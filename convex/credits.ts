@@ -41,7 +41,7 @@ export const addCredits = mutation({
     if (!profile) {
       await ctx.db.insert("userProfiles", {
         userId: args.userId,
-        credits: args.amount,
+        credits: (DEFAULT_START_CREDITS ?? 0) + args.amount,
         createdAt: Date.now(),
       });
       return args.amount;
@@ -111,7 +111,7 @@ export const addCreditsByExternalId = mutation({
 
       await ctx.db.insert("userProfiles", {
         userId: anyId,
-        credits: amount,
+        credits: (DEFAULT_START_CREDITS ?? 0) + amount,
         createdAt: Date.now(),
       });
     } catch {
@@ -152,7 +152,7 @@ export const addCreditsByEmail = mutation({
     } else {
       await ctx.db.insert("userProfiles", {
         userId: user._id,
-        credits: amount,
+        credits: (DEFAULT_START_CREDITS ?? 0) + amount,
         createdAt: Date.now(),
       });
     }
@@ -177,7 +177,7 @@ export const internalAddCredits = internalMutation({
     if (!profile) {
       await ctx.db.insert("userProfiles", {
         userId: args.userId,
-        credits: args.amount,
+        credits: (DEFAULT_START_CREDITS ?? 0) + args.amount,
         createdAt: Date.now(),
       });
       return args.amount;
