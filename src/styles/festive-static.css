@@ -1,0 +1,16 @@
+/* FUNDAL STATIC FESTIVE (fără flicker) */
+:root { --tdg-bg1:#0b0e11; --tdg-bg2:#0f141a; }
+html,body,#root{height:100%}
+body{
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,.04), transparent 60%),
+    linear-gradient(180deg, var(--tdg-bg1) 0%, var(--tdg-bg2) 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: #e7ecef;
+}
+
+/* OPRIRE TOTALĂ ANIMAȚII/GRID/NOISE/SCANLINES din teme vechi */
+.animated-grid, .bg-noise-anim, .moving-gradient, .snowfall,
+.scanlines, .bg-grid, .bg-noise { animation: none !important; }
+.bg-grid, .bg-noise, .scanlines { background: none !important; }
