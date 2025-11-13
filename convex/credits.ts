@@ -188,3 +188,40 @@ export const internalAddCredits = internalMutation({
     return newCredits;
   },
 });
+
+/**
+ * Internal mutation to refund credits to a user by userId string
+ * Used for automatic refunds when jobs fail
+ */
+export const refundCreditsByUserId = internalMutation({
+  args: {
+    userId: v.string(),
+    amount: v.number(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.amount || args.amount <= 0) {
+      return;
+    }
+
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (!profile) {
+      console.warn(
+        `[refundCreditsByUserId] Profile not found for userId: ${args.userId}`
+      );
+      return;
+    }
+
+    const newCredits = (profile.credits ?? 0) + args.amount;
+    await ctx.db.patch(profile._id, { credits: newCredits });
+
+    console.log(`[refundCreditsByUserId] Refunded ${args.amount} credits`, {
+      userId: args.userId,
+      previousCredits: profile.credits,
+      newCredits,
+    });
+  },
+});

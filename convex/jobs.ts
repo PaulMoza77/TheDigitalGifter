@@ -1,7 +1,15 @@
-import { mutation, query, action, internalAction, internalMutation, internalQuery } from "./_generated/server";
+import {
+  mutation,
+  query,
+  internalAction,
+  internalMutation,
+  internalQuery,
+} from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
+import { generateImageFromStorage } from "./ai/replicate";
+import { Id } from "./_generated/dataModel";
 
 export const create = mutation({
   args: {
@@ -43,8 +51,16 @@ export const create = mutation({
       updatedAt: Date.now(),
     });
 
-    // Schedule processing
-    await ctx.scheduler.runAfter(0, internal.jobs.processJob, { jobId });
+    // Schedule AI generation if input file exists, otherwise use processJob fallback
+    if (args.inputFileId) {
+      await ctx.scheduler.runAfter(0, internal.jobs.generateWithAI, {
+        inputFileId: args.inputFileId,
+        prompt: args.prompt,
+        jobId,
+      });
+    } else {
+      await ctx.scheduler.runAfter(0, internal.jobs.processJob, { jobId });
+    }
 
     return jobId;
   },
@@ -92,9 +108,10 @@ export const processJob = internalAction({
       status: "processing",
     });
 
+    let job;
     try {
       // Get job details
-      const job = await ctx.runQuery(internal.jobs.getInternal, {
+      job = await ctx.runQuery(internal.jobs.getInternal, {
         jobId: args.jobId,
       });
 
@@ -102,32 +119,55 @@ export const processJob = internalAction({
         throw new Error("Job not found");
       }
 
-      // Simulate AI processing (replace with actual AI service call)
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // For demo purposes, generate a placeholder result
-      const resultUrl = `https://picsum.photos/800/600?random=${Date.now()}`;
-
-      // Update job with result
-      await ctx.runMutation(internal.jobs.updateResult, {
+      // If job has inputFileId, use AI generation
+      if (job.inputFileId) {
+        await ctx.runAction(internal.jobs.generateWithAI, {
+          inputFileId: job.inputFileId,
+          prompt: job.prompt,
+          jobId: args.jobId,
+        });
+      } else {
+        // Fallback: simulate AI processing for jobs without input files
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        const resultUrl = `https://picsum.photos/800/600?random=${Date.now()}`;
+        await ctx.runMutation(internal.jobs.updateResult, {
+          jobId: args.jobId,
+          resultUrl,
+          status: "done",
+        });
+      }
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      console.error("[processJob] Job processing failed", {
         jobId: args.jobId,
-        resultUrl,
-        status: "done",
+        error: errorMessage,
       });
 
-    } catch (error) {
-      // Update job with error
+      // Update job with error status
       await ctx.runMutation(internal.jobs.updateStatus, {
         jobId: args.jobId,
         status: "error",
-        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorMessage,
       });
+
+      // Refund credits if job had debited credits
+      if (job?.debited && job.debited > 0) {
+        await ctx.runMutation(internal.credits.refundCreditsByUserId, {
+          userId: job.userId,
+          amount: job.debited,
+        });
+        console.log("[processJob] Credits refunded", {
+          jobId: args.jobId,
+          userId: job.userId,
+          amount: job.debited,
+        });
+      }
     }
   },
 });
 
 export const processTemplateJob = internalAction({
-  args: { 
+  args: {
     jobId: v.id("jobs"),
     templateId: v.id("templates"),
   },
@@ -138,9 +178,10 @@ export const processTemplateJob = internalAction({
       status: "processing",
     });
 
+    let job;
     try {
       // Get job and template details
-      const job = await ctx.runQuery(internal.jobs.getInternal, {
+      job = await ctx.runQuery(internal.jobs.getInternal, {
         jobId: args.jobId,
       });
       const template = await ctx.runQuery(internal.jobs.getTemplateInternal, {
@@ -151,27 +192,51 @@ export const processTemplateJob = internalAction({
         throw new Error("Job or template not found");
       }
 
-      // Here you would integrate with your AI service (OpenAI, Replicate, etc.)
-      // For now, we'll simulate the processing
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      // Generate a result URL (replace with actual AI-generated image)
-      const resultUrl = `https://picsum.photos/800/600?random=${Date.now()}&template=${template.scene}`;
-
-      // Update job with result
-      await ctx.runMutation(internal.jobs.updateResult, {
+      // Use AI generation if input file exists
+      if (job.inputFileId) {
+        // Combine template prompt with job prompt
+        const combinedPrompt = `${template.prompt}. ${job.prompt}`;
+        await ctx.runAction(internal.jobs.generateWithAI, {
+          inputFileId: job.inputFileId,
+          prompt: combinedPrompt,
+          jobId: args.jobId,
+        });
+      } else {
+        // Fallback: simulate processing for jobs without input files
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const resultUrl = `https://picsum.photos/800/600?random=${Date.now()}&template=${template.scene}`;
+        await ctx.runMutation(internal.jobs.updateResult, {
+          jobId: args.jobId,
+          resultUrl,
+          status: "done",
+        });
+      }
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      console.error("[processTemplateJob] Job processing failed", {
         jobId: args.jobId,
-        resultUrl,
-        status: "done",
+        error: errorMessage,
       });
 
-    } catch (error) {
-      // Update job with error
+      // Update job with error status
       await ctx.runMutation(internal.jobs.updateStatus, {
         jobId: args.jobId,
         status: "error",
-        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorMessage,
       });
+
+      // Refund credits if job had debited credits
+      if (job?.debited && job.debited > 0) {
+        await ctx.runMutation(internal.credits.refundCreditsByUserId, {
+          userId: job.userId,
+          amount: job.debited,
+        });
+        console.log("[processTemplateJob] Credits refunded", {
+          jobId: args.jobId,
+          userId: job.userId,
+          amount: job.debited,
+        });
+      }
     }
   },
 });
@@ -180,15 +245,38 @@ export const processTemplateJob = internalAction({
 export const updateStatus = internalMutation({
   args: {
     jobId: v.id("jobs"),
-    status: v.union(v.literal("queued"), v.literal("processing"), v.literal("done"), v.literal("error")),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("processing"),
+      v.literal("done"),
+      v.literal("error")
+    ),
     errorMessage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const job = await ctx.db.get(args.jobId);
+    if (!job) {
+      throw new Error(`Job not found: ${args.jobId}`);
+    }
+
     await ctx.db.patch(args.jobId, {
       status: args.status,
       updatedAt: Date.now(),
       ...(args.errorMessage && { errorMessage: args.errorMessage }),
     });
+
+    // If status is error and job has debited credits, refund them
+    if (args.status === "error" && job.debited && job.debited > 0) {
+      // Refund credits asynchronously via action to avoid blocking
+      // The refund will be handled by the calling action
+      console.log(
+        `[updateStatus] Job ${args.jobId} marked as error, credits will be refunded`,
+        {
+          userId: job.userId,
+          debited: job.debited,
+        }
+      );
+    }
   },
 });
 
@@ -203,6 +291,46 @@ export const updateResult = internalMutation({
       resultUrl: args.resultUrl,
       status: args.status,
       updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Internal mutation to store job result with storage ID
+ * Used when result is stored in Convex storage
+ */
+export const storeJobResult = internalMutation({
+  args: {
+    jobId: v.id("jobs"),
+    resultStorageId: v.optional(v.id("_storage")),
+    resultUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const job = await ctx.db.get(args.jobId);
+    if (!job) {
+      throw new Error(`Job not found: ${args.jobId}`);
+    }
+
+    let finalResultUrl = args.resultUrl;
+
+    // If storage ID provided, get the URL
+    if (args.resultStorageId && !finalResultUrl) {
+      finalResultUrl =
+        (await ctx.storage.getUrl(args.resultStorageId)) ?? undefined;
+    }
+
+    if (!finalResultUrl) {
+      throw new Error("No result URL or storage ID provided");
+    }
+
+    await ctx.db.patch(args.jobId, {
+      resultUrl: finalResultUrl,
+      status: "done",
+      updatedAt: Date.now(),
+    });
+
+    console.log(`[storeJobResult] Job ${args.jobId} result stored`, {
+      resultUrl: finalResultUrl,
     });
   },
 });
@@ -236,5 +364,147 @@ export const deleteJob = mutation({
 
     await ctx.db.delete(args.jobId);
     return { success: true };
+  },
+});
+
+/**
+ * Helper function to extract error message from unknown error type
+ * Matches the frontend getErrorMessage utility for consistency
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return "Unknown error occurred";
+}
+
+/**
+ * Downloads an image from a URL and uploads it to Convex storage
+ */
+async function downloadAndStoreImage(
+  ctx: { storage: { generateUploadUrl: () => Promise<string> } },
+  imageUrl: string
+): Promise<Id<"_storage">> {
+  // Download the image
+  const imageResponse = await fetch(imageUrl);
+  if (!imageResponse.ok) {
+    throw new Error(`Failed to download image: ${imageResponse.statusText}`);
+  }
+
+  const imageBlob = await imageResponse.blob();
+  const contentType = imageResponse.headers.get("content-type") || "image/jpeg";
+
+  // Generate upload URL
+  const uploadUrl = await ctx.storage.generateUploadUrl();
+
+  // Upload to Convex storage
+  const uploadResponse = await fetch(uploadUrl, {
+    method: "POST",
+    headers: { "Content-Type": contentType },
+    body: imageBlob,
+  });
+
+  if (!uploadResponse.ok) {
+    const errorText = await uploadResponse.text().catch(() => "Unknown error");
+    throw new Error(`Failed to upload image to storage: ${errorText}`);
+  }
+
+  const { storageId } = (await uploadResponse.json()) as {
+    storageId: Id<"_storage">;
+  };
+  return storageId;
+}
+
+/**
+ * Internal action to generate AI image using Replicate
+ * Downloads result and stores it in Convex storage, then updates job record
+ */
+export const generateWithAI = internalAction({
+  args: {
+    inputFileId: v.id("_storage"),
+    prompt: v.string(),
+    jobId: v.id("jobs"),
+  },
+  handler: async (ctx, args) => {
+    // Update job status to processing
+    await ctx.runMutation(internal.jobs.updateStatus, {
+      jobId: args.jobId,
+      status: "processing",
+    });
+
+    let job;
+    try {
+      // Get job to access userId for potential credit refund
+      job = await ctx.runQuery(internal.jobs.getInternal, {
+        jobId: args.jobId,
+      });
+
+      if (!job) {
+        throw new Error("Job not found");
+      }
+
+      // Generate AI image using Replicate
+      const outputImageUrl = await generateImageFromStorage(
+        ctx,
+        args.inputFileId,
+        args.prompt
+      );
+
+      console.log("[generateWithAI] AI generation completed", {
+        jobId: args.jobId,
+        outputUrl: outputImageUrl,
+      });
+
+      // Download and store the result image in Convex storage
+      const resultStorageId = await downloadAndStoreImage(ctx, outputImageUrl);
+
+      // Get the storage URL for the result
+      const resultUrl = await ctx.storage.getUrl(resultStorageId);
+      if (!resultUrl) {
+        throw new Error("Failed to get URL for stored result image");
+      }
+
+      // Store job result using the new mutation
+      await ctx.runMutation(internal.jobs.storeJobResult, {
+        jobId: args.jobId,
+        resultStorageId,
+        resultUrl,
+      });
+
+      console.log("[generateWithAI] Job updated successfully", {
+        jobId: args.jobId,
+        resultStorageId,
+        resultUrl,
+      });
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      console.error("[generateWithAI] Generation failed", {
+        jobId: args.jobId,
+        error: errorMessage,
+      });
+
+      // Update job with error status
+      await ctx.runMutation(internal.jobs.updateStatus, {
+        jobId: args.jobId,
+        status: "error",
+        errorMessage,
+      });
+
+      // Refund credits if job had debited credits
+      if (job?.debited && job.debited > 0) {
+        await ctx.runMutation(internal.credits.refundCreditsByUserId, {
+          userId: job.userId,
+          amount: job.debited,
+        });
+        console.log("[generateWithAI] Credits refunded", {
+          jobId: args.jobId,
+          userId: job.userId,
+          amount: job.debited,
+        });
+      }
+    }
   },
 });

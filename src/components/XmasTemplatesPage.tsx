@@ -4,9 +4,12 @@ import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { Doc } from "../../convex/_generated/dataModel";
 import TemplatesGrid from "./TemplatesGrid";
+import { uploadFileToStorage } from "../lib/uploadFileToStorage";
+import { getErrorMessage } from "../lib/getErrorMessage";
 
 export default function XmasTemplatesPage() {
-  const [selectedTemplate, setSelectedTemplate] = useState<Doc<"templates"> | null>(null);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<Doc<"templates"> | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [additionalPrompt, setAdditionalPrompt] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -16,43 +19,40 @@ export default function XmasTemplatesPage() {
   const credits = useQuery(api.credits.getUserCredits);
   const templates = useQuery(api.templates.list) || [];
 
-  const hasEnoughCredits = selectedTemplate ? (credits || 0) >= selectedTemplate.creditCost : true;
+  const hasEnoughCredits = selectedTemplate
+    ? (credits || 0) >= selectedTemplate.creditCost
+    : true;
 
   const onPick = (template: Doc<"templates">) => {
     setSelectedTemplate(template);
     // Scroll to the form section
-    document.getElementById('template-form')?.scrollIntoView({ behavior: 'smooth' });
+    document
+      .getElementById("template-form")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedTemplate || !selectedFile) {
       toast.error("Please select a template and upload a photo");
       return;
     }
 
     if (!hasEnoughCredits) {
-      toast.error(`You need ${selectedTemplate.creditCost} credits to create this Christmas card. Please purchase more credits.`);
+      toast.error(
+        `You need ${selectedTemplate.creditCost} credits to create this Christmas card. Please purchase more credits.`
+      );
       return;
     }
 
     setIsUploading(true);
 
     try {
-      // Upload the file
-      const uploadUrl = await generateUploadUrl();
-      const uploadResult = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": selectedFile.type },
-        body: selectedFile,
-      });
-
-      if (!uploadResult.ok) {
-        throw new Error("Failed to upload file");
-      }
-
-      const { storageId } = await uploadResult.json();
+      const storageId = await uploadFileToStorage(
+        generateUploadUrl,
+        selectedFile
+      );
 
       // Create job from template
       const result = await createFromTemplate({
@@ -61,16 +61,20 @@ export default function XmasTemplatesPage() {
         additionalPrompt: additionalPrompt.trim() || undefined,
       });
 
-      toast.success(`Christmas card creation started! Template: ${result.template}`);
-      
+      toast.success(
+        `Christmas card creation started! Template: ${result.template}`
+      );
+
       // Reset form
       setSelectedTemplate(null);
       setSelectedFile(null);
       setAdditionalPrompt("");
-      
     } catch (error) {
-      console.error("Error creating template job:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create Christmas card");
+      const message = getErrorMessage(
+        error,
+        "Failed to create Christmas card."
+      );
+      toast.error(message);
     } finally {
       setIsUploading(false);
     }
@@ -86,10 +90,15 @@ export default function XmasTemplatesPage() {
               🎄 Christmas Card Templates
             </h1>
             <p className="text-lg text-gray-600">
-              Choose from {templates.length} magical Christmas templates to create your perfect holiday card
+              Choose from {templates.length} magical Christmas templates to
+              create your perfect holiday card
             </p>
             <div className="mt-4 flex items-center justify-center gap-4 text-sm text-gray-500">
-              <span>💳 You have <strong className="text-green-600">{credits || 0}</strong> credits</span>
+              <span>
+                💳 You have{" "}
+                <strong className="text-green-600">{credits || 0}</strong>{" "}
+                credits
+              </span>
               <span>•</span>
               <span>🎨 Templates from 10-20 credits</span>
             </div>
@@ -103,7 +112,7 @@ export default function XmasTemplatesPage() {
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             Select Your Template
           </h2>
-          <TemplatesGrid 
+          <TemplatesGrid
             onPick={onPick}
             selectedTemplateId={selectedTemplate?._id}
           />
@@ -111,7 +120,10 @@ export default function XmasTemplatesPage() {
 
         {/* Selected Template Form */}
         {selectedTemplate && (
-          <div id="template-form" className="bg-white rounded-lg shadow-lg border p-6">
+          <div
+            id="template-form"
+            className="bg-white rounded-lg shadow-lg border p-6"
+          >
             <div className="flex items-start gap-4 mb-6">
               <img
                 src={selectedTemplate.previewUrl}
@@ -131,7 +143,10 @@ export default function XmasTemplatesPage() {
                   </span>
                   <div className="flex gap-1">
                     {selectedTemplate.tags.map((tag) => (
-                      <span key={tag} className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">
+                      <span
+                        key={tag}
+                        className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs"
+                      >
                         {tag}
                       </span>
                     ))}
@@ -139,13 +154,19 @@ export default function XmasTemplatesPage() {
                 </div>
                 {!hasEnoughCredits && (
                   <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-sm">
-                    ⚠️ You need {selectedTemplate.creditCost - (credits || 0)} more credits to create this card.
+                    ⚠️ You need {selectedTemplate.creditCost - (credits || 0)}{" "}
+                    more credits to create this card.
                   </div>
                 )}
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form
+              onSubmit={(event) => {
+                void handleSubmit(event);
+              }}
+              className="space-y-4"
+            >
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -216,21 +237,27 @@ export default function XmasTemplatesPage() {
           </h3>
           <div className="grid md:grid-cols-3 gap-4 text-sm text-green-700">
             <div className="flex items-start gap-2">
-              <span className="bg-green-200 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</span>
+              <span className="bg-green-200 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                1
+              </span>
               <div>
                 <p className="font-medium">Choose Template</p>
                 <p>Browse and select your favorite Christmas scene</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <span className="bg-green-200 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">2</span>
+              <span className="bg-green-200 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                2
+              </span>
               <div>
                 <p className="font-medium">Upload Photo</p>
                 <p>Add your family photo or portrait</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <span className="bg-green-200 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</span>
+              <span className="bg-green-200 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                3
+              </span>
               <div>
                 <p className="font-medium">Create Magic</p>
                 <p>AI will blend your photo into the Christmas scene</p>

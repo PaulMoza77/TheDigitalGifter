@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as ai_replicate from "../ai/replicate.js";
 import type * as auth from "../auth.js";
 import type * as checkout from "../checkout.js";
 import type * as constants from "../constants.js";
@@ -33,6 +34,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "ai/replicate": typeof ai_replicate;
   auth: typeof auth;
   checkout: typeof checkout;
   constants: typeof constants;

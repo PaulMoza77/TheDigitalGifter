@@ -6,19 +6,16 @@ export function CreditsDisplay() {
 
   if (credits === undefined) {
     return (
-      <div className="flex items-center space-x-2">
-        <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
-        <span className="text-sm text-gray-500">Loading...</span>
+      <div className="rounded-full px-3 py-2 text-sm border border-white/20 bg-white/10">
+        <span className="text-white/60">Loading...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center space-x-2 bg-purple-50 px-3 py-1 rounded-full">
-      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-      <span className="text-sm font-medium text-purple-700">
-        {credits} credits
-      </span>
+    <div className="rounded-full px-3 py-2 text-sm border border-white/20 bg-white/10">
+      <span className="hidden sm:inline text-white/90">Credits:</span>{" "}
+      <span className="font-bold text-[#ffd976]">{credits}</span>
     </div>
   );
 }

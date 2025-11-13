@@ -1,22 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
-import { Doc } from "../../convex/_generated/dataModel";
+import { Doc, Id } from "../../convex/_generated/dataModel";
 import TemplatesGrid from "./TemplatesGrid";
+import { uploadFileToStorage } from "../lib/uploadFileToStorage";
+import { getErrorMessage } from "../lib/getErrorMessage";
 
 export function TemplateJobCreator() {
-  const [selectedTemplate, setSelectedTemplate] = useState<Doc<"templates"> | null>(null);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<Doc<"templates"> | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [additionalPrompt, setAdditionalPrompt] = useState("");
   const [customText, setCustomText] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [currentJobId, setCurrentJobId] = useState<Id<"jobs"> | null>(null);
 
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
   const createFromTemplate = useMutation(api.templates.createFromTemplate);
   const credits = useQuery(api.credits.getUserCredits);
+  const jobs = useQuery(api.jobs.list) || [];
 
-  const hasEnoughCredits = selectedTemplate ? (credits || 0) >= selectedTemplate.creditCost : true;
+  // Watch for current job status updates
+  const currentJob = currentJobId
+    ? jobs.find((j) => j._id === currentJobId)
+    : null;
+
+  // Monitor job status changes
+  useEffect(() => {
+    if (!currentJob) return;
+
+    if (currentJob.status === "done" && currentJob.resultUrl) {
+      setIsUploading(false);
+      toast.success("🎄 Your Christmas card is ready!");
+    } else if (currentJob.status === "error") {
+      setIsUploading(false);
+      const errorMsg =
+        currentJob.errorMessage ||
+        "Failed to create card. Credits have been refunded.";
+      toast.error(errorMsg);
+    } else if (currentJob.status === "processing") {
+      toast.info("🎨 AI is creating your Christmas card...");
+    }
+  }, [currentJob]);
+
+  const hasEnoughCredits = selectedTemplate
+    ? (credits || 0) >= selectedTemplate.creditCost
+    : true;
 
   const handleTemplateSelect = (template: Doc<"templates">) => {
     setSelectedTemplate(template);
@@ -25,33 +55,26 @@ export function TemplateJobCreator() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedTemplate || !selectedFile) {
       toast.error("Please select a template and upload a photo");
       return;
     }
 
     if (!hasEnoughCredits) {
-      toast.error(`You need ${selectedTemplate.creditCost} credits to create this Christmas card. Please purchase more credits.`);
+      toast.error(
+        `You need ${selectedTemplate.creditCost} credits to create this Christmas card. Please purchase more credits.`
+      );
       return;
     }
 
     setIsUploading(true);
 
     try {
-      // Upload the file
-      const uploadUrl = await generateUploadUrl();
-      const uploadResult = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": selectedFile.type },
-        body: selectedFile,
-      });
-
-      if (!uploadResult.ok) {
-        throw new Error("Failed to upload file");
-      }
-
-      const { storageId } = await uploadResult.json();
+      const storageId = await uploadFileToStorage(
+        generateUploadUrl,
+        selectedFile
+      );
 
       // Build enhanced prompt with custom text
       let enhancedPrompt = additionalPrompt.trim();
@@ -66,17 +89,25 @@ export function TemplateJobCreator() {
         additionalPrompt: enhancedPrompt || undefined,
       });
 
-      toast.success(`🎄 Christmas card creation started! Template: ${result.template}`);
-      
-      // Reset form
-      setSelectedTemplate(null);
+      // Extract jobId from result if available, otherwise find it from jobs list
+      if (result.jobId) {
+        setCurrentJobId(result.jobId);
+      }
+
+      toast.success(
+        `🎄 Christmas card creation started! Template: ${result.template}`
+      );
+
+      // Reset form (but keep template selected for status monitoring)
       setSelectedFile(null);
       setAdditionalPrompt("");
       setCustomText("");
-      
     } catch (error) {
-      console.error("Error creating template job:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create Christmas card");
+      const message = getErrorMessage(
+        error,
+        "Failed to create Christmas card."
+      );
+      toast.error(message);
     } finally {
       setIsUploading(false);
     }
@@ -88,13 +119,18 @@ export function TemplateJobCreator() {
         🎄 Create Christmas Card from Template
       </h3>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form
+        onSubmit={(event) => {
+          void handleSubmit(event);
+        }}
+        className="space-y-6"
+      >
         {/* Template Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Choose a Christmas Template
           </label>
-          <TemplatesGrid 
+          <TemplatesGrid
             onPick={handleTemplateSelect}
             selectedTemplateId={selectedTemplate?._id}
           />
@@ -110,8 +146,12 @@ export function TemplateJobCreator() {
                 className="w-20 h-16 object-cover rounded-lg border-2 border-red-200"
               />
               <div className="flex-1">
-                <h4 className="font-medium text-red-800 mb-1">{selectedTemplate.title}</h4>
-                <p className="text-sm text-red-700 mb-2">{selectedTemplate.prompt}</p>
+                <h4 className="font-medium text-red-800 mb-1">
+                  {selectedTemplate.title}
+                </h4>
+                <p className="text-sm text-red-700 mb-2">
+                  {selectedTemplate.prompt}
+                </p>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-red-600 font-medium">
                     💳 {selectedTemplate.creditCost} credits
@@ -122,17 +162,21 @@ export function TemplateJobCreator() {
                 </div>
                 <div className="flex gap-1 mt-2">
                   {selectedTemplate.tags.map((tag) => (
-                    <span key={tag} className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">
+                    <span
+                      key={tag}
+                      className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs"
+                    >
                       {tag}
                     </span>
                   ))}
                 </div>
               </div>
             </div>
-            
+
             {!hasEnoughCredits && (
               <div className="mt-3 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-sm">
-                ⚠️ You need {selectedTemplate.creditCost - (credits || 0)} more credits to create this card.
+                ⚠️ You need {selectedTemplate.creditCost - (credits || 0)} more
+                credits to create this card.
               </div>
             )}
           </div>
@@ -195,7 +239,12 @@ export function TemplateJobCreator() {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={!selectedTemplate || !selectedFile || isUploading || !hasEnoughCredits}
+          disabled={
+            !selectedTemplate ||
+            !selectedFile ||
+            isUploading ||
+            !hasEnoughCredits
+          }
           className="w-full bg-gradient-to-r from-red-600 to-green-600 text-white py-3 px-4 rounded-md hover:from-red-700 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           {isUploading ? (
@@ -213,7 +262,9 @@ export function TemplateJobCreator() {
 
       {/* Tips */}
       <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-green-800 mb-2">💡 Tips for Best Results</h4>
+        <h4 className="text-sm font-medium text-green-800 mb-2">
+          💡 Tips for Best Results
+        </h4>
         <ul className="text-xs text-green-700 space-y-1">
           <li>• Use high-quality photos with clear faces</li>
           <li>• Portrait orientation works best for family photos</li>

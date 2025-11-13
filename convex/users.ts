@@ -1,7 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { DEFAULT_START_CREDITS } from "./constants";
-import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const ensureUserProfile = mutation({
   args: { userId: v.string() },
@@ -24,7 +23,7 @@ export const ensureUserProfile = mutation({
       credits: DEFAULT_START_CREDITS,
       createdAt: Date.now(),
     });
-    
+
     return profileId;
   },
 });
@@ -33,13 +32,12 @@ export const getMe = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
     if (!userId) return null;
-    
+
     const userProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
-    
+
     return userProfile;
   },
 });
-

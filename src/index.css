@@ -3,35 +3,61 @@
 @tailwind utilities;
 
 /* === Enhanced Festive dark theme layers === */
-:root{
-  --festive-red:#ff6b6b; 
-  --festive-green:#2dd4bf; /* emerald-leaning */
-  --snow:#ffffff10; 
-  --vignette:#000000aa;
+:root {
+  --festive-red: #ff6b6b;
+  --festive-green: #2dd4bf; /* emerald-leaning */
+  --snow: #ffffff10;
+  --vignette: #000000aa;
   --dark-bg: #0b1220;
   --dark-surface: #1a2332;
   --dark-border: rgba(255, 255, 255, 0.1);
 }
 
-html, body, #root { height: 100%; }
-body { color: #e5e7eb; background: transparent; }
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  color: #e5e7eb;
+  background: transparent;
+}
 
-body{
+body {
   /* Enhanced festive dark gradient background - STATIC */
   background:
     /* Main gradient with subtle festive colors */
-    radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,.08), transparent 60%),
+    radial-gradient(
+      1200px 600px at 50% -10%,
+      rgba(255, 255, 255, 0.08),
+      transparent 60%
+    ),
     /* Subtle red accent bottom left */
-    radial-gradient(900px 500px at 10% 110%, rgba(231, 76, 60, .055), transparent 50%),
+      radial-gradient(
+        900px 500px at 10% 110%,
+        rgba(231, 76, 60, 0.055),
+        transparent 50%
+      ),
     /* Subtle green accent bottom right */
-    radial-gradient(900px 500px at 90% 110%, rgba(26, 188, 156, .055), transparent 50%),
+      radial-gradient(
+        900px 500px at 90% 110%,
+        rgba(26, 188, 156, 0.055),
+        transparent 50%
+      ),
     /* Additional subtle top accents */
-    radial-gradient(600px 400px at 20% 0%, rgba(255, 107, 107, .03), transparent 40%),
-    radial-gradient(600px 400px at 80% 0%, rgba(45, 212, 191, .03), transparent 40%),
-    /* Base dark color */
-    #0b0f12;
+      radial-gradient(
+        600px 400px at 20% 0%,
+        rgba(255, 107, 107, 0.03),
+        transparent 40%
+      ),
+    radial-gradient(
+      600px 400px at 80% 0%,
+      rgba(45, 212, 191, 0.03),
+      transparent 40%
+    ),
+    /* Base dark color */ #0b0f12;
   background-blend-mode: screen, normal, normal, normal, normal, normal;
-  color:#e6ebf5;
+  color: #e6ebf5;
   background-attachment: fixed;
 }
 
@@ -39,31 +65,55 @@ body{
 .festive-bg {
   background:
     /* Subtle light overlay */
-    radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,.08), transparent 60%),
+    radial-gradient(
+      1200px 600px at 50% -10%,
+      rgba(255, 255, 255, 0.08),
+      transparent 60%
+    ),
     /* Red accent bottom left */
-    radial-gradient(900px 500px at 10% 110%, rgba(255,107,107,.06), transparent 50%),
+      radial-gradient(
+        900px 500px at 10% 110%,
+        rgba(255, 107, 107, 0.06),
+        transparent 50%
+      ),
     /* Green accent bottom right */
-    radial-gradient(900px 500px at 90% 110%, rgba(45,212,191,.06), transparent 50%),
+      radial-gradient(
+        900px 500px at 90% 110%,
+        rgba(45, 212, 191, 0.06),
+        transparent 50%
+      ),
     /* Additional top accents for depth */
-    radial-gradient(600px 400px at 20% 0%, rgba(231, 76, 60, .04), transparent 40%),
-    radial-gradient(600px 400px at 80% 0%, rgba(26, 188, 156, .04), transparent 40%),
+      radial-gradient(
+        600px 400px at 20% 0%,
+        rgba(231, 76, 60, 0.04),
+        transparent 40%
+      ),
+    radial-gradient(
+      600px 400px at 80% 0%,
+      rgba(26, 188, 156, 0.04),
+      transparent 40%
+    ),
     #0b0f12;
 }
 
 /* Static festive texture overlay - very subtle */
-.festive-bg::after{
-  content:"";
-  position:fixed; 
-  inset:0; 
-  pointer-events:none; 
-  opacity:.15;
+.festive-bg::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.15;
   background-image: 
     /* Tiny dots pattern */
     radial-gradient(#ffffff22 1px, transparent 1px),
     /* Even tinier sparkle effect */
-    radial-gradient(#ffffff11 0.5px, transparent 0.5px);
-  background-size: 6px 6px, 12px 12px;
-  background-position: 0 0, 3px 3px;
+      radial-gradient(#ffffff11 0.5px, transparent 0.5px);
+  background-size:
+    6px 6px,
+    12px 12px;
+  background-position:
+    0 0,
+    3px 3px;
   /* Mask to fade towards edges */
   mask-image: radial-gradient(circle at 50% 30%, black 60%, transparent 90%);
   z-index: -1;
@@ -73,23 +123,43 @@ body{
 .bg-festive-static {
   background:
     /* Main subtle gradient */
-    radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,.1), transparent 65%),
+    radial-gradient(
+      1200px 600px at 50% -10%,
+      rgba(255, 255, 255, 0.1),
+      transparent 65%
+    ),
     /* Christmas red accent */
-    radial-gradient(800px 400px at 15% 100%, rgba(231, 76, 60, .08), transparent 55%),
+      radial-gradient(
+        800px 400px at 15% 100%,
+        rgba(231, 76, 60, 0.08),
+        transparent 55%
+      ),
     /* Christmas green accent */
-    radial-gradient(800px 400px at 85% 100%, rgba(26, 188, 156, .08), transparent 55%),
+      radial-gradient(
+        800px 400px at 85% 100%,
+        rgba(26, 188, 156, 0.08),
+        transparent 55%
+      ),
     /* Top subtle accents */
-    radial-gradient(500px 300px at 30% 0%, rgba(255, 107, 107, .05), transparent 45%),
-    radial-gradient(500px 300px at 70% 0%, rgba(45, 212, 191, .05), transparent 45%),
-    /* Base */
-    #0b0f12;
+      radial-gradient(
+        500px 300px at 30% 0%,
+        rgba(255, 107, 107, 0.05),
+        transparent 45%
+      ),
+    radial-gradient(
+      500px 300px at 70% 0%,
+      rgba(45, 212, 191, 0.05),
+      transparent 45%
+    ),
+    /* Base */ #0b0f12;
   color-scheme: dark;
 }
 
 /* Separator "garland" - enhanced */
-.hr-garland{
-  height:3px;
-  background-image: linear-gradient(90deg,
+.hr-garland {
+  height: 3px;
+  background-image: linear-gradient(
+    90deg,
     transparent 0 6%,
     var(--festive-red) 6% 12%,
     transparent 12% 18%,
@@ -98,17 +168,18 @@ body{
     var(--festive-red) 30% 36%,
     transparent 36% 42%,
     var(--festive-green) 42% 48%,
-    transparent 48% 100%);
-  opacity:.7; 
-  border-radius:9999px;
+    transparent 48% 100%
+  );
+  opacity: 0.7;
+  border-radius: 9999px;
   box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
 }
 
 /* Badge / chip */
-.badge-festive{
-  background:linear-gradient(90deg,var(--festive-red),var(--festive-green));
-  color:#0a0f1a; 
-  font-weight:700;
+.badge-festive {
+  background: linear-gradient(90deg, var(--festive-red), var(--festive-green));
+  color: #0a0f1a;
+  font-weight: 700;
   padding: 8px 16px;
   border-radius: 9999px;
   display: inline-flex;
@@ -118,13 +189,13 @@ body{
 }
 
 /* Enhanced buttons */
-.btn-festive{
+.btn-festive {
   background: linear-gradient(135deg, #e74b3c 0%, #ff6a3a 45%, #1abc9c 100%);
-  color: #ffffff; 
-  font-weight: 500; 
-  padding: 12px 24px; 
+  color: #ffffff;
+  font-weight: 500;
+  padding: 12px 24px;
   border-radius: 12px;
-  transition: all 0.3s ease; 
+  transition: all 0.3s ease;
   box-shadow: 0 8px 20px rgba(26, 188, 156, 0.25);
   border: none;
   cursor: pointer;
@@ -133,19 +204,19 @@ body{
   justify-content: center;
   gap: 8px;
 }
-.btn-festive:hover{
-  transform: translateY(-1px) scale(1.05); 
+.btn-festive:hover {
+  transform: translateY(-1px) scale(1.05);
   box-shadow: 0 10px 28px rgba(231, 76, 60, 0.35);
 }
 
-.btn-ghost{
-  background: rgba(255, 255, 255, 0.08); 
-  color: rgba(255, 255, 255, 0.9); 
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
-  padding: 12px 24px; 
-  border-radius: 12px; 
+  padding: 12px 24px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  transition: all 0.3s ease; 
+  transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   cursor: pointer;
   display: inline-flex;
@@ -153,8 +224,8 @@ body{
   justify-content: center;
   gap: 8px;
 }
-.btn-ghost:hover{
-  background: rgba(255, 255, 255, 0.12); 
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
   transform: translateY(-1px) scale(1.05);
   border-color: rgba(255, 255, 255, 0.25);
   box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
@@ -243,19 +314,23 @@ body{
   .text-festive-red {
     color: var(--festive-red);
   }
-  
+
   .text-festive-green {
     color: var(--festive-green);
   }
-  
+
   .bg-festive-gradient {
-    background: linear-gradient(90deg, var(--festive-red), var(--festive-green));
+    background: linear-gradient(
+      90deg,
+      var(--festive-red),
+      var(--festive-green)
+    );
   }
-  
+
   .border-festive {
     border-color: rgba(255, 255, 255, 0.12);
   }
-  
+
   .glass-effect {
     background: rgba(255, 255, 255, 0.06);
     backdrop-filter: blur(12px);
@@ -281,18 +356,32 @@ body{
 
 /* Smooth animations - keeping only non-distracting ones */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes glow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-float {
@@ -304,7 +393,12 @@ body{
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -328,13 +422,13 @@ body{
   background: rgba(255, 255, 255, 0.3);
 }
 /* Gradient doar pe text, fără bloc în spate */
-.bg-festive-gradient-text{
+.bg-festive-gradient-text {
   background: linear-gradient(90deg, var(--festive-red), var(--festive-green));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  display: inline;   /* important: să nu devină “bară” */
-  padding: 0;        /* fără padding ca să nu capete fundal */
+  display: inline; /* important: să nu devină “bară” */
+  padding: 0; /* fără padding ca să nu capete fundal */
   margin: 0;
 }
 .gradient-text {
@@ -342,4 +436,58 @@ body{
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent !important;
+}
+
+@keyframes coinShimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Snow animation */
+@keyframes snowDrift {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(30vh) translateX(6vw);
+    opacity: 0.6;
+  }
+}
+
+.animate-snowDrift {
+  animation: snowDrift 12s linear infinite;
+}
+
+/* Gradient shift animation */
+@keyframes gradientShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradientShift {
+  animation: gradientShift 6s ease-in-out infinite;
+}
+
+/* Coin shimmer animation (for header) */
+@keyframes coinShimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+    background-position: 0% 50%;
+  }
+  50% {
+    filter: brightness(1.25);
+    background-position: 100% 50%;
+  }
 }
