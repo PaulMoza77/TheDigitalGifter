@@ -63,8 +63,8 @@ export default function GeneratorPage() {
   const user = useBootstrapUser();
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [previewBefore, setPreviewBefore] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [previewAfter, setPreviewAfter] = useState<string | null>(null);
   const [customInstructions, setCustomInstructions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -100,15 +100,14 @@ export default function GeneratorPage() {
     ? jobs.find((j) => j._id === currentJobId)
     : null;
 
+  // Update preview URLs when files change
   useEffect(() => {
-    if (uploadedFile) {
-      const url = URL.createObjectURL(uploadedFile);
-      setPreviewBefore(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setPreviewBefore(null);
-    }
-  }, [uploadedFile]);
+    const urls = uploadedFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [uploadedFiles]);
 
   // Monitor job status changes
   useEffect(() => {
@@ -128,31 +127,54 @@ export default function GeneratorPage() {
     }
   }, [currentJob]);
 
-  // Handle file upload
+  // Handle file upload (multiple files)
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("File too large. Maximum 10MB.");
-        return;
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      const validFiles = files.filter((file) => {
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} is too large. Maximum 10MB.`);
+          return false;
+        }
+        if (!file.type.startsWith("image/")) {
+          toast.error(`${file.name} is not an image.`);
+          return false;
+        }
+        return true;
+      });
+      if (validFiles.length > 0) {
+        setUploadedFiles((prev) => [...prev, ...validFiles]);
+        toast.success(`${validFiles.length} photo(s) uploaded!`);
       }
-      setUploadedFile(file);
-      toast.success("Photo uploaded! Now select a template.");
+    }
+    // Reset input to allow selecting the same file again
+    event.target.value = "";
+  };
+
+  // Handle drag and drop (multiple files)
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer.files).filter((file) =>
+      file.type.startsWith("image/")
+    );
+    if (files.length > 0) {
+      const validFiles = files.filter((file) => {
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} is too large. Maximum 10MB.`);
+          return false;
+        }
+        return true;
+      });
+      if (validFiles.length > 0) {
+        setUploadedFiles((prev) => [...prev, ...validFiles]);
+        toast.success(`${validFiles.length} photo(s) uploaded!`);
+      }
     }
   };
 
-  // Handle drag and drop
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const file = event.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("File too large. Maximum 10MB.");
-        return;
-      }
-      setUploadedFile(file);
-      toast.success("Photo uploaded! Now select a template.");
-    }
+  // Remove uploaded file
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Handle download
@@ -188,8 +210,8 @@ export default function GeneratorPage() {
       toast.error("Please select a template.");
       return;
     }
-    if (!uploadedFile) {
-      toast.error("Please upload a photo.");
+    if (uploadedFiles.length === 0) {
+      toast.error("Please upload at least one photo.");
       return;
     }
 
@@ -210,14 +232,18 @@ export default function GeneratorPage() {
     setPreviewAfter(null);
 
     try {
-      // Upload file
-      const uploadUrl = await generateUploadUrl();
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": uploadedFile.type },
-        body: uploadedFile,
-      });
-      const { storageId } = await uploadResponse.json();
+      // Upload all files
+      const storageIds: Id<"_storage">[] = [];
+      for (const file of uploadedFiles) {
+        const uploadUrl = await generateUploadUrl();
+        const uploadResponse = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        const { storageId } = await uploadResponse.json();
+        storageIds.push(storageId);
+      }
 
       // Build final prompt with custom instructions
       let finalPrompt = template.prompt;
@@ -225,11 +251,11 @@ export default function GeneratorPage() {
         finalPrompt += ` Additional instructions: ${customInstructions.trim()}`;
       }
 
-      // Create job
+      // Create job with multiple input files
       const jobId = await createJob({
         type: "image",
         prompt: finalPrompt,
-        inputFileId: storageId,
+        inputFileIds: storageIds,
         templateId: templateId,
         aspectRatio: selectedAspectRatio,
       });
@@ -258,23 +284,56 @@ export default function GeneratorPage() {
           id="file-input"
           type="file"
           accept="image/*"
+          multiple
           onChange={handleFileSelect}
           className="hidden"
         />
         <h2 className="text-xl font-semibold mb-2">
-          {uploadedFile ? `✅ ${uploadedFile.name}` : "Drag & drop"}
+          {uploadedFiles.length > 0
+            ? `✅ ${uploadedFiles.length} photo${uploadedFiles.length > 1 ? "s" : ""} uploaded`
+            : "Drag & drop"}
         </h2>
         <p className="text-[#c1c8d8]">
-          {uploadedFile
-            ? "Click to change photo"
-            : "or click to upload your reference family photo"}
+          {uploadedFiles.length > 0
+            ? "Click to add more photos"
+            : "or click to upload your reference photos"}
         </p>
         <p className="mt-4 text-sm text-[#c1c8d8]">
-          {uploadedFile && !selectedTemplate
+          {uploadedFiles.length > 0 && !selectedTemplate
             ? "Now select your desired template below ⬇️"
             : ""}
         </p>
       </section>
+
+      {/* Uploaded images preview */}
+      {uploadedFiles.length > 0 && (
+        <div className="mx-auto my-6 max-w-4xl px-4">
+          <div className="flex flex-wrap gap-3 justify-center">
+            {previewUrls.map((url, index) => (
+              <div
+                key={index}
+                className="relative w-24 h-24 rounded-xl overflow-hidden border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] group"
+              >
+                <img
+                  src={url}
+                  alt={`Preview ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveFile(index);
+                  }}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500/90 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold"
+                  aria-label="Remove image"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Category buttons */}
       <div className="flex flex-wrap justify-center gap-2 mb-6 px-4">
@@ -358,7 +417,11 @@ export default function GeneratorPage() {
               <select
                 value={selectedAspectRatio}
                 onChange={(e) => setSelectedAspectRatio(e.target.value)}
-                disabled={isGenerating || !uploadedFile || !selectedTemplate}
+                disabled={
+                  isGenerating ||
+                  uploadedFiles.length === 0 ||
+                  !selectedTemplate
+                }
                 className="rounded-xl px-5 py-2 pr-10 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
               >
                 <option value="match_input_image">Match input</option>
@@ -393,7 +456,9 @@ export default function GeneratorPage() {
               onClick={() => {
                 void handleGenerate();
               }}
-              disabled={isGenerating || !uploadedFile || !selectedTemplate}
+              disabled={
+                isGenerating || uploadedFiles.length === 0 || !selectedTemplate
+              }
               className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGenerating ? "Generating..." : "Generate"}
@@ -411,14 +476,19 @@ export default function GeneratorPage() {
       {/* Before/After panels */}
       <div className="mx-auto mt-2 w-[92%] max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 pb-28">
         <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)] overflow-hidden">
-          {previewBefore ? (
-            <img
-              src={previewBefore}
-              alt="Before"
-              className="max-w-full max-h-full object-contain rounded-lg"
-            />
+          {previewUrls.length > 0 ? (
+            <div className="flex flex-wrap gap-2 justify-center items-center">
+              {previewUrls.map((url, index) => (
+                <img
+                  key={index}
+                  src={url}
+                  alt={`Input ${index + 1}`}
+                  className="max-w-full max-h-[240px] object-contain rounded-lg"
+                />
+              ))}
+            </div>
           ) : (
-            <span>No image uploaded</span>
+            <span>No images uploaded</span>
           )}
         </div>
         <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)] overflow-hidden relative">

@@ -3,9 +3,8 @@ import { Id } from "../_generated/dataModel";
 import { ActionCtx } from "../_generated/server";
 
 const REPLICATE_API_BASE = "https://api.replicate.com/v1";
-// Using black-forest-labs/flux-kontext-pro for image-to-image transformation
-const DEFAULT_MODEL = "black-forest-labs/flux-kontext-pro";
-// Known latest version ID (as of 2025-11-12): 897a70f5a7dbd8a0611413b3b98cf417b45f266bd595c571a22947619d9ae462
+// Using google/nano-banana for image-to-image transformation and multi-image fusion
+const DEFAULT_MODEL = "google/nano-banana";
 // Optional: Set REPLICATE_MODEL_VERSION_ID in environment to bypass version lookup
 // This is useful if the API doesn't return versions or you want to use a specific version
 const MAX_POLL_ATTEMPTS = 60; // 5 minutes max (5s intervals)
@@ -31,9 +30,10 @@ interface ReplicatePrediction {
 }
 
 interface GenerateImageOptions {
-  inputImageUrl: string;
+  inputImageUrls: string[]; // Array of image URLs for multi-image support
   promptTemplate: string;
   aspectRatio?: string;
+  outputFormat?: string;
 }
 
 /**
@@ -452,21 +452,22 @@ export async function generateImageWithReplicate(
   const modelPath = DEFAULT_MODEL;
 
   try {
-    // Create prediction using Flux Kontext Pro model
-    // Flux schema: input_image, prompt, aspect_ratio, output_format, safety_tolerance, prompt_upsampling
+    // Create prediction using google/nano-banana model
+    // nano-banana schema: prompt, image_input (array), aspect_ratio, output_format
     console.log("[Replicate] Creating prediction with prompt", {
       promptLength: options.promptTemplate.length,
       promptPreview: options.promptTemplate.substring(0, 100) + "...",
-      inputImageUrl: options.inputImageUrl.substring(0, 50) + "...",
+      imageCount: options.inputImageUrls.length,
+      imageUrls: options.inputImageUrls.map(
+        (url) => url.substring(0, 50) + "..."
+      ),
     });
 
     const prediction = await createPrediction(apiToken, modelPath, {
-      input_image: options.inputImageUrl,
       prompt: options.promptTemplate,
+      image_input: options.inputImageUrls, // Array of image URLs
       aspect_ratio: options.aspectRatio || "match_input_image",
-      output_format: "png", // Changed to png as per schema default
-      safety_tolerance: 2,
-      prompt_upsampling: false,
+      output_format: options.outputFormat || "jpg",
     });
 
     console.log("[Replicate] Prediction created", {
@@ -496,19 +497,23 @@ export async function generateImageWithReplicate(
 }
 
 /**
- * Generates an image from a Convex storage ID
- * Convenience wrapper that gets the storage URL first
+ * Generates an image from Convex storage IDs
+ * Convenience wrapper that gets the storage URLs first
  */
 export async function generateImageFromStorage(
   ctx: ActionCtx,
-  storageId: Id<"_storage">,
+  storageIds: Id<"_storage">[],
   promptTemplate: string,
-  aspectRatio?: string
+  aspectRatio?: string,
+  outputFormat?: string
 ): Promise<string> {
-  const inputImageUrl = await getStorageUrl(ctx, storageId);
+  const inputImageUrls = await Promise.all(
+    storageIds.map((id) => getStorageUrl(ctx, id))
+  );
   return generateImageWithReplicate(ctx, {
-    inputImageUrl,
+    inputImageUrls,
     promptTemplate,
     aspectRatio,
+    outputFormat,
   });
 }

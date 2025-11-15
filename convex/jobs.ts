@@ -15,7 +15,7 @@ export const create = mutation({
   args: {
     type: v.literal("image"),
     prompt: v.string(),
-    inputFileId: v.optional(v.id("_storage")),
+    inputFileIds: v.array(v.id("_storage")),
     templateId: v.optional(v.id("templates")),
     aspectRatio: v.optional(v.string()),
   },
@@ -49,12 +49,13 @@ export const create = mutation({
       credits: userProfile.credits - creditCost,
     });
 
-    // Create job
+    // Create job (keep inputFileId for backward compatibility, use first file if exists)
     const jobId = await ctx.db.insert("jobs", {
       userId,
       type: args.type,
       prompt: args.prompt,
-      inputFileId: args.inputFileId,
+      inputFileId:
+        args.inputFileIds.length > 0 ? args.inputFileIds[0] : undefined,
       status: "queued",
       debited: creditCost,
       createdAt: Date.now(),
@@ -63,10 +64,10 @@ export const create = mutation({
       aspectRatio: args.aspectRatio,
     });
 
-    // Schedule AI generation if input file exists, otherwise use processJob fallback
-    if (args.inputFileId) {
+    // Schedule AI generation if input files exist, otherwise use processJob fallback
+    if (args.inputFileIds.length > 0) {
       await ctx.scheduler.runAfter(0, internal.jobs.generateWithAI, {
-        inputFileId: args.inputFileId,
+        inputFileIds: args.inputFileIds,
         prompt: args.prompt,
         jobId,
         aspectRatio: args.aspectRatio,
@@ -135,7 +136,7 @@ export const processJob = internalAction({
       // If job has inputFileId, use AI generation
       if (job.inputFileId) {
         await ctx.runAction(internal.jobs.generateWithAI, {
-          inputFileId: job.inputFileId,
+          inputFileIds: [job.inputFileId], // Convert single file to array
           prompt: job.prompt,
           jobId: args.jobId,
         });
@@ -205,12 +206,15 @@ export const processTemplateJob = internalAction({
         throw new Error("Job or template not found");
       }
 
-      // Use AI generation if input file exists
-      if (job.inputFileId) {
+      // Use AI generation if input files exist
+      // Get inputFileIds from job (backward compatibility: use inputFileId if exists)
+      const inputFileIds =
+        (job as any).inputFileIds || (job.inputFileId ? [job.inputFileId] : []);
+      if (inputFileIds.length > 0) {
         // Combine template prompt with job prompt
         const combinedPrompt = `${template.prompt}. ${job.prompt}`;
         await ctx.runAction(internal.jobs.generateWithAI, {
-          inputFileId: job.inputFileId,
+          inputFileIds: inputFileIds,
           prompt: combinedPrompt,
           jobId: args.jobId,
           aspectRatio: job.aspectRatio,
@@ -466,7 +470,7 @@ async function downloadAndStoreImage(
  */
 export const generateWithAI = internalAction({
   args: {
-    inputFileId: v.id("_storage"),
+    inputFileIds: v.array(v.id("_storage")),
     prompt: v.string(),
     jobId: v.id("jobs"),
     aspectRatio: v.optional(v.string()),
@@ -495,12 +499,13 @@ export const generateWithAI = internalAction({
         aspectRatio = job.aspectRatio;
       }
 
-      // Generate AI image using Replicate
+      // Generate AI image using Replicate with multiple input images
       const outputImageUrl = await generateImageFromStorage(
         ctx,
-        args.inputFileId,
+        args.inputFileIds,
         args.prompt,
-        aspectRatio
+        aspectRatio,
+        "jpg"
       );
 
       console.log("[generateWithAI] AI generation completed", {

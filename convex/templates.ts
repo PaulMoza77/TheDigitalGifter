@@ -406,7 +406,7 @@ export const createFromTemplate = mutation({
     // Schedule AI generation directly if input file exists
     if (args.inputFileId) {
       await ctx.scheduler.runAfter(0, internal.jobs.generateWithAI, {
-        inputFileId: args.inputFileId,
+        inputFileIds: [args.inputFileId],
         prompt: finalPrompt,
         jobId,
         aspectRatio: args.aspectRatio,
