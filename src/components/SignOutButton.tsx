@@ -1,10 +1,13 @@
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { User } from "lucide-react";
 
 export default function SignOutButton() {
   const { isAuthenticated } = useConvexAuth();
   const { signOut } = useAuthActions();
+  const user = useQuery(api.auth.loggedInUser);
 
   if (!isAuthenticated) {
     return null;
@@ -19,14 +22,29 @@ export default function SignOutButton() {
     }
   }
 
+  const userImage = user?.image ?? null;
+
   return (
     <button
       onClick={() => {
         void handleSignOut();
       }}
-      className="rounded-full px-3 py-2 text-sm border border-red-400/30 bg-red-500/20 hover:bg-red-500/30 text-red-200 hover:text-red-100 transition will-change-transform hover:scale-[1.04]"
+      className=" group rounded-full flex items-center text-sm border border-red-400/30 bg-red-500/20 hover:bg-red-500/30 text-red-200 hover:text-red-100 transition will-change-transform hover:scale-[1.04]"
     >
-      Sign Out
+      {userImage ? (
+        <img
+          src={userImage}
+          alt="User avatar"
+          className="w-9 h-9 rounded-full object-cover border border-red-400/30"
+        />
+      ) : (
+        <div className="w-9 h-9 rounded-full bg-red-400/20 border border-red-400/30 flex items-center justify-center">
+          <User className="w-5 h-5 text-red-200" />
+        </div>
+      )}
+      <span className="hidden group-hover:block group-hover:px-2">
+        Sign Out
+      </span>
     </button>
   );
 }

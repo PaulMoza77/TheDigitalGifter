@@ -10,6 +10,7 @@ import MainLayout from "./layouts/MainLayouts";
 import HomePage from "./pages/HomePage";
 import GeneratorPage from "./pages/GeneratorPage";
 import TemplatesPage from "./pages/TemplatesPage";
+import TheDigitalGifterDashboard from "./pages/TheDigitalGifterDashboard";
 
 export default function App() {
   useEffect(() => {
@@ -29,8 +30,10 @@ export default function App() {
             <Route path="/generator" element={<GeneratorPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
           </Route>
+          <Route path="/dashboard" element={<TheDigitalGifterDashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
         <Toaster />
       </div>
     </Router>

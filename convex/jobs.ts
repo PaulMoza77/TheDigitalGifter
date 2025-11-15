@@ -13,9 +13,11 @@ import { Id } from "./_generated/dataModel";
 
 export const create = mutation({
   args: {
-    type: v.union(v.literal("image"), v.literal("video"), v.literal("card")),
+    type: v.literal("image"),
     prompt: v.string(),
     inputFileId: v.optional(v.id("_storage")),
+    templateId: v.optional(v.id("templates")),
+    aspectRatio: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -23,20 +25,28 @@ export const create = mutation({
       throw new Error("Must be logged in");
     }
 
-    // Check user has enough credits (basic cost calculation)
-    const baseCost = args.type === "video" ? 20 : 10;
+    // Get credit cost from template if provided, otherwise use default
+    let creditCost = 10; // Default cost
+    if (args.templateId) {
+      const template = await ctx.db.get(args.templateId);
+      if (!template) {
+        throw new Error("Template not found");
+      }
+      creditCost = template.creditCost;
+    }
+
     const userProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
-    if (!userProfile || userProfile.credits < baseCost) {
+    if (!userProfile || userProfile.credits < creditCost) {
       throw new Error("Insufficient credits");
     }
 
     // Debit credits
     await ctx.db.patch(userProfile._id, {
-      credits: userProfile.credits - baseCost,
+      credits: userProfile.credits - creditCost,
     });
 
     // Create job
@@ -46,9 +56,11 @@ export const create = mutation({
       prompt: args.prompt,
       inputFileId: args.inputFileId,
       status: "queued",
-      debited: baseCost,
+      debited: creditCost,
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      templateId: args.templateId,
+      aspectRatio: args.aspectRatio,
     });
 
     // Schedule AI generation if input file exists, otherwise use processJob fallback
@@ -57,6 +69,7 @@ export const create = mutation({
         inputFileId: args.inputFileId,
         prompt: args.prompt,
         jobId,
+        aspectRatio: args.aspectRatio,
       });
     } else {
       await ctx.scheduler.runAfter(0, internal.jobs.processJob, { jobId });
@@ -200,6 +213,7 @@ export const processTemplateJob = internalAction({
           inputFileId: job.inputFileId,
           prompt: combinedPrompt,
           jobId: args.jobId,
+          aspectRatio: job.aspectRatio,
         });
       } else {
         // Fallback: simulate processing for jobs without input files
@@ -368,6 +382,34 @@ export const deleteJob = mutation({
 });
 
 /**
+ * Migration: Update all existing jobs with type "card" or "video" to "image"
+ * This fixes schema validation errors after removing card/video types
+ */
+export const migrateJobTypes = mutation({
+  args: {},
+  returns: v.object({
+    updated: v.number(),
+  }),
+  handler: async (ctx) => {
+    const allJobs = await ctx.db.query("jobs").collect();
+    let updated = 0;
+
+    for (const job of allJobs) {
+      // TypeScript might complain, but we need to check the actual value
+      const jobType = (job as any).type;
+      if (jobType === "card" || jobType === "video") {
+        await ctx.db.patch(job._id, {
+          type: "image" as const,
+        });
+        updated++;
+      }
+    }
+
+    return { updated };
+  },
+});
+
+/**
  * Helper function to extract error message from unknown error type
  * Matches the frontend getErrorMessage utility for consistency
  */
@@ -427,6 +469,7 @@ export const generateWithAI = internalAction({
     inputFileId: v.id("_storage"),
     prompt: v.string(),
     jobId: v.id("jobs"),
+    aspectRatio: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Update job status to processing
@@ -446,11 +489,18 @@ export const generateWithAI = internalAction({
         throw new Error("Job not found");
       }
 
+      // Get aspect ratio from job if not provided
+      let aspectRatio = args.aspectRatio;
+      if (!aspectRatio && job.aspectRatio) {
+        aspectRatio = job.aspectRatio;
+      }
+
       // Generate AI image using Replicate
       const outputImageUrl = await generateImageFromStorage(
         ctx,
         args.inputFileId,
-        args.prompt
+        args.prompt,
+        aspectRatio
       );
 
       console.log("[generateWithAI] AI generation completed", {

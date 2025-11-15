@@ -330,6 +330,7 @@ export const createFromTemplate = mutation({
     templateId: v.id("templates"),
     inputFileId: v.id("_storage"),
     additionalPrompt: v.optional(v.string()),
+    aspectRatio: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -361,13 +362,15 @@ export const createFromTemplate = mutation({
     // Build the final prompt by merging template base prompt with user input
     // Structure: [Template Base Prompt] + [Custom Text if provided] + [Additional Instructions if provided]
     let finalPrompt = template.prompt;
-    
+
     // Extract custom text from additionalPrompt if it contains "Include text:"
     let customText = "";
     let additionalInstructions = args.additionalPrompt || "";
-    
+
     if (additionalInstructions.includes("Include text:")) {
-      const textMatch = additionalInstructions.match(/Include text:\s*"([^"]+)"/);
+      const textMatch = additionalInstructions.match(
+        /Include text:\s*"([^"]+)"/
+      );
       if (textMatch && textMatch[1]) {
         customText = textMatch[1];
         // Remove the custom text part from additional instructions
@@ -376,12 +379,12 @@ export const createFromTemplate = mutation({
           .trim();
       }
     }
-    
+
     // Merge prompts in structured format
     if (customText) {
       finalPrompt += ` Include the text "${customText}" in the image.`;
     }
-    
+
     if (additionalInstructions) {
       finalPrompt += ` Additional instructions: ${additionalInstructions}`;
     }
@@ -389,13 +392,15 @@ export const createFromTemplate = mutation({
     // Create the job
     const jobId = await ctx.db.insert("jobs", {
       userId,
-      type: "card",
+      type: "image",
       prompt: finalPrompt,
       inputFileId: args.inputFileId,
       status: "queued",
       debited: template.creditCost,
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      templateId: args.templateId,
+      aspectRatio: args.aspectRatio,
     });
 
     // Schedule AI generation directly if input file exists
@@ -404,6 +409,7 @@ export const createFromTemplate = mutation({
         inputFileId: args.inputFileId,
         prompt: finalPrompt,
         jobId,
+        aspectRatio: args.aspectRatio,
       });
     } else {
       // Fallback: use processTemplateJob for jobs without input files

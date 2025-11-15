@@ -6,13 +6,11 @@ import { uploadFileToStorage } from "../lib/uploadFileToStorage";
 import { Id } from "../../convex/_generated/dataModel";
 import { getErrorMessage } from "../lib/getErrorMessage";
 
-type ContentType = "image" | "video" | "card";
+type ContentType = "image";
 
 // Credit costs for each content type
 const CREDIT_COSTS: Record<ContentType, number> = {
   image: 6,
-  video: 12,
-  card: 10,
 };
 
 export function JobCreator() {
@@ -115,15 +113,10 @@ export function JobCreator() {
             value={contentType}
             onChange={(e) => setContentType(e.target.value as ContentType)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            disabled
           >
             <option value="image">
               AI Image ({CREDIT_COSTS.image} credits)
-            </option>
-            <option value="video">
-              AI Video ({CREDIT_COSTS.video} credits) - Coming Soon
-            </option>
-            <option value="card">
-              Greeting Card ({CREDIT_COSTS.card} credits)
             </option>
           </select>
 

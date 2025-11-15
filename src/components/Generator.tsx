@@ -5,6 +5,7 @@ import { useBootstrapUser } from "../hooks/useBootstrapUser";
 import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
 import { Coins } from "lucide-react";
+import { TEMPLATES } from "@/constants/templates";
 
 // Snow Animation Background Component
 function SnowBackground() {
@@ -57,104 +58,6 @@ function SnowBackground() {
 }
 
 // Template data structure
-const TEMPLATES = [
-  {
-    id: "family-tree-cozy",
-    title: "Family by Tree",
-    category: "Cozy",
-    orientation: "portrait",
-    previewUrl:
-      "https://images.unsplash.com/photo-1543589077-47d81606c1bf?q=80&w=900",
-    prompt:
-      "Transform this person into a cozy family Christmas scene. Place them by a warm fireplace with a decorated Christmas tree in the background, soft golden lighting, wearing a festive red sweater, holding a cup of hot cocoa, surrounded by wrapped presents and stockings. Photorealistic, warm atmosphere, professional photography style.",
-    creditCost: 10,
-    tags: ["family", "warm", "cozy"],
-  },
-  {
-    id: "faces-ornaments",
-    title: "Faces on Ornaments",
-    category: "Classic",
-    orientation: "portrait",
-    previewUrl:
-      "https://images.unsplash.com/photo-1543583101-7954cac4f9a1?q=80&w=900",
-    prompt:
-      "Transform this person into a classic Christmas ornament scene. Place their face inside glossy baubles on a Christmas tree, beautiful bokeh lights in background, festive Christmas atmosphere, professional photography style.",
-    creditCost: 12,
-    tags: ["ornaments", "classic"],
-  },
-  {
-    id: "fireplace-evening",
-    title: "Fireplace Evening",
-    category: "Cozy",
-    orientation: "portrait",
-    previewUrl:
-      "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=900",
-    prompt:
-      "Transform this person into a cozy fireplace Christmas scene. Place them in a living room with crackling fireplace, stockings, garland, soft orange light, warm intimate atmosphere, professional Christmas card style.",
-    creditCost: 10,
-    tags: ["fireplace", "cozy"],
-  },
-  {
-    id: "winter-wonderland",
-    title: "Winter Wonderland",
-    category: "Snowy",
-    orientation: "landscape",
-    previewUrl:
-      "https://images.unsplash.com/photo-1544273677-6e4c999de2a6?q=80&w=1200",
-    prompt:
-      "Transform this person into a magical winter wonderland scene. Place them in a snowy forest with falling snowflakes, wearing a warm winter coat and scarf, Christmas lights twinkling in the background trees, soft evening light, photorealistic style, cinematic quality.",
-    creditCost: 10,
-    tags: ["outdoor", "snow", "winter"],
-  },
-  {
-    id: "romantic-evening",
-    title: "Romantic Evening",
-    category: "Romantic",
-    orientation: "portrait",
-    previewUrl:
-      "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=900",
-    prompt:
-      "Transform this person into a romantic Christmas scene with soft candlelight, warm intimate atmosphere, elegant decorations, romantic winter evening, cozy fireplace setting, beautiful romantic Christmas card style.",
-    creditCost: 10,
-    tags: ["romantic", "cozy"],
-  },
-  {
-    id: "minimalist-modern",
-    title: "Minimalist Modern",
-    category: "Minimalist",
-    orientation: "portrait",
-    previewUrl:
-      "https://images.unsplash.com/photo-1513885535751-8b9238bd345d?q=80&w=900",
-    prompt:
-      "Transform this into a minimalist modern Christmas card with clean design, simple elegant decorations, minimal Christmas elements, contemporary style, subtle holiday touches, sophisticated minimalist aesthetic.",
-    creditCost: 10,
-    tags: ["minimal", "modern"],
-  },
-  {
-    id: "cookies-gathering",
-    title: "Cookies Gathering",
-    category: "Homey",
-    orientation: "landscape",
-    previewUrl:
-      "https://images.unsplash.com/photo-1512406926044-444d641267ee?q=80&w=1200",
-    prompt:
-      "Transform this person into a festive cookie baking scene. Place them at a table with Christmas cookies, mugs of hot cocoa, pine cones, warm kitchen lighting, cozy family atmosphere, professional Christmas photography style.",
-    creditCost: 10,
-    tags: ["kitchen", "family", "homey"],
-  },
-  {
-    id: "religious-nativity",
-    title: "Nativity Scene",
-    category: "Religious",
-    orientation: "portrait",
-    previewUrl:
-      "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=900",
-    prompt:
-      "Transform this into a peaceful religious Christmas scene with nativity elements, soft divine lighting, reverent atmosphere, traditional religious Christmas card style.",
-    creditCost: 12,
-    tags: ["religious", "peaceful"],
-  },
-];
 
 export default function GeneratorPage() {
   const user = useBootstrapUser();
@@ -166,11 +69,14 @@ export default function GeneratorPage() {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentJobId, setCurrentJobId] = useState<Id<"jobs"> | null>(null);
+  const [selectedAspectRatio, setSelectedAspectRatio] =
+    useState("match_input_image");
 
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
   const createJob = useMutation(api.jobs.create);
   const userCredits = useQuery(api.credits.getUserCredits);
   const jobs = useQuery(api.jobs.list) || [];
+  const dbTemplates = useQuery(api.templates.list) || [];
 
   const categories = [
     "All",
@@ -178,9 +84,9 @@ export default function GeneratorPage() {
     "Cozy",
     "Snowy",
     "Romantic",
-    "Religious",
-    "Minimalist",
-    "Homey",
+    // "Religious",
+    // "Minimalist",
+    // "Homey",
   ];
 
   // Filter templates by category
@@ -249,6 +155,29 @@ export default function GeneratorPage() {
     }
   };
 
+  // Handle download
+  async function handleDownload(url: string, filename: string) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Failed to fetch image");
+      }
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success("Download started!");
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Failed to download image");
+    }
+  }
+
   // Handle generate
   async function handleGenerate() {
     if (!user) {
@@ -266,6 +195,10 @@ export default function GeneratorPage() {
 
     const template = TEMPLATES.find((t) => t.id === selectedTemplate);
     if (!template) return;
+
+    // Find matching database template by title
+    const dbTemplate = dbTemplates.find((t) => t.title === template.title);
+    const templateId = dbTemplate?._id;
 
     if ((userCredits || 0) < template.creditCost) {
       toast.error(`Not enough credits. Need ${template.creditCost} credits.`);
@@ -294,9 +227,11 @@ export default function GeneratorPage() {
 
       // Create job
       const jobId = await createJob({
-        type: "card",
+        type: "image",
         prompt: finalPrompt,
         inputFileId: storageId,
+        templateId: templateId,
+        aspectRatio: selectedAspectRatio,
       });
 
       setCurrentJobId(jobId);
@@ -407,7 +342,7 @@ export default function GeneratorPage() {
         })}
       </div>
 
-      {/* Custom instructions + Generate */}
+      {/* Custom instructions + Aspect Ratio + Generate */}
       <div className="mx-auto max-w-3xl mb-8 px-4">
         <div className="rounded-2xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.08)] backdrop-blur-md px-4 py-3 shadow-[0_12px_34px_rgba(0,0,0,.45)] flex flex-col gap-3">
           <textarea
@@ -418,7 +353,41 @@ export default function GeneratorPage() {
             rows={3}
             disabled={isGenerating}
           />
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-4">
+            <div className="relative">
+              <select
+                value={selectedAspectRatio}
+                onChange={(e) => setSelectedAspectRatio(e.target.value)}
+                disabled={isGenerating || !uploadedFile || !selectedTemplate}
+                className="rounded-xl px-5 py-2 pr-10 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
+              >
+                <option value="match_input_image">Match input</option>
+                <option value="1:1">1:1</option>
+                <option value="16:9">16:9</option>
+                <option value="9:16">9:16</option>
+                <option value="4:3">4:3</option>
+                <option value="3:4">3:4</option>
+                <option value="3:2">3:2</option>
+                <option value="2:3">2:3</option>
+                <option value="4:5">4:5</option>
+                <option value="5:4">5:4</option>
+                <option value="21:9">21:9</option>
+                <option value="9:21">9:21</option>
+                <option value="2:1">2:1</option>
+                <option value="1:2">1:2</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M6 9L1 4H11L6 9Z" fill="#1e1e1e" />
+                </svg>
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -465,13 +434,15 @@ export default function GeneratorPage() {
                 alt="After"
                 className="max-w-full max-h-full object-contain rounded-lg"
               />
-              <a
-                href={previewAfter}
-                download
+              <button
+                onClick={() => {
+                  const filename = `christmas-card-${Date.now()}.png`;
+                  void handleDownload(previewAfter, filename);
+                }}
                 className="absolute bottom-4 right-4 bg-[#ffd976] text-[#1e1e1e] px-4 py-2 rounded-lg font-semibold hover:brightness-110 transition"
               >
                 Download
-              </a>
+              </button>
             </>
           ) : (
             <span>No image generated yet</span>

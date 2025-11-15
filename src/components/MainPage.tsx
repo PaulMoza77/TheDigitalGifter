@@ -1,16 +1,17 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { ChevronRight, Star, Coins } from "lucide-react";
+import { TEMPLATES } from "@/constants/templates";
 
 interface TheDigitalGifterMainPageProps {
   onStartCreating: () => void;
   onViewTemplates: () => void;
-  createHref?: string;
+  createHref?: string; // Used for href links if needed
 }
 
 export default function TheDigitalGifterMainPage({
   onStartCreating,
   onViewTemplates,
-  createHref = "/generator",
+  createHref: _createHref = "/generator",
 }: TheDigitalGifterMainPageProps) {
   const stats = [
     { value: "50,000+", label: "Cards Created" },
@@ -259,36 +260,18 @@ export default function TheDigitalGifterMainPage({
 
 /* ===== Carousel Component (4 per page + badges) ===== */
 function TemplatesCarousel() {
-  const categories = [
-    "All",
-    "Classic",
-    "Cozy",
-    "Snowy",
-    "Romantic",
-    "Religious",
-    "Minimalist",
-    "Homey",
-    "Foodie",
-  ];
+  const categories = ["All", "Classic", "Cozy", "Snowy", "Romantic"];
 
+  // Map templates to carousel items format
   const items = useMemo(
-    () => [
-      { id: "c1", title: "Gold Ribbon Classic", price: 8, category: "Classic" },
-      { id: "c2", title: "Midnight Ornaments", price: 12, category: "Classic" },
-      { id: "z1", title: "Fireplace Family", price: 10, category: "Cozy" },
-      { id: "z2", title: "Decorating Tree", price: 14, category: "Cozy" },
-      { id: "s1", title: "Snowman Builders", price: 9, category: "Snowy" },
-      {
-        id: "r1",
-        title: "Warm Lights Couple",
-        price: 16,
-        category: "Romantic",
-      },
-      { id: "g1", title: "Nativity Glow", price: 18, category: "Religious" },
-      { id: "m1", title: "Scandi Calm", price: 6, category: "Minimalist" },
-      { id: "h1", title: "Kitchen Cookies", price: 7, category: "Homey" },
-      { id: "f1", title: "Festive Dinner", price: 11, category: "Foodie" },
-    ],
+    () =>
+      TEMPLATES.map((template) => ({
+        id: template.id,
+        title: template.title,
+        price: template.creditCost,
+        category: template.category,
+        previewUrl: template.previewUrl,
+      })),
     []
   );
 
@@ -339,17 +322,31 @@ function TemplatesCarousel() {
             {pageItems.map((item) => (
               <div
                 key={item.id}
-                className="relative rounded-2xl bg-white/10 border border-white/20 overflow-hidden"
+                className="relative rounded-2xl bg-white/10 border border-white/20 overflow-hidden hover:scale-[1.02] transition-transform"
               >
                 {/* price badge */}
-                <div className="absolute top-2 right-2 flex items-center gap-2 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] text-[#1a1a1a] text-xs font-extrabold px-2 py-1 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
+                <div className="absolute top-2 right-2 z-10 flex items-center gap-2 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] text-[#1a1a1a] text-xs font-extrabold px-2 py-1 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
                   <Coins size={14} className="text-[#1a1a1a]" />{" "}
                   <span>{item.price}</span>
                 </div>
 
-                <div className="aspect-[4/3] bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)]" />
+                {/* Template preview image */}
+                <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
+                  {item.previewUrl ? (
+                    <img
+                      src={item.previewUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)]" />
+                  )}
+                </div>
                 <div className="p-4">
-                  <div className="font-extrabold text-lg">{item.title}</div>
+                  <div className="font-extrabold text-lg text-white">
+                    {item.title}
+                  </div>
                   <div className="text-[#dfe6f1] text-sm mt-1">
                     {item.category}
                   </div>

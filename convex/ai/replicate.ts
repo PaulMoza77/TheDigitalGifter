@@ -33,6 +33,7 @@ interface ReplicatePrediction {
 interface GenerateImageOptions {
   inputImageUrl: string;
   promptTemplate: string;
+  aspectRatio?: string;
 }
 
 /**
@@ -462,7 +463,7 @@ export async function generateImageWithReplicate(
     const prediction = await createPrediction(apiToken, modelPath, {
       input_image: options.inputImageUrl,
       prompt: options.promptTemplate,
-      aspect_ratio: "match_input_image",
+      aspect_ratio: options.aspectRatio || "match_input_image",
       output_format: "png", // Changed to png as per schema default
       safety_tolerance: 2,
       prompt_upsampling: false,
@@ -501,11 +502,13 @@ export async function generateImageWithReplicate(
 export async function generateImageFromStorage(
   ctx: ActionCtx,
   storageId: Id<"_storage">,
-  promptTemplate: string
+  promptTemplate: string,
+  aspectRatio?: string
 ): Promise<string> {
   const inputImageUrl = await getStorageUrl(ctx, storageId);
   return generateImageWithReplicate(ctx, {
     inputImageUrl,
     promptTemplate,
+    aspectRatio,
   });
 }

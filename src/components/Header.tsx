@@ -28,13 +28,13 @@ export default function Header({ onBuyCredits }: HeaderProps) {
 
         <div className="flex items-center gap-2 sm:gap-3">
           {isAuthenticated ? <SignOutButton /> : <SignInButton />}
-          <CreditsDisplay />
-          <button
+          <CreditsDisplay onBuyCredits={onBuyCredits} />
+          {/* <button
             onClick={onBuyCredits}
             className="px-4 py-2 rounded-xl text-sm font-extrabold text-[#1a1a1a] border border-white/50 bg-[conic-gradient(from_0deg,#ffc65c,#ff9f43,#ff7040,#ffc65c)] bg-[length:200%_200%] animate-[coinShimmer_5.5s_ease-in-out_infinite] shadow-[0_10px_24px_rgba(0,0,0,.35)] hover:scale-[1.05] transition will-change-transform"
           >
             Buy credits
-          </button>
+          </button> */}
         </div>
       </div>
     </header>

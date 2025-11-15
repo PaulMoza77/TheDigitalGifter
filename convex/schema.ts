@@ -6,22 +6,31 @@ const applicationTables = {
   // Extend the existing users table from authTables with credits
   userProfiles: defineTable({
     userId: v.string(),
-    credits: v.number(),         // balance of credits
+    credits: v.number(), // balance of credits
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
 
   jobs: defineTable({
     userId: v.string(),
-    type: v.union(v.literal("image"), v.literal("video"), v.literal("card")),
+    // Temporarily allow old types for migration - will be changed back to v.literal("image") after migration
+    type: v.union(v.literal("image"), v.literal("card"), v.literal("video")),
     prompt: v.string(),
     inputFileId: v.optional(v.id("_storage")),
-    status: v.union(v.literal("queued"), v.literal("processing"), v.literal("done"), v.literal("error")),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("processing"),
+      v.literal("done"),
+      v.literal("error")
+    ),
     resultUrl: v.optional(v.string()),
     errorMessage: v.optional(v.string()),
     debited: v.optional(v.number()), // Make optional for backward compatibility
     createdAt: v.optional(v.number()), // Make optional for backward compatibility
     updatedAt: v.optional(v.number()), // Make optional for backward compatibility
-  }).index("by_user", ["userId"])
+    templateId: v.optional(v.id("templates")),
+    aspectRatio: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"])
     .index("by_status", ["status"]),
 
   templates: defineTable({
@@ -33,7 +42,8 @@ const applicationTables = {
     textDefault: v.string(), // default text for the card
     creditCost: v.number(),
     tags: v.array(v.string()),
-  }).index("by_scene", ["scene"])
+  })
+    .index("by_scene", ["scene"])
     .index("by_credit_cost", ["creditCost"])
     .index("by_orientation", ["orientation"])
     .index("by_tags", ["tags"]),
