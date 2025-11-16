@@ -1,57 +1,5 @@
 export const TEMPLATES = [
   {
-    id: "classic-grand-evergreen-portrait",
-    title: "Grand Evergreen Portrait",
-    category: "Classic",
-    subCategory: "Couple / Duo",
-    type: "photo",
-    orientation: "portrait",
-    aspectRatio: "4:5",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/d9eae752-a6f1-4f21-87d1-8371531fffc1",
-    prompt:
-      'Edit the uploaded photo so it matches the "Grand Evergreen Portrait" Classic Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Classic Christmas tree with ornaments and warm bokeh lights; elegant living room.\n- Use lighting style: warm practicals.\n- Update outfits only to fit a festive classic Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
-    creditCost: 24,
-    tags: ["classic", "couple / duo", "portrait", "tree"],
-  },
-  {
-    id: "classic-festive-dinner-table",
-    title: "Festive Dinner Table",
-    category: "Classic",
-    subCategory: "Scene / No people",
-    type: "photo",
-    orientation: "landscape",
-    aspectRatio: "16:9",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/24a44325-ec92-48b5-a1e7-a2ecd7c5cc0a",
-    prompt:
-      'Edit the uploaded photo into a Christmas scene that matches the "Festive Dinner Table" Classic template.\n- Replace the environment with: Candle-lit table setting with crystal glasses, red-green accents, shallow depth of field.\n- Use lighting style: warm practicals.\n- You may overwrite most of the original background, but keep the general framing and orientation.\n- Avoid adding recognizable new people or faces.\n- If additional user preferences are provided, apply them to atmosphere, weather, colors and small decorative elements only.',
-    creditCost: 24,
-    tags: ["candle", "classic", "landscape", "scene / no people", "table"],
-  },
-  {
-    id: "classic-red-and-gold-card",
-    title: "Red & Gold Card",
-    category: "Classic",
-    subCategory: "Card / No people",
-    type: "card",
-    orientation: "portrait",
-    aspectRatio: "4:5",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/ca70f1d4-3b3e-487a-a646-da9954cff8c4",
-    prompt:
-      'Edit the uploaded image into a clean Christmas greeting card that matches the "Red & Gold Card" template.\n- Focus on creating a polished card layout with: Minimal red-gold border, snowflake corners, ample text area.\n- Use lighting style: warm practicals.\n- Remove or strongly de-emphasize any recognizable faces or people from the original image so the design feels like a standalone card.\n- Leave clear space where greeting text can be placed.\n- Keep the overall orientation of the original photo.\n- If additional user preferences are provided, apply them to color palette, decorative details or text mood, but do not add complex new scenes or characters.',
-    creditCost: 6,
-    tags: [
-      "card",
-      "card / no people",
-      "classic",
-      "minimal",
-      "portrait",
-      "snow",
-    ],
-  },
-  {
     id: "classic-wreath-entrance",
     title: "Wreath Entrance",
     category: "Classic",
@@ -165,36 +113,6 @@ export const TEMPLATES = [
     ],
   },
   {
-    id: "cozy-by-the-hearth",
-    title: "By the Hearth",
-    category: "Cozy",
-    subCategory: "Couple / Duo",
-    type: "photo",
-    orientation: "landscape",
-    aspectRatio: "16:9",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/619e7fee-e45f-4d2a-9e29-9e1aad59b843",
-    prompt:
-      'Edit the uploaded photo so it matches the "By the Hearth" Cozy Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Couple on rug near crackling fireplace, knit blankets, warm tones.\n- Use lighting style: warm practicals.\n- Update outfits only to fit a festive cozy Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
-    creditCost: 12,
-    tags: ["couple", "couple / duo", "cozy", "fireplace", "landscape"],
-  },
-  {
-    id: "cozy-choosing-the-star",
-    title: "Choosing the Star",
-    category: "Cozy",
-    subCategory: "Family / Group",
-    type: "photo",
-    orientation: "portrait",
-    aspectRatio: "4:5",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/47e9a32b-e629-4601-a72e-d65f32f553b2",
-    prompt:
-      'Edit the uploaded photo so it matches the "Choosing the Star" Cozy Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Parents lifting child to place star on tree; joyful candid.\n- Use lighting style: warm practicals.\n- Update outfits only to fit a festive cozy Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
-    creditCost: 24,
-    tags: ["cozy", "family / group", "portrait", "tree"],
-  },
-  {
     id: "cozy-knitted-sweater-card",
     title: "Knitted Sweater Card",
     category: "Cozy",
@@ -240,21 +158,6 @@ export const TEMPLATES = [
     tags: ["couple / duo", "cozy", "family", "landscape"],
   },
   {
-    id: "cozy-story-time",
-    title: "Story Time",
-    category: "Cozy",
-    subCategory: "Family / Group",
-    type: "photo",
-    orientation: "landscape",
-    aspectRatio: "16:9",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/b04f04c6-a3f9-41fe-916f-e50fcedd66d7",
-    prompt:
-      'Edit the uploaded photo so it matches the "Story Time" Cozy Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Parent reading book to kids by fireplace; gentle rim light.\n- Use lighting style: warm practicals.\n- Update outfits only to fit a festive cozy Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
-    creditCost: 24,
-    tags: ["cozy", "family / group", "fireplace", "landscape"],
-  },
-  {
     id: "cozy-cozy-cabin-window",
     title: "Cozy Cabin Window",
     category: "Cozy",
@@ -268,21 +171,6 @@ export const TEMPLATES = [
       'Edit the uploaded image into a clean Christmas greeting card that matches the "Cozy Cabin Window" template.\n- Focus on creating a polished card layout with: Frosted window frame with interior glow; text on frosty pane.\n- Use lighting style: warm practicals.\n- Remove or strongly de-emphasize any recognizable faces or people from the original image so the design feels like a standalone card.\n- Leave clear space where greeting text can be placed.\n- Keep the overall orientation of the original photo.\n- If additional user preferences are provided, apply them to color palette, decorative details or text mood, but do not add complex new scenes or characters.',
     creditCost: 12,
     tags: ["card", "card / no people", "cozy", "portrait", "window"],
-  },
-  {
-    id: "cozy-sweater-weather",
-    title: "Sweater Weather",
-    category: "Cozy",
-    subCategory: "Couple / Duo",
-    type: "image",
-    orientation: "portrait",
-    aspectRatio: "4:5",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/bd5977e9-6ff0-4da6-ba7b-5507055213da",
-    prompt:
-      'Edit the uploaded photo so it matches the "Sweater Weather" Cozy Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Slow pan across couple under blanket; embers floating.\n- Use lighting style: warm practicals.\n- Update outfits only to fit a festive cozy Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
-    creditCost: 8,
-    tags: ["couple", "couple / duo", "cozy", "portrait", "image"],
   },
   {
     id: "cozy-hot-cocoa",
@@ -328,21 +216,6 @@ export const TEMPLATES = [
       'Edit the uploaded photo so it matches the "Snowman Builders" Snowy Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Family building snowman; rosy cheeks; visible happy faces.\n- Use lighting style: natural / ambient.\n- Update outfits only to fit a festive snowy Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
     creditCost: 24,
     tags: ["family", "family / group", "landscape", "snow", "snowy"],
-  },
-  {
-    id: "snowy-sledding-hill",
-    title: "Sledding Hill",
-    category: "Snowy",
-    subCategory: "Couple / Duo",
-    type: "photo",
-    orientation: "landscape",
-    aspectRatio: "16:9",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/8af35e81-724b-40d6-88e4-c716c74b0ec9",
-    prompt:
-      'Edit the uploaded photo so it matches the "Sledding Hill" Snowy Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Kids on sleds mid-slope; motion blur; sunset sky.\n- Use lighting style: natural / ambient.\n- Update outfits only to fit a festive snowy Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
-    creditCost: 24,
-    tags: ["couple / duo", "landscape", "snowy"],
   },
   {
     id: "snowy-snow-angels",
@@ -412,21 +285,7 @@ export const TEMPLATES = [
     creditCost: 24,
     tags: ["family", "family / group", "landscape", "snow", "snowy"],
   },
-  {
-    id: "snowy-snowfall-portrait",
-    title: "Snowfall Portrait",
-    category: "Snowy",
-    subCategory: "Single Portrait",
-    type: "photo",
-    orientation: "portrait",
-    aspectRatio: "4:5",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/5b942485-95cf-48b6-b0c0-70c70773ffa8",
-    prompt:
-      'Edit the uploaded photo so it matches the "Snowfall Portrait" Snowy Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Single subject with knit beanie; flakes sharp in foreground.\n- Use lighting style: natural / ambient.\n- Update outfits only to fit a festive snowy Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
-    creditCost: 12,
-    tags: ["portrait", "single portrait", "snowy"],
-  },
+
   {
     id: "snowy-snowy-street",
     title: "Snowy Street",
@@ -471,21 +330,6 @@ export const TEMPLATES = [
       'Edit the uploaded image into a clean Christmas greeting card that matches the "Snow Globe Card" template.\n- Focus on creating a polished card layout with: Snow globe frame with insert window and bottom ribbon text.\n- Use lighting style: natural / ambient.\n- Remove or strongly de-emphasize any recognizable faces or people from the original image so the design feels like a standalone card.\n- Leave clear space where greeting text can be placed.\n- Keep the overall orientation of the original photo.\n- If additional user preferences are provided, apply them to color palette, decorative details or text mood, but do not add complex new scenes or characters.',
     creditCost: 12,
     tags: ["card", "card / no people", "snow", "snowy", "square", "window"],
-  },
-  {
-    id: "romantic-mistletoe-kiss",
-    title: "Mistletoe Kiss",
-    category: "Romantic",
-    subCategory: "Couple / Duo",
-    type: "photo",
-    orientation: "portrait",
-    aspectRatio: "4:5",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/eb12a7f4-e5cf-468d-9b40-a0cf8156c13b",
-    prompt:
-      'Edit the uploaded photo so it matches the "Mistletoe Kiss" Romantic Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Couple kissing under mistletoe; soft backlight and flare.\n- Use lighting style: natural / ambient.\n- Update outfits only to fit a festive romantic Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
-    creditCost: 24,
-    tags: ["couple", "couple / duo", "portrait", "romantic"],
   },
   {
     id: "romantic-baking-together",
@@ -598,21 +442,6 @@ export const TEMPLATES = [
       'Edit the uploaded photo so it matches the "Starlit Kiss" Romantic Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Slow-motion kiss; animated twinkling stars; soft vignette.\n- Use lighting style: natural / ambient.\n- Update outfits only to fit a festive romantic Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
     creditCost: 9,
     tags: ["couple / duo", "portrait", "romantic", "image"],
-  },
-  {
-    id: "romantic-winter-proposal",
-    title: "Winter Proposal",
-    category: "Romantic",
-    subCategory: "Couple / Duo",
-    type: "photo",
-    orientation: "portrait",
-    aspectRatio: "4:5",
-    previewUrl:
-      "https://giddy-swan-737.convex.cloud/api/storage/ecd91923-abfc-429f-b0b9-3b75d61faffa",
-    prompt:
-      'Edit the uploaded photo so it matches the "Winter Proposal" Romantic Christmas template.\n- Keep the same person or people from the original image. Preserve their faces, identity, body shape, approximate age and pose.\n- Do not change the number of people or their relative positions in the frame.\n- Replace the background with: Proposal moment in snowy park; fairy lights; candid emotion.\n- Use lighting style: natural / ambient.\n- Update outfits only to fit a festive romantic Christmas look (sweaters, coats, dresses, etc.) while keeping overall realism.\n- Maintain the original camera angle and composition as much as possible.\n- If additional user preferences are provided, treat them as secondary styling notes (colors, small props, mood) and only apply them when they do not conflict with the template layout or with preserving the subject(s).',
-    creditCost: 18,
-    tags: ["couple / duo", "portrait", "romantic", "snow"],
   },
   {
     id: "religious-nativity-illustration",

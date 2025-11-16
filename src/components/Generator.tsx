@@ -227,6 +227,12 @@ export default function GeneratorPage() {
       return;
     }
 
+    // Scroll to preview section
+    const previewSection = document.getElementById("preview-section");
+    if (previewSection) {
+      previewSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     setIsGenerating(true);
     setCurrentJobId(null);
     setPreviewAfter(null);
@@ -355,7 +361,7 @@ export default function GeneratorPage() {
       </div>
 
       {/* Template cards */}
-      <div className="mx-auto grid max-w-5xl grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 px-4 pb-8">
+      <div className="mx-auto grid max-w-5xl grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 px-4 pb-8">
         {filteredTemplates.map((template) => {
           const isSelected = selectedTemplate === template.id;
           return (
@@ -401,80 +407,17 @@ export default function GeneratorPage() {
         })}
       </div>
 
-      {/* Custom instructions + Aspect Ratio + Generate */}
-      <div className="mx-auto max-w-3xl mb-8 px-4">
-        <div className="rounded-2xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.08)] backdrop-blur-md px-4 py-3 shadow-[0_12px_34px_rgba(0,0,0,.45)] flex flex-col gap-3">
-          <textarea
-            value={customInstructions}
-            onChange={(e) => setCustomInstructions(e.target.value)}
-            placeholder="Optional: Add custom instructions (e.g., 'add Santa hat', 'make background snowy', etc.)"
-            className="w-full rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-3 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
-            rows={3}
-            disabled={isGenerating}
-          />
-          <div className="flex items-center justify-end gap-4">
-            <div className="relative">
-              <select
-                value={selectedAspectRatio}
-                onChange={(e) => setSelectedAspectRatio(e.target.value)}
-                disabled={
-                  isGenerating ||
-                  uploadedFiles.length === 0 ||
-                  !selectedTemplate
-                }
-                className="rounded-xl px-5 py-2 pr-10 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-              >
-                <option value="match_input_image">Match input</option>
-                <option value="1:1">1:1</option>
-                <option value="16:9">16:9</option>
-                <option value="9:16">9:16</option>
-                <option value="4:3">4:3</option>
-                <option value="3:4">3:4</option>
-                <option value="3:2">3:2</option>
-                <option value="2:3">2:3</option>
-                <option value="4:5">4:5</option>
-                <option value="5:4">5:4</option>
-                <option value="21:9">21:9</option>
-                <option value="9:21">9:21</option>
-                <option value="2:1">2:1</option>
-                <option value="1:2">1:2</option>
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M6 9L1 4H11L6 9Z" fill="#1e1e1e" />
-                </svg>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                void handleGenerate();
-              }}
-              disabled={
-                isGenerating || uploadedFiles.length === 0 || !selectedTemplate
-              }
-              className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGenerating ? "Generating..." : "Generate"}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Before/After labels */}
-      <div className="mx-auto mt-4 w-[92%] max-w-5xl grid grid-cols-2 gap-6 text-center font-bold text-[#c1c8d8]">
+      <div
+        id="preview-section"
+        className="mx-auto mt-4 w-[92%] max-w-5xl grid grid-cols-2 gap-6 text-center font-bold text-[#c1c8d8]"
+      >
         <span>Before</span>
         <span>After</span>
       </div>
 
       {/* Before/After panels */}
-      <div className="mx-auto mt-2 w-[92%] max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 pb-28">
+      <div className="mx-auto mt-2 w-[92%] max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 pb-32">
         <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)] overflow-hidden">
           {previewUrls.length > 0 ? (
             <div className="flex flex-wrap gap-2 justify-center items-center">
@@ -517,6 +460,79 @@ export default function GeneratorPage() {
           ) : (
             <span>No image generated yet</span>
           )}
+        </div>
+      </div>
+
+      {/* Floating Bottom Action Panel */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[rgba(6,10,18,0.95)] backdrop-blur-xl border-t border-[rgba(255,255,255,.18)] shadow-[0_-8px_32px_rgba(0,0,0,.5)]">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+            {/* Instructions textarea */}
+            <textarea
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              placeholder="Optional: Add custom instructions..."
+              className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[44px] max-h-[100px]"
+              rows={1}
+              disabled={isGenerating}
+            />
+
+            {/* Aspect Ratio & Generate */}
+            <div className="flex items-center justify-end gap-3">
+              <div className="relative">
+                <select
+                  value={selectedAspectRatio}
+                  onChange={(e) => setSelectedAspectRatio(e.target.value)}
+                  disabled={
+                    isGenerating ||
+                    uploadedFiles.length === 0 ||
+                    !selectedTemplate
+                  }
+                  className="rounded-xl px-4 py-2 pr-9 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer text-sm"
+                >
+                  <option value="match_input_image">Match input</option>
+                  <option value="1:1">1:1</option>
+                  <option value="16:9">16:9</option>
+                  <option value="9:16">9:16</option>
+                  <option value="4:3">4:3</option>
+                  <option value="3:4">3:4</option>
+                  <option value="3:2">3:2</option>
+                  <option value="2:3">2:3</option>
+                  <option value="4:5">4:5</option>
+                  <option value="5:4">5:4</option>
+                  <option value="21:9">21:9</option>
+                  <option value="9:21">9:21</option>
+                  <option value="2:1">2:1</option>
+                  <option value="1:2">1:2</option>
+                </select>
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M6 9L1 4H11L6 9Z" fill="#1e1e1e" />
+                  </svg>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleGenerate();
+                }}
+                disabled={
+                  isGenerating ||
+                  uploadedFiles.length === 0 ||
+                  !selectedTemplate
+                }
+                className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {isGenerating ? "Generating..." : "Generate"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
