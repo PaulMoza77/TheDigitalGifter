@@ -18,6 +18,7 @@ export const create = mutation({
     inputFileIds: v.array(v.id("_storage")),
     templateId: v.optional(v.id("templates")),
     aspectRatio: v.optional(v.string()),
+    creditCost: v.optional(v.number()), // Credit cost from template (fallback if templateId not found)
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -25,14 +26,13 @@ export const create = mutation({
       throw new Error("Must be logged in");
     }
 
-    // Get credit cost from template if provided, otherwise use default
-    let creditCost = 10; // Default cost
+    // Get credit cost from template if provided, otherwise use passed creditCost or default
+    let creditCost = args.creditCost || 10; // Use passed creditCost or default
     if (args.templateId) {
       const template = await ctx.db.get(args.templateId);
-      if (!template) {
-        throw new Error("Template not found");
+      if (template) {
+        creditCost = template.creditCost; // Database template takes priority
       }
-      creditCost = template.creditCost;
     }
 
     const userProfile = await ctx.db

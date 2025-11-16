@@ -258,12 +258,14 @@ export default function GeneratorPage() {
       }
 
       // Create job with multiple input files
+      // Pass creditCost from constants template to ensure correct deduction
       const jobId = await createJob({
         type: "image",
         prompt: finalPrompt,
         inputFileIds: storageIds,
         templateId: templateId,
         aspectRatio: selectedAspectRatio,
+        creditCost: template.creditCost, // Always use template's creditCost
       });
 
       setCurrentJobId(jobId);
