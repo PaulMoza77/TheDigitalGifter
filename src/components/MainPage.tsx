@@ -1,6 +1,7 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, memo } from "react";
 import { ChevronRight, Star, Coins } from "lucide-react";
-import { TEMPLATES } from "@/constants/templates";
+import { TemplateSummary } from "@/types/templates";
+import { useTemplatesQuery } from "@/data";
 
 interface TheDigitalGifterMainPageProps {
   onStartCreating: () => void;
@@ -259,20 +260,22 @@ export default function TheDigitalGifterMainPage({
 }
 
 /* ===== Carousel Component (4 per page + badges) ===== */
-function TemplatesCarousel() {
+const TemplatesCarousel = memo(function TemplatesCarousel() {
   const categories = ["All", "Classic", "Cozy", "Snowy", "Romantic"];
+
+  const { data: templates = [] } = useTemplatesQuery();
 
   // Map templates to carousel items format
   const items = useMemo(
     () =>
-      TEMPLATES.map((template) => ({
-        id: template.id,
+      templates.map((template) => ({
+        id: template._id,
         title: template.title,
         price: template.creditCost,
         category: template.category,
         previewUrl: template.previewUrl,
       })),
-    []
+    [templates]
   );
 
   const [active, setActive] = useState("All");
@@ -290,7 +293,7 @@ function TemplatesCarousel() {
   const goPrev = () => setPage((p) => (p - 1 + totalPages) % totalPages);
   const goNext = () => setPage((p) => (p + 1) % totalPages);
 
-  useEffect(() => setPage(0), [active]);
+  useEffect(() => setPage(0), [active, templates.length]);
 
   return (
     <section
@@ -318,42 +321,48 @@ function TemplatesCarousel() {
 
         {/* Carousel body */}
         <div className="relative">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {pageItems.map((item) => (
-              <div
-                key={item.id}
-                className="relative rounded-2xl bg-white/10 border border-white/20 overflow-hidden hover:scale-[1.02] transition-transform"
-              >
-                {/* price badge */}
-                <div className="absolute top-2 right-2 z-10 flex items-center gap-2 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] text-[#1a1a1a] text-xs font-extrabold px-2 py-1 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
-                  <Coins size={14} className="text-[#1a1a1a]" />{" "}
-                  <span>{item.price}</span>
-                </div>
+          {items.length === 0 ? (
+            <div className="text-center text-[#dfe6f1] py-10 border border-dashed border-white/20 rounded-2xl">
+              Templates are loading...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {pageItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="relative rounded-2xl bg-white/10 border border-white/20 overflow-hidden hover:scale-[1.02] transition-transform"
+                >
+                  {/* price badge */}
+                  <div className="absolute top-2 right-2 z-10 flex items-center gap-2 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] text-[#1a1a1a] text-xs font-extrabold px-2 py-1 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
+                    <Coins size={14} className="text-[#1a1a1a]" />{" "}
+                    <span>{item.price}</span>
+                  </div>
 
-                {/* Template preview image */}
-                <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
-                  {item.previewUrl ? (
-                    <img
-                      src={item.previewUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)]" />
-                  )}
-                </div>
-                <div className="p-4">
-                  <div className="font-extrabold text-lg text-white">
-                    {item.title}
+                  {/* Template preview image */}
+                  <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
+                    {item.previewUrl ? (
+                      <img
+                        src={item.previewUrl}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)]" />
+                    )}
                   </div>
-                  <div className="text-[#dfe6f1] text-sm mt-1">
-                    {item.category}
+                  <div className="p-4">
+                    <div className="font-extrabold text-lg text-white">
+                      {item.title}
+                    </div>
+                    <div className="text-[#dfe6f1] text-sm mt-1">
+                      {item.category}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Arrows */}
           <div className="flex items-center justify-center gap-3 mt-6">
@@ -379,4 +388,4 @@ function TemplatesCarousel() {
       </div>
     </section>
   );
-}
+});

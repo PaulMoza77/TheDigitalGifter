@@ -1,16 +1,20 @@
 import { useState } from "react";
-import { useQuery, useAction } from "convex/react";
-import { api } from "../../convex/_generated/api";
 import { PricingModal } from "./PricingModal";
 import { toast } from "sonner";
+import {
+  useCheckoutMutation,
+  useLoggedInUserQuery,
+  useUserCreditsQuery,
+} from "@/data";
 
 type Pack = "starter" | "creator" | "pro" | "enterprise";
 
 export function PurchaseCredits() {
   const [showModal, setShowModal] = useState(false);
-  const credits = useQuery(api.credits.getUserCredits) ?? 0;
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-  const createCheckoutByPack = useAction(api.checkout.createCheckoutByPack);
+  const { data: creditsData } = useUserCreditsQuery();
+  const { data: loggedInUser } = useLoggedInUserQuery();
+  const checkoutMutation = useCheckoutMutation();
+  const credits = creditsData ?? 0;
 
   // ✅ Funcția care pornește plata
   async function onBuyPack(pack: Pack) {
@@ -25,7 +29,7 @@ export function PurchaseCredits() {
         userId: loggedInUser._id,
       });
 
-      const { url } = await createCheckoutByPack({ pack });
+      const { url } = await checkoutMutation.mutateAsync({ pack });
 
       console.log("[PurchaseCredits] stripe url:", url);
       if (!url) {

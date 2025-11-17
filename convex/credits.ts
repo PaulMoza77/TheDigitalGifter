@@ -27,7 +27,7 @@ export const getUserCredits = query({
    PUBLIC MUTATIONS
    ========================= */
 
-export const addCredits = mutation({
+export const addCredits = internalMutation({
   args: {
     userId: v.id("users"),
     amount: v.number(),
@@ -90,7 +90,7 @@ export const deductCredits = mutation({
  * userId este primit ca string; îl folosim direct pentru că este deja
  * Id<"users"> serializat de Convex în client.
  */
-export const addCreditsByExternalId = mutation({
+export const addCreditsByExternalId = internalMutation({
   args: { userId: v.string(), amount: v.number() },
   handler: async (ctx, { userId, amount }) => {
     if (!amount || amount <= 0) return;
@@ -126,7 +126,7 @@ export const addCreditsByExternalId = mutation({
  *  - tabelul "users" cu index "by_email"
  *  - tabelul "userProfiles" cu index "by_user"
  */
-export const addCreditsByEmail = mutation({
+export const addCreditsByEmail = internalMutation({
   args: { email: v.string(), amount: v.number() },
   handler: async (ctx, { email, amount }) => {
     if (!amount || amount <= 0) return;

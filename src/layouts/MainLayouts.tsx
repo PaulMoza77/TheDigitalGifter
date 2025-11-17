@@ -2,14 +2,13 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../components/Header";
 import { PricingModal } from "../components/PricingModal";
-import { useAction, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { useCheckoutMutation, useLoggedInUserQuery } from "@/data";
 
 export default function MainLayout() {
   const [showPricing, setShowPricing] = useState(false);
-  const me = useQuery(api.auth.loggedInUser);
-  const buyPack = useAction(api.checkout.createCheckoutByPack);
+  const { data: me } = useLoggedInUserQuery();
+  const buyPack = useCheckoutMutation();
 
   const handleBuyCredits = () => {
     setShowPricing(true);
@@ -24,7 +23,7 @@ export default function MainLayout() {
 
     try {
       console.log("[MainLayout] Starting checkout", { pack, userId: me._id });
-      const { url } = await buyPack({ pack });
+      const { url } = await buyPack.mutateAsync({ pack });
       if (url) {
         console.log("[MainLayout] Redirecting to Stripe", { url });
         window.location.assign(url);

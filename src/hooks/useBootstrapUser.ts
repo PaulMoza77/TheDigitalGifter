@@ -1,17 +1,18 @@
 import { useEffect } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { useLoggedInUserQuery, useEnsureUserProfileMutation } from "@/data";
 
 export function useBootstrapUser() {
-  const ensureUserProfile = useMutation(api.users.ensureUserProfile);
-  const userProfile = useQuery(api.users.getMe, { userId: "skip" });
+  const { data: user } = useLoggedInUserQuery();
+  const { mutateAsync: ensureUserProfile } = useEnsureUserProfileMutation();
 
   useEffect(() => {
-    // We don't have a userId here, so this hook just returns the user profile if it exists
-    ensureUserProfile({ userId: "skip" }).catch((err) =>
+    if (!user?._id) {
+      return;
+    }
+    ensureUserProfile({ userId: user._id as string }).catch((err) =>
       console.error("Failed to bootstrap user:", err)
     );
-  }, [ensureUserProfile]);
+  }, [ensureUserProfile, user?._id]);
 
-  return userProfile;
+  return user;
 }

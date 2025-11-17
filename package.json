@@ -14,6 +14,7 @@
     "@auth/core": "^0.37.4",
     "@clerk/clerk-react": "^5.53.4",
     "@convex-dev/auth": "^0.0.80",
+    "@tanstack/react-query": "^5.90.10",
     "clsx": "^2.1.1",
     "convex": "^1.28.0",
     "lucide-react": "^0.552.0",

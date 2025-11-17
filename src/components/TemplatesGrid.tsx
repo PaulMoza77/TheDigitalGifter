@@ -1,62 +1,86 @@
-import React, { useEffect, useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Doc } from "../../convex/_generated/dataModel";
+import React, { memo, useCallback, useMemo, useState } from "react";
+import { Id } from "../../convex/_generated/dataModel";
+import { TemplateSummary } from "@/types/templates";
+import { useTemplatesQuery } from "@/data";
 
-type Template = Doc<"templates">;
+type Template = TemplateSummary;
 
 interface TemplatesGridProps {
   onPick?: (template: Template) => void;
-  selectedTemplateId?: string;
+  selectedTemplateId?: Id<"templates">;
 }
 
-export default function TemplatesGrid({ onPick, selectedTemplateId }: TemplatesGridProps) {
+export default memo(TemplatesGridComponent);
+
+function TemplatesGridComponent({
+  onPick,
+  selectedTemplateId,
+}: TemplatesGridProps) {
   const [scene, setScene] = useState<string>("");
   const [orientation, setOrientation] = useState<string>("");
   const [priceRange, setPriceRange] = useState<string>("");
-  const allTemplates = useQuery(api.templates.list) || [];
-  
-  // Filter templates by scene, orientation, and price
-  let filteredTemplates = allTemplates;
-  if (scene) {
-    filteredTemplates = filteredTemplates.filter(t => t.scene === scene);
-  }
-  if (orientation) {
-    filteredTemplates = filteredTemplates.filter(t => (t.orientation || "landscape") === orientation);
-  }
-  if (priceRange) {
-    const [min, max] = priceRange.split("-").map(Number);
-    filteredTemplates = filteredTemplates.filter(t => t.creditCost >= min && t.creditCost <= max);
-  }
+  const { data: allTemplates = [] } = useTemplatesQuery();
+  const handleClearFilters = useCallback(() => {
+    setScene("");
+    setOrientation("");
+    setPriceRange("");
+  }, []);
 
-  // Get unique scenes and price ranges for dropdowns
-  const uniqueScenes = Array.from(new Set(allTemplates.map(t => t.scene))).sort();
+  const filteredTemplates = useMemo(() => {
+    return allTemplates.filter((template) => {
+      const matchesScene = scene ? template.scene === scene : true;
+      const matchesOrientation = orientation
+        ? template.orientation === orientation
+        : true;
+
+      const matchesPrice = priceRange
+        ? (() => {
+            const [min, max] = priceRange.split("-").map(Number);
+            return template.creditCost >= min && template.creditCost <= max;
+          })()
+        : true;
+
+      return matchesScene && matchesOrientation && matchesPrice;
+    });
+  }, [allTemplates, scene, orientation, priceRange]);
+
+  const sceneCounts = useMemo(() => {
+    return allTemplates.reduce<Record<string, number>>((acc, template) => {
+      acc[template.scene] = (acc[template.scene] ?? 0) + 1;
+      return acc;
+    }, {});
+  }, [allTemplates]);
+
+  const uniqueScenes = useMemo(
+    () => Object.keys(sceneCounts).sort(),
+    [sceneCounts]
+  );
   const priceRanges = [
     { label: "Budget (10-12)", value: "10-12" },
     { label: "Premium (13-16)", value: "13-16" },
-    { label: "Luxury (17-20)", value: "17-20" }
+    { label: "Luxury (17-20)", value: "17-20" },
   ];
 
   return (
     <div className="space-y-6">
       {/* Enhanced Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <select 
-          value={scene} 
-          onChange={e => setScene(e.target.value)}
+        <select
+          value={scene}
+          onChange={(e) => setScene(e.target.value)}
           className="festive-select text-sm"
         >
           <option value="">All scenes ({allTemplates.length})</option>
-          {uniqueScenes.map(s => (
+          {uniqueScenes.map((s) => (
             <option key={s} value={s}>
-              {s.charAt(0).toUpperCase() + s.slice(1)} ({allTemplates.filter(t => t.scene === s).length})
+              {s.charAt(0).toUpperCase() + s.slice(1)} ({sceneCounts[s] ?? 0})
             </option>
           ))}
         </select>
 
-        <select 
-          value={orientation} 
-          onChange={e => setOrientation(e.target.value)}
+        <select
+          value={orientation}
+          onChange={(e) => setOrientation(e.target.value)}
           className="festive-select text-sm"
         >
           <option value="">All orientations</option>
@@ -64,13 +88,13 @@ export default function TemplatesGrid({ onPick, selectedTemplateId }: TemplatesG
           <option value="landscape">Landscape</option>
         </select>
 
-        <select 
-          value={priceRange} 
-          onChange={e => setPriceRange(e.target.value)}
+        <select
+          value={priceRange}
+          onChange={(e) => setPriceRange(e.target.value)}
           className="festive-select text-sm"
         >
           <option value="">All prices</option>
-          {priceRanges.map(range => (
+          {priceRanges.map((range) => (
             <option key={range.value} value={range.value}>
               {range.label}
             </option>
@@ -80,11 +104,7 @@ export default function TemplatesGrid({ onPick, selectedTemplateId }: TemplatesG
         {/* Clear filters button */}
         {(scene || orientation || priceRange) && (
           <button
-            onClick={() => {
-              setScene("");
-              setOrientation("");
-              setPriceRange("");
-            }}
+            onClick={handleClearFilters}
             className="text-sm text-festive-red hover:text-red-300 underline transition-colors"
           >
             Clear filters
@@ -99,27 +119,29 @@ export default function TemplatesGrid({ onPick, selectedTemplateId }: TemplatesG
 
       {/* Templates Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-h-96 overflow-y-auto">
-        {filteredTemplates.map(template => (
-          <button 
-            key={template._id} 
+        {filteredTemplates.map((template) => (
+          <button
+            key={template._id}
             onClick={() => onPick?.(template)}
             className={`template-card group ${
               selectedTemplateId === template._id ? "selected" : ""
             }`}
           >
-            <div 
+            <div
               className={`w-full bg-gray-800/50 relative ${
-                template.orientation === "portrait" ? "aspect-[3/4]" : "aspect-[4/3]"
+                template.orientation === "portrait"
+                  ? "aspect-[3/4]"
+                  : "aspect-[4/3]"
               }`}
               style={{
                 backgroundImage: `url(${template.previewUrl})`,
                 backgroundSize: "cover",
-                backgroundPosition: "center"
+                backgroundPosition: "center",
               }}
             >
               {/* Overlay for better text readability */}
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all" />
-              
+
               {/* Selection indicator */}
               {selectedTemplateId === template._id && (
                 <div className="absolute top-3 right-3">
@@ -139,8 +161,8 @@ export default function TemplatesGrid({ onPick, selectedTemplateId }: TemplatesG
               {/* Tags overlay */}
               <div className="absolute bottom-3 left-3 right-3">
                 <div className="flex flex-wrap gap-1">
-                  {template.tags.slice(0, 2).map(tag => (
-                    <span 
+                  {template.tags.slice(0, 2).map((tag) => (
+                    <span
                       key={tag}
                       className="glass-effect text-light px-2 py-1 rounded text-xs font-medium"
                     >
@@ -155,12 +177,18 @@ export default function TemplatesGrid({ onPick, selectedTemplateId }: TemplatesG
                 </div>
               </div>
             </div>
-            
+
             <div className="p-4 text-left">
-              <p className="font-semibold text-light text-sm line-clamp-1 mb-2">{template.title}</p>
+              <p className="font-semibold text-light text-sm line-clamp-1 mb-2">
+                {template.title}
+              </p>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-light-muted capitalize">{template.scene}</p>
-                <p className="text-xs font-semibold text-festive-red">{template.creditCost} credits</p>
+                <p className="text-xs text-light-muted capitalize">
+                  {template.scene}
+                </p>
+                <p className="text-xs font-semibold text-festive-red">
+                  {template.creditCost} credits
+                </p>
               </div>
               <p className="text-xs text-light-muted line-clamp-2 italic">
                 "{template.textDefault}"
@@ -173,15 +201,10 @@ export default function TemplatesGrid({ onPick, selectedTemplateId }: TemplatesG
       {filteredTemplates.length === 0 && (
         <div className="text-center py-12 glass-card">
           <div className="text-4xl mb-4">🎄</div>
-          <p className="text-light-muted mb-4">No templates found for the selected filters.</p>
-          <button
-            onClick={() => {
-              setScene("");
-              setOrientation("");
-              setPriceRange("");
-            }}
-            className="btn-ghost text-sm"
-          >
+          <p className="text-light-muted mb-4">
+            No templates found for the selected filters.
+          </p>
+          <button onClick={handleClearFilters} className="btn-ghost text-sm">
             Clear all filters
           </button>
         </div>

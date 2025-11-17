@@ -1,10 +1,15 @@
-import { useState, useRef, useEffect } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { uploadFileToStorage } from "../lib/uploadFileToStorage";
 import { Id } from "../../convex/_generated/dataModel";
 import { getErrorMessage } from "../lib/getErrorMessage";
+import {
+  useCreateJobMutation,
+  useGenerateUploadUrlMutation,
+  useJobsQuery,
+  useTemplatesQuery,
+  useUserCreditsQuery,
+} from "@/data";
 
 type ContentType = "image";
 
@@ -20,15 +25,19 @@ export function JobCreator() {
   const [currentJobId, setCurrentJobId] = useState<Id<"jobs"> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const createJob = useMutation(api.jobs.create);
-  const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
-  const credits = useQuery(api.credits.getUserCredits);
-  const jobs = useQuery(api.jobs.list) || [];
+  const { data: creditsData } = useUserCreditsQuery();
+  const { data: jobs = [] } = useJobsQuery();
+  const { data: templates = [] } = useTemplatesQuery();
+  const { mutateAsync: createJob } = useCreateJobMutation();
+  const { mutateAsync: generateUploadUrl } = useGenerateUploadUrlMutation();
+  const defaultTemplate = useMemo(() => templates[0], [templates]);
 
   // Watch for current job status updates
-  const currentJob = currentJobId
-    ? jobs.find((j) => j._id === currentJobId)
-    : null;
+  const currentJob = useMemo(
+    () =>
+      currentJobId ? (jobs.find((j) => j._id === currentJobId) ?? null) : null,
+    [jobs, currentJobId]
+  );
 
   // Monitor job status changes
   useEffect(() => {
@@ -48,13 +57,19 @@ export function JobCreator() {
     }
   }, [currentJob]);
 
-  const requiredCredits = CREDIT_COSTS[contentType];
-  const hasEnoughCredits = (credits || 0) >= requiredCredits;
+  const requiredCredits =
+    defaultTemplate?.creditCost ?? CREDIT_COSTS[contentType];
+  const hasEnoughCredits = (creditsData || 0) >= requiredCredits;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) {
       toast.error("Please enter a prompt");
+      return;
+    }
+
+    if (!defaultTemplate) {
+      toast.error("No templates available. Please add one first.");
       return;
     }
 
@@ -67,17 +82,20 @@ export function JobCreator() {
 
     setIsSubmitting(true);
     try {
-      let inputFileId;
-
+      let inputStorageId: Id<"_storage"> | undefined;
       const file = fileInputRef.current?.files?.[0];
       if (file) {
-        inputFileId = await uploadFileToStorage(generateUploadUrl, file);
+        inputStorageId = await uploadFileToStorage(
+          () => generateUploadUrl(),
+          file
+        );
       }
 
       const jobId = await createJob({
         type: contentType,
-        prompt: prompt.trim(),
-        inputFileId,
+        inputFileIds: inputStorageId ? [inputStorageId] : [],
+        templateId: defaultTemplate._id,
+        userInstructions: prompt.trim(),
       });
 
       setCurrentJobId(jobId);
@@ -125,13 +143,13 @@ export function JobCreator() {
             <span className="text-gray-600">
               You have{" "}
               <span className="font-medium text-purple-600">
-                {credits || 0}
+                {creditsData ?? 0}
               </span>{" "}
               credits
             </span>
             {!hasEnoughCredits && (
               <span className="text-red-600 ml-2">
-                (Need {requiredCredits - (credits || 0)} more)
+                (Need {requiredCredits - (creditsData || 0)} more)
               </span>
             )}
           </div>

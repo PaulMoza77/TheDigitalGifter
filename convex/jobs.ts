@@ -11,14 +11,19 @@ import { internal } from "./_generated/api";
 import { generateImageFromStorage } from "./ai/replicate";
 import { Id } from "./_generated/dataModel";
 
+// Atomic internal mutation to debit credits and create a job (prevents race conditions)
+// Atomic debit+job creation moved to `convex/atomic.ts` to avoid circular type references
+
 export const create = mutation({
   args: {
     type: v.literal("image"),
-    prompt: v.string(),
     inputFileIds: v.array(v.id("_storage")),
-    templateId: v.optional(v.id("templates")),
+    templateId: v.id("templates"), // Required - backend is source of truth
     aspectRatio: v.optional(v.string()),
-    creditCost: v.optional(v.number()), // Credit cost from template (fallback if templateId not found)
+    userInstructions: v.optional(v.string()), // User's custom instructions (merged with template prompt on backend)
+    // Legacy fields removed for security:
+    // - prompt: removed (client should never send prompts)
+    // - creditCost: removed (always use database template's creditCost)
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -26,14 +31,25 @@ export const create = mutation({
       throw new Error("Must be logged in");
     }
 
-    // Get credit cost from template if provided, otherwise use passed creditCost or default
-    let creditCost = args.creditCost || 10; // Use passed creditCost or default
-    if (args.templateId) {
-      const template = await ctx.db.get(args.templateId);
-      if (template) {
-        creditCost = template.creditCost; // Database template takes priority
-      }
+    // Load template from database - this is the single source of truth
+    const template = await ctx.db.get(args.templateId);
+    if (!template) {
+      throw new Error("Template not found");
     }
+
+    // Validate user instructions length (prevent prompt injection attacks)
+    if (args.userInstructions && args.userInstructions.length > 2000) {
+      throw new Error("User instructions too long. Maximum 2000 characters.");
+    }
+
+    // Merge template prompt with user instructions securely on backend
+    let finalPrompt = template.prompt;
+    if (args.userInstructions && args.userInstructions.trim()) {
+      finalPrompt += ` Additional instructions: ${args.userInstructions.trim()}`;
+    }
+
+    // Use template's credit cost from database (never trust client)
+    const creditCost = template.creditCost;
 
     const userProfile = await ctx.db
       .query("userProfiles")
@@ -43,32 +59,25 @@ export const create = mutation({
     if (!userProfile || userProfile.credits < creditCost) {
       throw new Error("Insufficient credits");
     }
-
-    // Debit credits
-    await ctx.db.patch(userProfile._id, {
-      credits: userProfile.credits - creditCost,
-    });
-
-    // Create job (keep inputFileId for backward compatibility, use first file if exists)
-    const jobId = await ctx.db.insert("jobs", {
-      userId,
-      type: args.type,
-      prompt: args.prompt,
-      inputFileId:
-        args.inputFileIds.length > 0 ? args.inputFileIds[0] : undefined,
-      status: "queued",
-      debited: creditCost,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      templateId: args.templateId,
-      aspectRatio: args.aspectRatio,
-    });
+    // Atomically debit credits and create the job via internal mutation
+    const jobId: Id<"jobs"> = await ctx.runMutation(
+      internal.atomic.debitCreditsAndCreateJob,
+      {
+        userId,
+        templateId: args.templateId,
+        creditCost,
+        inputFileIds: args.inputFileIds,
+        prompt: finalPrompt,
+        aspectRatio: args.aspectRatio,
+        type: args.type,
+      }
+    );
 
     // Schedule AI generation if input files exist, otherwise use processJob fallback
     if (args.inputFileIds.length > 0) {
       await ctx.scheduler.runAfter(0, internal.jobs.generateWithAI, {
         inputFileIds: args.inputFileIds,
-        prompt: args.prompt,
+        prompt: finalPrompt, // Use merged prompt from backend
         jobId,
         aspectRatio: args.aspectRatio,
       });

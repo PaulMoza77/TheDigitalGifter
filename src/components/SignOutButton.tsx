@@ -1,13 +1,13 @@
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { useConvexAuth } from "convex/react";
 import { toast } from "sonner";
 import { User } from "lucide-react";
+import { useLoggedInUserQuery } from "@/data";
 
 export default function SignOutButton() {
   const { isAuthenticated } = useConvexAuth();
   const { signOut } = useAuthActions();
-  const user = useQuery(api.auth.loggedInUser);
+  const { data: user } = useLoggedInUserQuery();
 
   if (!isAuthenticated) {
     return null;

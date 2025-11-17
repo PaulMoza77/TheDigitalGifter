@@ -5,12 +5,15 @@ import {
   Navigate,
 } from "react-router-dom";
 import { Toaster } from "sonner";
-import { useEffect } from "react";
-import MainLayout from "./layouts/MainLayouts";
-import HomePage from "./pages/HomePage";
-import GeneratorPage from "./pages/GeneratorPage";
-import TemplatesPage from "./pages/TemplatesPage";
-import TheDigitalGifterDashboard from "./pages/TheDigitalGifterDashboard";
+import { Suspense, useEffect, lazy } from "react";
+
+const MainLayout = lazy(() => import("./layouts/MainLayouts"));
+const HomePage = lazy(() => import("./pages/HomePage"));
+const GeneratorPage = lazy(() => import("./pages/GeneratorPage"));
+const TemplatesPage = lazy(() => import("./pages/TemplatesPage"));
+const TheDigitalGifterDashboard = lazy(
+  () => import("./pages/TheDigitalGifterDashboard")
+);
 
 export default function App() {
   useEffect(() => {
@@ -24,15 +27,23 @@ export default function App() {
   return (
     <Router>
       <div className="min-h-screen bg-black text-gray-900 flex flex-col">
-        <Routes>
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/generator" element={<GeneratorPage />} />
-            <Route path="/templates" element={<TemplatesPage />} />
-          </Route>
-          <Route path="/dashboard" element={<TheDigitalGifterDashboard />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense
+          fallback={
+            <div className="flex flex-1 items-center justify-center text-white/80">
+              Loading magic...
+            </div>
+          }
+        >
+          <Routes>
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/generator" element={<GeneratorPage />} />
+              <Route path="/templates" element={<TemplatesPage />} />
+            </Route>
+            <Route path="/dashboard" element={<TheDigitalGifterDashboard />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
 
         <Toaster position="top-right" />
       </div>

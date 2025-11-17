@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useBootstrapUser } from "../hooks/useBootstrapUser";
 import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
 import { Coins } from "lucide-react";
-import { TEMPLATES } from "@/constants/templates";
+import { TemplateSummary } from "@/types/templates";
+import {
+  useTemplatesQuery,
+  useUserCreditsQuery,
+  useJobsQuery,
+  useCreateJobMutation,
+  useGenerateUploadUrlMutation,
+} from "@/data";
 
 // Snow Animation Background Component
 function SnowBackground() {
@@ -62,7 +67,8 @@ function SnowBackground() {
 export default function GeneratorPage() {
   const user = useBootstrapUser();
   const [activeCategory, setActiveCategory] = useState("All");
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<Id<"templates"> | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [previewAfter, setPreviewAfter] = useState<string | null>(null);
@@ -72,11 +78,12 @@ export default function GeneratorPage() {
   const [selectedAspectRatio, setSelectedAspectRatio] =
     useState("match_input_image");
 
-  const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
-  const createJob = useMutation(api.jobs.create);
-  const userCredits = useQuery(api.credits.getUserCredits);
-  const jobs = useQuery(api.jobs.list) || [];
-  const dbTemplates = useQuery(api.templates.list) || [];
+  const { data: templates = [] } = useTemplatesQuery();
+  const { data: creditsData } = useUserCreditsQuery();
+  const { data: jobs = [] } = useJobsQuery();
+  const { mutateAsync: requestUploadUrl } = useGenerateUploadUrlMutation();
+  const { mutateAsync: triggerCreateJob } = useCreateJobMutation();
+  const userCredits = creditsData ?? 0;
 
   const categories = [
     "All",
@@ -90,15 +97,25 @@ export default function GeneratorPage() {
   ];
 
   // Filter templates by category
-  const filteredTemplates =
-    activeCategory === "All"
-      ? TEMPLATES
-      : TEMPLATES.filter((t) => t.category === activeCategory);
+  const filteredTemplates = useMemo(() => {
+    if (activeCategory === "All") return templates;
+    return templates.filter((t) => t.category === activeCategory);
+  }, [activeCategory, templates]);
+
+  const templateMap = useMemo(() => {
+    const lookup = new Map<string, TemplateSummary>();
+    templates.forEach((template) => {
+      lookup.set(template._id, template);
+    });
+    return lookup;
+  }, [templates]);
 
   // Watch for current job status updates
-  const currentJob = currentJobId
-    ? jobs.find((j) => j._id === currentJobId)
-    : null;
+  const currentJob = useMemo(
+    () =>
+      currentJobId ? (jobs.find((j) => j._id === currentJobId) ?? null) : null,
+    [jobs, currentJobId]
+  );
 
   // Update preview URLs when files change
   useEffect(() => {
@@ -127,32 +144,40 @@ export default function GeneratorPage() {
     }
   }, [currentJob]);
 
+  const handleTemplateSelect = useCallback((template: TemplateSummary) => {
+    setSelectedTemplate(template._id);
+    toast.success(`Selected: ${template.title}`);
+  }, []);
+
   // Handle file upload (multiple files)
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length > 0) {
-      const validFiles = files.filter((file) => {
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name} is too large. Maximum 10MB.`);
-          return false;
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || []);
+      if (files.length > 0) {
+        const validFiles = files.filter((file) => {
+          if (file.size > 10 * 1024 * 1024) {
+            toast.error(`${file.name} is too large. Maximum 10MB.`);
+            return false;
+          }
+          if (!file.type.startsWith("image/")) {
+            toast.error(`${file.name} is not an image.`);
+            return false;
+          }
+          return true;
+        });
+        if (validFiles.length > 0) {
+          setUploadedFiles((prev) => [...prev, ...validFiles]);
+          toast.success(`${validFiles.length} photo(s) uploaded!`);
         }
-        if (!file.type.startsWith("image/")) {
-          toast.error(`${file.name} is not an image.`);
-          return false;
-        }
-        return true;
-      });
-      if (validFiles.length > 0) {
-        setUploadedFiles((prev) => [...prev, ...validFiles]);
-        toast.success(`${validFiles.length} photo(s) uploaded!`);
       }
-    }
-    // Reset input to allow selecting the same file again
-    event.target.value = "";
-  };
+      // Reset input to allow selecting the same file again
+      event.target.value = "";
+    },
+    []
+  );
 
   // Handle drag and drop (multiple files)
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = Array.from(event.dataTransfer.files).filter((file) =>
       file.type.startsWith("image/")
@@ -170,15 +195,15 @@ export default function GeneratorPage() {
         toast.success(`${validFiles.length} photo(s) uploaded!`);
       }
     }
-  };
+  }, []);
 
   // Remove uploaded file
-  const handleRemoveFile = (index: number) => {
+  const handleRemoveFile = useCallback((index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
   // Handle download
-  async function handleDownload(url: string, filename: string) {
+  const handleDownload = useCallback(async (url: string, filename: string) => {
     try {
       const response = await fetch(url);
       if (!response.ok) {
@@ -198,10 +223,10 @@ export default function GeneratorPage() {
       console.error("Download failed:", error);
       toast.error("Failed to download image");
     }
-  }
+  }, []);
 
   // Handle generate
-  async function handleGenerate() {
+  const handleGenerate = useCallback(async () => {
     if (!user) {
       toast.error("Please sign in to generate.");
       return;
@@ -215,19 +240,17 @@ export default function GeneratorPage() {
       return;
     }
 
-    const template = TEMPLATES.find((t) => t.id === selectedTemplate);
-    if (!template) return;
+    const template = templateMap.get(selectedTemplate);
+    if (!template) {
+      toast.error("Template not found. Please pick another option.");
+      return;
+    }
 
-    // Find matching database template by title
-    const dbTemplate = dbTemplates.find((t) => t.title === template.title);
-    const templateId = dbTemplate?._id;
-
-    if ((userCredits || 0) < template.creditCost) {
+    if (userCredits < template.creditCost) {
       toast.error(`Not enough credits. Need ${template.creditCost} credits.`);
       return;
     }
 
-    // Scroll to preview section
     const previewSection = document.getElementById("preview-section");
     if (previewSection) {
       previewSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -238,44 +261,53 @@ export default function GeneratorPage() {
     setPreviewAfter(null);
 
     try {
-      // Upload all files
-      const storageIds: Id<"_storage">[] = [];
-      for (const file of uploadedFiles) {
-        const uploadUrl = await generateUploadUrl();
-        const uploadResponse = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        const { storageId } = await uploadResponse.json();
-        storageIds.push(storageId);
-      }
+      const storageIds = await Promise.all(
+        uploadedFiles.map(async (file) => {
+          const uploadUrl = await requestUploadUrl();
+          const uploadResponse = await fetch(uploadUrl, {
+            method: "POST",
+            headers: { "Content-Type": file.type },
+            body: file,
+          });
+          if (!uploadResponse.ok) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+          const { storageId } = (await uploadResponse.json()) as {
+            storageId: Id<"_storage">;
+          };
+          if (!storageId) {
+            throw new Error("Upload response missing storage ID");
+          }
+          return storageId;
+        })
+      );
 
-      // Build final prompt with custom instructions
-      let finalPrompt = template.prompt;
-      if (customInstructions.trim()) {
-        finalPrompt += ` Additional instructions: ${customInstructions.trim()}`;
-      }
-
-      // Create job with multiple input files
-      // Pass creditCost from constants template to ensure correct deduction
-      const jobId = await createJob({
+      const jobId = await triggerCreateJob({
         type: "image",
-        prompt: finalPrompt,
         inputFileIds: storageIds,
-        templateId: templateId,
+        templateId: template._id,
         aspectRatio: selectedAspectRatio,
-        creditCost: template.creditCost, // Always use template's creditCost
+        userInstructions: customInstructions.trim() || undefined,
       });
 
       setCurrentJobId(jobId);
       toast.success("Generation started! This may take 30-60 seconds.");
     } catch (error: any) {
       setIsGenerating(false);
-      const message = error.message || "Failed to generate.";
+      const message = error?.message ?? "Failed to generate.";
       toast.error(message);
     }
-  }
+  }, [
+    user,
+    selectedTemplate,
+    uploadedFiles,
+    templateMap,
+    userCredits,
+    requestUploadUrl,
+    triggerCreateJob,
+    selectedAspectRatio,
+    customInstructions,
+  ]);
 
   return (
     <div className="relative min-h-screen text-[#f6f8ff] overflow-x-hidden">
@@ -365,13 +397,12 @@ export default function GeneratorPage() {
       {/* Template cards */}
       <div className="mx-auto grid max-w-5xl grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 px-4 pb-8">
         {filteredTemplates.map((template) => {
-          const isSelected = selectedTemplate === template.id;
+          const isSelected = selectedTemplate === template._id;
           return (
             <div
-              key={template.id}
+              key={template._id}
               onClick={() => {
-                setSelectedTemplate(template.id);
-                toast.success(`Selected: ${template.title}`);
+                handleTemplateSelect(template);
               }}
               className={`rounded-3xl border overflow-hidden hover:-translate-y-0.5 transition group cursor-pointer ${
                 isSelected

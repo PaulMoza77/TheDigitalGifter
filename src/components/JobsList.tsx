@@ -1,12 +1,11 @@
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Doc } from "../../convex/_generated/dataModel";
+import { memo, useMemo, useState } from "react";
+import { Doc, Id } from "../../convex/_generated/dataModel";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useJobsQuery, useDeleteJobMutation } from "@/data";
 
-export function JobsList() {
-  const jobs = useQuery(api.jobs.list) || [];
-  const deleteJob = useMutation(api.jobs.deleteJob);
+export const JobsList = memo(function JobsList() {
+  const { data: jobs = [] } = useJobsQuery();
+  const deleteJob = useDeleteJobMutation();
   const [deletingJobs, setDeletingJobs] = useState<Set<string>>(new Set());
 
   const handleDelete = async (jobId: string) => {
@@ -16,7 +15,7 @@ export function JobsList() {
 
     setDeletingJobs((prev) => new Set(prev).add(jobId));
     try {
-      await deleteJob({ jobId: jobId as any });
+      await deleteJob.mutateAsync({ jobId: jobId as Id<"jobs"> });
       toast.success("Creation deleted successfully");
     } catch {
       toast.error("Failed to delete creation");
@@ -47,7 +46,26 @@ export function JobsList() {
     }
   };
 
-  if (jobs.length === 0) {
+  const hasJobs = jobs.length > 0;
+
+  // Group jobs by status (memoized for performance)
+  const groupedJobs = useMemo(() => {
+    return jobs.reduce<Record<string, Doc<"jobs">[]>>((acc, job) => {
+      if (!acc[job.status]) acc[job.status] = [];
+      acc[job.status].push(job);
+      return acc;
+    }, {});
+  }, [jobs]);
+
+  const statusOrder = ["processing", "queued", "done", "error"];
+  const statusIcons = {
+    queued: "⏳",
+    processing: "🎨",
+    done: "✅",
+    error: "❌",
+  };
+
+  if (!hasJobs) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
         <div className="text-4xl mb-3">🎄</div>
@@ -59,24 +77,6 @@ export function JobsList() {
       </div>
     );
   }
-
-  // Group jobs by status
-  const groupedJobs = jobs.reduce(
-    (acc, job) => {
-      if (!acc[job.status]) acc[job.status] = [];
-      acc[job.status].push(job);
-      return acc;
-    },
-    {} as Record<string, Doc<"jobs">[]>
-  );
-
-  const statusOrder = ["processing", "queued", "done", "error"];
-  const statusIcons = {
-    queued: "⏳",
-    processing: "🎨",
-    done: "✅",
-    error: "❌",
-  };
 
   return (
     <div className="space-y-6">
@@ -201,9 +201,9 @@ export function JobsList() {
       })}
     </div>
   );
-}
+});
 
-function StatusBadge({ status }: { status: string }) {
+const StatusBadge = memo(function StatusBadge({ status }: { status: string }) {
   const colors = {
     queued: "bg-yellow-100 text-yellow-800 border-yellow-200",
     processing: "bg-blue-100 text-blue-800 border-blue-200",
@@ -226,4 +226,4 @@ function StatusBadge({ status }: { status: string }) {
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
-}
+});

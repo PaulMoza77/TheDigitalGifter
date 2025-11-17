@@ -1,7 +1,7 @@
 // convex/http.ts
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import auth from "./auth";
 
 // === Utils ===
@@ -98,7 +98,7 @@ const stripeWebhook = httpAction(async (ctx, req) => {
     if (userId && userId !== "guest_user" && amount > 0) {
       console.log("[Webhook] Adding credits by userId", { userId, amount });
       try {
-        await ctx.runMutation(api.credits.addCreditsByExternalId, {
+        await ctx.runMutation(internal.credits.addCreditsByExternalId, {
           userId,
           amount,
         });
@@ -122,7 +122,10 @@ const stripeWebhook = httpAction(async (ctx, req) => {
     if (email && amount > 0) {
       console.log("[Webhook] Adding credits by email", { email, amount });
       try {
-        await ctx.runMutation(api.credits.addCreditsByEmail, { email, amount });
+        await ctx.runMutation(internal.credits.addCreditsByEmail, {
+          email,
+          amount,
+        });
         console.log("[Webhook] ✅ Credits added by email", { email, amount });
         return new Response("ok", { status: 200 });
       } catch (error) {

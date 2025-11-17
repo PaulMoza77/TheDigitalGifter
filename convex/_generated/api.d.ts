@@ -9,10 +9,12 @@
  */
 
 import type * as ai_replicate from "../ai/replicate.js";
+import type * as atomic from "../atomic.js";
 import type * as auth from "../auth.js";
 import type * as checkout from "../checkout.js";
 import type * as constants from "../constants.js";
 import type * as credits from "../credits.js";
+import type * as data_templateMetadata from "../data/templateMetadata.js";
 import type * as http from "../http.js";
 import type * as jobs from "../jobs.js";
 import type * as storage from "../storage.js";
@@ -35,10 +37,12 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   "ai/replicate": typeof ai_replicate;
+  atomic: typeof atomic;
   auth: typeof auth;
   checkout: typeof checkout;
   constants: typeof constants;
   credits: typeof credits;
+  "data/templateMetadata": typeof data_templateMetadata;
   http: typeof http;
   jobs: typeof jobs;
   storage: typeof storage;
