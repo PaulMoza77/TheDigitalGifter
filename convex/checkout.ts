@@ -40,10 +40,10 @@ async function createStripeCheckoutSession(body: Record<string, string>) {
 /**
  * Recommended: client sends only the pack.
  * Packs must have price IDs configured in env:
- *  - PRICE_25_CREDITS
- *  - PRICE_50_CREDITS
- *  - PRICE_500_CREDITS
- *  - PRICE_5000_CREDITS
+ *  - PRICE_STARTER
+ *  - PRICE_CREATOR
+ *  - PRICE_PRO
+ *  - PRICE_ENTERPRISE
  *
  * Requires authenticated user - throws if not logged in.
  */
@@ -68,10 +68,10 @@ export const createCheckoutByPack = action({
     ).trim();
 
     const PRICE_IDS: Record<string, string> = {
-      starter: requireEnv("PRICE_25_CREDITS"),
-      creator: requireEnv("PRICE_50_CREDITS"),
-      pro: requireEnv("PRICE_500_CREDITS"),
-      enterprise: requireEnv("PRICE_5000_CREDITS"),
+      starter: requireEnv("PRICE_STARTER"),
+      creator: requireEnv("PRICE_CREATOR"),
+      pro: requireEnv("PRICE_PRO"),
+      enterprise: requireEnv("PRICE_ENTERPRISE"),
     };
 
     const priceId = PRICE_IDS[args.pack];

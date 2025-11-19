@@ -89,6 +89,119 @@ export const create = mutation({
   },
 });
 
+// Create a video generation job (server-side only). This keeps image flow untouched
+// and provides a separate explicit entrypoint for video jobs. The mutation reads
+// template.prompt and template.creditCost from the DB (never trust client input),
+// validates video-specific params, and delegates atomic debit + job insert to
+// `internal.atomic.debitCreditsAndCreateJob`.
+export const createVideoJob = mutation({
+  args: {
+    templateId: v.id("templates"),
+    inputFileIds: v.optional(v.array(v.id("_storage"))),
+    userInstructions: v.optional(v.string()),
+    duration: v.optional(v.union(v.literal(4), v.literal(6), v.literal(8))),
+    resolution: v.optional(v.union(v.literal("720p"), v.literal("1080p"))),
+    aspectRatio: v.optional(v.union(v.literal("16:9"), v.literal("9:16"))),
+    generateAudio: v.optional(v.boolean()),
+    negativePrompt: v.optional(v.string()),
+    seed: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be logged in");
+
+    // Validate and fetch template
+    const template = await ctx.db.get(args.templateId);
+    if (!template) throw new Error("Template not found");
+
+    // If template.type exists and is not 'video', disallow using it for video jobs.
+    if ((template as any).type && (template as any).type !== "video") {
+      throw new Error("Template not usable for video generation");
+    }
+
+    // Validate inputs
+    const userInstructions = (args.userInstructions || "").trim();
+    if (userInstructions.length > 2000) {
+      throw new Error("User instructions must be <= 2000 characters");
+    }
+
+    if (args.negativePrompt && args.negativePrompt.length > 500) {
+      throw new Error("Negative prompt must be <= 500 characters");
+    }
+
+    // Use provided values, only fall back to defaults if explicitly undefined
+    // This ensures frontend selections are always respected
+    const duration = args.duration !== undefined ? args.duration : 8;
+    const resolution = args.resolution !== undefined ? args.resolution : ("1080p" as const);
+    const aspectRatio = args.aspectRatio !== undefined ? args.aspectRatio : ("16:9" as const);
+    // generateAudio: if explicitly false, use false; if undefined, default to true
+    const generateAudio = args.generateAudio !== undefined ? args.generateAudio : true;
+    
+    // Log the values being used for debugging
+    console.log("[createVideoJob] Video settings:", {
+      duration,
+      resolution,
+      aspectRatio,
+      generateAudio,
+      provided: {
+        duration: args.duration,
+        resolution: args.resolution,
+        aspectRatio: args.aspectRatio,
+        generateAudio: args.generateAudio,
+      },
+    });
+
+    // Cap number of input files to 3 to avoid abuse
+    const inputFileIds = (args.inputFileIds || []).slice(0, 3);
+
+    // Compose final prompt server-side
+    let finalPrompt = template.prompt;
+    if (userInstructions) {
+      finalPrompt += ` Additional instructions: ${userInstructions}`;
+    }
+
+    if (args.negativePrompt) {
+      // Store negative prompt separately; do not expose to public queries
+    }
+
+    // Atomically debit credits and create the job via internal mutation
+    const jobId: Id<"jobs"> = await ctx.runMutation(
+      (internal as any).atomic.debitCreditsAndCreateJob,
+      {
+        userId,
+        templateId: args.templateId,
+        creditCost: template.creditCost,
+        inputFileIds,
+        prompt: finalPrompt,
+        aspectRatio,
+        type: "video",
+        videoUrl: null,
+        duration,
+        resolution,
+        generateAudio,
+        negativePrompt: args.negativePrompt ?? null,
+        seed: args.seed ?? null,
+      }
+    );
+
+    // Schedule video generation worker (implemented in `jobs_video.ts`)
+    await ctx.scheduler.runAfter(
+      0,
+      (internal as any)["jobs_video"].generateVideoWithAI,
+      {
+        jobId,
+      }
+    );
+
+    return {
+      jobId,
+      status: "queued",
+      creditsDebited: template.creditCost,
+      templateTitle: template.title,
+    };
+  },
+});
+
 export const list = query({
   args: {},
   handler: async (ctx) => {

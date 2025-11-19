@@ -1,4 +1,47 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+// Minimal Select component styled to match current UI
+type SelectProps = {
+  value: string;
+  onValueChange: (value: string) => void;
+  options: { label: string; value: string }[];
+  className?: string;
+  disabled?: boolean;
+};
+function Select({
+  value,
+  onValueChange,
+  options,
+  className = "",
+  disabled,
+}: SelectProps) {
+  return (
+    <div className={`relative ${className}`}>
+      <select
+        value={value}
+        onChange={(e) => onValueChange(e.target.value)}
+        disabled={disabled}
+        className="rounded-xl px-4 py-2 pr-9 font-semibold text-[#1e1e1e] border border-transparent bg-white text-sm appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 12 12"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M6 9L1 4H11L6 9Z" fill="#1e1e1e" />
+        </svg>
+      </div>
+    </div>
+  );
+}
 import { useBootstrapUser } from "../hooks/useBootstrapUser";
 import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
@@ -10,6 +53,7 @@ import {
   useJobsQuery,
   useCreateJobMutation,
   useGenerateUploadUrlMutation,
+  useCreateVideoJobMutation,
 } from "@/data";
 
 // Snow Animation Background Component
@@ -78,11 +122,26 @@ export default function GeneratorPage() {
   const [selectedAspectRatio, setSelectedAspectRatio] =
     useState("match_input_image");
 
+  // Video feature is enabled in production: both Image and Video flows available.
+  // Remove mediaType state, use selected template type for controls
+  const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">(
+    "all"
+  );
+
+  // Video-specific state
+  const [duration, setDuration] = useState<4 | 6 | 8>(6);
+  const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
+  const [resolution, setResolution] = useState<"720p" | "1080p">("1080p");
+  const [generateAudio, setGenerateAudio] = useState(false);
+  const [negativePrompt, setNegativePrompt] = useState("");
+
   const { data: templates = [] } = useTemplatesQuery();
+  const templatesList = templates as TemplateSummary[];
   const { data: creditsData } = useUserCreditsQuery();
   const { data: jobs = [] } = useJobsQuery();
   const { mutateAsync: requestUploadUrl } = useGenerateUploadUrlMutation();
   const { mutateAsync: triggerCreateJob } = useCreateJobMutation();
+  const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
   const userCredits = creditsData ?? 0;
 
   const categories = [
@@ -96,19 +155,38 @@ export default function GeneratorPage() {
     // "Homey",
   ];
 
-  // Filter templates by category
+  // Filter templates by category and optional type (image/video)
   const filteredTemplates = useMemo(() => {
-    if (activeCategory === "All") return templates;
-    return templates.filter((t) => t.category === activeCategory);
-  }, [activeCategory, templates]);
+    let list = templatesList;
+    const activeNormalized = (activeCategory || "")
+      .toString()
+      .trim()
+      .toLowerCase();
+    if (activeNormalized && activeNormalized !== "all") {
+      list = list.filter(
+        (t) =>
+          (t.category || "").toString().trim().toLowerCase() ===
+          activeNormalized
+      );
+    }
+    if (typeFilter !== "all") {
+      list = list.filter((t) => (t as any).type === typeFilter);
+    }
+    return list;
+  }, [activeCategory, templatesList, typeFilter]);
 
   const templateMap = useMemo(() => {
     const lookup = new Map<string, TemplateSummary>();
-    templates.forEach((template) => {
+    templatesList.forEach((template) => {
       lookup.set(template._id, template);
     });
     return lookup;
-  }, [templates]);
+  }, [templatesList]);
+
+  // Get selected template object
+  const selectedTemplateObj = selectedTemplate
+    ? templateMap.get(selectedTemplate)
+    : null;
 
   // Watch for current job status updates
   const currentJob = useMemo(
@@ -133,14 +211,22 @@ export default function GeneratorPage() {
     if (currentJob.status === "done" && currentJob.resultUrl) {
       setPreviewAfter(currentJob.resultUrl);
       setIsGenerating(false);
-      toast.success("🎄 Your Christmas card is ready!");
+      if (currentJob.type === "video") {
+        toast.success("🎬 Your video is ready!");
+      } else {
+        toast.success("🎄 Your Christmas card is ready!");
+      }
     } else if (currentJob.status === "error") {
       setIsGenerating(false);
       const errorMsg =
         currentJob.errorMessage || "Failed to generate. Credits refunded.";
       toast.error(errorMsg);
     } else if (currentJob.status === "processing") {
-      toast.info("🎨 AI is creating your Christmas card...");
+      if (currentJob.type === "video") {
+        toast.info("🎥 AI is creating your video...");
+      } else {
+        toast.info("🎨 AI is creating your Christmas card...");
+      }
     }
   }, [currentJob]);
 
@@ -235,7 +321,13 @@ export default function GeneratorPage() {
       toast.error("Please select a template.");
       return;
     }
-    if (uploadedFiles.length === 0) {
+
+    // For images, require at least one photo
+    if (
+      selectedTemplateObj &&
+      selectedTemplateObj.type === "image" &&
+      uploadedFiles.length === 0
+    ) {
       toast.error("Please upload at least one photo.");
       return;
     }
@@ -261,8 +353,12 @@ export default function GeneratorPage() {
     setPreviewAfter(null);
 
     try {
+      const filesToUpload =
+        selectedTemplateObj && selectedTemplateObj.type === "video"
+          ? uploadedFiles.slice(0, 3)
+          : uploadedFiles;
       const storageIds = await Promise.all(
-        uploadedFiles.map(async (file) => {
+        filesToUpload.map(async (file) => {
           const uploadUrl = await requestUploadUrl();
           const uploadResponse = await fetch(uploadUrl, {
             method: "POST",
@@ -282,16 +378,42 @@ export default function GeneratorPage() {
         })
       );
 
-      const jobId = await triggerCreateJob({
-        type: "image",
-        inputFileIds: storageIds,
-        templateId: template._id,
-        aspectRatio: selectedAspectRatio,
-        userInstructions: customInstructions.trim() || undefined,
-      });
+      if (selectedTemplateObj && selectedTemplateObj.type === "video") {
+        // Validate video-specific fields
+        if (customInstructions && customInstructions.length > 2000) {
+          throw new Error("User instructions must be <= 2000 characters");
+        }
+        if (negativePrompt && negativePrompt.length > 500) {
+          throw new Error("Negative prompt must be <= 500 characters");
+        }
 
-      setCurrentJobId(jobId);
-      toast.success("Generation started! This may take 30-60 seconds.");
+        // Ensure all video settings are explicitly passed (not undefined)
+        const res = await triggerCreateVideoJob({
+          templateId: template._id,
+          inputFileIds: storageIds as Id<"_storage">[],
+          userInstructions: customInstructions.trim() || undefined,
+          duration,
+          resolution,
+          aspectRatio: videoAspectRatio,
+          generateAudio,
+          negativePrompt: negativePrompt.trim() || undefined,
+        });
+
+        const jobId = (res as any)?.jobId ?? (res as any as Id<"jobs">);
+        setCurrentJobId(jobId);
+        toast.success("Video generation started! This may take 5-10 minutes.");
+      } else {
+        const jobId = await triggerCreateJob({
+          type: "image",
+          inputFileIds: storageIds,
+          templateId: template._id,
+          aspectRatio: selectedAspectRatio,
+          userInstructions: customInstructions.trim() || undefined,
+        });
+
+        setCurrentJobId(jobId);
+        toast.success("Generation started! This may take 30-60 seconds.");
+      }
     } catch (error: any) {
       setIsGenerating(false);
       const message = error?.message ?? "Failed to generate.";
@@ -305,8 +427,15 @@ export default function GeneratorPage() {
     userCredits,
     requestUploadUrl,
     triggerCreateJob,
+    triggerCreateVideoJob,
     selectedAspectRatio,
     customInstructions,
+    duration,
+    resolution,
+    videoAspectRatio,
+    generateAudio,
+    negativePrompt,
+    selectedTemplateObj,
   ]);
 
   return (
@@ -375,23 +504,28 @@ export default function GeneratorPage() {
         </div>
       )}
 
-      {/* Category buttons */}
-      <div className="flex flex-wrap justify-center gap-2 mb-6 px-4">
-        {categories.map((cat) => {
-          const isActive = activeCategory === cat;
-          const activeStyle = isActive
-            ? "text-[#1e1e1e] bg-[linear-gradient(135deg,#ffd976,#ff9f66)] border-[rgba(255,235,200,.8)] shadow-[0_12px_30px_rgba(255,170,90,.35)]"
-            : "text-[#c1c8d8] bg-[rgba(255,255,255,.06)] border-[rgba(255,255,255,.18)] hover:text-[#1e1e1e] hover:bg-[linear-gradient(135deg,#ffe6a3,#ffb482)] hover:border-[rgba(255,210,150,.6)] hover:shadow-[0_10px_24px_rgba(255,200,140,.35)] hover:-translate-y-[1px]";
-          return (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`rounded-xl border px-3 py-2 font-bold transition-all duration-200 ${activeStyle}`}
-            >
-              {cat}
-            </button>
-          );
-        })}
+      {/* Inline filter row: left (category), right (media type) */}
+      <div className="flex flex-row items-center justify-between gap-4 mb-6 px-4 max-w-5xl mx-auto">
+        <div className="w-full max-w-[320px]">
+          <Select
+            value={activeCategory}
+            onValueChange={setActiveCategory}
+            options={categories.map((c) => ({ label: c, value: c }))}
+            className="w-full"
+          />
+        </div>
+        <div className="w-full max-w-[200px]">
+          <Select
+            value={typeFilter}
+            onValueChange={(v) => setTypeFilter(v as "all" | "image" | "video")}
+            options={[
+              { label: "All Media", value: "all" },
+              { label: "Images", value: "image" },
+              { label: "Videos", value: "video" },
+            ]}
+            className="w-full"
+          />
+        </div>
       </div>
 
       {/* Template cards */}
@@ -416,6 +550,11 @@ export default function GeneratorPage() {
                   alt={template.title}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
+                {(template as any).type === "video" && (
+                  <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-purple-600 text-white text-xs font-bold">
+                    🎥 Video
+                  </div>
+                )}
                 <div className="absolute top-3 right-3 flex items-center gap-2 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] text-[#1a1a1a] text-xs font-extrabold px-2 py-1 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
                   <Coins size={14} className="text-[#1a1a1a]" />{" "}
                   {template.creditCost}
@@ -475,14 +614,29 @@ export default function GeneratorPage() {
             </div>
           ) : previewAfter ? (
             <>
-              <img
-                src={previewAfter}
-                alt="After"
-                className="max-w-full max-h-full object-contain rounded-lg"
-              />
+              {currentJob?.type === "video" ? (
+                <video
+                  src={previewAfter}
+                  controls
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                  autoPlay
+                  loop
+                />
+              ) : (
+                <img
+                  src={previewAfter}
+                  alt="After"
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                />
+              )}
               <button
                 onClick={() => {
-                  const filename = `christmas-card-${Date.now()}.png`;
+                  const extension =
+                    currentJob?.type === "video" ? "mp4" : "png";
+                  const filename =
+                    currentJob?.type === "video"
+                      ? `video-${Date.now()}.${extension}`
+                      : `christmas-card-${Date.now()}.${extension}`;
                   void handleDownload(previewAfter, filename);
                 }}
                 className="absolute bottom-4 right-4 bg-[#ffd976] text-[#1e1e1e] px-4 py-2 rounded-lg font-semibold hover:brightness-110 transition"
@@ -496,75 +650,156 @@ export default function GeneratorPage() {
         </div>
       </div>
 
-      {/* Floating Bottom Action Panel */}
+      {/* Dynamic controls based on selected template type */}
+      {/* Dynamic controls based on selected template type */}
       <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[rgba(6,10,18,0.95)] backdrop-blur-xl border-t border-[rgba(255,255,255,.18)] shadow-[0_-8px_32px_rgba(0,0,0,.5)]">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-            {/* Instructions textarea */}
-            <textarea
-              value={customInstructions}
-              onChange={(e) => setCustomInstructions(e.target.value)}
-              placeholder="Optional: Add custom instructions..."
-              className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[44px] max-h-[100px]"
-              rows={1}
-              disabled={isGenerating}
-            />
-
-            {/* Aspect Ratio & Generate */}
-            <div className="flex items-center justify-end gap-3">
-              <div className="relative">
-                <select
-                  value={selectedAspectRatio}
-                  onChange={(e) => setSelectedAspectRatio(e.target.value)}
-                  disabled={
-                    isGenerating ||
-                    uploadedFiles.length === 0 ||
-                    !selectedTemplate
-                  }
-                  className="rounded-xl px-4 py-2 pr-9 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer text-sm"
-                >
-                  <option value="match_input_image">Match input</option>
-                  <option value="1:1">1:1</option>
-                  <option value="16:9">16:9</option>
-                  <option value="9:16">9:16</option>
-                  <option value="4:3">4:3</option>
-                  <option value="3:4">3:4</option>
-                  <option value="3:2">3:2</option>
-                  <option value="2:3">2:3</option>
-                  <option value="4:5">4:5</option>
-                  <option value="5:4">5:4</option>
-                  <option value="21:9">21:9</option>
-                  <option value="9:21">9:21</option>
-                  <option value="2:1">2:1</option>
-                  <option value="1:2">1:2</option>
-                </select>
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg
-                    width="10"
-                    height="10"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M6 9L1 4H11L6 9Z" fill="#1e1e1e" />
-                  </svg>
+          <div className="flex flex-col gap-3">
+            {/* VIDEO: inline top row with custom instructions (left) and negative prompt (right) */}
+            {selectedTemplateObj && selectedTemplateObj.type === "video" ? (
+              <>
+                {/* Top row: Instructions and Negative Prompt */}
+                <div className="flex flex-col md:flex-row gap-3">
+                  <textarea
+                    value={customInstructions}
+                    onChange={(e) => setCustomInstructions(e.target.value)}
+                    placeholder="Optional: Add custom instructions..."
+                    className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px] max-h-[80px]"
+                    rows={3}
+                    disabled={isGenerating}
+                  />
+                  <textarea
+                    value={negativePrompt}
+                    onChange={(e) =>
+                      setNegativePrompt(e.target.value.slice(0, 500))
+                    }
+                    placeholder="Negative Prompt (Optional) e.g., blurry, low quality, distorted"
+                    className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px]"
+                  />
                 </div>
+
+                {/* Bottom row: Controls + Generate button */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Video controls - will wrap on small screens */}
+                  <Select
+                    value={String(duration)}
+                    onValueChange={(v) => setDuration(Number(v) as 4 | 6 | 8)}
+                    options={[
+                      { label: "4s", value: "4" },
+                      { label: "6s", value: "6" },
+                      { label: "8s", value: "8" },
+                    ]}
+                    className="min-w-[80px]"
+                  />
+                  <Select
+                    value={videoAspectRatio}
+                    onValueChange={setVideoAspectRatio}
+                    options={[
+                      { label: "16:9 (Landscape)", value: "16:9" },
+                      { label: "9:16 (Portrait)", value: "9:16" },
+                    ]}
+                    className="min-w-[120px]"
+                  />
+                  <Select
+                    value={resolution}
+                    onValueChange={(v) => setResolution(v as "720p" | "1080p")}
+                    options={[
+                      { label: "720p (HD)", value: "720p" },
+                      { label: "1080p (Full HD)", value: "1080p" },
+                    ]}
+                    className="min-w-[120px]"
+                  />
+                  <label className="flex items-center gap-2 text-sm text-white whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={generateAudio}
+                      onChange={(e) => setGenerateAudio(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    Generate Audio
+                  </label>
+
+                  {/* Generate button - pushes to right on large screens, stays on left after wrapping on small screens */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleGenerate();
+                    }}
+                    disabled={
+                      isGenerating ||
+                      uploadedFiles.length === 0 ||
+                      !selectedTemplate
+                    }
+                    className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ml-auto"
+                  >
+                    {isGenerating ? "Generating..." : "Generate"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              // IMAGE / default layout (preserve existing behavior)
+              <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
+                <textarea
+                  value={customInstructions}
+                  onChange={(e) => setCustomInstructions(e.target.value)}
+                  placeholder="Optional: Add custom instructions..."
+                  className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[44px] max-h-[100px]"
+                  rows={1}
+                  disabled={isGenerating}
+                />
+
+                {selectedTemplateObj &&
+                  selectedTemplateObj.type === "image" && (
+                    <div className="flex items-center justify-end gap-3">
+                      <div className="relative">
+                        <Select
+                          value={selectedAspectRatio}
+                          onValueChange={setSelectedAspectRatio}
+                          options={[
+                            {
+                              label: "Match input",
+                              value: "match_input_image",
+                            },
+                            { label: "1:1", value: "1:1" },
+                            { label: "16:9", value: "16:9" },
+                            { label: "9:16", value: "9:16" },
+                            { label: "4:3", value: "4:3" },
+                            { label: "3:4", value: "3:4" },
+                            { label: "3:2", value: "3:2" },
+                            { label: "2:3", value: "2:3" },
+                            { label: "4:5", value: "4:5" },
+                            { label: "5:4", value: "5:4" },
+                            { label: "21:9", value: "21:9" },
+                            { label: "9:21", value: "9:21" },
+                            { label: "2:1", value: "2:1" },
+                            { label: "1:2", value: "1:2" },
+                          ]}
+                          disabled={
+                            isGenerating ||
+                            uploadedFiles.length === 0 ||
+                            !selectedTemplate
+                          }
+                          className="min-w-[120px]"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleGenerate();
+                        }}
+                        disabled={
+                          isGenerating ||
+                          uploadedFiles.length === 0 ||
+                          !selectedTemplate
+                        }
+                        className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {isGenerating ? "Generating..." : "Generate"}
+                      </button>
+                    </div>
+                  )}
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  void handleGenerate();
-                }}
-                disabled={
-                  isGenerating ||
-                  uploadedFiles.length === 0 ||
-                  !selectedTemplate
-                }
-                className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              >
-                {isGenerating ? "Generating..." : "Generate"}
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>

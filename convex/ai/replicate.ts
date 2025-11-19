@@ -70,7 +70,7 @@ async function verifyApiToken(apiToken: string): Promise<boolean> {
  * Gets the latest version ID for a model from Replicate API
  * Tries multiple approaches to get the version ID
  */
-async function getModelVersionId(
+export async function getModelVersionId(
   apiToken: string,
   owner: string,
   modelName: string
@@ -275,7 +275,7 @@ async function getModelVersionId(
  * Creates a prediction on Replicate API
  * Replicate API requires 'version' parameter (not 'model')
  */
-async function createPrediction(
+export async function createPrediction(
   apiToken: string,
   modelPath: string,
   input: Record<string, unknown>
@@ -286,49 +286,9 @@ async function createPrediction(
     throw new Error(`Invalid model path format: ${modelPath}`);
   }
 
-  let versionId: string;
-
-  try {
-    // Get the latest version ID for this model
-    versionId = await getModelVersionId(apiToken, owner, modelName);
-  } catch (versionError) {
-    // If we can't get version ID, try using model path directly as fallback
-    // Some Replicate endpoints might support this
-    console.warn(
-      "[Replicate] Failed to get version ID, trying model path directly",
-      {
-        error:
-          versionError instanceof Error
-            ? versionError.message
-            : "Unknown error",
-        modelPath,
-      }
-    );
-
-    // Try creating prediction with model path instead of version
-    // Note: This might not work with REST API v1, but worth trying
-    const fallbackResponse = await fetch(`${REPLICATE_API_BASE}/predictions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Token ${apiToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: modelPath, // Try using 'model' instead of 'version'
-        input,
-      }),
-    });
-
-    if (fallbackResponse.ok) {
-      console.log(
-        "[Replicate] Successfully created prediction using model path directly"
-      );
-      return (await fallbackResponse.json()) as ReplicatePrediction;
-    }
-
-    // If fallback also failed, throw the original version error
-    throw versionError;
-  }
+  // Get the latest version ID for this model
+  // Replicate API v1 requires 'version' parameter, not 'model'
+  const versionId = await getModelVersionId(apiToken, owner, modelName);
 
   // Create prediction with version ID
   const response = await fetch(`${REPLICATE_API_BASE}/predictions`, {
@@ -374,7 +334,7 @@ async function createPrediction(
 /**
  * Polls Replicate API until prediction completes
  */
-async function pollPrediction(
+export async function pollPrediction(
   apiToken: string,
   predictionId: string
 ): Promise<ReplicatePrediction> {

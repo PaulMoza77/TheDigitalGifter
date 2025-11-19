@@ -84,15 +84,44 @@ const stripeWebhook = httpAction(async (ctx, req) => {
       sessionId: session?.id,
     });
 
-    const PACK_TO_CREDITS: Record<string, number> = {
-      starter: 25,
-      creator: 50,
-      pro: 500,
-      enterprise: 5000,
+    // Preferred: map Stripe price IDs (from env) to credit amounts so the
+    // webhook can be authoritative and independent from client-sent metadata.
+    const PRICE_ID_TO_CREDITS: Record<string, number> = {
+      // env vars expected to hold Stripe price IDs (plan-specific names)
+      [requireEnv("PRICE_STARTER")]: 100,
+      [requireEnv("PRICE_CREATOR")]: 250,
+      [requireEnv("PRICE_PRO")]: 4000,
+      [requireEnv("PRICE_ENTERPRISE")]: 50000,
     };
-    const amount = pack ? (PACK_TO_CREDITS[pack] ?? 0) : 0;
 
-    console.log("[Webhook] Calculated credits", { pack, amount });
+    // Fallback mapping if metadata.pack is present (keeps behavior for older sessions)
+    const PACK_TO_CREDITS: Record<string, number> = {
+      starter: 100,
+      creator: 250,
+      pro: 4000,
+      enterprise: 50000,
+    };
+
+    // Try to determine price id from session (best-effort). Stripe may or may not
+    // include line_items in the session payload depending on how the webhook is configured.
+    const sessionPriceId: string | undefined =
+      session?.line_items?.data?.[0]?.price?.id ||
+      session?.display_items?.[0]?.price?.id ||
+      session?.line_items?.data?.[0]?.price ||
+      undefined;
+
+    let amount = 0;
+    if (sessionPriceId && PRICE_ID_TO_CREDITS[sessionPriceId]) {
+      amount = PRICE_ID_TO_CREDITS[sessionPriceId];
+    } else if (pack) {
+      amount = PACK_TO_CREDITS[pack] ?? 0;
+    }
+
+    console.log("[Webhook] Determined credits", {
+      pack,
+      sessionPriceId,
+      amount,
+    });
 
     // 1) Dacă avem userId (și nu e "guest_user"), adăugăm pe userId
     if (userId && userId !== "guest_user" && amount > 0) {

@@ -24,16 +24,21 @@ export function PricingModal({
   if (!isOpen) return null;
 
   const plans: Plan[] = [
-    { pack: "starter", name: "Starter", price: "€4.98", credits: 25 },
+    { pack: "starter", name: "Starter", price: "€4.98", credits: 100 },
     {
       pack: "creator",
       name: "Creator",
       price: "€9.98",
-      credits: 50,
+      credits: 250,
       popular: true,
     },
-    { pack: "pro", name: "Pro", price: "€78.98", credits: 500 },
-    { pack: "enterprise", name: "Enterprise", price: "€499.98", credits: 5000 },
+    { pack: "pro", name: "Pro", price: "€78.98", credits: 4000 },
+    {
+      pack: "enterprise",
+      name: "Enterprise",
+      price: "€499.98",
+      credits: 50000,
+    },
   ];
 
   const handleBuy = async (pack: Pack) => {

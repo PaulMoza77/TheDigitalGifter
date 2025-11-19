@@ -7,7 +7,9 @@ export type TemplateSummary = {
   title: string;
   category: string;
   subCategory: string;
-  type: string;
+  // Normalized template type: 'image' | 'video'.
+  // Legacy DB values ("photo", "card") are normalized to "image" by server helpers.
+  type: "image" | "video";
   orientation: "portrait" | "landscape";
   aspectRatio: string;
   previewUrl: string;

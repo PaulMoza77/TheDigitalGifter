@@ -13,7 +13,7 @@ export function SignInButton() {
         [
           "Sign-in error. Verifică:",
           "1) Redirect URI: https://giddy-swan-737.convex.app/auth/callback/google",
-          "2) Origin: https://app.thedigitalgifter.com",
+          "2) Origin: https://thedigitalgifter.com",
           "3) Test users pe OAuth consent screen",
           "4) GOOGLE_CLIENT_ID / SECRET în Convex",
         ].join("\n")

@@ -104,7 +104,7 @@ export const JobsList = memo(function JobsList() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                          🎄 IMAGE
+                          {job.type === "video" ? "🎬 VIDEO" : "🎄 IMAGE"}
                         </span>
                         <StatusBadge status={job.status} />
                         {job.debited && (
@@ -141,34 +141,67 @@ export const JobsList = memo(function JobsList() {
                   {job.status === "done" && job.resultUrl && (
                     <div className="mt-3">
                       <div className="relative group">
-                        <img
-                          src={job.resultUrl}
-                          alt="Generated Christmas card"
-                          className="w-full h-48 object-cover rounded-md border-2 border-red-200"
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-md flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                            <button
-                              onClick={() =>
-                                window.open(job.resultUrl, "_blank")
-                              }
-                              className="bg-white text-gray-800 px-3 py-1 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
-                            >
-                              👁️ View
-                            </button>
-                            <button
-                              onClick={() => {
-                                void handleDownload(
-                                  job.resultUrl!,
-                                  `christmas-card-${job._id}.jpg`
-                                );
-                              }}
-                              className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
-                            >
-                              📥 Download
-                            </button>
+                        {job.type === "video" ? (
+                          <div className="w-full">
+                            <video
+                              src={job.resultUrl}
+                              controls
+                              className="w-full h-48 object-cover rounded-md border-2 border-red-200 bg-black"
+                            />
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() =>
+                                  window.open(job.resultUrl, "_blank")
+                                }
+                                className="bg-white text-gray-800 px-3 py-1 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
+                              >
+                                👁️ View
+                              </button>
+                              <button
+                                onClick={() => {
+                                  void handleDownload(
+                                    job.resultUrl!,
+                                    `video-${job._id}.mp4`
+                                  );
+                                }}
+                                className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
+                              >
+                                📥 Download
+                              </button>
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <>
+                            <img
+                              src={job.resultUrl}
+                              alt="Generated Christmas card"
+                              className="w-full h-48 object-cover rounded-md border-2 border-red-200"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-md flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    window.open(job.resultUrl, "_blank")
+                                  }
+                                  className="bg-white text-gray-800 px-3 py-1 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
+                                >
+                                  👁️ View
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    void handleDownload(
+                                      job.resultUrl!,
+                                      `christmas-card-${job._id}.jpg`
+                                    );
+                                  }}
+                                  className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
+                                >
+                                  📥 Download
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
