@@ -45,7 +45,8 @@ function Select({
 import { useBootstrapUser } from "../hooks/useBootstrapUser";
 import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
-import { Coins } from "lucide-react";
+import { Coins, Play } from "lucide-react";
+import VideoModal from "./VideoModal";
 import { TemplateSummary } from "@/types/templates";
 import {
   useTemplatesQuery,
@@ -122,16 +123,23 @@ export default function GeneratorPage() {
   const [selectedAspectRatio, setSelectedAspectRatio] =
     useState("match_input_image");
 
+  const [modal, setModal] = useState<{
+    open: boolean;
+    src: string;
+    title?: string;
+  }>({
+    open: false,
+    src: "",
+    title: "",
+  });
+
   // Video feature is enabled in production: both Image and Video flows available.
   // Remove mediaType state, use selected template type for controls
   const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">(
     "all"
   );
 
-  // Video-specific state
-  const [duration, setDuration] = useState<4 | 6 | 8>(6);
-  const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
-  const [resolution, setResolution] = useState<"720p" | "1080p">("1080p");
+  // Video-specific state (R2V enforced: duration=8, aspect_ratio=16:9, resolution=1080p)
   const [generateAudio, setGenerateAudio] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState("");
 
@@ -353,10 +361,21 @@ export default function GeneratorPage() {
     setPreviewAfter(null);
 
     try {
-      const filesToUpload =
-        selectedTemplateObj && selectedTemplateObj.type === "video"
-          ? uploadedFiles.slice(0, 3)
-          : uploadedFiles;
+      // Video R2V validation: require 1-3 images
+      if (selectedTemplateObj && selectedTemplateObj.type === "video") {
+        if (uploadedFiles.length === 0) {
+          toast.error("Please upload 1-3 photos for video generation.");
+          setIsGenerating(false);
+          return;
+        }
+        if (uploadedFiles.length > 3) {
+          toast.error("You can upload up to 3 photos for video generation.");
+          setIsGenerating(false);
+          return;
+        }
+      }
+
+      const filesToUpload = uploadedFiles;
       const storageIds = await Promise.all(
         filesToUpload.map(async (file) => {
           const uploadUrl = await requestUploadUrl();
@@ -387,14 +406,14 @@ export default function GeneratorPage() {
           throw new Error("Negative prompt must be <= 500 characters");
         }
 
-        // Ensure all video settings are explicitly passed (not undefined)
+        // Enforce R2V parameters: always duration=8, aspect_ratio=16:9, resolution=1080p
         const res = await triggerCreateVideoJob({
           templateId: template._id,
           inputFileIds: storageIds as Id<"_storage">[],
           userInstructions: customInstructions.trim() || undefined,
-          duration,
-          resolution,
-          aspectRatio: videoAspectRatio,
+          duration: 8,
+          resolution: "1080p",
+          aspectRatio: "16:9",
           generateAudio,
           negativePrompt: negativePrompt.trim() || undefined,
         });
@@ -430,9 +449,7 @@ export default function GeneratorPage() {
     triggerCreateVideoJob,
     selectedAspectRatio,
     customInstructions,
-    duration,
-    resolution,
-    videoAspectRatio,
+
     generateAudio,
     negativePrompt,
     selectedTemplateObj,
@@ -473,6 +490,15 @@ export default function GeneratorPage() {
             : ""}
         </p>
       </section>
+
+      {/* Video preview modal (full view) */}
+      {modal.open && (
+        <VideoModal
+          src={modal.src}
+          title={modal.title}
+          onClose={() => setModal({ open: false, src: "", title: "" })}
+        />
+      )}
 
       {/* Uploaded images preview */}
       {uploadedFiles.length > 0 && (
@@ -529,7 +555,7 @@ export default function GeneratorPage() {
       </div>
 
       {/* Template cards */}
-      <div className="mx-auto grid max-w-5xl grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 px-4 pb-8">
+      <div className="mx-auto grid max-w-5xl grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 px-4 pb-8">
         {filteredTemplates.map((template) => {
           const isSelected = selectedTemplate === template._id;
           return (
@@ -545,29 +571,51 @@ export default function GeneratorPage() {
               }`}
             >
               <div className="relative aspect-[4/5] w-full">
-                <img
-                  src={template.previewUrl}
-                  alt={template.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                {(template as any).type === "video" && (
-                  <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-purple-600 text-white text-xs font-bold">
-                    🎥 Video
-                  </div>
+                {template.type === "video" ? (
+                  <>
+                    <video
+                      src={template.previewUrl}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setModal({
+                          open: true,
+                          src: template.previewUrl,
+                          title: template.title,
+                        });
+                      }}
+                      aria-label={`Preview ${template.title}`}
+                      className="absolute left-3 top-3 p-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow-lg"
+                    >
+                      <Play size={18} />
+                    </button>
+                  </>
+                ) : (
+                  <img
+                    src={template.previewUrl}
+                    alt={template.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
                 )}
                 <div className="absolute top-3 right-3 flex items-center gap-2 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] text-[#1a1a1a] text-xs font-extrabold px-2 py-1 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
                   <Coins size={14} className="text-[#1a1a1a]" />{" "}
                   {template.creditCost}
                 </div>
-
                 {isSelected && (
                   <div className="absolute inset-0 bg-[rgba(255,217,118,0.2)] flex items-center justify-center">
                     <span className="text-4xl">✓</span>
                   </div>
                 )}
               </div>
-              <div className="p-4 bg-[rgba(255,255,255,.06)]">
-                <h3 className="font-semibold text-base leading-tight">
+              <div className=" p-2 sm:p-4 bg-[rgba(255,255,255,.06)]">
+                <h3 className="font-semibold text-sm sm:text-base leading-tight">
                   {template.title}
                 </h3>
                 <p className="text-xs text-[#c1c8d8] mt-1">
@@ -651,137 +699,52 @@ export default function GeneratorPage() {
       </div>
 
       {/* Dynamic controls based on selected template type */}
-      {/* Dynamic controls based on selected template type */}
       <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[rgba(6,10,18,0.95)] backdrop-blur-xl border-t border-[rgba(255,255,255,.18)] shadow-[0_-8px_32px_rgba(0,0,0,.5)]">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col gap-3">
-            {/* VIDEO: inline top row with custom instructions (left) and negative prompt (right) */}
-            {selectedTemplateObj && selectedTemplateObj.type === "video" ? (
-              <>
-                {/* Top row: Instructions and Negative Prompt */}
-                <div className="flex flex-col md:flex-row gap-3">
-                  <textarea
-                    value={customInstructions}
-                    onChange={(e) => setCustomInstructions(e.target.value)}
-                    placeholder="Optional: Add custom instructions..."
-                    className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px] max-h-[80px]"
-                    rows={3}
-                    disabled={isGenerating}
-                  />
-                  <textarea
-                    value={negativePrompt}
-                    onChange={(e) =>
-                      setNegativePrompt(e.target.value.slice(0, 500))
-                    }
-                    placeholder="Negative Prompt (Optional) e.g., blurry, low quality, distorted"
-                    className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px]"
-                  />
-                </div>
+            {/* Show controls only when a template is selected. Render video controls for video templates, image controls for image templates. */}
+            {selectedTemplateObj ? (
+              selectedTemplateObj.type === "video" ? (
+                <>
+                  {/* R2V notice shown in the video controls area */}
+                  <p className="text-xs text-[#c1c8d8] mt-2">
+                    Faces are matched; poses are synthesized. Moreover, if you
+                    select Generate Audio then Credits will be consumed 2x.
+                  </p>
 
-                {/* Bottom row: Controls + Generate button */}
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Video controls - will wrap on small screens */}
-                  <Select
-                    value={String(duration)}
-                    onValueChange={(v) => setDuration(Number(v) as 4 | 6 | 8)}
-                    options={[
-                      { label: "4s", value: "4" },
-                      { label: "6s", value: "6" },
-                      { label: "8s", value: "8" },
-                    ]}
-                    className="min-w-[80px]"
-                  />
-                  <Select
-                    value={videoAspectRatio}
-                    onValueChange={setVideoAspectRatio}
-                    options={[
-                      { label: "16:9 (Landscape)", value: "16:9" },
-                      { label: "9:16 (Portrait)", value: "9:16" },
-                    ]}
-                    className="min-w-[120px]"
-                  />
-                  <Select
-                    value={resolution}
-                    onValueChange={(v) => setResolution(v as "720p" | "1080p")}
-                    options={[
-                      { label: "720p (HD)", value: "720p" },
-                      { label: "1080p (Full HD)", value: "1080p" },
-                    ]}
-                    className="min-w-[120px]"
-                  />
-                  <label className="flex items-center gap-2 text-sm text-white whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={generateAudio}
-                      onChange={(e) => setGenerateAudio(e.target.checked)}
-                      className="w-4 h-4"
+                  {/*Instructions and Negative Prompt */}
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <textarea
+                      value={customInstructions}
+                      onChange={(e) => setCustomInstructions(e.target.value)}
+                      placeholder="Optional: Add custom instructions..."
+                      className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px] max-h-[80px]"
+                      rows={3}
+                      disabled={isGenerating}
                     />
-                    Generate Audio
-                  </label>
+                    <textarea
+                      value={negativePrompt}
+                      onChange={(e) =>
+                        setNegativePrompt(e.target.value.slice(0, 500))
+                      }
+                      placeholder="Negative Prompt (Optional) e.g., blurry, low quality, distorted"
+                      className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px]"
+                    />
+                    {/* Bottom row: Controls + Generate button */}
+                    <div className="flex flex-row md:flex-col flex-wrap gap-2">
+                      {/* Video controls - will wrap on small screens */}
 
-                  {/* Generate button - pushes to right on large screens, stays on left after wrapping on small screens */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleGenerate();
-                    }}
-                    disabled={
-                      isGenerating ||
-                      uploadedFiles.length === 0 ||
-                      !selectedTemplate
-                    }
-                    className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ml-auto"
-                  >
-                    {isGenerating ? "Generating..." : "Generate"}
-                  </button>
-                </div>
-              </>
-            ) : (
-              // IMAGE / default layout (preserve existing behavior)
-              <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
-                <textarea
-                  value={customInstructions}
-                  onChange={(e) => setCustomInstructions(e.target.value)}
-                  placeholder="Optional: Add custom instructions..."
-                  className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[44px] max-h-[100px]"
-                  rows={1}
-                  disabled={isGenerating}
-                />
-
-                {selectedTemplateObj &&
-                  selectedTemplateObj.type === "image" && (
-                    <div className="flex items-center justify-end gap-3">
-                      <div className="relative">
-                        <Select
-                          value={selectedAspectRatio}
-                          onValueChange={setSelectedAspectRatio}
-                          options={[
-                            {
-                              label: "Match input",
-                              value: "match_input_image",
-                            },
-                            { label: "1:1", value: "1:1" },
-                            { label: "16:9", value: "16:9" },
-                            { label: "9:16", value: "9:16" },
-                            { label: "4:3", value: "4:3" },
-                            { label: "3:4", value: "3:4" },
-                            { label: "3:2", value: "3:2" },
-                            { label: "2:3", value: "2:3" },
-                            { label: "4:5", value: "4:5" },
-                            { label: "5:4", value: "5:4" },
-                            { label: "21:9", value: "21:9" },
-                            { label: "9:21", value: "9:21" },
-                            { label: "2:1", value: "2:1" },
-                            { label: "1:2", value: "1:2" },
-                          ]}
-                          disabled={
-                            isGenerating ||
-                            uploadedFiles.length === 0 ||
-                            !selectedTemplate
-                          }
-                          className="min-w-[120px]"
+                      <label className="flex items-center gap-2 text-sm text-white whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={generateAudio}
+                          onChange={(e) => setGenerateAudio(e.target.checked)}
+                          className="w-4 h-4"
                         />
-                      </div>
+                        With Audio
+                      </label>
+
+                      {/* Generate button - pushes to right on large screens, stays on left after wrapping on small screens */}
                       <button
                         type="button"
                         onClick={() => {
@@ -792,14 +755,78 @@ export default function GeneratorPage() {
                           uploadedFiles.length === 0 ||
                           !selectedTemplate
                         }
-                        className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ml-auto"
                       >
                         {isGenerating ? "Generating..." : "Generate"}
                       </button>
                     </div>
-                  )}
-              </div>
-            )}
+                  </div>
+                </>
+              ) : (
+                // IMAGE controls
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
+                  <textarea
+                    value={customInstructions}
+                    onChange={(e) => setCustomInstructions(e.target.value)}
+                    placeholder="Optional: Add custom instructions..."
+                    className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[44px] max-h-[100px]"
+                    rows={1}
+                    disabled={isGenerating}
+                  />
+
+                  {selectedTemplateObj &&
+                    selectedTemplateObj.type === "image" && (
+                      <div className="flex items-center justify-end gap-3">
+                        <div className="relative">
+                          <Select
+                            value={selectedAspectRatio}
+                            onValueChange={setSelectedAspectRatio}
+                            options={[
+                              {
+                                label: "Match input",
+                                value: "match_input_image",
+                              },
+                              { label: "1:1", value: "1:1" },
+                              { label: "16:9", value: "16:9" },
+                              { label: "9:16", value: "9:16" },
+                              { label: "4:3", value: "4:3" },
+                              { label: "3:4", value: "3:4" },
+                              { label: "3:2", value: "3:2" },
+                              { label: "2:3", value: "2:3" },
+                              { label: "4:5", value: "4:5" },
+                              { label: "5:4", value: "5:4" },
+                              { label: "21:9", value: "21:9" },
+                              { label: "9:21", value: "9:21" },
+                              { label: "2:1", value: "2:1" },
+                              { label: "1:2", value: "1:2" },
+                            ]}
+                            disabled={
+                              isGenerating ||
+                              uploadedFiles.length === 0 ||
+                              !selectedTemplate
+                            }
+                            className="min-w-[120px]"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleGenerate();
+                          }}
+                          disabled={
+                            isGenerating ||
+                            uploadedFiles.length === 0 ||
+                            !selectedTemplate
+                          }
+                          className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                          {isGenerating ? "Generating..." : "Generate"}
+                        </button>
+                      </div>
+                    )}
+                </div>
+              )
+            ) : null}
           </div>
         </div>
       </div>

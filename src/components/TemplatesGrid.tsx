@@ -1,4 +1,6 @@
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState, useRef } from "react";
+import { Play, Maximize } from "lucide-react";
+import VideoModal from "./VideoModal";
 import { Id } from "../../convex/_generated/dataModel";
 import { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
@@ -16,10 +18,26 @@ function TemplatesGridComponent({
   onPick,
   selectedTemplateId,
 }: TemplatesGridProps) {
+  const [modal, setModal] = useState<{
+    open: boolean;
+    src: string;
+    title: string;
+  }>({
+    open: false,
+    src: "",
+    title: "",
+  });
+  // refs to video elements by template id for inline playback control
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const [scene, setScene] = useState<string>("");
   const [orientation, setOrientation] = useState<string>("");
   const [priceRange, setPriceRange] = useState<string>("");
   const { data: allTemplates = [] } = useTemplatesQuery();
+  // Ensure the query result is treated as TemplateSummary[] for correct typing
+  const templatesArray = useMemo(
+    () => (allTemplates ?? []) as TemplateSummary[],
+    [allTemplates]
+  );
   const handleClearFilters = useCallback(() => {
     setScene("");
     setOrientation("");
@@ -27,7 +45,7 @@ function TemplatesGridComponent({
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    return allTemplates.filter((template) => {
+    return templatesArray.filter((template) => {
       const matchesScene = scene ? template.scene === scene : true;
       const matchesOrientation = orientation
         ? template.orientation === orientation
@@ -42,14 +60,14 @@ function TemplatesGridComponent({
 
       return matchesScene && matchesOrientation && matchesPrice;
     });
-  }, [allTemplates, scene, orientation, priceRange]);
+  }, [templatesArray, scene, orientation, priceRange]);
 
   const sceneCounts = useMemo(() => {
-    return allTemplates.reduce<Record<string, number>>((acc, template) => {
+    return templatesArray.reduce<Record<string, number>>((acc, template) => {
       acc[template.scene] = (acc[template.scene] ?? 0) + 1;
       return acc;
     }, {});
-  }, [allTemplates]);
+  }, [templatesArray]);
 
   const uniqueScenes = useMemo(
     () => Object.keys(sceneCounts).sort(),
@@ -70,7 +88,7 @@ function TemplatesGridComponent({
           onChange={(e) => setScene(e.target.value)}
           className="festive-select text-sm"
         >
-          <option value="">All scenes ({allTemplates.length})</option>
+          <option value="">All scenes ({templatesArray.length})</option>
           {uniqueScenes.map((s) => (
             <option key={s} value={s}>
               {s.charAt(0).toUpperCase() + s.slice(1)} ({sceneCounts[s] ?? 0})
@@ -114,7 +132,7 @@ function TemplatesGridComponent({
 
       {/* Results count */}
       <div className="text-sm text-light-muted">
-        Showing {filteredTemplates.length} of {allTemplates.length} templates
+        Showing {filteredTemplates.length} of {templatesArray.length} templates
       </div>
 
       {/* Templates Grid */}
@@ -133,12 +151,72 @@ function TemplatesGridComponent({
                   ? "aspect-[3/4]"
                   : "aspect-[4/3]"
               }`}
-              style={{
-                backgroundImage: `url(${template.previewUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
             >
+              {/* Media (image or video) */}
+              <div className="absolute inset-0">
+                {template.type === "video" ? (
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[template._id] = el;
+                    }}
+                    src={template.previewUrl}
+                    className="w-full h-full object-cover"
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                  />
+                ) : (
+                  <img
+                    src={template.previewUrl}
+                    alt={template.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                )}
+
+                {/* Play overlay for videos */}
+                {template.type === "video" && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const v = videoRefs.current[template._id];
+                        if (!v) return;
+                        if (v.paused) {
+                          v.muted = true;
+                          v.play().catch(() => {});
+                        } else {
+                          v.pause();
+                        }
+                      }}
+                      aria-label={`Play inline ${template.title}`}
+                      className="absolute left-3 top-3 p-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow-lg"
+                    >
+                      <Play size={18} />
+                    </button>
+
+                    {/* Full view opens modal with controls */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setModal({
+                          open: true,
+                          src: template.previewUrl,
+                          title: template.title,
+                        });
+                      }}
+                      aria-label={`Full view ${template.title}`}
+                      className="absolute right-3 top-3 p-1 rounded-full bg-white/10 text-white text-xs font-bold shadow-lg"
+                    >
+                      <Maximize size={16} />
+                    </button>
+                  </>
+                )}
+              </div>
+
               {/* Overlay for better text readability */}
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all" />
 
@@ -197,6 +275,14 @@ function TemplatesGridComponent({
           </button>
         ))}
       </div>
+
+      {modal.open && (
+        <VideoModal
+          src={modal.src}
+          title={modal.title}
+          onClose={() => setModal({ open: false, src: "", title: "" })}
+        />
+      )}
 
       {filteredTemplates.length === 0 && (
         <div className="text-center py-12 glass-card">

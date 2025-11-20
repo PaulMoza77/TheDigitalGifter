@@ -1,13 +1,15 @@
-// Wrapper around Replicate's veo-3 model with retry/backoff and standardized results
+// Wrapper around Replicate's Veo 3.1 model with retry/backoff and standardized results
 import { createPrediction, pollPrediction } from "./replicate";
 
 export type VeoInput = {
   prompt: string;
-  duration?: number; // 4|6|8
-  resolution?: string; // "720p"|"1080p"
-  aspect_ratio?: string; // "16:9"|"9:16" etc.
+  duration?: 4 | 6 | 8;
+  resolution?: "720p" | "1080p";
+  aspect_ratio?: "16:9" | "9:16";
   generate_audio?: boolean;
   image?: string | null;
+  last_frame?: string | null;
+  reference_images?: string[] | null;
   negative_prompt?: string | null;
   seed?: number | null;
 };
@@ -67,13 +69,16 @@ export async function runVeo3(
       // Build the input object according to Veo-3 schema
       const payloadInput: any = {};
       payloadInput.prompt = input.prompt;
-      if (typeof input.duration !== "undefined")
+      if (typeof input.duration !== "undefined") {
         payloadInput.duration = input.duration;
+      }
       if (input.resolution) payloadInput.resolution = input.resolution;
       if (input.aspect_ratio) payloadInput.aspect_ratio = input.aspect_ratio;
       if (typeof input.generate_audio !== "undefined")
         payloadInput.generate_audio = input.generate_audio;
-      if (input.image) payloadInput.image = input.image;
+      // For R2V we use `reference_images` exclusively (1-3 items).
+      if (input.reference_images && input.reference_images.length > 0)
+        payloadInput.reference_images = input.reference_images;
       if (input.negative_prompt)
         payloadInput.negative_prompt = input.negative_prompt;
       if (typeof input.seed === "number") payloadInput.seed = input.seed;
@@ -81,7 +86,7 @@ export async function runVeo3(
       // Create prediction (shared helper handles version lookup and POST)
       const prediction = await createPrediction(
         apiToken,
-        "google/veo-3",
+        process.env.REPLICATE_VEO_MODEL?.trim() || "google/veo-3.1",
         payloadInput
       );
 

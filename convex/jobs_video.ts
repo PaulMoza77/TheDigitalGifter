@@ -96,46 +96,102 @@ export const generateVideoWithAI = internalAction({
         .slice(0, 4000);
     const finalPrompt = sanitize(String(job.prompt || template?.prompt || ""));
 
-    // Prepare input file URL (first of up to 3)
-    const inputFileIds = (
+    // Prepare input file IDs (support both new and legacy shapes)
+    const inputFileIds =
       job.inputFileIds && Array.isArray(job.inputFileIds)
         ? job.inputFileIds
         : job.inputFileId
           ? [job.inputFileId]
-          : []
-    ).slice(0, 3);
-    let inputFileUrl: string | undefined;
-    if (inputFileIds.length > 0) {
-      // Use Convex storage to get an accessible URL for model input
-      try {
-        inputFileUrl = (await ctx.storage.getUrl(inputFileIds[0])) ?? undefined;
-      } catch (e) {
-        console.error("[generateVideoWithAI] Failed to get input file URL", {
-          jobId: args.jobId,
-          err: getErrorMessage(e),
+          : [];
+
+    // Validate: require 1-3 images for R2V
+    if (!inputFileIds || inputFileIds.length === 0) {
+      const msg = "No reference images uploaded. Please upload 1-3 images.";
+      console.warn("[generateVideoWithAI]", { jobId: args.jobId, msg });
+      await ctx.runMutation((internal as any).jobs.updateStatus, {
+        jobId: args.jobId,
+        status: "error",
+        errorMessage: msg,
+      });
+      return;
+    }
+    if (inputFileIds.length > 3) {
+      const msg = "Too many images uploaded. Only 1-3 images are supported.";
+      console.warn("[generateVideoWithAI]", {
+        jobId: args.jobId,
+        msg,
+        count: inputFileIds.length,
+      });
+      await ctx.runMutation((internal as any).jobs.updateStatus, {
+        jobId: args.jobId,
+        status: "error",
+        errorMessage: msg,
+      });
+      // Refund credits if debited
+      if (job.debited && job.debited > 0) {
+        await ctx.runMutation((internal as any).credits.refundCreditsByUserId, {
+          userId: job.userId,
+          amount: job.debited,
         });
+      }
+      return;
+    }
+
+    // Fetch signed URLs for all provided storage IDs
+    const referenceImageUrls: string[] = [];
+    for (const storageId of inputFileIds) {
+      try {
+        const url = await ctx.storage.getUrl(storageId);
+        if (url) referenceImageUrls.push(url);
+      } catch (e) {
+        console.error(
+          "[generateVideoWithAI] Failed to get reference image URL",
+          {
+            jobId: args.jobId,
+            storageId,
+            err: getErrorMessage(e),
+          }
+        );
       }
     }
 
-    // Prepare veo input - use stored job values, only fall back to defaults if explicitly undefined
-    // This ensures the frontend selections are respected
+    if (referenceImageUrls.length === 0) {
+      const msg = "Failed to fetch reference image URLs.";
+      console.error("[generateVideoWithAI]", { jobId: args.jobId, msg });
+      await ctx.runMutation((internal as any).jobs.updateStatus, {
+        jobId: args.jobId,
+        status: "error",
+        errorMessage: msg,
+      });
+      return;
+    }
+
+    // Build unified R2V input: always use reference_images (1-3 items), never `image`.
     const veoInput: VeoInput = {
       prompt: finalPrompt,
-      duration: job.duration !== undefined ? job.duration : 8,
+      // Enforce Veo 3.1 R2V requirements
+      duration: 8,
       resolution: job.resolution !== undefined ? job.resolution : "1080p",
-      aspect_ratio: job.aspectRatio !== undefined ? job.aspectRatio : "16:9",
-      generate_audio: job.generateAudio !== undefined ? Boolean(job.generateAudio) : true,
-      image: inputFileUrl ?? null,
+      aspect_ratio: "16:9",
+      generate_audio:
+        job.generateAudio !== undefined ? Boolean(job.generateAudio) : true,
+      reference_images: referenceImageUrls,
       negative_prompt: job.negativePrompt ?? null,
       seed: job.seed ?? null,
     };
-    
+
+    console.log(
+      "[generateVideoWithAI] Using unified reference-image mode (R2V)",
+      { jobId: args.jobId, referenceCount: referenceImageUrls.length }
+    );
+
     // Log the values being sent to VEO-3 for debugging
-    console.log("[generateVideoWithAI] VEO-3 input settings:", {
+    console.log("[generateVideoWithAI] Veo 3.1 input settings:", {
       duration: veoInput.duration,
       resolution: veoInput.resolution,
       aspect_ratio: veoInput.aspect_ratio,
       generate_audio: veoInput.generate_audio,
+      referenceImages: veoInput.reference_images?.length ?? 0,
       fromJob: {
         duration: job.duration,
         resolution: job.resolution,
