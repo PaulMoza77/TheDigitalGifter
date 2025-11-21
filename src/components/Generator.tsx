@@ -264,6 +264,72 @@ export default function GeneratorPage() {
   }, []);
 
   // Handle download for both images and videos
+  // const handleDownload = useCallback(async (url: string, filename: string) => {
+  //   if (!url) {
+  //     toast.error("No file to download");
+  //     return;
+  //   }
+
+  //   try {
+  //     // Try direct download first (works for Convex URLs and same-origin URLs)
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.download = filename;
+  //     link.style.display = "none";
+
+  //     document.body.appendChild(link);
+  //     link.click();
+
+  //     // Clean up
+  //     setTimeout(() => {
+  //       document.body.removeChild(link);
+  //     }, 100);
+
+  //     toast.success("Download started!");
+  //   } catch (directError) {
+  //     console.error(
+  //       "Direct download failed, trying fetch method:",
+  //       directError
+  //     );
+
+  //     // Fallback: fetch the URL and create blob
+  //     try {
+  //       const response = await fetch(url, {
+  //         method: "GET",
+  //         mode: "cors",
+  //         credentials: "omit",
+  //       });
+
+  //       if (!response.ok) {
+  //         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  //       }
+
+  //       const blob = await response.blob();
+  //       const blobUrl = window.URL.createObjectURL(blob);
+
+  //       const fallbackLink = document.createElement("a");
+  //       fallbackLink.href = blobUrl;
+  //       fallbackLink.download = filename;
+  //       fallbackLink.style.display = "none";
+
+  //       document.body.appendChild(fallbackLink);
+  //       fallbackLink.click();
+
+  //       // Clean up
+  //       setTimeout(() => {
+  //         document.body.removeChild(fallbackLink);
+  //         window.URL.revokeObjectURL(blobUrl);
+  //       }, 100);
+
+  //       toast.success("Download started!");
+  //     } catch (fetchError) {
+  //       console.error("Download failed:", fetchError);
+  //       toast.error("Failed to download file. Please try again.");
+  //     }
+  //   }
+  // }, []);
+
+  // Handle download for both images and videos
   const handleDownload = useCallback(async (url: string, filename: string) => {
     if (!url) {
       toast.error("No file to download");
@@ -271,9 +337,24 @@ export default function GeneratorPage() {
     }
 
     try {
-      // Try direct download first (works for Convex URLs and same-origin URLs)
+      toast.info("Preparing download...");
+
+      // Fetch the file as a blob
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status}`);
+      }
+
+      // Get the blob from the response
+      const blob = await response.blob();
+
+      // Create a blob URL
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // Create a temporary link and trigger download
       const link = document.createElement("a");
-      link.href = url;
+      link.href = blobUrl;
       link.download = filename;
       link.style.display = "none";
 
@@ -283,49 +364,16 @@ export default function GeneratorPage() {
       // Clean up
       setTimeout(() => {
         document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
       }, 100);
 
       toast.success("Download started!");
-    } catch (directError) {
-      console.error(
-        "Direct download failed, trying fetch method:",
-        directError
-      );
+    } catch (error) {
+      console.error("Download failed:", error);
 
-      // Fallback: fetch the URL and create blob
-      try {
-        const response = await fetch(url, {
-          method: "GET",
-          mode: "cors",
-          credentials: "omit",
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-
-        const fallbackLink = document.createElement("a");
-        fallbackLink.href = blobUrl;
-        fallbackLink.download = filename;
-        fallbackLink.style.display = "none";
-
-        document.body.appendChild(fallbackLink);
-        fallbackLink.click();
-
-        // Clean up
-        setTimeout(() => {
-          document.body.removeChild(fallbackLink);
-          window.URL.revokeObjectURL(blobUrl);
-        }, 100);
-
-        toast.success("Download started!");
-      } catch (fetchError) {
-        console.error("Download failed:", fetchError);
-        toast.error("Failed to download file. Please try again.");
-      }
+      // Fallback: open in new tab
+      toast.error("Direct download failed. Opening in new tab...");
+      window.open(url, "_blank");
     }
   }, []);
 
