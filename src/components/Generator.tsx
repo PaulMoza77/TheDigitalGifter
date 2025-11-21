@@ -263,26 +263,69 @@ export default function GeneratorPage() {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Handle download
+  // Handle download for both images and videos
   const handleDownload = useCallback(async (url: string, filename: string) => {
+    if (!url) {
+      toast.error("No file to download");
+      return;
+    }
+
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Failed to fetch image");
-      }
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+      // Try direct download first (works for Convex URLs and same-origin URLs)
       const link = document.createElement("a");
-      link.href = downloadUrl;
+      link.href = url;
       link.download = filename;
+      link.style.display = "none";
+
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
+
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 100);
+
       toast.success("Download started!");
-    } catch (error) {
-      console.error("Download failed:", error);
-      toast.error("Failed to download image");
+    } catch (directError) {
+      console.error(
+        "Direct download failed, trying fetch method:",
+        directError
+      );
+
+      // Fallback: fetch the URL and create blob
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          mode: "cors",
+          credentials: "omit",
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const fallbackLink = document.createElement("a");
+        fallbackLink.href = blobUrl;
+        fallbackLink.download = filename;
+        fallbackLink.style.display = "none";
+
+        document.body.appendChild(fallbackLink);
+        fallbackLink.click();
+
+        // Clean up
+        setTimeout(() => {
+          document.body.removeChild(fallbackLink);
+          window.URL.revokeObjectURL(blobUrl);
+        }, 100);
+
+        toast.success("Download started!");
+      } catch (fetchError) {
+        console.error("Download failed:", fetchError);
+        toast.error("Failed to download file. Please try again.");
+      }
     }
   }, []);
 
@@ -615,7 +658,9 @@ export default function GeneratorPage() {
                       : `christmas-card-${Date.now()}.${extension}`;
                   void handleDownload(previewAfter, filename);
                 }}
-                className="absolute bottom-4 right-4 bg-[#ffd976] text-[#1e1e1e] px-4 py-2 rounded-lg font-semibold hover:brightness-110 transition"
+                className="absolute bottom-4 right-4 bg-[#ffd976] text-[#1e1e1e] px-4 py-2 rounded-lg font-semibold hover:brightness-110 active:scale-95 transition"
+                type="button"
+                aria-label={`Download ${currentJob?.type === "video" ? "video" : "image"}`}
               >
                 Download
               </button>
