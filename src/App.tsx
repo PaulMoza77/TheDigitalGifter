@@ -11,9 +11,9 @@ const MainLayout = lazy(() => import("./layouts/MainLayouts"));
 const HomePage = lazy(() => import("./pages/HomePage"));
 const GeneratorPage = lazy(() => import("./pages/GeneratorPage"));
 const TemplatesPage = lazy(() => import("./pages/TemplatesPage"));
-const TheDigitalGifterDashboard = lazy(
-  () => import("./pages/TheDigitalGifterDashboard")
-);
+// const TheDigitalGifterDashboard = lazy(
+//   () => import("./pages/TheDigitalGifterDashboard")
+// );
 
 export default function App() {
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function App() {
               <Route path="/generator" element={<GeneratorPage />} />
               <Route path="/templates" element={<TemplatesPage />} />
             </Route>
-            <Route path="/dashboard" element={<TheDigitalGifterDashboard />} />
+            {/* <Route path="/dashboard" element={<TheDigitalGifterDashboard />} /> */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, memo } from "react";
-import { ChevronRight, Star, Coins } from "lucide-react";
-import { Play } from "lucide-react";
+import { ChevronRight, Star } from "lucide-react";
 import VideoModal from "./VideoModal";
+import TemplateCard from "./TemplateCard";
 import { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
 
@@ -69,6 +69,14 @@ export default function TheDigitalGifterMainPage({
                     linear-gradient(180deg,#060a12 0%, #0b1220 100%)`,
       }}
     >
+      {/* Skip-to-content link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded"
+      >
+        Skip to main content
+      </a>
+
       {/* Static Snow Layer (subtle) */}
       <div
         aria-hidden="true"
@@ -84,13 +92,14 @@ export default function TheDigitalGifterMainPage({
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 12}s`,
+              willChange: "transform",
             }}
           />
         ))}
       </div>
 
       {/* MAIN CONTENT WRAPPER */}
-      <main>
+      <main id="main-content">
         {/* HERO */}
         <section className="relative z-[2] max-w-4xl mx-auto text-center py-12 px-4">
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-white/20 bg-[linear-gradient(90deg,rgba(46,230,162,.18),rgba(255,90,90,.18))] font-semibold">
@@ -111,12 +120,14 @@ export default function TheDigitalGifterMainPage({
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
             <button
               onClick={onStartCreating}
+              aria-label="Start creating your AI Christmas card"
               className="inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 font-extrabold text-[#1a1a1a] border border-white/60 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] bg-[length:250%_250%] animate-gradientShift shadow-[0_12px_30px_rgba(255,170,90,.45),_0_0_0_2px_rgba(255,210,150,.45)_inset] hover:scale-[1.04] transition"
             >
               Start Creating <ChevronRight size={18} />
             </button>
             <button
               onClick={onViewTemplates}
+              aria-label="View available templates"
               className="rounded-2xl px-8 py-4 font-semibold bg-white/10 border border-white/20 hover:bg-white/15 transition"
             >
               View Templates
@@ -149,6 +160,7 @@ export default function TheDigitalGifterMainPage({
           </p>
           <button
             onClick={onStartCreating}
+            aria-label="Create a custom design for your Christmas card"
             className="inline-block rounded-2xl px-8 py-4 font-extrabold text-[#1a1a1a] border border-white/60 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] bg-[length:250%_250%] animate-gradientShift shadow-[0_12px_30px_rgba(255,170,90,.45)] hover:scale-[1.04] transition"
           >
             Create Custom Design
@@ -168,7 +180,10 @@ export default function TheDigitalGifterMainPage({
               "Download & Share",
             ].map((step, i) => (
               <div key={i} className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 flex items-center justify-center rounded-full text-2xl font-bold text-[#1a1a1a] bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] mb-4">
+                <div
+                  className="w-16 h-16 flex items-center justify-center rounded-full text-2xl font-bold text-[#1a1a1a] bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] mb-4"
+                  aria-label={`Step ${i + 1}: ${step}`}
+                >
                   {i + 1}
                 </div>
                 <p className="font-bold text-white mb-1">{step}</p>
@@ -212,8 +227,13 @@ export default function TheDigitalGifterMainPage({
               <div
                 key={i}
                 className="bg-white/10 border border-white/20 rounded-2xl p-6 shadow-[0_6px_12px_rgba(0,0,0,.2)]"
+                itemScope
+                itemType="https://schema.org/Review"
               >
-                <div className="flex items-center mb-3">
+                <div
+                  className="flex items-center mb-3"
+                  aria-label="5 out of 5 stars"
+                >
                   {Array.from({ length: 5 }).map((_, j) => (
                     <Star
                       key={j}
@@ -222,8 +242,12 @@ export default function TheDigitalGifterMainPage({
                     />
                   ))}
                 </div>
-                <p className="text-[#e9ecf3] mb-3 italic">"{t.text}"</p>
-                <h4 className="font-bold text-white">{t.name}</h4>
+                <p className="text-[#e9ecf3] mb-3 italic" itemProp="reviewBody">
+                  "{t.text}"
+                </p>
+                <h4 className="font-bold text-white" itemProp="author">
+                  {t.name}
+                </h4>
                 <p className="text-sm text-[#b8c2d1]">{t.role}</p>
               </div>
             ))}
@@ -242,6 +266,7 @@ export default function TheDigitalGifterMainPage({
             </p>
             <button
               onClick={onStartCreating}
+              aria-label="Start creating your Christmas cards now"
               className="inline-block rounded-2xl px-8 py-4 font-extrabold text-[#1a1a1a] border border-white/60 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] bg-[length:250%_250%] animate-gradientShift shadow-[0_12px_30px_rgba(255,170,90,.45)] hover:scale-[1.04] transition"
             >
               Start Your Christmas Cards
@@ -271,24 +296,13 @@ const TemplatesCarousel = memo(function TemplatesCarousel() {
     [templates]
   );
 
-  const items = useMemo(
-    () =>
-      templatesArr.map((template) => ({
-        id: template._id,
-        title: template.title,
-        price: template.creditCost,
-        category: template.category,
-        previewUrl: template.previewUrl,
-        type: template.type,
-      })),
-    [templatesArr]
-  );
-
   const [active, setActive] = useState("All");
   const filtered = useMemo(
     () =>
-      active === "All" ? items : items.filter((i) => i.category === active),
-    [active, items]
+      active === "All"
+        ? templatesArr
+        : templatesArr.filter((t) => t.category === active),
+    [active, templatesArr]
   );
 
   const [page, setPage] = useState(0);
@@ -331,65 +345,12 @@ const TemplatesCarousel = memo(function TemplatesCarousel() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {pageItems.map((item) => (
-            <div
-              key={item.id}
-              className="relative rounded-2xl bg-white/10 border border-white/20 overflow-hidden hover:scale-[1.02] transition-transform"
-            >
-              <div className="absolute top-2 right-2 z-10 flex items-center gap-2 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] text-[#1a1a1a] text-xs font-extrabold px-2 py-1 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
-                <Coins size={14} className="text-[#1a1a1a]" />{" "}
-                <span>{item.price}</span>
-              </div>
-
-              <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
-                {item.previewUrl ? (
-                  item.type === "video" ? (
-                    <>
-                      <video
-                        src={item.previewUrl}
-                        className="w-full h-full object-cover"
-                        muted
-                        loop
-                        playsInline
-                        preload="metadata"
-                      />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          setModal({
-                            open: true,
-                            src: item.previewUrl,
-                            title: item.title,
-                          });
-                        }}
-                        aria-label={`Preview ${item.title}`}
-                        className="absolute left-3 top-3 p-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow-lg"
-                      >
-                        <Play size={18} />
-                      </button>
-                    </>
-                  ) : (
-                    <img
-                      src={item.previewUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  )
-                ) : (
-                  <div className="w-full h-full bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)]" />
-                )}
-              </div>
-
-              <div className="p-2 sm:p-4">
-                <div className="font-semibold text-sm sm:text-base leading-tight">
-                  {item.title}
-                </div>
-                <div className="text-[#dfe6f1] text-sm mt-1">
-                  {item.category}
-                </div>
-              </div>
-            </div>
+            <TemplateCard
+              key={(item as any)._id}
+              template={item as any}
+              aspectClass="aspect-[4/3]"
+              onOpenModal={(src, title) => setModal({ open: true, src, title })}
+            />
           ))}
         </div>
 

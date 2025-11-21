@@ -1,0 +1,16 @@
+# robots.txt for TheDigitalGifter
+# Allow all user-agents to crawl public pages
+
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /.convex
+Disallow: /.next
+Disallow: /node_modules
+
+# Crawl delay (optional, in seconds)
+Crawl-delay: 1
+
+# Reference to sitemap
+Sitemap: https://www.thedigitalgifter.com/sitemap.xml

@@ -1,47 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-// Minimal Select component styled to match current UI
-type SelectProps = {
-  value: string;
-  onValueChange: (value: string) => void;
-  options: { label: string; value: string }[];
-  className?: string;
-  disabled?: boolean;
-};
-function Select({
-  value,
-  onValueChange,
-  options,
-  className = "",
-  disabled,
-}: SelectProps) {
-  return (
-    <div className={`relative ${className}`}>
-      <select
-        value={value}
-        onChange={(e) => onValueChange(e.target.value)}
-        disabled={disabled}
-        className="rounded-xl px-4 py-2 pr-9 font-semibold text-[#1e1e1e] border border-transparent bg-white text-sm appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 12 12"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M6 9L1 4H11L6 9Z" fill="#1e1e1e" />
-        </svg>
-      </div>
-    </div>
-  );
-}
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useBootstrapUser } from "../hooks/useBootstrapUser";
 import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
@@ -56,11 +19,15 @@ import {
   useGenerateUploadUrlMutation,
   useCreateVideoJobMutation,
 } from "@/data";
+import { Select } from "./ui/Select";
+import { cn } from "@/lib/utils";
+import { InfiniteQueryObserver } from "@tanstack/react-query";
+import { Info } from "lucide-react";
 
 // Snow Animation Background Component
 function SnowBackground() {
-  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
-  React.useEffect(() => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -464,6 +431,14 @@ export default function GeneratorPage() {
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
         onClick={() => document.getElementById("file-input")?.click()}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload photos for your Christmas card. Drag and drop or click to select images."
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            document.getElementById("file-input")?.click();
+          }
+        }}
         className="mx-auto my-8 max-w-4xl rounded-3xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] p-8 text-center cursor-pointer transition hover:bg-[rgba(255,255,255,.12)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
       >
         <input
@@ -472,6 +447,7 @@ export default function GeneratorPage() {
           accept="image/*"
           multiple
           onChange={handleFileSelect}
+          aria-label="Select image files"
           className="hidden"
         />
         <h2 className="text-xl font-semibold mb-2">
@@ -582,7 +558,14 @@ export default function GeneratorPage() {
       </div>
 
       {/* Before/After panels */}
-      <div className="mx-auto mt-2 w-[92%] max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 pb-32">
+      <div
+        className={cn(
+          `mx-auto mt-2 w-[92%] max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 pb-32`,
+          selectedTemplateObj && selectedTemplateObj.type === "video"
+            ? "pb-72"
+            : selectedTemplateObj?.type === "image" && "pb-64"
+        )}
+      >
         <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)] overflow-hidden">
           {previewUrls.length > 0 ? (
             <div className="flex flex-wrap gap-2 justify-center items-center">
@@ -652,9 +635,20 @@ export default function GeneratorPage() {
               selectedTemplateObj.type === "video" ? (
                 <>
                   {/* R2V notice shown in the video controls area */}
-                  <p className="text-xs text-[#c1c8d8] mt-2">
-                    Faces are matched; poses are synthesized. Moreover, if you
-                    select Generate Audio then Credits will be consumed 2x.
+                  <p className="text-xs text-[#c1c8d8] mt-2 flex items-start sm:items-center gap-2">
+                    <div>
+                      <Info size={18} />
+                    </div>
+                    <span>
+                      Video generation costs{" "}
+                      {selectedTemplateObj?.creditCost ?? "X"} credits per
+                      second. Enabling "Generate With Audio" will double the
+                      credit cost (e.g.,{" "}
+                      {selectedTemplateObj?.creditCost
+                        ? selectedTemplateObj.creditCost * 2
+                        : "2X"}{" "}
+                      credits per second).
+                    </span>
                   </p>
 
                   {/*Instructions and Negative Prompt */}
@@ -695,6 +689,7 @@ export default function GeneratorPage() {
                         onClick={() => {
                           void handleGenerate();
                         }}
+                        aria-label="Generate your AI Christmas card video"
                         disabled={
                           isGenerating ||
                           uploadedFiles.length === 0 ||

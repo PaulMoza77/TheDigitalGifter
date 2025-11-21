@@ -1,9 +1,11 @@
-import React, { memo, useCallback, useMemo, useState, useRef } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import VideoModal from "./VideoModal";
 import TemplateCard from "./TemplateCard";
+import { Select } from "./ui/Select";
 import { Id } from "../../convex/_generated/dataModel";
 import { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
+import { X } from "lucide-react";
 
 type Template = TemplateSummary;
 
@@ -27,16 +29,18 @@ function TemplatesGridComponent({
     src: "",
     title: "",
   });
-  // (no inline video refs needed — we load full video only on modal open)
+
   const [scene, setScene] = useState<string>("");
   const [orientation, setOrientation] = useState<string>("");
   const [priceRange, setPriceRange] = useState<string>("");
+
   const { data: allTemplates = [] } = useTemplatesQuery();
-  // Ensure the query result is treated as TemplateSummary[] for correct typing
+
   const templatesArray = useMemo(
     () => (allTemplates ?? []) as TemplateSummary[],
     [allTemplates]
   );
+
   const handleClearFilters = useCallback(() => {
     setScene("");
     setOrientation("");
@@ -72,106 +76,148 @@ function TemplatesGridComponent({
     () => Object.keys(sceneCounts).sort(),
     [sceneCounts]
   );
-  const priceRanges = [
+
+  const sceneOptions = useMemo(
+    () => [
+      { label: `All Scenes (${templatesArray.length})`, value: "" },
+      ...uniqueScenes.map((s) => ({
+        label: `${s.charAt(0).toUpperCase() + s.slice(1)} (${sceneCounts[s] ?? 0})`,
+        value: s,
+      })),
+    ],
+    [uniqueScenes, sceneCounts, templatesArray.length]
+  );
+
+  const orientationOptions = [
+    { label: "All Orientations", value: "" },
+    { label: "Portrait", value: "portrait" },
+    { label: "Landscape", value: "landscape" },
+  ];
+
+  const priceRangeOptions = [
+    { label: "All", value: "" },
     { label: "Budget (10-12)", value: "10-12" },
     { label: "Premium (13-16)", value: "13-16" },
     { label: "Luxury (17-20)", value: "17-20" },
   ];
 
+  const hasActiveFilters = scene || orientation || priceRange;
+
   return (
-    <div className="space-y-6">
-      {/* Enhanced Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={scene}
-          onChange={(e) => setScene(e.target.value)}
-          className="festive-select text-sm"
-        >
-          <option value="">All scenes ({templatesArray.length})</option>
-          {uniqueScenes.map((s) => (
-            <option key={s} value={s}>
-              {s.charAt(0).toUpperCase() + s.slice(1)} ({sceneCounts[s] ?? 0})
-            </option>
+    <div className="space-y-8">
+      {/* Filters Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[#fffef5]">Filters</h2>
+          {/* Results info */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-[#c1c8d8]">
+                <span className="font-semibold text-[#dfe6f1]">
+                  {filteredTemplates.length}
+                </span>
+                {" of "}
+                <span className="font-semibold text-[#dfe6f1]">
+                  {templatesArray.length}
+                </span>
+                {" templates found"}
+              </p>
+            </div>
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearFilters}
+              className="inline-flex items-center gap-1 text-sm text-[#ff9866] hover:text-[#ffd976] transition-colors"
+              aria-label="Clear all filters"
+            >
+              <X size={14} />
+              Clear all
+            </button>
+          )}
+        </div>
+
+        {/* Filter controls grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-[#c1c8d8] mb-2">
+              Scene
+            </label>
+            <Select
+              value={scene}
+              onValueChange={setScene}
+              options={sceneOptions}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#c1c8d8] mb-2">
+              Orientation
+            </label>
+            <Select
+              value={orientation}
+              onValueChange={setOrientation}
+              options={orientationOptions}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#c1c8d8] mb-2">
+              Price Range
+            </label>
+            <Select
+              value={priceRange}
+              onValueChange={setPriceRange}
+              options={priceRangeOptions}
+              className="w-full"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Templates Grid - Full page responsive */}
+      {filteredTemplates.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          {filteredTemplates.map((template) => (
+            <TemplateCard
+              key={template._id}
+              template={template}
+              onOpenModal={(src, title) =>
+                setModal({ open: true, src, title: title ?? "" })
+              }
+            />
           ))}
-        </select>
+        </div>
+      ) : (
+        /* Empty state */
+        <div className="py-16 px-6">
+          <div className="text-center max-w-md mx-auto">
+            <div className="text-6xl mb-4">🎄</div>
+            <h3 className="text-xl font-bold text-[#fffef5] mb-2">
+              No Templates Found
+            </h3>
+            <p className="text-[#c1c8d8] mb-6">
+              Try adjusting your filters to find the perfect template for your
+              holiday card.
+            </p>
+            <button
+              onClick={handleClearFilters}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-[#1a1a1a] border border-transparent bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 transition-all"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      )}
 
-        <select
-          value={orientation}
-          onChange={(e) => setOrientation(e.target.value)}
-          className="festive-select text-sm"
-        >
-          <option value="">All orientations</option>
-          <option value="portrait">Portrait</option>
-          <option value="landscape">Landscape</option>
-        </select>
-
-        <select
-          value={priceRange}
-          onChange={(e) => setPriceRange(e.target.value)}
-          className="festive-select text-sm"
-        >
-          <option value="">All prices</option>
-          {priceRanges.map((range) => (
-            <option key={range.value} value={range.value}>
-              {range.label}
-            </option>
-          ))}
-        </select>
-
-        {/* Clear filters button */}
-        {(scene || orientation || priceRange) && (
-          <button
-            onClick={handleClearFilters}
-            className="text-sm text-festive-red hover:text-red-300 underline transition-colors"
-          >
-            Clear filters
-          </button>
-        )}
-      </div>
-
-      {/* Results count */}
-      <div className="text-sm text-light-muted">
-        Showing {filteredTemplates.length} of {templatesArray.length} templates
-      </div>
-
-      {/* Templates Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-h-96 overflow-y-auto">
-        {filteredTemplates.map((template) => (
-          <TemplateCard
-            key={template._id}
-            template={template}
-            isSelected={selectedTemplateId === template._id}
-            onSelect={(t) => onPick?.(t)}
-            onOpenModal={(src, title) =>
-              setModal({ open: true, src, title: title ?? "" })
-            }
-            aspectClass={
-              template.orientation === "portrait"
-                ? "aspect-[3/4]"
-                : "aspect-[4/3]"
-            }
-          />
-        ))}
-      </div>
-
+      {/* Video Modal */}
       {modal.open && (
         <VideoModal
           src={modal.src}
           title={modal.title}
           onClose={() => setModal({ open: false, src: "", title: "" })}
         />
-      )}
-
-      {filteredTemplates.length === 0 && (
-        <div className="text-center py-12 glass-card">
-          <div className="text-4xl mb-4">🎄</div>
-          <p className="text-light-muted mb-4">
-            No templates found for the selected filters.
-          </p>
-          <button onClick={handleClearFilters} className="btn-ghost text-sm">
-            Clear all filters
-          </button>
-        </div>
       )}
     </div>
   );
