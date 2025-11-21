@@ -14,5 +14,14 @@ export const queryClient = new QueryClient({
   },
 });
 
+// Helper function to invalidate auth-related caches
+export async function invalidateAuthCaches() {
+  await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+  await queryClient.invalidateQueries({ queryKey: ["credits"] });
+  await queryClient.invalidateQueries({ queryKey: ["user"] });
+  await queryClient.invalidateQueries({ queryKey: ["jobs"] });
+  await queryClient.invalidateQueries({ queryKey: ["templates"] });
+}
+
 export * from "./queries";
 export * from "./mutations";

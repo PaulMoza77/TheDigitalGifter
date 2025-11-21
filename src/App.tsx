@@ -5,10 +5,12 @@ import {
   Navigate,
 } from "react-router-dom";
 import { Toaster } from "sonner";
-import { Suspense, useEffect, lazy } from "react";
+import { Suspense, useEffect } from "react";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { TermsPage } from "./pages/TermsPage";
 import { RefundPolicyPage } from "./pages/RefundPolicyPage";
+import { useAuthStateMonitor } from "./hooks/useAuthStateMonitor";
+import { lazy } from "react";
 
 const MainLayout = lazy(() => import("./layouts/MainLayouts"));
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -19,6 +21,9 @@ const TemplatesPage = lazy(() => import("./pages/TemplatesPage"));
 // );
 
 export default function App() {
+  // Monitor auth state changes and invalidate caches when user logs in/out
+  useAuthStateMonitor();
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
