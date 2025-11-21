@@ -740,7 +740,8 @@ export default function GeneratorPage() {
                       {selectedTemplateObj?.creditCost
                         ? selectedTemplateObj.creditCost * 2
                         : "2X"}{" "}
-                      credits per second).
+                      credits per second). Please specify the age's as well for
+                      better results.
                     </span>
                   </p>
 
