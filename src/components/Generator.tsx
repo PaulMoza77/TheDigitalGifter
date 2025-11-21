@@ -45,8 +45,8 @@ function Select({
 import { useBootstrapUser } from "../hooks/useBootstrapUser";
 import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
-import { Coins, Play } from "lucide-react";
 import VideoModal from "./VideoModal";
+import TemplateCard from "./TemplateCard";
 import { TemplateSummary } from "@/types/templates";
 import {
   useTemplatesQuery,
@@ -559,70 +559,15 @@ export default function GeneratorPage() {
         {filteredTemplates.map((template) => {
           const isSelected = selectedTemplate === template._id;
           return (
-            <div
+            <TemplateCard
               key={template._id}
-              onClick={() => {
-                handleTemplateSelect(template);
-              }}
-              className={`rounded-3xl border overflow-hidden hover:-translate-y-0.5 transition group cursor-pointer ${
-                isSelected
-                  ? "border-[#ffd976] ring-2 ring-[#ffd976] shadow-[0_0_20px_rgba(255,217,118,0.5)]"
-                  : "border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)]"
-              }`}
-            >
-              <div className="relative aspect-[4/5] w-full">
-                {template.type === "video" ? (
-                  <>
-                    <video
-                      src={template.previewUrl}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      muted
-                      loop
-                      playsInline
-                      preload="metadata"
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        setModal({
-                          open: true,
-                          src: template.previewUrl,
-                          title: template.title,
-                        });
-                      }}
-                      aria-label={`Preview ${template.title}`}
-                      className="absolute left-3 top-3 p-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow-lg"
-                    >
-                      <Play size={18} />
-                    </button>
-                  </>
-                ) : (
-                  <img
-                    src={template.previewUrl}
-                    alt={template.title}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                )}
-                <div className="absolute top-3 right-3 flex items-center gap-2 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] text-[#1a1a1a] text-xs font-extrabold px-2 py-1 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
-                  <Coins size={14} className="text-[#1a1a1a]" />{" "}
-                  {template.creditCost}
-                </div>
-                {isSelected && (
-                  <div className="absolute inset-0 bg-[rgba(255,217,118,0.2)] flex items-center justify-center">
-                    <span className="text-4xl">✓</span>
-                  </div>
-                )}
-              </div>
-              <div className=" p-2 sm:p-4 bg-[rgba(255,255,255,.06)]">
-                <h3 className="font-semibold text-sm sm:text-base leading-tight">
-                  {template.title}
-                </h3>
-                <p className="text-xs text-[#c1c8d8] mt-1">
-                  {template.category}
-                </p>
-              </div>
-            </div>
+              template={template}
+              isSelected={isSelected}
+              onSelect={handleTemplateSelect}
+              onOpenModal={(src, title) =>
+                setModal({ open: true, src, title: title })
+              }
+            />
           );
         })}
       </div>

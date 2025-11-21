@@ -42,6 +42,14 @@ const applicationTables = {
     createdAt: v.optional(v.number()), // Make optional for backward compatibility
     updatedAt: v.optional(v.number()), // Make optional for backward compatibility
     templateId: v.optional(v.id("templates")),
+    creditBreakdown: v.optional(
+      v.object({
+        perSecondCost: v.number(),
+        seconds: v.number(),
+        audioMultiplier: v.number(),
+        totalCost: v.number(),
+      })
+    ),
     // (note: aspectRatio already defined above for video jobs as an optional enum)
   })
     .index("by_user", ["userId"])
@@ -60,6 +68,7 @@ const applicationTables = {
     scene: v.string(), // "tree","globes","cookies","fireplace","outdoor","workshop","market","gingerbread","skating","morning","vintage","snowglobe","cabin","forest","lake","village","church","aurora","enchanted","reading","baking","ballroom","victorian","sledding","snowangels","modern","hygge"
     orientation: v.union(v.literal("portrait"), v.literal("landscape")), // portrait | landscape
     previewUrl: v.string(),
+    thumbnailUrl: v.optional(v.string()),
     prompt: v.string(), // prompt de bază pt AI
     textDefault: v.string(), // default text for the card
     // Video-specific optional defaults for templates (backwards-compatible)

@@ -24,6 +24,14 @@ export const debitCreditsAndCreateJob = internalMutation({
     generateAudio: v.optional(v.boolean()),
     negativePrompt: v.optional(v.union(v.string(), v.null())),
     seed: v.optional(v.union(v.number(), v.null())),
+    creditBreakdown: v.optional(
+      v.object({
+        perSecondCost: v.number(),
+        seconds: v.number(),
+        audioMultiplier: v.number(),
+        totalCost: v.number(),
+      })
+    ),
   },
   handler: async (ctx, args) => {
     const userProfile = await ctx.db
@@ -54,6 +62,7 @@ export const debitCreditsAndCreateJob = internalMutation({
       inputFileIds: args.inputFileIds, // Store the full array for video multi-file support
       status: "queued",
       debited: args.creditCost,
+      creditBreakdown: args.creditBreakdown,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       templateId: args.templateId,

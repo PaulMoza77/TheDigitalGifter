@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo, useState, useRef } from "react";
-import { Play, Maximize } from "lucide-react";
 import VideoModal from "./VideoModal";
+import TemplateCard from "./TemplateCard";
 import { Id } from "../../convex/_generated/dataModel";
 import { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
@@ -27,8 +27,7 @@ function TemplatesGridComponent({
     src: "",
     title: "",
   });
-  // refs to video elements by template id for inline playback control
-  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  // (no inline video refs needed — we load full video only on modal open)
   const [scene, setScene] = useState<string>("");
   const [orientation, setOrientation] = useState<string>("");
   const [priceRange, setPriceRange] = useState<string>("");
@@ -138,141 +137,20 @@ function TemplatesGridComponent({
       {/* Templates Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-h-96 overflow-y-auto">
         {filteredTemplates.map((template) => (
-          <button
+          <TemplateCard
             key={template._id}
-            onClick={() => onPick?.(template)}
-            className={`template-card group ${
-              selectedTemplateId === template._id ? "selected" : ""
-            }`}
-          >
-            <div
-              className={`w-full bg-gray-800/50 relative ${
-                template.orientation === "portrait"
-                  ? "aspect-[3/4]"
-                  : "aspect-[4/3]"
-              }`}
-            >
-              {/* Media (image or video) */}
-              <div className="absolute inset-0">
-                {template.type === "video" ? (
-                  <video
-                    ref={(el) => {
-                      videoRefs.current[template._id] = el;
-                    }}
-                    src={template.previewUrl}
-                    className="w-full h-full object-cover"
-                    muted
-                    loop
-                    playsInline
-                    preload="metadata"
-                  />
-                ) : (
-                  <img
-                    src={template.previewUrl}
-                    alt={template.title}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                )}
-
-                {/* Play overlay for videos */}
-                {template.type === "video" && (
-                  <>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        const v = videoRefs.current[template._id];
-                        if (!v) return;
-                        if (v.paused) {
-                          v.muted = true;
-                          v.play().catch(() => {});
-                        } else {
-                          v.pause();
-                        }
-                      }}
-                      aria-label={`Play inline ${template.title}`}
-                      className="absolute left-3 top-3 p-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow-lg"
-                    >
-                      <Play size={18} />
-                    </button>
-
-                    {/* Full view opens modal with controls */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        setModal({
-                          open: true,
-                          src: template.previewUrl,
-                          title: template.title,
-                        });
-                      }}
-                      aria-label={`Full view ${template.title}`}
-                      className="absolute right-3 top-3 p-1 rounded-full bg-white/10 text-white text-xs font-bold shadow-lg"
-                    >
-                      <Maximize size={16} />
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Overlay for better text readability */}
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all" />
-
-              {/* Selection indicator */}
-              {selectedTemplateId === template._id && (
-                <div className="absolute top-3 right-3">
-                  <div className="bg-festive-gradient text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow-lg">
-                    ✓
-                  </div>
-                </div>
-              )}
-
-              {/* Orientation badge */}
-              <div className="absolute top-3 left-3">
-                <span className="glass-effect text-light px-3 py-1 rounded-full text-xs font-medium">
-                  {template.orientation === "portrait" ? "📱" : "🖥️"}
-                </span>
-              </div>
-
-              {/* Tags overlay */}
-              <div className="absolute bottom-3 left-3 right-3">
-                <div className="flex flex-wrap gap-1">
-                  {template.tags.slice(0, 2).map((tag) => (
-                    <span
-                      key={tag}
-                      className="glass-effect text-light px-2 py-1 rounded text-xs font-medium"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                  {template.tags.length > 2 && (
-                    <span className="glass-effect text-light px-2 py-1 rounded text-xs font-medium">
-                      +{template.tags.length - 2}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 text-left">
-              <p className="font-semibold text-light text-sm line-clamp-1 mb-2">
-                {template.title}
-              </p>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-light-muted capitalize">
-                  {template.scene}
-                </p>
-                <p className="text-xs font-semibold text-festive-red">
-                  {template.creditCost} credits
-                </p>
-              </div>
-              <p className="text-xs text-light-muted line-clamp-2 italic">
-                "{template.textDefault}"
-              </p>
-            </div>
-          </button>
+            template={template}
+            isSelected={selectedTemplateId === template._id}
+            onSelect={(t) => onPick?.(t)}
+            onOpenModal={(src, title) =>
+              setModal({ open: true, src, title: title ?? "" })
+            }
+            aspectClass={
+              template.orientation === "portrait"
+                ? "aspect-[3/4]"
+                : "aspect-[4/3]"
+            }
+          />
         ))}
       </div>
 

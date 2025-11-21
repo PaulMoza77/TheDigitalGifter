@@ -51,6 +51,7 @@ function sanitizeTemplate(template: Doc<"templates">) {
     orientation: (template as any).orientation || "portrait",
     aspectRatio: (template as any).aspectRatio || "",
     previewUrl: (template as any).previewUrl || "",
+    thumbnailUrl: (template as any).thumbnailUrl || "",
     creditCost: (template as any).creditCost || 0,
     tags: (template as any).tags || [],
     scene: (template as any).scene || "",
@@ -446,164 +447,507 @@ export const seed = mutation({
 
 // Development-only seeding helper: inserts three video templates without requiring admin.
 // This is intended for local development only and will not perform any admin checks.
-// export const devSeed = mutation({
-//   args: {},
-//   handler: async (ctx) => {
-//     const items: TemplateSeed[] = [
-//       {
-//         title: "Cozy Fireplace Gathering",
-//         category: "Cozy",
-//         subCategory: "Family / Group",
-//         type: "video",
-//         orientation: "landscape",
-//         previewUrl:
-//           "https://giddy-swan-737.convex.cloud/api/storage/efc9e84f-ed1f-47cb-ac2b-606d35b7cc25",
-//         prompt: `Cinematic close-up and medium shots of warm family scene by crackling stone fireplace during Christmas evening. Family members sit on plush rug and couch, holding steaming mugs of hot chocolate topped with marshmallows. Gentle steam rises from mugs. Warm golden firelight flickers across faces creating soft shadows and highlights. Christmas stockings hang on mantel, twinkling fairy lights visible in soft-focused background. Camera slowly dollies in capturing authentic intimate moments - hands warming around mugs, gentle conversation gestures, content smiles. Pine garlands with red berries frame mantel. Clothing: cozy knit sweaters in burgundy, cream, forest green. Movement: subtle natural gestures, steam rising, firelight dancing, gentle breathing. Style: lifestyle documentary cinematography, shallow depth of field, professional warm color grading with rich tones, film grain texture. Color temperature warm 2700K, soft bokeh from tree lights.`,
-//         creditCost: 18,
-//         tags: ["cozy", "family / group", "fireplace", "landscape", "video"],
-//         scene: "fireplace",
-//         textDefault: "Warm Holiday Moments",
-//         defaultDuration: 6,
-//         defaultAspectRatio: "16:9",
-//         defaultResolution: "1080p",
-//         generateAudioDefault: true,
-//       },
+export const devSeed = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const items: TemplateSeed[] = [
+      {
+        title: "Cozy Fireplace Gathering",
+        category: "Cozy",
+        subCategory: "Family / Group",
+        type: "video",
+        orientation: "landscape",
+        previewUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/efc9e84f-ed1f-47cb-ac2b-606d35b7cc25",
+        prompt: `Use the uploaded reference images to extract and preserve the identity, facial features, hairstyle, age, skin tone, and overall appearance of each individual with maximum fidelity. Only the people in the reference images may appear in the video. No additional characters, no altered faces, and no identity drift are allowed. Maintain sharp, clear, well-lit faces throughout the entire sequence.
 
-//       {
-//         title: "Fireplace Laughter",
-//         category: "Cozy",
-//         subCategory: "Family / Group",
-//         type: "video",
-//         orientation: "landscape",
-//         previewUrl:
-//           "https://giddy-swan-737.convex.cloud/api/storage/2d32231d-9403-473f-968b-62485379683e",
-//         prompt: `Heartwarming wide-to-medium shot of joyful family gathered by stone fireplace sharing genuine laughter and stories on Christmas evening. Capture authentic connection moments - heads tilting back in laughter, hands gesturing expressively during storytelling, shoulders touching in closeness. Crackling fire casts warm dancing golden light across scene creating depth and atmosphere. Christmas tree with white lights glows softly in background, slightly out of focus. Stockings hang from mantel decorated with fresh pine garlands and burgundy ribbons. Camera movement slow gentle push-in to emphasize intimacy and emotion. Family wears festive casual clothing - chunky knit sweaters, comfortable holiday attire in rich jewel tones. Natural facial expressions - genuine smiles, eye contact between family members, animated conversation. Lighting warm practical firelight as key source 2700K, soft fill from Christmas lights, gentle rim light. Movement emphasis natural laughter gestures, heads nodding, hands moving expressively, firelight flickering. Style high-end lifestyle cinematography, emotional storytelling, shallow focus on faces, professional warm color grade, cinematic 24fps motion.`,
-//         creditCost: 18,
-//         tags: ["cozy", "family / group", "fireplace", "landscape", "video"],
-//         scene: "fireplace",
-//         textDefault: "Joyful Together",
-//         defaultDuration: 6,
-//         defaultAspectRatio: "16:9",
-//         defaultResolution: "1080p",
-//         generateAudioDefault: true,
-//       },
-//       {
-//         title: "Snowman Builders",
-//         category: "Snowy",
-//         subCategory: "Family / Group",
-//         type: "video",
-//         orientation: "landscape",
-//         previewUrl:
-//           "https://giddy-swan-737.convex.cloud/api/storage/e559f884-3fc4-4d97-be6c-a5b362991a4b",
-//         prompt: `Charming medium shot of adults collaborating to build classic snowman in picturesque snow-covered setting during daytime. Scene captures process - hands rolling large snowballs, lifting and stacking sections, adding final touches like coal button eyes, carrot nose, stick arms. Natural teamwork gestures - pointing, adjusting placement, stepping back to admire work. Partially completed snowman stands prominently in frame with fresh pristine snow all around. Background shows snow-laden pine trees creating depth and framing. Gentle snowfall continues, individual flakes visible catching natural light. Adults wear coordinated winter clothing - insulated coats in complementary colors navy, burgundy, forest green, colorful scarves, warm hats and gloves. Camera movement slow circular dolly around snowman creation capturing multiple angles and perspectives. Movement emphasis hands patting snow, arms lifting sections, collaborative gestures, natural breathing creating visible vapor. Lighting soft overcast winter daylight providing even exposure, bright white snow creating natural fill light, cool 5500K color temperature with pops of warm clothing colors. Style heartwarming lifestyle documentary, medium depth of field keeping snowman and people sharp, natural color grading emphasizing winter atmosphere, smooth cinematic motion.`,
-//         creditCost: 24,
-//         tags: ["snowy", "family / group", "landscape", "winter", "video"],
-//         scene: "outdoor",
-//         textDefault: "Winter Fun",
-//         defaultDuration: 6,
-//         defaultAspectRatio: "16:9",
-//         defaultResolution: "1080p",
-//         generateAudioDefault: true,
-//       },
+Identity requirements:
+- Preserve each person’s exact facial structure, proportions, skin tone, hair details, and natural expression style.
+- No blending, deformation, or smoothing of facial features.
+- Faces must remain stable and recognizable from all angles.
+- Do not obscure faces with props, shadows, or exaggerated movements.
 
-//       {
-//         title: "Snow Angels",
-//         category: "Snowy",
-//         subCategory: "Family / Group",
-//         type: "video",
-//         orientation: "portrait",
-//         previewUrl:
-//           "https://giddy-swan-737.convex.cloud/api/storage/91ee572b-b72c-4135-aade-9e87d3c46c5c",
-//         prompt: `Overhead aerial-style shot looking down at adults lying in fresh untouched snow creating snow angels with sweeping arm and leg movements. Camera positioned directly above captures full symmetrical motion - arms sweeping from sides to above head, legs spreading wide then closing. Fresh snow canvas shows perfect angel impressions forming in real-time. Gentle snowfall drifts down toward camera creating beautiful foreground bokeh. Participants wear vibrant winter coats in contrasting colors red, royal blue, bright purple that stand out against pristine white snow. Faces show pure joy and laughter, eyes looking up at camera sky. Surrounding environment open snow field with distant snow-covered trees along horizon, pure winter landscape. Movement emphasis smooth rhythmic arm and leg sweeping motions creating angel wings and dress, natural breathing visible as vapor, occasional joyful laughter. Lighting bright overcast winter sky providing even soft illumination, snow acting as natural reflector creating flattering light on faces, cool daylight balance. Camera movement subtle slow descent rise to emphasize motion or slow rotation around subjects. Style whimsical lifestyle cinematography, vibrant color saturation, high contrast between subjects and snow, crisp sharp focus, magical winter atmosphere.`,
-//         creditCost: 18,
-//         tags: ["snowy", "family / group", "portrait", "winter", "video"],
-//         scene: "outdoor",
-//         textDefault: "Snow Day Magic",
-//         defaultDuration: 6,
-//         defaultAspectRatio: "9:16",
-//         defaultResolution: "1080p",
-//         generateAudioDefault: true,
-//       },
-//       {
-//         title: "Tree Decorating Magic",
-//         category: "Classic",
-//         subCategory: "Family / Group",
-//         type: "video",
-//         orientation: "portrait",
-//         previewUrl:
-//           "https://giddy-swan-737.convex.cloud/api/storage/c5dcbc25-f5e2-4bcd-ac3c-00a352e5cddd",
-//         prompt: `Elegant medium-wide shot of adults decorating majestic Christmas tree together in beautifully appointed living room during evening. Scene captures collaborative decoration process - hands gently hanging ornaments on branches, stringing lights along boughs, placing golden star topper. Tree gradually illuminates as lights are tested and activated creating magical transformation from plain to fully decorated. Adults reach up to higher branches, pass ornaments to each other, step back to assess placement. Tree stands prominently with rich green needles catching warm interior lighting. Background shows elegant home interior with fireplace, garlands, holiday décor. Adults wear coordinated holiday attire - elegant sweaters, festive colors in burgundy, cream, forest green. Camera movement slow circular dolly around tree capturing 180-degree perspective, gentle crane movement from low to high emphasizing tree height. Movement emphasis hands carefully placing ornaments, arms reaching upward, collaborative pointing and arranging gestures, natural family interaction. Lighting warm practical room lighting 2700K, tree lights gradually glowing brighter creating star-burst effects, soft window light from evening. Ornaments reflect and refract light beautifully. Style upscale lifestyle cinematography, medium depth of field, rich warm color grading, cinematic smooth motion, capturing traditional holiday ritual.`,
-//         creditCost: 24,
-//         tags: ["classic", "family / group", "portrait", "tree", "video"],
-//         scene: "tree",
-//         textDefault: "Deck The Halls",
-//         defaultDuration: 6,
-//         defaultAspectRatio: "9:16",
-//         defaultResolution: "1080p",
-//         generateAudioDefault: true,
-//       },
-//       {
-//         title: "Mistletoe Kiss",
-//         category: "Romantic",
-//         subCategory: "Couple / Duo",
-//         type: "video",
-//         orientation: "portrait",
-//         previewUrl:
-//           "https://giddy-swan-737.convex.cloud/api/storage/e94f3df7-8553-4089-822b-b5a190b83ed1",
-//         prompt: `Cinematic romantic close-up of couple sharing tender kiss beneath hanging mistletoe with red berries and green leaves. Scene unfolds as beautiful moment - couple approaches, looks up noticing mistletoe, exchanges loving glances, then leans in for soft kiss. Mistletoe hangs naturally from doorway or archway decorated with pine garland and red ribbon. Background features softly glowing Christmas tree with warm bokeh lights creating dreamy romantic atmosphere. Soft golden backlight creates gentle halo effect around couple with subtle lens flare adding magic. Couple wears elegant holiday attire - woman in sophisticated dress or dressy sweater, man in button-down or fine-knit sweater, colors in deep jewel tones burgundy, emerald, navy. Camera movement slow gentle push-in during approach, holds steady on kiss, subtle upward tilt following their gaze to mistletoe. Movement emphasis natural romantic gestures - hand reaching to partner face, gentle embrace, heads tilting together, eyes closing during kiss, soft intimate body language. Lighting warm golden practical lighting 2700K creating romantic mood, soft backlight from Christmas lights, gentle key light on faces. Depth of field very shallow focus isolating couple, background beautifully blurred with creamy bokeh. Style luxury romance cinematography, film-like quality, soft diffusion, warm rich color grade, timeless elegant aesthetic, authentic emotional connection.`,
-//         creditCost: 24,
-//         tags: ["romantic", "couple / duo", "portrait", "mistletoe", "video"],
-//         scene: "tree",
-//         textDefault: "Love & Joy",
-//         defaultDuration: 6,
-//         defaultAspectRatio: "4:5",
-//         defaultResolution: "1080p",
-//         generateAudioDefault: true,
-//       },
+Scene description:
+A warm, intimate Christmas evening setting with only the uploaded individuals sitting comfortably near a crackling stone fireplace. They relax together on a plush rug and a cozy couch, each holding a steaming mug of hot chocolate topped with marshmallows. Light steam rises naturally from the mugs. The atmosphere is calm, joyful, and cinematic.
 
-//       {
-//         title: "Festive Dinner Table",
-//         category: "Romantic",
-//         subCategory: "Family / Group",
-//         type: "video",
-//         orientation: "landscape",
-//         previewUrl:
-//           "https://giddy-swan-737.convex.cloud/api/storage/222518b1-b43a-4a07-8e2e-bdf212c37a50",
-//         prompt: `Wide establishing shot transitioning to medium shots of adults gathered around elegantly set Christmas dinner table in warmly lit dining room during evening. Table beautifully arranged with white linen tablecloth, fine bone china plates, crystal wine glasses filled with red wine, polished silverware, cloth napkins. Festive centerpiece features fresh pine branches, red holly berries, white pillar candles in varying heights, scattered gold ornaments creating elegant focal point. Holiday feast includes golden-brown roasted turkey as centerpiece surrounded by classic side dishes in elegant serving bowls and platters. Soft candlelight flickers gently throughout scene casting warm amber glow across faces and creating intimate atmosphere. Adult family members of various ages engage in natural conversation - some leaning forward attentively, others gesturing expressively while speaking, genuine smiles and laughter shared between them. Each person holds crystal wine glass throughout entire scene maintaining consistent hand positions. Movement limited to subtle natural gestures slight tilting of heads during conversation, gentle smiles and laughter, minimal hand movements while holding glasses steady, eyes making contact across table. At key moment all adults simultaneously raise crystal wine glasses in celebratory toast gesture, glasses meeting in center above table, then returning glasses to table surface. No objects transform or change - wine glasses remain wine glasses, no bottles appear in hands, silverware stays on table, all props maintain visual consistency throughout. Background features decorated dining room with fresh garland draped along walls, warm string lights providing soft ambient glow, partial view of illuminated Christmas tree visible through doorway creating depth. Adults wear sophisticated holiday attire - women in elegant dresses or dressy blouses in jewel tones, men in button-down shirts or fine-knit sweaters, color palette burgundy, emerald green, navy, gold accents. Camera executes slow smooth lateral dolly tracking along length of table from left to right at consistent eye-level perspective, no sudden movements or angle changes. Lighting design features warm candlelight as primary practical key source 2400K color temperature, supplemented by soft overhead chandelier with warm bulbs, subtle window light from twilight creating natural fill and depth, all combining to create rich inviting atmosphere. Visual style luxury lifestyle editorial cinematography with film-like quality, medium depth of field keeping foreground diners sharp while background softly defocuses, professional warm color grading emphasizing golden and amber tones, smooth consistent 24fps motion with no jerky transitions, capturing timeless traditional holiday gathering with authentic emotional warmth and sophisticated aesthetic. Maintain complete prop consistency - no objects morph, transform, or swap between hands during entire sequence.`,
-//         creditCost: 30,
-//         tags: ["romantic", "family / group", "landscape", "dinner", "video"],
-//         scene: "table",
-//         textDefault: "Holiday Feast",
-//         defaultDuration: 8,
-//         defaultAspectRatio: "16:9",
-//         defaultResolution: "1080p",
-//         generateAudioDefault: true,
-//       },
-//     ];
+Action control:
+Show subtle, slow, realistic gestures:
+- hands warming around mugs  
+- gentle head movements  
+- soft eye contact or relaxed glances  
+- natural breathing  
+- light, warm expressions and content smiles  
 
-//     // Insert items (do not clear existing templates to avoid accidental deletion)
-//     const inserted: Array<{ title: string; id: any }> = [];
-//     const errors: Array<{ title: string; error: string }> = [];
+Avoid any artificial or exaggerated movements. No sudden behavior changes. No automatic action transitions.
 
-//     for (const item of items) {
-//       try {
-//         const id = await ctx.db.insert("templates", item);
-//         inserted.push({ title: item.title, id });
-//       } catch (err: any) {
-//         errors.push({ title: item.title, error: String(err) });
-//       }
-//     }
+Environment:
+A stone fireplace emits warm flickering golden light that softly illuminates the individuals’ faces with smooth highlights and gentle shadows. Christmas stockings hang neatly from the mantel. Pine garlands decorated with red berries frame the fireplace. In the softly blurred background, twinkling fairy lights create warm bokeh.
 
-//     return {
-//       success: true,
-//       marker: "devSeed-patched-v2",
-//       count: items.length,
-//       inserted: inserted.length,
-//       insertedItems: inserted,
-//       errors,
-//     };
-//   },
-// });
+Clothing:
+AI-generated cozy knit winter sweaters in tones such as burgundy, cream, and forest green. Clothing must not distort identity or hide the face.
+
+Camera direction:
+Cinematic close-up and medium shots with a slow, smooth dolly-in movement. Shallow depth of field keeps faces crisp while the background softly blurs. Motion must be stable, gentle, and consistent.
+
+Lighting:
+Warm 2700K firelight as the key source. Soft fill from ambient Christmas tree lights. Balanced exposure that keeps faces clear and well defined without harsh shadows or overexposure.
+
+Style:
+Lifestyle documentary-style cinematography with emotional warmth and premium visual quality. Professional warm color grading with rich tones and subtle film grain texture. Smooth cinematic motion similar to a holiday commercial.
+
+Additional instructions:
+- Preserve identity only; clothing, environment, and lighting follow the scene description.
+- Adapt naturally to 1, 2, or 3 reference individuals, maintaining accurate placement and proportions.
+- No extra people under any circumstances.
+- Maintain visual consistency of all individuals across the entire video.
+- Keep all actions, lighting, and gestures coherent and realistic.
+- Faces must stay sharp, stable, and unobstructed at all times.
+`,
+        creditCost: 6,
+        thumbnailUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/7db4bb2d-2e86-4535-ae8f-98d2a910c25e",
+        tags: ["cozy", "family / group", "fireplace", "landscape", "video"],
+        scene: "fireplace",
+        textDefault: "Warm Holiday Moments",
+        defaultDuration: 6,
+        defaultAspectRatio: "16:9",
+        defaultResolution: "1080p",
+        generateAudioDefault: true,
+      },
+
+      {
+        title: "Fireplace Laughter",
+        category: "Cozy",
+        subCategory: "Family / Group",
+        type: "video",
+        orientation: "landscape",
+        previewUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/2d32231d-9403-473f-968b-62485379683e",
+        prompt: `Use the uploaded reference images to extract and preserve the identity, facial features, hairstyle, age, skin tone, and overall appearance of each individual with maximum clarity. The video must include only these exact people. No additional characters are allowed. Each face must remain consistently sharp, stable, and recognizable throughout the entire video.
+
+Identity requirements (critical):
+- Do not alter age, skin tone, hairstyle, bone structure, or natural expression style.
+- No face blending, smoothing, distortion, or morphing.
+- Faces must remain well-lit, clear, unobstructed, and never lost in shadow.
+- Maintain identity fidelity with no changes during motion or angle shifts.
+
+Scene description:
+A heartwarming wide-to-medium shot of only the people in the uploaded reference images gathered cozily near a stone fireplace during a warm Christmas evening. They interact naturally with each other—sharing gentle laughter, exchanging smiles, and enjoying intimate conversation. Show authentic human connection: soft head tilts, expressive hand gestures, warm eye contact, and relaxed leaning or closeness between individuals.
+
+Fireplace environment:
+A crackling stone fireplace emits warm golden light that flickers softly across the scene, creating depth and cinematic atmosphere. A Christmas tree with soft white lights appears in the background with a gentle glow, slightly out of focus for bokeh effect. Stockings hang neatly from the mantel alongside pine garlands, natural green foliage, and rich burgundy ribbons—forming a classic Christmas ambiance.
+
+Action control (strict):
+- Movements must be slow, natural, and physically consistent.
+- No abrupt transitions, no automatic changes in activity.
+- No invented actions, no props appearing unless described.
+- Hands must not merge into bodies, fireplace, or environment.
+- Keep actions simple: laughter, gestures, storytelling, eye contact.
+
+Cinematic direction:
+A slow and subtle gentle push-in camera movement emphasizes intimacy. Use shallow depth of field to keep the individuals and their faces in crisp focus while the background softly blurs. Maintain smooth, stable motion with zero jitter or sudden reframing.
+
+Lighting:
+Warm fireplace practical light as the key source (~2700K), softly illuminating faces with gentle highlights and warm shadows. Christmas lights act as subtle fill and accent light. Include a delicate warm rim light that defines outlines without overpowering the scene.
+
+Clothing:
+AI-generated festive casual winter clothing such as chunky knit sweaters, cozy textures, and holiday-appropriate outfits in rich jewel tones — but identity must remain the same. Clothing should not block or distort facial identity.
+
+Style:
+High-end lifestyle cinematography with emotional storytelling. Professional warm color grading. Smooth cinematic motion similar to premium holiday commercial aesthetics. Keep expressions genuine and natural — real smiles, soft eye movements, subtle breathing.
+
+Additional instructions:
+- Preserve identity only; background, clothing, lighting, and environment follow the scene description.
+- Maintain accurate proportion and placement for 1, 2, or 3 uploaded individuals.
+- No additional characters or background people.
+- Keep faces clear, sharp, and never occluded by hair, hands, shadows, or props.
+- Ensure visual consistency across the entire video with no identity drift.
+- Avoid any dramatic changes, exaggerated gestures, or unpredictable behavior.
+`,
+        creditCost: 6,
+        thumbnailUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/4d3c2ab0-2676-4345-994e-05b3b7d44d74",
+        tags: ["cozy", "family / group", "fireplace", "landscape", "video"],
+        scene: "fireplace",
+        textDefault: "Joyful Together",
+        defaultDuration: 6,
+        defaultAspectRatio: "16:9",
+        defaultResolution: "1080p",
+        generateAudioDefault: true,
+      },
+      {
+        title: "Snowman Builders",
+        category: "Snowy",
+        subCategory: "Family / Group",
+        type: "video",
+        orientation: "landscape",
+        previewUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/e559f884-3fc4-4d97-be6c-a5b362991a4b",
+        prompt: `Use the uploaded reference images to extract and preserve the identity, facial features, hairstyle, age, skin tone, and overall appearance of each individual with maximum clarity. The video must include only these exact people, with no additional characters added. The face of each person must remain consistently sharp, stable, and clearly recognizable throughout the entire video.
+Identity requirements (very important):
+- Do not alter age, facial structure, skin tone, or hairstyle.
+- Do not blend faces or smooth them out; maintain crisp identity details.
+- Faces must remain fully visible, unobstructed, and not distorted by snow, motion, or transitions.
+- No morphing, no automatic camera-cut transitions, and no changes to identity at any moment.
+
+Scene description:
+Medium shot of only the people in the uploaded reference images collaborating together to build a snowman in a winter landscape. Show realistic and controlled actions: gently rolling large snowballs, lifting and placing sections, patting the snow to smooth the surface, and carefully adjusting details. Actions must be natural, stable, and physically coherent.
+
+Important action control:
+- No automatic transitions or sudden changes in activity.
+- Do not jump ahead in the process.
+- The carrot nose, eyes, and stick arms should appear ONLY when placed in the moment, not earlier.
+- No merging of hands with the snowman; maintain clean separation between hands and snow.
+- Movements must be smooth, slow, intentional, and continuous.
+
+Visual environment:
+A bright snowy landscape with soft snowfall, snow-covered trees in the background, and even cinematic winter daylight. Clothing should be winter-appropriate, colorful, and coordinated, but identity must remain the same. Keep the faces well-lit and clearly visible at all times.
+
+Cinematic requirements:
+- Smooth, slow, stable camera movement (no cuts, no jumps).
+- Medium depth of field to keep faces sharp.
+- Realistic breathing, natural gestures, and consistent proportions.
+- No extra people, no crowds, no additional characters in the background.
+
+Additional instructions:
+- Preserve identity only; background, clothing, and lighting are generated according to the scene description.
+- Maintain consistent placement and proportion for 1, 2, or 3 uploaded individuals.
+- The video must not introduce new elements, new characters, or new actions.
+- Keep faces front-facing or at natural angles where identity remains fully recognizable.
+- Avoid hand, snow, or body deformation during interaction.
+`,
+        creditCost: 6,
+        thumbnailUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/1c0d147a-467d-43a8-97d1-725b7089818b",
+        tags: ["snowy", "family / group", "landscape", "winter", "video"],
+        scene: "outdoor",
+        textDefault: "Winter Fun",
+        defaultDuration: 6,
+        defaultAspectRatio: "16:9",
+        defaultResolution: "1080p",
+        generateAudioDefault: true,
+      },
+
+      {
+        title: "Snow Angels",
+        category: "Snowy",
+        subCategory: "Family / Group",
+        type: "video",
+        orientation: "portrait",
+        previewUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/91ee572b-b72c-4135-aade-9e87d3c46c5c",
+        prompt: `Use the uploaded reference images to extract and preserve the exact identity of each individual with maximum accuracy. Maintain their real facial features, proportions, hair characteristics, age, skin tone, and overall appearance exactly as shown in the reference images. Only the individuals from the reference images may appear in the video. Absolutely no additional characters, no altered faces, and no identity drift are allowed.
+
+Identity stability:
+- Keep all faces sharp, well-lit, and fully recognizable throughout.
+- Preserve each person’s natural facial expression style.
+- No warping, smoothing, blending, or de-aging.
+- No obscured faces—ensure upward-facing visibility remains clear.
+
+Scene description:
+A magical winter scene filmed from an overhead aerial perspective, looking directly down at only the uploaded individuals lying in pristine, untouched fresh snow while joyfully creating snow angels. The snow surface is clean and bright, forming a perfect natural canvas.
+
+Action control:
+Show smooth, natural, rhythmic snow-angel motions:
+- arms sweeping outward from hips to overhead  
+- legs spreading outward and then closing  
+- gentle, coordinated movement  
+- consistent motion without abrupt transitions  
+
+Faces should show joyful expressions as they look upward toward the sky/camera. Breathing should be subtle and natural, with occasional soft visible vapor. No actions should change or transition unexpectedly.
+
+Environment:
+Fresh, untouched snow beneath the individuals with soft texture. Snow angel impressions must form clearly and accurately in real-time with each sweeping motion. Light gentle snowfall drifts downward, creating soft foreground bokeh and enhancing the overhead perspective. Surrounding area is an open snow field with distant snow-covered trees along the horizon.
+
+Clothing:
+AI-generated vibrant winter coats in rich contrasting colors such as red, royal blue, and bright purple that stand out against the white snow. Clothing must not obscure faces or interfere with identity clarity.
+
+Camera direction:
+Overhead camera positioned directly above subjects. Composition should show full body and complete symmetrical snow-angel formations. Camera movement should be minimal, subtle, and cinematic—such as a slow, smooth rise, gentle descent, or slight rotation to enhance perspective while maintaining stability.
+
+Lighting:
+Bright overcast winter daylight provides soft, even illumination. Snow acts as a natural reflector, casting clean diffused light upward onto faces for flattering clarity. White balance should reflect cool winter daylight.
+
+Style:
+Whimsical lifestyle cinematography with crisp focus, vibrant color saturation, and strong contrast between subjects and snow. Magical winter atmosphere enhanced by falling snow, clean compositions, and rhythmic motion. Professional cinematic quality with smooth, stable movement.
+
+Additional instructions:
+- Preserve identity only; clothing, background, and lighting are defined by the scene description.
+- Adapt naturally to 1, 2, or 3 reference individuals while maintaining accurate proportions and spatial placement.
+- No extra people under any circumstances.
+- Ensure consistent appearance, lighting, and facial clarity for all individuals across the entire video.
+- Motion must remain steady, realistic, and visually coherent with no abrupt shifts or unwanted behaviors.
+`,
+        creditCost: 6,
+        thumbnailUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/d7b42be8-730c-4e67-8ec1-b00cc1d25da0",
+        tags: ["snowy", "family / group", "portrait", "winter", "video"],
+        scene: "outdoor",
+        textDefault: "Snow Day Magic",
+        defaultDuration: 6,
+        defaultAspectRatio: "9:16",
+        defaultResolution: "1080p",
+        generateAudioDefault: true,
+      },
+      {
+        title: "Tree Decorating Magic",
+        category: "Classic",
+        subCategory: "Family / Group",
+        type: "video",
+        orientation: "portrait",
+        previewUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/c5dcbc25-f5e2-4bcd-ac3c-00a352e5cddd",
+        prompt: `Use the uploaded reference images to extract and preserve the exact identity of each individual with maximum fidelity. Maintain their real facial structure, proportions, hairstyle, age, skin tone, and unique appearance exactly as shown. Only the individuals in the reference images may appear. No additional characters or altered faces are allowed.
+
+Identity stability:
+- Keep faces sharp, clear, well-lit, and recognizable at all times.
+- No warping, blending, smoothing, or face drift.
+- Preserve their natural look and expression style while maintaining cinematic consistency.
+- Do not obscure faces with camera angles, ornaments, shadows, or tree branches.
+
+Scene description:
+A warm, elegant Christmas evening scene where only the uploaded individuals decorate a majestic Christmas tree together in a beautifully appointed living room. The mood is cozy, festive, and cinematic.
+
+Action control:
+Show natural, collaborative decorating motions:
+- hands gently hanging ornaments  
+- placing baubles and ribbons  
+- stringing lights along branches  
+- reaching upward toward higher branches  
+- passing ornaments to one another  
+- stepping back briefly to evaluate placement  
+- subtle, realistic gestures and soft expressions  
+
+Movements must be smooth, intentional, and consistent, with no abrupt behavior changes or automatic transitions.
+
+Environment:
+A tall, richly green Christmas tree stands prominently in the room. Branches catch warm interior lighting, creating depth and sparkle. The room features tasteful holiday décor: fireplace in the background, pine garlands, candles, and elegant seasonal accents. Evening ambiance enhances the cozy warm styling.
+
+Clothing:
+AI-generated holiday attire inspired by festive elegance—knit sweaters or soft winter clothing in burgundy, forest green, cream, or muted seasonal jewel tones. Clothing must never obscure identity.
+
+Camera direction:
+A graceful cinematic medium-wide shot with slow circular dolly movement around the tree, capturing a 180-degree perspective. Subtle crane motion from slightly low to slightly high accentuates tree height and creates a dynamic visual layer. Keep motion smooth, stable, and slow.
+
+Lighting:
+Warm interior lighting around 2700K reflecting a cozy evening environment. Christmas tree lights gradually brighten as they are tested and activated, creating subtle starburst reflections on ornaments. Soft window light from outside adds a mild cool contrast for realism. Ensure faces remain evenly lit, visible, and clear throughout.
+
+Style:
+Upscale lifestyle cinematography with rich warm color grading, controlled highlights, and smooth cinematic motion. Medium depth of field keeps subjects and tree sharp while the background softly blends. Reflections on ornaments should shimmer naturally with high-quality detail.
+
+Additional instructions:
+- Preserve identity only; environment, clothing, and lighting follow the scene description.
+- Adapt cleanly to 1, 2, or 3 reference individuals while maintaining correct proportions and natural interaction.
+- No extra people under any circumstances.
+- Maintain facial consistency, lighting consistency, and stable identity across the entire video.
+- Keep all gestures and actions realistic, coherent, and aligned with the decorating process.
+- No unwanted pose changes, random actions, or character inconsistencies.
+`,
+        creditCost: 6,
+        thumbnailUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/1f2751f9-3555-4a0e-9f37-5dba2eb78c3d",
+        tags: ["classic", "family / group", "portrait", "tree", "video"],
+        scene: "tree",
+        textDefault: "Deck The Halls",
+        defaultDuration: 6,
+        defaultAspectRatio: "9:16",
+        defaultResolution: "1080p",
+        generateAudioDefault: true,
+      },
+      {
+        title: "Mistletoe Kiss",
+        category: "Romantic",
+        subCategory: "Couple / Duo",
+        type: "video",
+        orientation: "portrait",
+        previewUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/e94f3df7-8553-4089-822b-b5a190b83ed1",
+        prompt: `Use the uploaded reference images to extract and preserve the exact identity, facial features, hairstyle, age, skin tone, and overall appearance of each individual with maximum accuracy. Only the people in the reference images may appear. No additional characters, no altered faces, and no identity drift are allowed.
+
+Identity stability:
+- Maintain sharp, clear, well-lit facial details at all times.
+- Preserve their natural appearance and expression style without smoothing, warping, or blending.
+- Keep both faces unobstructed, with consistent proportions and stable identity from every angle.
+
+Scene description:
+A warm, cinematic romantic moment where the two uploaded individuals share a tender holiday kiss beneath a hanging mistletoe. The environment is soft, glowing, and emotionally intimate, capturing a timeless Christmas romance.
+
+Action control:
+Show a natural sequence of romantic gestures:
+- couple approaches each other with warm expressions  
+- they gently look upward to notice the mistletoe  
+- exchange loving glances  
+- lean in slowly for a soft, tender kiss  
+- natural eye closing during the kiss  
+- subtle hands touching face, gentle embrace, relaxed body language  
+
+Movements must remain smooth, stable, and realistic, with no abrupt or exaggerated transitions.
+
+Environment:
+Mistletoe with green leaves and red berries hangs naturally from a doorway or archway decorated with pine garland and a red ribbon. Behind them, a softly glowing Christmas tree emits warm golden lights. Background bokeh should create a dreamy, romantic atmosphere.
+
+Clothing:
+AI-generated elegant holiday attire—such as a sophisticated dress or dressy sweater for the woman, and a fine-knit sweater or button-down shirt for the man. Colors include deep jewel tones: burgundy, emerald, navy. Clothing should complement the scene without obscuring facial identity.
+
+Camera direction:
+Cinematic romantic close-up with a gentle slow push-in as the couple approaches. Camera holds steady during the kiss, with a subtle upward tilt following their gaze toward the mistletoe before they lean in. Motion is soft, smooth, and highly controlled.
+
+Lighting:
+Warm golden lighting around 2700K creating a romantic mood. Soft golden backlight forms a gentle halo around their hair and shoulders, with subtle lens flare adding a magical holiday touch. Key light on faces must remain soft and flattering. Background tree lights create creamy bokeh.
+
+Style:
+Luxury romance cinematography with film-like softness, warm rich color grading, subtle diffusion, and shallow depth of field. Emphasize emotional authenticity, gentle movement, and high-end holiday aesthetics.
+
+Additional instructions:
+- Preserve identity only; clothing, background, and lighting are defined by the scene description.
+- For two uploaded individuals, maintain accurate positioning and intimate interaction.
+- No extra people under any circumstances.
+- Keep faces fully visible and consistently recognizable throughout.
+- Ensure motion is coherent, intimate, and emotionally natural.
+`,
+        creditCost: 6,
+        thumbnailUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/296fbd99-db41-46e4-b1b5-45842cbd728c",
+        tags: ["romantic", "couple / duo", "portrait", "mistletoe", "video"],
+        scene: "tree",
+        textDefault: "Love & Joy",
+        defaultDuration: 6,
+        defaultAspectRatio: "4:5",
+        defaultResolution: "1080p",
+        generateAudioDefault: true,
+      },
+
+      {
+        title: "Festive Dinner Table",
+        category: "Romantic",
+        subCategory: "Family / Group",
+        type: "video",
+        orientation: "landscape",
+        previewUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/222518b1-b43a-4a07-8e2e-bdf212c37a50",
+        prompt: `Use the uploaded reference images to extract and preserve the exact facial identity, expressions, age, hairstyle, and physical appearance of each adult exactly as shown. Only the individuals in the reference images may appear. No additional people, no identity drift, no facial changes, and no alterations to their appearance at any point.
+
+Identity stability requirements:
+- Maintain consistent, sharp, well-lit facial features no matter the angle.
+- Preserve natural expressions, eye shapes, and proportional details.
+- Faces may turn naturally while staying fully recognizable.
+- No smoothing, warping, or blending between frames.
+
+Scene overview:
+A warm, elegant Christmas dinner gathering in a beautifully lit dining room. Begin with a wide establishing shot of all adults seated around an exquisitely prepared holiday dinner table, transitioning into medium shots during natural conversation. The emotional tone is warm, joyful, and sincere.
+
+Table & props (STRICT continuity rules):
+The table is elegantly set with:
+- white linen tablecloth  
+- fine bone china  
+- polished silverware  
+- crystal wine glasses (each filled with red wine)  
+- cloth napkins folded neatly  
+- festive centerpiece of fresh pine branches, red holly berries, white pillar candles at multiple heights, and scattered gold ornaments  
+
+A golden roasted turkey sits as the main centerpiece dish, surrounded by classic holiday sides in refined serving platters.  
+All props remain perfectly consistent with NO changes:
+- wine glasses never transform, disappear, change color, or become another object  
+- silverware stays on the table  
+- no bottles appear in hands  
+- food remains visually stable  
+- candles do not change height or position  
+
+Character action & movement:
+Adults engage in subtle, natural dinner-table behavior:
+- relaxed conversation  
+- gentle head tilts  
+- soft laughter  
+- mild expressive gestures while keeping one hand on their crystal wine glass  
+- occasional warm glances exchanged across the table  
+
+At the key emotional moment, all adults simultaneously perform a coordinated toast:
+- each raises their crystal wine glass  
+- glasses meet in the center above the table  
+- glasses return smoothly to their original position afterward  
+
+Movements must stay controlled, stable, and realistic. No exaggerated gestures or rapid motion.
+
+Clothing:
+AI-generated but aligned with the upscale holiday theme.  
+Women wear elegant holiday dresses or dressy blouses in jewel tones.  
+Men wear button-down shirts or fine-knit sweaters.  
+Color palette: burgundy, emerald green, navy, gold accents.  
+Clothing must remain stable and consistent through the entire sequence.
+
+Camera direction:
+A slow, refined lateral dolly shot tracking along the length of the table from left to right at consistent eye-level.  
+No sudden angle changes, no jumps, no cuts.  
+Camera glides smoothly, transitioning naturally from the wide establishing view into medium conversational shots.
+
+Lighting:
+Warm candlelight is the dominant source at around 2400K, providing soft flicker and amber glow across faces.  
+Supplemented by:
+- soft, warm overhead chandelier lighting  
+- gentle twilight window fill for subtle depth  
+The lighting creates dimensionality without harsh shadows, preserving flattering skin tones and rich golden warmth.
+
+Background & environment:
+Decorated dining room with:
+- fresh garland along walls  
+- warm string lights  
+- soft ambient Christmas décor  
+- partial view of a lit Christmas tree through a doorway or adjacent room  
+
+Depth of field:
+Medium depth of field keeping diners and table elements sharp while the background falls into elegant soft defocus.
+
+Cinematic style:
+Luxury lifestyle editorial cinematography with:
+- smooth 24fps motion  
+- film-like grain  
+- warm golden/amber color grading  
+- consistent exposure  
+- no visual artifacts, no jerky transitions  
+- grounded, authentic emotional warmth  
+
+Special requirements:
+- Maintain perfect prop continuity—no object morphing or swapping.  
+- Maintain perfect facial identity.  
+- Keep wine glasses stable, never replaced or altered.  
+- Keep scene absolutely consistent in lighting, environment, and attire.  
+`,
+        creditCost: 6,
+        thumbnailUrl:
+          "https://giddy-swan-737.convex.cloud/api/storage/81f283a8-1722-4d2e-afdf-98e0d00efc6e",
+        tags: ["romantic", "family / group", "landscape", "dinner", "video"],
+        scene: "table",
+        textDefault: "Holiday Feast",
+        defaultDuration: 8,
+        defaultAspectRatio: "16:9",
+        defaultResolution: "1080p",
+        generateAudioDefault: true,
+      },
+    ];
+
+    // Insert items (do not clear existing templates to avoid accidental deletion)
+    const inserted: Array<{ title: string; id: any }> = [];
+    const errors: Array<{ title: string; error: string }> = [];
+
+    for (const item of items) {
+      try {
+        const id = await ctx.db.insert("templates", item);
+        inserted.push({ title: item.title, id });
+      } catch (err: any) {
+        errors.push({ title: item.title, error: String(err) });
+      }
+    }
+
+    return {
+      success: true,
+      marker: "devSeed-patched-v2",
+      count: items.length,
+      inserted: inserted.length,
+      insertedItems: inserted,
+      errors,
+    };
+  },
+});
 
 // export const devImageTempSeed = mutation({
 //   args: {},
@@ -889,6 +1233,7 @@ export const list = query({
       orientation: v.union(v.literal("portrait"), v.literal("landscape")),
       aspectRatio: v.string(),
       previewUrl: v.string(),
+      thumbnailUrl: v.string(),
       creditCost: v.number(),
       tags: v.array(v.string()),
       scene: v.string(),

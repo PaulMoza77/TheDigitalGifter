@@ -99,10 +99,11 @@ export const createVideoJob = mutation({
     templateId: v.id("templates"),
     inputFileIds: v.optional(v.array(v.id("_storage"))),
     userInstructions: v.optional(v.string()),
+    // Duration is hardcoded to 8 for Veo 3.1; ignore client-provided duration
     duration: v.optional(v.union(v.literal(4), v.literal(6), v.literal(8))),
     resolution: v.optional(v.union(v.literal("720p"), v.literal("1080p"))),
     aspectRatio: v.optional(v.union(v.literal("16:9"), v.literal("9:16"))),
-    generateAudio: v.optional(v.boolean()),
+    generateAudio: v.boolean(),
     negativePrompt: v.optional(v.string()),
     seed: v.optional(v.number()),
   },
@@ -129,14 +130,14 @@ export const createVideoJob = mutation({
       throw new Error("Negative prompt must be <= 500 characters");
     }
 
-    // Use provided values, only fall back to defaults if explicitly undefined
-    // This ensures frontend selections are always respected
-    const duration = args.duration !== undefined ? args.duration : 8;
-    const resolution = args.resolution !== undefined ? args.resolution : ("1080p" as const);
-    const aspectRatio = args.aspectRatio !== undefined ? args.aspectRatio : ("16:9" as const);
-    // generateAudio: if explicitly false, use false; if undefined, default to true
-    const generateAudio = args.generateAudio !== undefined ? args.generateAudio : true;
-    
+    // Duration is always 8 seconds for Veo 3.1
+    const duration = 8;
+    const resolution =
+      args.resolution !== undefined ? args.resolution : ("1080p" as const);
+    const aspectRatio =
+      args.aspectRatio !== undefined ? args.aspectRatio : ("16:9" as const);
+    const generateAudio = args.generateAudio;
+
     // Log the values being used for debugging
     console.log("[createVideoJob] Video settings:", {
       duration,
@@ -164,13 +165,58 @@ export const createVideoJob = mutation({
       // Store negative prompt separately; do not expose to public queries
     }
 
-    // Atomically debit credits and create the job via internal mutation
+    // Validate template creditCost exists and is positive
+    if (typeof template.creditCost !== "number" || template.creditCost <= 0) {
+      throw new Error("Template creditCost missing or invalid");
+    }
+
+    // Helper: calculate total credits and breakdown
+    function calculateVideoCredits(template: any, generateAudioParam: boolean) {
+      const durationSeconds = 8; // Veo 3.1 fixed duration
+      const perSecondCost = template.creditCost; // per-second WITHOUT audio
+      const baseCost = perSecondCost * durationSeconds;
+      const audioMultiplier = generateAudioParam ? 2 : 1;
+      const totalCost = baseCost * audioMultiplier;
+
+      return {
+        totalCost,
+        breakdown: {
+          perSecondCost,
+          seconds: durationSeconds,
+          audioMultiplier,
+          totalCost,
+        },
+      };
+    }
+
+    // Validate generateAudio is boolean
+    if (typeof generateAudio !== "boolean") {
+      throw new Error("generateAudio must be a boolean");
+    }
+
+    const { totalCost, breakdown } = calculateVideoCredits(
+      template,
+      generateAudio
+    );
+
+    // Ensure user has enough credits before calling atomic mutation (atomic will also check)
+    const userProfile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .unique();
+
+    if (!userProfile || (userProfile.credits ?? 0) < totalCost) {
+      throw new Error("Insufficient credits");
+    }
+
+    // Atomically debit calculated totalCost and create the job via internal mutation
     const jobId: Id<"jobs"> = await ctx.runMutation(
       (internal as any).atomic.debitCreditsAndCreateJob,
       {
         userId,
         templateId: args.templateId,
-        creditCost: template.creditCost,
+        creditCost: totalCost,
+        creditBreakdown: breakdown,
         inputFileIds,
         prompt: finalPrompt,
         aspectRatio,
@@ -196,7 +242,7 @@ export const createVideoJob = mutation({
     return {
       jobId,
       status: "queued",
-      creditsDebited: template.creditCost,
+      creditsDebited: totalCost,
       templateTitle: template.title,
     };
   },

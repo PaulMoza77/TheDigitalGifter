@@ -13,6 +13,7 @@ export type TemplateSummary = {
   orientation: "portrait" | "landscape";
   aspectRatio: string;
   previewUrl: string;
+  thumbnailUrl?: string;
   creditCost: number;
   tags: string[];
   scene: string;
