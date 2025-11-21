@@ -23,6 +23,12 @@ export default function MainLayout() {
     }
 
     try {
+      if (!me) {
+        toast.error("Please sign in to purchase credits");
+        setShowPricing(false);
+        return;
+      }
+
       console.log("[MainLayout] Starting checkout", { pack, userId: me._id });
       const { url } = await buyPack.mutateAsync({ pack });
       if (url) {

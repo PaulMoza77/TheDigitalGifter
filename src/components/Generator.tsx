@@ -21,7 +21,6 @@ import {
 } from "@/data";
 import { Select } from "./ui/Select";
 import { cn } from "@/lib/utils";
-import { InfiniteQueryObserver } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 
 // Snow Animation Background Component
@@ -112,12 +111,12 @@ export default function GeneratorPage() {
 
   const { data: templates = [] } = useTemplatesQuery();
   const templatesList = templates as TemplateSummary[];
-  const { data: creditsData } = useUserCreditsQuery();
+  const { data: creditsData = 0 } = useUserCreditsQuery();
   const { data: jobs = [] } = useJobsQuery();
   const { mutateAsync: requestUploadUrl } = useGenerateUploadUrlMutation();
   const { mutateAsync: triggerCreateJob } = useCreateJobMutation();
   const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
-  const userCredits = creditsData ?? 0;
+  const userCredits: number = (creditsData ?? 0) as number;
 
   const categories = [
     "All",
@@ -404,7 +403,7 @@ export default function GeneratorPage() {
       return;
     }
 
-    if (userCredits < template.creditCost) {
+    if ((userCredits ?? 0) < template.creditCost) {
       toast.error(`Not enough credits. Need ${template.creditCost} credits.`);
       return;
     }

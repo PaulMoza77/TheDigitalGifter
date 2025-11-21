@@ -3,22 +3,30 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { Toaster } from "sonner";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, lazy } from "react";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { TermsPage } from "./pages/TermsPage";
 import { RefundPolicyPage } from "./pages/RefundPolicyPage";
 import { useAuthStateMonitor } from "./hooks/useAuthStateMonitor";
-import { lazy } from "react";
 
 const MainLayout = lazy(() => import("./layouts/MainLayouts"));
 const HomePage = lazy(() => import("./pages/HomePage"));
 const GeneratorPage = lazy(() => import("./pages/GeneratorPage"));
 const TemplatesPage = lazy(() => import("./pages/TemplatesPage"));
-// const TheDigitalGifterDashboard = lazy(
-//   () => import("./pages/TheDigitalGifterDashboard")
-// );
+
+// Component to handle scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 export default function App() {
   // Monitor auth state changes and invalidate caches when user logs in/out
@@ -34,6 +42,7 @@ export default function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <div className="min-h-screen bg-black text-gray-900 flex flex-col">
         <Suspense
           fallback={
@@ -51,7 +60,6 @@ export default function App() {
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/refunds" element={<RefundPolicyPage />} />
             </Route>
-            {/* <Route path="/dashboard" element={<TheDigitalGifterDashboard />} /> */}
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

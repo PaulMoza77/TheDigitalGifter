@@ -13,8 +13,12 @@ export function useLoggedInUserQuery() {
   return useQuery<Doc<"users"> | null, Error>({
     queryKey: authKeys.me,
     queryFn: () => convex.query(api.auth.loggedInUser, {}),
-    staleTime: 60 * 1000,
+    // For auth queries, use very short stale time so changes are detected quickly
+    staleTime: 0, // Always consider stale, refetch on mount
     gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    // Refetch when window regains focus (catches auth redirects)
+    refetchOnWindowFocus: true,
+    // Only fetch when authenticated or when checking auth status
+    enabled: true,
   });
 }
