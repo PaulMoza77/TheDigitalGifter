@@ -135,6 +135,9 @@ export default function TheDigitalGifterMainPage({
           </div>
         </section>
 
+        {/* CAROUSEL */}
+        <TemplatesCarousel />
+
         {/* STATS */}
         <section className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 text-center py-8 gap-8 relative z-[2]">
           {stats.map((s, i) => (
@@ -147,24 +150,6 @@ export default function TheDigitalGifterMainPage({
               </p>
             </div>
           ))}
-        </section>
-
-        {/* CAROUSEL */}
-        <TemplatesCarousel />
-
-        {/* CTA CUSTOM DESIGN */}
-        <section className="text-center py-10 px-6">
-          <p className="text-[#dfe6f1] mb-4">
-            Don't see what you're looking for? Our AI can create custom designs
-            based on your description!
-          </p>
-          <button
-            onClick={onStartCreating}
-            aria-label="Create a custom design for your Christmas card"
-            className="inline-block rounded-2xl px-8 py-4 font-extrabold text-[#1a1a1a] border border-white/60 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] bg-[length:250%_250%] animate-gradientShift shadow-[0_12px_30px_rgba(255,170,90,.45)] hover:scale-[1.04] transition"
-          >
-            Create Custom Design
-          </button>
         </section>
 
         {/* HOW IT WORKS */}
@@ -196,6 +181,21 @@ export default function TheDigitalGifterMainPage({
               </div>
             ))}
           </div>
+        </section>
+
+        {/* CTA CUSTOM DESIGN */}
+        <section className="text-center py-10 px-6">
+          <p className="text-[#dfe6f1] mb-4">
+            Don't see what you're looking for? Our AI can create custom designs
+            based on your description!
+          </p>
+          <button
+            onClick={onStartCreating}
+            aria-label="Create a custom design for your Christmas card"
+            className="inline-block rounded-2xl px-8 py-4 font-extrabold text-[#1a1a1a] border border-white/60 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] bg-[length:250%_250%] animate-gradientShift shadow-[0_12px_30px_rgba(255,170,90,.45)] hover:scale-[1.04] transition"
+          >
+            Create Custom Design
+          </button>
         </section>
 
         {/* WHY CHOOSE */}
@@ -274,14 +274,6 @@ export default function TheDigitalGifterMainPage({
           </div>
         </section>
       </main>
-
-      {/* FOOTER */}
-      <footer className="text-center py-6 text-[#dfe6f1] text-sm border-t border-white/10">
-        <div className="flex justify-center items-center gap-2 mb-2 font-extrabold text-white">
-          🎁 TheDigitalGifter
-        </div>
-        <p>© 2024 TheDigitalGifter. Spreading Christmas joy with AI.</p>
-      </footer>
     </div>
   );
 }

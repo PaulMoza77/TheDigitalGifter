@@ -6,6 +6,9 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Suspense, useEffect, lazy } from "react";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
+import { TermsPage } from "./pages/TermsPage";
+import { RefundPolicyPage } from "./pages/RefundPolicyPage";
 
 const MainLayout = lazy(() => import("./layouts/MainLayouts"));
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -39,8 +42,12 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/generator" element={<GeneratorPage />} />
               <Route path="/templates" element={<TemplatesPage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/refunds" element={<RefundPolicyPage />} />
             </Route>
             {/* <Route path="/dashboard" element={<TheDigitalGifterDashboard />} /> */}
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

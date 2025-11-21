@@ -51,6 +51,13 @@ export default function MainLayout() {
         onClose={() => setShowPricing(false)}
         onBuyPack={handleBuyPack}
       />
+      {/* FOOTER */}
+      <footer className="text-center py-6 text-[#dfe6f1] text-sm border-t border-white/10">
+        <div className="mb-2 font-extrabold text-white">
+          🎁 TheDigitalGifter
+        </div>
+        <p>© 2024 TheDigitalGifter. Spreading Christmas joy with AI.</p>
+      </footer>
     </>
   );
 }
