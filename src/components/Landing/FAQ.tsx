@@ -10,7 +10,7 @@ const faqs = [
   {
     question: "How does the credit system work?",
     answer:
-      "Each AI card generation costs 1 credit. Video generations cost 5 credits. Credits are purchased in packs and never expire. You only pay for what you actually use, with no monthly commitments required.",
+      "Each AI card generation costs upto 10 credit. Video generations cost 12 credits without audio and with audio it will be 24. Credits are purchased in packs and never expire. You only pay for what you actually use, with no monthly commitments required.",
   },
   {
     question: "How does AI handle my photos?",
@@ -20,7 +20,7 @@ const faqs = [
   {
     question: "How fast is video generation?",
     answer:
-      "AI card generation takes approximately 30 seconds. Video generation using Google VEO3 technology typically completes in under 2 minutes. Processing time may vary slightly based on server load and complexity.",
+      "AI card generation takes approximately 30 seconds. Video generation using Google VEO3.1 technology typically completes in under 2 minutes. Processing time may vary slightly based on server load and complexity.",
   },
   {
     question: "What about privacy and data security?",
