@@ -5,6 +5,7 @@ export type TemplateSummary = {
   _creationTime: number;
   slug: string;
   title: string;
+  occasion: string;
   category: string;
   subCategory: string;
   type: "image" | "video";

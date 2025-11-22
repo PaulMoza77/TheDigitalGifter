@@ -39,6 +39,7 @@ function sanitizeTemplate(template: Doc<"templates">) {
     title: (template as any).title || "",
     category: (template as any).category || "",
     subCategory: (template as any).subCategory || "",
+    occasion: (template as any).occasion || "",
     // Normalize legacy template types to a standardized set for the frontend
     // Legacy values like "photo" or "card" are normalized to "image".
     type: (function () {
@@ -171,6 +172,7 @@ export const seed = mutation({
     const items: TemplateSeed[] = [
       {
         title: "Gift Unwrapping Moment",
+        occasion: "christmas",
         category: "Classic",
         subCategory: "Family",
         type: "image",
@@ -194,6 +196,7 @@ export const seed = mutation({
       },
       {
         title: "Grand Evergreen Portrait",
+        occasion: "christmas",
         category: "Classic",
         subCategory: "Couple / Duo",
         type: "photo",
@@ -209,6 +212,7 @@ export const seed = mutation({
       },
       {
         title: "Festive Dinner Table",
+        occasion: "christmas",
         category: "Classic",
         subCategory: "Couple / Dou",
         type: "photo",
@@ -224,6 +228,7 @@ export const seed = mutation({
       },
       {
         title: "Red & Gold Card",
+        occasion: "christmas",
         category: "Classic",
         subCategory: "Card / No people",
         type: "card",
@@ -246,6 +251,7 @@ export const seed = mutation({
       },
       {
         title: "By the Hearth",
+        occasion: "christmas",
         category: "Cozy",
         subCategory: "Couple / Duo",
         type: "photo",
@@ -261,6 +267,7 @@ export const seed = mutation({
       },
       {
         title: "Choosing the Star",
+        occasion: "christmas",
         category: "Cozy",
         subCategory: "Family / Group",
         type: "photo",
@@ -276,6 +283,7 @@ export const seed = mutation({
       },
       {
         title: "Story Time",
+        occasion: "christmas",
         category: "Cozy",
         subCategory: "Family / Group",
         type: "photo",
@@ -291,6 +299,7 @@ export const seed = mutation({
       },
       {
         title: "Sweater Weather",
+        occasion: "christmas",
         category: "Cozy",
         subCategory: "Couple / Duo",
         type: "image",
@@ -306,6 +315,7 @@ export const seed = mutation({
       },
       {
         title: "Snowman Builders",
+        occasion: "christmas",
         category: "Snowy",
         subCategory: "Family / Group",
         type: "image",
@@ -321,6 +331,7 @@ export const seed = mutation({
       },
       {
         title: "Sledding Hill",
+        occasion: "christmas",
         category: "Snowy",
         subCategory: "Couple / Duo",
         type: "photo",
@@ -336,6 +347,7 @@ export const seed = mutation({
       },
       {
         title: "Snowfall Portrait",
+        occasion: "christmas",
         category: "Snowy",
         subCategory: "Single Portrait",
         type: "photo",
@@ -351,6 +363,7 @@ export const seed = mutation({
       },
       {
         title: "Derdelus",
+        occasion: "christmas",
         category: "Snowy",
         subCategory: "Single Portrait",
         type: "image",
@@ -366,6 +379,7 @@ export const seed = mutation({
       },
       {
         title: "Mistletoe Kiss",
+        occasion: "christmas",
         category: "Romantic",
         subCategory: "Couple / Duo",
         type: "photo",
@@ -381,6 +395,7 @@ export const seed = mutation({
       },
       {
         title: "Sleigh Ride Duo",
+        occasion: "christmas",
         category: "Romantic",
         subCategory: "Couple / Duo",
         type: "photo",
@@ -396,6 +411,7 @@ export const seed = mutation({
       },
       {
         title: "Minimal Love Card",
+        occasion: "christmas",
         category: "Romantic",
         subCategory: "Card / No people",
         type: "card",
@@ -411,6 +427,7 @@ export const seed = mutation({
       },
       {
         title: "Winter Proposal",
+        occasion: "christmas",
         category: "Romantic",
         subCategory: "Couple / Duo",
         type: "photo",
@@ -1229,6 +1246,7 @@ export const list = query({
       title: v.string(),
       category: v.string(),
       subCategory: v.string(),
+      occasion: v.string(),
       type: v.string(),
       orientation: v.union(v.literal("portrait"), v.literal("landscape")),
       aspectRatio: v.string(),

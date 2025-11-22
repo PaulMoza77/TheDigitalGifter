@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import { useLocation } from "react-router-dom";
 import { useBootstrapUser } from "../hooks/useBootstrapUser";
 import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
@@ -22,6 +23,7 @@ import {
 import { Select } from "./ui/Select";
 import { cn } from "@/lib/utils";
 import { Info } from "lucide-react";
+import { occasions } from "@/constants/occasions";
 
 // Snow Animation Background Component
 function SnowBackground() {
@@ -77,6 +79,7 @@ function SnowBackground() {
 
 export default function GeneratorPage() {
   const user = useBootstrapUser();
+  const location = useLocation();
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedTemplate, setSelectedTemplate] =
     useState<Id<"templates"> | null>(null);
@@ -118,6 +121,19 @@ export default function GeneratorPage() {
   const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
   const userCredits: number = (creditsData ?? 0) as number;
 
+  // Read ?occasion= query param and filter templates by that occasion
+  const [selectedOccasion, setSelectedOccasion] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const occasionParam = params.get("occasion");
+    if (occasionParam) {
+      setSelectedOccasion(occasionParam.toLowerCase().trim());
+      // Pre-select first category for this occasion
+      setActiveCategory("Classic");
+    }
+  }, [location.search]);
+
   const categories = [
     "All",
     "Classic",
@@ -129,9 +145,20 @@ export default function GeneratorPage() {
     // "Homey",
   ];
 
-  // Filter templates by category and optional type (image/video)
+  // Filter templates by occasion (if specified), category and optional type (image/video)
   const filteredTemplates = useMemo(() => {
     let list = templatesList;
+    
+    // First filter by occasion if specified in query params
+    if (selectedOccasion) {
+      list = list.filter(
+        (t) =>
+          (t.occasion || "").toString().trim().toLowerCase() ===
+          selectedOccasion
+      );
+    }
+    
+    // Then filter by category
     const activeNormalized = (activeCategory || "")
       .toString()
       .trim()
@@ -143,11 +170,13 @@ export default function GeneratorPage() {
           activeNormalized
       );
     }
+    
+    // Then filter by type
     if (typeFilter !== "all") {
       list = list.filter((t) => (t as any).type === typeFilter);
     }
     return list;
-  }, [activeCategory, templatesList, typeFilter]);
+  }, [activeCategory, templatesList, typeFilter, selectedOccasion]);
 
   const templateMap = useMemo(() => {
     const lookup = new Map<string, TemplateSummary>();

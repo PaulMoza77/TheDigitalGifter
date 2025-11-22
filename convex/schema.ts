@@ -58,6 +58,8 @@ const applicationTables = {
     .index("by_type", ["type"]),
 
   templates: defineTable({
+    // Occasion (e.g., "christmas", "birthday", "wedding") - links to occasions.ts
+    occasion: v.optional(v.string()),
     // Categories and sub-categories for UI filtering and organization
     category: v.optional(v.string()),
     subCategory: v.optional(v.string()),
@@ -84,6 +86,7 @@ const applicationTables = {
     creditCost: v.number(),
     tags: v.array(v.string()),
   })
+    .index("by_occasion", ["occasion"])
     .index("by_scene", ["scene"])
     .index("by_category", ["category"])
     .index("by_credit_cost", ["creditCost"])

@@ -12,6 +12,7 @@ type Template = TemplateSummary;
 interface TemplatesGridProps {
   onPick?: (template: Template) => void;
   selectedTemplateId?: Id<"templates">;
+  occasionFilter?: string | null;
 }
 
 export default memo(TemplatesGridComponent);
@@ -19,6 +20,7 @@ export default memo(TemplatesGridComponent);
 function TemplatesGridComponent({
   onPick,
   selectedTemplateId,
+  occasionFilter,
 }: TemplatesGridProps) {
   const [modal, setModal] = useState<{
     open: boolean;
@@ -61,9 +63,14 @@ function TemplatesGridComponent({
           })()
         : true;
 
-      return matchesScene && matchesOrientation && matchesPrice;
+      const matchesOccasion = occasionFilter
+        ? (template.occasion || "").toLowerCase().trim() ===
+          occasionFilter.toLowerCase().trim()
+        : true;
+
+      return matchesScene && matchesOrientation && matchesPrice && matchesOccasion;
     });
-  }, [templatesArray, scene, orientation, priceRange]);
+  }, [templatesArray, scene, orientation, priceRange, occasionFilter]);
 
   const sceneCounts = useMemo(() => {
     return templatesArray.reduce<Record<string, number>>((acc, template) => {

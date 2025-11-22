@@ -1,7 +1,11 @@
 import TemplatesGrid from "../components/TemplatesGrid";
 import { PageHead } from "../components/PageHead";
+import { useLocation } from "react-router-dom";
 
 export default function TemplatesPage() {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const occasionParam = params.get("occasion");
   return (
     <>
       <PageHead
@@ -36,7 +40,7 @@ export default function TemplatesPage() {
           {/* Templates section */}
           <div className="px-4 py-8 md:py-12">
             <div className="max-w-7xl mx-auto">
-              <TemplatesGrid />
+              <TemplatesGrid occasionFilter={occasionParam} />
             </div>
           </div>
         </div>

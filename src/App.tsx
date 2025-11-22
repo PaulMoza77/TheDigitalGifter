@@ -11,9 +11,10 @@ import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { TermsPage } from "./pages/TermsPage";
 import { RefundPolicyPage } from "./pages/RefundPolicyPage";
 import { useAuthStateMonitor } from "./hooks/useAuthStateMonitor";
+import Index from "./pages/HomePage";
 
 const MainLayout = lazy(() => import("./layouts/MainLayouts"));
-const HomePage = lazy(() => import("./pages/HomePage"));
+const ChristmasPage = lazy(() => import("./pages/ChristmasPage"));
 const GeneratorPage = lazy(() => import("./pages/GeneratorPage"));
 const TemplatesPage = lazy(() => import("./pages/TemplatesPage"));
 
@@ -53,7 +54,8 @@ export default function App() {
         >
           <Routes>
             <Route element={<MainLayout />}>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/christmas" element={<ChristmasPage />} />
               <Route path="/generator" element={<GeneratorPage />} />
               <Route path="/templates" element={<TemplatesPage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />

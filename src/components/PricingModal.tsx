@@ -1,4 +1,6 @@
 import React from "react";
+import { useLoggedInUserQuery, useCheckoutMutation } from "@/data";
+import { handleCheckout } from "@/lib/checkoutHandler";
 
 type Pack = "starter" | "creator" | "pro" | "enterprise";
 
@@ -13,14 +15,12 @@ type Plan = {
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onBuyPack: (pack: Pack) => Promise<void> | void;
 }
 
-export function PricingModal({
-  isOpen,
-  onClose,
-  onBuyPack,
-}: PricingModalProps) {
+export function PricingModal({ isOpen, onClose }: PricingModalProps) {
+  const { data: me } = useLoggedInUserQuery();
+  const buyPack = useCheckoutMutation();
+
   if (!isOpen) return null;
 
   const plans: Plan[] = [
@@ -41,9 +41,12 @@ export function PricingModal({
     },
   ];
 
-  const handleBuy = async (pack: Pack) => {
-    await onBuyPack(pack);
-    onClose(); // opțional: închide după inițiere
+  const handleBuy = (pack: Pack) => {
+    void handleCheckout({
+      pack,
+      user: me ?? null,
+      checkoutMutation: buyPack,
+    });
   };
 
   return (
@@ -86,7 +89,7 @@ export function PricingModal({
                 type="button"
                 className="btn-festive w-full mt-4"
                 onClick={(e) => {
-                  e.preventDefault(); // oprește refresh-ul
+                  e.preventDefault();
                   e.stopPropagation();
                   console.log("[PricingModal] click", p.pack);
                   handleBuy(p.pack);
