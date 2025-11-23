@@ -23,7 +23,6 @@ import {
 import { Select } from "./ui/Select";
 import { cn } from "@/lib/utils";
 import { Info } from "lucide-react";
-import { occasions } from "@/constants/occasions";
 
 // Snow Animation Background Component
 function SnowBackground() {
@@ -123,14 +122,13 @@ export default function GeneratorPage() {
 
   // Read ?occasion= query param and filter templates by that occasion
   const [selectedOccasion, setSelectedOccasion] = useState<string | null>(null);
-  
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const occasionParam = params.get("occasion");
     if (occasionParam) {
       setSelectedOccasion(occasionParam.toLowerCase().trim());
-      // Pre-select first category for this occasion
-      setActiveCategory("Classic");
+      // Don't pre-select a category - let users see all templates and filter as they want
     }
   }, [location.search]);
 
@@ -148,7 +146,7 @@ export default function GeneratorPage() {
   // Filter templates by occasion (if specified), category and optional type (image/video)
   const filteredTemplates = useMemo(() => {
     let list = templatesList;
-    
+
     // First filter by occasion if specified in query params
     if (selectedOccasion) {
       list = list.filter(
@@ -157,7 +155,7 @@ export default function GeneratorPage() {
           selectedOccasion
       );
     }
-    
+
     // Then filter by category
     const activeNormalized = (activeCategory || "")
       .toString()
@@ -170,7 +168,7 @@ export default function GeneratorPage() {
           activeNormalized
       );
     }
-    
+
     // Then filter by type
     if (typeFilter !== "all") {
       list = list.filter((t) => (t as any).type === typeFilter);
@@ -290,72 +288,6 @@ export default function GeneratorPage() {
   const handleRemoveFile = useCallback((index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
-
-  // Handle download for both images and videos
-  // const handleDownload = useCallback(async (url: string, filename: string) => {
-  //   if (!url) {
-  //     toast.error("No file to download");
-  //     return;
-  //   }
-
-  //   try {
-  //     // Try direct download first (works for Convex URLs and same-origin URLs)
-  //     const link = document.createElement("a");
-  //     link.href = url;
-  //     link.download = filename;
-  //     link.style.display = "none";
-
-  //     document.body.appendChild(link);
-  //     link.click();
-
-  //     // Clean up
-  //     setTimeout(() => {
-  //       document.body.removeChild(link);
-  //     }, 100);
-
-  //     toast.success("Download started!");
-  //   } catch (directError) {
-  //     console.error(
-  //       "Direct download failed, trying fetch method:",
-  //       directError
-  //     );
-
-  //     // Fallback: fetch the URL and create blob
-  //     try {
-  //       const response = await fetch(url, {
-  //         method: "GET",
-  //         mode: "cors",
-  //         credentials: "omit",
-  //       });
-
-  //       if (!response.ok) {
-  //         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  //       }
-
-  //       const blob = await response.blob();
-  //       const blobUrl = window.URL.createObjectURL(blob);
-
-  //       const fallbackLink = document.createElement("a");
-  //       fallbackLink.href = blobUrl;
-  //       fallbackLink.download = filename;
-  //       fallbackLink.style.display = "none";
-
-  //       document.body.appendChild(fallbackLink);
-  //       fallbackLink.click();
-
-  //       // Clean up
-  //       setTimeout(() => {
-  //         document.body.removeChild(fallbackLink);
-  //         window.URL.revokeObjectURL(blobUrl);
-  //       }, 100);
-
-  //       toast.success("Download started!");
-  //     } catch (fetchError) {
-  //       console.error("Download failed:", fetchError);
-  //       toast.error("Failed to download file. Please try again.");
-  //     }
-  //   }
-  // }, []);
 
   // Handle download for both images and videos
   const handleDownload = useCallback(async (url: string, filename: string) => {
