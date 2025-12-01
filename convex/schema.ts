@@ -8,6 +8,8 @@ const applicationTables = {
     userId: v.string(),
     credits: v.number(), // balance of credits
     createdAt: v.number(),
+    // Email marketing preference (true by default, false if unsubscribed)
+    emailMarketingConsent: v.optional(v.boolean()),
   }).index("by_user", ["userId"]),
 
   jobs: defineTable({
@@ -85,6 +87,7 @@ const applicationTables = {
     negativePromptDefault: v.optional(v.union(v.string(), v.null())),
     creditCost: v.number(),
     tags: v.array(v.string()),
+    isActive: v.optional(v.boolean()),
   })
     .index("by_occasion", ["occasion"])
     .index("by_scene", ["scene"])

@@ -1,10 +1,10 @@
-import { OccasionGrid } from "../components/Landing/OccasionGrid";
-import { HowItWorks } from "../components/Landing/HowItWorks";
-import { FeaturesHighlight } from "../components/Landing/FeaturesHighlight";
-import { Testimonials } from "../components/Landing/Testimonials";
-import { PricingCTA } from "../components/Landing/PricingCTA";
-import { FAQ } from "../components/Landing/FAQ";
-import { HeroSection } from "../components/Landing/HeroSection";
+import { HeroSection } from "@/domains/Landing/components/HeroSection";
+import { OccasionGrid } from "@/domains/Landing/components/OccasionGrid";
+import { HowItWorks } from "@/domains/Landing/components/HowItWorks";
+import { FeaturesHighlight } from "@/domains/Landing/components/FeaturesHighlight";
+import { Testimonials } from "@/domains/Landing/components/Testimonials";
+import { PricingCTA } from "@/domains/Landing/components/PricingCTA";
+import { FAQ } from "@/domains/Landing/components/FAQ";
 import { Link } from "react-router-dom";
 
 const HomePage = () => {

@@ -1,5 +1,5 @@
-import GeneratorPage from "../components/Generator";
-import { PageHead } from "../components/PageHead";
+import GeneratorPage from "@/domains/generator/components/Generator";
+import { PageHead } from "@/components/PageHead";
 
 export default function GeneratorPageWrapper() {
   return (

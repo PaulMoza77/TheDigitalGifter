@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import MainPage from "../components/MainPage";
-import { PageHead } from "../components/PageHead";
+import MainPage from "@/components/MainPage";
+import { PageHead } from "@/components/PageHead";
 
 export default function ChristmasPage() {
   const navigate = useNavigate();

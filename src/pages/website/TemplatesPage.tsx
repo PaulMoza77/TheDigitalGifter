@@ -1,5 +1,5 @@
-import TemplatesGrid from "../components/TemplatesGrid";
-import { PageHead } from "../components/PageHead";
+import TemplatesGrid from "@/components/TemplatesGrid";
+import { PageHead } from "@/components/PageHead";
 import { useLocation } from "react-router-dom";
 
 export default function TemplatesPage() {

@@ -1,8 +1,8 @@
 import { useConvexAuth } from "convex/react";
 import { CreditsDisplay } from "./CreditsDisplay";
-import SignOutButton from "./SignOutButton";
 import { SignInButton } from "./SignInButton";
 import { Link } from "react-router-dom";
+import UserMenu from "./UserMenu";
 
 interface HeaderProps {
   onBuyCredits?: () => void;
@@ -27,7 +27,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {isAuthenticated ? <SignOutButton /> : <SignInButton />}
+          {isAuthenticated ? <UserMenu /> : <SignInButton />}
           <CreditsDisplay onBuyCredits={onBuyCredits} />
         </div>
       </div>

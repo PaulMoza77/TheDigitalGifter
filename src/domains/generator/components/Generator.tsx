@@ -6,11 +6,11 @@ import React, {
   useRef,
 } from "react";
 import { useLocation } from "react-router-dom";
-import { useBootstrapUser } from "../hooks/useBootstrapUser";
+import { useBootstrapUser } from "@/hooks/useBootstrapUser";
 import { toast } from "sonner";
-import { Id } from "../../convex/_generated/dataModel";
-import VideoModal from "./VideoModal";
-import TemplateCard from "./TemplateCard";
+import { Id } from "../../../../convex/_generated/dataModel";
+import VideoModal from "@/components/VideoModal";
+import TemplateCard from "@/components/TemplateCard";
 import { TemplateSummary } from "@/types/templates";
 import {
   useTemplatesQuery,
@@ -20,7 +20,7 @@ import {
   useGenerateUploadUrlMutation,
   useCreateVideoJobMutation,
 } from "@/data";
-import { Select } from "./ui/Select";
+import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
 import { Info } from "lucide-react";
 
