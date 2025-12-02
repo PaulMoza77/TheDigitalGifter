@@ -8,6 +8,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 import { EllipsisVerticalIcon, PenBoxIcon, Search, Trash2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -216,30 +223,59 @@ function TemplatesAdminPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800 px-2 py-1">
+              <div className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800 px-3 py-1 h-8">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 <span className="text-[10px] font-medium text-slate-400">
                   {filteredTemplates.length} templates
                 </span>
               </div>
-              <select
+              <Select
                 value={categoryFilter}
-                onChange={(e) => updateFilter("category", e.target.value)}
-                className="rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs text-slate-300 outline-none hover:bg-slate-800"
+                onValueChange={(value) => updateFilter("category", value)}
               >
-                {categories.map((cat) => (
-                  <option key={cat}>{cat}</option>
-                ))}
-              </select>
-              <select
+                <SelectTrigger className="w-[140px] rounded-full border-slate-700 bg-slate-800/50 text-xs text-slate-300 hover:bg-slate-800 h-8">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
+                  {categories.map((cat) => (
+                    <SelectItem
+                      key={cat}
+                      value={cat}
+                      className="focus:bg-slate-800 focus:text-slate-50"
+                    >
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
                 value={typeFilter}
-                onChange={(e) => updateFilter("type", e.target.value)}
-                className="rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs text-slate-300 outline-none hover:bg-slate-800"
+                onValueChange={(value) => updateFilter("type", value)}
               >
-                <option>All types</option>
-                <option>Images</option>
-                <option>Videos</option>
-              </select>
+                <SelectTrigger className="w-[110px] rounded-full border-slate-700 bg-slate-800/50 text-xs text-slate-300 hover:bg-slate-800 h-8">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
+                  <SelectItem
+                    value="All types"
+                    className="focus:bg-slate-800 focus:text-slate-50"
+                  >
+                    All types
+                  </SelectItem>
+                  <SelectItem
+                    value="Images"
+                    className="focus:bg-slate-800 focus:text-slate-50"
+                  >
+                    Images
+                  </SelectItem>
+                  <SelectItem
+                    value="Videos"
+                    className="focus:bg-slate-800 focus:text-slate-50"
+                  >
+                    Videos
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -254,7 +290,7 @@ function TemplatesAdminPage() {
                 placeholder="Search templates by name or prompt..."
               />
             </div>
-            <button className="rounded-full border border-slate-700 px-3 py-1.5 text-[11px] font-medium text-slate-400 hover:bg-slate-800">
+            <button className="rounded-full border border-slate-700 px-3 py-1.5 text-[11px] font-medium text-slate-400 hover:bg-slate-800 h-8">
               Sort by usage
             </button>
           </div>

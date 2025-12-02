@@ -135,6 +135,40 @@ const stripeWebhook = httpAction(async (ctx, req) => {
           userId,
           amount,
         });
+
+        // Create order record for revenue tracking
+        // Map credits to Euro amount (you can adjust these prices)
+        const PACK_TO_PRICE: Record<string, number> = {
+          starter: 4.98,
+          creator: 9.98,
+          pro: 78.98,
+          enterprise: 499.98,
+        };
+
+        const euroAmount = pack ? (PACK_TO_PRICE[pack] ?? 0) : 0;
+
+        if (euroAmount > 0 && session?.id) {
+          try {
+            await ctx.runMutation(api.orders.create, {
+              amount: euroAmount,
+              pack: pack || "unknown",
+              stripeSessionId: session.id,
+            });
+            console.log("[Webhook] ✅ Order record created", {
+              userId,
+              pack,
+              euroAmount,
+            });
+          } catch (orderError) {
+            console.error("[Webhook] ⚠️ Failed to create order record", {
+              userId,
+              pack,
+              error: orderError,
+            });
+            // Don't fail the webhook if order creation fails
+          }
+        }
+
         return new Response("ok", { status: 200 });
       } catch (error) {
         console.error("[Webhook] ❌ Failed to add credits by userId", {
@@ -156,6 +190,38 @@ const stripeWebhook = httpAction(async (ctx, req) => {
           amount,
         });
         console.log("[Webhook] ✅ Credits added by email", { email, amount });
+
+        // Create order record for revenue tracking (email-based)
+        const PACK_TO_PRICE: Record<string, number> = {
+          starter: 4.98,
+          creator: 9.98,
+          pro: 78.98,
+          enterprise: 499.98,
+        };
+
+        const euroAmount = pack ? (PACK_TO_PRICE[pack] ?? 0) : 0;
+
+        if (euroAmount > 0 && session?.id) {
+          try {
+            // For email-based purchases, we need to find the userId first
+            // This is a limitation - we can't create orders without userId
+            // You might want to store email in orders table or link later
+            console.log(
+              "[Webhook] ⚠️ Skipping order creation for email-based purchase (no userId)",
+              {
+                email,
+                pack,
+              }
+            );
+          } catch (orderError) {
+            console.error("[Webhook] ⚠️ Failed to create order record", {
+              email,
+              pack,
+              error: orderError,
+            });
+          }
+        }
+
         return new Response("ok", { status: 200 });
       } catch (error) {
         console.error("[Webhook] ❌ Failed to add credits by email", {

@@ -95,6 +95,18 @@ const applicationTables = {
     .index("by_credit_cost", ["creditCost"])
     .index("by_orientation", ["orientation"])
     .index("by_tags", ["tags"]),
+
+  orders: defineTable({
+    userId: v.string(),
+    amount: v.number(), // Amount in Euros
+    pack: v.string(), // "starter", "creator", "pro", "enterprise"
+    stripeSessionId: v.string(),
+    status: v.union(v.literal("completed"), v.literal("refunded")),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_session_id", ["stripeSessionId"]),
 };
 
 export default defineSchema({

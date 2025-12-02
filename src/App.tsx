@@ -22,6 +22,7 @@ const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
 const TemplatesPage = lazy(() => import("@/pages/website/TemplatesPage"));
+const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -82,6 +83,14 @@ export default function App() {
                 element={
                   <AdminRoute>
                     <Templates />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/customers"
+                element={
+                  <AdminRoute>
+                    <CustomersPage />
                   </AdminRoute>
                 }
               />

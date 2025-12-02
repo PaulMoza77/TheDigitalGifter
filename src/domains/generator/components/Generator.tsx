@@ -20,7 +20,13 @@ import {
   useGenerateUploadUrlMutation,
   useCreateVideoJobMutation,
 } from "@/data";
-import { Select } from "@/components/ui/Select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
 import { Info } from "lucide-react";
 
@@ -74,7 +80,7 @@ function SnowBackground() {
   );
 }
 
-// Template data structure
+// Aspect ratio options - defined outside component to prevent recreation on every render
 
 export default function GeneratorPage() {
   const user = useBootstrapUser();
@@ -141,6 +147,23 @@ export default function GeneratorPage() {
     // "Religious",
     // "Minimalist",
     // "Homey",
+  ];
+
+  const aspectRatioOptions = [
+    { label: "Match input", value: "match_input_image" },
+    { label: "1:1", value: "1:1" },
+    { label: "16:9", value: "16:9" },
+    { label: "9:16", value: "9:16" },
+    { label: "4:3", value: "4:3" },
+    { label: "3:4", value: "3:4" },
+    { label: "3:2", value: "3:2" },
+    { label: "2:3", value: "2:3" },
+    { label: "4:5", value: "4:5" },
+    { label: "5:4", value: "5:4" },
+    { label: "21:9", value: "21:9" },
+    { label: "9:21", value: "9:21" },
+    { label: "2:1", value: "2:1" },
+    { label: "1:2", value: "1:2" },
   ];
 
   // Filter templates by occasion (if specified), category and optional type (image/video)
@@ -560,24 +583,52 @@ export default function GeneratorPage() {
       {/* Inline filter row: left (category), right (media type) */}
       <div className="flex flex-row items-center justify-between gap-4 mb-6 px-4 max-w-5xl mx-auto">
         <div className="w-full max-w-[320px]">
-          <Select
-            value={activeCategory}
-            onValueChange={setActiveCategory}
-            options={categories.map((c) => ({ label: c, value: c }))}
-            className="w-full"
-          />
+          <Select value={activeCategory} onValueChange={setActiveCategory}>
+            <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#0b1220] border-[rgba(255,255,255,.2)] text-white">
+              {categories.map((c) => (
+                <SelectItem
+                  key={c}
+                  value={c}
+                  className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
+                >
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="w-full max-w-[200px]">
           <Select
             value={typeFilter}
             onValueChange={(v) => setTypeFilter(v as "all" | "image" | "video")}
-            options={[
-              { label: "All Media", value: "all" },
-              { label: "Images", value: "image" },
-              { label: "Videos", value: "video" },
-            ]}
-            className="w-full"
-          />
+          >
+            <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#0b1220] border-[rgba(255,255,255,.2)] text-white">
+              <SelectItem
+                value="all"
+                className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
+              >
+                All Media
+              </SelectItem>
+              <SelectItem
+                value="image"
+                className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
+              >
+                Images
+              </SelectItem>
+              <SelectItem
+                value="video"
+                className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
+              >
+                Videos
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -775,32 +826,27 @@ export default function GeneratorPage() {
                           <Select
                             value={selectedAspectRatio}
                             onValueChange={setSelectedAspectRatio}
-                            options={[
-                              {
-                                label: "Match input",
-                                value: "match_input_image",
-                              },
-                              { label: "1:1", value: "1:1" },
-                              { label: "16:9", value: "16:9" },
-                              { label: "9:16", value: "9:16" },
-                              { label: "4:3", value: "4:3" },
-                              { label: "3:4", value: "3:4" },
-                              { label: "3:2", value: "3:2" },
-                              { label: "2:3", value: "2:3" },
-                              { label: "4:5", value: "4:5" },
-                              { label: "5:4", value: "5:4" },
-                              { label: "21:9", value: "21:9" },
-                              { label: "9:21", value: "9:21" },
-                              { label: "2:1", value: "2:1" },
-                              { label: "1:2", value: "1:2" },
-                            ]}
                             disabled={
                               isGenerating ||
                               uploadedFiles.length === 0 ||
                               !selectedTemplate
                             }
-                            className="min-w-[120px]"
-                          />
+                          >
+                            <SelectTrigger className="min-w-[120px] bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
+                              <SelectValue placeholder="Aspect ratio" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#0b1220] border-[rgba(255,255,255,.2)] text-white">
+                              {aspectRatioOptions.map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                  className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <button
                           type="button"

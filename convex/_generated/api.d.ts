@@ -23,6 +23,7 @@ import type * as fileUpload from "../fileUpload.js";
 import type * as http from "../http.js";
 import type * as jobs from "../jobs.js";
 import type * as jobs_video from "../jobs_video.js";
+import type * as orders from "../orders.js";
 import type * as storage from "../storage.js";
 import type * as templates from "../templates.js";
 import type * as users from "../users.js";
@@ -49,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   jobs: typeof jobs;
   jobs_video: typeof jobs_video;
+  orders: typeof orders;
   storage: typeof storage;
   templates: typeof templates;
   users: typeof users;

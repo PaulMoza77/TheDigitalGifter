@@ -1,7 +1,13 @@
 import React, { memo, useCallback, useMemo, useState } from "react";
 import VideoModal from "./VideoModal";
 import TemplateCard from "./TemplateCard";
-import { Select } from "./ui/Select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 import { Id } from "../../convex/_generated/dataModel";
 import { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
@@ -32,9 +38,9 @@ function TemplatesGridComponent({
     title: "",
   });
 
-  const [scene, setScene] = useState<string>("");
-  const [orientation, setOrientation] = useState<string>("");
-  const [priceRange, setPriceRange] = useState<string>("");
+  const [scene, setScene] = useState<string>("all");
+  const [orientation, setOrientation] = useState<string>("all");
+  const [priceRange, setPriceRange] = useState<string>("all");
 
   const { data: allTemplates = [] } = useTemplatesQuery();
 
@@ -44,31 +50,36 @@ function TemplatesGridComponent({
   );
 
   const handleClearFilters = useCallback(() => {
-    setScene("");
-    setOrientation("");
-    setPriceRange("");
+    setScene("all");
+    setOrientation("all");
+    setPriceRange("all");
   }, []);
 
   const filteredTemplates = useMemo(() => {
     return templatesArray.filter((template) => {
-      const matchesScene = scene ? template.scene === scene : true;
-      const matchesOrientation = orientation
-        ? template.orientation === orientation
-        : true;
+      const matchesScene =
+        scene && scene !== "all" ? template.scene === scene : true;
+      const matchesOrientation =
+        orientation && orientation !== "all"
+          ? template.orientation === orientation
+          : true;
 
-      const matchesPrice = priceRange
-        ? (() => {
-            const [min, max] = priceRange.split("-").map(Number);
-            return template.creditCost >= min && template.creditCost <= max;
-          })()
-        : true;
+      const matchesPrice =
+        priceRange && priceRange !== "all"
+          ? (() => {
+              const [min, max] = priceRange.split("-").map(Number);
+              return template.creditCost >= min && template.creditCost <= max;
+            })()
+          : true;
 
       const matchesOccasion = occasionFilter
         ? (template.occasion || "").toLowerCase().trim() ===
           occasionFilter.toLowerCase().trim()
         : true;
 
-      return matchesScene && matchesOrientation && matchesPrice && matchesOccasion;
+      return (
+        matchesScene && matchesOrientation && matchesPrice && matchesOccasion
+      );
     });
   }, [templatesArray, scene, orientation, priceRange, occasionFilter]);
 
@@ -86,7 +97,7 @@ function TemplatesGridComponent({
 
   const sceneOptions = useMemo(
     () => [
-      { label: `All Scenes (${templatesArray.length})`, value: "" },
+      { label: `All Scenes (${templatesArray.length})`, value: "all" },
       ...uniqueScenes.map((s) => ({
         label: `${s.charAt(0).toUpperCase() + s.slice(1)} (${sceneCounts[s] ?? 0})`,
         value: s,
@@ -96,19 +107,20 @@ function TemplatesGridComponent({
   );
 
   const orientationOptions = [
-    { label: "All Orientations", value: "" },
+    { label: "All Orientations", value: "all" },
     { label: "Portrait", value: "portrait" },
     { label: "Landscape", value: "landscape" },
   ];
 
   const priceRangeOptions = [
-    { label: "All", value: "" },
+    { label: "All", value: "all" },
     { label: "Budget (10-12)", value: "10-12" },
     { label: "Premium (13-16)", value: "13-16" },
     { label: "Luxury (17-20)", value: "17-20" },
   ];
 
-  const hasActiveFilters = scene || orientation || priceRange;
+  const hasActiveFilters =
+    scene !== "all" || orientation !== "all" || priceRange !== "all";
 
   return (
     <div className="space-y-8">
@@ -149,36 +161,66 @@ function TemplatesGridComponent({
             <label className="block text-xs font-medium text-[#c1c8d8] mb-2">
               Scene
             </label>
-            <Select
-              value={scene}
-              onValueChange={setScene}
-              options={sceneOptions}
-              className="w-full"
-            />
+            <Select value={scene} onValueChange={setScene}>
+              <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
+                <SelectValue placeholder="Select scene" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0b1220] border-[rgba(255,255,255,.2)] text-white">
+                {sceneOptions.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-[#c1c8d8] mb-2">
               Orientation
             </label>
-            <Select
-              value={orientation}
-              onValueChange={setOrientation}
-              options={orientationOptions}
-              className="w-full"
-            />
+            <Select value={orientation} onValueChange={setOrientation}>
+              <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
+                <SelectValue placeholder="Select orientation" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0b1220] border-[rgba(255,255,255,.2)] text-white">
+                {orientationOptions.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-[#c1c8d8] mb-2">
               Price Range
             </label>
-            <Select
-              value={priceRange}
-              onValueChange={setPriceRange}
-              options={priceRangeOptions}
-              className="w-full"
-            />
+            <Select value={priceRange} onValueChange={setPriceRange}>
+              <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
+                <SelectValue placeholder="Select price range" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0b1220] border-[rgba(255,255,255,.2)] text-white">
+                {priceRangeOptions.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
