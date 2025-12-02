@@ -4,16 +4,12 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const create = mutation({
   args: {
+    userId: v.string(),
     amount: v.number(),
     pack: v.string(),
     stripeSessionId: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Must be logged in");
-    }
-
     // Check if order already exists (idempotency)
     const existing = await ctx.db
       .query("orders")
@@ -27,7 +23,7 @@ export const create = mutation({
     }
 
     const orderId = await ctx.db.insert("orders", {
-      userId,
+      userId: args.userId,
       amount: args.amount,
       pack: args.pack,
       stripeSessionId: args.stripeSessionId,

@@ -150,6 +150,7 @@ const stripeWebhook = httpAction(async (ctx, req) => {
         if (euroAmount > 0 && session?.id) {
           try {
             await ctx.runMutation(api.orders.create, {
+              userId: userId,
               amount: euroAmount,
               pack: pack || "unknown",
               stripeSessionId: session.id,
