@@ -104,19 +104,10 @@ export const generateVideoWithAI = internalAction({
           ? [job.inputFileId]
           : [];
 
-    // Validate: require 1-3 images for R2V
-    if (!inputFileIds || inputFileIds.length === 0) {
-      const msg = "No reference images uploaded. Please upload 1-3 images.";
-      console.warn("[generateVideoWithAI]", { jobId: args.jobId, msg });
-      await ctx.runMutation((internal as any).jobs.updateStatus, {
-        jobId: args.jobId,
-        status: "error",
-        errorMessage: msg,
-      });
-      return;
-    }
+    // Validate: allow 0-3 images (0 = T2V mode, 1-3 = R2V mode)
     if (inputFileIds.length > 3) {
-      const msg = "Too many images uploaded. Only 1-3 images are supported.";
+      const msg =
+        "Too many images uploaded. Only up to 3 images are supported.";
       console.warn("[generateVideoWithAI]", {
         jobId: args.jobId,
         msg,
@@ -137,7 +128,7 @@ export const generateVideoWithAI = internalAction({
       return;
     }
 
-    // Fetch signed URLs for all provided storage IDs
+    // Fetch signed URLs for all provided storage IDs (if any)
     const referenceImageUrls: string[] = [];
     for (const storageId of inputFileIds) {
       try {
@@ -155,18 +146,7 @@ export const generateVideoWithAI = internalAction({
       }
     }
 
-    if (referenceImageUrls.length === 0) {
-      const msg = "Failed to fetch reference image URLs.";
-      console.error("[generateVideoWithAI]", { jobId: args.jobId, msg });
-      await ctx.runMutation((internal as any).jobs.updateStatus, {
-        jobId: args.jobId,
-        status: "error",
-        errorMessage: msg,
-      });
-      return;
-    }
-
-    // Build unified R2V input: always use reference_images (1-3 items), never `image`.
+    // Build unified input: use reference_images if provided (R2V), otherwise T2V
     const veoInput: VeoInput = {
       prompt: finalPrompt,
       // Enforce Veo 3.1 R2V requirements
@@ -181,7 +161,9 @@ export const generateVideoWithAI = internalAction({
     };
 
     console.log(
-      "[generateVideoWithAI] Using unified reference-image mode (R2V)",
+      referenceImageUrls.length > 0
+        ? "[generateVideoWithAI] Using reference-to-video mode (R2V)"
+        : "[generateVideoWithAI] Using text-to-video mode (T2V)",
       { jobId: args.jobId, referenceCount: referenceImageUrls.length }
     );
 

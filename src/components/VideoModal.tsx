@@ -33,19 +33,27 @@ export default function VideoModal({ src, title, onClose }: VideoModalProps) {
   //   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="relative w-full max-w-4xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex flex-col items-center justify-center max-w-[95vw] max-h-[95vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button - always visible at top right */}
         <button
           onClick={onClose}
           aria-label="Close preview"
-          className="absolute -top-4 -right-4 bg-[#111827] text-white rounded-full p-2 shadow-lg"
+          className="absolute -top-12 right-0 z-50 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-full p-2.5 shadow-lg transition-colors border border-white/20"
         >
-          <X size={18} />
+          <X size={20} />
         </button>
 
-        <div className="bg-black rounded-lg overflow-hidden">
+        {/* Video container with proper aspect ratio handling */}
+        <div className="bg-black rounded-lg overflow-hidden shadow-2xl max-w-full max-h-full">
           {title && (
-            <div className="px-4 py-3 border-b border-white/10 text-white font-semibold">
+            <div className="px-4 py-3 border-b border-white/10 text-white font-semibold bg-black/50 backdrop-blur-sm">
               {title}
             </div>
           )}
@@ -53,17 +61,9 @@ export default function VideoModal({ src, title, onClose }: VideoModalProps) {
             ref={videoRef}
             src={src}
             controls
-            className="w-full h-auto bg-black"
+            className="max-w-[90vw] max-h-[85vh] w-auto h-auto bg-black"
             playsInline
           />
-          {/* <div className="flex items-center justify-end gap-2 p-3">
-            <button
-              onClick={handleFullscreen}
-              className="px-3 py-1 rounded-md bg-white/10 text-white text-sm"
-            >
-              Fullscreen
-            </button>
-          </div> */}
         </div>
       </div>
     </div>

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
 import { Info } from "lucide-react";
+import LanguageSelector from "@/components/LanguageSelector";
 
 // Snow Animation Background Component
 function SnowBackground() {
@@ -116,6 +117,7 @@ export default function GeneratorPage() {
   // Video-specific state (R2V enforced: duration=8, aspect_ratio=16:9, resolution=1080p)
   const [generateAudio, setGenerateAudio] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
 
   const { data: templates = [] } = useTemplatesQuery();
   const templatesList = templates as TemplateSummary[];
@@ -402,13 +404,8 @@ export default function GeneratorPage() {
     setPreviewAfter(null);
 
     try {
-      // Video R2V validation: require 1-3 images
+      // Video R2V validation: allow 0-3 images (optional)
       if (selectedTemplateObj && selectedTemplateObj.type === "video") {
-        if (uploadedFiles.length === 0) {
-          toast.error("Please upload 1-3 photos for video generation.");
-          setIsGenerating(false);
-          return;
-        }
         if (uploadedFiles.length > 3) {
           toast.error("You can upload up to 3 photos for video generation.");
           setIsGenerating(false);
@@ -447,11 +444,20 @@ export default function GeneratorPage() {
           throw new Error("Negative prompt must be <= 500 characters");
         }
 
+        // Build final prompt with language instruction if not English
+        let finalUserInstructions = customInstructions.trim();
+        if (selectedLanguage && selectedLanguage !== "English") {
+          const languageInstruction = `The dialogue and any spoken words should be in ${selectedLanguage}.`;
+          finalUserInstructions = finalUserInstructions
+            ? `${finalUserInstructions} ${languageInstruction}`
+            : languageInstruction;
+        }
+
         // Enforce R2V parameters: always duration=8, aspect_ratio=16:9, resolution=1080p
         const res = await triggerCreateVideoJob({
           templateId: template._id,
           inputFileIds: storageIds as Id<"_storage">[],
-          userInstructions: customInstructions.trim() || undefined,
+          userInstructions: finalUserInstructions || undefined,
           duration: 8,
           resolution: "1080p",
           aspectRatio: "16:9",
@@ -774,9 +780,17 @@ export default function GeneratorPage() {
                       placeholder="Negative Prompt (Optional) e.g., blurry, low quality, distorted"
                       className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px]"
                     />
+
                     {/* Bottom row: Controls + Generate button */}
                     <div className="flex flex-row md:flex-col flex-wrap gap-2">
                       {/* Video controls - will wrap on small screens */}
+
+                      {/* Language Selector */}
+                      <LanguageSelector
+                        value={selectedLanguage}
+                        onChange={setSelectedLanguage}
+                        disabled={isGenerating}
+                      />
 
                       <label className="flex items-center gap-2 text-sm text-white whitespace-nowrap">
                         <input
@@ -787,24 +801,20 @@ export default function GeneratorPage() {
                         />
                         With Audio
                       </label>
-
-                      {/* Generate button - pushes to right on large screens, stays on left after wrapping on small screens */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void handleGenerate();
-                        }}
-                        aria-label="Generate your AI Christmas card video"
-                        disabled={
-                          isGenerating ||
-                          uploadedFiles.length === 0 ||
-                          !selectedTemplate
-                        }
-                        className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ml-auto"
-                      >
-                        {isGenerating ? "Generating..." : "Generate"}
-                      </button>
                     </div>
+
+                    {/* Generate button - pushes to right on large screens, stays on left after wrapping on small screens */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleGenerate();
+                      }}
+                      aria-label="Generate your AI Christmas card video"
+                      disabled={isGenerating || !selectedTemplate}
+                      className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ml-auto h-10"
+                    >
+                      {isGenerating ? "Generating..." : "Generate"}
+                    </button>
                   </div>
                 </>
               ) : (

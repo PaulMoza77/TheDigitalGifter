@@ -16,7 +16,7 @@ export const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative w-full min-h-[90vh] flex items-center justify-center overflow-hidden">
+    <section className="relative w-full flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"
