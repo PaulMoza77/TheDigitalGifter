@@ -90,7 +90,7 @@ export default function TemplateCard({
         )}
       </div>
 
-      <div className=" p-2 sm:p-4 bg-[rgba(255,255,255,.06)]">
+      <div className=" p-2 sm:p-4 bg-[rgba(255,255,255,.06)] h-full">
         <h3 className="font-semibold text-sm sm:text-base leading-tight text-[#fffef5]">
           {template.title}
         </h3>
