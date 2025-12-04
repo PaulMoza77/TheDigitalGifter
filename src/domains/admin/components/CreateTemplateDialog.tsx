@@ -70,7 +70,7 @@ export function CreateTemplateDialog({
       textDefault: "",
       creditCost: 6,
       tags: "",
-      defaultDuration: 6,
+      defaultDuration: 8,
       defaultAspectRatio: "16:9",
       defaultResolution: "1080p",
       generateAudioDefault: true,
@@ -131,7 +131,7 @@ export function CreateTemplateDialog({
         textDefault: "",
         creditCost: 6,
         tags: "",
-        defaultDuration: 6,
+        defaultDuration: 8,
         defaultAspectRatio: "16:9",
         defaultResolution: "1080p",
         generateAudioDefault: true,
@@ -542,113 +542,37 @@ export function CreateTemplateDialog({
             {templateType === "video" && (
               <div className="space-y-3 p-3 rounded-xl bg-slate-800/30 border border-slate-700">
                 <h3 className="text-xs font-semibold text-slate-200">
-                  Video Settings
+                  Video Settings (Defaults)
                 </h3>
                 <div className="grid gap-3 md:grid-cols-3">
+                  {/* Duration - Display only */}
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-300">
                       Duration
                     </label>
-                    <Select
-                      value={String(watch("defaultDuration"))}
-                      onValueChange={(value) =>
-                        setValue("defaultDuration", Number(value) as 4 | 6 | 8)
-                      }
-                    >
-                      <SelectTrigger className="w-full rounded-xl border-slate-700 bg-slate-800/50 text-xs text-slate-200">
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
-                        <SelectItem
-                          value="4"
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          4 seconds
-                        </SelectItem>
-                        <SelectItem
-                          value="6"
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          6 seconds
-                        </SelectItem>
-                        <SelectItem
-                          value="8"
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          8 seconds
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="w-full rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
+                      8 seconds
+                    </div>
                   </div>
+
+                  {/* Aspect Ratio - Display only */}
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-300">
                       Aspect Ratio
                     </label>
-                    <Select
-                      value={watch("defaultAspectRatio")}
-                      onValueChange={(value) =>
-                        setValue("defaultAspectRatio", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full rounded-xl border-slate-700 bg-slate-800/50 text-xs text-slate-200">
-                        <SelectValue placeholder="Select aspect ratio" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
-                        <SelectItem
-                          value="16:9"
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          16:9 (Landscape)
-                        </SelectItem>
-                        <SelectItem
-                          value="9:16"
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          9:16 (Portrait)
-                        </SelectItem>
-                        <SelectItem
-                          value="4:5"
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          4:5 (Portrait)
-                        </SelectItem>
-                        <SelectItem
-                          value="1:1"
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          1:1 (Square)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="w-full rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
+                      16:9 (Landscape)
+                    </div>
                   </div>
+
+                  {/* Resolution - Display only */}
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-300">
                       Resolution
                     </label>
-                    <Select
-                      value={watch("defaultResolution")}
-                      onValueChange={(value) =>
-                        setValue("defaultResolution", value as "720p" | "1080p")
-                      }
-                    >
-                      <SelectTrigger className="w-full rounded-xl border-slate-700 bg-slate-800/50 text-xs text-slate-200">
-                        <SelectValue placeholder="Select resolution" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
-                        <SelectItem
-                          value="720p"
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          720p
-                        </SelectItem>
-                        <SelectItem
-                          value="1080p"
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          1080p
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="w-full rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
+                      1080p
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

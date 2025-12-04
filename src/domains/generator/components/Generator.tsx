@@ -782,7 +782,7 @@ export default function GeneratorPage() {
                     />
 
                     {/* Bottom row: Controls + Generate button */}
-                    <div className="flex flex-row md:flex-col flex-wrap gap-2">
+                    <div className="flex flex-row md:flex-col justify-between gap-2">
                       {/* Video controls - will wrap on small screens */}
 
                       {/* Language Selector */}
