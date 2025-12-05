@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { occasions } from "@/constants/occasions";
+import { toast } from "sonner";
 
 export const HeroSection = () => {
   const [currentMockup, setCurrentMockup] = useState(0);
@@ -14,6 +15,19 @@ export const HeroSection = () => {
     return () => clearInterval(interval);
   }, []);
   const navigate = useNavigate();
+
+  // Memoized handler to prevent recreation on every render
+  const handleOccasionClick = useCallback(() => {
+    const occasion = occasions[currentMockup];
+    // Only Christmas is available for now
+    if (occasion.id === "christmas") {
+      void navigate(`/generator?occasion=${occasion.id}`);
+    } else {
+      toast.info(`${occasion.title} coming soon! 🎉`, {
+        description: "Stay tuned for more occasions",
+      });
+    }
+  }, [currentMockup, navigate]);
 
   return (
     <section className="relative w-full flex items-center justify-center overflow-hidden">
@@ -122,11 +136,7 @@ export const HeroSection = () => {
                   <motion.div
                     key={currentMockup}
                     className="relative cursor-pointer"
-                    onClick={() =>
-                      void navigate(
-                        `/generator?occasion=${occasions[currentMockup].id}`
-                      )
-                    }
+                    onClick={handleOccasionClick}
                     initial={{ opacity: 0, scale: 1.05 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
