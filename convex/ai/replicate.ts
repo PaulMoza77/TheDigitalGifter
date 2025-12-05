@@ -418,17 +418,32 @@ export async function generateImageWithReplicate(
       promptLength: options.promptTemplate.length,
       promptPreview: options.promptTemplate.substring(0, 100) + "...",
       imageCount: options.inputImageUrls.length,
+      mode:
+        options.inputImageUrls.length > 0 ? "image-to-image" : "text-to-image",
       imageUrls: options.inputImageUrls.map(
         (url) => url.substring(0, 50) + "..."
       ),
     });
 
-    const prediction = await createPrediction(apiToken, modelPath, {
+    // Build input for nano-banana API
+    // Per schema: prompt is required, image_input defaults to [], aspect_ratio defaults to match_input_image
+    const apiInput: Record<string, unknown> = {
       prompt: options.promptTemplate,
-      image_input: options.inputImageUrls, // Array of image URLs
-      aspect_ratio: options.aspectRatio || "match_input_image",
       output_format: options.outputFormat || "jpg",
-    });
+    };
+
+    // Only include image_input if there are images
+    if (options.inputImageUrls.length > 0) {
+      apiInput.image_input = options.inputImageUrls;
+      // Use match_input_image or specified aspect ratio
+      apiInput.aspect_ratio = options.aspectRatio || "match_input_image";
+    } else {
+      // For text-to-image, use specified aspect ratio or default to 1:1
+      // Cannot use match_input_image without images
+      apiInput.aspect_ratio = options.aspectRatio || "1:1";
+    }
+
+    const prediction = await createPrediction(apiToken, modelPath, apiInput);
 
     console.log("[Replicate] Prediction created", {
       predictionId: prediction.id,
@@ -459,6 +474,7 @@ export async function generateImageWithReplicate(
 /**
  * Generates an image from Convex storage IDs
  * Convenience wrapper that gets the storage URLs first
+ * Supports text-to-image when storageIds is empty
  */
 export async function generateImageFromStorage(
   ctx: ActionCtx,
@@ -467,9 +483,16 @@ export async function generateImageFromStorage(
   aspectRatio?: string,
   outputFormat?: string
 ): Promise<string> {
+  // Get URLs for any input images (empty array for text-to-image)
   const inputImageUrls = await Promise.all(
     storageIds.map((id) => getStorageUrl(ctx, id))
   );
+
+  console.log("[Replicate] generateImageFromStorage called", {
+    imageCount: inputImageUrls.length,
+    mode: inputImageUrls.length > 0 ? "image-to-image" : "text-to-image",
+  });
+
   return generateImageWithReplicate(ctx, {
     inputImageUrls,
     promptTemplate,

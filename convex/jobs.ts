@@ -73,17 +73,14 @@ export const create = mutation({
       }
     );
 
-    // Schedule AI generation if input files exist, otherwise use processJob fallback
-    if (args.inputFileIds.length > 0) {
-      await ctx.scheduler.runAfter(0, internal.jobs.generateWithAI, {
-        inputFileIds: args.inputFileIds,
-        prompt: finalPrompt, // Use merged prompt from backend
-        jobId,
-        aspectRatio: args.aspectRatio,
-      });
-    } else {
-      await ctx.scheduler.runAfter(0, internal.jobs.processJob, { jobId });
-    }
+    // Schedule AI generation - works with or without input images
+    // nano-banana supports text-to-image when no images provided
+    await ctx.scheduler.runAfter(0, internal.jobs.generateWithAI, {
+      inputFileIds: args.inputFileIds,
+      prompt: finalPrompt, // Use merged prompt from backend
+      jobId,
+      aspectRatio: args.aspectRatio,
+    });
 
     return jobId;
   },
@@ -301,23 +298,14 @@ export const processJob = internalAction({
         throw new Error("Job not found");
       }
 
-      // If job has inputFileId, use AI generation
-      if (job.inputFileId) {
-        await ctx.runAction(internal.jobs.generateWithAI, {
-          inputFileIds: [job.inputFileId], // Convert single file to array
-          prompt: job.prompt,
-          jobId: args.jobId,
-        });
-      } else {
-        // Fallback: simulate AI processing for jobs without input files
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        const resultUrl = `https://picsum.photos/800/600?random=${Date.now()}`;
-        await ctx.runMutation(internal.jobs.updateResult, {
-          jobId: args.jobId,
-          resultUrl,
-          status: "done",
-        });
-      }
+      // Use AI generation - works with or without input files
+      // nano-banana supports text-to-image when no images provided
+      const inputFileIds = job.inputFileId ? [job.inputFileId] : [];
+      await ctx.runAction(internal.jobs.generateWithAI, {
+        inputFileIds,
+        prompt: job.prompt,
+        jobId: args.jobId,
+      });
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       console.error("[processJob] Job processing failed", {
@@ -374,29 +362,19 @@ export const processTemplateJob = internalAction({
         throw new Error("Job or template not found");
       }
 
-      // Use AI generation if input files exist
-      // Get inputFileIds from job (backward compatibility: use inputFileId if exists)
+      // Use AI generation - works with or without input files
+      // nano-banana supports text-to-image when no images provided
       const inputFileIds =
         (job as any).inputFileIds || (job.inputFileId ? [job.inputFileId] : []);
-      if (inputFileIds.length > 0) {
-        // Combine template prompt with job prompt
-        const combinedPrompt = `${template.prompt}. ${job.prompt}`;
-        await ctx.runAction(internal.jobs.generateWithAI, {
-          inputFileIds: inputFileIds,
-          prompt: combinedPrompt,
-          jobId: args.jobId,
-          aspectRatio: job.aspectRatio,
-        });
-      } else {
-        // Fallback: simulate processing for jobs without input files
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        const resultUrl = `https://picsum.photos/800/600?random=${Date.now()}&template=${template.scene}`;
-        await ctx.runMutation(internal.jobs.updateResult, {
-          jobId: args.jobId,
-          resultUrl,
-          status: "done",
-        });
-      }
+
+      // Combine template prompt with job prompt
+      const combinedPrompt = `${template.prompt}. ${job.prompt}`;
+      await ctx.runAction(internal.jobs.generateWithAI, {
+        inputFileIds: inputFileIds,
+        prompt: combinedPrompt,
+        jobId: args.jobId,
+        aspectRatio: job.aspectRatio,
+      });
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       console.error("[processTemplateJob] Job processing failed", {
