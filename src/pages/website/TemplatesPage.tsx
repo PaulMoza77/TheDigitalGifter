@@ -1,11 +1,24 @@
 import TemplatesGrid from "@/components/TemplatesGrid";
 import { PageHead } from "@/components/PageHead";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { TemplateSummary } from "@/types/templates";
 
 export default function TemplatesPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const occasionParam = params.get("occasion");
+
+  // Navigate to generator page with template ID and its occasion
+  const handleTemplatePick = (template: TemplateSummary) => {
+    const urlParams = new URLSearchParams();
+    // Use template's occasion, or fallback to current filter occasion
+    const occasion = template.occasion?.toLowerCase().trim() || occasionParam;
+    if (occasion) urlParams.set("occasion", occasion);
+    urlParams.set("template", template._id);
+    navigate(`/generator?${urlParams.toString()}`);
+  };
+
   return (
     <>
       <PageHead
@@ -40,7 +53,10 @@ export default function TemplatesPage() {
           {/* Templates section */}
           <div className="px-4 py-8 md:py-12">
             <div className="max-w-7xl mx-auto">
-              <TemplatesGrid occasionFilter={occasionParam} />
+              <TemplatesGrid
+                occasionFilter={occasionParam}
+                onPick={handleTemplatePick}
+              />
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, memo } from "react";
 import { ChevronRight, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import VideoModal from "./VideoModal";
 import TemplateCard from "./TemplateCard";
 import { TemplateSummary } from "@/types/templates";
@@ -9,12 +10,14 @@ interface TheDigitalGifterMainPageProps {
   onStartCreating: () => void;
   onViewTemplates: () => void;
   createHref?: string; // Used for href links if needed
+  occasion?: string; // Occasion context for template navigation (e.g., "christmas")
 }
 
 export default function TheDigitalGifterMainPage({
   onStartCreating,
   onViewTemplates,
   createHref: _createHref = "/generator",
+  occasion,
 }: TheDigitalGifterMainPageProps) {
   const stats = [
     { value: "50,000+", label: "Cards Created" },
@@ -136,7 +139,7 @@ export default function TheDigitalGifterMainPage({
         </section>
 
         {/* CAROUSEL */}
-        <TemplatesCarousel />
+        <TemplatesCarousel occasion={occasion} />
 
         {/* STATS */}
         <section className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 text-center py-8 gap-8 relative z-[2]">
@@ -279,7 +282,12 @@ export default function TheDigitalGifterMainPage({
 }
 
 /* ===== Carousel Component (4 per page + badges) ===== */
-const TemplatesCarousel = memo(function TemplatesCarousel() {
+const TemplatesCarousel = memo(function TemplatesCarousel({
+  occasion,
+}: {
+  occasion?: string;
+}) {
+  const navigate = useNavigate();
   const categories = ["All", "Classic", "Cozy", "Snowy", "Romantic"];
 
   const { data: templates = [] } = useTemplatesQuery();
@@ -336,14 +344,30 @@ const TemplatesCarousel = memo(function TemplatesCarousel() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {pageItems.map((item) => (
-            <TemplateCard
-              key={(item as any)._id}
-              template={item as any}
-              aspectClass="aspect-[4/3]"
-              onOpenModal={(src, title) => setModal({ open: true, src, title })}
-            />
-          ))}
+          {pageItems.map((item) => {
+            // Navigate to generator with occasion and template ID
+            const handleTemplateSelect = () => {
+              const params = new URLSearchParams();
+              // Use occasion from template or fallback to page occasion
+              const templateOccasion =
+                item.occasion?.toLowerCase().trim() || occasion;
+              if (templateOccasion) params.set("occasion", templateOccasion);
+              params.set("template", item._id);
+              navigate(`/generator?${params.toString()}`);
+            };
+
+            return (
+              <TemplateCard
+                key={(item as any)._id}
+                template={item as any}
+                aspectClass="aspect-[4/3]"
+                onSelect={handleTemplateSelect}
+                onOpenModal={(src, title) =>
+                  setModal({ open: true, src, title })
+                }
+              />
+            );
+          })}
         </div>
 
         {/* Arrows */}

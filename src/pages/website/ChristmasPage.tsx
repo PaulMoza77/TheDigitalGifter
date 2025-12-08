@@ -15,6 +15,7 @@ export default function ChristmasPage() {
         onStartCreating={() => void navigate("/generator?occasion=christmas")}
         onViewTemplates={() => void navigate("/templates?occasion=christmas")}
         createHref="/generator?occasion=christmas"
+        occasion="christmas"
       />
     </>
   );

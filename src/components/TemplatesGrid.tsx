@@ -232,6 +232,7 @@ function TemplatesGridComponent({
             <TemplateCard
               key={template._id}
               template={template}
+              onSelect={onPick ? () => onPick(template) : undefined}
               onOpenModal={(src, title) =>
                 setModal({ open: true, src, title: title ?? "" })
               }

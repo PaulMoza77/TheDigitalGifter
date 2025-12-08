@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import { useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useBootstrapUser } from "@/hooks/useBootstrapUser";
 import { toast } from "sonner";
 import { Id } from "../../../../convex/_generated/dataModel";
@@ -85,10 +85,16 @@ function SnowBackground() {
 
 export default function GeneratorPage() {
   const user = useBootstrapUser();
-  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeCategory, setActiveCategory] = useState("All");
-  const [selectedTemplate, setSelectedTemplate] =
-    useState<Id<"templates"> | null>(null);
+
+  // URL-based template and occasion selection (persists on refresh)
+  const selectedTemplate = searchParams.get(
+    "template"
+  ) as Id<"templates"> | null;
+  const selectedOccasion =
+    searchParams.get("occasion")?.toLowerCase().trim() || null;
+
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [previewAfter, setPreviewAfter] = useState<string | null>(null);
@@ -128,17 +134,7 @@ export default function GeneratorPage() {
   const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
   const userCredits: number = (creditsData ?? 0) as number;
 
-  // Read ?occasion= query param and filter templates by that occasion
-  const [selectedOccasion, setSelectedOccasion] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const occasionParam = params.get("occasion");
-    if (occasionParam) {
-      setSelectedOccasion(occasionParam.toLowerCase().trim());
-      // Don't pre-select a category - let users see all templates and filter as they want
-    }
-  }, [location.search]);
+  // Note: occasion and template are now read directly from URL via searchParams (defined above)
 
   const categories = [
     "All",
@@ -256,10 +252,30 @@ export default function GeneratorPage() {
     }
   }, [currentJob]);
 
-  const handleTemplateSelect = useCallback((template: TemplateSummary) => {
-    setSelectedTemplate(template._id);
-    toast.success(`Selected: ${template.title}`);
-  }, []);
+  // Update URL when template is selected (supports toggle/deselect)
+  const handleTemplateSelect = useCallback(
+    (template: TemplateSummary) => {
+      setSearchParams(
+        (prev) => {
+          // Toggle: if same template clicked, deselect it
+          if (prev.get("template") === template._id) {
+            prev.delete("template");
+            toast.success(`Deselected: ${template.title}`);
+          } else {
+            prev.set("template", template._id);
+            // Also set occasion from template if not already set
+            if (template.occasion && !prev.get("occasion")) {
+              prev.set("occasion", template.occasion.toLowerCase().trim());
+            }
+            toast.success(`Selected: ${template.title}`);
+          }
+          return prev;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   // Handle file upload (multiple files)
   const handleFileSelect = useCallback(
