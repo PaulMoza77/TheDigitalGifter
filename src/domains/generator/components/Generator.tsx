@@ -30,6 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Info } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
+import { useCreditsFunnel } from "@/contexts/CreditsFunnelContext";
 
 // Snow Animation Background Component
 function SnowBackground() {
@@ -378,10 +379,14 @@ export default function GeneratorPage() {
     }
   }, []);
 
+  // Credits funnel popup context
+  const { openFunnel } = useCreditsFunnel();
+
   // Handle generate
   const handleGenerate = useCallback(async () => {
+    // Check if user is not logged in
     if (!user) {
-      toast.error("Please sign in to generate.");
+      openFunnel({ mode: "not_logged_in" });
       return;
     }
     if (!selectedTemplate) {
@@ -398,8 +403,22 @@ export default function GeneratorPage() {
       return;
     }
 
+    // Check if user has insufficient credits
     if ((userCredits ?? 0) < template.creditCost) {
-      toast.error(`Not enough credits. Need ${template.creditCost} credits.`);
+      // Determine if this is first generation (no jobs yet = first time user)
+      const hasGeneratedBefore = jobs.length > 0;
+
+      if (!hasGeneratedBefore && (userCredits ?? 0) === 0) {
+        // First time user with 0 credits
+        openFunnel({ mode: "first_generation" });
+      } else {
+        // Has some credits but not enough
+        openFunnel({
+          mode: "insufficient_credits",
+          required: template.creditCost,
+          available: userCredits ?? 0,
+        });
+      }
       return;
     }
 
@@ -505,10 +524,11 @@ export default function GeneratorPage() {
     triggerCreateVideoJob,
     selectedAspectRatio,
     customInstructions,
-
     generateAudio,
     negativePrompt,
     selectedTemplateObj,
+    openFunnel,
+    jobs,
   ]);
 
   return (
