@@ -54,18 +54,9 @@ export const listAdmin = query({
 
     // 3. Fetch all jobs to calculate credit usage stats
     const jobs = await ctx.db.query("jobs").collect();
-    console.log("[listAdmin] Total jobs found:", jobs.length);
-    if (jobs.length > 0) {
-      console.log("[listAdmin] Sample job:", {
-        userId: jobs[0].userId,
-        debited: jobs[0].debited,
-        type: jobs[0].type,
-      });
-    }
 
     // 4. Fetch all orders to calculate monetary stats
     const orders = await ctx.db.query("orders").collect();
-    console.log("[listAdmin] Total orders found:", orders.length);
 
     // Calculate stats per user
     const userStats = new Map<
@@ -107,12 +98,6 @@ export const listAdmin = query({
       userStats.set(job.userId, current);
     }
 
-    console.log(
-      "[listAdmin] User stats after processing jobs:",
-      userStats.size,
-      "users"
-    );
-
     // Process Orders (Money & Purchases)
     for (const order of orders) {
       const current = userStats.get(order.userId) || {
@@ -146,13 +131,6 @@ export const listAdmin = query({
         totalMoneySpent: 0,
         ordersCount: 0,
       };
-
-      // Debug: Log first profile to see userId format
-      if (profiles.indexOf(profile) === 0) {
-        console.log("[listAdmin] First profile userId:", profile.userId);
-        console.log("[listAdmin] Stats for this user:", stats);
-        console.log("[listAdmin] Total userStats entries:", userStats.size);
-      }
 
       return {
         _id: profile._id,

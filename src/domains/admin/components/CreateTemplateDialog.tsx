@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,8 @@ import { Mail } from "lucide-react";
 import { useForm, SubmitHandler, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  templateFormSchema,
+  templateCreateSchema,
+  templateUpdateSchema,
   TemplateFormValues,
 } from "../validations/template";
 import {
@@ -55,9 +56,16 @@ export function CreateTemplateDialog({
   const createTemplate = useMutation(api.templates.create);
   const updateTemplate = useMutation(api.templates.update);
 
-  // Form Setup
+  // Use different validation schemas for create vs update
+  // Update mode allows all fields to be optional for partial updates
+  const validationSchema = useMemo(
+    () => (isEditing ? templateUpdateSchema : templateCreateSchema),
+    [isEditing]
+  );
+
+  // Form Setup with dynamic resolver based on editing mode
   const form = useForm<TemplateFormValues>({
-    resolver: zodResolver(templateFormSchema) as Resolver<TemplateFormValues>,
+    resolver: zodResolver(validationSchema) as Resolver<TemplateFormValues>,
     defaultValues: {
       title: "",
       occasion: "",
@@ -95,12 +103,17 @@ export function CreateTemplateDialog({
   // Load existing template data
   useEffect(() => {
     if (existingTemplate && isEditing) {
+      // Normalize type value - database might have legacy values like "photo", "card"
+      // Only "video" is kept as-is, everything else becomes "image"
+      const normalizedType: "image" | "video" =
+        existingTemplate.type === "video" ? "video" : "image";
+
       reset({
         title: existingTemplate.title || "",
         occasion: existingTemplate.occasion || "",
         category: existingTemplate.category || "",
         subCategory: existingTemplate.subCategory || "",
-        type: (existingTemplate.type as "image" | "video") || "image",
+        type: normalizedType,
         scene: existingTemplate.scene || "",
         orientation: existingTemplate.orientation || "portrait",
         prompt: existingTemplate.prompt || "",
@@ -157,18 +170,16 @@ export function CreateTemplateDialog({
 
   const onSubmit: SubmitHandler<TemplateFormValues> = async (data) => {
     try {
-      // Manual file validation since it depends on isEditing
-      if (data.type === "image" && !data.previewImageFile && !isEditing) {
-        toast.error("Please upload a preview image");
-        return;
-      }
-      if (
-        data.type === "video" &&
-        (!data.thumbnailFile || !data.videoFile) &&
-        !isEditing
-      ) {
-        toast.error("Please upload thumbnail and video files");
-        return;
+      // Manual file validation only for create mode
+      if (!isEditing) {
+        if (data.type === "image" && !data.previewImageFile) {
+          toast.error("Please upload a preview image");
+          return;
+        }
+        if (data.type === "video" && (!data.thumbnailFile || !data.videoFile)) {
+          toast.error("Please upload thumbnail and video files");
+          return;
+        }
       }
 
       setIsUploading(true);
@@ -177,64 +188,126 @@ export function CreateTemplateDialog({
       let previewImageId: Id<"_storage"> | undefined;
       let thumbnailImageId: Id<"_storage"> | undefined;
 
-      if (data.type === "image" && data.previewImageFile) {
+      // Handle file uploads if files are provided
+      if (data.previewImageFile) {
         setUploadProgress(30);
         previewImageId = await uploadFile(data.previewImageFile);
-      } else if (data.type === "video") {
-        if (data.thumbnailFile) {
-          setUploadProgress(20);
-          thumbnailImageId = await uploadFile(data.thumbnailFile);
-        }
-        if (data.videoFile) {
-          setUploadProgress(60);
-          previewImageId = await uploadFile(data.videoFile);
-        }
+      }
+      if (data.thumbnailFile) {
+        setUploadProgress(20);
+        thumbnailImageId = await uploadFile(data.thumbnailFile);
+      }
+      if (data.videoFile) {
+        setUploadProgress(60);
+        previewImageId = await uploadFile(data.videoFile);
       }
 
       setUploadProgress(80);
 
-      const commonFields = {
-        title: data.title,
-        occasion: data.occasion,
-        category: data.category,
-        subCategory: data.subCategory,
-        type: data.type,
-        scene: data.scene,
-        orientation: data.orientation,
-        prompt: data.prompt,
-        textDefault: data.textDefault || "", // Ensure string
-        creditCost: data.creditCost,
-        tags: data.tags
-          ? data.tags
-              .split(",")
-              .map((t) => t.trim())
-              .filter(Boolean)
-          : [],
-        ...(data.type === "video" && {
-          defaultDuration: data.defaultDuration as 4 | 6 | 8,
-          defaultAspectRatio: data.defaultAspectRatio,
-          defaultResolution: data.defaultResolution as "720p" | "1080p",
-          generateAudioDefault: data.generateAudioDefault,
-        }),
-      };
-
       if (isEditing && templateId) {
-        // Update existing template
-        await updateTemplate({
-          id: templateId,
-          ...commonFields,
-          // Note: File updates are not fully supported in this simplified version
-          // as the update mutation expects URLs, not IDs.
-          // For now, we only update metadata.
-        });
+        // UPDATE MODE: Build payload with only provided fields
+        // This allows partial updates - only send fields that have values
+        const updatePayload: Record<string, unknown> = { id: templateId };
+
+        // Only include fields that have actual values (not undefined/empty)
+        if (data.title) updatePayload.title = data.title;
+        if (data.occasion) updatePayload.occasion = data.occasion;
+        if (data.category !== undefined) updatePayload.category = data.category;
+        if (data.subCategory !== undefined)
+          updatePayload.subCategory = data.subCategory;
+        if (data.type) updatePayload.type = data.type;
+        if (data.scene !== undefined) updatePayload.scene = data.scene;
+        if (data.orientation) updatePayload.orientation = data.orientation;
+        if (data.prompt) updatePayload.prompt = data.prompt;
+        if (data.textDefault !== undefined)
+          updatePayload.textDefault = data.textDefault;
+        if (data.creditCost !== undefined && data.creditCost !== null) {
+          updatePayload.creditCost = Number(data.creditCost);
+        }
+        if (data.tags) {
+          updatePayload.tags = data.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean);
+        }
+        if (data.isActive !== undefined) updatePayload.isActive = data.isActive;
+
+        // Video-specific fields
+        if (data.type === "video") {
+          if (data.defaultDuration !== undefined) {
+            const validDurations = [4, 6, 8] as const;
+            const durationNum = Number(data.defaultDuration);
+            if (validDurations.includes(durationNum as 4 | 6 | 8)) {
+              updatePayload.defaultDuration = durationNum as 4 | 6 | 8;
+            }
+          }
+          if (data.defaultAspectRatio)
+            updatePayload.defaultAspectRatio = data.defaultAspectRatio;
+          if (data.defaultResolution) {
+            const validResolutions = ["720p", "1080p"] as const;
+            if (
+              validResolutions.includes(
+                data.defaultResolution as "720p" | "1080p"
+              )
+            ) {
+              updatePayload.defaultResolution = data.defaultResolution as
+                | "720p"
+                | "1080p";
+            }
+          }
+          if (data.generateAudioDefault !== undefined) {
+            updatePayload.generateAudioDefault = data.generateAudioDefault;
+          }
+        }
+
+        await updateTemplate(updatePayload as any);
         toast.success("Template updated successfully!");
       } else {
-        await createTemplate({
-          ...commonFields,
+        // CREATE MODE: All required fields are validated by schema
+        const creditCostNumber = Number(data.creditCost);
+        const validDurations = [4, 6, 8] as const;
+        const durationNum = Number(data.defaultDuration);
+        const defaultDuration = validDurations.includes(
+          durationNum as 4 | 6 | 8
+        )
+          ? (durationNum as 4 | 6 | 8)
+          : 8;
+        const validResolutions = ["720p", "1080p"] as const;
+        const defaultResolution = validResolutions.includes(
+          data.defaultResolution as "720p" | "1080p"
+        )
+          ? (data.defaultResolution as "720p" | "1080p")
+          : "1080p";
+
+        const createPayload = {
+          title: data.title,
+          occasion: data.occasion,
+          category: data.category,
+          subCategory: data.subCategory,
+          type: data.type,
+          scene: data.scene,
+          orientation: data.orientation,
+          prompt: data.prompt,
+          textDefault: data.textDefault || "",
+          creditCost: creditCostNumber,
+          tags: data.tags
+            ? data.tags
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean)
+            : [],
           previewImageId,
           thumbnailImageId,
           sendEmailNotification: data.sendEmailNotification,
-        });
+          ...(data.type === "video" && {
+            defaultDuration,
+            defaultAspectRatio: data.defaultAspectRatio,
+            defaultResolution,
+            generateAudioDefault: data.generateAudioDefault,
+          }),
+        };
+
+        await createTemplate(createPayload);
         toast.success("Template created successfully!");
       }
 
@@ -267,7 +340,17 @@ export function CreateTemplateDialog({
           </div>
         ) : (
           <form
-            onSubmit={(e) => void handleSubmit(onSubmit)(e)}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit(onSubmit, (errors) => {
+                // Show first validation error to user
+                const firstError = Object.values(errors)[0];
+                const errorMessage =
+                  firstError?.message || "Please check the form for errors";
+                toast.error(String(errorMessage));
+                console.error("Form validation errors:", errors);
+              })(e);
+            }}
             className="space-y-4 max-h-[75vh] overflow-y-auto pr-2"
           >
             <div className="flex gap-2 items-center">
