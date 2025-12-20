@@ -77,10 +77,14 @@ const stripeWebhook = httpAction(async (ctx, req) => {
     const meta = session?.metadata || {};
     const userId: string | undefined = meta.userId;
     const pack: string | undefined = meta.pack;
+    const quantity: number = parseInt(meta.quantity || "1", 10) || 1;
+    const discount: number = parseFloat(meta.discount || "0") || 0;
 
     console.log("[Webhook] Session metadata", {
       userId,
       pack,
+      quantity,
+      discount,
       sessionId: session?.id,
     });
 
@@ -112,14 +116,15 @@ const stripeWebhook = httpAction(async (ctx, req) => {
 
     let amount = 0;
     if (sessionPriceId && PRICE_ID_TO_CREDITS[sessionPriceId]) {
-      amount = PRICE_ID_TO_CREDITS[sessionPriceId];
+      amount = PRICE_ID_TO_CREDITS[sessionPriceId] * quantity;
     } else if (pack) {
-      amount = PACK_TO_CREDITS[pack] ?? 0;
+      amount = (PACK_TO_CREDITS[pack] ?? 0) * quantity;
     }
 
     console.log("[Webhook] Determined credits", {
       pack,
       sessionPriceId,
+      quantity,
       amount,
     });
 
@@ -137,7 +142,7 @@ const stripeWebhook = httpAction(async (ctx, req) => {
         });
 
         // Create order record for revenue tracking
-        // Map credits to Euro amount (you can adjust these prices)
+        // Map credits to Euro amount (apply discount for accurate revenue)
         const PACK_TO_PRICE: Record<string, number> = {
           starter: 4.98,
           creator: 9.98,
@@ -145,7 +150,9 @@ const stripeWebhook = httpAction(async (ctx, req) => {
           enterprise: 499.98,
         };
 
-        const euroAmount = pack ? (PACK_TO_PRICE[pack] ?? 0) : 0;
+        const baseEuroAmount = pack ? (PACK_TO_PRICE[pack] ?? 0) * quantity : 0;
+        const euroAmount =
+          Math.round(baseEuroAmount * (1 - discount) * 100) / 100;
 
         if (euroAmount > 0 && session?.id) {
           try {
@@ -158,6 +165,8 @@ const stripeWebhook = httpAction(async (ctx, req) => {
             console.log("[Webhook] ✅ Order record created", {
               userId,
               pack,
+              quantity,
+              discount: `${discount * 100}%`,
               euroAmount,
             });
           } catch (orderError) {
@@ -200,7 +209,9 @@ const stripeWebhook = httpAction(async (ctx, req) => {
           enterprise: 499.98,
         };
 
-        const euroAmount = pack ? (PACK_TO_PRICE[pack] ?? 0) : 0;
+        const baseEuroAmount = pack ? (PACK_TO_PRICE[pack] ?? 0) * quantity : 0;
+        const euroAmount =
+          Math.round(baseEuroAmount * (1 - discount) * 100) / 100;
 
         if (euroAmount > 0 && session?.id) {
           try {

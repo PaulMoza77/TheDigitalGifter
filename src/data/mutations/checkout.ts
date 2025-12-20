@@ -4,6 +4,7 @@ import { api } from "../../../convex/_generated/api";
 
 type CheckoutArgs = {
   pack: string;
+  quantity?: number;
 };
 
 type CheckoutResponse = {

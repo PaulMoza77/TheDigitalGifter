@@ -50,6 +50,7 @@ async function createStripeCheckoutSession(body: Record<string, string>) {
 export const createCheckoutByPack = action({
   args: {
     pack: v.string(), // "starter" | "creator" | "pro" | "enterprise"
+    quantity: v.optional(v.number()), // Bundle quantity (default 1)
   },
   handler: async (ctx, args) => {
     // ✅ Require authentication
@@ -67,30 +68,65 @@ export const createCheckoutByPack = action({
       process.env.PUBLIC_APP_URL || "http://localhost:5173"
     ).trim();
 
-    const PRICE_IDS: Record<string, string> = {
-      starter: requireEnv("PRICE_STARTER"),
-      creator: requireEnv("PRICE_CREATOR"),
-      pro: requireEnv("PRICE_PRO"),
-      enterprise: requireEnv("PRICE_ENTERPRISE"),
+    // Pack prices in cents (for Stripe)
+    const PACK_PRICES: Record<string, number> = {
+      starter: 498, // €4.98
+      creator: 998, // €9.98
+      pro: 7898, // €78.98
+      enterprise: 49998, // €499.98
     };
 
-    const priceId = PRICE_IDS[args.pack];
+    // Pack display names
+    const PACK_NAMES: Record<string, string> = {
+      starter: "Starter",
+      creator: "Creator",
+      pro: "Pro",
+      enterprise: "Enterprise",
+    };
+
+    const quantity = args.quantity ?? 1;
+
+    // Tiered bundle discount: 2=10%, 3=15%, 4+=20%
+    const getDiscount = (qty: number): number => {
+      if (qty >= 4) return 0.2;
+      if (qty >= 3) return 0.15;
+      if (qty >= 2) return 0.1;
+      return 0;
+    };
+
+    const discount = getDiscount(quantity);
+    const basePrice = PACK_PRICES[args.pack];
+    const discountedPrice = Math.round(basePrice * (1 - discount));
 
     console.log("[Checkout] Creating session", {
       userId,
       pack: args.pack,
-      priceId,
+      quantity,
+      basePrice,
+      discount: `${discount * 100}%`,
+      discountedPrice,
+      totalBeforeDiscount: basePrice * quantity,
+      totalAfterDiscount: discountedPrice * quantity,
     });
 
-    const session = await createStripeCheckoutSession({
+    // Build session params using price_data (no pre-created price ID needed)
+    const sessionParams: Record<string, string> = {
       mode: "payment",
-      "line_items[0][price]": priceId,
-      "line_items[0][quantity]": "1",
+      // Use price_data to set custom discounted price
+      "line_items[0][price_data][currency]": "eur",
+      "line_items[0][price_data][unit_amount]": String(discountedPrice),
+      "line_items[0][price_data][product_data][name]": `${PACK_NAMES[args.pack]} Pack${discount > 0 ? ` (${Math.round(discount * 100)}% OFF)` : ""}`,
+      "line_items[0][price_data][product_data][description]": `Credit bundle for The Digital Gifter`,
+      "line_items[0][quantity]": String(quantity),
       success_url: `${baseUrl}/?checkout=success`,
       cancel_url: `${baseUrl}/?checkout=cancel`,
       "metadata[userId]": String(userId),
       "metadata[pack]": args.pack,
-    });
+      "metadata[quantity]": String(quantity),
+      "metadata[discount]": String(discount),
+    };
+
+    const session = await createStripeCheckoutSession(sessionParams);
 
     if (!session.url) throw new Error("Stripe did not return a checkout URL");
 

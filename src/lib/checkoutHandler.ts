@@ -9,13 +9,18 @@ type Pack = "starter" | "creator" | "pro" | "enterprise";
  */
 export async function handleCheckout({
   pack,
+  quantity = 1,
   user,
   checkoutMutation,
 }: {
   pack: Pack;
+  quantity?: number;
   user: Doc<"users"> | null;
   checkoutMutation: {
-    mutateAsync: (input: { pack: string }) => Promise<{ url?: string | null }>;
+    mutateAsync: (input: {
+      pack: string;
+      quantity?: number;
+    }) => Promise<{ url?: string | null }>;
   };
 }) {
   // Auth check
@@ -27,10 +32,11 @@ export async function handleCheckout({
   try {
     console.log("[handleCheckout] Starting checkout", {
       pack,
+      quantity,
       userId: user._id,
     });
 
-    const response = await checkoutMutation.mutateAsync({ pack });
+    const response = await checkoutMutation.mutateAsync({ pack, quantity });
     const url = response?.url;
 
     if (url) {
