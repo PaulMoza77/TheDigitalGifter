@@ -3,6 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { SignInButton } from "@/components/SignInButton";
+import { useLoggedInUserQuery, useCheckoutMutation } from "@/data";
+import { handleCheckout } from "@/lib/checkoutHandler";
 
 // Canvas Preview Page — TheDigitalGifter
 // Style inspiration: AliveMoment summary/pricing pages
@@ -75,6 +78,9 @@ export default function Index() {
   const selectedPack = useMemo(() => packs.find((p) => p.id === selected)!, [selected]);
   const totalCredits = selectedPack.credits + selectedPack.bonus;
 
+  const { data: me } = useLoggedInUserQuery();
+  const buyPack = useCheckoutMutation();
+
   return (
     <div className="min-h-screen bg-[#F6F0E6] text-[#10221B]">
       {/* Top header */}
@@ -93,20 +99,10 @@ export default function Index() {
               bonus credits included
             </div>
           </div>
-        </div>
 
-        <Separator className="my-8 bg-[#1B3A30]/15" />
-
-        {/* Main content – centered layout like AliveMoment */}
-        <div className="mx-auto max-w-lg">
-          <h1 className="text-center text-4xl font-semibold leading-tight tracking-tight">
-            Unlock your personalized magic ✨
-          </h1>
-          <p className="mt-3 text-center text-sm text-[#10221B]/75">
-            Turn photos into unforgettable digital moments. Create reactions they’ll replay again and again.
-          </p>
-
-          {/* What’s included */}
+            <div className="mt-3">
+              <SignInButton />
+            </div>
           <div className="mt-8">
             <h2 className="text-center text-2xl font-semibold">What’s included?</h2>
             <div className="mt-4 rounded-2xl border border-[#1B3A30]/15 bg-white/55 p-5">
@@ -217,8 +213,12 @@ export default function Index() {
                 </div>
                 <div className="mt-1 text-xs text-[#10221B]/70">Credits valid until Dec 24 • No expiration pressure</div>
 
-                <Button className="mt-4 h-11 w-full rounded-full bg-[#F3D35B] text-[#10221B] hover:bg-[#EDC94A]">
-                  Create my digital gift
+                <Button
+                  className="mt-4 h-11 w-full rounded-full bg-[#F3D35B] text-[#10221B] hover:bg-[#EDC94A]"
+                  onClick={() => void handleCheckout({ pack: selected, user: me ?? null, checkoutMutation: buyPack })}
+                  disabled={buyPack.isPending}
+                >
+                  {buyPack.isPending ? "Processing…" : "Create my digital gift"}
                 </Button>
 
                 <div className="mt-3 text-xs text-[#10221B]/70">✔ Secure checkout • ✔ No subscriptions • ✔ Instant access</div>
