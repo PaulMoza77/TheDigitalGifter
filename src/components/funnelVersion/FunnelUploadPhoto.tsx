@@ -265,7 +265,7 @@ export default function Index() {
                     Upload photo later
                   </button>
                   <div className="mt-2 text-xs text-zinc-600">
-                    You can upload more photos right after onboarding.
+                    Your photo stays private. You control what you share.
                   </div>
                 </div>
               </CardContent>
@@ -273,7 +273,7 @@ export default function Index() {
 
             {/* Tiny hint/footer */}
             <div className="mt-6 text-center text-xs text-zinc-500">
-              Your photo stays private. You control what you share.
+              Create your digital gift in minutes. No Subscription required.
             </div>
           </div>
         </div>
