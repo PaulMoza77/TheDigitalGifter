@@ -17,6 +17,8 @@ import Index from "@/pages/website/HomePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLayout from "./layouts/AdminLayout";
 import Templates from "./pages/admin/Templates";
+import FunnelHomePage from "./components/funnelVersion/FunnelHomePage";
+import FunnelUploadPhoto from "./components/funnelVersion/FunnelUploadPhoto";
 
 const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
@@ -68,6 +70,8 @@ export default function App() {
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/refunds" element={<RefundPolicyPage />} />
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
+              <Route path="/funnel/homepage" element={<FunnelHomePage />} />
+              <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
             </Route>
             <Route element={<AdminLayout />}>
               <Route
