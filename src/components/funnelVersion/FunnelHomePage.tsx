@@ -427,21 +427,8 @@ function Nav() {
           <a href="#" className="text-sm font-medium text-emerald-950/70 hover:text-emerald-950">
             Contact
           </a>
-          <Button
-            variant="outline"
-            className="rounded-full border-emerald-950/15 bg-white/60 px-4 text-emerald-950 hover:bg-white"
-          >
-            Sign in
-          </Button>
         </div>
-        <div className="md:hidden">
-          <Button
-            variant="outline"
-            className="rounded-full border-emerald-950/15 bg-white/60 px-4 text-emerald-950 hover:bg-white"
-          >
-            Sign in
-          </Button>
-        </div>
+        <div className="md:hidden" />
       </div>
     </div>
   );
@@ -927,75 +914,7 @@ function FAQ() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="border-t border-emerald-950/10 bg-[#F6F2EA]">
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div>
-            <LogoMark />
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-emerald-950/70">
-              TDG helps you turn photos into moving gifts — warm, personal, and made to be shared.
-            </p>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="space-y-2">
-              <div className="font-semibold text-emerald-950">Product</div>
-              <a className="block text-emerald-950/70 hover:text-emerald-950" href="#how">
-                How it works
-              </a>
-              <a className="block text-emerald-950/70 hover:text-emerald-950" href="#examples">
-                Examples
-              </a>
-              <a className="block text-emerald-950/70 hover:text-emerald-950" href="#faq">
-                FAQ
-              </a>
-            </div>
-            <div className="space-y-2">
-              <div className="font-semibold text-emerald-950">Company</div>
-              <a className="block text-emerald-950/70 hover:text-emerald-950" href="#">
-                Contact
-              </a>
-              <a className="block text-emerald-950/70 hover:text-emerald-950" href="#">
-                Privacy
-              </a>
-              <a className="block text-emerald-950/70 hover:text-emerald-950" href="#">
-                Terms
-              </a>
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-emerald-950/10 bg-white/60 p-6 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
-            <div className="font-serif text-xl tracking-tight text-emerald-950">Ready to create your first moving gift?</div>
-            <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-              Start with one photo. Pick a style. Share something that feels personal.
-            </p>
-            <div className="mt-5">
-              <CTAButton className="w-full" />
-            </div>
-          </div>
-        </div>
-
-        <Separator className="my-10 bg-emerald-950/10" />
-
-        <div className="flex flex-col items-center justify-between gap-3 text-xs text-emerald-950/60 md:flex-row">
-          <div>© {new Date().getFullYear()} TheDigitalGifter. All rights reserved.</div>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-yellow-300/70" />
-              Warm & premium design
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/40" />
-              Connectors + motion
-            </span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 // Minimal runtime “self-test” (no test runner in Canvas).
 // Helps catch accidental empty CTA label or missing browser APIs during development.
@@ -1028,7 +947,6 @@ export default function Index() {
       <ValueTrio />
       <ResultsBand />
       <FAQ />
-      <Footer />
     </div>
   );
 }

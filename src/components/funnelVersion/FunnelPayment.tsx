@@ -100,9 +100,6 @@ export default function Index() {
             </div>
           </div>
 
-            <div className="mt-3">
-              <SignInButton />
-            </div>
           <div className="mt-8">
             <h2 className="text-center text-2xl font-semibold">What’s included?</h2>
             <div className="mt-4 rounded-2xl border border-[#1B3A30]/15 bg-white/55 p-5">

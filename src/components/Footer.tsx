@@ -110,18 +110,10 @@ export default function Footer() {
         {/* Divider */}
         <div className="border-t border-white/10 my-8"></div>
 
-        {/* Bottom Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <p className="text-[#8892a8] text-xs">
-            © 2024 TheDigitalGifter. All rights reserved. Spreading Christmas
-            joy with AI.
-          </p>
-          <div className="flex items-center gap-1 text-[#8892a8] text-xs">
-            <span>Made with</span>
-            <Heart size={14} className="text-red-500 mx-0.5" fill="red" />
-            <span>for the holidays</span>
-          </div>
+          <p className="text-[#8892a8] text-xs">© 2024 TheDigitalGifter. All rights reserved.</p>
         </div>
+
       </div>
     </footer>
   );
