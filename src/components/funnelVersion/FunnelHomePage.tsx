@@ -172,7 +172,7 @@ function PhotoMock({
   labelTone,
   footer,
 }: {
-  variant?: "warm" | "vintage" | "winter" | "love" | "cinematic";
+  variant?: "warm" | "vintage" | "winter" | "love" | "cinematic" | "download" | "averybefore" | "averyafter" | "emilybefore" | "emilyafter" | "annabefore" | "annaafter" | "family" | "moments" | "preserve";
   className?: string;
   rounded?: string;
   label?: string;
@@ -203,13 +203,25 @@ function PhotoMock({
       <div className="absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle_at_1px_1px,rgba(6,78,59,0.35)_1px,transparent_0)] [background-size:16px_16px]" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.10),rgba(255,255,255,0.65))]" />
 
-      {label ? (
-        <div className="absolute left-4 top-4 z-10">
-          <Pill tone={labelTone || "sun"}>{label}</Pill>
-        </div>
-      ) : null}
+      <div className="relative aspect-[4/5] w-full">
+        {label ? (
+          <div className="absolute left-4 bottom-4 z-10">
+            <Pill tone={labelTone || "sun"}>{label}</Pill>
+          </div>
+        ) : null}
 
-      <div className="relative aspect-[4/5] w-full" />
+        <img
+          src={`/assets/funnel/${variant}.png`}
+          alt={label || variant}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            const img = e.currentTarget as HTMLImageElement;
+            if (img.src.endsWith('.png')) img.src = `/assets/funnel/${variant}.svg`;
+            else if (img.src.endsWith('.svg')) img.src = `/assets/funnel/${variant}.jpg`;
+            else img.src = `/assets/funnel/default.png`;
+          }}
+        />
+      </div>
 
       {footer ? (
         <div className="relative border-t border-emerald-950/10 bg-emerald-950/90 px-4 py-2 text-center text-xs font-medium text-emerald-50">
@@ -630,7 +642,7 @@ function HowItWorks() {
                   Save your animated memory and send it to someone who matters.
                 </p>
                 <div className="mt-5">
-                  <PhotoMock variant="winter" label="TDG result ✨" labelTone="ink" />
+                  <PhotoMock variant="download" label="TDG result ✨" labelTone="ink" />
                 </div>
               </CardContent>
             </Card>
@@ -669,24 +681,24 @@ function Examples() {
       name: "Emily R.",
       location: "Portland, OR",
       quote: "Watching our old photo feel alive again gave me chills — it was like stepping back into that day.",
-      before: "vintage" as const,
-      after: "winter" as const,
+      before: "emilybefore" as const,
+      after: "emilyafter" as const,
       refs: { a: a1, b: b1 },
     },
     {
       name: "Avery",
       location: "Cheyenne, WY",
       quote: "The motion is subtle and beautiful. I made a birthday surprise and everyone asked how I did it.",
-      before: "warm" as const,
-      after: "cinematic" as const,
+      before: "averybefore" as const,
+      after: "averyafter" as const,
       refs: { a: a2, b: b2 },
     },
     {
       name: "Anna K.",
       location: "Omaha, NE",
       quote: "Perfect for love notes and winter greetings. It feels personal, not like a template.",
-      before: "love" as const,
-      after: "warm" as const,
+      before: "annabefore" as const,
+      after: "annaafter" as const,
       refs: { a: a3, b: b3 },
     },
   ];
@@ -764,17 +776,17 @@ function ValueTrio() {
     {
       title: "Bring your family’s memories to life",
       desc: "Watch treasured photos gently move and tell the story behind every smile and moment.",
-      variant: "warm" as const,
+      variant: "family" as const,
     },
     {
       title: "Celebrate the moments that shape us",
       desc: "Turn everyday snapshots into shareable keepsakes with cinematic warmth.",
-      variant: "cinematic" as const,
+      variant: "moments" as const,
     },
     {
       title: "Preserve your story for tomorrow",
       desc: "Create animated gifts from your photos — moving and vibrant for years to come.",
-      variant: "vintage" as const,
+      variant: "preserve" as const,
     },
   ];
 

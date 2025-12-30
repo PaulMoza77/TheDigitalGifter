@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -33,6 +34,7 @@ export default function Index() {
   const [uploaded, setUploaded] = useState<UploadedFile | null>(null);
 
   const stepLabel = useMemo(() => "1 of 2", []);
+  const navigate = useNavigate();
 
   const openFilePicker = useCallback(() => {
     fileInputRef.current?.click();
@@ -101,6 +103,7 @@ export default function Index() {
           <button
             type="button"
             className="text-sm text-zinc-700 hover:text-zinc-900 transition"
+            onClick={() => navigate(-1)}
           >
             Back
           </button>
@@ -236,6 +239,7 @@ export default function Index() {
                         <Button
                           type="button"
                           className="h-11 px-10 rounded-full bg-[#0b3b2e] hover:bg-[#082c22] text-white"
+                          onClick={() => navigate('/funnel/payment')}
                         >
                           Continue
                         </Button>
@@ -262,7 +266,7 @@ export default function Index() {
                     type="button"
                     className="text-sm font-medium text-[#0b3b2e] hover:underline"
                   >
-                    Upload photo later
+                    Upload your photo now 
                   </button>
                   <div className="mt-2 text-xs text-zinc-600">
                     Your photo stays private. You control what you share.

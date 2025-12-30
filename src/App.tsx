@@ -19,6 +19,8 @@ import AdminLayout from "./layouts/AdminLayout";
 import Templates from "./pages/admin/Templates";
 import FunnelHomePage from "./components/funnelVersion/FunnelHomePage";
 import FunnelUploadPhoto from "./components/funnelVersion/FunnelUploadPhoto";
+import { Funnel } from "lucide-react";
+import FunnelPayment from "./components/funnelVersion/FunnelPayment";
 
 const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
@@ -72,6 +74,7 @@ export default function App() {
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
               <Route path="/funnel/homepage" element={<FunnelHomePage />} />
               <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
+              <Route path="/funnel/payment" element={<FunnelPayment />} />
             </Route>
             <Route element={<AdminLayout />}>
               <Route
