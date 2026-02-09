@@ -1,6 +1,5 @@
 import React from "react";
-import { Play, Maximize } from "lucide-react";
-import { Coins } from "lucide-react";
+import { Play, Maximize, Coins } from "lucide-react";
 import { TemplateSummary } from "@/types/templates";
 
 type WrapperType = "div" | "button";
@@ -24,10 +23,12 @@ export default function TemplateCard({
   className = "",
   aspectClass,
 }: Props) {
-  const Container: any = wrapper === "button" ? "button" : "div";
+  const isButton = wrapper === "button";
+  const Container: any = isButton ? "button" : "div";
 
   return (
     <Container
+      type={isButton ? "button" : undefined}
       onClick={() => onSelect?.(template)}
       className={`rounded-3xl border overflow-hidden hover:-translate-y-0.5 transition group cursor-pointer ${
         isSelected
@@ -40,17 +41,17 @@ export default function TemplateCard({
           <>
             <img
               src={template.thumbnailUrl || template.previewUrl}
-              alt={template.title + " thumbnail"}
+              alt={`${template.title} thumbnail`}
               className="absolute inset-0 w-full h-full object-cover"
               loading="lazy"
             />
 
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                if (onOpenModal)
-                  onOpenModal(template.previewUrl, template.title);
+                onOpenModal?.(template.previewUrl, template.title);
               }}
               aria-label={`Preview ${template.title}`}
               className="absolute left-3 top-3 p-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow-lg"
@@ -59,11 +60,11 @@ export default function TemplateCard({
             </button>
 
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                if (onOpenModal)
-                  onOpenModal(template.previewUrl, template.title);
+                onOpenModal?.(template.previewUrl, template.title);
               }}
               aria-label={`Full view ${template.title}`}
               className="absolute right-3 top-3 p-1 rounded-full bg-white/10 text-white text-xs font-bold shadow-lg"
@@ -76,11 +77,13 @@ export default function TemplateCard({
             src={template.previewUrl}
             alt={template.title}
             className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
           />
         )}
 
         <div className="absolute top-3 right-3 flex items-center gap-2 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] text-[#1a1a1a] text-xs font-extrabold px-2 py-1 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
-          <Coins size={14} className="text-[#1a1a1a]" /> {template.creditCost}
+          <Coins size={14} className="text-[#1a1a1a]" />
+          {template.creditCost}
         </div>
 
         {isSelected && (
@@ -90,7 +93,7 @@ export default function TemplateCard({
         )}
       </div>
 
-      <div className=" p-2 sm:p-4 bg-[rgba(255,255,255,.06)] h-full">
+      <div className="p-2 sm:p-4 bg-[rgba(255,255,255,.06)] h-full">
         <h3 className="font-semibold text-sm sm:text-base leading-tight text-[#fffef5]">
           {template.title}
         </h3>

@@ -239,7 +239,7 @@ export default function Index() {
                         <Button
                           type="button"
                           className="h-11 px-10 rounded-full bg-[#0b3b2e] hover:bg-[#082c22] text-white"
-                          onClick={() => navigate('/funnel/payment')}
+                          onClick={() => navigate('/funnel/styleSelect')}
                         >
                           Continue
                         </Button>

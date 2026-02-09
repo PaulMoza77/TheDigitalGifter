@@ -1,6 +1,9 @@
 import React, { memo, useCallback, useMemo, useState } from "react";
+import { X } from "lucide-react";
+
 import VideoModal from "./VideoModal";
 import TemplateCard from "./TemplateCard";
+
 import {
   Select,
   SelectContent,
@@ -8,10 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
-import { Id } from "../../convex/_generated/dataModel";
-import { TemplateSummary } from "@/types/templates";
+
+import type { Id } from "../../convex/_generated/dataModel";
+import type { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
-import { X } from "lucide-react";
 
 type Template = TemplateSummary;
 
@@ -21,22 +24,31 @@ interface TemplatesGridProps {
   occasionFilter?: string | null;
 }
 
-export default memo(TemplatesGridComponent);
+function emojiForOccasion(occasion?: string | null) {
+  const o = (occasion || "").toLowerCase().trim();
+  if (!o || o === "all") return "✨";
+  if (o.includes("christ")) return "🎄";
+  if (o.includes("birth")) return "🎂";
+  if (o.includes("new")) return "🎆";
+  if (o.includes("thanks")) return "🦃";
+  if (o.includes("baby")) return "👶";
+  return "✨";
+}
+
+function prettyOccasion(occasion?: string | null) {
+  const o = (occasion || "").trim();
+  if (!o) return "this occasion";
+  return o.charAt(0).toUpperCase() + o.slice(1);
+}
 
 function TemplatesGridComponent({
   onPick,
   selectedTemplateId,
   occasionFilter,
 }: TemplatesGridProps) {
-  const [modal, setModal] = useState<{
-    open: boolean;
-    src: string;
-    title: string;
-  }>({
-    open: false,
-    src: "",
-    title: "",
-  });
+  const [modal, setModal] = useState<{ open: boolean; src: string; title: string }>(
+    { open: false, src: "", title: "" }
+  );
 
   const [scene, setScene] = useState<string>("all");
   const [orientation, setOrientation] = useState<string>("all");
@@ -57,17 +69,15 @@ function TemplatesGridComponent({
 
   const filteredTemplates = useMemo(() => {
     return templatesArray.filter((template) => {
-      const matchesScene =
-        scene && scene !== "all" ? template.scene === scene : true;
+      const matchesScene = scene !== "all" ? template.scene === scene : true;
+
       const matchesOrientation =
-        orientation && orientation !== "all"
-          ? template.orientation === orientation
-          : true;
+        orientation !== "all" ? template.orientation === orientation : true;
 
       const matchesPrice =
-        priceRange && priceRange !== "all"
+        priceRange !== "all"
           ? (() => {
-              const [min, max] = priceRange.split("-").map(Number);
+              const [min, max] = priceRange.split("-").map((n) => Number(n));
               return template.creditCost >= min && template.creditCost <= max;
             })()
           : true;
@@ -77,23 +87,19 @@ function TemplatesGridComponent({
           occasionFilter.toLowerCase().trim()
         : true;
 
-      return (
-        matchesScene && matchesOrientation && matchesPrice && matchesOccasion
-      );
+      return matchesScene && matchesOrientation && matchesPrice && matchesOccasion;
     });
   }, [templatesArray, scene, orientation, priceRange, occasionFilter]);
 
   const sceneCounts = useMemo(() => {
     return templatesArray.reduce<Record<string, number>>((acc, template) => {
-      acc[template.scene] = (acc[template.scene] ?? 0) + 1;
+      const key = template.scene || "unknown";
+      acc[key] = (acc[key] ?? 0) + 1;
       return acc;
     }, {});
   }, [templatesArray]);
 
-  const uniqueScenes = useMemo(
-    () => Object.keys(sceneCounts).sort(),
-    [sceneCounts]
-  );
+  const uniqueScenes = useMemo(() => Object.keys(sceneCounts).sort(), [sceneCounts]);
 
   const sceneOptions = useMemo(
     () => [
@@ -106,18 +112,24 @@ function TemplatesGridComponent({
     [uniqueScenes, sceneCounts, templatesArray.length]
   );
 
-  const orientationOptions = [
-    { label: "All Orientations", value: "all" },
-    { label: "Portrait", value: "portrait" },
-    { label: "Landscape", value: "landscape" },
-  ];
+  const orientationOptions = useMemo(
+    () => [
+      { label: "All Orientations", value: "all" },
+      { label: "Portrait", value: "portrait" },
+      { label: "Landscape", value: "landscape" },
+    ],
+    []
+  );
 
-  const priceRangeOptions = [
-    { label: "All", value: "all" },
-    { label: "Budget (10-12)", value: "10-12" },
-    { label: "Premium (13-16)", value: "13-16" },
-    { label: "Luxury (17-20)", value: "17-20" },
-  ];
+  const priceRangeOptions = useMemo(
+    () => [
+      { label: "All", value: "all" },
+      { label: "Budget (10-12)", value: "10-12" },
+      { label: "Premium (13-16)", value: "13-16" },
+      { label: "Luxury (17-20)", value: "17-20" },
+    ],
+    []
+  );
 
   const hasActiveFilters =
     scene !== "all" || orientation !== "all" || priceRange !== "all";
@@ -126,25 +138,19 @@ function TemplatesGridComponent({
     <div className="space-y-8">
       {/* Filters Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <h2 className="text-lg font-semibold text-[#fffef5]">Filters</h2>
-          {/* Results info */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-[#c1c8d8]">
-                <span className="font-semibold text-[#dfe6f1]">
-                  {filteredTemplates.length}
-                </span>
-                {" of "}
-                <span className="font-semibold text-[#dfe6f1]">
-                  {templatesArray.length}
-                </span>
-                {" templates found"}
-              </p>
-            </div>
-          </div>
+
+          <p className="text-sm text-[#c1c8d8]">
+            <span className="font-semibold text-[#dfe6f1]">{filteredTemplates.length}</span>
+            {" of "}
+            <span className="font-semibold text-[#dfe6f1]">{templatesArray.length}</span>
+            {" templates found"}
+          </p>
+
           {hasActiveFilters && (
             <button
+              type="button"
               onClick={handleClearFilters}
               className="inline-flex items-center gap-1 text-sm text-[#ff9866] hover:text-[#ffd976] transition-colors"
               aria-label="Clear all filters"
@@ -225,14 +231,15 @@ function TemplatesGridComponent({
         </div>
       </div>
 
-      {/* Templates Grid - Full page responsive */}
+      {/* Templates Grid */}
       {filteredTemplates.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           {filteredTemplates.map((template) => (
             <TemplateCard
               key={template._id}
               template={template}
-              onSelect={onPick ? () => onPick(template) : undefined}
+              isSelected={Boolean(selectedTemplateId && template._id === selectedTemplateId)}
+              onSelect={onPick} // ✅ TS corect: TemplateCard va apela onPick(template)
               onOpenModal={(src, title) =>
                 setModal({ open: true, src, title: title ?? "" })
               }
@@ -243,15 +250,16 @@ function TemplatesGridComponent({
         /* Empty state */
         <div className="py-16 px-6">
           <div className="text-center max-w-md mx-auto">
-            <div className="text-6xl mb-4">🎄</div>
+            <div className="text-6xl mb-4">{emojiForOccasion(occasionFilter)}</div>
             <h3 className="text-xl font-bold text-[#fffef5] mb-2">
               No Templates Found
             </h3>
             <p className="text-[#c1c8d8] mb-6">
-              Try adjusting your filters to find the perfect template for your
-              holiday card.
+              Try adjusting your filters to find the perfect template for{" "}
+              {prettyOccasion(occasionFilter)}.
             </p>
             <button
+              type="button"
               onClick={handleClearFilters}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-[#1a1a1a] border border-transparent bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 transition-all"
             >
@@ -272,3 +280,5 @@ function TemplatesGridComponent({
     </div>
   );
 }
+
+export default memo(TemplatesGridComponent);
