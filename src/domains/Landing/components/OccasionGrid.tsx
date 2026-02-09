@@ -6,7 +6,29 @@ import { motion } from "framer-motion";
 import { occasions } from "@/constants/occasions";
 import { cn } from "@/lib/utils";
 
-const ENABLED_OCCASIONS = new Set(["christmas", "birthday"]);
+// ✅ activezi aici ce vrei să fie clickable ca Christmas + Birthday
+const ENABLED_OCCASIONS = new Set([
+  "christmas",
+  "birthday",
+  "new_years_eve",
+  "new-years-eve",
+  "thanksgiving",
+  "baby_reveal",
+  "baby-reveal",
+  "new_born",
+  "new-born",
+  "pregnancy",
+  "wedding",
+  "easter",
+  "valentines_day",
+  "valentines-day",
+  "anniversary",
+  "mothers_day",
+  "mothers-day",
+  "fathers_day",
+  "fathers-day",
+  "graduation",
+]);
 
 export const OccasionGrid = () => {
   const navigate = useNavigate();
@@ -37,7 +59,14 @@ export const OccasionGrid = () => {
         {/* Category grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {occasions.map((occasion, index) => {
-            const enabled = ENABLED_OCCASIONS.has(occasion.id);
+            const enabled = ENABLED_OCCASIONS.has(String(occasion.id));
+
+            // ✅ IMPORTANT:
+            // if you have occasion.href in your constants, it will use it;
+            // otherwise it will convert underscores to dashes so it matches your routes
+            const href =
+              (occasion as any).href ??
+              `/${String(occasion.id).trim().toLowerCase().replace(/_/g, "-")}`;
 
             return (
               <motion.div
@@ -48,7 +77,7 @@ export const OccasionGrid = () => {
                 transition={{ delay: index * 0.1, duration: 0.5 }}
                 whileHover={{ scale: 1.03 }}
                 onClick={() => {
-                  if (enabled) navigate(`/${occasion.id}`);
+                  if (enabled) navigate(href);
                 }}
                 className={cn(enabled ? "cursor-pointer" : "cursor-default")}
               >
@@ -116,7 +145,7 @@ export const OccasionGrid = () => {
                       {enabled && (
                         <div className="flex gap-2 items-center">
                           <Link
-                            to={`/${occasion.id}`}
+                            to={href}
                             className="w-full"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -133,7 +162,7 @@ export const OccasionGrid = () => {
                           </Link>
 
                           <Link
-                            to={`/templates?occasion=${occasion.id}`}
+                            to={`/templates?occasion=${String(occasion.id)}`}
                             className="w-full"
                             onClick={(e) => e.stopPropagation()}
                           >
