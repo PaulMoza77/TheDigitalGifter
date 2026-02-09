@@ -133,7 +133,7 @@ function TemplatesAdminPage() {
         (t) =>
           t.title?.toLowerCase().includes(query) ||
           t.prompt?.toLowerCase().includes(query) ||
-          t.tags?.some((tag) => tag.toLowerCase().includes(query))
+          t.tags?.some((tag: string) => tag.toLowerCase().includes(query))
       );
     }
 

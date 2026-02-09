@@ -28,32 +28,45 @@ import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
 import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
 
 const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
-const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
-const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
 const TemplatesPage = lazy(() => import("@/pages/website/TemplatesPage"));
+
+// ✅ Occasion landing pages (all created above)
+const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
+const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
+const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
+const ThanksgivingPage = lazy(() => import("@/pages/website/ThanksgivingPage"));
+const BabyRevealPage = lazy(() => import("@/pages/website/BabyRevealPage"));
+const NewBornPage = lazy(() => import("@/pages/website/NewBornPage"));
+const PregnancyPage = lazy(() => import("@/pages/website/PregnancyPage"));
+const WeddingPage = lazy(() => import("@/pages/website/WeddingPage"));
+const EasterPage = lazy(() => import("@/pages/website/EasterPage"));
+const ValentinesDayPage = lazy(
+  () => import("@/pages/website/ValentinesDayPage")
+);
+const AnniversaryPage = lazy(() => import("@/pages/website/AnniversaryPage"));
+const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
+const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
+const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
+
+// ✅ Admin
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 
-// Component to handle scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-
   return null;
 }
 
 export default function App() {
-  // Monitor auth state changes and invalidate caches when user logs in/out
   useAuthStateMonitor();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
       console.log("[App] Checkout success detected");
-      // remove ?checkout=success from URL
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
@@ -75,14 +88,27 @@ export default function App() {
             <Route element={<MainLayout />}>
               <Route path="/" element={<Index />} />
 
+              {/* Occasion pages */}
               <Route path="/christmas" element={<ChristmasPage />} />
               <Route path="/birthday" element={<BirthdayPage />} />
-
-              {/* (optional) generator page if you still use it */}
-              <Route path="/generator" element={<GeneratorPage />} />
+              <Route path="/new-years-eve" element={<NewYearsEvePage />} />
+              <Route path="/thanksgiving" element={<ThanksgivingPage />} />
+              <Route path="/baby-reveal" element={<BabyRevealPage />} />
+              <Route path="/new-born" element={<NewBornPage />} />
+              <Route path="/pregnancy" element={<PregnancyPage />} />
+              <Route path="/wedding" element={<WeddingPage />} />
+              <Route path="/easter" element={<EasterPage />} />
+              <Route path="/valentines-day" element={<ValentinesDayPage />} />
+              <Route path="/anniversary" element={<AnniversaryPage />} />
+              <Route path="/mothers-day" element={<MothersDayPage />} />
+              <Route path="/fathers-day" element={<FathersDayPage />} />
+              <Route path="/graduation" element={<GraduationPage />} />
 
               {/* public templates page */}
               <Route path="/templates" element={<TemplatesPage />} />
+
+              {/* optional legacy generator page */}
+              <Route path="/generator" element={<GeneratorPage />} />
 
               {/* legal */}
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
@@ -92,10 +118,39 @@ export default function App() {
 
               {/* FUNNEL */}
               <Route path="/funnel/homepage" element={<FunnelHomePage />} />
-              <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
+              <Route
+                path="/funnel/uploadPhoto"
+                element={<FunnelUploadPhoto />}
+              />
               <Route path="/funnel/styleSelect" element={<FunnelStyleSelect />} />
               <Route path="/funnel/preview" element={<FunnelPreview />} />
               <Route path="/funnel/payment" element={<FunnelPayment />} />
+
+              {/* ✅ Redirects (old/alias routes → new pretty routes) */}
+              <Route
+                path="/new_years_eve"
+                element={<Navigate to="/new-years-eve" replace />}
+              />
+              <Route
+                path="/valentines_day"
+                element={<Navigate to="/valentines-day" replace />}
+              />
+              <Route
+                path="/mothers_day"
+                element={<Navigate to="/mothers-day" replace />}
+              />
+              <Route
+                path="/fathers_day"
+                element={<Navigate to="/fathers-day" replace />}
+              />
+              <Route
+                path="/baby_reveal"
+                element={<Navigate to="/baby-reveal" replace />}
+              />
+              <Route
+                path="/new_born"
+                element={<Navigate to="/new-born" replace />}
+              />
             </Route>
 
             {/* ADMIN */}
