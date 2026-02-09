@@ -1,4 +1,4 @@
-// ✅ 1) Create: src/pages/website/NewBornPage.tsx
+// src/pages/website/NewBornPage.tsx
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
@@ -8,17 +8,21 @@ function clsx(...a: Array<string | false | null | undefined>) {
 
 export default function NewBornPage() {
   const [sp] = useSearchParams();
-  const next = new URLSearchParams(sp);
 
-  // ✅ force occasion=new_born (keep other params)
+  // ✅ keep any existing params (utm, lang, etc) but force occasion
+  const next = new URLSearchParams(sp);
   next.set("occasion", "new_born");
+
+  // ✅ build the exact URL we want
+  const styleSelectUrl = `/funnel/styleSelect?${next.toString()}`;
+  const templatesUrl = `/templates?${next.toString()}`;
 
   return (
     <div className="min-h-[calc(100vh-72px)] px-4 pb-16 pt-8">
       <div className="mx-auto max-w-6xl">
         {/* HERO */}
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-6 md:p-10">
-          <div className="absolute inset-0 pointer-events-none">
+          <div className="pointer-events-none absolute inset-0">
             <div className="absolute -top-24 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
             <div className="absolute -bottom-24 right-10 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
           </div>
@@ -41,9 +45,9 @@ export default function NewBornPage() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              {/* ✅ same generator flow with occasion preset */}
+              {/* ✅ MUST include ?occasion=new_born */}
               <Link
-                to={`/funnel/styleSelect?${next.toString()}`}
+                to={styleSelectUrl}
                 className={clsx(
                   "inline-flex items-center gap-2 rounded-2xl px-5 py-3",
                   "bg-orange-200 text-black font-semibold shadow-lg shadow-black/30",
@@ -54,7 +58,7 @@ export default function NewBornPage() {
               </Link>
 
               <Link
-                to={`/templates?${next.toString()}`}
+                to={templatesUrl}
                 className={clsx(
                   "inline-flex items-center gap-2 rounded-2xl px-5 py-3",
                   "border border-white/15 bg-white/5 text-white/90",
@@ -76,9 +80,18 @@ export default function NewBornPage() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {[
-              { title: "Minimal Newborn Announcement", desc: "Clean layout, premium typography." },
-              { title: "Soft Pastel Welcome", desc: "Gentle colors + cozy glow." },
-              { title: "Cute Icons Frame", desc: "Tiny stars, hearts, and baby icons." },
+              {
+                title: "Minimal Newborn Announcement",
+                desc: "Clean layout, premium typography.",
+              },
+              {
+                title: "Soft Pastel Welcome",
+                desc: "Gentle colors + cozy glow.",
+              },
+              {
+                title: "Cute Icons Frame",
+                desc: "Tiny stars, hearts, and baby icons.",
+              },
             ].map((t) => (
               <div
                 key={t.title}
@@ -97,3 +110,4 @@ export default function NewBornPage() {
     </div>
   );
 }
+``
