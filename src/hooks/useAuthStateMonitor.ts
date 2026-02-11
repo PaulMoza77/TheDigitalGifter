@@ -1,45 +1,30 @@
-// src/hooks/useAuthStateMonitor.ts
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { invalidateAuthCaches, queryClient } from "@/data";
 
-/**
- * Supabase-based auth state monitor
- * - When user logs in/out, we clear & invalidate react-query caches
- * - Also invalidates on focus/visibility to catch OAuth redirects
- */
 export function useAuthStateMonitor() {
-  const previousAuthRef = useRef<string | null>(null);
+  const previousEmailRef = useRef<string | null>(null);
 
-  // 1) Monitor Supabase session changes
   useEffect(() => {
     let mounted = true;
 
+    // init snapshot
     (async () => {
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
-
-      const email = data.session?.user?.email ?? null;
-      previousAuthRef.current = email;
+      previousEmailRef.current = data.session?.user?.email ?? null;
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const email = session?.user?.email ?? null;
 
-      // first time: just store
-      if (previousAuthRef.current === null && email === null) {
-        previousAuthRef.current = email;
-        return;
-      }
-
-      // if changed: clear + invalidate
-      if (previousAuthRef.current !== email) {
+      if (previousEmailRef.current !== email) {
         console.log(
           `[useAuthStateMonitor] Auth changed: ${email ? "logged-in" : "logged-out"}`
         );
         queryClient.clear();
         invalidateAuthCaches();
-        previousAuthRef.current = email;
+        previousEmailRef.current = email;
       }
     });
 
@@ -49,24 +34,18 @@ export function useAuthStateMonitor() {
     };
   }, []);
 
-  // 2) Aggressive refetch on focus/visibility
   useEffect(() => {
-    const handleFocus = () => {
-      invalidateAuthCaches();
+    const onFocus = () => invalidateAuthCaches();
+    const onVis = () => {
+      if (document.visibilityState === "visible") invalidateAuthCaches();
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        invalidateAuthCaches();
-      }
-    };
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
 
     return () => {
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, []);
 }

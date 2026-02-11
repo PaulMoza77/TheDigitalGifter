@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 
-import type { Id } from "../../convex/_generated/dataModel";
 import type { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
 
@@ -20,8 +19,13 @@ type Template = TemplateSummary;
 
 interface TemplatesGridProps {
   onPick?: (template: Template) => void;
-  selectedTemplateId?: Id<"templates">;
+  selectedTemplateId?: string; // ✅ Supabase uuid (string)
   occasionFilter?: string | null;
+}
+
+function getTemplateId(t: any): string {
+  // ✅ suportă atât noul format (Supabase: id) cât și vechiul (Convex: _id)
+  return String(t?.id ?? t?._id ?? "");
 }
 
 function emojiForOccasion(occasion?: string | null) {
@@ -46,9 +50,11 @@ function TemplatesGridComponent({
   selectedTemplateId,
   occasionFilter,
 }: TemplatesGridProps) {
-  const [modal, setModal] = useState<{ open: boolean; src: string; title: string }>(
-    { open: false, src: "", title: "" }
-  );
+  const [modal, setModal] = useState<{ open: boolean; src: string; title: string }>({
+    open: false,
+    src: "",
+    title: "",
+  });
 
   const [scene, setScene] = useState<string>("all");
   const [orientation, setOrientation] = useState<string>("all");
@@ -57,7 +63,7 @@ function TemplatesGridComponent({
   const { data: allTemplates = [] } = useTemplatesQuery();
 
   const templatesArray = useMemo(
-    () => (allTemplates ?? []) as TemplateSummary[],
+    () => (Array.isArray(allTemplates) ? (allTemplates as TemplateSummary[]) : []),
     [allTemplates]
   );
 
@@ -68,9 +74,10 @@ function TemplatesGridComponent({
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    return templatesArray.filter((template) => {
-      const matchesScene = scene !== "all" ? template.scene === scene : true;
+    const occ = (occasionFilter || "").toLowerCase().trim();
 
+    return templatesArray.filter((template: any) => {
+      const matchesScene = scene !== "all" ? template.scene === scene : true;
       const matchesOrientation =
         orientation !== "all" ? template.orientation === orientation : true;
 
@@ -78,13 +85,13 @@ function TemplatesGridComponent({
         priceRange !== "all"
           ? (() => {
               const [min, max] = priceRange.split("-").map((n) => Number(n));
-              return template.creditCost >= min && template.creditCost <= max;
+              const cost = Number(template.creditCost ?? 0);
+              return cost >= min && cost <= max;
             })()
           : true;
 
-      const matchesOccasion = occasionFilter
-        ? (template.occasion || "").toLowerCase().trim() ===
-          occasionFilter.toLowerCase().trim()
+      const matchesOccasion = occ
+        ? String(template.occasion || "").toLowerCase().trim() === occ
         : true;
 
       return matchesScene && matchesOrientation && matchesPrice && matchesOccasion;
@@ -92,8 +99,8 @@ function TemplatesGridComponent({
   }, [templatesArray, scene, orientation, priceRange, occasionFilter]);
 
   const sceneCounts = useMemo(() => {
-    return templatesArray.reduce<Record<string, number>>((acc, template) => {
-      const key = template.scene || "unknown";
+    return templatesArray.reduce<Record<string, number>>((acc, t: any) => {
+      const key = String(t.scene || "unknown");
       acc[key] = (acc[key] ?? 0) + 1;
       return acc;
     }, {});
@@ -136,7 +143,7 @@ function TemplatesGridComponent({
 
   return (
     <div className="space-y-8">
-      {/* Filters Section */}
+      {/* Filters */}
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <h2 className="text-lg font-semibold text-[#fffef5]">Filters</h2>
@@ -161,12 +168,9 @@ function TemplatesGridComponent({
           )}
         </div>
 
-        {/* Filter controls grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#c1c8d8] mb-2">
-              Scene
-            </label>
+            <label className="block text-xs font-medium text-[#c1c8d8] mb-2">Scene</label>
             <Select value={scene} onValueChange={setScene}>
               <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
                 <SelectValue placeholder="Select scene" />
@@ -186,9 +190,7 @@ function TemplatesGridComponent({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#c1c8d8] mb-2">
-              Orientation
-            </label>
+            <label className="block text-xs font-medium text-[#c1c8d8] mb-2">Orientation</label>
             <Select value={orientation} onValueChange={setOrientation}>
               <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
                 <SelectValue placeholder="Select orientation" />
@@ -208,9 +210,7 @@ function TemplatesGridComponent({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#c1c8d8] mb-2">
-              Price Range
-            </label>
+            <label className="block text-xs font-medium text-[#c1c8d8] mb-2">Price Range</label>
             <Select value={priceRange} onValueChange={setPriceRange}>
               <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
                 <SelectValue placeholder="Select price range" />
@@ -231,29 +231,29 @@ function TemplatesGridComponent({
         </div>
       </div>
 
-      {/* Templates Grid */}
+      {/* Grid */}
       {filteredTemplates.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-          {filteredTemplates.map((template) => (
-            <TemplateCard
-              key={template._id}
-              template={template}
-              isSelected={Boolean(selectedTemplateId && template._id === selectedTemplateId)}
-              onSelect={onPick} // ✅ TS corect: TemplateCard va apela onPick(template)
-              onOpenModal={(src, title) =>
-                setModal({ open: true, src, title: title ?? "" })
-              }
-            />
-          ))}
+          {filteredTemplates.map((template: any) => {
+            const id = getTemplateId(template);
+            return (
+              <TemplateCard
+                key={id}
+                template={template}
+                isSelected={Boolean(selectedTemplateId && id === String(selectedTemplateId))}
+                onSelect={onPick}
+                onOpenModal={(src, title) =>
+                  setModal({ open: true, src, title: title ?? "" })
+                }
+              />
+            );
+          })}
         </div>
       ) : (
-        /* Empty state */
         <div className="py-16 px-6">
           <div className="text-center max-w-md mx-auto">
             <div className="text-6xl mb-4">{emojiForOccasion(occasionFilter)}</div>
-            <h3 className="text-xl font-bold text-[#fffef5] mb-2">
-              No Templates Found
-            </h3>
+            <h3 className="text-xl font-bold text-[#fffef5] mb-2">No Templates Found</h3>
             <p className="text-[#c1c8d8] mb-6">
               Try adjusting your filters to find the perfect template for{" "}
               {prettyOccasion(occasionFilter)}.

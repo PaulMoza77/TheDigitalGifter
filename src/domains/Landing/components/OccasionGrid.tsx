@@ -1,34 +1,28 @@
 // src/domains/Landing/components/OccasionGrid.tsx
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
-
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 /**
- * DB shape (current):
- * occasions: { slug, title, active, sortOrder, updatedAt }
- *
- * Until you add media fields in DB, we use lightweight fallbacks
- * (label/description/gradient/image) based on slug.
+ * DB shape (Supabase):
+ * public.occasions: { id, slug, title, active, sortOrder, updatedAt }
  */
 type OccasionRow = {
-  _id: string;
+  id: string;
   slug: string;
   title: string;
-  active?: boolean;
-  sortOrder?: number;
-  updatedAt?: number;
+  active: boolean | null;
+  sortOrder: number | null;
+  updatedAt: string | null;
 };
 
 function slugToHref(slug: string) {
-  // keep your routes dashed
   return `/${String(slug || "")
     .trim()
     .toLowerCase()
@@ -91,7 +85,7 @@ function fallbackGradientFrom(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
   if (s.includes("christmas")) return "from-blue-700/60";
   if (s.includes("new") && s.includes("year")) return "from-amber-700/60";
-  if (s.includes("thank")) return "from-orange-700/60"; // ✅ thanksgiving
+  if (s.includes("thank")) return "from-orange-700/60";
   if (s.includes("birthday")) return "from-fuchsia-700/60";
   if (s.includes("baby") && s.includes("reveal")) return "from-violet-700/60";
   if (s.includes("born")) return "from-emerald-700/60";
@@ -106,29 +100,10 @@ function fallbackGradientFrom(slug: string) {
   return "from-slate-700/60";
 }
 
-function fallbackGradientTo(slug: string) {
-  const s = String(slug || "").trim().toLowerCase();
-  if (s.includes("christmas")) return "to-slate-900/70";
-  if (s.includes("new") && s.includes("year")) return "to-slate-900/70";
-  if (s.includes("thank")) return "to-slate-900/70"; // ✅ thanksgiving
-  if (s.includes("birthday")) return "to-slate-900/70";
-  if (s.includes("baby") && s.includes("reveal")) return "to-slate-900/70";
-  if (s.includes("born")) return "to-slate-900/70";
-  if (s.includes("pregnancy")) return "to-slate-900/70";
-  if (s.includes("wedding")) return "to-slate-900/70";
-  if (s.includes("easter")) return "to-slate-900/70";
-  if (s.includes("valentine")) return "to-slate-900/70";
-  if (s.includes("anniversary")) return "to-slate-900/70";
-  if (s.includes("mother")) return "to-slate-900/70";
-  if (s.includes("father")) return "to-slate-900/70";
-  if (s.includes("graduation")) return "to-slate-900/70";
+function fallbackGradientTo(_slug: string) {
   return "to-slate-900/70";
 }
 
-/**
- * Placeholder images (until DB has imageUrl).
- * If you already have real images in /public, swap these paths.
- */
 function fallbackImage(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
   if (s.includes("christmas")) return "/images/occasions/christmas.jpg";
@@ -151,11 +126,50 @@ function fallbackImage(slug: string) {
 export const OccasionGrid = () => {
   const navigate = useNavigate();
 
-  // ✅ IMPORTANT: use FunctionReference from `api`
-  const rows = useQuery(api.occasions.listActive, {}) as OccasionRow[] | undefined;
+  const [rows, setRows] = useState<OccasionRow[] | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // loading
-  if (rows === undefined) {
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setErrorMsg(null);
+      setRows(null);
+
+      const { data, error } = await supabase
+        .from("occasions")
+        .select("id, slug, title, active, sortOrder, updatedAt")
+        .eq("active", true);
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error("[OccasionGrid] load error:", error);
+        setErrorMsg(error.message || "Failed to load occasions");
+        setRows([]);
+        return;
+      }
+
+      setRows((data || []) as OccasionRow[]);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const occasions = useMemo(() => {
+    if (!rows) return [];
+    return [...rows].sort((a, b) => {
+      const ao = typeof a.sortOrder === "number" ? a.sortOrder : 999999;
+      const bo = typeof b.sortOrder === "number" ? b.sortOrder : 999999;
+      if (ao !== bo) return ao - bo;
+      return String(a.title || "").localeCompare(String(b.title || ""));
+    });
+  }, [rows]);
+
+  // loading (same UX)
+  if (rows === null) {
     return (
       <section id="categories" className="w-full py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
@@ -166,7 +180,10 @@ export const OccasionGrid = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-3xl bg-white/5 border border-white/10 overflow-hidden">
+              <div
+                key={i}
+                className="rounded-3xl bg-white/5 border border-white/10 overflow-hidden"
+              >
                 <div className="h-64 bg-white/10" />
                 <div className="p-4 space-y-3">
                   <div className="h-7 w-40 bg-white/10 rounded-lg" />
@@ -180,14 +197,6 @@ export const OccasionGrid = () => {
       </section>
     );
   }
-
-  // sort safety (even if query already sorts)
-  const occasions = [...rows].sort((a, b) => {
-    const ao = typeof a.sortOrder === "number" ? a.sortOrder : 999999;
-    const bo = typeof b.sortOrder === "number" ? b.sortOrder : 999999;
-    if (ao !== bo) return ao - bo;
-    return String(a.title || "").localeCompare(String(b.title || ""));
-  });
 
   return (
     <section id="categories" className="w-full py-24 px-4 sm:px-6 lg:px-8">
@@ -212,6 +221,21 @@ export const OccasionGrid = () => {
           </p>
         </motion.div>
 
+        {/* Error */}
+        {errorMsg && (
+          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            {errorMsg}
+          </div>
+        )}
+
+        {/* Empty */}
+        {!errorMsg && occasions.length === 0 && (
+          <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-slate-300">
+            No occasions found. Add rows in <code className="text-slate-100">public.occasions</code>{" "}
+            with <code className="text-slate-100">active=true</code>.
+          </div>
+        )}
+
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {occasions.map((occ, index) => {
@@ -226,7 +250,7 @@ export const OccasionGrid = () => {
 
             return (
               <motion.div
-                key={occ._id}
+                key={occ.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -271,7 +295,11 @@ export const OccasionGrid = () => {
                       </div>
 
                       <div className="flex gap-2 items-center">
-                        <Link to={href} className="w-full" onClick={(e) => e.stopPropagation()}>
+                        <Link
+                          to={href}
+                          className="w-full"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Button
                             className={cn(
                               "w-full text-white rounded-xl group/btn",
