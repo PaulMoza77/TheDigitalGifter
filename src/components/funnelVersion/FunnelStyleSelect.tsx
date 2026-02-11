@@ -24,19 +24,10 @@ const cardAnim: Variants = {
   },
 };
 
-/**
- * ✅ TEMP FIX: styles live in this file (no imports),
- * so "Cannot find module ...giftStyles" disappears.
- * After it works, we can move this object back to src/config/giftStyles.ts.
- */
-const GIFT_STYLES: Record<
-  string,
-  {
-    title: string;
-    subtitle: string;
-    styles: Array<{ id: string; name: string; script: string }>;
-  }
-> = {
+type GiftStyle = { id: string; name: string; script: string };
+type GiftOccasion = { title: string; subtitle: string; styles: GiftStyle[] };
+
+const GIFT_STYLES: Record<string, GiftOccasion> = {
   new_born: {
     title: "Choose your New Born Vibe",
     subtitle: "A gentle beginning deserves a timeless memory.",
@@ -90,6 +81,23 @@ export default function FunnelStyleSelect() {
 
   const [selected, setSelected] = useState<string | null>(null);
 
+  const handleContinue = () => {
+    if (!data || !selected) return;
+    const style = data.styles.find((s) => s.id === selected);
+    if (!style) return;
+
+    localStorage.setItem(
+      "tdg_funnel_session",
+      JSON.stringify({
+        gift_type: occasion,
+        style_id: style.id,
+        script: style.script,
+      })
+    );
+
+    navigate("/funnel/upload");
+  };
+
   if (!data) {
     return <div className="p-10 text-center">Invalid occasion</div>;
   }
@@ -117,14 +125,18 @@ export default function FunnelStyleSelect() {
           transition={{ duration: 0.3 }}
           className="mx-auto mt-10"
         >
-          <Card className="rounded-[28px] border-slate-200 bg-white/80 backdrop-blur">
+          <Card className="overflow-hidden rounded-[28px] border-slate-200 bg-white/80 shadow-[0_12px_40px_-18px_rgba(17,24,39,0.35)] backdrop-blur">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-semibold">Select a style</div>
-                  <div className="text-xs text-slate-500">Auto-continue</div>
+                  <div className="text-xs text-slate-500">
+                    Select one, then continue
+                  </div>
                 </div>
-                <Badge>{data.styles.length} options</Badge>
+                <Badge className="border-slate-200 bg-white text-slate-600">
+                  {data.styles.length} options
+                </Badge>
               </div>
             </CardHeader>
 
@@ -134,61 +146,71 @@ export default function FunnelStyleSelect() {
                   const isSelected = selected === style.id;
 
                   return (
-                    <motion.div
+                    <motion.button
                       key={style.id}
+                      type="button"
                       initial="hidden"
                       animate="show"
                       variants={cardAnim}
+                      onClick={() => setSelected(style.id)}
+                      className={cn(
+                        "group relative w-full rounded-2xl border p-4 text-left transition",
+                        "border-slate-200 bg-white hover:bg-slate-50",
+                        "shadow-[0_10px_24px_-18px_rgba(17,24,39,0.35)]",
+                        isSelected &&
+                          "border-[#6D5EF7]/40 ring-2 ring-[#6D5EF7]/15"
+                      )}
+                      aria-pressed={isSelected}
                     >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelected(style.id);
+                      {/* simple thumbnail placeholder (Christmas-like) */}
+                      <div className="mb-3 h-24 w-full rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 via-indigo-50 to-slate-50" />
 
-                          setTimeout(() => {
-                            localStorage.setItem(
-                              "tdg_funnel_session",
-                              JSON.stringify({
-                                gift_type: occasion,
-                                style_id: style.id,
-                                script: style.script,
-                              })
-                            );
-
-                            navigate("/funnel/upload");
-                          }, 200);
-                        }}
-                        className={cn(
-                          "w-full rounded-2xl border p-4 text-left transition",
-                          "border-slate-200 bg-white hover:bg-slate-50",
-                          isSelected &&
-                            "border-[#6D5EF7]/40 ring-2 ring-[#6D5EF7]/15"
-                        )}
-                        aria-pressed={isSelected}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-semibold">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold">
                               {style.name}
-                            </div>
-                            <p className="mt-1 text-xs text-slate-600">
-                              Tap to continue
-                            </p>
-                          </div>
-
-                          <span
-                            className={cn(
-                              "text-slate-400",
-                              isSelected && "text-[#6D5EF7]"
+                            </span>
+                            {isSelected && (
+                              <Badge className="border-[#6D5EF7]/20 bg-[#6D5EF7]/10 text-[#6D5EF7]">
+                                Selected
+                              </Badge>
                             )}
-                          >
-                            →
-                          </span>
+                          </div>
+                          <p className="mt-1 text-xs text-slate-600">
+                            Tap to select
+                          </p>
                         </div>
-                      </button>
-                    </motion.div>
+
+                        <span
+                          className={cn(
+                            "text-slate-400 transition",
+                            isSelected && "text-[#6D5EF7]"
+                          )}
+                        >
+                          →
+                        </span>
+                      </div>
+                    </motion.button>
                   );
                 })}
+              </div>
+
+              {/* Continue */}
+              <div className="pt-2 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleContinue}
+                  disabled={!selected}
+                  className={cn(
+                    "rounded-2xl px-8 py-3 font-semibold transition",
+                    selected
+                      ? "bg-[#6D5EF7] text-white hover:brightness-105 active:brightness-95 shadow-lg shadow-black/10"
+                      : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                  )}
+                >
+                  Continue
+                </button>
               </div>
             </CardContent>
           </Card>
