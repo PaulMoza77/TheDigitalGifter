@@ -1,10 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useSearchParams } from "react-router-dom";
@@ -31,10 +26,46 @@ interface CreateTemplateDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateTemplateDialog({
-  open,
-  onOpenChange,
-}: CreateTemplateDialogProps) {
+/**
+ * ✅ Canonical occasion slugs (use these everywhere: admin + funnel)
+ * (labels are only for UI)
+ */
+const OCCASIONS: Array<{ value: string; label: string }> = [
+  { value: "christmas", label: "Christmas" },
+  { value: "birthday", label: "Birthday" },
+  { value: "anniversary", label: "Anniversary" },
+  { value: "thank_you", label: "Thank You" },
+  { value: "new_born", label: "New Born" },
+  { value: "baby_reveal", label: "Baby Reveal" },
+  { value: "new_years_eve", label: "New Year’s Eve" },
+  { value: "valentines_day", label: "Valentine’s Day" },
+  { value: "mothers_day", label: "Mother’s Day" },
+  { value: "fathers_day", label: "Father’s Day" },
+  { value: "graduation", label: "Graduation" },
+];
+
+/**
+ * ✅ Style options per occasion (optional but recommended)
+ * Keep IDs identical to what funnel stores as `style_id`
+ */
+const OCCASION_STYLES: Record<
+  string,
+  Array<{ value: string; label: string }>
+> = {
+  new_born: [
+    { value: "soft_pastel", label: "Soft Pastel" },
+    { value: "cozy_blanket", label: "Cozy Blanket" },
+    { value: "angel_sleep", label: "Angel Sleep" },
+    { value: "first_light", label: "First Light" },
+    { value: "minimal_studio", label: "Minimal Studio" },
+    { value: "golden_memory", label: "Golden Memory" },
+  ],
+  // you can add later:
+  // christmas: [...],
+  // birthday: [...],
+};
+
+export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialogProps) {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get("templateId") as Id<"templates"> | null;
 
@@ -57,18 +88,17 @@ export function CreateTemplateDialog({
   const updateTemplate = useMutation(api.templates.update);
 
   // Use different validation schemas for create vs update
-  // Update mode allows all fields to be optional for partial updates
   const validationSchema = useMemo(
     () => (isEditing ? templateUpdateSchema : templateCreateSchema),
     [isEditing]
   );
 
-  // Form Setup with dynamic resolver based on editing mode
+  // Form Setup
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(validationSchema) as Resolver<TemplateFormValues>,
     defaultValues: {
       title: "",
-      occasion: "",
+      occasion: "", // ✅ will store slug (e.g., "new_born")
       category: "",
       subCategory: "",
       type: "image",
@@ -83,7 +113,10 @@ export function CreateTemplateDialog({
       defaultResolution: "1080p",
       generateAudioDefault: true,
       sendEmailNotification: true,
-    },
+
+      // ✅ NEW optional field (requires it in your TemplateFormValues + schema if you validate it)
+      styleId: "",
+    } as any,
   });
 
   const {
@@ -100,17 +133,23 @@ export function CreateTemplateDialog({
   const thumbnailFile = watch("thumbnailFile");
   const videoFile = watch("videoFile");
 
+  // ✅ watch occasion + style
+  const occasionValue = watch("occasion") || "";
+  // @ts-expect-error - if not in your type yet, add it in TemplateFormValues
+  const styleIdValue = (watch("styleId") as string) || "";
+
+  const styleOptions = OCCASION_STYLES[occasionValue] || [];
+  const shouldShowStyle = styleOptions.length > 0;
+
   // Load existing template data
   useEffect(() => {
     if (existingTemplate && isEditing) {
-      // Normalize type value - database might have legacy values like "photo", "card"
-      // Only "video" is kept as-is, everything else becomes "image"
       const normalizedType: "image" | "video" =
         existingTemplate.type === "video" ? "video" : "image";
 
       reset({
         title: existingTemplate.title || "",
-        occasion: existingTemplate.occasion || "",
+        occasion: existingTemplate.occasion || "", // ✅ should already be slug
         category: existingTemplate.category || "",
         subCategory: existingTemplate.subCategory || "",
         type: normalizedType,
@@ -125,7 +164,10 @@ export function CreateTemplateDialog({
         defaultResolution: existingTemplate.defaultResolution || "1080p",
         generateAudioDefault: existingTemplate.generateAudioDefault ?? true,
         sendEmailNotification: true,
-      });
+
+        // ✅ NEW
+        styleId: (existingTemplate as any).styleId || "",
+      } as any);
     }
   }, [existingTemplate, isEditing, reset]);
 
@@ -152,9 +194,25 @@ export function CreateTemplateDialog({
         previewImageFile: undefined,
         thumbnailFile: undefined,
         videoFile: undefined,
-      });
+
+        // ✅ NEW
+        styleId: "",
+      } as any);
     }
   }, [open, templateId, reset]);
+
+  // If occasion changes, clear styleId if it's not valid anymore
+  useEffect(() => {
+    if (!shouldShowStyle) {
+      // @ts-expect-error
+      setValue("styleId", "");
+      return;
+    }
+    if (styleIdValue && !styleOptions.some((s) => s.value === styleIdValue)) {
+      // @ts-expect-error
+      setValue("styleId", "");
+    }
+  }, [occasionValue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Upload file helper
   const uploadFile = async (file: File): Promise<Id<"_storage">> => {
@@ -170,7 +228,6 @@ export function CreateTemplateDialog({
 
   const onSubmit: SubmitHandler<TemplateFormValues> = async (data) => {
     try {
-      // Manual file validation only for create mode
       if (!isEditing) {
         if (data.type === "image" && !data.previewImageFile) {
           toast.error("Please upload a preview image");
@@ -188,7 +245,6 @@ export function CreateTemplateDialog({
       let previewImageId: Id<"_storage"> | undefined;
       let thumbnailImageId: Id<"_storage"> | undefined;
 
-      // Handle file uploads if files are provided
       if (data.previewImageFile) {
         setUploadProgress(30);
         previewImageId = await uploadFile(data.previewImageFile);
@@ -204,23 +260,21 @@ export function CreateTemplateDialog({
 
       setUploadProgress(80);
 
+      
+      const styleId = (data as any).styleId || "";
+
       if (isEditing && templateId) {
-        // UPDATE MODE: Build payload with only provided fields
-        // This allows partial updates - only send fields that have values
         const updatePayload: Record<string, unknown> = { id: templateId };
 
-        // Only include fields that have actual values (not undefined/empty)
         if (data.title) updatePayload.title = data.title;
-        if (data.occasion) updatePayload.occasion = data.occasion;
+        if (data.occasion) updatePayload.occasion = data.occasion; // ✅ slug
         if (data.category !== undefined) updatePayload.category = data.category;
-        if (data.subCategory !== undefined)
-          updatePayload.subCategory = data.subCategory;
+        if (data.subCategory !== undefined) updatePayload.subCategory = data.subCategory;
         if (data.type) updatePayload.type = data.type;
         if (data.scene !== undefined) updatePayload.scene = data.scene;
         if (data.orientation) updatePayload.orientation = data.orientation;
         if (data.prompt) updatePayload.prompt = data.prompt;
-        if (data.textDefault !== undefined)
-          updatePayload.textDefault = data.textDefault;
+        if (data.textDefault !== undefined) updatePayload.textDefault = data.textDefault;
         if (data.creditCost !== undefined && data.creditCost !== null) {
           updatePayload.creditCost = Number(data.creditCost);
         }
@@ -232,7 +286,9 @@ export function CreateTemplateDialog({
         }
         if (data.isActive !== undefined) updatePayload.isActive = data.isActive;
 
-        // Video-specific fields
+        // ✅ NEW: styleId update (optional)
+        if (styleId !== undefined) updatePayload.styleId = styleId || "";
+
         if (data.type === "video") {
           if (data.defaultDuration !== undefined) {
             const validDurations = [4, 6, 8] as const;
@@ -241,18 +297,11 @@ export function CreateTemplateDialog({
               updatePayload.defaultDuration = durationNum as 4 | 6 | 8;
             }
           }
-          if (data.defaultAspectRatio)
-            updatePayload.defaultAspectRatio = data.defaultAspectRatio;
+          if (data.defaultAspectRatio) updatePayload.defaultAspectRatio = data.defaultAspectRatio;
           if (data.defaultResolution) {
             const validResolutions = ["720p", "1080p"] as const;
-            if (
-              validResolutions.includes(
-                data.defaultResolution as "720p" | "1080p"
-              )
-            ) {
-              updatePayload.defaultResolution = data.defaultResolution as
-                | "720p"
-                | "1080p";
+            if (validResolutions.includes(data.defaultResolution as "720p" | "1080p")) {
+              updatePayload.defaultResolution = data.defaultResolution as "720p" | "1080p";
             }
           }
           if (data.generateAudioDefault !== undefined) {
@@ -263,25 +312,21 @@ export function CreateTemplateDialog({
         await updateTemplate(updatePayload as any);
         toast.success("Template updated successfully!");
       } else {
-        // CREATE MODE: All required fields are validated by schema
         const creditCostNumber = Number(data.creditCost);
         const validDurations = [4, 6, 8] as const;
         const durationNum = Number(data.defaultDuration);
-        const defaultDuration = validDurations.includes(
-          durationNum as 4 | 6 | 8
-        )
+        const defaultDuration = validDurations.includes(durationNum as 4 | 6 | 8)
           ? (durationNum as 4 | 6 | 8)
           : 8;
+
         const validResolutions = ["720p", "1080p"] as const;
-        const defaultResolution = validResolutions.includes(
-          data.defaultResolution as "720p" | "1080p"
-        )
+        const defaultResolution = validResolutions.includes(data.defaultResolution as "720p" | "1080p")
           ? (data.defaultResolution as "720p" | "1080p")
           : "1080p";
 
         const createPayload = {
           title: data.title,
-          occasion: data.occasion,
+          occasion: data.occasion, // ✅ slug
           category: data.category,
           subCategory: data.subCategory,
           type: data.type,
@@ -299,6 +344,10 @@ export function CreateTemplateDialog({
           previewImageId,
           thumbnailImageId,
           sendEmailNotification: data.sendEmailNotification,
+
+          // ✅ NEW: styleId for funnel filtering
+          styleId: styleId || "",
+
           ...(data.type === "video" && {
             defaultDuration,
             defaultAspectRatio: data.defaultAspectRatio,
@@ -307,7 +356,7 @@ export function CreateTemplateDialog({
           }),
         };
 
-        await createTemplate(createPayload);
+        await createTemplate(createPayload as any);
         toast.success("Template created successfully!");
       }
 
@@ -342,13 +391,11 @@ export function CreateTemplateDialog({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSubmit(onSubmit, (errors) => {
-                // Show first validation error to user
-                const firstError = Object.values(errors)[0];
-                const errorMessage =
-                  firstError?.message || "Please check the form for errors";
+              handleSubmit(onSubmit, (errs) => {
+                const firstError = Object.values(errs)[0];
+                const errorMessage = firstError?.message || "Please check the form for errors";
                 toast.error(String(errorMessage));
-                console.error("Form validation errors:", errors);
+                console.error("Form validation errors:", errs);
               })(e);
             }}
             className="space-y-4 max-h-[75vh] overflow-y-auto pr-2"
@@ -365,29 +412,81 @@ export function CreateTemplateDialog({
                   placeholder="e.g., Cozy Fireplace Gathering"
                 />
                 {errors.title && (
-                  <p className="text-[10px] text-red-400">
-                    {errors.title.message}
-                  </p>
+                  <p className="text-[10px] text-red-400">{errors.title.message}</p>
                 )}
               </div>
 
-              {/* Occasion */}
-              <div>
+              {/* Occasion (slug) */}
+              <div className="w-[220px]">
                 <label className="text-xs font-medium text-slate-300">
                   Occasion *
                 </label>
-                <input
-                  {...register("occasion")}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
-                  placeholder="e.g., Christmas"
-                />
+                <Select
+                  value={occasionValue || ""}
+                  onValueChange={(v) => setValue("occasion", v, { shouldValidate: true })}
+                >
+                  <SelectTrigger className="w-full rounded-xl border border-slate-700 bg-slate-800/50 text-xs text-slate-200 h-[34px]">
+                    <SelectValue placeholder="Select occasion" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
+                    {OCCASIONS.map((o) => (
+                      <SelectItem
+                        key={o.value}
+                        value={o.value}
+                        className="focus:bg-slate-800 focus:text-slate-50"
+                      >
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {errors.occasion && (
-                  <p className="text-[10px] text-red-400">
-                    {errors.occasion.message}
-                  </p>
+                  <p className="text-[10px] text-red-400">{errors.occasion.message}</p>
                 )}
               </div>
             </div>
+
+            {/* ✅ Style (only if occasion has styles) */}
+            {shouldShowStyle && (
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="space-y-2 md:col-span-1">
+                  <label className="text-xs font-medium text-slate-300">
+                    Style (optional)
+                  </label>
+                  <Select
+                    value={styleIdValue || ""}
+                    onValueChange={(v) => {
+                      // @ts-expect-error
+                      setValue("styleId", v, { shouldValidate: false });
+                    }}
+                  >
+                    <SelectTrigger className="w-full rounded-xl border border-slate-700 bg-slate-800/50 text-xs text-slate-200 h-[34px]">
+                      <SelectValue placeholder="All styles" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
+                      <SelectItem
+                        value=""
+                        className="focus:bg-slate-800 focus:text-slate-50"
+                      >
+                        All styles
+                      </SelectItem>
+                      {styleOptions.map((s) => (
+                        <SelectItem
+                          key={s.value}
+                          value={s.value}
+                          className="focus:bg-slate-800 focus:text-slate-50"
+                        >
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-slate-500">
+                    If set, this template will show only for that funnel style.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Category, SubCategory & Template Type */}
             <div className="grid gap-3 md:grid-cols-3">
@@ -445,9 +544,7 @@ export function CreateTemplateDialog({
             {/* Scene & Orientation */}
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-300">
-                  Scene *
-                </label>
+                <label className="text-xs font-medium text-slate-300">Scene *</label>
                 <input
                   {...register("scene")}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
@@ -506,27 +603,13 @@ export function CreateTemplateDialog({
                 />
                 <button
                   type="button"
-                  onClick={() =>
-                    document.getElementById("preview-image-upload")?.click()
-                  }
+                  onClick={() => document.getElementById("preview-image-upload")?.click()}
                   className="flex w-full items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-800/50 px-3 py-6 text-xs text-slate-400 hover:bg-slate-800 transition-colors"
                 >
-                  <svg
-                    className="mr-2 h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
+                  <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  {previewImageFile
-                    ? `Selected: ${previewImageFile.name}`
-                    : "Click to upload preview image"}
+                  {previewImageFile ? `Selected: ${previewImageFile.name}` : "Click to upload preview image"}
                 </button>
                 <p className="text-[10px] text-slate-500">
                   Recommended: 4:5 or 1:1 ratio, max 5MB.
@@ -535,9 +618,7 @@ export function CreateTemplateDialog({
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-medium text-slate-300">
-                    Thumbnail Image *
-                  </label>
+                  <label className="text-xs font-medium text-slate-300">Thumbnail Image *</label>
                   <input
                     type="file"
                     id="thumbnail-upload"
@@ -553,33 +634,17 @@ export function CreateTemplateDialog({
                   />
                   <button
                     type="button"
-                    onClick={() =>
-                      document.getElementById("thumbnail-upload")?.click()
-                    }
+                    onClick={() => document.getElementById("thumbnail-upload")?.click()}
                     className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-800/50 px-3 py-6 text-xs text-slate-400 hover:bg-slate-800 transition-colors"
                   >
-                    <svg
-                      className="mr-2 h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
+                    <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    {thumbnailFile
-                      ? `Selected: ${thumbnailFile.name}`
-                      : "Click to upload thumbnail"}
+                    {thumbnailFile ? `Selected: ${thumbnailFile.name}` : "Click to upload thumbnail"}
                   </button>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-medium text-slate-300">
-                    Video File *
-                  </label>
+                  <label className="text-xs font-medium text-slate-300">Video File *</label>
                   <input
                     type="file"
                     id="video-upload"
@@ -595,27 +660,13 @@ export function CreateTemplateDialog({
                   />
                   <button
                     type="button"
-                    onClick={() =>
-                      document.getElementById("video-upload")?.click()
-                    }
+                    onClick={() => document.getElementById("video-upload")?.click()}
                     className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-800/50 px-3 py-6 text-xs text-slate-400 hover:bg-slate-800 transition-colors"
                   >
-                    <svg
-                      className="mr-2 h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
+                    <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
-                    {videoFile
-                      ? `Selected: ${videoFile.name}`
-                      : "Click to upload video"}
+                    {videoFile ? `Selected: ${videoFile.name}` : "Click to upload video"}
                   </button>
                 </div>
               </div>
@@ -624,35 +675,22 @@ export function CreateTemplateDialog({
             {/* Video-specific settings */}
             {templateType === "video" && (
               <div className="space-y-3 p-3 rounded-xl bg-slate-800/30 border border-slate-700">
-                <h3 className="text-xs font-semibold text-slate-200">
-                  Video Settings (Defaults)
-                </h3>
+                <h3 className="text-xs font-semibold text-slate-200">Video Settings (Defaults)</h3>
                 <div className="grid gap-3 md:grid-cols-3">
-                  {/* Duration - Display only */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300">
-                      Duration
-                    </label>
+                    <label className="text-xs font-medium text-slate-300">Duration</label>
                     <div className="w-full rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
                       8 seconds
                     </div>
                   </div>
-
-                  {/* Aspect Ratio - Display only */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300">
-                      Aspect Ratio
-                    </label>
+                    <label className="text-xs font-medium text-slate-300">Aspect Ratio</label>
                     <div className="w-full rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
                       16:9 (Landscape)
                     </div>
                   </div>
-
-                  {/* Resolution - Display only */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300">
-                      Resolution
-                    </label>
+                    <label className="text-xs font-medium text-slate-300">Resolution</label>
                     <div className="w-full rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
                       1080p
                     </div>
@@ -665,10 +703,7 @@ export function CreateTemplateDialog({
                     {...register("generateAudioDefault")}
                     className="w-4 h-4 rounded border-slate-700 bg-slate-800"
                   />
-                  <label
-                    htmlFor="generateAudio"
-                    className="text-xs text-slate-300"
-                  >
+                  <label htmlFor="generateAudio" className="text-xs text-slate-300">
                     Generate audio by default
                   </label>
                 </div>
@@ -678,9 +713,7 @@ export function CreateTemplateDialog({
             {/* Prompt */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-slate-300">
-                  Prompt *
-                </label>
+                <label className="text-xs font-medium text-slate-300">Prompt *</label>
                 <span className="text-[10px] text-slate-500">
                   Used to generate variations for this template
                 </span>
@@ -691,18 +724,14 @@ export function CreateTemplateDialog({
                 placeholder="Describe the scene, style, and mood for this template..."
               />
               {errors.prompt && (
-                <p className="text-[10px] text-red-400">
-                  {errors.prompt.message}
-                </p>
+                <p className="text-[10px] text-red-400">{errors.prompt.message}</p>
               )}
             </div>
 
             {/* Default Text & Credit Cost */}
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-300">
-                  Default Text
-                </label>
+                <label className="text-xs font-medium text-slate-300">Default Text</label>
                 <input
                   {...register("textDefault")}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
@@ -710,9 +739,7 @@ export function CreateTemplateDialog({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-300">
-                  Credit Cost *
-                </label>
+                <label className="text-xs font-medium text-slate-300">Credit Cost *</label>
                 <input
                   type="number"
                   {...register("creditCost")}
@@ -720,9 +747,7 @@ export function CreateTemplateDialog({
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                 />
                 {errors.creditCost && (
-                  <p className="text-[10px] text-red-400">
-                    {errors.creditCost.message}
-                  </p>
+                  <p className="text-[10px] text-red-400">{errors.creditCost.message}</p>
                 )}
               </div>
             </div>
@@ -735,12 +760,9 @@ export function CreateTemplateDialog({
                 className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                 placeholder="cozy, family, fireplace, landscape (comma-separated)"
               />
-              <p className="text-[10px] text-slate-500">
-                Separate tags with commas
-              </p>
+              <p className="text-[10px] text-slate-500">Separate tags with commas</p>
             </div>
 
-            {/* Email Notification Toggle - Only show when creating, not editing */}
             {!isEditing && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/30">
                 <input
@@ -754,15 +776,11 @@ export function CreateTemplateDialog({
                   className="text-xs text-slate-300 flex-1 cursor-pointer flex items-center"
                 >
                   <Mail className="w-4 h-4 mr-2" />
-                  <span>
-                    Send email notification to all subscribed users about this
-                    new template
-                  </span>
+                  <span>Send email notification to all subscribed users about this new template</span>
                 </label>
               </div>
             )}
 
-            {/* Upload Progress */}
             {isUploading && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-400">
@@ -778,7 +796,6 @@ export function CreateTemplateDialog({
               </div>
             )}
 
-            {/* Action buttons */}
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -793,11 +810,7 @@ export function CreateTemplateDialog({
                 disabled={isUploading}
                 className="rounded-full bg-emerald-500 px-5 py-2 text-xs font-medium text-white shadow-sm hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isUploading
-                  ? "Uploading..."
-                  : isEditing
-                    ? "Update Template"
-                    : "Create Template"}
+                {isUploading ? "Uploading..." : isEditing ? "Update Template" : "Create Template"}
               </button>
             </div>
           </form>
