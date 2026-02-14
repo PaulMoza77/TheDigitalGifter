@@ -19,30 +19,35 @@ type Template = TemplateSummary;
 
 interface TemplatesGridProps {
   onPick?: (template: Template) => void;
-  selectedTemplateId?: string; // ✅ Supabase uuid (string)
+  selectedTemplateId?: string | null; // ✅ fără Convex
   occasionFilter?: string | null;
 }
 
-function getTemplateId(t: any): string {
-  // ✅ suportă atât noul format (Supabase: id) cât și vechiul (Convex: _id)
-  return String(t?.id ?? t?._id ?? "");
-}
-
 function emojiForOccasion(occasion?: string | null) {
-  const o = (occasion || "").toLowerCase().trim();
+  const o = String(occasion || "").toLowerCase().trim();
   if (!o || o === "all") return "✨";
   if (o.includes("christ")) return "🎄";
   if (o.includes("birth")) return "🎂";
   if (o.includes("new")) return "🎆";
-  if (o.includes("thanks")) return "🦃";
+  if (o.includes("thank")) return "🦃";
   if (o.includes("baby")) return "👶";
   return "✨";
 }
 
 function prettyOccasion(occasion?: string | null) {
-  const o = (occasion || "").trim();
+  const o = String(occasion || "").trim();
   if (!o) return "this occasion";
   return o.charAt(0).toUpperCase() + o.slice(1);
+}
+
+function parseRange(range: string): { min: number; max: number } | null {
+  const parts = String(range || "")
+    .split("-")
+    .map((n) => Number(n));
+  if (parts.length !== 2) return null;
+  const [min, max] = parts;
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  return { min, max };
 }
 
 function TemplatesGridComponent({
@@ -74,24 +79,24 @@ function TemplatesGridComponent({
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    const occ = (occasionFilter || "").toLowerCase().trim();
+    const pr = priceRange !== "all" ? parseRange(priceRange) : null;
 
-    return templatesArray.filter((template: any) => {
+    return templatesArray.filter((template) => {
       const matchesScene = scene !== "all" ? template.scene === scene : true;
+
       const matchesOrientation =
         orientation !== "all" ? template.orientation === orientation : true;
 
       const matchesPrice =
         priceRange !== "all"
-          ? (() => {
-              const [min, max] = priceRange.split("-").map((n) => Number(n));
-              const cost = Number(template.creditCost ?? 0);
-              return cost >= min && cost <= max;
-            })()
+          ? pr
+            ? Number(template.creditCost) >= pr.min && Number(template.creditCost) <= pr.max
+            : true
           : true;
 
-      const matchesOccasion = occ
-        ? String(template.occasion || "").toLowerCase().trim() === occ
+      const matchesOccasion = occasionFilter
+        ? String(template.occasion || "").toLowerCase().trim() ===
+          String(occasionFilter || "").toLowerCase().trim()
         : true;
 
       return matchesScene && matchesOrientation && matchesPrice && matchesOccasion;
@@ -99,8 +104,8 @@ function TemplatesGridComponent({
   }, [templatesArray, scene, orientation, priceRange, occasionFilter]);
 
   const sceneCounts = useMemo(() => {
-    return templatesArray.reduce<Record<string, number>>((acc, t: any) => {
-      const key = String(t.scene || "unknown");
+    return templatesArray.reduce<Record<string, number>>((acc, template) => {
+      const key = template.scene || "unknown";
       acc[key] = (acc[key] ?? 0) + 1;
       return acc;
     }, {});
@@ -138,8 +143,7 @@ function TemplatesGridComponent({
     []
   );
 
-  const hasActiveFilters =
-    scene !== "all" || orientation !== "all" || priceRange !== "all";
+  const hasActiveFilters = scene !== "all" || orientation !== "all" || priceRange !== "all";
 
   return (
     <div className="space-y-8">
@@ -234,20 +238,15 @@ function TemplatesGridComponent({
       {/* Grid */}
       {filteredTemplates.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-          {filteredTemplates.map((template: any) => {
-            const id = getTemplateId(template);
-            return (
-              <TemplateCard
-                key={id}
-                template={template}
-                isSelected={Boolean(selectedTemplateId && id === String(selectedTemplateId))}
-                onSelect={onPick}
-                onOpenModal={(src, title) =>
-                  setModal({ open: true, src, title: title ?? "" })
-                }
-              />
-            );
-          })}
+          {filteredTemplates.map((template) => (
+            <TemplateCard
+              key={String(template._id)}
+              template={template}
+              isSelected={Boolean(selectedTemplateId && String(template._id) === String(selectedTemplateId))}
+              onSelect={onPick}
+              onOpenModal={(src, title) => setModal({ open: true, src, title: title ?? "" })}
+            />
+          ))}
         </div>
       ) : (
         <div className="py-16 px-6">
@@ -255,8 +254,7 @@ function TemplatesGridComponent({
             <div className="text-6xl mb-4">{emojiForOccasion(occasionFilter)}</div>
             <h3 className="text-xl font-bold text-[#fffef5] mb-2">No Templates Found</h3>
             <p className="text-[#c1c8d8] mb-6">
-              Try adjusting your filters to find the perfect template for{" "}
-              {prettyOccasion(occasionFilter)}.
+              Try adjusting your filters to find the perfect template for {prettyOccasion(occasionFilter)}.
             </p>
             <button
               type="button"
@@ -269,7 +267,7 @@ function TemplatesGridComponent({
         </div>
       )}
 
-      {/* Video Modal */}
+      {/* Modal */}
       {modal.open && (
         <VideoModal
           src={modal.src}

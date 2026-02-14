@@ -1,4 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import { EllipsisVerticalIcon, PenBoxIcon, Search, Trash2 } from "lucide-react";
+
+import { supabase } from "@/lib/supabase";
 import { CreateTemplateDialog } from "@/domains/admin/components/CreateTemplateDialog";
 
 import {
@@ -16,12 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 
-import { EllipsisVerticalIcon, PenBoxIcon, Search, Trash2 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
-
-import { supabase } from "@/lib/supabase";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +32,42 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+/** =========================
+ * Types
+ * ========================= */
+type TemplateDbRow = {
+  id: string;
+
+  title: string | null;
+  prompt: string | null;
+
+  occasion: string | null;
+  category: string | null;
+  sub_category: string | null;
+
+  type: string | null; // "image" | "video" ...
+  orientation: string | null;
+
+  preview_url: string | null;
+  thumbnail_url: string | null;
+
+  text_default: string | null;
+
+  default_duration: number | null;
+  default_aspect_ratio: string | null;
+  default_resolution: string | null;
+  generate_audio_default: boolean | null;
+  negative_prompt_default: string | null;
+
+  credit_cost: number | null;
+  tags: string[] | null;
+
+  is_active: boolean | null;
+
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 type TemplateRow = {
   id: string;
 
@@ -43,7 +78,7 @@ type TemplateRow = {
   category: string | null;
   subCategory: string | null;
 
-  type: string | null; // "image" | "video" etc
+  type: "image" | "video" | string;
   orientation: "portrait" | "landscape" | string;
 
   previewUrl: string;
@@ -58,14 +93,52 @@ type TemplateRow = {
   negativePromptDefault: string | null;
 
   creditCost: number;
-  tags: string[] | null;
+  tags: string[];
 
-  isActive: boolean | null;
+  isActive: boolean;
 
   created_at?: string;
   updated_at?: string;
 };
 
+function mapTemplate(db: TemplateDbRow): TemplateRow {
+  return {
+    id: db.id,
+
+    title: db.title ?? "",
+    prompt: db.prompt ?? "",
+
+    occasion: db.occasion,
+    category: db.category,
+    subCategory: db.sub_category,
+
+    type: (db.type ?? "image").toLowerCase(),
+    orientation: db.orientation ?? "portrait",
+
+    previewUrl: db.preview_url ?? "",
+    thumbnailUrl: db.thumbnail_url,
+
+    textDefault: db.text_default,
+
+    defaultDuration: db.default_duration,
+    defaultAspectRatio: db.default_aspect_ratio,
+    defaultResolution: db.default_resolution,
+    generateAudioDefault: db.generate_audio_default,
+    negativePromptDefault: db.negative_prompt_default,
+
+    creditCost: typeof db.credit_cost === "number" ? db.credit_cost : 0,
+    tags: Array.isArray(db.tags) ? db.tags : [],
+
+    isActive: db.is_active !== false,
+
+    created_at: db.created_at ?? undefined,
+    updated_at: db.updated_at ?? undefined,
+  };
+}
+
+/** =========================
+ * UI helpers
+ * ========================= */
 const categories = [
   "All categories",
   "Christmas",
@@ -116,7 +189,10 @@ function StatusSwitch({
   );
 }
 
-function TemplatesAdminPage() {
+/** =========================
+ * Page
+ * ========================= */
+export default function TemplatesAdminPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -126,7 +202,7 @@ function TemplatesAdminPage() {
   const [templates, setTemplates] = useState<TemplateRow[]>([]);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Get filter values from URL
+  // URL filters
   const categoryFilter = searchParams.get("category") || "All categories";
   const typeFilter = searchParams.get("type") || "All types";
   const searchQuery = searchParams.get("search") || "";
@@ -135,7 +211,31 @@ function TemplatesAdminPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("templates")
-      .select("*")
+      .select(
+        [
+          "id",
+          "title",
+          "prompt",
+          "occasion",
+          "category",
+          "sub_category",
+          "type",
+          "orientation",
+          "preview_url",
+          "thumbnail_url",
+          "text_default",
+          "default_duration",
+          "default_aspect_ratio",
+          "default_resolution",
+          "generate_audio_default",
+          "negative_prompt_default",
+          "credit_cost",
+          "tags",
+          "is_active",
+          "created_at",
+          "updated_at",
+        ].join(",")
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -146,7 +246,8 @@ function TemplatesAdminPage() {
       return;
     }
 
-    setTemplates((data as TemplateRow[]) || []);
+    const mapped = (data ?? []).map((r) => mapTemplate(r as unknown as TemplateDbRow));
+    setTemplates(mapped);
     setLoading(false);
   };
 
@@ -155,21 +256,18 @@ function TemplatesAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filter templates based on URL params
   const filteredTemplates = useMemo(() => {
     let filtered = [...templates];
 
-    // Filter by category
     if (categoryFilter && categoryFilter !== "All categories") {
-      const cf = categoryFilter.toLowerCase();
+      const cf = categoryFilter.toLowerCase().trim();
       filtered = filtered.filter((t) => {
-        const cat = (t.category || "").toLowerCase();
-        const occ = (t.occasion || "").toLowerCase();
+        const cat = (t.category || "").toLowerCase().trim();
+        const occ = (t.occasion || "").toLowerCase().trim();
         return cat === cf || occ === cf;
       });
     }
 
-    // Filter by type
     if (typeFilter && typeFilter !== "All types") {
       const normalizedType = typeFilter.toLowerCase().replace(/s$/, ""); // Images -> image
       filtered = filtered.filter(
@@ -177,25 +275,19 @@ function TemplatesAdminPage() {
       );
     }
 
-    // Filter by search query
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase().trim();
       filtered = filtered.filter((t) => {
         const title = (t.title || "").toLowerCase();
         const prompt = (t.prompt || "").toLowerCase();
         const tags = (t.tags || []).map((x) => String(x || "").toLowerCase());
-        return (
-          title.includes(query) ||
-          prompt.includes(query) ||
-          tags.some((tag) => tag.includes(query))
-        );
+        return title.includes(q) || prompt.includes(q) || tags.some((x) => x.includes(q));
       });
     }
 
     return filtered;
   }, [templates, categoryFilter, typeFilter, searchQuery]);
 
-  // Update URL params
   const updateFilter = (key: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
     if (value === "All categories" || value === "All types" || !value) {
@@ -206,14 +298,23 @@ function TemplatesAdminPage() {
     setSearchParams(newParams);
   };
 
-  // Handle dialog close and cleanup
+  const closeDialogAndCleanup = () => {
+    setIsDialogOpen(false);
+
+    // remove templateId only (keep other filters!)
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("templateId");
+    setSearchParams(newParams);
+
+    setOpenDropdownId(null);
+  };
+
   const handleDialogChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete("templateId");
-      setSearchParams(newParams);
-      setOpenDropdownId(null);
+      closeDialogAndCleanup();
+      // refresh list after create/update
+      void fetchTemplates();
     }
   };
 
@@ -222,15 +323,12 @@ function TemplatesAdminPage() {
     try {
       const { error } = await supabase
         .from("templates")
-        .update({ isActive: next })
+        .update({ is_active: next })
         .eq("id", id);
 
       if (error) throw error;
 
-      setTemplates((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, isActive: next } : t))
-      );
-
+      setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, isActive: next } : t)));
       toast.success(next ? "Template activated" : "Template deactivated");
     } catch (e) {
       console.error("[TemplatesAdminPage] toggle error:", e);
@@ -256,7 +354,6 @@ function TemplatesAdminPage() {
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="bg-slate-950 px-4 py-6 md:px-8">
@@ -272,21 +369,22 @@ function TemplatesAdminPage() {
   return (
     <div className="bg-slate-950 px-4 py-6 md:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <header className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-50">Templates</h1>
             <p className="mt-1 text-sm text-slate-400">
-              Manage image and video templates, prompts, and categories for
-              TheDigitalGifter.
+              Manage image and video templates, prompts, and categories for TheDigitalGifter.
             </p>
           </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => {
+                // keep filters; remove templateId; open dialog
                 const newParams = new URLSearchParams(searchParams);
                 newParams.delete("templateId");
                 setSearchParams(newParams);
+
                 setIsDialogOpen(true);
               }}
               className="rounded-full bg-indigo-500 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-400"
@@ -296,18 +394,15 @@ function TemplatesAdminPage() {
           </div>
         </header>
 
-        {/* Templates list */}
         <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm md:p-6">
-          {/* Filters */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-slate-50">
-                Templates library
-              </h2>
+              <h2 className="text-sm font-semibold text-slate-50">Templates library</h2>
               <p className="mt-1 text-xs text-slate-400">
                 View all templates, toggle availability, and track usage.
               </p>
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800 px-3 py-1 h-8">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -316,10 +411,7 @@ function TemplatesAdminPage() {
                 </span>
               </div>
 
-              <Select
-                value={categoryFilter}
-                onValueChange={(value) => updateFilter("category", value)}
-              >
+              <Select value={categoryFilter} onValueChange={(v) => updateFilter("category", v)}>
                 <SelectTrigger className="w-[140px] rounded-full border-slate-700 bg-slate-800/50 text-xs text-slate-300 hover:bg-slate-800 h-8">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
@@ -336,30 +428,18 @@ function TemplatesAdminPage() {
                 </SelectContent>
               </Select>
 
-              <Select
-                value={typeFilter}
-                onValueChange={(value) => updateFilter("type", value)}
-              >
+              <Select value={typeFilter} onValueChange={(v) => updateFilter("type", v)}>
                 <SelectTrigger className="w-[110px] rounded-full border-slate-700 bg-slate-800/50 text-xs text-slate-300 hover:bg-slate-800 h-8">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
-                  <SelectItem
-                    value="All types"
-                    className="focus:bg-slate-800 focus:text-slate-50"
-                  >
+                  <SelectItem value="All types" className="focus:bg-slate-800 focus:text-slate-50">
                     All types
                   </SelectItem>
-                  <SelectItem
-                    value="Images"
-                    className="focus:bg-slate-800 focus:text-slate-50"
-                  >
+                  <SelectItem value="Images" className="focus:bg-slate-800 focus:text-slate-50">
                     Images
                   </SelectItem>
-                  <SelectItem
-                    value="Videos"
-                    className="focus:bg-slate-800 focus:text-slate-50"
-                  >
+                  <SelectItem value="Videos" className="focus:bg-slate-800 focus:text-slate-50">
                     Videos
                   </SelectItem>
                 </SelectContent>
@@ -367,7 +447,6 @@ function TemplatesAdminPage() {
             </div>
           </div>
 
-          {/* Search */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs text-slate-400">
               <Search size={14} />
@@ -378,44 +457,37 @@ function TemplatesAdminPage() {
                 placeholder="Search templates by name or prompt..."
               />
             </div>
+
             <button className="rounded-full border border-slate-700 px-3 py-1.5 text-[11px] font-medium text-slate-400 hover:bg-slate-800 h-8">
               Sort by usage
             </button>
           </div>
 
-          {/* Templates grid */}
           <div className="mt-2 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {filteredTemplates.map((template) => {
               const id = template.id;
               const typeLabel = (template.type || "image").toLowerCase();
+              const imgSrc = template.thumbnailUrl || template.previewUrl || "";
 
               return (
                 <article
                   key={id}
                   className="flex flex-col rounded-2xl border border-slate-700 bg-slate-800/40 p-3 text-xs text-slate-300 relative"
                 >
-                  {/* Thumbnail */}
                   <div className="mb-2 flex h-48 items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 via-slate-600 to-slate-500 text-[10px] font-medium text-slate-100 overflow-hidden">
-                    {template.thumbnailUrl || template.previewUrl ? (
-                      <img
-                        src={template.thumbnailUrl || template.previewUrl}
-                        alt={template.title}
-                        className="w-full h-full object-cover"
-                      />
+                    {imgSrc ? (
+                      <img src={imgSrc} alt={template.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="flex flex-col items-center gap-1 text-center">
                         <span className="inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-0.5 text-[10px]">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                           {typeLabel} template
                         </span>
-                        <span className="line-clamp-2 px-4 opacity-90">
-                          {template.title}
-                        </span>
+                        <span className="line-clamp-2 px-4 opacity-90">{template.title}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Meta */}
                   <div className="flex flex-1 flex-col gap-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1">
@@ -424,9 +496,7 @@ function TemplatesAdminPage() {
                         </h3>
                         <div className="flex flex-wrap items-center gap-1">
                           <span className="inline-flex items-center rounded-full bg-slate-700/50 px-2 py-0.5 text-[10px] text-slate-200">
-                            {template.category ||
-                              template.occasion ||
-                              "Uncategorized"}
+                            {template.category || template.occasion || "Uncategorized"}
                           </span>
                           <span className="inline-flex items-center rounded-full bg-slate-700 px-2 py-0.5 text-[9px] uppercase tracking-wide text-slate-400">
                             {typeLabel}
@@ -436,7 +506,7 @@ function TemplatesAdminPage() {
 
                       <StatusSwitch
                         templateId={id}
-                        isActive={template.isActive !== false}
+                        isActive={template.isActive}
                         onToggle={handleToggleActive}
                         disabled={updatingId === id}
                       />
@@ -444,8 +514,7 @@ function TemplatesAdminPage() {
 
                     <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400">
                       <span>
-                        Usage:{" "}
-                        <span className="font-semibold text-slate-200">N/A</span>
+                        Usage: <span className="font-semibold text-slate-200">N/A</span>
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -462,24 +531,26 @@ function TemplatesAdminPage() {
                           <EllipsisVerticalIcon className="w-4 h-4" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="bg-slate-900 border-slate-700"
-                      >
+
+                      <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700">
                         <DropdownMenuItem
                           onSelect={(e) => {
                             e.preventDefault();
                             setOpenDropdownId(null);
-                            setTimeout(() => {
-                              setSearchParams({ templateId: id });
-                              setIsDialogOpen(true);
-                            }, 50);
+
+                            // keep filters, set templateId
+                            const newParams = new URLSearchParams(searchParams);
+                            newParams.set("templateId", id);
+                            setSearchParams(newParams);
+
+                            setIsDialogOpen(true);
                           }}
                           className="text-slate-200 focus:bg-slate-800 focus:text-slate-50 cursor-pointer"
                         >
                           <PenBoxIcon className="h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
+
                         <DropdownMenuItem
                           onSelect={(e) => {
                             e.preventDefault();
@@ -499,14 +570,11 @@ function TemplatesAdminPage() {
             })}
           </div>
 
-          {/* Empty state */}
           {filteredTemplates.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-sm text-slate-400">No templates found</p>
               <p className="mt-1 text-xs text-slate-500">
-                {searchQuery ||
-                categoryFilter !== "All categories" ||
-                typeFilter !== "All types"
+                {searchQuery || categoryFilter !== "All categories" || typeFilter !== "All types"
                   ? "Try adjusting your filters or search query"
                   : "Create your first template to get started"}
               </p>
@@ -517,19 +585,15 @@ function TemplatesAdminPage() {
 
       <CreateTemplateDialog open={isDialogOpen} onOpenChange={handleDialogChange} />
 
-      <AlertDialog
-        open={!!templateToDelete}
-        onOpenChange={(open) => !open && setTemplateToDelete(null)}
-      >
+      <AlertDialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
         <AlertDialogContent className="bg-slate-900 border-slate-800">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-slate-50">
-              Are you absolutely sure?
-            </AlertDialogTitle>
+            <AlertDialogTitle className="text-slate-50">Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-400">
               By confirming you will permanently delete this template. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-slate-50">
               Cancel
@@ -550,5 +614,3 @@ function TemplatesAdminPage() {
     </div>
   );
 }
-
-export default TemplatesAdminPage;

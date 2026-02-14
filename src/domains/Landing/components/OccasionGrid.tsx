@@ -5,21 +5,26 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 /**
- * DB shape (Supabase):
- * public.occasions: { id, slug, title, active, sortOrder, updatedAt }
+ * Supabase DB expected (recommended):
+ * public.occasions:
+ *  - id uuid (recommended) OR slug text as unique
+ *  - slug text
+ *  - title text
+ *  - active boolean
+ *  - sort_order int
+ *  - updated_at timestamptz
  */
 type OccasionRow = {
-  id: string;
+  id?: string | null;
   slug: string;
   title: string;
-  active: boolean | null;
-  sortOrder: number | null;
-  updatedAt: string | null;
+  active?: boolean | null;
+  sort_order?: number | null;
+  updated_at?: string | null;
 };
 
 function slugToHref(slug: string) {
@@ -123,52 +128,52 @@ function fallbackImage(slug: string) {
   return "/images/occasions/default.jpg";
 }
 
-export const OccasionGrid = () => {
+export default function OccasionGrid() {
   const navigate = useNavigate();
 
+  // null = loading, [] = loaded but empty
   const [rows, setRows] = useState<OccasionRow[] | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
-      setErrorMsg(null);
-      setRows(null);
-
+    async function load() {
       const { data, error } = await supabase
         .from("occasions")
-        .select("id, slug, title, active, sortOrder, updatedAt")
-        .eq("active", true);
+        .select("id, slug, title, active, sort_order, updated_at")
+        .eq("active", true)
+        .order("sort_order", { ascending: true });
 
       if (cancelled) return;
 
       if (error) {
-        console.error("[OccasionGrid] load error:", error);
-        setErrorMsg(error.message || "Failed to load occasions");
-        setRows([]);
+        console.error("[OccasionGrid] supabase error:", error);
+        setRows([]); // fail soft
         return;
       }
 
-      setRows((data || []) as OccasionRow[]);
-    })();
+      setRows((data as OccasionRow[]) || []);
+    }
+
+    void load();
 
     return () => {
       cancelled = true;
     };
   }, []);
 
+  // ✅ hooks must be called unconditionally
   const occasions = useMemo(() => {
-    if (!rows) return [];
-    return [...rows].sort((a, b) => {
-      const ao = typeof a.sortOrder === "number" ? a.sortOrder : 999999;
-      const bo = typeof b.sortOrder === "number" ? b.sortOrder : 999999;
+    const src = rows ?? [];
+    return [...src].sort((a, b) => {
+      const ao = typeof a.sort_order === "number" ? a.sort_order : 999999;
+      const bo = typeof b.sort_order === "number" ? b.sort_order : 999999;
       if (ao !== bo) return ao - bo;
       return String(a.title || "").localeCompare(String(b.title || ""));
     });
   }, [rows]);
 
-  // loading (same UX)
+  // loading skeleton
   if (rows === null) {
     return (
       <section id="categories" className="w-full py-24 px-4 sm:px-6 lg:px-8">
@@ -201,7 +206,6 @@ export const OccasionGrid = () => {
   return (
     <section id="categories" className="w-full py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Section header */}
         <motion.div
           className="text-center mb-16 space-y-4"
           initial={{ opacity: 0, y: 20 }}
@@ -221,22 +225,6 @@ export const OccasionGrid = () => {
           </p>
         </motion.div>
 
-        {/* Error */}
-        {errorMsg && (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            {errorMsg}
-          </div>
-        )}
-
-        {/* Empty */}
-        {!errorMsg && occasions.length === 0 && (
-          <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-slate-300">
-            No occasions found. Add rows in <code className="text-slate-100">public.occasions</code>{" "}
-            with <code className="text-slate-100">active=true</code>.
-          </div>
-        )}
-
-        {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {occasions.map((occ, index) => {
             const slug = String(occ.slug || "").trim();
@@ -248,9 +236,11 @@ export const OccasionGrid = () => {
             const gradientFrom = fallbackGradientFrom(slug);
             const gradientTo = fallbackGradientTo(slug);
 
+            const key = String(occ.id || occ.slug);
+
             return (
               <motion.div
-                key={occ.id}
+                key={key}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -261,7 +251,6 @@ export const OccasionGrid = () => {
               >
                 <Card className="group relative overflow-hidden bg-slate-900/50 border-slate-800 transition-all duration-300 hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/20">
                   <CardContent className="p-0 relative isolate">
-                    {/* Image */}
                     <div className="relative h-64 overflow-hidden">
                       <div
                         className={cn(
@@ -277,7 +266,6 @@ export const OccasionGrid = () => {
                         loading="lazy"
                       />
 
-                      {/* Label */}
                       <div className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 text-xs text-white">
                         {label}
                       </div>
@@ -285,13 +273,14 @@ export const OccasionGrid = () => {
                       <div className="absolute inset-0 z-20 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
                     </div>
 
-                    {/* Content */}
                     <div className="p-4 space-y-4 relative z-20">
                       <div>
                         <h3 className="text-2xl font-bold mb-2 text-white group-hover:text-blue-400 transition-colors">
                           {occ.title}
                         </h3>
-                        <p className="text-slate-400 text-sm mb-2">{description}</p>
+                        <p className="text-slate-400 text-sm mb-2">
+                          {description}
+                        </p>
                       </div>
 
                       <div className="flex gap-2 items-center">
@@ -333,6 +322,4 @@ export const OccasionGrid = () => {
       </div>
     </section>
   );
-};
-
-export default OccasionGrid;
+}
