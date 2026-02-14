@@ -1,26 +1,90 @@
-import { useEffect, useState } from "react";
+// src/pages/website/UnsubscribePage.tsx
+import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { supabase } from "@/lib/supabase";
 
+type Status = "loading" | "success" | "error";
+
+/**
+ * Expects:
+ *  - query param: ?userId=<uuid>  OR ?email=<email>
+ *
+ * Recommended DB:
+ * 1) public.email_preferences
+ *    - user_id uuid (unique) OR email text (unique)
+ *    - marketing boolean default true
+ *    - updated_at timestamptz
+ *
+ * This page will try:
+ *  - if userId exists: update by user_id
+ *  - else if email exists: update by email
+ *
+ * If table/columns differ, adjust the update() payload + eq() column.
+ */
 export function UnsubscribePage() {
   const [searchParams] = useSearchParams();
-  const userId = searchParams.get("userId");
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
-  );
+  const userId = searchParams.get("userId")?.trim() || "";
+  const email = searchParams.get("email")?.trim() || "";
 
-  const unsubscribe = useMutation(api.emailPreferences.unsubscribe);
+  const [status, setStatus] = useState<Status>("loading");
 
   useEffect(() => {
-    if (userId) {
-      unsubscribe({ userId })
-        .then(() => setStatus("success"))
-        .catch(() => setStatus("error"));
-    } else {
-      setStatus("error");
+    let cancelled = false;
+
+    async function run() {
+      setStatus("loading");
+
+      try {
+        if (!userId && !email) {
+          if (!cancelled) setStatus("error");
+          return;
+        }
+
+        // ✅ choose match column
+        const matchCol = userId ? "user_id" : "email";
+        const matchVal = userId ? userId : email;
+
+        // ✅ try update first
+        const { data: updated, error: updateErr } = await supabase
+          .from("email_preferences")
+          .update({
+            marketing: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq(matchCol, matchVal)
+          .select("id")
+          .maybeSingle();
+
+        if (updateErr) throw updateErr;
+
+        // If no row existed, create it (upsert behavior)
+        if (!updated) {
+          const insertPayload: Record<string, any> = {
+            marketing: false,
+            updated_at: new Date().toISOString(),
+          };
+          if (userId) insertPayload.user_id = userId;
+          if (!userId && email) insertPayload.email = email;
+
+          const { error: insertErr } = await supabase
+            .from("email_preferences")
+            .upsert(insertPayload, { onConflict: userId ? "user_id" : "email" });
+
+          if (insertErr) throw insertErr;
+        }
+
+        if (!cancelled) setStatus("success");
+      } catch (e) {
+        console.error("[UnsubscribePage] error:", e);
+        if (!cancelled) setStatus("error");
+      }
     }
-  }, [userId, unsubscribe]);
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, email]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
@@ -31,6 +95,9 @@ export function UnsubscribePage() {
             <h1 className="text-xl font-semibold text-slate-50 mb-2">
               Unsubscribing...
             </h1>
+            <p className="text-sm text-slate-400">
+              Please wait while we update your email preferences.
+            </p>
           </>
         )}
 
@@ -38,11 +105,10 @@ export function UnsubscribePage() {
           <>
             <div className="text-5xl mb-4">✅</div>
             <h1 className="text-2xl font-bold text-slate-50 mb-3">
-              You've been unsubscribed
+              You&apos;ve been unsubscribed
             </h1>
             <p className="text-slate-400 mb-6">
-              You won't receive any more marketing emails from us. We're sorry
-              to see you go!
+              You won&apos;t receive any more marketing emails from us.
             </p>
             <p className="text-sm text-slate-500 mb-6">
               You can resubscribe anytime from your account settings.
@@ -63,8 +129,8 @@ export function UnsubscribePage() {
               Something went wrong
             </h1>
             <p className="text-slate-400 mb-6">
-              We couldn't process your unsubscribe request. Please try again or
-              contact support.
+              We couldn&apos;t process your unsubscribe request. Please try again
+              or contact support.
             </p>
             <a
               href="/"
@@ -78,3 +144,5 @@ export function UnsubscribePage() {
     </div>
   );
 }
+
+export default UnsubscribePage;
