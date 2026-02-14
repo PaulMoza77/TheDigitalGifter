@@ -1,4 +1,4 @@
-// src/pages/admin/CustomersPage.tsx
+// src/pages/admin/Customers.tsx
 import React, { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -39,7 +39,6 @@ function initials(name?: string | null, email?: string | null) {
 }
 
 function moneyEUR(n: number) {
-  // avoid locale surprises in build
   return `€${Number.isFinite(n) ? n.toFixed(2) : "0.00"}`;
 }
 
@@ -54,15 +53,12 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
 
-  // load once
   React.useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setLoading(true);
 
-      // ✅ If you don't have a "customers" view/table, create one or adjust this query to your table(s).
-      // Recommended: create a VIEW that aggregates user stats for admin.
       const { data, error } = await supabase
         .from("customers_admin_view")
         .select(
@@ -177,9 +173,7 @@ export default function CustomersPage() {
                 {stats.total.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              All accounts created on the platform.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">All accounts created on the platform.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -191,9 +185,7 @@ export default function CustomersPage() {
                 {stats.newThisMonth.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Joined since the 1st of the month.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Joined since the 1st of the month.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -205,9 +197,7 @@ export default function CustomersPage() {
                 {stats.active.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Users active in the last 24 hours.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Users active in the last 24 hours.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -219,9 +209,7 @@ export default function CustomersPage() {
                 {moneyEUR(stats.totalRevenue)}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Total money spent by users.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Total money spent by users.</p>
           </div>
         </section>
 
@@ -293,12 +281,8 @@ export default function CustomersPage() {
                               <span className="font-medium text-slate-200 text-sm">
                                 {c.name || "Unknown"}
                               </span>
-                              <span className="text-xs text-slate-500">
-                                {c.email || "—"}
-                              </span>
-                              <span className="text-[10px] text-slate-600">
-                                {c.id}
-                              </span>
+                              <span className="text-xs text-slate-500">{c.email || "—"}</span>
+                              <span className="text-[10px] text-slate-600">{c.id}</span>
                             </div>
                           </div>
                         </TableCell>
@@ -311,9 +295,7 @@ export default function CustomersPage() {
                           {Number(c.generations || 0)}
                         </TableCell>
 
-                        <TableCell className="text-slate-300">
-                          {moneyEUR(spent)}
-                        </TableCell>
+                        <TableCell className="text-slate-300">{moneyEUR(spent)}</TableCell>
 
                         <TableCell className="text-slate-400">
                           {Number(c.orders_count || 0)}
