@@ -1,26 +1,34 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useConvex } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { userKeys } from "../queries/users";
-import { creditsKeys } from "../queries/credits";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
-type EnsureUserProfileArgs = {
-  userId: string;
+export type UserProfileRow = {
+  id: string;
+  // coloane…
 };
 
-export function useEnsureUserProfileMutation() {
-  const convex = useConvex();
-  const queryClient = useQueryClient();
+export const userKeys = {
+  profile: (userId?: string | null) =>
+    ["userProfile", userId ?? "anonymous"] as const,
+};
 
-  return useMutation<string, Error, EnsureUserProfileArgs>({
-    mutationKey: ["users", "ensureProfile"],
-    mutationFn: async (variables) =>
-      convex.mutation(api.users.ensureUserProfile, variables),
-    onSuccess: (_result, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: userKeys.profile(variables.userId),
-      });
-      void queryClient.invalidateQueries({ queryKey: creditsKeys.all });
+export function useUserProfileQuery(userId?: string | null) {
+  return useQuery<UserProfileRow | null, Error>({
+    queryKey: userKeys.profile(userId),
+    queryFn: async () => {
+      if (!userId) return null;
+
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data ?? null) as UserProfileRow | null;
     },
+    enabled: Boolean(userId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

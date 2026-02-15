@@ -1,23 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
-import { useConvex } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Doc } from "../../../convex/_generated/dataModel";
+import { supabase } from "@/lib/supabase";
 
 export const userKeys = {
   profile: (userId?: string | null) =>
     ["userProfile", userId ?? "anonymous"] as const,
 };
 
-export function useUserProfileQuery(userId?: string | null) {
-  const convex = useConvex();
+// ✅ adaptează câmpurile după tabela ta
+export type UserProfileRow = {
+  id: string;
+  full_name?: string | null;
+  avatar_url?: string | null;
+  credits?: number | null;
+  created_at?: string | null;
+  // ...alte coloane dacă ai
+};
 
-  return useQuery<Doc<"userProfiles"> | null, Error>({
+export function useUserProfileQuery(userId?: string | null) {
+  return useQuery<UserProfileRow | null, Error>({
     queryKey: userKeys.profile(userId),
-    queryFn: () => {
-      if (!userId) {
-        return Promise.resolve(null);
-      }
-      return convex.query(api.users.getMe, { userId });
+    queryFn: async () => {
+      if (!userId) return null;
+
+      const { data, error } = await supabase
+        .from("user_profiles") // 🔁 schimbă dacă tabela ta are alt nume (ex: profiles)
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return (data ?? null) as UserProfileRow | null;
     },
     enabled: Boolean(userId),
     staleTime: 5 * 60 * 1000,

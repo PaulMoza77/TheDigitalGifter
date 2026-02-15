@@ -1,43 +1,23 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useConvex } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { templateKeys } from "../queries/templates";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import type { TemplateSummary } from "@/types/templates";
 
-export function useSeedTemplatesMutation() {
-  const convex = useConvex();
-  const queryClient = useQueryClient();
+export const templateKeys = { all: ["templates"] as const };
 
-  return useMutation({
-    mutationKey: ["templates", "seed"],
-    mutationFn: () => convex.mutation(api.templates.seed, {}),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: templateKeys.all });
+export function useTemplatesQuery() {
+  return useQuery<TemplateSummary[], Error>({
+    queryKey: templateKeys.all,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("templates")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return (data ?? []) as TemplateSummary[];
     },
-  });
-}
-
-export function useAddMoreTemplatesMutation() {
-  const convex = useConvex();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationKey: ["templates", "addMore"],
-    mutationFn: () => convex.mutation(api.templates.addMoreTemplates, {}),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: templateKeys.all });
-    },
-  });
-}
-
-export function useClearTemplatesMutation() {
-  const convex = useConvex();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationKey: ["templates", "clearAll"],
-    mutationFn: () => convex.mutation(api.templates.clearAll, {}),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: templateKeys.all });
-    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

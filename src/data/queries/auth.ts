@@ -1,24 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
-import { useConvex } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Doc } from "../../../convex/_generated/dataModel";
+import { supabase } from "@/lib/supabase";
 
 export const authKeys = {
   me: ["auth", "me"] as const,
 };
 
-export function useLoggedInUserQuery() {
-  const convex = useConvex();
+export type LoggedInUser = {
+  id: string;
+  email: string | null;
+};
 
-  return useQuery<Doc<"users"> | null, Error>({
+export function useLoggedInUserQuery() {
+  return useQuery<LoggedInUser | null, Error>({
     queryKey: authKeys.me,
-    queryFn: () => convex.query(api.auth.loggedInUser, {}),
-    // For auth queries, use very short stale time so changes are detected quickly
-    staleTime: 0, // Always consider stale, refetch on mount
+    queryFn: async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) throw error;
+
+      const u = data.user;
+      if (!u) return null;
+
+      return { id: u.id, email: u.email ?? null };
+    },
+    staleTime: 0,
     gcTime: 5 * 60 * 1000,
-    // Refetch when window regains focus (catches auth redirects)
     refetchOnWindowFocus: true,
-    // Only fetch when authenticated or when checking auth status
     enabled: true,
   });
 }

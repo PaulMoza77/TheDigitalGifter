@@ -8,20 +8,20 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       retry: 1,
     },
-    mutations: {
-      retry: 1,
-    },
+    mutations: { retry: 1 },
   },
 });
 
-// Helper function to invalidate auth-related caches
 export async function invalidateAuthCaches() {
   await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
   await queryClient.invalidateQueries({ queryKey: ["credits"] });
-  await queryClient.invalidateQueries({ queryKey: ["user"] });
+  await queryClient.invalidateQueries({ queryKey: ["userProfile"] });
   await queryClient.invalidateQueries({ queryKey: ["jobs"] });
   await queryClient.invalidateQueries({ queryKey: ["templates"] });
 }
 
+// ✅ Queries rămân flat
 export * from "./queries";
-export * from "./mutations";
+
+// ✅ Mutations devin “namespaced” ca să nu se bată numele
+export * as mutations from "./mutations";

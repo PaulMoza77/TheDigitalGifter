@@ -1,24 +1,37 @@
 import { useQuery } from "@tanstack/react-query";
-import { useConvex, useConvexAuth } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { supabase } from "@/lib/supabase";
 
 export const creditsKeys = {
   all: ["credits"] as const,
 };
 
 export function useUserCreditsQuery() {
-  const convex = useConvex();
-  const { isAuthenticated } = useConvexAuth();
-
   return useQuery<number, Error>({
     queryKey: creditsKeys.all,
-    queryFn: () => convex.query(api.credits.getUserCredits, {}),
-    // For auth-dependent queries, use very short stale time
-    staleTime: 0, // Always consider stale, refetch on mount
+    queryFn: async () => {
+      // 1️⃣ Get logged-in user
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+
+      if (authError) throw authError;
+
+      const user = authData.user;
+      if (!user) return 0;
+
+      // 2️⃣ Get credits from DB
+      const { data, error } = await supabase
+        .from("profiles") // 🔁 schimbă dacă tabelul tău are alt nume
+        .select("credits")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return Number(data?.credits ?? 0);
+    },
+    staleTime: 0,
     gcTime: 5 * 60 * 1000,
-    // Refetch when window regains focus (catches auth redirects)
     refetchOnWindowFocus: true,
-    // Only fetch when authenticated
-    enabled: isAuthenticated,
+    enabled: true,
   });
 }

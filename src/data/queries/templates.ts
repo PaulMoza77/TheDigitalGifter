@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useConvex } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { supabase } from "@/lib/supabase";
 import { TemplateSummary } from "@/types/templates";
 
 export const templateKeys = {
@@ -8,11 +7,18 @@ export const templateKeys = {
 };
 
 export function useTemplatesQuery() {
-  const convex = useConvex();
-
   return useQuery<TemplateSummary[], Error>({
     queryKey: templateKeys.all,
-    queryFn: () => convex.query(api.templates.list, {}),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("templates") // 🔁 asigură-te că tabela se numește exact așa
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      return (data ?? []) as TemplateSummary[];
+    },
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
