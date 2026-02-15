@@ -1,29 +1,61 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
-export type JobRow = {
-  id: string;
-  // restul coloanelor tale…
+type CreateImageJobArgs = {
+  type: "image";
+  templateId: string;
+  inputUrls: string[];
+  aspectRatio: string;
+  userInstructions?: string;
 };
 
-export const jobsKeys = { all: ["jobs"] as const };
+type CreateVideoJobArgs = {
+  templateId: string;
+  inputUrls: string[];
+  userInstructions?: string;
+  duration: number; // ex 8
+  resolution: "1080p";
+  aspectRatio: "16:9";
+  generateAudio: boolean;
+  negativePrompt?: string;
+};
 
-export function useJobsQuery() {
-  return useQuery<JobRow[], Error>({
-    queryKey: jobsKeys.all,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("jobs")
-        .select("*")
-        .order("created_at", { ascending: false });
+type JobCreateResponse = {
+  jobId: string;
+};
 
-      if (error) throw error;
-      return (data ?? []) as JobRow[];
+export function useCreateJobMutation() {
+  return useMutation<JobCreateResponse, Error, CreateImageJobArgs>({
+    mutationKey: ["jobs", "create", "image"],
+    mutationFn: async (payload) => {
+      // ✅ Aici chemi backend-ul tău (Edge Function / API)
+      // IMPORTANT: schimbă numele funcției dacă ai altul
+      const { data, error } = await supabase.functions.invoke("create-image-job", {
+        body: payload,
+      });
+
+      if (error) throw new Error(error.message || "Failed to create image job");
+      const jobId = (data as any)?.jobId ?? (data as any)?.id ?? data;
+      if (!jobId) throw new Error("Missing jobId from create-image-job");
+
+      return { jobId: String(jobId) };
     },
-    staleTime: 5 * 1000,
-    gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchInterval: 5 * 1000,
-    refetchIntervalInBackground: true,
+  });
+}
+
+export function useCreateVideoJobMutation() {
+  return useMutation<JobCreateResponse, Error, CreateVideoJobArgs>({
+    mutationKey: ["jobs", "create", "video"],
+    mutationFn: async (payload) => {
+      const { data, error } = await supabase.functions.invoke("create-video-job", {
+        body: payload,
+      });
+
+      if (error) throw new Error(error.message || "Failed to create video job");
+      const jobId = (data as any)?.jobId ?? (data as any)?.id ?? data;
+      if (!jobId) throw new Error("Missing jobId from create-video-job");
+
+      return { jobId: String(jobId) };
+    },
   });
 }

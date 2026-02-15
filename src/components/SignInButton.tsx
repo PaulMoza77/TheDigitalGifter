@@ -1,7 +1,7 @@
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth } from "convex/react";
-import { toast } from "sonner";
+// src/components/SignInButton.tsx
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 import { invalidateAuthCaches, queryClient } from "@/data";
 
 interface SignInButtonProps {
@@ -9,54 +9,74 @@ interface SignInButtonProps {
 }
 
 export function SignInButton({ variant = "default" }: SignInButtonProps) {
-  const { signIn } = useAuthActions();
-  const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
-  const previousAuthStateRef = useRef<boolean | null>(null);
+  const previousAuthRef = useRef<boolean | null>(null);
 
-  // Monitor for successful login and invalidate caches
+  // ✅ listen for auth state changes (login/logout) and refresh caches
   useEffect(() => {
-    // Skip if still loading
-    if (authLoading) return;
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      // When auth changes, clear + refetch cached queries
+      if (
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "SIGNED_OUT" ||
+        event === "USER_UPDATED"
+      ) {
+        queryClient.clear();
+        void invalidateAuthCaches();
+      }
+    });
 
-    // Initialize on first render
-    if (previousAuthStateRef.current === null) {
-      previousAuthStateRef.current = isAuthenticated;
-      return;
-    }
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
-    // If switched to authenticated, invalidate and refetch everything
-    if (isAuthenticated && !previousAuthStateRef.current) {
-      console.log("[SignInButton] Login detected! Invalidating caches");
-      // Clear entire cache and invalidate auth queries
-      queryClient.clear();
-      invalidateAuthCaches();
-      previousAuthStateRef.current = true;
-    } else {
-      previousAuthStateRef.current = isAuthenticated;
-    }
-  }, [isAuthenticated, authLoading]);
+  // ✅ initial check (optional, but keeps same “previousAuthState” spirit)
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+
+      const isAuthed = Boolean(data.session?.user);
+      if (previousAuthRef.current === null) {
+        previousAuthRef.current = isAuthed;
+      } else if (isAuthed !== previousAuthRef.current) {
+        previousAuthRef.current = isAuthed;
+        queryClient.clear();
+        void invalidateAuthCaches();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleGoogle() {
     try {
-      console.log("[SignInButton] Starting Google sign-in...");
-      await signIn("google");
-      console.log("[SignInButton] Google sign-in completed");
-      // Invalidate caches after login completes
-      setTimeout(() => {
-        console.log("[SignInButton] Post-login cache invalidation");
-        queryClient.clear();
-        invalidateAuthCaches();
-      }, 500);
-    } catch (e) {
+      // ✅ if you use PKCE + redirect, this will navigate away
+      const redirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/auth/callback`
+          : undefined;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          // optional: keep user landing page
+          queryParams: { access_type: "offline", prompt: "consent" },
+        },
+      });
+
+      if (error) throw error;
+    } catch (e: any) {
       console.error("Google sign-in failed:", e);
       toast.error(
-        [
-          "Sign-in error. Verifică:",
-          "1) Redirect URI: https://giddy-swan-737.convex.app/auth/callback/google",
-          "2) Origin: https://thedigitalgifter.com",
-          "3) Test users pe OAuth consent screen",
-          "4) GOOGLE_CLIENT_ID / SECRET în Convex",
-        ].join("\n")
+        e?.message ||
+          "Sign-in error. Verifică setările Google OAuth din Supabase."
       );
     }
   }
@@ -70,9 +90,7 @@ export function SignInButton({ variant = "default" }: SignInButtonProps) {
     <button
       type="button"
       className={buttonStyles}
-      onClick={() => {
-        void handleGoogle();
-      }}
+      onClick={() => void handleGoogle()}
     >
       {variant === "gradient" && (
         <svg className="w-5 h-5" viewBox="0 0 24 24">

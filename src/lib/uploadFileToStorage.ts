@@ -1,32 +1,56 @@
-import { Id } from "../../convex/_generated/dataModel";
+// src/lib/uploadFileToStorage.ts
+import { supabase } from "@/lib/supabase";
 
-type GenerateUploadUrl = () => Promise<string>;
+type UploadResult = {
+  path: string;
+  publicUrl: string;
+};
+
+function safeName(name: string) {
+  return name
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9._-]/g, "");
+}
 
 export async function uploadFileToStorage(
-  generateUploadUrl: GenerateUploadUrl,
-  file: File
-): Promise<Id<"_storage">> {
-  const uploadUrl = await generateUploadUrl();
+  file: File,
+  opts?: {
+    bucket?: string; // default: "uploads"
+    folder?: string; // default: "uploads"
+    upsert?: boolean; // default: false
+    makePublicUrl?: boolean; // default: true
+  }
+): Promise<UploadResult> {
+  const bucket = opts?.bucket ?? "uploads";
+  const folder = opts?.folder ?? "uploads";
+  const upsert = opts?.upsert ?? false;
+  const makePublicUrl = opts?.makePublicUrl ?? true;
 
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": file.type || "application/octet-stream",
-    },
-    body: file,
-  });
+  const ext =
+    file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase() : "";
+  const filename = safeName(file.name || `file.${ext || "bin"}`);
+  const path = `${folder}/${Date.now()}-${filename}`;
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => null);
-    throw new Error(
-      message ? `Failed to upload file: ${message}` : "Failed to upload file"
-    );
+  const { error: uploadError } = await supabase.storage
+    .from(bucket)
+    .upload(path, file, {
+      upsert,
+      contentType: file.type || "application/octet-stream",
+    });
+
+  if (uploadError) throw uploadError;
+
+  if (!makePublicUrl) {
+    return { path, publicUrl: "" };
   }
 
-  const body = (await response.json()) as { storageId?: Id<"_storage"> };
-  if (!body.storageId) {
-    throw new Error("Upload response missing storageId");
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  const publicUrl = data.publicUrl;
+
+  if (!publicUrl) {
+    throw new Error("Could not generate public URL for uploaded file.");
   }
 
-  return body.storageId;
+  return { path, publicUrl };
 }

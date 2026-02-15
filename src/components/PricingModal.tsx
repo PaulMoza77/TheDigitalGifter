@@ -9,7 +9,7 @@ import {
   X,
   BadgeCheck,
 } from "lucide-react";
-import { useLoggedInUserQuery, useCheckoutMutation } from "@/data";
+import { useLoggedInUserQuery } from "@/data";
 import { handleCheckout } from "@/lib/checkoutHandler";
 import {
   useCreditsFunnel,
@@ -46,39 +46,10 @@ interface PricingModalProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PACKS: Pack[] = [
-  {
-    key: "starter",
-    name: "Starter",
-    price: 4.98,
-    credits: 100,
-    bonusCredits: 10,
-    tag: "Perfect to try",
-  },
-  {
-    key: "creator",
-    name: "Creator",
-    price: 9.98,
-    credits: 250,
-    bonusCredits: 50,
-    badge: "Most popular",
-    tag: "Best value",
-  },
-  {
-    key: "pro",
-    name: "Pro",
-    price: 78.98,
-    credits: 4000,
-    bonusCredits: 600,
-    tag: "For power users",
-  },
-  {
-    key: "enterprise",
-    name: "Enterprise",
-    price: 499.98,
-    credits: 50000,
-    bonusCredits: 10000,
-    tag: "Teams & agencies",
-  },
+  { key: "starter", name: "Starter", price: 4.98, credits: 100, bonusCredits: 10, tag: "Perfect to try" },
+  { key: "creator", name: "Creator", price: 9.98, credits: 250, bonusCredits: 50, badge: "Most popular", tag: "Best value" },
+  { key: "pro", name: "Pro", price: 78.98, credits: 4000, bonusCredits: 600, tag: "For power users" },
+  { key: "enterprise", name: "Enterprise", price: 499.98, credits: 50000, bonusCredits: 10000, tag: "Teams & agencies" },
 ];
 
 const SOCIAL_PROOF_MESSAGES = [
@@ -88,7 +59,7 @@ const SOCIAL_PROOF_MESSAGES = [
   "⚡ Instant delivery — no apps, no editing",
 ];
 
-const RESERVATION_SECONDS = 10 * 60; // 10 minutes
+const RESERVATION_SECONDS = 10 * 60;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Utilities
@@ -112,9 +83,7 @@ function useCountdown(seconds: number, isActive: boolean) {
   useEffect(() => {
     if (!isActive) return;
     setLeft(seconds);
-    const t = setInterval(() => {
-      setLeft((s) => (s <= 1 ? 0 : s - 1));
-    }, 1000);
+    const t = setInterval(() => setLeft((s) => (s <= 1 ? 0 : s - 1)), 1000);
     return () => clearInterval(t);
   }, [seconds, isActive]);
 
@@ -186,13 +155,7 @@ function GlowCard({
   );
 }
 
-function ReminderToast({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+function ReminderToast({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <AnimatePresence>
       {open && (
@@ -213,8 +176,7 @@ function ReminderToast({
                   Don't miss it — Christmas is closer than you think.
                 </div>
                 <div className="mt-1 text-xs text-white/70">
-                  Your Santa message takes less than 1 minute. Come back anytime
-                  to unlock credits.
+                  Your Santa message takes less than 1 minute. Come back anytime to unlock credits.
                 </div>
               </div>
               <button
@@ -284,40 +246,34 @@ export function PricingModal({
   availableCredits: propAvailable,
 }: PricingModalProps) {
   const { data: me } = useLoggedInUserQuery();
-  const buyPack = useCheckoutMutation();
 
   const [selected, setSelected] = useState<PackKey>("creator");
   const [bundleCount, setBundleCount] = useState(1);
   const [showToast, setShowToast] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
 
-  // Funnel mode
   const mode = propMode ?? null;
   const requiredCredits = propRequired ?? null;
   const availableCredits = propAvailable ?? null;
 
-  // FOMO: Countdown timer
   const { label: holdLabel, left: holdLeft } = useCountdown(
     RESERVATION_SECONDS,
     isOpen
   );
 
-  // Social proof ticker
   const ticker = useSocialProofTicker(isOpen);
 
-  // Header content
   const { emoji, title, subtitle } = getHeaderContent(
     mode,
     requiredCredits,
     availableCredits
   );
 
-  // Selected pack
   const selPack = useMemo(
     () => PACKS.find((p) => p.key === selected) ?? PACKS[1],
     [selected]
   );
 
-  // Tiered bundle discount: 2 = 10%, 3 = 15%, 4 = 20%
   const getDiscount = (count: number) => {
     if (count >= 4) return 0.2;
     if (count >= 3) return 0.15;
@@ -330,31 +286,28 @@ export function PricingModal({
     if (count >= 2) return "10% OFF";
     return "offer";
   };
+
   const bundleDiscount = getDiscount(bundleCount);
   const priceNow = selPack.price * bundleCount * (1 - bundleDiscount);
   const totalCredits = getTotalCredits(selPack) * bundleCount;
 
-  // Checkout handler
-  const handleBuy = () => {
-    // For bundles, we still process as individual pack checkouts.
-    // A production system might have a dedicated bundle endpoint.
-    void handleCheckout({
-      pack: selected,
-      user: me ?? null,
-      checkoutMutation: buyPack,
-    });
-  };
+  async function doCheckout(pack: PackKey, quantity: number) {
+    if (isPaying) return;
+    setIsPaying(true);
+    try {
+      await handleCheckout({ pack, quantity, user: me ?? null });
+    } finally {
+      setIsPaying(false);
+    }
+  }
 
-  // Close modal and show reminder toast
   const closeModal = () => {
     onClose();
     setShowToast(true);
   };
 
   if (!isOpen) {
-    return (
-      <ReminderToast open={showToast} onClose={() => setShowToast(false)} />
-    );
+    return <ReminderToast open={showToast} onClose={() => setShowToast(false)} />;
   }
 
   return (
@@ -366,14 +319,12 @@ export function PricingModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={closeModal}
             aria-hidden="true"
           />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -384,7 +335,6 @@ export function PricingModal({
             aria-modal="true"
             aria-label="Purchase credits"
           >
-            {/* Gradient background */}
             <div
               className="absolute inset-0 opacity-70 pointer-events-none"
               style={{
@@ -394,13 +344,10 @@ export function PricingModal({
             />
 
             <div className="relative p-6 md:p-7">
-              {/* Header */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  {/* Reservation timer pill */}
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">
-                    <Clock className="h-4 w-4" /> Reserved for {holdLabel}{" "}
-                    minutes
+                    <Clock className="h-4 w-4" /> Reserved for {holdLabel} minutes
                   </div>
 
                   <h2 className="mt-3 text-xl font-semibold md:text-2xl text-white">
@@ -410,7 +357,6 @@ export function PricingModal({
                     {subtitle}
                   </p>
 
-                  {/* Trust pills */}
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Pill>
                       <BadgeCheck className="h-4 w-4" /> No subscriptions
@@ -424,7 +370,6 @@ export function PricingModal({
                   </div>
                 </div>
 
-                {/* Close button */}
                 <button
                   onClick={closeModal}
                   className="rounded-2xl border border-white/10 bg-white/5 p-2 text-white/70 hover:bg-white/10 hover:text-white transition"
@@ -434,23 +379,19 @@ export function PricingModal({
                 </button>
               </div>
 
-              {/* Price anchor */}
               <div className="mt-3 text-sm text-white/70">
-                Average families spend{" "}
-                <span className="text-white">€19–€29</span> per personalized
-                Christmas gift. Credits start from{" "}
+                Average families spend <span className="text-white">€19–€29</span>{" "}
+                per personalized Christmas gift. Credits start from{" "}
                 <span className="text-white">€4.98</span>.
               </div>
 
-              {/* Sign In Section for not_logged_in mode */}
               {mode === "not_logged_in" && (
                 <div className="mt-6 p-5 rounded-2xl border border-white/10 bg-white/5 relative overflow-hidden">
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-rose-500 to-emerald-400" />
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="text-center sm:text-left">
                       <p className="text-white font-semibold text-lg">
-                        Connect your account to get started with free bonus
-                        credits!
+                        Connect your account to get started with free bonus credits!
                       </p>
                       <p className="text-white/50 text-sm mt-1">
                         Or purchase credits after signing in ↓
@@ -461,13 +402,13 @@ export function PricingModal({
                 </div>
               )}
 
-              {/* Packs grid */}
               <div className="mt-6 grid gap-3 md:grid-cols-2">
                 {PACKS.map((p) => {
                   const isSel = p.key === selected;
+                  const qty = isSel ? bundleCount : 1;
+
                   return (
                     <div key={p.key} className="relative">
-                      {/* Badge */}
                       {p.badge && (
                         <div className="absolute -top-3 left-5 z-10">
                           <span className="inline-flex items-center rounded-full bg-gradient-to-r from-sky-400/20 to-emerald-300/20 px-3 py-1 text-[11px] font-semibold text-white border border-white/10">
@@ -476,10 +417,7 @@ export function PricingModal({
                         </div>
                       )}
 
-                      <GlowCard
-                        selected={isSel}
-                        onClick={() => setSelected(p.key)}
-                      >
+                      <GlowCard selected={isSel} onClick={() => setSelected(p.key)}>
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <div className="text-sm font-semibold text-white">
@@ -489,24 +427,18 @@ export function PricingModal({
                               {euro(p.price)}
                             </div>
                             <div className="mt-1 text-sm text-white/70">
-                              <span className="text-white">{p.credits}</span>{" "}
-                              credits
+                              <span className="text-white">{p.credits}</span> credits
                               {p.bonusCredits ? (
                                 <>
                                   {" "}
                                   <span className="text-white/60">+</span>{" "}
-                                  <span className="text-white">
-                                    {p.bonusCredits}
-                                  </span>{" "}
+                                  <span className="text-white">{p.bonusCredits}</span>{" "}
                                   <span className="text-white/70">bonus</span>
                                 </>
                               ) : null}
                             </div>
-                            <div className="mt-2 text-xs text-white/60">
-                              {p.tag}
-                            </div>
+                            <div className="mt-2 text-xs text-white/60">{p.tag}</div>
 
-                            {/* Bundle controls */}
                             <div className="mt-3 inline-flex items-center gap-2">
                               <div className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden">
                                 <button
@@ -521,7 +453,7 @@ export function PricingModal({
                                   −
                                 </button>
                                 <div className="px-2 text-[11px] font-medium text-white/80">
-                                  {isSel ? bundleCount : 1}
+                                  {qty}
                                 </div>
                                 <button
                                   type="button"
@@ -537,45 +469,34 @@ export function PricingModal({
                               </div>
 
                               <div className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white/80">
-                                🎁 Buy {isSel ? bundleCount : 1} & unlock{" "}
-                                {getDiscountLabel(isSel ? bundleCount : 1)}
+                                🎁 Buy {qty} & unlock {getDiscountLabel(qty)}
                               </div>
                             </div>
                           </div>
 
-                          {/* Icon */}
                           <div className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10">
                             <Sparkles className="h-5 w-5 text-white/80" />
                           </div>
                         </div>
 
-                        {/* Purchase button */}
                         <div className="mt-4">
                           <button
                             type="button"
+                            disabled={isPaying}
                             onClick={(e) => {
                               e.stopPropagation();
-                              // Use bundleCount if this pack is already selected, otherwise 1
-                              const qty = selected === p.key ? bundleCount : 1;
-                              console.log("[PricingModal] Purchase clicked", {
-                                pack: p.key,
-                                isSelected: selected === p.key,
-                                bundleCount,
-                                qty,
-                              });
                               setSelected(p.key);
-                              // Trigger checkout with correct quantity
-                              void handleCheckout({
-                                pack: p.key,
-                                quantity: qty,
-                                user: me ?? null,
-                                checkoutMutation: buyPack,
-                              });
+                              void doCheckout(p.key, qty);
                             }}
-                            className="h-10 w-full rounded-xl bg-gradient-to-r from-orange-500 via-rose-500 to-emerald-400 text-sm font-semibold text-white hover:opacity-90 transition"
+                            className={
+                              "h-10 w-full rounded-xl bg-gradient-to-r from-orange-500 via-rose-500 to-emerald-400 text-sm font-semibold text-white transition " +
+                              (isPaying ? "opacity-70 cursor-not-allowed" : "hover:opacity-90")
+                            }
                           >
-                            {isSel && bundleCount > 1
-                              ? `Purchase ${bundleCount}x`
+                            {isPaying
+                              ? "Processing…"
+                              : qty > 1
+                              ? `Purchase ${qty}x`
                               : "Purchase"}
                           </button>
                         </div>
@@ -585,21 +506,17 @@ export function PricingModal({
                 })}
               </div>
 
-              {/* Footer */}
               <div className="mt-6 grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-                {/* Social proof */}
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="text-xs text-white/70">Live social proof</div>
                   <div className="mt-1 text-sm font-semibold text-white">
                     {ticker}
                   </div>
                   <div className="mt-2 text-xs text-white/60">
-                    ⏳ Credits valid until Dec 24 • ✔ No subscriptions • ⚡
-                    Instant delivery
+                    ⏳ Credits valid until Dec 24 • ✔ No subscriptions • ⚡ Instant delivery
                   </div>
                 </div>
 
-                {/* Checkout summary */}
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 min-w-[280px]">
                   <div className="flex items-center justify-between">
                     <div className="text-xs text-white/70">Total</div>
@@ -608,36 +525,29 @@ export function PricingModal({
                     </div>
                   </div>
                   <div className="mt-1 text-xs text-white/60">
-                    You'll get{" "}
-                    <span className="text-white">{totalCredits}</span> credits
-                    (incl. bonus)
+                    You'll get <span className="text-white">{totalCredits}</span> credits (incl. bonus)
                     {bundleDiscount > 0 ? (
-                      <span className="text-white">
-                        {" "}
-                        • {getDiscountLabel(bundleCount)} applied
-                      </span>
+                      <span className="text-white"> • {getDiscountLabel(bundleCount)} applied</span>
                     ) : (
-                      <span className="text-white/70">
-                        {" "}
-                        • Add 1 more pack to unlock 10% OFF
-                      </span>
+                      <span className="text-white/70"> • Add 1 more pack to unlock 10% OFF</span>
                     )}
                   </div>
 
-                  {/* CTA */}
                   <button
-                    onClick={handleBuy}
-                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-rose-500 to-emerald-400 px-4 py-3 text-sm font-semibold text-white shadow-2xl shadow-orange-500/10 hover:opacity-95 transition"
+                    disabled={isPaying}
+                    onClick={() => void doCheckout(selected, bundleCount)}
+                    className={
+                      "mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-rose-500 to-emerald-400 px-4 py-3 text-sm font-semibold text-white shadow-2xl shadow-orange-500/10 transition " +
+                      (isPaying ? "opacity-70 cursor-not-allowed" : "hover:opacity-95")
+                    }
                   >
-                    🎅 Create my Santa message
-                    <span className="text-white/90">→</span>
+                    🎅 Create my Santa message <span className="text-white/90">→</span>
                   </button>
 
                   <div className="mt-2 text-center text-[11px] text-white/60">
                     Secure checkout • Instant delivery • One-time payment
                   </div>
 
-                  {/* Urgency warning near zero */}
                   {holdLeft <= 60 && (
                     <div className="mt-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-white/80">
                       ⚠️ Reservation ends soon. Don't lose your spot.
@@ -654,11 +564,6 @@ export function PricingModal({
     </>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Connected modal that uses CreditsFunnelContext for state management.
-// Use this in layouts where you want the funnel to be controlled by context.
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function CreditsFunnelModal() {
   const { isOpen, mode, requiredCredits, availableCredits, closeFunnel } =

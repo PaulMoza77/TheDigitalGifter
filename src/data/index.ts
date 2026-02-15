@@ -1,3 +1,4 @@
+// src/data/index.ts
 import { QueryClient } from "@tanstack/react-query";
 
 export const queryClient = new QueryClient({
@@ -8,7 +9,9 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       retry: 1,
     },
-    mutations: { retry: 1 },
+    mutations: {
+      retry: 1,
+    },
   },
 });
 
@@ -20,8 +23,8 @@ export async function invalidateAuthCaches() {
   await queryClient.invalidateQueries({ queryKey: ["templates"] });
 }
 
-// ✅ Queries rămân flat
+// ✅ Queries (flat)
 export * from "./queries";
 
-// ✅ Mutations devin “namespaced” ca să nu se bată numele
+// ✅ Mutations (namespaced) => import { mutations } from "@/data"
 export * as mutations from "./mutations";

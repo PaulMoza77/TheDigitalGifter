@@ -1,63 +1,36 @@
-import { toast } from "sonner";
-import { Doc } from "../../convex/_generated/dataModel";
+// src/lib/checkoutHandler.ts
+import { supabase } from "@/lib/supabase";
 
-type Pack = "starter" | "creator" | "pro" | "enterprise";
+export type LoggedInUserLite = {
+  id: string;
+  email: string | null;
+};
 
-/**
- * Global checkout handler for all pricing flows
- * Handles auth checks, Stripe redirect, and error handling
- */
-export async function handleCheckout({
-  pack,
-  quantity = 1,
-  user,
-  checkoutMutation,
-}: {
-  pack: Pack;
+export type CheckoutArgs = {
+  pack: string;
   quantity?: number;
-  user: Doc<"users"> | null;
-  checkoutMutation: {
-    mutateAsync: (input: {
-      pack: string;
-      quantity?: number;
-    }) => Promise<{ url?: string | null }>;
-  };
-}) {
-  // Auth check
-  if (!user) {
-    toast.error("Please sign in to purchase credits");
-    return false;
+  user: LoggedInUserLite | null;
+};
+
+export async function handleCheckout(args: CheckoutArgs): Promise<void> {
+  const { pack, quantity = 1, user } = args;
+
+  // (optional) you can require login:
+  // if (!user) throw new Error("Please sign in to purchase credits.");
+
+  // Call Supabase Edge Function to create Stripe Checkout
+  const { data, error } = await supabase.functions.invoke("create-checkout", {
+    body: { pack, quantity, userId: user?.id ?? null },
+  });
+
+  if (error) {
+    throw error;
   }
 
-  try {
-    console.log("[handleCheckout] Starting checkout", {
-      pack,
-      quantity,
-      userId: user._id,
-    });
-
-    const response = await checkoutMutation.mutateAsync({ pack, quantity });
-    const url = response?.url;
-
-    if (url) {
-      console.log("[handleCheckout] Redirecting to Stripe", { url });
-      window.location.assign(url);
-      return true;
-    } else {
-      console.error("[handleCheckout] No Stripe URL returned");
-      toast.error("Failed to create checkout session. Please try again.");
-      return false;
-    }
-  } catch (err: any) {
-    console.error("[handleCheckout] Stripe checkout failed", err);
-    const message = err?.message || "Checkout failed. Please try again.";
-
-    if (message.includes("Must be logged in")) {
-      toast.error("Please sign in to purchase credits");
-    } else {
-      toast.error("Failed to create checkout session. Please try again.");
-    }
-
-    return false;
+  const url = (data as any)?.url as string | null | undefined;
+  if (!url) {
+    throw new Error("Checkout URL missing from server response.");
   }
+
+  window.location.href = url;
 }

@@ -1,49 +1,62 @@
 import { useEffect } from "react";
-import { useLoggedInUserQuery, useEnsureUserProfileMutation } from "@/data";
-import { useConvexAuth } from "convex/react";
-import { queryClient, invalidateAuthCaches } from "@/data";
+import { supabase } from "@/lib/supabase";
+import { queryClient, invalidateAuthCaches, useLoggedInUserQuery } from "@/data";
 
 export function useBootstrapUser() {
-  const { data: user } = useLoggedInUserQuery();
-  const { mutateAsync: ensureUserProfile } = useEnsureUserProfileMutation();
-  const { isAuthenticated } = useConvexAuth();
+  const { data: user } = useLoggedInUserQuery(); // { id, email } | null
 
-  // When user data is available, ensure profile is synced and refetch if needed
+  // 1) Ensure profile row exists in DB (profiles)
   useEffect(() => {
-    if (!user?._id) {
-      return;
-    }
+    if (!user?.id) return;
 
-    console.log(
-      "[useBootstrapUser] User data available, ensuring profile is synced",
-      {
-        userId: user._id,
-        userName: user.name,
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // ✅ create/update profile row (adjust columns as you want)
+        const { error } = await supabase.from("profiles").upsert(
+          {
+            id: user.id,
+            email: user.email,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+
+        if (error) throw error;
+
+        if (!cancelled) {
+          // refresh any auth-dependent queries
+          await invalidateAuthCaches();
+        }
+      } catch (err) {
+        console.error("[useBootstrapUser] Failed to ensure profile:", err);
       }
-    );
+    })();
 
-    void ensureUserProfile({ userId: user._id as string })
-      .then(() => {
-        console.log("[useBootstrapUser] Profile ensured successfully");
-        // Refetch user data after ensuring profile is synced
-        void invalidateAuthCaches();
-      })
-      .catch((err) => {
-        console.error("[useBootstrapUser] Failed to bootstrap user:", err);
-      });
-  }, [ensureUserProfile, user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, user?.email]);
 
-  // When auth state changes to authenticated, clear cache and let queries refetch
+  // 2) When auth changes, clear + invalidate caches
   useEffect(() => {
-    if (isAuthenticated && !user) {
-      console.log(
-        "[useBootstrapUser] User authenticated but data not loaded, invalidating cache"
-      );
-      // Clear the entire query cache to force fresh queries
-      queryClient.clear();
-      void invalidateAuthCaches();
-    }
-  }, [isAuthenticated, user]);
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (
+        event === "SIGNED_IN" ||
+        event === "SIGNED_OUT" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "USER_UPDATED"
+      ) {
+        queryClient.clear();
+        void invalidateAuthCaches();
+      }
+    });
+
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   return user;
 }

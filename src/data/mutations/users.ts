@@ -1,34 +1,37 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
-export type UserProfileRow = {
-  id: string;
-  // coloane…
+export type EnsureUserProfileArgs = {
+  userId: string;
+  email?: string | null;
+  name?: string | null;
+  avatarUrl?: string | null;
 };
 
-export const userKeys = {
-  profile: (userId?: string | null) =>
-    ["userProfile", userId ?? "anonymous"] as const,
+export type EnsureUserProfileResult = {
+  ok: true;
 };
 
-export function useUserProfileQuery(userId?: string | null) {
-  return useQuery<UserProfileRow | null, Error>({
-    queryKey: userKeys.profile(userId),
-    queryFn: async () => {
-      if (!userId) return null;
+export function useEnsureUserProfileMutation() {
+  return useMutation<EnsureUserProfileResult, Error, EnsureUserProfileArgs>({
+    mutationKey: ["users", "ensureProfile"],
+    mutationFn: async ({ userId, email, name, avatarUrl }) => {
+      const { error } = await supabase.from("user_profiles").upsert(
+        {
+          id: userId,
+          email: email ?? null,
+          name: name ?? null,
+          avatar_url: avatarUrl ?? null,
+          updated_at: new Date().toISOString(),
+        } as any,
+        { onConflict: "id" }
+      );
 
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
+      if (error) {
+        throw new Error(error.message || "Failed to ensure user profile");
+      }
 
-      if (error) throw error;
-      return (data ?? null) as UserProfileRow | null;
+      return { ok: true };
     },
-    enabled: Boolean(userId),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
   });
 }
