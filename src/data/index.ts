@@ -9,9 +9,7 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       retry: 1,
     },
-    mutations: {
-      retry: 1,
-    },
+    mutations: { retry: 1 },
   },
 });
 
@@ -23,8 +21,31 @@ export async function invalidateAuthCaches() {
   await queryClient.invalidateQueries({ queryKey: ["templates"] });
 }
 
-// ✅ Queries (flat)
+/**
+ * ✅ QUERIES (hooks + keys) – exportate “flat”
+ */
 export * from "./queries";
 
-// ✅ Mutations (namespaced) => import { mutations } from "@/data"
-export * as mutations from "./mutations";
+/**
+ * ✅ MUTATIONS – exportate explicit (ca să nu se bată cu keys din queries)
+ * Aici se rezolvă fix erorile gen: “useCheckoutMutation is not exported by src/data/index.ts”
+ */
+export {
+  useCheckoutMutation,
+} from "./mutations/checkout";
+
+export {
+  useCreateJobMutation,
+  useCreateVideoJobMutation,
+} from "./mutations/jobs";
+
+export {
+  useGenerateUploadUrlMutation,
+} from "./mutations/storage";
+
+export {
+  useEnsureUserProfileMutation,
+} from "./mutations/users";
+
+// (opțional) dacă ai și alte mutations și vrei acces “namespaced”:
+// export * as mutations from "./mutations";

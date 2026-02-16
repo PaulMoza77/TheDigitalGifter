@@ -11,7 +11,12 @@ import {
   useJobsQuery,
 } from "@/data";
 
-import { mutations } from "@/data";
+import {
+  useGenerateUploadUrlMutation,
+  useCreateJobMutation,
+  useCreateVideoJobMutation,
+} from "@/data";
+
 import {
   Select,
   SelectContent,
@@ -135,8 +140,9 @@ export default function GeneratorPage() {
   const { data: jobsRaw = [] } = useJobsQuery();
   const jobs = (jobsRaw as any[]).map((j) => j) as JobRow[];
 
-  const { mutateAsync: triggerCreateJob } = mutations.useCreateJobMutation();
-const { mutateAsync: triggerCreateVideoJob } = mutations.useCreateVideoJobMutation();
+  const { mutateAsync: requestUploadUrl } = useGenerateUploadUrlMutation();
+const { mutateAsync: triggerCreateJob } = useCreateJobMutation();
+const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
 
   const categories = ["All", "Classic", "Cozy", "Snowy", "Romantic"];
 
