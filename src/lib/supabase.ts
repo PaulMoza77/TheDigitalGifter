@@ -10,17 +10,23 @@ function missingEnv(name: string) {
   );
 }
 
-// We export a single client instance.
-// If env vars are missing, we throw early so the app fails loudly (better than silent blank screen).
+// Single client instance.
+// Fail loudly if env vars are missing.
 export const supabase: SupabaseClient = (() => {
   if (!supabaseUrl) throw missingEnv("VITE_SUPABASE_URL");
   if (!supabaseAnonKey) throw missingEnv("VITE_SUPABASE_ANON_KEY");
 
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
+      // ✅ Important for OAuth in SPA (recommended)
+      flowType: "pkce",
+
+      // ✅ Persist + refresh
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true, // useful if you do OAuth redirects later
+
+      // ✅ If you use OAuth redirects (code in URL)
+      detectSessionInUrl: true,
     },
   });
 })();

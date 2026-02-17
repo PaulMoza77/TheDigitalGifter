@@ -1,9 +1,11 @@
+// src/components/UserMenu.tsx
 import { toast } from "sonner";
 import { User, LogOut, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { useLoggedInUserQuery } from "@/data";
+import { useAuth } from "@/contexts/AuthContext";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,10 +16,10 @@ import {
 
 export default function UserMenu() {
   const navigate = useNavigate();
-  const { data: user } = useLoggedInUserQuery();
+  const { user, loading } = useAuth();
   const { isAdmin } = useAdminAuth(false);
 
-  // ✅ supabase auth: if no user => not logged in
+  if (loading) return null;
   if (!user) return null;
 
   async function handleSignOut(): Promise<void> {
@@ -30,9 +32,8 @@ export default function UserMenu() {
     }
   }
 
-  // You said you moved to Supabase; your useLoggedInUserQuery returns { id, email }
-  // If you have avatar in profile table, fetch it in useUserProfileQuery instead.
-  const userImage = null;
+  // If you later store avatar_url in a profile table, plug it here
+  const userImage = (user.user_metadata as any)?.avatar_url ?? null;
 
   return (
     <DropdownMenu>
@@ -43,6 +44,7 @@ export default function UserMenu() {
               src={userImage}
               alt="User avatar"
               className="w-9 h-9 rounded-full object-cover"
+              referrerPolicy="no-referrer"
             />
           ) : (
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">

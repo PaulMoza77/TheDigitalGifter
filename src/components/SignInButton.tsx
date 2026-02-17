@@ -1,4 +1,3 @@
-// src/components/SignInButton.tsx
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -11,7 +10,10 @@ interface SignInButtonProps {
 export function SignInButton({ variant = "default" }: SignInButtonProps) {
   const previousAuthRef = useRef<boolean | null>(null);
 
-  // ✅ listen for auth state changes (login/logout) and refresh caches
+  /**
+   * ✅ Listen for auth state changes
+   * When auth changes → clear + refetch caches
+   */
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       // When auth changes, clear + refetch cached queries
@@ -31,15 +33,24 @@ export function SignInButton({ variant = "default" }: SignInButtonProps) {
     };
   }, []);
 
-  // ✅ initial check (optional, but keeps same “previousAuthState” spirit)
+  /**
+   * ✅ Initial auth snapshot check
+   * Keeps previousAuthRef behavior
+   */
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
       if (cancelled) return;
 
+      if (error) {
+        console.error("[SignInButton] getSession error:", error);
+        return;
+      }
+
       const isAuthed = Boolean(data.session?.user);
+
       if (previousAuthRef.current === null) {
         previousAuthRef.current = isAuthed;
       } else if (isAuthed !== previousAuthRef.current) {
@@ -54,13 +65,20 @@ export function SignInButton({ variant = "default" }: SignInButtonProps) {
     };
   }, []);
 
+  /**
+   * ✅ Google OAuth handler
+   */
   async function handleGoogle() {
     try {
-      // ✅ if you use PKCE + redirect, this will navigate away
-      const redirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/auth/callback`
-          : undefined;
+      const base =
+        typeof window !== "undefined" &&
+        window.location.hostname === "thedigitalgifter.com"
+          ? "https://www.thedigitalgifter.com"
+          : typeof window !== "undefined"
+          ? window.location.origin
+          : "";
+
+      const redirectTo = base ? `${base}/auth/callback` : undefined;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

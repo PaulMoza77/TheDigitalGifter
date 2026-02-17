@@ -15,6 +15,8 @@ import { TermsPage } from "@/pages/website/TermsPage";
 import { RefundPolicyPage } from "@/pages/website/RefundPolicyPage";
 import { UnsubscribePage } from "@/pages/website/UnsubscribePage";
 
+import AuthCallback from "@/pages/AuthCallback";
+
 import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
 import { AdminRoute } from "@/components/AdminRoute";
 
@@ -28,7 +30,8 @@ import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
 import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
 import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
 
-import { AuthProvider } from "@/lib/auth/AuthProvider";
+// IMPORTANT: use the single-source provider alias (so you don't end up with 2 contexts)
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
@@ -61,11 +64,6 @@ function ScrollToTop() {
   return null;
 }
 
-/**
- * IMPORTANT:
- * - Hook-ul useAuthStateMonitor() trebuie să fie în interiorul AuthProvider,
- *   altfel dacă folosește useAuth() o să crape cu "must be used inside AuthProvider".
- */
 function AppInner() {
   useAuthStateMonitor();
 
@@ -93,6 +91,9 @@ function AppInner() {
             {/* WEBSITE */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Index />} />
+
+              {/* ✅ Supabase OAuth callback */}
+              <Route path="/auth/callback" element={<AuthCallback />} />
 
               {/* Occasion pages */}
               <Route path="/christmas" element={<ChristmasPage />} />
