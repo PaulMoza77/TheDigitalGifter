@@ -1,3 +1,4 @@
+// src/layouts/AdminLayout.tsx
 import React, { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -37,12 +38,15 @@ const SidebarNavigation: React.FC<{
   return (
     <>
       <Logo />
+
       {/* Main Section */}
       <div>
         <SidebarGroupLabel className="text-xs font-semibold tracking-[0.2em] text-slate-400 mb-2">
           MAIN
         </SidebarGroupLabel>
+
         <button
+          type="button"
           onClick={() => handleNavigation("/admin")}
           className={`inline-flex items-center justify-between w-full rounded-2xl px-4 py-3 ${
             isActive("/admin")
@@ -65,6 +69,7 @@ const SidebarNavigation: React.FC<{
           {navigationItems.map((item) => (
             <SidebarMenuItem key={item.path}>
               <SidebarMenuButton
+                type="button"
                 onClick={() => handleNavigation(item.path)}
                 className={`rounded-xl px-2 py-1.5 text-left hover:bg-slate-800/70 ${
                   isActive(item.path) ? "bg-slate-800" : ""
@@ -85,6 +90,7 @@ const SidebarNavigation: React.FC<{
           {/* Offers - Special styling */}
           <SidebarMenuItem>
             <SidebarMenuButton
+              type="button"
               onClick={() => handleNavigation("/admin/offers")}
               className={`mt-4 rounded-xl px-2 py-1.5 text-left text-indigo-300 hover:bg-slate-800/70 ${
                 isActive("/admin/offers") ? "bg-slate-800" : ""
@@ -99,9 +105,9 @@ const SidebarNavigation: React.FC<{
   );
 };
 
-const AdminLayout: React.FC = () => {
+export const AdminLayout: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const nav = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
@@ -114,12 +120,14 @@ const AdminLayout: React.FC = () => {
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <button
+                type="button"
                 className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
                 aria-label="Open menu"
               >
                 <Menu className="w-5 h-5 text-slate-200" />
               </button>
             </SheetTrigger>
+
             <SheetContent
               side="left"
               className="w-64 bg-slate-950 border-slate-800 p-0"
@@ -127,12 +135,13 @@ const AdminLayout: React.FC = () => {
               <SidebarContent className="px-5 py-6 flex flex-col gap-8">
                 <SidebarNavigation
                   isActive={isActive}
-                  navigate={navigate}
+                  navigate={(path) => nav(path)}
                   onNavigate={() => setMobileMenuOpen(false)}
                 />
               </SidebarContent>
             </SheetContent>
           </Sheet>
+
           <Logo />
         </header>
 
@@ -141,7 +150,10 @@ const AdminLayout: React.FC = () => {
           {/* Desktop Sidebar */}
           <Sidebar className="hidden md:flex w-64 border-r border-slate-800 bg-slate-950">
             <SidebarContent className="px-5 py-6 flex flex-col gap-8">
-              <SidebarNavigation isActive={isActive} navigate={navigate} />
+              <SidebarNavigation
+                isActive={isActive}
+                navigate={(path) => nav(path)}
+              />
             </SidebarContent>
           </Sidebar>
 

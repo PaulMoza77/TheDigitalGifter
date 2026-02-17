@@ -1,7 +1,7 @@
 // src/components/AdminRoute.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 // ✅ Simple allowlist (edit to your admin emails)
 const ADMIN_EMAILS = new Set<string>([
@@ -21,18 +21,26 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    (async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (!mounted) return;
+    async function init() {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (!mounted) return;
 
-      if (error) {
-        console.error("[AdminRoute] supabase.auth.getUser error:", error);
+        if (error) {
+          console.error("[AdminRoute] supabase.auth.getUser error:", error);
+          setState({ loading: false, email: null });
+          return;
+        }
+
+        setState({ loading: false, email: data.user?.email ?? null });
+      } catch (e) {
+        console.error("[AdminRoute] init error:", e);
+        if (!mounted) return;
         setState({ loading: false, email: null });
-        return;
       }
+    }
 
-      setState({ loading: false, email: data.user?.email ?? null });
-    })();
+    void init();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
@@ -61,14 +69,14 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // not logged in → redirect to home (or to /login if you have one)
+  // not logged in → redirect to home
   if (!state.email) {
     return <Navigate to="/" replace state={{ from: location.pathname }} />;
   }
 
   // logged in but not admin → redirect home
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" replace state={{ from: location.pathname }} />;
   }
 
   return <>{children}</>;

@@ -30,7 +30,7 @@ import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
 import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
 import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
 
-// IMPORTANT: use the single-source provider alias (so you don't end up with 2 contexts)
+// ✅ Single-source provider (avoid duplicate contexts)
 import { AuthProvider } from "@/contexts/AuthContext";
 
 const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
@@ -47,7 +47,9 @@ const NewBornPage = lazy(() => import("@/pages/website/NewBornPage"));
 const PregnancyPage = lazy(() => import("@/pages/website/PregnancyPage"));
 const WeddingPage = lazy(() => import("@/pages/website/WeddingPage"));
 const EasterPage = lazy(() => import("@/pages/website/EasterPage"));
-const ValentinesDayPage = lazy(() => import("@/pages/website/ValentinesDayPage"));
+const ValentinesDayPage = lazy(
+  () => import("@/pages/website/ValentinesDayPage")
+);
 const AnniversaryPage = lazy(() => import("@/pages/website/AnniversaryPage"));
 const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
 const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
@@ -92,7 +94,7 @@ function AppInner() {
             <Route element={<MainLayout />}>
               <Route path="/" element={<Index />} />
 
-              {/* ✅ Supabase OAuth callback */}
+              {/* ✅ Supabase OAuth callback must be PUBLIC */}
               <Route path="/auth/callback" element={<AuthCallback />} />
 
               {/* Occasion pages */}
@@ -111,13 +113,13 @@ function AppInner() {
               <Route path="/fathers-day" element={<FathersDayPage />} />
               <Route path="/graduation" element={<GraduationPage />} />
 
-              {/* public templates page */}
+              {/* Public templates page */}
               <Route path="/templates" element={<TemplatesPage />} />
 
-              {/* optional legacy generator page */}
+              {/* Optional legacy generator page */}
               <Route path="/generator" element={<GeneratorPage />} />
 
-              {/* legal */}
+              {/* Legal */}
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/refunds" element={<RefundPolicyPage />} />
@@ -125,18 +127,42 @@ function AppInner() {
 
               {/* FUNNEL */}
               <Route path="/funnel/homepage" element={<FunnelHomePage />} />
-              <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
-              <Route path="/funnel/styleSelect" element={<FunnelStyleSelect />} />
+              <Route
+                path="/funnel/uploadPhoto"
+                element={<FunnelUploadPhoto />}
+              />
+              <Route
+                path="/funnel/styleSelect"
+                element={<FunnelStyleSelect />}
+              />
               <Route path="/funnel/preview" element={<FunnelPreview />} />
               <Route path="/funnel/payment" element={<FunnelPayment />} />
 
               {/* Redirects (old/alias routes → new pretty routes) */}
-              <Route path="/new_years_eve" element={<Navigate to="/new-years-eve" replace />} />
-              <Route path="/valentines_day" element={<Navigate to="/valentines-day" replace />} />
-              <Route path="/mothers_day" element={<Navigate to="/mothers-day" replace />} />
-              <Route path="/fathers_day" element={<Navigate to="/fathers-day" replace />} />
-              <Route path="/baby_reveal" element={<Navigate to="/baby-reveal" replace />} />
-              <Route path="/new_born" element={<Navigate to="/new-born" replace />} />
+              <Route
+                path="/new_years_eve"
+                element={<Navigate to="/new-years-eve" replace />}
+              />
+              <Route
+                path="/valentines_day"
+                element={<Navigate to="/valentines-day" replace />}
+              />
+              <Route
+                path="/mothers_day"
+                element={<Navigate to="/mothers-day" replace />}
+              />
+              <Route
+                path="/fathers_day"
+                element={<Navigate to="/fathers-day" replace />}
+              />
+              <Route
+                path="/baby_reveal"
+                element={<Navigate to="/baby-reveal" replace />}
+              />
+              <Route
+                path="/new_born"
+                element={<Navigate to="/new-born" replace />}
+              />
             </Route>
 
             {/* ADMIN */}
