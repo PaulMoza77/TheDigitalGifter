@@ -28,24 +28,13 @@ export * from "./queries";
 
 /**
  * ✅ MUTATIONS – exportate explicit (ca să nu se bată cu keys din queries)
- * Aici se rezolvă fix erorile gen: “useCheckoutMutation is not exported by src/data/index.ts”
  */
-export {
-  useCheckoutMutation,
-} from "./mutations/checkout";
+export { useCheckoutMutation } from "./mutations/checkout";
+export { useCreateJobMutation, useCreateVideoJobMutation } from "./mutations/jobs";
+export { useGenerateUploadUrlMutation } from "./mutations/storage";
+export { useEnsureUserProfileMutation } from "./mutations/users";
 
-export {
-  useCreateJobMutation,
-  useCreateVideoJobMutation,
-} from "./mutations/jobs";
-
-export {
-  useGenerateUploadUrlMutation,
-} from "./mutations/storage";
-
-export {
-  useEnsureUserProfileMutation,
-} from "./mutations/users";
-
-// (opțional) dacă ai și alte mutations și vrei acces “namespaced”:
-// export * as mutations from "./mutations";
+/**
+ * ✅ OPTIONAL: namespace export (pentru `import { mutations } from "@/data"`)
+ */
+export * as mutations from "./mutations";
