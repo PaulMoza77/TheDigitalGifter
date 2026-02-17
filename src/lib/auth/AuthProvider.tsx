@@ -1,8 +1,16 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+// src/contexts/AuthProvider.tsx
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
-type AuthContextValue = {
+export type AuthContextValue = {
   session: Session | null;
   user: User | null;
   loading: boolean;
@@ -16,29 +24,34 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    let alive = true;
+    mountedRef.current = true;
 
+    // 1) initial session
     (async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (!alive) return;
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!mountedRef.current) return;
 
-      if (error) {
-        console.error("[auth] getSession error:", error);
+        if (error) console.error("[auth] getSession error:", error);
+        setSession(data.session ?? null);
+      } finally {
+        if (mountedRef.current) setLoading(false);
       }
-      setSession(data.session ?? null);
-      setLoading(false);
     })();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    // 2) listen for changes
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!mountedRef.current) return;
       setSession(newSession ?? null);
       setLoading(false);
     });
 
     return () => {
-      alive = false;
-      sub.subscription.unsubscribe();
+      mountedRef.current = false;
+      listener?.subscription?.unsubscribe();
     };
   }, []);
 
@@ -54,7 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
 
       signInWithGoogle: async (opts) => {
-        const redirectTo = opts?.redirectTo ?? window.location.origin;
+        // default: keep user on same page after auth callback (origin + current path)
+        const redirectTo =
+          opts?.redirectTo ??
+          `${window.location.origin}${window.location.pathname}`;
+
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: { redirectTo },
@@ -67,8 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
+  if (!ctx) {
+    throw new Error("useAuth must be used inside <AuthProvider>");
+  }
   return ctx;
 }

@@ -1,3 +1,5 @@
+// src/App.tsx
+import { Suspense, useEffect, lazy } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,7 +8,6 @@ import {
   useLocation,
 } from "react-router-dom";
 import { Toaster } from "sonner";
-import { Suspense, useEffect, lazy } from "react";
 
 import Index from "@/pages/website/HomePage";
 import { PrivacyPolicyPage } from "@/pages/website/PrivacyPolicyPage";
@@ -27,11 +28,13 @@ import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
 import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
 import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
 
+import { AuthProvider } from "@/lib/auth/AuthProvider";
+
 const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
 const TemplatesPage = lazy(() => import("@/pages/website/TemplatesPage"));
 
-// ✅ Occasion landing pages (all created above)
+// Occasion landing pages
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
@@ -41,15 +44,13 @@ const NewBornPage = lazy(() => import("@/pages/website/NewBornPage"));
 const PregnancyPage = lazy(() => import("@/pages/website/PregnancyPage"));
 const WeddingPage = lazy(() => import("@/pages/website/WeddingPage"));
 const EasterPage = lazy(() => import("@/pages/website/EasterPage"));
-const ValentinesDayPage = lazy(
-  () => import("@/pages/website/ValentinesDayPage")
-);
+const ValentinesDayPage = lazy(() => import("@/pages/website/ValentinesDayPage"));
 const AnniversaryPage = lazy(() => import("@/pages/website/AnniversaryPage"));
 const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
 const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
 const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
 
-// ✅ Admin
+// Admin
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 
 function ScrollToTop() {
@@ -60,7 +61,12 @@ function ScrollToTop() {
   return null;
 }
 
-export default function App() {
+/**
+ * IMPORTANT:
+ * - Hook-ul useAuthStateMonitor() trebuie să fie în interiorul AuthProvider,
+ *   altfel dacă folosește useAuth() o să crape cu "must be used inside AuthProvider".
+ */
+function AppInner() {
   useAuthStateMonitor();
 
   useEffect(() => {
@@ -118,39 +124,18 @@ export default function App() {
 
               {/* FUNNEL */}
               <Route path="/funnel/homepage" element={<FunnelHomePage />} />
-              <Route
-                path="/funnel/uploadPhoto"
-                element={<FunnelUploadPhoto />}
-              />
+              <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
               <Route path="/funnel/styleSelect" element={<FunnelStyleSelect />} />
               <Route path="/funnel/preview" element={<FunnelPreview />} />
               <Route path="/funnel/payment" element={<FunnelPayment />} />
 
-              {/* ✅ Redirects (old/alias routes → new pretty routes) */}
-              <Route
-                path="/new_years_eve"
-                element={<Navigate to="/new-years-eve" replace />}
-              />
-              <Route
-                path="/valentines_day"
-                element={<Navigate to="/valentines-day" replace />}
-              />
-              <Route
-                path="/mothers_day"
-                element={<Navigate to="/mothers-day" replace />}
-              />
-              <Route
-                path="/fathers_day"
-                element={<Navigate to="/fathers-day" replace />}
-              />
-              <Route
-                path="/baby_reveal"
-                element={<Navigate to="/baby-reveal" replace />}
-              />
-              <Route
-                path="/new_born"
-                element={<Navigate to="/new-born" replace />}
-              />
+              {/* Redirects (old/alias routes → new pretty routes) */}
+              <Route path="/new_years_eve" element={<Navigate to="/new-years-eve" replace />} />
+              <Route path="/valentines_day" element={<Navigate to="/valentines-day" replace />} />
+              <Route path="/mothers_day" element={<Navigate to="/mothers-day" replace />} />
+              <Route path="/fathers_day" element={<Navigate to="/fathers-day" replace />} />
+              <Route path="/baby_reveal" element={<Navigate to="/baby-reveal" replace />} />
+              <Route path="/new_born" element={<Navigate to="/new-born" replace />} />
             </Route>
 
             {/* ADMIN */}
@@ -189,5 +174,13 @@ export default function App() {
         <Toaster position="top-right" />
       </div>
     </Router>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   );
 }

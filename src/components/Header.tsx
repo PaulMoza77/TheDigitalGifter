@@ -16,10 +16,12 @@ export default function Header({ onBuyCredits }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-[rgba(255,255,255,0.04)] border-b border-[rgba(255,255,255,0.15)]">
       <div className="max-w-7xl mx-auto flex items-center justify-between p-4">
+        {/* Logo */}
         <Link to="/" aria-label="Go to homepage" className="shrink-0">
           <Logo />
         </Link>
 
+        {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-3">
           {loading ? (
             <div className="h-9 w-24 rounded-full bg-white/10 border border-white/10 animate-pulse" />

@@ -3,41 +3,51 @@ import { supabase } from "@/lib/supabase";
 import { invalidateAuthCaches, queryClient } from "@/data";
 
 export function useAuthStateMonitor() {
-  const previousEmailRef = useRef<string | null>(null);
+  const prevKeyRef = useRef<string>("__INIT__");
 
   useEffect(() => {
-    let mounted = true;
-
-    // init snapshot
+    // 1) init snapshot
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      previousEmailRef.current = data.session?.user?.email ?? null;
+      const { data, error } = await supabase.auth.getSession();
+      if (error) console.error("[useAuthStateMonitor] getSession error:", error);
+
+      const user = data.session?.user ?? null;
+      const key = user ? `${user.id}:${user.email ?? ""}` : "__LOGGED_OUT__";
+      prevKeyRef.current = key;
     })();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const email = session?.user?.email ?? null;
+    // 2) subscribe
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user ?? null;
+      const key = user ? `${user.id}:${user.email ?? ""}` : "__LOGGED_OUT__";
 
-      if (previousEmailRef.current !== email) {
+      if (prevKeyRef.current !== key) {
         console.log(
-          `[useAuthStateMonitor] Auth changed: ${email ? "logged-in" : "logged-out"}`
+          `[useAuthStateMonitor] Auth changed: ${user ? "logged-in" : "logged-out"}`
         );
+
+        // Clear cached queries + refetch auth-related caches
         queryClient.clear();
-        invalidateAuthCaches();
-        previousEmailRef.current = email;
+        await invalidateAuthCaches();
+
+        prevKeyRef.current = key;
       }
     });
 
     return () => {
-      mounted = false;
       sub?.subscription?.unsubscribe();
     };
   }, []);
 
   useEffect(() => {
-    const onFocus = () => invalidateAuthCaches();
+    const onFocus = () => {
+      void invalidateAuthCaches();
+    };
+
     const onVis = () => {
-      if (document.visibilityState === "visible") invalidateAuthCaches();
+      if (document.visibilityState === "visible") {
+        void invalidateAuthCaches();
+      }
     };
 
     window.addEventListener("focus", onFocus);
