@@ -1,0 +1,90 @@
+[
+  {
+    _creationTime: 1766860116892.7488,
+    _id: "kh73vqpgfqqv24ga6aescycpjx7y2jf6",
+    amount: 4.98,
+    createdAt: 1766860116892,
+    pack: "starter",
+    status: "completed",
+    stripeSessionId:
+      "cs_live_a1NNPCD9NUnCwO8hNbTNg5Me072gV67ml17EdrWS49UrnQ9pKnHqdMSrzI",
+    userId: "k175tgkm37pdpgf8b4n1cs98ps7y23g0",
+  },
+  {
+    _creationTime: 1766676165550.8396,
+    _id: "kh7dvkn4jpyewvbe01ettkxmy17xyzqw",
+    amount: 4.98,
+    createdAt: 1766676165550,
+    pack: "starter",
+    status: "completed",
+    stripeSessionId:
+      "cs_live_a1w5tlcqM6kCqeEmiInV5qAt7bsHdkjUNygSsEZQoJo4twP1UODki9L5zw",
+    userId: "k17fsfjz0jqewr5vxrhab0h8p97xzyem",
+  },
+  {
+    _creationTime: 1766472876534.3472,
+    _id: "kh7dx9rjrdnnsys68ahrqxvem17xvkbv",
+    amount: 4.98,
+    createdAt: 1766472876534,
+    pack: "starter",
+    status: "completed",
+    stripeSessionId:
+      "cs_live_a1068A4wdkCD5TwW75adgGYoYLZf1SXaSybqWUpjPymffwAcPM2TSJ1PPC",
+    userId: "k17fzv6eqm8xhxscvbfxwtt19s7xt9b2",
+  },
+  {
+    _creationTime: 1766174604855.4004,
+    _id: "kh72fw3rt0hhr6bmqakjc63kqs7xj3f6",
+    amount: 4.98,
+    createdAt: 1766174604855,
+    pack: "starter",
+    status: "completed",
+    stripeSessionId:
+      "cs_live_a1AHe83YqWQIb5mn3FUtahuqoJJGdEluKF0JHe5JRyqjNCcA4wsGKcbItI",
+    userId: "k17d2p636zrw3xb9k0rycez1597xjdm0",
+  },
+  {
+    _creationTime: 1766155122353.1812,
+    _id: "kh74cjc21713yt9cmt3fwkdmz97xkstn",
+    amount: 9.98,
+    createdAt: 1766155122353,
+    pack: "creator",
+    status: "completed",
+    stripeSessionId:
+      "cs_live_a1xtqQIngd8Q2jZ1vJKxx7uo4vaXURsAsurJda1MAqZR31HsIiyexPyuc9",
+    userId: "k17d2p636zrw3xb9k0rycez1597xjdm0",
+  },
+  {
+    _creationTime: 1764928740896.3137,
+    _id: "kh77vtc1qwm3w96rprgvhv4tw97wp0z2",
+    amount: 4.98,
+    createdAt: 1764928740896,
+    pack: "starter",
+    status: "completed",
+    stripeSessionId:
+      "cs_live_a1gdT7NDdqVGUXMfFtg2OrTCASZ1zZOz55sjCQR3cFhdUKStfzFLisxP52",
+    userId: "k17egaswxgajd63vy2trcc9xr57wqrsm",
+  },
+  {
+    _creationTime: 1764661030305.1787,
+    _id: "kh75a3nq6rp9yh41c3095kpten7whc7x",
+    amount: 4.98,
+    createdAt: 1764661030309,
+    pack: "starter",
+    status: "completed",
+    stripeSessionId:
+      "cs_live_a1MVZiJxBWMM4LAfHDtB3pt3Cjaa30zHWi1y1dR41N6DHibWQIyXeRqBNv",
+    userId: "k1741kyrysv578690xdpegyvn97vs4f9",
+  },
+  {
+    _creationTime: 1764660770710.951,
+    _id: "kh7dahj0zzbrbsnm0mxhytvcyn7wgz59",
+    amount: 4.98,
+    createdAt: 1764660770714,
+    pack: "starter",
+    status: "completed",
+    stripeSessionId:
+      "cs_test_a1gDVSHPR6z2IxsIE5wJMVabVYZYoGRKsILpeAsTCQ67CGl1vLEKlgpXyw",
+    userId: "k176mtqaf7k7az8m5kvdrtkawd7v7g00",
+  },
+]
