@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 
+// Website core pages
 import Index from "@/pages/website/HomePage";
 import { PrivacyPolicyPage } from "@/pages/website/PrivacyPolicyPage";
 import { TermsPage } from "@/pages/website/TermsPage";
@@ -20,24 +21,32 @@ import AuthCallback from "@/pages/AuthCallback";
 import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
 import { AdminRoute } from "@/components/AdminRoute";
 
+// Layouts
 import AdminLayout from "@/layouts/AdminLayout";
+
+// Admin core
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import Templates from "@/pages/admin/Templates";
 
+// ✅ NEW — Orders page
+const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
+
+// Funnel
 import FunnelHomePage from "@/components/funnelVersion/FunnelHomePage";
 import FunnelUploadPhoto from "@/components/funnelVersion/FunnelUploadPhoto";
 import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
 import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
 import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
 
-// ✅ Single-source provider (avoid duplicate contexts)
+// Provider
 import { AuthProvider } from "@/contexts/AuthContext";
 
+// Lazy website pages
 const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
 const TemplatesPage = lazy(() => import("@/pages/website/TemplatesPage"));
 
-// Occasion landing pages
+// Occasion pages
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
@@ -47,15 +56,13 @@ const NewBornPage = lazy(() => import("@/pages/website/NewBornPage"));
 const PregnancyPage = lazy(() => import("@/pages/website/PregnancyPage"));
 const WeddingPage = lazy(() => import("@/pages/website/WeddingPage"));
 const EasterPage = lazy(() => import("@/pages/website/EasterPage"));
-const ValentinesDayPage = lazy(
-  () => import("@/pages/website/ValentinesDayPage")
-);
+const ValentinesDayPage = lazy(() => import("@/pages/website/ValentinesDayPage"));
 const AnniversaryPage = lazy(() => import("@/pages/website/AnniversaryPage"));
 const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
 const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
 const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
 
-// Admin
+// Admin extra
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 
 function ScrollToTop() {
@@ -85,16 +92,17 @@ function AppInner() {
         <Suspense
           fallback={
             <div className="flex flex-1 items-center justify-center text-white/80">
-              Loading magic...
+              Loading...
             </div>
           }
         >
           <Routes>
-            {/* WEBSITE */}
+
+            {/* ================= WEBSITE ================= */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Index />} />
 
-              {/* ✅ Supabase OAuth callback must be PUBLIC */}
+              {/* OAuth callback */}
               <Route path="/auth/callback" element={<AuthCallback />} />
 
               {/* Occasion pages */}
@@ -113,10 +121,10 @@ function AppInner() {
               <Route path="/fathers-day" element={<FathersDayPage />} />
               <Route path="/graduation" element={<GraduationPage />} />
 
-              {/* Public templates page */}
+              {/* Public templates */}
               <Route path="/templates" element={<TemplatesPage />} />
 
-              {/* Optional legacy generator page */}
+              {/* Generator */}
               <Route path="/generator" element={<GeneratorPage />} />
 
               {/* Legal */}
@@ -125,48 +133,25 @@ function AppInner() {
               <Route path="/refunds" element={<RefundPolicyPage />} />
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
-              {/* FUNNEL */}
+              {/* Funnel */}
               <Route path="/funnel/homepage" element={<FunnelHomePage />} />
-              <Route
-                path="/funnel/uploadPhoto"
-                element={<FunnelUploadPhoto />}
-              />
-              <Route
-                path="/funnel/styleSelect"
-                element={<FunnelStyleSelect />}
-              />
+              <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
+              <Route path="/funnel/styleSelect" element={<FunnelStyleSelect />} />
               <Route path="/funnel/preview" element={<FunnelPreview />} />
               <Route path="/funnel/payment" element={<FunnelPayment />} />
 
-              {/* Redirects (old/alias routes → new pretty routes) */}
-              <Route
-                path="/new_years_eve"
-                element={<Navigate to="/new-years-eve" replace />}
-              />
-              <Route
-                path="/valentines_day"
-                element={<Navigate to="/valentines-day" replace />}
-              />
-              <Route
-                path="/mothers_day"
-                element={<Navigate to="/mothers-day" replace />}
-              />
-              <Route
-                path="/fathers_day"
-                element={<Navigate to="/fathers-day" replace />}
-              />
-              <Route
-                path="/baby_reveal"
-                element={<Navigate to="/baby-reveal" replace />}
-              />
-              <Route
-                path="/new_born"
-                element={<Navigate to="/new-born" replace />}
-              />
+              {/* Redirects */}
+              <Route path="/new_years_eve" element={<Navigate to="/new-years-eve" replace />} />
+              <Route path="/valentines_day" element={<Navigate to="/valentines-day" replace />} />
+              <Route path="/mothers_day" element={<Navigate to="/mothers-day" replace />} />
+              <Route path="/fathers_day" element={<Navigate to="/fathers-day" replace />} />
+              <Route path="/baby_reveal" element={<Navigate to="/baby-reveal" replace />} />
+              <Route path="/new_born" element={<Navigate to="/new-born" replace />} />
             </Route>
 
-            {/* ADMIN */}
+            {/* ================= ADMIN ================= */}
             <Route element={<AdminLayout />}>
+
               <Route
                 path="/admin"
                 element={
@@ -175,6 +160,7 @@ function AppInner() {
                   </AdminRoute>
                 }
               />
+
               <Route
                 path="/admin/templates"
                 element={
@@ -183,6 +169,7 @@ function AppInner() {
                   </AdminRoute>
                 }
               />
+
               <Route
                 path="/admin/customers"
                 element={
@@ -191,10 +178,22 @@ function AppInner() {
                   </AdminRoute>
                 }
               />
+
+              {/* ✅ NEW ORDERS ROUTE */}
+              <Route
+                path="/admin/orders"
+                element={
+                  <AdminRoute>
+                    <OrdersPage />
+                  </AdminRoute>
+                }
+              />
+
             </Route>
 
-            {/* FALLBACK */}
+            {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
+
           </Routes>
         </Suspense>
 
