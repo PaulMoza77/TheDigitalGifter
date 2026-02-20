@@ -16,7 +16,7 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 
 type CustomerRow = {
-  id: string; // uuid
+  id: string; // string for UI (we keep stable key)
   name: string | null;
   email: string | null;
   image_url: string | null;
@@ -26,8 +26,34 @@ type CustomerRow = {
   total_money_spent: number | null;
   orders_count: number | null;
 
-  created_at: string | null; // timestamptz
-  last_activity: string | null; // timestamptz
+  created_at: string | null; // ISO string
+  last_activity: string | null; // ISO string
+};
+
+type ViewRow = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image_url: string | null;
+
+  credits_used: number | null;
+  generations: number | null;
+  total_money_spent: number | null;
+  orders_count: number | null;
+
+  created_at: string | null;
+  last_activity: string | null;
+};
+
+type AppUserRow = {
+  id: number; // bigint in DB -> comes as number in JS sometimes
+  convex_id: string | null;
+  email: string | null;
+  name: string | null;
+  image: string | null;
+  email_verification_time: number | string | null;
+  creation_time: number | string | null; // epoch ms
+  is_anonymous: number | boolean | null;
 };
 
 function initials(name?: string | null, email?: string | null) {
@@ -48,6 +74,75 @@ function parseISOToDate(iso?: string | null) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function epochMsToISO(v: number | string | null | undefined) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "string" ? Number(v) : v;
+  if (!Number.isFinite(n)) return null;
+  const d = new Date(n);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
+  const { data, error } = await supabase
+    .from("customers_admin_view")
+    .select(
+      "id,name,email,image_url,credits_used,generations,total_money_spent,orders_count,created_at,last_activity"
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) return null;
+  const rows = (data as ViewRow[]) || [];
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name ?? null,
+    email: r.email ?? null,
+    image_url: r.image_url ?? null,
+    credits_used: r.credits_used ?? 0,
+    generations: r.generations ?? 0,
+    total_money_spent: r.total_money_spent ?? 0,
+    orders_count: r.orders_count ?? 0,
+    created_at: r.created_at ?? null,
+    last_activity: r.last_activity ?? null,
+  }));
+}
+
+async function loadFromAppUsers(): Promise<CustomerRow[]> {
+  // NOTE: app_users may have RLS off; if you enable RLS, you must add a policy for admin users.
+  const { data, error } = await supabase
+    .from("app_users")
+    .select("id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous")
+    .order("creation_time", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data as AppUserRow[]) || [];
+
+  return rows.map((u) => {
+    // Prefer convex_id as stable external ID; fallback to numeric id.
+    const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${String(u.id)}`;
+
+    const createdISO = epochMsToISO(u.creation_time);
+    // We don’t have last_activity in app_users; leave null for now.
+    return {
+      id: stableId,
+      name: u.name ?? null,
+      email: u.email ?? null,
+      image_url: u.image ?? null,
+
+      // Until you wire billing/orders tables:
+      credits_used: 0,
+      generations: 0,
+      total_money_spent: 0,
+      orders_count: 0,
+
+      created_at: createdISO,
+      last_activity: null,
+    };
+  });
+}
+
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -59,25 +154,30 @@ export default function CustomersPage() {
     async function load() {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from("customers_admin_view")
-        .select(
-          "id,name,email,image_url,credits_used,generations,total_money_spent,orders_count,created_at,last_activity"
-        )
-        .order("created_at", { ascending: false });
+      try {
+        // 1) Try view first (if you have it)
+        const fromView = await loadFromCustomersAdminView();
+        if (cancelled) return;
 
-      if (cancelled) return;
+        if (fromView) {
+          setCustomers(fromView);
+          setLoading(false);
+          return;
+        }
 
-      if (error) {
-        console.error("[CustomersPage] load error:", error);
+        // 2) Fallback to app_users (imported from Convex)
+        const fromAppUsers = await loadFromAppUsers();
+        if (cancelled) return;
+
+        setCustomers(fromAppUsers);
+        setLoading(false);
+      } catch (e: any) {
+        if (cancelled) return;
+        console.error("[CustomersPage] load error:", e);
         toast.error("Failed to load customers");
         setCustomers([]);
         setLoading(false);
-        return;
       }
-
-      setCustomers((data as CustomerRow[]) || []);
-      setLoading(false);
     }
 
     void load();
