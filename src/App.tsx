@@ -1,7 +1,7 @@
 // src/App.tsx
 import { Suspense, useEffect, lazy } from "react";
 import {
-  BrowserRouter as Router,
+  BrowserRouter,
   Routes,
   Route,
   Navigate,
@@ -9,40 +9,32 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 
-// Website core pages
+// ================= WEBSITE CORE =================
 import Index from "@/pages/website/HomePage";
 import { PrivacyPolicyPage } from "@/pages/website/PrivacyPolicyPage";
 import { TermsPage } from "@/pages/website/TermsPage";
 import { RefundPolicyPage } from "@/pages/website/RefundPolicyPage";
 import { UnsubscribePage } from "@/pages/website/UnsubscribePage";
-
 import AuthCallback from "@/pages/AuthCallback";
 
+// ================= AUTH =================
 import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
 import { AdminRoute } from "@/components/AdminRoute";
+import { AuthProvider } from "@/contexts/AuthContext";
 
-// Layouts
+// ================= LAYOUTS =================
 import AdminLayout from "@/layouts/AdminLayout";
+const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
 
-// Admin core
+// ================= ADMIN CORE =================
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import Templates from "@/pages/admin/Templates";
 
-// ✅ NEW — Orders page
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
+const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
+const CreditsPage = lazy(() => import("@/pages/admin/Credits")); // ✅ NEW
 
-// Funnel
-import FunnelHomePage from "@/components/funnelVersion/FunnelHomePage";
-import FunnelUploadPhoto from "@/components/funnelVersion/FunnelUploadPhoto";
-import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
-import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
-import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
-
-// Provider
-import { AuthProvider } from "@/contexts/AuthContext";
-
-// Lazy website pages
-const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
+// ================= WEBSITE PAGES =================
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
 const TemplatesPage = lazy(() => import("@/pages/website/TemplatesPage"));
 
@@ -62,14 +54,21 @@ const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
 const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
 const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
 
-// Admin extra
-const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
+// ================= FUNNEL =================
+import FunnelHomePage from "@/components/funnelVersion/FunnelHomePage";
+import FunnelUploadPhoto from "@/components/funnelVersion/FunnelUploadPhoto";
+import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
+import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
+import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
 
+// ================= HELPERS =================
 function ScrollToTop() {
   const { pathname } = useLocation();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
   return null;
 }
 
@@ -85,7 +84,7 @@ function AppInner() {
   }, []);
 
   return (
-    <Router>
+    <BrowserRouter>
       <ScrollToTop />
 
       <div className="min-h-screen bg-black text-gray-900 flex flex-col">
@@ -100,9 +99,8 @@ function AppInner() {
 
             {/* ================= WEBSITE ================= */}
             <Route element={<MainLayout />}>
-              <Route path="/" element={<Index />} />
 
-              {/* OAuth callback */}
+              <Route path="/" element={<Index />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
 
               {/* Occasion pages */}
@@ -121,10 +119,8 @@ function AppInner() {
               <Route path="/fathers-day" element={<FathersDayPage />} />
               <Route path="/graduation" element={<GraduationPage />} />
 
-              {/* Public templates */}
+              {/* Public */}
               <Route path="/templates" element={<TemplatesPage />} />
-
-              {/* Generator */}
               <Route path="/generator" element={<GeneratorPage />} />
 
               {/* Legal */}
@@ -140,13 +136,14 @@ function AppInner() {
               <Route path="/funnel/preview" element={<FunnelPreview />} />
               <Route path="/funnel/payment" element={<FunnelPayment />} />
 
-              {/* Redirects */}
+              {/* Redirect aliases */}
               <Route path="/new_years_eve" element={<Navigate to="/new-years-eve" replace />} />
               <Route path="/valentines_day" element={<Navigate to="/valentines-day" replace />} />
               <Route path="/mothers_day" element={<Navigate to="/mothers-day" replace />} />
               <Route path="/fathers_day" element={<Navigate to="/fathers-day" replace />} />
               <Route path="/baby_reveal" element={<Navigate to="/baby-reveal" replace />} />
               <Route path="/new_born" element={<Navigate to="/new-born" replace />} />
+
             </Route>
 
             {/* ================= ADMIN ================= */}
@@ -179,7 +176,6 @@ function AppInner() {
                 }
               />
 
-              {/* ✅ NEW ORDERS ROUTE */}
               <Route
                 path="/admin/orders"
                 element={
@@ -189,9 +185,18 @@ function AppInner() {
                 }
               />
 
+              <Route
+                path="/admin/credits"
+                element={
+                  <AdminRoute>
+                    <CreditsPage />
+                  </AdminRoute>
+                }
+              />
+
             </Route>
 
-            {/* Fallback */}
+            {/* ================= FALLBACK ================= */}
             <Route path="*" element={<Navigate to="/" replace />} />
 
           </Routes>
@@ -199,7 +204,7 @@ function AppInner() {
 
         <Toaster position="top-right" />
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
 
