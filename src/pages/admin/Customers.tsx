@@ -91,7 +91,16 @@ function num(v: any, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function sortByCreatedAtDesc(rows: CustomerRow[]) {
+  return [...rows].sort((a, b) => {
+    const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return tb - ta;
+  });
+}
+
 async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
+  // ✅ FIX: NU MAI FOLOSIM .order("created_at") (poate da 400 / mismatch)
   const { data, error } = await supabase
     .from("customers_admin_view")
     .select(
@@ -100,7 +109,6 @@ async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
         "name",
         "email",
         "image_url",
-        "image",
         "credits_used",
         "generations",
         "total_money_spent",
@@ -108,8 +116,7 @@ async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
         "created_at",
         "last_activity",
       ].join(",")
-    )
-    .order("created_at", { ascending: false });
+    );
 
   if (error) {
     const msg = error.message || "Unknown error";
@@ -124,8 +131,8 @@ async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
 
   const rows = ((data as any[]) || []) as ViewRowLoose[];
 
-  return rows.map((r) => {
-    const image = (r.image_url ?? r.image ?? null) as string | null;
+  const mapped = rows.map((r) => {
+    const image = (r.image_url ?? null) as string | null;
 
     return {
       id: String(r.id ?? ""),
@@ -140,17 +147,19 @@ async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
 
       created_at: safeToISO(r.created_at),
       last_activity: safeToISO(r.last_activity),
-    };
+    } satisfies CustomerRow;
   });
+
+  return sortByCreatedAtDesc(mapped);
 }
 
 async function loadFromAppUsers(): Promise<CustomerRow[]> {
+  // fallback
   const { data, error } = await supabase
     .from("app_users")
     .select(
       "id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous"
-    )
-    .order("creation_time", { ascending: false });
+    );
 
   if (error) {
     console.error("[Customers] app_users error:", error);
@@ -160,7 +169,7 @@ async function loadFromAppUsers(): Promise<CustomerRow[]> {
 
   const rows = (data as AppUserRow[]) || [];
 
-  return rows.map((u) => {
+  const mapped = rows.map((u) => {
     const stableId =
       (u.convex_id && String(u.convex_id)) || `app_user:${String(u.id)}`;
 
@@ -177,8 +186,10 @@ async function loadFromAppUsers(): Promise<CustomerRow[]> {
 
       created_at: safeToISO(u.creation_time),
       last_activity: null,
-    };
+    } satisfies CustomerRow;
   });
+
+  return sortByCreatedAtDesc(mapped);
 }
 
 export default function CustomersPage() {
@@ -279,7 +290,9 @@ export default function CustomersPage() {
             <p className="mt-1 text-xs text-slate-500">
               Data source:{" "}
               <span className="font-semibold">
-                {source === "view" ? "customers_admin_view" : "app_users (fallback)"}
+                {source === "view"
+                  ? "customers_admin_view"
+                  : "app_users (fallback)"}
               </span>
             </p>
           </div>
@@ -312,7 +325,9 @@ export default function CustomersPage() {
                 {stats.total.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">All accounts created on the platform.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              All accounts created on the platform.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -324,7 +339,9 @@ export default function CustomersPage() {
                 {stats.newThisMonth.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Joined since the 1st of the month.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Joined since the 1st of the month.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -336,7 +353,9 @@ export default function CustomersPage() {
                 {stats.active.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Users active in the last 24 hours.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Users active in the last 24 hours.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -348,7 +367,9 @@ export default function CustomersPage() {
                 {moneyEUR(stats.totalRevenue)}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Total money spent by users.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Total money spent by users.
+            </p>
           </div>
         </section>
 
@@ -420,8 +441,12 @@ export default function CustomersPage() {
                               <span className="font-medium text-slate-200 text-sm">
                                 {c.name || "Unknown"}
                               </span>
-                              <span className="text-xs text-slate-500">{c.email || "—"}</span>
-                              <span className="text-[10px] text-slate-600">{c.id}</span>
+                              <span className="text-xs text-slate-500">
+                                {c.email || "—"}
+                              </span>
+                              <span className="text-[10px] text-slate-600">
+                                {c.id}
+                              </span>
                             </div>
                           </div>
                         </TableCell>
@@ -434,7 +459,9 @@ export default function CustomersPage() {
                           {Number(c.generations || 0)}
                         </TableCell>
 
-                        <TableCell className="text-slate-300">{moneyEUR(spent)}</TableCell>
+                        <TableCell className="text-slate-300">
+                          {moneyEUR(spent)}
+                        </TableCell>
 
                         <TableCell className="text-slate-400">
                           {Number(c.orders_count || 0)}
