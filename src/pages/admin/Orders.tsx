@@ -22,33 +22,22 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-type AppUserRow = {
-  convex_id: string | null;
-  email: string | null;
-  name: string | null;
-  image: string | null;
-};
-
-type OrderRowDB = {
-  // in supabase table "orders" (imported from Convex)
-  convex_id: string; // order convex id
+type OrderViewRow = {
+  convex_id: string;
   user_convex_id: string | null;
-  amount: number | null; // EUR
-  pack: string | null;
-  status: string | null; // completed / pending etc
-  stripe_session_id: string | null;
-  created_at_ms: number | string | null; // epoch ms
-  creation_time_ms: number | string | null; // epoch ms (Convex _creationTime)
-};
+  user_name: string | null;
+  user_email: string | null;
+  user_image: string | null;
 
-type OrderItemRowDB = {
-  id: string;
-  order_convex_id: string; // FK -> orders.convex_id
-  template_id: string | null;
-  template_title: string | null;
-  category: string | null;
-  credits_spent: number | null;
-  amount: number | null; // optional, if you store per-item money
+  amount: number | string | null;
+  pack: string | null;
+  status: string | null;
+
+  credits_spent: number | string | null;
+  categories: string | null;
+
+  created_at: string | null;
+  created_at_ms: number | string | null;
 };
 
 type OrderUI = {
@@ -59,13 +48,24 @@ type OrderUI = {
   user_image: string | null;
 
   amount: number; // EUR
-  credits_spent: number; // sum from items (or 0)
+  credits_spent: number;
   pack: string | null;
   status: string | null;
 
   created_at_iso: string | null;
 
-  categories: string[]; // unique from items
+  categories: string[]; // unique
+};
+
+type LedgerItemUI = {
+  id: string;
+  template_id: string | null;
+  template_title: string | null;
+  category: string | null;
+  credits: number;
+  amount: number | null;
+  currency: string | null;
+  occurred_at: string | null;
 };
 
 function initials(name?: string | null, email?: string | null) {
@@ -80,22 +80,30 @@ function moneyEUR(n: number) {
   return `€${Number.isFinite(n) ? n.toFixed(2) : "0.00"}`;
 }
 
-function epochMsToISO(v: number | string | null | undefined) {
-  if (v === null || v === undefined || v === "") return null;
-  const n = typeof v === "string" ? Number(v) : v;
-  if (!Number.isFinite(n)) return null;
-  const d = new Date(n);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
-}
-
 function parseISOToDate(iso?: string | null) {
   if (!iso) return null;
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function num(v: any, fallback = 0) {
+  if (v === null || v === undefined || v === "") return fallback;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function uniq(arr: string[]) {
   return Array.from(new Set(arr.filter(Boolean)));
+}
+
+function splitCats(s: string | null) {
+  if (!s) return [];
+  return uniq(
+    s
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean)
+  );
 }
 
 export default function OrdersPage() {
@@ -104,94 +112,40 @@ export default function OrdersPage() {
 
   const [orders, setOrders] = useState<OrderUI[]>([]);
   const [selected, setSelected] = useState<OrderUI | null>(null);
-  const [selectedItems, setSelectedItems] = useState<OrderItemRowDB[]>([]);
+  const [selectedItems, setSelectedItems] = useState<LedgerItemUI[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
 
   async function loadOrders() {
     setLoading(true);
 
-    // 1) get orders
-    const { data: ordersData, error: ordersErr } = await supabase
-      .from("orders")
-      .select(
-        "convex_id,user_convex_id,amount,pack,status,stripe_session_id,created_at_ms,creation_time_ms"
-      )
-      .order("creation_time_ms", { ascending: false });
+    const { data, error } = await supabase
+      .from("orders_admin_view")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    if (ordersErr) {
-      console.error("[OrdersPage] orders load error:", ordersErr);
-      toast.error("Failed to load orders");
+    if (error) {
+      console.error("[OrdersPage] orders_admin_view load error:", error);
+      toast.error(`Failed to load orders: ${error.message}`);
       setOrders([]);
       setLoading(false);
       return;
     }
 
-    const rawOrders = (ordersData as OrderRowDB[]) || [];
-    const userIds = uniq(rawOrders.map((o) => o.user_convex_id || ""));
+    const raw = (data as OrderViewRow[]) || [];
 
-    // 2) get users map (from app_users)
-    let usersMap = new Map<string, AppUserRow>();
-    if (userIds.length) {
-      const { data: usersData, error: usersErr } = await supabase
-        .from("app_users")
-        .select("convex_id,email,name,image")
-        .in("convex_id", userIds);
-
-      if (usersErr) {
-        console.warn("[OrdersPage] app_users load warn:", usersErr);
-      } else {
-        for (const u of (usersData as AppUserRow[]) || []) {
-          if (u.convex_id) usersMap.set(u.convex_id, u);
-        }
-      }
-    }
-
-    // 3) (optional) get order items to compute credits + categories
-    // If table doesn't exist yet, we silently fallback.
-    let itemsByOrder = new Map<string, OrderItemRowDB[]>();
-    try {
-      const orderIds = rawOrders.map((o) => o.convex_id);
-      if (orderIds.length) {
-        const { data: itemsData, error: itemsErr } = await supabase
-          .from("order_items")
-          .select("id,order_convex_id,template_id,template_title,category,credits_spent,amount")
-          .in("order_convex_id", orderIds);
-
-        if (!itemsErr) {
-          const items = (itemsData as OrderItemRowDB[]) || [];
-          for (const it of items) {
-            const key = it.order_convex_id;
-            const list = itemsByOrder.get(key) || [];
-            list.push(it);
-            itemsByOrder.set(key, list);
-          }
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    const ui: OrderUI[] = rawOrders.map((o) => {
-      const u = o.user_convex_id ? usersMap.get(o.user_convex_id) : undefined;
-      const items = itemsByOrder.get(o.convex_id) || [];
-
-      const credits = items.reduce((acc, it) => acc + Number(it.credits_spent || 0), 0);
-      const categories = uniq(items.map((it) => (it.category || "").trim()).filter(Boolean));
-
-      const createdIso =
-        epochMsToISO(o.created_at_ms) ||
-        epochMsToISO(o.creation_time_ms) ||
-        null;
+    const ui: OrderUI[] = raw.map((o) => {
+      const createdIso = o.created_at ? new Date(o.created_at).toISOString() : null;
+      const categories = splitCats(o.categories);
 
       return {
         id: o.convex_id,
         user_convex_id: o.user_convex_id ?? null,
-        user_name: u?.name ?? null,
-        user_email: u?.email ?? null,
-        user_image: u?.image ?? null,
+        user_name: o.user_name ?? null,
+        user_email: o.user_email ?? null,
+        user_image: o.user_image ?? null,
 
-        amount: Number(o.amount || 0),
-        credits_spent: credits,
+        amount: num(o.amount, 0),
+        credits_spent: num(o.credits_spent, 0),
         pack: o.pack ?? null,
         status: o.status ?? null,
 
@@ -209,22 +163,37 @@ export default function OrdersPage() {
     setSelectedItems([]);
     setItemsLoading(true);
 
-    // load items for this order (exact templates)
+    // Pull exact “what templates were purchased” from credits ledger view
+    // (works even if you do NOT have order_items table)
     const { data, error } = await supabase
-      .from("order_items")
-      .select("id,order_convex_id,template_id,template_title,category,credits_spent,amount")
+      .from("credits_admin_view")
+      .select("id,template_id,template_title,category,credits,amount,currency,occurred_at,direction,order_convex_id")
       .eq("order_convex_id", order.id)
-      .order("id", { ascending: true });
+      .order("occurred_at", { ascending: true });
 
     if (error) {
-      console.warn("[OrdersPage] order_items not available:", error);
-      // If table doesn't exist yet or empty, keep empty and show message
+      console.warn("[OrdersPage] credits_admin_view details error:", error);
+      toast.error(`Failed to load order details: ${error.message}`);
       setSelectedItems([]);
       setItemsLoading(false);
       return;
     }
 
-    setSelectedItems((data as OrderItemRowDB[]) || []);
+    // we only care about OUT (spend)
+    const rows = ((data as any[]) || [])
+      .filter((r) => String(r.direction || "").toLowerCase() === "out")
+      .map((r) => ({
+        id: String(r.id),
+        template_id: r.template_id ?? null,
+        template_title: r.template_title ?? null,
+        category: r.category ?? null,
+        credits: num(r.credits, 0),
+        amount: r.amount === null || r.amount === undefined ? null : num(r.amount, 0),
+        currency: r.currency ?? null,
+        occurred_at: r.occurred_at ?? null,
+      })) as LedgerItemUI[];
+
+    setSelectedItems(rows);
     setItemsLoading(false);
   }
 
@@ -304,6 +273,13 @@ export default function OrdersPage() {
             >
               Export orders
             </button>
+            <button
+              type="button"
+              onClick={() => void loadOrders()}
+              className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+            >
+              Refresh
+            </button>
           </div>
         </header>
 
@@ -353,7 +329,7 @@ export default function OrdersPage() {
                 {stats.credits.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Sum of credits from order items.</p>
+            <p className="text-xs text-slate-500 mt-1">Credits computed from ledger per order.</p>
           </div>
         </section>
 
@@ -498,7 +474,7 @@ export default function OrdersPage() {
           <DialogHeader>
             <DialogTitle className="text-slate-50">Order details</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Exact templates and categories purchased in this order.
+              Exact templates and categories purchased in this order (from credits ledger).
             </DialogDescription>
           </DialogHeader>
 
@@ -556,11 +532,11 @@ export default function OrdersPage() {
                   <div className="text-slate-400 text-sm">Loading order items...</div>
                 ) : selectedItems.length === 0 ? (
                   <div className="text-slate-500 text-sm">
-                    No order items found.
+                    No ledger items found for this order.
                     <div className="text-xs text-slate-600 mt-1">
-                      (If this is your first migration: you need a Supabase table{" "}
-                      <code className="text-slate-400">order_items</code> to store template usage per
-                      order.)
+                      If this order exists but ledger is empty, it means credits usage wasn’t written to{" "}
+                      <code className="text-slate-400">credits_ledger</code> with{" "}
+                      <code className="text-slate-400">order_convex_id</code>.
                     </div>
                   </div>
                 ) : (
@@ -597,7 +573,7 @@ export default function OrdersPage() {
                               )}
                             </TableCell>
                             <TableCell className="text-slate-300 font-medium">
-                              {Number(it.credits_spent || 0)}
+                              {Number(it.credits || 0)}
                             </TableCell>
                             <TableCell className="text-right text-slate-300">
                               {it.amount !== null && it.amount !== undefined
