@@ -59,6 +59,10 @@ function moneyEUR(n: number) {
 function safeToISO(v: any): string | null {
   if (v === null || v === undefined || v === "") return null;
 
+  if (v instanceof Date) {
+    return Number.isNaN(v.getTime()) ? null : v.toISOString();
+  }
+
   // already ISO-ish
   if (typeof v === "string") {
     const d = new Date(v);
@@ -82,12 +86,12 @@ function parseISOToDate(iso?: string | null) {
 }
 
 function num(v: any, fallback = 0) {
-  const n = typeof v === "string" ? Number(v) : Number(v);
+  if (v === null || v === undefined || v === "") return fallback;
+  const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : fallback;
 }
 
 async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
-  // We explicitly pick columns BUT also accept if view uses slightly different aliases.
   const { data, error } = await supabase
     .from("customers_admin_view")
     .select(
@@ -108,13 +112,13 @@ async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
     .order("created_at", { ascending: false });
 
   if (error) {
-    // If the view does not exist, return null so we can fallback.
-    // Otherwise, surface the error (this is what was hiding your issue).
     const msg = error.message || "Unknown error";
+    // fallback ONLY if view missing
     if (String(msg).toLowerCase().includes("does not exist")) return null;
 
     console.error("[Customers] customers_admin_view error:", error);
     toast.error(`Customers view error: ${msg}`);
+    // do NOT fallback on permission/column errors; show empty so you see issue
     return [];
   }
 
@@ -181,6 +185,7 @@ export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
+  const [source, setSource] = useState<"view" | "fallback">("view");
 
   React.useEffect(() => {
     let cancelled = false;
@@ -194,6 +199,7 @@ export default function CustomersPage() {
 
       if (fromView !== null) {
         setCustomers(fromView);
+        setSource("view");
         setLoading(false);
         return;
       }
@@ -203,6 +209,7 @@ export default function CustomersPage() {
       if (cancelled) return;
 
       setCustomers(fromAppUsers);
+      setSource("fallback");
       setLoading(false);
     }
 
@@ -268,6 +275,12 @@ export default function CustomersPage() {
             </h1>
             <p className="mt-1 text-sm text-slate-400">
               View and manage all TheDigitalGifter customers, spending, and activity.
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Data source:{" "}
+              <span className="font-semibold">
+                {source === "view" ? "customers_admin_view" : "app_users (fallback)"}
+              </span>
             </p>
           </div>
 

@@ -1,5 +1,5 @@
 // src/pages/admin/Credits.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -49,33 +49,45 @@ function clsBadge(dir: "in" | "out") {
 }
 
 function num(v: any, fallback = 0) {
-  const n = typeof v === "string" ? Number(v) : Number(v);
+  if (v === null || v === undefined || v === "") return fallback;
+  const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : fallback;
 }
 
 function pickFirst<T>(...vals: T[]): T {
   for (const v of vals) {
+    // accept 0, false as valid
     if (v !== null && v !== undefined && (typeof v !== "string" || v !== "")) return v;
   }
   return vals[vals.length - 1];
 }
 
 function normalizeDirection(v: any): "in" | "out" {
-  const s = String(v || "").toLowerCase();
-  return s === "in" ? "in" : "out";
+  const s = String(v || "").toLowerCase().trim();
+  if (s === "in") return "in";
+  return "out";
 }
 
 function toISO(v: any): string | null {
   if (v === null || v === undefined || v === "") return null;
+
+  if (v instanceof Date) {
+    return Number.isNaN(v.getTime()) ? null : v.toISOString();
+  }
+
   if (typeof v === "string") {
+    // already ISO (or timestamptz string)
     const d = new Date(v);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
   }
+
   if (typeof v === "number") {
+    // support seconds or ms
     const n = v > 10_000_000_000 ? v : v * 1000;
     const d = new Date(n);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
   }
+
   return null;
 }
 
@@ -84,19 +96,9 @@ function mapLedgerRow(r: any): CreditRow {
     pickFirst(r.user_convex_id, r.user_id, r.userId, r.customer_id, "")
   );
 
-  const user_name = pickFirst<string | null>(
-    r.user_name,
-    r.customer_name,
-    r.name,
-    null
-  );
+  const user_name = pickFirst<string | null>(r.user_name, r.customer_name, r.name, null);
 
-  const user_email = pickFirst<string | null>(
-    r.user_email,
-    r.customer_email,
-    r.email,
-    null
-  );
+  const user_email = pickFirst<string | null>(r.user_email, r.customer_email, r.email, null);
 
   const user_image = pickFirst<string | null>(
     r.user_image,
@@ -107,22 +109,23 @@ function mapLedgerRow(r: any): CreditRow {
   );
 
   const direction = normalizeDirection(pickFirst(r.direction, r.dir, "out"));
-  const credits = num(pickFirst(r.credits, r.delta_credits, r.credit_delta, r.amount_credits, 0), 0);
+  const credits = num(
+    pickFirst(r.credits, r.delta_credits, r.credit_delta, r.amount_credits, 0),
+    0
+  );
+
+  const occurred_at = toISO(pickFirst(r.occurred_at, r.created_at, r.timestamp, null));
+  const created_at = toISO(pickFirst(r.created_at, r.occurred_at, null));
 
   return {
-    id: String(pickFirst(r.id, r.ledger_id, r.row_id, r.uuid, "")),
+    id: String(pickFirst(r.id, r.ledger_id, r.row_id, r.uuid, `${user_convex_id}:${created_at || occurred_at || "row"}`)),
 
     user_convex_id,
     user_name,
     user_email,
     user_image,
 
-    event_type: pickFirst<string | null>(
-      r.event_type,
-      r.type,
-      r.source,
-      null
-    ),
+    event_type: pickFirst<string | null>(r.event_type, r.type, r.source, null),
 
     direction,
     credits,
@@ -135,20 +138,15 @@ function mapLedgerRow(r: any): CreditRow {
     ),
 
     template_id: pickFirst<string | null>(r.template_id, r.templateId, null),
-    template_title: pickFirst<string | null>(
-      r.template_title,
-      r.title,
-      r.template_name,
-      null
-    ),
+    template_title: pickFirst<string | null>(r.template_title, r.title, r.template_name, null),
     category: pickFirst<string | null>(r.category, r.template_category, null),
 
     amount: r.amount === null || r.amount === undefined ? null : num(r.amount, 0),
     currency: pickFirst<string | null>(r.currency, null),
     note: pickFirst<string | null>(r.note, r.message, r.reason, null),
 
-    occurred_at: toISO(pickFirst(r.occurred_at, r.created_at, r.timestamp, null)),
-    created_at: toISO(pickFirst(r.created_at, r.occurred_at, null)),
+    occurred_at,
+    created_at,
   };
 }
 
@@ -172,6 +170,14 @@ export default function Credits() {
   const [dir, setDir] = useState<"all" | "in" | "out">("all");
   const [limit, setLimit] = useState(200);
 
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   async function load() {
     setLoading(true);
 
@@ -179,7 +185,7 @@ export default function Credits() {
       supabase
         .from("credits_admin_view")
         .select("*")
-        .order("created_at", { ascending: false })
+        .order("occurred_at", { ascending: false })
         .limit(limit),
       supabase
         .from("user_credits_balance_view")
@@ -200,13 +206,15 @@ export default function Credits() {
     const ledger = ((ledgerRes.data as any[]) || []).map(mapLedgerRow);
     const bals = ((balRes.data as any[]) || []).map(mapBalanceRow);
 
+    if (!mountedRef.current) return;
+
     setRows(ledger);
     setBalances(bals);
     setLoading(false);
   }
 
   useEffect(() => {
-    load();
+    void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit]);
 
@@ -277,7 +285,7 @@ export default function Credits() {
             </select>
 
             <button
-              onClick={load}
+              onClick={() => void load()}
               className="rounded-xl bg-white text-black px-4 py-2 font-medium hover:opacity-90"
             >
               Refresh
