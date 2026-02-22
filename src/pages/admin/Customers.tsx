@@ -16,43 +16,30 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 
 type CustomerRow = {
-  id: string; // string for UI (we keep stable key)
-  name: string | null;
-  email: string | null;
-  image_url: string | null;
-
-  credits_used: number | null;
-  generations: number | null;
-  total_money_spent: number | null;
-  orders_count: number | null;
-
-  created_at: string | null; // ISO string
-  last_activity: string | null; // ISO string
-};
-
-type ViewRow = {
   id: string;
   name: string | null;
   email: string | null;
   image_url: string | null;
 
-  credits_used: number | null;
-  generations: number | null;
-  total_money_spent: number | null;
-  orders_count: number | null;
+  credits_used: number;
+  generations: number;
+  total_money_spent: number;
+  orders_count: number;
 
-  created_at: string | null;
-  last_activity: string | null;
+  created_at: string | null; // ISO
+  last_activity: string | null; // ISO
 };
 
+type ViewRowLoose = Record<string, any>;
+
 type AppUserRow = {
-  id: number; // bigint in DB -> comes as number in JS sometimes
+  id: number;
   convex_id: string | null;
   email: string | null;
   name: string | null;
   image: string | null;
   email_verification_time: number | string | null;
-  creation_time: number | string | null; // epoch ms
+  creation_time: number | string | null;
   is_anonymous: number | boolean | null;
 };
 
@@ -65,7 +52,27 @@ function initials(name?: string | null, email?: string | null) {
 }
 
 function moneyEUR(n: number) {
-  return `€${Number.isFinite(n) ? n.toFixed(2) : "0.00"}`;
+  const x = Number(n);
+  return `€${Number.isFinite(x) ? x.toFixed(2) : "0.00"}`;
+}
+
+function safeToISO(v: any): string | null {
+  if (v === null || v === undefined || v === "") return null;
+
+  // already ISO-ish
+  if (typeof v === "string") {
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+
+  // epoch ms / seconds
+  if (typeof v === "number") {
+    const n = v > 10_000_000_000 ? v : v * 1000; // handle seconds
+    const d = new Date(n);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+
+  return null;
 }
 
 function parseISOToDate(iso?: string | null) {
@@ -74,70 +81,97 @@ function parseISOToDate(iso?: string | null) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function epochMsToISO(v: number | string | null | undefined) {
-  if (v === null || v === undefined || v === "") return null;
-  const n = typeof v === "string" ? Number(v) : v;
-  if (!Number.isFinite(n)) return null;
-  const d = new Date(n);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+function num(v: any, fallback = 0) {
+  const n = typeof v === "string" ? Number(v) : Number(v);
+  return Number.isFinite(n) ? n : fallback;
 }
 
 async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
+  // We explicitly pick columns BUT also accept if view uses slightly different aliases.
   const { data, error } = await supabase
     .from("customers_admin_view")
     .select(
-      "id,name,email,image_url,credits_used,generations,total_money_spent,orders_count,created_at,last_activity"
+      [
+        "id",
+        "name",
+        "email",
+        "image_url",
+        "image",
+        "credits_used",
+        "generations",
+        "total_money_spent",
+        "orders_count",
+        "created_at",
+        "last_activity",
+      ].join(",")
     )
     .order("created_at", { ascending: false });
 
-  if (error) return null;
-  const rows = (data as ViewRow[]) || [];
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name ?? null,
-    email: r.email ?? null,
-    image_url: r.image_url ?? null,
-    credits_used: r.credits_used ?? 0,
-    generations: r.generations ?? 0,
-    total_money_spent: r.total_money_spent ?? 0,
-    orders_count: r.orders_count ?? 0,
-    created_at: r.created_at ?? null,
-    last_activity: r.last_activity ?? null,
-  }));
+  if (error) {
+    // If the view does not exist, return null so we can fallback.
+    // Otherwise, surface the error (this is what was hiding your issue).
+    const msg = error.message || "Unknown error";
+    if (String(msg).toLowerCase().includes("does not exist")) return null;
+
+    console.error("[Customers] customers_admin_view error:", error);
+    toast.error(`Customers view error: ${msg}`);
+    return [];
+  }
+
+  const rows = ((data as any[]) || []) as ViewRowLoose[];
+
+  return rows.map((r) => {
+    const image = (r.image_url ?? r.image ?? null) as string | null;
+
+    return {
+      id: String(r.id ?? ""),
+      name: (r.name ?? null) as string | null,
+      email: (r.email ?? null) as string | null,
+      image_url: image,
+
+      credits_used: num(r.credits_used, 0),
+      generations: num(r.generations, 0),
+      total_money_spent: num(r.total_money_spent, 0),
+      orders_count: num(r.orders_count, 0),
+
+      created_at: safeToISO(r.created_at),
+      last_activity: safeToISO(r.last_activity),
+    };
+  });
 }
 
 async function loadFromAppUsers(): Promise<CustomerRow[]> {
-  // NOTE: app_users may have RLS off; if you enable RLS, you must add a policy for admin users.
   const { data, error } = await supabase
     .from("app_users")
-    .select("id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous")
+    .select(
+      "id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous"
+    )
     .order("creation_time", { ascending: false });
 
   if (error) {
-    throw error;
+    console.error("[Customers] app_users error:", error);
+    toast.error(`Customers fallback error: ${error.message}`);
+    return [];
   }
 
   const rows = (data as AppUserRow[]) || [];
 
   return rows.map((u) => {
-    // Prefer convex_id as stable external ID; fallback to numeric id.
-    const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${String(u.id)}`;
+    const stableId =
+      (u.convex_id && String(u.convex_id)) || `app_user:${String(u.id)}`;
 
-    const createdISO = epochMsToISO(u.creation_time);
-    // We don’t have last_activity in app_users; leave null for now.
     return {
       id: stableId,
       name: u.name ?? null,
       email: u.email ?? null,
       image_url: u.image ?? null,
 
-      // Until you wire billing/orders tables:
       credits_used: 0,
       generations: 0,
       total_money_spent: 0,
       orders_count: 0,
 
-      created_at: createdISO,
+      created_at: safeToISO(u.creation_time),
       last_activity: null,
     };
   });
@@ -154,30 +188,22 @@ export default function CustomersPage() {
     async function load() {
       setLoading(true);
 
-      try {
-        // 1) Try view first (if you have it)
-        const fromView = await loadFromCustomersAdminView();
-        if (cancelled) return;
+      // 1) Use view (primary)
+      const fromView = await loadFromCustomersAdminView();
+      if (cancelled) return;
 
-        if (fromView) {
-          setCustomers(fromView);
-          setLoading(false);
-          return;
-        }
-
-        // 2) Fallback to app_users (imported from Convex)
-        const fromAppUsers = await loadFromAppUsers();
-        if (cancelled) return;
-
-        setCustomers(fromAppUsers);
+      if (fromView !== null) {
+        setCustomers(fromView);
         setLoading(false);
-      } catch (e: any) {
-        if (cancelled) return;
-        console.error("[CustomersPage] load error:", e);
-        toast.error("Failed to load customers");
-        setCustomers([]);
-        setLoading(false);
+        return;
       }
+
+      // 2) Fallback only if view is missing
+      const fromAppUsers = await loadFromAppUsers();
+      if (cancelled) return;
+
+      setCustomers(fromAppUsers);
+      setLoading(false);
     }
 
     void load();
