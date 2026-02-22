@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 /** =========================
- * Types
+ * Types (match DB schema)
  * ========================= */
 type TemplateDbRow = {
   id: string;
@@ -43,26 +43,31 @@ type TemplateDbRow = {
 
   occasion: string | null;
   category: string | null;
-  sub_category: string | null;
+  subcategory: string | null;
 
   type: string | null; // "image" | "video" ...
   orientation: string | null;
 
-  preview_url: string | null;
-  thumbnail_url: string | null;
+  previewurl: string | null;
+  thumbnailurl: string | null;
 
-  text_default: string | null;
+  textdefault: string | null;
 
-  default_duration: number | null;
-  default_aspect_ratio: string | null;
-  default_resolution: string | null;
-  generate_audio_default: boolean | null;
-  negative_prompt_default: string | null;
+  defaultduration: number | null;
+  defaultaspectratio: string | null;
+  defaultresolution: string | null;
 
-  credit_cost: number | null;
-  tags: string[] | null;
+  generateaudiodefault: boolean | null;
 
-  is_active: boolean | null;
+  // in unele scheme poate să existe / nu existe
+  negativepromptdefault?: string | null;
+
+  creditcost: number | null;
+
+  // în DB poate fi text[] / json / null. Îl tratăm safe.
+  tags?: unknown;
+
+  isactive: boolean | null;
 
   created_at?: string | null;
   updated_at?: string | null;
@@ -101,6 +106,18 @@ type TemplateRow = {
   updated_at?: string;
 };
 
+function coerceTags(tags: unknown): string[] {
+  if (Array.isArray(tags)) return tags.map((x) => String(x ?? "")).filter(Boolean);
+  // dacă e string cu csv gen "a,b,c"
+  if (typeof tags === "string") {
+    return tags
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
 function mapTemplate(db: TemplateDbRow): TemplateRow {
   return {
     id: db.id,
@@ -110,26 +127,26 @@ function mapTemplate(db: TemplateDbRow): TemplateRow {
 
     occasion: db.occasion,
     category: db.category,
-    subCategory: db.sub_category,
+    subCategory: db.subcategory,
 
     type: (db.type ?? "image").toLowerCase(),
-    orientation: db.orientation ?? "portrait",
+    orientation: (db.orientation ?? "portrait").toLowerCase(),
 
-    previewUrl: db.preview_url ?? "",
-    thumbnailUrl: db.thumbnail_url,
+    previewUrl: db.previewurl ?? "",
+    thumbnailUrl: db.thumbnailurl ?? null,
 
-    textDefault: db.text_default,
+    textDefault: db.textdefault ?? null,
 
-    defaultDuration: db.default_duration,
-    defaultAspectRatio: db.default_aspect_ratio,
-    defaultResolution: db.default_resolution,
-    generateAudioDefault: db.generate_audio_default,
-    negativePromptDefault: db.negative_prompt_default,
+    defaultDuration: db.defaultduration ?? null,
+    defaultAspectRatio: db.defaultaspectratio ?? null,
+    defaultResolution: db.defaultresolution ?? null,
+    generateAudioDefault: db.generateaudiodefault ?? null,
+    negativePromptDefault: (db.negativepromptdefault ?? null) as string | null,
 
-    creditCost: typeof db.credit_cost === "number" ? db.credit_cost : 0,
-    tags: Array.isArray(db.tags) ? db.tags : [],
+    creditCost: typeof db.creditcost === "number" ? db.creditcost : 0,
+    tags: coerceTags(db.tags),
 
-    isActive: db.is_active !== false,
+    isActive: db.isactive !== false,
 
     created_at: db.created_at ?? undefined,
     updated_at: db.updated_at ?? undefined,
@@ -209,6 +226,7 @@ export default function TemplatesAdminPage() {
 
   const fetchTemplates = async () => {
     setLoading(true);
+
     const { data, error } = await supabase
       .from("templates")
       .select(
@@ -218,25 +236,25 @@ export default function TemplatesAdminPage() {
           "prompt",
           "occasion",
           "category",
-          "sub_category",
+          "subcategory",
           "type",
           "orientation",
-          "preview_url",
-          "thumbnail_url",
-          "text_default",
-          "default_duration",
-          "default_aspect_ratio",
-          "default_resolution",
-          "generate_audio_default",
-          "negative_prompt_default",
-          "credit_cost",
+          "previewurl",
+          "thumbnailurl",
+          "textdefault",
+          "defaultduration",
+          "defaultaspectratio",
+          "defaultresolution",
+          "generateaudiodefault",
+          "negativepromptdefault",
+          "creditcost",
           "tags",
-          "is_active",
+          "isactive",
           "created_at",
           "updated_at",
         ].join(",")
       )
-      .order("created_at", { ascending: false });
+      .order("id", { ascending: false });
 
     if (error) {
       console.error("[TemplatesAdminPage] fetch templates error:", error);
@@ -270,9 +288,7 @@ export default function TemplatesAdminPage() {
 
     if (typeFilter && typeFilter !== "All types") {
       const normalizedType = typeFilter.toLowerCase().replace(/s$/, ""); // Images -> image
-      filtered = filtered.filter(
-        (t) => (t.type || "").toLowerCase() === normalizedType
-      );
+      filtered = filtered.filter((t) => (t.type || "").toLowerCase() === normalizedType);
     }
 
     if (searchQuery) {
@@ -321,11 +337,7 @@ export default function TemplatesAdminPage() {
   const handleToggleActive = async (id: string, next: boolean) => {
     setUpdatingId(id);
     try {
-      const { error } = await supabase
-        .from("templates")
-        .update({ is_active: next })
-        .eq("id", id);
-
+      const { error } = await supabase.from("templates").update({ isactive: next }).eq("id", id);
       if (error) throw error;
 
       setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, isActive: next } : t)));
@@ -380,11 +392,9 @@ export default function TemplatesAdminPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => {
-                // keep filters; remove templateId; open dialog
                 const newParams = new URLSearchParams(searchParams);
                 newParams.delete("templateId");
                 setSearchParams(newParams);
-
                 setIsDialogOpen(true);
               }}
               className="rounded-full bg-indigo-500 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-400"
@@ -476,7 +486,11 @@ export default function TemplatesAdminPage() {
                 >
                   <div className="mb-2 flex h-48 items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 via-slate-600 to-slate-500 text-[10px] font-medium text-slate-100 overflow-hidden">
                     {imgSrc ? (
-                      <img src={imgSrc} alt={template.title} className="w-full h-full object-cover" />
+                      <img
+                        src={imgSrc}
+                        alt={template.title}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="flex flex-col items-center gap-1 text-center">
                         <span className="inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-0.5 text-[10px]">
@@ -538,7 +552,6 @@ export default function TemplatesAdminPage() {
                             e.preventDefault();
                             setOpenDropdownId(null);
 
-                            // keep filters, set templateId
                             const newParams = new URLSearchParams(searchParams);
                             newParams.set("templateId", id);
                             setSearchParams(newParams);
@@ -585,7 +598,10 @@ export default function TemplatesAdminPage() {
 
       <CreateTemplateDialog open={isDialogOpen} onOpenChange={handleDialogChange} />
 
-      <AlertDialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
+      <AlertDialog
+        open={!!templateToDelete}
+        onOpenChange={(open) => !open && setTemplateToDelete(null)}
+      >
         <AlertDialogContent className="bg-slate-900 border-slate-800">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-slate-50">Are you absolutely sure?</AlertDialogTitle>
