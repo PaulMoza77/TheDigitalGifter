@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import {
   Select,
@@ -50,40 +50,52 @@ const OCCASION_STYLES: Record<string, Array<{ value: string; label: string }>> =
 type TemplateType = "image" | "video";
 type Orientation = "portrait" | "landscape";
 
-type TemplateRow = {
+/**
+ * ✅ IMPORTANT:
+ * Your DB columns are camel-ish (no underscores), e.g.:
+ * - subcategory, previewurl, thumbnailurl, textdefault
+ * - defaultduration, defaultaspectratio, defaultresolution, generateaudiodefault
+ * - creditcost, isactive
+ * - (optional) videourl, styleid, negativepromptdefault
+ */
+type TemplateDbRow = {
   id: string;
 
-  title: string;
+  title: string | null;
   occasion: string | null;
   category: string | null;
-  subCategory: string | null;
+  subcategory: string | null;
 
   type: string | null;
   scene: string | null;
   orientation: string | null;
 
-  prompt: string;
-  textDefault: string | null;
+  prompt: string | null;
+  textdefault: string | null;
 
-  creditCost: number;
-  tags: string[] | null;
+  creditcost: number | null;
+  tags?: unknown;
 
-  previewUrl: string | null;
-  thumbnailUrl: string | null;
-  videoUrl: string | null;
+  previewurl: string | null;
+  thumbnailurl: string | null;
+  videourl?: string | null;
 
-  styleId: string | null;
+  styleid?: string | null;
 
-  defaultDuration: number | null;
-  defaultAspectRatio: string | null;
-  defaultResolution: string | null;
-  generateAudioDefault: boolean | null;
+  defaultduration: number | null;
+  defaultaspectratio: string | null;
+  defaultresolution: string | null;
+  generateaudiodefault: boolean | null;
 
-  isActive: boolean | null;
+  negativepromptdefault?: string | null;
+
+  isactive: boolean | null;
 };
 
-function safeTagsToString(tags: string[] | null | undefined) {
-  return (tags || []).join(", ");
+function safeTagsToString(tags: unknown) {
+  if (Array.isArray(tags)) return tags.map((t) => String(t ?? "")).filter(Boolean).join(", ");
+  if (typeof tags === "string") return tags;
+  return "";
 }
 
 function parseTags(input: string) {
@@ -123,10 +135,15 @@ async function uploadToSupabaseStorage(file: File, folder: string) {
   return data.publicUrl;
 }
 
+/**
+ * ✅ Select.Item cannot use empty-string value.
+ * We'll use a sentinel for "none".
+ */
+const NONE = "__none__";
+
 export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialogProps) {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get("templateId"); // uuid string
-
   const isEditing = !!templateId;
 
   const [loadingTemplate, setLoadingTemplate] = useState(false);
@@ -138,7 +155,7 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
 
   // Form state
   const [title, setTitle] = useState("");
-  const [occasion, setOccasion] = useState("");
+  const [occasion, setOccasion] = useState<string | null>(null);
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
 
@@ -154,7 +171,7 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
   const [sendEmailNotification, setSendEmailNotification] = useState(true);
 
   // NEW: styleId
-  const [styleId, setStyleId] = useState("");
+  const [styleId, setStyleId] = useState<string | null>(null);
 
   // media files
   const [previewImageFile, setPreviewImageFile] = useState<File | null>(null);
@@ -167,19 +184,49 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
   const [defaultAspectRatio] = useState<string>("16:9");
   const [defaultResolution] = useState<string>("1080p");
 
-  const styleOptions = useMemo(() => OCCASION_STYLES[occasion] || [], [occasion]);
+  const styleOptions = useMemo(
+    () => (occasion ? OCCASION_STYLES[occasion] || [] : []),
+    [occasion]
+  );
   const shouldShowStyle = styleOptions.length > 0;
 
   // If occasion changes, clear styleId if it doesn't exist
   useEffect(() => {
     if (!shouldShowStyle) {
-      setStyleId("");
+      setStyleId(null);
       return;
     }
     if (styleId && !styleOptions.some((s) => s.value === styleId)) {
-      setStyleId("");
+      setStyleId(null);
     }
-  }, [occasion]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [occasion]);
+
+  const resetForm = () => {
+    setTitle("");
+    setOccasion(null);
+    setCategory("");
+    setSubCategory("");
+    setType("image");
+    setScene("");
+    setOrientation("portrait");
+    setPrompt("");
+    setTextDefault("");
+    setCreditCost(6);
+    setTags("");
+    setSendEmailNotification(true);
+    setStyleId(null);
+
+    setPreviewImageFile(null);
+    setThumbnailFile(null);
+    setVideoFile(null);
+
+    setGenerateAudioDefault(true);
+    setUploadProgress(0);
+    setIsUploading(false);
+    setSaving(false);
+    setLoadingTemplate(false);
+  };
 
   // Load existing template (edit mode)
   useEffect(() => {
@@ -187,68 +234,73 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
 
     // create mode reset
     if (!templateId) {
-      setTitle("");
-      setOccasion("");
-      setCategory("");
-      setSubCategory("");
-      setType("image");
-      setScene("");
-      setOrientation("portrait");
-      setPrompt("");
-      setTextDefault("");
-      setCreditCost(6);
-      setTags("");
-      setSendEmailNotification(true);
-      setStyleId("");
-
-      setPreviewImageFile(null);
-      setThumbnailFile(null);
-      setVideoFile(null);
-
-      setGenerateAudioDefault(true);
-      setUploadProgress(0);
-      setIsUploading(false);
-      setSaving(false);
-      setLoadingTemplate(false);
+      resetForm();
       return;
     }
 
     let cancelled = false;
+
     (async () => {
       try {
         setLoadingTemplate(true);
+
         const { data, error } = await supabase
           .from("templates")
-          .select("*")
+          .select(
+            [
+              "id",
+              "title",
+              "occasion",
+              "category",
+              "subcategory",
+              "type",
+              "scene",
+              "orientation",
+              "prompt",
+              "textdefault",
+              "creditcost",
+              "tags",
+              "previewurl",
+              "thumbnailurl",
+              "videourl",
+              "styleid",
+              "defaultduration",
+              "defaultaspectratio",
+              "defaultresolution",
+              "generateaudiodefault",
+              "negativepromptdefault",
+              "isactive",
+            ].join(",")
+          )
           .eq("id", templateId)
           .maybeSingle();
 
         if (cancelled) return;
-
         if (error) throw error;
+
         if (!data) {
           toast.error("Template not found");
           setLoadingTemplate(false);
           return;
         }
 
-        const t = data as TemplateRow;
+        const t = data as TemplateDbRow;
 
         setTitle(t.title || "");
-        setOccasion(t.occasion || "");
+        setOccasion(t.occasion || null);
         setCategory(t.category || "");
-        setSubCategory(t.subCategory || "");
+        setSubCategory(t.subcategory || "");
         setType((t.type === "video" ? "video" : "image") as TemplateType);
         setScene(t.scene || "");
         setOrientation((t.orientation === "landscape" ? "landscape" : "portrait") as Orientation);
         setPrompt(t.prompt || "");
-        setTextDefault(t.textDefault || "");
-        setCreditCost(Number(t.creditCost || 6));
+        setTextDefault(t.textdefault || "");
+        setCreditCost(Number(t.creditcost || 6));
         setTags(safeTagsToString(t.tags));
 
-        setStyleId(t.styleId || "");
+        setStyleId(t.styleid || null);
 
-        setGenerateAudioDefault(t.generateAudioDefault ?? true);
+        setGenerateAudioDefault(t.generateaudiodefault ?? true);
 
         // files are not pre-filled
         setPreviewImageFile(null);
@@ -265,11 +317,12 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, templateId]);
 
   const validate = () => {
     if (!title.trim()) return "Template Title is required";
-    if (!occasion.trim()) return "Occasion is required";
+    if (!occasion?.trim()) return "Occasion is required";
     if (!category.trim()) return "Category is required";
     if (!scene.trim()) return "Scene is required";
     if (!orientation) return "Orientation is required";
@@ -304,8 +357,6 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
       let thumbnailUrl: string | null = null;
       let videoUrl: string | null = null;
 
-      // For create: required media depends on type
-      // For edit: upload only if a new file is selected
       if (type === "image") {
         if (previewImageFile) {
           setUploadProgress(20);
@@ -324,38 +375,41 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
         setUploadProgress(70);
       }
 
+      /**
+       * ✅ Map payload to REAL DB column names
+       */
       const payload: Record<string, any> = {
         title: title.trim(),
-        occasion: occasion.trim(), // slug
+        occasion: (occasion || "").trim(), // slug
         category: category.trim(),
-        subCategory: subCategory ? subCategory.trim() : null,
+        subcategory: subCategory ? subCategory.trim() : null,
         type,
         scene: scene.trim(),
         orientation,
         prompt: prompt.trim(),
-        textDefault: textDefault || "",
-        creditCost: Number(creditCost),
+        textdefault: textDefault || "",
+        creditcost: Number(creditCost),
         tags: parseTags(tags),
-        styleId: styleId || "",
-        isActive: true,
+        styleid: styleId || null,
+        isactive: true,
       };
 
       if (type === "video") {
-        payload.defaultDuration = defaultDuration;
-        payload.defaultAspectRatio = defaultAspectRatio;
-        payload.defaultResolution = defaultResolution;
-        payload.generateAudioDefault = generateAudioDefault;
+        payload.defaultduration = defaultDuration;
+        payload.defaultaspectratio = defaultAspectRatio;
+        payload.defaultresolution = defaultResolution;
+        payload.generateaudiodefault = generateAudioDefault;
       } else {
-        payload.generateAudioDefault = null;
-        payload.defaultDuration = null;
-        payload.defaultAspectRatio = null;
-        payload.defaultResolution = null;
+        payload.generateaudiodefault = null;
+        payload.defaultduration = null;
+        payload.defaultaspectratio = null;
+        payload.defaultresolution = null;
       }
 
       // Only set URLs if we uploaded new ones
-      if (previewUrl) payload.previewUrl = previewUrl;
-      if (thumbnailUrl) payload.thumbnailUrl = thumbnailUrl;
-      if (videoUrl) payload.videoUrl = videoUrl;
+      if (previewUrl) payload.previewurl = previewUrl;
+      if (thumbnailUrl) payload.thumbnailurl = thumbnailUrl;
+      if (videoUrl) payload.videourl = videoUrl;
 
       // Create vs Update
       if (isEditing && templateId) {
@@ -363,12 +417,12 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
         if (error) throw error;
         toast.success("Template updated successfully!");
       } else {
-        // For create, we must ensure previewUrl exists for image or videoUrl+thumbnailUrl for video
-        if (type === "image" && !payload.previewUrl) {
+        // For create, ensure uploads exist based on type
+        if (type === "image" && !payload.previewurl) {
           toast.error("Missing preview upload");
           return;
         }
-        if (type === "video" && (!payload.thumbnailUrl || !payload.videoUrl)) {
+        if (type === "video" && (!payload.thumbnailurl || !payload.videourl)) {
           toast.error("Missing video/thumbnail upload");
           return;
         }
@@ -381,7 +435,6 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
 
       setUploadProgress(100);
 
-      // Email notification left as a future step (needs backend/edge function)
       if (!isEditing && sendEmailNotification) {
         toast.message("Email notification is not wired yet (we’ll add later).");
       }
@@ -430,11 +483,17 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
               {/* Occasion */}
               <div className="w-[220px]">
                 <label className="text-xs font-medium text-slate-300">Occasion *</label>
-                <Select value={occasion || ""} onValueChange={(v) => setOccasion(v)}>
+                <Select
+                  value={occasion ?? NONE}
+                  onValueChange={(v) => setOccasion(v === NONE ? null : v)}
+                >
                   <SelectTrigger className="w-full rounded-xl border border-slate-700 bg-slate-800/50 text-xs text-slate-200 h-[34px]">
                     <SelectValue placeholder="Select occasion" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
+                    <SelectItem value={NONE} className="focus:bg-slate-800 focus:text-slate-50">
+                      Select occasion
+                    </SelectItem>
                     {OCCASIONS.map((o) => (
                       <SelectItem
                         key={o.value}
@@ -454,12 +513,15 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-2 md:col-span-1">
                   <label className="text-xs font-medium text-slate-300">Style (optional)</label>
-                  <Select value={styleId || ""} onValueChange={(v) => setStyleId(v)}>
+                  <Select
+                    value={styleId ?? NONE}
+                    onValueChange={(v) => setStyleId(v === NONE ? null : v)}
+                  >
                     <SelectTrigger className="w-full rounded-xl border border-slate-700 bg-slate-800/50 text-xs text-slate-200 h-[34px]">
                       <SelectValue placeholder="All styles" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
-                      <SelectItem value="" className="focus:bg-slate-800 focus:text-slate-50">
+                      <SelectItem value={NONE} className="focus:bg-slate-800 focus:text-slate-50">
                         All styles
                       </SelectItem>
                       {styleOptions.map((s) => (
@@ -591,7 +653,9 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
                   onClick={() => document.getElementById("preview-image-upload")?.click()}
                   className="flex w-full items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-800/50 px-3 py-6 text-xs text-slate-400 hover:bg-slate-800 transition-colors"
                 >
-                  {previewImageFile ? `Selected: ${previewImageFile.name}` : "Click to upload preview image"}
+                  {previewImageFile
+                    ? `Selected: ${previewImageFile.name}`
+                    : "Click to upload preview image"}
                 </button>
                 <p className="text-[10px] text-slate-500">Recommended: 4:5 or 1:1 ratio, max 5MB.</p>
               </div>
@@ -690,7 +754,9 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-slate-300">Prompt *</label>
-                <span className="text-[10px] text-slate-500">Used to generate variations for this template</span>
+                <span className="text-[10px] text-slate-500">
+                  Used to generate variations for this template
+                </span>
               </div>
               <textarea
                 value={prompt}
@@ -744,7 +810,10 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
                   onChange={(e) => setSendEmailNotification(e.target.checked)}
                   className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
                 />
-                <label htmlFor="sendEmail" className="text-xs text-slate-300 flex-1 cursor-pointer flex items-center">
+                <label
+                  htmlFor="sendEmail"
+                  className="text-xs text-slate-300 flex-1 cursor-pointer flex items-center"
+                >
                   <Mail className="w-4 h-4 mr-2" />
                   <span>Send email notification to all subscribed users about this new template</span>
                 </label>
