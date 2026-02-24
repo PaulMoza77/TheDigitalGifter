@@ -369,8 +369,8 @@ async function requestReplicatePreview(args: {
   bucket: string;
   signal: AbortSignal;
 }): Promise<PreviewResponse> {
-  const res = await fetch("/api/replicate/preview", {
-    method: "POST",
+const res = await fetch("https://rmdsnpckutsucabledqz.supabase.co/functions/v1/replicate-preview", {
+      method: "POST",
     headers: { "Content-Type": "application/json" },
     signal: args.signal,
     body: JSON.stringify({
