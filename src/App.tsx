@@ -29,10 +29,9 @@ const MainLayout = lazy(() => import("@/layouts/MainLayouts"));
 // ================= ADMIN CORE =================
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import Templates from "@/pages/admin/Templates";
-
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
-const CreditsPage = lazy(() => import("@/pages/admin/Credits")); // ✅ NEW
+const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 
 // ================= WEBSITE PAGES =================
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
@@ -57,18 +56,21 @@ const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
 // ================= FUNNEL =================
 import FunnelHomePage from "@/components/funnelVersion/FunnelHomePage";
 import FunnelUploadPhoto from "@/components/funnelVersion/FunnelUploadPhoto";
-import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
 import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
 import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
+import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
+
+// ✅ NEW (MUST EXIST)
+const FunnelEmailCapture = lazy(
+  () => import("@/components/funnelVersion/FunnelEmailCapture")
+);
 
 // ================= HELPERS =================
 function ScrollToTop() {
   const { pathname } = useLocation();
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-
   return null;
 }
 
@@ -96,10 +98,8 @@ function AppInner() {
           }
         >
           <Routes>
-
             {/* ================= WEBSITE ================= */}
             <Route element={<MainLayout />}>
-
               <Route path="/" element={<Index />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
 
@@ -129,11 +129,26 @@ function AppInner() {
               <Route path="/refunds" element={<RefundPolicyPage />} />
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
-              {/* Funnel */}
+              {/* ================= FUNNEL FLOW (ORDER) ================= */}
+              {/* Optional landing */}
               <Route path="/funnel/homepage" element={<FunnelHomePage />} />
+
+              {/* ✅ Start funnel alias -> upload step */}
+              <Route path="/funnel" element={<Navigate to="/funnel/uploadPhoto" replace />} />
+
+              {/* 1) Upload Photo */}
               <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
+
+              {/* 2) Select Style */}
               <Route path="/funnel/styleSelect" element={<FunnelStyleSelect />} />
+
+              {/* 3) Preview */}
               <Route path="/funnel/preview" element={<FunnelPreview />} />
+
+              {/* 4) Email */}
+              <Route path="/funnel/email" element={<FunnelEmailCapture />} />
+
+              {/* 5) Payment */}
               <Route path="/funnel/payment" element={<FunnelPayment />} />
 
               {/* Redirect aliases */}
@@ -143,12 +158,10 @@ function AppInner() {
               <Route path="/fathers_day" element={<Navigate to="/fathers-day" replace />} />
               <Route path="/baby_reveal" element={<Navigate to="/baby-reveal" replace />} />
               <Route path="/new_born" element={<Navigate to="/new-born" replace />} />
-
             </Route>
 
             {/* ================= ADMIN ================= */}
             <Route element={<AdminLayout />}>
-
               <Route
                 path="/admin"
                 element={
@@ -193,12 +206,10 @@ function AppInner() {
                   </AdminRoute>
                 }
               />
-
             </Route>
 
             {/* ================= FALLBACK ================= */}
             <Route path="*" element={<Navigate to="/" replace />} />
-
           </Routes>
         </Suspense>
 

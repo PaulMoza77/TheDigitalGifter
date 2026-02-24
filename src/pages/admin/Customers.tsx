@@ -1,5 +1,5 @@
 // src/pages/admin/Customers.tsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search } from "lucide-react";
+import { Search, RefreshCw, Download } from "lucide-react";
 import { toast } from "sonner";
 
 type CustomerRow = {
@@ -63,15 +63,14 @@ function safeToISO(v: any): string | null {
     return Number.isNaN(v.getTime()) ? null : v.toISOString();
   }
 
-  // already ISO-ish
   if (typeof v === "string") {
     const d = new Date(v);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
   }
 
-  // epoch ms / seconds
   if (typeof v === "number") {
-    const n = v > 10_000_000_000 ? v : v * 1000; // handle seconds
+    // accept seconds or ms
+    const n = v > 10_000_000_000 ? v : v * 1000;
     const d = new Date(n);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
   }
@@ -99,9 +98,16 @@ function sortByCreatedAtDesc(rows: CustomerRow[]) {
   });
 }
 
-async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
-  // ✅ FIX: NU MAI FOLOSIM .order("created_at") (poate da 400 / mismatch)
-  const { data, error } = await supabase
+/**
+ * Primary source: customers_admin_view (existing, contains platform users + spending)
+ * Add-on source: funnel_customers_admin_view (only funnel leads that were synced into customers)
+ *
+ * We merge by email (prefer primary if it exists).
+ * IMPORTANT: we do NOT call .order() to avoid view column mismatches.
+ */
+async function loadFromCustomersAdminViewMerged(): Promise<CustomerRow[] | null> {
+  // 1) primary view (your existing one)
+  const primary = await supabase
     .from("customers_admin_view")
     .select(
       [
@@ -118,61 +124,108 @@ async function loadFromCustomersAdminView(): Promise<CustomerRow[] | null> {
       ].join(",")
     );
 
-  if (error) {
-    const msg = error.message || "Unknown error";
-    // fallback ONLY if view missing
-    if (String(msg).toLowerCase().includes("does not exist")) return null;
+  if (primary.error) {
+    const msg = (primary.error.message || "").toLowerCase();
 
-    console.error("[Customers] customers_admin_view error:", error);
-    toast.error(`Customers view error: ${msg}`);
-    // do NOT fallback on permission/column errors; show empty so you see issue
+    // fallback ONLY if view is missing
+    if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("not found")) {
+      return null;
+    }
+
+    console.error("[Customers] customers_admin_view error:", primary.error);
+    toast.error(`Customers view error: ${primary.error.message || "Unknown error"}`);
     return [];
   }
 
-  const rows = ((data as any[]) || []) as ViewRowLoose[];
+  // 2) funnel addon view (optional; if not present/permission issues, we just ignore)
+  const funnel = await supabase
+    .from("funnel_customers_admin_view")
+    .select(
+      [
+        "id",
+        "name",
+        "email",
+        "image_url",
+        "credits_used",
+        "generations",
+        "total_money_spent",
+        "orders_count",
+        "created_at",
+        "last_activity",
+      ].join(",")
+    );
 
-  const mapped = rows.map((r) => {
-    const image = (r.image_url ?? null) as string | null;
+  if (funnel.error) {
+    // don't block the page
+    console.warn("[Customers] funnel_customers_admin_view error:", funnel.error);
+  }
 
-    return {
-      id: String(r.id ?? ""),
-      name: (r.name ?? null) as string | null,
-      email: (r.email ?? null) as string | null,
-      image_url: image,
+  const rowsA = (((primary.data as any[]) || []) as ViewRowLoose[]).map((r) => ({
+    id: String(r.id ?? ""),
+    name: (r.name ?? null) as string | null,
+    email: (r.email ?? null) as string | null,
+    image_url: (r.image_url ?? null) as string | null,
+    credits_used: num(r.credits_used, 0),
+    generations: num(r.generations, 0),
+    total_money_spent: num(r.total_money_spent, 0),
+    orders_count: num(r.orders_count, 0),
+    created_at: safeToISO(r.created_at),
+    last_activity: safeToISO(r.last_activity),
+  })) as CustomerRow[];
 
-      credits_used: num(r.credits_used, 0),
-      generations: num(r.generations, 0),
-      total_money_spent: num(r.total_money_spent, 0),
-      orders_count: num(r.orders_count, 0),
+  const rowsB = ((((funnel.data as any[]) || []) as ViewRowLoose[]) || []).map((r) => ({
+    id: String(r.id ?? ""),
+    name: (r.name ?? null) as string | null,
+    email: (r.email ?? null) as string | null,
+    image_url: (r.image_url ?? null) as string | null,
+    credits_used: num(r.credits_used, 0),
+    generations: num(r.generations, 0),
+    total_money_spent: num(r.total_money_spent, 0),
+    orders_count: num(r.orders_count, 0),
+    created_at: safeToISO(r.created_at),
+    last_activity: safeToISO(r.last_activity),
+  })) as CustomerRow[];
 
-      created_at: safeToISO(r.created_at),
-      last_activity: safeToISO(r.last_activity),
-    } satisfies CustomerRow;
-  });
+  // Merge by email (fallback to id if email missing)
+  const keyOf = (r: CustomerRow) => (r.email || r.id || "").toLowerCase().trim();
 
-  return sortByCreatedAtDesc(mapped);
+  const byKey = new Map<string, CustomerRow>();
+
+  // add funnel first (so primary overrides with richer stats)
+  for (const r of rowsB) {
+    const k = keyOf(r);
+    if (!k) continue;
+    byKey.set(k, r);
+  }
+
+  // override with primary
+  for (const r of rowsA) {
+    const k = keyOf(r);
+    if (!k) continue;
+    byKey.set(k, r);
+  }
+
+  return sortByCreatedAtDesc(Array.from(byKey.values()));
 }
 
+/**
+ * Fallback source: app_users (ONLY used if customers_admin_view missing)
+ */
 async function loadFromAppUsers(): Promise<CustomerRow[]> {
-  // fallback
   const { data, error } = await supabase
     .from("app_users")
-    .select(
-      "id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous"
-    );
+    .select("id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous");
 
   if (error) {
     console.error("[Customers] app_users error:", error);
-    toast.error(`Customers fallback error: ${error.message}`);
+    toast.error(`Customers fallback error: ${error.message || "Unknown error"}`);
     return [];
   }
 
   const rows = (data as AppUserRow[]) || [];
 
-  const mapped = rows.map((u) => {
-    const stableId =
-      (u.convex_id && String(u.convex_id)) || `app_user:${String(u.id)}`;
-
+  const mapped: CustomerRow[] = rows.map((u) => {
+    const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${String(u.id)}`;
     return {
       id: stableId,
       name: u.name ?? null,
@@ -186,10 +239,58 @@ async function loadFromAppUsers(): Promise<CustomerRow[]> {
 
       created_at: safeToISO(u.creation_time),
       last_activity: null,
-    } satisfies CustomerRow;
+    };
   });
 
   return sortByCreatedAtDesc(mapped);
+}
+
+function exportCSV(rows: CustomerRow[]) {
+  const header = [
+    "id",
+    "name",
+    "email",
+    "credits_used",
+    "generations",
+    "total_money_spent",
+    "orders_count",
+    "created_at",
+    "last_activity",
+  ];
+
+  const esc = (v: any) => {
+    const s = String(v ?? "");
+    const needs = /[",\n]/.test(s);
+    const out = s.replace(/"/g, '""');
+    return needs ? `"${out}"` : out;
+  };
+
+  const lines = [
+    header.join(","),
+    ...rows.map((r) =>
+      [
+        r.id,
+        r.name ?? "",
+        r.email ?? "",
+        r.credits_used ?? 0,
+        r.generations ?? 0,
+        r.total_money_spent ?? 0,
+        r.orders_count ?? 0,
+        r.created_at ?? "",
+        r.last_activity ?? "",
+      ].map(esc).join(",")
+    ),
+  ];
+
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `customers_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function CustomersPage() {
@@ -198,41 +299,48 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [source, setSource] = useState<"view" | "fallback">("view");
 
-  React.useEffect(() => {
-    let cancelled = false;
+  const load = async () => {
+    setLoading(true);
 
-    async function load() {
-      setLoading(true);
-
-      // 1) Use view (primary)
-      const fromView = await loadFromCustomersAdminView();
-      if (cancelled) return;
-
-      if (fromView !== null) {
-        setCustomers(fromView);
-        setSource("view");
-        setLoading(false);
-        return;
-      }
-
-      // 2) Fallback only if view is missing
-      const fromAppUsers = await loadFromAppUsers();
-      if (cancelled) return;
-
-      setCustomers(fromAppUsers);
-      setSource("fallback");
+    // 1) primary view + funnel addon merge
+    const fromMergedView = await loadFromCustomersAdminViewMerged();
+    if (fromMergedView !== null) {
+      setCustomers(fromMergedView);
+      setSource("view");
       setLoading(false);
+      return;
     }
 
-    void load();
+    // 2) fallback only if primary view is missing
+    const fromAppUsers = await loadFromAppUsers();
+    setCustomers(fromAppUsers);
+    setSource("fallback");
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        await load();
+      } catch (e: any) {
+        if (cancelled) return;
+        console.error("[Customers] load failed:", e);
+        toast.error(e?.message || "Failed to load customers");
+        setCustomers([]);
+        setLoading(false);
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredCustomers = useMemo(() => {
-    if (!searchQuery) return customers;
-    const q = searchQuery.toLowerCase().trim();
+    const q = (searchQuery || "").toLowerCase().trim();
     if (!q) return customers;
 
     return customers.filter((c) => {
@@ -257,7 +365,9 @@ export default function CustomersPage() {
       const lastActivity = parseISOToDate(c.last_activity);
 
       if (createdAt && createdAt >= startOfMonth) acc.newThisMonth += 1;
-      if (lastActivity && lastActivity >= oneDayAgo) acc.active += 1;
+
+      // Guard: avoid "1970" showing as active if a view gives epoch 0 or invalid date
+      if (lastActivity && lastActivity.getTime() > 0 && lastActivity >= oneDayAgo) acc.active += 1;
 
       acc.totalRevenue += Number(c.total_money_spent || 0);
       return acc;
@@ -291,7 +401,7 @@ export default function CustomersPage() {
               Data source:{" "}
               <span className="font-semibold">
                 {source === "view"
-                  ? "customers_admin_view"
+                  ? "customers_admin_view (+ funnel_customers_admin_view)"
                   : "app_users (fallback)"}
               </span>
             </p>
@@ -300,17 +410,34 @@ export default function CustomersPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => toast.message("Export coming soon")}
-              className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+              onClick={() => {
+                exportCSV(filteredCustomers);
+                toast.success("Exported CSV");
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
             >
-              Export customers
+              <Download className="h-4 w-4" />
+              Export
             </button>
+
             <button
               type="button"
               onClick={() => toast.message("Campaigns coming soon")}
               className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
             >
               Send email campaign
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                await load();
+                toast.success("Refreshed");
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
             </button>
           </div>
         </header>
@@ -325,9 +452,7 @@ export default function CustomersPage() {
                 {stats.total.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              All accounts created on the platform.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">All accounts created on the platform.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -339,9 +464,7 @@ export default function CustomersPage() {
                 {stats.newThisMonth.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Joined since the 1st of the month.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Joined since the 1st of the month.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -353,9 +476,7 @@ export default function CustomersPage() {
                 {stats.active.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Users active in the last 24 hours.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Users active in the last 24 hours.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -367,9 +488,7 @@ export default function CustomersPage() {
                 {moneyEUR(stats.totalRevenue)}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Total money spent by users.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Total money spent by users.</p>
           </div>
         </section>
 
@@ -422,10 +541,11 @@ export default function CustomersPage() {
                     const spent = Number(c.total_money_spent || 0);
                     const joined = parseISOToDate(c.created_at);
                     const last = parseISOToDate(c.last_activity);
+                    const hasValidLast = !!last && last.getTime() > 0;
 
                     return (
                       <TableRow
-                        key={c.id}
+                        key={`${c.id}:${c.email ?? ""}`}
                         className="border-slate-800 hover:bg-slate-800/50 transition-colors"
                       >
                         <TableCell>
@@ -444,9 +564,7 @@ export default function CustomersPage() {
                               <span className="text-xs text-slate-500">
                                 {c.email || "—"}
                               </span>
-                              <span className="text-[10px] text-slate-600">
-                                {c.id}
-                              </span>
+                              <span className="text-[10px] text-slate-600">{c.id}</span>
                             </div>
                           </div>
                         </TableCell>
@@ -459,9 +577,7 @@ export default function CustomersPage() {
                           {Number(c.generations || 0)}
                         </TableCell>
 
-                        <TableCell className="text-slate-300">
-                          {moneyEUR(spent)}
-                        </TableCell>
+                        <TableCell className="text-slate-300">{moneyEUR(spent)}</TableCell>
 
                         <TableCell className="text-slate-400">
                           {Number(c.orders_count || 0)}
@@ -472,7 +588,7 @@ export default function CustomersPage() {
                         </TableCell>
 
                         <TableCell className="text-slate-400 text-xs">
-                          {last ? last.toLocaleString() : "—"}
+                          {hasValidLast ? last!.toLocaleString() : "—"}
                         </TableCell>
 
                         <TableCell className="text-right">
