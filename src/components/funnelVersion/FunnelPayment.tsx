@@ -1,10 +1,30 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+
 import { useLoggedInUserQuery } from "@/data";
 import { handleCheckout } from "@/lib/checkoutHandler";
+
+type FunnelSession = {
+  gift_type?: string;
+  style_id?: string;
+  script?: string;
+  email?: string;
+  lead_id?: string | number | null;
+};
+
+function readSession(): FunnelSession | null {
+  try {
+    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
+  } catch {
+    return null;
+  }
+}
 
 function formatMMSS(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -63,32 +83,81 @@ const packs = [
 
 type PackId = (typeof packs)[number]["id"];
 
-export default function PricingPage() {
+export default function FunnelPayment() {
+  const navigate = useNavigate();
+
   const [selected, setSelected] = useState<PackId>("creator");
   const [secondsLeft, setSecondsLeft] = useState<number>(29 * 60 + 46);
   const [isPaying, setIsPaying] = useState(false);
 
   const { data: me } = useLoggedInUserQuery();
 
+  // ✅ GUARD: nu intra la payment fără photo + email
   useEffect(() => {
-    const t = setInterval(() => {
+    const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
+    if (!photo) {
+      toast.error("Upload a photo first.");
+      navigate("/funnel/uploadPhoto", { replace: true });
+      return;
+    }
+
+    const s = readSession();
+    const email = String(s?.email || "").trim();
+    if (!email) {
+      toast.error("Please enter your email to continue.");
+      navigate("/funnel/email", { replace: true });
+      return;
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    const t = window.setInterval(() => {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
-    return () => clearInterval(t);
+    return () => window.clearInterval(t);
   }, []);
 
-  const selectedPack = useMemo(
-    () => packs.find((p) => p.id === selected) ?? packs[1],
-    [selected]
-  );
-
+  const selectedPack = useMemo(() => packs.find((p) => p.id === selected) ?? packs[1], [selected]);
   const totalCredits = selectedPack.credits + selectedPack.bonus;
 
   async function onCheckout() {
     if (isPaying) return;
+
+    // încă un guard (în caz că user forțează click rapid înainte de redirect)
+    const s = readSession();
+    const email = String(s?.email || "").trim();
+    const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
+
+    if (!photo) {
+      toast.error("Upload a photo first.");
+      navigate("/funnel/uploadPhoto", { replace: true });
+      return;
+    }
+
+    if (!email) {
+      toast.error("Please enter your email to continue.");
+      navigate("/funnel/email", { replace: true });
+      return;
+    }
+
     setIsPaying(true);
     try {
-      await handleCheckout({ pack: selected, user: me ?? null });
+      // ✅ Păstrăm semnătura ta existentă, dar trimitem user + pack.
+      // Dacă mâine schimbi în $0.99/generation, aici vei schimba doar payload-ul.
+      await handleCheckout({
+        pack: selected,
+        user: me ?? null,
+        // extra meta (nu strică dacă handler-ul ignoră câmpuri necunoscute)
+        funnel: {
+          email,
+          lead_id: s?.lead_id ?? null,
+          gift_type: s?.gift_type ?? null,
+          style_id: s?.style_id ?? null,
+        },
+      } as any);
+    } catch (e) {
+      console.error("[FunnelPayment] checkout error:", e);
+      toast.error("Checkout failed. Please try again.");
     } finally {
       setIsPaying(false);
     }
@@ -98,16 +167,12 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#F6F0E6] text-[#10221B]">
       <div className="mx-auto max-w-3xl px-4 pt-10">
         <div className="flex flex-col items-center gap-3">
-          <div className="text-3xl font-semibold tracking-tight">
-            TheDigitalGifter
-          </div>
+          <div className="text-3xl font-semibold tracking-tight">TheDigitalGifter</div>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#1B3A30]/15 bg-white/55 px-3 py-1 text-xs">
               <span className="inline-block h-2 w-2 rounded-full bg-[#1B3A30]" />
-              Reserved for{" "}
-              <span className="font-semibold">{formatMMSS(secondsLeft)}</span>{" "}
-              minutes
+              Reserved for <span className="font-semibold">{formatMMSS(secondsLeft)}</span> minutes
             </div>
 
             <div className="inline-flex items-center gap-2 rounded-full border border-[#1B3A30]/15 bg-white/55 px-3 py-1 text-xs">
@@ -117,9 +182,7 @@ export default function PricingPage() {
           </div>
 
           <div className="mt-8">
-            <h2 className="text-center text-2xl font-semibold">
-              What’s included?
-            </h2>
+            <h2 className="text-center text-2xl font-semibold">What’s included?</h2>
             <div className="mt-4 rounded-2xl border border-[#1B3A30]/15 bg-white/55 p-5">
               <ul className="space-y-3 text-sm">
                 {[
@@ -157,20 +220,12 @@ export default function PricingPage() {
 
           <div className="mt-8 space-y-3">
             <div className="rounded-2xl border border-[#1B3A30]/15 bg-white/55 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-[#10221B]/60">
-                Spending insight
-              </div>
-              <div className="mt-1 text-sm font-medium">
-                Average families spend €9–€29 per personalized gift
-              </div>
+              <div className="text-xs uppercase tracking-wide text-[#10221B]/60">Spending insight</div>
+              <div className="mt-1 text-sm font-medium">Average families spend €9–€29 per personalized gift</div>
             </div>
             <div className="rounded-2xl border border-[#1B3A30]/15 bg-white/55 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-[#10221B]/60">
-                Social proof
-              </div>
-              <div className="mt-1 text-sm font-medium">
-                ⭐ Rated 4.9/5 by families worldwide
-              </div>
+              <div className="text-xs uppercase tracking-wide text-[#10221B]/60">Social proof</div>
+              <div className="mt-1 text-sm font-medium">⭐ Rated 4.9/5 by families worldwide</div>
             </div>
           </div>
 
@@ -178,18 +233,12 @@ export default function PricingPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-[#10221B]/60">
-                    Choose your pack
-                  </div>
-                  <div className="mt-1 text-lg font-semibold">
-                    Credit packs (one-time)
-                  </div>
+                  <div className="text-xs uppercase tracking-wide text-[#10221B]/60">Choose your pack</div>
+                  <div className="mt-1 text-lg font-semibold">Credit packs (one-time)</div>
                 </div>
                 <div className="rounded-2xl border border-[#1B3A30]/15 bg-white px-3 py-2 text-center">
                   <div className="text-xs text-[#10221B]/60">Time left</div>
-                  <div className="text-sm font-semibold">
-                    {formatMSSFull(secondsLeft)}
-                  </div>
+                  <div className="text-sm font-semibold">{formatMSSFull(secondsLeft)}</div>
                 </div>
               </div>
 
@@ -203,22 +252,14 @@ export default function PricingPage() {
                       onClick={() => setSelected(p.id)}
                       className={
                         "w-full rounded-2xl border text-left transition " +
-                        (active
-                          ? "border-[#1B3A30]/45 bg-white"
-                          : "border-[#1B3A30]/15 bg-white/55")
+                        (active ? "border-[#1B3A30]/45 bg-white" : "border-[#1B3A30]/15 bg-white/55")
                       }
                     >
                       <div className="p-4 flex items-center justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <div className="text-base font-semibold">
-                              {p.name}
-                            </div>
-                            {p.popular && (
-                              <Badge className="rounded-full bg-[#1B3A30] text-white">
-                                Most popular
-                              </Badge>
-                            )}
+                            <div className="text-base font-semibold">{p.name}</div>
+                            {p.popular && <Badge className="rounded-full bg-[#1B3A30] text-white">Most popular</Badge>}
                             <Badge variant="outline" className="rounded-full">
                               +{p.bonus} bonus
                             </Badge>
@@ -229,9 +270,7 @@ export default function PricingPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-semibold">{p.price}</div>
-                          <div className="text-xs text-[#10221B]/60">
-                            one-time
-                          </div>
+                          <div className="text-xs text-[#10221B]/60">one-time</div>
                         </div>
                       </div>
                     </button>
@@ -243,15 +282,9 @@ export default function PricingPage() {
 
               <div className="rounded-2xl border border-[#1B3A30]/15 bg-white/60 p-4 text-center">
                 <div className="text-sm font-semibold">
-                  You’ll get{" "}
-                  <span className="font-bold">
-                    {totalCredits.toLocaleString()}
-                  </span>{" "}
-                  credits (incl. bonus)
+                  You’ll get <span className="font-bold">{totalCredits.toLocaleString()}</span> credits (incl. bonus)
                 </div>
-                <div className="mt-1 text-xs text-[#10221B]/70">
-                  Credits valid until Dec 24 • No expiration pressure
-                </div>
+                <div className="mt-1 text-xs text-[#10221B]/70">Credits valid until Dec 24 • No expiration pressure</div>
 
                 <Button
                   className="mt-4 h-11 w-full rounded-full bg-[#F3D35B] text-[#10221B] hover:bg-[#EDC94A]"
@@ -261,9 +294,7 @@ export default function PricingPage() {
                   {isPaying ? "Processing…" : "Create my digital gift"}
                 </Button>
 
-                <div className="mt-3 text-xs text-[#10221B]/70">
-                  ✔ Secure checkout • ✔ No subscriptions • ✔ Instant access
-                </div>
+                <div className="mt-3 text-xs text-[#10221B]/70">✔ Secure checkout • ✔ No subscriptions • ✔ Instant access</div>
               </div>
             </CardContent>
           </Card>
