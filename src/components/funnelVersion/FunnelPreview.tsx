@@ -10,10 +10,11 @@ import { AnimatePresence, motion } from "framer-motion";
  */
 
 type PreviewResponse = {
-  preview_url: string;
+  preview_url?: string; // ✅ poate lipsi când e pending
   request_id?: string;
   pending?: boolean;
   cached?: "mem" | "db";
+  error?: string;
 };
 
 function cx(...classes: Array<string | false | null | undefined>): string {
@@ -179,6 +180,12 @@ function ToastViewport(props: { toasts: ToastItem[] }) {
   );
 }
 
+/**
+ * ✅ CRITICAL FIX:
+ * - trimitem snake_case către Edge Function: funnel_slug, style_key
+ * - NU includem "signal" în body
+ * - acceptăm răspuns "pending" fără preview_url
+ */
 async function requestReplicatePreview(args:
   | {
       signal: AbortSignal;
@@ -192,24 +199,37 @@ async function requestReplicatePreview(args:
       request_id: string;
     }
 ): Promise<PreviewResponse> {
+  const body =
+    "request_id" in args
+      ? { request_id: args.request_id }
+      : {
+          funnel_slug: args.funnelSlug,
+          style_key: args.styleKey,
+          photo: args.photo,
+          bucket: args.bucket,
+          watermark: true,
+        };
+
   const res = await fetch("https://rmdsnpckutsucabledqz.supabase.co/functions/v1/replicate-preview", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     signal: args.signal,
-    body: JSON.stringify(args),
+    body: JSON.stringify(body),
   });
 
+  const text = await res.text().catch(() => "");
+  let data: PreviewResponse = {};
+  try {
+    data = text ? (JSON.parse(text) as PreviewResponse) : {};
+  } catch {
+    // ignore json parse
+  }
+
   if (!res.ok) {
-    let msg = `Preview request failed (${res.status})`;
-    try {
-      const j = await res.json();
-      if (j?.error) msg = String(j.error);
-    } catch {}
+    const msg = data?.error || `Preview request failed (${res.status})`;
     throw new Error(msg);
   }
 
-  const data = (await res.json()) as PreviewResponse;
-  if (!data?.preview_url) throw new Error("Preview response missing preview_url");
   return data;
 }
 
@@ -218,7 +238,6 @@ export default function FunnelPreview() {
 
   const [funnelSlug, setFunnelSlug] = useState<string>("newborn");
   const [bucket, setBucket] = useState<string>("templates");
-
   const [photo, setPhoto] = useState<string | null>(null);
 
   // keep styleKey (backend needs it), but NO UI to change it
@@ -242,7 +261,7 @@ export default function FunnelPreview() {
     setFunnelSlug(normalizeKey(qsSlug, "newborn"));
     setBucket(normalizeKey(qsBucket, "templates"));
 
-    if (qsStyle) setStyleKey(qsStyle.trim());
+    if (qsStyle && qsStyle.trim()) setStyleKey(qsStyle.trim());
 
     if (qsPhoto && qsPhoto.trim()) {
       setPhoto(qsPhoto.trim());
@@ -365,13 +384,13 @@ export default function FunnelPreview() {
           signal: ac.signal,
         });
 
-        const firstUrl = addCacheBusterIfHttp(first.preview_url);
-        setPreviewUrl(firstUrl);
-
         const requestId = first.request_id;
         const pending = !!first.pending;
 
-        // save style (optional)
+        if (first.preview_url) {
+          setPreviewUrl(addCacheBusterIfHttp(first.preview_url));
+        }
+
         try {
           window.localStorage.setItem("tdg_funnel_style", styleKey);
         } catch {}
@@ -385,20 +404,22 @@ export default function FunnelPreview() {
         const deadline = Date.now() + 10_000;
         while (!stopped && Date.now() < deadline) {
           await new Promise((r) => setTimeout(r, 450));
+
           const polled = await requestReplicatePreview({ request_id: requestId, signal: ac.signal });
 
+          if (polled.preview_url) {
+            setPreviewUrl(addCacheBusterIfHttp(polled.preview_url));
+          }
+
           const u = polled.preview_url || "";
-          const isStillPending = !!polled.pending || isDataUrl(u);
+          const stillPending = !!polled.pending || (u ? isDataUrl(u) : true);
 
-          setPreviewUrl(addCacheBusterIfHttp(u));
-
-          if (!isStillPending) {
+          if (!stillPending) {
             setIsGenerating(false);
             return;
           }
         }
 
-        // if still pending after 10s, stop spinner but keep placeholder showing
         setIsGenerating(false);
       } catch (e: any) {
         if (ac.signal.aborted) return;
@@ -461,6 +482,10 @@ export default function FunnelPreview() {
                         className="h-full w-full object-cover"
                         draggable={false}
                         onDragStart={onPreviewDragStart}
+                        onError={(e) => {
+                          console.error("IMG LOAD ERROR:", (e.target as HTMLImageElement)?.src);
+                          push("Preview image failed to load", "Check the returned preview_url (Console).");
+                        }}
                       />
                     ) : photo ? (
                       <div className="flex h-full w-full items-center justify-center bg-black/5">
@@ -514,7 +539,10 @@ export default function FunnelPreview() {
                     animate={{ x: [0, 8, 0], y: [0, -6, 0] }}
                     transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <div className="absolute inset-[-30%] flex flex-col gap-6" style={{ transform: "rotate(-20deg)", ...watermarkTileStyle }}>
+                    <div
+                      className="absolute inset-[-30%] flex flex-col gap-6"
+                      style={{ transform: "rotate(-20deg)", ...watermarkTileStyle }}
+                    >
                       {repeatedTextLines.map((line, idx) => (
                         <div key={`wm_${idx}`} className="whitespace-nowrap text-[14px] font-semibold tracking-wide text-black/70">
                           {line}
@@ -548,11 +576,7 @@ export default function FunnelPreview() {
             </div>
 
             <div className="mt-6 w-full max-w-sm text-center">
-              <Button
-                className="w-full"
-                disabled={!photo || isGenerating}
-                onClick={() => window.location.assign("/funnel/payment")}
-              >
+              <Button className="w-full" disabled={!photo || isGenerating} onClick={() => window.location.assign("/funnel/payment")}>
                 Unlock Full Quality
               </Button>
               <div className="mt-2 text-xs text-black/55">You’ll receive the final image in high resolution after payment.</div>
