@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 /**
@@ -164,12 +164,13 @@ type ToastItem = {
 
 function useToasts() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const lastRef = useRef<string>("");
+  const lastSigRef = useRef<string>("");
 
-  const push = (title: string, description?: string, durationMs = 2200) => {
+  // ✅ IMPORTANT: push trebuie să fie stabil (useCallback), altfel rerulează efectele la infinit
+  const push = useCallback((title: string, description?: string, durationMs = 2200) => {
     const sig = `${title}::${description || ""}`;
-    if (lastRef.current === sig) return;
-    lastRef.current = sig;
+    if (lastSigRef.current === sig) return;
+    lastSigRef.current = sig;
 
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     const item: ToastItem = {
@@ -179,11 +180,13 @@ function useToasts() {
       createdAt: Date.now(),
       durationMs: clamp(durationMs, 1200, 6000),
     };
+
     setToasts((prev) => [...prev, item]);
+
     window.setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, item.durationMs);
-  };
+  }, []);
 
   return { toasts, push };
 }
@@ -210,25 +213,17 @@ function ToastViewport(props: { toasts: ToastItem[] }) {
   );
 }
 
-async function requestReplicatePreview(args:
-  | {
-      signal: AbortSignal;
-      funnelSlug: string;
-      styleKey: string;
-      photo: string;
-      bucket: string;
-    }
-  | {
-      signal: AbortSignal;
-      request_id: string;
-    }
+async function requestReplicatePreview(
+  args:
+    | { signal: AbortSignal; funnelSlug: string; styleKey: string; photo: string; bucket: string }
+    | { signal: AbortSignal; request_id: string }
 ): Promise<PreviewResponse> {
   const body =
     "request_id" in args
       ? { request_id: args.request_id }
       : {
-          funnel_slug: args.funnelSlug, // ✅ snake_case
-          style_key: args.styleKey,     // ✅ snake_case
+          funnel_slug: args.funnelSlug,
+          style_key: args.styleKey,
           photo: args.photo,
           bucket: args.bucket,
           watermark: true,
@@ -236,7 +231,6 @@ async function requestReplicatePreview(args:
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-  // ✅ dacă funcția cere auth, anon key e ok în frontend
   if (SUPABASE_ANON_KEY) {
     headers["apikey"] = SUPABASE_ANON_KEY;
     headers["Authorization"] = `Bearer ${SUPABASE_ANON_KEY}`;
@@ -255,7 +249,6 @@ async function requestReplicatePreview(args:
     data = raw ? (JSON.parse(raw) as PreviewResponse) : {};
   } catch {}
 
-  // ✅ DEBUG: vezi instant ce întoarce funcția
   console.log("[replicate-preview] status:", res.status, "data:", data);
 
   if (!res.ok) {
@@ -357,15 +350,6 @@ export default function FunnelPreview() {
     } as React.CSSProperties;
   }, []);
 
-  const onPreviewContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    push("Preview protected");
-  };
-
-  const onPreviewDragStart = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
   const watermarkText = "TDG • TheDigitalGifter • PREVIEW";
   const repeatedTextLines = useMemo(() => {
     const line = `${watermarkText}   ${watermarkText}   ${watermarkText}   ${watermarkText}   ${watermarkText}`;
@@ -395,6 +379,7 @@ export default function FunnelPreview() {
     setProgressHint("Generating preview…");
 
     let stopped = false;
+    let lastResolvedUrl = ""; // ✅ evităm state-stale la final
 
     (async () => {
       try {
@@ -411,6 +396,7 @@ export default function FunnelPreview() {
 
         if (first.preview_url) {
           const resolved = resolvePreviewUrl(first.preview_url);
+          lastResolvedUrl = resolved;
           setPreviewUrl(addCacheBusterIfHttp(resolved));
         }
 
@@ -431,6 +417,7 @@ export default function FunnelPreview() {
         }
 
         const deadline = Date.now() + 10_000;
+
         while (!stopped && Date.now() < deadline) {
           await new Promise((r) => setTimeout(r, 450));
 
@@ -438,11 +425,12 @@ export default function FunnelPreview() {
 
           if (polled.preview_url) {
             const resolved = resolvePreviewUrl(polled.preview_url);
+            lastResolvedUrl = resolved;
             setPreviewUrl(addCacheBusterIfHttp(resolved));
           }
 
-          const u = polled.preview_url || "";
-          const stillPending = !!polled.pending || (!u ? true : isDataUrl(u));
+          const u = (polled.preview_url || "").trim();
+          const stillPending = !!polled.pending || !u || isDataUrl(u);
 
           if (!stillPending) {
             if (!polled.preview_url) throw new Error("Finished but preview_url missing");
@@ -452,7 +440,7 @@ export default function FunnelPreview() {
         }
 
         setIsGenerating(false);
-        if (!previewUrl) {
+        if (!lastResolvedUrl) {
           push("Preview still not ready", "Backend didn't return a usable preview_url in 10s.");
         }
       } catch (e: any) {
@@ -468,7 +456,6 @@ export default function FunnelPreview() {
       stopped = true;
       ac.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photo, bucket, funnelSlug, styleKey, push]);
 
   return (
@@ -521,8 +508,13 @@ export default function FunnelPreview() {
                         draggable={false}
                         onDragStart={(e) => e.preventDefault()}
                         onError={(e) => {
-                          console.error("IMG LOAD ERROR:", (e.target as HTMLImageElement)?.src);
-                          push("Preview image failed to load", "Open Console to see IMG LOAD ERROR URL.");
+                          const url = (e.target as HTMLImageElement)?.src;
+                          console.error("IMG LOAD ERROR:", url);
+                          push("Preview image failed to load", "Check Console for IMG LOAD ERROR URL.");
+                        }}
+                        onLoad={(e) => {
+                          const url = (e.target as HTMLImageElement)?.src;
+                          console.log("IMG LOADED OK:", url);
                         }}
                       />
                     ) : photo ? (
@@ -582,7 +574,10 @@ export default function FunnelPreview() {
                       style={{ transform: "rotate(-20deg)", ...watermarkTileStyle }}
                     >
                       {repeatedTextLines.map((line, idx) => (
-                        <div key={`wm_${idx}`} className="whitespace-nowrap text-[14px] font-semibold tracking-wide text-black/70">
+                        <div
+                          key={`wm_${idx}`}
+                          className="whitespace-nowrap text-[14px] font-semibold tracking-wide text-black/70"
+                        >
                           {line}
                         </div>
                       ))}
