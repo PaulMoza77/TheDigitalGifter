@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 /**
  * FunnelPreview.tsx
@@ -16,6 +17,22 @@ type PreviewResponse = {
   cached?: "mem" | "db";
   error?: string;
 };
+
+type FunnelSession = {
+  gift_type?: string;
+  style_id?: string;
+  script?: string;
+  email?: string;
+  lead_id?: string | number | null;
+};
+
+function readSession(): FunnelSession | null {
+  try {
+    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
+  } catch {
+    return null;
+  }
+}
 
 function cx(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
@@ -166,7 +183,6 @@ function useToasts() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const lastSigRef = useRef<string>("");
 
-  // ✅ IMPORTANT: push trebuie să fie stabil (useCallback), altfel rerulează efectele la infinit
   const push = useCallback((title: string, description?: string, durationMs = 2200) => {
     const sig = `${title}::${description || ""}`;
     if (lastSigRef.current === sig) return;
@@ -258,6 +274,7 @@ async function requestReplicatePreview(
 }
 
 export default function FunnelPreview() {
+  const navigate = useNavigate();
   const { toasts, push } = useToasts();
 
   const [funnelSlug, setFunnelSlug] = useState<string>("newborn");
@@ -272,6 +289,15 @@ export default function FunnelPreview() {
   const redirectTimerRef = useRef<number | null>(null);
   const lastKeydownRef = useRef<number>(0);
   const abortRef = useRef<AbortController | null>(null);
+
+  // ✅ Decide next step (email -> payment) based on session.email
+  const goNext = useCallback(() => {
+    const s = readSession();
+    const email = String(s?.email || "").trim().toLowerCase();
+    const hasEmail = !!email;
+
+    navigate(hasEmail ? "/funnel/payment" : "/funnel/email");
+  }, [navigate]);
 
   useEffect(() => {
     const qsPhoto = getQueryStringValue("photo");
@@ -309,13 +335,13 @@ export default function FunnelPreview() {
     if (!storedPhoto) {
       push("Upload a photo first", "No photo reference found. Please upload again.");
       redirectTimerRef.current = window.setTimeout(() => {
-        window.location.assign("/funnel/uploadPhoto");
+        navigate("/funnel/uploadPhoto", { replace: true });
       }, 650);
       return;
     }
 
     setPhoto(storedPhoto);
-  }, [push]);
+  }, [push, navigate]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -379,7 +405,7 @@ export default function FunnelPreview() {
     setProgressHint("Generating preview…");
 
     let stopped = false;
-    let lastResolvedUrl = ""; // ✅ evităm state-stale la final
+    let lastResolvedUrl = "";
 
     (async () => {
       try {
@@ -405,16 +431,12 @@ export default function FunnelPreview() {
         } catch {}
 
         if (!pending) {
-          if (!first.preview_url) {
-            throw new Error("Backend returned pending=false but no preview_url");
-          }
+          if (!first.preview_url) throw new Error("Backend returned pending=false but no preview_url");
           setIsGenerating(false);
           return;
         }
 
-        if (!requestId) {
-          throw new Error("Backend returned pending=true but missing request_id");
-        }
+        if (!requestId) throw new Error("Backend returned pending=true but missing request_id");
 
         const deadline = Date.now() + 10_000;
 
@@ -609,7 +631,7 @@ export default function FunnelPreview() {
             </div>
 
             <div className="mt-6 w-full max-w-sm text-center">
-              <Button className="w-full" disabled={!photo || isGenerating} onClick={() => window.location.assign("/funnel/payment")}>
+              <Button className="w-full" disabled={!photo || isGenerating} onClick={goNext}>
                 Unlock Full Quality
               </Button>
               <div className="mt-2 text-xs text-black/55">You’ll receive the final image in high resolution after payment.</div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -13,19 +13,47 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase());
 }
 
+type FunnelSession = {
+  gift_type?: string;
+  style_id?: string;
+  script?: string;
+  email?: string;
+  lead_id?: string | number | null;
+};
+
+function readSession(): FunnelSession | null {
+  try {
+    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
+  } catch {
+    return null;
+  }
+}
+
 export default function FunnelEmailCapture() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const session = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as
-        | { gift_type?: string; style_id?: string; script?: string }
-        | null;
-    } catch {
-      return null;
+  const session = useMemo(() => readSession(), []);
+
+  // ✅ Guards: dacă n-ai photo, înapoi la upload; dacă ai deja email, sari direct la payment
+  useEffect(() => {
+    const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
+    if (!photo) {
+      navigate("/funnel/uploadPhoto", { replace: true });
+      return;
     }
+
+    const s = readSession();
+    const existingEmail = String(s?.email || "").trim().toLowerCase();
+    if (existingEmail && isValidEmail(existingEmail)) {
+      navigate("/funnel/payment", { replace: true });
+      return;
+    }
+
+    // prefill dacă ai deja ceva în session (ex: user revine)
+    if (existingEmail) setEmail(existingEmail);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleContinue = async () => {
@@ -37,26 +65,24 @@ export default function FunnelEmailCapture() {
 
     setSaving(true);
     try {
-      const occasion = String(session?.gift_type || "").trim() || null;
-      const style_id = String(session?.style_id || "").trim() || null;
+      const s = readSession();
+      const occasion = String(s?.gift_type || "").trim() || null;
+      const style_id = String(s?.style_id || "").trim() || null;
 
       // upsert (nu dubla același email)
       const { data, error } = await supabase
         .from("funnel_leads")
-        .upsert(
-          { email: e, occasion, style_id },
-          { onConflict: "email" }
-        )
+        .upsert({ email: e, occasion, style_id }, { onConflict: "email" })
         .select("id")
         .single();
 
       if (error) throw error;
 
-      // salvează lead_id în session (util la payment)
-      const nextSession = {
-        ...(session || {}),
+      // salvează lead_id + email în session (util la payment)
+      const nextSession: FunnelSession = {
+        ...(s || {}),
         email: e,
-        lead_id: data?.id || null,
+        lead_id: data?.id ?? null,
       };
       localStorage.setItem("tdg_funnel_session", JSON.stringify(nextSession));
 
