@@ -25,7 +25,7 @@ const cardAnim: Variants = {
   },
 };
 
-// ✅ change ONLY this if your preview page route is different
+// ✅ preview route
 const NEXT_ROUTE = "/funnel/preview";
 
 type TemplateDbRow = {
@@ -34,10 +34,8 @@ type TemplateDbRow = {
   prompt: string | null;
   occasion: string | null;
   style_id: string | null;
-
   preview_url: string | null;
   thumbnail_url: string | null;
-
   isactive: boolean | null;
 };
 
@@ -49,29 +47,43 @@ type FunnelStyle = {
   thumbnailUrl: string | null;
 };
 
-function normalizeOccasion(x: string) {
-  return (x || "").toLowerCase().trim();
-}
-
 function safeString(x: unknown) {
   return String(x ?? "").trim();
+}
+
+function normalizeOccasion(raw: string) {
+  const x = (raw || "").toLowerCase().trim();
+
+  // Normalize a few common variants
+  if (x === "new_born" || x === "newborn" || x === "new-born") return "newborn";
+  return x || "newborn";
 }
 
 export default function FunnelStyleSelect() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const occasion = normalizeOccasion(searchParams.get("occasion") || "new_born");
+  // ✅ pull context from URL (coming from Upload step)
+  const bucket = safeString(searchParams.get("bucket")) || "templates";
+  const photoPath = safeString(searchParams.get("photo")); // required for next step
+  const slug = safeString(searchParams.get("slug")) || "newborn";
+
+  // ✅ occasion param is optional; default to slug (newborn)
+  const occasion = useMemo(() => {
+    const fromQs = safeString(searchParams.get("occasion"));
+    return normalizeOccasion(fromQs || slug || "newborn");
+  }, [searchParams, slug]);
 
   const [loading, setLoading] = useState(true);
   const [styles, setStyles] = useState<FunnelStyle[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const header = useMemo(() => {
-    if (occasion === "new_born") {
+    if (occasion === "newborn") {
       return {
-        title: "Choose your New Born Vibe",
-        subtitle: "A gentle beginning deserves a timeless memory.",
+        title: "Choose your Newborn Vibe",
+        subtitle: "Pick a style — we’ll generate a watermarked preview next.",
       };
     }
     return {
@@ -85,33 +97,62 @@ export default function FunnelStyleSelect() {
 
     const fetchStyles = async () => {
       setLoading(true);
+      setErrorMsg(null);
 
-      const { data, error } = await supabase
-        .from("templates")
-        .select(
-          [
-            "id",
-            "title",
-            "prompt",
-            "occasion",
-            "style_id",
-            "preview_url",
-            "thumbnail_url",
-            "isactive",
-          ].join(",")
-        )
-        .eq("isactive", true)
-        .eq("occasion", occasion)
-        .order("style_id", { ascending: true });
+      // We will try 2 occasions if needed:
+      // - "newborn"
+      // - legacy "new_born" (in case your DB still uses it)
+      const primaryOccasion = occasion;
+      const legacyOccasion = primaryOccasion === "newborn" ? "new_born" : null;
 
-      if (!alive) return;
+      const runQuery = async (occ: string) => {
+        return await supabase
+          .from("templates")
+          .select(
+            [
+              "id",
+              "title",
+              "prompt",
+              "occasion",
+              "style_id",
+              "preview_url",
+              "thumbnail_url",
+              "isactive",
+            ].join(",")
+          )
+          .eq("isactive", true)
+          .eq("occasion", occ)
+          .order("style_id", { ascending: true });
+      };
 
-      if (error) {
-        console.error("[FunnelStyleSelect] fetch templates error:", error);
+      let data: any[] | null = null;
+
+      // first try normalized occasion
+      const q1 = await runQuery(primaryOccasion);
+      if (q1.error) {
+        if (!alive) return;
+        console.error("[FunnelStyleSelect] fetch templates error:", q1.error);
+        setErrorMsg(q1.error.message || "Failed to load styles.");
         setStyles([]);
         setLoading(false);
         return;
       }
+      data = q1.data ?? [];
+
+      // if nothing and legacy exists, try legacy occasion
+      if (data.length === 0 && legacyOccasion) {
+        const q2 = await runQuery(legacyOccasion);
+        if (q2.error) {
+          if (!alive) return;
+          console.error("[FunnelStyleSelect] legacy fetch error:", q2.error);
+          // keep empty but show a softer message
+          data = [];
+        } else {
+          data = q2.data ?? [];
+        }
+      }
+
+      if (!alive) return;
 
       const mapped: FunnelStyle[] = (data ?? [])
         .map((r) => r as unknown as TemplateDbRow)
@@ -127,6 +168,7 @@ export default function FunnelStyleSelect() {
       setStyles(mapped);
       setLoading(false);
 
+      // keep selection if still exists
       setSelected((prev) => (prev && mapped.some((x) => x.id === prev) ? prev : null));
     };
 
@@ -138,20 +180,45 @@ export default function FunnelStyleSelect() {
   }, [occasion]);
 
   const handleContinue = () => {
+    setErrorMsg(null);
+
+    if (!photoPath) {
+      // we can’t continue because Preview needs the photo reference
+      setErrorMsg("Missing photo reference. Please go back and upload your photo again.");
+      return;
+    }
+
     if (!selected) return;
+
     const style = styles.find((s) => s.id === selected);
     if (!style) return;
 
-    localStorage.setItem(
-      "tdg_funnel_session",
-      JSON.stringify({
-        gift_type: occasion,
-        style_id: style.id,
-        script: style.script,
-      })
-    );
+    // optional: store for internal use
+    try {
+      window.localStorage.setItem(
+        "tdg_funnel_session",
+        JSON.stringify({
+          gift_type: occasion,
+          style_id: style.id,
+          script: style.script,
+        })
+      );
+      window.localStorage.setItem("tdg_funnel_style", style.id);
+      window.localStorage.setItem("tdg_funnel_slug", slug || occasion);
+      window.localStorage.setItem("tdg_funnel_bucket", bucket);
+      window.localStorage.setItem("tdg_funnel_photo_path", photoPath);
+    } catch {
+      // ignore
+    }
 
-    navigate(NEXT_ROUTE);
+    const qs = new URLSearchParams({
+      bucket,
+      photo: photoPath,
+      slug: slug || occasion,
+      style: style.id,
+    });
+
+    navigate(`${NEXT_ROUTE}?${qs.toString()}`);
   };
 
   return (
@@ -189,6 +256,18 @@ export default function FunnelStyleSelect() {
             </CardHeader>
 
             <CardContent className="space-y-5">
+              {!photoPath ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Missing photo reference. Please return to upload and try again.
+                </div>
+              ) : null}
+
+              {errorMsg ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {errorMsg}
+                </div>
+              ) : null}
+
               {loading ? (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {Array.from({ length: 6 }).map((_, idx) => (
@@ -232,7 +311,6 @@ export default function FunnelStyleSelect() {
                         )}
                         aria-pressed={isSelected}
                       >
-                        {/* BIG Thumbnail (like Templates) */}
                         <div className="mb-3 h-36 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:h-44">
                           {imgSrc ? (
                             <img
@@ -257,9 +335,7 @@ export default function FunnelStyleSelect() {
                             <p className="mt-1 text-xs text-slate-600">Tap to select</p>
                           </div>
 
-                          <span
-                            className={cn("text-slate-400 transition", isSelected && "text-[#6D5EF7]")}
-                          >
+                          <span className={cn("text-slate-400 transition", isSelected && "text-[#6D5EF7]")}>
                             →
                           </span>
                         </div>
@@ -269,15 +345,14 @@ export default function FunnelStyleSelect() {
                 </div>
               )}
 
-              {/* Continue */}
               <div className="pt-2 flex justify-center">
                 <button
                   type="button"
                   onClick={handleContinue}
-                  disabled={!selected || loading || styles.length === 0}
+                  disabled={!selected || loading || styles.length === 0 || !photoPath}
                   className={cn(
                     "rounded-2xl px-8 py-3 font-semibold transition",
-                    selected && !loading && styles.length > 0
+                    selected && !loading && styles.length > 0 && photoPath
                       ? "bg-[#6D5EF7] text-white hover:brightness-105 active:brightness-95 shadow-lg shadow-black/10"
                       : "bg-slate-200 text-slate-500 cursor-not-allowed"
                   )}

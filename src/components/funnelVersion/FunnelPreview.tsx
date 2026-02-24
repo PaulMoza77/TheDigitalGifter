@@ -5,26 +5,18 @@ import { AnimatePresence, motion } from "framer-motion";
  * FunnelPreview.tsx (NEWBORN / PORTRAIT funnel)
  * ------------------------------------------------
  * - Single-file React + TS component
- * - NO external UI/toast imports, NO router hooks
+ * - NO external UI/toast imports, NO router hooks.
  * - Navigation via window.location.assign(...)
  *
- * What it does:
- * 1) Reads uploaded photo + selected style from localStorage
- * 2) When style changes (or manual regenerate), calls a backend endpoint that runs Replicate
- * 3) Shows a WATERMARKED preview (overlay watermarks + optional server-watermarked image)
+ * How it gets the photo:
+ * ✅ Primary: query params (recommended)
+ *   /funnel/preview?bucket=templates&photo=previews/xxx.png&slug=newborn
  *
- * IMPORTANT:
- * - You MUST implement the backend endpoint to call Replicate (do NOT call Replicate directly from the browser).
- * - This file expects: POST /api/replicate/preview -> { preview_url: string }
+ * Fallbacks:
+ * - localStorage tdg_funnel_photo (if present)
  *
- * LocalStorage keys expected:
- * - tdg_funnel_photo: dataURL/base64 or http(s) url to uploaded photo
- * - tdg_funnel_style: style key
- * - tdg_funnel_slug: funnel identifier (e.g. "newborn")
- *
- * Redirects:
- * - if no photo: /funnel/uploadPhoto
- * - checkout: /funnel/payment
+ * Replicate:
+ * - Calls POST /api/replicate/preview -> { preview_url: string }
  */
 
 type ColorGrade = "warm" | "cool" | "neutral";
@@ -46,7 +38,7 @@ type TemplateStyle = {
   };
   colorGrade: ColorGrade;
   motionHint: string;
-  promptHint: string; // used for replicate prompt building (backend can use it)
+  promptHint: string;
   flags?: {
     hasGlow?: boolean;
     hasBokeh?: boolean;
@@ -63,7 +55,7 @@ type ToastItem = {
 };
 
 type PreviewResponse = {
-  preview_url: string; // URL to watermarked image OR plain preview image
+  preview_url: string;
   request_id?: string;
 };
 
@@ -79,18 +71,27 @@ function safeNow(): number {
   return typeof performance !== "undefined" && (performance as any).now ? (performance as any).now() : Date.now();
 }
 
-function safeJsonParse<T>(s: string | null): T | null {
-  if (!s) return null;
+function normalizeKey(s: string | null | undefined, fallback: string) {
+  const v = (s || "").trim();
+  return v ? v : fallback;
+}
+
+function getQS(): URLSearchParams {
+  if (typeof window === "undefined") return new URLSearchParams();
+  return new URLSearchParams(window.location.search);
+}
+
+function getQueryStringValue(key: string): string | null {
   try {
-    return JSON.parse(s) as T;
+    return getQS().get(key);
   } catch {
     return null;
   }
 }
 
-function normalizeKey(s: string | null | undefined, fallback: string) {
-  const v = (s || "").trim();
-  return v ? v : fallback;
+function addCacheBuster(url: string): string {
+  const t = Date.now();
+  return url.includes("?") ? `${url}&t=${t}` : `${url}?t=${t}`;
 }
 
 /** Minimal UI primitives */
@@ -175,11 +176,16 @@ function Select(props: {
   );
 }
 
-/** Local toast system */
+/** Local toast system (anti-spam: dedupe last message) */
 function useToasts() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const lastRef = useRef<string>("");
 
   const push = (title: string, description?: string, durationMs = 2200) => {
+    const sig = `${title}::${description || ""}`;
+    if (lastRef.current === sig) return; // prevent spam
+    lastRef.current = sig;
+
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     const item: ToastItem = {
       id,
@@ -322,7 +328,6 @@ function getTemplateByKey(styleKey: string | null | undefined): TemplateStyle {
 }
 
 function computeFilterForTemplate(t: TemplateStyle): string {
-  // subtle CSS filter on top of the Replicate preview
   const base = { contrast: 1.05, saturate: 1.06, brightness: 1.02, hue: 0, blur: 0 };
 
   if (t.colorGrade === "cool") {
@@ -335,11 +340,6 @@ function computeFilterForTemplate(t: TemplateStyle): string {
     base.saturate = 1.1;
     base.brightness = 1.02;
     base.hue = 6;
-  } else {
-    base.contrast = 1.05;
-    base.saturate = 1.06;
-    base.brightness = 1.02;
-    base.hue = 0;
   }
 
   if (t.flags?.hasBokeh) base.blur = 0.25;
@@ -362,24 +362,11 @@ function Skeleton() {
   );
 }
 
-/**
- * Calls your backend that runs Replicate and returns a preview URL.
- * You MUST implement /api/replicate/preview.
- *
- * Expected request shape (example):
- * {
- *   funnel_slug: "newborn",
- *   style_key: "newborn_soft_cream",
- *   photo: "<dataURL or image url>",
- *   watermark: true
- * }
- *
- * Response: { preview_url: "https://..." }
- */
 async function requestReplicatePreview(args: {
   funnelSlug: string;
   styleKey: string;
-  photo: string;
+  photo: string; // should be a URL or a storage path (backend must support)
+  bucket: string;
   signal: AbortSignal;
 }): Promise<PreviewResponse> {
   const res = await fetch("/api/replicate/preview", {
@@ -390,7 +377,8 @@ async function requestReplicatePreview(args: {
       funnel_slug: args.funnelSlug,
       style_key: args.styleKey,
       photo: args.photo,
-      watermark: true, // ask server to watermark too (recommended)
+      bucket: args.bucket,
+      watermark: true,
     }),
   });
 
@@ -399,9 +387,7 @@ async function requestReplicatePreview(args: {
     try {
       const j = await res.json();
       if (j?.error) msg = String(j.error);
-    } catch {
-      // ignore
-    }
+    } catch {}
     throw new Error(msg);
   }
 
@@ -413,28 +399,49 @@ async function requestReplicatePreview(args: {
 export default function FunnelPreview() {
   const { toasts, push } = useToasts();
 
-  // funnel context
+  // context
   const [funnelSlug, setFunnelSlug] = useState<string>("newborn");
+  const [bucket, setBucket] = useState<string>("templates");
 
-  // input photo + style
-  const [photo, setPhoto] = useState<string | null>(null);
+  // photo source
+  const [photo, setPhoto] = useState<string | null>(null); // can be storage path or full URL
+
+  // style
   const [styleKey, setStyleKey] = useState<string>("newborn_soft_cream");
 
-  // replicate result
+  // generated result
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // generating state
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [progressHint, setProgressHint] = useState<string>("Generating preview…");
-  const [generationToken, setGenerationToken] = useState<number>(0);
+  // generating
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progressHint, setProgressHint] = useState("Generating preview…");
+  const [generationToken, setGenerationToken] = useState(0);
 
   const redirectTimerRef = useRef<number | null>(null);
   const lastKeydownRef = useRef<number>(0);
-
   const abortRef = useRef<AbortController | null>(null);
 
-  // load from localStorage
+  // ✅ Read photo from query params (primary) OR localStorage (fallback)
   useEffect(() => {
+    const qsPhoto = getQueryStringValue("photo"); // e.g. previews/xxx.png
+    const qsBucket = getQueryStringValue("bucket"); // templates
+    const qsSlug = getQueryStringValue("slug"); // newborn
+    const qsStyle = getQueryStringValue("style"); // optional
+
+    const slug = normalizeKey(qsSlug, "newborn");
+    setFunnelSlug(slug);
+
+    setBucket(normalizeKey(qsBucket, "templates"));
+
+    if (qsStyle) setStyleKey(qsStyle);
+
+    // primary: query param
+    if (qsPhoto && qsPhoto.trim()) {
+      setPhoto(qsPhoto.trim());
+      return;
+    }
+
+    // fallback: localStorage
     const storedPhoto = (() => {
       try {
         return window.localStorage.getItem("tdg_funnel_photo");
@@ -451,19 +458,12 @@ export default function FunnelPreview() {
       }
     })();
 
-    const storedSlug = (() => {
-      try {
-        return window.localStorage.getItem("tdg_funnel_slug");
-      } catch {
-        return null;
-      }
-    })();
-
-    const slug = normalizeKey(storedSlug, "newborn");
-    setFunnelSlug(slug);
+    if (storedStyle && storedStyle.trim()) {
+      setStyleKey(storedStyle.trim());
+    }
 
     if (!storedPhoto) {
-      push("Upload a photo first", "We need your photo to generate a preview.");
+      push("Upload a photo first", "No photo reference found. Please upload again.");
       redirectTimerRef.current = window.setTimeout(() => {
         window.location.assign("/funnel/uploadPhoto");
       }, 650);
@@ -471,12 +471,9 @@ export default function FunnelPreview() {
     }
 
     setPhoto(storedPhoto);
-
-    const initialStyle = normalizeKey(storedStyle, "newborn_soft_cream");
-    setStyleKey(initialStyle);
   }, [push]);
 
-  // protect: PrintScreen, Ctrl+P / Cmd+P + context menu
+  // protect keyboard
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const now = safeNow();
@@ -486,7 +483,6 @@ export default function FunnelPreview() {
       const key = (e.key || "").toLowerCase();
       const isPrintScreen = key === "printscreen";
       const isPrintCombo = (e.ctrlKey || e.metaKey) && key === "p";
-
       if (isPrintScreen || isPrintCombo) {
         e.preventDefault();
         push("Preview protected");
@@ -497,7 +493,7 @@ export default function FunnelPreview() {
     return () => window.removeEventListener("keydown", onKeyDown as any);
   }, [push]);
 
-  // cleanup timers + abort
+  // cleanup
   useEffect(() => {
     return () => {
       if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
@@ -505,22 +501,20 @@ export default function FunnelPreview() {
     };
   }, []);
 
-  // derived
-  const resolvedTemplate: TemplateStyle = useMemo(() => getTemplateByKey(styleKey), [styleKey]);
+  const resolvedTemplate = useMemo(() => getTemplateByKey(styleKey), [styleKey]);
   const filterCss = useMemo(() => computeFilterForTemplate(resolvedTemplate), [resolvedTemplate]);
 
-  // Generate preview via Replicate whenever style/photo changes (or manual regeneration)
+  // ✅ Generate via Replicate when photo/style changes
   useEffect(() => {
     if (!photo) return;
 
-    // abort previous
     if (abortRef.current) abortRef.current.abort();
     const ac = new AbortController();
     abortRef.current = ac;
 
     setIsGenerating(true);
-    setProgressHint(`Generating preview… ${resolvedTemplate.motionHint}`);
     setPreviewUrl(null);
+    setProgressHint(`Generating preview… ${resolvedTemplate.motionHint}`);
 
     (async () => {
       try {
@@ -528,23 +522,17 @@ export default function FunnelPreview() {
           funnelSlug,
           styleKey: resolvedTemplate.styleKey,
           photo,
+          bucket,
           signal: ac.signal,
         });
 
-        // add cache-buster so style switching doesn't show stale cached image
-        const url = r.preview_url.includes("?")
-          ? `${r.preview_url}&t=${Date.now()}`
-          : `${r.preview_url}?t=${Date.now()}`;
-
-        setPreviewUrl(url);
+        setPreviewUrl(addCacheBuster(r.preview_url));
         setIsGenerating(false);
 
-        // persist selected style
+        // persist only style (optional)
         try {
           window.localStorage.setItem("tdg_funnel_style", resolvedTemplate.styleKey);
-        } catch {
-          // ignore
-        }
+        } catch {}
       } catch (e: any) {
         if (ac.signal.aborted) return;
         console.error("[FunnelPreview] replicate preview error:", e);
@@ -554,13 +542,10 @@ export default function FunnelPreview() {
       }
     })();
 
-    return () => {
-      ac.abort();
-    };
-  }, [photo, resolvedTemplate.styleKey, funnelSlug, generationToken, resolvedTemplate.motionHint, push]);
+    return () => ac.abort();
+  }, [photo, bucket, funnelSlug, resolvedTemplate.styleKey, resolvedTemplate.motionHint, generationToken, push]);
 
   const bg = useMemo(() => {
-    // neutral premium background (not seasonal)
     return {
       backgroundImage:
         "radial-gradient(1200px 800px at 20% 10%, rgba(235,244,242,0.95) 0%, rgba(250,248,242,1) 55%, rgba(247,246,242,1) 100%), radial-gradient(900px 600px at 85% 35%, rgba(220,235,255,0.55) 0%, rgba(255,255,255,0) 60%)",
@@ -576,53 +561,42 @@ export default function FunnelPreview() {
     e.preventDefault();
   };
 
-  // Watermark composition (client-side overlay)
+  // watermark overlay
   const watermarkText = "TDG • TheDigitalGifter • PREVIEW";
   const repeatedTextLines = useMemo(() => {
     const line = `${watermarkText}   ${watermarkText}   ${watermarkText}   ${watermarkText}   ${watermarkText}`;
     return new Array(10).fill(line);
   }, [watermarkText]);
 
-  const watermarkTileStyle = useMemo(() => {
-    return { opacity: 0.15 } as React.CSSProperties;
-  }, []);
-
-  const bigTDGStyle = useMemo(() => {
-    return {
-      opacity: 0.1,
-      mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
-      textShadow: "0 10px 40px rgba(0,0,0,0.25)",
-    } as React.CSSProperties;
-  }, []);
-
-  const styleOptions = useMemo(
+  const watermarkTileStyle = useMemo(() => ({ opacity: 0.15 } as React.CSSProperties), []);
+  const bigTDGStyle = useMemo(
     () =>
-      TEMPLATES.map((t) => ({
-        value: t.styleKey,
-        label: t.name,
-        sub: t.subtitle,
-      })),
+      ({
+        opacity: 0.1,
+        mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
+        textShadow: "0 10px 40px rgba(0,0,0,0.25)",
+      }) as React.CSSProperties,
     []
   );
 
-  const onRegenerate = () => {
-    setGenerationToken((n) => n + 1);
-  };
+  const styleOptions = useMemo(
+    () => TEMPLATES.map((t) => ({ value: t.styleKey, label: t.name, sub: t.subtitle })),
+    []
+  );
+
+  const onRegenerate = () => setGenerationToken((n) => n + 1);
 
   return (
     <div className="min-h-screen w-full" style={bg}>
       <ToastViewport toasts={toasts} />
 
-      {/* Sticky Header */}
       <div className="sticky top-0 z-40 w-full border-b border-black/10 bg-white/60 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-[#0f3d2e] shadow-[0_10px_30px_-18px_rgba(15,61,46,0.9)]" />
             <div className="flex flex-col leading-tight">
               <span className="text-sm font-semibold text-black/90">TheDigitalGifter</span>
-              <span className="text-xs text-black/55">
-                Step 2 of 3 — Preview ({funnelSlug})
-              </span>
+              <span className="text-xs text-black/55">Step 2 of 3 — Preview ({funnelSlug})</span>
             </div>
           </div>
 
@@ -633,7 +607,6 @@ export default function FunnelPreview() {
         </div>
       </div>
 
-      {/* Main */}
       <div className="mx-auto w-full max-w-4xl px-4 py-10">
         <Card className="p-4 md:p-7">
           <div className="flex flex-col items-center">
@@ -645,7 +618,6 @@ export default function FunnelPreview() {
                 </div>
               </div>
 
-              {/* Style selector */}
               <div className="mx-auto mb-4 w-full max-w-md">
                 <div className="mb-2 flex items-center justify-between">
                   <div className="text-xs font-semibold text-black/65">Style</div>
@@ -668,9 +640,7 @@ export default function FunnelPreview() {
                 )}
                 onContextMenu={onPreviewContextMenu}
               >
-                {/* aspect 4/3 */}
                 <div className="relative w-full" style={{ paddingTop: "75%" }}>
-                  {/* base image: Replicate preview if available, else uploaded photo as fallback */}
                   <div className="absolute inset-0">
                     {previewUrl ? (
                       <img
@@ -682,14 +652,9 @@ export default function FunnelPreview() {
                         onDragStart={onPreviewDragStart}
                       />
                     ) : photo ? (
-                      <img
-                        src={photo}
-                        alt="Uploaded photo"
-                        className="h-full w-full object-cover"
-                        style={{ filter: filterCss }}
-                        draggable={false}
-                        onDragStart={onPreviewDragStart}
-                      />
+                      <div className="flex h-full w-full items-center justify-center bg-black/5">
+                        <div className="text-sm text-black/60">Preparing preview…</div>
+                      </div>
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-black/5">
                         <div className="text-sm text-black/60">No photo</div>
@@ -697,7 +662,6 @@ export default function FunnelPreview() {
                     )}
                   </div>
 
-                  {/* Style overlay (subtle, always on) */}
                   <div
                     className="absolute inset-0"
                     style={{
@@ -707,7 +671,6 @@ export default function FunnelPreview() {
                     }}
                   />
 
-                  {/* Loading overlay */}
                   <AnimatePresence initial={false}>
                     {isGenerating ? (
                       <motion.div
@@ -738,7 +701,6 @@ export default function FunnelPreview() {
                     ) : null}
                   </AnimatePresence>
 
-                  {/* Aggressive watermark layers (client-side) */}
                   <motion.div
                     className="absolute inset-0"
                     style={{
@@ -751,7 +713,6 @@ export default function FunnelPreview() {
                     animate={{ x: [0, 8, 0], y: [0, -6, 0] }}
                     transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    {/* tiled diagonal repeating text */}
                     <div
                       className="absolute inset-[-30%] flex flex-col gap-6"
                       style={{ transform: "rotate(-20deg)", ...watermarkTileStyle }}
@@ -766,7 +727,6 @@ export default function FunnelPreview() {
                       ))}
                     </div>
 
-                    {/* big centered TDG */}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div
                         className="text-[96px] font-black uppercase tracking-[0.18em] text-black"
@@ -776,7 +736,6 @@ export default function FunnelPreview() {
                       </div>
                     </div>
 
-                    {/* subtle film grain */}
                     <div
                       className="absolute inset-0"
                       style={{
@@ -789,7 +748,6 @@ export default function FunnelPreview() {
                     />
                   </motion.div>
 
-                  {/* hard interaction guard */}
                   <div
                     className="absolute inset-0"
                     style={{
@@ -806,7 +764,6 @@ export default function FunnelPreview() {
               </div>
             </div>
 
-            {/* CTA */}
             <div className="mt-6 w-full max-w-sm text-center">
               <Button
                 className="w-full"

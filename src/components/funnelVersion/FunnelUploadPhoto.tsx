@@ -1,12 +1,10 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-
-// TDG Upload Step — Canvas Preview Page
-// Inspired by AliveMoment, adapted for TheDigitalGifter
-// Single primary action: upload photo
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -23,29 +21,54 @@ function formatBytes(bytes: number) {
   return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+function slugifyFilename(name: string) {
+  const parts = name.split(".");
+  const ext = parts.length > 1 ? parts.pop() : "";
+  const base = parts.join(".");
+  const safe = base
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 60);
+  return { safeBase: safe || "photo", ext: (ext || "jpg").toLowerCase() };
+}
+
+async function fileToArrayBuffer(file: File): Promise<ArrayBuffer> {
+  return await file.arrayBuffer();
+}
+
 type UploadedFile = {
   file: File;
-  url: string;
+  localUrl: string; // object URL for local preview
 };
 
-export default function Index() {
+export default function UploadPhotoPage() {
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [dragActive, setDragActive] = useState(false);
   const [uploaded, setUploaded] = useState<UploadedFile | null>(null);
 
-  const stepLabel = useMemo(() => "1 of 2", []);
-  const navigate = useNavigate();
+  const [isUploading, setIsUploading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const stepLabel = useMemo(() => "1 of 3", []); // upload -> style -> preview
 
   const openFilePicker = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
 
   const acceptFile = useCallback((file: File) => {
-    if (!file.type.startsWith("image/")) return;
-    const url = URL.createObjectURL(file);
+    setErrorMsg(null);
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("Please upload an image file (JPG/PNG/WebP).");
+      return;
+    }
+
+    const localUrl = URL.createObjectURL(file);
     setUploaded((prev) => {
-      if (prev?.url) URL.revokeObjectURL(prev.url);
-      return { file, url };
+      if (prev?.localUrl) URL.revokeObjectURL(prev.localUrl);
+      return { file, localUrl };
     });
   }, []);
 
@@ -54,8 +77,7 @@ export default function Index() {
       const file = e.target.files?.[0];
       if (!file) return;
       acceptFile(file);
-      // reset to allow re-upload same file
-      e.target.value = "";
+      e.target.value = ""; // allow re-upload same file
     },
     [acceptFile]
   );
@@ -89,15 +111,66 @@ export default function Index() {
   }, []);
 
   const removeUpload = useCallback(() => {
+    setErrorMsg(null);
     setUploaded((prev) => {
-      if (prev?.url) URL.revokeObjectURL(prev.url);
+      if (prev?.localUrl) URL.revokeObjectURL(prev.localUrl);
       return null;
     });
   }, []);
 
+  const uploadToSupabase = useCallback(async () => {
+    if (!uploaded?.file) {
+      setErrorMsg("Please select a photo first.");
+      return;
+    }
+
+    setIsUploading(true);
+    setErrorMsg(null);
+
+    try {
+      const bucket = "templates";
+      const folder = "previews";
+
+      const { safeBase, ext } = slugifyFilename(uploaded.file.name);
+      const uniq = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const path = `${folder}/${uniq}-${safeBase}.${ext}`;
+
+      const bytes = await fileToArrayBuffer(uploaded.file);
+
+      const { error } = await supabase.storage.from(bucket).upload(path, bytes, {
+        contentType: uploaded.file.type || "image/jpeg",
+        upsert: false,
+        cacheControl: "3600",
+      });
+
+      if (error) throw new Error(error.message || "Upload failed");
+
+      // (Optional) store for fallback usage
+      try {
+        window.localStorage.setItem("tdg_funnel_photo_path", path);
+        window.localStorage.setItem("tdg_funnel_bucket", bucket);
+        window.localStorage.setItem("tdg_funnel_slug", "newborn");
+      } catch {
+        // ignore
+      }
+
+      // ✅ Next step: style select with query params
+      const qs = new URLSearchParams({
+        bucket,
+        photo: path,
+        slug: "newborn",
+      });
+
+      navigate(`/funnel/styleSelect?${qs.toString()}`);
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Upload failed. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  }, [navigate, uploaded]);
+
   return (
     <div className="min-h-screen bg-[#f6f1ea] text-zinc-900">
-      {/* Top bar */}
       <header className="mx-auto w-full max-w-5xl px-6 pt-6">
         <div className="flex items-center justify-between">
           <button
@@ -114,12 +187,12 @@ export default function Index() {
 
           <div className="text-sm text-zinc-700">{stepLabel}</div>
         </div>
+
         <div className="mt-5">
           <Separator className="bg-zinc-200" />
         </div>
       </header>
 
-      {/* Main */}
       <main className="mx-auto w-full max-w-5xl px-6">
         <div className="flex flex-col items-center justify-center py-14">
           <h1 className="text-center text-4xl md:text-5xl font-semibold text-[#0b3b2e]">
@@ -129,7 +202,6 @@ export default function Index() {
             Upload a special moment and turn it into a magical digital gift.
           </p>
 
-          {/* Upload card */}
           <div className="mt-10 w-full max-w-xl">
             <Card className="rounded-3xl border-zinc-200 bg-white/55 shadow-sm">
               <CardContent className="p-6 md:p-8">
@@ -148,7 +220,6 @@ export default function Index() {
                 >
                   {!uploaded ? (
                     <div className="flex flex-col items-center">
-                      {/* Icon */}
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-zinc-200 bg-white shadow-sm">
                         <svg
                           width="22"
@@ -209,7 +280,7 @@ export default function Index() {
                     </div>
                   ) : (
                     <div className="flex flex-col">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-3">
                         <div>
                           <div className="text-sm text-zinc-600">Selected photo</div>
                           <div className="text-base font-semibold text-zinc-900 truncate max-w-[260px] md:max-w-[420px]">
@@ -217,11 +288,13 @@ export default function Index() {
                           </div>
                           <div className="text-xs text-zinc-500">{formatBytes(uploaded.file.size)}</div>
                         </div>
+
                         <Button
                           type="button"
                           variant="outline"
                           onClick={removeUpload}
                           className="rounded-full"
+                          disabled={isUploading}
                         >
                           Remove
                         </Button>
@@ -229,19 +302,26 @@ export default function Index() {
 
                       <div className="mt-5 overflow-hidden rounded-2xl border bg-white">
                         <img
-                          src={uploaded.url}
+                          src={uploaded.localUrl}
                           alt="Uploaded preview"
                           className="h-64 w-full object-cover"
                         />
                       </div>
 
+                      {errorMsg ? (
+                        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                          {errorMsg}
+                        </div>
+                      ) : null}
+
                       <div className="mt-5 flex items-center justify-center">
                         <Button
                           type="button"
                           className="h-11 px-10 rounded-full bg-[#0b3b2e] hover:bg-[#082c22] text-white"
-                          onClick={() => navigate('/funnel/styleSelect')}
+                          onClick={uploadToSupabase}
+                          disabled={isUploading}
                         >
-                          Continue
+                          {isUploading ? "Uploading..." : "Continue"}
                         </Button>
                       </div>
 
@@ -260,13 +340,13 @@ export default function Index() {
                   )}
                 </div>
 
-                {/* Secondary option */}
                 <div className="mt-6 text-center">
                   <button
                     type="button"
                     className="text-sm font-medium text-[#0b3b2e] hover:underline"
+                    onClick={openFilePicker}
                   >
-                    Upload your photo now 
+                    Upload your photo now
                   </button>
                   <div className="mt-2 text-xs text-zinc-600">
                     Your photo stays private. You control what you share.
@@ -275,7 +355,6 @@ export default function Index() {
               </CardContent>
             </Card>
 
-            {/* Tiny hint/footer */}
             <div className="mt-6 text-center text-xs text-zinc-500">
               Create your digital gift in minutes. No Subscription required.
             </div>
@@ -283,7 +362,6 @@ export default function Index() {
         </div>
       </main>
 
-      {/* Bottom spacing */}
       <div className="h-14" />
     </div>
   );
