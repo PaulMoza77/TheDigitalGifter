@@ -71,14 +71,12 @@ function fallbackDescription(slug: string) {
     return "Elegant silhouettes, warm light and calm tones.";
   if (s.includes("wedding"))
     return "Luxury, editorial-style wedding announcement cards.";
-  if (s.includes("easter"))
-    return "Fresh colors, flowers and soft daylight.";
+  if (s.includes("easter")) return "Fresh colors, flowers and soft daylight.";
   if (s.includes("valentine"))
     return "Cinematic couples, roses and candlelight.";
   if (s.includes("anniversary"))
     return "Elegant layouts to celebrate any milestone.";
-  if (s.includes("mother"))
-    return "Delicate florals and warm light for mom.";
+  if (s.includes("mother")) return "Delicate florals and warm light for mom.";
   if (s.includes("father"))
     return "Minimal, modern layouts with strong contrast.";
   if (s.includes("graduation"))
@@ -112,10 +110,12 @@ function fallbackGradientTo(_slug: string) {
 function fallbackImage(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
   if (s.includes("christmas")) return "/images/occasions/christmas.jpg";
-  if (s.includes("new") && s.includes("year")) return "/images/occasions/new-years-eve.jpg";
+  if (s.includes("new") && s.includes("year"))
+    return "/images/occasions/new-years-eve.jpg";
   if (s.includes("thank")) return "/images/occasions/thanksgiving.jpg";
   if (s.includes("birthday")) return "/images/occasions/birthday.jpg";
-  if (s.includes("baby") && s.includes("reveal")) return "/images/occasions/baby-reveal.jpg";
+  if (s.includes("baby") && s.includes("reveal"))
+    return "/images/occasions/baby-reveal.jpg";
   if (s.includes("born")) return "/images/occasions/new-born.jpg";
   if (s.includes("pregnancy")) return "/images/occasions/pregnancy.jpg";
   if (s.includes("wedding")) return "/images/occasions/wedding.jpg";
@@ -252,6 +252,7 @@ export default function OccasionGrid() {
                 <Card className="group relative overflow-hidden bg-slate-900/50 border-slate-800 transition-all duration-300 hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/20">
                   <CardContent className="p-0 relative isolate">
                     <div className="relative h-64 overflow-hidden">
+                      {/* Gradient overlay */}
                       <div
                         className={cn(
                           "absolute inset-0 bg-gradient-to-br opacity-80 z-10",
@@ -259,11 +260,13 @@ export default function OccasionGrid() {
                           gradientTo
                         )}
                       />
+
+                      {/* ✅ FIX: image must fill the container (absolute + inset-0) */}
                       <img
                         src={image}
                         alt={occ.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
 
                       <div className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 text-xs text-white">
