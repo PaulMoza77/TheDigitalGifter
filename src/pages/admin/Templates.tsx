@@ -1,3 +1,4 @@
+// src/pages/admin/Templates.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -48,8 +49,9 @@ type TemplateDbRow = {
   type: string | null; // "image" | "video" ...
   orientation: string | null;
 
-  previewurl: string | null;
-  thumbnailurl: string | null;
+  // ✅ FIX: underscores (match DB columns)
+  preview_url: string | null;
+  thumbnail_url: string | null;
 
   textdefault: string | null;
 
@@ -132,8 +134,9 @@ function mapTemplate(db: TemplateDbRow): TemplateRow {
     type: (db.type ?? "image").toLowerCase(),
     orientation: (db.orientation ?? "portrait").toLowerCase(),
 
-    previewUrl: db.previewurl ?? "",
-    thumbnailUrl: db.thumbnailurl ?? null,
+    // ✅ FIX: underscores
+    previewUrl: db.preview_url ?? "",
+    thumbnailUrl: db.thumbnail_url ?? null,
 
     textDefault: db.textdefault ?? null,
 
@@ -156,13 +159,7 @@ function mapTemplate(db: TemplateDbRow): TemplateRow {
 /** =========================
  * UI helpers
  * ========================= */
-const categories = [
-  "All categories",
-  "Christmas",
-  "Birthday",
-  "Anniversary",
-  "Thank you",
-];
+const categories = ["All categories", "Christmas", "Birthday", "Anniversary", "Thank you"];
 
 function StatusSwitch({
   templateId,
@@ -239,8 +236,9 @@ export default function TemplatesAdminPage() {
           "subcategory",
           "type",
           "orientation",
-          "previewurl",
-          "thumbnailurl",
+          // ✅ FIX
+          "preview_url",
+          "thumbnail_url",
           "textdefault",
           "defaultduration",
           "defaultaspectratio",
