@@ -25,14 +25,14 @@ const cardAnim: Variants = {
   },
 };
 
-// DB row shape for funnel
+// ✅ change ONLY this if your preview page route is different
+const NEXT_ROUTE = "/funnel/preview";
+
 type TemplateDbRow = {
   id: string;
   title: string | null;
   prompt: string | null;
   occasion: string | null;
-
-  // this is what links to your static "style ids" (first_light, etc.)
   style_id: string | null;
 
   preview_url: string | null;
@@ -49,17 +49,24 @@ type FunnelStyle = {
   thumbnailUrl: string | null;
 };
 
+function normalizeOccasion(x: string) {
+  return (x || "").toLowerCase().trim();
+}
+
+function safeString(x: unknown) {
+  return String(x ?? "").trim();
+}
+
 export default function FunnelStyleSelect() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const occasion = (searchParams.get("occasion") || "new_born").toLowerCase().trim();
+  const occasion = normalizeOccasion(searchParams.get("occasion") || "new_born");
 
   const [loading, setLoading] = useState(true);
   const [styles, setStyles] = useState<FunnelStyle[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
 
-  // Header text per occasion (optional)
   const header = useMemo(() => {
     if (occasion === "new_born") {
       return {
@@ -108,11 +115,11 @@ export default function FunnelStyleSelect() {
 
       const mapped: FunnelStyle[] = (data ?? [])
         .map((r) => r as unknown as TemplateDbRow)
-        .filter((r) => (r.style_id || "").trim().length > 0)
+        .filter((r) => safeString(r.style_id).length > 0)
         .map((r) => ({
-          id: String(r.style_id),
-          name: String(r.title ?? "").trim() || String(r.style_id),
-          script: String(r.prompt ?? "").trim(),
+          id: safeString(r.style_id),
+          name: safeString(r.title) || safeString(r.style_id),
+          script: safeString(r.prompt),
           previewUrl: r.preview_url ?? "",
           thumbnailUrl: r.thumbnail_url ?? null,
         }));
@@ -120,7 +127,6 @@ export default function FunnelStyleSelect() {
       setStyles(mapped);
       setLoading(false);
 
-      // if current selected no longer exists, reset
       setSelected((prev) => (prev && mapped.some((x) => x.id === prev) ? prev : null));
     };
 
@@ -145,7 +151,7 @@ export default function FunnelStyleSelect() {
       })
     );
 
-    navigate("/funnel/upload");
+    navigate(NEXT_ROUTE);
   };
 
   return (
@@ -190,7 +196,7 @@ export default function FunnelStyleSelect() {
                       key={idx}
                       className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_24px_-18px_rgba(17,24,39,0.35)]"
                     >
-                      <div className="mb-3 h-24 w-full rounded-xl border border-slate-200 bg-slate-100" />
+                      <div className="mb-3 h-36 w-full rounded-xl border border-slate-200 bg-slate-100 sm:h-44" />
                       <div className="h-3 w-32 rounded bg-slate-200" />
                       <div className="mt-2 h-3 w-20 rounded bg-slate-100" />
                     </div>
@@ -218,17 +224,23 @@ export default function FunnelStyleSelect() {
                         variants={cardAnim}
                         onClick={() => setSelected(style.id)}
                         className={cn(
-                          "group relative w-full rounded-2xl border p-4 text-left transition",
+                          "group relative w-full rounded-2xl border text-left transition",
                           "border-slate-200 bg-white hover:bg-slate-50",
                           "shadow-[0_10px_24px_-18px_rgba(17,24,39,0.35)]",
+                          "p-3 sm:p-4",
                           isSelected && "border-[#6D5EF7]/40 ring-2 ring-[#6D5EF7]/15"
                         )}
                         aria-pressed={isSelected}
                       >
-                        {/* Thumbnail */}
-                        <div className="mb-3 h-24 w-full overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 via-indigo-50 to-slate-50">
+                        {/* BIG Thumbnail (like Templates) */}
+                        <div className="mb-3 h-36 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:h-44">
                           {imgSrc ? (
-                            <img src={imgSrc} alt={style.name} className="h-full w-full object-cover" />
+                            <img
+                              src={imgSrc}
+                              alt={style.name}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
                           ) : null}
                         </div>
 
@@ -245,7 +257,9 @@ export default function FunnelStyleSelect() {
                             <p className="mt-1 text-xs text-slate-600">Tap to select</p>
                           </div>
 
-                          <span className={cn("text-slate-400 transition", isSelected && "text-[#6D5EF7]")}>
+                          <span
+                            className={cn("text-slate-400 transition", isSelected && "text-[#6D5EF7]")}
+                          >
                             →
                           </span>
                         </div>
