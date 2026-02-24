@@ -2,15 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 /**
- * FunnelPreview.tsx (NEWBORN / PORTRAIT funnel)
- * ------------------------------------------------
+ * FunnelPreview.tsx
  * - Preview only (NO style selector, NO regenerate)
  * - Calls Supabase Edge Function replicate-preview
- * - Polls by request_id until real preview URL arrives (fast + no budget burn)
+ * - Polls by request_id (no budget burn)
+ * - Supports preview_url as full URL OR storage path
  */
 
 type PreviewResponse = {
-  preview_url?: string; // ✅ poate lipsi când e pending
+  preview_url?: string;
   request_id?: string;
   pending?: boolean;
   cached?: "mem" | "db";
@@ -51,11 +51,41 @@ function isDataUrl(url: string) {
   return /^data:/i.test(url);
 }
 
+function isHttpUrl(url: string) {
+  return /^https?:\/\//i.test(url);
+}
+
 function addCacheBusterIfHttp(url: string): string {
   if (!url) return url;
-  if (isDataUrl(url)) return url; // ✅ DO NOT break data: URLs
+  if (isDataUrl(url)) return url;
   const t = Date.now();
   return url.includes("?") ? `${url}&t=${t}` : `${url}?t=${t}`;
+}
+
+/** ✅ Supabase config */
+const SUPABASE_URL = "https://rmdsnpckutsucabledqz.supabase.co";
+/**
+ * Pune anon key în env (recomandat):
+ * - Vite: VITE_SUPABASE_ANON_KEY
+ * - Next: NEXT_PUBLIC_SUPABASE_ANON_KEY
+ */
+const SUPABASE_ANON_KEY =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_ANON_KEY) ||
+  (typeof process !== "undefined" && (process as any).env?.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
+  "";
+
+/** Dacă funcția îți returnează path (ex: previews/x.webp), îl convertim în URL public */
+function resolvePreviewUrl(previewUrl: string, fallbackBucketForOutputs = "photo-previews") {
+  const u = (previewUrl || "").trim();
+  if (!u) return "";
+  if (isDataUrl(u) || isHttpUrl(u)) return u;
+
+  // dacă vine ca "/storage/v1/..." îl completăm
+  if (u.startsWith("/")) return `${SUPABASE_URL}${u}`;
+
+  // altfel îl tratăm ca path în storage public
+  // IMPORTANT: output bucket trebuie să fie PUBLIC, altfel nu se vede în browser.
+  return `${SUPABASE_URL}/storage/v1/object/public/${fallbackBucketForOutputs}/${u}`;
 }
 
 /** Minimal UI primitives */
@@ -123,7 +153,7 @@ function Skeleton() {
   );
 }
 
-/** Local toast system (anti-spam: dedupe last message) */
+/** Local toast system */
 type ToastItem = {
   id: string;
   title: string;
@@ -180,12 +210,6 @@ function ToastViewport(props: { toasts: ToastItem[] }) {
   );
 }
 
-/**
- * ✅ CRITICAL FIX:
- * - trimitem snake_case către Edge Function: funnel_slug, style_key
- * - NU includem "signal" în body
- * - acceptăm răspuns "pending" fără preview_url
- */
 async function requestReplicatePreview(args:
   | {
       signal: AbortSignal;
@@ -203,33 +227,40 @@ async function requestReplicatePreview(args:
     "request_id" in args
       ? { request_id: args.request_id }
       : {
-          funnel_slug: args.funnelSlug,
-          style_key: args.styleKey,
+          funnel_slug: args.funnelSlug, // ✅ snake_case
+          style_key: args.styleKey,     // ✅ snake_case
           photo: args.photo,
           bucket: args.bucket,
           watermark: true,
         };
 
-  const res = await fetch("https://rmdsnpckutsucabledqz.supabase.co/functions/v1/replicate-preview", {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+  // ✅ dacă funcția cere auth, anon key e ok în frontend
+  if (SUPABASE_ANON_KEY) {
+    headers["apikey"] = SUPABASE_ANON_KEY;
+    headers["Authorization"] = `Bearer ${SUPABASE_ANON_KEY}`;
+  }
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/replicate-preview`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     signal: args.signal,
     body: JSON.stringify(body),
   });
 
-  const text = await res.text().catch(() => "");
+  const raw = await res.text().catch(() => "");
   let data: PreviewResponse = {};
   try {
-    data = text ? (JSON.parse(text) as PreviewResponse) : {};
-  } catch {
-    // ignore json parse
-  }
+    data = raw ? (JSON.parse(raw) as PreviewResponse) : {};
+  } catch {}
+
+  // ✅ DEBUG: vezi instant ce întoarce funcția
+  console.log("[replicate-preview] status:", res.status, "data:", data);
 
   if (!res.ok) {
-    const msg = data?.error || `Preview request failed (${res.status})`;
-    throw new Error(msg);
+    throw new Error(data?.error || `Preview request failed (${res.status})`);
   }
-
   return data;
 }
 
@@ -239,8 +270,6 @@ export default function FunnelPreview() {
   const [funnelSlug, setFunnelSlug] = useState<string>("newborn");
   const [bucket, setBucket] = useState<string>("templates");
   const [photo, setPhoto] = useState<string | null>(null);
-
-  // keep styleKey (backend needs it), but NO UI to change it
   const [styleKey, setStyleKey] = useState<string>("newborn_soft_cream");
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -251,7 +280,6 @@ export default function FunnelPreview() {
   const lastKeydownRef = useRef<number>(0);
   const abortRef = useRef<AbortController | null>(null);
 
-  // ✅ Read photo from query params OR localStorage
   useEffect(() => {
     const qsPhoto = getQueryStringValue("photo");
     const qsBucket = getQueryStringValue("bucket");
@@ -260,7 +288,6 @@ export default function FunnelPreview() {
 
     setFunnelSlug(normalizeKey(qsSlug, "newborn"));
     setBucket(normalizeKey(qsBucket, "templates"));
-
     if (qsStyle && qsStyle.trim()) setStyleKey(qsStyle.trim());
 
     if (qsPhoto && qsPhoto.trim()) {
@@ -297,7 +324,6 @@ export default function FunnelPreview() {
     setPhoto(storedPhoto);
   }, [push]);
 
-  // protect keyboard
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const now = safeNow();
@@ -317,7 +343,6 @@ export default function FunnelPreview() {
     return () => window.removeEventListener("keydown", onKeyDown as any);
   }, [push]);
 
-  // cleanup
   useEffect(() => {
     return () => {
       if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
@@ -341,7 +366,6 @@ export default function FunnelPreview() {
     e.preventDefault();
   };
 
-  // watermark overlay
   const watermarkText = "TDG • TheDigitalGifter • PREVIEW";
   const repeatedTextLines = useMemo(() => {
     const line = `${watermarkText}   ${watermarkText}   ${watermarkText}   ${watermarkText}   ${watermarkText}`;
@@ -359,7 +383,6 @@ export default function FunnelPreview() {
     []
   );
 
-  // ✅ Generate + poll until real URL (max ~10s), no repeat creates
   useEffect(() => {
     if (!photo) return;
 
@@ -375,7 +398,6 @@ export default function FunnelPreview() {
 
     (async () => {
       try {
-        // 1) create (or cached) => get request_id + placeholder/real url
         const first = await requestReplicatePreview({
           funnelSlug,
           styleKey,
@@ -388,19 +410,26 @@ export default function FunnelPreview() {
         const pending = !!first.pending;
 
         if (first.preview_url) {
-          setPreviewUrl(addCacheBusterIfHttp(first.preview_url));
+          const resolved = resolvePreviewUrl(first.preview_url);
+          setPreviewUrl(addCacheBusterIfHttp(resolved));
         }
 
         try {
           window.localStorage.setItem("tdg_funnel_style", styleKey);
         } catch {}
 
-        if (!pending || !requestId) {
+        if (!pending) {
+          if (!first.preview_url) {
+            throw new Error("Backend returned pending=false but no preview_url");
+          }
           setIsGenerating(false);
           return;
         }
 
-        // 2) poll by request_id (cheap, no create)
+        if (!requestId) {
+          throw new Error("Backend returned pending=true but missing request_id");
+        }
+
         const deadline = Date.now() + 10_000;
         while (!stopped && Date.now() < deadline) {
           await new Promise((r) => setTimeout(r, 450));
@@ -408,19 +437,24 @@ export default function FunnelPreview() {
           const polled = await requestReplicatePreview({ request_id: requestId, signal: ac.signal });
 
           if (polled.preview_url) {
-            setPreviewUrl(addCacheBusterIfHttp(polled.preview_url));
+            const resolved = resolvePreviewUrl(polled.preview_url);
+            setPreviewUrl(addCacheBusterIfHttp(resolved));
           }
 
           const u = polled.preview_url || "";
-          const stillPending = !!polled.pending || (u ? isDataUrl(u) : true);
+          const stillPending = !!polled.pending || (!u ? true : isDataUrl(u));
 
           if (!stillPending) {
+            if (!polled.preview_url) throw new Error("Finished but preview_url missing");
             setIsGenerating(false);
             return;
           }
         }
 
         setIsGenerating(false);
+        if (!previewUrl) {
+          push("Preview still not ready", "Backend didn't return a usable preview_url in 10s.");
+        }
       } catch (e: any) {
         if (ac.signal.aborted) return;
         console.error("[FunnelPreview] replicate preview error:", e);
@@ -434,6 +468,7 @@ export default function FunnelPreview() {
       stopped = true;
       ac.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photo, bucket, funnelSlug, styleKey, push]);
 
   return (
@@ -471,7 +506,10 @@ export default function FunnelPreview() {
                   "relative mx-auto overflow-hidden rounded-2xl border border-black/10 bg-white",
                   "shadow-[0_14px_36px_-26px_rgba(0,0,0,0.45)]"
                 )}
-                onContextMenu={onPreviewContextMenu}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  push("Preview protected");
+                }}
               >
                 <div className="relative w-full" style={{ paddingTop: "75%" }}>
                   <div className="absolute inset-0">
@@ -481,10 +519,10 @@ export default function FunnelPreview() {
                         alt="Generated preview"
                         className="h-full w-full object-cover"
                         draggable={false}
-                        onDragStart={onPreviewDragStart}
+                        onDragStart={(e) => e.preventDefault()}
                         onError={(e) => {
                           console.error("IMG LOAD ERROR:", (e.target as HTMLImageElement)?.src);
-                          push("Preview image failed to load", "Check the returned preview_url (Console).");
+                          push("Preview image failed to load", "Open Console to see IMG LOAD ERROR URL.");
                         }}
                       />
                     ) : photo ? (
