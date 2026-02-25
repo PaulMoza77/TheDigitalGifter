@@ -30,7 +30,7 @@ type CustomerRow = {
   last_activity: string | null; // ISO
 };
 
-type ViewRowLoose = Record<string, any>;
+type ViewRowLoose = Record<string, unknown>;
 
 type AppUserRow = {
   id: number;
@@ -56,7 +56,7 @@ function moneyEUR(n: number) {
   return `€${Number.isFinite(x) ? x.toFixed(2) : "0.00"}`;
 }
 
-function safeToISO(v: any): string | null {
+function safeToISO(v: unknown): string | null {
   if (v === null || v === undefined || v === "") return null;
 
   if (v instanceof Date) {
@@ -84,10 +84,16 @@ function parseISOToDate(iso?: string | null) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function num(v: any, fallback = 0) {
+function num(v: unknown, fallback = 0) {
   if (v === null || v === undefined || v === "") return fallback;
-  const n = typeof v === "number" ? v : Number(v);
+  if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
+  const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function asStringOrNull(v: unknown): string | null {
+  if (v === null || v === undefined || v === "") return null;
+  return String(v);
 }
 
 function sortByCreatedAtDesc(rows: CustomerRow[]) {
@@ -100,95 +106,85 @@ function sortByCreatedAtDesc(rows: CustomerRow[]) {
 
 /**
  * Primary source: customers_admin_view (existing, contains platform users + spending)
- * Add-on source: funnel_customers_admin_view (only funnel leads that were synced into customers)
- *
- * We merge by email (prefer primary if it exists).
- * IMPORTANT: we do NOT call .order() to avoid view column mismatches.
+ * Add-on source: funnel_customers_admin_view (optional; funnel leads)
+ * Merge by email (prefer primary if it exists).
  */
 async function loadFromCustomersAdminViewMerged(): Promise<CustomerRow[] | null> {
-  // 1) primary view (your existing one)
-  const primary = await supabase
-    .from("customers_admin_view")
-    .select(
-      [
-        "id",
-        "name",
-        "email",
-        "image_url",
-        "credits_used",
-        "generations",
-        "total_money_spent",
-        "orders_count",
-        "created_at",
-        "last_activity",
-      ].join(",")
-    );
+  const selectCols = [
+    "id",
+    "name",
+    "email",
+    "image_url",
+    "credits_used",
+    "generations",
+    "total_money_spent",
+    "orders_count",
+    "created_at",
+    "last_activity",
+  ].join(",");
+
+  // 1) primary
+  const primary = await supabase.from("customers_admin_view").select(selectCols);
 
   if (primary.error) {
     const msg = (primary.error.message || "").toLowerCase();
 
     // fallback ONLY if view is missing
-    if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("not found")) {
+    if (
+      msg.includes("does not exist") ||
+      msg.includes("relation") ||
+      msg.includes("not found")
+    ) {
       return null;
     }
 
+    // other errors => don't crash page, but show toast and return empty
     console.error("[Customers] customers_admin_view error:", primary.error);
-    toast.error(`Customers view error: ${primary.error.message || "Unknown error"}`);
+    toast.error(
+      `Customers view error: ${primary.error.message || "Unknown error"}`
+    );
     return [];
   }
 
-  // 2) funnel addon view (optional; if not present/permission issues, we just ignore)
+  // 2) funnel addon (optional)
   const funnel = await supabase
     .from("funnel_customers_admin_view")
-    .select(
-      [
-        "id",
-        "name",
-        "email",
-        "image_url",
-        "credits_used",
-        "generations",
-        "total_money_spent",
-        "orders_count",
-        "created_at",
-        "last_activity",
-      ].join(",")
-    );
+    .select(selectCols);
 
   if (funnel.error) {
-    // don't block the page
     console.warn("[Customers] funnel_customers_admin_view error:", funnel.error);
   }
 
-  const rowsA = (((primary.data as any[]) || []) as ViewRowLoose[]).map((r) => ({
-    id: String(r.id ?? ""),
-    name: (r.name ?? null) as string | null,
-    email: (r.email ?? null) as string | null,
-    image_url: (r.image_url ?? null) as string | null,
-    credits_used: num(r.credits_used, 0),
-    generations: num(r.generations, 0),
-    total_money_spent: num(r.total_money_spent, 0),
-    orders_count: num(r.orders_count, 0),
-    created_at: safeToISO(r.created_at),
-    last_activity: safeToISO(r.last_activity),
+  const rowsA = ((primary.data as unknown as ViewRowLoose[]) || []).map((r) => ({
+    id: String((r as any).id ?? ""),
+    name: asStringOrNull((r as any).name),
+    email: asStringOrNull((r as any).email),
+    image_url: asStringOrNull((r as any).image_url),
+    credits_used: num((r as any).credits_used, 0),
+    generations: num((r as any).generations, 0),
+    total_money_spent: num((r as any).total_money_spent, 0),
+    orders_count: num((r as any).orders_count, 0),
+    created_at: safeToISO((r as any).created_at),
+    last_activity: safeToISO((r as any).last_activity),
   })) as CustomerRow[];
 
-  const rowsB = ((((funnel.data as any[]) || []) as ViewRowLoose[]) || []).map((r) => ({
-    id: String(r.id ?? ""),
-    name: (r.name ?? null) as string | null,
-    email: (r.email ?? null) as string | null,
-    image_url: (r.image_url ?? null) as string | null,
-    credits_used: num(r.credits_used, 0),
-    generations: num(r.generations, 0),
-    total_money_spent: num(r.total_money_spent, 0),
-    orders_count: num(r.orders_count, 0),
-    created_at: safeToISO(r.created_at),
-    last_activity: safeToISO(r.last_activity),
-  })) as CustomerRow[];
+  const rowsB = (((funnel.data as unknown as ViewRowLoose[]) || []) as ViewRowLoose[]).map(
+    (r) => ({
+      id: String((r as any).id ?? ""),
+      name: asStringOrNull((r as any).name),
+      email: asStringOrNull((r as any).email),
+      image_url: asStringOrNull((r as any).image_url),
+      credits_used: num((r as any).credits_used, 0),
+      generations: num((r as any).generations, 0),
+      total_money_spent: num((r as any).total_money_spent, 0),
+      orders_count: num((r as any).orders_count, 0),
+      created_at: safeToISO((r as any).created_at),
+      last_activity: safeToISO((r as any).last_activity),
+    })
+  ) as CustomerRow[];
 
   // Merge by email (fallback to id if email missing)
   const keyOf = (r: CustomerRow) => (r.email || r.id || "").toLowerCase().trim();
-
   const byKey = new Map<string, CustomerRow>();
 
   // add funnel first (so primary overrides with richer stats)
@@ -214,7 +210,9 @@ async function loadFromCustomersAdminViewMerged(): Promise<CustomerRow[] | null>
 async function loadFromAppUsers(): Promise<CustomerRow[]> {
   const { data, error } = await supabase
     .from("app_users")
-    .select("id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous");
+    .select(
+      "id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous"
+    );
 
   if (error) {
     console.error("[Customers] app_users error:", error);
@@ -225,7 +223,7 @@ async function loadFromAppUsers(): Promise<CustomerRow[]> {
   const rows = (data as AppUserRow[]) || [];
 
   const mapped: CustomerRow[] = rows.map((u) => {
-    const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${String(u.id)}`;
+    const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${u.id}`;
     return {
       id: stableId,
       name: u.name ?? null,
@@ -258,7 +256,7 @@ function exportCSV(rows: CustomerRow[]) {
     "last_activity",
   ];
 
-  const esc = (v: any) => {
+  const esc = (v: unknown) => {
     const s = String(v ?? "");
     const needs = /[",\n]/.test(s);
     const out = s.replace(/"/g, '""');
@@ -278,7 +276,9 @@ function exportCSV(rows: CustomerRow[]) {
         r.orders_count ?? 0,
         r.created_at ?? "",
         r.last_activity ?? "",
-      ].map(esc).join(",")
+      ]
+        .map(esc)
+        .join(",")
     ),
   ];
 
@@ -294,8 +294,8 @@ function exportCSV(rows: CustomerRow[]) {
 }
 
 export default function CustomersPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [source, setSource] = useState<"view" | "fallback">("view");
 
@@ -324,10 +324,12 @@ export default function CustomersPage() {
     (async () => {
       try {
         await load();
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (cancelled) return;
+        const msg =
+          e instanceof Error ? e.message : typeof e === "string" ? e : null;
         console.error("[Customers] load failed:", e);
-        toast.error(e?.message || "Failed to load customers");
+        toast.error(msg || "Failed to load customers");
         setCustomers([]);
         setLoading(false);
       }
@@ -367,7 +369,12 @@ export default function CustomersPage() {
       if (createdAt && createdAt >= startOfMonth) acc.newThisMonth += 1;
 
       // Guard: avoid "1970" showing as active if a view gives epoch 0 or invalid date
-      if (lastActivity && lastActivity.getTime() > 0 && lastActivity >= oneDayAgo) acc.active += 1;
+      if (
+        lastActivity &&
+        lastActivity.getTime() > 0 &&
+        lastActivity >= oneDayAgo
+      )
+        acc.active += 1;
 
       acc.totalRevenue += Number(c.total_money_spent || 0);
       return acc;
@@ -395,7 +402,8 @@ export default function CustomersPage() {
               Customers
             </h1>
             <p className="mt-1 text-sm text-slate-400">
-              View and manage all TheDigitalGifter customers, spending, and activity.
+              View and manage all TheDigitalGifter customers, spending, and
+              activity.
             </p>
             <p className="mt-1 text-xs text-slate-500">
               Data source:{" "}
@@ -452,7 +460,9 @@ export default function CustomersPage() {
                 {stats.total.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">All accounts created on the platform.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              All accounts created on the platform.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -464,7 +474,9 @@ export default function CustomersPage() {
                 {stats.newThisMonth.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Joined since the 1st of the month.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Joined since the 1st of the month.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -476,7 +488,9 @@ export default function CustomersPage() {
                 {stats.active.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Users active in the last 24 hours.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Users active in the last 24 hours.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -488,7 +502,9 @@ export default function CustomersPage() {
                 {moneyEUR(stats.totalRevenue)}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Total money spent by users.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Total money spent by users.
+            </p>
           </div>
         </section>
 
@@ -525,14 +541,19 @@ export default function CustomersPage() {
                   <TableHead className="text-slate-400">Orders</TableHead>
                   <TableHead className="text-slate-400">Joined</TableHead>
                   <TableHead className="text-slate-400">Last Activity</TableHead>
-                  <TableHead className="text-slate-400 text-right">Status</TableHead>
+                  <TableHead className="text-slate-400 text-right">
+                    Status
+                  </TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {filteredCustomers.length === 0 ? (
                   <TableRow className="border-slate-800">
-                    <TableCell colSpan={8} className="h-24 text-center text-slate-500">
+                    <TableCell
+                      colSpan={8}
+                      className="h-24 text-center text-slate-500"
+                    >
                       No customers found.
                     </TableCell>
                   </TableRow>
@@ -551,7 +572,10 @@ export default function CustomersPage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9 border border-slate-700">
-                              <AvatarImage src={c.image_url || undefined} />
+                              <AvatarImage
+                                src={c.image_url || undefined}
+                                alt={c.name || c.email || "User"}
+                              />
                               <AvatarFallback className="bg-slate-800 text-slate-400 text-xs">
                                 {initials(c.name, c.email)}
                               </AvatarFallback>
@@ -564,7 +588,9 @@ export default function CustomersPage() {
                               <span className="text-xs text-slate-500">
                                 {c.email || "—"}
                               </span>
-                              <span className="text-[10px] text-slate-600">{c.id}</span>
+                              <span className="text-[10px] text-slate-600">
+                                {c.id}
+                              </span>
                             </div>
                           </div>
                         </TableCell>
@@ -577,7 +603,9 @@ export default function CustomersPage() {
                           {Number(c.generations || 0)}
                         </TableCell>
 
-                        <TableCell className="text-slate-300">{moneyEUR(spent)}</TableCell>
+                        <TableCell className="text-slate-300">
+                          {moneyEUR(spent)}
+                        </TableCell>
 
                         <TableCell className="text-slate-400">
                           {Number(c.orders_count || 0)}
