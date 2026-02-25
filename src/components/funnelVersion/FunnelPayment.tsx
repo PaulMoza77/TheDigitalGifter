@@ -2,7 +2,6 @@
 import React, { JSX, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 
 type FunnelSession = {
   gift_type?: string;
@@ -27,12 +26,6 @@ function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
 }
 
-function formatMMSS(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${String(m).padStart(2, "0")} : ${String(s).padStart(2, "0")}`;
-}
-
 type PlanId = "starter" | "pro" | "elite";
 
 const plans: Array<{
@@ -42,7 +35,6 @@ const plans: Array<{
   credits: number;
   generations: number;
   price: string; // display
-  // optional “was” price for UI strike-through (for style parity)
   was?: string;
   badge?: string;
   badgeTone?: "yellow" | "red";
@@ -86,22 +78,31 @@ function getDealExpiresAtMs(): number {
   const existing = Number(localStorage.getItem(key) || "0");
   if (existing && Number.isFinite(existing) && existing > Date.now()) return existing;
 
-  // 30 minutes offer window (AliveMoment-style)
+  // 30 min offer window
   const next = Date.now() + 30 * 60 * 1000;
   localStorage.setItem(key, String(next));
   return next;
 }
 
+function formatMMSS(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${String(m).padStart(2, "0")} : ${String(s).padStart(2, "0")}`;
+}
+
+const EDGE_URL =
+  "https://rmdsnpckutsucabledqz.supabase.co/functions/v1/create-checkout-session";
+
 export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
 
-  const [selected, setSelected] = useState<PlanId>(() => {
-    const d = plans.find((p) => p.default)?.id ?? "pro";
-    return d;
-  });
+  const [selected, setSelected] = useState<PlanId>(() => plans.find((p) => p.default)?.id ?? "pro");
 
   const [promo, setPromo] = useState<string>(() => localStorage.getItem("tdg_promo_code") || "");
-  const [promoApplied, setPromoApplied] = useState<boolean>(() => Boolean(localStorage.getItem("tdg_promo_applied")));
+  const [promoApplied, setPromoApplied] = useState<boolean>(
+    () => localStorage.getItem("tdg_promo_applied") === "1"
+  );
+
   const [secondsLeft, setSecondsLeft] = useState<number>(() => {
     const ms = getDealExpiresAtMs() - Date.now();
     return Math.max(0, Math.floor(ms / 1000));
@@ -109,12 +110,9 @@ export default function FunnelPayment(): JSX.Element {
 
   const [isPaying, setIsPaying] = useState<boolean>(false);
 
-  const selectedPlan = useMemo(
-    () => plans.find((p) => p.id === selected) ?? plans[1],
-    [selected]
-  );
+  const selectedPlan = useMemo(() => plans.find((p) => p.id === selected) ?? plans[1], [selected]);
 
-  // ✅ GUARD: nu intra la payment fără photo + email
+  // Guard: require photo + email
   useEffect(() => {
     const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
     if (!photo) {
@@ -132,7 +130,7 @@ export default function FunnelPayment(): JSX.Element {
     }
   }, [navigate]);
 
-  // countdown
+  // Countdown
   useEffect(() => {
     const t = window.setInterval(() => {
       const ms = getDealExpiresAtMs() - Date.now();
@@ -147,7 +145,7 @@ export default function FunnelPayment(): JSX.Element {
       toast.error("Enter a promo code.");
       return;
     }
-    // MVP: just UI state (poți lega mai târziu la Stripe promotion codes)
+    // MVP: UI only
     localStorage.setItem("tdg_promo_code", code);
     localStorage.setItem("tdg_promo_applied", "1");
     setPromoApplied(true);
@@ -159,35 +157,41 @@ export default function FunnelPayment(): JSX.Element {
 
     const s = readSession();
     const email = String(s?.email || "").trim();
-    const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
 
-    if (!photo) {
-      toast.error("Upload a photo first.");
-      navigate("/funnel/uploadPhoto", { replace: true });
-      return;
-    }
     if (!email) {
-      toast.error("Please enter your email to continue.");
+      toast.error("Missing email. Please re-enter your email.");
       navigate("/funnel/email", { replace: true });
       return;
     }
 
     setIsPaying(true);
     try {
-      // ✅ Uses Supabase Edge Function (create-checkout-session)
-      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
-        body: { plan: selected, email },
+      // Direct fetch (guaranteed to hit function; logs will show)
+      const res = await fetch(EDGE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: selected, email }),
       });
 
-      if (error) throw error;
+      const data: unknown = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const msg =
+          (data as any)?.error ||
+          (data as any)?.message ||
+          "Edge Function error";
+        throw new Error(msg);
+      }
 
       const url = (data as any)?.url as string | undefined;
       if (!url) throw new Error("Missing checkout URL");
 
       window.location.href = url;
-    } catch (e: any) {
-      console.error("[FunnelPayment] checkout error:", e);
-      toast.error(e?.message || "Checkout failed. Please try again.");
+    } catch (err: unknown) {
+      console.error("[FunnelPayment] checkout error:", err);
+      const msg =
+        err instanceof Error ? err.message : "Checkout failed. Please try again.";
+      toast.error(msg);
     } finally {
       setIsPaying(false);
     }
@@ -202,7 +206,7 @@ export default function FunnelPayment(): JSX.Element {
         <div className="text-center">
           <div className="text-2xl font-semibold tracking-tight">thedigitalgifter</div>
 
-          {/* Timer strip (AliveMoment vibe) */}
+          {/* Timer strip */}
           <div className="mx-auto mt-6 flex max-w-xl items-center justify-center gap-4">
             <div className="flex items-end gap-3 rounded-2xl bg-transparent px-4 py-3">
               <div className="text-4xl font-semibold tabular-nums leading-none">
@@ -227,7 +231,6 @@ export default function FunnelPayment(): JSX.Element {
                   : "bg-[#1B3A30] text-white hover:brightness-105 active:brightness-95"
               )}
               onClick={() => {
-                // Just a CTA hook; optionally scroll to plans
                 const el = document.getElementById("tdg-plans");
                 if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
@@ -245,7 +248,7 @@ export default function FunnelPayment(): JSX.Element {
           </p>
         </div>
 
-        {/* Promo box */}
+        {/* Promo */}
         <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-black/10 bg-white/55 p-4">
           <div className="flex items-center gap-2 text-sm font-medium">
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/5">%</span>
@@ -297,7 +300,6 @@ export default function FunnelPayment(): JSX.Element {
                 )}
               >
                 <div className="relative p-5">
-                  {/* badge */}
                   {p.badge ? (
                     <div
                       className={cn(
@@ -313,7 +315,6 @@ export default function FunnelPayment(): JSX.Element {
 
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
-                      {/* radio */}
                       <div
                         className={cn(
                           "mt-1 h-5 w-5 rounded-full border flex items-center justify-center",
@@ -363,11 +364,12 @@ export default function FunnelPayment(): JSX.Element {
             </button>
 
             <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#10221B]/65">
-              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-black/10 bg-white">✓</span>
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-black/10 bg-white">
+                ✓
+              </span>
               Secure checkout • Monthly reset • Cancel anytime
             </div>
 
-            {/* payment icons (simple placeholders; poți pune PNG-uri când vrei) */}
             <div className="mt-4 flex items-center justify-center gap-3">
               {["MC", "VISA", "Pay", "GPay"].map((x) => (
                 <div
@@ -382,6 +384,11 @@ export default function FunnelPayment(): JSX.Element {
             <div className="mt-6 text-center text-xs text-[#10221B]/55">
               ✔ Reset lunar (nu se acumulează) • ✔ Recurent automat • ✔ Anulare oricând
             </div>
+          </div>
+
+          {/* small debug (safe): helps if someone gets stuck; remove later */}
+          <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
+            Selected: {selectedPlan.id} • Credits: {selectedPlan.credits}
           </div>
         </div>
       </div>
