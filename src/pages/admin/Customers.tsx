@@ -26,8 +26,12 @@ type CustomerRow = {
   total_money_spent: number;
   orders_count: number;
 
-  created_at: string | null; // ISO
-  last_activity: string | null; // ISO
+  created_at: string | null;
+  last_activity: string | null;
+
+  promo_code: string | null;
+  promo_sent_at: string | null;
+  has_purchased: boolean;
 };
 
 type ViewRowLoose = Record<string, unknown>;
@@ -69,7 +73,6 @@ function safeToISO(v: unknown): string | null {
   }
 
   if (typeof v === "number") {
-    // accept seconds or ms
     const n = v > 10_000_000_000 ? v : v * 1000;
     const d = new Date(n);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
@@ -96,6 +99,16 @@ function asStringOrNull(v: unknown): string | null {
   return String(v);
 }
 
+function asBool(v: unknown, fallback = false) {
+  if (v === null || v === undefined || v === "") return fallback;
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") return v !== 0;
+  const s = String(v).toLowerCase().trim();
+  if (s === "true" || s === "t" || s === "1" || s === "yes") return true;
+  if (s === "false" || s === "f" || s === "0" || s === "no") return false;
+  return fallback;
+}
+
 function sortByCreatedAtDesc(rows: CustomerRow[]) {
   return [...rows].sort((a, b) => {
     const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -104,143 +117,33 @@ function sortByCreatedAtDesc(rows: CustomerRow[]) {
   });
 }
 
-/**
- * Primary source: customers_admin_view (existing, contains platform users + spending)
- * Add-on source: funnel_customers_admin_view (optional; funnel leads)
- * Merge by email (prefer primary if it exists).
- */
-async function loadFromCustomersAdminViewMerged(): Promise<CustomerRow[] | null> {
-  const selectCols = [
-    "id",
-    "name",
-    "email",
-    "image_url",
-    "credits_used",
-    "generations",
-    "total_money_spent",
-    "orders_count",
-    "created_at",
-    "last_activity",
-  ].join(",");
+function mapLooseToCustomerRow(r: ViewRowLoose): CustomerRow {
+  const spent = num((r as any).total_money_spent, 0);
+  const orders = num((r as any).orders_count, 0);
 
-  // 1) primary
-  const primary = await supabase.from("customers_admin_view").select(selectCols);
+  const hasPurchased =
+    (r as any).has_purchased !== undefined
+      ? asBool((r as any).has_purchased, false)
+      : spent > 0 || orders > 0;
 
-  if (primary.error) {
-    const msg = (primary.error.message || "").toLowerCase();
-
-    // fallback ONLY if view is missing
-    if (
-      msg.includes("does not exist") ||
-      msg.includes("relation") ||
-      msg.includes("not found")
-    ) {
-      return null;
-    }
-
-    // other errors => don't crash page, but show toast and return empty
-    console.error("[Customers] customers_admin_view error:", primary.error);
-    toast.error(
-      `Customers view error: ${primary.error.message || "Unknown error"}`
-    );
-    return [];
-  }
-
-  // 2) funnel addon (optional)
-  const funnel = await supabase
-    .from("funnel_customers_admin_view")
-    .select(selectCols);
-
-  if (funnel.error) {
-    console.warn("[Customers] funnel_customers_admin_view error:", funnel.error);
-  }
-
-  const rowsA = ((primary.data as unknown as ViewRowLoose[]) || []).map((r) => ({
+  return {
     id: String((r as any).id ?? ""),
     name: asStringOrNull((r as any).name),
     email: asStringOrNull((r as any).email),
     image_url: asStringOrNull((r as any).image_url),
+
     credits_used: num((r as any).credits_used, 0),
     generations: num((r as any).generations, 0),
-    total_money_spent: num((r as any).total_money_spent, 0),
-    orders_count: num((r as any).orders_count, 0),
+    total_money_spent: spent,
+    orders_count: orders,
+
     created_at: safeToISO((r as any).created_at),
     last_activity: safeToISO((r as any).last_activity),
-  })) as CustomerRow[];
 
-  const rowsB = (((funnel.data as unknown as ViewRowLoose[]) || []) as ViewRowLoose[]).map(
-    (r) => ({
-      id: String((r as any).id ?? ""),
-      name: asStringOrNull((r as any).name),
-      email: asStringOrNull((r as any).email),
-      image_url: asStringOrNull((r as any).image_url),
-      credits_used: num((r as any).credits_used, 0),
-      generations: num((r as any).generations, 0),
-      total_money_spent: num((r as any).total_money_spent, 0),
-      orders_count: num((r as any).orders_count, 0),
-      created_at: safeToISO((r as any).created_at),
-      last_activity: safeToISO((r as any).last_activity),
-    })
-  ) as CustomerRow[];
-
-  // Merge by email (fallback to id if email missing)
-  const keyOf = (r: CustomerRow) => (r.email || r.id || "").toLowerCase().trim();
-  const byKey = new Map<string, CustomerRow>();
-
-  // add funnel first (so primary overrides with richer stats)
-  for (const r of rowsB) {
-    const k = keyOf(r);
-    if (!k) continue;
-    byKey.set(k, r);
-  }
-
-  // override with primary
-  for (const r of rowsA) {
-    const k = keyOf(r);
-    if (!k) continue;
-    byKey.set(k, r);
-  }
-
-  return sortByCreatedAtDesc(Array.from(byKey.values()));
-}
-
-/**
- * Fallback source: app_users (ONLY used if customers_admin_view missing)
- */
-async function loadFromAppUsers(): Promise<CustomerRow[]> {
-  const { data, error } = await supabase
-    .from("app_users")
-    .select(
-      "id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous"
-    );
-
-  if (error) {
-    console.error("[Customers] app_users error:", error);
-    toast.error(`Customers fallback error: ${error.message || "Unknown error"}`);
-    return [];
-  }
-
-  const rows = (data as AppUserRow[]) || [];
-
-  const mapped: CustomerRow[] = rows.map((u) => {
-    const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${u.id}`;
-    return {
-      id: stableId,
-      name: u.name ?? null,
-      email: u.email ?? null,
-      image_url: u.image ?? null,
-
-      credits_used: 0,
-      generations: 0,
-      total_money_spent: 0,
-      orders_count: 0,
-
-      created_at: safeToISO(u.creation_time),
-      last_activity: null,
-    };
-  });
-
-  return sortByCreatedAtDesc(mapped);
+    promo_code: asStringOrNull((r as any).promo_code),
+    promo_sent_at: safeToISO((r as any).promo_sent_at),
+    has_purchased: hasPurchased,
+  };
 }
 
 function exportCSV(rows: CustomerRow[]) {
@@ -252,6 +155,9 @@ function exportCSV(rows: CustomerRow[]) {
     "generations",
     "total_money_spent",
     "orders_count",
+    "has_purchased",
+    "promo_code",
+    "promo_sent_at",
     "created_at",
     "last_activity",
   ];
@@ -274,6 +180,9 @@ function exportCSV(rows: CustomerRow[]) {
         r.generations ?? 0,
         r.total_money_spent ?? 0,
         r.orders_count ?? 0,
+        r.has_purchased ? 1 : 0,
+        r.promo_code ?? "",
+        r.promo_sent_at ?? "",
         r.created_at ?? "",
         r.last_activity ?? "",
       ]
@@ -293,28 +202,154 @@ function exportCSV(rows: CustomerRow[]) {
   URL.revokeObjectURL(url);
 }
 
+async function loadCustomers(): Promise<{
+  rows: CustomerRow[];
+  source: "unified" | "view" | "fallback";
+}> {
+  const selectColsUnified = [
+    "id",
+    "name",
+    "email",
+    "image_url",
+    "credits_used",
+    "generations",
+    "total_money_spent",
+    "orders_count",
+    "created_at",
+    "last_activity",
+    "promo_code",
+    "promo_sent_at",
+    "has_purchased",
+  ].join(",");
+
+  const unified = await supabase
+    .from("customers_admin_view_unified")
+    .select(selectColsUnified);
+
+  if (!unified.error) {
+    const rows = ((unified.data as unknown as ViewRowLoose[]) || []).map(
+      mapLooseToCustomerRow
+    );
+    return { rows: sortByCreatedAtDesc(rows), source: "unified" };
+  }
+
+  const umsg = (unified.error.message || "").toLowerCase();
+  const unifiedMissing =
+    umsg.includes("does not exist") ||
+    umsg.includes("relation") ||
+    umsg.includes("not found");
+
+  if (!unifiedMissing) {
+    console.error(
+      "[Customers] customers_admin_view_unified error:",
+      unified.error
+    );
+    toast.error(
+      `Customers error: ${unified.error.message || "Unknown error"}`
+    );
+  }
+
+  const primary = await supabase
+    .from("customers_admin_view")
+    .select(selectColsUnified);
+
+  if (primary.error) {
+    const pmsg = (primary.error.message || "").toLowerCase();
+    const primaryMissing =
+      pmsg.includes("does not exist") ||
+      pmsg.includes("relation") ||
+      pmsg.includes("not found");
+
+    if (!primaryMissing) {
+      console.error("[Customers] customers_admin_view error:", primary.error);
+      toast.error(
+        `Customers view error: ${primary.error.message || "Unknown error"}`
+      );
+      return { rows: [], source: "view" };
+    }
+
+    const { data, error } = await supabase
+      .from("app_users")
+      .select(
+        "id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous"
+      );
+
+    if (error) {
+      console.error("[Customers] app_users error:", error);
+      toast.error(`Customers fallback error: ${error.message || "Unknown error"}`);
+      return { rows: [], source: "fallback" };
+    }
+
+    const rows = ((data as AppUserRow[]) || []).map((u) => {
+      const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${u.id}`;
+      return {
+        id: stableId,
+        name: u.name ?? null,
+        email: u.email ?? null,
+        image_url: u.image ?? null,
+        credits_used: 0,
+        generations: 0,
+        total_money_spent: 0,
+        orders_count: 0,
+        created_at: safeToISO(u.creation_time),
+        last_activity: null,
+        promo_code: null,
+        promo_sent_at: null,
+        has_purchased: false,
+      };
+    });
+
+    return { rows: sortByCreatedAtDesc(rows), source: "fallback" };
+  }
+
+  const funnel = await supabase
+    .from("funnel_customers_admin_view")
+    .select(selectColsUnified);
+
+  if (funnel.error) {
+    console.warn("[Customers] funnel_customers_admin_view error:", funnel.error);
+  }
+
+  const rowsA = ((primary.data as unknown as ViewRowLoose[]) || []).map(
+    mapLooseToCustomerRow
+  );
+
+  const rowsB = ((funnel.data as unknown as ViewRowLoose[]) || []).map(
+    mapLooseToCustomerRow
+  );
+
+  const keyOf = (r: CustomerRow) => (r.email || r.id || "").toLowerCase().trim();
+
+  const byKey = new Map<string, CustomerRow>();
+
+  for (const r of rowsB) {
+    const k = keyOf(r);
+    if (!k) continue;
+    byKey.set(k, r);
+  }
+
+  for (const r of rowsA) {
+    const k = keyOf(r);
+    if (!k) continue;
+    byKey.set(k, r);
+  }
+
+  return { rows: sortByCreatedAtDesc(Array.from(byKey.values())), source: "view" };
+}
+
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
-  const [source, setSource] = useState<"view" | "fallback">("view");
+  const [source, setSource] = useState<"unified" | "view" | "fallback">(
+    "unified"
+  );
 
   const load = async () => {
     setLoading(true);
-
-    // 1) primary view + funnel addon merge
-    const fromMergedView = await loadFromCustomersAdminViewMerged();
-    if (fromMergedView !== null) {
-      setCustomers(fromMergedView);
-      setSource("view");
-      setLoading(false);
-      return;
-    }
-
-    // 2) fallback only if primary view is missing
-    const fromAppUsers = await loadFromAppUsers();
-    setCustomers(fromAppUsers);
-    setSource("fallback");
+    const out = await loadCustomers();
+    setCustomers(out.rows);
+    setSource(out.source);
     setLoading(false);
   };
 
@@ -349,7 +384,10 @@ export default function CustomersPage() {
       const name = (c.name || "").toLowerCase();
       const email = (c.email || "").toLowerCase();
       const id = (c.id || "").toLowerCase();
-      return name.includes(q) || email.includes(q) || id.includes(q);
+      const promo = (c.promo_code || "").toLowerCase();
+      return (
+        name.includes(q) || email.includes(q) || id.includes(q) || promo.includes(q)
+      );
     });
   }, [customers, searchQuery]);
 
@@ -368,13 +406,9 @@ export default function CustomersPage() {
 
       if (createdAt && createdAt >= startOfMonth) acc.newThisMonth += 1;
 
-      // Guard: avoid "1970" showing as active if a view gives epoch 0 or invalid date
-      if (
-        lastActivity &&
-        lastActivity.getTime() > 0 &&
-        lastActivity >= oneDayAgo
-      )
+      if (lastActivity && lastActivity.getTime() > 0 && lastActivity >= oneDayAgo) {
         acc.active += 1;
+      }
 
       acc.totalRevenue += Number(c.total_money_spent || 0);
       return acc;
@@ -402,13 +436,15 @@ export default function CustomersPage() {
               Customers
             </h1>
             <p className="mt-1 text-sm text-slate-400">
-              View and manage all TheDigitalGifter customers, spending, and
+              View and manage all TheDigitalGifter customers, spending, promo, and
               activity.
             </p>
             <p className="mt-1 text-xs text-slate-500">
               Data source:{" "}
               <span className="font-semibold">
-                {source === "view"
+                {source === "unified"
+                  ? "customers_admin_view_unified"
+                  : source === "view"
                   ? "customers_admin_view (+ funnel_customers_admin_view)"
                   : "app_users (fallback)"}
               </span>
@@ -460,9 +496,7 @@ export default function CustomersPage() {
                 {stats.total.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              All accounts created on the platform.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">All accounts + funnel leads.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -514,7 +548,7 @@ export default function CustomersPage() {
               <div className="relative max-w-md w-full">
                 <input
                   type="text"
-                  placeholder="Search by name, email, or ID..."
+                  placeholder="Search by name, email, ID, promo..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-full border border-slate-700 bg-slate-950 px-4 py-2.5 pr-10 text-sm text-slate-200 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
@@ -535,25 +569,21 @@ export default function CustomersPage() {
               <TableHeader className="bg-slate-900/50">
                 <TableRow className="border-slate-800 hover:bg-slate-900/50">
                   <TableHead className="text-slate-400">Customer</TableHead>
+                  <TableHead className="text-slate-400">Promo</TableHead>
                   <TableHead className="text-slate-400">Credits Used</TableHead>
                   <TableHead className="text-slate-400">Generations</TableHead>
                   <TableHead className="text-slate-400">Total Spent</TableHead>
                   <TableHead className="text-slate-400">Orders</TableHead>
                   <TableHead className="text-slate-400">Joined</TableHead>
                   <TableHead className="text-slate-400">Last Activity</TableHead>
-                  <TableHead className="text-slate-400 text-right">
-                    Status
-                  </TableHead>
+                  <TableHead className="text-slate-400 text-right">Status</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {filteredCustomers.length === 0 ? (
                   <TableRow className="border-slate-800">
-                    <TableCell
-                      colSpan={8}
-                      className="h-24 text-center text-slate-500"
-                    >
+                    <TableCell colSpan={9} className="h-24 text-center text-slate-500">
                       No customers found.
                     </TableCell>
                   </TableRow>
@@ -562,7 +592,14 @@ export default function CustomersPage() {
                     const spent = Number(c.total_money_spent || 0);
                     const joined = parseISOToDate(c.created_at);
                     const last = parseISOToDate(c.last_activity);
+                    const promoSent = parseISOToDate(c.promo_sent_at);
                     const hasValidLast = !!last && last.getTime() > 0;
+
+                    const statusLabel = c.has_purchased || spent > 0 ? "Purchased" : "Lead";
+                    const statusClass =
+                      c.has_purchased || spent > 0
+                        ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+                        : "border-slate-700 text-slate-400 bg-slate-800/50";
 
                     return (
                       <TableRow
@@ -585,14 +622,45 @@ export default function CustomersPage() {
                               <span className="font-medium text-slate-200 text-sm">
                                 {c.name || "Unknown"}
                               </span>
-                              <span className="text-xs text-slate-500">
-                                {c.email || "—"}
-                              </span>
-                              <span className="text-[10px] text-slate-600">
-                                {c.id}
-                              </span>
+                              <span className="text-xs text-slate-500">{c.email || "—"}</span>
+                              <span className="text-[10px] text-slate-600">{c.id}</span>
                             </div>
                           </div>
+                        </TableCell>
+
+                        <TableCell className="text-slate-300">
+                          {c.promo_code ? (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className="border-indigo-500/30 text-indigo-300 bg-indigo-500/10"
+                                >
+                                  {c.promo_code}
+                                </Badge>
+                                {promoSent ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+                                  >
+                                    Sent
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="border-amber-500/30 text-amber-300 bg-amber-500/10"
+                                  >
+                                    Not sent
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                {promoSent ? promoSent.toLocaleString() : "—"}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-500">—</span>
+                          )}
                         </TableCell>
 
                         <TableCell className="text-slate-300 font-medium">
@@ -603,9 +671,7 @@ export default function CustomersPage() {
                           {Number(c.generations || 0)}
                         </TableCell>
 
-                        <TableCell className="text-slate-300">
-                          {moneyEUR(spent)}
-                        </TableCell>
+                        <TableCell className="text-slate-300">{moneyEUR(spent)}</TableCell>
 
                         <TableCell className="text-slate-400">
                           {Number(c.orders_count || 0)}
@@ -620,15 +686,8 @@ export default function CustomersPage() {
                         </TableCell>
 
                         <TableCell className="text-right">
-                          <Badge
-                            variant="outline"
-                            className={
-                              spent > 0
-                                ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-                                : "border-slate-700 text-slate-400 bg-slate-800/50"
-                            }
-                          >
-                            {spent > 0 ? "Customer" : "User"}
+                          <Badge variant="outline" className={statusClass}>
+                            {statusLabel}
                           </Badge>
                         </TableCell>
                       </TableRow>
