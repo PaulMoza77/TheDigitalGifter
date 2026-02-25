@@ -2,6 +2,7 @@
 import React, { JSX, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 type FunnelSession = {
   gift_type?: string;
@@ -14,9 +15,9 @@ type FunnelSession = {
 
 function readSession(): FunnelSession | null {
   try {
-    return JSON.parse(
-      localStorage.getItem("tdg_funnel_session") || "null"
-    ) as FunnelSession | null;
+    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as
+      | FunnelSession
+      | null;
   } catch {
     return null;
   }
@@ -89,9 +90,6 @@ function formatMMSS(totalSeconds: number): string {
   const s = totalSeconds % 60;
   return `${String(m).padStart(2, "0")} : ${String(s).padStart(2, "0")}`;
 }
-
-const EDGE_URL =
-  "https://rmdsnpckutsucabledqz.supabase.co/functions/v1/create-checkout-session";
 
 export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
@@ -166,22 +164,12 @@ export default function FunnelPayment(): JSX.Element {
 
     setIsPaying(true);
     try {
-      // Direct fetch (guaranteed to hit function; logs will show)
-      const res = await fetch(EDGE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: selected, email }),
+      // ✅ Correct: invoke Edge Function via Supabase client (adds required auth headers)
+      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+        body: { plan: selected, email },
       });
 
-      const data: unknown = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        const msg =
-          (data as any)?.error ||
-          (data as any)?.message ||
-          "Edge Function error";
-        throw new Error(msg);
-      }
+      if (error) throw error;
 
       const url = (data as any)?.url as string | undefined;
       if (!url) throw new Error("Missing checkout URL");
@@ -386,7 +374,7 @@ export default function FunnelPayment(): JSX.Element {
             </div>
           </div>
 
-          {/* small debug (safe): helps if someone gets stuck; remove later */}
+          {/* small debug (safe): remove later */}
           <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
             Selected: {selectedPlan.id} • Credits: {selectedPlan.credits}
           </div>
