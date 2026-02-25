@@ -1,4 +1,3 @@
-// src/App.tsx
 import { Suspense, useEffect, lazy } from "react";
 import {
   BrowserRouter,
@@ -47,7 +46,9 @@ const NewBornPage = lazy(() => import("@/pages/website/NewBornPage"));
 const PregnancyPage = lazy(() => import("@/pages/website/PregnancyPage"));
 const WeddingPage = lazy(() => import("@/pages/website/WeddingPage"));
 const EasterPage = lazy(() => import("@/pages/website/EasterPage"));
-const ValentinesDayPage = lazy(() => import("@/pages/website/ValentinesDayPage"));
+const ValentinesDayPage = lazy(
+  () => import("@/pages/website/ValentinesDayPage")
+);
 const AnniversaryPage = lazy(() => import("@/pages/website/AnniversaryPage"));
 const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
 const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
@@ -59,11 +60,13 @@ import FunnelUploadPhoto from "@/components/funnelVersion/FunnelUploadPhoto";
 import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
 import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
 import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
-
-// ✅ NEW (MUST EXIST)
 const FunnelEmailCapture = lazy(
   () => import("@/components/funnelVersion/FunnelEmailCapture")
 );
+
+// ✅ RESULT (after payment)
+// Corect: importă direct componenta ResultPage din folderul corect
+import FunnelResultPage from "@/components/funnelVersion/ResultPage";
 
 // ================= HELPERS =================
 function ScrollToTop() {
@@ -77,11 +80,12 @@ function ScrollToTop() {
 function AppInner() {
   useAuthStateMonitor();
 
+  // Cură vechiul query param ?checkout=success dacă există
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("checkout") === "success") {
-      console.log("[App] Checkout success detected");
-      window.history.replaceState({}, "", window.location.pathname);
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("checkout") === "success") {
+      url.searchParams.delete("checkout");
+      window.history.replaceState({}, "", url.pathname + url.search);
     }
   }, []);
 
@@ -130,11 +134,13 @@ function AppInner() {
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
               {/* ================= FUNNEL FLOW (ORDER) ================= */}
-              {/* Optional landing */}
               <Route path="/funnel/homepage" element={<FunnelHomePage />} />
 
-              {/* ✅ Start funnel alias -> upload step */}
-              <Route path="/funnel" element={<Navigate to="/funnel/uploadPhoto" replace />} />
+              {/* Start alias -> upload */}
+              <Route
+                path="/funnel"
+                element={<Navigate to="/funnel/uploadPhoto" replace />}
+              />
 
               {/* 1) Upload Photo */}
               <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
@@ -151,13 +157,34 @@ function AppInner() {
               {/* 5) Payment */}
               <Route path="/funnel/payment" element={<FunnelPayment />} />
 
+              {/* 6) Result (Stripe success_url -> /funnel/result?session_id=...) */}
+              <Route path="/funnel/result" element={<FunnelResultPage />} />
+
               {/* Redirect aliases */}
-              <Route path="/new_years_eve" element={<Navigate to="/new-years-eve" replace />} />
-              <Route path="/valentines_day" element={<Navigate to="/valentines-day" replace />} />
-              <Route path="/mothers_day" element={<Navigate to="/mothers-day" replace />} />
-              <Route path="/fathers_day" element={<Navigate to="/fathers-day" replace />} />
-              <Route path="/baby_reveal" element={<Navigate to="/baby-reveal" replace />} />
-              <Route path="/new_born" element={<Navigate to="/new-born" replace />} />
+              <Route
+                path="/new_years_eve"
+                element={<Navigate to="/new-years-eve" replace />}
+              />
+              <Route
+                path="/valentines_day"
+                element={<Navigate to="/valentines-day" replace />}
+              />
+              <Route
+                path="/mothers_day"
+                element={<Navigate to="/mothers-day" replace />}
+              />
+              <Route
+                path="/fathers_day"
+                element={<Navigate to="/fathers-day" replace />}
+              />
+              <Route
+                path="/baby_reveal"
+                element={<Navigate to="/baby-reveal" replace />}
+              />
+              <Route
+                path="/new_born"
+                element={<Navigate to="/new-born" replace />}
+              />
             </Route>
 
             {/* ================= ADMIN ================= */}
