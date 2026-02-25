@@ -2,7 +2,6 @@
 import React, { JSX, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 
 type FunnelSession = {
   gift_type?: string;
@@ -13,23 +12,9 @@ type FunnelSession = {
   funnel_slug?: string;
 };
 
-function readSession(): FunnelSession | null {
-  try {
-    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as
-      | FunnelSession
-      | null;
-  } catch {
-    return null;
-  }
-}
-
-function cn(...classes: Array<string | false | null | undefined>): string {
-  return classes.filter(Boolean).join(" ");
-}
-
 type PlanId = "starter" | "pro" | "elite";
 
-const plans: Array<{
+type Plan = {
   id: PlanId;
   title: string;
   subtitle: string;
@@ -40,7 +25,23 @@ const plans: Array<{
   badge?: string;
   badgeTone?: "yellow" | "red";
   default?: boolean;
-}> = [
+};
+
+type CheckoutResponse = { url?: string; error?: string; message?: string };
+
+function readSession(): FunnelSession | null {
+  try {
+    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
+  } catch {
+    return null;
+  }
+}
+
+function cn(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(" ");
+}
+
+const plans: Plan[] = [
   {
     id: "starter",
     title: "Starter",
@@ -90,40 +91,35 @@ function formatMMSS(totalSeconds: number): string {
   return `${String(m).padStart(2, "0")} : ${String(s).padStart(2, "0")}`;
 }
 
-// ✅ Extract a useful error message from Supabase Functions errors
-async function extractInvokeErrorMessage(err: unknown): Promise<string> {
-  // supabase-js FunctionsError has .message + sometimes .context (Response-like)
-  const anyErr = err as any;
-  let msg = anyErr?.message || "Edge Function error";
+function getPublicSupabaseConfig(): { url: string; anon: string } {
+  const env = import.meta.env as unknown as {
+    VITE_SUPABASE_URL?: string;
+    VITE_SUPABASE_ANON_KEY?: string;
+  };
 
-  try {
-    const ctx = anyErr?.context;
-    // In many cases ctx is a Response object
-    if (ctx && typeof ctx.text === "function") {
-      const raw = await ctx.text().catch(() => "");
-      if (raw) {
-        // try json parse
-        try {
-          const j = JSON.parse(raw);
-          msg = j?.error || j?.message || msg;
-        } catch {
-          msg = raw;
-        }
-      }
-    } else if (anyErr?.details) {
-      msg = String(anyErr.details);
-    }
-  } catch {
-    // ignore
+  const url = (env.VITE_SUPABASE_URL || "").trim();
+  const anon = (env.VITE_SUPABASE_ANON_KEY || "").trim();
+
+  if (!url || !anon) {
+    throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY (Vercel env).");
   }
 
-  return String(msg || "Edge Function error");
+  return { url, anon };
+}
+
+async function safeReadJson(res: Response): Promise<CheckoutResponse> {
+  try {
+    return (await res.json()) as CheckoutResponse;
+  } catch {
+    return {};
+  }
 }
 
 export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
 
   const [selected, setSelected] = useState<PlanId>(() => plans.find((p) => p.default)?.id ?? "pro");
+
   const [promo, setPromo] = useState<string>(() => localStorage.getItem("tdg_promo_code") || "");
   const [promoApplied, setPromoApplied] = useState<boolean>(
     () => localStorage.getItem("tdg_promo_applied") === "1"
@@ -136,10 +132,7 @@ export default function FunnelPayment(): JSX.Element {
 
   const [isPaying, setIsPaying] = useState<boolean>(false);
 
-  const selectedPlan = useMemo(
-    () => plans.find((p) => p.id === selected) ?? plans[1],
-    [selected]
-  );
+  const selectedPlan = useMemo<Plan>(() => plans.find((p) => p.id === selected) ?? plans[1], [selected]);
 
   // Guard: require photo + email
   useEffect(() => {
@@ -194,21 +187,31 @@ export default function FunnelPayment(): JSX.Element {
     }
 
     setIsPaying(true);
+
     try {
-      // ✅ Correct call (adds required auth headers)
-      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
-        body: { plan: selected, email },
+      const { url: SUPABASE_URL, anon: ANON_KEY } = getPublicSupabaseConfig();
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: ANON_KEY,
+          Authorization: `Bearer ${ANON_KEY}`,
+        },
+        body: JSON.stringify({ plan: selected, email }),
       });
 
-      if (error) {
-        const msg = await extractInvokeErrorMessage(error);
+      const data = await safeReadJson(res);
+
+      if (!res.ok) {
+        const msg = (data.error || data.message || `Checkout error (${res.status})`).toString();
         throw new Error(msg);
       }
 
-      const url = (data as any)?.url as string | undefined;
-      if (!url) throw new Error("Missing checkout URL");
+      const checkoutUrl = (data.url || "").toString();
+      if (!checkoutUrl) throw new Error("Missing checkout URL");
 
-      window.location.href = url;
+      window.location.href = checkoutUrl;
     } catch (err: unknown) {
       console.error("[FunnelPayment] checkout error:", err);
       const msg = err instanceof Error ? err.message : "Checkout failed. Please try again.";
@@ -325,9 +328,7 @@ export default function FunnelPayment(): JSX.Element {
                     <div
                       className={cn(
                         "absolute -top-3 right-5 rounded-full px-3 py-1 text-[11px] font-semibold",
-                        p.badgeTone === "yellow"
-                          ? "bg-[#F3D35B] text-[#10221B]"
-                          : "bg-[#D44B4B] text-white"
+                        p.badgeTone === "yellow" ? "bg-[#F3D35B] text-[#10221B]" : "bg-[#D44B4B] text-white"
                       )}
                     >
                       {p.badge}
