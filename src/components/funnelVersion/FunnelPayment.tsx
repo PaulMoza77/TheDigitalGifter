@@ -121,9 +121,7 @@ export default function FunnelPayment(): JSX.Element {
   const [selected, setSelected] = useState<PlanId>(() => plans.find((p) => p.default)?.id ?? "pro");
 
   const [promo, setPromo] = useState<string>(() => localStorage.getItem("tdg_promo_code") || "");
-  const [promoApplied, setPromoApplied] = useState<boolean>(
-    () => localStorage.getItem("tdg_promo_applied") === "1"
-  );
+  const [promoApplied, setPromoApplied] = useState<boolean>(() => localStorage.getItem("tdg_promo_applied") === "1");
 
   const [secondsLeft, setSecondsLeft] = useState<number>(() => {
     const ms = getDealExpiresAtMs() - Date.now();
@@ -133,6 +131,21 @@ export default function FunnelPayment(): JSX.Element {
   const [isPaying, setIsPaying] = useState<boolean>(false);
 
   const selectedPlan = useMemo<Plan>(() => plans.find((p) => p.id === selected) ?? plans[1], [selected]);
+
+  const expired = secondsLeft <= 0;
+
+  // Text clar, ca să nu pară bug: Stripe calculează promo, nu UI
+  const promoBannerText = useMemo(() => {
+    if (!promoApplied) return null;
+
+    const code = promo.trim();
+    // dacă ai un promo specific (ex: START056) poți afișa mesajul “Today 0.56”
+    if (code.toUpperCase() === "START056" && selected === "starter") {
+      return "✅ Promo applied. You’ll pay €0.56 today, then €1.99/month starting next month (shown in secure checkout).";
+    }
+
+    return "✅ Promo saved. The discount is applied and calculated in the secure checkout (Stripe).";
+  }, [promoApplied, promo, selected]);
 
   // Guard: require photo + email
   useEffect(() => {
@@ -167,11 +180,20 @@ export default function FunnelPayment(): JSX.Element {
       toast.error("Enter a promo code.");
       return;
     }
-    // MVP: UI only
+
+    // MVP: îl salvăm local (iar reducerea reală o vezi în Stripe Checkout)
     localStorage.setItem("tdg_promo_code", code);
     localStorage.setItem("tdg_promo_applied", "1");
     setPromoApplied(true);
-    toast.success("Promo code applied!");
+    toast.success("Promo saved! It will apply in secure checkout.");
+  }
+
+  function removePromo(): void {
+    localStorage.removeItem("tdg_promo_code");
+    localStorage.removeItem("tdg_promo_applied");
+    setPromo("");
+    setPromoApplied(false);
+    toast.message("Promo removed.");
   }
 
   async function onCheckout(): Promise<void> {
@@ -191,6 +213,8 @@ export default function FunnelPayment(): JSX.Element {
     try {
       const { url: SUPABASE_URL, anon: ANON_KEY } = getPublicSupabaseConfig();
 
+      // Notă: Stripe va aplica promo code în Checkout (ai allow_promotion_codes=true în Edge Function).
+      // Aici doar trimitem promo_code ca info (optional), nu recalculăm prețul în UI.
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: "POST",
         headers: {
@@ -198,7 +222,11 @@ export default function FunnelPayment(): JSX.Element {
           apikey: ANON_KEY,
           Authorization: `Bearer ${ANON_KEY}`,
         },
-        body: JSON.stringify({ plan: selected, email }),
+        body: JSON.stringify({
+          plan: selected,
+          email,
+          promo_code: promoApplied ? promo.trim() : "",
+        }),
       });
 
       const data = await safeReadJson(res);
@@ -220,8 +248,6 @@ export default function FunnelPayment(): JSX.Element {
       setIsPaying(false);
     }
   }
-
-  const expired = secondsLeft <= 0;
 
   return (
     <div className="min-h-screen w-full bg-[#F6F0E6] text-[#10221B]">
@@ -274,9 +300,21 @@ export default function FunnelPayment(): JSX.Element {
 
         {/* Promo */}
         <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-black/10 bg-white/55 p-4">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/5">%</span>
-            {promoApplied ? "Your promo code is applied!" : "Have a promo code?"}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/5">%</span>
+              {promoApplied ? "Promo saved" : "Have a promo code?"}
+            </div>
+
+            {promoApplied ? (
+              <button
+                type="button"
+                onClick={removePromo}
+                className="text-xs font-semibold text-[#10221B]/70 underline decoration-black/20 underline-offset-4 hover:text-[#10221B]"
+              >
+                Remove
+              </button>
+            ) : null}
           </div>
 
           <div className="mt-3 flex gap-3">
@@ -285,7 +323,9 @@ export default function FunnelPayment(): JSX.Element {
               onChange={(e) => setPromo(e.target.value)}
               placeholder="Enter code"
               className="h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-sm outline-none placeholder:text-black/35"
+              disabled={promoApplied}
             />
+
             <button
               type="button"
               onClick={applyPromo}
@@ -307,6 +347,16 @@ export default function FunnelPayment(): JSX.Element {
               {expired ? "Expired" : "Active"}
             </div>
           </div>
+
+          {/* ✅ Clarificare importantă */}
+          {promoBannerText ? (
+            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              {promoBannerText}
+              <div className="mt-1 text-[12px] text-emerald-900/70">
+                Note: plan card prices stay standard here. Final total is shown in Stripe checkout.
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Plans */}
@@ -351,6 +401,13 @@ export default function FunnelPayment(): JSX.Element {
                         <div className="mt-0.5 text-sm text-[#10221B]/65">
                           {p.subtitle} • ({p.generations} generations)
                         </div>
+
+                        {/* mic hint sub planul selectat, doar dacă promo e applied */}
+                        {promoApplied && active ? (
+                          <div className="mt-2 text-xs text-[#10221B]/60">
+                            Promo will be applied in secure checkout.
+                          </div>
+                        ) : null}
                       </div>
                     </div>
 
@@ -382,7 +439,7 @@ export default function FunnelPayment(): JSX.Element {
                   : "bg-[#F3D35B] text-[#10221B] hover:brightness-105 active:brightness-95"
               )}
             >
-              {isPaying ? "Redirecting…" : expired ? "Offer expired" : "Claim my plan"}
+              {isPaying ? "Redirecting…" : expired ? "Offer expired" : promoApplied ? "Continue to checkout (promo applies)" : "Claim my plan"}
             </button>
 
             <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#10221B]/65">
@@ -391,6 +448,12 @@ export default function FunnelPayment(): JSX.Element {
               </span>
               Secure checkout • Monthly reset • Cancel anytime
             </div>
+
+            {promoApplied ? (
+              <div className="mt-2 text-center text-[11px] text-[#10221B]/55">
+                Promo discount is calculated and shown in Stripe checkout.
+              </div>
+            ) : null}
 
             <div className="mt-4 flex items-center justify-center gap-3">
               {["MC", "VISA", "Pay", "GPay"].map((x) => (
