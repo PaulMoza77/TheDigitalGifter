@@ -1,14 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+// src/components/funnelVersion/FunnelPayment.tsx
+import React, { JSX, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-
-import { useLoggedInUserQuery } from "@/data";
-import { handleCheckout } from "@/lib/checkoutHandler";
+import { supabase } from "@/lib/supabase";
 
 type FunnelSession = {
   gift_type?: string;
@@ -16,81 +10,109 @@ type FunnelSession = {
   script?: string;
   email?: string;
   lead_id?: string | number | null;
+  funnel_slug?: string;
 };
 
 function readSession(): FunnelSession | null {
   try {
-    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
+    return JSON.parse(
+      localStorage.getItem("tdg_funnel_session") || "null"
+    ) as FunnelSession | null;
   } catch {
     return null;
   }
 }
 
-function formatMMSS(totalSeconds: number) {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+function cn(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(" ");
 }
 
-function formatMSSFull(totalSeconds: number) {
+function formatMMSS(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
+  return `${String(m).padStart(2, "0")} : ${String(s).padStart(2, "0")}`;
 }
 
-const packs = [
+type PlanId = "starter" | "pro" | "elite";
+
+const plans: Array<{
+  id: PlanId;
+  title: string;
+  subtitle: string;
+  credits: number;
+  generations: number;
+  price: string; // display
+  // optional “was” price for UI strike-through (for style parity)
+  was?: string;
+  badge?: string;
+  badgeTone?: "yellow" | "red";
+  default?: boolean;
+}> = [
   {
     id: "starter",
-    name: "Starter",
-    price: "€4.98",
-    priceNumber: 4.98,
-    credits: 100,
-    bonus: 10,
-    helper: "Perfect to try",
-    popular: false,
-  },
-  {
-    id: "creator",
-    name: "Creator",
-    price: "€9.98",
-    priceNumber: 9.98,
-    credits: 250,
-    bonus: 50,
-    helper: "Best value",
-    popular: true,
+    title: "Starter",
+    subtitle: "30 credits / month",
+    credits: 30,
+    generations: 6,
+    price: "€1.99",
+    was: "€3.98",
+    badge: "Special offer • save 50%",
+    badgeTone: "red",
   },
   {
     id: "pro",
-    name: "Pro",
-    price: "€78.98",
-    priceNumber: 78.98,
-    credits: 4000,
-    bonus: 600,
-    helper: "For power users",
-    popular: false,
+    title: "Pro ⭐",
+    subtitle: "100 credits / month",
+    credits: 100,
+    generations: 20,
+    price: "€4.99",
+    was: "€14.25",
+    badge: "Special value • save 65%",
+    badgeTone: "yellow",
+    default: true,
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "€499.98",
-    priceNumber: 499.98,
-    credits: 50000,
-    bonus: 10000,
-    helper: "Teams & agencies",
-    popular: false,
+    id: "elite",
+    title: "Elite",
+    subtitle: "300 credits / month",
+    credits: 300,
+    generations: 60,
+    price: "€9.99",
   },
-] as const;
+];
 
-type PackId = (typeof packs)[number]["id"];
+function getDealExpiresAtMs(): number {
+  const key = "tdg_payment_deal_expires_at";
+  const existing = Number(localStorage.getItem(key) || "0");
+  if (existing && Number.isFinite(existing) && existing > Date.now()) return existing;
 
-export default function FunnelPayment() {
+  // 30 minutes offer window (AliveMoment-style)
+  const next = Date.now() + 30 * 60 * 1000;
+  localStorage.setItem(key, String(next));
+  return next;
+}
+
+export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
 
-  const [selected, setSelected] = useState<PackId>("creator");
-  const [secondsLeft, setSecondsLeft] = useState<number>(29 * 60 + 46);
-  const [isPaying, setIsPaying] = useState(false);
+  const [selected, setSelected] = useState<PlanId>(() => {
+    const d = plans.find((p) => p.default)?.id ?? "pro";
+    return d;
+  });
 
-  const { data: me } = useLoggedInUserQuery();
+  const [promo, setPromo] = useState<string>(() => localStorage.getItem("tdg_promo_code") || "");
+  const [promoApplied, setPromoApplied] = useState<boolean>(() => Boolean(localStorage.getItem("tdg_promo_applied")));
+  const [secondsLeft, setSecondsLeft] = useState<number>(() => {
+    const ms = getDealExpiresAtMs() - Date.now();
+    return Math.max(0, Math.floor(ms / 1000));
+  });
+
+  const [isPaying, setIsPaying] = useState<boolean>(false);
+
+  const selectedPlan = useMemo(
+    () => plans.find((p) => p.id === selected) ?? plans[1],
+    [selected]
+  );
 
   // ✅ GUARD: nu intra la payment fără photo + email
   useEffect(() => {
@@ -110,20 +132,31 @@ export default function FunnelPayment() {
     }
   }, [navigate]);
 
+  // countdown
   useEffect(() => {
     const t = window.setInterval(() => {
-      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+      const ms = getDealExpiresAtMs() - Date.now();
+      setSecondsLeft(Math.max(0, Math.floor(ms / 1000)));
     }, 1000);
     return () => window.clearInterval(t);
   }, []);
 
-  const selectedPack = useMemo(() => packs.find((p) => p.id === selected) ?? packs[1], [selected]);
-  const totalCredits = selectedPack.credits + selectedPack.bonus;
+  function applyPromo(): void {
+    const code = promo.trim();
+    if (!code) {
+      toast.error("Enter a promo code.");
+      return;
+    }
+    // MVP: just UI state (poți lega mai târziu la Stripe promotion codes)
+    localStorage.setItem("tdg_promo_code", code);
+    localStorage.setItem("tdg_promo_applied", "1");
+    setPromoApplied(true);
+    toast.success("Promo code applied!");
+  }
 
-  async function onCheckout() {
+  async function onCheckout(): Promise<void> {
     if (isPaying) return;
 
-    // încă un guard (în caz că user forțează click rapid înainte de redirect)
     const s = readSession();
     const email = String(s?.email || "").trim();
     const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
@@ -133,7 +166,6 @@ export default function FunnelPayment() {
       navigate("/funnel/uploadPhoto", { replace: true });
       return;
     }
-
     if (!email) {
       toast.error("Please enter your email to continue.");
       navigate("/funnel/email", { replace: true });
@@ -142,165 +174,216 @@ export default function FunnelPayment() {
 
     setIsPaying(true);
     try {
-      // ✅ Păstrăm semnătura ta existentă, dar trimitem user + pack.
-      // Dacă mâine schimbi în $0.99/generation, aici vei schimba doar payload-ul.
-      await handleCheckout({
-        pack: selected,
-        user: me ?? null,
-        // extra meta (nu strică dacă handler-ul ignoră câmpuri necunoscute)
-        funnel: {
-          email,
-          lead_id: s?.lead_id ?? null,
-          gift_type: s?.gift_type ?? null,
-          style_id: s?.style_id ?? null,
-        },
-      } as any);
-    } catch (e) {
+      // ✅ Uses Supabase Edge Function (create-checkout-session)
+      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+        body: { plan: selected, email },
+      });
+
+      if (error) throw error;
+
+      const url = (data as any)?.url as string | undefined;
+      if (!url) throw new Error("Missing checkout URL");
+
+      window.location.href = url;
+    } catch (e: any) {
       console.error("[FunnelPayment] checkout error:", e);
-      toast.error("Checkout failed. Please try again.");
+      toast.error(e?.message || "Checkout failed. Please try again.");
     } finally {
       setIsPaying(false);
     }
   }
 
+  const expired = secondsLeft <= 0;
+
   return (
-    <div className="min-h-screen bg-[#F6F0E6] text-[#10221B]">
-      <div className="mx-auto max-w-3xl px-4 pt-10">
-        <div className="flex flex-col items-center gap-3">
-          <div className="text-3xl font-semibold tracking-tight">TheDigitalGifter</div>
+    <div className="min-h-screen w-full bg-[#F6F0E6] text-[#10221B]">
+      <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
+        {/* Brand */}
+        <div className="text-center">
+          <div className="text-2xl font-semibold tracking-tight">thedigitalgifter</div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#1B3A30]/15 bg-white/55 px-3 py-1 text-xs">
-              <span className="inline-block h-2 w-2 rounded-full bg-[#1B3A30]" />
-              Reserved for <span className="font-semibold">{formatMMSS(secondsLeft)}</span> minutes
+          {/* Timer strip (AliveMoment vibe) */}
+          <div className="mx-auto mt-6 flex max-w-xl items-center justify-center gap-4">
+            <div className="flex items-end gap-3 rounded-2xl bg-transparent px-4 py-3">
+              <div className="text-4xl font-semibold tabular-nums leading-none">
+                {formatMMSS(secondsLeft).split(" : ")[0]}
+              </div>
+              <div className="pb-1 text-4xl font-semibold leading-none">:</div>
+              <div className="text-4xl font-semibold tabular-nums leading-none">
+                {formatMMSS(secondsLeft).split(" : ")[1]}
+              </div>
+              <div className="ml-2 pb-1 text-xs uppercase tracking-wide text-[#10221B]/55">
+                minutes&nbsp;&nbsp;&nbsp;seconds
+              </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#1B3A30]/15 bg-white/55 px-3 py-1 text-xs">
-              <span className="font-semibold">Limited-time:</span>
-              bonus credits included
-            </div>
+            <button
+              type="button"
+              disabled={expired}
+              className={cn(
+                "h-11 rounded-full px-6 text-sm font-semibold transition",
+                expired
+                  ? "cursor-not-allowed bg-[#1B3A30]/10 text-[#10221B]/45"
+                  : "bg-[#1B3A30] text-white hover:brightness-105 active:brightness-95"
+              )}
+              onClick={() => {
+                // Just a CTA hook; optionally scroll to plans
+                const el = document.getElementById("tdg-plans");
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Claim my offer
+            </button>
           </div>
 
-          <div className="mt-8">
-            <h2 className="text-center text-2xl font-semibold">What’s included?</h2>
-            <div className="mt-4 rounded-2xl border border-[#1B3A30]/15 bg-white/55 p-5">
-              <ul className="space-y-3 text-sm">
-                {[
-                  {
-                    t: "AI-powered photo-to-video & message generation",
-                    d: "Create emotional moments from a single photo — in minutes.",
-                  },
-                  {
-                    t: "Instant delivery",
-                    d: "Generate, preview, and share immediately.",
-                  },
-                  {
-                    t: "Unlimited previews & edits",
-                    d: "Tweak until it feels just right — no pressure.",
-                  },
-                  {
-                    t: "Multiple styles & emotions",
-                    d: "Warm, playful, magical, heartfelt, and more.",
-                  },
-                  { t: "No subscriptions", d: "Pay once. Use anytime." },
-                ].map((x) => (
-                  <li key={x.t} className="flex gap-3">
-                    <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#1B3A30]/20 bg-white text-[#1B3A30]">
-                      ✓
-                    </span>
-                    <div>
-                      <div className="font-medium">{x.t}</div>
-                      <div className="text-[#10221B]/70">{x.d}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <h1 className="mx-auto mt-10 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">
+            Bring your memories to life
+          </h1>
 
-          <div className="mt-8 space-y-3">
-            <div className="rounded-2xl border border-[#1B3A30]/15 bg-white/55 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-[#10221B]/60">Spending insight</div>
-              <div className="mt-1 text-sm font-medium">Average families spend €9–€29 per personalized gift</div>
-            </div>
-            <div className="rounded-2xl border border-[#1B3A30]/15 bg-white/55 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-[#10221B]/60">Social proof</div>
-              <div className="mt-1 text-sm font-medium">⭐ Rated 4.9/5 by families worldwide</div>
-            </div>
-          </div>
-
-          <Card className="mt-8 rounded-3xl border-[#1B3A30]/15 bg-white/55 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-[#10221B]/60">Choose your pack</div>
-                  <div className="mt-1 text-lg font-semibold">Credit packs (one-time)</div>
-                </div>
-                <div className="rounded-2xl border border-[#1B3A30]/15 bg-white px-3 py-2 text-center">
-                  <div className="text-xs text-[#10221B]/60">Time left</div>
-                  <div className="text-sm font-semibold">{formatMSSFull(secondsLeft)}</div>
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-3">
-                {packs.map((p) => {
-                  const active = p.id === selected;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setSelected(p.id)}
-                      className={
-                        "w-full rounded-2xl border text-left transition " +
-                        (active ? "border-[#1B3A30]/45 bg-white" : "border-[#1B3A30]/15 bg-white/55")
-                      }
-                    >
-                      <div className="p-4 flex items-center justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-base font-semibold">{p.name}</div>
-                            {p.popular && <Badge className="rounded-full bg-[#1B3A30] text-white">Most popular</Badge>}
-                            <Badge variant="outline" className="rounded-full">
-                              +{p.bonus} bonus
-                            </Badge>
-                          </div>
-                          <div className="mt-1 text-xs text-[#10221B]/70">
-                            {p.credits.toLocaleString()} credits • {p.helper}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-semibold">{p.price}</div>
-                          <div className="text-xs text-[#10221B]/60">one-time</div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <Separator className="my-5 bg-[#1B3A30]/15" />
-
-              <div className="rounded-2xl border border-[#1B3A30]/15 bg-white/60 p-4 text-center">
-                <div className="text-sm font-semibold">
-                  You’ll get <span className="font-bold">{totalCredits.toLocaleString()}</span> credits (incl. bonus)
-                </div>
-                <div className="mt-1 text-xs text-[#10221B]/70">Credits valid until Dec 24 • No expiration pressure</div>
-
-                <Button
-                  className="mt-4 h-11 w-full rounded-full bg-[#F3D35B] text-[#10221B] hover:bg-[#EDC94A]"
-                  onClick={() => void onCheckout()}
-                  disabled={isPaying}
-                >
-                  {isPaying ? "Processing…" : "Create my digital gift"}
-                </Button>
-
-                <div className="mt-3 text-xs text-[#10221B]/70">✔ Secure checkout • ✔ No subscriptions • ✔ Instant access</div>
-              </div>
-            </CardContent>
-          </Card>
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-[#10221B]/70 sm:text-base">
+            Pick a monthly plan to unlock credits. Reset monthly • recurring • cancel anytime.
+          </p>
         </div>
 
-        <div className="h-14" />
+        {/* Promo box */}
+        <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-black/10 bg-white/55 p-4">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/5">%</span>
+            {promoApplied ? "Your promo code is applied!" : "Have a promo code?"}
+          </div>
+
+          <div className="mt-3 flex gap-3">
+            <input
+              value={promo}
+              onChange={(e) => setPromo(e.target.value)}
+              placeholder="Enter code"
+              className="h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-sm outline-none placeholder:text-black/35"
+            />
+            <button
+              type="button"
+              onClick={applyPromo}
+              className={cn(
+                "h-11 rounded-xl px-4 text-sm font-semibold transition",
+                promoApplied ? "bg-black/5 text-black/45" : "bg-[#1B3A30] text-white hover:brightness-105"
+              )}
+              disabled={promoApplied}
+            >
+              {promoApplied ? "Applied" : "Apply"}
+            </button>
+
+            <div
+              className={cn(
+                "h-11 min-w-[92px] rounded-xl px-3 text-sm font-semibold flex items-center justify-center",
+                expired ? "bg-black/5 text-black/45" : "bg-black/5 text-black/70"
+              )}
+            >
+              {expired ? "Expired" : "Active"}
+            </div>
+          </div>
+        </div>
+
+        {/* Plans */}
+        <div id="tdg-plans" className="mx-auto mt-10 max-w-xl space-y-4">
+          {plans.map((p) => {
+            const active = p.id === selected;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setSelected(p.id)}
+                className={cn(
+                  "w-full rounded-2xl border bg-white/55 text-left transition",
+                  active ? "border-[#D44B4B] bg-white" : "border-black/10 hover:bg-white/70"
+                )}
+              >
+                <div className="relative p-5">
+                  {/* badge */}
+                  {p.badge ? (
+                    <div
+                      className={cn(
+                        "absolute -top-3 right-5 rounded-full px-3 py-1 text-[11px] font-semibold",
+                        p.badgeTone === "yellow"
+                          ? "bg-[#F3D35B] text-[#10221B]"
+                          : "bg-[#D44B4B] text-white"
+                      )}
+                    >
+                      {p.badge}
+                    </div>
+                  ) : null}
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      {/* radio */}
+                      <div
+                        className={cn(
+                          "mt-1 h-5 w-5 rounded-full border flex items-center justify-center",
+                          active ? "border-[#D44B4B]" : "border-black/15"
+                        )}
+                      >
+                        {active ? <div className="h-2.5 w-2.5 rounded-full bg-[#D44B4B]" /> : null}
+                      </div>
+
+                      <div>
+                        <div className="text-lg font-semibold">{p.title}</div>
+                        <div className="mt-0.5 text-sm text-[#10221B]/65">
+                          {p.subtitle} • ({p.generations} generations)
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      {p.was ? (
+                        <div className="text-xs text-[#10221B]/45 line-through">{p.was}</div>
+                      ) : (
+                        <div className="text-xs text-transparent">.</div>
+                      )}
+                      <div className="text-2xl font-semibold">{p.price}</div>
+                      <div className="text-xs text-[#10221B]/60">per month</div>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+
+          {/* CTA */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => void onCheckout()}
+              disabled={isPaying}
+              className={cn(
+                "w-full h-12 rounded-full text-sm font-semibold transition",
+                isPaying
+                  ? "bg-black/10 text-black/45 cursor-not-allowed"
+                  : "bg-[#F3D35B] text-[#10221B] hover:brightness-105 active:brightness-95"
+              )}
+            >
+              {isPaying ? "Redirecting…" : "Claim my plan"}
+            </button>
+
+            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#10221B]/65">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-black/10 bg-white">✓</span>
+              Secure checkout • Monthly reset • Cancel anytime
+            </div>
+
+            {/* payment icons (simple placeholders; poți pune PNG-uri când vrei) */}
+            <div className="mt-4 flex items-center justify-center gap-3">
+              {["MC", "VISA", "Pay", "GPay"].map((x) => (
+                <div
+                  key={x}
+                  className="h-9 min-w-[56px] rounded-xl border border-black/10 bg-white/70 px-3 flex items-center justify-center text-xs font-semibold text-[#10221B]/70"
+                >
+                  {x}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 text-center text-xs text-[#10221B]/55">
+              ✔ Reset lunar (nu se acumulează) • ✔ Recurent automat • ✔ Anulare oricând
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
