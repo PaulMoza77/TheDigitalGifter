@@ -20,7 +20,7 @@ type Plan = {
   subtitle: string;
   credits: number;
   generations: number;
-  price: string; // display
+  price: string; // display (standard)
   was?: string;
   badge?: string;
   badgeTone?: "yellow" | "red";
@@ -115,6 +115,74 @@ async function safeReadJson(res: Response): Promise<CheckoutResponse> {
   }
 }
 
+// ---------- PRICE HELPERS ----------
+function parseEuro(eur: string): number {
+  const n = Number(String(eur).replace("€", "").trim());
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatEuro(n: number): string {
+  const v = Math.round(n * 100) / 100;
+  return `€${v.toFixed(2)}`;
+}
+
+type PromoEffect =
+  | { kind: "none" }
+  | { kind: "percent_first_month"; percent: number };
+
+function getPromoEffect(codeRaw: string): PromoEffect {
+  const code = codeRaw.trim();
+  if (!code) return { kind: "none" };
+
+  const upper = code.toUpperCase();
+
+  // ✅ ONLY: START70 => 70% off first month (applies to all 3 plans)
+  if (upper === "START70") {
+    return { kind: "percent_first_month", percent: 70 };
+  }
+
+  return { kind: "none" };
+}
+
+function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, promoCode: string) {
+  const standard = parseEuro(plan.price);
+
+  if (!promoApplied) {
+    return {
+      displayMain: plan.price,
+      displaySub: "per month",
+      showThen: false,
+      thenText: "",
+      showWasOverride: false,
+      wasOverride: "",
+    };
+  }
+
+  const effect = getPromoEffect(promoCode);
+  if (effect.kind === "none") {
+    return {
+      displayMain: plan.price,
+      displaySub: "per month",
+      showThen: false,
+      thenText: "",
+      showWasOverride: false,
+      wasOverride: "",
+    };
+  }
+
+  // percent off first month
+  const first = standard * (1 - effect.percent / 100);
+
+  return {
+    displayMain: formatEuro(first),
+    displaySub: `first month (-${effect.percent}%)`,
+    showThen: true,
+    thenText: `then ${formatEuro(standard)}/month`,
+    showWasOverride: true,
+    wasOverride: plan.price,
+  };
+}
+
 export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
 
@@ -133,19 +201,6 @@ export default function FunnelPayment(): JSX.Element {
   const selectedPlan = useMemo<Plan>(() => plans.find((p) => p.id === selected) ?? plans[1], [selected]);
 
   const expired = secondsLeft <= 0;
-
-  // Text clar, ca să nu pară bug: Stripe calculează promo, nu UI
-  const promoBannerText = useMemo(() => {
-    if (!promoApplied) return null;
-
-    const code = promo.trim();
-    // dacă ai un promo specific (ex: START056) poți afișa mesajul “Today 0.56”
-    if (code.toUpperCase() === "START056" && selected === "starter") {
-      return "✅ Promo applied. You’ll pay €0.56 today, then €1.99/month starting next month (shown in secure checkout).";
-    }
-
-    return "✅ Promo saved. The discount is applied and calculated in the secure checkout (Stripe).";
-  }, [promoApplied, promo, selected]);
 
   // Guard: require photo + email
   useEffect(() => {
@@ -181,11 +236,15 @@ export default function FunnelPayment(): JSX.Element {
       return;
     }
 
-    // MVP: îl salvăm local (iar reducerea reală o vezi în Stripe Checkout)
+    if (code.toUpperCase() !== "START70") {
+      toast.error("Invalid promo code.");
+      return;
+    }
+
     localStorage.setItem("tdg_promo_code", code);
     localStorage.setItem("tdg_promo_applied", "1");
     setPromoApplied(true);
-    toast.success("Promo saved! It will apply in secure checkout.");
+    toast.success("Promo applied!");
   }
 
   function removePromo(): void {
@@ -213,8 +272,6 @@ export default function FunnelPayment(): JSX.Element {
     try {
       const { url: SUPABASE_URL, anon: ANON_KEY } = getPublicSupabaseConfig();
 
-      // Notă: Stripe va aplica promo code în Checkout (ai allow_promotion_codes=true în Edge Function).
-      // Aici doar trimitem promo_code ca info (optional), nu recalculăm prețul în UI.
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: "POST",
         headers: {
@@ -303,7 +360,7 @@ export default function FunnelPayment(): JSX.Element {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/5">%</span>
-              {promoApplied ? "Promo saved" : "Have a promo code?"}
+              {promoApplied ? "Promo applied (START70)" : "Have a promo code?"}
             </div>
 
             {promoApplied ? (
@@ -348,13 +405,9 @@ export default function FunnelPayment(): JSX.Element {
             </div>
           </div>
 
-          {/* ✅ Clarificare importantă */}
-          {promoBannerText ? (
+          {promoApplied ? (
             <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              {promoBannerText}
-              <div className="mt-1 text-[12px] text-emerald-900/70">
-                Note: plan card prices stay standard here. Final total is shown in Stripe checkout.
-              </div>
+              ✅ START70 applied — <b>70% off your first month</b>. Regular monthly price starts next month.
             </div>
           ) : null}
         </div>
@@ -363,6 +416,9 @@ export default function FunnelPayment(): JSX.Element {
         <div id="tdg-plans" className="mx-auto mt-10 max-w-xl space-y-4">
           {plans.map((p) => {
             const active = p.id === selected;
+
+            const uiPrice = calcUiPriceForPlan(p, promoApplied, promo);
+
             return (
               <button
                 key={p.id}
@@ -402,23 +458,23 @@ export default function FunnelPayment(): JSX.Element {
                           {p.subtitle} • ({p.generations} generations)
                         </div>
 
-                        {/* mic hint sub planul selectat, doar dacă promo e applied */}
-                        {promoApplied && active ? (
-                          <div className="mt-2 text-xs text-[#10221B]/60">
-                            Promo will be applied in secure checkout.
-                          </div>
+                        {promoApplied && uiPrice.showThen ? (
+                          <div className="mt-2 text-xs text-[#10221B]/60">{uiPrice.thenText}</div>
                         ) : null}
                       </div>
                     </div>
 
                     <div className="text-right">
-                      {p.was ? (
+                      {uiPrice.showWasOverride ? (
+                        <div className="text-xs text-[#10221B]/45 line-through">{uiPrice.wasOverride}</div>
+                      ) : p.was ? (
                         <div className="text-xs text-[#10221B]/45 line-through">{p.was}</div>
                       ) : (
                         <div className="text-xs text-transparent">.</div>
                       )}
-                      <div className="text-2xl font-semibold">{p.price}</div>
-                      <div className="text-xs text-[#10221B]/60">per month</div>
+
+                      <div className="text-2xl font-semibold">{uiPrice.displayMain}</div>
+                      <div className="text-xs text-[#10221B]/60">{uiPrice.displaySub}</div>
                     </div>
                   </div>
                 </div>
@@ -439,7 +495,7 @@ export default function FunnelPayment(): JSX.Element {
                   : "bg-[#F3D35B] text-[#10221B] hover:brightness-105 active:brightness-95"
               )}
             >
-              {isPaying ? "Redirecting…" : expired ? "Offer expired" : promoApplied ? "Continue to checkout (promo applies)" : "Claim my plan"}
+              {isPaying ? "Redirecting…" : expired ? "Offer expired" : promoApplied ? "Continue to checkout (70% off first month)" : "Claim my plan"}
             </button>
 
             <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#10221B]/65">
@@ -448,12 +504,6 @@ export default function FunnelPayment(): JSX.Element {
               </span>
               Secure checkout • Monthly reset • Cancel anytime
             </div>
-
-            {promoApplied ? (
-              <div className="mt-2 text-center text-[11px] text-[#10221B]/55">
-                Promo discount is calculated and shown in Stripe checkout.
-              </div>
-            ) : null}
 
             <div className="mt-4 flex items-center justify-center gap-3">
               {["MC", "VISA", "Pay", "GPay"].map((x) => (
@@ -473,7 +523,8 @@ export default function FunnelPayment(): JSX.Element {
 
           {/* debug (safe) */}
           <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
-            Selected: {selectedPlan.id} • Credits: {selectedPlan.credits}
+            Selected: {selectedPlan.id} • Credits: {selectedPlan.credits} • Promo:{" "}
+            {promoApplied ? promo.toUpperCase() : "none"}
           </div>
         </div>
       </div>
