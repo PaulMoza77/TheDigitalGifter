@@ -9,25 +9,27 @@ export function useUserCreditsQuery() {
   return useQuery<number, Error>({
     queryKey: creditsKeys.all,
     queryFn: async () => {
-      // 1️⃣ Get logged-in user
-      const { data: authData, error: authError } =
-        await supabase.auth.getUser();
-
+      // 1) Get logged-in user
+      const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
 
       const user = authData.user;
       if (!user) return 0;
 
-      // 2️⃣ Get credits from DB
+      // 2) Get credits balance from ledger view
       const { data, error } = await supabase
-        .from("profiles") // 🔁 schimbă dacă tabelul tău are alt nume
-        .select("credits")
-        .eq("id", user.id)
+        .from("user_credits_balance_view")
+        .select("credits_balance")
+        .eq("user_id", user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      // If view is blocked by RLS or missing, don't hard-crash UI; show 0 and log
+      if (error) {
+        console.warn("[useUserCreditsQuery] credits load failed:", error);
+        return 0;
+      }
 
-      return Number(data?.credits ?? 0);
+      return Number(data?.credits_balance ?? 0);
     },
     staleTime: 0,
     gcTime: 5 * 60 * 1000,
