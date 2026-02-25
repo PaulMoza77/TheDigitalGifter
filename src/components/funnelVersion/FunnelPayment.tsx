@@ -79,8 +79,7 @@ function getDealExpiresAtMs(): number {
   const existing = Number(localStorage.getItem(key) || "0");
   if (existing && Number.isFinite(existing) && existing > Date.now()) return existing;
 
-  // 30 min offer window
-  const next = Date.now() + 30 * 60 * 1000;
+  const next = Date.now() + 30 * 60 * 1000; // 30 min
   localStorage.setItem(key, String(next));
   return next;
 }
@@ -91,11 +90,40 @@ function formatMMSS(totalSeconds: number): string {
   return `${String(m).padStart(2, "0")} : ${String(s).padStart(2, "0")}`;
 }
 
+// ✅ Extract a useful error message from Supabase Functions errors
+async function extractInvokeErrorMessage(err: unknown): Promise<string> {
+  // supabase-js FunctionsError has .message + sometimes .context (Response-like)
+  const anyErr = err as any;
+  let msg = anyErr?.message || "Edge Function error";
+
+  try {
+    const ctx = anyErr?.context;
+    // In many cases ctx is a Response object
+    if (ctx && typeof ctx.text === "function") {
+      const raw = await ctx.text().catch(() => "");
+      if (raw) {
+        // try json parse
+        try {
+          const j = JSON.parse(raw);
+          msg = j?.error || j?.message || msg;
+        } catch {
+          msg = raw;
+        }
+      }
+    } else if (anyErr?.details) {
+      msg = String(anyErr.details);
+    }
+  } catch {
+    // ignore
+  }
+
+  return String(msg || "Edge Function error");
+}
+
 export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
 
   const [selected, setSelected] = useState<PlanId>(() => plans.find((p) => p.default)?.id ?? "pro");
-
   const [promo, setPromo] = useState<string>(() => localStorage.getItem("tdg_promo_code") || "");
   const [promoApplied, setPromoApplied] = useState<boolean>(
     () => localStorage.getItem("tdg_promo_applied") === "1"
@@ -108,7 +136,10 @@ export default function FunnelPayment(): JSX.Element {
 
   const [isPaying, setIsPaying] = useState<boolean>(false);
 
-  const selectedPlan = useMemo(() => plans.find((p) => p.id === selected) ?? plans[1], [selected]);
+  const selectedPlan = useMemo(
+    () => plans.find((p) => p.id === selected) ?? plans[1],
+    [selected]
+  );
 
   // Guard: require photo + email
   useEffect(() => {
@@ -164,12 +195,15 @@ export default function FunnelPayment(): JSX.Element {
 
     setIsPaying(true);
     try {
-      // ✅ Correct: invoke Edge Function via Supabase client (adds required auth headers)
+      // ✅ Correct call (adds required auth headers)
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
         body: { plan: selected, email },
       });
 
-      if (error) throw error;
+      if (error) {
+        const msg = await extractInvokeErrorMessage(error);
+        throw new Error(msg);
+      }
 
       const url = (data as any)?.url as string | undefined;
       if (!url) throw new Error("Missing checkout URL");
@@ -177,8 +211,7 @@ export default function FunnelPayment(): JSX.Element {
       window.location.href = url;
     } catch (err: unknown) {
       console.error("[FunnelPayment] checkout error:", err);
-      const msg =
-        err instanceof Error ? err.message : "Checkout failed. Please try again.";
+      const msg = err instanceof Error ? err.message : "Checkout failed. Please try again.";
       toast.error(msg);
     } finally {
       setIsPaying(false);
@@ -340,15 +373,15 @@ export default function FunnelPayment(): JSX.Element {
             <button
               type="button"
               onClick={() => void onCheckout()}
-              disabled={isPaying}
+              disabled={isPaying || expired}
               className={cn(
                 "w-full h-12 rounded-full text-sm font-semibold transition",
-                isPaying
+                isPaying || expired
                   ? "bg-black/10 text-black/45 cursor-not-allowed"
                   : "bg-[#F3D35B] text-[#10221B] hover:brightness-105 active:brightness-95"
               )}
             >
-              {isPaying ? "Redirecting…" : "Claim my plan"}
+              {isPaying ? "Redirecting…" : expired ? "Offer expired" : "Claim my plan"}
             </button>
 
             <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#10221B]/65">
@@ -374,7 +407,7 @@ export default function FunnelPayment(): JSX.Element {
             </div>
           </div>
 
-          {/* small debug (safe): remove later */}
+          {/* debug (safe) */}
           <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
             Selected: {selectedPlan.id} • Credits: {selectedPlan.credits}
           </div>
