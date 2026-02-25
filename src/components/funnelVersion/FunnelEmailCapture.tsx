@@ -22,7 +22,7 @@ function isValidEmail(email: string) {
 }
 
 type FunnelSession = {
-  gift_type?: string;
+  gift_type?: string; // we map this -> occasion
   style_id?: string;
   script?: string;
   email?: string;
@@ -44,6 +44,7 @@ export default function FunnelEmailCapture() {
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // stable snapshot for quick prefill (we still re-read when saving)
   const session = useMemo(() => readSession(), []);
 
   const trimmedEmail = email.trim().toLowerCase();
@@ -75,6 +76,7 @@ export default function FunnelEmailCapture() {
       return;
     }
 
+    // prefill if returning user
     if (existingEmail) setEmail(existingEmail);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -94,34 +96,41 @@ export default function FunnelEmailCapture() {
     try {
       const s = readSession();
 
+      // now your table has these columns (you ran the SQL):
       const occasion = String(s?.gift_type || "").trim() || null;
       const style_id = String(s?.style_id || "").trim() || null;
 
       const { data, error } = await supabase
         .from("funnel_leads")
-        .upsert({ email: e, occasion, style_id }, { onConflict: "email" })
+        .upsert(
+          { email: e, occasion, style_id },
+          { onConflict: "email" }
+        )
         .select("id")
         .single();
 
       if (error) throw error;
 
+      // persist in session for later steps
       const nextSession: FunnelSession = {
         ...(s || {}),
         email: e,
         lead_id: data?.id ?? null,
       };
-
       localStorage.setItem("tdg_funnel_session", JSON.stringify(nextSession));
 
       navigate("/funnel/payment");
     } catch (err: any) {
-      // Show the real Supabase message (helps you debug RLS / missing table / permissions)
       console.error("[FunnelEmailCapture] save error:", err);
+
+      // show real message (RLS / missing columns / etc.)
       const msg =
         err?.message ||
         err?.error_description ||
         err?.hint ||
+        (typeof err === "string" ? err : "") ||
         "Could not save email. Try again.";
+
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -141,7 +150,7 @@ export default function FunnelEmailCapture() {
             Where should we send it?
           </h1>
           <p className="mt-4 text-sm text-slate-600 sm:text-base">
-            Enter your email to save your design and continue to payment.
+            Enter your email to continue.
           </p>
         </motion.div>
 
@@ -177,7 +186,6 @@ export default function FunnelEmailCapture() {
                   autoComplete="email"
                   type="email"
                   required
-                  // browser-level enforcement (still we validate in JS)
                   pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
                   aria-invalid={!!emailError}
                 />
@@ -187,7 +195,7 @@ export default function FunnelEmailCapture() {
                 <div className="text-xs text-red-600">{emailError}</div>
               ) : (
                 <div className="text-xs text-slate-500">
-                  Must include <b>@</b> and a valid domain (example: gmail.com).
+                  Must include <b>@</b> and a valid domain.
                 </div>
               )}
 
