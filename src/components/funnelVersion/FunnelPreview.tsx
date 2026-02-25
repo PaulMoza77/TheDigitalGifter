@@ -1,3 +1,4 @@
+// src/components/funnelVersion/FunnelPreview.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +9,10 @@ import { useNavigate } from "react-router-dom";
  * - Calls Supabase Edge Function replicate-preview
  * - Polls by request_id (no budget burn)
  * - Supports preview_url as full URL OR storage path
+ *
+ * IMPORTANT FIX:
+ * - If photo comes from querystring (?photo=...), we MUST persist it in localStorage ("tdg_funnel_photo")
+ *   otherwise Email/Payment guards will redirect back to /funnel/uploadPhoto.
  */
 
 type PreviewResponse = {
@@ -43,7 +48,9 @@ function clamp(n: number, min: number, max: number): number {
 }
 
 function safeNow(): number {
-  return typeof performance !== "undefined" && (performance as any).now ? (performance as any).now() : Date.now();
+  return typeof performance !== "undefined" && (performance as any).now
+    ? (performance as any).now()
+    : Date.now();
 }
 
 function normalizeKey(s: string | null | undefined, fallback: string) {
@@ -82,7 +89,7 @@ function addCacheBusterIfHttp(url: string): string {
 /** ✅ Supabase config */
 const SUPABASE_URL = "https://rmdsnpckutsucabledqz.supabase.co";
 /**
- * Pune anon key în env (recomandat):
+ * Put anon key in env (recommended):
  * - Vite: VITE_SUPABASE_ANON_KEY
  * - Next: NEXT_PUBLIC_SUPABASE_ANON_KEY
  */
@@ -91,17 +98,16 @@ const SUPABASE_ANON_KEY =
   (typeof process !== "undefined" && (process as any).env?.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
   "";
 
-/** Dacă funcția îți returnează path (ex: previews/x.webp), îl convertim în URL public */
+/** If backend returns storage path (ex: previews/x.webp), convert to public URL */
 function resolvePreviewUrl(previewUrl: string, fallbackBucketForOutputs = "photo-previews") {
   const u = (previewUrl || "").trim();
   if (!u) return "";
   if (isDataUrl(u) || isHttpUrl(u)) return u;
 
-  // dacă vine ca "/storage/v1/..." îl completăm
+  // if starts with "/storage/v1/..." complete it
   if (u.startsWith("/")) return `${SUPABASE_URL}${u}`;
 
-  // altfel îl tratăm ca path în storage public
-  // IMPORTANT: output bucket trebuie să fie PUBLIC, altfel nu se vede în browser.
+  // otherwise treat as public object path
   return `${SUPABASE_URL}/storage/v1/object/public/${fallbackBucketForOutputs}/${u}`;
 }
 
@@ -183,6 +189,7 @@ function useToasts() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const lastSigRef = useRef<string>("");
 
+  // IMPORTANT: stable callback so effects don't loop
   const push = useCallback((title: string, description?: string, durationMs = 2200) => {
     const sig = `${title}::${description || ""}`;
     if (lastSigRef.current === sig) return;
@@ -221,7 +228,9 @@ function ToastViewport(props: { toasts: ToastItem[] }) {
             className="pointer-events-none rounded-2xl border border-black/10 bg-white/90 px-4 py-3 shadow-[0_14px_36px_-22px_rgba(0,0,0,0.55)] backdrop-blur"
           >
             <div className="text-sm font-semibold text-black/90">{t.title}</div>
-            {t.description ? <div className="mt-0.5 text-xs leading-relaxed text-black/65">{t.description}</div> : null}
+            {t.description ? (
+              <div className="mt-0.5 text-xs leading-relaxed text-black/65">{t.description}</div>
+            ) : null}
           </motion.div>
         ))}
       </AnimatePresence>
@@ -284,21 +293,20 @@ export default function FunnelPreview() {
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [progressHint, setProgressHint] = useState("Generating preview…");
+  const [progressHint] = useState("Generating preview…");
 
   const redirectTimerRef = useRef<number | null>(null);
   const lastKeydownRef = useRef<number>(0);
   const abortRef = useRef<AbortController | null>(null);
 
-  // ✅ Decide next step (email -> payment) based on session.email
+  // ✅ Next step: Email (if missing) else Payment
   const goNext = useCallback(() => {
     const s = readSession();
     const email = String(s?.email || "").trim().toLowerCase();
-    const hasEmail = !!email;
-
-    navigate(hasEmail ? "/funnel/payment" : "/funnel/email");
+    navigate(email ? "/funnel/payment" : "/funnel/email");
   }, [navigate]);
 
+  // ✅ Init: read querystring + localStorage. Persist photo if received via querystring.
   useEffect(() => {
     const qsPhoto = getQueryStringValue("photo");
     const qsBucket = getQueryStringValue("bucket");
@@ -310,7 +318,14 @@ export default function FunnelPreview() {
     if (qsStyle && qsStyle.trim()) setStyleKey(qsStyle.trim());
 
     if (qsPhoto && qsPhoto.trim()) {
-      setPhoto(qsPhoto.trim());
+      const p = qsPhoto.trim();
+      setPhoto(p);
+
+      // ✅ CRITICAL FIX: persist so Email/Payment guards don't bounce back to upload
+      try {
+        window.localStorage.setItem("tdg_funnel_photo", p);
+      } catch {}
+
       return;
     }
 
@@ -343,6 +358,7 @@ export default function FunnelPreview() {
     setPhoto(storedPhoto);
   }, [push, navigate]);
 
+  // Block printscreen / ctrl+p
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const now = safeNow();
@@ -362,6 +378,7 @@ export default function FunnelPreview() {
     return () => window.removeEventListener("keydown", onKeyDown as any);
   }, [push]);
 
+  // Cleanup
   useEffect(() => {
     return () => {
       if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
@@ -393,6 +410,7 @@ export default function FunnelPreview() {
     []
   );
 
+  // Generate / poll preview
   useEffect(() => {
     if (!photo) return;
 
@@ -402,7 +420,6 @@ export default function FunnelPreview() {
 
     setIsGenerating(true);
     setPreviewUrl(null);
-    setProgressHint("Generating preview…");
 
     let stopped = false;
     let lastResolvedUrl = "";
