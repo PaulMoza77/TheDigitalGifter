@@ -74,7 +74,7 @@ function safeToISO(v: unknown): string | null {
   }
 
   if (typeof v === "number") {
-    // Convex timestamps are usually ms; sometimes seconds.
+    // Convex timestamps can be ms or seconds
     const n = v > 10_000_000_000 ? v : v * 1000;
     const d = new Date(n);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
@@ -119,9 +119,42 @@ function sortByCreatedAtDesc(rows: CustomerRow[]) {
   });
 }
 
+/** ia prima valoare existentă din lista de chei (sinonime) */
+function pick(r: ViewRowLoose, keys: string[]) {
+  for (const k of keys) {
+    if ((r as any)[k] !== undefined) return (r as any)[k];
+  }
+  return undefined;
+}
+
 function mapLooseToCustomerRow(r: ViewRowLoose): CustomerRow {
-  const spent = num((r as any).total_money_spent, 0);
-  const orders = num((r as any).orders_count, 0);
+  const spent = num(
+    pick(r, ["total_money_spent", "total_spent", "totalSpent", "total"]),
+    0
+  );
+  const orders = num(pick(r, ["orders_count", "orders", "ordersCount"]), 0);
+
+  const createdAt = safeToISO(
+    pick(r, ["created_at", "joined_at", "joined", "createdAt", "created"])
+  );
+  const lastActivity = safeToISO(
+    pick(r, [
+      "last_activity",
+      "last_activity_at",
+      "lastActivity",
+      "last_seen_at",
+      "last_seen",
+    ])
+  );
+
+  const creditsUsed = num(
+    pick(r, ["credits_used", "creditsUsed", "credits_spent", "credits"]),
+    0
+  );
+  const generations = num(
+    pick(r, ["generations", "generation_count", "generations_count"]),
+    0
+  );
 
   const hasPurchased =
     (r as any).has_purchased !== undefined
@@ -129,21 +162,23 @@ function mapLooseToCustomerRow(r: ViewRowLoose): CustomerRow {
       : spent > 0 || orders > 0;
 
   return {
-    id: String((r as any).id ?? ""),
-    name: asStringOrNull((r as any).name),
-    email: asStringOrNull((r as any).email),
-    image_url: asStringOrNull((r as any).image_url),
+    id: String(pick(r, ["id"]) ?? ""),
+    name: asStringOrNull(pick(r, ["name", "full_name", "fullName"])),
+    email: asStringOrNull(pick(r, ["email"])),
+    image_url: asStringOrNull(
+      pick(r, ["image_url", "image", "avatar_url", "avatar"])
+    ),
 
-    credits_used: num((r as any).credits_used, 0),
-    generations: num((r as any).generations, 0),
+    credits_used: creditsUsed,
+    generations,
     total_money_spent: spent,
     orders_count: orders,
 
-    created_at: safeToISO((r as any).created_at),
-    last_activity: safeToISO((r as any).last_activity),
+    created_at: createdAt,
+    last_activity: lastActivity,
 
-    promo_code: asStringOrNull((r as any).promo_code),
-    promo_sent_at: safeToISO((r as any).promo_sent_at),
+    promo_code: asStringOrNull(pick(r, ["promo_code", "promo", "promoCode"])),
+    promo_sent_at: safeToISO(pick(r, ["promo_sent_at", "promoSentAt"])),
     has_purchased: hasPurchased,
   };
 }
@@ -208,27 +243,8 @@ async function loadCustomers(): Promise<{
   rows: CustomerRow[];
   source: "unified" | "view" | "fallback";
 }> {
-  // IMPORTANT: unified view already contains BOTH imported (legacy) + new users.
-  const selectColsUnified = [
-    "id",
-    "name",
-    "email",
-    "image_url",
-    "credits_used",
-    "generations",
-    "total_money_spent",
-    "orders_count",
-    "created_at",
-    "last_activity",
-    "promo_code",
-    "promo_sent_at",
-    "has_purchased",
-  ].join(",");
-
-  // 1) Try unified (should be the only source we need)
-  const unified = await supabase
-    .from("customers_admin_view_unified")
-    .select(selectColsUnified);
+  // 1) ✅ Unified (ideal). IMPORTANT: select("*") ca să nu pice pe coloane lipsă
+  const unified = await supabase.from("customers_admin_view_unified").select("*");
 
   if (!unified.error) {
     const rows = ((unified.data as unknown as ViewRowLoose[]) || []).map(
@@ -237,7 +253,7 @@ async function loadCustomers(): Promise<{
     return { rows: sortByCreatedAtDesc(rows), source: "unified" };
   }
 
-  // If unified fails, we allow fallbacks (keeps admin page usable)
+  // dacă nu e “does not exist”, logăm eroarea (te ajută să vezi RLS / grants / etc)
   const umsg = (unified.error.message || "").toLowerCase();
   const unifiedMissing =
     umsg.includes("does not exist") ||
@@ -245,20 +261,12 @@ async function loadCustomers(): Promise<{
     umsg.includes("not found");
 
   if (!unifiedMissing) {
-    console.error(
-      "[Customers] customers_admin_view_unified error:",
-      unified.error
-    );
-    toast.error(
-      `Customers error: ${unified.error.message || "Unknown error"}`
-    );
+    console.error("[Customers] customers_admin_view_unified error:", unified.error);
+    toast.error(`Customers unified error: ${unified.error.message || "Unknown error"}`);
   }
 
-  // 2) Legacy admin view (older pipeline)
-  const primary = await supabase
-    .from("customers_admin_view")
-    .select(selectColsUnified);
-
+  // 2) Legacy view (dacă îl mai ai)
+  const primary = await supabase.from("customers_admin_view").select("*");
   if (!primary.error) {
     const rows = ((primary.data as unknown as ViewRowLoose[]) || []).map(
       mapLooseToCustomerRow
@@ -274,13 +282,10 @@ async function loadCustomers(): Promise<{
 
   if (!primaryMissing) {
     console.error("[Customers] customers_admin_view error:", primary.error);
-    toast.error(
-      `Customers view error: ${primary.error.message || "Unknown error"}`
-    );
-    return { rows: [], source: "view" };
+    toast.error(`Customers view error: ${primary.error.message || "Unknown error"}`);
   }
 
-  // 3) Fallback to raw app_users
+  // 3) Fallback app_users (doar listă; stats rămân 0)
   const { data, error } = await supabase
     .from("app_users")
     .select(
@@ -319,9 +324,7 @@ export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
-  const [source, setSource] = useState<"unified" | "view" | "fallback">(
-    "unified"
-  );
+  const [source, setSource] = useState<"unified" | "view" | "fallback">("unified");
 
   const load = async () => {
     setLoading(true);
@@ -339,8 +342,7 @@ export default function CustomersPage() {
         await load();
       } catch (e: unknown) {
         if (cancelled) return;
-        const msg =
-          e instanceof Error ? e.message : typeof e === "string" ? e : null;
+        const msg = e instanceof Error ? e.message : typeof e === "string" ? e : null;
         console.error("[Customers] load failed:", e);
         toast.error(msg || "Failed to load customers");
         setCustomers([]);
@@ -363,9 +365,7 @@ export default function CustomersPage() {
       const email = (c.email || "").toLowerCase();
       const id = (c.id || "").toLowerCase();
       const promo = (c.promo_code || "").toLowerCase();
-      return (
-        name.includes(q) || email.includes(q) || id.includes(q) || promo.includes(q)
-      );
+      return name.includes(q) || email.includes(q) || id.includes(q) || promo.includes(q);
     });
   }, [customers, searchQuery]);
 
@@ -383,10 +383,7 @@ export default function CustomersPage() {
       const lastActivity = parseISOToDate(c.last_activity);
 
       if (createdAt && createdAt >= startOfMonth) acc.newThisMonth += 1;
-
-      if (lastActivity && lastActivity.getTime() > 0 && lastActivity >= oneDayAgo) {
-        acc.active += 1;
-      }
+      if (lastActivity && lastActivity.getTime() > 0 && lastActivity >= oneDayAgo) acc.active += 1;
 
       acc.totalRevenue += Number(c.total_money_spent || 0);
       return acc;
@@ -410,12 +407,9 @@ export default function CustomersPage() {
       <div className="mx-auto max-w-7xl flex flex-col gap-6">
         <header className="flex flex-col gap-4 border-b border-slate-800 pb-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-50">
-              Customers
-            </h1>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-50">Customers</h1>
             <p className="mt-1 text-sm text-slate-400">
-              View and manage all TheDigitalGifter customers, spending, promo, and
-              activity.
+              View and manage all TheDigitalGifter customers, spending, promo, and activity.
             </p>
             <p className="mt-1 text-xs text-slate-500">
               Data source:{" "}
@@ -466,57 +460,37 @@ export default function CustomersPage() {
 
         <section className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
-            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">
-              Total customers
-            </p>
+            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">Total customers</p>
             <div className="mt-2 flex items-baseline justify-between">
-              <p className="text-2xl font-semibold text-slate-50">
-                {stats.total.toLocaleString()}
-              </p>
+              <p className="text-2xl font-semibold text-slate-50">{stats.total.toLocaleString()}</p>
             </div>
             <p className="text-xs text-slate-500 mt-1">All accounts + funnel leads.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
-            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">
-              New this month
-            </p>
+            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">New this month</p>
             <div className="mt-2 flex items-baseline justify-between">
               <p className="text-2xl font-semibold text-slate-50">
                 {stats.newThisMonth.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Joined since the 1st of the month.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Joined since the 1st of the month.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
-            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">
-              Active (24h)
-            </p>
+            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">Active (24h)</p>
             <div className="mt-2 flex items-baseline justify-between">
-              <p className="text-2xl font-semibold text-slate-50">
-                {stats.active.toLocaleString()}
-              </p>
+              <p className="text-2xl font-semibold text-slate-50">{stats.active.toLocaleString()}</p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Users active in the last 24 hours.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Users active in the last 24 hours.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
-            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">
-              Total Revenue
-            </p>
+            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">Total Revenue</p>
             <div className="mt-2 flex items-baseline justify-between">
-              <p className="text-2xl font-semibold text-slate-50">
-                {moneyEUR(stats.totalRevenue)}
-              </p>
+              <p className="text-2xl font-semibold text-slate-50">{moneyEUR(stats.totalRevenue)}</p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Total money spent by users.
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Total money spent by users.</p>
           </div>
         </section>
 
@@ -573,8 +547,7 @@ export default function CustomersPage() {
                     const promoSent = parseISOToDate(c.promo_sent_at);
                     const hasValidLast = !!last && last.getTime() > 0;
 
-                    const statusLabel =
-                      c.has_purchased || spent > 0 ? "Purchased" : "Lead";
+                    const statusLabel = c.has_purchased || spent > 0 ? "Purchased" : "Lead";
                     const statusClass =
                       c.has_purchased || spent > 0
                         ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
@@ -601,12 +574,8 @@ export default function CustomersPage() {
                               <span className="font-medium text-slate-200 text-sm">
                                 {c.name || "Unknown"}
                               </span>
-                              <span className="text-xs text-slate-500">
-                                {c.email || "—"}
-                              </span>
-                              <span className="text-[10px] text-slate-600">
-                                {c.id}
-                              </span>
+                              <span className="text-xs text-slate-500">{c.email || "—"}</span>
+                              <span className="text-[10px] text-slate-600">{c.id}</span>
                             </div>
                           </div>
                         </TableCell>
@@ -654,9 +623,7 @@ export default function CustomersPage() {
                           {Number(c.generations || 0)}
                         </TableCell>
 
-                        <TableCell className="text-slate-300">
-                          {moneyEUR(spent)}
-                        </TableCell>
+                        <TableCell className="text-slate-300">{moneyEUR(spent)}</TableCell>
 
                         <TableCell className="text-slate-400">
                           {Number(c.orders_count || 0)}
