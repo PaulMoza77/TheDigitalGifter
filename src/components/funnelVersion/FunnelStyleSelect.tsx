@@ -37,36 +37,53 @@ const NEXT_ROUTE = "/funnel/preview";
 
 /**
  * Emoji mapping:
- * - If you later add a column in DB (ex: templates.emoji), we can use it.
- * - For now, deterministic mapping by style name.
+ * - If later you add templates.emoji or templates.icon, we can use it.
+ * - For now, deterministic mapping by style name (high enough quality for MVP).
  */
 function emojiForStyle(nameOrId: string) {
   const s = (nameOrId || "").toLowerCase();
-  if (s.includes("mystery") || s.includes("cinematic") || s.includes("dram")) return "🪄";
-  if (s.includes("friendly") || s.includes("wave") || s.includes("hello")) return "👋";
-  if (s.includes("play") || s.includes("fun") || s.includes("joy")) return "🔴";
-  if (s.includes("hug") || s.includes("warm")) return "🫂";
-  if (s.includes("kiss") || s.includes("love") || s.includes("rom")) return "💋";
-  if (s.includes("walk") || s.includes("move")) return "🚶";
-  if (s.includes("flower") || s.includes("bloom")) return "🌸";
-  if (s.includes("spark") || s.includes("glow")) return "✨";
+  if (s.includes("mystery") || s.includes("cinematic") || s.includes("film") || s.includes("dram")) return "🪄";
+  if (s.includes("friendly") || s.includes("wave") || s.includes("hello") || s.includes("greet")) return "👋";
+  if (s.includes("play") || s.includes("fun") || s.includes("joy") || s.includes("party")) return "🔴";
+  if (s.includes("hug") || s.includes("warm") || s.includes("embrace") || s.includes("cuddle")) return "🫂";
+  if (s.includes("kiss") || s.includes("love") || s.includes("rom") || s.includes("affection")) return "💋";
+  if (s.includes("walk") || s.includes("move") || s.includes("stroll") || s.includes("step")) return "🚶";
+  if (s.includes("flower") || s.includes("bloom") || s.includes("garden")) return "🌸";
+  if (s.includes("spark") || s.includes("glow") || s.includes("magic")) return "✨";
   return "✨";
 }
 
 /**
- * Subtitle line under the style name.
- * (Optional: you can delete this and keep only title if you want “strict” minimal.)
+ * High-intent, marketing-grade descriptions (alivemoment vibe).
+ * If we don't recognize a name, we use a premium fallback.
  */
-function descriptionForStyle(nameOrId: string) {
-  const s = (nameOrId || "").toLowerCase();
-  if (s.includes("mystery")) return "Every photo is unique. Our AI picks the best motion for your memory.";
-  if (s.includes("friendly") || s.includes("wave")) return "Add a natural, heartwarming wave — simple and welcoming.";
-  if (s.includes("play")) return "Lively and joyful — perfect for fun, happy memories.";
-  if (s.includes("hug")) return "Bring the feeling of closeness to life with a gentle embrace.";
-  if (s.includes("kiss")) return "Showcase affection with a soft, romantic gesture.";
-  if (s.includes("walk")) return "Add calm, lifelike movement as if you’re walking through time.";
-  if (s.includes("flower") || s.includes("bloom")) return "Watch gentle flowers bloom around your photo, adding a touch of life.";
-  return "Choose this vibe to continue.";
+function marketingDescription(styleName: string) {
+  const n = (styleName || "").trim();
+
+  const s = n.toLowerCase();
+  if (s.includes("mystery")) {
+    return "A cinematic reveal that feels handcrafted — subtle motion, rich depth, and a premium finish.";
+  }
+  if (s.includes("friendly") || s.includes("wave")) {
+    return "A gentle, natural greeting that instantly feels warm, personal, and real.";
+  }
+  if (s.includes("playful") || s.includes("play")) {
+    return "Bright, upbeat movement that captures joy — perfect for lighthearted, happy moments.";
+  }
+  if (s.includes("warm") || s.includes("hug")) {
+    return "Soft, intimate motion designed to feel like closeness — tender, calm, and heartfelt.";
+  }
+  if (s.includes("sweet") || s.includes("kiss") || s.includes("rom")) {
+    return "A delicate romantic gesture with a smooth, elegant touch — pure affection in motion.";
+  }
+  if (s.includes("natural") || s.includes("walk")) {
+    return "Lifelike motion that feels effortless — calm, grounded, and beautifully human.";
+  }
+  if (s.includes("blossom") || s.includes("flower") || s.includes("bloom")) {
+    return "A dreamy bloom that frames your memory — soft, poetic, and instantly gift-worthy.";
+  }
+
+  return "A premium animation style crafted to make your photo feel alive — elegant, emotional, and share-ready.";
 }
 
 export default function FunnelStyleSelect() {
@@ -86,6 +103,22 @@ export default function FunnelStyleSelect() {
   const [loading, setLoading] = useState(true);
   const [styles, setStyles] = useState<FunnelStyle[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const header = useMemo(() => {
+    // Title adapted to TheDigitalGifter + high intent
+    if (occasion === "newborn") {
+      return {
+        brand: "TheDigitalGifter",
+        title: "Pick the perfect vibe for your newborn memory",
+        subtitle: "Choose a style and we’ll create a beautiful preview in seconds.",
+      };
+    }
+    return {
+      brand: "TheDigitalGifter",
+      title: "Choose the style for your digital gift",
+      subtitle: "Select a vibe — we’ll generate your preview instantly.",
+    };
+  }, [occasion]);
 
   useEffect(() => {
     let alive = true;
@@ -183,14 +216,14 @@ export default function FunnelStyleSelect() {
 
   return (
     <div className="min-h-screen w-full bg-[#F3EEE6] text-[#111827]">
-      {/* Top brand */}
+      {/* Brand */}
       <div className="pt-10">
         <div className="mx-auto max-w-5xl px-6">
           <div
             className="text-center text-[34px] font-semibold tracking-tight"
             style={{ fontFamily: "ui-serif, Georgia, serif" }}
           >
-            alivemoment
+            {header.brand}
           </div>
         </div>
       </div>
@@ -202,12 +235,9 @@ export default function FunnelStyleSelect() {
             className="text-[28px] leading-tight sm:text-[40px] sm:leading-tight font-semibold"
             style={{ fontFamily: "ui-serif, Georgia, serif", color: "#0F3D2E" }}
           >
-            How would you like to bring your first <br className="hidden sm:block" />
-            photo to life?
+            {header.title}
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-[#111827]/70">
-            Choose an animation style that feels right for your memory.
-          </p>
+          <p className="mt-3 text-sm sm:text-base text-[#111827]/70">{header.subtitle}</p>
         </div>
 
         <div className="mx-auto mt-10 max-w-xl">
@@ -229,7 +259,7 @@ export default function FunnelStyleSelect() {
                 {Array.from({ length: 7 }).map((_, i) => (
                   <div
                     key={i}
-                    className="rounded-[10px] border border-[#D8DDE6] bg-white/40 px-6 py-5"
+                    className="rounded-[10px] border border-[#D7DEEA] bg-white/40 px-6 py-5"
                   >
                     <div className="h-4 w-48 rounded bg-black/10" />
                     <div className="mt-2 h-3 w-72 rounded bg-black/5" />
@@ -237,7 +267,7 @@ export default function FunnelStyleSelect() {
                 ))}
               </>
             ) : styles.length === 0 ? (
-              <div className="rounded-[10px] border border-[#D8DDE6] bg-white/40 px-6 py-6 text-center">
+              <div className="rounded-[10px] border border-[#D7DEEA] bg-white/40 px-6 py-6 text-center">
                 <div className="text-sm font-semibold">No styles found</div>
                 <div className="mt-1 text-xs text-[#111827]/60">
                   Add templates with <b>occasion = {occasion}</b> and a <b>style_id</b>.
@@ -246,7 +276,7 @@ export default function FunnelStyleSelect() {
             ) : (
               styles.map((style) => {
                 const emoji = emojiForStyle(style.name || style.id);
-                const desc = descriptionForStyle(style.name || style.id);
+                const desc = marketingDescription(style.name || style.id);
 
                 return (
                   <button
@@ -263,10 +293,14 @@ export default function FunnelStyleSelect() {
                   >
                     <div className="flex items-start gap-3">
                       <div className="pt-[1px] text-[14px] leading-none">{emoji}</div>
+
                       <div className="min-w-0">
+                        {/* ✅ title from your real templates */}
                         <div className="text-[15px] font-semibold text-[#111827]">
                           {style.name}
                         </div>
+
+                        {/* ✅ high-intent description (marketing grade) */}
                         <div className="mt-1 text-[12px] leading-snug text-[#111827]/55">
                           {desc}
                         </div>
@@ -278,9 +312,9 @@ export default function FunnelStyleSelect() {
             )}
           </div>
 
-          {/* tiny footnote (optional) */}
+          {/* micro reassurance (alivemoment vibe) */}
           <div className="mt-10 text-center text-[11px] text-[#111827]/45">
-            Clicking a style will generate your watermarked preview next.
+            Your preview is generated instantly. You’ll unlock the final, clean version after checkout.
           </div>
         </div>
       </div>
