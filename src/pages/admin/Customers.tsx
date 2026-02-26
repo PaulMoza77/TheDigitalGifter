@@ -45,6 +45,7 @@ type AppUserRow = {
   email_verification_time: number | string | null;
   creation_time: number | string | null;
   is_anonymous: number | boolean | null;
+  created_at: string | null;
 };
 
 function initials(name?: string | null, email?: string | null) {
@@ -73,6 +74,7 @@ function safeToISO(v: unknown): string | null {
   }
 
   if (typeof v === "number") {
+    // Convex timestamps are usually ms; sometimes seconds.
     const n = v > 10_000_000_000 ? v : v * 1000;
     const d = new Date(n);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
@@ -206,6 +208,7 @@ async function loadCustomers(): Promise<{
   rows: CustomerRow[];
   source: "unified" | "view" | "fallback";
 }> {
+  // IMPORTANT: unified view already contains BOTH imported (legacy) + new users.
   const selectColsUnified = [
     "id",
     "name",
@@ -222,6 +225,7 @@ async function loadCustomers(): Promise<{
     "has_purchased",
   ].join(",");
 
+  // 1) Try unified (should be the only source we need)
   const unified = await supabase
     .from("customers_admin_view_unified")
     .select(selectColsUnified);
@@ -233,6 +237,7 @@ async function loadCustomers(): Promise<{
     return { rows: sortByCreatedAtDesc(rows), source: "unified" };
   }
 
+  // If unified fails, we allow fallbacks (keeps admin page usable)
   const umsg = (unified.error.message || "").toLowerCase();
   const unifiedMissing =
     umsg.includes("does not exist") ||
@@ -249,92 +254,65 @@ async function loadCustomers(): Promise<{
     );
   }
 
+  // 2) Legacy admin view (older pipeline)
   const primary = await supabase
     .from("customers_admin_view")
     .select(selectColsUnified);
 
-  if (primary.error) {
-    const pmsg = (primary.error.message || "").toLowerCase();
-    const primaryMissing =
-      pmsg.includes("does not exist") ||
-      pmsg.includes("relation") ||
-      pmsg.includes("not found");
-
-    if (!primaryMissing) {
-      console.error("[Customers] customers_admin_view error:", primary.error);
-      toast.error(
-        `Customers view error: ${primary.error.message || "Unknown error"}`
-      );
-      return { rows: [], source: "view" };
-    }
-
-    const { data, error } = await supabase
-      .from("app_users")
-      .select(
-        "id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous"
-      );
-
-    if (error) {
-      console.error("[Customers] app_users error:", error);
-      toast.error(`Customers fallback error: ${error.message || "Unknown error"}`);
-      return { rows: [], source: "fallback" };
-    }
-
-    const rows = ((data as AppUserRow[]) || []).map((u) => {
-      const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${u.id}`;
-      return {
-        id: stableId,
-        name: u.name ?? null,
-        email: u.email ?? null,
-        image_url: u.image ?? null,
-        credits_used: 0,
-        generations: 0,
-        total_money_spent: 0,
-        orders_count: 0,
-        created_at: safeToISO(u.creation_time),
-        last_activity: null,
-        promo_code: null,
-        promo_sent_at: null,
-        has_purchased: false,
-      };
-    });
-
-    return { rows: sortByCreatedAtDesc(rows), source: "fallback" };
+  if (!primary.error) {
+    const rows = ((primary.data as unknown as ViewRowLoose[]) || []).map(
+      mapLooseToCustomerRow
+    );
+    return { rows: sortByCreatedAtDesc(rows), source: "view" };
   }
 
-  const funnel = await supabase
-    .from("funnel_customers_admin_view")
-    .select(selectColsUnified);
+  const pmsg = (primary.error.message || "").toLowerCase();
+  const primaryMissing =
+    pmsg.includes("does not exist") ||
+    pmsg.includes("relation") ||
+    pmsg.includes("not found");
 
-  if (funnel.error) {
-    console.warn("[Customers] funnel_customers_admin_view error:", funnel.error);
+  if (!primaryMissing) {
+    console.error("[Customers] customers_admin_view error:", primary.error);
+    toast.error(
+      `Customers view error: ${primary.error.message || "Unknown error"}`
+    );
+    return { rows: [], source: "view" };
   }
 
-  const rowsA = ((primary.data as unknown as ViewRowLoose[]) || []).map(
-    mapLooseToCustomerRow
-  );
+  // 3) Fallback to raw app_users
+  const { data, error } = await supabase
+    .from("app_users")
+    .select(
+      "id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous,created_at"
+    );
 
-  const rowsB = ((funnel.data as unknown as ViewRowLoose[]) || []).map(
-    mapLooseToCustomerRow
-  );
-
-  const keyOf = (r: CustomerRow) => (r.email || r.id || "").toLowerCase().trim();
-
-  const byKey = new Map<string, CustomerRow>();
-
-  for (const r of rowsB) {
-    const k = keyOf(r);
-    if (!k) continue;
-    byKey.set(k, r);
+  if (error) {
+    console.error("[Customers] app_users error:", error);
+    toast.error(`Customers fallback error: ${error.message || "Unknown error"}`);
+    return { rows: [], source: "fallback" };
   }
 
-  for (const r of rowsA) {
-    const k = keyOf(r);
-    if (!k) continue;
-    byKey.set(k, r);
-  }
+  const rows = ((data as AppUserRow[]) || []).map((u) => {
+    const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${u.id}`;
+    return {
+      id: stableId,
+      name: u.name ?? null,
+      email: u.email ?? null,
+      image_url: u.image ?? null,
+      credits_used: 0,
+      generations: 0,
+      total_money_spent: 0,
+      orders_count: 0,
+      created_at: safeToISO(u.created_at ?? u.creation_time),
+      last_activity: null,
+      promo_code: null,
+      promo_sent_at: null,
+      has_purchased: false,
+    };
+  });
 
-  return { rows: sortByCreatedAtDesc(Array.from(byKey.values())), source: "view" };
+  return { rows: sortByCreatedAtDesc(rows), source: "fallback" };
 }
 
 export default function CustomersPage() {
@@ -445,7 +423,7 @@ export default function CustomersPage() {
                 {source === "unified"
                   ? "customers_admin_view_unified"
                   : source === "view"
-                  ? "customers_admin_view (+ funnel_customers_admin_view)"
+                  ? "customers_admin_view"
                   : "app_users (fallback)"}
               </span>
             </p>
@@ -595,7 +573,8 @@ export default function CustomersPage() {
                     const promoSent = parseISOToDate(c.promo_sent_at);
                     const hasValidLast = !!last && last.getTime() > 0;
 
-                    const statusLabel = c.has_purchased || spent > 0 ? "Purchased" : "Lead";
+                    const statusLabel =
+                      c.has_purchased || spent > 0 ? "Purchased" : "Lead";
                     const statusClass =
                       c.has_purchased || spent > 0
                         ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
@@ -622,8 +601,12 @@ export default function CustomersPage() {
                               <span className="font-medium text-slate-200 text-sm">
                                 {c.name || "Unknown"}
                               </span>
-                              <span className="text-xs text-slate-500">{c.email || "—"}</span>
-                              <span className="text-[10px] text-slate-600">{c.id}</span>
+                              <span className="text-xs text-slate-500">
+                                {c.email || "—"}
+                              </span>
+                              <span className="text-[10px] text-slate-600">
+                                {c.id}
+                              </span>
                             </div>
                           </div>
                         </TableCell>
@@ -671,7 +654,9 @@ export default function CustomersPage() {
                           {Number(c.generations || 0)}
                         </TableCell>
 
-                        <TableCell className="text-slate-300">{moneyEUR(spent)}</TableCell>
+                        <TableCell className="text-slate-300">
+                          {moneyEUR(spent)}
+                        </TableCell>
 
                         <TableCell className="text-slate-400">
                           {Number(c.orders_count || 0)}
