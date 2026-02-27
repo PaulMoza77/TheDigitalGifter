@@ -12,9 +12,9 @@ function useQuery() {
 type ResultRow = {
   id: string;
   status: string | null;
-  final_image_url: string | null; // full https URL OR signed URL
-  final_bucket: string | null; // optional
-  final_storage_path: string | null; // optional
+  final_image_url: string | null;
+  final_bucket: string | null;
+  final_storage_path: string | null;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -23,10 +23,6 @@ function isHttpUrl(s: string) {
   return /^https?:\/\//i.test((s || "").trim());
 }
 
-/**
- * If you store outputs in private storage (bucket+path), we create a signed URL.
- * If final_image_url is already http(s), we use it directly.
- */
 async function resolveFinalUrl(row: ResultRow): Promise<string | null> {
   const direct = (row.final_image_url || "").trim();
   if (direct && isHttpUrl(direct)) return direct;
@@ -36,12 +32,28 @@ async function resolveFinalUrl(row: ResultRow): Promise<string | null> {
 
   if (!bucket || !path) return direct || null;
 
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, 60 * 60);
-
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
   if (error) return null;
+
   return data?.signedUrl ?? null;
+}
+
+function normalizeRpcRow(x: any): ResultRow | null {
+  if (!x) return null;
+
+  // accept either an object row or array[0]
+  const r = Array.isArray(x) ? x[0] : x;
+  if (!r) return null;
+
+  return {
+    id: String(r.id ?? ""),
+    status: r.status ?? null,
+    final_image_url: r.final_image_url ?? null,
+    final_bucket: r.final_bucket ?? null,
+    final_storage_path: r.final_storage_path ?? null,
+    created_at: r.created_at ?? null,
+    updated_at: r.updated_at ?? null,
+  };
 }
 
 export default function ResultPage() {
@@ -61,6 +73,57 @@ export default function ResultPage() {
   useEffect(() => {
     let cancelled = false;
 
+    async function tickOnce(): Promise<{ done: boolean }> {
+      // IMPORTANT: DOAR RPC (fără select direct pe generations)
+      const { data, error } = await supabase.rpc("get_generation_by_session", {
+        p_session_id: sessionId,
+      });
+
+      if (error) {
+        const msg = String(error.message || "Unknown RPC error");
+        if (!cancelled) {
+          setDebug(`RPC error: ${msg}`);
+          setLoading(false);
+        }
+        return { done: true };
+      }
+
+      const r = normalizeRpcRow(data);
+
+      if (!r || !r.id) {
+        if (!cancelled) {
+          setDebug("No generation found yet for this session_id (RPC returned empty).");
+        }
+        return { done: false };
+      }
+
+      if (!cancelled) setRow(r);
+
+      const url = await resolveFinalUrl(r);
+
+      if (!cancelled) {
+        setDebug(
+          `found id=${r.id} status=${r.status || "?"} final_image_url=${
+            r.final_image_url ? "yes" : "no"
+          } bucket=${r.final_bucket || "—"} path=${r.final_storage_path || "—"} resolved=${
+            url ? "yes" : "no"
+          }`
+        );
+      }
+
+      // dacă avem URL => gata
+      if (url) {
+        if (!cancelled) {
+          setFinalUrl(url);
+          setLoading(false);
+        }
+        return { done: true };
+      }
+
+      // dacă e "succeeded" dar încă nu ai url în DB, continuăm polling, dar arătăm clar
+      return { done: false };
+    }
+
     async function load() {
       if (!sessionId) {
         setLoading(false);
@@ -74,106 +137,32 @@ export default function ResultPage() {
       setDebug("");
 
       const start = Date.now();
-      const maxMs = 120_000; // 2 min
+      const maxMs = 180_000; // 3 minute (mai safe)
       const intervalMs = 1500;
 
       while (!cancelled && Date.now() - start < maxMs) {
-        let r: ResultRow | null = null;
-
-        // 1) RPC (recommended)
         try {
-          const { data, error } = await supabase.rpc("get_generation_by_session", {
-            p_session_id: sessionId,
-          });
-
-          if (!error && Array.isArray(data) && data.length > 0) {
-            const x = data[0] as any;
-            r = {
-              id: String(x.id ?? ""),
-              status: x.status ?? null,
-              final_image_url: x.final_image_url ?? null,
-              final_bucket: x.final_bucket ?? null,
-              final_storage_path: x.final_storage_path ?? null,
-              created_at: x.created_at ?? null,
-              updated_at: x.updated_at ?? null,
-            };
-          } else if (error) {
-            const msg = String(error.message || "");
-            // nu spamam debug daca functia nu exista (caz normal)
-            const low = msg.toLowerCase();
-            if (!low.includes("function") && !low.includes("rpc")) {
-              setDebug(`RPC error: ${msg}`);
-            }
-          }
-        } catch {
-          // ignore -> fallback
-        }
-
-        // 2) Fallback direct select
-        if (!r) {
-          const { data, error } = await supabase
-            .from("generations")
-            .select(
-              "id,status,final_image_url,final_bucket,final_storage_path,created_at,updated_at"
-            )
-            .eq("stripe_session_id", sessionId)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (error) {
-            setDebug(`DB error: ${error.message || "Unknown"}`);
-            break;
-          }
-
-          if (data) {
-            const x = data as any;
-            r = {
-              id: String(x.id ?? ""),
-              status: x.status ?? null,
-              final_image_url: x.final_image_url ?? null,
-              final_bucket: x.final_bucket ?? null,
-              final_storage_path: x.final_storage_path ?? null,
-              created_at: x.created_at ?? null,
-              updated_at: x.updated_at ?? null,
-            };
-          }
-        }
-
-        if (r) {
-          if (!cancelled) setRow(r);
-
-          const url = await resolveFinalUrl(r);
-
+          const { done } = await tickOnce();
+          if (done) return;
+        } catch (e: any) {
           if (!cancelled) {
-            setDebug(
-              `found id=${r.id || "?"} status=${r.status || "?"} final_image_url=${
-                r.final_image_url ? "yes" : "no"
-              } bucket=${r.final_bucket || "—"} path=${r.final_storage_path || "—"} resolved=${
-                url ? "yes" : "no"
-              }`
-            );
+            setDebug(`Unexpected error: ${String(e?.message || e)}`);
+            setLoading(false);
           }
-
-          if (url) {
-            if (!cancelled) {
-              setFinalUrl(url);
-              setLoading(false);
-            }
-            return;
-          }
-        } else {
-          if (!cancelled) setDebug("No generation row found yet for this session_id.");
+          return;
         }
 
         await new Promise((res) => setTimeout(res, intervalMs));
       }
 
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+        // dacă după maxMs tot nu e, rămâne cu mesaj
+        setDebug((d) => d || "Timed out waiting for final result. Please click Refresh.");
+      }
     }
 
     load();
-
     return () => {
       cancelled = true;
     };
@@ -192,9 +181,7 @@ export default function ResultPage() {
               Back
             </button>
 
-            <div className="select-none text-xl tracking-wide font-semibold">
-              TheDigitalGifter
-            </div>
+            <div className="select-none text-xl tracking-wide font-semibold">TheDigitalGifter</div>
 
             <div className="text-sm text-zinc-700">{stepLabel}</div>
           </div>
@@ -246,9 +233,7 @@ export default function ResultPage() {
             Back
           </button>
 
-          <div className="select-none text-xl tracking-wide font-semibold">
-            TheDigitalGifter
-          </div>
+          <div className="select-none text-xl tracking-wide font-semibold">TheDigitalGifter</div>
 
           <div className="text-sm text-zinc-700">{stepLabel}</div>
         </div>
@@ -267,6 +252,8 @@ export default function ResultPage() {
           <p className="mt-3 max-w-xl text-center text-base md:text-lg text-zinc-700">
             {finalUrl
               ? "Here’s the full-quality version — clean, sharp, and ready to share."
+              : row?.status === "succeeded"
+              ? "We finished the generation — syncing the final image link now."
               : "We’re creating the full-quality image now. This usually takes a moment."}
           </p>
 
@@ -291,6 +278,7 @@ export default function ResultPage() {
                           ? "Keep this tab open — we’ll show it as soon as it’s ready."
                           : "Click Refresh and we’ll check again."}
                       </div>
+
                       {debug ? (
                         <div className="mt-4 text-xs text-zinc-500 break-all max-w-[520px] mx-auto">
                           {debug}
