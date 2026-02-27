@@ -1,280 +1,321 @@
 // src/components/funnelVersion/ResultPage.tsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
-
-function cn(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
+import { Separator } from "@/components/ui/separator";
 
 function useQuery() {
   const { search } = useLocation();
   return useMemo(() => new URLSearchParams(search), [search]);
 }
 
-type GenerationLoose = Record<string, any>;
-
-type GenerationRow = {
+type ResultRow = {
   id: string;
   status: string | null;
-  final_image_url: string | null; // resolved URL (http or signed)
+  final_image_url: string | null; // full https URL OR signed URL
+  final_bucket: string | null; // optional
+  final_storage_path: string | null; // optional
   created_at: string | null;
+  updated_at: string | null;
 };
 
-function pick(obj: any, keys: string[]) {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v !== undefined && v !== null && v !== "") return v;
-  }
-  return null;
-}
-
 function isHttpUrl(s: string) {
-  return /^https?:\/\//i.test(s);
-}
-
-function addCacheBuster(url: string) {
-  const t = Date.now();
-  return url.includes("?") ? `${url}&t=${t}` : `${url}?t=${t}`;
+  return /^https?:\/\//i.test((s || "").trim());
 }
 
 /**
- * IMPORTANT (Bucket):
- * - final image should be stored in a dedicated bucket (recommended) like: "generations"
- * - set VITE_GENERATIONS_BUCKET="generations"
- * If your DB stores full https URLs, bucket is not used.
+ * If you store outputs in private storage (bucket+path), we create a signed URL.
+ * If final_image_url is already http(s), we use it directly.
  */
-async function resolveImageUrl(raw: string | null): Promise<string | null> {
-  if (!raw) return null;
+async function resolveFinalUrl(row: ResultRow): Promise<string | null> {
+  const direct = (row.final_image_url || "").trim();
+  if (direct && isHttpUrl(direct)) return direct;
 
-  const trimmed = String(raw).trim();
-  if (!trimmed) return null;
+  const bucket = (row.final_bucket || "").trim();
+  const path = (row.final_storage_path || "").trim();
 
-  // Full URL already
-  if (isHttpUrl(trimmed)) return trimmed;
+  if (!bucket || !path) return direct || null;
 
-  // If backend stored "/storage/v1/..." path
-  if (trimmed.startsWith("/storage/v1/")) {
-    const base = (import.meta as any).env?.VITE_SUPABASE_URL || "";
-    return base ? `${base}${trimmed}` : trimmed; // fallback
-  }
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(path, 60 * 60);
 
-  // Treat as storage path -> signed URL (best for private bucket)
-  const bucket = (import.meta as any).env?.VITE_GENERATIONS_BUCKET || "generations";
-
-  try {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(trimmed, 60 * 60);
-
-    if (error) return null;
-    return data?.signedUrl ?? null;
-  } catch {
-    return null;
-  }
+  if (error) return null;
+  return data?.signedUrl ?? null;
 }
 
 export default function ResultPage() {
   const q = useQuery();
   const navigate = useNavigate();
 
-  const sessionId = q.get("session_id") || "";
+  const sessionId = (q.get("session_id") || "").trim();
 
   const [loading, setLoading] = useState(true);
-  const [row, setRow] = useState<GenerationRow | null>(null);
-
-  // ✅ debug only in dev (keeps UI clean in production)
+  const [row, setRow] = useState<ResultRow | null>(null);
+  const [finalUrl, setFinalUrl] = useState<string | null>(null);
   const [debug, setDebug] = useState<string>("");
-  const DEV = (import.meta as any).env?.DEV === true;
 
-  const cancelledRef = useRef(false);
+  const stepLabel = useMemo(() => "3 of 3", []);
+  const pageBg = useMemo(() => ({ background: "#f6f1ea" as const }), []);
 
   useEffect(() => {
-    cancelledRef.current = false;
+    let cancelled = false;
 
     async function load() {
       if (!sessionId) {
-        toast.error("Missing session_id");
-        navigate("/", { replace: true });
+        setLoading(false);
+        setDebug("Missing session_id in URL.");
         return;
       }
 
       setLoading(true);
       setRow(null);
+      setFinalUrl(null);
       setDebug("");
 
       const start = Date.now();
-      const maxMs = 90_000; // 90s
+      const maxMs = 120_000; // 2 min
       const intervalMs = 1500;
 
-      while (!cancelledRef.current && Date.now() - start < maxMs) {
-        const { data, error } = await supabase
-          .from("generations")
-          .select("*")
-          .eq("stripe_session_id", sessionId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+      while (!cancelled && Date.now() - start < maxMs) {
+        let r: ResultRow | null = null;
 
-        if (error) {
-          console.error("[ResultPage] DB error:", error);
-          if (DEV) setDebug(`DB error: ${error.message}`);
-          toast.error(error.message || "Failed to load result");
-          break;
+        // 1) RPC (recommended)
+        try {
+          const { data, error } = await supabase.rpc("get_generation_by_session", {
+            p_session_id: sessionId,
+          });
+
+          if (!error && Array.isArray(data) && data.length > 0) {
+            const x = data[0] as any;
+            r = {
+              id: String(x.id ?? ""),
+              status: x.status ?? null,
+              final_image_url: x.final_image_url ?? null,
+              final_bucket: x.final_bucket ?? null,
+              final_storage_path: x.final_storage_path ?? null,
+              created_at: x.created_at ?? null,
+              updated_at: x.updated_at ?? null,
+            };
+          } else if (error) {
+            const msg = String(error.message || "");
+            // nu spamam debug daca functia nu exista (caz normal)
+            const low = msg.toLowerCase();
+            if (!low.includes("function") && !low.includes("rpc")) {
+              setDebug(`RPC error: ${msg}`);
+            }
+          }
+        } catch {
+          // ignore -> fallback
         }
 
-        if (data) {
-          const g = data as GenerationLoose;
+        // 2) Fallback direct select
+        if (!r) {
+          const { data, error } = await supabase
+            .from("generations")
+            .select(
+              "id,status,final_image_url,final_bucket,final_storage_path,created_at,updated_at"
+            )
+            .eq("stripe_session_id", sessionId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-          const status = String(pick(g, ["status", "state"]) ?? "") || null;
-          const createdAt = String(pick(g, ["created_at", "createdAt"]) ?? "") || null;
+          if (error) {
+            setDebug(`DB error: ${error.message || "Unknown"}`);
+            break;
+          }
 
-          // ✅ Only trust FINAL fields (so it shows only here, after payment)
-          // Prefer: final_image_url
-          // Then: final_url (if you have it)
-          // Avoid: preview_url, watermark_url etc.
-          const rawFinal =
-            (pick(g, ["final_image_url", "final_url", "finalImageUrl", "finalUrl"]) as
-              | string
-              | null) ?? null;
+          if (data) {
+            const x = data as any;
+            r = {
+              id: String(x.id ?? ""),
+              status: x.status ?? null,
+              final_image_url: x.final_image_url ?? null,
+              final_bucket: x.final_bucket ?? null,
+              final_storage_path: x.final_storage_path ?? null,
+              created_at: x.created_at ?? null,
+              updated_at: x.updated_at ?? null,
+            };
+          }
+        }
 
-          const resolved = await resolveImageUrl(rawFinal);
+        if (r) {
+          if (!cancelled) setRow(r);
 
-          if (DEV) {
+          const url = await resolveFinalUrl(r);
+
+          if (!cancelled) {
             setDebug(
-              `id=${String(g.id)} status=${status ?? "?"} rawFinal=${
-                rawFinal ?? "null"
-              } resolved=${resolved ? "yes" : "no"}`
+              `found id=${r.id || "?"} status=${r.status || "?"} final_image_url=${
+                r.final_image_url ? "yes" : "no"
+              } bucket=${r.final_bucket || "—"} path=${r.final_storage_path || "—"} resolved=${
+                url ? "yes" : "no"
+              }`
             );
           }
 
-          if (resolved) {
-            if (!cancelledRef.current) {
-              setRow({
-                id: String(g.id),
-                status,
-                final_image_url: addCacheBuster(resolved),
-                created_at: createdAt,
-              });
+          if (url) {
+            if (!cancelled) {
+              setFinalUrl(url);
               setLoading(false);
             }
             return;
           }
         } else {
-          if (DEV) setDebug("No generation row for this session_id yet.");
+          if (!cancelled) setDebug("No generation row found yet for this session_id.");
         }
 
-        await new Promise((r) => setTimeout(r, intervalMs));
+        await new Promise((res) => setTimeout(res, intervalMs));
       }
 
-      if (!cancelledRef.current) {
-        setLoading(false);
-        toast.message("Still processing. Try Refresh in a moment.");
-      }
+      if (!cancelled) setLoading(false);
     }
 
-    void load();
+    load();
 
     return () => {
-      cancelledRef.current = true;
+      cancelled = true;
     };
-  }, [sessionId, navigate, DEV]);
+  }, [sessionId]);
 
-  // ================== UI (AliveMoment-ish) ==================
-  const url = row?.final_image_url;
-
-  return (
-    <div className="min-h-screen w-full bg-[#F3EEE6] text-[#111827]">
-      {/* header (same system as other funnel pages) */}
-      <div className="pt-10">
-        <div className="mx-auto max-w-5xl px-6">
+  if (!sessionId) {
+    return (
+      <div className="min-h-screen" style={pageBg}>
+        <header className="mx-auto w-full max-w-5xl px-6 pt-6">
           <div className="flex items-center justify-between">
             <button
               type="button"
-              className="text-sm text-black/60 hover:text-black/80 transition"
+              className="text-sm text-zinc-700 hover:text-zinc-900 transition"
               onClick={() => navigate("/")}
             >
               Back
             </button>
 
-            <div
-              className="select-none text-[34px] font-semibold tracking-tight"
-              style={{ fontFamily: "ui-serif, Georgia, serif" }}
-            >
+            <div className="select-none text-xl tracking-wide font-semibold">
               TheDigitalGifter
             </div>
 
-            <div className="text-sm text-black/60">Done</div>
+            <div className="text-sm text-zinc-700">{stepLabel}</div>
           </div>
 
-          <div className="mt-6 h-px w-full bg-black/10" />
-        </div>
-      </div>
+          <div className="mt-5">
+            <Separator className="bg-zinc-200" />
+          </div>
+        </header>
 
-      <main className="mx-auto w-full max-w-5xl px-6 pb-20 pt-10">
-        <div className="mx-auto max-w-2xl text-center">
-          <h1
-            className="text-[28px] leading-tight sm:text-[40px] sm:leading-tight font-semibold"
-            style={{ fontFamily: "ui-serif, Georgia, serif", color: "#0F3D2E" }}
+        <main className="mx-auto w-full max-w-5xl px-6">
+          <div className="flex flex-col items-center justify-center py-14">
+            <h1 className="text-center text-4xl md:text-5xl font-semibold text-[#0b3b2e]">
+              We couldn’t open your result
+            </h1>
+            <p className="mt-3 max-w-xl text-center text-base md:text-lg text-zinc-700">
+              The payment session is missing. Please return to the start and try again.
+            </p>
+
+            {debug ? (
+              <div className="mt-6 max-w-xl rounded-2xl border border-zinc-200 bg-white/60 px-4 py-3 text-xs text-zinc-600 break-all">
+                {debug}
+              </div>
+            ) : null}
+
+            <div className="mt-8">
+              <button
+                type="button"
+                className="rounded-full bg-[#0b3b2e] px-8 py-3 text-sm font-semibold text-white hover:bg-[#082c22] transition"
+                onClick={() => navigate("/funnel/uploadPhoto")}
+              >
+                Start again
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen" style={pageBg}>
+      <header className="mx-auto w-full max-w-5xl px-6 pt-6">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            className="text-sm text-zinc-700 hover:text-zinc-900 transition"
+            onClick={() => navigate("/")}
           >
-            {loading ? "Preparing your final gift…" : "✓ Your final gift is ready"}
+            Back
+          </button>
+
+          <div className="select-none text-xl tracking-wide font-semibold">
+            TheDigitalGifter
+          </div>
+
+          <div className="text-sm text-zinc-700">{stepLabel}</div>
+        </div>
+
+        <div className="mt-5">
+          <Separator className="bg-zinc-200" />
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-5xl px-6">
+        <div className="flex flex-col items-center justify-center py-14">
+          <h1 className="text-center text-4xl md:text-5xl font-semibold text-[#0b3b2e]">
+            {finalUrl ? "Your gift is ready ✓" : loading ? "Finishing your gift…" : "Almost there…"}
           </h1>
 
-          <p className="mt-3 text-sm sm:text-base text-black/65">
-            {loading
-              ? "Payment confirmed. We’re finishing the clean, high-quality version."
-              : "This is the clean version — no watermark, ready to save or share."}
+          <p className="mt-3 max-w-xl text-center text-base md:text-lg text-zinc-700">
+            {finalUrl
+              ? "Here’s the full-quality version — clean, sharp, and ready to share."
+              : "We’re creating the full-quality image now. This usually takes a moment."}
           </p>
-        </div>
 
-        <div className="mx-auto mt-10 w-full max-w-[820px]">
-          <div className="rounded-[18px] border border-black/10 bg-white/55 shadow-[0_16px_40px_-26px_rgba(0,0,0,0.35)]">
-            <div className="p-6 sm:p-8">
-              <div className="overflow-hidden rounded-[16px] border border-black/10 bg-white">
-                {loading ? (
-                  <div className="flex h-[360px] w-full items-center justify-center">
-                    <div className="text-sm text-black/60">Loading…</div>
-                  </div>
-                ) : url ? (
+          <div className="mt-10 w-full max-w-3xl">
+            <div className="rounded-3xl border border-zinc-200 bg-white/55 shadow-sm p-4 md:p-6 overflow-hidden">
+              <div className="relative w-full overflow-hidden rounded-2xl border bg-white">
+                {finalUrl ? (
                   <img
-                    src={url}
+                    src={finalUrl}
                     alt="Final result"
-                    className="w-full h-auto"
-                    onError={() => {
-                      toast.error("Image failed to load. Try Refresh.");
-                    }}
+                    className="w-full h-auto object-contain"
+                    onError={() => setDebug((d) => `${d}\nIMG error loading finalUrl`)}
                   />
                 ) : (
-                  <div className="flex h-[360px] w-full flex-col items-center justify-center px-6 text-center">
-                    <div className="text-sm font-semibold text-black/75">
-                      Still finishing your image
+                  <div className="flex min-h-[360px] items-center justify-center bg-white">
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-zinc-800">
+                        {loading ? "Generating your final image…" : "Result not ready yet"}
+                      </div>
+                      <div className="mt-1 text-sm text-zinc-600">
+                        {loading
+                          ? "Keep this tab open — we’ll show it as soon as it’s ready."
+                          : "Click Refresh and we’ll check again."}
+                      </div>
+                      {debug ? (
+                        <div className="mt-4 text-xs text-zinc-500 break-all max-w-[520px] mx-auto">
+                          {debug}
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="mt-2 text-sm text-black/60">
-                      It can take a little longer sometimes. Please refresh in a moment.
-                    </div>
-                    {DEV && debug ? (
-                      <div className="mt-4 text-xs text-black/45 break-all">{debug}</div>
-                    ) : null}
                   </div>
                 )}
               </div>
 
-              <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
-                  className="w-full sm:w-auto rounded-full border border-black/15 bg-white/70 px-6 py-3 text-sm font-semibold text-black/70 hover:bg-white transition"
+                  className="rounded-full border border-zinc-300 bg-white px-6 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 transition"
                 >
                   Refresh
                 </button>
 
-                {url ? (
+                {finalUrl ? (
                   <a
-                    href={url}
+                    href={finalUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full sm:w-auto rounded-full bg-[#0F3D2E] px-6 py-3 text-sm font-semibold text-white hover:bg-[#0C3326] transition shadow-[0_14px_40px_-26px_rgba(15,61,46,0.9)]"
+                    className="rounded-full bg-[#0b3b2e] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#082c22] transition"
                   >
                     Open full image
                   </a>
@@ -282,18 +323,24 @@ export default function ResultPage() {
 
                 <button
                   type="button"
-                  onClick={() => navigate("/")}
-                  className="w-full sm:w-auto rounded-full border border-black/15 bg-white/70 px-6 py-3 text-sm font-semibold text-black/70 hover:bg-white transition"
+                  onClick={() => navigate("/funnel/uploadPhoto")}
+                  className="rounded-full border border-zinc-300 bg-white px-6 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 transition"
                 >
-                  Back home
+                  Start new gift
                 </button>
               </div>
 
-              {DEV && debug ? (
-                <div className="mt-5 text-xs text-black/45 break-all text-center">{debug}</div>
-              ) : null}
+              <div className="mt-4 text-center text-xs text-zinc-500">
+                Tip: save the image or open it in a new tab for the best quality.
+              </div>
             </div>
           </div>
+
+          {debug ? (
+            <div className="mt-6 max-w-3xl rounded-2xl border border-zinc-200 bg-white/60 px-4 py-3 text-xs text-zinc-600 break-all">
+              {debug}
+            </div>
+          ) : null}
         </div>
       </main>
 
