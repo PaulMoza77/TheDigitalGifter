@@ -23,38 +23,37 @@ import {
 } from "@/components/ui/dialog";
 
 type OrderViewRow = {
-  convex_id: string;
+  id: string; // convex_id aliased in orders_admin_view
   user_convex_id: string | null;
-  user_name: string | null;
-  user_email: string | null;
-  user_image: string | null;
 
-  amount: number | string | null;
+  amount: number | string | null; // original (raw)
+  amount_eur: number | string | null; // computed in view
   pack: string | null;
   status: string | null;
+  stripe_session_id: string | null;
 
-  credits_spent: number | string | null;
-  categories: string | null;
-
-  created_at: string | null;
-  created_at_ms: number | string | null;
+  // if your DB has these, great; otherwise they will be undefined
+  created_at?: string | null;
 };
 
 type OrderUI = {
-  id: string; // convex order id
+  id: string;
   user_convex_id: string | null;
-  user_name: string | null;
-  user_email: string | null;
-  user_image: string | null;
 
-  amount: number; // EUR
-  credits_spent: number;
+  amount_eur: number; // EUR
   pack: string | null;
   status: string | null;
 
   created_at_iso: string | null;
 
-  categories: string[]; // unique
+  // optional customer info (may be unknown for now)
+  user_name: string | null;
+  user_email: string | null;
+  user_image: string | null;
+
+  // optional computed from ledger
+  credits_spent: number;
+  categories: string[];
 };
 
 type LedgerItemUI = {
@@ -118,10 +117,12 @@ export default function OrdersPage() {
   async function loadOrders() {
     setLoading(true);
 
+    // IMPORTANT: orders_admin_view currently does NOT have created_at
+    // So we only order by "id" (convex_id) desc as a stable fallback.
     const { data, error } = await supabase
       .from("orders_admin_view")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("id,user_convex_id,amount,amount_eur,pack,status,stripe_session_id")
+      .order("id", { ascending: false });
 
     if (error) {
       console.error("[OrdersPage] orders_admin_view load error:", error);
@@ -134,23 +135,22 @@ export default function OrdersPage() {
     const raw = (data as OrderViewRow[]) || [];
 
     const ui: OrderUI[] = raw.map((o) => {
-      const createdIso = o.created_at ? new Date(o.created_at).toISOString() : null;
-      const categories = splitCats(o.categories);
-
       return {
-        id: o.convex_id,
+        id: String(o.id),
         user_convex_id: o.user_convex_id ?? null,
-        user_name: o.user_name ?? null,
-        user_email: o.user_email ?? null,
-        user_image: o.user_image ?? null,
 
-        amount: num(o.amount, 0),
-        credits_spent: num(o.credits_spent, 0),
+        amount_eur: num((o as any).amount_eur, 0),
         pack: o.pack ?? null,
         status: o.status ?? null,
 
-        created_at_iso: createdIso,
-        categories,
+        created_at_iso: null, // view doesn't have created_at yet
+
+        user_name: null,
+        user_email: null,
+        user_image: null,
+
+        credits_spent: 0,
+        categories: [],
       };
     });
 
@@ -163,11 +163,11 @@ export default function OrdersPage() {
     setSelectedItems([]);
     setItemsLoading(true);
 
-    // Pull exact “what templates were purchased” from credits ledger view
-    // (works even if you do NOT have order_items table)
     const { data, error } = await supabase
       .from("credits_admin_view")
-      .select("id,template_id,template_title,category,credits,amount,currency,occurred_at,direction,order_convex_id")
+      .select(
+        "id,template_id,template_title,category,credits,amount,currency,occurred_at,direction,order_convex_id"
+      )
       .eq("order_convex_id", order.id)
       .order("occurred_at", { ascending: true });
 
@@ -179,7 +179,6 @@ export default function OrdersPage() {
       return;
     }
 
-    // we only care about OUT (spend)
     const rows = ((data as any[]) || [])
       .filter((r) => String(r.direction || "").toLowerCase() === "out")
       .map((r) => ({
@@ -195,6 +194,20 @@ export default function OrdersPage() {
 
     setSelectedItems(rows);
     setItemsLoading(false);
+
+    // Update selected order credits/categories in UI (nice to have)
+    const creditsSpent = rows.reduce((acc, r) => acc + num(r.credits, 0), 0);
+    const cats = uniq(rows.map((r) => r.category || "").filter(Boolean));
+
+    setSelected((prev) =>
+      prev
+        ? {
+            ...prev,
+            credits_spent: creditsSpent,
+            categories: cats,
+          }
+        : prev
+    );
   }
 
   useEffect(() => {
@@ -212,6 +225,7 @@ export default function OrdersPage() {
       const pack = (o.pack || "").toLowerCase();
       const status = (o.status || "").toLowerCase();
       const cats = (o.categories || []).join(" ").toLowerCase();
+
       return (
         email.includes(q) ||
         name.includes(q) ||
@@ -234,7 +248,7 @@ export default function OrdersPage() {
     return filteredOrders.reduce((acc, o) => {
       acc.totalOrders += 1;
       if ((o.status || "").toLowerCase() === "completed") acc.completed += 1;
-      acc.revenue += Number(o.amount || 0);
+      acc.revenue += Number(o.amount_eur || 0);
       acc.credits += Number(o.credits_spent || 0);
       return acc;
     }, base);
@@ -329,7 +343,9 @@ export default function OrdersPage() {
                 {stats.credits.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Credits computed from ledger per order.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Credits computed from ledger per order.
+            </p>
           </div>
         </section>
 
@@ -408,9 +424,7 @@ export default function OrdersPage() {
                           </div>
                         </TableCell>
 
-                        <TableCell className="text-slate-300">
-                          {o.pack || "—"}
-                        </TableCell>
+                        <TableCell className="text-slate-300">{o.pack || "—"}</TableCell>
 
                         <TableCell className="text-slate-400">
                           {o.categories.length ? (
@@ -439,7 +453,7 @@ export default function OrdersPage() {
                         </TableCell>
 
                         <TableCell className="text-slate-300">
-                          {moneyEUR(Number(o.amount || 0))}
+                          {moneyEUR(Number(o.amount_eur || 0))}
                         </TableCell>
 
                         <TableCell className="text-slate-400 text-xs">
@@ -494,7 +508,9 @@ export default function OrdersPage() {
                       <div className="text-sm font-semibold text-slate-100">
                         {selected.user_name || "Unknown"}
                       </div>
-                      <div className="text-xs text-slate-400">{selected.user_email || "—"}</div>
+                      <div className="text-xs text-slate-400">
+                        {selected.user_email || "—"}
+                      </div>
                       <div className="text-[11px] text-slate-600 mt-1">{selected.id}</div>
                     </div>
                   </div>
@@ -502,7 +518,7 @@ export default function OrdersPage() {
                   <div className="text-right">
                     <div className="text-sm text-slate-300">{selected.pack || "—"}</div>
                     <div className="text-lg font-semibold text-slate-50">
-                      {moneyEUR(selected.amount)}
+                      {moneyEUR(selected.amount_eur)}
                     </div>
                     <div className="text-xs text-slate-500">
                       Credits: {Number(selected.credits_spent || 0)}
@@ -513,7 +529,9 @@ export default function OrdersPage() {
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm font-semibold text-slate-100">Templates in this order</div>
+                  <div className="text-sm font-semibold text-slate-100">
+                    Templates in this order
+                  </div>
                   <div>
                     <Badge
                       variant="outline"
@@ -534,8 +552,8 @@ export default function OrdersPage() {
                   <div className="text-slate-500 text-sm">
                     No ledger items found for this order.
                     <div className="text-xs text-slate-600 mt-1">
-                      If this order exists but ledger is empty, it means credits usage wasn’t written to{" "}
-                      <code className="text-slate-400">credits_ledger</code> with{" "}
+                      If this order exists but ledger is empty, it means credits usage wasn’t written
+                      to <code className="text-slate-400">credits_ledger</code> with{" "}
                       <code className="text-slate-400">order_convex_id</code>.
                     </div>
                   </div>
@@ -559,7 +577,9 @@ export default function OrdersPage() {
                                   {it.template_title || it.template_id || "Unknown template"}
                                 </span>
                                 {it.template_id ? (
-                                  <span className="text-[11px] text-slate-600">{it.template_id}</span>
+                                  <span className="text-[11px] text-slate-600">
+                                    {it.template_id}
+                                  </span>
                                 ) : null}
                               </div>
                             </TableCell>
