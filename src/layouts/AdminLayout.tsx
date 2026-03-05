@@ -26,17 +26,26 @@ type NavSection = {
   items: NavItem[];
 };
 
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function useIsActivePath() {
+  const { pathname } = useLocation();
+  return React.useCallback(
+    (path: string) => pathname === path || (path !== "/admin" && pathname.startsWith(path)),
+    [pathname]
+  );
+}
+
 const SidebarNavigation: React.FC<{
   isActive: (path: string) => boolean;
-  navigate: (path: string) => void;
+  navigateTo: (path: string) => void;
   onNavigate?: () => void;
-}> = ({ isActive, navigate, onNavigate }) => {
+}> = ({ isActive, navigateTo, onNavigate }) => {
   const sections: NavSection[] = useMemo(
     () => [
-      {
-        label: "MAIN",
-        items: [{ label: "Overview", path: "/admin", badge: "Main" }],
-      },
+      { label: "MAIN", items: [{ label: "Overview", path: "/admin", badge: "Main" }] },
       {
         label: "EMAIL",
         items: [
@@ -44,6 +53,10 @@ const SidebarNavigation: React.FC<{
           { label: "Offers", path: "/admin/email/offers" },
           { label: "Campaigns", path: "/admin/email/campaigns" },
         ],
+      },
+      {
+        label: "FUNNEL",
+        items: [{ label: "Occasions & Styles", path: "/admin/funnel" }],
       },
       {
         label: "BUSINESS",
@@ -57,18 +70,20 @@ const SidebarNavigation: React.FC<{
     []
   );
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
+  const handle = (path: string) => {
+    navigateTo(path);
     onNavigate?.();
   };
 
   return (
     <>
-      <Logo />
+      <div className="pt-1">
+        <Logo />
+      </div>
 
       {sections.map((section) => (
-        <div key={section.label}>
-          <SidebarGroupLabel className="text-xs font-semibold tracking-[0.2em] text-slate-400 mb-2">
+        <div key={section.label} className="space-y-3">
+          <SidebarGroupLabel className="text-xs font-semibold tracking-[0.2em] text-slate-400">
             {section.label}
           </SidebarGroupLabel>
 
@@ -78,21 +93,23 @@ const SidebarNavigation: React.FC<{
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton
                     type="button"
-                    onClick={() => handleNavigation(item.path)}
-                    className={[
-                      "rounded-xl px-2 py-1.5 text-left hover:bg-slate-800/70",
-                      isActive(item.path) ? "bg-slate-800" : "",
-                    ].join(" ")}
+                    onClick={() => handle(item.path)}
+                    className={cx(
+                      "rounded-xl px-2 py-1.5 text-left transition-colors",
+                      "hover:bg-slate-800/70",
+                      isActive(item.path) && "bg-slate-800"
+                    )}
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <span className={section.label === "EMAIL" ? "text-indigo-200" : ""}>
+                    <div className="flex w-full items-center justify-between gap-3">
+                      <span className={cx(section.label === "EMAIL" && "text-indigo-200")}>
                         {item.label}
                       </span>
-                      {item.badge && (
+
+                      {item.badge ? (
                         <span className="text-[10px] tracking-[0.25em] text-slate-500 uppercase">
                           {item.badge}
                         </span>
-                      )}
+                      ) : null}
                     </div>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -105,12 +122,10 @@ const SidebarNavigation: React.FC<{
   );
 };
 
-export const AdminLayout: React.FC = () => {
-  const location = useLocation();
-  const nav = useNavigate();
+const AdminLayout: React.FC = () => {
+  const navigate = useNavigate();
+  const isActive = useIsActivePath();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const isActive = (path: string) => location.pathname === path;
 
   return (
     <SidebarProvider>
@@ -124,7 +139,7 @@ export const AdminLayout: React.FC = () => {
                 className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
                 aria-label="Open menu"
               >
-                <Menu className="w-5 h-5 text-slate-200" />
+                <Menu className="h-5 w-5 text-slate-200" />
               </button>
             </SheetTrigger>
 
@@ -132,7 +147,7 @@ export const AdminLayout: React.FC = () => {
               <SidebarContent className="px-5 py-6 flex flex-col gap-8">
                 <SidebarNavigation
                   isActive={isActive}
-                  navigate={(path) => nav(path)}
+                  navigateTo={(path) => navigate(path)}
                   onNavigate={() => setMobileMenuOpen(false)}
                 />
               </SidebarContent>
@@ -146,7 +161,7 @@ export const AdminLayout: React.FC = () => {
           {/* Desktop Sidebar */}
           <Sidebar className="hidden md:flex w-72 border-r border-slate-800 bg-slate-950">
             <SidebarContent className="px-5 py-6 flex flex-col gap-8">
-              <SidebarNavigation isActive={isActive} navigate={(path) => nav(path)} />
+              <SidebarNavigation isActive={isActive} navigateTo={(path) => navigate(path)} />
             </SidebarContent>
           </Sidebar>
 
@@ -161,3 +176,4 @@ export const AdminLayout: React.FC = () => {
 };
 
 export default AdminLayout;
+export { AdminLayout };
