@@ -12,22 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/Select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 
-import { Plus, RefreshCw, Search, Pencil, Trash2, Save } from "lucide-react";
+import { Plus, RefreshCw, Search, Pencil, Trash2, Save, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type TemplateDbRow = {
@@ -93,6 +81,7 @@ export default function AdminFunnelPage() {
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
   const [editing, setEditing] = useState<TemplateDbRow | null>(null);
 
   const [form, setForm] = useState({
@@ -101,6 +90,7 @@ export default function AdminFunnelPage() {
     style_id: "",
     prompt: "",
     isactive: true,
+    ai_notes: "",
   });
 
   const filtered = useMemo(() => {
@@ -159,6 +149,7 @@ export default function AdminFunnelPage() {
       style_id: "",
       prompt: "",
       isactive: true,
+      ai_notes: "",
     });
     setOpen(true);
   }
@@ -172,6 +163,7 @@ export default function AdminFunnelPage() {
       style_id: r.style_id ?? "",
       prompt: r.prompt ?? "",
       isactive: !!r.isactive,
+      ai_notes: "",
     });
 
     setOpen(true);
@@ -236,6 +228,53 @@ export default function AdminFunnelPage() {
     await load();
   }
 
+  async function generateWithAI() {
+    const occ = normalizeOccasion(form.occasion);
+    const notes = norm(form.ai_notes);
+
+    if (!occ) return toast.error("Pick an occasion first");
+
+    setAiGenerating(true);
+    try {
+      // Expect an Edge Function: supabase/functions/generate-style
+      // Returns: { title, style_id, prompt }
+      const { data, error } = await supabase.functions.invoke("generate-style", {
+        body: {
+          occasion: occ,
+          notes,
+          existing_style_ids: (rows ?? [])
+            .filter((r) => normalizeOccasion(r.occasion ?? "") === occ)
+            .map((r) => r.style_id)
+            .filter(Boolean),
+        },
+      });
+
+      if (error) throw error;
+
+      const title = norm((data as any)?.title);
+      const style_id = norm((data as any)?.style_id) || (title ? makeStyleIdFromTitle(title) : "");
+      const prompt = norm((data as any)?.prompt);
+
+      if (!title || !prompt) {
+        toast.error("AI response invalid (missing title/prompt)");
+        return;
+      }
+
+      setForm((s) => ({
+        ...s,
+        title,
+        style_id: style_id || s.style_id,
+        prompt,
+      }));
+
+      toast.success("Generated");
+    } catch (e: any) {
+      toast.error(e?.message || "AI generation failed");
+    } finally {
+      setAiGenerating(false);
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* header */}
@@ -279,13 +318,19 @@ export default function AdminFunnelPage() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label className="text-slate-300">Occasion</Label>
-                <Select value={occasion} onValueChange={(v) => setOccasion(normalizeOccasion(v))}>
+                <Select value={normalizeOccasion(occasion)} onValueChange={(v) => setOccasion(normalizeOccasion(v))}>
                   <SelectTrigger className="rounded-xl border-slate-800 bg-slate-900 text-slate-100">
                     <SelectValue placeholder="Select occasion" />
                   </SelectTrigger>
-                  <SelectContent>
+
+                  {/* FIX: dropdown vizibil (nu transparent) */}
+                  <SelectContent className="z-50 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl">
                     {OCCASIONS.map((o) => (
-                      <SelectItem key={o.key} value={o.key}>
+                      <SelectItem
+                        key={o.key}
+                        value={o.key}
+                        className="focus:bg-slate-800 focus:text-slate-50 data-[highlighted]:bg-slate-800 data-[highlighted]:text-slate-50"
+                      >
                         {o.label}
                       </SelectItem>
                     ))}
@@ -322,6 +367,20 @@ export default function AdminFunnelPage() {
               <Badge className="rounded-xl bg-slate-900 text-rose-200 border border-slate-800">
                 Inactive: {stats.inactive}
               </Badge>
+
+              {/* Quick clear search */}
+              {q.trim() ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
+                  onClick={() => setQ("")}
+                >
+                  Clear search
+                </Button>
+              ) : (
+                <span className="ml-auto text-xs text-slate-500">Search filters only current occasion</span>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -420,11 +479,7 @@ export default function AdminFunnelPage() {
                     Edit
                   </Button>
 
-                  <Button
-                    variant="destructive"
-                    className="rounded-xl"
-                    onClick={() => del(r)}
-                  >
+                  <Button variant="destructive" className="rounded-xl" onClick={() => del(r)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </Button>
@@ -450,15 +505,21 @@ export default function AdminFunnelPage() {
               <div className="space-y-2">
                 <Label className="text-slate-300">Occasion</Label>
                 <Select
-                  value={form.occasion}
+                  value={normalizeOccasion(form.occasion)}
                   onValueChange={(v) => setForm((s) => ({ ...s, occasion: normalizeOccasion(v) }))}
                 >
                   <SelectTrigger className="rounded-xl border-slate-800 bg-slate-900 text-slate-100">
                     <SelectValue placeholder="Select occasion" />
                   </SelectTrigger>
-                  <SelectContent>
+
+                  {/* FIX: dropdown vizibil (nu transparent) */}
+                  <SelectContent className="z-50 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl">
                     {OCCASIONS.map((o) => (
-                      <SelectItem key={o.key} value={o.key}>
+                      <SelectItem
+                        key={o.key}
+                        value={o.key}
+                        className="focus:bg-slate-800 focus:text-slate-50 data-[highlighted]:bg-slate-800 data-[highlighted]:text-slate-50"
+                      >
                         {o.label}
                       </SelectItem>
                     ))}
@@ -469,14 +530,36 @@ export default function AdminFunnelPage() {
               <div className="space-y-2">
                 <Label className="text-slate-300">Active</Label>
                 <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-3 py-2">
-                  <span className="text-sm text-slate-200">
-                    {form.isactive ? "Enabled" : "Disabled"}
-                  </span>
-                  <Switch
-                    checked={!!form.isactive}
-                    onCheckedChange={(v) => setForm((s) => ({ ...s, isactive: v }))}
-                  />
+                  <span className="text-sm text-slate-200">{form.isactive ? "Enabled" : "Disabled"}</span>
+                  <Switch checked={!!form.isactive} onCheckedChange={(v) => setForm((s) => ({ ...s, isactive: v }))} />
                 </div>
+              </div>
+            </div>
+
+            {/* AI helper */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="sm:col-span-2 space-y-2">
+                <Label className="text-slate-300">AI notes (optional)</Label>
+                <Input
+                  value={form.ai_notes}
+                  onChange={(e) => setForm((s) => ({ ...s, ai_notes: e.target.value }))}
+                  placeholder='e.g. "warm golden light, film look, joyful family, premium, clean background"'
+                  className="rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div className="sm:col-span-1 space-y-2">
+                <Label className="text-slate-300">Generate</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
+                  onClick={generateWithAI}
+                  disabled={aiGenerating}
+                >
+                  <Sparkles className={cn("h-4 w-4 mr-2", aiGenerating && "animate-pulse")} />
+                  {aiGenerating ? "Generating..." : "Generate with AI"}
+                </Button>
               </div>
             </div>
 
@@ -490,7 +573,7 @@ export default function AdminFunnelPage() {
                     setForm((s) => ({
                       ...s,
                       title,
-                      style_id: s.style_id || makeStyleIdFromTitle(title),
+                      style_id: s.style_id || (title ? makeStyleIdFromTitle(title) : ""),
                     }));
                   }}
                   placeholder="Golden Memory"
