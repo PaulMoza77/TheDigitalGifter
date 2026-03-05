@@ -32,6 +32,9 @@ import AdminEmailTemplatesPage from "@/pages/admin/email/Templates";
 import AdminEmailOffersPage from "@/pages/admin/email/Offers";
 import AdminEmailCampaignsPage from "@/pages/admin/email/Campaigns";
 
+// ================= ADMIN FUNNEL =================
+const AdminFunnelPage = lazy(() => import("@/pages/admin/funnel/index"));
+
 // ================= WEBSITE PAGES =================
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
 const TemplatesPage = lazy(() => import("@/pages/website/TemplatesPage"));
@@ -172,7 +175,15 @@ function AppInner() {
               }
             />
 
-            {/* Old templates page (dacă încă o folosești) */}
+            <Route
+              path="/admin/funnel"
+              element={
+                <AdminRoute>
+                  <AdminFunnelPage />
+                </AdminRoute>
+              }
+            />
+
             <Route
               path="/admin/templates"
               element={
@@ -182,7 +193,6 @@ function AppInner() {
               }
             />
 
-            {/* EMAIL section (nou) */}
             <Route
               path="/admin/email"
               element={
