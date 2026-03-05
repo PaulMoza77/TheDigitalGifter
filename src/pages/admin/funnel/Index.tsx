@@ -228,6 +228,7 @@ export default function AdminFunnelPage() {
     await load();
   }
 
+  // ✅ FIX 401: send Authorization Bearer token explicitly
   async function generateWithAI() {
     const occ = normalizeOccasion(form.occasion);
     const notes = norm(form.ai_notes);
@@ -236,8 +237,14 @@ export default function AdminFunnelPage() {
 
     setAiGenerating(true);
     try {
-      // Expect an Edge Function: supabase/functions/generate-style
-      // Returns: { title, style_id, prompt }
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+
+      if (!token) {
+        toast.error("Not authenticated. Please re-login.");
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("generate-style", {
         body: {
           occasion: occ,
@@ -246,6 +253,9 @@ export default function AdminFunnelPage() {
             .filter((r) => normalizeOccasion(r.occasion ?? "") === occ)
             .map((r) => r.style_id)
             .filter(Boolean),
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -323,7 +333,6 @@ export default function AdminFunnelPage() {
                     <SelectValue placeholder="Select occasion" />
                   </SelectTrigger>
 
-                  {/* FIX: dropdown vizibil (nu transparent) */}
                   <SelectContent className="z-50 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl">
                     {OCCASIONS.map((o) => (
                       <SelectItem
@@ -368,7 +377,6 @@ export default function AdminFunnelPage() {
                 Inactive: {stats.inactive}
               </Badge>
 
-              {/* Quick clear search */}
               {q.trim() ? (
                 <Button
                   variant="outline"
@@ -459,8 +467,8 @@ export default function AdminFunnelPage() {
                     <span className="text-slate-200">{r.id}</span>
                   </div>
 
-                  <div className="text-xs text-slate-500 line-clamp-2">
-                    {r.prompt ?? <span className="text-slate-600">(no prompt)</span>}
+                  <div className="text-xs text-slate-400 line-clamp-2">
+                    {r.prompt ?? <span className="text-slate-500">(no prompt)</span>}
                   </div>
                 </div>
 
@@ -512,7 +520,6 @@ export default function AdminFunnelPage() {
                     <SelectValue placeholder="Select occasion" />
                   </SelectTrigger>
 
-                  {/* FIX: dropdown vizibil (nu transparent) */}
                   <SelectContent className="z-50 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl">
                     {OCCASIONS.map((o) => (
                       <SelectItem
@@ -592,13 +599,19 @@ export default function AdminFunnelPage() {
               </div>
             </div>
 
+            {/* ✅ Prompt readable: white bg + black text */}
             <div className="space-y-2">
               <Label className="text-slate-300">Prompt</Label>
               <Textarea
                 value={form.prompt}
                 onChange={(e) => setForm((s) => ({ ...s, prompt: e.target.value }))}
                 placeholder="Write the exact Replicate prompt here..."
-                className="rounded-xl min-h-[240px] border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500 font-mono text-xs"
+                className={cn(
+                  "rounded-xl min-h-[240px] font-mono text-xs",
+                  "border border-slate-700 bg-white text-slate-900",
+                  "placeholder:text-slate-500",
+                  "focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-0"
+                )}
               />
               <div className="text-xs text-slate-500">
                 Tip: ține prompturile consistente per ocazie (același format), ca să fie ușor de întreținut.
