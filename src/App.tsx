@@ -33,7 +33,7 @@ import AdminEmailOffersPage from "@/pages/admin/email/Offers";
 import AdminEmailCampaignsPage from "@/pages/admin/email/Campaigns";
 
 // ================= ADMIN FUNNEL =================
-const AdminFunnelPage = lazy(() => import("@/pages/admin/funnel/index"));
+const AdminFunnelPage = lazy(() => import("@/pages/admin/funnel/Index"));
 
 // ================= WEBSITE PAGES =================
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
