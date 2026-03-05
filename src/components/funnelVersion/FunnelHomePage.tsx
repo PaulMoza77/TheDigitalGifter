@@ -1,27 +1,30 @@
+// src/components/funnelVersion/FunnelHomePage.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useNavigate } from "react-router-dom";
+
+import { FUNNEL_OCCASIONS, type FunnelOccasionKey } from "@/components/funnelVersion/occasions";
 
 /**
- * TDG — AliveMoment-inspired landing (Canvas Preview)
- * Single-file React + TSX page
- * - Warm premium palette
- * - ONE CTA label reused
- * - Connectors between photo blocks (SVG)
+ * TDG — AliveMoment-inspired landing
+ * Universal by occasion:
+ *   /funnel/homepage/:occasion
+ *
+ * Layout stays the same; copy swaps by config.
  */
 
 const CTA_LABEL = "Try now — Bring your photos to life";
 
 type Point = { x: number; y: number };
+type AnchorSide = "left" | "right" | "top" | "bottom";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -46,13 +49,15 @@ function useRafResize(callback: () => void, deps: any[] = []) {
 function getAnchor(
   el: HTMLElement | null,
   root: HTMLElement | null,
-  side: "left" | "right" | "top" | "bottom" = "right"
+  side: AnchorSide = "right"
 ): Point {
   if (!el || !root) return { x: 0, y: 0 };
   const r = el.getBoundingClientRect();
   const rr = root.getBoundingClientRect();
+
   const xMid = r.left + r.width / 2 - rr.left;
   const yMid = r.top + r.height / 2 - rr.top;
+
   if (side === "left") return { x: r.left - rr.left, y: yMid };
   if (side === "right") return { x: r.left + r.width - rr.left, y: yMid };
   if (side === "top") return { x: xMid, y: r.top - rr.top };
@@ -75,6 +80,7 @@ function ArrowMarkerDefs() {
         <stop offset="50%" stopColor="rgba(6,78,59,0.40)" />
         <stop offset="100%" stopColor="rgba(6,78,59,0.22)" />
       </linearGradient>
+
       <marker
         id="arrowHead"
         viewBox="0 0 10 10"
@@ -86,6 +92,7 @@ function ArrowMarkerDefs() {
       >
         <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(6,78,59,0.6)" />
       </marker>
+
       <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
         <feGaussianBlur stdDeviation="2.2" result="blur" />
         <feColorMatrix
@@ -130,27 +137,13 @@ function Pill({
       : tone === "mint"
         ? "bg-emerald-50 text-emerald-950 border-emerald-200"
         : "bg-emerald-950 text-emerald-50 border-emerald-950";
+
   return (
     <span
       className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium shadow-[0_1px_0_rgba(0,0,0,0.03)] ${cls}`}
     >
       {children}
     </span>
-  );
-}
-
-function CTAButton({ className = "" }: { className?: string }) {
-    const navigate = useNavigate();
-  return (
-    <Button
-        onClick={() => navigate('/funnel/uploadPhoto')}
-      className={
-        "rounded-full bg-emerald-950 px-6 py-6 text-base font-semibold text-emerald-50 shadow-[0_12px_30px_rgba(6,78,59,0.22)] hover:bg-emerald-900 active:translate-y-[1px] " +
-        className
-      }
-    >
-      {CTA_LABEL}
-    </Button>
   );
 }
 
@@ -164,6 +157,23 @@ function SoftBg() {
   );
 }
 
+type PhotoVariant =
+  | "warm"
+  | "vintage"
+  | "winter"
+  | "love"
+  | "cinematic"
+  | "download"
+  | "averybefore"
+  | "averyafter"
+  | "emilybefore"
+  | "emilyafter"
+  | "annabefore"
+  | "annaafter"
+  | "family"
+  | "moments"
+  | "preserve";
+
 function PhotoMock({
   variant = "warm",
   className = "",
@@ -172,7 +182,7 @@ function PhotoMock({
   labelTone,
   footer,
 }: {
-  variant?: "warm" | "vintage" | "winter" | "love" | "cinematic" | "download" | "averybefore" | "averyafter" | "emilybefore" | "emilyafter" | "annabefore" | "annaafter" | "family" | "moments" | "preserve";
+  variant?: PhotoVariant;
   className?: string;
   rounded?: string;
   label?: string;
@@ -213,11 +223,12 @@ function PhotoMock({
         <img
           src={`/assets/funnel/${variant}.png`}
           alt={label || variant}
-          className="w-full h-full object-cover"
+          className="h-full w-full object-cover"
           onError={(e) => {
             const img = e.currentTarget as HTMLImageElement;
-            if (img.src.endsWith('.png')) img.src = `/assets/funnel/${variant}.svg`;
-            else if (img.src.endsWith('.svg')) img.src = `/assets/funnel/${variant}.jpg`;
+            const src = img.src;
+            if (src.endsWith(".png")) img.src = `/assets/funnel/${variant}.svg`;
+            else if (src.endsWith(".svg")) img.src = `/assets/funnel/${variant}.jpg`;
             else img.src = `/assets/funnel/default.png`;
           }}
         />
@@ -238,50 +249,47 @@ function PhotoMock({
   );
 }
 
+type ConnectorLink = {
+  from: React.RefObject<HTMLElement | null>;
+  to: React.RefObject<HTMLElement | null>;
+  fromSide?: AnchorSide;
+  toSide?: AnchorSide;
+  arrow?: boolean;
+  bend?: number;
+};
+
 function ConnectorOverlay({
   rootRef,
   links,
   simplifiedOnMobile = true,
 }: {
   rootRef: React.RefObject<HTMLDivElement | null>;
-  links: Array<{
-    from: React.RefObject<HTMLElement | null>;
-    to: React.RefObject<HTMLElement | null>;
-    fromSide?: any;
-    toSide?: any;
-    arrow?: boolean;
-    bend?: number;
-  }>;
+  links: ConnectorLink[];
   simplifiedOnMobile?: boolean;
 }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [paths, setPaths] = useState<Array<{ d: string; arrow: boolean; dots: Point[] }>>(
-    []
-  );
+  const [paths, setPaths] = useState<Array<{ d: string; arrow: boolean; dots: Point[] }>>([]);
 
   const recalc = () => {
     const root = rootRef.current;
     if (!root) return;
+
     const rr = root.getBoundingClientRect();
-    setSize({ w: Math.max(1, rr.width), h: Math.max(1, rr.height) });
+    const w = Math.max(1, rr.width);
+    const h = Math.max(1, rr.height);
+    setSize({ w, h });
 
     const isMobile = window.innerWidth < 768;
 
     const out = links.map((l) => {
-      const a = getAnchor(l.from.current, root, (l.fromSide || "right") as any);
-      const b = getAnchor(l.to.current, root, (l.toSide || "left") as any);
+      const a = getAnchor(l.from.current, root, l.fromSide ?? "right");
+      const b = getAnchor(l.to.current, root, l.toSide ?? "left");
 
       const d =
         isMobile && simplifiedOnMobile
           ? (() => {
-              const aa: Point = {
-                x: clamp(a.x, 16, rr.width - 16),
-                y: a.y,
-              };
-              const bb: Point = {
-                x: clamp(b.x, 16, rr.width - 16),
-                y: b.y,
-              };
+              const aa: Point = { x: clamp(a.x, 16, w - 16), y: a.y };
+              const bb: Point = { x: clamp(b.x, 16, w - 16), y: b.y };
               const midY = (aa.y + bb.y) / 2;
               return `M ${aa.x} ${aa.y} C ${aa.x} ${midY}, ${bb.x} ${midY}, ${bb.x} ${bb.y}`;
             })()
@@ -383,9 +391,7 @@ function SectionTitle({
 }) {
   return (
     <div className={center ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      {eyebrow ? (
-        <div className="mb-3 text-sm text-emerald-950/70">{eyebrow}</div>
-      ) : null}
+      {eyebrow ? <div className="mb-3 text-sm text-emerald-950/70">{eyebrow}</div> : null}
       <h2 className="text-balance font-serif text-3xl tracking-tight text-emerald-950 sm:text-4xl md:text-5xl">
         {title}
       </h2>
@@ -408,12 +414,10 @@ function Nav() {
   return (
     <div className="sticky top-0 z-40 border-b border-emerald-950/10 bg-[#F6F2EA]/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-        <a
-          href="#top"
-          className="rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
-        >
+        <a href="#top" className="rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/30">
           <LogoMark />
         </a>
+
         <div className="hidden items-center gap-6 md:flex">
           {items.map((it) => (
             <a
@@ -428,22 +432,23 @@ function Nav() {
             Contact
           </a>
         </div>
+
         <div className="md:hidden" />
       </div>
     </div>
   );
 }
 
-function Hero() {
+function Hero({ cfg }: { cfg: typeof FUNNEL_OCCASIONS[FunnelOccasionKey] }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const beforeRef = useRef<HTMLDivElement | null>(null);
   const afterRef = useRef<HTMLDivElement | null>(null);
 
-  const links = useMemo(
+  const links: ConnectorLink[] = useMemo(
     () => [
       {
-        from: beforeRef as any,
-        to: afterRef as any,
+        from: beforeRef as React.RefObject<HTMLElement | null>,
+        to: afterRef as React.RefObject<HTMLElement | null>,
         fromSide: "right",
         toSide: "left",
         arrow: true,
@@ -453,9 +458,13 @@ function Hero() {
     []
   );
 
+  const beforeVariant = (cfg.heroBeforeVariant ?? "vintage") as PhotoVariant;
+  const afterVariant = (cfg.heroAfterVariant ?? "winter") as PhotoVariant;
+
   return (
     <section id="top" className="relative overflow-hidden bg-[#F6F2EA]">
       <SoftBg />
+
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-12 md:grid-cols-2 md:py-20">
         <div className="flex flex-col justify-center">
           <div className="mb-5">
@@ -463,15 +472,14 @@ function Hero() {
           </div>
 
           <h1 className="text-balance font-serif text-4xl tracking-tight text-emerald-950 sm:text-5xl md:text-6xl">
-            Bring Your Photos to Life
+            {cfg.heroTitle}
           </h1>
           <p className="mt-4 max-w-xl text-pretty text-base leading-relaxed text-emerald-950/70 sm:text-lg">
-            Upload a photo and generate a moving memory in minutes. Perfect for winter surprises, birthdays, love
-            messages, and family moments that deserve to feel real.
+            {cfg.heroSubtitle}
           </p>
 
           <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
-            <CTAButton />
+            <CTAButton to={cfg.ctaTo} />
             <div className="flex items-center gap-2 text-sm text-emerald-950/70">
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-950/10">
                 ✓
@@ -488,7 +496,7 @@ function Hero() {
         </div>
 
         <div ref={rootRef} className="relative">
-          <ConnectorOverlay rootRef={rootRef} links={links as any} />
+          <ConnectorOverlay rootRef={rootRef} links={links} />
 
           <Card className="mx-auto max-w-[560px] rounded-[32px] border-emerald-950/10 bg-white/55 shadow-[0_30px_90px_rgba(6,78,59,0.12)] backdrop-blur">
             <CardContent className="p-4 sm:p-5">
@@ -498,13 +506,13 @@ function Hero() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-                <div ref={beforeRef as any} className="relative">
-                  <PhotoMock variant="vintage" label="Your photo" labelTone="sun" rounded="rounded-[28px]" />
+                <div ref={beforeRef} className="relative">
+                  <PhotoMock variant={beforeVariant} label="Your photo" labelTone="sun" rounded="rounded-[28px]" />
                 </div>
 
-                <div ref={afterRef as any} className="relative">
+                <div ref={afterRef} className="relative">
                   <PhotoMock
-                    variant="winter"
+                    variant={afterVariant}
                     label="TDG result ✨"
                     labelTone="ink"
                     rounded="rounded-[28px]"
@@ -550,13 +558,29 @@ function Hero() {
   );
 }
 
+function CTAButton({ className = "", to }: { className?: string; to: string }) {
+  const navigate = useNavigate();
+
+  return (
+    <Button
+      onClick={() => navigate(to)}
+      className={
+        "rounded-full bg-emerald-950 px-6 py-6 text-base font-semibold text-emerald-50 shadow-[0_12px_30px_rgba(6,78,59,0.22)] hover:bg-emerald-900 active:translate-y-[1px] " +
+        className
+      }
+    >
+      {CTA_LABEL}
+    </Button>
+  );
+}
+
 function HowItWorks() {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const s1 = useRef<HTMLDivElement | null>(null);
   const s2 = useRef<HTMLDivElement | null>(null);
   const s3 = useRef<HTMLDivElement | null>(null);
 
-  const links = useMemo(
+  const links: ConnectorLink[] = useMemo(
     () => [
       { from: s1 as any, to: s2 as any, fromSide: "right", toSide: "left", arrow: true, bend: 0.18 },
       { from: s2 as any, to: s3 as any, fromSide: "right", toSide: "left", arrow: true, bend: 0.18 },
@@ -574,69 +598,66 @@ function HowItWorks() {
         />
 
         <div ref={rootRef} className="relative mt-10">
-          <ConnectorOverlay rootRef={rootRef} links={links as any} />
+          <ConnectorOverlay rootRef={rootRef} links={links} />
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
-            <Card
-              ref={s1 as any}
-              className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]"
-            >
-              <CardContent className="p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">STEP 1</Badge>
-                  <span className="text-xs text-emerald-950/60">Upload</span>
-                </div>
-                <div className="text-xl font-semibold text-emerald-950">Upload a Photo</div>
-                <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                  Choose a memory — family, friends, love, or a special moment.
-                </p>
-                <div className="mt-5">
-                  <PhotoMock variant="warm" label="Your photo" labelTone="sun" />
-                </div>
-              </CardContent>
-            </Card>
+            <div ref={s1} className="relative">
+              <Card className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">STEP 1</Badge>
+                    <span className="text-xs text-emerald-950/60">Upload</span>
+                  </div>
+                  <div className="text-xl font-semibold text-emerald-950">Upload a Photo</div>
+                  <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
+                    Choose a memory — family, friends, love, or a special moment.
+                  </p>
+                  <div className="mt-5">
+                    <PhotoMock variant="warm" label="Your photo" labelTone="sun" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card
-              ref={s2 as any}
-              className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]"
-            >
-              <CardContent className="p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">STEP 2</Badge>
-                  <span className="text-xs text-emerald-950/60">Style</span>
-                </div>
-                <div className="text-xl font-semibold text-emerald-950">Pick a Style</div>
-                <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                  Winter, Birthday, Love, Retro, Cinematic — choose the vibe.
-                </p>
-                <div className="mt-5">
-                  <PhotoMock variant="cinematic" label="Style preview" labelTone="mint" />
-                </div>
-              </CardContent>
-            </Card>
+            <div ref={s2} className="relative">
+              <Card className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">STEP 2</Badge>
+                    <span className="text-xs text-emerald-950/60">Style</span>
+                  </div>
+                  <div className="text-xl font-semibold text-emerald-950">Pick a Style</div>
+                  <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
+                    Winter, Birthday, Love, Retro, Cinematic — choose the vibe.
+                  </p>
+                  <div className="mt-5">
+                    <PhotoMock variant="cinematic" label="Style preview" labelTone="mint" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card
-              ref={s3 as any}
-              className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]"
-            >
-              <CardContent className="p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">STEP 3</Badge>
-                  <span className="text-xs text-emerald-950/60">Share</span>
-                </div>
-                <div className="text-xl font-semibold text-emerald-950">Download & Share</div>
-                <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                  Save your animated memory and send it to someone who matters.
-                </p>
-                <div className="mt-5">
-                  <PhotoMock variant="download" label="TDG result ✨" labelTone="ink" />
-                </div>
-              </CardContent>
-            </Card>
+            <div ref={s3} className="relative">
+              <Card className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">STEP 3</Badge>
+                    <span className="text-xs text-emerald-950/60">Share</span>
+                  </div>
+                  <div className="text-xl font-semibold text-emerald-950">Download & Share</div>
+                  <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
+                    Save your animated memory and send it to someone who matters.
+                  </p>
+                  <div className="mt-5">
+                    <PhotoMock variant="download" label="TDG result ✨" labelTone="ink" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           <div className="mt-10 flex justify-center">
-            <CTAButton />
+            <CTAButton to="/funnel/uploadPhoto" />
           </div>
         </div>
       </div>
@@ -654,7 +675,7 @@ function Examples() {
   const a3 = useRef<HTMLDivElement | null>(null);
   const b3 = useRef<HTMLDivElement | null>(null);
 
-  const links = useMemo(
+  const links: ConnectorLink[] = useMemo(
     () => [
       { from: a1 as any, to: b1 as any, fromSide: "right", toSide: "left", arrow: true, bend: 0.22 },
       { from: a2 as any, to: b2 as any, fromSide: "right", toSide: "left", arrow: true, bend: 0.22 },
@@ -699,7 +720,7 @@ function Examples() {
         />
 
         <div ref={rootRef} className="relative mt-12">
-          <ConnectorOverlay rootRef={rootRef} links={links as any} />
+          <ConnectorOverlay rootRef={rootRef} links={links} />
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {items.map((it) => (
@@ -719,17 +740,11 @@ function Examples() {
                     </div>
 
                     <div className="mt-5 grid grid-cols-2 gap-3">
-                      <div ref={it.refs.a as any} className="relative">
+                      <div ref={it.refs.a} className="relative">
                         <PhotoMock variant={it.before} label="Before" labelTone="sun" rounded="rounded-3xl" />
                       </div>
-                      <div ref={it.refs.b as any} className="relative">
-                        <PhotoMock
-                          variant={it.after}
-                          label="After"
-                          labelTone="ink"
-                          rounded="rounded-3xl"
-                          footer="TDG result ✨"
-                        />
+                      <div ref={it.refs.b} className="relative">
+                        <PhotoMock variant={it.after} label="After" labelTone="ink" rounded="rounded-3xl" footer="TDG result ✨" />
                       </div>
                     </div>
 
@@ -780,9 +795,8 @@ function ValueTrio() {
   return (
     <section className="bg-[#F6F2EA] py-10 md:py-14">
       <div className="mx-auto max-w-6xl px-4">
-        {/* ONE button here, tight spacing to cards */}
         <div className="flex justify-center">
-          <CTAButton />
+          <CTAButton to="/funnel/uploadPhoto" />
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -803,21 +817,9 @@ function ValueTrio() {
 
 function ResultsBand() {
   const cards = [
-    {
-      big: "Tens of thousands+",
-      label: "Moments Created",
-      desc: "Real people turning precious photos into moving memories.",
-    },
-    {
-      big: "Daily creations",
-      label: "Worldwide",
-      desc: "Each one crafted with care and lifelike emotion.",
-    },
-    {
-      big: "High satisfaction",
-      label: "From recipients",
-      desc: "Loved by families, friends, and gift-givers.",
-    },
+    { big: "Tens of thousands+", label: "Moments Created", desc: "Real people turning precious photos into moving memories." },
+    { big: "Daily creations", label: "Worldwide", desc: "Each one crafted with care and lifelike emotion." },
+    { big: "High satisfaction", label: "From recipients", desc: "Loved by families, friends, and gift-givers." },
   ];
 
   return (
@@ -838,9 +840,7 @@ function ResultsBand() {
             >
               <CardContent className="p-7">
                 <div className="text-4xl font-extrabold tracking-tight text-yellow-300 md:text-5xl">{c.big}</div>
-                <div className="mt-2 text-sm font-semibold uppercase tracking-[0.18em] text-yellow-200/90">
-                  {c.label}
-                </div>
+                <div className="mt-2 text-sm font-semibold uppercase tracking-[0.18em] text-yellow-200/90">{c.label}</div>
                 <div className="mt-5 rounded-2xl bg-emerald-900/35 px-4 py-3 text-sm leading-relaxed text-emerald-50/80">
                   {c.desc}
                 </div>
@@ -855,26 +855,11 @@ function ResultsBand() {
 
 function FAQ() {
   const faqs = [
-    {
-      q: "Do I need any technical skills to use this?",
-      a: "No. Upload a photo, pick a style, and generate. The flow is designed to feel simple and fast.",
-    },
-    {
-      q: "How long does it take to create the animated result?",
-      a: "Usually just a few moments depending on the style and current demand. You’ll see progress as it generates.",
-    },
-    {
-      q: "Can I choose how the photo is animated?",
-      a: "Yes. Pick from styles like Winter, Birthday, Love, Retro, or Cinematic to guide the look and motion.",
-    },
-    {
-      q: "Is my photo safe and private?",
-      a: "Your content stays private. Use TDG to create gifts for people you care about, without public sharing by default.",
-    },
-    {
-      q: "What formats can I download?",
-      a: "You can download and share your result in common formats suitable for social sharing and messaging.",
-    },
+    { q: "Do I need any technical skills to use this?", a: "No. Upload a photo, pick a style, and generate. The flow is designed to feel simple and fast." },
+    { q: "How long does it take to create the animated result?", a: "Usually just a few moments depending on the style and current demand. You’ll see progress as it generates." },
+    { q: "Can I choose how the photo is animated?", a: "Yes. Pick from styles like Winter, Birthday, Love, Retro, or Cinematic to guide the look and motion." },
+    { q: "Is my photo safe and private?", a: "Your content stays private. Use TDG to create gifts for people you care about, without public sharing by default." },
+    { q: "What formats can I download?", a: "You can download and share your result in common formats suitable for social sharing and messaging." },
   ];
 
   return (
@@ -882,9 +867,7 @@ function FAQ() {
       <div className="mx-auto max-w-6xl px-4">
         <SectionTitle
           title={<>Common questions, simple answers</>}
-          subtitle={
-            <>If you’re unsure about anything, the flow is intentionally straightforward — and support is always within reach.</>
-          }
+          subtitle={<>If you’re unsure about anything, the flow is intentionally straightforward — and support is always within reach.</>}
         />
 
         <div className="mx-auto mt-10 max-w-3xl">
@@ -906,7 +889,7 @@ function FAQ() {
           </Card>
 
           <div className="mt-10 flex justify-center">
-            <CTAButton />
+            <CTAButton to="/funnel/uploadPhoto" />
           </div>
         </div>
       </div>
@@ -914,10 +897,6 @@ function FAQ() {
   );
 }
 
-
-
-// Minimal runtime “self-test” (no test runner in Canvas).
-// Helps catch accidental empty CTA label or missing browser APIs during development.
 function runSmokeChecks() {
   try {
     if (!CTA_LABEL || CTA_LABEL.trim().length < 3) {
@@ -933,15 +912,27 @@ function runSmokeChecks() {
   }
 }
 
-export default function Index() {
+function useOccasionConfig() {
+  const params = useParams();
+  const raw = String(params.occasion ?? "christmas").toLowerCase().trim();
+
+  return useMemo(() => {
+    const key = raw as FunnelOccasionKey;
+    return FUNNEL_OCCASIONS[key] ?? FUNNEL_OCCASIONS.christmas;
+  }, [raw]);
+}
+
+export default function FunnelHomePage() {
   useEffect(() => {
     runSmokeChecks();
   }, []);
 
+  const cfg = useOccasionConfig();
+
   return (
     <div className="min-h-screen bg-[#F6F2EA] text-emerald-950">
       <Nav />
-      <Hero />
+      <Hero cfg={cfg} />
       <HowItWorks />
       <Examples />
       <ValueTrio />
