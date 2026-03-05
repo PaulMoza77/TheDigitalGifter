@@ -85,10 +85,7 @@ const SidebarNavigation: React.FC<{
       {sections.map((section) => (
         <div key={section.label} className={cx("space-y-3", collapsed && "w-full")}>
           <SidebarGroupLabel
-            className={cx(
-              "text-xs font-semibold tracking-[0.2em] text-slate-400",
-              collapsed && "text-center"
-            )}
+            className={cx("text-xs font-semibold tracking-[0.2em] text-slate-400", collapsed && "text-center")}
           >
             {collapsed ? section.label[0] : section.label}
           </SidebarGroupLabel>
@@ -108,15 +105,18 @@ const SidebarNavigation: React.FC<{
                     )}
                     title={collapsed ? item.label : undefined}
                   >
-                    <div className={cx("flex w-full items-center justify-between gap-3", collapsed && "justify-center")}>
+                    <div
+                      className={cx(
+                        "flex w-full items-center justify-between gap-3",
+                        collapsed && "justify-center"
+                      )}
+                    >
                       <span className={cx(section.label === "EMAIL" && "text-indigo-200", collapsed && "hidden")}>
                         {item.label}
                       </span>
 
                       {!collapsed && item.badge ? (
-                        <span className="text-[10px] tracking-[0.25em] text-slate-500 uppercase">
-                          {item.badge}
-                        </span>
+                        <span className="text-[10px] tracking-[0.25em] text-slate-500 uppercase">{item.badge}</span>
                       ) : null}
 
                       {collapsed ? (
@@ -148,81 +148,83 @@ const AdminLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
+  const sidebarWidth = collapsed ? "4.25rem" : "18rem";
+
   return (
     <SidebarProvider>
       <div className="min-h-screen w-full bg-slate-950 text-slate-50 flex flex-col font-sans">
         {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-50 flex items-center gap-3 px-4 py-3 bg-slate-950 border-b border-slate-800">
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
-                aria-label="Open menu"
-              >
-                <Menu className="h-5 w-5 text-slate-200" />
-              </button>
-            </SheetTrigger>
+        <header className="md:hidden sticky top-0 z-50 flex items-center justify-between gap-3 px-4 py-3 bg-slate-950 border-b border-slate-800">
+          <div className="flex items-center gap-3">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-5 w-5 text-slate-200" />
+                </button>
+              </SheetTrigger>
 
-            <SheetContent side="left" className="w-72 bg-slate-950 border-slate-800 p-0">
-              <SidebarContent className="px-5 py-6 flex flex-col gap-8">
-                <SidebarNavigation
-                  isActive={isActive}
-                  navigateTo={(path) => navigate(path)}
-                  onNavigate={() => setMobileMenuOpen(false)}
-                />
-              </SidebarContent>
-            </SheetContent>
-          </Sheet>
+              <SheetContent side="left" className="w-72 bg-slate-950 border-slate-800 p-0">
+                <SidebarContent className="px-5 py-6 flex flex-col gap-8">
+                  <SidebarNavigation
+                    isActive={isActive}
+                    navigateTo={(path) => navigate(path)}
+                    onNavigate={() => setMobileMenuOpen(false)}
+                  />
+                </SidebarContent>
+              </SheetContent>
+            </Sheet>
 
-          <Logo />
+            <Logo />
+          </div>
         </header>
 
-        {/* Desktop: grid => sidebar + content (NU suprapune) */}
-        <div
-          className="hidden md:grid flex-1 overflow-hidden"
-          style={{ gridTemplateColumns: collapsed ? "4.25rem 1fr" : "18rem 1fr" }}
-        >
-          <aside className="border-r border-slate-800 bg-slate-950 overflow-hidden">
-            <Sidebar className="w-full bg-transparent">
-              <SidebarContent className={cx("px-5 py-6 flex flex-col gap-6", collapsed && "px-3")}>
-                <div className={cx("flex items-center", collapsed ? "justify-center" : "justify-between")}>
-                  {!collapsed ? <div className="opacity-0 pointer-events-none select-none"><Logo /></div> : null}
-                  <button
-                    type="button"
-                    onClick={() => setCollapsed((v) => !v)}
-                    className={cx(
-                      "h-9 w-9 rounded-xl border border-slate-800 hover:bg-slate-800/60 transition-colors",
-                      "flex items-center justify-center"
-                    )}
-                    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    title={collapsed ? "Expand" : "Collapse"}
-                  >
-                    {collapsed ? (
-                      <ChevronRight className="h-4 w-4 text-slate-200" />
-                    ) : (
-                      <ChevronLeft className="h-4 w-4 text-slate-200" />
-                    )}
-                  </button>
-                </div>
+        {/* Desktop */}
+        <div className="hidden md:flex flex-1 min-h-0">
+          {/* Sidebar wrapper (NOT overlay), full height */}
+          <aside
+            className="relative border-r border-slate-800 bg-slate-950 shrink-0 min-h-0"
+            style={{ width: sidebarWidth }}
+          >
+            {/* Toggle pinned on RIGHT edge of sidebar (same place always) */}
+            <button
+              type="button"
+              onClick={() => setCollapsed((v) => !v)}
+              className={cx(
+                "absolute top-4 -right-3 z-50",
+                "h-9 w-9 rounded-xl border border-slate-800 bg-slate-950",
+                "hover:bg-slate-800/60 transition-colors",
+                "flex items-center justify-center"
+              )}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={collapsed ? "Expand" : "Collapse"}
+            >
+              {collapsed ? (
+                <ChevronRight className="h-4 w-4 text-slate-200" />
+              ) : (
+                <ChevronLeft className="h-4 w-4 text-slate-200" />
+              )}
+            </button>
 
-                <SidebarNavigation
-                  collapsed={collapsed}
-                  isActive={isActive}
-                  navigateTo={(path) => navigate(path)}
-                />
+            <Sidebar className="w-full bg-transparent">
+              <SidebarContent className={cx("px-5 py-6 flex flex-col gap-8", collapsed && "px-3")}>
+                <SidebarNavigation collapsed={collapsed} isActive={isActive} navigateTo={(p) => navigate(p)} />
               </SidebarContent>
             </Sidebar>
           </aside>
 
-          <main className="bg-slate-950 overflow-y-auto">
+          {/* Content */}
+          <main className="flex-1 min-w-0 min-h-0 bg-slate-950 overflow-y-auto">
             <Outlet />
           </main>
         </div>
 
-        {/* Mobile/Small screens fallback content area */}
-        <div className="md:hidden flex-1 overflow-hidden">
-          <main className="bg-slate-950 overflow-y-auto">
+        {/* Mobile content */}
+        <div className="md:hidden flex-1 min-h-0">
+          <main className="bg-slate-950 overflow-y-auto min-h-0">
             <Outlet />
           </main>
         </div>
