@@ -73,6 +73,19 @@ function makeStyleIdFromTitle(title: string) {
     .slice(0, 60);
 }
 
+function extractInvokeErrorMessage(err: any) {
+  const status = err?.context?.status ?? err?.status;
+  const body = err?.context?.body ?? err?.body;
+
+  let bodyMsg = "";
+  if (typeof body === "string") bodyMsg = body;
+  else if (body?.error) bodyMsg = String(body.error);
+  else if (body?.message) bodyMsg = String(body.message);
+
+  const msg = bodyMsg || err?.message || "Request failed";
+  return `${status ? `(${status}) ` : ""}${msg}`;
+}
+
 export default function AdminFunnelPage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<TemplateDbRow[]>([]);
@@ -151,6 +164,7 @@ export default function AdminFunnelPage() {
       isactive: true,
       ai_notes: "",
     });
+
     setOpen(true);
   }
 
@@ -214,7 +228,6 @@ export default function AdminFunnelPage() {
     if (error) {
       setRows((p) => p.map((x) => (x.id === r.id ? { ...x, isactive: prev } : x)));
       toast.error(error.message);
-      return;
     }
   }
 
@@ -228,7 +241,7 @@ export default function AdminFunnelPage() {
     await load();
   }
 
-  // ✅ FIX 401: send Authorization Bearer token explicitly
+  // ✅ AI generate (Bearer token explicit) + better error surfacing
   async function generateWithAI() {
     const occ = normalizeOccasion(form.occasion);
     const notes = norm(form.ai_notes);
@@ -237,9 +250,13 @@ export default function AdminFunnelPage() {
 
     setAiGenerating(true);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
+      const { data: sess, error: sessErr } = await supabase.auth.getSession();
+      if (sessErr) {
+        toast.error(sessErr.message);
+        return;
+      }
 
+      const token = sess.session?.access_token;
       if (!token) {
         toast.error("Not authenticated. Please re-login.");
         return;
@@ -259,7 +276,11 @@ export default function AdminFunnelPage() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("generate-style invoke error:", error);
+        toast.error(extractInvokeErrorMessage(error));
+        return;
+      }
 
       const title = norm((data as any)?.title);
       const style_id = norm((data as any)?.style_id) || (title ? makeStyleIdFromTitle(title) : "");
@@ -279,6 +300,7 @@ export default function AdminFunnelPage() {
 
       toast.success("Generated");
     } catch (e: any) {
+      console.error("generateWithAI exception:", e);
       toast.error(e?.message || "AI generation failed");
     } finally {
       setAiGenerating(false);
@@ -324,6 +346,7 @@ export default function AdminFunnelPage() {
               Alege o ocazie și gestionează stilurile care apar în Style Select.
             </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
@@ -599,7 +622,7 @@ export default function AdminFunnelPage() {
               </div>
             </div>
 
-            {/* ✅ Prompt readable: white bg + black text */}
+            {/* ✅ Prompt readable */}
             <div className="space-y-2">
               <Label className="text-slate-300">Prompt</Label>
               <Textarea
