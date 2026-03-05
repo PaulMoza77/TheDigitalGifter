@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/ui/logo";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, ChevronLeft, ChevronRight } from "lucide-react";
 
 type NavItem = {
   label: string;
@@ -39,10 +39,11 @@ function useIsActivePath() {
 }
 
 const SidebarNavigation: React.FC<{
+  collapsed?: boolean;
   isActive: (path: string) => boolean;
   navigateTo: (path: string) => void;
   onNavigate?: () => void;
-}> = ({ isActive, navigateTo, onNavigate }) => {
+}> = ({ collapsed = false, isActive, navigateTo, onNavigate }) => {
   const sections: NavSection[] = useMemo(
     () => [
       { label: "MAIN", items: [{ label: "Overview", path: "/admin", badge: "Main" }] },
@@ -76,15 +77,20 @@ const SidebarNavigation: React.FC<{
   };
 
   return (
-    <>
-      <div className="pt-1">
+    <div className={cx("flex flex-col gap-8", collapsed ? "items-center" : "")}>
+      <div className={cx("pt-1", collapsed ? "w-full flex justify-center" : "")}>
         <Logo />
       </div>
 
       {sections.map((section) => (
-        <div key={section.label} className="space-y-3">
-          <SidebarGroupLabel className="text-xs font-semibold tracking-[0.2em] text-slate-400">
-            {section.label}
+        <div key={section.label} className={cx("space-y-3", collapsed && "w-full")}>
+          <SidebarGroupLabel
+            className={cx(
+              "text-xs font-semibold tracking-[0.2em] text-slate-400",
+              collapsed && "text-center"
+            )}
+          >
+            {collapsed ? section.label[0] : section.label}
           </SidebarGroupLabel>
 
           <SidebarGroup>
@@ -97,17 +103,30 @@ const SidebarNavigation: React.FC<{
                     className={cx(
                       "rounded-xl px-2 py-1.5 text-left transition-colors",
                       "hover:bg-slate-800/70",
-                      isActive(item.path) && "bg-slate-800"
+                      isActive(item.path) && "bg-slate-800",
+                      collapsed && "justify-center px-2"
                     )}
+                    title={collapsed ? item.label : undefined}
                   >
-                    <div className="flex w-full items-center justify-between gap-3">
-                      <span className={cx(section.label === "EMAIL" && "text-indigo-200")}>
+                    <div className={cx("flex w-full items-center justify-between gap-3", collapsed && "justify-center")}>
+                      <span className={cx(section.label === "EMAIL" && "text-indigo-200", collapsed && "hidden")}>
                         {item.label}
                       </span>
 
-                      {item.badge ? (
+                      {!collapsed && item.badge ? (
                         <span className="text-[10px] tracking-[0.25em] text-slate-500 uppercase">
                           {item.badge}
+                        </span>
+                      ) : null}
+
+                      {collapsed ? (
+                        <span className="text-[11px] text-slate-300">
+                          {item.label
+                            .split(" ")
+                            .map((w) => w[0])
+                            .join("")
+                            .slice(0, 3)
+                            .toUpperCase()}
                         </span>
                       ) : null}
                     </div>
@@ -118,14 +137,16 @@ const SidebarNavigation: React.FC<{
           </SidebarGroup>
         </div>
       ))}
-    </>
+    </div>
   );
 };
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const isActive = useIsActivePath();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <SidebarProvider>
@@ -157,16 +178,51 @@ const AdminLayout: React.FC = () => {
           <Logo />
         </header>
 
-        <div className="flex flex-1 overflow-hidden">
-          {/* Desktop Sidebar */}
-          <Sidebar className="hidden md:flex w-72 border-r border-slate-800 bg-slate-950">
-            <SidebarContent className="px-5 py-6 flex flex-col gap-8">
-              <SidebarNavigation isActive={isActive} navigateTo={(path) => navigate(path)} />
-            </SidebarContent>
-          </Sidebar>
+        {/* Desktop: grid => sidebar + content (NU suprapune) */}
+        <div
+          className="hidden md:grid flex-1 overflow-hidden"
+          style={{ gridTemplateColumns: collapsed ? "4.25rem 1fr" : "18rem 1fr" }}
+        >
+          <aside className="border-r border-slate-800 bg-slate-950 overflow-hidden">
+            <Sidebar className="w-full bg-transparent">
+              <SidebarContent className={cx("px-5 py-6 flex flex-col gap-6", collapsed && "px-3")}>
+                <div className={cx("flex items-center", collapsed ? "justify-center" : "justify-between")}>
+                  {!collapsed ? <div className="opacity-0 pointer-events-none select-none"><Logo /></div> : null}
+                  <button
+                    type="button"
+                    onClick={() => setCollapsed((v) => !v)}
+                    className={cx(
+                      "h-9 w-9 rounded-xl border border-slate-800 hover:bg-slate-800/60 transition-colors",
+                      "flex items-center justify-center"
+                    )}
+                    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    title={collapsed ? "Expand" : "Collapse"}
+                  >
+                    {collapsed ? (
+                      <ChevronRight className="h-4 w-4 text-slate-200" />
+                    ) : (
+                      <ChevronLeft className="h-4 w-4 text-slate-200" />
+                    )}
+                  </button>
+                </div>
 
-          {/* Main content */}
-          <main className="flex-1 bg-slate-950 overflow-y-auto">
+                <SidebarNavigation
+                  collapsed={collapsed}
+                  isActive={isActive}
+                  navigateTo={(path) => navigate(path)}
+                />
+              </SidebarContent>
+            </Sidebar>
+          </aside>
+
+          <main className="bg-slate-950 overflow-y-auto">
+            <Outlet />
+          </main>
+        </div>
+
+        {/* Mobile/Small screens fallback content area */}
+        <div className="md:hidden flex-1 overflow-hidden">
+          <main className="bg-slate-950 overflow-y-auto">
             <Outlet />
           </main>
         </div>
