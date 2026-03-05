@@ -1,5 +1,5 @@
 // src/layouts/AdminLayout.tsx
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -15,20 +15,47 @@ import { Logo } from "@/components/ui/logo";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 
-// Reusable Sidebar Navigation Component
+type NavItem = {
+  label: string;
+  path: string;
+  badge?: string;
+};
+
+type NavSection = {
+  label: string;
+  items: NavItem[];
+};
+
 const SidebarNavigation: React.FC<{
   isActive: (path: string) => boolean;
   navigate: (path: string) => void;
   onNavigate?: () => void;
 }> = ({ isActive, navigate, onNavigate }) => {
-  const navigationItems = [
-    { label: "Categories", path: "/admin/categories" },
-    { label: "Templates", path: "/admin/templates", badge: "Items" },
-    { label: "Credits", path: "/admin/credits" },
-    { label: "Orders", path: "/admin/orders" },
-    { label: "Customers", path: "/admin/customers" },
-    { label: "Statistics", path: "/admin/statistics" },
-  ];
+  const sections: NavSection[] = useMemo(
+    () => [
+      {
+        label: "MAIN",
+        items: [{ label: "Overview", path: "/admin", badge: "Main" }],
+      },
+      {
+        label: "EMAIL",
+        items: [
+          { label: "Templates", path: "/admin/email/templates" },
+          { label: "Offers", path: "/admin/email/offers" },
+          { label: "Campaigns", path: "/admin/email/campaigns" },
+        ],
+      },
+      {
+        label: "BUSINESS",
+        items: [
+          { label: "Credits", path: "/admin/credits" },
+          { label: "Orders", path: "/admin/orders" },
+          { label: "Customers", path: "/admin/customers" },
+        ],
+      },
+    ],
+    []
+  );
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -39,68 +66,41 @@ const SidebarNavigation: React.FC<{
     <>
       <Logo />
 
-      {/* Main Section */}
-      <div>
-        <SidebarGroupLabel className="text-xs font-semibold tracking-[0.2em] text-slate-400 mb-2">
-          MAIN
-        </SidebarGroupLabel>
+      {sections.map((section) => (
+        <div key={section.label}>
+          <SidebarGroupLabel className="text-xs font-semibold tracking-[0.2em] text-slate-400 mb-2">
+            {section.label}
+          </SidebarGroupLabel>
 
-        <button
-          type="button"
-          onClick={() => handleNavigation("/admin")}
-          className={`inline-flex items-center justify-between w-full rounded-2xl px-4 py-3 ${
-            isActive("/admin")
-              ? "bg-slate-100 text-slate-900"
-              : "bg-slate-800/50 text-slate-200 hover:bg-slate-800/70"
-          }`}
-        >
-          <span className="text-sm font-semibold">Overview</span>
-          {isActive("/admin") && (
-            <span className="text-[10px] font-semibold tracking-[0.25em] text-slate-400 uppercase">
-              Main
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* Navigation Menu */}
-      <SidebarGroup>
-        <SidebarMenu className="flex flex-col gap-3 text-sm text-slate-200">
-          {navigationItems.map((item) => (
-            <SidebarMenuItem key={item.path}>
-              <SidebarMenuButton
-                type="button"
-                onClick={() => handleNavigation(item.path)}
-                className={`rounded-xl px-2 py-1.5 text-left hover:bg-slate-800/70 ${
-                  isActive(item.path) ? "bg-slate-800" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="text-[10px] tracking-[0.25em] text-slate-500 uppercase">
-                      {item.badge}
-                    </span>
-                  )}
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-
-          {/* Offers - Special styling */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              type="button"
-              onClick={() => handleNavigation("/admin/offers")}
-              className={`mt-4 rounded-xl px-2 py-1.5 text-left text-indigo-300 hover:bg-slate-800/70 ${
-                isActive("/admin/offers") ? "bg-slate-800" : ""
-              }`}
-            >
-              Offers
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarGroup>
+          <SidebarGroup>
+            <SidebarMenu className="flex flex-col gap-2 text-sm text-slate-200">
+              {section.items.map((item) => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton
+                    type="button"
+                    onClick={() => handleNavigation(item.path)}
+                    className={[
+                      "rounded-xl px-2 py-1.5 text-left hover:bg-slate-800/70",
+                      isActive(item.path) ? "bg-slate-800" : "",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={section.label === "EMAIL" ? "text-indigo-200" : ""}>
+                        {item.label}
+                      </span>
+                      {item.badge && (
+                        <span className="text-[10px] tracking-[0.25em] text-slate-500 uppercase">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        </div>
+      ))}
     </>
   );
 };
@@ -128,10 +128,7 @@ export const AdminLayout: React.FC = () => {
               </button>
             </SheetTrigger>
 
-            <SheetContent
-              side="left"
-              className="w-64 bg-slate-950 border-slate-800 p-0"
-            >
+            <SheetContent side="left" className="w-72 bg-slate-950 border-slate-800 p-0">
               <SidebarContent className="px-5 py-6 flex flex-col gap-8">
                 <SidebarNavigation
                   isActive={isActive}
@@ -145,19 +142,15 @@ export const AdminLayout: React.FC = () => {
           <Logo />
         </header>
 
-        {/* Desktop & Mobile Layout */}
         <div className="flex flex-1 overflow-hidden">
           {/* Desktop Sidebar */}
-          <Sidebar className="hidden md:flex w-64 border-r border-slate-800 bg-slate-950">
+          <Sidebar className="hidden md:flex w-72 border-r border-slate-800 bg-slate-950">
             <SidebarContent className="px-5 py-6 flex flex-col gap-8">
-              <SidebarNavigation
-                isActive={isActive}
-                navigate={(path) => nav(path)}
-              />
+              <SidebarNavigation isActive={isActive} navigate={(path) => nav(path)} />
             </SidebarContent>
           </Sidebar>
 
-          {/* Main content area - Outlet for nested routes */}
+          {/* Main content */}
           <main className="flex-1 bg-slate-950 overflow-y-auto">
             <Outlet />
           </main>
