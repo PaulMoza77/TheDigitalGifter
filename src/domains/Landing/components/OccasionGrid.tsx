@@ -16,15 +16,6 @@ type OccasionRow = {
   active?: boolean | null;
   sort_order?: number | null;
   updated_at?: string | null;
-
-  image_url?: string | null;
-  imageurl?: string | null;
-  preview_url?: string | null;
-  previewurl?: string | null;
-  cover_url?: string | null;
-  coverurl?: string | null;
-  thumbnail_url?: string | null;
-  thumbnailurl?: string | null;
 };
 
 function normalizeOccasionSlug(slug: string) {
@@ -106,7 +97,7 @@ function fallbackGradientFrom(slug: string) {
   return "from-slate-700/60";
 }
 
-function fallbackGradientTo(_slug: string) {
+function fallbackGradientTo() {
   return "to-slate-950/85";
 }
 
@@ -131,19 +122,14 @@ function fallbackImage(slug: string) {
   return "/images/occasions/default.jpg";
 }
 
-function getOccasionImage(row: OccasionRow) {
-  return (
-    row.image_url ||
-    row.imageurl ||
-    row.preview_url ||
-    row.previewurl ||
-    row.cover_url ||
-    row.coverurl ||
-    row.thumbnail_url ||
-    row.thumbnailurl ||
-    fallbackImage(row.slug)
-  );
-}
+const FALLBACK_OCCASIONS: OccasionRow[] = [
+  { slug: "christmas", title: "Christmas", active: true, sort_order: 1 },
+  { slug: "birthday", title: "Birthday", active: true, sort_order: 2 },
+  { slug: "new-years-eve", title: "New Year's Eve", active: true, sort_order: 3 },
+  { slug: "thanksgiving", title: "Thanksgiving", active: true, sort_order: 4 },
+  { slug: "baby-reveal", title: "Baby Reveal", active: true, sort_order: 5 },
+  { slug: "new-born", title: "New Born", active: true, sort_order: 6 },
+];
 
 export default function OccasionGrid() {
   const navigate = useNavigate();
@@ -155,24 +141,7 @@ export default function OccasionGrid() {
     async function load() {
       const { data, error } = await supabase
         .from("occasions")
-        .select(
-          `
-            id,
-            slug,
-            title,
-            active,
-            sort_order,
-            updated_at,
-            image_url,
-            imageurl,
-            preview_url,
-            previewurl,
-            cover_url,
-            coverurl,
-            thumbnail_url,
-            thumbnailurl
-          `
-        )
+        .select("id, slug, title, active, sort_order, updated_at")
         .eq("active", true)
         .order("sort_order", { ascending: true });
 
@@ -180,11 +149,15 @@ export default function OccasionGrid() {
 
       if (error) {
         console.error("[OccasionGrid] supabase error:", error);
-        setRows([]);
+        setRows(FALLBACK_OCCASIONS);
         return;
       }
 
-      setRows((data as OccasionRow[]) || []);
+      const safeRows = ((data as OccasionRow[]) || []).filter(
+        (x) => x?.slug && x?.title
+      );
+
+      setRows(safeRows.length > 0 ? safeRows : FALLBACK_OCCASIONS);
     }
 
     void load();
@@ -195,14 +168,13 @@ export default function OccasionGrid() {
   }, []);
 
   const occasions = useMemo(() => {
-    const source = rows ?? [];
+    const source = rows ?? FALLBACK_OCCASIONS;
 
     return [...source].sort((a, b) => {
       const aOrder = typeof a.sort_order === "number" ? a.sort_order : 999999;
       const bOrder = typeof b.sort_order === "number" ? b.sort_order : 999999;
 
       if (aOrder !== bOrder) return aOrder - bOrder;
-
       return String(a.title || "").localeCompare(String(b.title || ""));
     });
   }, [rows]);
@@ -269,9 +241,9 @@ export default function OccasionGrid() {
 
             const label = prettyLabelFromSlug(slug);
             const description = fallbackDescription(slug);
-            const image = getOccasionImage(occ);
+            const image = fallbackImage(slug);
             const gradientFrom = fallbackGradientFrom(slug);
-            const gradientTo = fallbackGradientTo(slug);
+            const gradientTo = fallbackGradientTo();
 
             return (
               <motion.div
