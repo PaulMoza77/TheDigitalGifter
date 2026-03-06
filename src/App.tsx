@@ -142,6 +142,7 @@ function AppInner() {
         }
       >
         <Routes>
+          {/* ================= WEBSITE ================= */}
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
@@ -195,6 +196,7 @@ function AppInner() {
             />
           </Route>
 
+          {/* ================= CLIENT ACCOUNT ================= */}
           <Route element={<ProtectedClientRoute />}>
             <Route path="/account" element={<ClientLayout />}>
               <Route
@@ -206,6 +208,7 @@ function AppInner() {
             </Route>
           </Route>
 
+          {/* ================= FUNNEL ================= */}
           <Route element={<FunnelLayout />}>
             <Route
               path="/funnel"
@@ -227,39 +230,24 @@ function AppInner() {
             <Route path="/funnel/result" element={<FunnelResultPage />} />
           </Route>
 
-          <Route element={<AdminLayout />}>
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <AdminDashboard />
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/funnel"
-              element={
-                <AdminRoute>
-                  <AdminFunnelPage />
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/templates"
-              element={
-                <AdminRoute>
-                  <Templates />
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/email"
-              element={
-                <AdminRoute>
-                  <AdminEmailLayoutPage />
-                </AdminRoute>
-              }
-            >
+          {/* ================= ADMIN ================= */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+
+            <Route path="funnel" element={<AdminFunnelPage />} />
+            <Route path="templates" element={<Templates />} />
+            <Route path="customers" element={<CustomersPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="credits" element={<CreditsPage />} />
+
+            <Route path="email" element={<AdminEmailLayoutPage />}>
               <Route
                 index
                 element={<Navigate to="/admin/email/templates" replace />}
@@ -268,30 +256,6 @@ function AppInner() {
               <Route path="offers" element={<AdminEmailOffersPage />} />
               <Route path="campaigns" element={<AdminEmailCampaignsPage />} />
             </Route>
-            <Route
-              path="/admin/customers"
-              element={
-                <AdminRoute>
-                  <CustomersPage />
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/orders"
-              element={
-                <AdminRoute>
-                  <OrdersPage />
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/credits"
-              element={
-                <AdminRoute>
-                  <CreditsPage />
-                </AdminRoute>
-              }
-            />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
