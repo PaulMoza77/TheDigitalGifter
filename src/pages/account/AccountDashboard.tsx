@@ -3,7 +3,9 @@ import React from "react";
 import type { User } from "@supabase/supabase-js";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
+
 import { supabase } from "@/lib/supabase";
+
 import { Button } from "@/components/ui/button";
 import ClientStatsCards from "@/components/client/ClientStatsCards";
 import RecentGenerations from "@/components/client/RecentGenerations";
@@ -11,18 +13,122 @@ import ContinueCreatingCard from "@/components/client/ContinueCreatingCard";
 import AccountInfoCard from "@/components/client/AccountInfoCard";
 import NeedHelpCard from "@/components/client/NeedHelpCard";
 import UsageSummaryCard from "@/components/client/UsageSummaryCard";
-import { clientDashboardDemo } from "@/components/client/client-demo";
+
+import type { ClientGeneration, ClientStat } from "@/components/client/types";
+
+type DashboardSummaryRow = {
+  user_id: string;
+  credits_balance: number | null;
+  credits_used: number | null;
+  total_purchased: number | null;
+  total_generations: number | null;
+  saved_results_count: number | null;
+  recent_activity_count: number | null;
+};
+
+type GenerationRow = {
+  id: string;
+  status: string | null;
+  final_image_url: string | null;
+  preview_image_url: string | null;
+  created_at: string | null;
+};
+
+function formatRelativeDate(value?: string | null) {
+  if (!value) return "Recently";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Recently";
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diffMs < minute) return "Just now";
+  if (diffMs < hour) return `${Math.max(1, Math.floor(diffMs / minute))} min ago`;
+  if (diffMs < day) return `${Math.max(1, Math.floor(diffMs / hour))} hours ago`;
+  if (diffMs < day * 7) return `${Math.max(1, Math.floor(diffMs / day))} days ago`;
+
+  return date.toLocaleDateString();
+}
+
+function mapStatus(status?: string | null): ClientGeneration["status"] {
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "completed" || normalized === "saved") return "Completed";
+  if (normalized === "processing" || normalized === "pending") return "Processing";
+  return "Saved";
+}
+
+function buildGenerationTitle(item: GenerationRow, index: number) {
+  const shortId = item.id.slice(0, 8).toUpperCase();
+  return `Creation #${shortId || index + 1}`;
+}
 
 export default function AccountDashboard() {
   const [user, setUser] = React.useState<User | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [summary, setSummary] = React.useState<DashboardSummaryRow | null>(null);
+  const [recentRows, setRecentRows] = React.useState<GenerationRow[]>([]);
 
   React.useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getUser().then(({ data }) => {
+    async function load() {
+      setLoading(true);
+
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+
       if (!mounted) return;
-      setUser(data.user ?? null);
-    });
+
+      setUser(authUser ?? null);
+
+      if (!authUser) {
+        setSummary(null);
+        setRecentRows([]);
+        setLoading(false);
+        return;
+      }
+
+      const [summaryRes, generationsRes] = await Promise.all([
+        supabase
+          .from("client_dashboard_summary")
+          .select(
+            "user_id, credits_balance, credits_used, total_purchased, total_generations, saved_results_count, recent_activity_count"
+          )
+          .eq("user_id", authUser.id)
+          .maybeSingle(),
+        supabase
+          .from("generations")
+          .select("id, status, final_image_url, preview_image_url, created_at")
+          .eq("user_id", authUser.id)
+          .order("created_at", { ascending: false })
+          .limit(6),
+      ]);
+
+      if (!mounted) return;
+
+      if (summaryRes.error) {
+        console.error("[AccountDashboard] summary error:", summaryRes.error);
+      }
+
+      if (generationsRes.error) {
+        console.error("[AccountDashboard] generations error:", generationsRes.error);
+      }
+
+      setSummary((summaryRes.data as DashboardSummaryRow | null) ?? null);
+      setRecentRows((generationsRes.data as GenerationRow[] | null) ?? []);
+      setLoading(false);
+    }
+
+    void load();
 
     return () => {
       mounted = false;
@@ -34,6 +140,71 @@ export default function AccountDashboard() {
     (user?.user_metadata?.name as string | undefined)?.split(" ")[0] ||
     user?.email?.split("@")[0] ||
     "there";
+
+  const totalGenerations = summary?.total_generations ?? 0;
+  const remainingCredits = summary?.credits_balance ?? 0;
+  const savedResults = summary?.saved_results_count ?? 0;
+  const recentActivity = summary?.recent_activity_count ?? 0;
+  const creditsUsed = summary?.credits_used ?? 0;
+
+  const completedCreations = React.useMemo(
+    () =>
+      recentRows.filter((item) => {
+        const s = String(item.status || "")
+          .trim()
+          .toLowerCase();
+        return s === "completed" || s === "saved";
+      }).length,
+    [recentRows]
+  );
+
+  const inProgress = React.useMemo(
+    () =>
+      recentRows.filter((item) => {
+        const s = String(item.status || "")
+          .trim()
+          .toLowerCase();
+        return s === "pending" || s === "processing";
+      }).length,
+    [recentRows]
+  );
+
+  const stats: ClientStat[] = [
+    {
+      label: "Total Generations",
+      value: String(totalGenerations),
+      helper: "All-time creations",
+      icon: "sparkles",
+    },
+    {
+      label: "Remaining Credits",
+      value: String(remainingCredits),
+      helper: `${creditsUsed} used so far`,
+      icon: "coins",
+    },
+    {
+      label: "Saved Results",
+      value: String(savedResults),
+      helper: "Saved in your account",
+      icon: "bookmark",
+    },
+    {
+      label: "Recent Activity",
+      value: String(recentActivity),
+      helper: "Last 7 days",
+      icon: "activity",
+    },
+  ];
+
+  const recentGenerations: ClientGeneration[] = recentRows.map((item, index) => ({
+    id: item.id,
+    title: buildGenerationTitle(item, index),
+    occasion: "AI Creation",
+    style: item.final_image_url ? "Final Result" : "Preview",
+    status: mapStatus(item.status),
+    createdAt: formatRelativeDate(item.created_at),
+    imageUrl: item.final_image_url || item.preview_image_url || null,
+  }));
 
   return (
     <div className="space-y-6">
@@ -79,14 +250,19 @@ export default function AccountDashboard() {
         </div>
       </section>
 
-      <ClientStatsCards stats={clientDashboardDemo.stats} />
+      <ClientStatsCards stats={stats} />
 
       <section className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.5fr)_420px]">
-        <RecentGenerations items={clientDashboardDemo.recentGenerations} />
+        <RecentGenerations items={recentGenerations} />
 
         <div className="space-y-6">
           <ContinueCreatingCard />
-          <UsageSummaryCard />
+          <UsageSummaryCard
+            creditsAvailable={remainingCredits}
+            completedCreations={completedCreations}
+            inProgress={inProgress}
+            savedItems={savedResults}
+          />
         </div>
       </section>
 
@@ -94,6 +270,12 @@ export default function AccountDashboard() {
         <AccountInfoCard user={user} />
         <NeedHelpCard />
       </section>
+
+      {loading ? (
+        <div className="rounded-[28px] border border-white/10 bg-zinc-950/50 p-4 text-sm text-zinc-400">
+          Loading account data...
+        </div>
+      ) : null}
     </div>
   );
 }

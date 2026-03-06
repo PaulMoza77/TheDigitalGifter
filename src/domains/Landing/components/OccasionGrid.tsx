@@ -1,6 +1,6 @@
 // FILE: src/domains/Landing/components/OccasionGrid.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
@@ -59,48 +59,20 @@ function prettyLabelFromSlug(slug: string) {
 function fallbackDescription(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
 
-  if (s.includes("christmas")) {
-    return "Turn any photo into a warm, cinematic Christmas card.";
-  }
-  if (s.includes("new") && s.includes("year")) {
-    return "Sparkling countdown vibes with neon lights and confetti.";
-  }
-  if (s.includes("thank")) {
-    return "Autumn colors, candles and a grateful, family feel.";
-  }
-  if (s.includes("birthday")) {
-    return "Balloons, cake and bright birthday energy.";
-  }
-  if (s.includes("baby") && s.includes("reveal")) {
-    return "Gender reveal or baby news with dreamy pastel tones.";
-  }
-  if (s.includes("born")) {
-    return "Minimal, clean layouts that keep the baby in focus.";
-  }
-  if (s.includes("pregnancy")) {
-    return "Elegant silhouettes, warm light and calm tones.";
-  }
-  if (s.includes("wedding")) {
-    return "Luxury, editorial-style wedding announcement cards.";
-  }
-  if (s.includes("easter")) {
-    return "Fresh colors, flowers and soft daylight.";
-  }
-  if (s.includes("valentine")) {
-    return "Cinematic couples, roses and candlelight.";
-  }
-  if (s.includes("anniversary")) {
-    return "Elegant layouts to celebrate any milestone.";
-  }
-  if (s.includes("mother")) {
-    return "Delicate florals and warm light for mom.";
-  }
-  if (s.includes("father")) {
-    return "Minimal, modern layouts with strong contrast.";
-  }
-  if (s.includes("graduation")) {
-    return "Sharp, modern cards to celebrate the big day.";
-  }
+  if (s.includes("christmas")) return "Turn any photo into a warm, cinematic Christmas card.";
+  if (s.includes("new") && s.includes("year")) return "Sparkling countdown vibes with neon lights and confetti.";
+  if (s.includes("thank")) return "Autumn colors, candles and a grateful, family feel.";
+  if (s.includes("birthday")) return "Balloons, cake and bright birthday energy.";
+  if (s.includes("baby") && s.includes("reveal")) return "Gender reveal or baby news with dreamy pastel tones.";
+  if (s.includes("born")) return "Minimal, clean layouts that keep the baby in focus.";
+  if (s.includes("pregnancy")) return "Elegant silhouettes, warm light and calm tones.";
+  if (s.includes("wedding")) return "Luxury, editorial-style wedding announcement cards.";
+  if (s.includes("easter")) return "Fresh colors, flowers and soft daylight.";
+  if (s.includes("valentine")) return "Cinematic couples, roses and candlelight.";
+  if (s.includes("anniversary")) return "Elegant layouts to celebrate any milestone.";
+  if (s.includes("mother")) return "Delicate florals and warm light for mom.";
+  if (s.includes("father")) return "Minimal, modern layouts with strong contrast.";
+  if (s.includes("graduation")) return "Sharp, modern cards to celebrate the big day.";
 
   return "Create something beautiful in seconds.";
 }
@@ -152,6 +124,7 @@ function fallbackImage(slug: string) {
 }
 
 export default function OccasionGrid() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<OccasionRow[] | null>(null);
 
   useEffect(() => {
@@ -269,7 +242,6 @@ export default function OccasionGrid() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.08, duration: 0.5 }}
                 whileHover={{ scale: 1.03 }}
-                className="cursor-default"
               >
                 <Card className="group relative overflow-hidden border-slate-800 bg-slate-900/50 transition-all duration-300 hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/20">
                   <CardContent className="relative isolate p-0">
@@ -308,25 +280,27 @@ export default function OccasionGrid() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Link to={funnelHref} className="w-full">
-                          <Button
-                            variant="ghost"
-                            className={cn(
-                              "w-full rounded-xl text-white group/btn",
-                              "bg-gray-800 hover:bg-gray-700"
-                            )}
-                          >
-                            See More
-                            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                          </Button>
-                        </Link>
+                        <Button
+                          type="button"
+                          onClick={() => navigate(funnelHref)}
+                          variant="ghost"
+                          className={cn(
+                            "w-full rounded-xl text-white group/btn",
+                            "bg-gray-800 hover:bg-gray-700"
+                          )}
+                        >
+                          See More
+                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                        </Button>
 
-                        <Link to={templatesHref} className="w-full">
-                          <Button className="w-full rounded-xl bg-blue-600 text-white group/btn hover:bg-blue-700">
-                            Explore Templates
-                            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                          </Button>
-                        </Link>
+                        <Button
+                          type="button"
+                          onClick={() => navigate(templatesHref)}
+                          className="w-full rounded-xl bg-blue-600 text-white group/btn hover:bg-blue-700"
+                        >
+                          Explore Templates
+                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
