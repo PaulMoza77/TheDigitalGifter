@@ -1,4 +1,4 @@
-// src/layouts/AdminLayout.tsx
+// FILE: src/layouts/AdminLayout.tsx
 import React, { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
@@ -15,6 +15,7 @@ import {
   Coins,
   ShoppingCart,
   Users,
+  LayoutTemplate,
 } from "lucide-react";
 
 type NavItem = {
@@ -35,8 +36,12 @@ function cx(...classes: Array<string | false | null | undefined>) {
 
 function useIsActivePath() {
   const { pathname } = useLocation();
+
   return React.useCallback(
-    (path: string) => pathname === path || (path !== "/admin" && pathname.startsWith(path)),
+    (path: string) => {
+      if (path === "/admin") return pathname === "/admin";
+      return pathname === path || pathname.startsWith(`${path}/`);
+    },
     [pathname]
   );
 }
@@ -73,10 +78,12 @@ function NavButton({
       <Icon className={cx("h-4 w-4 shrink-0", active ? "text-slate-100" : "text-slate-300")} />
 
       {!collapsed ? (
-        <div className="flex w-full items-center justify-between gap-2 min-w-0">
+        <div className="flex w-full min-w-0 items-center justify-between gap-2">
           <span className="truncate">{label}</span>
           {badge ? (
-            <span className="text-[10px] tracking-[0.25em] text-slate-500 uppercase">{badge}</span>
+            <span className="text-[10px] tracking-[0.25em] text-slate-500 uppercase">
+              {badge}
+            </span>
           ) : null}
         </div>
       ) : null}
@@ -97,9 +104,13 @@ const SidebarNavigation: React.FC<{
         items: [{ label: "Overview", path: "/admin", badge: "Main", icon: LayoutDashboard }],
       },
       {
+        label: "CONTENT",
+        items: [{ label: "Templates", path: "/admin/templates", icon: LayoutTemplate }],
+      },
+      {
         label: "EMAIL",
         items: [
-          { label: "Templates", path: "/admin/email/templates", icon: FileText },
+          { label: "Email Templates", path: "/admin/email/templates", icon: FileText },
           { label: "Offers", path: "/admin/email/offers", icon: BadgePercent },
           { label: "Campaigns", path: "/admin/email/campaigns", icon: Send },
         ],
@@ -131,7 +142,7 @@ const SidebarNavigation: React.FC<{
         <Logo />
       </div>
 
-      <div className="flex flex-col gap-6 w-full">
+      <div className="flex w-full flex-col gap-6">
         {sections.map((section) => (
           <div key={section.label} className={cx("w-full", collapsed ? "px-1" : "")}>
             {!collapsed ? (
@@ -139,7 +150,7 @@ const SidebarNavigation: React.FC<{
                 {section.label}
               </div>
             ) : (
-              <div className="h-px w-full bg-slate-800 my-1" />
+              <div className="my-1 h-px w-full bg-slate-800" />
             )}
 
             <div className={cx("mt-3 flex flex-col gap-2", collapsed ? "items-center" : "")}>
@@ -169,25 +180,25 @@ const AdminLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
-  const sidebarWidth = collapsed ? 72 : 288; // px (icon-only vs full)
+  const sidebarWidth = collapsed ? 72 : 288;
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-50 flex flex-col font-sans">
+    <div className="flex min-h-screen w-full flex-col bg-slate-950 font-sans text-slate-50">
       {/* Mobile Header */}
-      <header className="md:hidden sticky top-0 z-50 flex items-center justify-between gap-3 px-4 py-3 bg-slate-950 border-b border-slate-800">
+      <header className="sticky top-0 z-50 flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 px-4 py-3 md:hidden">
         <div className="flex items-center gap-3">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+                className="rounded-lg p-2 transition-colors hover:bg-slate-800"
                 aria-label="Open menu"
               >
                 <Menu className="h-5 w-5 text-slate-200" />
               </button>
             </SheetTrigger>
 
-            <SheetContent side="left" className="w-72 bg-slate-950 border-slate-800 p-0">
+            <SheetContent side="left" className="w-72 border-slate-800 bg-slate-950 p-0">
               <div className="px-5 py-6">
                 <SidebarNavigation
                   collapsed={false}
@@ -204,20 +215,18 @@ const AdminLayout: React.FC = () => {
       </header>
 
       {/* Desktop */}
-      <div className="hidden md:flex flex-1 min-h-0">
+      <div className="hidden min-h-0 flex-1 md:flex">
         <aside
-          className="relative shrink-0 border-r border-slate-800 bg-slate-950 min-h-0"
+          className="relative min-h-0 shrink-0 border-r border-slate-800 bg-slate-950"
           style={{ width: sidebarWidth }}
         >
-          {/* Toggle ALWAYS on right edge of sidebar */}
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
             className={cx(
               "absolute top-4 -right-3 z-50",
-              "h-9 w-9 rounded-xl border border-slate-800 bg-slate-950",
-              "hover:bg-slate-800/60 transition-colors",
-              "flex items-center justify-center"
+              "flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950",
+              "transition-colors hover:bg-slate-800/60"
             )}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand" : "Collapse"}
@@ -230,18 +239,22 @@ const AdminLayout: React.FC = () => {
           </button>
 
           <div className={cx("h-full overflow-y-auto", collapsed ? "px-2 py-6" : "px-5 py-6")}>
-            <SidebarNavigation collapsed={collapsed} isActive={isActive} navigateTo={(p) => navigate(p)} />
+            <SidebarNavigation
+              collapsed={collapsed}
+              isActive={isActive}
+              navigateTo={(p) => navigate(p)}
+            />
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 min-h-0 bg-slate-950 overflow-y-auto">
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-slate-950">
           <Outlet />
         </main>
       </div>
 
       {/* Mobile content */}
-      <div className="md:hidden flex-1 min-h-0">
-        <main className="bg-slate-950 overflow-y-auto min-h-0">
+      <div className="min-h-0 flex-1 md:hidden">
+        <main className="min-h-0 overflow-y-auto bg-slate-950">
           <Outlet />
         </main>
       </div>
