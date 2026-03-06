@@ -1,4 +1,3 @@
-// FILE: src/components/funnelVersion/ResultPage.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -33,8 +32,22 @@ type ResultRow = {
   updated_at: string | null;
 };
 
-type ActionType = "full_hd" | "regenerate" | "golden_frame" | "puzzle";
+type UpgradeRpcRow = {
+  fulfillment_id: string | null;
+  generation_id: string | null;
+  action_type: string | null;
+  fulfillment_status: string | null;
+  output_generation_id: string | null;
+  output_image_url: string | null;
+  final_image_url: string | null;
+  final_bucket: string | null;
+  final_storage_path: string | null;
+  generation_status: string | null;
+  generation_created_at: string | null;
+  generation_updated_at: string | null;
+};
 
+type ActionType = "full_hd" | "regenerate" | "golden_frame" | "puzzle";
 type CheckoutLoadingState = Record<ActionType, boolean>;
 
 function isHttpUrl(s: string) {
@@ -60,7 +73,6 @@ async function resolveFinalUrl(row: ResultRow): Promise<string | null> {
 
 function normalizeRpcRow(x: any): ResultRow | null {
   if (!x) return null;
-
   const r = Array.isArray(x) ? x[0] : x;
   if (!r) return null;
 
@@ -72,6 +84,27 @@ function normalizeRpcRow(x: any): ResultRow | null {
     final_storage_path: r.final_storage_path ?? null,
     created_at: r.created_at ?? null,
     updated_at: r.updated_at ?? null,
+  };
+}
+
+function normalizeUpgradeRpcRow(x: any): UpgradeRpcRow | null {
+  if (!x) return null;
+  const r = Array.isArray(x) ? x[0] : x;
+  if (!r) return null;
+
+  return {
+    fulfillment_id: r.fulfillment_id ?? null,
+    generation_id: r.generation_id ?? null,
+    action_type: r.action_type ?? null,
+    fulfillment_status: r.fulfillment_status ?? null,
+    output_generation_id: r.output_generation_id ?? null,
+    output_image_url: r.output_image_url ?? null,
+    final_image_url: r.final_image_url ?? null,
+    final_bucket: r.final_bucket ?? null,
+    final_storage_path: r.final_storage_path ?? null,
+    generation_status: r.generation_status ?? null,
+    generation_created_at: r.generation_created_at ?? null,
+    generation_updated_at: r.generation_updated_at ?? null,
   };
 }
 
@@ -116,22 +149,26 @@ const OFFER_CONFIG: Array<{
 function formatStatus(status: string | null) {
   const s = String(status || "").toLowerCase();
   if (!s) return "waiting";
-  if (s === "succeeded" || s === "done") return "ready";
+  if (s === "succeeded" || s === "done" || s === "completed" || s === "fulfilled") return "ready";
   return s;
 }
 
 export default function ResultPage() {
   const q = useQuery();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const sessionId = (q.get("session_id") || "").trim();
+  const generationIdFromUrl = (q.get("generation_id") || "").trim();
+  const checkoutSessionId = (q.get("checkout_session_id") || "").trim();
+  const upgradeSuccess = (q.get("upgrade_success") || "").trim() === "1";
+  const upgradeCanceled = (q.get("upgrade_canceled") || "").trim() === "1";
 
   const [loading, setLoading] = useState(true);
   const [row, setRow] = useState<ResultRow | null>(null);
   const [finalUrl, setFinalUrl] = useState<string | null>(null);
   const [debug, setDebug] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [upgradeStatus, setUpgradeStatus] = useState<string>("");
   const [checkoutLoading, setCheckoutLoading] = useState<CheckoutLoadingState>({
     full_hd: false,
     regenerate: false,
@@ -144,9 +181,71 @@ export default function ResultPage() {
   const normalizedStatus = useMemo(() => formatStatus(row?.status ?? null), [row?.status]);
 
   useEffect(() => {
+    if (upgradeSuccess) toast.success("Payment successful.");
+    if (upgradeCanceled) toast.error("Checkout canceled.");
+  }, [upgradeSuccess, upgradeCanceled]);
+
+  useEffect(() => {
     let cancelled = false;
 
-    async function tickOnce(): Promise<{ done: boolean }> {
+    async function fetchGenerationDirect(generationId: string): Promise<{ done: boolean }> {
+      const { data, error } = await supabase
+        .from("generations")
+        .select("id,status,final_image_url,final_bucket,final_storage_path,created_at,updated_at")
+        .eq("id", generationId)
+        .maybeSingle();
+
+      if (error) {
+        const msg = String(error.message || "Unknown generation fetch error");
+        if (!cancelled) {
+          setDebug(`Generation fetch error: ${msg}`);
+          setErrorMessage(msg);
+          setLoading(false);
+        }
+        return { done: true };
+      }
+
+      const r = normalizeRpcRow(data);
+
+      if (!r || !r.id) {
+        if (!cancelled) {
+          setDebug("No generation found for generation_id.");
+          setErrorMessage("Generation not found.");
+          setLoading(false);
+        }
+        return { done: true };
+      }
+
+      if (!cancelled) setRow(r);
+
+      const url = await resolveFinalUrl(r);
+
+      if (!cancelled) {
+        setDebug(
+          [
+            `mode=generation_id`,
+            `id=${r.id}`,
+            `status=${r.status || "?"}`,
+            `direct_url=${r.final_image_url ? "yes" : "no"}`,
+            `bucket=${r.final_bucket || "—"}`,
+            `path=${r.final_storage_path || "—"}`,
+            `resolved=${url ? "yes" : "no"}`,
+          ].join(" · ")
+        );
+      }
+
+      if (url) {
+        if (!cancelled) {
+          setFinalUrl(url);
+          setErrorMessage("");
+        }
+      }
+
+      if (!cancelled) setLoading(false);
+      return { done: true };
+    }
+
+    async function tickBySessionId(): Promise<{ done: boolean }> {
       const { data, error } = await supabase.rpc("get_generation_by_session", {
         p_session_id: sessionId,
       });
@@ -164,9 +263,7 @@ export default function ResultPage() {
       const r = normalizeRpcRow(data);
 
       if (!r || !r.id) {
-        if (!cancelled) {
-          setDebug("No generation found yet for this session_id.");
-        }
+        if (!cancelled) setDebug("No generation found yet for this session_id.");
         return { done: false };
       }
 
@@ -177,6 +274,7 @@ export default function ResultPage() {
       if (!cancelled) {
         setDebug(
           [
+            `mode=session_id`,
             `id=${r.id}`,
             `status=${r.status || "?"}`,
             `direct_url=${r.final_image_url ? "yes" : "no"}`,
@@ -190,8 +288,8 @@ export default function ResultPage() {
       if (url) {
         if (!cancelled) {
           setFinalUrl(url);
-          setLoading(false);
           setErrorMessage("");
+          setLoading(false);
         }
         return { done: true };
       }
@@ -199,10 +297,90 @@ export default function ResultPage() {
       return { done: false };
     }
 
+    async function tickUpgradeResult(): Promise<{ done: boolean }> {
+      const { data, error } = await supabase.rpc("get_upgrade_result_by_checkout_session", {
+        p_checkout_session_id: checkoutSessionId,
+      });
+
+      if (error) {
+        const msg = String(error.message || "Unknown upgrade RPC error");
+        if (!cancelled) {
+          setDebug(`Upgrade RPC error: ${msg}`);
+          setErrorMessage(msg);
+          setLoading(false);
+        }
+        return { done: true };
+      }
+
+      const upgrade = normalizeUpgradeRpcRow(data);
+
+      if (!upgrade) {
+        if (!cancelled) {
+          setUpgradeStatus("Waiting for upgrade fulfillment…");
+          setDebug(`mode=checkout_session_id · checkout_session_id=${checkoutSessionId} · no fulfillment yet`);
+        }
+        return { done: false };
+      }
+
+      const fulfillmentStatus = String(upgrade.fulfillment_status || "").toLowerCase();
+      const actionType = String(upgrade.action_type || "");
+      const outputGenerationId = String(upgrade.output_generation_id || "").trim();
+
+      if (!cancelled) {
+        setUpgradeStatus(
+          fulfillmentStatus === "queued" || fulfillmentStatus === "processing"
+            ? `Processing upgrade: ${actionType || "upgrade"}…`
+            : fulfillmentStatus === "fulfilled"
+              ? `Upgrade ready: ${actionType || "upgrade"}`
+              : fulfillmentStatus === "failed"
+                ? `Upgrade failed: ${actionType || "upgrade"}`
+                : `Upgrade status: ${fulfillmentStatus || "unknown"}`
+        );
+      }
+
+      if (fulfillmentStatus === "failed") {
+        if (!cancelled) {
+          setDebug(
+            [
+              `mode=checkout_session_id`,
+              `checkout_session_id=${checkoutSessionId}`,
+              `fulfillment_status=${fulfillmentStatus}`,
+              `action_type=${actionType || "—"}`,
+            ].join(" · ")
+          );
+          setErrorMessage("Upgrade processing failed.");
+          setLoading(false);
+        }
+        return { done: true };
+      }
+
+      if (actionType === "full_hd" && upgrade.generation_id) {
+        return await fetchGenerationDirect(String(upgrade.generation_id));
+      }
+
+      if (outputGenerationId) {
+        return await fetchGenerationDirect(outputGenerationId);
+      }
+
+      if (!cancelled) {
+        setDebug(
+          [
+            `mode=checkout_session_id`,
+            `checkout_session_id=${checkoutSessionId}`,
+            `fulfillment_status=${fulfillmentStatus || "—"}`,
+            `action_type=${actionType || "—"}`,
+            `output_generation_id=${outputGenerationId || "—"}`,
+          ].join(" · ")
+        );
+      }
+
+      return { done: false };
+    }
+
     async function load() {
-      if (!sessionId) {
+      if (!sessionId && !generationIdFromUrl && !checkoutSessionId) {
         setLoading(false);
-        setDebug("Missing session_id in URL.");
+        setDebug("Missing session_id, generation_id and checkout_session_id in URL.");
         setErrorMessage("Missing payment session.");
         return;
       }
@@ -212,6 +390,41 @@ export default function ResultPage() {
       setFinalUrl(null);
       setDebug("");
       setErrorMessage("");
+      setUpgradeStatus("");
+
+      if (checkoutSessionId) {
+        const start = Date.now();
+        const maxMs = 180_000;
+        const intervalMs = 1500;
+
+        while (!cancelled && Date.now() - start < maxMs) {
+          try {
+            const { done } = await tickUpgradeResult();
+            if (done) return;
+          } catch (e: any) {
+            if (!cancelled) {
+              const msg = String(e?.message || e || "Unexpected upgrade error");
+              setDebug(`Unexpected upgrade error: ${msg}`);
+              setErrorMessage(msg);
+              setLoading(false);
+            }
+            return;
+          }
+
+          await new Promise((res) => setTimeout(res, intervalMs));
+        }
+
+        if (!cancelled) {
+          setLoading(false);
+          setDebug((d) => d || "Timed out waiting for upgrade result.");
+        }
+        return;
+      }
+
+      if (generationIdFromUrl) {
+        await fetchGenerationDirect(generationIdFromUrl);
+        return;
+      }
 
       const start = Date.now();
       const maxMs = 180_000;
@@ -219,7 +432,7 @@ export default function ResultPage() {
 
       while (!cancelled && Date.now() - start < maxMs) {
         try {
-          const { done } = await tickOnce();
+          const { done } = await tickBySessionId();
           if (done) return;
         } catch (e: any) {
           if (!cancelled) {
@@ -245,14 +458,9 @@ export default function ResultPage() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, generationIdFromUrl, checkoutSessionId]);
 
   async function handleCheckout(actionType: ActionType) {
-    if (!sessionId) {
-      toast.error("Missing session_id.");
-      return;
-    }
-
     if (!row?.id) {
       toast.error("Generation not found yet.");
       return;
@@ -261,12 +469,11 @@ export default function ResultPage() {
     setCheckoutLoading((prev) => ({ ...prev, [actionType]: true }));
 
     try {
-      const successUrl = `${window.location.origin}/funnel/result?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${window.location.origin}${location.pathname}${location.search}`;
+      const successUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
+      const cancelUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
 
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
         body: {
-          session_id: sessionId,
           generation_id: row.id,
           action_type: actionType,
           success_url: successUrl,
@@ -295,7 +502,7 @@ export default function ResultPage() {
   const anyCheckoutLoading = Object.values(checkoutLoading).some(Boolean);
   const canBuy = Boolean(finalUrl) && Boolean(row?.id) && !loading;
 
-  if (!sessionId) {
+  if (!sessionId && !generationIdFromUrl && !checkoutSessionId) {
     return (
       <div className="min-h-screen" style={pageBg}>
         <header className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
@@ -383,8 +590,16 @@ export default function ResultPage() {
           <p className="mx-auto mt-3 max-w-2xl text-sm text-zinc-700 sm:text-base md:text-lg">
             {finalUrl
               ? "Unlock premium upgrades, regenerate new variations, or download a sharper final version."
-              : "We’re keeping this page updated while your final result is prepared."}
+              : checkoutSessionId
+                ? "We’re processing your upgrade and will show the new result automatically."
+                : "We’re keeping this page updated while your final result is prepared."}
           </p>
+
+          {upgradeStatus ? (
+            <div className="mx-auto mt-4 max-w-2xl rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900">
+              {upgradeStatus}
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
@@ -396,7 +611,7 @@ export default function ResultPage() {
                     <img
                       src={finalUrl}
                       alt="Final result"
-                      className="block w-full h-auto object-contain"
+                      className="block h-auto w-full object-contain"
                       onError={() => setDebug((d) => `${d}\nIMG error loading finalUrl`)}
                     />
 
@@ -470,7 +685,7 @@ export default function ResultPage() {
               </div>
 
               {debug ? (
-                <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-xs text-zinc-500 break-all">
+                <div className="mt-4 break-all rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-xs text-zinc-500">
                   {debug}
                 </div>
               ) : null}
