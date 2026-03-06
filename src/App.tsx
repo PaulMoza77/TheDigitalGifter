@@ -1,4 +1,4 @@
-// src/App.tsx
+// FILE: src/App.tsx
 import { Suspense, useEffect, lazy } from "react";
 import {
   BrowserRouter,
@@ -22,9 +22,11 @@ import AuthCallback from "@/pages/AuthCallback";
 import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
 import { AdminRoute } from "@/components/AdminRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedClientRoute from "@/routes/ProtectedClientRoute";
 
 // ================= LAYOUTS =================
 import AdminLayout from "@/layouts/AdminLayout";
+import ClientLayout from "@/layouts/ClientLayout";
 
 // ================= ADMIN CORE =================
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -40,7 +42,7 @@ import AdminEmailOffersPage from "@/pages/admin/email/Offers";
 import AdminEmailCampaignsPage from "@/pages/admin/email/Campaigns";
 
 // ================= ADMIN FUNNEL =================
-const AdminFunnelPage = lazy(() => import("@/pages/admin/funnel/Index"));
+const AdminFunnelPage = lazy(() => import("@/pages/admin/funnel/index"));
 
 // ================= WEBSITE PAGES =================
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
@@ -61,6 +63,10 @@ const AnniversaryPage = lazy(() => import("@/pages/website/AnniversaryPage"));
 const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
 const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
 const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
+
+// ================= CLIENT ACCOUNT =================
+import AccountDashboard from "@/pages/account/AccountDashboard";
+import AccountGeneratorRedirect from "@/pages/account/AccountGeneratorRedirect";
 
 // ================= FUNNEL =================
 import FunnelHomePage from "@/components/funnelVersion/FunnelHomePage";
@@ -86,7 +92,7 @@ function ScrollToTop() {
 
 function WebsiteLayout() {
   return (
-    <div className="min-h-screen bg-black text-gray-900 flex flex-col">
+    <div className="min-h-screen flex flex-col bg-black text-gray-900">
       <Outlet />
     </div>
   );
@@ -156,33 +162,58 @@ function AppInner() {
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
             {/* Redirect aliases */}
-            <Route path="/new_years_eve" element={<Navigate to="/new-years-eve" replace />} />
-            <Route path="/valentines_day" element={<Navigate to="/valentines-day" replace />} />
-            <Route path="/mothers_day" element={<Navigate to="/mothers-day" replace />} />
-            <Route path="/fathers_day" element={<Navigate to="/fathers-day" replace />} />
-            <Route path="/baby_reveal" element={<Navigate to="/baby-reveal" replace />} />
-            <Route path="/new_born" element={<Navigate to="/new-born" replace />} />
+            <Route
+              path="/new_years_eve"
+              element={<Navigate to="/new-years-eve" replace />}
+            />
+            <Route
+              path="/valentines_day"
+              element={<Navigate to="/valentines-day" replace />}
+            />
+            <Route
+              path="/mothers_day"
+              element={<Navigate to="/mothers-day" replace />}
+            />
+            <Route
+              path="/fathers_day"
+              element={<Navigate to="/fathers-day" replace />}
+            />
+            <Route
+              path="/baby_reveal"
+              element={<Navigate to="/baby-reveal" replace />}
+            />
+            <Route
+              path="/new_born"
+              element={<Navigate to="/new-born" replace />}
+            />
+          </Route>
+
+          {/* ================= CLIENT ACCOUNT ================= */}
+          <Route element={<ProtectedClientRoute />}>
+            <Route path="/account" element={<ClientLayout />}>
+              <Route index element={<Navigate to="/account/dashboard" replace />} />
+              <Route path="dashboard" element={<AccountDashboard />} />
+              <Route path="generator" element={<AccountGeneratorRedirect />} />
+            </Route>
           </Route>
 
           {/* ================= FUNNEL ================= */}
           <Route element={<FunnelLayout />}>
-            {/* funnel landing from ads */}
             <Route
-              path="/funnel/homepage/:occasion"
-              element={<FunnelHomePage />}
+              path="/funnel"
+              element={<Navigate to="/funnel/homepage/christmas" replace />}
             />
 
-            {/* optional default funnel entry */}
             <Route
               path="/funnel/homepage"
               element={<Navigate to="/funnel/homepage/christmas" replace />}
             />
 
-            {/* funnel flow */}
             <Route
-              path="/funnel"
-              element={<Navigate to="/funnel/homepage/christmas" replace />}
+              path="/funnel/homepage/:occasion"
+              element={<FunnelHomePage />}
             />
+
             <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
             <Route path="/funnel/styleSelect" element={<FunnelStyleSelect />} />
             <Route path="/funnel/preview" element={<FunnelPreview />} />

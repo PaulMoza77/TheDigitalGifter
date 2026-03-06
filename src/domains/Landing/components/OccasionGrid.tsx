@@ -1,12 +1,14 @@
-// src/domains/Landing/components/OccasionGrid.tsx
+// FILE: src/domains/Landing/components/OccasionGrid.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
+
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type OccasionRow = {
   id?: string | null;
@@ -21,21 +23,21 @@ function normalizeOccasionSlug(slug: string) {
   return String(slug || "")
     .trim()
     .toLowerCase()
-    .replace(/-/g, "_");
+    .replace(/_/g, "-")
+    .replace(/\s+/g, "-");
 }
 
 function funnelHrefForSlug(slug: string) {
-  const normalized = normalizeOccasionSlug(slug);
-  return `/funnel/upload?occasion=${encodeURIComponent(normalized)}&slug=${encodeURIComponent(normalized)}`;
+  return `/funnel/homepage/${encodeURIComponent(normalizeOccasionSlug(slug))}`;
 }
 
 function templatesHrefForSlug(slug: string) {
-  const normalized = normalizeOccasionSlug(slug);
-  return `/templates?occasion=${encodeURIComponent(normalized)}`;
+  return `/templates?occasion=${encodeURIComponent(normalizeOccasionSlug(slug))}`;
 }
 
 function prettyLabelFromSlug(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
+
   if (s.includes("christmas")) return "Cozy snowy magic";
   if (s.includes("new") && s.includes("year")) return "Gold & fireworks";
   if (s.includes("thank")) return "Warm & cozy dinner";
@@ -50,30 +52,62 @@ function prettyLabelFromSlug(slug: string) {
   if (s.includes("mother")) return "Soft & floral";
   if (s.includes("father")) return "Bold & clean";
   if (s.includes("graduation")) return "Caps & confetti";
+
   return "New memories";
 }
 
 function fallbackDescription(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
-  if (s.includes("christmas")) return "Turn any photo into a warm, cinematic Christmas card.";
-  if (s.includes("new") && s.includes("year")) return "Sparkling countdown vibes with neon lights and confetti.";
-  if (s.includes("thank")) return "Autumn colors, candles and a grateful, family feel.";
-  if (s.includes("birthday")) return "Balloons, cake and bright birthday energy.";
-  if (s.includes("baby") && s.includes("reveal")) return "Gender reveal or baby news with dreamy pastel tones.";
-  if (s.includes("born")) return "Minimal, clean layouts that keep the baby in focus.";
-  if (s.includes("pregnancy")) return "Elegant silhouettes, warm light and calm tones.";
-  if (s.includes("wedding")) return "Luxury, editorial-style wedding announcement cards.";
-  if (s.includes("easter")) return "Fresh colors, flowers and soft daylight.";
-  if (s.includes("valentine")) return "Cinematic couples, roses and candlelight.";
-  if (s.includes("anniversary")) return "Elegant layouts to celebrate any milestone.";
-  if (s.includes("mother")) return "Delicate florals and warm light for mom.";
-  if (s.includes("father")) return "Minimal, modern layouts with strong contrast.";
-  if (s.includes("graduation")) return "Sharp, modern cards to celebrate the big day.";
+
+  if (s.includes("christmas")) {
+    return "Turn any photo into a warm, cinematic Christmas card.";
+  }
+  if (s.includes("new") && s.includes("year")) {
+    return "Sparkling countdown vibes with neon lights and confetti.";
+  }
+  if (s.includes("thank")) {
+    return "Autumn colors, candles and a grateful, family feel.";
+  }
+  if (s.includes("birthday")) {
+    return "Balloons, cake and bright birthday energy.";
+  }
+  if (s.includes("baby") && s.includes("reveal")) {
+    return "Gender reveal or baby news with dreamy pastel tones.";
+  }
+  if (s.includes("born")) {
+    return "Minimal, clean layouts that keep the baby in focus.";
+  }
+  if (s.includes("pregnancy")) {
+    return "Elegant silhouettes, warm light and calm tones.";
+  }
+  if (s.includes("wedding")) {
+    return "Luxury, editorial-style wedding announcement cards.";
+  }
+  if (s.includes("easter")) {
+    return "Fresh colors, flowers and soft daylight.";
+  }
+  if (s.includes("valentine")) {
+    return "Cinematic couples, roses and candlelight.";
+  }
+  if (s.includes("anniversary")) {
+    return "Elegant layouts to celebrate any milestone.";
+  }
+  if (s.includes("mother")) {
+    return "Delicate florals and warm light for mom.";
+  }
+  if (s.includes("father")) {
+    return "Minimal, modern layouts with strong contrast.";
+  }
+  if (s.includes("graduation")) {
+    return "Sharp, modern cards to celebrate the big day.";
+  }
+
   return "Create something beautiful in seconds.";
 }
 
 function fallbackGradientFrom(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
+
   if (s.includes("christmas")) return "from-blue-700/60";
   if (s.includes("new") && s.includes("year")) return "from-amber-700/60";
   if (s.includes("thank")) return "from-orange-700/60";
@@ -88,15 +122,17 @@ function fallbackGradientFrom(slug: string) {
   if (s.includes("mother")) return "from-pink-700/60";
   if (s.includes("father")) return "from-slate-700/60";
   if (s.includes("graduation")) return "from-teal-700/60";
+
   return "from-slate-700/60";
 }
 
 function fallbackGradientTo(_slug: string) {
-  return "to-slate-900/70";
+  return "to-slate-950/85";
 }
 
 function fallbackImage(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
+
   if (s.includes("christmas")) return "/images/occasions/christmas.jpg";
   if (s.includes("new") && s.includes("year")) return "/images/occasions/new-years-eve.jpg";
   if (s.includes("thank")) return "/images/occasions/thanksgiving.jpg";
@@ -111,6 +147,7 @@ function fallbackImage(slug: string) {
   if (s.includes("mother")) return "/images/occasions/mothers-day.jpg";
   if (s.includes("father")) return "/images/occasions/fathers-day.jpg";
   if (s.includes("graduation")) return "/images/occasions/graduation.jpg";
+
   return "/images/occasions/default.jpg";
 }
 
@@ -146,11 +183,14 @@ export default function OccasionGrid() {
   }, []);
 
   const occasions = useMemo(() => {
-    const src = rows ?? [];
-    return [...src].sort((a, b) => {
-      const ao = typeof a.sort_order === "number" ? a.sort_order : 999999;
-      const bo = typeof b.sort_order === "number" ? b.sort_order : 999999;
-      if (ao !== bo) return ao - bo;
+    const source = rows ?? [];
+
+    return [...source].sort((a, b) => {
+      const aOrder = typeof a.sort_order === "number" ? a.sort_order : 999999;
+      const bOrder = typeof b.sort_order === "number" ? b.sort_order : 999999;
+
+      if (aOrder !== bOrder) return aOrder - bOrder;
+
       return String(a.title || "").localeCompare(String(b.title || ""));
     });
   }, [rows]);
@@ -203,13 +243,15 @@ export default function OccasionGrid() {
 
           <p className="mx-auto max-w-2xl text-xl text-slate-400">
             From festive holidays to milestone celebrations, find the perfect
-            style for every special moment
+            style for every special moment.
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {occasions.map((occ, index) => {
             const slug = String(occ.slug || "").trim();
+            const key = String(occ.id || slug || index);
+
             const funnelHref = funnelHrefForSlug(slug);
             const templatesHref = templatesHrefForSlug(slug);
 
@@ -218,8 +260,6 @@ export default function OccasionGrid() {
             const image = fallbackImage(slug);
             const gradientFrom = fallbackGradientFrom(slug);
             const gradientTo = fallbackGradientTo(slug);
-
-            const key = String(occ.id || occ.slug);
 
             return (
               <motion.div
@@ -234,6 +274,13 @@ export default function OccasionGrid() {
                 <Card className="group relative overflow-hidden border-slate-800 bg-slate-900/50 transition-all duration-300 hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/20">
                   <CardContent className="relative isolate p-0">
                     <div className="relative h-64 overflow-hidden">
+                      <img
+                        src={image}
+                        alt={occ.title}
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+
                       <div
                         className={cn(
                           "absolute inset-0 z-10 bg-gradient-to-br opacity-80",
@@ -242,21 +289,14 @@ export default function OccasionGrid() {
                         )}
                       />
 
-                      <img
-                        src={image}
-                        alt={occ.title}
-                        loading="lazy"
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
+                      <div className="absolute inset-0 z-20 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-70" />
 
-                      <div className="absolute left-4 top-4 z-20 rounded-full border border-white/20 bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm">
+                      <div className="absolute left-4 top-4 z-30 rounded-full border border-white/20 bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm">
                         {label}
                       </div>
-
-                      <div className="absolute inset-0 z-20 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
                     </div>
 
-                    <div className="relative z-20 space-y-4 p-4">
+                    <div className="relative z-30 space-y-4 p-4">
                       <div>
                         <h3 className="mb-2 text-2xl font-bold text-white transition-colors group-hover:text-blue-400">
                           {occ.title}
@@ -268,21 +308,19 @@ export default function OccasionGrid() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        {/* See More = Funnel */}
                         <Link to={funnelHref} className="w-full">
                           <Button
+                            variant="ghost"
                             className={cn(
                               "w-full rounded-xl text-white group/btn",
                               "bg-gray-800 hover:bg-gray-700"
                             )}
-                            variant="ghost"
                           >
                             See More
                             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                           </Button>
                         </Link>
 
-                        {/* Explore Templates = Templates page */}
                         <Link to={templatesHref} className="w-full">
                           <Button className="w-full rounded-xl bg-blue-600 text-white group/btn hover:bg-blue-700">
                             Explore Templates
