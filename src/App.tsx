@@ -18,6 +18,10 @@ import { RefundPolicyPage } from "@/pages/website/RefundPolicyPage";
 import { UnsubscribePage } from "@/pages/website/UnsubscribePage";
 import AuthCallback from "@/pages/AuthCallback";
 
+// ================= WEBSITE UI =================
+import WebsiteHeader from "@/components/Header";
+import WebsiteFooter from "@/components/Footer";
+
 // ================= AUTH =================
 import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
 import { AdminRoute } from "@/components/AdminRoute";
@@ -42,7 +46,9 @@ import AdminEmailOffersPage from "@/pages/admin/email/Offers";
 import AdminEmailCampaignsPage from "@/pages/admin/email/Campaigns";
 
 // ================= ADMIN FUNNEL =================
-const AdminFunnelPage = lazy(() => import("@/pages/admin/funnel/AdminFunnelPage"));
+const AdminFunnelPage = lazy(
+  () => import("@/pages/admin/funnel/AdminFunnelPage")
+);
 
 // ================= WEBSITE PAGES =================
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
@@ -84,7 +90,7 @@ function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
 
   return null;
@@ -92,15 +98,19 @@ function ScrollToTop() {
 
 function WebsiteLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-black text-gray-900">
-      <Outlet />
+    <div className="min-h-screen flex flex-col bg-black text-white">
+      <WebsiteHeader />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <WebsiteFooter />
     </div>
   );
 }
 
 function FunnelLayout() {
   return (
-    <div className="min-h-screen w-full bg-black">
+    <div className="min-h-screen w-full bg-black text-white">
       <Outlet />
     </div>
   );
@@ -114,7 +124,8 @@ function AppInner() {
 
     if (url.searchParams.get("checkout") === "success") {
       url.searchParams.delete("checkout");
-      window.history.replaceState({}, "", url.pathname + url.search);
+      const next = `${url.pathname}${url.search}${url.hash}`;
+      window.history.replaceState({}, "", next);
     }
   }, []);
 
@@ -191,7 +202,10 @@ function AppInner() {
           {/* ================= CLIENT ACCOUNT ================= */}
           <Route element={<ProtectedClientRoute />}>
             <Route path="/account" element={<ClientLayout />}>
-              <Route index element={<Navigate to="/account/dashboard" replace />} />
+              <Route
+                index
+                element={<Navigate to="/account/dashboard" replace />}
+              />
               <Route path="dashboard" element={<AccountDashboard />} />
               <Route path="generator" element={<AccountGeneratorRedirect />} />
             </Route>
@@ -203,17 +217,14 @@ function AppInner() {
               path="/funnel"
               element={<Navigate to="/funnel/homepage/christmas" replace />}
             />
-
             <Route
               path="/funnel/homepage"
               element={<Navigate to="/funnel/homepage/christmas" replace />}
             />
-
             <Route
               path="/funnel/homepage/:occasion"
               element={<FunnelHomePage />}
             />
-
             <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
             <Route path="/funnel/styleSelect" element={<FunnelStyleSelect />} />
             <Route path="/funnel/preview" element={<FunnelPreview />} />
@@ -232,7 +243,6 @@ function AppInner() {
                 </AdminRoute>
               }
             />
-
             <Route
               path="/admin/funnel"
               element={
@@ -241,7 +251,6 @@ function AppInner() {
                 </AdminRoute>
               }
             />
-
             <Route
               path="/admin/templates"
               element={
@@ -250,7 +259,6 @@ function AppInner() {
                 </AdminRoute>
               }
             />
-
             <Route
               path="/admin/email"
               element={
@@ -267,7 +275,6 @@ function AppInner() {
               <Route path="offers" element={<AdminEmailOffersPage />} />
               <Route path="campaigns" element={<AdminEmailCampaignsPage />} />
             </Route>
-
             <Route
               path="/admin/customers"
               element={
@@ -276,7 +283,6 @@ function AppInner() {
                 </AdminRoute>
               }
             />
-
             <Route
               path="/admin/orders"
               element={
@@ -285,7 +291,6 @@ function AppInner() {
                 </AdminRoute>
               }
             />
-
             <Route
               path="/admin/credits"
               element={

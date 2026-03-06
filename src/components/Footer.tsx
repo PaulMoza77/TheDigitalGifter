@@ -1,119 +1,124 @@
-import { Heart } from "lucide-react";
+// FILE: src/components/Footer.tsx
 import { Link } from "react-router-dom";
+import { Logo } from "./ui/logo";
 
 export default function Footer() {
   return (
-    <footer className=" border-t border-white/10 bg-gradient-to-b from-[#060a12] to-[#0a0e18]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          {/* Logo & About Section */}
+    <footer className="border-t border-white/10 bg-gradient-to-b from-[#060a12] to-[#0a0e18]">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="md:col-span-1">
-            <Link
-              to="/"
-              className="flex items-center gap-3 font-extrabold text-[1.1rem] cursor-pointer select-none mb-4"
-            >
-              <div className="w-10 h-10 rounded-full bg-[radial-gradient(circle_at_35%_35%,#fff,#ffe39d_35%,#ffb85b_70%)] shadow-[0_0_12px_rgba(255,195,90,.8)] grid place-items-center text-black text-base border border-white/60 flex-shrink-0">
-                ★
-              </div>
-              <span className="text-[#fff8e7] drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] hidden sm:block">
-                TheDigitalGifter
-              </span>
+            <Link to="/" className="mb-4 inline-flex items-center">
+              <Logo />
             </Link>
-            <p className="text-[#c1c8d8] text-sm leading-relaxed mt-3">
-              Create stunning AI-powered holiday cards with personalized magic.
-              Spreading Christmas joy with cutting-edge technology.
+
+            <p className="mt-3 text-sm leading-relaxed text-[#c1c8d8]">
+              Create stunning AI-powered cards and share-ready visuals for holidays,
+              celebrations and meaningful moments.
             </p>
           </div>
 
-          {/* Quick Links */}
           <div className="md:col-span-1">
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
               Quick Links
             </h3>
+
             <nav className="space-y-3">
               <Link
                 to="/"
-                className="text-[#c1c8d8] hover:text-[#ffd976] transition-colors text-sm flex items-center gap-2"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >
-                <span className="w-1 h-1 bg-[#ffd976] rounded-full"></span>
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Home
               </Link>
+
               <Link
                 to="/generator"
-                className="text-[#c1c8d8] hover:text-[#ffd976] transition-colors text-sm flex items-center gap-2"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >
-                <span className="w-1 h-1 bg-[#ffd976] rounded-full"></span>
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Generator
               </Link>
+
               <Link
                 to="/templates"
-                className="text-[#c1c8d8] hover:text-[#ffd976] transition-colors text-sm flex items-center gap-2"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >
-                <span className="w-1 h-1 bg-[#ffd976] rounded-full"></span>
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Templates
               </Link>
             </nav>
           </div>
 
-          {/* Legal Links */}
           <div className="md:col-span-1">
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
               Legal
             </h3>
+
             <nav className="space-y-3">
               <Link
                 to="/privacy"
-                className="text-[#c1c8d8] hover:text-[#ffd976] transition-colors text-sm flex items-center gap-2"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >
-                <span className="w-1 h-1 bg-[#ffd976] rounded-full"></span>
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Privacy Policy
               </Link>
+
               <Link
                 to="/terms"
-                className="text-[#c1c8d8] hover:text-[#ffd976] transition-colors text-sm flex items-center gap-2"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >
-                <span className="w-1 h-1 bg-[#ffd976] rounded-full"></span>
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Terms & Conditions
               </Link>
+
               <Link
                 to="/refunds"
-                className="text-[#c1c8d8] hover:text-[#ffd976] transition-colors text-sm flex items-center gap-2"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >
-                <span className="w-1 h-1 bg-[#ffd976] rounded-full"></span>
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Refund Policy
+              </Link>
+
+              <Link
+                to="/unsubscribe"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
+              >
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
+                Unsubscribe
               </Link>
             </nav>
           </div>
 
-          {/* Contact Section */}
           <div className="md:col-span-1">
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
               Contact & Support
             </h3>
+
             <div className="space-y-3">
               <a
                 href="mailto:support@thedigitalgifter.com"
-                className="text-[#c1c8d8] hover:text-[#ffd976] transition-colors text-sm flex items-center gap-2"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >
-                <span className="w-1 h-1 bg-[#ffd976] rounded-full"></span>
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 support@thedigitalgifter.com
               </a>
-              <div className="text-[#c1c8d8] text-sm flex items-start gap-2">
-                <span className="w-1 h-1 bg-[#ffd976] rounded-full mt-1.5 flex-shrink-0"></span>
-                <span>Available 24/7 for your assistance</span>
+
+              <div className="flex items-start gap-2 text-sm text-[#c1c8d8]">
+                <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-[#ffd976]" />
+                <span>Available 24/7 for your assistance.</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-white/10 my-8"></div>
+        <div className="my-8 border-t border-white/10" />
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <p className="text-[#8892a8] text-xs">© 2024 TheDigitalGifter. All rights reserved.</p>
+        <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+          <p className="text-xs text-[#8892a8]">
+            © 2026 TheDigitalGifter. All rights reserved.
+          </p>
         </div>
-
       </div>
     </footer>
   );
