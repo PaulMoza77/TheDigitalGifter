@@ -1,4 +1,3 @@
-// FILE: src/domains/Landing/components/OccasionGrid.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -17,6 +16,15 @@ type OccasionRow = {
   active?: boolean | null;
   sort_order?: number | null;
   updated_at?: string | null;
+
+  image_url?: string | null;
+  imageurl?: string | null;
+  preview_url?: string | null;
+  previewurl?: string | null;
+  cover_url?: string | null;
+  coverurl?: string | null;
+  thumbnail_url?: string | null;
+  thumbnailurl?: string | null;
 };
 
 function normalizeOccasionSlug(slug: string) {
@@ -123,6 +131,20 @@ function fallbackImage(slug: string) {
   return "/images/occasions/default.jpg";
 }
 
+function getOccasionImage(row: OccasionRow) {
+  return (
+    row.image_url ||
+    row.imageurl ||
+    row.preview_url ||
+    row.previewurl ||
+    row.cover_url ||
+    row.coverurl ||
+    row.thumbnail_url ||
+    row.thumbnailurl ||
+    fallbackImage(row.slug)
+  );
+}
+
 export default function OccasionGrid() {
   const navigate = useNavigate();
   const [rows, setRows] = useState<OccasionRow[] | null>(null);
@@ -133,7 +155,24 @@ export default function OccasionGrid() {
     async function load() {
       const { data, error } = await supabase
         .from("occasions")
-        .select("id, slug, title, active, sort_order, updated_at")
+        .select(
+          `
+            id,
+            slug,
+            title,
+            active,
+            sort_order,
+            updated_at,
+            image_url,
+            imageurl,
+            preview_url,
+            previewurl,
+            cover_url,
+            coverurl,
+            thumbnail_url,
+            thumbnailurl
+          `
+        )
         .eq("active", true)
         .order("sort_order", { ascending: true });
 
@@ -230,7 +269,7 @@ export default function OccasionGrid() {
 
             const label = prettyLabelFromSlug(slug);
             const description = fallbackDescription(slug);
-            const image = fallbackImage(slug);
+            const image = getOccasionImage(occ);
             const gradientFrom = fallbackGradientFrom(slug);
             const gradientTo = fallbackGradientTo(slug);
 
