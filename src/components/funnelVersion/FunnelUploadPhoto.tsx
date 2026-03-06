@@ -1,20 +1,40 @@
 // src/components/funnelVersion/FunnelUploadPhoto.tsx
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+function safeString(v: unknown) {
+  return String(v ?? "").trim();
+}
+
+function normalizeOccasion(raw: string) {
+  const x = safeString(raw).toLowerCase();
+
+  if (!x) return "newborn";
+  if (x === "new_born" || x === "new-born") return "newborn";
+  if (x === "valentines-day") return "valentines_day";
+  if (x === "mothers-day") return "mothers_day";
+  if (x === "fathers-day") return "fathers_day";
+  if (x === "new-years-eve") return "new_years_eve";
+  if (x === "baby-reveal") return "baby_reveal";
+
+  return x.replace(/-/g, "_");
+}
+
 function formatBytes(bytes: number) {
   const units = ["B", "KB", "MB", "GB"];
   let i = 0;
   let value = bytes;
+
   while (value >= 1024 && i < units.length - 1) {
     value /= 1024;
     i++;
   }
+
   return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
@@ -22,12 +42,17 @@ function slugifyFilename(name: string) {
   const parts = name.split(".");
   const ext = parts.length > 1 ? parts.pop() : "";
   const base = parts.join(".");
+
   const safe = base
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 60);
-  return { safeBase: safe || "photo", ext: (ext || "jpg").toLowerCase() };
+
+  return {
+    safeBase: safe || "photo",
+    ext: (ext || "jpg").toLowerCase(),
+  };
 }
 
 async function fileToArrayBuffer(file: File): Promise<ArrayBuffer> {
@@ -36,20 +61,57 @@ async function fileToArrayBuffer(file: File): Promise<ArrayBuffer> {
 
 type UploadedFile = {
   file: File;
-  localUrl: string; // object URL for local preview
+  localUrl: string;
 };
+
+function headerForOccasion(occasion: string) {
+  switch (occasion) {
+    case "birthday":
+      return {
+        title: "Upload the photo for your birthday gift",
+        subtitle: "Choose a beautiful photo and continue to pick the perfect birthday style.",
+      };
+    case "wedding":
+      return {
+        title: "Upload the photo for your wedding memory",
+        subtitle: "Start with the photo you love most, then choose the style that fits the moment.",
+      };
+    case "newborn":
+      return {
+        title: "Start with a photo you love",
+        subtitle: "Upload a special moment. We’ll turn it into a gift-worthy image in minutes.",
+      };
+    default:
+      return {
+        title: "Start with a photo you love",
+        subtitle: "Upload a special moment. We’ll turn it into a gift-worthy image in minutes.",
+      };
+  }
+}
 
 export default function FunnelUploadPhoto() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const occasion = useMemo(() => {
+    const fromQs = safeString(searchParams.get("occasion"));
+    const fromSlug = safeString(searchParams.get("slug"));
+    return normalizeOccasion(fromQs || fromSlug || "newborn");
+  }, [searchParams]);
+
+  const slug = useMemo(() => {
+    const fromSlug = safeString(searchParams.get("slug"));
+    return normalizeOccasion(fromSlug || occasion);
+  }, [searchParams, occasion]);
+
+  const header = useMemo(() => headerForOccasion(occasion), [occasion]);
+  const stepLabel = useMemo(() => "1 of 3", []);
 
   const [dragActive, setDragActive] = useState(false);
   const [uploaded, setUploaded] = useState<UploadedFile | null>(null);
-
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const stepLabel = useMemo(() => "1 of 3", []);
 
   const openFilePicker = useCallback(() => {
     fileInputRef.current?.click();
@@ -59,11 +121,12 @@ export default function FunnelUploadPhoto() {
     setErrorMsg(null);
 
     if (!file.type.startsWith("image/")) {
-      setErrorMsg("Please upload an image file (JPG/PNG/WebP).");
+      setErrorMsg("Please upload an image file (JPG, PNG or WebP).");
       return;
     }
 
     const localUrl = URL.createObjectURL(file);
+
     setUploaded((prev) => {
       if (prev?.localUrl) URL.revokeObjectURL(prev.localUrl);
       return { file, localUrl };
@@ -75,7 +138,7 @@ export default function FunnelUploadPhoto() {
       const file = e.target.files?.[0];
       if (!file) return;
       acceptFile(file);
-      e.target.value = ""; // allow re-upload same file
+      e.target.value = "";
     },
     [acceptFile]
   );
@@ -85,6 +148,7 @@ export default function FunnelUploadPhoto() {
       e.preventDefault();
       e.stopPropagation();
       setDragActive(false);
+
       const file = e.dataTransfer.files?.[0];
       if (file) acceptFile(file);
     },
@@ -126,7 +190,6 @@ export default function FunnelUploadPhoto() {
     setErrorMsg(null);
 
     try {
-      // ✅ keep consistent across funnel
       const bucket = "templates";
       const folder = "previews";
 
@@ -144,21 +207,21 @@ export default function FunnelUploadPhoto() {
 
       if (error) throw new Error(error.message || "Upload failed");
 
-      // ✅ store for the whole funnel (Preview/Email/Payment/Result)
       try {
         window.localStorage.setItem("tdg_funnel_photo_path", path);
         window.localStorage.setItem("tdg_funnel_bucket", bucket);
-        window.localStorage.setItem("tdg_funnel_slug", "newborn");
-        window.localStorage.setItem("tdg_funnel_photo", path); // fallback
+        window.localStorage.setItem("tdg_funnel_slug", slug);
+        window.localStorage.setItem("tdg_funnel_occasion", occasion);
+        window.localStorage.setItem("tdg_funnel_photo", path);
       } catch {
         // ignore
       }
 
-      // ✅ go to style select
       const qs = new URLSearchParams({
         bucket,
         photo: path,
-        slug: "newborn",
+        slug,
+        occasion,
       });
 
       navigate(`/funnel/styleSelect?${qs.toString()}`);
@@ -167,17 +230,17 @@ export default function FunnelUploadPhoto() {
     } finally {
       setIsUploading(false);
     }
-  }, [navigate, uploaded]);
+  }, [uploaded, occasion, slug, navigate]);
 
   return (
     <div className="min-h-screen w-full bg-[#F3EEE6] text-[#111827]">
-      {/* Centered brand header (AliveMoment-like) */}
+      {/* Header */}
       <div className="pt-10">
         <div className="mx-auto max-w-5xl px-6">
           <div className="flex items-center justify-between">
             <button
               type="button"
-              className="text-sm text-black/60 hover:text-black/80 transition"
+              className="text-sm text-black/60 transition hover:text-black/80"
               onClick={() => navigate(-1)}
             >
               Back
@@ -200,13 +263,14 @@ export default function FunnelUploadPhoto() {
       <main className="mx-auto w-full max-w-5xl px-6 pb-20 pt-10">
         <div className="mx-auto max-w-2xl text-center">
           <h1
-            className="text-[30px] leading-tight sm:text-[44px] sm:leading-tight font-semibold"
+            className="text-[30px] font-semibold leading-tight sm:text-[44px] sm:leading-tight"
             style={{ fontFamily: "ui-serif, Georgia, serif", color: "#0F3D2E" }}
           >
-            Start with a photo you love
+            {header.title}
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-black/65">
-            Upload a special moment. We’ll turn it into a gift-worthy image in minutes.
+
+          <p className="mt-3 text-sm text-black/65 sm:text-base">
+            {header.subtitle}
           </p>
         </div>
 
@@ -215,9 +279,8 @@ export default function FunnelUploadPhoto() {
             <div className="p-6 sm:p-8">
               <div
                 className={cn(
-                  "relative rounded-[18px] border border-black/10 bg-white/40 p-6 sm:p-8 transition",
-                  "shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)]",
-                  dragActive ? "ring-2 ring-[#0F3D2E]/25 bg-[#0F3D2E]/5" : ""
+                  "relative rounded-[18px] border border-black/10 bg-white/40 p-6 transition shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)] sm:p-8",
+                  dragActive && "bg-[#0F3D2E]/5 ring-2 ring-[#0F3D2E]/25"
                 )}
                 onDrop={onDrop}
                 onDragOver={onDragOver}
@@ -262,7 +325,7 @@ export default function FunnelUploadPhoto() {
                     </div>
 
                     <div className="mt-5 text-center">
-                      <div className="text-base sm:text-lg font-semibold text-black/85">
+                      <div className="text-base font-semibold text-black/85 sm:text-lg">
                         Drag &amp; drop your photo here
                       </div>
                       <div className="mt-1 text-sm text-black/55">or click to browse</div>
@@ -275,7 +338,7 @@ export default function FunnelUploadPhoto() {
                           e.stopPropagation();
                           openFilePicker();
                         }}
-                        className="rounded-full bg-[#0F3D2E] px-10 py-3 text-sm font-semibold text-white hover:bg-[#0C3326] transition shadow-[0_14px_40px_-26px_rgba(15,61,46,0.9)]"
+                        className="rounded-full bg-[#0F3D2E] px-10 py-3 text-sm font-semibold text-white shadow-[0_14px_40px_-26px_rgba(15,61,46,0.9)] transition hover:bg-[#0C3326]"
                       >
                         Browse photos
                       </button>
@@ -313,7 +376,7 @@ export default function FunnelUploadPhoto() {
                           removeUpload();
                         }}
                         disabled={isUploading}
-                        className="rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm font-semibold text-black/70 hover:bg-white transition disabled:opacity-60"
+                        className="rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm font-semibold text-black/70 transition hover:bg-white disabled:opacity-60"
                       >
                         Remove
                       </button>
@@ -341,7 +404,7 @@ export default function FunnelUploadPhoto() {
                           void uploadToSupabase();
                         }}
                         disabled={isUploading}
-                        className="w-full max-w-[420px] rounded-full bg-[#0F3D2E] px-10 py-3 text-sm font-semibold text-white hover:bg-[#0C3326] transition shadow-[0_14px_40px_-26px_rgba(15,61,46,0.9)] disabled:opacity-60"
+                        className="w-full max-w-[420px] rounded-full bg-[#0F3D2E] px-10 py-3 text-sm font-semibold text-white shadow-[0_14px_40px_-26px_rgba(15,61,46,0.9)] transition hover:bg-[#0C3326] disabled:opacity-60"
                       >
                         {isUploading ? "Uploading..." : "Continue"}
                       </button>
@@ -371,6 +434,7 @@ export default function FunnelUploadPhoto() {
                   >
                     Upload your photo now
                   </button>
+
                   <div className="mt-2 text-xs text-black/55">
                     Your photo stays private. You control what you share.
                   </div>
