@@ -12,7 +12,6 @@ import {
 } from "@/data";
 
 import {
-  useGenerateUploadUrlMutation,
   useCreateJobMutation,
   useCreateVideoJobMutation,
 } from "@/data";
@@ -30,10 +29,8 @@ import { Info } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useCreditsFunnel } from "@/contexts/CreditsFunnelContext";
 import { useBootstrapUser } from "@/hooks/useBootstrapUser";
-
 import { uploadFileToStorage } from "@/lib/uploadFileToStorage";
 
-// Snow Animation Background Component
 function SnowBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -54,6 +51,8 @@ function SnowBackground() {
       s: Math.random() * 0.5 + 0.2,
     }));
 
+    let raf = 0;
+
     const draw = () => {
       const gradient = ctx.createLinearGradient(0, 0, 0, h);
       gradient.addColorStop(0, "#060a12");
@@ -71,7 +70,7 @@ function SnowBackground() {
         ctx.fill();
       });
 
-      requestAnimationFrame(draw);
+      raf = requestAnimationFrame(draw);
     };
 
     draw();
@@ -82,12 +81,14 @@ function SnowBackground() {
     };
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
-  return (
-    <canvas ref={canvasRef} className="fixed inset-0 -z-10 pointer-events-none" />
-  );
+  return <canvas ref={canvasRef} className="fixed inset-0 -z-10 pointer-events-none" />;
 }
 
 type JobRow = {
@@ -98,16 +99,69 @@ type JobRow = {
   error_message: string | null;
 };
 
+type AnyTemplate = TemplateSummary & {
+  _id?: string;
+  previewurl?: string | null;
+  preview_url?: string | null;
+  thumbnailurl?: string | null;
+  thumbnail_url?: string | null;
+  image?: string | null;
+  imageUrl?: string | null;
+  mediaUrl?: string | null;
+  creditCost?: number;
+  creditcost?: number;
+};
+
+function normalizeTemplate(t: AnyTemplate): AnyTemplate {
+  const id = (t.id ?? t._id ?? "") as string;
+
+  const previewUrl =
+    t.previewUrl ||
+    t.thumbnailUrl ||
+    t.preview_url ||
+    t.previewurl ||
+    t.thumbnail_url ||
+    t.thumbnailurl ||
+    t.imageUrl ||
+    t.image ||
+    t.mediaUrl ||
+    "";
+
+  const thumbnailUrl =
+    t.thumbnailUrl ||
+    t.thumbnail_url ||
+    t.thumbnailurl ||
+    t.preview_url ||
+    t.previewurl ||
+    t.previewUrl ||
+    "";
+
+  const creditCost =
+    typeof t.creditCost === "number"
+      ? t.creditCost
+      : typeof t.creditcost === "number"
+        ? t.creditcost
+        : 0;
+
+  return {
+    ...(t as TemplateSummary),
+    ...(t as any),
+    id,
+    previewUrl,
+    thumbnailUrl,
+    creditCost,
+    type: String(t.type ?? "image").toLowerCase(),
+  };
+}
+
 export default function GeneratorPage() {
-  const user = useBootstrapUser(); // { id, email } | null
+  const user = useBootstrapUser();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeCategory, setActiveCategory] = useState("All");
 
-  // URL params
   const selectedTemplateId = searchParams.get("template") || null;
-  const selectedOccasion =
-    searchParams.get("occasion")?.toLowerCase().trim() || null;
+  const selectedOccasion = searchParams.get("occasion")?.toLowerCase().trim() || null;
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -115,8 +169,7 @@ export default function GeneratorPage() {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const [selectedAspectRatio, setSelectedAspectRatio] =
-    useState("match_input_image");
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState("match_input_image");
 
   const [modal, setModal] = useState<{ open: boolean; src: string; title?: string }>({
     open: false,
@@ -125,14 +178,15 @@ export default function GeneratorPage() {
   });
 
   const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">("all");
-
-  // Video options
   const [generateAudio, setGenerateAudio] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
 
   const { data: templates = [] } = useTemplatesQuery();
-  const templatesList = templates as TemplateSummary[];
+  const templatesList = useMemo(
+    () => (templates as AnyTemplate[]).map((t) => normalizeTemplate(t)),
+    [templates]
+  );
 
   const { data: creditsData = 0 } = useUserCreditsQuery();
   const userCredits: number = (creditsData ?? 0) as number;
@@ -140,11 +194,10 @@ export default function GeneratorPage() {
   const { data: jobsRaw = [] } = useJobsQuery();
   const jobs = (jobsRaw as any[]).map((j) => j) as JobRow[];
 
-  const { mutateAsync: requestUploadUrl } = useGenerateUploadUrlMutation();
-const { mutateAsync: triggerCreateJob } = useCreateJobMutation();
-const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
+  const { mutateAsync: triggerCreateJob } = useCreateJobMutation();
+  const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
 
-  const categories = ["All", "Classic", "Cozy", "Snowy", "Romantic"];
+  const categories = ["All", "Classic", "Cozy", "Snowy", "Romantic", "Family", "General", "Birthday"];
 
   const aspectRatioOptions = [
     { label: "Match input", value: "match_input_image" },
@@ -174,75 +227,84 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
 
     const activeNormalized = (activeCategory || "").toString().trim().toLowerCase();
     if (activeNormalized && activeNormalized !== "all") {
-      list = list.filter(
-        (t) => (t.category || "").toString().trim().toLowerCase() === activeNormalized
-      );
+      list = list.filter((t) => {
+        const category = (t.category || "").toString().trim().toLowerCase();
+        const occasion = (t.occasion || "").toString().trim().toLowerCase();
+        return category === activeNormalized || occasion === activeNormalized;
+      });
     }
 
     if (typeFilter !== "all") {
-      list = list.filter((t) => (t as any).type === typeFilter);
+      list = list.filter((t) => String(t.type || "").toLowerCase() === typeFilter);
     }
 
     return list;
   }, [activeCategory, templatesList, typeFilter, selectedOccasion]);
 
   const templateMap = useMemo(() => {
-    const lookup = new Map<string, TemplateSummary>();
-    templatesList.forEach((t: any) => {
-      // accept both id / _id (in case you still have old data)
+    const lookup = new Map<string, AnyTemplate>();
+    templatesList.forEach((t) => {
       const id = (t.id ?? t._id) as string;
-      lookup.set(id, { ...(t as any), id } as any);
+      lookup.set(id, normalizeTemplate(t));
     });
     return lookup;
   }, [templatesList]);
 
-  const selectedTemplateObj = selectedTemplateId ? templateMap.get(selectedTemplateId) ?? null : null;
+  const selectedTemplateObj = selectedTemplateId
+    ? templateMap.get(selectedTemplateId) ?? null
+    : null;
 
   const currentJob = useMemo(() => {
     if (!currentJobId) return null;
     return jobs.find((j) => j.id === currentJobId) ?? null;
   }, [jobs, currentJobId]);
 
-  // Preview URLs for local files
   useEffect(() => {
     const urls = uploadedFiles.map((f) => URL.createObjectURL(f));
     setPreviewUrls(urls);
-    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u));
+    };
   }, [uploadedFiles]);
 
-  // Monitor job status changes
   useEffect(() => {
     if (!currentJob) return;
 
     if (currentJob.status === "done" && currentJob.result_url) {
       setPreviewAfter(currentJob.result_url);
       setIsGenerating(false);
-      toast.success(currentJob.type === "video" ? "🎬 Your video is ready!" : "🎄 Your Christmas card is ready!");
+      toast.success(
+        currentJob.type === "video"
+          ? "🎬 Your video is ready!"
+          : "🎄 Your card is ready!"
+      );
     } else if (currentJob.status === "error") {
       setIsGenerating(false);
       toast.error(currentJob.error_message || "Failed to generate. Please try again.");
-    } else if (currentJob.status === "processing") {
-      toast.info(currentJob.type === "video" ? "🎥 AI is creating your video..." : "🎨 AI is creating your Christmas card...");
     }
   }, [currentJob]);
 
   const handleTemplateSelect = useCallback(
-    (template: any) => {
+    (template: AnyTemplate) => {
       const id = (template.id ?? template._id) as string;
 
       setSearchParams(
         (prev) => {
-          if (prev.get("template") === id) {
-            prev.delete("template");
+          const next = new URLSearchParams(prev);
+
+          if (next.get("template") === id) {
+            next.delete("template");
             toast.success(`Deselected: ${template.title}`);
           } else {
-            prev.set("template", id);
-            if (template.occasion && !prev.get("occasion")) {
-              prev.set("occasion", String(template.occasion).toLowerCase().trim());
+            next.set("template", id);
+            if (template.occasion && !next.get("occasion")) {
+              next.set("occasion", String(template.occasion).toLowerCase().trim());
             }
             toast.success(`Selected: ${template.title}`);
           }
-          return prev;
+
+          return next;
         },
         { replace: true }
       );
@@ -252,23 +314,23 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    if (files.length > 0) {
-      const valid = files.filter((f) => {
-        if (f.size > 10 * 1024 * 1024) {
-          toast.error(`${f.name} is too large. Maximum 10MB.`);
-          return false;
-        }
-        if (!f.type.startsWith("image/")) {
-          toast.error(`${f.name} is not an image.`);
-          return false;
-        }
-        return true;
-      });
+    if (files.length === 0) return;
 
-      if (valid.length > 0) {
-        setUploadedFiles((prev) => [...prev, ...valid]);
-        toast.success(`${valid.length} photo(s) uploaded!`);
+    const valid = files.filter((f) => {
+      if (f.size > 10 * 1024 * 1024) {
+        toast.error(`${f.name} is too large. Maximum 10MB.`);
+        return false;
       }
+      if (!f.type.startsWith("image/")) {
+        toast.error(`${f.name} is not an image.`);
+        return false;
+      }
+      return true;
+    });
+
+    if (valid.length > 0) {
+      setUploadedFiles((prev) => [...prev, ...valid]);
+      toast.success(`${valid.length} photo(s) uploaded!`);
     }
 
     event.target.value = "";
@@ -276,7 +338,10 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
 
   const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const files = Array.from(event.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+
+    const files = Array.from(event.dataTransfer.files).filter((f) =>
+      f.type.startsWith("image/")
+    );
 
     const valid = files.filter((f) => {
       if (f.size > 10 * 1024 * 1024) {
@@ -297,12 +362,15 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
   }, []);
 
   const handleDownload = useCallback(async (url: string, filename: string) => {
-    if (!url) return toast.error("No file to download");
+    if (!url) {
+      toast.error("No file to download");
+      return;
+    }
 
     try {
-      toast.info("Preparing download...");
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`);
+
       const blob = await res.blob();
       const blobUrl = window.URL.createObjectURL(blob);
 
@@ -317,11 +385,8 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(blobUrl);
       }, 100);
-
-      toast.success("Download started!");
     } catch (err) {
       console.error("Download failed:", err);
-      toast.error("Direct download failed. Opening in new tab...");
       window.open(url, "_blank");
     }
   }, []);
@@ -333,6 +398,7 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
       openFunnel({ mode: "not_logged_in" });
       return;
     }
+
     if (!selectedTemplateId) {
       toast.error("Please select a template.");
       return;
@@ -344,36 +410,41 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
       return;
     }
 
-    if ((userCredits ?? 0) < (template as any).creditCost) {
+    const requiredCredits = Number((template as any).creditCost ?? 0);
+
+    if ((userCredits ?? 0) < requiredCredits) {
       const hasGeneratedBefore = jobs.length > 0;
+
       if (!hasGeneratedBefore && (userCredits ?? 0) === 0) {
         openFunnel({ mode: "first_generation" });
       } else {
         openFunnel({
           mode: "insufficient_credits",
-          required: (template as any).creditCost,
+          required: requiredCredits,
           available: userCredits ?? 0,
         });
       }
       return;
     }
 
-    const previewSection = document.getElementById("preview-section");
-    previewSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("preview-section")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
 
     setIsGenerating(true);
     setCurrentJobId(null);
     setPreviewAfter(null);
 
     try {
-      const isVideo = (selectedTemplateObj as any)?.type === "video";
+      const isVideo = String(selectedTemplateObj?.type || "image").toLowerCase() === "video";
+
       if (isVideo && uploadedFiles.length > 3) {
         toast.error("You can upload up to 3 photos for video generation.");
         setIsGenerating(false);
         return;
       }
 
-      // ✅ Upload files to Supabase Storage -> get public URLs
       const inputUrls = await Promise.all(
         uploadedFiles.map(async (file) => {
           const { publicUrl } = await uploadFileToStorage(file, {
@@ -382,6 +453,7 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
             upsert: false,
             makePublicUrl: true,
           });
+
           return publicUrl;
         })
       );
@@ -390,11 +462,13 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         if (customInstructions && customInstructions.length > 2000) {
           throw new Error("User instructions must be <= 2000 characters");
         }
+
         if (negativePrompt && negativePrompt.length > 500) {
           throw new Error("Negative prompt must be <= 500 characters");
         }
 
         let finalUserInstructions = customInstructions.trim();
+
         if (selectedLanguage && selectedLanguage !== "English") {
           const languageInstruction = `The dialogue and any spoken words should be in ${selectedLanguage}.`;
           finalUserInstructions = finalUserInstructions
@@ -403,7 +477,7 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         }
 
         const res: any = await triggerCreateVideoJob({
-          templateId: (template as any).id,
+          templateId: template.id,
           inputUrls,
           userInstructions: finalUserInstructions || undefined,
           duration: 8,
@@ -415,11 +489,11 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
 
         const jobId = String(res?.jobId ?? res?.id ?? res);
         setCurrentJobId(jobId);
-        toast.success("Video generation started! This may take 5-10 minutes.");
+        toast.success("Video generation started!");
       } else {
         const res: any = await triggerCreateJob({
           type: "image",
-          templateId: (template as any).id,
+          templateId: template.id,
           inputUrls,
           aspectRatio: selectedAspectRatio,
           userInstructions: customInstructions.trim() || undefined,
@@ -427,7 +501,7 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
 
         const jobId = String(res?.jobId ?? res?.id ?? res);
         setCurrentJobId(jobId);
-        toast.success("Generation started! This may take 30-60 seconds.");
+        toast.success("Generation started!");
       }
     } catch (error: any) {
       setIsGenerating(false);
@@ -455,7 +529,6 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
     <div className="relative min-h-screen text-[#f6f8ff] overflow-x-hidden">
       <SnowBackground />
 
-      {/* Upload area */}
       <section
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
@@ -487,11 +560,15 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         </h2>
 
         <p className="text-[#c1c8d8]">
-          {uploadedFiles.length > 0 ? "Click to add more photos" : "or click to upload your reference photos"}
+          {uploadedFiles.length > 0
+            ? "Click to add more photos"
+            : "or click to upload your reference photos"}
         </p>
 
         <p className="mt-4 text-sm text-[#c1c8d8]">
-          {uploadedFiles.length > 0 && !selectedTemplateId ? "Now select your desired template below ⬇️" : ""}
+          {uploadedFiles.length > 0 && !selectedTemplateId
+            ? "Now select your desired template below ⬇️"
+            : ""}
         </p>
       </section>
 
@@ -503,7 +580,6 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         />
       )}
 
-      {/* Uploaded preview */}
       {uploadedFiles.length > 0 && (
         <div className="mx-auto my-6 max-w-4xl px-4">
           <div className="flex flex-wrap gap-3 justify-center">
@@ -530,7 +606,6 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         </div>
       )}
 
-      {/* Filters */}
       <div className="flex flex-row items-center justify-between gap-4 mb-6 px-4 max-w-5xl mx-auto">
         <div className="w-full max-w-[320px]">
           <Select value={activeCategory} onValueChange={setActiveCategory}>
@@ -548,7 +623,7 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         </div>
 
         <div className="w-full max-w-[200px]">
-          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | "image" | "video")}>
             <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
@@ -567,15 +642,16 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         </div>
       </div>
 
-      {/* Templates */}
       <div className="mx-auto grid max-w-5xl grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 px-4 pb-8">
-        {filteredTemplates.map((t: any) => {
-          const id = (t.id ?? t._id) as string;
+        {filteredTemplates.map((t) => {
+          const normalized = normalizeTemplate(t);
+          const id = normalized.id as string;
           const isSelected = selectedTemplateId === id;
+
           return (
             <TemplateCard
               key={id}
-              template={{ ...(t as any), id }}
+              template={normalized as TemplateSummary}
               isSelected={isSelected}
               onSelect={handleTemplateSelect}
               onOpenModal={(src, title) => setModal({ open: true, src, title })}
@@ -584,7 +660,6 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         })}
       </div>
 
-      {/* Before/After */}
       <div
         id="preview-section"
         className="mx-auto mt-4 w-[92%] max-w-5xl grid grid-cols-2 gap-6 text-center font-bold text-[#c1c8d8]"
@@ -596,9 +671,9 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
       <div
         className={cn(
           "mx-auto mt-2 w-[92%] max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 pb-32",
-          selectedTemplateObj && (selectedTemplateObj as any).type === "video"
+          selectedTemplateObj && selectedTemplateObj.type === "video"
             ? "pb-72"
-            : (selectedTemplateObj as any)?.type === "image"
+            : selectedTemplateObj?.type === "image"
               ? "pb-64"
               : ""
         )}
@@ -607,7 +682,12 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
           {previewUrls.length > 0 ? (
             <div className="flex flex-wrap gap-2 justify-center items-center">
               {previewUrls.map((url, i) => (
-                <img key={i} src={url} alt={`Input ${i + 1}`} className="max-w-full max-h-[240px] object-contain rounded-lg" />
+                <img
+                  key={i}
+                  src={url}
+                  alt={`Input ${i + 1}`}
+                  className="max-w-full max-h-[240px] object-contain rounded-lg"
+                />
               ))}
             </div>
           ) : (
@@ -624,9 +704,19 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
           ) : previewAfter ? (
             <>
               {currentJob?.type === "video" ? (
-                <video src={previewAfter} controls className="max-w-full max-h-full object-contain rounded-lg" autoPlay loop />
+                <video
+                  src={previewAfter}
+                  controls
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                  autoPlay
+                  loop
+                />
               ) : (
-                <img src={previewAfter} alt="After" className="max-w-full max-h-full object-contain rounded-lg" />
+                <img
+                  src={previewAfter}
+                  alt="After"
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                />
               )}
 
               <button
@@ -635,7 +725,7 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
                   const filename =
                     currentJob?.type === "video"
                       ? `video-${Date.now()}.${ext}`
-                      : `christmas-card-${Date.now()}.${ext}`;
+                      : `generated-card-${Date.now()}.${ext}`;
                   void handleDownload(previewAfter, filename);
                 }}
                 className="absolute bottom-4 right-4 bg-[#ffd976] text-[#1e1e1e] px-4 py-2 rounded-lg font-semibold hover:brightness-110 active:scale-95 transition"
@@ -650,20 +740,19 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
         </div>
       </div>
 
-      {/* Bottom controls */}
       <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[rgba(6,10,18,0.95)] backdrop-blur-xl border-t border-[rgba(255,255,255,.18)] shadow-[0_-8px_32px_rgba(0,0,0,.5)]">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col gap-3">
             {selectedTemplateObj ? (
-              (selectedTemplateObj as any).type === "video" ? (
+              selectedTemplateObj.type === "video" ? (
                 <>
                   <p className="text-xs text-[#c1c8d8] mt-2 flex items-start sm:items-center gap-2">
                     <span className="mt-0.5">
                       <Info size={18} />
                     </span>
                     <span>
-                      Video generation costs {(selectedTemplateObj as any)?.creditCost ?? "X"} credits per second. Enabling
-                      "With Audio" will double the cost.
+                      Video generation costs {selectedTemplateObj.creditCost ?? "X"} credits per second.
+                      Enabling "With Audio" will double the cost.
                     </span>
                   </p>
 
@@ -680,13 +769,17 @@ const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
                     <textarea
                       value={negativePrompt}
                       onChange={(e) => setNegativePrompt(e.target.value.slice(0, 500))}
-                      placeholder="Negative Prompt (Optional) e.g., blurry, low quality, distorted"
+                      placeholder="Negative Prompt (Optional)"
                       className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px]"
                       disabled={isGenerating}
                     />
 
                     <div className="flex flex-row md:flex-col justify-between gap-2">
-                      <LanguageSelector value={selectedLanguage} onChange={setSelectedLanguage} disabled={isGenerating} />
+                      <LanguageSelector
+                        value={selectedLanguage}
+                        onChange={setSelectedLanguage}
+                        disabled={isGenerating}
+                      />
 
                       <label className="flex items-center gap-2 text-sm text-white whitespace-nowrap">
                         <input
