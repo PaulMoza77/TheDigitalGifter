@@ -27,6 +27,7 @@ import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
 import { AdminRoute } from "@/components/AdminRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedClientRoute from "@/routes/ProtectedClientRoute";
+import { CreditsFunnelProvider } from "@/contexts/CreditsFunnelContext";
 
 // ================= LAYOUTS =================
 import AdminLayout from "@/layouts/AdminLayout";
@@ -141,12 +142,10 @@ function AppInner() {
         }
       >
         <Routes>
-          {/* ================= WEBSITE ================= */}
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
 
-            {/* Occasion pages */}
             <Route path="/christmas" element={<ChristmasPage />} />
             <Route path="/birthday" element={<BirthdayPage />} />
             <Route path="/new-years-eve" element={<NewYearsEvePage />} />
@@ -162,17 +161,14 @@ function AppInner() {
             <Route path="/fathers-day" element={<FathersDayPage />} />
             <Route path="/graduation" element={<GraduationPage />} />
 
-            {/* Public */}
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/generator" element={<GeneratorPage />} />
 
-            {/* Legal */}
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/refunds" element={<RefundPolicyPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
-            {/* Redirect aliases */}
             <Route
               path="/new_years_eve"
               element={<Navigate to="/new-years-eve" replace />}
@@ -199,7 +195,6 @@ function AppInner() {
             />
           </Route>
 
-          {/* ================= CLIENT ACCOUNT ================= */}
           <Route element={<ProtectedClientRoute />}>
             <Route path="/account" element={<ClientLayout />}>
               <Route
@@ -211,7 +206,6 @@ function AppInner() {
             </Route>
           </Route>
 
-          {/* ================= FUNNEL ================= */}
           <Route element={<FunnelLayout />}>
             <Route
               path="/funnel"
@@ -233,7 +227,6 @@ function AppInner() {
             <Route path="/funnel/result" element={<FunnelResultPage />} />
           </Route>
 
-          {/* ================= ADMIN ================= */}
           <Route element={<AdminLayout />}>
             <Route
               path="/admin"
@@ -301,7 +294,6 @@ function AppInner() {
             />
           </Route>
 
-          {/* ================= FALLBACK ================= */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
@@ -314,7 +306,9 @@ function AppInner() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppInner />
+      <CreditsFunnelProvider>
+        <AppInner />
+      </CreditsFunnelProvider>
     </AuthProvider>
   );
 }
