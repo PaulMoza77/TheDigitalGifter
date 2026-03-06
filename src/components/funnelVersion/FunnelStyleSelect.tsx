@@ -13,9 +13,9 @@ type TemplateDbRow = {
 };
 
 type FunnelStyle = {
-  id: string; // style_id
-  name: string; // title (REAL from DB)
-  script: string; // prompt
+  id: string;      // style_id
+  name: string;    // title
+  script: string;  // prompt
 };
 
 function cn(...classes: Array<string | false | null | undefined>) {
@@ -27,17 +27,25 @@ function safeString(x: unknown) {
 }
 
 function normalizeOccasion(raw: string) {
-  const x = (raw || "").toLowerCase().trim();
-  if (x === "new_born" || x === "newborn" || x === "new-born") return "newborn";
-  return x || "newborn";
+  const x = safeString(raw).toLowerCase();
+
+  if (!x) return "newborn";
+  if (x === "new_born" || x === "new-born") return "newborn";
+  if (x === "valentines-day") return "valentines_day";
+  if (x === "mothers-day") return "mothers_day";
+  if (x === "fathers-day") return "fathers_day";
+  if (x === "new-years-eve") return "new_years_eve";
+  if (x === "baby-reveal") return "baby_reveal";
+
+  return x.replace(/-/g, "_");
 }
 
 const NEXT_ROUTE = "/funnel/preview";
 
-// ------- marketing helpers (DIFFERENT per template) -------
+// ------- marketing helpers -------
 
 function emojiForStyle(title: string) {
-  const s = (title || "").toLowerCase();
+  const s = safeString(title).toLowerCase();
 
   if (s.includes("angel")) return "👼";
   if (s.includes("cozy") || s.includes("blanket")) return "🧸";
@@ -52,16 +60,9 @@ function emojiForStyle(title: string) {
   return "✨";
 }
 
-/**
- * HIGH-INTENT, UNIQUE descriptions per template title.
- * - exact matches (ideal for your current set)
- * - plus smart fallbacks so any new template still gets a distinct description
- */
 function descriptionForTemplateTitle(title: string) {
-  const t = (title || "").trim();
-  const s = t.toLowerCase();
+  const s = safeString(title).toLowerCase();
 
-  // ✅ exact-name descriptions (your screenshot set)
   if (s === "angel sleep") {
     return "A serene, dreamy motion that feels like a lullaby — calm, tender, and instantly heart-melting.";
   }
@@ -79,10 +80,8 @@ function descriptionForTemplateTitle(title: string) {
   }
   if (s === "soft pastel") {
     return "A delicate pastel touch with smooth, airy motion — sweet, elegant, and gift-ready.";
-
   }
 
-  // ✅ smart fallbacks by keywords (still varied)
   if (s.includes("angel")) {
     return "Soft, heavenly motion with a gentle glow — tender, peaceful, and emotionally rich.";
   }
@@ -108,32 +107,41 @@ function descriptionForTemplateTitle(title: string) {
     return "Cinematic motion with tasteful depth — dramatic in a subtle, premium way.";
   }
 
-  // default (still “high intent”, not generic “click to continue”)
   return "A premium motion style designed to make your photo feel alive — elegant, emotional, and gift-ready.";
 }
 
-// Title adapted to TheDigitalGifter + occasion
 function headerForOccasion(occasion: string) {
-  if (occasion === "newborn") {
-    return {
-      title: "Choose the style for your newborn memory",
-      subtitle: "Pick a vibe — we’ll generate a beautiful preview in seconds.",
-    };
+  switch (occasion) {
+    case "newborn":
+      return {
+        title: "Choose the style for your newborn memory",
+        subtitle: "Pick a vibe — we’ll generate a beautiful preview in seconds.",
+      };
+    case "birthday":
+      return {
+        title: "Choose the style for your birthday gift",
+        subtitle: "Pick the mood you want and continue to your preview.",
+      };
+    case "wedding":
+      return {
+        title: "Choose the style for your wedding memory",
+        subtitle: "Elegant templates, romantic motion, beautiful final result.",
+      };
+    default:
+      return {
+        title: "Choose the style for your digital gift",
+        subtitle: "Pick a vibe — we’ll generate a beautiful preview in seconds.",
+      };
   }
-  return {
-    title: "Choose the style for your digital gift",
-    subtitle: "Pick a vibe — we’ll generate a beautiful preview in seconds.",
-  };
 }
 
 export default function FunnelStyleSelect() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // context from Upload step
   const bucket = safeString(searchParams.get("bucket")) || "templates";
   const photoPath = safeString(searchParams.get("photo"));
-  const slug = safeString(searchParams.get("slug")) || "newborn";
+  const slug = safeString(searchParams.get("slug"));
 
   const occasion = useMemo(() => {
     const fromQs = safeString(searchParams.get("occasion"));
@@ -149,7 +157,7 @@ export default function FunnelStyleSelect() {
   useEffect(() => {
     let alive = true;
 
-    const fetchStyles = async () => {
+    async function fetchStyles() {
       setLoading(true);
       setErrorMsg(null);
 
@@ -159,13 +167,13 @@ export default function FunnelStyleSelect() {
       const runQuery = async (occ: string) => {
         return await supabase
           .from("templates")
-          .select(["id", "title", "prompt", "occasion", "style_id", "isactive"].join(","))
+          .select("id,title,prompt,occasion,style_id,isactive")
           .eq("isactive", true)
           .eq("occasion", occ)
-          .order("style_id", { ascending: true });
+          .order("title", { ascending: true });
       };
 
-      let data: any[] = [];
+      let rows: TemplateDbRow[] = [];
 
       const q1 = await runQuery(primaryOccasion);
       if (q1.error) {
@@ -176,27 +184,27 @@ export default function FunnelStyleSelect() {
         setLoading(false);
         return;
       }
-      data = q1.data ?? [];
 
-      if (data.length === 0 && legacyOccasion) {
+      rows = (q1.data ?? []) as TemplateDbRow[];
+
+      if (rows.length === 0 && legacyOccasion) {
         const q2 = await runQuery(legacyOccasion);
-        if (!q2.error) data = q2.data ?? [];
+        if (!q2.error) rows = ((q2.data ?? []) as TemplateDbRow[]) || [];
       }
 
       if (!alive) return;
 
-      const mapped: FunnelStyle[] = (data ?? [])
-        .map((r) => r as unknown as TemplateDbRow)
+      const mapped: FunnelStyle[] = rows
         .filter((r) => safeString(r.style_id).length > 0)
         .map((r) => ({
           id: safeString(r.style_id),
-          name: safeString(r.title) || safeString(r.style_id), // ✅ REAL titles
+          name: safeString(r.title) || safeString(r.style_id),
           script: safeString(r.prompt),
         }));
 
       setStyles(mapped);
       setLoading(false);
-    };
+    }
 
     void fetchStyles();
 
@@ -205,7 +213,7 @@ export default function FunnelStyleSelect() {
     };
   }, [occasion]);
 
-  const goNext = (style: FunnelStyle) => {
+  function goNext(style: FunnelStyle) {
     setErrorMsg(null);
 
     if (!photoPath) {
@@ -227,18 +235,19 @@ export default function FunnelStyleSelect() {
       window.localStorage.setItem("tdg_funnel_bucket", bucket);
       window.localStorage.setItem("tdg_funnel_photo_path", photoPath);
     } catch {
-      // ignore
+      // ignore localStorage failures
     }
 
     const qs = new URLSearchParams({
       bucket,
       photo: photoPath,
       slug: slug || occasion,
+      occasion,
       style: style.id,
     });
 
     navigate(`${NEXT_ROUTE}?${qs.toString()}`);
-  };
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#F3EEE6] text-[#111827]">
@@ -258,12 +267,13 @@ export default function FunnelStyleSelect() {
       <div className="mx-auto max-w-5xl px-6 pb-20 pt-10">
         <div className="mx-auto max-w-2xl text-center">
           <h1
-            className="text-[28px] leading-tight sm:text-[40px] sm:leading-tight font-semibold"
+            className="text-[28px] leading-tight font-semibold sm:text-[40px] sm:leading-tight"
             style={{ fontFamily: "ui-serif, Georgia, serif", color: "#0F3D2E" }}
           >
             {header.title}
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-[#111827]/70">
+
+          <p className="mt-3 text-sm text-[#111827]/70 sm:text-base">
             {header.subtitle}
           </p>
         </div>
@@ -284,7 +294,7 @@ export default function FunnelStyleSelect() {
           <div className="space-y-3">
             {loading ? (
               <>
-                {Array.from({ length: 7 }).map((_, i) => (
+                {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
                     className="rounded-[10px] border border-[#D7DEEA] bg-white/40 px-6 py-5"
@@ -298,7 +308,7 @@ export default function FunnelStyleSelect() {
               <div className="rounded-[10px] border border-[#D7DEEA] bg-white/40 px-6 py-6 text-center">
                 <div className="text-sm font-semibold">No styles found</div>
                 <div className="mt-1 text-xs text-[#111827]/60">
-                  Add templates with <b>occasion = {occasion}</b> and a <b>style_id</b>.
+                  Add templates with <b>occasion = {occasion}</b>, <b>isactive = true</b> and a <b>style_id</b>.
                 </div>
               </div>
             ) : (
@@ -310,13 +320,13 @@ export default function FunnelStyleSelect() {
                   <button
                     key={style.id}
                     type="button"
-                    onClick={() => goNext(style)} // ✅ instant continue
+                    onClick={() => goNext(style)}
                     disabled={!photoPath}
                     className={cn(
-                      "w-full text-left rounded-[10px] border px-6 py-5 transition",
+                      "w-full rounded-[10px] border px-6 py-5 text-left transition",
                       "border-[#D7DEEA] bg-[#F6F1E9] hover:bg-[#F8F4EE]",
                       "focus:outline-none focus:ring-2 focus:ring-[#0F3D2E]/20",
-                      !photoPath && "opacity-60 cursor-not-allowed"
+                      !photoPath && "cursor-not-allowed opacity-60"
                     )}
                   >
                     <div className="flex items-start gap-3">
@@ -326,6 +336,7 @@ export default function FunnelStyleSelect() {
                         <div className="text-[15px] font-semibold text-[#111827]">
                           {style.name}
                         </div>
+
                         <div className="mt-1 text-[12px] leading-snug text-[#111827]/55">
                           {desc}
                         </div>

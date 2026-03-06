@@ -1,6 +1,13 @@
 // src/App.tsx
 import { Suspense, useEffect, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  Outlet,
+} from "react-router-dom";
 import { Toaster } from "sonner";
 
 // ================= WEBSITE CORE =================
@@ -26,7 +33,7 @@ const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 
-// ================= ADMIN EMAIL (SUB-SECTION) =================
+// ================= ADMIN EMAIL =================
 import AdminEmailLayoutPage from "@/pages/admin/email/Index";
 import AdminEmailTemplatesPage from "@/pages/admin/email/Templates";
 import AdminEmailOffersPage from "@/pages/admin/email/Offers";
@@ -61,17 +68,22 @@ import FunnelUploadPhoto from "@/components/funnelVersion/FunnelUploadPhoto";
 import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
 import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
 import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
-const FunnelEmailCapture = lazy(() => import("@/components/funnelVersion/FunnelEmailCapture"));
+const FunnelEmailCapture = lazy(
+  () => import("@/components/funnelVersion/FunnelEmailCapture")
+);
 import FunnelResultPage from "@/components/funnelVersion/ResultPage";
 
 // ================= HELPERS =================
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
   return null;
 }
 
-/** WebsiteLayout: wrapper simplu (fără MainLayout) */
 function WebsiteLayout() {
   return (
     <div className="min-h-screen bg-black text-gray-900 flex flex-col">
@@ -80,7 +92,6 @@ function WebsiteLayout() {
   );
 }
 
-/** FunnelLayout: fără header/footer */
 function FunnelLayout() {
   return (
     <div className="min-h-screen w-full bg-black">
@@ -94,6 +105,7 @@ function AppInner() {
 
   useEffect(() => {
     const url = new URL(window.location.href);
+
     if (url.searchParams.get("checkout") === "success") {
       url.searchParams.delete("checkout");
       window.history.replaceState({}, "", url.pathname + url.search);
@@ -152,10 +164,25 @@ function AppInner() {
             <Route path="/new_born" element={<Navigate to="/new-born" replace />} />
           </Route>
 
-          {/* ================= FUNNEL (NO header/footer) ================= */}
+          {/* ================= FUNNEL ================= */}
           <Route element={<FunnelLayout />}>
-            <Route path="/funnel/homepage" element={<FunnelHomePage />} />
-            <Route path="/funnel" element={<Navigate to="/funnel/uploadPhoto" replace />} />
+            {/* funnel landing from ads */}
+            <Route
+              path="/funnel/homepage/:occasion"
+              element={<FunnelHomePage />}
+            />
+
+            {/* optional default funnel entry */}
+            <Route
+              path="/funnel/homepage"
+              element={<Navigate to="/funnel/homepage/christmas" replace />}
+            />
+
+            {/* funnel flow */}
+            <Route
+              path="/funnel"
+              element={<Navigate to="/funnel/homepage/christmas" replace />}
+            />
             <Route path="/funnel/uploadPhoto" element={<FunnelUploadPhoto />} />
             <Route path="/funnel/styleSelect" element={<FunnelStyleSelect />} />
             <Route path="/funnel/preview" element={<FunnelPreview />} />
@@ -201,7 +228,10 @@ function AppInner() {
                 </AdminRoute>
               }
             >
-              <Route index element={<Navigate to="/admin/email/templates" replace />} />
+              <Route
+                index
+                element={<Navigate to="/admin/email/templates" replace />}
+              />
               <Route path="templates" element={<AdminEmailTemplatesPage />} />
               <Route path="offers" element={<AdminEmailOffersPage />} />
               <Route path="campaigns" element={<AdminEmailCampaignsPage />} />
