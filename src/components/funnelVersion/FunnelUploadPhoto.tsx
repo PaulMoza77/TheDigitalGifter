@@ -1,7 +1,22 @@
 // src/components/funnelVersion/FunnelUploadPhoto.tsx
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+
+type FunnelSession = {
+  gift_type?: string;
+  style_id?: string;
+  script?: string;
+  email?: string;
+  lead_id?: string | number | null;
+  funnel_slug?: string;
+  generation_id?: string | null;
+  template_id?: string | null;
+  occasion?: string | null;
+  photo_bucket?: string | null;
+  photo_path?: string | null;
+};
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -9,6 +24,32 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 function safeString(v: unknown) {
   return String(v ?? "").trim();
+}
+
+function readSession(): FunnelSession | null {
+  try {
+    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(next: FunnelSession) {
+  try {
+    localStorage.setItem("tdg_funnel_session", JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
+function mergeSession(partial: Partial<FunnelSession>): FunnelSession {
+  const current = readSession() || {};
+  const next: FunnelSession = {
+    ...current,
+    ...partial,
+  };
+  writeSession(next);
+  return next;
 }
 
 function normalizeOccasion(raw: string) {
@@ -89,29 +130,85 @@ function headerForOccasion(occasion: string) {
   }
 }
 
+function resolveInitialContext(searchParams: URLSearchParams) {
+  const session = readSession() || {};
+
+  const occasionFromQs = safeString(searchParams.get("occasion"));
+  const slugFromQs = safeString(searchParams.get("slug"));
+  const templateIdFromQs = safeString(searchParams.get("template_id"));
+  const emailFromQs = safeString(searchParams.get("email"));
+
+  const occasion = normalizeOccasion(
+    occasionFromQs || safeString(session.occasion) || slugFromQs || safeString(session.funnel_slug) || "newborn"
+  );
+
+  const slug = normalizeOccasion(
+    slugFromQs || safeString(session.funnel_slug) || occasion
+  );
+
+  const email =
+    emailFromQs ||
+    safeString(session.email) ||
+    safeString(localStorage.getItem("tdg_email"));
+
+  const templateId =
+    templateIdFromQs ||
+    safeString(session.template_id) ||
+    safeString(localStorage.getItem("tdg_template_id"));
+
+  return {
+    occasion,
+    slug,
+    email,
+    templateId,
+  };
+}
+
 export default function FunnelUploadPhoto() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const occasion = useMemo(() => {
-    const fromQs = safeString(searchParams.get("occasion"));
-    const fromSlug = safeString(searchParams.get("slug"));
-    return normalizeOccasion(fromQs || fromSlug || "newborn");
-  }, [searchParams]);
+  const initial = useMemo(() => resolveInitialContext(searchParams), [searchParams]);
 
-  const slug = useMemo(() => {
-    const fromSlug = safeString(searchParams.get("slug"));
-    return normalizeOccasion(fromSlug || occasion);
-  }, [searchParams, occasion]);
-
+  const occasion = initial.occasion;
+  const slug = initial.slug;
   const header = useMemo(() => headerForOccasion(occasion), [occasion]);
-  const stepLabel = useMemo(() => "1 of 3", []);
+  const stepLabel = "1 of 3";
 
   const [dragActive, setDragActive] = useState(false);
   const [uploaded, setUploaded] = useState<UploadedFile | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    mergeSession({
+      email: initial.email || undefined,
+      template_id: initial.templateId || null,
+      funnel_slug: slug,
+      occasion,
+    });
+
+    if (initial.email) {
+      localStorage.setItem("tdg_email", initial.email);
+    }
+
+    if (initial.templateId) {
+      localStorage.setItem("tdg_template_id", initial.templateId);
+    }
+
+    localStorage.setItem("tdg_funnel_slug", slug);
+    localStorage.setItem("tdg_funnel_occasion", occasion);
+  }, [initial.email, initial.templateId, slug, occasion]);
+
+  useEffect(() => {
+    return () => {
+      setUploaded((prev) => {
+        if (prev?.localUrl) URL.revokeObjectURL(prev.localUrl);
+        return prev;
+      });
+    };
+  }, []);
 
   const openFilePicker = useCallback(() => {
     fileInputRef.current?.click();
@@ -122,6 +219,12 @@ export default function FunnelUploadPhoto() {
 
     if (!file.type.startsWith("image/")) {
       setErrorMsg("Please upload an image file (JPG, PNG or WebP).");
+      return;
+    }
+
+    const maxBytes = 15 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setErrorMsg("Image is too large. Please upload a file under 15 MB.");
       return;
     }
 
@@ -205,36 +308,59 @@ export default function FunnelUploadPhoto() {
         cacheControl: "3600",
       });
 
-      if (error) throw new Error(error.message || "Upload failed");
-
-      try {
-        window.localStorage.setItem("tdg_funnel_photo_path", path);
-        window.localStorage.setItem("tdg_funnel_bucket", bucket);
-        window.localStorage.setItem("tdg_funnel_slug", slug);
-        window.localStorage.setItem("tdg_funnel_occasion", occasion);
-        window.localStorage.setItem("tdg_funnel_photo", path);
-      } catch {
-        // ignore
+      if (error) {
+        throw new Error(error.message || "Upload failed");
       }
 
-      const qs = new URLSearchParams({
-        bucket,
-        photo: path,
-        slug,
+      localStorage.setItem("tdg_funnel_photo_path", path);
+      localStorage.setItem("tdg_funnel_bucket", bucket);
+      localStorage.setItem("tdg_funnel_slug", slug);
+      localStorage.setItem("tdg_funnel_occasion", occasion);
+      localStorage.setItem("tdg_funnel_photo", path);
+      localStorage.setItem("tdg_uploaded_photo_path", path);
+
+      const publicRes = supabase.storage.from(bucket).getPublicUrl(path);
+      const publicUrl = safeString(publicRes?.data?.publicUrl);
+
+      if (publicUrl) {
+        localStorage.setItem("tdg_uploaded_photo_url", publicUrl);
+      }
+
+      mergeSession({
+        email: initial.email || undefined,
+        template_id: initial.templateId || null,
+        funnel_slug: slug,
         occasion,
+        photo_bucket: bucket,
+        photo_path: path,
       });
+
+      const qs = new URLSearchParams();
+
+      qs.set("bucket", bucket);
+      qs.set("photo", path);
+      qs.set("slug", slug);
+      qs.set("occasion", occasion);
+
+      if (initial.templateId) {
+        qs.set("template_id", initial.templateId);
+      }
+
+      if (initial.email) {
+        qs.set("email", initial.email);
+      }
 
       navigate(`/funnel/styleSelect?${qs.toString()}`);
     } catch (e: any) {
       setErrorMsg(e?.message || "Upload failed. Please try again.");
+      toast.error(e?.message || "Upload failed. Please try again.");
     } finally {
       setIsUploading(false);
     }
-  }, [uploaded, occasion, slug, navigate]);
+  }, [uploaded, occasion, slug, navigate, initial.email, initial.templateId]);
 
   return (
     <div className="min-h-screen w-full bg-[#F3EEE6] text-[#111827]">
-      {/* Header */}
       <div className="pt-10">
         <div className="mx-auto max-w-5xl px-6">
           <div className="flex items-center justify-between">
