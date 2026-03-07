@@ -1,4 +1,3 @@
-// src/components/AdminRoute.tsx
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +10,7 @@ type State = {
 
 export function AdminRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+
   const [state, setState] = useState<State>({
     loading: true,
     email: null,
@@ -20,60 +20,107 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    async function run() {
+    async function checkAdmin(sessionEmail?: string | null) {
       try {
-        // 1) get current session/email
-        const { data, error } = await supabase.auth.getSession();
-        if (!mounted) return;
+        const normalizedEmail = (sessionEmail || "").trim().toLowerCase();
 
-        if (error) {
-          console.error("[AdminRoute] getSession error:", error);
-          setState({ loading: false, email: null, isAdmin: false });
+        if (!normalizedEmail) {
+          if (mounted) {
+            setState({
+              loading: false,
+              email: null,
+              isAdmin: false,
+            });
+          }
           return;
         }
 
-        const email = data.session?.user?.email?.trim().toLowerCase() ?? null;
-
-        if (!email) {
-          setState({ loading: false, email: null, isAdmin: false });
-          return;
-        }
-
-        // 2) check admin by DB table: public.admin_users
-        // NOTE: needs RLS policy (see SQL below) OR RLS disabled for admin_users
-        const { data: row, error: e2 } = await supabase
+        const { data: row, error } = await supabase
           .from("admin_users")
           .select("email")
-          .eq("email", email)
+          .eq("email", normalizedEmail)
           .maybeSingle();
 
         if (!mounted) return;
 
-        if (e2) {
-          console.error("[AdminRoute] admin_users check error:", e2);
-          setState({ loading: false, email, isAdmin: false });
+        if (error) {
+          console.error("[AdminRoute] admin_users check error:", error);
+          setState({
+            loading: false,
+            email: normalizedEmail,
+            isAdmin: false,
+          });
           return;
         }
 
-        setState({ loading: false, email, isAdmin: Boolean(row?.email) });
+        setState({
+          loading: false,
+          email: normalizedEmail,
+          isAdmin: Boolean(row?.email),
+        });
       } catch (e) {
-        console.error("[AdminRoute] fatal:", e);
+        console.error("[AdminRoute] checkAdmin fatal:", e);
+
         if (!mounted) return;
-        setState({ loading: false, email: null, isAdmin: false });
+
+        setState({
+          loading: false,
+          email: null,
+          isAdmin: false,
+        });
       }
     }
 
-    void run();
+    async function bootstrap() {
+      try {
+        const { data, error } = await supabase.auth.getSession();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!mounted) return;
+
+        if (error) {
+          console.error("[AdminRoute] getSession error:", error);
+          setState({
+            loading: false,
+            email: null,
+            isAdmin: false,
+          });
+          return;
+        }
+
+        const email = data.session?.user?.email?.trim().toLowerCase() ?? null;
+        await checkAdmin(email);
+      } catch (e) {
+        console.error("[AdminRoute] bootstrap fatal:", e);
+
+        if (!mounted) return;
+
+        setState({
+          loading: false,
+          email: null,
+          isAdmin: false,
+        });
+      }
+    }
+
+    void bootstrap();
+
+    const { data: authSub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+
       const email = session?.user?.email?.trim().toLowerCase() ?? null;
-      // keep UI responsive; actual admin check runs on mount / refresh.
-      setState((s) => ({ ...s, email }));
+
+      setState((prev) => ({
+        ...prev,
+        loading: true,
+        email,
+      }));
+
+      await checkAdmin(email);
     });
 
     return () => {
       mounted = false;
-      sub?.subscription?.unsubscribe();
+      authSub?.subscription?.unsubscribe();
     };
   }, []);
 
@@ -88,12 +135,10 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // not logged in
   if (!state.email) {
     return <Navigate to="/" replace state={{ from: location.pathname }} />;
   }
 
-  // logged in but not admin
   if (!state.isAdmin) {
     console.warn("[AdminRoute] Not admin:", { email: state.email });
     return <Navigate to="/" replace state={{ from: location.pathname }} />;

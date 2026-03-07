@@ -1,4 +1,3 @@
-// FILE: src/layouts/AdminLayout.tsx
 import React, { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
@@ -67,10 +66,9 @@ function NavButton({
       onClick={onClick}
       title={collapsed ? label : undefined}
       className={cx(
-        "w-full flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors",
-        "border border-transparent",
+        "flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-colors",
         active
-          ? "bg-slate-800 text-slate-50 border-slate-700"
+          ? "border-slate-700 bg-slate-800 text-slate-50"
           : "text-slate-200 hover:bg-slate-800/60",
         collapsed && "justify-center px-2"
       )}
@@ -81,7 +79,7 @@ function NavButton({
         <div className="flex w-full min-w-0 items-center justify-between gap-2">
           <span className="truncate">{label}</span>
           {badge ? (
-            <span className="text-[10px] tracking-[0.25em] text-slate-500 uppercase">
+            <span className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
               {badge}
             </span>
           ) : null}
@@ -131,14 +129,14 @@ const SidebarNavigation: React.FC<{
     []
   );
 
-  const handle = (path: string) => {
+  const handleNavigate = (path: string) => {
     navigateTo(path);
     onNavigate?.();
   };
 
   return (
     <div className={cx("flex flex-col gap-6", collapsed ? "items-center" : "")}>
-      <div className={cx("pt-1", collapsed ? "w-full flex justify-center" : "")}>
+      <div className={cx("pt-1", collapsed ? "flex w-full justify-center" : "")}>
         <Logo />
       </div>
 
@@ -159,7 +157,7 @@ const SidebarNavigation: React.FC<{
                   key={item.path}
                   collapsed={collapsed}
                   active={isActive(item.path)}
-                  onClick={() => handle(item.path)}
+                  onClick={() => handleNavigate(item.path)}
                   icon={item.icon}
                   label={item.label}
                   badge={item.badge}
@@ -184,7 +182,6 @@ const AdminLayout: React.FC = () => {
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-slate-950 font-sans text-slate-50">
-      {/* Mobile Header */}
       <header className="sticky top-0 z-50 flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 px-4 py-3 md:hidden">
         <div className="flex items-center gap-3">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -214,7 +211,6 @@ const AdminLayout: React.FC = () => {
         </div>
       </header>
 
-      {/* Desktop */}
       <div className="hidden min-h-0 flex-1 md:flex">
         <aside
           className="relative min-h-0 shrink-0 border-r border-slate-800 bg-slate-950"
@@ -224,9 +220,7 @@ const AdminLayout: React.FC = () => {
             type="button"
             onClick={() => setCollapsed((v) => !v)}
             className={cx(
-              "absolute top-4 -right-3 z-50",
-              "flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950",
-              "transition-colors hover:bg-slate-800/60"
+              "absolute top-4 -right-3 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 transition-colors hover:bg-slate-800/60"
             )}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand" : "Collapse"}
@@ -252,7 +246,6 @@ const AdminLayout: React.FC = () => {
         </main>
       </div>
 
-      {/* Mobile content */}
       <div className="min-h-0 flex-1 md:hidden">
         <main className="min-h-0 overflow-y-auto bg-slate-950">
           <Outlet />
