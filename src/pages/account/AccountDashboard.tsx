@@ -1,8 +1,7 @@
-// FILE: src/pages/account/AccountDashboard.tsx
 import React from "react";
 import type { User } from "@supabase/supabase-js";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Shield, Sparkles } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 
@@ -56,9 +55,7 @@ function formatRelativeDate(value?: string | null) {
 }
 
 function mapStatus(status?: string | null): ClientGeneration["status"] {
-  const normalized = String(status || "")
-    .trim()
-    .toLowerCase();
+  const normalized = String(status || "").trim().toLowerCase();
 
   if (normalized === "completed" || normalized === "saved") return "Completed";
   if (normalized === "processing" || normalized === "pending") return "Processing";
@@ -73,6 +70,7 @@ function buildGenerationTitle(item: GenerationRow, index: number) {
 export default function AccountDashboard() {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [isAdmin, setIsAdmin] = React.useState(false);
   const [summary, setSummary] = React.useState<DashboardSummaryRow | null>(null);
   const [recentRows, setRecentRows] = React.useState<GenerationRow[]>([]);
 
@@ -91,13 +89,16 @@ export default function AccountDashboard() {
       setUser(authUser ?? null);
 
       if (!authUser) {
+        setIsAdmin(false);
         setSummary(null);
         setRecentRows([]);
         setLoading(false);
         return;
       }
 
-      const [summaryRes, generationsRes] = await Promise.all([
+      const email = authUser.email?.trim().toLowerCase() ?? "";
+
+      const [summaryRes, generationsRes, adminRes] = await Promise.all([
         supabase
           .from("client_dashboard_summary")
           .select(
@@ -111,6 +112,11 @@ export default function AccountDashboard() {
           .eq("user_id", authUser.id)
           .order("created_at", { ascending: false })
           .limit(6),
+        supabase
+          .from("admin_users")
+          .select("email")
+          .eq("email", email)
+          .maybeSingle(),
       ]);
 
       if (!mounted) return;
@@ -123,6 +129,11 @@ export default function AccountDashboard() {
         console.error("[AccountDashboard] generations error:", generationsRes.error);
       }
 
+      if (adminRes.error) {
+        console.error("[AccountDashboard] admin check error:", adminRes.error);
+      }
+
+      setIsAdmin(Boolean(adminRes.data?.email));
       setSummary((summaryRes.data as DashboardSummaryRow | null) ?? null);
       setRecentRows((generationsRes.data as GenerationRow[] | null) ?? []);
       setLoading(false);
@@ -150,9 +161,7 @@ export default function AccountDashboard() {
   const completedCreations = React.useMemo(
     () =>
       recentRows.filter((item) => {
-        const s = String(item.status || "")
-          .trim()
-          .toLowerCase();
+        const s = String(item.status || "").trim().toLowerCase();
         return s === "completed" || s === "saved";
       }).length,
     [recentRows]
@@ -161,9 +170,7 @@ export default function AccountDashboard() {
   const inProgress = React.useMemo(
     () =>
       recentRows.filter((item) => {
-        const s = String(item.status || "")
-          .trim()
-          .toLowerCase();
+        const s = String(item.status || "").trim().toLowerCase();
         return s === "pending" || s === "processing";
       }).length,
     [recentRows]
@@ -246,9 +253,55 @@ export default function AccountDashboard() {
             >
               <Link to="/account/dashboard">Refresh Overview</Link>
             </Button>
+
+            {isAdmin ? (
+              <Button
+                asChild
+                variant="secondary"
+                className="rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-200 hover:bg-amber-400/15"
+              >
+                <Link to="/admin">
+                  Admin Panel
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            ) : null}
           </div>
         </div>
       </section>
+
+      {isAdmin ? (
+        <section className="rounded-[28px] border border-amber-400/15 bg-gradient-to-br from-amber-400/10 via-white/[0.02] to-transparent p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-200">
+                <Shield className="h-3.5 w-3.5" />
+                Admin Access
+              </div>
+
+              <h2 className="mt-3 text-2xl font-semibold text-white">
+                Admin Panel
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                You are logged in as an admin. Open the admin area to manage templates, funnel settings, credits, orders and customers.
+              </p>
+            </div>
+
+            <div className="shrink-0">
+              <Button
+                asChild
+                className="rounded-2xl bg-white text-zinc-950 hover:bg-zinc-200"
+              >
+                <Link to="/admin">
+                  Open Admin Panel
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <ClientStatsCards stats={stats} />
 

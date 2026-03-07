@@ -1,8 +1,8 @@
-// FILE: src/components/client/AccountTopbar.tsx
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
-import { LayoutGrid, Wand2, Sparkles, Menu } from "lucide-react";
+import { LayoutGrid, Wand2, Sparkles, Menu, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 import {
   Sheet,
   SheetContent,
@@ -18,19 +18,102 @@ function mobileNavClass(active: boolean) {
   ].join(" ");
 }
 
+type TopbarItem = {
+  label: string;
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
 export default function AccountTopbar() {
-  const items = [
-    {
-      label: "Dashboard",
-      to: "/account/dashboard",
-      icon: LayoutGrid,
-    },
-    {
+  const [isAdmin, setIsAdmin] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    async function load() {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (!mounted) return;
+
+        if (userError) {
+          console.error("[AccountTopbar] getUser error:", userError);
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
+
+        const email = user?.email?.trim().toLowerCase() ?? "";
+
+        if (!email) {
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("admin_users")
+          .select("email")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (!mounted) return;
+
+        if (error) {
+          console.error("[AccountTopbar] admin check error:", error);
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
+
+        setIsAdmin(Boolean(data?.email));
+        setLoading(false);
+      } catch (e) {
+        console.error("[AccountTopbar] fatal:", e);
+
+        if (!mounted) return;
+
+        setIsAdmin(false);
+        setLoading(false);
+      }
+    }
+
+    void load();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const items: TopbarItem[] = React.useMemo(() => {
+    const base: TopbarItem[] = [
+      {
+        label: "Dashboard",
+        to: "/account/dashboard",
+        icon: LayoutGrid,
+      },
+    ];
+
+    if (isAdmin) {
+      base.push({
+        label: "Admin Panel",
+        to: "/admin",
+        icon: Shield,
+      });
+    }
+
+    base.push({
       label: "Generator",
       to: "/account/generator",
       icon: Wand2,
-    },
-  ];
+    });
+
+    return base;
+  }, [isAdmin]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/70 backdrop-blur-xl">
@@ -41,34 +124,39 @@ export default function AccountTopbar() {
               <Sparkles className="h-4 w-4 text-white" />
             </span>
             <div className="hidden sm:block">
-              <div className="text-sm font-semibold text-white">My Account</div>
-              <div className="text-xs text-zinc-500">Client workspace</div>
+              <div className="text-sm font-semibold text-white">
+                {isAdmin ? "My Account + Admin" : "My Account"}
+              </div>
+              <div className="text-xs text-zinc-500">
+                {isAdmin ? "Client + admin workspace" : "Client workspace"}
+              </div>
             </div>
           </Link>
         </div>
 
         <nav className="hidden items-center gap-2 md:flex">
-          {items.map((item) => {
-            const Icon = item.icon;
+          {!loading &&
+            items.map((item) => {
+              const Icon = item.icon;
 
-            return (
-              <NavLink key={item.to} to={item.to}>
-                {({ isActive }) => (
-                  <span
-                    className={[
-                      "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-medium transition-all",
-                      isActive
-                        ? "border-white/10 bg-white/10 text-white"
-                        : "border-transparent bg-transparent text-zinc-400 hover:border-white/10 hover:bg-white/5 hover:text-white",
-                    ].join(" ")}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </span>
-                )}
-              </NavLink>
-            );
-          })}
+              return (
+                <NavLink key={item.to} to={item.to}>
+                  {({ isActive }) => (
+                    <span
+                      className={[
+                        "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-medium transition-all",
+                        isActive
+                          ? "border-white/10 bg-white/10 text-white"
+                          : "border-transparent bg-transparent text-zinc-400 hover:border-white/10 hover:bg-white/5 hover:text-white",
+                      ].join(" ")}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </span>
+                  )}
+                </NavLink>
+              );
+            })}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -97,20 +185,27 @@ export default function AccountTopbar() {
                 className="border-l border-white/10 bg-zinc-950 text-white"
               >
                 <SheetHeader>
-                  <SheetTitle className="text-left text-white">Client Account</SheetTitle>
+                  <SheetTitle className="text-left text-white">
+                    {isAdmin ? "Client + Admin Account" : "Client Account"}
+                  </SheetTitle>
                 </SheetHeader>
 
                 <div className="mt-6 space-y-2">
-                  {items.map((item) => {
-                    const Icon = item.icon;
+                  {!loading &&
+                    items.map((item) => {
+                      const Icon = item.icon;
 
-                    return (
-                      <NavLink key={item.to} to={item.to} className={({ isActive }) => mobileNavClass(isActive)}>
-                        <Icon className="h-4 w-4" />
-                        {item.label}
-                      </NavLink>
-                    );
-                  })}
+                      return (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          className={({ isActive }) => mobileNavClass(isActive)}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {item.label}
+                        </NavLink>
+                      );
+                    })}
 
                   <Link
                     to="/generator"
