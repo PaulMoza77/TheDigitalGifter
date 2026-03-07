@@ -35,6 +35,10 @@ type CheckoutResponse = {
   message?: string;
 };
 
+function cn(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(" ");
+}
+
 function readSession(): FunnelSession | null {
   try {
     return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
@@ -43,8 +47,22 @@ function readSession(): FunnelSession | null {
   }
 }
 
-function cn(...classes: Array<string | false | null | undefined>): string {
-  return classes.filter(Boolean).join(" ");
+function writeSession(next: FunnelSession): void {
+  try {
+    localStorage.setItem("tdg_funnel_session", JSON.stringify(next));
+  } catch {
+    // no-op
+  }
+}
+
+function mergeSession(partial: Partial<FunnelSession>): FunnelSession {
+  const current = readSession() || {};
+  const next: FunnelSession = {
+    ...current,
+    ...partial,
+  };
+  writeSession(next);
+  return next;
 }
 
 const plans: Plan[] = [
@@ -84,7 +102,10 @@ const plans: Plan[] = [
 function getDealExpiresAtMs(): number {
   const key = "tdg_payment_deal_expires_at";
   const existing = Number(localStorage.getItem(key) || "0");
-  if (existing && Number.isFinite(existing) && existing > Date.now()) return existing;
+
+  if (existing && Number.isFinite(existing) && existing > Date.now()) {
+    return existing;
+  }
 
   const next = Date.now() + 30 * 60 * 1000;
   localStorage.setItem(key, String(next));
@@ -137,10 +158,13 @@ type PromoEffect =
 
 function getPromoEffect(codeRaw: string): PromoEffect {
   const code = codeRaw.trim().toUpperCase();
+
   if (!code) return { kind: "none" };
+
   if (code === "START70") {
     return { kind: "percent_first_month", percent: 70 };
   }
+
   return { kind: "none" };
 }
 
@@ -159,6 +183,7 @@ function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, promoCode: string
   }
 
   const effect = getPromoEffect(promoCode);
+
   if (effect.kind === "none") {
     return {
       displayMain: plan.price,
@@ -182,6 +207,66 @@ function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, promoCode: string
   };
 }
 
+function resolveFunnelContext(search: string) {
+  const params = new URLSearchParams(search);
+  const session = readSession() || {};
+
+  const generationIdFromUrl = (params.get("generation_id") || "").trim();
+  const templateIdFromUrl = (params.get("template_id") || "").trim();
+  const emailFromUrl = (params.get("email") || "").trim();
+
+  const generationId =
+    generationIdFromUrl ||
+    String(session.generation_id || "").trim() ||
+    (localStorage.getItem("tdg_generation_id") || "").trim() ||
+    (localStorage.getItem("tdg_last_generation_id") || "").trim();
+
+  const email =
+    emailFromUrl ||
+    String(session.email || "").trim() ||
+    (localStorage.getItem("tdg_email") || "").trim();
+
+  const templateId =
+    templateIdFromUrl ||
+    String(session.template_id || "").trim() ||
+    (localStorage.getItem("tdg_template_id") || "").trim();
+
+  const photo =
+    (localStorage.getItem("tdg_funnel_photo") || "").trim() ||
+    (localStorage.getItem("tdg_uploaded_photo_url") || "").trim() ||
+    (localStorage.getItem("tdg_uploaded_photo_path") || "").trim();
+
+  if (generationId || email || templateId) {
+    mergeSession({
+      ...session,
+      generation_id: generationId || session.generation_id || null,
+      email: email || session.email || "",
+      template_id: templateId || session.template_id || null,
+    });
+  }
+
+  if (generationId) {
+    localStorage.setItem("tdg_generation_id", generationId);
+    localStorage.setItem("tdg_last_generation_id", generationId);
+  }
+
+  if (email) {
+    localStorage.setItem("tdg_email", email);
+  }
+
+  if (templateId) {
+    localStorage.setItem("tdg_template_id", templateId);
+  }
+
+  return {
+    canceled: (params.get("canceled") || "").trim() === "1",
+    generationId,
+    email,
+    templateId,
+    photo,
+  };
+}
+
 export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
@@ -195,43 +280,45 @@ export default function FunnelPayment(): JSX.Element {
   });
   const [isPaying, setIsPaying] = useState<boolean>(false);
 
-  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const generationIdFromUrl = (params.get("generation_id") || "").trim();
-  const canceled = (params.get("canceled") || "").trim() === "1";
+  const funnel = useMemo(() => resolveFunnelContext(location.search), [location.search]);
 
   const selectedPlan = useMemo<Plan>(() => plans.find((p) => p.id === selected) ?? plans[1], [selected]);
   const expired = secondsLeft <= 0;
 
-  const sessionData = useMemo(() => readSession(), []);
-  const email = String(sessionData?.email || "").trim();
-  const templateId = String(sessionData?.template_id || "").trim();
-
-  const generationId =
-    generationIdFromUrl ||
-    String(sessionData?.generation_id || "").trim() ||
-    (localStorage.getItem("tdg_generation_id") || "").trim();
-
   useEffect(() => {
-    if (canceled) {
+    if (funnel.canceled) {
       toast.error("Checkout canceled.");
     }
-  }, [canceled]);
+  }, [funnel.canceled]);
 
   useEffect(() => {
-    const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
-
-    if (!photo) {
+    if (!funnel.photo) {
       toast.error("Upload a photo first.");
-      navigate("/funnel/uploadPhoto", { replace: true });
+      navigate(
+        funnel.generationId
+          ? `/funnel/uploadPhoto?generation_id=${encodeURIComponent(funnel.generationId)}`
+          : "/funnel/uploadPhoto",
+        { replace: true }
+      );
       return;
     }
 
-    if (!email) {
+    if (!funnel.email) {
       toast.error("Please enter your email to continue.");
-      navigate("/funnel/email", { replace: true });
+      navigate(
+        funnel.generationId
+          ? `/funnel/email?generation_id=${encodeURIComponent(funnel.generationId)}`
+          : "/funnel/email",
+        { replace: true }
+      );
       return;
     }
-  }, [navigate, email]);
+
+    if (!funnel.generationId) {
+      toast.error("Generation is not ready yet. Please complete the previous funnel step first.");
+      navigate("/funnel/uploadPhoto", { replace: true });
+    }
+  }, [navigate, funnel.photo, funnel.email, funnel.generationId]);
 
   useEffect(() => {
     const t = window.setInterval(() => {
@@ -272,14 +359,31 @@ export default function FunnelPayment(): JSX.Element {
   async function onCheckout(): Promise<void> {
     if (isPaying) return;
 
-    if (!email) {
+    if (!funnel.email) {
       toast.error("Missing email. Please re-enter your email.");
-      navigate("/funnel/email", { replace: true });
+      navigate(
+        funnel.generationId
+          ? `/funnel/email?generation_id=${encodeURIComponent(funnel.generationId)}`
+          : "/funnel/email",
+        { replace: true }
+      );
       return;
     }
 
-    if (!generationId) {
+    if (!funnel.photo) {
+      toast.error("Upload a photo first.");
+      navigate(
+        funnel.generationId
+          ? `/funnel/uploadPhoto?generation_id=${encodeURIComponent(funnel.generationId)}`
+          : "/funnel/uploadPhoto",
+        { replace: true }
+      );
+      return;
+    }
+
+    if (!funnel.generationId) {
       toast.error("Generation is not ready yet. Please complete the previous funnel step first.");
+      navigate("/funnel/uploadPhoto", { replace: true });
       return;
     }
 
@@ -297,9 +401,9 @@ export default function FunnelPayment(): JSX.Element {
         },
         body: JSON.stringify({
           plan: selected,
-          email,
-          generation_id: generationId,
-          template_id: templateId || null,
+          email: funnel.email,
+          generation_id: funnel.generationId,
+          template_id: funnel.templateId || null,
           promo_code: promoApplied ? promo.trim() : "",
         }),
       });
@@ -311,13 +415,15 @@ export default function FunnelPayment(): JSX.Element {
         throw new Error(msg);
       }
 
-      if (data?.id && generationId) {
-        localStorage.setItem(`tdg_session_generation:${data.id}`, generationId);
-        localStorage.setItem("tdg_last_generation_id", generationId);
+      if (data?.id && funnel.generationId) {
+        localStorage.setItem(`tdg_session_generation:${data.id}`, funnel.generationId);
+        localStorage.setItem("tdg_last_generation_id", funnel.generationId);
       }
 
       const checkoutUrl = (data.url || "").toString();
-      if (!checkoutUrl) throw new Error("Missing checkout URL");
+      if (!checkoutUrl) {
+        throw new Error("Missing checkout URL");
+      }
 
       window.location.href = checkoutUrl;
     } catch (err: unknown) {
@@ -546,7 +652,7 @@ export default function FunnelPayment(): JSX.Element {
 
           <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
             Selected: {selectedPlan.id} • Credits: {selectedPlan.credits} • Promo:{" "}
-            {promoApplied ? promo.toUpperCase() : "none"} • Generation: {generationId || "missing"}
+            {promoApplied ? promo.toUpperCase() : "none"} • Generation: {funnel.generationId || "missing"}
           </div>
         </div>
       </div>
