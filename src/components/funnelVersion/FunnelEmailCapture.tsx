@@ -1,4 +1,3 @@
-// src/components/funnelVersion/FunnelEmailCapture.tsx
 import React, { JSX, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -16,25 +15,35 @@ function isValidEmail(email: string): boolean {
 }
 
 type FunnelSession = {
-  gift_type?: string; // -> occasion
+  gift_type?: string;
   style_id?: string;
   script?: string;
   email?: string;
   lead_id?: string | number | null;
   funnel_slug?: string;
+  generation_id?: string | null;
+  template_id?: string | null;
+  occasion?: string | null;
+  photo_bucket?: string | null;
+  photo_path?: string | null;
 };
 
 function readSession(): FunnelSession | null {
   try {
-    return JSON.parse(
-      localStorage.getItem("tdg_funnel_session") || "null"
-    ) as FunnelSession | null;
+    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
   } catch {
     return null;
   }
 }
 
-// Tipuri locale pentru upsert-ul Supabase
+function writeSession(next: FunnelSession): void {
+  try {
+    localStorage.setItem("tdg_funnel_session", JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
 type FunnelLeadUpsert = {
   email: string;
   occasion: string | null;
@@ -70,17 +79,18 @@ export default function FunnelEmailCapture(): JSX.Element {
         ? "Please enter a valid email."
         : "";
 
-  // Guards:
-  // - if no photo => back to upload
-  // - if already have a valid email in session => jump to payment
   useEffect((): void => {
-    const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
+    const s = readSession();
+    const photo =
+      String(s?.photo_path || "").trim() ||
+      String(localStorage.getItem("tdg_funnel_photo") || "").trim() ||
+      String(localStorage.getItem("tdg_funnel_photo_path") || "").trim();
+
     if (!photo) {
       navigate("/funnel/uploadPhoto", { replace: true });
       return;
     }
 
-    const s = readSession();
     const existingEmail = String(s?.email || "").trim().toLowerCase();
 
     if (existingEmail && isValidEmail(existingEmail)) {
@@ -89,8 +99,7 @@ export default function FunnelEmailCapture(): JSX.Element {
     }
 
     if (existingEmail) setEmail(existingEmail);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [navigate]);
 
   async function handleContinue(): Promise<void> {
     const e = email.trim().toLowerCase();
@@ -104,10 +113,15 @@ export default function FunnelEmailCapture(): JSX.Element {
     if (saving) return;
 
     setSaving(true);
+
     try {
       const s = readSession();
 
-      const occasion = String(s?.gift_type || "").trim() || null;
+      const occasion =
+        String(s?.gift_type || "").trim() ||
+        String(s?.occasion || "").trim() ||
+        null;
+
       const style_id = String(s?.style_id || "").trim() || null;
 
       const funnel_slug =
@@ -137,7 +151,8 @@ export default function FunnelEmailCapture(): JSX.Element {
         funnel_slug,
       };
 
-      localStorage.setItem("tdg_funnel_session", JSON.stringify(nextSession));
+      writeSession(nextSession);
+      localStorage.setItem("tdg_email", e);
       localStorage.setItem("tdg_funnel_slug", funnel_slug);
 
       navigate("/funnel/payment");
@@ -167,12 +182,8 @@ export default function FunnelEmailCapture(): JSX.Element {
           transition={{ duration: 0.25 }}
           className="mx-auto text-center"
         >
-          <h1 className="text-3xl font-semibold sm:text-5xl">
-            Where should we send it?
-          </h1>
-          <p className="mt-4 text-sm text-slate-600 sm:text-base">
-            Enter your email to continue.
-          </p>
+          <h1 className="text-3xl font-semibold sm:text-5xl">Where should we send it?</h1>
+          <p className="mt-4 text-sm text-slate-600 sm:text-base">Enter your email to continue.</p>
         </motion.div>
 
         <motion.div
@@ -196,15 +207,13 @@ export default function FunnelEmailCapture(): JSX.Element {
               >
                 <input
                   value={email}
-                  onChange={(ev: React.ChangeEvent<HTMLInputElement>) =>
-                    setEmail(ev.target.value)
-                  }
+                  onChange={(ev: React.ChangeEvent<HTMLInputElement>) => setEmail(ev.target.value)}
                   onBlur={(): void => setTouched(true)}
                   onKeyDown={(ev: React.KeyboardEvent<HTMLInputElement>) => {
                     if (ev.key === "Enter") void handleContinue();
                   }}
                   placeholder="you@example.com"
-                  className="w-full bg-transparent outline-none text-sm text-slate-900 placeholder:text-slate-400"
+                  className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
                   inputMode="email"
                   autoComplete="email"
                   type="email"
@@ -214,9 +223,7 @@ export default function FunnelEmailCapture(): JSX.Element {
                 />
               </div>
 
-              {emailError ? (
-                <div className="text-xs text-red-600">{emailError}</div>
-              ) : null}
+              {emailError ? <div className="text-xs text-red-600">{emailError}</div> : null}
 
               <button
                 type="button"
@@ -225,8 +232,8 @@ export default function FunnelEmailCapture(): JSX.Element {
                 className={cn(
                   "w-full rounded-2xl px-6 py-3 font-semibold transition",
                   saving || !emailOk
-                    ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                    : "bg-[#6D5EF7] text-white hover:brightness-105 active:brightness-95 shadow-lg shadow-black/10"
+                    ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                    : "bg-[#6D5EF7] text-white shadow-lg shadow-black/10 hover:brightness-105 active:brightness-95"
                 )}
               >
                 {saving ? "Saving..." : "Continue"}

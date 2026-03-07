@@ -1,14 +1,5 @@
-// src/components/funnelVersion/FunnelPreview.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-/**
- * FunnelPreview.tsx (UPDATED)
- * ✅ NO Replicate call here anymore.
- * ✅ Shows the uploaded user photo with blur (like AliveMoment finished screen).
- * ✅ Header/branding matches the Style Select page (simple centered brand).
- * ✅ CTA stays: "Unlock Full Quality" -> Email (if missing) else Payment
- */
 
 type FunnelSession = {
   gift_type?: string;
@@ -16,6 +7,12 @@ type FunnelSession = {
   script?: string;
   email?: string;
   lead_id?: string | number | null;
+  funnel_slug?: string;
+  generation_id?: string | null;
+  template_id?: string | null;
+  occasion?: string | null;
+  photo_bucket?: string | null;
+  photo_path?: string | null;
 };
 
 function readSession(): FunnelSession | null {
@@ -23,6 +20,14 @@ function readSession(): FunnelSession | null {
     return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
   } catch {
     return null;
+  }
+}
+
+function writeSession(next: FunnelSession) {
+  try {
+    localStorage.setItem("tdg_funnel_session", JSON.stringify(next));
+  } catch {
+    // ignore
   }
 }
 
@@ -38,12 +43,6 @@ function isHttpUrl(url: string) {
   return /^https?:\/\//i.test(url);
 }
 
-/**
- * We support:
- * - full public URL
- * - storage path like "uploads/xyz.jpg"
- * - bucket/path stored as "bucket:path" (optional)
- */
 const SUPABASE_URL = "https://rmdsnpckutsucabledqz.supabase.co";
 
 function resolvePublicObjectUrl(bucket: string, path: string) {
@@ -55,23 +54,24 @@ function resolvePublicObjectUrl(bucket: string, path: string) {
 }
 
 function getStoredPhotoRef(): { bucket: string; path: string } | null {
-  // 1) prefer the new keys used in StyleSelect
-  const bucket = safeString(localStorage.getItem("tdg_funnel_bucket") || "") || "templates";
-  const p1 = safeString(localStorage.getItem("tdg_funnel_photo_path") || "");
+  const s = readSession();
+
+  const bucket =
+    safeString(s?.photo_bucket) ||
+    safeString(localStorage.getItem("tdg_funnel_bucket")) ||
+    "templates";
+
+  const p1 =
+    safeString(s?.photo_path) ||
+    safeString(localStorage.getItem("tdg_funnel_photo_path")) ||
+    safeString(localStorage.getItem("tdg_funnel_photo"));
+
   if (p1) return { bucket, path: p1 };
 
-  // 2) fallback old key
-  const p2 = safeString(localStorage.getItem("tdg_funnel_photo") || "");
-  if (!p2) return null;
+  const p2 = safeString(localStorage.getItem("tdg_uploaded_photo_path"));
+  if (p2) return { bucket, path: p2 };
 
-  // support "bucket:path" if you ever stored that format
-  if (p2.includes(":")) {
-    const [b, ...rest] = p2.split(":");
-    const path = rest.join(":");
-    return { bucket: b || bucket, path };
-  }
-
-  return { bucket, path: p2 };
+  return null;
 }
 
 function Button(props: {
@@ -107,7 +107,6 @@ export default function FunnelPreview() {
 
   const redirectTimerRef = useRef<number | null>(null);
 
-  // ✅ Next step: Email (if missing) else Payment
   const goNext = useCallback(() => {
     const s = readSession();
     const email = String(s?.email || "").trim().toLowerCase();
@@ -116,6 +115,7 @@ export default function FunnelPreview() {
 
   useEffect(() => {
     const ref = getStoredPhotoRef();
+    const s = readSession() || {};
 
     if (!ref?.path) {
       redirectTimerRef.current = window.setTimeout(() => {
@@ -123,6 +123,12 @@ export default function FunnelPreview() {
       }, 250);
       return;
     }
+
+    writeSession({
+      ...s,
+      photo_bucket: ref.bucket,
+      photo_path: ref.path,
+    });
 
     const url = resolvePublicObjectUrl(ref.bucket || "templates", ref.path);
     setPhotoUrl(url);
@@ -143,7 +149,6 @@ export default function FunnelPreview() {
 
   return (
     <div className="min-h-screen w-full" style={bg}>
-      {/* Brand header (matches StyleSelect vibe) */}
       <div className="pt-10">
         <div className="mx-auto max-w-5xl px-6">
           <div
@@ -168,18 +173,15 @@ export default function FunnelPreview() {
           </p>
         </div>
 
-        {/* Blurred image block */}
         <div className="mx-auto mt-10 max-w-3xl">
           <div className="flex items-center justify-center">
             <div className="w-full">
               <div className="mx-auto w-full max-w-[680px]">
                 <div className="relative overflow-hidden rounded-[18px] border border-black/10 bg-white/40 shadow-[0_16px_40px_-26px_rgba(0,0,0,0.45)]">
-                  {/* 4:3-ish like screenshot */}
                   <div className="relative w-full" style={{ paddingTop: "62%" }}>
                     <div className="absolute inset-0">
                       {hasPhoto ? (
                         <>
-                          {/* blurred image */}
                           <img
                             src={photoUrl}
                             alt="Your photo (blurred preview)"
@@ -191,8 +193,6 @@ export default function FunnelPreview() {
                             draggable={false}
                             onDragStart={(e) => e.preventDefault()}
                           />
-
-                          {/* subtle overlay to match AliveMoment softness */}
                           <div className="absolute inset-0 bg-[#F3EEE6]/30" />
                           <div
                             className="absolute inset-0"
@@ -214,7 +214,6 @@ export default function FunnelPreview() {
                   </div>
                 </div>
 
-                {/* CTA */}
                 <div className="mt-8 flex justify-center">
                   <Button onClick={goNext} disabled={!hasPhoto} className="w-full max-w-[420px]">
                     Unlock Full Quality
