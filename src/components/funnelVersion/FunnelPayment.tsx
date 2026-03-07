@@ -209,8 +209,7 @@ export default function FunnelPayment(): JSX.Element {
   const generationId =
     generationIdFromUrl ||
     String(sessionData?.generation_id || "").trim() ||
-    localStorage.getItem("tdg_generation_id") ||
-    "";
+    (localStorage.getItem("tdg_generation_id") || "").trim();
 
   useEffect(() => {
     if (canceled) {
@@ -220,6 +219,7 @@ export default function FunnelPayment(): JSX.Element {
 
   useEffect(() => {
     const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
+
     if (!photo) {
       toast.error("Upload a photo first.");
       navigate("/funnel/uploadPhoto", { replace: true });
@@ -231,24 +231,20 @@ export default function FunnelPayment(): JSX.Element {
       navigate("/funnel/email", { replace: true });
       return;
     }
-
-    if (!generationId) {
-      toast.error("Missing generation. Please restart the funnel.");
-      navigate("/funnel/uploadPhoto", { replace: true });
-      return;
-    }
-  }, [navigate, email, generationId]);
+  }, [navigate, email]);
 
   useEffect(() => {
     const t = window.setInterval(() => {
       const ms = getDealExpiresAtMs() - Date.now();
       setSecondsLeft(Math.max(0, Math.floor(ms / 1000)));
     }, 1000);
+
     return () => window.clearInterval(t);
   }, []);
 
   function applyPromo(): void {
     const code = promo.trim();
+
     if (!code) {
       toast.error("Enter a promo code.");
       return;
@@ -283,8 +279,7 @@ export default function FunnelPayment(): JSX.Element {
     }
 
     if (!generationId) {
-      toast.error("Missing generation. Please restart the funnel.");
-      navigate("/funnel/uploadPhoto", { replace: true });
+      toast.error("Generation is not ready yet. Please complete the previous funnel step first.");
       return;
     }
 
