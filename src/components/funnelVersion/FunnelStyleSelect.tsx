@@ -1,4 +1,3 @@
-// src/components/funnelVersion/FunnelStyleSelect.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -13,10 +12,50 @@ type TemplateDbRow = {
 };
 
 type FunnelStyle = {
-  id: string;      // style_id
-  name: string;    // title
-  script: string;  // prompt
+  id: string;
+  name: string;
+  script: string;
 };
+
+type FunnelSession = {
+  gift_type?: string;
+  style_id?: string;
+  script?: string;
+  email?: string;
+  lead_id?: string | number | null;
+  funnel_slug?: string;
+  generation_id?: string | null;
+  template_id?: string | null;
+  occasion?: string | null;
+  photo_bucket?: string | null;
+  photo_path?: string | null;
+};
+
+function readSession(): FunnelSession | null {
+  try {
+    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(next: FunnelSession) {
+  try {
+    localStorage.setItem("tdg_funnel_session", JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
+function mergeSession(partial: Partial<FunnelSession>): FunnelSession {
+  const current = readSession() || {};
+  const next: FunnelSession = {
+    ...current,
+    ...partial,
+  };
+  writeSession(next);
+  return next;
+}
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -41,8 +80,6 @@ function normalizeOccasion(raw: string) {
 }
 
 const NEXT_ROUTE = "/funnel/preview";
-
-// ------- marketing helpers -------
 
 function emojiForStyle(title: string) {
   const s = safeString(title).toLowerCase();
@@ -82,30 +119,14 @@ function descriptionForTemplateTitle(title: string) {
     return "A delicate pastel touch with smooth, airy motion — sweet, elegant, and gift-ready.";
   }
 
-  if (s.includes("angel")) {
-    return "Soft, heavenly motion with a gentle glow — tender, peaceful, and emotionally rich.";
-  }
-  if (s.includes("sleep") || s.includes("dream")) {
-    return "A dreamy, slow-motion feel — soothing, intimate, and perfect for quiet memories.";
-  }
-  if (s.includes("cozy") || s.includes("blanket") || s.includes("warm")) {
-    return "Warm, comforting movement — like a hug in motion, soft and reassuring.";
-  }
-  if (s.includes("first") || s.includes("light") || s.includes("sunrise")) {
-    return "A bright, uplifting reveal — clean, cinematic, and naturally beautiful.";
-  }
-  if (s.includes("gold") || s.includes("golden") || s.includes("glow")) {
-    return "A premium glow that adds warmth and depth — timeless, radiant, and share-worthy.";
-  }
-  if (s.includes("minimal") || s.includes("studio") || s.includes("editorial")) {
-    return "Minimal, modern, and polished — subtle motion that feels premium and intentional.";
-  }
-  if (s.includes("pastel") || s.includes("soft") || s.includes("pink")) {
-    return "Soft, delicate color energy — gentle motion with a sweet, elegant finish.";
-  }
-  if (s.includes("cinema") || s.includes("film") || s.includes("movie")) {
-    return "Cinematic motion with tasteful depth — dramatic in a subtle, premium way.";
-  }
+  if (s.includes("angel")) return "Soft, heavenly motion with a gentle glow — tender, peaceful, and emotionally rich.";
+  if (s.includes("sleep") || s.includes("dream")) return "A dreamy, slow-motion feel — soothing, intimate, and perfect for quiet memories.";
+  if (s.includes("cozy") || s.includes("blanket") || s.includes("warm")) return "Warm, comforting movement — like a hug in motion, soft and reassuring.";
+  if (s.includes("first") || s.includes("light") || s.includes("sunrise")) return "A bright, uplifting reveal — clean, cinematic, and naturally beautiful.";
+  if (s.includes("gold") || s.includes("golden") || s.includes("glow")) return "A premium glow that adds warmth and depth — timeless, radiant, and share-worthy.";
+  if (s.includes("minimal") || s.includes("studio") || s.includes("editorial")) return "Minimal, modern, and polished — subtle motion that feels premium and intentional.";
+  if (s.includes("pastel") || s.includes("soft") || s.includes("pink")) return "Soft, delicate color energy — gentle motion with a sweet, elegant finish.";
+  if (s.includes("cinema") || s.includes("film") || s.includes("movie")) return "Cinematic motion with tasteful depth — dramatic in a subtle, premium way.";
 
   return "A premium motion style designed to make your photo feel alive — elegant, emotional, and gift-ready.";
 }
@@ -139,20 +160,50 @@ export default function FunnelStyleSelect() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const bucket = safeString(searchParams.get("bucket")) || "templates";
-  const photoPath = safeString(searchParams.get("photo"));
-  const slug = safeString(searchParams.get("slug"));
+  const bucket = safeString(searchParams.get("bucket")) || safeString(localStorage.getItem("tdg_funnel_bucket")) || "templates";
+  const photoPath =
+    safeString(searchParams.get("photo")) ||
+    safeString(localStorage.getItem("tdg_funnel_photo_path")) ||
+    safeString(localStorage.getItem("tdg_funnel_photo"));
 
+  const slugFromQs = safeString(searchParams.get("slug"));
   const occasion = useMemo(() => {
     const fromQs = safeString(searchParams.get("occasion"));
-    return normalizeOccasion(fromQs || slug || "newborn");
-  }, [searchParams, slug]);
+    const fromStorage = safeString(localStorage.getItem("tdg_funnel_occasion"));
+    const fromSession = safeString(readSession()?.occasion);
+    return normalizeOccasion(fromQs || fromStorage || fromSession || slugFromQs || "newborn");
+  }, [searchParams, slugFromQs]);
+
+  const slug = normalizeOccasion(
+    slugFromQs ||
+      safeString(localStorage.getItem("tdg_funnel_slug")) ||
+      safeString(readSession()?.funnel_slug) ||
+      occasion
+  );
 
   const header = useMemo(() => headerForOccasion(occasion), [occasion]);
 
   const [loading, setLoading] = useState(true);
   const [styles, setStyles] = useState<FunnelStyle[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    mergeSession({
+      funnel_slug: slug,
+      occasion,
+      gift_type: occasion,
+      photo_bucket: bucket,
+      photo_path: photoPath || null,
+    });
+
+    localStorage.setItem("tdg_funnel_slug", slug);
+    localStorage.setItem("tdg_funnel_occasion", occasion);
+    if (bucket) localStorage.setItem("tdg_funnel_bucket", bucket);
+    if (photoPath) {
+      localStorage.setItem("tdg_funnel_photo_path", photoPath);
+      localStorage.setItem("tdg_funnel_photo", photoPath);
+    }
+  }, [slug, occasion, bucket, photoPath]);
 
   useEffect(() => {
     let alive = true;
@@ -221,27 +272,26 @@ export default function FunnelStyleSelect() {
       return;
     }
 
-    try {
-      window.localStorage.setItem(
-        "tdg_funnel_session",
-        JSON.stringify({
-          gift_type: occasion,
-          style_id: style.id,
-          script: style.script,
-        })
-      );
-      window.localStorage.setItem("tdg_funnel_style", style.id);
-      window.localStorage.setItem("tdg_funnel_slug", slug || occasion);
-      window.localStorage.setItem("tdg_funnel_bucket", bucket);
-      window.localStorage.setItem("tdg_funnel_photo_path", photoPath);
-    } catch {
-      // ignore localStorage failures
-    }
+    mergeSession({
+      gift_type: occasion,
+      occasion,
+      style_id: style.id,
+      script: style.script,
+      funnel_slug: slug,
+      photo_bucket: bucket,
+      photo_path: photoPath,
+    });
+
+    localStorage.setItem("tdg_funnel_style", style.id);
+    localStorage.setItem("tdg_funnel_slug", slug);
+    localStorage.setItem("tdg_funnel_bucket", bucket);
+    localStorage.setItem("tdg_funnel_photo_path", photoPath);
+    localStorage.setItem("tdg_funnel_photo", photoPath);
 
     const qs = new URLSearchParams({
       bucket,
       photo: photoPath,
-      slug: slug || occasion,
+      slug,
       occasion,
       style: style.id,
     });
@@ -251,7 +301,6 @@ export default function FunnelStyleSelect() {
 
   return (
     <div className="min-h-screen w-full bg-[#F3EEE6] text-[#111827]">
-      {/* Brand */}
       <div className="pt-10">
         <div className="mx-auto max-w-5xl px-6">
           <div
@@ -263,7 +312,6 @@ export default function FunnelStyleSelect() {
         </div>
       </div>
 
-      {/* Main */}
       <div className="mx-auto max-w-5xl px-6 pb-20 pt-10">
         <div className="mx-auto max-w-2xl text-center">
           <h1
@@ -273,9 +321,7 @@ export default function FunnelStyleSelect() {
             {header.title}
           </h1>
 
-          <p className="mt-3 text-sm text-[#111827]/70 sm:text-base">
-            {header.subtitle}
-          </p>
+          <p className="mt-3 text-sm text-[#111827]/70 sm:text-base">{header.subtitle}</p>
         </div>
 
         <div className="mx-auto mt-10 max-w-xl">
@@ -295,10 +341,7 @@ export default function FunnelStyleSelect() {
             {loading ? (
               <>
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="rounded-[10px] border border-[#D7DEEA] bg-white/40 px-6 py-5"
-                  >
+                  <div key={i} className="rounded-[10px] border border-[#D7DEEA] bg-white/40 px-6 py-5">
                     <div className="h-4 w-56 rounded bg-black/10" />
                     <div className="mt-2 h-3 w-80 rounded bg-black/5" />
                   </div>
@@ -331,15 +374,9 @@ export default function FunnelStyleSelect() {
                   >
                     <div className="flex items-start gap-3">
                       <div className="pt-[1px] text-[14px] leading-none">{emoji}</div>
-
                       <div className="min-w-0">
-                        <div className="text-[15px] font-semibold text-[#111827]">
-                          {style.name}
-                        </div>
-
-                        <div className="mt-1 text-[12px] leading-snug text-[#111827]/55">
-                          {desc}
-                        </div>
+                        <div className="text-[15px] font-semibold text-[#111827]">{style.name}</div>
+                        <div className="mt-1 text-[12px] leading-snug text-[#111827]/55">{desc}</div>
                       </div>
                     </div>
                   </button>

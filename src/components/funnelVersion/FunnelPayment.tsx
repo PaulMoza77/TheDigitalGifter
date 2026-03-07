@@ -11,6 +11,9 @@ type FunnelSession = {
   funnel_slug?: string;
   generation_id?: string | null;
   template_id?: string | null;
+  occasion?: string | null;
+  photo_bucket?: string | null;
+  photo_path?: string | null;
 };
 
 type PlanId = "starter" | "pro" | "elite";
@@ -160,7 +163,6 @@ function getPromoEffect(codeRaw: string): PromoEffect {
   const code = codeRaw.trim().toUpperCase();
 
   if (!code) return { kind: "none" };
-
   if (code === "START70") {
     return { kind: "percent_first_month", percent: 70 };
   }
@@ -211,15 +213,8 @@ function resolveFunnelContext(search: string) {
   const params = new URLSearchParams(search);
   const session = readSession() || {};
 
-  const generationIdFromUrl = (params.get("generation_id") || "").trim();
   const templateIdFromUrl = (params.get("template_id") || "").trim();
   const emailFromUrl = (params.get("email") || "").trim();
-
-  const generationId =
-    generationIdFromUrl ||
-    String(session.generation_id || "").trim() ||
-    (localStorage.getItem("tdg_generation_id") || "").trim() ||
-    (localStorage.getItem("tdg_last_generation_id") || "").trim();
 
   const email =
     emailFromUrl ||
@@ -232,38 +227,49 @@ function resolveFunnelContext(search: string) {
     (localStorage.getItem("tdg_template_id") || "").trim();
 
   const photo =
+    String(session.photo_path || "").trim() ||
     (localStorage.getItem("tdg_funnel_photo") || "").trim() ||
-    (localStorage.getItem("tdg_uploaded_photo_url") || "").trim() ||
-    (localStorage.getItem("tdg_uploaded_photo_path") || "").trim();
+    (localStorage.getItem("tdg_funnel_photo_path") || "").trim() ||
+    (localStorage.getItem("tdg_uploaded_photo_path") || "").trim() ||
+    (localStorage.getItem("tdg_uploaded_photo_url") || "").trim();
 
-  if (generationId || email || templateId) {
+  const styleId =
+    String(session.style_id || "").trim() ||
+    (localStorage.getItem("tdg_funnel_style") || "").trim();
+
+  const funnelSlug =
+    String(session.funnel_slug || "").trim() ||
+    (localStorage.getItem("tdg_funnel_slug") || "").trim();
+
+  const occasion =
+    String(session.occasion || "").trim() ||
+    String(session.gift_type || "").trim() ||
+    (localStorage.getItem("tdg_funnel_occasion") || "").trim();
+
+  if (email || templateId || photo || styleId || funnelSlug || occasion) {
     mergeSession({
       ...session,
-      generation_id: generationId || session.generation_id || null,
       email: email || session.email || "",
       template_id: templateId || session.template_id || null,
+      photo_path: photo || session.photo_path || null,
+      style_id: styleId || session.style_id || undefined,
+      funnel_slug: funnelSlug || session.funnel_slug || undefined,
+      occasion: occasion || session.occasion || null,
+      gift_type: occasion || session.gift_type || undefined,
     });
   }
 
-  if (generationId) {
-    localStorage.setItem("tdg_generation_id", generationId);
-    localStorage.setItem("tdg_last_generation_id", generationId);
-  }
-
-  if (email) {
-    localStorage.setItem("tdg_email", email);
-  }
-
-  if (templateId) {
-    localStorage.setItem("tdg_template_id", templateId);
-  }
+  if (email) localStorage.setItem("tdg_email", email);
+  if (templateId) localStorage.setItem("tdg_template_id", templateId);
 
   return {
     canceled: (params.get("canceled") || "").trim() === "1",
-    generationId,
     email,
     templateId,
     photo,
+    styleId,
+    funnelSlug,
+    occasion,
   };
 }
 
@@ -294,31 +300,21 @@ export default function FunnelPayment(): JSX.Element {
   useEffect(() => {
     if (!funnel.photo) {
       toast.error("Upload a photo first.");
-      navigate(
-        funnel.generationId
-          ? `/funnel/uploadPhoto?generation_id=${encodeURIComponent(funnel.generationId)}`
-          : "/funnel/uploadPhoto",
-        { replace: true }
-      );
+      navigate("/funnel/uploadPhoto", { replace: true });
+      return;
+    }
+
+    if (!funnel.styleId) {
+      toast.error("Choose a style first.");
+      navigate("/funnel/styleSelect", { replace: true });
       return;
     }
 
     if (!funnel.email) {
       toast.error("Please enter your email to continue.");
-      navigate(
-        funnel.generationId
-          ? `/funnel/email?generation_id=${encodeURIComponent(funnel.generationId)}`
-          : "/funnel/email",
-        { replace: true }
-      );
-      return;
+      navigate("/funnel/email", { replace: true });
     }
-
-    if (!funnel.generationId) {
-      toast.error("Generation is not ready yet. Please complete the previous funnel step first.");
-      navigate("/funnel/uploadPhoto", { replace: true });
-    }
-  }, [navigate, funnel.photo, funnel.email, funnel.generationId]);
+  }, [navigate, funnel.photo, funnel.styleId, funnel.email]);
 
   useEffect(() => {
     const t = window.setInterval(() => {
@@ -359,31 +355,21 @@ export default function FunnelPayment(): JSX.Element {
   async function onCheckout(): Promise<void> {
     if (isPaying) return;
 
-    if (!funnel.email) {
-      toast.error("Missing email. Please re-enter your email.");
-      navigate(
-        funnel.generationId
-          ? `/funnel/email?generation_id=${encodeURIComponent(funnel.generationId)}`
-          : "/funnel/email",
-        { replace: true }
-      );
-      return;
-    }
-
     if (!funnel.photo) {
       toast.error("Upload a photo first.");
-      navigate(
-        funnel.generationId
-          ? `/funnel/uploadPhoto?generation_id=${encodeURIComponent(funnel.generationId)}`
-          : "/funnel/uploadPhoto",
-        { replace: true }
-      );
+      navigate("/funnel/uploadPhoto", { replace: true });
       return;
     }
 
-    if (!funnel.generationId) {
-      toast.error("Generation is not ready yet. Please complete the previous funnel step first.");
-      navigate("/funnel/uploadPhoto", { replace: true });
+    if (!funnel.styleId) {
+      toast.error("Choose a style first.");
+      navigate("/funnel/styleSelect", { replace: true });
+      return;
+    }
+
+    if (!funnel.email) {
+      toast.error("Missing email. Please re-enter your email.");
+      navigate("/funnel/email", { replace: true });
       return;
     }
 
@@ -392,6 +378,17 @@ export default function FunnelPayment(): JSX.Element {
     try {
       const { url: SUPABASE_URL, anon: ANON_KEY } = getPublicSupabaseConfig();
 
+      const payload = {
+        plan: selected,
+        email: funnel.email,
+        template_id: funnel.templateId || null,
+        promo_code: promoApplied ? promo.trim() : "",
+        style_id: funnel.styleId || null,
+        funnel_slug: funnel.funnelSlug || null,
+        occasion: funnel.occasion || null,
+        photo_path: funnel.photo || null,
+      };
+
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: "POST",
         headers: {
@@ -399,13 +396,7 @@ export default function FunnelPayment(): JSX.Element {
           apikey: ANON_KEY,
           Authorization: `Bearer ${ANON_KEY}`,
         },
-        body: JSON.stringify({
-          plan: selected,
-          email: funnel.email,
-          generation_id: funnel.generationId,
-          template_id: funnel.templateId || null,
-          promo_code: promoApplied ? promo.trim() : "",
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await safeReadJson(res);
@@ -415,9 +406,8 @@ export default function FunnelPayment(): JSX.Element {
         throw new Error(msg);
       }
 
-      if (data?.id && funnel.generationId) {
-        localStorage.setItem(`tdg_session_generation:${data.id}`, funnel.generationId);
-        localStorage.setItem("tdg_last_generation_id", funnel.generationId);
+      if (data?.id) {
+        localStorage.setItem("tdg_last_checkout_session_id", data.id);
       }
 
       const checkoutUrl = (data.url || "").toString();
@@ -652,7 +642,7 @@ export default function FunnelPayment(): JSX.Element {
 
           <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
             Selected: {selectedPlan.id} • Credits: {selectedPlan.credits} • Promo:{" "}
-            {promoApplied ? promo.toUpperCase() : "none"} • Generation: {funnel.generationId || "missing"}
+            {promoApplied ? promo.toUpperCase() : "none"} • Style: {funnel.styleId || "missing"}
           </div>
         </div>
       </div>
