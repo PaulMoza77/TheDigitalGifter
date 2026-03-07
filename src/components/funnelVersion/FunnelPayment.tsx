@@ -1,6 +1,5 @@
-// src/components/funnelVersion/FunnelPayment.tsx
 import React, { JSX, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 type FunnelSession = {
@@ -10,6 +9,8 @@ type FunnelSession = {
   email?: string;
   lead_id?: string | number | null;
   funnel_slug?: string;
+  generation_id?: string | null;
+  template_id?: string | null;
 };
 
 type PlanId = "starter" | "pro" | "elite";
@@ -20,14 +21,19 @@ type Plan = {
   subtitle: string;
   credits: number;
   generations: number;
-  price: string; // display (standard)
+  price: string;
   was?: string;
   badge?: string;
   badgeTone?: "yellow" | "red";
   default?: boolean;
 };
 
-type CheckoutResponse = { url?: string; error?: string; message?: string };
+type CheckoutResponse = {
+  url?: string;
+  id?: string;
+  error?: string;
+  message?: string;
+};
 
 function readSession(): FunnelSession | null {
   try {
@@ -80,7 +86,7 @@ function getDealExpiresAtMs(): number {
   const existing = Number(localStorage.getItem(key) || "0");
   if (existing && Number.isFinite(existing) && existing > Date.now()) return existing;
 
-  const next = Date.now() + 30 * 60 * 1000; // 30 min
+  const next = Date.now() + 30 * 60 * 1000;
   localStorage.setItem(key, String(next));
   return next;
 }
@@ -92,7 +98,7 @@ function formatMMSS(totalSeconds: number): string {
 }
 
 function getPublicSupabaseConfig(): { url: string; anon: string } {
-  const env = import.meta.env as unknown as {
+  const env = import.meta.env as {
     VITE_SUPABASE_URL?: string;
     VITE_SUPABASE_ANON_KEY?: string;
   };
@@ -101,7 +107,7 @@ function getPublicSupabaseConfig(): { url: string; anon: string } {
   const anon = (env.VITE_SUPABASE_ANON_KEY || "").trim();
 
   if (!url || !anon) {
-    throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY (Vercel env).");
+    throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
   }
 
   return { url, anon };
@@ -115,7 +121,6 @@ async function safeReadJson(res: Response): Promise<CheckoutResponse> {
   }
 }
 
-// ---------- PRICE HELPERS ----------
 function parseEuro(eur: string): number {
   const n = Number(String(eur).replace("€", "").trim());
   return Number.isFinite(n) ? n : 0;
@@ -131,16 +136,11 @@ type PromoEffect =
   | { kind: "percent_first_month"; percent: number };
 
 function getPromoEffect(codeRaw: string): PromoEffect {
-  const code = codeRaw.trim();
+  const code = codeRaw.trim().toUpperCase();
   if (!code) return { kind: "none" };
-
-  const upper = code.toUpperCase();
-
-  // ✅ ONLY: START70 => 70% off first month (applies to all 3 plans)
-  if (upper === "START70") {
+  if (code === "START70") {
     return { kind: "percent_first_month", percent: 70 };
   }
-
   return { kind: "none" };
 }
 
@@ -170,7 +170,6 @@ function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, promoCode: string
     };
   }
 
-  // percent off first month
   const first = standard * (1 - effect.percent / 100);
 
   return {
@@ -185,24 +184,40 @@ function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, promoCode: string
 
 export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [selected, setSelected] = useState<PlanId>(() => plans.find((p) => p.default)?.id ?? "pro");
-
   const [promo, setPromo] = useState<string>(() => localStorage.getItem("tdg_promo_code") || "");
   const [promoApplied, setPromoApplied] = useState<boolean>(() => localStorage.getItem("tdg_promo_applied") === "1");
-
   const [secondsLeft, setSecondsLeft] = useState<number>(() => {
     const ms = getDealExpiresAtMs() - Date.now();
     return Math.max(0, Math.floor(ms / 1000));
   });
-
   const [isPaying, setIsPaying] = useState<boolean>(false);
 
-  const selectedPlan = useMemo<Plan>(() => plans.find((p) => p.id === selected) ?? plans[1], [selected]);
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const generationIdFromUrl = (params.get("generation_id") || "").trim();
+  const canceled = (params.get("canceled") || "").trim() === "1";
 
+  const selectedPlan = useMemo<Plan>(() => plans.find((p) => p.id === selected) ?? plans[1], [selected]);
   const expired = secondsLeft <= 0;
 
-  // Guard: require photo + email
+  const sessionData = useMemo(() => readSession(), []);
+  const email = String(sessionData?.email || "").trim();
+  const templateId = String(sessionData?.template_id || "").trim();
+
+  const generationId =
+    generationIdFromUrl ||
+    String(sessionData?.generation_id || "").trim() ||
+    localStorage.getItem("tdg_generation_id") ||
+    "";
+
+  useEffect(() => {
+    if (canceled) {
+      toast.error("Checkout canceled.");
+    }
+  }, [canceled]);
+
   useEffect(() => {
     const photo = (localStorage.getItem("tdg_funnel_photo") || "").trim();
     if (!photo) {
@@ -211,16 +226,19 @@ export default function FunnelPayment(): JSX.Element {
       return;
     }
 
-    const s = readSession();
-    const email = String(s?.email || "").trim();
     if (!email) {
       toast.error("Please enter your email to continue.");
       navigate("/funnel/email", { replace: true });
       return;
     }
-  }, [navigate]);
 
-  // Countdown
+    if (!generationId) {
+      toast.error("Missing generation. Please restart the funnel.");
+      navigate("/funnel/uploadPhoto", { replace: true });
+      return;
+    }
+  }, [navigate, email, generationId]);
+
   useEffect(() => {
     const t = window.setInterval(() => {
       const ms = getDealExpiresAtMs() - Date.now();
@@ -258,12 +276,15 @@ export default function FunnelPayment(): JSX.Element {
   async function onCheckout(): Promise<void> {
     if (isPaying) return;
 
-    const s = readSession();
-    const email = String(s?.email || "").trim();
-
     if (!email) {
       toast.error("Missing email. Please re-enter your email.");
       navigate("/funnel/email", { replace: true });
+      return;
+    }
+
+    if (!generationId) {
+      toast.error("Missing generation. Please restart the funnel.");
+      navigate("/funnel/uploadPhoto", { replace: true });
       return;
     }
 
@@ -282,6 +303,8 @@ export default function FunnelPayment(): JSX.Element {
         body: JSON.stringify({
           plan: selected,
           email,
+          generation_id: generationId,
+          template_id: templateId || null,
           promo_code: promoApplied ? promo.trim() : "",
         }),
       });
@@ -291,6 +314,11 @@ export default function FunnelPayment(): JSX.Element {
       if (!res.ok) {
         const msg = (data.error || data.message || `Checkout error (${res.status})`).toString();
         throw new Error(msg);
+      }
+
+      if (data?.id && generationId) {
+        localStorage.setItem(`tdg_session_generation:${data.id}`, generationId);
+        localStorage.setItem("tdg_last_generation_id", generationId);
       }
 
       const checkoutUrl = (data.url || "").toString();
@@ -309,11 +337,9 @@ export default function FunnelPayment(): JSX.Element {
   return (
     <div className="min-h-screen w-full bg-[#F6F0E6] text-[#10221B]">
       <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
-        {/* Brand */}
         <div className="text-center">
           <div className="text-2xl font-semibold tracking-tight">thedigitalgifter</div>
 
-          {/* Timer strip */}
           <div className="mx-auto mt-6 flex max-w-xl items-center justify-center gap-4">
             <div className="flex items-end gap-3 rounded-2xl bg-transparent px-4 py-3">
               <div className="text-4xl font-semibold tabular-nums leading-none">
@@ -355,7 +381,6 @@ export default function FunnelPayment(): JSX.Element {
           </p>
         </div>
 
-        {/* Promo */}
         <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-black/10 bg-white/55 p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-medium">
@@ -397,7 +422,7 @@ export default function FunnelPayment(): JSX.Element {
 
             <div
               className={cn(
-                "h-11 min-w-[92px] rounded-xl px-3 text-sm font-semibold flex items-center justify-center",
+                "flex h-11 min-w-[92px] items-center justify-center rounded-xl px-3 text-sm font-semibold",
                 expired ? "bg-black/5 text-black/45" : "bg-black/5 text-black/70"
               )}
             >
@@ -412,11 +437,9 @@ export default function FunnelPayment(): JSX.Element {
           ) : null}
         </div>
 
-        {/* Plans */}
         <div id="tdg-plans" className="mx-auto mt-10 max-w-xl space-y-4">
           {plans.map((p) => {
             const active = p.id === selected;
-
             const uiPrice = calcUiPriceForPlan(p, promoApplied, promo);
 
             return (
@@ -445,7 +468,7 @@ export default function FunnelPayment(): JSX.Element {
                     <div className="flex items-start gap-3">
                       <div
                         className={cn(
-                          "mt-1 h-5 w-5 rounded-full border flex items-center justify-center",
+                          "mt-1 flex h-5 w-5 items-center justify-center rounded-full border",
                           active ? "border-[#D44B4B]" : "border-black/15"
                         )}
                       >
@@ -482,20 +505,25 @@ export default function FunnelPayment(): JSX.Element {
             );
           })}
 
-          {/* CTA */}
           <div className="pt-2">
             <button
               type="button"
               onClick={() => void onCheckout()}
               disabled={isPaying || expired}
               className={cn(
-                "w-full h-12 rounded-full text-sm font-semibold transition",
+                "h-12 w-full rounded-full text-sm font-semibold transition",
                 isPaying || expired
-                  ? "bg-black/10 text-black/45 cursor-not-allowed"
+                  ? "cursor-not-allowed bg-black/10 text-black/45"
                   : "bg-[#F3D35B] text-[#10221B] hover:brightness-105 active:brightness-95"
               )}
             >
-              {isPaying ? "Redirecting…" : expired ? "Offer expired" : promoApplied ? "Continue to checkout (70% off first month)" : "Claim my plan"}
+              {isPaying
+                ? "Redirecting…"
+                : expired
+                  ? "Offer expired"
+                  : promoApplied
+                    ? "Continue to checkout (70% off first month)"
+                    : "Claim my plan"}
             </button>
 
             <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#10221B]/65">
@@ -509,7 +537,7 @@ export default function FunnelPayment(): JSX.Element {
               {["MC", "VISA", "Pay", "GPay"].map((x) => (
                 <div
                   key={x}
-                  className="h-9 min-w-[56px] rounded-xl border border-black/10 bg-white/70 px-3 flex items-center justify-center text-xs font-semibold text-[#10221B]/70"
+                  className="flex h-9 min-w-[56px] items-center justify-center rounded-xl border border-black/10 bg-white/70 px-3 text-xs font-semibold text-[#10221B]/70"
                 >
                   {x}
                 </div>
@@ -521,10 +549,9 @@ export default function FunnelPayment(): JSX.Element {
             </div>
           </div>
 
-          {/* debug (safe) */}
           <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
             Selected: {selectedPlan.id} • Credits: {selectedPlan.credits} • Promo:{" "}
-            {promoApplied ? promo.toUpperCase() : "none"}
+            {promoApplied ? promo.toUpperCase() : "none"} • Generation: {generationId || "missing"}
           </div>
         </div>
       </div>
