@@ -104,6 +104,7 @@ function normalizeResultRow(x: any): ResultRow | null {
   };
 }
 
+
 function normalizeUpgradeRpcRow(x: any): UpgradeRpcRow | null {
   if (!x) return null;
   const r = Array.isArray(x) ? x[0] : x;
