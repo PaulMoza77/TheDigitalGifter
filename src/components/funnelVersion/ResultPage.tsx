@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,6 +17,18 @@ import {
   Download,
   ArrowLeft,
 } from "lucide-react";
+
+const publicSupabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  }
+);
 
 function useQuery() {
   const { search } = useLocation();
@@ -76,7 +89,7 @@ async function resolveImageUrl(row: ResultRow): Promise<string | null> {
     return direct || null;
   }
 
-  const { data, error } = await supabase.storage
+  const { data, error } = await publicSupabase.storage
     .from(bucket)
     .createSignedUrl(path, 60 * 60);
 
@@ -205,7 +218,7 @@ export default function ResultPage() {
     const sess = (session || "").trim();
 
     if (genId) {
-      const { data, error } = await supabase
+      const { data, error } = await publicSupabase
         .from("generations")
         .select(
           "id,status,final_image_url,result_image_url,preview_image_url,final_bucket,final_storage_path,created_at,updated_at"
@@ -213,7 +226,10 @@ export default function ResultPage() {
         .eq("id", genId)
         .maybeSingle();
 
-      if (error) throw new Error(error.message || "Failed to load generation");
+      if (error) {
+        throw new Error(error.message || "Failed to load generation");
+      }
+
       return normalizeResultRow(data);
     }
 
@@ -223,7 +239,10 @@ export default function ResultPage() {
         p_generation_id: null,
       });
 
-      if (error) throw new Error(error.message || "Failed to load generation");
+      if (error) {
+        throw new Error(error.message || "Failed to load generation");
+      }
+
       return normalizeResultRow(data);
     }
 
