@@ -1,7 +1,7 @@
 // FILE: src/components/UserMenu.tsx
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutGrid, LogOut, Wand2 } from "lucide-react";
+import { LayoutGrid, LogOut, Shield, Wand2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -9,6 +9,7 @@ export default function UserMenu() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [open, setOpen] = React.useState(false);
+  const [isAdmin, setIsAdmin] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -31,6 +32,35 @@ export default function UserMenu() {
       document.removeEventListener("keydown", handleEscape);
     };
   }, []);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    async function checkAdmin() {
+      if (!user?.id) {
+        if (mounted) setIsAdmin(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("is_admin");
+
+      if (!mounted) return;
+
+      if (error) {
+        console.error("is_admin rpc error:", error);
+        setIsAdmin(false);
+        return;
+      }
+
+      setIsAdmin(!!data);
+    }
+
+    checkAdmin();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]);
 
   async function handleLogout() {
     setOpen(false);
@@ -100,6 +130,20 @@ export default function UserMenu() {
             <Wand2 className="h-4 w-4" />
             Generator
           </button>
+
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                navigate("/admin");
+              }}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-white transition hover:bg-white/8"
+            >
+              <Shield className="h-4 w-4" />
+              Admin Panel
+            </button>
+          ) : null}
 
           <div className="my-2 h-px bg-white/10" />
 
