@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,23 +16,6 @@ import {
   Download,
   ArrowLeft,
 } from "lucide-react";
-
-const publicSupabase = createClient(
-  "https://rmdsnpckutsucabledqz.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtZHNucGNrdXRzdWNhYmxlZHF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjE2NTksImV4cCI6MjA4NjM5NzY1OX0.yHUiSnsvCyjXkLaazuumVcEL4d0ChdwFaaFR4YXkkCI",
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-    global: {
-      headers: {
-        "X-Client-Info": "thedigitalgifter-web",
-      },
-    },
-  }
-);
 
 function useQuery() {
   const { search } = useLocation();
@@ -77,9 +60,7 @@ async function resolveImageUrl(row: ResultRow): Promise<string | null> {
 
   for (const value of candidates) {
     const url = String(value || "").trim();
-    if (url && isHttpUrl(url)) {
-      return url;
-    }
+    if (url && isHttpUrl(url)) return url;
   }
 
   return null;
@@ -162,7 +143,7 @@ const OFFER_CONFIG: Array<{
 function formatStatus(status: string | null) {
   const s = String(status || "").trim().toLowerCase();
   if (!s) return "waiting";
-  if (["succeeded", "done", "completed", "fulfilled", "ready"].includes(s)) return "ready";
+  if (["succeeded", "done", "completed", "fulfilled", "ready", "processing"].includes(s)) return s;
   return s;
 }
 
@@ -204,7 +185,7 @@ export default function ResultPage() {
     const sess = String(session || "").trim();
 
     if (genId) {
-      const { data, error } = await publicSupabase
+      const { data, error } = await supabase
         .from("generations")
         .select("id,status,final_image_url,result_image_url,preview_image_url,created_at")
         .eq("id", genId)
@@ -218,7 +199,7 @@ export default function ResultPage() {
     }
 
     if (sess) {
-      const { data, error } = await publicSupabase.rpc("get_result_page_generation", {
+      const { data, error } = await supabase.rpc("get_result_page_generation", {
         p_session_id: sess,
         p_generation_id: null,
       });
@@ -259,17 +240,17 @@ export default function ResultPage() {
     const existing = await fetchGeneration(generationId, null);
     const status = String(existing?.status || "").toLowerCase();
 
-    if (status === "processing" || status === "completed" || status === "ready" || status === "succeeded") {
+    if (["processing", "completed", "ready", "succeeded"].includes(status)) {
       return;
     }
 
-    const { error } = await publicSupabase.functions.invoke("generate-nano-banana", {
+    const { error } = await supabase.functions.invoke("generate-nano-banana", {
       body: { generation_id: generationId },
     });
 
     if (error) {
       generationStartedRef.current = null;
-      throw new Error(error.message || "Failed to start generation");
+      throw new Error(error.message || "Failed to send a request to the Edge Function");
     }
   }
 
@@ -295,7 +276,6 @@ export default function ResultPage() {
             setLoading(false);
             return true;
           }
-
           setRow(nextRow);
         }
 
@@ -327,7 +307,6 @@ export default function ResultPage() {
             setLoading(false);
             return true;
           }
-
           setRow(nextRow);
         }
 
@@ -350,7 +329,7 @@ export default function ResultPage() {
       const intervalMs = 1500;
 
       while (!cancelled && Date.now() - start < maxMs) {
-        const { data, error } = await publicSupabase.rpc("get_upgrade_result_by_checkout_session", {
+        const { data, error } = await supabase.rpc("get_upgrade_result_by_checkout_session", {
           p_checkout_session_id: checkoutSessionId,
         });
 
@@ -368,7 +347,6 @@ export default function ResultPage() {
           if (!cancelled) {
             setUpgradeStatus("Waiting for upgrade fulfillment…");
           }
-
           await new Promise((resolve) => setTimeout(resolve, intervalMs));
           continue;
         }
@@ -484,7 +462,7 @@ export default function ResultPage() {
       const successUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
       const cancelUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
 
-      const { data, error } = await publicSupabase.functions.invoke("create-checkout-session", {
+      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
         body: {
           generation_id: row.id,
           action_type: actionType,
@@ -523,11 +501,7 @@ export default function ResultPage() {
       <div className="min-h-screen" style={pageBg}>
         <header className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
           <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              className="text-zinc-700 hover:text-zinc-900"
-              onClick={() => navigate("/")}
-            >
+            <Button variant="ghost" className="text-zinc-700 hover:text-zinc-900" onClick={() => navigate("/")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
