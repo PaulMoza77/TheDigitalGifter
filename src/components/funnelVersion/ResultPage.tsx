@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import { Separator } from "@/components/ui/separator";
@@ -188,6 +188,8 @@ export default function ResultPage() {
     puzzle: false,
   });
 
+  const generationStartedRef = useRef<string | null>(null);
+
   const stepLabel = useMemo(() => "3 of 3", []);
   const pageBg = useMemo(() => ({ background: "#f6f1ea" as const }), []);
   const normalizedStatus = useMemo(() => formatStatus(row?.status ?? null), [row?.status]);
@@ -248,11 +250,36 @@ export default function ResultPage() {
     return false;
   }
 
+  async function startGenerationIfNeeded(generationId: string) {
+    if (!generationId) return;
+    if (generationStartedRef.current === generationId) return;
+
+    generationStartedRef.current = generationId;
+
+    const existing = await fetchGeneration(generationId, null);
+    const status = String(existing?.status || "").toLowerCase();
+
+    if (status === "processing" || status === "completed" || status === "ready" || status === "succeeded") {
+      return;
+    }
+
+    const { error } = await publicSupabase.functions.invoke("generate-nano-banana", {
+      body: { generation_id: generationId },
+    });
+
+    if (error) {
+      generationStartedRef.current = null;
+      throw new Error(error.message || "Failed to start generation");
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
     async function loadDirectGeneration() {
       if (!generationIdFromUrl) return false;
+
+      await startGenerationIfNeeded(generationIdFromUrl);
 
       const start = Date.now();
       const maxMs = 180000;
