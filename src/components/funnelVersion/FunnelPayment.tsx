@@ -1,6 +1,7 @@
 import React, { JSX, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 type FunnelSession = {
   gift_type?: string;
@@ -36,6 +37,8 @@ type CheckoutResponse = {
   id?: string;
   error?: string;
   message?: string;
+  generation_id?: string;
+  user_id?: string | null;
 };
 
 function cn(...classes: Array<string | false | null | undefined>): string {
@@ -273,6 +276,20 @@ function resolveFunnelContext(search: string) {
   };
 }
 
+async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, string>> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token?.trim();
+
+  return {
+    "Content-Type": "application/json",
+    apikey: anonKey,
+    Authorization: `Bearer ${accessToken || anonKey}`,
+  };
+}
+
 export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
@@ -377,6 +394,7 @@ export default function FunnelPayment(): JSX.Element {
 
     try {
       const { url: SUPABASE_URL, anon: ANON_KEY } = getPublicSupabaseConfig();
+      const headers = await getEdgeFunctionHeaders(ANON_KEY);
 
       const payload = {
         plan: selected,
@@ -391,11 +409,7 @@ export default function FunnelPayment(): JSX.Element {
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: ANON_KEY,
-          Authorization: `Bearer ${ANON_KEY}`,
-        },
+        headers,
         body: JSON.stringify(payload),
       });
 
@@ -408,6 +422,12 @@ export default function FunnelPayment(): JSX.Element {
 
       if (data?.id) {
         localStorage.setItem("tdg_last_checkout_session_id", data.id);
+      }
+
+      if (data?.generation_id) {
+        mergeSession({
+          generation_id: data.generation_id,
+        });
       }
 
       const checkoutUrl = (data.url || "").toString();
