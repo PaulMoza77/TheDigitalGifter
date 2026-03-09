@@ -65,25 +65,23 @@ function firstNonEmpty(...vals: Array<string | null | undefined>) {
 }
 
 async function resolveImageUrl(row: ResultRow): Promise<string | null> {
-  const direct = firstNonEmpty(
-    row.final_image_url,
-    row.result_image_url,
-    row.preview_image_url
-  );
+  const direct = firstNonEmpty(row.final_image_url, row.result_image_url);
 
   if (direct && isHttpUrl(direct)) return direct;
 
   const bucket = (row.final_bucket || "").trim();
   const path = (row.final_storage_path || "").trim();
 
-  if (!bucket || !path) return direct || null;
+  if (!bucket || !path) {
+    return direct || null;
+  }
 
   const { data, error } = await supabase.storage
     .from(bucket)
     .createSignedUrl(path, 60 * 60);
 
   if (error) return direct || null;
-  return (data?.signedUrl ?? direct) || null;
+  return data?.signedUrl ?? direct ?? null;
 }
 
 function normalizeResultRow(x: any): ResultRow | null {
@@ -103,7 +101,6 @@ function normalizeResultRow(x: any): ResultRow | null {
     updated_at: r.updated_at ?? null,
   };
 }
-
 
 function normalizeUpgradeRpcRow(x: any): UpgradeRpcRow | null {
   if (!x) return null;
@@ -207,16 +204,30 @@ export default function ResultPage() {
     const genId = (generationId || "").trim();
     const sess = (session || "").trim();
 
-    const { data, error } = await supabase.rpc("get_result_page_generation", {
-      p_session_id: sess || null,
-      p_generation_id: genId || null,
-    });
+    if (genId) {
+      const { data, error } = await supabase
+        .from("generations")
+        .select(
+          "id,status,final_image_url,result_image_url,preview_image_url,final_bucket,final_storage_path,created_at,updated_at"
+        )
+        .eq("id", genId)
+        .maybeSingle();
 
-    if (error) {
-      throw new Error(error.message || "Failed to load generation");
+      if (error) throw new Error(error.message || "Failed to load generation");
+      return normalizeResultRow(data);
     }
 
-    return normalizeResultRow(data);
+    if (sess) {
+      const { data, error } = await supabase.rpc("get_result_page_generation", {
+        p_session_id: sess,
+        p_generation_id: null,
+      });
+
+      if (error) throw new Error(error.message || "Failed to load generation");
+      return normalizeResultRow(data);
+    }
+
+    return null;
   }
 
   async function applyRow(r: ResultRow | null, modeLabel: string) {
@@ -224,6 +235,7 @@ export default function ResultPage() {
 
     setRow(r);
 
+    const hasDirectImage = Boolean(firstNonEmpty(r.final_image_url, r.result_image_url));
     const url = await resolveImageUrl(r);
 
     setDebug(
@@ -236,6 +248,7 @@ export default function ResultPage() {
         `preview=${r.preview_image_url ? "yes" : "no"}`,
         `bucket=${r.final_bucket || "—"}`,
         `path=${r.final_storage_path || "—"}`,
+        `direct=${hasDirectImage ? "yes" : "no"}`,
         `resolved=${url ? "yes" : "no"}`,
       ].join(" · ")
     );
@@ -255,13 +268,29 @@ export default function ResultPage() {
     async function loadDirectGeneration() {
       if (!generationIdFromUrl) return false;
 
-      const r = await fetchGeneration(generationIdFromUrl, null);
-      if (cancelled) return true;
+      const start = Date.now();
+      const maxMs = 180000;
+      const intervalMs = 1500;
 
-      const ok = await applyRow(r, "generation_id");
-      setLoading(false);
+      while (!cancelled && Date.now() - start < maxMs) {
+        const r = await fetchGeneration(generationIdFromUrl, null);
+        if (cancelled) return true;
 
-      if (!ok && r?.id) {
+        if (r?.id) {
+          const ok = await applyRow(r, "generation_id");
+          if (ok) {
+            setLoading(false);
+            return true;
+          }
+
+          setRow(r);
+        }
+
+        await new Promise((res) => setTimeout(res, intervalMs));
+      }
+
+      if (!cancelled) {
+        setLoading(false);
         setErrorMessage("Generation found, but no image URL is available yet.");
       }
 
