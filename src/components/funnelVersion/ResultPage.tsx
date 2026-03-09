@@ -26,6 +26,11 @@ const publicSupabase = createClient(
       autoRefreshToken: false,
       detectSessionInUrl: false,
     },
+    global: {
+      headers: {
+        "X-Client-Info": "thedigitalgifter-web",
+      },
+    },
   }
 );
 
@@ -43,10 +48,7 @@ type ResultRow = {
   final_image_url: string | null;
   result_image_url: string | null;
   preview_image_url: string | null;
-  final_bucket: string | null;
-  final_storage_path: string | null;
   created_at: string | null;
-  updated_at: string | null;
 };
 
 type UpgradeRpcRow = {
@@ -77,28 +79,17 @@ function firstNonEmpty(...values: Array<string | null | undefined>) {
 }
 
 async function resolveImageUrl(row: ResultRow): Promise<string | null> {
-  const direct = firstNonEmpty(row.final_image_url, row.result_image_url);
+  const direct = firstNonEmpty(
+    row.final_image_url,
+    row.result_image_url,
+    row.preview_image_url
+  );
 
   if (direct && isHttpUrl(direct)) {
     return direct;
   }
 
-  const bucket = String(row.final_bucket || "").trim();
-  const path = String(row.final_storage_path || "").trim();
-
-  if (!bucket || !path) {
-    return direct || null;
-  }
-
-  const { data, error } = await publicSupabase.storage
-    .from(bucket)
-    .createSignedUrl(path, 60 * 60);
-
-  if (error) {
-    return direct || null;
-  }
-
-  return data?.signedUrl ?? direct ?? null;
+  return direct || null;
 }
 
 function normalizeResultRow(input: any): ResultRow | null {
@@ -113,10 +104,7 @@ function normalizeResultRow(input: any): ResultRow | null {
     final_image_url: row.final_image_url ?? null,
     result_image_url: row.result_image_url ?? null,
     preview_image_url: row.preview_image_url ?? null,
-    final_bucket: row.final_bucket ?? null,
-    final_storage_path: row.final_storage_path ?? null,
     created_at: row.created_at ?? null,
-    updated_at: row.updated_at ?? null,
   };
 }
 
@@ -226,9 +214,7 @@ export default function ResultPage() {
     if (genId) {
       const { data, error } = await publicSupabase
         .from("generations")
-        .select(
-          "id,status,final_image_url,result_image_url,preview_image_url,final_bucket,final_storage_path,created_at,updated_at"
-        )
+        .select("id,status,final_image_url,result_image_url,preview_image_url,created_at")
         .eq("id", genId)
         .maybeSingle();
 
@@ -260,7 +246,6 @@ export default function ResultPage() {
 
     setRow(nextRow);
 
-    const hasDirectImage = Boolean(firstNonEmpty(nextRow.final_image_url, nextRow.result_image_url));
     const resolvedUrl = await resolveImageUrl(nextRow);
 
     setDebug(
@@ -271,9 +256,6 @@ export default function ResultPage() {
         `final=${nextRow.final_image_url ? "yes" : "no"}`,
         `result=${nextRow.result_image_url ? "yes" : "no"}`,
         `preview=${nextRow.preview_image_url ? "yes" : "no"}`,
-        `bucket=${nextRow.final_bucket || "—"}`,
-        `path=${nextRow.final_storage_path || "—"}`,
-        `direct=${hasDirectImage ? "yes" : "no"}`,
         `resolved=${resolvedUrl ? "yes" : "no"}`,
       ].join(" · ")
     );
