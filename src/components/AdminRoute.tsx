@@ -104,23 +104,29 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
 
     void bootstrap();
 
-    const { data: authSub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
 
       const email = session?.user?.email?.trim().toLowerCase() ?? null;
 
-      setState((prev) => ({
-        ...prev,
-        loading: true,
-        email,
-      }));
+      setState((prev) => {
+        if (prev.email === email) {
+          return prev;
+        }
 
-      await checkAdmin(email);
+        return {
+          loading: true,
+          email,
+          isAdmin: false,
+        };
+      });
+
+      void checkAdmin(email);
     });
 
     return () => {
       mounted = false;
-      authSub?.subscription?.unsubscribe();
+      authSub.subscription.unsubscribe();
     };
   }, []);
 
