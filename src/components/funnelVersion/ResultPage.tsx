@@ -59,8 +59,6 @@ type UpgradeRpcRow = {
   output_generation_id: string | null;
   output_image_url: string | null;
   final_image_url: string | null;
-  final_bucket: string | null;
-  final_storage_path: string | null;
   generation_status: string | null;
   generation_created_at: string | null;
   generation_updated_at: string | null;
@@ -70,26 +68,21 @@ function isHttpUrl(value: string) {
   return /^https?:\/\//i.test((value || "").trim());
 }
 
-function firstNonEmpty(...values: Array<string | null | undefined>) {
-  for (const value of values) {
-    const s = String(value ?? "").trim();
-    if (s) return s;
-  }
-  return "";
-}
-
 async function resolveImageUrl(row: ResultRow): Promise<string | null> {
-  const direct = firstNonEmpty(
+  const candidates = [
     row.final_image_url,
     row.result_image_url,
-    row.preview_image_url
-  );
+    row.preview_image_url,
+  ];
 
-  if (direct && isHttpUrl(direct)) {
-    return direct;
+  for (const value of candidates) {
+    const url = String(value || "").trim();
+    if (url && isHttpUrl(url)) {
+      return url;
+    }
   }
 
-  return direct || null;
+  return null;
 }
 
 function normalizeResultRow(input: any): ResultRow | null {
@@ -122,8 +115,6 @@ function normalizeUpgradeRpcRow(input: any): UpgradeRpcRow | null {
     output_generation_id: row.output_generation_id ?? null,
     output_image_url: row.output_image_url ?? null,
     final_image_url: row.final_image_url ?? null,
-    final_bucket: row.final_bucket ?? null,
-    final_storage_path: row.final_storage_path ?? null,
     generation_status: row.generation_status ?? null,
     generation_created_at: row.generation_created_at ?? null,
     generation_updated_at: row.generation_updated_at ?? null,
@@ -188,7 +179,6 @@ export default function ResultPage() {
   const [loading, setLoading] = useState(true);
   const [row, setRow] = useState<ResultRow | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [debug, setDebug] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [upgradeStatus, setUpgradeStatus] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState<CheckoutLoadingState>({
@@ -241,31 +231,20 @@ export default function ResultPage() {
     return null;
   }
 
-  async function applyRow(nextRow: ResultRow | null, modeLabel: string) {
+  async function applyRow(nextRow: ResultRow | null) {
     if (!nextRow?.id) return false;
 
     setRow(nextRow);
 
     const resolvedUrl = await resolveImageUrl(nextRow);
 
-    setDebug(
-      [
-        `mode=${modeLabel}`,
-        `id=${nextRow.id}`,
-        `status=${nextRow.status || "—"}`,
-        `final=${nextRow.final_image_url ? "yes" : "no"}`,
-        `result=${nextRow.result_image_url ? "yes" : "no"}`,
-        `preview=${nextRow.preview_image_url ? "yes" : "no"}`,
-        `resolved=${resolvedUrl ? "yes" : "no"}`,
-      ].join(" · ")
-    );
-
-    if (resolvedUrl) {
+    if (resolvedUrl && isHttpUrl(resolvedUrl)) {
       setImageUrl(resolvedUrl);
       setErrorMessage("");
       return true;
     }
 
+    setImageUrl(null);
     return false;
   }
 
@@ -284,7 +263,7 @@ export default function ResultPage() {
         if (cancelled) return true;
 
         if (nextRow?.id) {
-          const ok = await applyRow(nextRow, "generation_id");
+          const ok = await applyRow(nextRow);
           if (ok) {
             setLoading(false);
             return true;
@@ -298,7 +277,7 @@ export default function ResultPage() {
 
       if (!cancelled) {
         setLoading(false);
-        setErrorMessage("Generation found, but no image URL is available yet.");
+        setErrorMessage("Generation found, but no valid public image URL is available yet.");
       }
 
       return true;
@@ -316,15 +295,13 @@ export default function ResultPage() {
         if (cancelled) return true;
 
         if (nextRow?.id) {
-          const ok = await applyRow(nextRow, "session_id");
+          const ok = await applyRow(nextRow);
           if (ok) {
             setLoading(false);
             return true;
           }
 
           setRow(nextRow);
-        } else {
-          setDebug(`mode=session_id · session_id=${sessionId} · no generation yet`);
         }
 
         await new Promise((resolve) => setTimeout(resolve, intervalMs));
@@ -363,7 +340,6 @@ export default function ResultPage() {
         if (!upgrade) {
           if (!cancelled) {
             setUpgradeStatus("Waiting for upgrade fulfillment…");
-            setDebug(`mode=checkout_session_id · checkout_session_id=${checkoutSessionId} · no fulfillment yet`);
           }
 
           await new Promise((resolve) => setTimeout(resolve, intervalMs));
@@ -398,7 +374,7 @@ export default function ResultPage() {
           const nextRow = await fetchGeneration(String(upgrade.generation_id), null);
           if (cancelled) return true;
 
-          const ok = await applyRow(nextRow, "checkout_session_id/full_hd");
+          const ok = await applyRow(nextRow);
           if (ok) {
             setLoading(false);
             return true;
@@ -409,7 +385,7 @@ export default function ResultPage() {
           const nextRow = await fetchGeneration(outputGenerationId, null);
           if (cancelled) return true;
 
-          const ok = await applyRow(nextRow, "checkout_session_id/output_generation");
+          const ok = await applyRow(nextRow);
           if (ok) {
             setLoading(false);
             return true;
@@ -432,14 +408,12 @@ export default function ResultPage() {
         setLoading(true);
         setRow(null);
         setImageUrl(null);
-        setDebug("");
         setErrorMessage("");
         setUpgradeStatus("");
 
         if (!sessionId && !generationIdFromUrl && !checkoutSessionId) {
           setLoading(false);
           setErrorMessage("Missing payment session.");
-          setDebug("Missing session_id, generation_id and checkout_session_id in URL.");
           return;
         }
 
@@ -635,9 +609,6 @@ export default function ResultPage() {
                       src={imageUrl}
                       alt="Final result"
                       className="block h-auto w-full object-contain"
-                      onError={() =>
-                        setDebug((prev) => `${prev}\nIMG error loading resolved image url`)
-                      }
                     />
 
                     <button
@@ -708,12 +679,6 @@ export default function ResultPage() {
                   <span>Your image is safely stored and ready for premium upgrades.</span>
                 </div>
               </div>
-
-              {debug ? (
-                <div className="mt-4 break-all rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-xs text-zinc-500">
-                  {debug}
-                </div>
-              ) : null}
 
               {errorMessage ? (
                 <div className="mt-4 rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-700">
