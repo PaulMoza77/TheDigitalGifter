@@ -47,6 +47,53 @@ type UpgradeRpcRow = {
   generation_updated_at: string | null;
 };
 
+type EdgeJson = {
+  url?: string;
+  id?: string;
+  error?: string;
+  message?: string;
+  imageUrl?: string;
+  checkout_url?: string;
+};
+
+function getPublicSupabaseConfig(): { url: string; anon: string } {
+  const env = import.meta.env as {
+    VITE_SUPABASE_URL?: string;
+    VITE_SUPABASE_ANON_KEY?: string;
+  };
+
+  const url = (env.VITE_SUPABASE_URL || "").trim();
+  const anon = (env.VITE_SUPABASE_ANON_KEY || "").trim();
+
+  if (!url || !anon) {
+    throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
+  }
+
+  return { url, anon };
+}
+
+async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, string>> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token?.trim();
+
+  return {
+    "Content-Type": "application/json",
+    apikey: anonKey,
+    Authorization: `Bearer ${accessToken || anonKey}`,
+  };
+}
+
+async function safeReadJson(res: Response): Promise<EdgeJson> {
+  try {
+    return (await res.json()) as EdgeJson;
+  } catch {
+    return {};
+  }
+}
+
 function isHttpUrl(value: string) {
   return /^https?:\/\//i.test((value || "").trim());
 }
@@ -143,7 +190,11 @@ const OFFER_CONFIG: Array<{
 function formatStatus(status: string | null) {
   const s = String(status || "").trim().toLowerCase();
   if (!s) return "waiting";
-  if (["succeeded", "done", "completed", "fulfilled", "ready", "processing"].includes(s)) return s;
+  if (
+    ["succeeded", "done", "completed", "fulfilled", "ready", "processing", "pending"].includes(s)
+  ) {
+    return s;
+  }
   return s;
 }
 
@@ -231,6 +282,29 @@ export default function ResultPage() {
     return false;
   }
 
+  async function callGenerateNanoBanana(generationId: string) {
+    const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
+    const headers = await getEdgeFunctionHeaders(anon);
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/generate-nano-banana`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        generation_id: generationId,
+      }),
+    });
+
+    const data = await safeReadJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        String(data.error || data.message || `generate-nano-banana failed (${res.status})`)
+      );
+    }
+
+    return data;
+  }
+
   async function startGenerationIfNeeded(generationId: string) {
     if (!generationId) return;
     if (generationStartedRef.current === generationId) return;
@@ -238,19 +312,25 @@ export default function ResultPage() {
     generationStartedRef.current = generationId;
 
     const existing = await fetchGeneration(generationId, null);
-    const status = String(existing?.status || "").toLowerCase();
+    const status = String(existing?.status || "").trim().toLowerCase();
 
-    if (["processing", "completed", "ready", "succeeded"].includes(status)) {
+    if (
+      [
+        "processing",
+        "completed",
+        "ready",
+        "succeeded",
+        "pending_upgrade_render",
+      ].includes(status)
+    ) {
       return;
     }
 
-    const { error } = await supabase.functions.invoke("generate-nano-banana", {
-      body: { generation_id: generationId },
-    });
-
-    if (error) {
+    try {
+      await callGenerateNanoBanana(generationId);
+    } catch (error) {
       generationStartedRef.current = null;
-      throw new Error(error.message || "Failed to send a request to the Edge Function");
+      throw error;
     }
   }
 
@@ -307,7 +387,23 @@ export default function ResultPage() {
             setLoading(false);
             return true;
           }
+
           setRow(nextRow);
+
+          const status = String(nextRow.status || "").trim().toLowerCase();
+          if (!["processing", "completed", "ready", "succeeded"].includes(status) && nextRow.id) {
+            try {
+              await startGenerationIfNeeded(nextRow.id);
+            } catch (error: any) {
+              if (!cancelled) {
+                setErrorMessage(
+                  String(error?.message || "Failed to send a request to the Edge Function")
+                );
+                setLoading(false);
+              }
+              return true;
+            }
+          }
         }
 
         await new Promise((resolve) => setTimeout(resolve, intervalMs));
@@ -459,20 +555,29 @@ export default function ResultPage() {
     setCheckoutLoading((prev) => ({ ...prev, [actionType]: true }));
 
     try {
+      const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
+      const headers = await getEdgeFunctionHeaders(anon);
+
       const successUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
       const cancelUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
 
-      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
-        body: {
+      const res = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
           generation_id: row.id,
           action_type: actionType,
           success_url: successUrl,
           cancel_url: cancelUrl,
-        },
+        }),
       });
 
-      if (error) {
-        throw error;
+      const data = await safeReadJson(res);
+
+      if (!res.ok) {
+        throw new Error(
+          String(data.error || data.message || `Failed to start checkout (${res.status})`)
+        );
       }
 
       const checkoutUrl = data?.url || data?.checkout_url || null;
