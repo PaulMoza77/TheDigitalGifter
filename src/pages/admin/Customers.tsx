@@ -1,7 +1,6 @@
-// src/pages/admin/Customers.tsx
-import React, { useEffect, useMemo, useState } from "react";
+// FILE: src/pages/admin/Customers.tsx
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-
 import {
   Table,
   TableBody,
@@ -20,15 +19,12 @@ type CustomerRow = {
   name: string | null;
   email: string | null;
   image_url: string | null;
-
   credits_used: number;
   generations: number;
   total_money_spent: number;
   orders_count: number;
-
   created_at: string | null;
   last_activity: string | null;
-
   promo_code: string | null;
   promo_sent_at: string | null;
   has_purchased: boolean;
@@ -47,6 +43,46 @@ type AppUserRow = {
   is_anonymous: number | boolean | null;
   created_at: string | null;
 };
+
+const VIEW_COLUMNS = `
+  id,
+  name,
+  email,
+  image_url,
+  image,
+  avatar_url,
+  avatar,
+  credits_used,
+  creditsUsed,
+  credits_spent,
+  credits,
+  generations,
+  generation_count,
+  generations_count,
+  total_money_spent,
+  total_spent,
+  totalSpent,
+  total,
+  orders_count,
+  orders,
+  ordersCount,
+  created_at,
+  joined_at,
+  joined,
+  createdAt,
+  created,
+  last_activity,
+  last_activity_at,
+  lastActivity,
+  last_seen_at,
+  last_seen,
+  promo_code,
+  promo,
+  promoCode,
+  promo_sent_at,
+  promoSentAt,
+  has_purchased
+`;
 
 function initials(name?: string | null, email?: string | null) {
   const base = (name || "").trim() || (email || "").trim() || "??";
@@ -74,7 +110,6 @@ function safeToISO(v: unknown): string | null {
   }
 
   if (typeof v === "number") {
-    // Convex timestamps can be ms or seconds
     const n = v > 10_000_000_000 ? v : v * 1000;
     const d = new Date(n);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
@@ -119,10 +154,11 @@ function sortByCreatedAtDesc(rows: CustomerRow[]) {
   });
 }
 
-/** ia prima valoare existentă din lista de chei (sinonime) */
 function pick(r: ViewRowLoose, keys: string[]) {
   for (const k of keys) {
-    if ((r as any)[k] !== undefined) return (r as any)[k];
+    if ((r as Record<string, unknown>)[k] !== undefined) {
+      return (r as Record<string, unknown>)[k];
+    }
   }
   return undefined;
 }
@@ -132,11 +168,16 @@ function mapLooseToCustomerRow(r: ViewRowLoose): CustomerRow {
     pick(r, ["total_money_spent", "total_spent", "totalSpent", "total"]),
     0
   );
-  const orders = num(pick(r, ["orders_count", "orders", "ordersCount"]), 0);
+
+  const orders = num(
+    pick(r, ["orders_count", "orders", "ordersCount"]),
+    0
+  );
 
   const createdAt = safeToISO(
     pick(r, ["created_at", "joined_at", "joined", "createdAt", "created"])
   );
+
   const lastActivity = safeToISO(
     pick(r, [
       "last_activity",
@@ -151,14 +192,15 @@ function mapLooseToCustomerRow(r: ViewRowLoose): CustomerRow {
     pick(r, ["credits_used", "creditsUsed", "credits_spent", "credits"]),
     0
   );
+
   const generations = num(
     pick(r, ["generations", "generation_count", "generations_count"]),
     0
   );
 
   const hasPurchased =
-    (r as any).has_purchased !== undefined
-      ? asBool((r as any).has_purchased, false)
+    (r as Record<string, unknown>).has_purchased !== undefined
+      ? asBool((r as Record<string, unknown>).has_purchased, false)
       : spent > 0 || orders > 0;
 
   return {
@@ -168,15 +210,12 @@ function mapLooseToCustomerRow(r: ViewRowLoose): CustomerRow {
     image_url: asStringOrNull(
       pick(r, ["image_url", "image", "avatar_url", "avatar"])
     ),
-
     credits_used: creditsUsed,
     generations,
     total_money_spent: spent,
     orders_count: orders,
-
     created_at: createdAt,
     last_activity: lastActivity,
-
     promo_code: asStringOrNull(pick(r, ["promo_code", "promo", "promoCode"])),
     promo_sent_at: safeToISO(pick(r, ["promo_sent_at", "promoSentAt"])),
     has_purchased: hasPurchased,
@@ -239,67 +278,65 @@ function exportCSV(rows: CustomerRow[]) {
   URL.revokeObjectURL(url);
 }
 
+async function tryLoadFromView(
+  tableName: "customers_admin_view_unified" | "customers_admin_view"
+): Promise<CustomerRow[] | null> {
+  const query = supabase
+    .from(tableName)
+    .select(VIEW_COLUMNS)
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const { data, error } = await query;
+
+  if (error) {
+    const msg = (error.message || "").toLowerCase();
+    const missing =
+      msg.includes("does not exist") ||
+      msg.includes("relation") ||
+      msg.includes("not found") ||
+      msg.includes("column");
+
+    if (!missing) {
+      console.error(`[Customers] ${tableName} error:`, error);
+    }
+
+    return null;
+  }
+
+  return ((data as ViewRowLoose[]) || []).map(mapLooseToCustomerRow);
+}
+
 async function loadCustomers(): Promise<{
   rows: CustomerRow[];
   source: "unified" | "view" | "fallback";
 }> {
-  // 1) ✅ Unified (ideal). IMPORTANT: select("*") ca să nu pice pe coloane lipsă
-  const unified = await supabase.from("customers_admin_view_unified").select("*");
-
-  if (!unified.error) {
-    const rows = ((unified.data as unknown as ViewRowLoose[]) || []).map(
-      mapLooseToCustomerRow
-    );
-    return { rows: sortByCreatedAtDesc(rows), source: "unified" };
+  const unifiedRows = await tryLoadFromView("customers_admin_view_unified");
+  if (unifiedRows) {
+    return { rows: sortByCreatedAtDesc(unifiedRows), source: "unified" };
   }
 
-  // dacă nu e “does not exist”, logăm eroarea (te ajută să vezi RLS / grants / etc)
-  const umsg = (unified.error.message || "").toLowerCase();
-  const unifiedMissing =
-    umsg.includes("does not exist") ||
-    umsg.includes("relation") ||
-    umsg.includes("not found");
-
-  if (!unifiedMissing) {
-    console.error("[Customers] customers_admin_view_unified error:", unified.error);
-    toast.error(`Customers unified error: ${unified.error.message || "Unknown error"}`);
+  const legacyRows = await tryLoadFromView("customers_admin_view");
+  if (legacyRows) {
+    return { rows: sortByCreatedAtDesc(legacyRows), source: "view" };
   }
 
-  // 2) Legacy view (dacă îl mai ai)
-  const primary = await supabase.from("customers_admin_view").select("*");
-  if (!primary.error) {
-    const rows = ((primary.data as unknown as ViewRowLoose[]) || []).map(
-      mapLooseToCustomerRow
-    );
-    return { rows: sortByCreatedAtDesc(rows), source: "view" };
-  }
-
-  const pmsg = (primary.error.message || "").toLowerCase();
-  const primaryMissing =
-    pmsg.includes("does not exist") ||
-    pmsg.includes("relation") ||
-    pmsg.includes("not found");
-
-  if (!primaryMissing) {
-    console.error("[Customers] customers_admin_view error:", primary.error);
-    toast.error(`Customers view error: ${primary.error.message || "Unknown error"}`);
-  }
-
-  // 3) Fallback app_users (doar listă; stats rămân 0)
   const { data, error } = await supabase
     .from("app_users")
     .select(
-      "id,convex_id,email,name,image,email_verification_time,creation_time,is_anonymous,created_at"
-    );
+      "id, convex_id, email, name, image, email_verification_time, creation_time, is_anonymous, created_at"
+    )
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   if (error) {
-    console.error("[Customers] app_users error:", error);
-    toast.error(`Customers fallback error: ${error.message || "Unknown error"}`);
-    return { rows: [], source: "fallback" };
+    console.error("[Customers] app_users fallback error:", error);
+    throw new Error(error.message || "Failed to load app_users");
   }
 
   const rows = ((data as AppUserRow[]) || []).map((u) => {
     const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${u.id}`;
+
     return {
       id: stableId,
       name: u.name ?? null,
@@ -321,43 +358,46 @@ async function loadCustomers(): Promise<{
 }
 
 export default function CustomersPage() {
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [source, setSource] = useState<"unified" | "view" | "fallback">("unified");
+  const [refreshing, setRefreshing] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
+  const load = useCallback(async () => {
     const out = await loadCustomers();
     setCustomers(out.rows);
     setSource(out.source);
-    setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
-        await load();
+        setLoading(true);
+        const out = await loadCustomers();
+        if (cancelled) return;
+        setCustomers(out.rows);
+        setSource(out.source);
       } catch (e: unknown) {
         if (cancelled) return;
-        const msg = e instanceof Error ? e.message : typeof e === "string" ? e : null;
+        const msg = e instanceof Error ? e.message : "Failed to load customers";
         console.error("[Customers] load failed:", e);
-        toast.error(msg || "Failed to load customers");
+        toast.error(msg);
         setCustomers([]);
-        setLoading(false);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredCustomers = useMemo(() => {
-    const q = (searchQuery || "").toLowerCase().trim();
+    const q = searchQuery.toLowerCase().trim();
     if (!q) return customers;
 
     return customers.filter((c) => {
@@ -365,7 +405,12 @@ export default function CustomersPage() {
       const email = (c.email || "").toLowerCase();
       const id = (c.id || "").toLowerCase();
       const promo = (c.promo_code || "").toLowerCase();
-      return name.includes(q) || email.includes(q) || id.includes(q) || promo.includes(q);
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        id.includes(q) ||
+        promo.includes(q)
+      );
     });
   }, [customers, searchQuery]);
 
@@ -383,18 +428,31 @@ export default function CustomersPage() {
       const lastActivity = parseISOToDate(c.last_activity);
 
       if (createdAt && createdAt >= startOfMonth) acc.newThisMonth += 1;
-      if (lastActivity && lastActivity.getTime() > 0 && lastActivity >= oneDayAgo) acc.active += 1;
+      if (lastActivity && lastActivity >= oneDayAgo) acc.active += 1;
 
       acc.totalRevenue += Number(c.total_money_spent || 0);
       return acc;
     }, base);
   }, [customers]);
 
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await load();
+      toast.success("Customers refreshed");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Refresh failed";
+      toast.error(msg);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="bg-slate-950 px-4 py-6 md:px-8 min-h-screen">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center min-h-[400px]">
+      <div className="min-h-screen bg-slate-950 px-4 py-6 text-slate-50 md:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex min-h-[400px] items-center justify-center">
             <div className="text-slate-400">Loading customers...</div>
           </div>
         </div>
@@ -403,11 +461,13 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="bg-slate-950 px-4 py-6 md:px-8 min-h-screen text-slate-50">
-      <div className="mx-auto max-w-7xl flex flex-col gap-6">
+    <div className="min-h-screen bg-slate-950 px-4 py-6 text-slate-50 md:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <header className="flex flex-col gap-4 border-b border-slate-800 pb-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-50">Customers</h1>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-50">
+              Customers
+            </h1>
             <p className="mt-1 text-sm text-slate-400">
               View and manage all TheDigitalGifter customers, spending, promo, and activity.
             </p>
@@ -430,7 +490,7 @@ export default function CustomersPage() {
                 exportCSV(filteredCustomers);
                 toast.success("Exported CSV");
               }}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800"
             >
               <Download className="h-4 w-4" />
               Export
@@ -439,74 +499,86 @@ export default function CustomersPage() {
             <button
               type="button"
               onClick={() => toast.message("Campaigns coming soon")}
-              className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+              className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
             >
               Send email campaign
             </button>
 
             <button
               type="button"
-              onClick={async () => {
-                await load();
-                toast.success("Refreshed");
-              }}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 disabled:opacity-60"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
               Refresh
             </button>
           </div>
         </header>
 
-        <section className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
-            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">Total customers</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Total customers
+            </p>
             <div className="mt-2 flex items-baseline justify-between">
-              <p className="text-2xl font-semibold text-slate-50">{stats.total.toLocaleString()}</p>
+              <p className="text-2xl font-semibold text-slate-50">
+                {stats.total.toLocaleString()}
+              </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">All accounts + funnel leads.</p>
+            <p className="mt-1 text-xs text-slate-500">All accounts + funnel leads.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
-            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">New this month</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              New this month
+            </p>
             <div className="mt-2 flex items-baseline justify-between">
               <p className="text-2xl font-semibold text-slate-50">
                 {stats.newThisMonth.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Joined since the 1st of the month.</p>
+            <p className="mt-1 text-xs text-slate-500">Joined since the 1st of the month.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
-            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">Active (24h)</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Active (24h)
+            </p>
             <div className="mt-2 flex items-baseline justify-between">
-              <p className="text-2xl font-semibold text-slate-50">{stats.active.toLocaleString()}</p>
+              <p className="text-2xl font-semibold text-slate-50">
+                {stats.active.toLocaleString()}
+              </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Users active in the last 24 hours.</p>
+            <p className="mt-1 text-xs text-slate-500">Users active in the last 24 hours.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
-            <p className="text-xs uppercase text-slate-500 font-medium tracking-wide">Total Revenue</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Total Revenue
+            </p>
             <div className="mt-2 flex items-baseline justify-between">
-              <p className="text-2xl font-semibold text-slate-50">{moneyEUR(stats.totalRevenue)}</p>
+              <p className="text-2xl font-semibold text-slate-50">
+                {moneyEUR(stats.totalRevenue)}
+              </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Total money spent by users.</p>
+            <p className="mt-1 text-xs text-slate-500">Total money spent by users.</p>
           </div>
         </section>
 
         <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-1 gap-3">
-              <div className="relative max-w-md w-full">
+              <div className="relative w-full max-w-md">
                 <input
                   type="text"
                   placeholder="Search by name, email, ID, promo..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-full border border-slate-700 bg-slate-950 px-4 py-2.5 pr-10 text-sm text-slate-200 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
+                  className="w-full rounded-full border border-slate-700 bg-slate-950 px-4 py-2.5 pr-10 text-sm text-slate-200 outline-none transition-all placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                 />
-                <span className="absolute right-3 inset-y-0 flex items-center text-slate-500 pointer-events-none">
-                  <Search className="w-4 h-4" />
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-500">
+                  <Search className="h-4 w-4" />
                 </span>
               </div>
             </div>
@@ -516,7 +588,7 @@ export default function CustomersPage() {
             </div>
           </div>
 
-          <div className="rounded-md border border-slate-800 overflow-hidden">
+          <div className="overflow-hidden rounded-md border border-slate-800">
             <Table>
               <TableHeader className="bg-slate-900/50">
                 <TableRow className="border-slate-800 hover:bg-slate-900/50">
@@ -528,7 +600,7 @@ export default function CustomersPage() {
                   <TableHead className="text-slate-400">Orders</TableHead>
                   <TableHead className="text-slate-400">Joined</TableHead>
                   <TableHead className="text-slate-400">Last Activity</TableHead>
-                  <TableHead className="text-slate-400 text-right">Status</TableHead>
+                  <TableHead className="text-right text-slate-400">Status</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -545,18 +617,19 @@ export default function CustomersPage() {
                     const joined = parseISOToDate(c.created_at);
                     const last = parseISOToDate(c.last_activity);
                     const promoSent = parseISOToDate(c.promo_sent_at);
-                    const hasValidLast = !!last && last.getTime() > 0;
 
-                    const statusLabel = c.has_purchased || spent > 0 ? "Purchased" : "Lead";
+                    const statusLabel =
+                      c.has_purchased || spent > 0 ? "Purchased" : "Lead";
+
                     const statusClass =
                       c.has_purchased || spent > 0
-                        ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-                        : "border-slate-700 text-slate-400 bg-slate-800/50";
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        : "border-slate-700 bg-slate-800/50 text-slate-400";
 
                     return (
                       <TableRow
                         key={`${c.id}:${c.email ?? ""}`}
-                        className="border-slate-800 hover:bg-slate-800/50 transition-colors"
+                        className="border-slate-800 transition-colors hover:bg-slate-800/50"
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -565,16 +638,18 @@ export default function CustomersPage() {
                                 src={c.image_url || undefined}
                                 alt={c.name || c.email || "User"}
                               />
-                              <AvatarFallback className="bg-slate-800 text-slate-400 text-xs">
+                              <AvatarFallback className="bg-slate-800 text-xs text-slate-400">
                                 {initials(c.name, c.email)}
                               </AvatarFallback>
                             </Avatar>
 
                             <div className="flex flex-col">
-                              <span className="font-medium text-slate-200 text-sm">
+                              <span className="text-sm font-medium text-slate-200">
                                 {c.name || "Unknown"}
                               </span>
-                              <span className="text-xs text-slate-500">{c.email || "—"}</span>
+                              <span className="text-xs text-slate-500">
+                                {c.email || "—"}
+                              </span>
                               <span className="text-[10px] text-slate-600">{c.id}</span>
                             </div>
                           </div>
@@ -586,26 +661,28 @@ export default function CustomersPage() {
                               <div className="flex items-center gap-2">
                                 <Badge
                                   variant="outline"
-                                  className="border-indigo-500/30 text-indigo-300 bg-indigo-500/10"
+                                  className="border-indigo-500/30 bg-indigo-500/10 text-indigo-300"
                                 >
                                   {c.promo_code}
                                 </Badge>
+
                                 {promoSent ? (
                                   <Badge
                                     variant="outline"
-                                    className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+                                    className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                                   >
                                     Sent
                                   </Badge>
                                 ) : (
                                   <Badge
                                     variant="outline"
-                                    className="border-amber-500/30 text-amber-300 bg-amber-500/10"
+                                    className="border-amber-500/30 bg-amber-500/10 text-amber-300"
                                   >
                                     Not sent
                                   </Badge>
                                 )}
                               </div>
+
                               <div className="text-[11px] text-slate-500">
                                 {promoSent ? promoSent.toLocaleString() : "—"}
                               </div>
@@ -615,7 +692,7 @@ export default function CustomersPage() {
                           )}
                         </TableCell>
 
-                        <TableCell className="text-slate-300 font-medium">
+                        <TableCell className="font-medium text-slate-300">
                           {Number(c.credits_used || 0)}
                         </TableCell>
 
@@ -629,12 +706,12 @@ export default function CustomersPage() {
                           {Number(c.orders_count || 0)}
                         </TableCell>
 
-                        <TableCell className="text-slate-400 text-xs">
+                        <TableCell className="text-xs text-slate-400">
                           {joined ? joined.toLocaleDateString() : "—"}
                         </TableCell>
 
-                        <TableCell className="text-slate-400 text-xs">
-                          {hasValidLast ? last!.toLocaleString() : "—"}
+                        <TableCell className="text-xs text-slate-400">
+                          {last ? last.toLocaleString() : "—"}
                         </TableCell>
 
                         <TableCell className="text-right">
