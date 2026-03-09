@@ -1,6 +1,7 @@
 // FILE: src/pages/admin/Customers.tsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+
 import {
   Table,
   TableBody,
@@ -30,60 +31,6 @@ type CustomerRow = {
   has_purchased: boolean;
 };
 
-type ViewRowLoose = Record<string, unknown>;
-
-type AppUserRow = {
-  id: number;
-  convex_id: string | null;
-  email: string | null;
-  name: string | null;
-  image: string | null;
-  email_verification_time: number | string | null;
-  creation_time: number | string | null;
-  is_anonymous: number | boolean | null;
-  created_at: string | null;
-};
-
-const VIEW_COLUMNS = `
-  id,
-  name,
-  email,
-  image_url,
-  image,
-  avatar_url,
-  avatar,
-  credits_used,
-  creditsUsed,
-  credits_spent,
-  credits,
-  generations,
-  generation_count,
-  generations_count,
-  total_money_spent,
-  total_spent,
-  totalSpent,
-  total,
-  orders_count,
-  orders,
-  ordersCount,
-  created_at,
-  joined_at,
-  joined,
-  createdAt,
-  created,
-  last_activity,
-  last_activity_at,
-  lastActivity,
-  last_seen_at,
-  last_seen,
-  promo_code,
-  promo,
-  promoCode,
-  promo_sent_at,
-  promoSentAt,
-  has_purchased
-`;
-
 function initials(name?: string | null, email?: string | null) {
   const base = (name || "").trim() || (email || "").trim() || "??";
   const parts = base.split(/[.\-_ ]+/).filter(Boolean);
@@ -97,129 +44,10 @@ function moneyEUR(n: number) {
   return `€${Number.isFinite(x) ? x.toFixed(2) : "0.00"}`;
 }
 
-function safeToISO(v: unknown): string | null {
-  if (v === null || v === undefined || v === "") return null;
-
-  if (v instanceof Date) {
-    return Number.isNaN(v.getTime()) ? null : v.toISOString();
-  }
-
-  if (typeof v === "string") {
-    const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? null : d.toISOString();
-  }
-
-  if (typeof v === "number") {
-    const n = v > 10_000_000_000 ? v : v * 1000;
-    const d = new Date(n);
-    return Number.isNaN(d.getTime()) ? null : d.toISOString();
-  }
-
-  return null;
-}
-
 function parseISOToDate(iso?: string | null) {
   if (!iso) return null;
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function num(v: unknown, fallback = 0) {
-  if (v === null || v === undefined || v === "") return fallback;
-  if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function asStringOrNull(v: unknown): string | null {
-  if (v === null || v === undefined || v === "") return null;
-  return String(v);
-}
-
-function asBool(v: unknown, fallback = false) {
-  if (v === null || v === undefined || v === "") return fallback;
-  if (typeof v === "boolean") return v;
-  if (typeof v === "number") return v !== 0;
-  const s = String(v).toLowerCase().trim();
-  if (s === "true" || s === "t" || s === "1" || s === "yes") return true;
-  if (s === "false" || s === "f" || s === "0" || s === "no") return false;
-  return fallback;
-}
-
-function sortByCreatedAtDesc(rows: CustomerRow[]) {
-  return [...rows].sort((a, b) => {
-    const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
-    const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
-    return tb - ta;
-  });
-}
-
-function pick(r: ViewRowLoose, keys: string[]) {
-  for (const k of keys) {
-    if ((r as Record<string, unknown>)[k] !== undefined) {
-      return (r as Record<string, unknown>)[k];
-    }
-  }
-  return undefined;
-}
-
-function mapLooseToCustomerRow(r: ViewRowLoose): CustomerRow {
-  const spent = num(
-    pick(r, ["total_money_spent", "total_spent", "totalSpent", "total"]),
-    0
-  );
-
-  const orders = num(
-    pick(r, ["orders_count", "orders", "ordersCount"]),
-    0
-  );
-
-  const createdAt = safeToISO(
-    pick(r, ["created_at", "joined_at", "joined", "createdAt", "created"])
-  );
-
-  const lastActivity = safeToISO(
-    pick(r, [
-      "last_activity",
-      "last_activity_at",
-      "lastActivity",
-      "last_seen_at",
-      "last_seen",
-    ])
-  );
-
-  const creditsUsed = num(
-    pick(r, ["credits_used", "creditsUsed", "credits_spent", "credits"]),
-    0
-  );
-
-  const generations = num(
-    pick(r, ["generations", "generation_count", "generations_count"]),
-    0
-  );
-
-  const hasPurchased =
-    (r as Record<string, unknown>).has_purchased !== undefined
-      ? asBool((r as Record<string, unknown>).has_purchased, false)
-      : spent > 0 || orders > 0;
-
-  return {
-    id: String(pick(r, ["id"]) ?? ""),
-    name: asStringOrNull(pick(r, ["name", "full_name", "fullName"])),
-    email: asStringOrNull(pick(r, ["email"])),
-    image_url: asStringOrNull(
-      pick(r, ["image_url", "image", "avatar_url", "avatar"])
-    ),
-    credits_used: creditsUsed,
-    generations,
-    total_money_spent: spent,
-    orders_count: orders,
-    created_at: createdAt,
-    last_activity: lastActivity,
-    promo_code: asStringOrNull(pick(r, ["promo_code", "promo", "promoCode"])),
-    promo_sent_at: safeToISO(pick(r, ["promo_sent_at", "promoSentAt"])),
-    has_purchased: hasPurchased,
-  };
 }
 
 function exportCSV(rows: CustomerRow[]) {
@@ -278,96 +106,60 @@ function exportCSV(rows: CustomerRow[]) {
   URL.revokeObjectURL(url);
 }
 
-async function tryLoadFromView(
-  tableName: "customers_admin_view_unified" | "customers_admin_view"
-): Promise<CustomerRow[] | null> {
-  const query = supabase
-    .from(tableName)
-    .select(VIEW_COLUMNS)
-    .order("created_at", { ascending: false })
-    .limit(500);
-
-  const { data, error } = await query;
-
-  if (error) {
-    const msg = (error.message || "").toLowerCase();
-    const missing =
-      msg.includes("does not exist") ||
-      msg.includes("relation") ||
-      msg.includes("not found") ||
-      msg.includes("column");
-
-    if (!missing) {
-      console.error(`[Customers] ${tableName} error:`, error);
-    }
-
-    return null;
-  }
-
-  return ((data as ViewRowLoose[]) || []).map(mapLooseToCustomerRow);
-}
-
-async function loadCustomers(): Promise<{
-  rows: CustomerRow[];
-  source: "unified" | "view" | "fallback";
-}> {
-  const unifiedRows = await tryLoadFromView("customers_admin_view_unified");
-  if (unifiedRows) {
-    return { rows: sortByCreatedAtDesc(unifiedRows), source: "unified" };
-  }
-
-  const legacyRows = await tryLoadFromView("customers_admin_view");
-  if (legacyRows) {
-    return { rows: sortByCreatedAtDesc(legacyRows), source: "view" };
-  }
-
+async function loadCustomers(): Promise<CustomerRow[]> {
   const { data, error } = await supabase
-    .from("app_users")
+    .from("customers_admin_view_unified")
     .select(
-      "id, convex_id, email, name, image, email_verification_time, creation_time, is_anonymous, created_at"
+      `
+      id,
+      name,
+      email,
+      image_url,
+      credits_used,
+      generations,
+      total_money_spent,
+      orders_count,
+      created_at,
+      last_activity,
+      promo_code,
+      promo_sent_at,
+      has_purchased
+      `
     )
     .order("created_at", { ascending: false })
     .limit(500);
 
   if (error) {
-    console.error("[Customers] app_users fallback error:", error);
-    throw new Error(error.message || "Failed to load app_users");
+    console.error("[Customers] load error:", error);
+    throw new Error(error.message || "Failed to load customers");
   }
 
-  const rows = ((data as AppUserRow[]) || []).map((u) => {
-    const stableId = (u.convex_id && String(u.convex_id)) || `app_user:${u.id}`;
-
-    return {
-      id: stableId,
-      name: u.name ?? null,
-      email: u.email ?? null,
-      image_url: u.image ?? null,
-      credits_used: 0,
-      generations: 0,
-      total_money_spent: 0,
-      orders_count: 0,
-      created_at: safeToISO(u.created_at ?? u.creation_time),
-      last_activity: null,
-      promo_code: null,
-      promo_sent_at: null,
-      has_purchased: false,
-    };
-  });
-
-  return { rows: sortByCreatedAtDesc(rows), source: "fallback" };
+  return ((data ?? []) as CustomerRow[]).map((row) => ({
+    id: row.id,
+    name: row.name ?? null,
+    email: row.email ?? null,
+    image_url: row.image_url ?? null,
+    credits_used: Number(row.credits_used || 0),
+    generations: Number(row.generations || 0),
+    total_money_spent: Number(row.total_money_spent || 0),
+    orders_count: Number(row.orders_count || 0),
+    created_at: row.created_at ?? null,
+    last_activity: row.last_activity ?? null,
+    promo_code: row.promo_code ?? null,
+    promo_sent_at: row.promo_sent_at ?? null,
+    has_purchased: Boolean(row.has_purchased),
+  }));
 }
 
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [customers, setCustomers] = useState<CustomerRow[]>([]);
-  const [source, setSource] = useState<"unified" | "view" | "fallback">("unified");
   const [refreshing, setRefreshing] = useState(false);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
 
   const load = useCallback(async () => {
-    const out = await loadCustomers();
-    setCustomers(out.rows);
-    setSource(out.source);
+    const rows = await loadCustomers();
+    setCustomers(rows);
   }, []);
 
   useEffect(() => {
@@ -376,14 +168,13 @@ export default function CustomersPage() {
     (async () => {
       try {
         setLoading(true);
-        const out = await loadCustomers();
+        const rows = await loadCustomers();
         if (cancelled) return;
-        setCustomers(out.rows);
-        setSource(out.source);
+        setCustomers(rows);
       } catch (e: unknown) {
         if (cancelled) return;
         const msg = e instanceof Error ? e.message : "Failed to load customers";
-        console.error("[Customers] load failed:", e);
+        console.error("[Customers] initial load failed:", e);
         toast.error(msg);
         setCustomers([]);
       } finally {
@@ -405,6 +196,7 @@ export default function CustomersPage() {
       const email = (c.email || "").toLowerCase();
       const id = (c.id || "").toLowerCase();
       const promo = (c.promo_code || "").toLowerCase();
+
       return (
         name.includes(q) ||
         email.includes(q) ||
@@ -472,14 +264,7 @@ export default function CustomersPage() {
               View and manage all TheDigitalGifter customers, spending, promo, and activity.
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Data source:{" "}
-              <span className="font-semibold">
-                {source === "unified"
-                  ? "customers_admin_view_unified"
-                  : source === "view"
-                  ? "customers_admin_view"
-                  : "app_users (fallback)"}
-              </span>
+              Data source: <span className="font-semibold">customers_admin_view_unified</span>
             </p>
           </div>
 
@@ -526,7 +311,7 @@ export default function CustomersPage() {
                 {stats.total.toLocaleString()}
               </p>
             </div>
-            <p className="mt-1 text-xs text-slate-500">All accounts + funnel leads.</p>
+            <p className="mt-1 text-xs text-slate-500">All accounts loaded in admin view.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
@@ -562,7 +347,7 @@ export default function CustomersPage() {
                 {moneyEUR(stats.totalRevenue)}
               </p>
             </div>
-            <p className="mt-1 text-xs text-slate-500">Total money spent by users.</p>
+            <p className="mt-1 text-xs text-slate-500">Total money spent by matched users.</p>
           </div>
         </section>
 
