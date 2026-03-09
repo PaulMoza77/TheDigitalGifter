@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,8 +18,8 @@ import {
 } from "lucide-react";
 
 const publicSupabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  "https://rmdsnpckutsucabledqz.supabase.co",
+  "PUNE_AICI_ANON_KEY_UL_TAU_REAL",
   {
     auth: {
       persistSession: false,
@@ -65,13 +64,13 @@ type UpgradeRpcRow = {
   generation_updated_at: string | null;
 };
 
-function isHttpUrl(s: string) {
-  return /^https?:\/\//i.test((s || "").trim());
+function isHttpUrl(value: string) {
+  return /^https?:\/\//i.test((value || "").trim());
 }
 
-function firstNonEmpty(...vals: Array<string | null | undefined>) {
-  for (const v of vals) {
-    const s = String(v ?? "").trim();
+function firstNonEmpty(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    const s = String(value ?? "").trim();
     if (s) return s;
   }
   return "";
@@ -80,10 +79,12 @@ function firstNonEmpty(...vals: Array<string | null | undefined>) {
 async function resolveImageUrl(row: ResultRow): Promise<string | null> {
   const direct = firstNonEmpty(row.final_image_url, row.result_image_url);
 
-  if (direct && isHttpUrl(direct)) return direct;
+  if (direct && isHttpUrl(direct)) {
+    return direct;
+  }
 
-  const bucket = (row.final_bucket || "").trim();
-  const path = (row.final_storage_path || "").trim();
+  const bucket = String(row.final_bucket || "").trim();
+  const path = String(row.final_storage_path || "").trim();
 
   if (!bucket || !path) {
     return direct || null;
@@ -93,46 +94,51 @@ async function resolveImageUrl(row: ResultRow): Promise<string | null> {
     .from(bucket)
     .createSignedUrl(path, 60 * 60);
 
-  if (error) return direct || null;
+  if (error) {
+    return direct || null;
+  }
+
   return data?.signedUrl ?? direct ?? null;
 }
 
-function normalizeResultRow(x: any): ResultRow | null {
-  if (!x) return null;
-  const r = Array.isArray(x) ? x[0] : x;
-  if (!r) return null;
+function normalizeResultRow(input: any): ResultRow | null {
+  if (!input) return null;
+
+  const row = Array.isArray(input) ? input[0] : input;
+  if (!row) return null;
 
   return {
-    id: String(r.id ?? ""),
-    status: r.status ?? null,
-    final_image_url: r.final_image_url ?? null,
-    result_image_url: r.result_image_url ?? null,
-    preview_image_url: r.preview_image_url ?? null,
-    final_bucket: r.final_bucket ?? null,
-    final_storage_path: r.final_storage_path ?? null,
-    created_at: r.created_at ?? null,
-    updated_at: r.updated_at ?? null,
+    id: String(row.id ?? ""),
+    status: row.status ?? null,
+    final_image_url: row.final_image_url ?? null,
+    result_image_url: row.result_image_url ?? null,
+    preview_image_url: row.preview_image_url ?? null,
+    final_bucket: row.final_bucket ?? null,
+    final_storage_path: row.final_storage_path ?? null,
+    created_at: row.created_at ?? null,
+    updated_at: row.updated_at ?? null,
   };
 }
 
-function normalizeUpgradeRpcRow(x: any): UpgradeRpcRow | null {
-  if (!x) return null;
-  const r = Array.isArray(x) ? x[0] : x;
-  if (!r) return null;
+function normalizeUpgradeRpcRow(input: any): UpgradeRpcRow | null {
+  if (!input) return null;
+
+  const row = Array.isArray(input) ? input[0] : input;
+  if (!row) return null;
 
   return {
-    fulfillment_id: r.fulfillment_id ?? null,
-    generation_id: r.generation_id ?? null,
-    action_type: r.action_type ?? null,
-    fulfillment_status: r.fulfillment_status ?? null,
-    output_generation_id: r.output_generation_id ?? null,
-    output_image_url: r.output_image_url ?? null,
-    final_image_url: r.final_image_url ?? null,
-    final_bucket: r.final_bucket ?? null,
-    final_storage_path: r.final_storage_path ?? null,
-    generation_status: r.generation_status ?? null,
-    generation_created_at: r.generation_created_at ?? null,
-    generation_updated_at: r.generation_updated_at ?? null,
+    fulfillment_id: row.fulfillment_id ?? null,
+    generation_id: row.generation_id ?? null,
+    action_type: row.action_type ?? null,
+    fulfillment_status: row.fulfillment_status ?? null,
+    output_generation_id: row.output_generation_id ?? null,
+    output_image_url: row.output_image_url ?? null,
+    final_image_url: row.final_image_url ?? null,
+    final_bucket: row.final_bucket ?? null,
+    final_storage_path: row.final_storage_path ?? null,
+    generation_status: row.generation_status ?? null,
+    generation_created_at: row.generation_created_at ?? null,
+    generation_updated_at: row.generation_updated_at ?? null,
   };
 }
 
@@ -175,7 +181,7 @@ const OFFER_CONFIG: Array<{
 ];
 
 function formatStatus(status: string | null) {
-  const s = String(status || "").toLowerCase();
+  const s = String(status || "").trim().toLowerCase();
   if (!s) return "waiting";
   if (["succeeded", "done", "completed", "fulfilled", "ready"].includes(s)) return "ready";
   return s;
@@ -185,18 +191,18 @@ export default function ResultPage() {
   const q = useQuery();
   const navigate = useNavigate();
 
-  const sessionId = (q.get("session_id") || "").trim();
-  const generationIdFromUrl = (q.get("generation_id") || "").trim();
-  const checkoutSessionId = (q.get("checkout_session_id") || "").trim();
-  const upgradeSuccess = (q.get("upgrade_success") || "").trim() === "1";
-  const upgradeCanceled = (q.get("upgrade_canceled") || "").trim() === "1";
+  const sessionId = String(q.get("session_id") || "").trim();
+  const generationIdFromUrl = String(q.get("generation_id") || "").trim();
+  const checkoutSessionId = String(q.get("checkout_session_id") || "").trim();
+  const upgradeSuccess = String(q.get("upgrade_success") || "").trim() === "1";
+  const upgradeCanceled = String(q.get("upgrade_canceled") || "").trim() === "1";
 
   const [loading, setLoading] = useState(true);
   const [row, setRow] = useState<ResultRow | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [debug, setDebug] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [upgradeStatus, setUpgradeStatus] = useState<string>("");
+  const [upgradeStatus, setUpgradeStatus] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState<CheckoutLoadingState>({
     full_hd: false,
     regenerate: false,
@@ -214,8 +220,8 @@ export default function ResultPage() {
   }, [upgradeSuccess, upgradeCanceled]);
 
   async function fetchGeneration(generationId?: string | null, session?: string | null) {
-    const genId = (generationId || "").trim();
-    const sess = (session || "").trim();
+    const genId = String(generationId || "").trim();
+    const sess = String(session || "").trim();
 
     if (genId) {
       const { data, error } = await publicSupabase
@@ -234,7 +240,7 @@ export default function ResultPage() {
     }
 
     if (sess) {
-      const { data, error } = await supabase.rpc("get_result_page_generation", {
+      const { data, error } = await publicSupabase.rpc("get_result_page_generation", {
         p_session_id: sess,
         p_generation_id: null,
       });
@@ -249,31 +255,31 @@ export default function ResultPage() {
     return null;
   }
 
-  async function applyRow(r: ResultRow | null, modeLabel: string) {
-    if (!r?.id) return false;
+  async function applyRow(nextRow: ResultRow | null, modeLabel: string) {
+    if (!nextRow?.id) return false;
 
-    setRow(r);
+    setRow(nextRow);
 
-    const hasDirectImage = Boolean(firstNonEmpty(r.final_image_url, r.result_image_url));
-    const url = await resolveImageUrl(r);
+    const hasDirectImage = Boolean(firstNonEmpty(nextRow.final_image_url, nextRow.result_image_url));
+    const resolvedUrl = await resolveImageUrl(nextRow);
 
     setDebug(
       [
         `mode=${modeLabel}`,
-        `id=${r.id}`,
-        `status=${r.status || "—"}`,
-        `final=${r.final_image_url ? "yes" : "no"}`,
-        `result=${r.result_image_url ? "yes" : "no"}`,
-        `preview=${r.preview_image_url ? "yes" : "no"}`,
-        `bucket=${r.final_bucket || "—"}`,
-        `path=${r.final_storage_path || "—"}`,
+        `id=${nextRow.id}`,
+        `status=${nextRow.status || "—"}`,
+        `final=${nextRow.final_image_url ? "yes" : "no"}`,
+        `result=${nextRow.result_image_url ? "yes" : "no"}`,
+        `preview=${nextRow.preview_image_url ? "yes" : "no"}`,
+        `bucket=${nextRow.final_bucket || "—"}`,
+        `path=${nextRow.final_storage_path || "—"}`,
         `direct=${hasDirectImage ? "yes" : "no"}`,
-        `resolved=${url ? "yes" : "no"}`,
+        `resolved=${resolvedUrl ? "yes" : "no"}`,
       ].join(" · ")
     );
 
-    if (url) {
-      setImageUrl(url);
+    if (resolvedUrl) {
+      setImageUrl(resolvedUrl);
       setErrorMessage("");
       return true;
     }
@@ -292,20 +298,20 @@ export default function ResultPage() {
       const intervalMs = 1500;
 
       while (!cancelled && Date.now() - start < maxMs) {
-        const r = await fetchGeneration(generationIdFromUrl, null);
+        const nextRow = await fetchGeneration(generationIdFromUrl, null);
         if (cancelled) return true;
 
-        if (r?.id) {
-          const ok = await applyRow(r, "generation_id");
+        if (nextRow?.id) {
+          const ok = await applyRow(nextRow, "generation_id");
           if (ok) {
             setLoading(false);
             return true;
           }
 
-          setRow(r);
+          setRow(nextRow);
         }
 
-        await new Promise((res) => setTimeout(res, intervalMs));
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
       }
 
       if (!cancelled) {
@@ -324,22 +330,22 @@ export default function ResultPage() {
       const intervalMs = 1500;
 
       while (!cancelled && Date.now() - start < maxMs) {
-        const r = await fetchGeneration(null, sessionId);
+        const nextRow = await fetchGeneration(null, sessionId);
         if (cancelled) return true;
 
-        if (r?.id) {
-          const ok = await applyRow(r, "session_id");
+        if (nextRow?.id) {
+          const ok = await applyRow(nextRow, "session_id");
           if (ok) {
             setLoading(false);
             return true;
           }
 
-          setRow(r);
+          setRow(nextRow);
         } else {
           setDebug(`mode=session_id · session_id=${sessionId} · no generation yet`);
         }
 
-        await new Promise((res) => setTimeout(res, intervalMs));
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
       }
 
       if (!cancelled) {
@@ -358,7 +364,7 @@ export default function ResultPage() {
       const intervalMs = 1500;
 
       while (!cancelled && Date.now() - start < maxMs) {
-        const { data, error } = await supabase.rpc("get_upgrade_result_by_checkout_session", {
+        const { data, error } = await publicSupabase.rpc("get_upgrade_result_by_checkout_session", {
           p_checkout_session_id: checkoutSessionId,
         });
 
@@ -377,7 +383,8 @@ export default function ResultPage() {
             setUpgradeStatus("Waiting for upgrade fulfillment…");
             setDebug(`mode=checkout_session_id · checkout_session_id=${checkoutSessionId} · no fulfillment yet`);
           }
-          await new Promise((res) => setTimeout(res, intervalMs));
+
+          await new Promise((resolve) => setTimeout(resolve, intervalMs));
           continue;
         }
 
@@ -406,10 +413,10 @@ export default function ResultPage() {
         }
 
         if (actionType === "full_hd" && upgrade.generation_id) {
-          const r = await fetchGeneration(String(upgrade.generation_id), null);
+          const nextRow = await fetchGeneration(String(upgrade.generation_id), null);
           if (cancelled) return true;
 
-          const ok = await applyRow(r, "checkout_session_id/full_hd");
+          const ok = await applyRow(nextRow, "checkout_session_id/full_hd");
           if (ok) {
             setLoading(false);
             return true;
@@ -417,17 +424,17 @@ export default function ResultPage() {
         }
 
         if (outputGenerationId) {
-          const r = await fetchGeneration(outputGenerationId, null);
+          const nextRow = await fetchGeneration(outputGenerationId, null);
           if (cancelled) return true;
 
-          const ok = await applyRow(r, "checkout_session_id/output_generation");
+          const ok = await applyRow(nextRow, "checkout_session_id/output_generation");
           if (ok) {
             setLoading(false);
             return true;
           }
         }
 
-        await new Promise((res) => setTimeout(res, intervalMs));
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
       }
 
       if (!cancelled) {
@@ -467,10 +474,10 @@ export default function ResultPage() {
         if (sessionId) {
           await loadBySessionPolling();
         }
-      } catch (e: any) {
+      } catch (error: any) {
         if (!cancelled) {
           setLoading(false);
-          setErrorMessage(String(e?.message || e || "Unexpected error"));
+          setErrorMessage(String(error?.message || error || "Unexpected error"));
         }
       }
     }
@@ -494,7 +501,7 @@ export default function ResultPage() {
       const successUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
       const cancelUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
 
-      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+      const { data, error } = await publicSupabase.functions.invoke("create-checkout-session", {
         body: {
           generation_id: row.id,
           action_type: actionType,
@@ -503,14 +510,18 @@ export default function ResultPage() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       const checkoutUrl = data?.url || data?.checkout_url || null;
-      if (!checkoutUrl) throw new Error("Missing checkout URL");
+      if (!checkoutUrl) {
+        throw new Error("Missing checkout URL");
+      }
 
       window.location.href = checkoutUrl;
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to start checkout");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to start checkout");
     } finally {
       setCheckoutLoading((prev) => ({ ...prev, [actionType]: false }));
     }
@@ -642,7 +653,9 @@ export default function ResultPage() {
                       src={imageUrl}
                       alt="Final result"
                       className="block h-auto w-full object-contain"
-                      onError={() => setDebug((d) => `${d}\nIMG error loading resolved image url`)}
+                      onError={() =>
+                        setDebug((prev) => `${prev}\nIMG error loading resolved image url`)
+                      }
                     />
 
                     <button
