@@ -57,14 +57,40 @@ function formatRelativeDate(value?: string | null) {
 function mapStatus(status?: string | null): ClientGeneration["status"] {
   const normalized = String(status || "").trim().toLowerCase();
 
-  if (normalized === "completed" || normalized === "saved") return "Completed";
+  if (normalized === "completed") return "Completed";
+  if (normalized === "saved") return "Saved";
   if (normalized === "processing" || normalized === "pending") return "Processing";
+
   return "Saved";
 }
 
 function buildGenerationTitle(item: GenerationRow, index: number) {
-  const shortId = item.id.slice(0, 8).toUpperCase();
-  return `Creation #${shortId || index + 1}`;
+  const shortId = item.id?.slice(0, 8).toUpperCase();
+  return `Creation #${shortId || String(index + 1)}`;
+}
+
+function resolveGenerationImage(item: GenerationRow) {
+  const finalUrl = (item.final_image_url || "").trim();
+  const previewUrl = (item.preview_image_url || "").trim();
+
+  if (finalUrl) return finalUrl;
+  if (previewUrl) return previewUrl;
+
+  return null;
+}
+
+function resolveGenerationStyle(item: GenerationRow) {
+  const finalUrl = (item.final_image_url || "").trim();
+  const previewUrl = (item.preview_image_url || "").trim();
+  const normalized = String(item.status || "").trim().toLowerCase();
+
+  if (finalUrl) return "Final Result";
+  if (previewUrl && (normalized === "processing" || normalized === "pending")) {
+    return "Preview";
+  }
+  if (previewUrl) return "Saved Preview";
+
+  return "AI Creation";
 }
 
 export default function AccountDashboard() {
@@ -106,12 +132,14 @@ export default function AccountDashboard() {
           )
           .eq("user_id", authUser.id)
           .maybeSingle(),
+
         supabase
           .from("generations")
           .select("id, status, final_image_url, preview_image_url, created_at")
           .eq("user_id", authUser.id)
           .order("created_at", { ascending: false })
           .limit(6),
+
         supabase
           .from("admin_users")
           .select("email")
@@ -203,15 +231,19 @@ export default function AccountDashboard() {
     },
   ];
 
-  const recentGenerations: ClientGeneration[] = recentRows.map((item, index) => ({
-    id: item.id,
-    title: buildGenerationTitle(item, index),
-    occasion: "AI Creation",
-    style: item.final_image_url ? "Final Result" : "Preview",
-    status: mapStatus(item.status),
-    createdAt: formatRelativeDate(item.created_at),
-    imageUrl: item.final_image_url || item.preview_image_url || null,
-  }));
+  const recentGenerations: ClientGeneration[] = React.useMemo(
+    () =>
+      recentRows.map((item, index) => ({
+        id: item.id,
+        title: buildGenerationTitle(item, index),
+        occasion: "AI Creation",
+        style: resolveGenerationStyle(item),
+        status: mapStatus(item.status),
+        createdAt: formatRelativeDate(item.created_at),
+        imageUrl: resolveGenerationImage(item),
+      })),
+    [recentRows]
+  );
 
   return (
     <div className="space-y-6">

@@ -1,7 +1,9 @@
 // FILE: src/components/client/RecentGenerations.tsx
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Clock3, ImageIcon, Sparkles, Wand2 } from "lucide-react";
+
 import type { ClientGeneration } from "@/components/client/types";
 import { Button } from "@/components/ui/button";
 import ClientEmptyState from "@/components/client/ClientEmptyState";
@@ -20,6 +22,36 @@ function badgeClass(status: ClientGeneration["status"]) {
   return "border-sky-500/20 bg-sky-500/10 text-sky-300";
 }
 
+function GenerationThumbnail({
+  imageUrl,
+  title,
+}: {
+  imageUrl?: string | null;
+  title: string;
+}) {
+  const [failed, setFailed] = React.useState(false);
+
+  if (!imageUrl || failed) {
+    return (
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02]">
+        <ImageIcon className="h-5 w-5 text-zinc-300" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+      <img
+        src={imageUrl}
+        alt={title}
+        className="h-full w-full object-cover"
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
+
 export default function RecentGenerations({ items }: Props) {
   if (!items.length) {
     return (
@@ -35,7 +67,9 @@ export default function RecentGenerations({ items }: Props) {
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-white">Recent Generations</h2>
-          <p className="mt-1 text-sm text-zinc-400">Your latest creations and saved results.</p>
+          <p className="mt-1 text-sm text-zinc-400">
+            Your latest creations and saved results.
+          </p>
         </div>
 
         <Button
@@ -56,14 +90,15 @@ export default function RecentGenerations({ items }: Props) {
             key={item.id}
             className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-4 transition hover:bg-white/[0.05] lg:flex-row lg:items-center"
           >
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02]">
-              <ImageIcon className="h-5 w-5 text-zinc-300" />
-            </div>
+            <GenerationThumbnail imageUrl={item.imageUrl} title={item.title} />
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
-                  <div className="truncate text-base font-semibold text-white">{item.title}</div>
+                  <div className="truncate text-base font-semibold text-white">
+                    {item.title}
+                  </div>
+
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
                     <span className="inline-flex items-center gap-1">
                       <Sparkles className="h-3.5 w-3.5" />
