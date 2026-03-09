@@ -19,7 +19,7 @@ import {
 
 const publicSupabase = createClient(
   "https://rmdsnpckutsucabledqz.supabase.co",
-  "PUNE_AICI_ANON_KEY_UL_TAU_REAL",
+  "PUNE_AICI_ANON_KEY_UL_TAU_COMPLET_CARE_INCEPE_CU_eyJ",
   {
     auth: {
       persistSession: false,
