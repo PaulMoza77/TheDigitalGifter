@@ -1,34 +1,24 @@
 // src/lib/supabase.ts
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  // Ajută enorm la debug când pe Vercel lipsesc env vars
-  throw new Error(
-    "Missing Supabase env vars. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
-  );
-}
-
-// IMPORTANT:
-// - persistSession + autoRefreshToken ca să ai JWT atașat automat la queries
-// - storage: window.localStorage ca să nu pice pe SSR/edge cases
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: window.localStorage,
-  },
-  global: {
-    headers: {
-      "X-Client-Info": "thedigitalgifter-web",
+export const supabase = createClient(
+  "https://rmdsnpckutsucabledqz.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtZHNucGNrdXRzdWNhYmxlZHF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjE2NTksImV4cCI6MjA4NjM5NzY1OX0.yHUiSnsvCyjXkLaazuumVcEL4d0ChdwFaaFR4YXkkCI",
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== "undefined" ? window.localStorage : undefined,
     },
-  },
-});
+    global: {
+      headers: {
+        "X-Client-Info": "thedigitalgifter-web",
+      },
+    },
+  }
+);
 
-// DEBUG helper (poți scoate după ce merge)
 if (typeof window !== "undefined") {
   (window as any).__supabase = supabase;
 }
