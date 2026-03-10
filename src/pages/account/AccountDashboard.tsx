@@ -162,6 +162,11 @@ export default function AccountDashboard() {
 
         if (!mounted) return;
 
+        console.log("[AccountDashboard] authUser.id =", authUser.id);
+        console.log("[AccountDashboard] summaryRes.data =", summaryRes.data);
+        console.log("[AccountDashboard] generationsRes.data =", generationsRes.data);
+        console.log("[AccountDashboard] generationsRes.error =", generationsRes.error);
+
         if (summaryRes.error) {
           console.error("[AccountDashboard] summary error:", summaryRes.error);
         }
@@ -179,7 +184,9 @@ export default function AccountDashboard() {
         setRecentRows((generationsRes.data as GenerationRow[] | null) ?? []);
       } catch (error) {
         console.error("[AccountDashboard] fatal:", error);
+
         if (!mounted) return;
+
         setIsAdmin(false);
         setSummary(null);
         setRecentRows([]);
@@ -335,12 +342,11 @@ export default function AccountDashboard() {
                 Admin Access
               </div>
 
-              <h2 className="mt-3 text-2xl font-semibold text-white">
-                Admin Panel
-              </h2>
+              <h2 className="mt-3 text-2xl font-semibold text-white">Admin Panel</h2>
 
               <p className="mt-2 text-sm leading-6 text-zinc-400">
-                You are logged in as an admin. Open the admin area to manage templates, funnel settings, credits, orders and customers.
+                You are logged in as an admin. Open the admin area to manage templates,
+                funnel settings, credits, orders and customers.
               </p>
             </div>
 
