@@ -1,9 +1,15 @@
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { LayoutGrid, Wand2, Sparkles, Menu, Shield } from "lucide-react";
+import {
+  LayoutGrid,
+  Wand2,
+  Sparkles,
+  Menu,
+  Shield,
+  Plus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
-import { CreditsDisplay } from "@/components/CreditsDisplay";
 import {
   Sheet,
   SheetContent,
@@ -29,8 +35,11 @@ type TopbarItem = {
 
 export default function AccountTopbar() {
   const navigate = useNavigate();
+
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [credits, setCredits] = React.useState<number>(0);
+  const [creditsLoading, setCreditsLoading] = React.useState(true);
 
   React.useEffect(() => {
     let mounted = true;
@@ -44,45 +53,62 @@ export default function AccountTopbar() {
 
         if (!mounted) return;
 
-        if (userError) {
+        if (userError || !user) {
           console.error("[AccountTopbar] getUser error:", userError);
           setIsAdmin(false);
+          setCredits(0);
           setLoading(false);
+          setCreditsLoading(false);
           return;
         }
 
-        const email = user?.email?.trim().toLowerCase() ?? "";
+        const email = user.email?.trim().toLowerCase() ?? "";
 
-        if (!email) {
+        if (email) {
+          const { data, error } = await supabase
+            .from("admin_users")
+            .select("email")
+            .eq("email", email)
+            .maybeSingle();
+
+          if (!mounted) return;
+
+          if (error) {
+            console.error("[AccountTopbar] admin check error:", error);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(Boolean(data?.email));
+          }
+        } else {
           setIsAdmin(false);
-          setLoading(false);
-          return;
         }
 
-        const { data, error } = await supabase
-          .from("admin_users")
-          .select("email")
-          .eq("email", email)
+        const { data: creditRow, error: creditsError } = await supabase
+          .from("user_credits_balance_view")
+          .select("credits_balance")
+          .eq("user_id", user.id)
           .maybeSingle();
 
         if (!mounted) return;
 
-        if (error) {
-          console.error("[AccountTopbar] admin check error:", error);
-          setIsAdmin(false);
-          setLoading(false);
-          return;
+        if (creditsError) {
+          console.error("[AccountTopbar] credits error:", creditsError);
+          setCredits(0);
+        } else {
+          setCredits(Number(creditRow?.credits_balance ?? 0));
         }
 
-        setIsAdmin(Boolean(data?.email));
         setLoading(false);
+        setCreditsLoading(false);
       } catch (e) {
         console.error("[AccountTopbar] fatal:", e);
 
         if (!mounted) return;
 
         setIsAdmin(false);
+        setCredits(0);
         setLoading(false);
+        setCreditsLoading(false);
       }
     }
 
@@ -165,9 +191,17 @@ export default function AccountTopbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <div className="hidden md:block">
-            <CreditsDisplay onBuyCredits={() => navigate("/pricing")} />
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/pricing")}
+            className="hidden md:flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-sm text-white/90"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">Credits:</span>
+            <span className="font-bold text-[#ffd976]">
+              {creditsLoading ? "..." : credits}
+            </span>
+          </button>
 
           <Button
             asChild
@@ -200,7 +234,17 @@ export default function AccountTopbar() {
                 </SheetHeader>
 
                 <div className="mt-6 space-y-3">
-                  <CreditsDisplay onBuyCredits={() => navigate("/pricing")} />
+                  <button
+                    type="button"
+                    onClick={() => navigate("/pricing")}
+                    className="flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-sm text-white/90"
+                  >
+                    <Plus size={18} />
+                    <span>Credits:</span>
+                    <span className="font-bold text-[#ffd976]">
+                      {creditsLoading ? "..." : credits}
+                    </span>
+                  </button>
 
                   {!loading &&
                     items.map((item) => {
