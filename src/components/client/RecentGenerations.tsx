@@ -2,7 +2,13 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Clock3, ImageIcon, Sparkles, Wand2 } from "lucide-react";
+import {
+  Clock3,
+  ImageIcon,
+  Sparkles,
+  Wand2,
+  ArrowRight,
+} from "lucide-react";
 
 import type { ClientGeneration } from "@/components/client/types";
 import { Button } from "@/components/ui/button";
@@ -85,47 +91,61 @@ export default function RecentGenerations({ items }: Props) {
       </div>
 
       <div className="space-y-3">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-4 transition hover:bg-white/[0.05] lg:flex-row lg:items-center"
-          >
-            <GenerationThumbnail imageUrl={item.imageUrl} title={item.title} />
+        {items.map((item) => {
+          const href = item.resultHref || `/funnel/result?id=${encodeURIComponent(item.id)}`;
 
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <div className="truncate text-base font-semibold text-white">
-                    {item.title}
+          return (
+            <Link
+              key={item.id}
+              to={href}
+              className="block rounded-3xl transition focus:outline-none focus:ring-2 focus:ring-white/20"
+            >
+              <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-4 transition hover:bg-white/[0.05] lg:flex-row lg:items-center">
+                <GenerationThumbnail imageUrl={item.imageUrl} title={item.title} />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="truncate text-base font-semibold text-white">
+                        {item.title}
+                      </div>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
+                        <span className="inline-flex items-center gap-1">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          {item.occasion}
+                        </span>
+                        <span className="text-zinc-600">•</span>
+                        <span>{item.style}</span>
+                      </div>
+                    </div>
+
+                    <div
+                      className={[
+                        "inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+                        badgeClass(item.status),
+                      ].join(" ")}
+                    >
+                      {item.status}
+                    </div>
                   </div>
 
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
-                    <span className="inline-flex items-center gap-1">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {item.occasion}
-                    </span>
-                    <span className="text-zinc-600">•</span>
-                    <span>{item.style}</span>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs text-zinc-500">
+                      <Clock3 className="h-3.5 w-3.5" />
+                      {item.createdAt}
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 text-sm font-medium text-white">
+                      View Result
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
                   </div>
                 </div>
-
-                <div
-                  className={[
-                    "inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-medium",
-                    badgeClass(item.status),
-                  ].join(" ")}
-                >
-                  {item.status}
-                </div>
               </div>
-
-              <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
-                <Clock3 className="h-3.5 w-3.5" />
-                {item.createdAt}
-              </div>
-            </div>
-          </div>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
