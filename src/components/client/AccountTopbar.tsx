@@ -51,6 +51,8 @@ export default function AccountTopbar() {
           error: userError,
         } = await supabase.auth.getUser();
 
+        alert(`USER ID: ${user?.id ?? "no-user"}`);
+
         if (!mounted) return;
 
         if (userError || !user) {
@@ -65,7 +67,7 @@ export default function AccountTopbar() {
         const email = user.email?.trim().toLowerCase() ?? "";
 
         if (email) {
-          const { data, error } = await supabase
+          const { data: adminRow, error: adminError } = await supabase
             .from("admin_users")
             .select("email")
             .eq("email", email)
@@ -73,11 +75,11 @@ export default function AccountTopbar() {
 
           if (!mounted) return;
 
-          if (error) {
-            console.error("[AccountTopbar] admin check error:", error);
+          if (adminError) {
+            console.error("[AccountTopbar] admin check error:", adminError);
             setIsAdmin(false);
           } else {
-            setIsAdmin(Boolean(data?.email));
+            setIsAdmin(Boolean(adminRow?.email));
           }
         } else {
           setIsAdmin(false);
@@ -194,7 +196,7 @@ export default function AccountTopbar() {
           <button
             type="button"
             onClick={() => navigate("/pricing")}
-            className="hidden md:flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-sm text-white/90"
+            className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-sm text-white/90 md:flex"
           >
             <Plus size={18} />
             <span className="hidden sm:inline">Credits:</span>
