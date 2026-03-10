@@ -6,10 +6,10 @@ import { CreditsFunnelProvider } from "@/contexts/CreditsFunnelContext";
 import Footer from "@/components/Footer";
 
 export default function MainLayout() {
-  // Keep local state for header "Buy Credits" button (opens normal pricing modal)
   const [showPricing, setShowPricing] = useState(false);
 
   const handleBuyCredits = () => {
+    alert("BUY CREDITS CLICKED");
     setShowPricing(true);
   };
 
@@ -17,15 +17,14 @@ export default function MainLayout() {
     <CreditsFunnelProvider>
       <Header onBuyCredits={handleBuyCredits} />
       <Outlet />
-      {/* Normal pricing modal triggered by header credits button */}
+
       <PricingModal
         isOpen={showPricing}
         onClose={() => setShowPricing(false)}
       />
-      {/* Credits funnel modal triggered by context (from Generator, etc.) */}
+
       <CreditsFunnelModal />
       <Footer />
     </CreditsFunnelProvider>
   );
 }
-  
