@@ -2,7 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -72,7 +78,9 @@ function getPublicSupabaseConfig(): { url: string; anon: string } {
   return { url, anon };
 }
 
-async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, string>> {
+async function getEdgeFunctionHeaders(
+  anonKey: string
+): Promise<Record<string, string>> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -113,39 +121,43 @@ async function resolveImageUrl(row: ResultRow): Promise<string | null> {
   return null;
 }
 
-function normalizeResultRow(input: any): ResultRow | null {
+function normalizeResultRow(input: unknown): ResultRow | null {
   if (!input) return null;
 
   const row = Array.isArray(input) ? input[0] : input;
-  if (!row) return null;
+  if (!row || typeof row !== "object") return null;
+
+  const r = row as Record<string, unknown>;
 
   return {
-    id: String(row.id ?? ""),
-    status: row.status ?? null,
-    final_image_url: row.final_image_url ?? null,
-    result_image_url: row.result_image_url ?? null,
-    preview_image_url: row.preview_image_url ?? null,
-    created_at: row.created_at ?? null,
+    id: String(r.id ?? ""),
+    status: (r.status as string | null) ?? null,
+    final_image_url: (r.final_image_url as string | null) ?? null,
+    result_image_url: (r.result_image_url as string | null) ?? null,
+    preview_image_url: (r.preview_image_url as string | null) ?? null,
+    created_at: (r.created_at as string | null) ?? null,
   };
 }
 
-function normalizeUpgradeRpcRow(input: any): UpgradeRpcRow | null {
+function normalizeUpgradeRpcRow(input: unknown): UpgradeRpcRow | null {
   if (!input) return null;
 
   const row = Array.isArray(input) ? input[0] : input;
-  if (!row) return null;
+  if (!row || typeof row !== "object") return null;
+
+  const r = row as Record<string, unknown>;
 
   return {
-    fulfillment_id: row.fulfillment_id ?? null,
-    generation_id: row.generation_id ?? null,
-    action_type: row.action_type ?? null,
-    fulfillment_status: row.fulfillment_status ?? null,
-    output_generation_id: row.output_generation_id ?? null,
-    output_image_url: row.output_image_url ?? null,
-    final_image_url: row.final_image_url ?? null,
-    generation_status: row.generation_status ?? null,
-    generation_created_at: row.generation_created_at ?? null,
-    generation_updated_at: row.generation_updated_at ?? null,
+    fulfillment_id: (r.fulfillment_id as string | null) ?? null,
+    generation_id: (r.generation_id as string | null) ?? null,
+    action_type: (r.action_type as string | null) ?? null,
+    fulfillment_status: (r.fulfillment_status as string | null) ?? null,
+    output_generation_id: (r.output_generation_id as string | null) ?? null,
+    output_image_url: (r.output_image_url as string | null) ?? null,
+    final_image_url: (r.final_image_url as string | null) ?? null,
+    generation_status: (r.generation_status as string | null) ?? null,
+    generation_created_at: (r.generation_created_at as string | null) ?? null,
+    generation_updated_at: (r.generation_updated_at as string | null) ?? null,
   };
 }
 
@@ -190,11 +202,6 @@ const OFFER_CONFIG: Array<{
 function formatStatus(status: string | null) {
   const s = String(status || "").trim().toLowerCase();
   if (!s) return "waiting";
-  if (
-    ["succeeded", "done", "completed", "fulfilled", "ready", "processing", "pending"].includes(s)
-  ) {
-    return s;
-  }
   return s;
 }
 
@@ -202,8 +209,11 @@ export default function ResultPage() {
   const q = useQuery();
   const navigate = useNavigate();
 
-  const sessionId = String(q.get("session_id") || "").trim();
+  const generationIdFromId = String(q.get("id") || "").trim();
   const generationIdFromUrl = String(q.get("generation_id") || "").trim();
+  const generationId = generationIdFromId || generationIdFromUrl;
+
+  const sessionId = String(q.get("session_id") || "").trim();
   const checkoutSessionId = String(q.get("checkout_session_id") || "").trim();
   const upgradeSuccess = String(q.get("upgrade_success") || "").trim() === "1";
   const upgradeCanceled = String(q.get("upgrade_canceled") || "").trim() === "1";
@@ -224,42 +234,58 @@ export default function ResultPage() {
 
   const stepLabel = useMemo(() => "3 of 3", []);
   const pageBg = useMemo(() => ({ background: "#f6f1ea" as const }), []);
-  const normalizedStatus = useMemo(() => formatStatus(row?.status ?? null), [row?.status]);
+  const normalizedStatus = useMemo(
+    () => formatStatus(row?.status ?? null),
+    [row?.status]
+  );
 
   useEffect(() => {
     if (upgradeSuccess) toast.success("Payment successful.");
     if (upgradeCanceled) toast.error("Checkout canceled.");
   }, [upgradeSuccess, upgradeCanceled]);
 
-  async function fetchGeneration(generationId?: string | null, session?: string | null) {
-    const genId = String(generationId || "").trim();
-    const sess = String(session || "").trim();
+  async function fetchGenerationById(genId: string) {
+    const { data, error } = await supabase
+      .from("generations")
+      .select(
+        "id, status, final_image_url, result_image_url, preview_image_url, created_at"
+      )
+      .eq("id", genId)
+      .maybeSingle();
 
-    if (genId) {
-      const { data, error } = await supabase
-        .from("generations")
-        .select("id,status,final_image_url,result_image_url,preview_image_url,created_at")
-        .eq("id", genId)
-        .maybeSingle();
-
-      if (error) {
-        throw new Error(error.message || "Failed to load generation");
-      }
-
-      return normalizeResultRow(data);
+    if (error) {
+      throw new Error(error.message || "Failed to load generation");
     }
 
-    if (sess) {
-      const { data, error } = await supabase.rpc("get_result_page_generation", {
-        p_session_id: sess,
-        p_generation_id: null,
-      });
+    return normalizeResultRow(data);
+  }
 
-      if (error) {
-        throw new Error(error.message || "Failed to load generation");
-      }
+  async function fetchGenerationBySession(sess: string) {
+    const { data, error } = await supabase.rpc("get_result_page_generation", {
+      p_session_id: sess,
+      p_generation_id: null,
+    });
 
-      return normalizeResultRow(data);
+    if (error) {
+      throw new Error(error.message || "Failed to load generation");
+    }
+
+    return normalizeResultRow(data);
+  }
+
+  async function fetchGeneration(
+    genId?: string | null,
+    sess?: string | null
+  ): Promise<ResultRow | null> {
+    const safeGenId = String(genId || "").trim();
+    const safeSess = String(sess || "").trim();
+
+    if (safeGenId) {
+      return fetchGenerationById(safeGenId);
+    }
+
+    if (safeSess) {
+      return fetchGenerationBySession(safeSess);
     }
 
     return null;
@@ -282,7 +308,7 @@ export default function ResultPage() {
     return false;
   }
 
-  async function callGenerateNanoBanana(generationId: string) {
+  async function callGenerateNanoBanana(generationIdToStart: string) {
     const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
     const headers = await getEdgeFunctionHeaders(anon);
 
@@ -290,7 +316,7 @@ export default function ResultPage() {
       method: "POST",
       headers,
       body: JSON.stringify({
-        generation_id: generationId,
+        generation_id: generationIdToStart,
       }),
     });
 
@@ -305,13 +331,13 @@ export default function ResultPage() {
     return data;
   }
 
-  async function startGenerationIfNeeded(generationId: string) {
-    if (!generationId) return;
-    if (generationStartedRef.current === generationId) return;
+  async function startGenerationIfNeeded(generationIdToStart: string) {
+    if (!generationIdToStart) return;
+    if (generationStartedRef.current === generationIdToStart) return;
 
-    generationStartedRef.current = generationId;
+    generationStartedRef.current = generationIdToStart;
 
-    const existing = await fetchGeneration(generationId, null);
+    const existing = await fetchGenerationById(generationIdToStart);
     const status = String(existing?.status || "").trim().toLowerCase();
 
     if (
@@ -321,13 +347,14 @@ export default function ResultPage() {
         "ready",
         "succeeded",
         "pending_upgrade_render",
+        "saved",
       ].includes(status)
     ) {
       return;
     }
 
     try {
-      await callGenerateNanoBanana(generationId);
+      await callGenerateNanoBanana(generationIdToStart);
     } catch (error) {
       generationStartedRef.current = null;
       throw error;
@@ -337,17 +364,21 @@ export default function ResultPage() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadDirectGeneration() {
-      if (!generationIdFromUrl) return false;
+    async function sleep(ms: number) {
+      await new Promise((resolve) => setTimeout(resolve, ms));
+    }
 
-      await startGenerationIfNeeded(generationIdFromUrl);
+    async function loadDirectGeneration() {
+      if (!generationId) return false;
+
+      await startGenerationIfNeeded(generationId);
 
       const start = Date.now();
       const maxMs = 180000;
       const intervalMs = 1500;
 
       while (!cancelled && Date.now() - start < maxMs) {
-        const nextRow = await fetchGeneration(generationIdFromUrl, null);
+        const nextRow = await fetchGeneration(generationId, null);
         if (cancelled) return true;
 
         if (nextRow?.id) {
@@ -359,7 +390,7 @@ export default function ResultPage() {
           setRow(nextRow);
         }
 
-        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+        await sleep(intervalMs);
       }
 
       if (!cancelled) {
@@ -391,14 +422,19 @@ export default function ResultPage() {
           setRow(nextRow);
 
           const status = String(nextRow.status || "").trim().toLowerCase();
-          if (!["processing", "completed", "ready", "succeeded"].includes(status) && nextRow.id) {
+          if (
+            !["processing", "completed", "ready", "succeeded", "saved"].includes(status) &&
+            nextRow.id
+          ) {
             try {
               await startGenerationIfNeeded(nextRow.id);
-            } catch (error: any) {
+            } catch (error: unknown) {
               if (!cancelled) {
-                setErrorMessage(
-                  String(error?.message || "Failed to send a request to the Edge Function")
-                );
+                const message =
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to send a request to the Edge Function";
+                setErrorMessage(message);
                 setLoading(false);
               }
               return true;
@@ -406,7 +442,7 @@ export default function ResultPage() {
           }
         }
 
-        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+        await sleep(intervalMs);
       }
 
       if (!cancelled) {
@@ -425,9 +461,12 @@ export default function ResultPage() {
       const intervalMs = 1500;
 
       while (!cancelled && Date.now() - start < maxMs) {
-        const { data, error } = await supabase.rpc("get_upgrade_result_by_checkout_session", {
-          p_checkout_session_id: checkoutSessionId,
-        });
+        const { data, error } = await supabase.rpc(
+          "get_upgrade_result_by_checkout_session",
+          {
+            p_checkout_session_id: checkoutSessionId,
+          }
+        );
 
         if (error) {
           if (!cancelled) {
@@ -443,7 +482,7 @@ export default function ResultPage() {
           if (!cancelled) {
             setUpgradeStatus("Waiting for upgrade fulfillment…");
           }
-          await new Promise((resolve) => setTimeout(resolve, intervalMs));
+          await sleep(intervalMs);
           continue;
         }
 
@@ -493,7 +532,7 @@ export default function ResultPage() {
           }
         }
 
-        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+        await sleep(intervalMs);
       }
 
       if (!cancelled) {
@@ -512,9 +551,9 @@ export default function ResultPage() {
         setErrorMessage("");
         setUpgradeStatus("");
 
-        if (!sessionId && !generationIdFromUrl && !checkoutSessionId) {
+        if (!sessionId && !generationId && !checkoutSessionId) {
           setLoading(false);
-          setErrorMessage("Missing payment session.");
+          setErrorMessage("Missing payment session or generation id.");
           return;
         }
 
@@ -523,7 +562,7 @@ export default function ResultPage() {
           if (handled) return;
         }
 
-        if (generationIdFromUrl) {
+        if (generationId) {
           const handled = await loadDirectGeneration();
           if (handled) return;
         }
@@ -531,10 +570,12 @@ export default function ResultPage() {
         if (sessionId) {
           await loadBySessionPolling();
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (!cancelled) {
+          const message =
+            error instanceof Error ? error.message : "Unexpected error";
           setLoading(false);
-          setErrorMessage(String(error?.message || error || "Unexpected error"));
+          setErrorMessage(message);
         }
       }
     }
@@ -544,7 +585,7 @@ export default function ResultPage() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, generationIdFromUrl, checkoutSessionId]);
+  }, [sessionId, generationId, checkoutSessionId]);
 
   async function handleCheckout(actionType: ActionType) {
     if (!row?.id) {
@@ -558,8 +599,12 @@ export default function ResultPage() {
       const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
       const headers = await getEdgeFunctionHeaders(anon);
 
-      const successUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
-      const cancelUrl = `${window.location.origin}/funnel/result?generation_id=${row.id}`;
+      const successUrl = `${window.location.origin}/funnel/result?generation_id=${encodeURIComponent(
+        row.id
+      )}`;
+      const cancelUrl = `${window.location.origin}/funnel/result?generation_id=${encodeURIComponent(
+        row.id
+      )}`;
 
       const res = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
         method: "POST",
@@ -586,8 +631,10 @@ export default function ResultPage() {
       }
 
       window.location.href = checkoutUrl;
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to start checkout");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to start checkout";
+      toast.error(message);
     } finally {
       setCheckoutLoading((prev) => ({ ...prev, [actionType]: false }));
     }
@@ -595,18 +642,30 @@ export default function ResultPage() {
 
   function downloadCurrent() {
     if (!imageUrl) return;
-    window.open(imageUrl, "_blank", "noopener,noreferrer");
+
+    const a = document.createElement("a");
+    a.href = imageUrl;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   const anyCheckoutLoading = Object.values(checkoutLoading).some(Boolean);
   const canBuy = Boolean(imageUrl) && Boolean(row?.id) && !loading;
 
-  if (!sessionId && !generationIdFromUrl && !checkoutSessionId) {
+  if (!sessionId && !generationId && !checkoutSessionId) {
     return (
       <div className="min-h-screen" style={pageBg}>
         <header className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" className="text-zinc-700 hover:text-zinc-900" onClick={() => navigate("/")}>
+            <Button
+              variant="ghost"
+              className="text-zinc-700 hover:text-zinc-900"
+              onClick={() => navigate("/")}
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
@@ -630,11 +689,13 @@ export default function ResultPage() {
                 We couldn’t open your result
               </h1>
               <p className="mt-3 text-zinc-700">
-                The payment session is missing. Please return and try again.
+                The payment session or generation id is missing. Please return and try again.
               </p>
 
               <div className="mt-6 flex justify-center gap-3">
-                <Button onClick={() => navigate("/funnel/uploadPhoto")}>Start again</Button>
+                <Button onClick={() => navigate("/funnel/uploadPhoto")}>
+                  Start again
+                </Button>
                 <Button variant="outline" onClick={() => navigate("/")}>
                   Go home
                 </Button>
@@ -653,7 +714,7 @@ export default function ResultPage() {
           <Button
             variant="ghost"
             className="text-zinc-700 hover:text-zinc-900"
-            onClick={() => navigate("/")}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
@@ -731,7 +792,9 @@ export default function ResultPage() {
                   <div className="flex min-h-[340px] items-center justify-center bg-gradient-to-b from-white to-[#f7f3ee] px-6 py-12 text-center sm:min-h-[420px]">
                     <div>
                       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-white">
-                        <RefreshCw className={`h-5 w-5 text-[#0b3b2e] ${loading ? "animate-spin" : ""}`} />
+                        <RefreshCw
+                          className={`h-5 w-5 text-[#0b3b2e] ${loading ? "animate-spin" : ""}`}
+                        />
                       </div>
 
                       <div className="mt-4 text-base font-medium text-zinc-900">
@@ -766,7 +829,7 @@ export default function ResultPage() {
                   disabled={!imageUrl || anyCheckoutLoading}
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  Open full image
+                  Download image
                 </Button>
 
                 <Button
@@ -796,7 +859,9 @@ export default function ResultPage() {
 
           <Card className="border-zinc-200 bg-white/85 shadow-[0_10px_40px_rgba(17,24,39,0.08)]">
             <CardHeader className="pb-3">
-              <CardTitle className="text-2xl text-[#0b3b2e]">More ways to enjoy your gift</CardTitle>
+              <CardTitle className="text-2xl text-[#0b3b2e]">
+                More ways to enjoy your gift
+              </CardTitle>
               <CardDescription className="text-zinc-600">
                 Premium upgrades designed to increase quality, presentation, and gifting value.
               </CardDescription>
@@ -824,19 +889,25 @@ export default function ResultPage() {
 
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-base font-semibold text-zinc-900">{offer.title}</h3>
+                            <h3 className="text-base font-semibold text-zinc-900">
+                              {offer.title}
+                            </h3>
                             {offer.featured ? (
                               <Badge className="bg-amber-500 text-white hover:bg-amber-500">
                                 Best Value
                               </Badge>
                             ) : null}
                           </div>
-                          <p className="mt-1 text-sm text-zinc-600">{offer.description}</p>
+                          <p className="mt-1 text-sm text-zinc-600">
+                            {offer.description}
+                          </p>
                         </div>
                       </div>
 
                       <div className="shrink-0 text-right">
-                        <div className="text-lg font-bold text-[#0b3b2e]">{offer.priceLabel}</div>
+                        <div className="text-lg font-bold text-[#0b3b2e]">
+                          {offer.priceLabel}
+                        </div>
                       </div>
                     </div>
 
@@ -852,7 +923,9 @@ export default function ResultPage() {
               })}
 
               <div className="rounded-2xl border border-zinc-200 bg-[#f8f5ef] p-4">
-                <div className="text-sm font-semibold text-[#0b3b2e]">Why upgrade?</div>
+                <div className="text-sm font-semibold text-[#0b3b2e]">
+                  Why upgrade?
+                </div>
                 <ul className="mt-2 space-y-2 text-sm text-zinc-700">
                   <li>• Sharper quality</li>
                   <li>• Premium gift presentation</li>

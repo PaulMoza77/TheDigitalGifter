@@ -51,7 +51,6 @@ export default function AccountTopbar() {
           error: userError,
         } = await supabase.auth.getUser();
 
-        alert(`USER ID: ${user?.id ?? "no-user"}`);
 
         if (!mounted) return;
 

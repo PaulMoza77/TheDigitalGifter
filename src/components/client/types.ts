@@ -17,6 +17,7 @@ export type ClientGeneration = {
   status: ClientGenerationStatus;
   createdAt: string;
   imageUrl?: string | null;
+  resultHref?: string;
 };
 
 export type ClientDashboardData = {

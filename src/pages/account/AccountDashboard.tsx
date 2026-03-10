@@ -29,6 +29,7 @@ type GenerationRow = {
   id: string;
   status: string | null;
   final_image_url: string | null;
+  result_image_url: string | null;
   preview_image_url: string | null;
   created_at: string | null;
 };
@@ -71,9 +72,11 @@ function buildGenerationTitle(item: GenerationRow, index: number) {
 
 function resolveGenerationImage(item: GenerationRow) {
   const finalUrl = (item.final_image_url || "").trim();
+  const resultUrl = (item.result_image_url || "").trim();
   const previewUrl = (item.preview_image_url || "").trim();
 
   if (finalUrl) return finalUrl;
+  if (resultUrl) return resultUrl;
   if (previewUrl) return previewUrl;
 
   return null;
@@ -81,10 +84,12 @@ function resolveGenerationImage(item: GenerationRow) {
 
 function resolveGenerationStyle(item: GenerationRow) {
   const finalUrl = (item.final_image_url || "").trim();
+  const resultUrl = (item.result_image_url || "").trim();
   const previewUrl = (item.preview_image_url || "").trim();
   const normalized = String(item.status || "").trim().toLowerCase();
 
   if (finalUrl) return "Final Result";
+  if (resultUrl) return "Saved Result";
   if (previewUrl && (normalized === "processing" || normalized === "pending")) {
     return "Preview";
   }
@@ -104,67 +109,85 @@ export default function AccountDashboard() {
     let mounted = true;
 
     async function load() {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+        const {
+          data: { user: authUser },
+          error: authError,
+        } = await supabase.auth.getUser();
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      setUser(authUser ?? null);
+        if (authError) {
+          console.error("[AccountDashboard] auth error:", authError);
+        }
 
-      if (!authUser) {
+        setUser(authUser ?? null);
+
+        if (!authUser) {
+          setIsAdmin(false);
+          setSummary(null);
+          setRecentRows([]);
+          setLoading(false);
+          return;
+        }
+
+        const email = authUser.email?.trim().toLowerCase() ?? "";
+
+        const [summaryRes, generationsRes, adminRes] = await Promise.all([
+          supabase
+            .from("client_dashboard_summary")
+            .select(
+              "user_id, credits_balance, credits_used, total_purchased, total_generations, saved_results_count, recent_activity_count"
+            )
+            .eq("user_id", authUser.id)
+            .maybeSingle(),
+
+          supabase
+            .from("generations")
+            .select(
+              "id, status, final_image_url, result_image_url, preview_image_url, created_at"
+            )
+            .eq("user_id", authUser.id)
+            .order("created_at", { ascending: false })
+            .limit(6),
+
+          supabase
+            .from("admin_users")
+            .select("email")
+            .eq("email", email)
+            .maybeSingle(),
+        ]);
+
+        if (!mounted) return;
+
+        if (summaryRes.error) {
+          console.error("[AccountDashboard] summary error:", summaryRes.error);
+        }
+
+        if (generationsRes.error) {
+          console.error("[AccountDashboard] generations error:", generationsRes.error);
+        }
+
+        if (adminRes.error) {
+          console.error("[AccountDashboard] admin check error:", adminRes.error);
+        }
+
+        setIsAdmin(Boolean(adminRes.data?.email));
+        setSummary((summaryRes.data as DashboardSummaryRow | null) ?? null);
+        setRecentRows((generationsRes.data as GenerationRow[] | null) ?? []);
+      } catch (error) {
+        console.error("[AccountDashboard] fatal:", error);
+        if (!mounted) return;
         setIsAdmin(false);
         setSummary(null);
         setRecentRows([]);
-        setLoading(false);
-        return;
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-
-      const email = authUser.email?.trim().toLowerCase() ?? "";
-
-      const [summaryRes, generationsRes, adminRes] = await Promise.all([
-        supabase
-          .from("client_dashboard_summary")
-          .select(
-            "user_id, credits_balance, credits_used, total_purchased, total_generations, saved_results_count, recent_activity_count"
-          )
-          .eq("user_id", authUser.id)
-          .maybeSingle(),
-
-        supabase
-          .from("generations")
-          .select("id, status, final_image_url, preview_image_url, created_at")
-          .eq("user_id", authUser.id)
-          .order("created_at", { ascending: false })
-          .limit(6),
-
-        supabase
-          .from("admin_users")
-          .select("email")
-          .eq("email", email)
-          .maybeSingle(),
-      ]);
-
-      if (!mounted) return;
-
-      if (summaryRes.error) {
-        console.error("[AccountDashboard] summary error:", summaryRes.error);
-      }
-
-      if (generationsRes.error) {
-        console.error("[AccountDashboard] generations error:", generationsRes.error);
-      }
-
-      if (adminRes.error) {
-        console.error("[AccountDashboard] admin check error:", adminRes.error);
-      }
-
-      setIsAdmin(Boolean(adminRes.data?.email));
-      setSummary((summaryRes.data as DashboardSummaryRow | null) ?? null);
-      setRecentRows((generationsRes.data as GenerationRow[] | null) ?? []);
-      setLoading(false);
     }
 
     void load();
@@ -241,6 +264,7 @@ export default function AccountDashboard() {
         status: mapStatus(item.status),
         createdAt: formatRelativeDate(item.created_at),
         imageUrl: resolveGenerationImage(item),
+        resultHref: `/funnel/result?id=${encodeURIComponent(item.id)}`,
       })),
     [recentRows]
   );
