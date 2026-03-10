@@ -1,8 +1,9 @@
 import React from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { LayoutGrid, Wand2, Sparkles, Menu, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import { CreditsDisplay } from "@/components/CreditsDisplay";
 import {
   Sheet,
   SheetContent,
@@ -14,7 +15,9 @@ import {
 function mobileNavClass(active: boolean) {
   return [
     "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200",
-    active ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white",
+    active
+      ? "bg-white/10 text-white"
+      : "text-zinc-400 hover:bg-white/5 hover:text-white",
   ].join(" ");
 }
 
@@ -25,6 +28,7 @@ type TopbarItem = {
 };
 
 export default function AccountTopbar() {
+  const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
@@ -123,6 +127,7 @@ export default function AccountTopbar() {
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
               <Sparkles className="h-4 w-4 text-white" />
             </span>
+
             <div className="hidden sm:block">
               <div className="text-sm font-semibold text-white">
                 {isAdmin ? "My Account + Admin" : "My Account"}
@@ -160,6 +165,10 @@ export default function AccountTopbar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <div className="hidden md:block">
+            <CreditsDisplay onBuyCredits={() => navigate("/pricing")} />
+          </div>
+
           <Button
             asChild
             variant="secondary"
@@ -190,7 +199,9 @@ export default function AccountTopbar() {
                   </SheetTitle>
                 </SheetHeader>
 
-                <div className="mt-6 space-y-2">
+                <div className="mt-6 space-y-3">
+                  <CreditsDisplay onBuyCredits={() => navigate("/pricing")} />
+
                   {!loading &&
                     items.map((item) => {
                       const Icon = item.icon;
