@@ -1,5 +1,5 @@
 // FILE: src/App.tsx
-import { Suspense, useEffect, lazy } from "react";
+import { Suspense, useEffect, useState, lazy } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -21,6 +21,7 @@ import AuthCallback from "@/pages/AuthCallback";
 // ================= WEBSITE UI =================
 import WebsiteHeader from "@/components/Header";
 import WebsiteFooter from "@/components/Footer";
+import { PricingModal } from "@/components/PricingModal";
 
 // ================= AUTH =================
 import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
@@ -98,12 +99,21 @@ function ScrollToTop() {
 }
 
 function WebsiteLayout() {
+  const [showPricing, setShowPricing] = useState(false);
+
   return (
     <div className="min-h-screen flex flex-col bg-black text-white">
-      <WebsiteHeader />
+      <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
+
       <main className="flex-1">
         <Outlet />
       </main>
+
+      <PricingModal
+        isOpen={showPricing}
+        onClose={() => setShowPricing(false)}
+      />
+
       <WebsiteFooter />
     </div>
   );
