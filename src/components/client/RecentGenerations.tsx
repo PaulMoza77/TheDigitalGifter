@@ -1,5 +1,3 @@
-// FILE: src/components/client/RecentGenerations.tsx
-
 import React from "react";
 import { Link } from "react-router-dom";
 import {
@@ -15,16 +13,18 @@ import { Button } from "@/components/ui/button";
 import ClientEmptyState from "@/components/client/ClientEmptyState";
 
 type Props = {
-  items: ClientGeneration[];
+  items?: ClientGeneration[] | null;
 };
 
 function badgeClass(status: ClientGeneration["status"]) {
   if (status === "Completed") {
     return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
   }
+
   if (status === "Processing") {
     return "border-amber-500/20 bg-amber-500/10 text-amber-300";
   }
+
   return "border-sky-500/20 bg-sky-500/10 text-sky-300";
 }
 
@@ -37,7 +37,9 @@ function GenerationThumbnail({
 }) {
   const [failed, setFailed] = React.useState(false);
 
-  if (!imageUrl || failed) {
+  const normalizedUrl = typeof imageUrl === "string" ? imageUrl.trim() : "";
+
+  if (!normalizedUrl || failed) {
     return (
       <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02]">
         <ImageIcon className="h-5 w-5 text-zinc-300" />
@@ -48,7 +50,7 @@ function GenerationThumbnail({
   return (
     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
       <img
-        src={imageUrl}
+        src={normalizedUrl}
         alt={title}
         className="h-full w-full object-cover"
         loading="lazy"
@@ -59,7 +61,12 @@ function GenerationThumbnail({
 }
 
 export default function RecentGenerations({ items }: Props) {
-  if (!items.length) {
+  const safeItems = React.useMemo(
+    () => (Array.isArray(items) ? items.filter(Boolean) : []),
+    [items]
+  );
+
+  if (safeItems.length === 0) {
     return (
       <ClientEmptyState
         title="No generations yet"
@@ -91,8 +98,9 @@ export default function RecentGenerations({ items }: Props) {
       </div>
 
       <div className="space-y-3">
-        {items.map((item) => {
-          const href = item.resultHref || `/funnel/result?id=${encodeURIComponent(item.id)}`;
+        {safeItems.map((item) => {
+          const href =
+            item.resultHref || `/funnel/result?id=${encodeURIComponent(item.id)}`;
 
           return (
             <Link
@@ -101,7 +109,10 @@ export default function RecentGenerations({ items }: Props) {
               className="block rounded-3xl transition focus:outline-none focus:ring-2 focus:ring-white/20"
             >
               <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-4 transition hover:bg-white/[0.05] lg:flex-row lg:items-center">
-                <GenerationThumbnail imageUrl={item.imageUrl} title={item.title} />
+                <GenerationThumbnail
+                  imageUrl={item.imageUrl}
+                  title={item.title}
+                />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
@@ -115,7 +126,9 @@ export default function RecentGenerations({ items }: Props) {
                           <Sparkles className="h-3.5 w-3.5" />
                           {item.occasion}
                         </span>
+
                         <span className="text-zinc-600">•</span>
+
                         <span>{item.style}</span>
                       </div>
                     </div>
