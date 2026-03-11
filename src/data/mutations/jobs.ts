@@ -13,7 +13,7 @@ type CreateVideoJobArgs = {
   templateId: string;
   inputUrls: string[];
   userInstructions?: string;
-  duration: number; // ex 8
+  duration: number;
   resolution: "1080p";
   aspectRatio: "16:9";
   generateAudio: boolean;
@@ -24,21 +24,70 @@ type JobCreateResponse = {
   jobId: string;
 };
 
+type EdgeJobResponse = {
+  jobId?: string;
+  id?: string;
+  error?: string;
+  message?: string;
+};
+
+async function getAuthenticatedUserId(): Promise<string> {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error) {
+    throw new Error(error.message || "Failed to get authenticated user");
+  }
+
+  if (!user?.id) {
+    throw new Error("User not authenticated");
+  }
+
+  return user.id;
+}
+
+function extractJobId(data: EdgeJobResponse | string | null | undefined): string {
+  if (typeof data === "string" && data.trim()) {
+    return data.trim();
+  }
+
+  if (data && typeof data === "object") {
+    const maybeJobId = String(data.jobId || data.id || "").trim();
+    if (maybeJobId) return maybeJobId;
+
+    const maybeError = String(data.error || data.message || "").trim();
+    if (maybeError) {
+      throw new Error(maybeError);
+    }
+  }
+
+  throw new Error("Missing jobId from Edge Function");
+}
+
 export function useCreateJobMutation() {
   return useMutation<JobCreateResponse, Error, CreateImageJobArgs>({
     mutationKey: ["jobs", "create", "image"],
     mutationFn: async (payload) => {
-      // ✅ Aici chemi backend-ul tău (Edge Function / API)
-      // IMPORTANT: schimbă numele funcției dacă ai altul
+      const userId = await getAuthenticatedUserId();
+
+      const body = {
+        ...payload,
+        userId,
+      };
+
       const { data, error } = await supabase.functions.invoke("create-image-job", {
-        body: payload,
+        body,
       });
 
-      if (error) throw new Error(error.message || "Failed to create image job");
-      const jobId = (data as any)?.jobId ?? (data as any)?.id ?? data;
-      if (!jobId) throw new Error("Missing jobId from create-image-job");
+      if (error) {
+        throw new Error(error.message || "Failed to create image job");
+      }
 
-      return { jobId: String(jobId) };
+      const jobId = extractJobId((data as EdgeJobResponse | string | null) ?? null);
+
+      return { jobId };
     },
   });
 }
@@ -47,15 +96,24 @@ export function useCreateVideoJobMutation() {
   return useMutation<JobCreateResponse, Error, CreateVideoJobArgs>({
     mutationKey: ["jobs", "create", "video"],
     mutationFn: async (payload) => {
+      const userId = await getAuthenticatedUserId();
+
+      const body = {
+        ...payload,
+        userId,
+      };
+
       const { data, error } = await supabase.functions.invoke("create-video-job", {
-        body: payload,
+        body,
       });
 
-      if (error) throw new Error(error.message || "Failed to create video job");
-      const jobId = (data as any)?.jobId ?? (data as any)?.id ?? data;
-      if (!jobId) throw new Error("Missing jobId from create-video-job");
+      if (error) {
+        throw new Error(error.message || "Failed to create video job");
+      }
 
-      return { jobId: String(jobId) };
+      const jobId = extractJobId((data as EdgeJobResponse | string | null) ?? null);
+
+      return { jobId };
     },
   });
 }
