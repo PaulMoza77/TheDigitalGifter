@@ -1,3 +1,4 @@
+// src/components/AccountTopbar.tsx
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
@@ -33,6 +34,11 @@ type TopbarItem = {
   label: string;
   to: string;
   icon: React.ComponentType<{ className?: string }>;
+};
+
+type LedgerBalanceRow = {
+  direction: "in" | "out" | null;
+  credits: number | string | null;
 };
 
 export default function AccountTopbar() {
@@ -85,19 +91,31 @@ export default function AccountTopbar() {
           setIsAdmin(false);
         }
 
-        const { data: creditRow, error: creditsError } = await supabase
-          .from("user_credits_balance_view")
-          .select("credits_balance")
-          .eq("user_id", user.id)
-          .maybeSingle();
+        const { data: ledgerRows, error: ledgerError } = await supabase
+          .from("credits_ledger")
+          .select("direction, credits")
+          .eq("user_convex_id", user.id)
+          .order("occurred_at", { ascending: false });
 
         if (!mounted) return;
 
-        if (creditsError) {
-          console.error("[AccountTopbar] credits error:", creditsError);
+        if (ledgerError) {
+          console.error("[AccountTopbar] credits ledger error:", ledgerError);
           setCredits(0);
         } else {
-          setCredits(Number(creditRow?.credits_balance ?? 0));
+          const balance = ((ledgerRows ?? []) as LedgerBalanceRow[]).reduce(
+            (sum, row) => {
+              const value = Number(row.credits ?? 0);
+
+              if (!Number.isFinite(value)) return sum;
+              if (row.direction === "in") return sum + value;
+              if (row.direction === "out") return sum - value;
+              return sum;
+            },
+            0
+          );
+
+          setCredits(balance);
         }
 
         setLoading(false);
