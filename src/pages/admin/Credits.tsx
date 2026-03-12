@@ -29,11 +29,15 @@ type CreditRow = {
 };
 
 type BalanceRow = {
+  key: string;
   user_convex_id: string;
   user_name: string | null;
   user_email: string | null;
   user_image: string | null;
   balance: number;
+  total_in: number;
+  total_out: number;
+  last_activity: string | null;
 };
 
 function fmtDate(iso?: string | null) {
@@ -48,7 +52,7 @@ function clsBadge(dir: "in" | "out") {
     : "bg-rose-500/15 text-rose-200 border-rose-500/30";
 }
 
-function num(v: any, fallback = 0) {
+function num(v: unknown, fallback = 0) {
   if (v === null || v === undefined || v === "") return fallback;
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -56,19 +60,18 @@ function num(v: any, fallback = 0) {
 
 function pickFirst<T>(...vals: T[]): T {
   for (const v of vals) {
-    // accept 0, false as valid
     if (v !== null && v !== undefined && (typeof v !== "string" || v !== "")) return v;
   }
   return vals[vals.length - 1];
 }
 
-function normalizeDirection(v: any): "in" | "out" {
+function normalizeDirection(v: unknown): "in" | "out" {
   const s = String(v || "").toLowerCase().trim();
   if (s === "in") return "in";
   return "out";
 }
 
-function toISO(v: any): string | null {
+function toISO(v: unknown): string | null {
   if (v === null || v === undefined || v === "") return null;
 
   if (v instanceof Date) {
@@ -76,13 +79,11 @@ function toISO(v: any): string | null {
   }
 
   if (typeof v === "string") {
-    // already ISO (or timestamptz string)
     const d = new Date(v);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
   }
 
   if (typeof v === "number") {
-    // support seconds or ms
     const n = v > 10_000_000_000 ? v : v * 1000;
     const d = new Date(n);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
@@ -118,7 +119,15 @@ function mapLedgerRow(r: any): CreditRow {
   const created_at = toISO(pickFirst(r.created_at, r.occurred_at, null));
 
   return {
-    id: String(pickFirst(r.id, r.ledger_id, r.row_id, r.uuid, `${user_convex_id}:${created_at || occurred_at || "row"}`)),
+    id: String(
+      pickFirst(
+        r.id,
+        r.ledger_id,
+        r.row_id,
+        r.uuid,
+        `${user_convex_id}:${created_at || occurred_at || "row"}`
+      )
+    ),
 
     user_convex_id,
     user_name,
@@ -150,20 +159,58 @@ function mapLedgerRow(r: any): CreditRow {
   };
 }
 
-function mapBalanceRow(b: any): BalanceRow {
-  const user_convex_id = String(pickFirst(b.user_convex_id, b.user_id, b.userId, ""));
-  return {
-    user_convex_id,
-    user_name: pickFirst<string | null>(b.user_name, b.customer_name, b.name, null),
-    user_email: pickFirst<string | null>(b.user_email, b.customer_email, b.email, null),
-    user_image: pickFirst<string | null>(b.user_image, b.customer_image, b.image, b.image_url, null),
-    balance: num(pickFirst(b.balance, b.credits, b.current_balance, 0), 0),
-  };
+function buildBalances(rows: CreditRow[]): BalanceRow[] {
+  const map = new Map<string, BalanceRow>();
+
+  for (const r of rows) {
+    const key =
+      (r.user_email || "").trim().toLowerCase() ||
+      (r.user_convex_id || "").trim() ||
+      `unknown:${r.id}`;
+
+    const existing = map.get(key) || {
+      key,
+      user_convex_id: r.user_convex_id || "",
+      user_name: r.user_name,
+      user_email: r.user_email,
+      user_image: r.user_image,
+      balance: 0,
+      total_in: 0,
+      total_out: 0,
+      last_activity: r.occurred_at || r.created_at || null,
+    };
+
+    const credits = Number(r.credits || 0);
+
+    if (r.direction === "in") {
+      existing.total_in += credits;
+      existing.balance += credits;
+    } else {
+      existing.total_out += credits;
+      existing.balance -= credits;
+    }
+
+    if (!existing.user_name && r.user_name) existing.user_name = r.user_name;
+    if (!existing.user_email && r.user_email) existing.user_email = r.user_email;
+    if (!existing.user_image && r.user_image) existing.user_image = r.user_image;
+    if (!existing.user_convex_id && r.user_convex_id) existing.user_convex_id = r.user_convex_id;
+
+    const prevDate = existing.last_activity ? new Date(existing.last_activity).getTime() : 0;
+    const currRaw = r.occurred_at || r.created_at;
+    const currDate = currRaw ? new Date(currRaw).getTime() : 0;
+    if (currDate > prevDate) existing.last_activity = currRaw;
+
+    map.set(key, existing);
+  }
+
+  return Array.from(map.values()).sort((a, b) => {
+    if (b.balance !== a.balance) return b.balance - a.balance;
+    return (a.user_email || a.key).localeCompare(b.user_email || b.key);
+  });
 }
 
 export default function Credits() {
   const [rows, setRows] = useState<CreditRow[]>([]);
-  const [balances, setBalances] = useState<BalanceRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [q, setQ] = useState("");
@@ -171,6 +218,7 @@ export default function Credits() {
   const [limit, setLimit] = useState(200);
 
   const mountedRef = useRef(true);
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -181,42 +229,35 @@ export default function Credits() {
   async function load() {
     setLoading(true);
 
-    const [ledgerRes, balRes] = await Promise.all([
-      supabase
-        .from("credits_admin_view")
-        .select("*")
-        .order("occurred_at", { ascending: false })
-        .limit(limit),
-      supabase
-        .from("user_credits_balance_view")
-        .select("*")
-        .order("balance", { ascending: false })
-        .limit(2000),
-    ]);
+    const ledgerRes = await supabase
+      .from("credits_admin_view")
+      .select("*")
+      .order("occurred_at", { ascending: false })
+      .limit(limit);
 
     if (ledgerRes.error) {
       console.error("[Credits] credits_admin_view error:", ledgerRes.error);
       toast.error(`Credits error: ${ledgerRes.error.message}`);
-    }
-    if (balRes.error) {
-      console.error("[Credits] user_credits_balance_view error:", balRes.error);
-      toast.error(`Balances error: ${balRes.error.message}`);
+      if (mountedRef.current) {
+        setRows([]);
+        setLoading(false);
+      }
+      return;
     }
 
     const ledger = ((ledgerRes.data as any[]) || []).map(mapLedgerRow);
-    const bals = ((balRes.data as any[]) || []).map(mapBalanceRow);
 
     if (!mountedRef.current) return;
 
     setRows(ledger);
-    setBalances(bals);
     setLoading(false);
   }
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit]);
+
+  const balances = useMemo(() => buildBalances(rows), [rows]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -244,14 +285,35 @@ export default function Credits() {
     });
   }, [rows, q, dir]);
 
+  const topBalances = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return balances.slice(0, 9);
+
+    return balances
+      .filter((b) => {
+        const hay = [
+          b.user_name,
+          b.user_email,
+          b.user_convex_id,
+          String(b.balance),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return hay.includes(needle);
+      })
+      .slice(0, 9);
+  }, [balances, q]);
+
   return (
-    <div className="bg-slate-950 min-h-screen p-6 text-white">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-slate-950 p-6 text-white">
+      <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Credits</h1>
-            <p className="text-white/60 text-sm">
-              Ledger (Supabase) — istoric complet + balance per user.
+            <p className="text-sm text-white/60">
+              Ledger (Supabase) — istoric complet + balance calculat din ledger.
             </p>
           </div>
 
@@ -260,13 +322,13 @@ export default function Credits() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search user / email / order / template..."
-              className="w-full md:w-[360px] rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-white/20"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 outline-none focus:border-white/20 md:w-[360px]"
             />
 
             <select
               value={dir}
-              onChange={(e) => setDir(e.target.value as any)}
-              className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none"
+              onChange={(e) => setDir(e.target.value as "all" | "in" | "out")}
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 outline-none"
             >
               <option value="all">All</option>
               <option value="in">IN</option>
@@ -276,7 +338,7 @@ export default function Credits() {
             <select
               value={String(limit)}
               onChange={(e) => setLimit(Number(e.target.value))}
-              className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none"
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 outline-none"
             >
               <option value="100">100</option>
               <option value="200">200</option>
@@ -286,24 +348,23 @@ export default function Credits() {
 
             <button
               onClick={() => void load()}
-              className="rounded-xl bg-white text-black px-4 py-2 font-medium hover:opacity-90"
+              className="rounded-xl bg-white px-4 py-2 font-medium text-black hover:opacity-90"
             >
               Refresh
             </button>
           </div>
         </div>
 
-        {/* Balances */}
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-white/70">Top balances</div>
             <div className="text-xs text-white/50">Users: {balances.length}</div>
           </div>
 
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-            {balances.slice(0, 9).map((b) => (
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+            {topBalances.map((b) => (
               <div
-                key={b.user_convex_id}
+                key={b.key}
                 className="rounded-xl border border-white/10 bg-black/30 p-3"
               >
                 <div className="text-sm font-medium">{b.user_name || "Unknown"}</div>
@@ -311,14 +372,22 @@ export default function Credits() {
                 <div className="mt-2 text-lg font-semibold">
                   {Number(b.balance || 0).toLocaleString()} credits
                 </div>
+                <div className="mt-1 text-xs text-white/45">
+                  IN: {b.total_in.toLocaleString()} · OUT: {b.total_out.toLocaleString()}
+                </div>
               </div>
             ))}
+
+            {!loading && topBalances.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white/60">
+                No balances.
+              </div>
+            ) : null}
           </div>
         </div>
 
-        {/* Ledger table */}
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
-          <div className="px-4 py-3 flex items-center justify-between">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+          <div className="flex items-center justify-between px-4 py-3">
             <div className="text-sm text-white/70">Ledger</div>
             <div className="text-xs text-white/50">
               Showing: {filtered.length} / {rows.length}
@@ -329,15 +398,15 @@ export default function Credits() {
             <table className="min-w-[1100px] w-full text-sm">
               <thead className="bg-white/5 text-white/70">
                 <tr>
-                  <th className="text-left px-4 py-3">User</th>
-                  <th className="text-left px-4 py-3">Type</th>
-                  <th className="text-left px-4 py-3">Dir</th>
-                  <th className="text-right px-4 py-3">Credits</th>
-                  <th className="text-left px-4 py-3">Order</th>
-                  <th className="text-left px-4 py-3">Template</th>
-                  <th className="text-left px-4 py-3">Category</th>
-                  <th className="text-left px-4 py-3">Note</th>
-                  <th className="text-left px-4 py-3">Occurred</th>
+                  <th className="px-4 py-3 text-left">User</th>
+                  <th className="px-4 py-3 text-left">Type</th>
+                  <th className="px-4 py-3 text-left">Dir</th>
+                  <th className="px-4 py-3 text-right">Credits</th>
+                  <th className="px-4 py-3 text-left">Order</th>
+                  <th className="px-4 py-3 text-left">Template</th>
+                  <th className="px-4 py-3 text-left">Category</th>
+                  <th className="px-4 py-3 text-left">Note</th>
+                  <th className="px-4 py-3 text-left">Occurred</th>
                 </tr>
               </thead>
 
@@ -360,7 +429,7 @@ export default function Credits() {
                       <td className="px-4 py-3">
                         <div className="font-medium">{r.user_name || "Unknown"}</div>
                         <div className="text-xs text-white/60">
-                          {r.user_email || r.user_convex_id}
+                          {r.user_email || r.user_convex_id || "-"}
                         </div>
                       </td>
 
