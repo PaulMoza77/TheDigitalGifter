@@ -1,4 +1,3 @@
-// FILE: src/layouts/ClientLayout.tsx
 import React from "react";
 import { Outlet } from "react-router-dom";
 import AccountTopbar from "@/components/client/AccountTopbar";
