@@ -206,10 +206,12 @@ export default function AccountDashboard() {
     user?.email?.split("@")[0] ||
     "there";
 
-  const totalGenerations = summary?.total_generations ?? 0;
+  const totalGenerations = summary?.total_generations ?? recentRows.length ?? 0;
   const remainingCredits = summary?.credits_balance ?? 0;
-  const savedResults = summary?.saved_results_count ?? 0;
-  const recentActivity = summary?.recent_activity_count ?? 0;
+  const savedResults =
+    summary?.saved_results_count ??
+    recentRows.filter((item) => String(item.status || "").trim().toLowerCase() === "saved").length;
+  const recentActivity = summary?.recent_activity_count ?? recentRows.length ?? 0;
   const creditsUsed = summary?.credits_used ?? 0;
 
   const completedCreations = React.useMemo(
