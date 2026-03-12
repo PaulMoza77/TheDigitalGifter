@@ -8,8 +8,10 @@ import {
   Shield,
   Plus,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import UserMenu from "@/components/UserMenu";
 import {
   Sheet,
   SheetContent,
@@ -50,7 +52,6 @@ export default function AccountTopbar() {
           data: { user },
           error: userError,
         } = await supabase.auth.getUser();
-
 
         if (!mounted) return;
 
@@ -139,7 +140,7 @@ export default function AccountTopbar() {
 
     base.push({
       label: "Generator",
-      to: "/account/generator",
+      to: "/generator",
       icon: Wand2,
     });
 
@@ -149,7 +150,7 @@ export default function AccountTopbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/70 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 xl:px-8">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Link to="/account/dashboard" className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
               <Sparkles className="h-4 w-4 text-white" />
@@ -164,32 +165,32 @@ export default function AccountTopbar() {
               </div>
             </div>
           </Link>
+
+          <nav className="hidden items-center gap-2 md:flex">
+            {!loading &&
+              items.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <NavLink key={item.to} to={item.to}>
+                    {({ isActive }) => (
+                      <span
+                        className={[
+                          "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-medium transition-all",
+                          isActive
+                            ? "border-white/10 bg-white/10 text-white"
+                            : "border-transparent bg-transparent text-zinc-400 hover:border-white/10 hover:bg-white/5 hover:text-white",
+                        ].join(" ")}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                      </span>
+                    )}
+                  </NavLink>
+                );
+              })}
+          </nav>
         </div>
-
-        <nav className="hidden items-center gap-2 md:flex">
-          {!loading &&
-            items.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <NavLink key={item.to} to={item.to}>
-                  {({ isActive }) => (
-                    <span
-                      className={[
-                        "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-medium transition-all",
-                        isActive
-                          ? "border-white/10 bg-white/10 text-white"
-                          : "border-transparent bg-transparent text-zinc-400 hover:border-white/10 hover:bg-white/5 hover:text-white",
-                      ].join(" ")}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
-                    </span>
-                  )}
-                </NavLink>
-              );
-            })}
-        </nav>
 
         <div className="flex items-center gap-2">
           <button
@@ -211,6 +212,10 @@ export default function AccountTopbar() {
           >
             <Link to="/generator">Open Generator</Link>
           </Button>
+
+          <div className="hidden md:block">
+            <UserMenu />
+          </div>
 
           <div className="md:hidden">
             <Sheet>
