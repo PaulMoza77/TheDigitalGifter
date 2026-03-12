@@ -1,7 +1,6 @@
 // FILE: src/layouts/ClientLayout.tsx
 import React from "react";
 import { Outlet } from "react-router-dom";
-import AccountSidebar from "@/components/client/AccountSidebar";
 import AccountTopbar from "@/components/client/AccountTopbar";
 
 export default function ClientLayout() {
@@ -13,10 +12,8 @@ export default function ClientLayout() {
 
       <AccountTopbar />
 
-      <div className="relative mx-auto flex w-full max-w-[1600px] gap-6 px-4 py-6 sm:px-6 xl:px-8">
-        <AccountSidebar />
-
-        <main className="min-w-0 flex-1">
+      <div className="relative mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 xl:px-8">
+        <main className="min-w-0">
           <Outlet />
         </main>
       </div>
