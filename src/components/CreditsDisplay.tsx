@@ -23,7 +23,9 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
     async function loadCredits() {
       if (authLoading) return;
 
-      if (!user?.id) {
+      const email = user?.email?.trim().toLowerCase() ?? "";
+
+      if (!email) {
         if (!cancelled) {
           setCredits(0);
           setLoading(false);
@@ -35,7 +37,7 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
         const { data, error } = await supabase
           .from("credits_ledger")
           .select("direction, credits")
-          .eq("user_convex_id", user.id)
+          .eq("user_convex_id", email)
           .order("occurred_at", { ascending: false });
 
         if (cancelled) return;
@@ -75,7 +77,7 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, authLoading]);
+  }, [user?.email, authLoading]);
 
   if (authLoading) {
     return (

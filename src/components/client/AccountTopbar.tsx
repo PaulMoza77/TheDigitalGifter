@@ -1,4 +1,3 @@
-// src/components/AccountTopbar.tsx
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
@@ -91,31 +90,35 @@ export default function AccountTopbar() {
           setIsAdmin(false);
         }
 
-        const { data: ledgerRows, error: ledgerError } = await supabase
-          .from("credits_ledger")
-          .select("direction, credits")
-          .eq("user_convex_id", user.id)
-          .order("occurred_at", { ascending: false });
-
-        if (!mounted) return;
-
-        if (ledgerError) {
-          console.error("[AccountTopbar] credits ledger error:", ledgerError);
+        if (!email) {
           setCredits(0);
         } else {
-          const balance = ((ledgerRows ?? []) as LedgerBalanceRow[]).reduce(
-            (sum, row) => {
-              const value = Number(row.credits ?? 0);
+          const { data: ledgerRows, error: ledgerError } = await supabase
+            .from("credits_ledger")
+            .select("direction, credits")
+            .eq("user_convex_id", email)
+            .order("occurred_at", { ascending: false });
 
-              if (!Number.isFinite(value)) return sum;
-              if (row.direction === "in") return sum + value;
-              if (row.direction === "out") return sum - value;
-              return sum;
-            },
-            0
-          );
+          if (!mounted) return;
 
-          setCredits(balance);
+          if (ledgerError) {
+            console.error("[AccountTopbar] credits ledger error:", ledgerError);
+            setCredits(0);
+          } else {
+            const balance = ((ledgerRows ?? []) as LedgerBalanceRow[]).reduce(
+              (sum, row) => {
+                const value = Number(row.credits ?? 0);
+
+                if (!Number.isFinite(value)) return sum;
+                if (row.direction === "in") return sum + value;
+                if (row.direction === "out") return sum - value;
+                return sum;
+              },
+              0
+            );
+
+            setCredits(balance);
+          }
         }
 
         setLoading(false);
