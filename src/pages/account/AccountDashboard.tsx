@@ -27,6 +27,7 @@ type DashboardSummaryRow = {
 
 type GenerationRow = {
   id: string;
+  user_id: string | null;
   status: string | null;
   final_image_url: string | null;
   result_image_url: string | null;
@@ -147,11 +148,11 @@ export default function AccountDashboard() {
           supabase
             .from("generations")
             .select(
-              "id, status, final_image_url, result_image_url, preview_image_url, created_at"
+              "id, user_id, status, final_image_url, result_image_url, preview_image_url, created_at"
             )
             .eq("user_id", authUser.id)
             .order("created_at", { ascending: false })
-            .limit(6),
+            .limit(10),
 
           supabase
             .from("admin_users")
@@ -161,11 +162,6 @@ export default function AccountDashboard() {
         ]);
 
         if (!mounted) return;
-
-        console.log("[AccountDashboard] authUser.id =", authUser.id);
-        console.log("[AccountDashboard] summaryRes.data =", summaryRes.data);
-        console.log("[AccountDashboard] generationsRes.data =", generationsRes.data);
-        console.log("[AccountDashboard] generationsRes.error =", generationsRes.error);
 
         if (summaryRes.error) {
           console.error("[AccountDashboard] summary error:", summaryRes.error);
