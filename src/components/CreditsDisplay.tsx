@@ -7,6 +7,11 @@ interface Props {
   onBuyCredits?: () => void;
 }
 
+type LedgerBalanceRow = {
+  direction: "in" | "out" | null;
+  credits: number | string | null;
+};
+
 export function CreditsDisplay({ onBuyCredits }: Props) {
   const { user, loading: authLoading } = useAuth();
   const [credits, setCredits] = React.useState<number>(0);
@@ -28,18 +33,30 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
 
       try {
         const { data, error } = await supabase
-          .from("user_credits_balance_view")
-          .select("credits_balance")
-          .eq("user_id", user.id)
-          .maybeSingle();
+          .from("credits_ledger")
+          .select("direction, credits")
+          .eq("user_convex_id", user.id)
+          .order("occurred_at", { ascending: false });
 
         if (cancelled) return;
 
         if (error) {
-          console.error("[CreditsDisplay] credits error:", error);
+          console.error("[CreditsDisplay] credits ledger error:", error);
           setCredits(0);
         } else {
-          setCredits(Number(data?.credits_balance ?? 0));
+          const balance = ((data ?? []) as LedgerBalanceRow[]).reduce(
+            (sum, row) => {
+              const value = Number(row.credits ?? 0);
+
+              if (!Number.isFinite(value)) return sum;
+              if (row.direction === "in") return sum + value;
+              if (row.direction === "out") return sum - value;
+              return sum;
+            },
+            0
+          );
+
+          setCredits(balance);
         }
       } catch (e) {
         if (!cancelled) {
