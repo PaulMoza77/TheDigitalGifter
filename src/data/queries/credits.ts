@@ -1,9 +1,37 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
+type LedgerRow = {
+  direction: "in" | "out" | null;
+  credits: number | string | null;
+};
+
 export const creditsKeys = {
   all: ["credits"] as const,
 };
+
+export async function getCreditsBalance(userId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from("credits_ledger")
+    .select("direction, credits")
+    .eq("user_convex_id", userId);
+
+  if (error) {
+    console.error("[getCreditsBalance] credits load failed:", error);
+    return 0;
+  }
+
+  const balance = ((data ?? []) as LedgerRow[]).reduce((sum, row) => {
+    const value = Number(row.credits ?? 0);
+
+    if (!Number.isFinite(value)) return sum;
+    if (row.direction === "in") return sum + value;
+    if (row.direction === "out") return sum - value;
+    return sum;
+  }, 0);
+
+  return balance;
+}
 
 export function useUserCreditsQuery() {
   return useQuery<number, Error>({
@@ -24,19 +52,7 @@ export function useUserCreditsQuery() {
         return 0;
       }
 
-      const { data, error } = await supabase
-        .from("user_credits_balance_view")
-        .select("credits_balance")
-        .eq("user_id", user.id)
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.warn("[useUserCreditsQuery] credits load failed:", error);
-        return 0;
-      }
-
-      return Number(data?.credits_balance ?? 0);
+      return getCreditsBalance(user.id);
     },
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
