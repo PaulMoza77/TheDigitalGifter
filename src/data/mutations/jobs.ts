@@ -77,7 +77,7 @@ export function useCreateJobMutation() {
         userId,
       };
 
-      const { data, error } = await supabase.functions.invoke("create-image-job", {
+      const { data, error } = await supabase.functions.invoke("generate-nano-banana", {
         body,
       });
 
@@ -95,25 +95,8 @@ export function useCreateJobMutation() {
 export function useCreateVideoJobMutation() {
   return useMutation<JobCreateResponse, Error, CreateVideoJobArgs>({
     mutationKey: ["jobs", "create", "video"],
-    mutationFn: async (payload) => {
-      const userId = await getAuthenticatedUserId();
-
-      const body = {
-        ...payload,
-        userId,
-      };
-
-      const { data, error } = await supabase.functions.invoke("create-video-job", {
-        body,
-      });
-
-      if (error) {
-        throw new Error(error.message || "Failed to create video job");
-      }
-
-      const jobId = extractJobId((data as EdgeJobResponse | string | null) ?? null);
-
-      return { jobId };
+    mutationFn: async () => {
+      throw new Error("Video generation is temporarily disabled.");
     },
   });
 }
