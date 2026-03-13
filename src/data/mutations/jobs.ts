@@ -31,7 +31,7 @@ type EdgeJobResponse = {
   message?: string;
 };
 
-async function getAuthenticatedUserId(): Promise<string> {
+async function getAuthenticatedUser() {
   const {
     data: { user },
     error,
@@ -45,7 +45,25 @@ async function getAuthenticatedUserId(): Promise<string> {
     throw new Error("User not authenticated");
   }
 
-  return user.id;
+  return user;
+}
+
+async function getAccessToken(): Promise<string> {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) {
+    throw new Error(error.message || "Failed to get session");
+  }
+
+  const token = session?.access_token?.trim();
+  if (!token) {
+    throw new Error("Missing access token");
+  }
+
+  return token;
 }
 
 function extractJobId(data: EdgeJobResponse | string | null | undefined): string {
@@ -70,15 +88,19 @@ export function useCreateJobMutation() {
   return useMutation<JobCreateResponse, Error, CreateImageJobArgs>({
     mutationKey: ["jobs", "create", "image"],
     mutationFn: async (payload) => {
-      const userId = await getAuthenticatedUserId();
+      const user = await getAuthenticatedUser();
+      const accessToken = await getAccessToken();
 
       const body = {
         ...payload,
-        userId,
+        userId: user.id,
       };
 
       const { data, error } = await supabase.functions.invoke("generate-nano-banana", {
         body,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
 
       if (error) {
