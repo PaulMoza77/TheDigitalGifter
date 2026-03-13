@@ -140,8 +140,8 @@ function normalizeTemplate(t: AnyTemplate): AnyTemplate {
     typeof t.creditCost === "number"
       ? t.creditCost
       : typeof t.creditcost === "number"
-        ? t.creditcost
-        : 0;
+      ? t.creditcost
+      : 0;
 
   return {
     ...(t as TemplateSummary),
@@ -189,7 +189,7 @@ export default function GeneratorPage() {
   );
 
   const { data: creditsData = 0 } = useUserCreditsQuery();
-  const userCredits: number = (creditsData ?? 0) as number;
+  const userCredits: number = Number(creditsData ?? 0);
 
   const { data: jobsRaw = [] } = useJobsQuery();
   const jobs = (jobsRaw as any[]).map((j) => j) as JobRow[];
@@ -394,26 +394,53 @@ export default function GeneratorPage() {
   const { openFunnel } = useCreditsFunnel();
 
   const handleGenerate = useCallback(async () => {
+    console.log("[handleGenerate] clicked", {
+      hasUser: !!user,
+      user,
+      selectedTemplateId,
+      uploadedFilesCount: uploadedFiles.length,
+      userCredits,
+      jobsLength: jobs.length,
+    });
+
     if (!user) {
+      console.log("[handleGenerate] no user");
+      toast.error("No authenticated user found.");
       openFunnel({ mode: "not_logged_in" });
       return;
     }
 
     if (!selectedTemplateId) {
+      console.log("[handleGenerate] no selectedTemplateId");
       toast.error("Please select a template.");
       return;
     }
 
+    if (uploadedFiles.length === 0) {
+      console.log("[handleGenerate] no uploaded files");
+      toast.error("Please upload at least one photo.");
+      return;
+    }
+
     const template = templateMap.get(selectedTemplateId);
+    console.log("[handleGenerate] template lookup", template);
+
     if (!template) {
+      console.log("[handleGenerate] template not found in templateMap");
       toast.error("Template not found. Please pick another option.");
       return;
     }
 
     const requiredCredits = Number((template as any).creditCost ?? 0);
+    console.log("[handleGenerate] requiredCredits", requiredCredits);
 
     if ((userCredits ?? 0) < requiredCredits) {
       const hasGeneratedBefore = jobs.length > 0;
+      console.log("[handleGenerate] insufficient credits", {
+        userCredits,
+        requiredCredits,
+        hasGeneratedBefore,
+      });
 
       if (!hasGeneratedBefore && (userCredits ?? 0) === 0) {
         openFunnel({ mode: "first_generation" });
@@ -437,9 +464,11 @@ export default function GeneratorPage() {
     setPreviewAfter(null);
 
     try {
-      const isVideo = String(selectedTemplateObj?.type || "image").toLowerCase() === "video";
+      const isVideo = String(template.type || "image").toLowerCase() === "video";
+      console.log("[handleGenerate] isVideo", isVideo);
 
       if (isVideo && uploadedFiles.length > 3) {
+        console.log("[handleGenerate] too many files for video");
         toast.error("You can upload up to 3 photos for video generation.");
         setIsGenerating(false);
         return;
@@ -457,6 +486,8 @@ export default function GeneratorPage() {
           return publicUrl;
         })
       );
+
+      console.log("[handleGenerate] uploaded inputUrls", inputUrls);
 
       if (isVideo) {
         if (customInstructions && customInstructions.length > 2000) {
@@ -476,6 +507,17 @@ export default function GeneratorPage() {
             : languageInstruction;
         }
 
+        console.log("[handleGenerate] triggerCreateVideoJob payload", {
+          templateId: template.id,
+          inputUrls,
+          userInstructions: finalUserInstructions || undefined,
+          duration: 8,
+          resolution: "1080p",
+          aspectRatio: "16:9",
+          generateAudio,
+          negativePrompt: negativePrompt.trim() || undefined,
+        });
+
         const res: any = await triggerCreateVideoJob({
           templateId: template.id,
           inputUrls,
@@ -487,10 +529,20 @@ export default function GeneratorPage() {
           negativePrompt: negativePrompt.trim() || undefined,
         });
 
+        console.log("[handleGenerate] triggerCreateVideoJob response", res);
+
         const jobId = String(res?.jobId ?? res?.id ?? res);
         setCurrentJobId(jobId);
         toast.success("Video generation started!");
       } else {
+        console.log("[handleGenerate] triggerCreateJob payload", {
+          type: "image",
+          templateId: template.id,
+          inputUrls,
+          aspectRatio: selectedAspectRatio,
+          userInstructions: customInstructions.trim() || undefined,
+        });
+
         const res: any = await triggerCreateJob({
           type: "image",
           templateId: template.id,
@@ -499,11 +551,14 @@ export default function GeneratorPage() {
           userInstructions: customInstructions.trim() || undefined,
         });
 
+        console.log("[handleGenerate] triggerCreateJob response", res);
+
         const jobId = String(res?.jobId ?? res?.id ?? res);
         setCurrentJobId(jobId);
         toast.success("Generation started!");
       }
     } catch (error: any) {
+      console.error("[handleGenerate] error", error);
       setIsGenerating(false);
       toast.error(error?.message ?? "Failed to generate.");
     }
@@ -519,7 +574,6 @@ export default function GeneratorPage() {
     customInstructions,
     generateAudio,
     negativePrompt,
-    selectedTemplateObj,
     openFunnel,
     jobs,
     selectedLanguage,
@@ -674,8 +728,8 @@ export default function GeneratorPage() {
           selectedTemplateObj && selectedTemplateObj.type === "video"
             ? "pb-72"
             : selectedTemplateObj?.type === "image"
-              ? "pb-64"
-              : ""
+            ? "pb-64"
+            : ""
         )}
       >
         <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)] overflow-hidden">
