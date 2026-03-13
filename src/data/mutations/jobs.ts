@@ -92,8 +92,11 @@ export function useCreateJobMutation() {
       const accessToken = await getAccessToken();
 
       const body = {
-        ...payload,
         userId: user.id,
+        template_id: payload.templateId,
+        image_url: payload.inputUrls?.[0] ?? "",
+        aspect_ratio: payload.aspectRatio,
+        prompt: payload.userInstructions ?? "",
       };
 
       const { data, error } = await supabase.functions.invoke("generate-nano-banana", {
