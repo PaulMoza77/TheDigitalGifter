@@ -10,11 +10,15 @@ export const creditsKeys = {
   all: ["credits"] as const,
 };
 
-export async function getCreditsBalance(userId: string): Promise<number> {
+export async function getCreditsBalance(userEmail: string): Promise<number> {
+  const normalizedEmail = (userEmail || "").trim().toLowerCase();
+
+  if (!normalizedEmail) return 0;
+
   const { data, error } = await supabase
     .from("credits_ledger")
     .select("direction, credits")
-    .eq("user_convex_id", userId);
+    .eq("user_convex_id", normalizedEmail);
 
   if (error) {
     console.error("[getCreditsBalance] credits load failed:", error);
@@ -48,13 +52,15 @@ export function useUserCreditsQuery() {
       }
 
       const user = session?.user;
-      if (!user?.id) {
+      const normalizedEmail = (user?.email || "").trim().toLowerCase();
+
+      if (!normalizedEmail) {
         return 0;
       }
 
-      return getCreditsBalance(user.id);
+      return getCreditsBalance(normalizedEmail);
     },
-    staleTime: 30 * 1000,
+    staleTime: 0,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
     retry: 1,
