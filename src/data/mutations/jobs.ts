@@ -105,10 +105,13 @@ export function useCreateJobMutation() {
         .from("generations")
         .insert({
           user_id: user.id,
-          template_id: payload.templateId,
           source_image_url: sourceImage,
           prompt: payload.userInstructions ?? "",
           status: "queued",
+          metadata: {
+            templateId: payload.templateId,
+            aspectRatio: payload.aspectRatio,
+          },
         })
         .select("id")
         .single<GenerationInsertRow>();
