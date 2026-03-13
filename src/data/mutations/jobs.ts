@@ -31,6 +31,10 @@ type EdgeJobResponse = {
   message?: string;
 };
 
+type GenerationInsertRow = {
+  id: string;
+};
+
 async function getAuthenticatedUser() {
   const {
     data: { user },
@@ -91,12 +95,30 @@ export function useCreateJobMutation() {
       const user = await getAuthenticatedUser();
       const accessToken = await getAccessToken();
 
+      const sourceImage = payload.inputUrls?.[0]?.trim() ?? "";
+
+      if (!sourceImage) {
+        throw new Error("Missing source image");
+      }
+
+      const { data: generation, error: insertError } = await supabase
+        .from("generations")
+        .insert({
+          user_id: user.id,
+          template_id: payload.templateId,
+          source_image_url: sourceImage,
+          prompt: payload.userInstructions ?? "",
+          status: "queued",
+        })
+        .select("id")
+        .single<GenerationInsertRow>();
+
+      if (insertError || !generation?.id) {
+        throw new Error(insertError?.message || "Failed to create generation");
+      }
+
       const body = {
-        userId: user.id,
-        template_id: payload.templateId,
-        image_url: payload.inputUrls?.[0] ?? "",
-        aspect_ratio: payload.aspectRatio,
-        prompt: payload.userInstructions ?? "",
+        generation_id: generation.id,
       };
 
       const { data, error } = await supabase.functions.invoke("generate-nano-banana", {
@@ -110,7 +132,9 @@ export function useCreateJobMutation() {
         throw new Error(error.message || "Failed to create image job");
       }
 
-      const jobId = extractJobId((data as EdgeJobResponse | string | null) ?? null);
+      const jobId = extractJobId(
+        (data as EdgeJobResponse | string | null) ?? generation.id
+      );
 
       return { jobId };
     },
