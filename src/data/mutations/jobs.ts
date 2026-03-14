@@ -24,13 +24,6 @@ type JobCreateResponse = {
   jobId: string;
 };
 
-type EdgeJobResponse = {
-  jobId?: string;
-  id?: string;
-  error?: string;
-  message?: string;
-};
-
 type GenerationInsertRow = {
   id: string;
 };
@@ -70,24 +63,6 @@ async function getAccessToken(): Promise<string> {
   return token;
 }
 
-function extractJobId(data: EdgeJobResponse | string | null | undefined): string {
-  if (typeof data === "string" && data.trim()) {
-    return data.trim();
-  }
-
-  if (data && typeof data === "object") {
-    const maybeJobId = String(data.jobId || data.id || "").trim();
-    if (maybeJobId) return maybeJobId;
-
-    const maybeError = String(data.error || data.message || "").trim();
-    if (maybeError) {
-      throw new Error(maybeError);
-    }
-  }
-
-  throw new Error("Missing jobId from Edge Function");
-}
-
 export function useCreateJobMutation() {
   return useMutation<JobCreateResponse, Error, CreateImageJobArgs>({
     mutationKey: ["jobs", "create", "image"],
@@ -124,7 +99,7 @@ export function useCreateJobMutation() {
         generation_id: generation.id,
       };
 
-      const { data, error } = await supabase.functions.invoke("generate-nano-banana", {
+      const { error } = await supabase.functions.invoke("generate-nano-banana", {
         body,
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -135,11 +110,7 @@ export function useCreateJobMutation() {
         throw new Error(error.message || "Failed to create image job");
       }
 
-      const jobId = extractJobId(
-        (data as EdgeJobResponse | string | null) ?? generation.id
-      );
-
-      return { jobId };
+      return { jobId: generation.id };
     },
   });
 }
