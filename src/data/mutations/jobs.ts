@@ -107,7 +107,7 @@ export function useCreateJobMutation() {
           user_id: user.id,
           source_image_url: sourceImage,
           prompt: payload.userInstructions ?? "",
-          status: "queued",
+          status: "pending",
           metadata: {
             templateId: payload.templateId,
             aspectRatio: payload.aspectRatio,
