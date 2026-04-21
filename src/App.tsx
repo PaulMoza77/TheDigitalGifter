@@ -1,4 +1,3 @@
-// FILE: src/App.tsx
 import { Suspense, useEffect, useState, lazy } from "react";
 import {
   BrowserRouter,
@@ -74,6 +73,7 @@ const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
 
 // ================= CLIENT ACCOUNT =================
 import AccountDashboard from "@/pages/account/AccountDashboard";
+import AccountAffiliate from "@/pages/account/AccountAffiliate";
 import AccountGeneratorRedirect from "@/pages/account/AccountGeneratorRedirect";
 
 // ================= FUNNEL =================
@@ -152,7 +152,6 @@ function AppInner() {
         }
       >
         <Routes>
-          {/* ================= WEBSITE ================= */}
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
@@ -206,7 +205,6 @@ function AppInner() {
             />
           </Route>
 
-          {/* ================= CLIENT ACCOUNT ================= */}
           <Route element={<ProtectedClientRoute />}>
             <Route path="/account" element={<ClientLayout />}>
               <Route
@@ -214,11 +212,11 @@ function AppInner() {
                 element={<Navigate to="/account/dashboard" replace />}
               />
               <Route path="dashboard" element={<AccountDashboard />} />
+              <Route path="affiliate" element={<AccountAffiliate />} />
               <Route path="generator" element={<AccountGeneratorRedirect />} />
             </Route>
           </Route>
 
-          {/* ================= FUNNEL ================= */}
           <Route element={<FunnelLayout />}>
             <Route
               path="/funnel"
@@ -240,7 +238,6 @@ function AppInner() {
             <Route path="/funnel/result" element={<FunnelResultPage />} />
           </Route>
 
-          {/* ================= ADMIN ================= */}
           <Route
             path="/admin"
             element={

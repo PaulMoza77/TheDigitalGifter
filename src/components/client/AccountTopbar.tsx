@@ -7,6 +7,7 @@ import {
   Menu,
   Shield,
   Plus,
+  Users,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -149,6 +150,11 @@ export default function AccountTopbar() {
         to: "/account/dashboard",
         icon: LayoutGrid,
       },
+      {
+        label: "Affiliate",
+        to: "/account/affiliate",
+        icon: Users,
+      },
     ];
 
     if (isAdmin) {
@@ -216,6 +222,16 @@ export default function AccountTopbar() {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => navigate("/account/affiliate")}
+            className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100 md:flex"
+          >
+            <Users size={17} />
+            <span className="hidden sm:inline">Affiliate:</span>
+            <span className="font-bold text-emerald-300">$12</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => navigate("/pricing")}
             className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-sm text-white/90 md:flex"
           >
@@ -261,6 +277,16 @@ export default function AccountTopbar() {
                 </SheetHeader>
 
                 <div className="mt-6 space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/account/affiliate")}
+                    className="flex w-full items-center justify-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100"
+                  >
+                    <Users size={17} />
+                    <span>Affiliate:</span>
+                    <span className="font-bold text-emerald-300">$12</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => navigate("/pricing")}
