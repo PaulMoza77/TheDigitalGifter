@@ -1,7 +1,12 @@
-// FILE: src/components/UserMenu.tsx
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutGrid, LogOut, Shield, Wand2 } from "lucide-react";
+import {
+  LayoutGrid,
+  LogOut,
+  Shield,
+  Wand2,
+  Users,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -52,10 +57,10 @@ export default function UserMenu() {
         return;
       }
 
-      setIsAdmin(!!data);
+      setIsAdmin(Boolean(data));
     }
 
-    checkAdmin();
+    void checkAdmin();
 
     return () => {
       mounted = false;
@@ -80,7 +85,7 @@ export default function UserMenu() {
       "U")
       .trim()
       .split(" ")
-      .map((p) => p[0])
+      .map((part) => part[0])
       .join("")
       .slice(0, 2)
       .toUpperCase();
@@ -89,7 +94,7 @@ export default function UserMenu() {
     <div className="relative" ref={menuRef}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen((value) => !value)}
         className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5 transition hover:bg-white/10"
         aria-label="Open user menu"
         aria-expanded={open}
@@ -106,7 +111,7 @@ export default function UserMenu() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-56 overflow-hidden rounded-2xl border border-white/10 bg-[#11131c]/95 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+        <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 overflow-hidden rounded-2xl border border-white/10 bg-[#11131c]/95 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl">
           <button
             type="button"
             onClick={() => {
@@ -117,6 +122,24 @@ export default function UserMenu() {
           >
             <LayoutGrid className="h-4 w-4" />
             Dashboard
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              navigate("/account/affiliate");
+            }}
+            className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm text-white transition hover:bg-white/8"
+          >
+            <span className="flex items-center gap-3">
+              <Users className="h-4 w-4" />
+              Affiliate
+            </span>
+
+            <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[11px] font-semibold text-emerald-300">
+              $12
+            </span>
           </button>
 
           <button
