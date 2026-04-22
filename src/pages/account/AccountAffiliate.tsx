@@ -15,80 +15,282 @@ import ClientStatsCards from "@/components/client/ClientStatsCards";
 import type { ClientStat } from "@/components/client/types";
 import { supabase } from "@/lib/supabase";
 
+type AffiliateProfileRow = {
+  id: string;
+  user_id: string;
+  email: string | null;
+  affiliate_code: string;
+  referral_slug: string;
+  referral_link: string;
+  total_clicks: number | null;
+  total_conversions: number | null;
+  available_earnings: number | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+type AffiliateEarningRow = {
+  amount: number | string | null;
+};
+
 function sanitizeAffiliateCode(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 20);
+}
+
+function sanitizeReferralSlug(value: string) {
   return value
-    .toUpperCase()
-    .replace(/[^A-Z0-9_-]/g, "")
-    .slice(0, 20);
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+function buildBaseCode(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}) {
+  const fullName =
+    typeof user.user_metadata?.full_name === "string"
+      ? user.user_metadata.full_name
+      : typeof user.user_metadata?.name === "string"
+        ? user.user_metadata.name
+        : "";
+
+  const emailPrefix = user.email?.split("@")[0] ?? "";
+  const raw = fullName || emailPrefix || "TDGUSER";
+
+  const cleaned = sanitizeAffiliateCode(
+    raw.replace(/\s+/g, "").replace(/[^A-Za-z0-9_-]/g, "")
+  );
+
+  return cleaned || "TDGUSER";
+}
+
+function buildReferralSlug(code: string) {
+  return sanitizeReferralSlug(code);
+}
+
+function buildReferralLink(slug: string) {
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://thedigitalgifter.com";
+
+  return `${origin}/?ref=${encodeURIComponent(slug)}`;
+}
+
+async function ensureUniqueAffiliateCode(
+  baseCode: string,
+  currentUserId: string
+): Promise<string> {
+  let candidate = sanitizeAffiliateCode(baseCode) || "TDGUSER";
+
+  for (let i = 0; i < 30; i += 1) {
+    const { data, error } = await supabase
+      .from("affiliate_profiles")
+      .select("user_id")
+      .eq("affiliate_code", candidate)
+      .maybeSingle<{ user_id: string }>();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data || data.user_id === currentUserId) {
+      return candidate;
+    }
+
+    const rawSuffix =
+      i === 0
+        ? currentUserId.replace(/-/g, "").slice(0, 4).toUpperCase()
+        : `${currentUserId.replace(/-/g, "").slice(0, 2).toUpperCase()}${i}`;
+
+    const maxBaseLength = Math.max(4, 20 - rawSuffix.length);
+    candidate = sanitizeAffiliateCode(
+      `${baseCode.slice(0, maxBaseLength)}${rawSuffix}`
+    );
+  }
+
+  const fallbackSuffix = currentUserId.replace(/-/g, "").slice(0, 6).toUpperCase();
+  return sanitizeAffiliateCode(`${baseCode.slice(0, 14)}${fallbackSuffix}`);
+}
+
+async function loadAffiliateStats(userId: string, referralSlug: string) {
+  const [{ count: clickCount, error: clickError }, { count: conversionCount, error: conversionError }, { data: earningsRows, error: earningsError }] =
+    await Promise.all([
+      supabase
+        .from("affiliate_clicks")
+        .select("*", { count: "exact", head: true })
+        .eq("code", referralSlug),
+      supabase
+        .from("affiliate_conversions")
+        .select("*", { count: "exact", head: true })
+        .eq("code", referralSlug),
+      supabase
+        .from("affiliate_earnings")
+        .select("amount")
+        .eq("user_id", userId),
+    ]);
+
+  if (clickError) {
+    throw clickError;
+  }
+
+  if (conversionError) {
+    throw conversionError;
+  }
+
+  if (earningsError) {
+    throw earningsError;
+  }
+
+  const totalEarnings = ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
+    (sum, row) => sum + Number(row.amount ?? 0),
+    0
+  );
+
+  return {
+    totalClicks: clickCount ?? 0,
+    totalConversions: conversionCount ?? 0,
+    availableEarnings: totalEarnings,
+  };
 }
 
 export default function AccountAffiliate() {
-  const [copiedField, setCopiedField] = React.useState<"link" | "code" | null>(null);
+  const [copiedField, setCopiedField] = React.useState<"link" | "code" | null>(
+    null
+  );
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
   const [userEmail, setUserEmail] = React.useState("");
-  const [affiliateCode, setAffiliateCode] = React.useState("RENTALCARS");
-  const [draftCode, setDraftCode] = React.useState("RENTALCARS");
+  const [affiliateCode, setAffiliateCode] = React.useState("");
+  const [draftCode, setDraftCode] = React.useState("");
+  const [referralSlug, setReferralSlug] = React.useState("");
+  const [affiliateLink, setAffiliateLink] = React.useState("");
+  const [totalClicks, setTotalClicks] = React.useState(0);
+  const [totalConversions, setTotalConversions] = React.useState(0);
+  const [availableEarnings, setAvailableEarnings] = React.useState(0);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   React.useEffect(() => {
     let mounted = true;
 
-    async function loadUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    async function loadUserAndProfile() {
+      try {
+        setLoading(true);
+        setErrorMessage("");
 
-      if (!mounted) return;
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-      setUserEmail(user?.email ?? "");
+        if (userError) {
+          throw userError;
+        }
 
-      const fallbackCode = sanitizeAffiliateCode(
-        (user?.user_metadata?.full_name as string | undefined) ||
-          (user?.user_metadata?.name as string | undefined) ||
-          user?.email?.split("@")[0] ||
-          "TDGUSER"
-      );
+        if (!user) {
+          throw new Error("User not found.");
+        }
 
-      const finalCode = fallbackCode || "TDGUSER";
+        if (!mounted) return;
 
-      setAffiliateCode(finalCode);
-      setDraftCode(finalCode);
+        setUserEmail(user.email ?? "");
+
+        const { data: existingProfile, error: profileError } = await supabase
+          .from("affiliate_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle<AffiliateProfileRow>();
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        let profile = existingProfile;
+
+        if (!profile) {
+          const baseCode = buildBaseCode(user);
+          const uniqueCode = await ensureUniqueAffiliateCode(baseCode, user.id);
+          const nextReferralSlug = buildReferralSlug(uniqueCode);
+          const nextReferralLink = buildReferralLink(nextReferralSlug);
+
+          const { data: insertedProfile, error: insertError } = await supabase
+            .from("affiliate_profiles")
+            .insert({
+              user_id: user.id,
+              email: user.email ?? null,
+              affiliate_code: uniqueCode,
+              referral_slug: nextReferralSlug,
+              referral_link: nextReferralLink,
+              total_clicks: 0,
+              total_conversions: 0,
+              available_earnings: 0,
+            })
+            .select("*")
+            .single<AffiliateProfileRow>();
+
+          if (insertError) {
+            throw insertError;
+          }
+
+          profile = insertedProfile;
+        }
+
+        const stats = await loadAffiliateStats(user.id, profile.referral_slug);
+
+        if (!mounted) return;
+
+        setAffiliateCode(profile.affiliate_code);
+        setDraftCode(profile.affiliate_code);
+        setReferralSlug(profile.referral_slug);
+        setAffiliateLink(profile.referral_link);
+        setTotalClicks(stats.totalClicks);
+        setTotalConversions(stats.totalConversions);
+        setAvailableEarnings(stats.availableEarnings);
+      } catch (error) {
+        console.error("[AccountAffiliate] load error:", error);
+        if (mounted) {
+          setErrorMessage("Could not load affiliate profile.");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     }
 
-    void loadUser();
+    void loadUserAndProfile();
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  const affiliateLink = React.useMemo(() => {
-    const origin =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : "https://thedigitalgifter.com";
-
-    return `${origin}/?ref=${encodeURIComponent(affiliateCode)}`;
-  }, [affiliateCode]);
-
-  const stats: ClientStat[] = [
-    {
-      label: "Entered on Link",
-      value: "128",
-      helper: "Total visits on your referral link",
-      icon: "activity",
-    },
-    {
-      label: "Conversions",
-      value: "9",
-      helper: "Paid customers attributed to your code",
-      icon: "bookmark",
-    },
-    {
-      label: "Affiliate Earnings",
-      value: "$12",
-      helper: "Available balance right now",
-      icon: "coins",
-    },
-  ];
+  const stats: ClientStat[] = React.useMemo(
+    () => [
+      {
+        label: "Entered on Link",
+        value: String(totalClicks),
+        helper: "Total visits on your referral link",
+        icon: "activity",
+      },
+      {
+        label: "Conversions",
+        value: String(totalConversions),
+        helper: "Paid customers attributed to your code",
+        icon: "bookmark",
+      },
+      {
+        label: "Affiliate Earnings",
+        value: `$${availableEarnings.toFixed(2)}`,
+        helper: "Available balance right now",
+        icon: "coins",
+      },
+    ],
+    [availableEarnings, totalClicks, totalConversions]
+  );
 
   async function copyValue(value: string, field: "link" | "code") {
     try {
@@ -100,13 +302,63 @@ export default function AccountAffiliate() {
     }
   }
 
-  function handleSaveCode() {
+  async function handleSaveCode() {
     const clean = sanitizeAffiliateCode(draftCode);
 
-    if (!clean) return;
+    if (!clean || saving) return;
 
-    setAffiliateCode(clean);
-    setDraftCode(clean);
+    try {
+      setSaving(true);
+      setErrorMessage("");
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!user) {
+        throw new Error("User not found.");
+      }
+
+      const uniqueCode = await ensureUniqueAffiliateCode(clean, user.id);
+      const nextReferralSlug = buildReferralSlug(uniqueCode);
+      const nextReferralLink = buildReferralLink(nextReferralSlug);
+
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from("affiliate_profiles")
+        .update({
+          affiliate_code: uniqueCode,
+          referral_slug: nextReferralSlug,
+          referral_link: nextReferralLink,
+          email: user.email ?? null,
+        })
+        .eq("user_id", user.id)
+        .select("*")
+        .single<AffiliateProfileRow>();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      const refreshedStats = await loadAffiliateStats(user.id, updatedProfile.referral_slug);
+
+      setAffiliateCode(updatedProfile.affiliate_code);
+      setDraftCode(updatedProfile.affiliate_code);
+      setReferralSlug(updatedProfile.referral_slug);
+      setAffiliateLink(updatedProfile.referral_link);
+      setTotalClicks(refreshedStats.totalClicks);
+      setTotalConversions(refreshedStats.totalConversions);
+      setAvailableEarnings(refreshedStats.availableEarnings);
+    } catch (error) {
+      console.error("[AccountAffiliate] save code error:", error);
+      setErrorMessage("Could not save affiliate code.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -127,7 +379,8 @@ export default function AccountAffiliate() {
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
-              Share your link or code, track performance and keep everything in one premium workspace.
+              Share your link or code, track performance and keep everything in
+              one premium workspace.
             </p>
           </div>
 
@@ -155,6 +408,12 @@ export default function AccountAffiliate() {
 
       <ClientStatsCards stats={stats} />
 
+      {errorMessage ? (
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {errorMessage}
+        </div>
+      ) : null}
+
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <div className="rounded-[28px] border border-white/10 bg-zinc-950/70 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur sm:p-6">
           <div className="flex flex-col gap-5">
@@ -169,7 +428,8 @@ export default function AccountAffiliate() {
               </h2>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-                Anyone entering through this link can be attributed to your affiliate account.
+                Anyone entering through this link can be attributed to your
+                affiliate account.
               </p>
             </div>
 
@@ -180,13 +440,16 @@ export default function AccountAffiliate() {
 
               <div className="mt-3 flex flex-col gap-3 sm:flex-row">
                 <div className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white">
-                  <div className="truncate">{affiliateLink}</div>
+                  <div className="truncate">
+                    {loading ? "Loading affiliate link..." : affiliateLink}
+                  </div>
                 </div>
 
                 <Button
                   type="button"
+                  disabled={loading || !affiliateLink}
                   onClick={() => copyValue(affiliateLink, "link")}
-                  className="rounded-2xl bg-white text-zinc-950 hover:bg-zinc-200"
+                  className="rounded-2xl bg-white text-zinc-950 hover:bg-zinc-200 disabled:opacity-60"
                 >
                   {copiedField === "link" ? (
                     <>
@@ -207,7 +470,18 @@ export default function AccountAffiliate() {
               <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
                 Current email
               </div>
-              <div className="mt-3 text-sm text-white">{userEmail || "No email found"}</div>
+              <div className="mt-3 text-sm text-white">
+                {userEmail || "No email found"}
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+                Referral slug
+              </div>
+              <div className="mt-3 text-sm text-white">
+                {loading ? "Loading..." : referralSlug || "-"}
+              </div>
             </div>
           </div>
         </div>
@@ -247,10 +521,11 @@ export default function AccountAffiliate() {
                 <Button
                   type="button"
                   onClick={handleSaveCode}
+                  disabled={loading || saving}
                   variant="secondary"
-                  className="rounded-2xl border border-white/10 bg-white/10 text-white hover:bg-white/15"
+                  className="rounded-2xl border border-white/10 bg-white/10 text-white hover:bg-white/15 disabled:opacity-60"
                 >
-                  Save Code
+                  {saving ? "Saving..." : "Save Code"}
                 </Button>
               </div>
             </div>
@@ -262,13 +537,14 @@ export default function AccountAffiliate() {
 
               <div className="mt-3 flex flex-col gap-3 sm:flex-row">
                 <div className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold tracking-[0.16em] text-white">
-                  {affiliateCode}
+                  {loading ? "Loading..." : affiliateCode || "-"}
                 </div>
 
                 <Button
                   type="button"
+                  disabled={loading || !affiliateCode}
                   onClick={() => copyValue(affiliateCode, "code")}
-                  className="rounded-2xl bg-white text-zinc-950 hover:bg-zinc-200"
+                  className="rounded-2xl bg-white text-zinc-950 hover:bg-zinc-200 disabled:opacity-60"
                 >
                   {copiedField === "code" ? (
                     <>
@@ -308,13 +584,13 @@ export default function AccountAffiliate() {
               Personal link display and copy action
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
-              Editable affiliate code UI
+              Editable affiliate code saved in Supabase
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
-              Top cards for clicks, conversions and earnings
+              One profile row per authenticated user
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
-              Clean base for later Supabase tracking
+              Ready for click / conversion / earnings tracking
             </div>
           </div>
         </div>
@@ -325,9 +601,12 @@ export default function AccountAffiliate() {
             Balance
           </div>
 
-          <div className="mt-4 text-4xl font-semibold tracking-tight text-white">$12</div>
+          <div className="mt-4 text-4xl font-semibold tracking-tight text-white">
+            ${availableEarnings.toFixed(2)}
+          </div>
+
           <p className="mt-2 text-sm leading-6 text-zinc-300">
-            Initial UI value for available affiliate earnings.
+            Available affiliate earnings currently tracked for your account.
           </p>
 
           <Button
