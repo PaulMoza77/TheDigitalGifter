@@ -40,13 +40,21 @@ type LedgerBalanceRow = {
   credits: number | string | null;
 };
 
+type AffiliateEarningRow = {
+  amount: number | string | null;
+};
+
 export default function AccountTopbar() {
   const navigate = useNavigate();
 
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+
   const [credits, setCredits] = React.useState<number>(0);
   const [creditsLoading, setCreditsLoading] = React.useState(true);
+
+  const [affiliateEarnings, setAffiliateEarnings] = React.useState<number>(0);
+  const [affiliateLoading, setAffiliateLoading] = React.useState(true);
 
   React.useEffect(() => {
     let mounted = true;
@@ -64,74 +72,96 @@ export default function AccountTopbar() {
           console.error("[AccountTopbar] getUser error:", userError);
           setIsAdmin(false);
           setCredits(0);
+          setAffiliateEarnings(0);
           setLoading(false);
           setCreditsLoading(false);
+          setAffiliateLoading(false);
           return;
         }
 
         const email = user.email?.trim().toLowerCase() ?? "";
 
-        if (email) {
-          const { data: adminRow, error: adminError } = await supabase
-            .from("admin_users")
-            .select("email")
-            .eq("email", email)
-            .maybeSingle();
+        const [adminResult, creditsResult, earningsResult] = await Promise.all([
+          email
+            ? supabase
+                .from("admin_users")
+                .select("email")
+                .eq("email", email)
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
+          email
+            ? supabase
+                .from("credits_ledger")
+                .select("direction, credits")
+                .eq("user_convex_id", email)
+                .order("occurred_at", { ascending: false })
+            : Promise.resolve({ data: [], error: null }),
+          supabase
+            .from("affiliate_earnings")
+            .select("amount")
+            .eq("user_id", user.id),
+        ]);
 
-          if (!mounted) return;
+        if (!mounted) return;
 
-          if (adminError) {
-            console.error("[AccountTopbar] admin check error:", adminError);
-            setIsAdmin(false);
-          } else {
-            setIsAdmin(Boolean(adminRow?.email));
-          }
-        } else {
+        if (adminResult.error) {
+          console.error("[AccountTopbar] admin check error:", adminResult.error);
           setIsAdmin(false);
+        } else {
+          setIsAdmin(Boolean(adminResult.data?.email));
         }
 
-        if (!email) {
+        if (creditsResult.error) {
+          console.error(
+            "[AccountTopbar] credits ledger error:",
+            creditsResult.error
+          );
           setCredits(0);
         } else {
-          const { data: ledgerRows, error: ledgerError } = await supabase
-            .from("credits_ledger")
-            .select("direction, credits")
-            .eq("user_convex_id", email)
-            .order("occurred_at", { ascending: false });
+          const balance = ((creditsResult.data ?? []) as LedgerBalanceRow[]).reduce(
+            (sum, row) => {
+              const value = Number(row.credits ?? 0);
 
-          if (!mounted) return;
+              if (!Number.isFinite(value)) return sum;
+              if (row.direction === "in") return sum + value;
+              if (row.direction === "out") return sum - value;
+              return sum;
+            },
+            0
+          );
 
-          if (ledgerError) {
-            console.error("[AccountTopbar] credits ledger error:", ledgerError);
-            setCredits(0);
-          } else {
-            const balance = ((ledgerRows ?? []) as LedgerBalanceRow[]).reduce(
-              (sum, row) => {
-                const value = Number(row.credits ?? 0);
+          setCredits(balance);
+        }
 
-                if (!Number.isFinite(value)) return sum;
-                if (row.direction === "in") return sum + value;
-                if (row.direction === "out") return sum - value;
-                return sum;
-              },
-              0
-            );
+        if (earningsResult.error) {
+          console.error(
+            "[AccountTopbar] affiliate earnings error:",
+            earningsResult.error
+          );
+          setAffiliateEarnings(0);
+        } else {
+          const totalEarnings = ((earningsResult.data ?? []) as AffiliateEarningRow[]).reduce(
+            (sum, row) => sum + Number(row.amount ?? 0),
+            0
+          );
 
-            setCredits(balance);
-          }
+          setAffiliateEarnings(totalEarnings);
         }
 
         setLoading(false);
         setCreditsLoading(false);
-      } catch (e) {
-        console.error("[AccountTopbar] fatal:", e);
+        setAffiliateLoading(false);
+      } catch (error) {
+        console.error("[AccountTopbar] fatal:", error);
 
         if (!mounted) return;
 
         setIsAdmin(false);
         setCredits(0);
+        setAffiliateEarnings(0);
         setLoading(false);
         setCreditsLoading(false);
+        setAffiliateLoading(false);
       }
     }
 
@@ -223,7 +253,9 @@ export default function AccountTopbar() {
           >
             <Users size={17} />
             <span className="hidden sm:inline">Affiliate:</span>
-            <span className="font-bold text-emerald-300">$12</span>
+            <span className="font-bold text-emerald-300">
+              {affiliateLoading ? "..." : `$${affiliateEarnings.toFixed(2)}`}
+            </span>
           </button>
 
           <button
@@ -280,7 +312,9 @@ export default function AccountTopbar() {
                   >
                     <Users size={17} />
                     <span>Affiliate:</span>
-                    <span className="font-bold text-emerald-300">$12</span>
+                    <span className="font-bold text-emerald-300">
+                      {affiliateLoading ? "..." : `$${affiliateEarnings.toFixed(2)}`}
+                    </span>
                   </button>
 
                   <button
