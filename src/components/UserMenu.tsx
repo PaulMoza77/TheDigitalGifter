@@ -10,11 +10,19 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
+type AffiliateEarningRow = {
+  amount: number | string | null;
+};
+
 export default function UserMenu() {
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [open, setOpen] = React.useState(false);
   const [isAdmin, setIsAdmin] = React.useState(false);
+  const [affiliateEarnings, setAffiliateEarnings] = React.useState(0);
+  const [earningsLoading, setEarningsLoading] = React.useState(true);
+
   const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -41,26 +49,58 @@ export default function UserMenu() {
   React.useEffect(() => {
     let mounted = true;
 
-    async function checkAdmin() {
-      if (!user?.id) {
-        if (mounted) setIsAdmin(false);
-        return;
-      }
+    async function loadMenuData() {
+      try {
+        if (!user?.id) {
+          if (!mounted) return;
+          setIsAdmin(false);
+          setAffiliateEarnings(0);
+          setEarningsLoading(false);
+          return;
+        }
 
-      const { data, error } = await supabase.rpc("is_admin");
+        const [{ data: adminData, error: adminError }, { data: earningsRows, error: earningsError }] =
+          await Promise.all([
+            supabase.rpc("is_admin"),
+            supabase
+              .from("affiliate_earnings")
+              .select("amount")
+              .eq("user_id", user.id),
+          ]);
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      if (error) {
-        console.error("is_admin rpc error:", error);
+        if (adminError) {
+          console.error("is_admin rpc error:", adminError);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(Boolean(adminData));
+        }
+
+        if (earningsError) {
+          console.error("affiliate_earnings query error:", earningsError);
+          setAffiliateEarnings(0);
+        } else {
+          const total = ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
+            (sum, row) => sum + Number(row.amount ?? 0),
+            0
+          );
+
+          setAffiliateEarnings(total);
+        }
+      } catch (error) {
+        console.error("UserMenu load error:", error);
+        if (!mounted) return;
         setIsAdmin(false);
-        return;
+        setAffiliateEarnings(0);
+      } finally {
+        if (mounted) {
+          setEarningsLoading(false);
+        }
       }
-
-      setIsAdmin(Boolean(data));
     }
 
-    void checkAdmin();
+    void loadMenuData();
 
     return () => {
       mounted = false;
@@ -138,7 +178,7 @@ export default function UserMenu() {
             </span>
 
             <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[11px] font-semibold text-emerald-300">
-              $12
+              {earningsLoading ? "..." : `$${affiliateEarnings.toFixed(2)}`}
             </span>
           </button>
 
