@@ -3,7 +3,6 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutGrid,
   Wand2,
-  Sparkles,
   Menu,
   Shield,
   Plus,
@@ -178,19 +177,16 @@ export default function AccountTopbar() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/70 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 xl:px-8">
         <div className="flex items-center gap-4">
-          <Link to="/account/dashboard" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
-              <Sparkles className="h-4 w-4 text-white" />
-            </span>
-
-            <div className="hidden sm:block">
-              <div className="text-sm font-semibold text-white">
-                {isAdmin ? "My Account + Admin" : "My Account"}
-              </div>
-              <div className="text-xs text-zinc-500">
-                {isAdmin ? "Client + admin workspace" : "Client workspace"}
-              </div>
-            </div>
+          <Link
+            to="/"
+            className="flex shrink-0 items-center"
+            aria-label="Go to homepage"
+          >
+            <img
+              src="/TheDigitalGifter.png"
+              alt="TheDigitalGifter"
+              className="h-10 w-auto object-contain"
+            />
           </Link>
 
           <nav className="hidden items-center gap-2 md:flex">
@@ -272,7 +268,7 @@ export default function AccountTopbar() {
               >
                 <SheetHeader>
                   <SheetTitle className="text-left text-white">
-                    {isAdmin ? "Client + Admin Account" : "Client Account"}
+                    Account
                   </SheetTitle>
                 </SheetHeader>
 
