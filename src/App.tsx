@@ -87,6 +87,9 @@ const FunnelEmailCapture = lazy(
 );
 import FunnelResultPage from "@/components/funnelVersion/ResultPage";
 
+// ================= SUPABASE =================
+import { supabase } from "@/lib/supabase";
+
 // ================= HELPERS =================
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -138,6 +141,131 @@ function AppInner() {
       const next = `${url.pathname}${url.search}${url.hash}`;
       window.history.replaceState({}, "", next);
     }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function trackAffiliateRefFromUrl() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get("ref");
+
+        if (!ref) return;
+
+        const cleanRef = ref.trim().toLowerCase();
+        if (!cleanRef) return;
+
+        localStorage.setItem("affiliate_ref", cleanRef);
+
+        const existingVisitorId = localStorage.getItem("affiliate_visitor_id");
+        const visitorId =
+          existingVisitorId ||
+          (typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+
+        localStorage.setItem("affiliate_visitor_id", visitorId);
+
+        const lastTrackedRef = localStorage.getItem("affiliate_last_tracked_ref");
+        const lastTrackedAt = localStorage.getItem("affiliate_last_tracked_at");
+        const now = Date.now();
+
+        const shouldSkip =
+          lastTrackedRef === cleanRef &&
+          lastTrackedAt &&
+          now - Number(lastTrackedAt) < 1000 * 60 * 30;
+
+        if (shouldSkip) return;
+
+        const { error } = await supabase.from("affiliate_clicks").insert({
+          code: cleanRef,
+          visitor_id: visitorId,
+        });
+
+        if (error) {
+          console.error("[App] affiliate click tracking error:", error);
+          return;
+        }
+
+        if (!cancelled) {
+          localStorage.setItem("affiliate_last_tracked_ref", cleanRef);
+          localStorage.setItem("affiliate_last_tracked_at", String(now));
+        }
+      } catch (error) {
+        console.error("[App] affiliate ref tracking fatal:", error);
+      }
+    }
+
+    void trackAffiliateRefFromUrl();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function attachAffiliateConversionToAuthenticatedUser() {
+      try {
+        const savedRef = localStorage.getItem("affiliate_ref");
+        if (!savedRef) return;
+
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) {
+          throw userError;
+        }
+
+        if (!user || cancelled) return;
+
+        const conversionKey = `affiliate_conversion_recorded_${user.id}_${savedRef}`;
+        if (localStorage.getItem(conversionKey) === "1") {
+          return;
+        }
+
+        const { data: existingConversion, error: existingError } = await supabase
+          .from("affiliate_conversions")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("code", savedRef)
+          .maybeSingle<{ id: string }>();
+
+        if (existingError) {
+          throw existingError;
+        }
+
+        if (!existingConversion) {
+          const { error: insertError } = await supabase
+            .from("affiliate_conversions")
+            .insert({
+              code: savedRef,
+              user_id: user.id,
+              amount: 0,
+            });
+
+          if (insertError) {
+            throw insertError;
+          }
+        }
+
+        if (!cancelled) {
+          localStorage.setItem(conversionKey, "1");
+        }
+      } catch (error) {
+        console.error("[App] affiliate conversion attach error:", error);
+      }
+    }
+
+    void attachAffiliateConversionToAuthenticatedUser();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
