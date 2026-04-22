@@ -39,7 +39,7 @@ function prettyLabelFromSlug(slug: string) {
 
   if (s.includes("christmas")) return "Cozy snowy magic";
   if (s.includes("new") && s.includes("year")) return "Gold & fireworks";
-  if (s.includes("thank")) return "Warm & cozy dinner";
+  if (s.includes("thank")) return "Warm family dinner";
   if (s.includes("birthday")) return "Party & confetti";
   if (s.includes("baby") && s.includes("reveal")) return "Soft pastel surprise";
   if (s.includes("born")) return "Gentle & creamy";
@@ -49,8 +49,8 @@ function prettyLabelFromSlug(slug: string) {
   if (s.includes("valentine")) return "Romantic candlelight";
   if (s.includes("anniversary")) return "Classy & intimate";
   if (s.includes("mother")) return "Soft & floral";
-  if (s.includes("father")) return "Bold & clean";
-  if (s.includes("graduation")) return "Caps & confetti";
+  if (s.includes("father")) return "Warm family moment";
+  if (s.includes("graduation")) return "Caps & celebration";
 
   return "New memories";
 }
@@ -58,20 +58,20 @@ function prettyLabelFromSlug(slug: string) {
 function fallbackDescription(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
 
-  if (s.includes("christmas")) return "Turn any photo into a warm, cinematic Christmas card.";
-  if (s.includes("new") && s.includes("year")) return "Sparkling countdown vibes with neon lights and confetti.";
-  if (s.includes("thank")) return "Autumn colors, candles and a grateful, family feel.";
-  if (s.includes("birthday")) return "Balloons, cake and bright birthday energy.";
-  if (s.includes("baby") && s.includes("reveal")) return "Gender reveal or baby news with dreamy pastel tones.";
-  if (s.includes("born")) return "Minimal, clean layouts that keep the baby in focus.";
-  if (s.includes("pregnancy")) return "Elegant silhouettes, warm light and calm tones.";
-  if (s.includes("wedding")) return "Luxury, editorial-style wedding announcement cards.";
-  if (s.includes("easter")) return "Fresh colors, flowers and soft daylight.";
-  if (s.includes("valentine")) return "Cinematic couples, roses and candlelight.";
-  if (s.includes("anniversary")) return "Elegant layouts to celebrate any milestone.";
-  if (s.includes("mother")) return "Delicate florals and warm light for mom.";
-  if (s.includes("father")) return "Minimal, modern layouts with strong contrast.";
-  if (s.includes("graduation")) return "Sharp, modern cards to celebrate the big day.";
+  if (s.includes("christmas")) return "Turn any photo into a warm, cinematic Christmas memory.";
+  if (s.includes("new") && s.includes("year")) return "Sparkling countdown vibes with lights, confetti and celebration.";
+  if (s.includes("thank")) return "Cozy autumn tones, gratitude and beautiful family dinner energy.";
+  if (s.includes("birthday")) return "Balloons, cake and bright birthday emotion.";
+  if (s.includes("baby") && s.includes("reveal")) return "Dreamy pastel moments for your big baby reveal.";
+  if (s.includes("born")) return "Beautiful newborn layouts with soft, gentle warmth.";
+  if (s.includes("pregnancy")) return "Elegant maternity styles with calm light and emotion.";
+  if (s.includes("wedding")) return "Luxury wedding visuals with timeless romantic atmosphere.";
+  if (s.includes("easter")) return "Fresh spring colors, flowers and joyful Easter charm.";
+  if (s.includes("valentine")) return "Romantic couple moments with roses and candlelight.";
+  if (s.includes("anniversary")) return "Celebrate milestone love stories with elegant, heartfelt visuals.";
+  if (s.includes("mother")) return "Warm, floral moments made to honor mom beautifully.";
+  if (s.includes("father")) return "Meaningful, warm family visuals for Father's Day.";
+  if (s.includes("graduation")) return "Celebrate the big win with bold, joyful graduation energy.";
 
   return "Create something beautiful in seconds.";
 }
@@ -79,22 +79,22 @@ function fallbackDescription(slug: string) {
 function fallbackGradientFrom(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
 
-  if (s.includes("christmas")) return "from-blue-700/60";
-  if (s.includes("new") && s.includes("year")) return "from-amber-700/60";
-  if (s.includes("thank")) return "from-orange-700/60";
-  if (s.includes("birthday")) return "from-fuchsia-700/60";
-  if (s.includes("baby") && s.includes("reveal")) return "from-violet-700/60";
-  if (s.includes("born")) return "from-emerald-700/60";
-  if (s.includes("pregnancy")) return "from-rose-700/60";
-  if (s.includes("wedding")) return "from-indigo-700/60";
-  if (s.includes("easter")) return "from-green-700/60";
-  if (s.includes("valentine")) return "from-red-700/60";
-  if (s.includes("anniversary")) return "from-slate-700/60";
-  if (s.includes("mother")) return "from-pink-700/60";
-  if (s.includes("father")) return "from-slate-700/60";
-  if (s.includes("graduation")) return "from-teal-700/60";
+  if (s.includes("christmas")) return "from-blue-700/40";
+  if (s.includes("new") && s.includes("year")) return "from-amber-700/40";
+  if (s.includes("thank")) return "from-orange-700/40";
+  if (s.includes("birthday")) return "from-fuchsia-700/40";
+  if (s.includes("baby") && s.includes("reveal")) return "from-pink-700/40";
+  if (s.includes("born")) return "from-stone-700/40";
+  if (s.includes("pregnancy")) return "from-rose-700/40";
+  if (s.includes("wedding")) return "from-indigo-700/40";
+  if (s.includes("easter")) return "from-emerald-700/40";
+  if (s.includes("valentine")) return "from-red-700/40";
+  if (s.includes("anniversary")) return "from-yellow-700/40";
+  if (s.includes("mother")) return "from-pink-700/40";
+  if (s.includes("father")) return "from-slate-700/40";
+  if (s.includes("graduation")) return "from-sky-700/40";
 
-  return "from-slate-700/60";
+  return "from-slate-700/40";
 }
 
 function fallbackGradientTo() {
@@ -104,22 +104,22 @@ function fallbackGradientTo() {
 function fallbackImage(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
 
-  if (s.includes("christmas")) return "/images/occasions/christmas.jpg";
-  if (s.includes("new") && s.includes("year")) return "/images/occasions/new-years-eve.jpg";
-  if (s.includes("thank")) return "/images/occasions/thanksgiving.jpg";
-  if (s.includes("birthday")) return "/images/occasions/birthday.jpg";
-  if (s.includes("baby") && s.includes("reveal")) return "/images/occasions/baby-reveal.jpg";
-  if (s.includes("born")) return "/images/occasions/new-born.jpg";
-  if (s.includes("pregnancy")) return "/images/occasions/pregnancy.jpg";
-  if (s.includes("wedding")) return "/images/occasions/wedding.jpg";
-  if (s.includes("easter")) return "/images/occasions/easter.jpg";
-  if (s.includes("valentine")) return "/images/occasions/valentines-day.jpg";
-  if (s.includes("anniversary")) return "/images/occasions/anniversary.jpg";
-  if (s.includes("mother")) return "/images/occasions/mothers-day.jpg";
-  if (s.includes("father")) return "/images/occasions/fathers-day.jpg";
-  if (s.includes("graduation")) return "/images/occasions/graduation.jpg";
+  if (s.includes("christmas")) return "/images/occasions/christmas.png";
+  if (s.includes("birthday")) return "/images/occasions/happy-birthday.png";
+  if (s.includes("new") && s.includes("year")) return "/images/occasions/new-years-eve.png";
+  if (s.includes("thank")) return "/images/occasions/thanks-giving.png";
+  if (s.includes("baby") && s.includes("reveal")) return "/images/occasions/gender-reveal.png";
+  if (s.includes("born")) return "/images/occasions/newborn.png";
+  if (s.includes("pregnancy")) return "/images/occasions/pregnancy.png";
+  if (s.includes("wedding")) return "/images/occasions/wedding.png";
+  if (s.includes("easter")) return "/images/occasions/easter.png";
+  if (s.includes("valentine")) return "/images/occasions/valentines-day.png";
+  if (s.includes("anniversary")) return "/images/occasions/anniversary.png";
+  if (s.includes("mother")) return "/images/occasions/mothers-day.png";
+  if (s.includes("father")) return "/images/occasions/fathers-day.png";
+  if (s.includes("graduation")) return "/images/occasions/graduation.png";
 
-  return "/images/occasions/default.jpg";
+  return "/images/occasions/default.png";
 }
 
 const FALLBACK_OCCASIONS: OccasionRow[] = [
@@ -129,6 +129,14 @@ const FALLBACK_OCCASIONS: OccasionRow[] = [
   { slug: "thanksgiving", title: "Thanksgiving", active: true, sort_order: 4 },
   { slug: "baby-reveal", title: "Baby Reveal", active: true, sort_order: 5 },
   { slug: "new-born", title: "New Born", active: true, sort_order: 6 },
+  { slug: "pregnancy", title: "Pregnancy", active: true, sort_order: 7 },
+  { slug: "wedding", title: "Wedding", active: true, sort_order: 8 },
+  { slug: "easter", title: "Easter", active: true, sort_order: 9 },
+  { slug: "valentines-day", title: "Valentine's Day", active: true, sort_order: 10 },
+  { slug: "anniversary", title: "Anniversary", active: true, sort_order: 11 },
+  { slug: "mothers-day", title: "Mother's Day", active: true, sort_order: 12 },
+  { slug: "fathers-day", title: "Father's Day", active: true, sort_order: 13 },
+  { slug: "graduation", title: "Graduation", active: true, sort_order: 14 },
 ];
 
 export default function OccasionGrid() {
@@ -252,40 +260,40 @@ export default function OccasionGrid() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.08, duration: 0.5 }}
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ y: -4 }}
               >
-                <Card className="group relative overflow-hidden border-slate-800 bg-slate-900/50 transition-all duration-300 hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/20">
-                  <CardContent className="relative isolate p-0">
+                <Card className="group overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 transition-all duration-300 hover:border-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/10">
+                  <CardContent className="p-0">
                     <div className="relative h-64 overflow-hidden">
                       <img
                         src={image}
                         alt={occ.title}
                         loading="lazy"
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
 
                       <div
                         className={cn(
-                          "absolute inset-0 z-10 bg-gradient-to-br opacity-80",
+                          "absolute inset-0 bg-gradient-to-br opacity-80",
                           gradientFrom,
                           gradientTo
                         )}
                       />
 
-                      <div className="absolute inset-0 z-20 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-70" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
 
-                      <div className="absolute left-4 top-4 z-30 rounded-full border border-white/20 bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm">
+                      <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/35 px-3 py-1 text-xs text-white backdrop-blur-sm">
                         {label}
                       </div>
                     </div>
 
-                    <div className="relative z-30 space-y-4 p-4">
+                    <div className="space-y-4 p-5">
                       <div>
                         <h3 className="mb-2 text-2xl font-bold text-white transition-colors group-hover:text-blue-400">
                           {occ.title}
                         </h3>
 
-                        <p className="mb-2 text-sm text-slate-400">
+                        <p className="text-sm leading-6 text-slate-400">
                           {description}
                         </p>
                       </div>
@@ -295,22 +303,19 @@ export default function OccasionGrid() {
                           type="button"
                           onClick={() => navigate(funnelHref)}
                           variant="ghost"
-                          className={cn(
-                            "w-full rounded-xl text-white group/btn",
-                            "bg-gray-800 hover:bg-gray-700"
-                          )}
+                          className="w-full rounded-xl bg-white/5 text-white hover:bg-white/10"
                         >
                           See More
-                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                          <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
 
                         <Button
                           type="button"
                           onClick={() => navigate(templatesHref)}
-                          className="w-full rounded-xl bg-blue-600 text-white group/btn hover:bg-blue-700"
+                          className="w-full rounded-xl bg-blue-600 text-white hover:bg-blue-700"
                         >
                           Explore Templates
-                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                          <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </div>
                     </div>
