@@ -35,11 +35,12 @@ function templatesHrefForSlug(slug: string) {
 }
 
 function prettyLabelFromSlug(slug: string) {
-  const s = String(slug || "").trim().toLowerCase();
+  const s = normalizeOccasionSlug(slug);
 
   if (s.includes("christmas")) return "Cozy snowy magic";
   if (s.includes("new") && s.includes("year")) return "Gold & fireworks";
-  if (s.includes("thank")) return "Warm family dinner";
+  if (s.includes("thank") && s.includes("you")) return "Warm gratitude";
+  if (s.includes("thank") && s.includes("giving")) return "Warm family dinner";
   if (s.includes("birthday")) return "Party & confetti";
   if (s.includes("baby") && s.includes("reveal")) return "Soft pastel surprise";
   if (s.includes("born")) return "Gentle & creamy";
@@ -56,32 +57,78 @@ function prettyLabelFromSlug(slug: string) {
 }
 
 function fallbackDescription(slug: string) {
-  const s = String(slug || "").trim().toLowerCase();
+  const s = normalizeOccasionSlug(slug);
 
-  if (s.includes("christmas")) return "Turn any photo into a warm, cinematic Christmas memory.";
-  if (s.includes("new") && s.includes("year")) return "Sparkling countdown vibes with lights, confetti and celebration.";
-  if (s.includes("thank")) return "Cozy autumn tones, gratitude and beautiful family dinner energy.";
-  if (s.includes("birthday")) return "Balloons, cake and bright birthday emotion.";
-  if (s.includes("baby") && s.includes("reveal")) return "Dreamy pastel moments for your big baby reveal.";
-  if (s.includes("born")) return "Beautiful newborn layouts with soft, gentle warmth.";
-  if (s.includes("pregnancy")) return "Elegant maternity styles with calm light and emotion.";
-  if (s.includes("wedding")) return "Luxury wedding visuals with timeless romantic atmosphere.";
-  if (s.includes("easter")) return "Fresh spring colors, flowers and joyful Easter charm.";
-  if (s.includes("valentine")) return "Romantic couple moments with roses and candlelight.";
-  if (s.includes("anniversary")) return "Celebrate milestone love stories with elegant, heartfelt visuals.";
-  if (s.includes("mother")) return "Warm, floral moments made to honor mom beautifully.";
-  if (s.includes("father")) return "Meaningful, warm family visuals for Father's Day.";
-  if (s.includes("graduation")) return "Celebrate the big win with bold, joyful graduation energy.";
+  if (s.includes("christmas")) {
+    return "Turn any photo into a warm, cinematic Christmas memory.";
+  }
+
+  if (s.includes("new") && s.includes("year")) {
+    return "Sparkling countdown vibes with lights, confetti and celebration.";
+  }
+
+  if (s.includes("thank") && s.includes("you")) {
+    return "Elegant gratitude cards with warm, heartfelt emotion.";
+  }
+
+  if (s.includes("thank") && s.includes("giving")) {
+    return "Cozy autumn tones, gratitude and beautiful family dinner energy.";
+  }
+
+  if (s.includes("birthday")) {
+    return "Balloons, cake and bright birthday emotion.";
+  }
+
+  if (s.includes("baby") && s.includes("reveal")) {
+    return "Dreamy pastel moments for your big baby reveal.";
+  }
+
+  if (s.includes("born")) {
+    return "Beautiful newborn layouts with soft, gentle warmth.";
+  }
+
+  if (s.includes("pregnancy")) {
+    return "Elegant maternity styles with calm light and emotion.";
+  }
+
+  if (s.includes("wedding")) {
+    return "Luxury wedding visuals with timeless romantic atmosphere.";
+  }
+
+  if (s.includes("easter")) {
+    return "Fresh spring colors, flowers and joyful Easter charm.";
+  }
+
+  if (s.includes("valentine")) {
+    return "Romantic couple moments with roses and candlelight.";
+  }
+
+  if (s.includes("anniversary")) {
+    return "Celebrate milestone love stories with elegant, heartfelt visuals.";
+  }
+
+  if (s.includes("mother")) {
+    return "Warm, floral moments made to honor mom beautifully.";
+  }
+
+  if (s.includes("father")) {
+    return "Meaningful, warm family visuals for Father's Day.";
+  }
+
+  if (s.includes("graduation")) {
+    return "Celebrate the big win with bold, joyful graduation energy.";
+  }
 
   return "Create something beautiful in seconds.";
 }
 
 function fallbackGradientFrom(slug: string) {
-  const s = String(slug || "").trim().toLowerCase();
+  const s = normalizeOccasionSlug(slug);
 
   if (s.includes("christmas")) return "from-blue-700/40";
   if (s.includes("new") && s.includes("year")) return "from-amber-700/40";
-  if (s.includes("thank")) return "from-orange-700/40";
+  if (s.includes("thank") && s.includes("you")) return "from-rose-700/40";
+  if (s.includes("thank") && s.includes("giving")) return "from-orange-700/40";
   if (s.includes("birthday")) return "from-fuchsia-700/40";
   if (s.includes("baby") && s.includes("reveal")) return "from-pink-700/40";
   if (s.includes("born")) return "from-stone-700/40";
@@ -102,12 +149,13 @@ function fallbackGradientTo() {
 }
 
 function fallbackImage(slug: string) {
-  const s = String(slug || "").trim().toLowerCase();
+  const s = normalizeOccasionSlug(slug);
 
   if (s.includes("christmas")) return "/images/occasions/christmas.png";
   if (s.includes("birthday")) return "/images/occasions/happy-birthday.png";
   if (s.includes("new") && s.includes("year")) return "/images/occasions/new-years-eve.png";
-  if (s.includes("thank")) return "/images/occasions/thanks-giving.png";
+  if (s.includes("thank") && s.includes("you")) return "/images/occasions/thank-you.png";
+  if (s.includes("thank") && s.includes("giving")) return "/images/occasions/thanks-giving.png";
   if (s.includes("baby") && s.includes("reveal")) return "/images/occasions/gender-reveal.png";
   if (s.includes("born")) return "/images/occasions/newborn.png";
   if (s.includes("pregnancy")) return "/images/occasions/pregnancy.png";
@@ -126,17 +174,18 @@ const FALLBACK_OCCASIONS: OccasionRow[] = [
   { slug: "christmas", title: "Christmas", active: true, sort_order: 1 },
   { slug: "birthday", title: "Birthday", active: true, sort_order: 2 },
   { slug: "new-years-eve", title: "New Year's Eve", active: true, sort_order: 3 },
-  { slug: "thanksgiving", title: "Thanksgiving", active: true, sort_order: 4 },
-  { slug: "baby-reveal", title: "Baby Reveal", active: true, sort_order: 5 },
-  { slug: "new-born", title: "New Born", active: true, sort_order: 6 },
-  { slug: "pregnancy", title: "Pregnancy", active: true, sort_order: 7 },
-  { slug: "wedding", title: "Wedding", active: true, sort_order: 8 },
-  { slug: "easter", title: "Easter", active: true, sort_order: 9 },
-  { slug: "valentines-day", title: "Valentine's Day", active: true, sort_order: 10 },
-  { slug: "anniversary", title: "Anniversary", active: true, sort_order: 11 },
-  { slug: "mothers-day", title: "Mother's Day", active: true, sort_order: 12 },
-  { slug: "fathers-day", title: "Father's Day", active: true, sort_order: 13 },
-  { slug: "graduation", title: "Graduation", active: true, sort_order: 14 },
+  { slug: "thank-you", title: "Thank You", active: true, sort_order: 4 },
+  { slug: "thanksgiving", title: "Thanksgiving", active: true, sort_order: 5 },
+  { slug: "baby-reveal", title: "Baby Reveal", active: true, sort_order: 6 },
+  { slug: "new-born", title: "New Born", active: true, sort_order: 7 },
+  { slug: "pregnancy", title: "Pregnancy", active: true, sort_order: 8 },
+  { slug: "wedding", title: "Wedding", active: true, sort_order: 9 },
+  { slug: "easter", title: "Easter", active: true, sort_order: 10 },
+  { slug: "valentines-day", title: "Valentine's Day", active: true, sort_order: 11 },
+  { slug: "anniversary", title: "Anniversary", active: true, sort_order: 12 },
+  { slug: "mothers-day", title: "Mother's Day", active: true, sort_order: 13 },
+  { slug: "fathers-day", title: "Father's Day", active: true, sort_order: 14 },
+  { slug: "graduation", title: "Graduation", active: true, sort_order: 15 },
 ];
 
 export default function OccasionGrid() {
