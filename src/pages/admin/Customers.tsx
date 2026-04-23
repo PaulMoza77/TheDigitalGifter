@@ -1,4 +1,3 @@
-// FILE: src/pages/admin/Customers.tsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -27,7 +26,7 @@ type CustomerRow = {
   last_activity: string | null;
   promo_code: string | null;
   promo_sent_at: string | null;
-  has_purchased: boolean | null;
+  has_purchased: boolean | number | string | null;
 };
 
 function initials(name?: string | null, email?: string | null) {
@@ -41,8 +40,12 @@ function initials(name?: string | null, email?: string | null) {
 function asNumber(value: unknown, fallback = 0) {
   if (value === null || value === undefined || value === "") return fallback;
   if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  if (typeof value === "string") {
+    const normalized = value.replace(",", ".").trim();
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
 }
 
 function asBool(value: unknown) {
@@ -145,14 +148,39 @@ async function loadCustomers(): Promise<CustomerRow[]> {
       `
     )
     .order("created_at", { ascending: false })
-    .limit(500);
+    .limit(2000);
 
   if (error) {
     console.error("[Customers] load error:", error);
     throw new Error(error.message || "Failed to load customers");
   }
 
-  return (data ?? []) as CustomerRow[];
+  const rows = ((data ?? []) as CustomerRow[]).filter((row) => row.id);
+
+  const dedupedMap = new Map<string, CustomerRow>();
+
+  for (const row of rows) {
+    const key = row.id;
+    const existing = dedupedMap.get(key);
+
+    if (!existing) {
+      dedupedMap.set(key, row);
+      continue;
+    }
+
+    const existingCreatedAt = parseISOToDate(existing.created_at)?.getTime() ?? 0;
+    const nextCreatedAt = parseISOToDate(row.created_at)?.getTime() ?? 0;
+
+    if (nextCreatedAt >= existingCreatedAt) {
+      dedupedMap.set(key, row);
+    }
+  }
+
+  return Array.from(dedupedMap.values()).sort((a, b) => {
+    const aTime = parseISOToDate(a.created_at)?.getTime() ?? 0;
+    const bTime = parseISOToDate(b.created_at)?.getTime() ?? 0;
+    return bTime - aTime;
+  });
 }
 
 export default function CustomersPage() {
@@ -161,9 +189,10 @@ export default function CustomersPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchRows = useCallback(async () => {
+  const fetchRows = useCallback(async (showToast = false) => {
     const rows = await loadCustomers();
     setCustomers(rows);
+    if (showToast) toast.success("Customers refreshed");
   }, []);
 
   useEffect(() => {
@@ -190,6 +219,42 @@ export default function CustomersPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      fetchRows(false).catch((e) => {
+        console.error("[Customers] background refresh failed:", e);
+      });
+    }, 30000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [fetchRows]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchRows(false).catch((e) => {
+        console.error("[Customers] focus refresh failed:", e);
+      });
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchRows(false).catch((e) => {
+          console.error("[Customers] visibility refresh failed:", e);
+        });
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [fetchRows]);
 
   const filteredCustomers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -246,8 +311,7 @@ export default function CustomersPage() {
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      await fetchRows();
-      toast.success("Customers refreshed");
+      await fetchRows(true);
     } catch (e: unknown) {
       console.error("[Customers] refresh failed:", e);
       const msg = e instanceof Error ? e.message : "Refresh failed";
@@ -434,7 +498,7 @@ export default function CustomersPage() {
 
                     return (
                       <TableRow
-                        key={`${c.id}:${c.email ?? ""}`}
+                        key={c.id}
                         className="border-slate-800 transition-colors hover:bg-slate-800/50"
                       >
                         <TableCell>
