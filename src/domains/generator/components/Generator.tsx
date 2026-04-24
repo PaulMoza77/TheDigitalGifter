@@ -30,6 +30,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { useCreditsFunnel } from "@/contexts/CreditsFunnelContext";
 import { useBootstrapUser } from "@/hooks/useBootstrapUser";
 import { uploadFileToStorage } from "@/lib/uploadFileToStorage";
+import { supabase } from "@/lib/supabase";
 
 function SnowBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -99,6 +100,13 @@ type JobRow = {
   error_message: string | null;
 };
 
+type GenerationRow = {
+  id: string;
+  status: "pending" | "queued" | "processing" | "completed" | "failed" | "error";
+  final_image_url: string | null;
+  error_message?: string | null;
+};
+
 type AnyTemplate = TemplateSummary & {
   _id?: string;
   previewurl?: string | null;
@@ -154,6 +162,21 @@ function normalizeTemplate(t: AnyTemplate): AnyTemplate {
   };
 }
 
+function getGenerationIdFromResponse(res: any): string | null {
+  const value =
+    res?.generation_id ??
+    res?.generationId ??
+    res?.generation?.id ??
+    res?.data?.generation_id ??
+    res?.data?.generationId ??
+    res?.data?.generation?.id ??
+    res?.id ??
+    null;
+
+  if (!value) return null;
+  return String(value);
+}
+
 export default function GeneratorPage() {
   const user = useBootstrapUser();
 
@@ -169,7 +192,11 @@ export default function GeneratorPage() {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState("match_input_image");
+
+  const pollingRef = useRef<number | null>(null);
+  const isPollingRef = useRef(false);
 
   const [modal, setModal] = useState<{ open: boolean; src: string; title?: string }>({
     open: false,
@@ -259,6 +286,80 @@ export default function GeneratorPage() {
     return jobs.find((j) => j.id === currentJobId) ?? null;
   }, [jobs, currentJobId]);
 
+  const stopGenerationPolling = useCallback(() => {
+    if (pollingRef.current) {
+      window.clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+    isPollingRef.current = false;
+  }, []);
+
+  const checkGenerationStatus = useCallback(
+    async (generationId: string) => {
+      if (isPollingRef.current) return;
+      isPollingRef.current = true;
+
+      try {
+        const { data, error } = await supabase
+          .from("generations")
+          .select("id, status, final_image_url, error_message")
+          .eq("id", generationId)
+          .maybeSingle();
+
+        if (error) {
+          console.error("[generations poll] error", error);
+          return;
+        }
+
+        if (!data) {
+          stopGenerationPolling();
+          setIsGenerating(false);
+          setCurrentGenerationId(null);
+          toast.error("Generation not found. Please try again.");
+          return;
+        }
+
+        const generation = data as GenerationRow;
+
+        if (generation.status === "completed" && generation.final_image_url) {
+          stopGenerationPolling();
+          setPreviewAfter(generation.final_image_url);
+          setIsGenerating(false);
+          setCurrentGenerationId(null);
+          toast.success("🎄 Your card is ready!");
+          return;
+        }
+
+        if (generation.status === "failed" || generation.status === "error") {
+          stopGenerationPolling();
+          setIsGenerating(false);
+          setCurrentGenerationId(null);
+          toast.error(generation.error_message || "Failed to generate. Please try again.");
+        }
+      } finally {
+        isPollingRef.current = false;
+      }
+    },
+    [stopGenerationPolling]
+  );
+
+  useEffect(() => {
+    if (!currentGenerationId) {
+      stopGenerationPolling();
+      return;
+    }
+
+    void checkGenerationStatus(currentGenerationId);
+
+    pollingRef.current = window.setInterval(() => {
+      void checkGenerationStatus(currentGenerationId);
+    }, 2500);
+
+    return () => {
+      stopGenerationPolling();
+    };
+  }, [currentGenerationId, checkGenerationStatus, stopGenerationPolling]);
+
   useEffect(() => {
     const urls = uploadedFiles.map((f) => URL.createObjectURL(f));
     setPreviewUrls(urls);
@@ -271,14 +372,12 @@ export default function GeneratorPage() {
   useEffect(() => {
     if (!currentJob) return;
 
+    if (currentJob.type !== "video") return;
+
     if (currentJob.status === "done" && currentJob.result_url) {
       setPreviewAfter(currentJob.result_url);
       setIsGenerating(false);
-      toast.success(
-        currentJob.type === "video"
-          ? "🎬 Your video is ready!"
-          : "🎄 Your card is ready!"
-      );
+      toast.success("🎬 Your video is ready!");
     } else if (currentJob.status === "error") {
       setIsGenerating(false);
       toast.error(currentJob.error_message || "Failed to generate. Please try again.");
@@ -461,7 +560,9 @@ export default function GeneratorPage() {
 
     setIsGenerating(true);
     setCurrentJobId(null);
+    setCurrentGenerationId(null);
     setPreviewAfter(null);
+    stopGenerationPolling();
 
     try {
       const isVideo = String(template.type || "image").toLowerCase() === "video";
@@ -553,8 +654,13 @@ export default function GeneratorPage() {
 
         console.log("[handleGenerate] triggerCreateJob response", res);
 
-        const jobId = String(res?.jobId ?? res?.id ?? res);
-        setCurrentJobId(jobId);
+        const generationId = getGenerationIdFromResponse(res);
+
+        if (!generationId) {
+          throw new Error("Generation was created, but no generation_id was returned.");
+        }
+
+        setCurrentGenerationId(generationId);
         toast.success("Generation started!");
       }
     } catch (error: any) {
@@ -577,6 +683,7 @@ export default function GeneratorPage() {
     openFunnel,
     jobs,
     selectedLanguage,
+    stopGenerationPolling,
   ]);
 
   return (
