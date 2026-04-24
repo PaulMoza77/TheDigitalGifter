@@ -683,7 +683,20 @@ export default function GeneratorPage() {
         });
 
         if (!generationId) {
-          throw new Error("Generation started, but the generation record could not be found.");
+          // Loghează răspunsul complet și orice mesaj de eroare primit
+          console.error("[handleGenerate] Generation response without ID", res);
+          let backendError =
+            res?.error?.message ||
+            res?.message ||
+            res?.error_description ||
+            (typeof res === "string" ? res : null);
+          toast.error(
+            backendError
+              ? `Generation failed: ${backendError}`
+              : "Generation started, but the generation record could not be found."
+          );
+          setIsGenerating(false);
+          return;
         }
 
         setCurrentGenerationId(generationId);
