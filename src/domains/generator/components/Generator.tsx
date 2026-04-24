@@ -165,10 +165,9 @@ function normalizeTemplate(t: AnyTemplate): AnyTemplate {
 async function resolveGenerationIdFromResponse(params: {
   response: any;
   userId: string;
-  templateId: string;
   startedAt: string;
 }): Promise<string | null> {
-  const directId =
+  const directGenerationId =
     params.response?.generation_id ??
     params.response?.generationId ??
     params.response?.generation?.id ??
@@ -177,24 +176,58 @@ async function resolveGenerationIdFromResponse(params: {
     params.response?.data?.generation?.id ??
     null;
 
-  if (directId) return String(directId);
+  if (directGenerationId) return String(directGenerationId);
 
-  const { data, error } = await supabase
-    .from("generations")
-    .select("id")
-    .eq("user_id", params.userId)
-    .eq("template_id", params.templateId)
-    .gte("created_at", params.startedAt)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const jobId =
+    params.response?.jobId ??
+    params.response?.job_id ??
+    params.response?.id ??
+    params.response?.data?.jobId ??
+    params.response?.data?.job_id ??
+    null;
 
-  if (error) {
-    console.error("[resolveGenerationIdFromResponse] fallback query error", error);
-    return null;
+  if (jobId) {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 2000));
+
+      const { data, error } = await supabase
+        .from("generations")
+        .select("id")
+        .eq("job_id", String(jobId))
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error("[resolveGenerationIdFromResponse] job_id fallback error", error);
+        continue;
+      }
+
+      if (data?.id) return String(data.id);
+    }
   }
 
-  return data?.id ? String(data.id) : null;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await new Promise((resolve) => window.setTimeout(resolve, 2000));
+
+    const { data, error } = await supabase
+      .from("generations")
+      .select("id")
+      .eq("user_id", params.userId)
+      .gte("created_at", params.startedAt)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[resolveGenerationIdFromResponse] user fallback error", error);
+      continue;
+    }
+
+    if (data?.id) return String(data.id);
+  }
+
+  return null;
 }
 
 export default function GeneratorPage() {
@@ -676,11 +709,10 @@ export default function GeneratorPage() {
         console.log("[handleGenerate] triggerCreateJob response", res);
 
         const generationId = await resolveGenerationIdFromResponse({
-          response: res,
-          userId: user.id,
-          templateId: template.id,
-          startedAt: generationStartedAt,
-        });
+  response: res,
+  userId: user.id,
+  startedAt: generationStartedAt,
+});
 
         if (!generationId) {
           // Loghează răspunsul complet și orice mesaj de eroare primit
