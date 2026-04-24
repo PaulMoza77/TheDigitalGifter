@@ -162,19 +162,39 @@ function normalizeTemplate(t: AnyTemplate): AnyTemplate {
   };
 }
 
-function getGenerationIdFromResponse(res: any): string | null {
-  const value =
-    res?.generation_id ??
-    res?.generationId ??
-    res?.generation?.id ??
-    res?.data?.generation_id ??
-    res?.data?.generationId ??
-    res?.data?.generation?.id ??
-    res?.id ??
+async function resolveGenerationIdFromResponse(params: {
+  response: any;
+  userId: string;
+  templateId: string;
+  startedAt: string;
+}): Promise<string | null> {
+  const directId =
+    params.response?.generation_id ??
+    params.response?.generationId ??
+    params.response?.generation?.id ??
+    params.response?.data?.generation_id ??
+    params.response?.data?.generationId ??
+    params.response?.data?.generation?.id ??
     null;
 
-  if (!value) return null;
-  return String(value);
+  if (directId) return String(directId);
+
+  const { data, error } = await supabase
+    .from("generations")
+    .select("id")
+    .eq("user_id", params.userId)
+    .eq("template_id", params.templateId)
+    .gte("created_at", params.startedAt)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[resolveGenerationIdFromResponse] fallback query error", error);
+    return null;
+  }
+
+  return data?.id ? String(data.id) : null;
 }
 
 export default function GeneratorPage() {
@@ -371,7 +391,6 @@ export default function GeneratorPage() {
 
   useEffect(() => {
     if (!currentJob) return;
-
     if (currentJob.type !== "video") return;
 
     if (currentJob.status === "done" && currentJob.result_url) {
@@ -636,6 +655,8 @@ export default function GeneratorPage() {
         setCurrentJobId(jobId);
         toast.success("Video generation started!");
       } else {
+        const generationStartedAt = new Date().toISOString();
+
         console.log("[handleGenerate] triggerCreateJob payload", {
           type: "image",
           templateId: template.id,
@@ -654,10 +675,15 @@ export default function GeneratorPage() {
 
         console.log("[handleGenerate] triggerCreateJob response", res);
 
-        const generationId = getGenerationIdFromResponse(res);
+        const generationId = await resolveGenerationIdFromResponse({
+          response: res,
+          userId: user.id,
+          templateId: template.id,
+          startedAt: generationStartedAt,
+        });
 
         if (!generationId) {
-          throw new Error("Generation was created, but no generation_id was returned.");
+          throw new Error("Generation started, but the generation record could not be found.");
         }
 
         setCurrentGenerationId(generationId);
