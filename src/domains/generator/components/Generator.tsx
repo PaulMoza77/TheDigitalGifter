@@ -355,7 +355,7 @@ export default function GeneratorPage() {
       try {
         const { data, error } = await supabase
           .from("generations")
-          .select("id, status, final_image_url, error_message")
+          .select("id, status, final_image_url")
           .eq("id", generationId)
           .maybeSingle();
 
@@ -387,7 +387,7 @@ export default function GeneratorPage() {
           stopGenerationPolling();
           setIsGenerating(false);
           setCurrentGenerationId(null);
-          toast.error(generation.error_message || "Failed to generate. Please try again.");
+          toast.error("Failed to generate. Please try again.");
         }
       } finally {
         isPollingRef.current = false;
