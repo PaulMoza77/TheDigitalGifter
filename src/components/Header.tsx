@@ -5,6 +5,7 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  Plus,
   Shield,
   Users,
   Wand2,
@@ -16,18 +17,24 @@ import { SignInButton } from "./SignInButton";
 import UserMenu from "./UserMenu";
 import { Logo } from "./ui/logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAccountOverview } from "@/hooks/useAccountOverview";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
   onBuyCredits?: () => void;
 }
 
-type AffiliateEarningRow = {
-  amount: number | string | null;
-};
-
-const navItems = [
+const desktopNavItems = [
   { label: "Home", to: "/" },
   { label: "Templates", to: "/templates" },
   { label: "Generator", to: "/generator" },
@@ -35,80 +42,19 @@ const navItems = [
 
 export default function Header({ onBuyCredits }: HeaderProps) {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
-  const isAuthenticated = !!user;
+  const {
+    loading: overviewLoading,
+    isAdmin,
+    creditsRemaining,
+    affiliateEarnings,
+  } = useAccountOverview();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [isAdmin, setIsAdmin] = React.useState(false);
-  const [affiliateEarnings, setAffiliateEarnings] = React.useState(0);
-  const [earningsLoading, setEarningsLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    const close = () => setMobileOpen(false);
-    window.addEventListener("resize", close);
-
-    return () => {
-      window.removeEventListener("resize", close);
-    };
-  }, []);
-
-  React.useEffect(() => {
-    let mounted = true;
-
-    async function loadMobileAccountData() {
-      try {
-        if (!user?.id) {
-          if (!mounted) return;
-          setIsAdmin(false);
-          setAffiliateEarnings(0);
-          setEarningsLoading(false);
-          return;
-        }
-
-        setEarningsLoading(true);
-
-        const [
-          { data: adminData, error: adminError },
-          { data: earningsRows, error: earningsError },
-        ] = await Promise.all([
-          supabase.rpc("is_admin"),
-          supabase
-            .from("affiliate_earnings")
-            .select("amount")
-            .eq("user_id", user.id),
-        ]);
-
-        if (!mounted) return;
-
-        setIsAdmin(adminError ? false : Boolean(adminData));
-
-        if (earningsError) {
-          console.error("[Header] affiliate_earnings query error:", earningsError);
-          setAffiliateEarnings(0);
-        } else {
-          const total = ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
-            (sum, row) => sum + Number(row.amount ?? 0),
-            0
-          );
-          setAffiliateEarnings(total);
-        }
-      } catch (error) {
-        console.error("[Header] mobile account data error:", error);
-        if (!mounted) return;
-        setIsAdmin(false);
-        setAffiliateEarnings(0);
-      } finally {
-        if (mounted) setEarningsLoading(false);
-      }
-    }
-
-    void loadMobileAccountData();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user?.id]);
+  const isAuthenticated = !!user;
+  const loading = authLoading || overviewLoading;
 
   async function handleLogout() {
     setMobileOpen(false);
@@ -124,7 +70,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[rgba(4,8,18,0.72)] backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-8">
+        <div className="flex min-w-0 items-center gap-8">
           <Link
             to="/"
             aria-label="Go to homepage"
@@ -135,7 +81,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
           </Link>
 
           <nav className="hidden items-center gap-2 lg:flex">
-            {navItems.map((item) => (
+            {desktopNavItems.map((item) => (
               <NavLink key={item.to} to={item.to}>
                 {({ isActive }) => (
                   <span
@@ -155,7 +101,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
         </div>
 
         <div className="hidden items-center gap-2 sm:gap-3 lg:flex">
-          {loading ? (
+          {authLoading ? (
             <div className="h-9 w-24 animate-pulse rounded-full border border-white/10 bg-white/10" />
           ) : isAuthenticated ? (
             <UserMenu />
@@ -166,132 +112,157 @@ export default function Header({ onBuyCredits }: HeaderProps) {
           <CreditsDisplay onBuyCredits={onBuyCredits} />
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMobileOpen((value) => !value)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white/10 lg:hidden"
-          aria-label="Toggle menu"
-          aria-expanded={mobileOpen}
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-      </div>
+        <div className="lg:hidden">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 rounded-2xl border border-white/10 bg-white/5 text-white hover:bg-white/10"
+                aria-label="Toggle menu"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
 
-      {mobileOpen ? (
-        <div className="border-t border-white/10 bg-[rgba(4,8,18,0.96)] shadow-[0_24px_80px_rgba(0,0,0,0.45)] lg:hidden">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
-            {loading ? (
-              <div className="h-11 w-full animate-pulse rounded-2xl border border-white/10 bg-white/10" />
-            ) : isAuthenticated ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-start pb-2">
-                  <CreditsDisplay onBuyCredits={onBuyCredits} />
-                </div>
+            <SheetContent
+              side="right"
+              className="w-[82vw] max-w-[360px] border-l border-white/10 bg-zinc-950 p-0 text-white sm:w-[390px] sm:max-w-[390px]"
+            >
+              <SheetHeader className="border-b border-white/10 px-5 py-5">
+                <div className="flex items-center justify-between gap-4">
+                  <SheetTitle className="flex items-center gap-3 text-left text-white">
+                    <Logo />
+                  </SheetTitle>
 
-                <button
-                  type="button"
-                  onClick={() => goTo("/")}
-                  className="flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/8 hover:text-white"
-                >
-                  Home
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => goTo("/templates")}
-                  className="flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/8 hover:text-white"
-                >
-                  Templates
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => goTo("/account/dashboard")}
-                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/8 hover:text-white"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                  Dashboard
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => goTo("/account/affiliate")}
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/8 hover:text-white"
-                >
-                  <span className="flex items-center gap-3">
-                    <Users className="h-4 w-4" />
-                    Affiliate
-                  </span>
-
-                  <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[11px] font-semibold text-emerald-300">
-                    {earningsLoading ? "..." : `$${affiliateEarnings.toFixed(2)}`}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => goTo("/generator")}
-                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/8 hover:text-white"
-                >
-                  <Wand2 className="h-4 w-4" />
-                  Generator
-                </button>
-
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => goTo("/admin")}
-                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/8 hover:text-white"
-                  >
-                    <Shield className="h-4 w-4" />
-                    Admin Panel
-                  </button>
-                ) : null}
-
-                <div className="my-1 h-px bg-white/10" />
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#ffcece] transition hover:bg-white/8"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                <nav className="flex flex-col gap-2">
-                  {navItems.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      onClick={() => setMobileOpen(false)}
+                  <SheetClose asChild>
+                    <button
+                      type="button"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white transition hover:bg-white/15"
+                      aria-label="Close menu"
                     >
-                      {({ isActive }) => (
-                        <span
-                          className={cn(
-                            "flex rounded-2xl px-4 py-3 text-sm font-medium transition-all",
-                            isActive
-                              ? "bg-white/10 text-white"
-                              : "text-white/70 hover:bg-white/5 hover:text-white"
-                          )}
-                        >
-                          {item.label}
-                        </span>
-                      )}
-                    </NavLink>
-                  ))}
-                </nav>
-
-                <div className="flex justify-start">
-                  <SignInButton />
+                      <X className="h-5 w-5" />
+                    </button>
+                  </SheetClose>
                 </div>
+              </SheetHeader>
+
+              <div className="px-5 py-6">
+                {loading ? (
+                  <div className="space-y-3">
+                    <div className="h-20 animate-pulse rounded-2xl border border-white/10 bg-white/10" />
+                    <div className="h-14 animate-pulse rounded-2xl border border-white/10 bg-white/10" />
+                    <div className="h-14 animate-pulse rounded-2xl border border-white/10 bg-white/10" />
+                  </div>
+                ) : isAuthenticated ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileOpen(false);
+                          onBuyCredits?.();
+                        }}
+                        className="rounded-2xl border border-white/15 bg-white/10 p-4 text-left"
+                      >
+                        <div className="flex items-center gap-2 text-sm text-zinc-300">
+                          <Plus className="h-4 w-4" />
+                          Credits
+                        </div>
+                        <div className="mt-2 text-2xl font-semibold text-[#ffd976]">
+                          {creditsRemaining}
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => goTo("/account/affiliate")}
+                        className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-left"
+                      >
+                        <div className="flex items-center gap-2 text-sm text-emerald-100">
+                          <Users className="h-4 w-4" />
+                          Affiliate
+                        </div>
+                        <div className="mt-2 text-2xl font-semibold text-emerald-300">
+                          ${affiliateEarnings.toFixed(2)}
+                        </div>
+                      </button>
+                    </div>
+
+                    <nav className="mt-5 space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => goTo("/account/dashboard")}
+                        className="flex w-full items-center gap-3 rounded-2xl bg-white/10 px-4 py-4 text-base font-semibold text-white"
+                      >
+                        <LayoutGrid className="h-5 w-5 shrink-0" />
+                        Dashboard
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => goTo("/account/affiliate")}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
+                      >
+                        <Users className="h-5 w-5 shrink-0" />
+                        Affiliate
+                      </button>
+
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => goTo("/admin")}
+                          className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
+                        >
+                          <Shield className="h-5 w-5 shrink-0" />
+                          Admin Panel
+                        </button>
+                      ) : null}
+
+                      <button
+                        type="button"
+                        onClick={() => goTo("/generator")}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
+                      >
+                        <Wand2 className="h-5 w-5 shrink-0" />
+                        Generator
+                      </button>
+                    </nav>
+
+                    <div className="mt-7 border-t border-white/10 pt-5">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-red-200 transition hover:bg-red-500/10"
+                      >
+                        <LogOut className="h-5 w-5 shrink-0" />
+                        Logout
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <nav className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => goTo("/generator")}
+                        className="flex w-full items-center gap-3 rounded-2xl bg-white/10 px-4 py-4 text-base font-semibold text-white"
+                      >
+                        <Wand2 className="h-5 w-5 shrink-0" />
+                        Generator
+                      </button>
+                    </nav>
+
+                    <div className="mt-5">
+                      <SignInButton />
+                    </div>
+                  </>
+                )}
               </div>
-            )}
-          </div>
+            </SheetContent>
+          </Sheet>
         </div>
-      ) : null}
+      </div>
     </header>
   );
 }
