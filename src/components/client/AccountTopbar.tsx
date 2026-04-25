@@ -1,3 +1,4 @@
+// FILE: src/components/client/AccountTopbar.tsx
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
@@ -41,10 +42,10 @@ function desktopNavClass(active: boolean) {
 
 function mobileNavClass(active: boolean) {
   return [
-    "flex items-center justify-between rounded-2xl px-4 py-4 text-base font-medium transition-all",
+    "flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold transition-all",
     active
       ? "bg-white/10 text-white"
-      : "text-zinc-300 hover:bg-white/5 hover:text-white",
+      : "text-zinc-200 hover:bg-white/[0.06] hover:text-white",
   ].join(" ");
 }
 
@@ -57,38 +58,20 @@ export default function AccountTopbar() {
 
   const items: TopbarItem[] = React.useMemo(() => {
     const base: TopbarItem[] = [
-      {
-        label: "Dashboard",
-        to: "/account/dashboard",
-        icon: LayoutGrid,
-      },
-      {
-        label: "Affiliate",
-        to: "/account/affiliate",
-        icon: Users,
-      },
+      { label: "Dashboard", to: "/account/dashboard", icon: LayoutGrid },
+      { label: "Affiliate", to: "/account/affiliate", icon: Users },
     ];
 
     if (isAdmin) {
-      base.push({
-        label: "Admin Panel",
-        to: "/admin",
-        icon: Shield,
-      });
+      base.push({ label: "Admin Panel", to: "/admin", icon: Shield });
     }
 
-    base.push({
-      label: "Generator",
-      to: "/generator",
-      icon: Wand2,
-    });
+    base.push({ label: "Generator", to: "/generator", icon: Wand2 });
 
     return base;
   }, [isAdmin]);
 
   React.useEffect(() => {
-    void refresh();
-
     const onCreditsRefresh = () => {
       void refresh();
     };
@@ -103,7 +86,7 @@ export default function AccountTopbar() {
   async function handleLogout() {
     setMobileOpen(false);
     await supabase.auth.signOut();
-    navigate("/");
+    navigate("/", { replace: true });
   }
 
   function handleNavigate(path: string) {
@@ -196,7 +179,7 @@ export default function AccountTopbar() {
 
               <SheetContent
                 side="right"
-                className="w-full border-l border-white/10 bg-zinc-950 p-0 text-white sm:max-w-[420px]"
+                className="w-[82vw] max-w-[360px] border-l border-white/10 bg-zinc-950 p-0 text-white sm:w-[390px] sm:max-w-[390px]"
               >
                 <SheetHeader className="border-b border-white/10 px-5 py-5">
                   <div className="flex items-center justify-between gap-4">
@@ -211,7 +194,8 @@ export default function AccountTopbar() {
                     <SheetClose asChild>
                       <button
                         type="button"
-                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white transition hover:bg-white/15"
+                        aria-label="Close menu"
                       >
                         <X className="h-5 w-5" />
                       </button>
@@ -219,7 +203,7 @@ export default function AccountTopbar() {
                   </div>
                 </SheetHeader>
 
-                <div className="space-y-6 px-5 py-6">
+                <div className="px-5 py-6">
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -250,7 +234,7 @@ export default function AccountTopbar() {
                     </button>
                   </div>
 
-                  <nav className="space-y-2">
+                  <nav className="mt-5 space-y-2">
                     {!loading &&
                       items.map((item) => {
                         const Icon = item.icon;
@@ -262,22 +246,20 @@ export default function AccountTopbar() {
                             onClick={() => setMobileOpen(false)}
                             className={({ isActive }) => mobileNavClass(isActive)}
                           >
-                            <span className="flex items-center gap-3">
-                              <Icon className="h-5 w-5" />
-                              {item.label}
-                            </span>
+                            <Icon className="h-5 w-5 shrink-0" />
+                            <span>{item.label}</span>
                           </NavLink>
                         );
                       })}
                   </nav>
 
-                  <div className="border-t border-white/10 pt-5">
+                  <div className="mt-7 border-t border-white/10 pt-5">
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-medium text-red-200 hover:bg-red-500/10"
+                      className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-red-200 transition hover:bg-red-500/10"
                     >
-                      <LogOut className="h-5 w-5" />
+                      <LogOut className="h-5 w-5 shrink-0" />
                       Logout
                     </button>
                   </div>
