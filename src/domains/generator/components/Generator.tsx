@@ -1,3 +1,5 @@
+// FILE: src/pages/GeneratorPage.tsx
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,12 +28,15 @@ import {
 } from "@/components/ui/Select";
 
 import { cn } from "@/lib/utils";
-import { Info } from "lucide-react";
+import { Info, Sparkles, ImageIcon, Video } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useCreditsFunnel } from "@/contexts/CreditsFunnelContext";
 import { useBootstrapUser } from "@/hooks/useBootstrapUser";
 import { uploadFileToStorage } from "@/lib/uploadFileToStorage";
 import { supabase } from "@/lib/supabase";
+
+const ALL_OCCASIONS = "all";
+const ALL_STYLES = "all";
 
 function SnowBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -120,6 +125,20 @@ type AnyTemplate = TemplateSummary & {
   creditcost?: number;
 };
 
+function normalizeKey(value: unknown) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function formatLabel(value: unknown) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "Other";
+
+  return raw
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function normalizeTemplate(t: AnyTemplate): AnyTemplate {
   const id = (t.id ?? t._id ?? "") as string;
 
@@ -190,10 +209,18 @@ export default function GeneratorPage() {
   const queryClient = useQueryClient();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeCategory, setActiveCategory] = useState("All");
 
   const selectedTemplateId = searchParams.get("template") || null;
-  const selectedOccasion = searchParams.get("occasion")?.toLowerCase().trim() || null;
+  const selectedOccasionParam = normalizeKey(searchParams.get("occasion"));
+  const selectedStyleParam = normalizeKey(searchParams.get("style"));
+
+  const selectedOccasion =
+    selectedOccasionParam && selectedOccasionParam !== ALL_OCCASIONS
+      ? selectedOccasionParam
+      : ALL_OCCASIONS;
+
+  const selectedStyle =
+    selectedStyleParam && selectedStyleParam !== ALL_STYLES ? selectedStyleParam : ALL_STYLES;
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -219,8 +246,9 @@ export default function GeneratorPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("English");
 
   const { data: templates = [] } = useTemplatesQuery();
+
   const templatesList = useMemo(
-    () => (templates as AnyTemplate[]).map((t) => normalizeTemplate(t)),
+    () => (templates as AnyTemplate[]).map((t) => normalizeTemplate(t)).filter((t) => t.id),
     [templates]
   );
 
@@ -233,7 +261,54 @@ export default function GeneratorPage() {
   const { mutateAsync: triggerCreateJob } = useCreateJobMutation();
   const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
 
-  const categories = ["All", "Classic", "Cozy", "Snowy", "Romantic", "Family", "General", "Birthday"];
+  const occasionOptions = useMemo(() => {
+    const map = new Map<string, { value: string; label: string; count: number }>();
+
+    templatesList.forEach((template) => {
+      const key = normalizeKey(template.occasion || "other");
+      if (!key) return;
+
+      const existing = map.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(key, {
+          value: key,
+          label: formatLabel(template.occasion || "Other"),
+          count: 1,
+        });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [templatesList]);
+
+  const styleOptions = useMemo(() => {
+    const source =
+      selectedOccasion === ALL_OCCASIONS
+        ? templatesList
+        : templatesList.filter((template) => normalizeKey(template.occasion) === selectedOccasion);
+
+    const map = new Map<string, { value: string; label: string; count: number }>();
+
+    source.forEach((template) => {
+      const key = normalizeKey(template.category || "general");
+      if (!key) return;
+
+      const existing = map.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(key, {
+          value: key,
+          label: formatLabel(template.category || "General"),
+          count: 1,
+        });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [templatesList, selectedOccasion]);
 
   const aspectRatioOptions = [
     { label: "Match input", value: "match_input_image" },
@@ -252,6 +327,56 @@ export default function GeneratorPage() {
     { label: "1:2", value: "1:2" },
   ];
 
+  const selectedOccasionLabel =
+    selectedOccasion === ALL_OCCASIONS
+      ? "All Occasions"
+      : occasionOptions.find((item) => item.value === selectedOccasion)?.label ||
+        formatLabel(selectedOccasion);
+
+  const selectedStyleLabel =
+    selectedStyle === ALL_STYLES
+      ? "All Styles"
+      : styleOptions.find((item) => item.value === selectedStyle)?.label || formatLabel(selectedStyle);
+
+  const updateFilterParams = useCallback(
+    (updates: { occasion?: string; style?: string; type?: "all" | "image" | "video" }) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+
+          if (updates.occasion !== undefined) {
+            if (updates.occasion === ALL_OCCASIONS) {
+              next.delete("occasion");
+            } else {
+              next.set("occasion", updates.occasion);
+            }
+
+            next.delete("style");
+            next.delete("template");
+          }
+
+          if (updates.style !== undefined) {
+            if (updates.style === ALL_STYLES) {
+              next.delete("style");
+            } else {
+              next.set("style", updates.style);
+            }
+
+            next.delete("template");
+          }
+
+          return next;
+        },
+        { replace: true }
+      );
+
+      if (updates.type) {
+        setTypeFilter(updates.type);
+      }
+    },
+    [setSearchParams]
+  );
+
   const refreshCredits = useCallback(() => {
     dispatchCreditsRefresh();
 
@@ -269,19 +394,12 @@ export default function GeneratorPage() {
   const filteredTemplates = useMemo(() => {
     let list = templatesList;
 
-    if (selectedOccasion) {
-      list = list.filter(
-        (t) => (t.occasion || "").toString().trim().toLowerCase() === selectedOccasion
-      );
+    if (selectedOccasion !== ALL_OCCASIONS) {
+      list = list.filter((t) => normalizeKey(t.occasion) === selectedOccasion);
     }
 
-    const activeNormalized = (activeCategory || "").toString().trim().toLowerCase();
-    if (activeNormalized && activeNormalized !== "all") {
-      list = list.filter((t) => {
-        const category = (t.category || "").toString().trim().toLowerCase();
-        const occasion = (t.occasion || "").toString().trim().toLowerCase();
-        return category === activeNormalized || occasion === activeNormalized;
-      });
+    if (selectedStyle !== ALL_STYLES) {
+      list = list.filter((t) => normalizeKey(t.category || "general") === selectedStyle);
     }
 
     if (typeFilter !== "all") {
@@ -289,7 +407,7 @@ export default function GeneratorPage() {
     }
 
     return list;
-  }, [activeCategory, templatesList, typeFilter, selectedOccasion]);
+  }, [templatesList, typeFilter, selectedOccasion, selectedStyle]);
 
   const templateMap = useMemo(() => {
     const lookup = new Map<string, AnyTemplate>();
@@ -420,9 +538,13 @@ export default function GeneratorPage() {
             toast.success(`Deselected: ${template.title}`);
           } else {
             next.set("template", id);
-            if (template.occasion && !next.get("occasion")) {
-              next.set("occasion", String(template.occasion).toLowerCase().trim());
-            }
+
+            const occasion = normalizeKey(template.occasion);
+            const style = normalizeKey(template.category || "general");
+
+            if (occasion) next.set("occasion", occasion);
+            if (style) next.set("style", style);
+
             toast.success(`Selected: ${template.title}`);
           }
 
@@ -516,53 +638,33 @@ export default function GeneratorPage() {
   const { openFunnel } = useCreditsFunnel();
 
   const handleGenerate = useCallback(async () => {
-    console.log("[handleGenerate] clicked", {
-      hasUser: !!user,
-      user,
-      selectedTemplateId,
-      uploadedFilesCount: uploadedFiles.length,
-      userCredits,
-      jobsLength: jobs.length,
-    });
-
     if (!user) {
-      console.log("[handleGenerate] no user");
       toast.error("No authenticated user found.");
       openFunnel({ mode: "not_logged_in" });
       return;
     }
 
     if (!selectedTemplateId) {
-      console.log("[handleGenerate] no selectedTemplateId");
       toast.error("Please select a template.");
       return;
     }
 
     if (uploadedFiles.length === 0) {
-      console.log("[handleGenerate] no uploaded files");
       toast.error("Please upload at least one photo.");
       return;
     }
 
     const template = templateMap.get(selectedTemplateId);
-    console.log("[handleGenerate] template lookup", template);
 
     if (!template) {
-      console.log("[handleGenerate] template not found in templateMap");
       toast.error("Template not found. Please pick another option.");
       return;
     }
 
     const requiredCredits = Number((template as any).creditCost ?? 0);
-    console.log("[handleGenerate] requiredCredits", requiredCredits);
 
     if ((userCredits ?? 0) < requiredCredits) {
       const hasGeneratedBefore = jobs.length > 0;
-      console.log("[handleGenerate] insufficient credits", {
-        userCredits,
-        requiredCredits,
-        hasGeneratedBefore,
-      });
 
       if (!hasGeneratedBefore && (userCredits ?? 0) === 0) {
         openFunnel({ mode: "first_generation" });
@@ -589,10 +691,8 @@ export default function GeneratorPage() {
 
     try {
       const isVideo = String(template.type || "image").toLowerCase() === "video";
-      console.log("[handleGenerate] isVideo", isVideo);
 
       if (isVideo && uploadedFiles.length > 3) {
-        console.log("[handleGenerate] too many files for video");
         toast.error("You can upload up to 3 photos for video generation.");
         setIsGenerating(false);
         return;
@@ -610,8 +710,6 @@ export default function GeneratorPage() {
           return publicUrl;
         })
       );
-
-      console.log("[handleGenerate] uploaded inputUrls", inputUrls);
 
       if (isVideo) {
         if (customInstructions && customInstructions.length > 2000) {
@@ -631,17 +729,6 @@ export default function GeneratorPage() {
             : languageInstruction;
         }
 
-        console.log("[handleGenerate] triggerCreateVideoJob payload", {
-          templateId: template.id,
-          inputUrls,
-          userInstructions: finalUserInstructions || undefined,
-          duration: 8,
-          resolution: "1080p",
-          aspectRatio: "16:9",
-          generateAudio,
-          negativePrompt: negativePrompt.trim() || undefined,
-        });
-
         const res: any = await triggerCreateVideoJob({
           templateId: template.id,
           inputUrls,
@@ -653,21 +740,11 @@ export default function GeneratorPage() {
           negativePrompt: negativePrompt.trim() || undefined,
         });
 
-        console.log("[handleGenerate] triggerCreateVideoJob response", res);
-
         const jobId = String(res?.jobId ?? res?.id ?? res);
         setCurrentJobId(jobId);
         refreshCredits();
         toast.success("Video generation started!");
       } else {
-        console.log("[handleGenerate] triggerCreateJob payload", {
-          type: "image",
-          templateId: template.id,
-          inputUrls,
-          aspectRatio: selectedAspectRatio,
-          userInstructions: customInstructions.trim() || undefined,
-        });
-
         const res: any = await triggerCreateJob({
           type: "image",
           templateId: template.id,
@@ -675,8 +752,6 @@ export default function GeneratorPage() {
           aspectRatio: selectedAspectRatio,
           userInstructions: customInstructions.trim() || undefined,
         });
-
-        console.log("[handleGenerate] triggerCreateJob response", res);
 
         const generationId = getGenerationIdFromResponse(res);
 
@@ -718,7 +793,7 @@ export default function GeneratorPage() {
   ]);
 
   return (
-    <div className="relative min-h-screen text-[#f6f8ff] overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-hidden text-[#f6f8ff]">
       <SnowBackground />
 
       <section
@@ -733,7 +808,7 @@ export default function GeneratorPage() {
             document.getElementById("file-input")?.click();
           }
         }}
-        className="mx-auto my-8 max-w-4xl rounded-3xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] p-8 text-center cursor-pointer transition hover:bg-[rgba(255,255,255,.12)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+        className="mx-auto my-8 max-w-4xl cursor-pointer rounded-[28px] border border-white/15 bg-white/[0.055] p-8 text-center shadow-[0_18px_60px_rgba(0,0,0,.35)] transition hover:border-white/25 hover:bg-white/[0.085]"
       >
         <input
           id="file-input"
@@ -745,7 +820,7 @@ export default function GeneratorPage() {
           className="hidden"
         />
 
-        <h2 className="text-xl font-semibold mb-2">
+        <h2 className="mb-2 text-xl font-semibold">
           {uploadedFiles.length > 0
             ? `✅ ${uploadedFiles.length} photo${uploadedFiles.length > 1 ? "s" : ""} uploaded`
             : "Drag & drop"}
@@ -774,19 +849,19 @@ export default function GeneratorPage() {
 
       {uploadedFiles.length > 0 && (
         <div className="mx-auto my-6 max-w-4xl px-4">
-          <div className="flex flex-wrap gap-3 justify-center">
+          <div className="flex flex-wrap justify-center gap-3">
             {previewUrls.map((url, index) => (
               <div
                 key={index}
-                className="relative w-24 h-24 rounded-xl overflow-hidden border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] group"
+                className="group relative h-24 w-24 overflow-hidden rounded-xl border border-white/15 bg-white/[0.06]"
               >
-                <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                <img src={url} alt={`Preview ${index + 1}`} className="h-full w-full object-cover" />
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRemoveFile(index);
                   }}
-                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500/90 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold"
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/90 text-xs font-bold text-white opacity-0 transition-opacity hover:bg-red-500 group-hover:opacity-100"
                   aria-label="Remove image"
                   type="button"
                 >
@@ -798,43 +873,120 @@ export default function GeneratorPage() {
         </div>
       )}
 
-      <div className="flex flex-row items-center justify-between gap-4 mb-6 px-4 max-w-5xl mx-auto">
-        <div className="w-full max-w-[320px]">
-          <Select value={activeCategory} onValueChange={setActiveCategory}>
-            <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#0b1220] border-[rgba(255,255,255,.2)] text-white">
-              {categories.map((c) => (
-                <SelectItem key={c} value={c} className="focus:bg-[rgba(255,255,255,.1)] focus:text-white">
-                  {c}
-                </SelectItem>
+      <section className="mx-auto mb-7 max-w-5xl px-4">
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.045] p-4 shadow-[0_18px_60px_rgba(0,0,0,.28)] backdrop-blur-xl">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#ffd976]" />
+                <h2 className="text-base font-semibold text-white">Choose your occasion and style</h2>
+              </div>
+              <p className="mt-1 text-sm text-[#9ca8bd]">
+                {selectedOccasionLabel} · {selectedStyleLabel} · {filteredTemplates.length} template
+                {filteredTemplates.length === 1 ? "" : "s"}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Select
+                value={typeFilter}
+                onValueChange={(v) => setTypeFilter(v as "all" | "image" | "video")}
+              >
+                <SelectTrigger className="h-11 w-full min-w-[160px] rounded-2xl border-white/10 bg-black/25 text-white">
+                  <SelectValue placeholder="Media type" />
+                </SelectTrigger>
+                <SelectContent className="border-white/15 bg-[#0b1220] text-white">
+                  <SelectItem value="all">All Media</SelectItem>
+                  <SelectItem value="image">Images</SelectItem>
+                  <SelectItem value="video">Videos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="mb-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => updateFilterParams({ occasion: ALL_OCCASIONS })}
+              className={cn(
+                "rounded-2xl border px-4 py-2 text-sm font-semibold transition",
+                selectedOccasion === ALL_OCCASIONS
+                  ? "border-[#ffd976]/70 bg-[#ffd976] text-[#171717] shadow-[0_0_22px_rgba(255,217,118,.22)]"
+                  : "border-white/10 bg-white/[0.055] text-zinc-200 hover:bg-white/[0.09]"
+              )}
+            >
+              All Occasions
+            </button>
+
+            {occasionOptions.map((occasion) => (
+              <button
+                key={occasion.value}
+                type="button"
+                onClick={() => updateFilterParams({ occasion: occasion.value })}
+                className={cn(
+                  "rounded-2xl border px-4 py-2 text-sm font-semibold transition",
+                  selectedOccasion === occasion.value
+                    ? "border-[#ffd976]/70 bg-[#ffd976] text-[#171717] shadow-[0_0_22px_rgba(255,217,118,.22)]"
+                    : "border-white/10 bg-white/[0.055] text-zinc-200 hover:bg-white/[0.09]"
+                )}
+              >
+                {occasion.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="border-t border-white/10 pt-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9ca8bd]">
+                Styles for {selectedOccasionLabel}
+              </p>
+
+              {selectedStyle !== ALL_STYLES && (
+                <button
+                  type="button"
+                  onClick={() => updateFilterParams({ style: ALL_STYLES })}
+                  className="text-xs font-semibold text-[#ffd976] hover:underline"
+                >
+                  Reset style
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => updateFilterParams({ style: ALL_STYLES })}
+                className={cn(
+                  "rounded-full border px-3.5 py-2 text-sm font-medium transition",
+                  selectedStyle === ALL_STYLES
+                    ? "border-white/25 bg-white text-black"
+                    : "border-white/10 bg-black/20 text-zinc-300 hover:bg-white/[0.08]"
+                )}
+              >
+                All Styles
+              </button>
+
+              {styleOptions.map((style) => (
+                <button
+                  key={style.value}
+                  type="button"
+                  onClick={() => updateFilterParams({ style: style.value })}
+                  className={cn(
+                    "rounded-full border px-3.5 py-2 text-sm font-medium transition",
+                    selectedStyle === style.value
+                      ? "border-white/25 bg-white text-black"
+                      : "border-white/10 bg-black/20 text-zinc-300 hover:bg-white/[0.08]"
+                  )}
+                >
+                  {style.label}
+                </button>
               ))}
-            </SelectContent>
-          </Select>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div className="w-full max-w-[200px]">
-          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | "image" | "video")}>
-            <SelectTrigger className="w-full bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#0b1220] border-[rgba(255,255,255,.2)] text-white">
-              <SelectItem value="all" className="focus:bg-[rgba(255,255,255,.1)] focus:text-white">
-                All Media
-              </SelectItem>
-              <SelectItem value="image" className="focus:bg-[rgba(255,255,255,.1)] focus:text-white">
-                Images
-              </SelectItem>
-              <SelectItem value="video" className="focus:bg-[rgba(255,255,255,.1)] focus:text-white">
-                Videos
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="mx-auto grid max-w-5xl grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 px-4 pb-8">
+      <div className="mx-auto grid max-w-5xl grid-cols-2 gap-5 px-4 pb-8 md:grid-cols-3 lg:grid-cols-4">
         {filteredTemplates.map((t) => {
           const normalized = normalizeTemplate(t);
           const id = normalized.id as string;
@@ -850,11 +1002,20 @@ export default function GeneratorPage() {
             />
           );
         })}
+
+        {filteredTemplates.length === 0 && (
+          <div className="col-span-full rounded-[28px] border border-white/10 bg-white/[0.045] px-6 py-14 text-center">
+            <p className="text-lg font-semibold text-white">No templates found</p>
+            <p className="mt-2 text-sm text-[#9ca8bd]">
+              Try All Occasions, All Styles, or another media type.
+            </p>
+          </div>
+        )}
       </div>
 
       <div
         id="preview-section"
-        className="mx-auto mt-4 w-[92%] max-w-5xl grid grid-cols-2 gap-6 text-center font-bold text-[#c1c8d8]"
+        className="mx-auto mt-4 grid w-[92%] max-w-5xl grid-cols-2 gap-6 text-center font-bold text-[#c1c8d8]"
       >
         <span>Before</span>
         <span>After</span>
@@ -862,7 +1023,7 @@ export default function GeneratorPage() {
 
       <div
         className={cn(
-          "mx-auto mt-2 w-[92%] max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 pb-32",
+          "mx-auto mt-2 grid w-[92%] max-w-5xl grid-cols-1 gap-6 px-4 pb-32 sm:grid-cols-2",
           selectedTemplateObj && selectedTemplateObj.type === "video"
             ? "pb-72"
             : selectedTemplateObj?.type === "image"
@@ -870,15 +1031,15 @@ export default function GeneratorPage() {
             : ""
         )}
       >
-        <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)] overflow-hidden">
+        <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)]">
           {previewUrls.length > 0 ? (
-            <div className="flex flex-wrap gap-2 justify-center items-center">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               {previewUrls.map((url, i) => (
                 <img
                   key={i}
                   src={url}
                   alt={`Input ${i + 1}`}
-                  className="max-w-full max-h-[240px] object-contain rounded-lg"
+                  className="max-h-[240px] max-w-full rounded-lg object-contain"
                 />
               ))}
             </div>
@@ -887,10 +1048,10 @@ export default function GeneratorPage() {
           )}
         </div>
 
-        <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-[rgba(255,255,255,.18)] bg-[rgba(255,255,255,.06)] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)] overflow-hidden relative">
+        <div className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)]">
           {isGenerating ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#ffd976] border-t-transparent" />
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#ffd976] border-t-transparent" />
               <span className="text-sm">Generating magic...</span>
             </div>
           ) : previewAfter ? (
@@ -899,7 +1060,7 @@ export default function GeneratorPage() {
                 <video
                   src={previewAfter}
                   controls
-                  className="max-w-full max-h-full object-contain rounded-lg"
+                  className="max-h-full max-w-full rounded-lg object-contain"
                   autoPlay
                   loop
                 />
@@ -907,7 +1068,7 @@ export default function GeneratorPage() {
                 <img
                   src={previewAfter}
                   alt="After"
-                  className="max-w-full max-h-full object-contain rounded-lg"
+                  className="max-h-full max-w-full rounded-lg object-contain"
                 />
               )}
 
@@ -920,7 +1081,7 @@ export default function GeneratorPage() {
                       : `generated-card-${Date.now()}.${ext}`;
                   void handleDownload(previewAfter, filename);
                 }}
-                className="absolute bottom-4 right-4 bg-[#ffd976] text-[#1e1e1e] px-4 py-2 rounded-lg font-semibold hover:brightness-110 active:scale-95 transition"
+                className="absolute bottom-4 right-4 rounded-lg bg-[#ffd976] px-4 py-2 font-semibold text-[#1e1e1e] transition hover:brightness-110 active:scale-95"
                 type="button"
               >
                 Download
@@ -932,13 +1093,13 @@ export default function GeneratorPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[rgba(6,10,18,0.95)] backdrop-blur-xl border-t border-[rgba(255,255,255,.18)] shadow-[0_-8px_32px_rgba(0,0,0,.5)]">
-        <div className="max-w-7xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/15 bg-[rgba(6,10,18,0.95)] px-4 py-3 shadow-[0_-8px_32px_rgba(0,0,0,.5)] backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-3">
             {selectedTemplateObj ? (
               selectedTemplateObj.type === "video" ? (
                 <>
-                  <p className="text-xs text-[#c1c8d8] mt-2 flex items-start sm:items-center gap-2">
+                  <p className="mt-2 flex items-start gap-2 text-xs text-[#c1c8d8] sm:items-center">
                     <span className="mt-0.5">
                       <Info size={18} />
                     </span>
@@ -948,12 +1109,12 @@ export default function GeneratorPage() {
                     </span>
                   </p>
 
-                  <div className="flex flex-col md:flex-row gap-3">
+                  <div className="flex flex-col gap-3 md:flex-row">
                     <textarea
                       value={customInstructions}
                       onChange={(e) => setCustomInstructions(e.target.value)}
                       placeholder="Optional: Add custom instructions..."
-                      className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px] max-h-[80px]"
+                      className="max-h-[80px] min-h-[40px] flex-1 resize-none rounded-xl border border-white/15 bg-white/[0.1] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
                       rows={3}
                       disabled={isGenerating}
                     />
@@ -962,23 +1123,23 @@ export default function GeneratorPage() {
                       value={negativePrompt}
                       onChange={(e) => setNegativePrompt(e.target.value.slice(0, 500))}
                       placeholder="Negative Prompt (Optional)"
-                      className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[40px]"
+                      className="min-h-[40px] flex-1 resize-none rounded-xl border border-white/15 bg-white/[0.1] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
                       disabled={isGenerating}
                     />
 
-                    <div className="flex flex-row md:flex-col justify-between gap-2">
+                    <div className="flex flex-row justify-between gap-2 md:flex-col">
                       <LanguageSelector
                         value={selectedLanguage}
                         onChange={setSelectedLanguage}
                         disabled={isGenerating}
                       />
 
-                      <label className="flex items-center gap-2 text-sm text-white whitespace-nowrap">
+                      <label className="flex items-center gap-2 whitespace-nowrap text-sm text-white">
                         <input
                           type="checkbox"
                           checked={generateAudio}
                           onChange={(e) => setGenerateAudio(e.target.checked)}
-                          className="w-4 h-4"
+                          className="h-4 w-4"
                           disabled={isGenerating}
                         />
                         With Audio
@@ -989,19 +1150,19 @@ export default function GeneratorPage() {
                       type="button"
                       onClick={() => void handleGenerate()}
                       disabled={isGenerating || !selectedTemplateId}
-                      className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ml-auto h-10"
+                      className="ml-auto h-10 whitespace-nowrap rounded-xl border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] px-5 py-2 font-semibold text-[#1e1e1e] transition hover:brightness-110 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isGenerating ? "Generating..." : "Generate"}
                     </button>
                   </div>
                 </>
               ) : (
-                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
+                <div className="flex w-full flex-col items-stretch gap-3 md:flex-row md:items-center">
                   <textarea
                     value={customInstructions}
                     onChange={(e) => setCustomInstructions(e.target.value)}
                     placeholder="Optional: Add custom instructions..."
-                    className="flex-1 rounded-xl bg-[rgba(255,255,255,.1)] border border-[rgba(255,255,255,.2)] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976] resize-none min-h-[44px] max-h-[100px]"
+                    className="max-h-[100px] min-h-[44px] flex-1 resize-none rounded-xl border border-white/15 bg-white/[0.1] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
                     rows={1}
                     disabled={isGenerating}
                   />
@@ -1012,16 +1173,12 @@ export default function GeneratorPage() {
                       onValueChange={setSelectedAspectRatio}
                       disabled={isGenerating || uploadedFiles.length === 0 || !selectedTemplateId}
                     >
-                      <SelectTrigger className="min-w-[120px] bg-[rgba(255,255,255,.1)] border-[rgba(255,255,255,.2)] text-white">
+                      <SelectTrigger className="min-w-[120px] border-white/15 bg-white/[0.1] text-white">
                         <SelectValue placeholder="Aspect ratio" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0b1220] border-[rgba(255,255,255,.2)] text-white">
+                      <SelectContent className="border-white/15 bg-[#0b1220] text-white">
                         {aspectRatioOptions.map((o) => (
-                          <SelectItem
-                            key={o.value}
-                            value={o.value}
-                            className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
-                          >
+                          <SelectItem key={o.value} value={o.value}>
                             {o.label}
                           </SelectItem>
                         ))}
@@ -1032,14 +1189,22 @@ export default function GeneratorPage() {
                       type="button"
                       onClick={() => void handleGenerate()}
                       disabled={isGenerating || !selectedTemplateId}
-                      className="rounded-xl px-5 py-2 font-semibold text-[#1e1e1e] border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] hover:brightness-110 active:scale-[.98] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="whitespace-nowrap rounded-xl border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] px-5 py-2 font-semibold text-[#1e1e1e] transition hover:brightness-110 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isGenerating ? "Generating..." : "Generate"}
                     </button>
                   </div>
                 </div>
               )
-            ) : null}
+            ) : (
+              <div className="flex items-center justify-between gap-3 text-sm text-[#c1c8d8]">
+                <span>Select a template to unlock generation options.</span>
+                <div className="hidden items-center gap-2 sm:flex">
+                  <ImageIcon className="h-4 w-4" />
+                  <Video className="h-4 w-4" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
