@@ -25,7 +25,6 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
 
   React.useEffect(() => {
     let cancelled = false;
-    let creditKey = "";
 
     async function loadCredits() {
       if (authLoading) return;
@@ -53,7 +52,7 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
           console.error("[CreditsDisplay] app_users error:", appUserError);
         }
 
-        creditKey =
+        const creditKey =
           appUser?.convex_id !== null && appUser?.convex_id !== undefined
             ? String(appUser.convex_id)
             : appUser?.id !== null && appUser?.id !== undefined
@@ -70,18 +69,19 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
         if (error) {
           console.error("[CreditsDisplay] credits ledger error:", error);
           setCredits(0);
-        } else {
-          const balance = ((data ?? []) as LedgerBalanceRow[]).reduce((sum, row) => {
-            const value = Number(row.credits ?? 0);
-
-            if (!Number.isFinite(value)) return sum;
-            if (row.direction === "in") return sum + value;
-            if (row.direction === "out") return sum - value;
-            return sum;
-          }, 0);
-
-          setCredits(balance);
+          return;
         }
+
+        const balance = ((data ?? []) as LedgerBalanceRow[]).reduce((sum, row) => {
+          const value = Number(row.credits ?? 0);
+
+          if (!Number.isFinite(value)) return sum;
+          if (row.direction === "in") return sum + value;
+          if (row.direction === "out") return sum - value;
+          return sum;
+        }, 0);
+
+        setCredits(balance);
       } catch (e) {
         if (!cancelled) {
           console.error("[CreditsDisplay] fatal:", e);
@@ -94,7 +94,13 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
       }
     }
 
+    const handleCreditsRefresh = () => {
+      void loadCredits();
+    };
+
     void loadCredits();
+
+    window.addEventListener("credits:refresh", handleCreditsRefresh);
 
     const channel = supabase
       .channel(`credits-display-${user?.id ?? user?.email ?? "guest"}`)
@@ -113,6 +119,7 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
 
     return () => {
       cancelled = true;
+      window.removeEventListener("credits:refresh", handleCreditsRefresh);
       void supabase.removeChannel(channel);
     };
   }, [user?.id, user?.email, authLoading]);
