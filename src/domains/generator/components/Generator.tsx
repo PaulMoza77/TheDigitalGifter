@@ -181,6 +181,10 @@ function getGenerationIdFromResponse(res: any): string | null {
   return value ? String(value) : null;
 }
 
+function dispatchCreditsRefresh() {
+  window.dispatchEvent(new Event("credits:refresh"));
+}
+
 export default function GeneratorPage() {
   const user = useBootstrapUser();
   const queryClient = useQueryClient();
@@ -249,12 +253,17 @@ export default function GeneratorPage() {
   ];
 
   const refreshCredits = useCallback(() => {
+    dispatchCreditsRefresh();
+
     void queryClient.invalidateQueries({ queryKey: ["userCredits"] });
     void queryClient.invalidateQueries({ queryKey: ["credits"] });
     void queryClient.invalidateQueries({ queryKey: ["user-credits"] });
     void queryClient.invalidateQueries({ queryKey: ["userCreditsQuery"] });
+
     void queryClient.refetchQueries({ queryKey: ["userCredits"] });
     void queryClient.refetchQueries({ queryKey: ["credits"] });
+    void queryClient.refetchQueries({ queryKey: ["user-credits"] });
+    void queryClient.refetchQueries({ queryKey: ["userCreditsQuery"] });
   }, [queryClient]);
 
   const filteredTemplates = useMemo(() => {
