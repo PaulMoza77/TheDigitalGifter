@@ -1,9 +1,11 @@
+// FILE: src/pages/account/AccountDashboard.tsx
 import React from "react";
 import type { User } from "@supabase/supabase-js";
 import { Link } from "react-router-dom";
 import { ArrowRight, Shield, Sparkles } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+import { useAccountOverview } from "@/hooks/useAccountOverview";
 
 import { Button } from "@/components/ui/button";
 import ClientStatsCards from "@/components/client/ClientStatsCards";
@@ -17,9 +19,6 @@ import type { ClientGeneration, ClientStat } from "@/components/client/types";
 
 type DashboardSummaryRow = {
   user_id: string;
-  credits_balance: number | null;
-  credits_used: number | null;
-  total_purchased: number | null;
   total_generations: number | null;
   saved_results_count: number | null;
   recent_activity_count: number | null;
@@ -34,6 +33,11 @@ type GenerationRow = {
   preview_image_url: string | null;
   created_at: string | null;
 };
+
+function toNumber(value: number | string | null | undefined) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 function formatRelativeDate(value?: string | null) {
   if (!value) return "Recently";
@@ -106,22 +110,9 @@ function normalizeSummaryRow(input: unknown): DashboardSummaryRow | null {
 
   return {
     user_id: String(row.user_id || ""),
-    credits_balance:
-      typeof row.credits_balance === "number" ? row.credits_balance : Number(row.credits_balance ?? 0),
-    credits_used:
-      typeof row.credits_used === "number" ? row.credits_used : Number(row.credits_used ?? 0),
-    total_purchased:
-      typeof row.total_purchased === "number" ? row.total_purchased : Number(row.total_purchased ?? 0),
-    total_generations:
-      typeof row.total_generations === "number" ? row.total_generations : Number(row.total_generations ?? 0),
-    saved_results_count:
-      typeof row.saved_results_count === "number"
-        ? row.saved_results_count
-        : Number(row.saved_results_count ?? 0),
-    recent_activity_count:
-      typeof row.recent_activity_count === "number"
-        ? row.recent_activity_count
-        : Number(row.recent_activity_count ?? 0),
+    total_generations: toNumber(row.total_generations as number | string | null),
+    saved_results_count: toNumber(row.saved_results_count as number | string | null),
+    recent_activity_count: toNumber(row.recent_activity_count as number | string | null),
   };
 }
 
@@ -147,125 +138,89 @@ function normalizeGenerationRows(input: unknown): GenerationRow[] {
 }
 
 export default function AccountDashboard() {
+  const {
+    loading: overviewLoading,
+    isAdmin,
+    creditsRemaining,
+    creditsUsed,
+    refresh,
+  } = useAccountOverview();
+
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [isAdmin, setIsAdmin] = React.useState(false);
   const [summary, setSummary] = React.useState<DashboardSummaryRow | null>(null);
   const [recentRows, setRecentRows] = React.useState<GenerationRow[]>([]);
-  const [generationsLoadError, setGenerationsLoadError] = React.useState<string>("");
+  const [generationsLoadError, setGenerationsLoadError] = React.useState("");
 
-  React.useEffect(() => {
-    let mounted = true;
+  const loadDashboard = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      setGenerationsLoadError("");
 
-    async function load() {
-      try {
-        setLoading(true);
-        setGenerationsLoadError("");
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-        const {
-          data: { user: authUser },
-          error: authError,
-        } = await supabase.auth.getUser();
+      if (authError) {
+        console.error("[AccountDashboard] auth error:", authError);
+      }
 
-        if (!mounted) return;
+      setUser(authUser ?? null);
 
-        if (authError) {
-          console.error("[AccountDashboard] auth error:", authError);
-        }
-
-        setUser(authUser ?? null);
-
-        if (!authUser) {
-          setIsAdmin(false);
-          setSummary(null);
-          setRecentRows([]);
-          setLoading(false);
-          return;
-        }
-
-        const email = authUser.email?.trim().toLowerCase() ?? "";
-
-        const [summaryRes, adminRes] = await Promise.all([
-          supabase
-            .from("client_dashboard_summary")
-            .select(
-              "user_id, credits_balance, credits_used, total_purchased, total_generations, saved_results_count, recent_activity_count"
-            )
-            .eq("user_id", authUser.id)
-            .maybeSingle(),
-
-          supabase
-            .from("admin_users")
-            .select("email")
-            .eq("email", email)
-            .maybeSingle(),
-        ]);
-
-        if (!mounted) return;
-
-        if (summaryRes.error) {
-          console.error("[AccountDashboard] summary error:", summaryRes.error);
-        }
-
-        if (adminRes.error) {
-          console.error("[AccountDashboard] admin check error:", adminRes.error);
-        }
-
-        setIsAdmin(Boolean(adminRes.data?.email));
-        setSummary(normalizeSummaryRow(summaryRes.data));
-
-        const generationsRes = await supabase
-          .from("generations")
-          .select(
-            "id, user_id, status, final_image_url, result_image_url, preview_image_url, created_at"
-          )
-          .eq("user_id", authUser.id)
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (!mounted) return;
-
-        if (generationsRes.error) {
-          console.error("[AccountDashboard] generations error:", generationsRes.error);
-          setGenerationsLoadError(generationsRes.error.message || "Failed to load generations.");
-          setRecentRows([]);
-        } else {
-          const normalizedRows = normalizeGenerationRows(generationsRes.data);
-          setRecentRows(normalizedRows);
-
-          if (
-            normalizedRows.length === 0 &&
-            Number(summaryRes.data?.total_generations ?? 0) > 0
-          ) {
-            setGenerationsLoadError(
-              "Generations exist for this account, but the list query returned no rows."
-            );
-          }
-        }
-      } catch (error) {
-        console.error("[AccountDashboard] fatal:", error);
-
-        if (!mounted) return;
-
-        setIsAdmin(false);
+      if (!authUser) {
         setSummary(null);
         setRecentRows([]);
-        setGenerationsLoadError(
-          error instanceof Error ? error.message : "Failed to load dashboard."
-        );
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        return;
       }
+
+      const [summaryRes, generationsRes] = await Promise.all([
+        supabase
+          .from("client_dashboard_summary")
+          .select("user_id, total_generations, saved_results_count, recent_activity_count")
+          .eq("user_id", authUser.id)
+          .maybeSingle(),
+
+        supabase
+          .from("generations")
+          .select("id, user_id, status, final_image_url, result_image_url, preview_image_url, created_at")
+          .eq("user_id", authUser.id)
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ]);
+
+      if (summaryRes.error) {
+        console.error("[AccountDashboard] summary error:", summaryRes.error);
+        setSummary(null);
+      } else {
+        setSummary(normalizeSummaryRow(summaryRes.data));
+      }
+
+      if (generationsRes.error) {
+        console.error("[AccountDashboard] generations error:", generationsRes.error);
+        setGenerationsLoadError(generationsRes.error.message || "Failed to load generations.");
+        setRecentRows([]);
+      } else {
+        setRecentRows(normalizeGenerationRows(generationsRes.data));
+      }
+    } catch (error) {
+      console.error("[AccountDashboard] fatal:", error);
+
+      setSummary(null);
+      setRecentRows([]);
+      setGenerationsLoadError(error instanceof Error ? error.message : "Failed to load dashboard.");
+    } finally {
+      setLoading(false);
     }
-
-    void load();
-
-    return () => {
-      mounted = false;
-    };
   }, []);
+
+  React.useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  const handleRefresh = React.useCallback(async () => {
+    await Promise.all([refresh(), loadDashboard()]);
+  }, [refresh, loadDashboard]);
 
   const firstName =
     (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
@@ -292,44 +247,45 @@ export default function AccountDashboard() {
   );
 
   const totalGenerations =
-    recentRows.length > 0
-      ? recentRows.length
-      : Number(summary?.total_generations ?? 0);
+    toNumber(summary?.total_generations) > 0
+      ? toNumber(summary?.total_generations)
+      : recentRows.length;
 
-  const remainingCredits = Number(summary?.credits_balance ?? 0);
   const savedResults =
-    recentRows.length > 0
-      ? recentRows.filter((item) => String(item.status || "").trim().toLowerCase() === "saved")
-          .length
-      : Number(summary?.saved_results_count ?? 0);
+    toNumber(summary?.saved_results_count) > 0
+      ? toNumber(summary?.saved_results_count)
+      : recentRows.filter((item) => {
+          const s = String(item.status || "").trim().toLowerCase();
+          return s === "saved" || Boolean(item.final_image_url || item.result_image_url);
+        }).length;
 
   const recentActivity =
-    recentRows.length > 0 ? recentRows.length : Number(summary?.recent_activity_count ?? 0);
-
-  const creditsUsed = Number(summary?.credits_used ?? 0);
+    toNumber(summary?.recent_activity_count) > 0
+      ? toNumber(summary?.recent_activity_count)
+      : recentRows.length;
 
   const stats: ClientStat[] = [
     {
       label: "Total Generations",
-      value: String(totalGenerations),
+      value: loading ? "..." : String(totalGenerations),
       helper: "All-time creations",
       icon: "sparkles",
     },
     {
       label: "Remaining Credits",
-      value: String(remainingCredits),
-      helper: `${creditsUsed} used so far`,
+      value: overviewLoading ? "..." : String(creditsRemaining),
+      helper: overviewLoading ? "Loading..." : `${creditsUsed} used so far`,
       icon: "coins",
     },
     {
       label: "Saved Results",
-      value: String(savedResults),
+      value: loading ? "..." : String(savedResults),
       helper: "Saved in your account",
       icon: "bookmark",
     },
     {
       label: "Recent Activity",
-      value: String(recentActivity),
+      value: loading ? "..." : String(recentActivity),
       helper: "Last 7 days",
       icon: "activity",
     },
@@ -384,11 +340,13 @@ export default function AccountDashboard() {
             </Button>
 
             <Button
-              asChild
+              type="button"
               variant="secondary"
-              className="rounded-2xl border border-white/10 bg-white/10 text-white hover:bg-white/15"
+              onClick={handleRefresh}
+              disabled={loading || overviewLoading}
+              className="rounded-2xl border border-white/10 bg-white/10 text-white hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Link to="/account/dashboard">Refresh Overview</Link>
+              Refresh Overview
             </Button>
 
             {isAdmin ? (
@@ -453,7 +411,7 @@ export default function AccountDashboard() {
         <div className="space-y-6">
           <ContinueCreatingCard />
           <UsageSummaryCard
-            creditsAvailable={remainingCredits}
+            creditsAvailable={creditsRemaining}
             completedCreations={completedCreations}
             inProgress={inProgress}
             savedItems={savedResults}
@@ -466,7 +424,7 @@ export default function AccountDashboard() {
         <NeedHelpCard />
       </section>
 
-      {loading ? (
+      {loading || overviewLoading ? (
         <div className="rounded-[28px] border border-white/10 bg-zinc-950/50 p-4 text-sm text-zinc-400">
           Loading account data...
         </div>

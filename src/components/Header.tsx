@@ -81,12 +81,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
 
         if (!mounted) return;
 
-        if (adminError) {
-          console.error("[Header] is_admin rpc error:", adminError);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(Boolean(adminData));
-        }
+        setIsAdmin(adminError ? false : Boolean(adminData));
 
         if (earningsError) {
           console.error("[Header] affiliate_earnings query error:", earningsError);
@@ -96,19 +91,15 @@ export default function Header({ onBuyCredits }: HeaderProps) {
             (sum, row) => sum + Number(row.amount ?? 0),
             0
           );
-
           setAffiliateEarnings(total);
         }
       } catch (error) {
         console.error("[Header] mobile account data error:", error);
-
         if (!mounted) return;
         setIsAdmin(false);
         setAffiliateEarnings(0);
       } finally {
-        if (mounted) {
-          setEarningsLoading(false);
-        }
+        if (mounted) setEarningsLoading(false);
       }
     }
 
@@ -189,38 +180,29 @@ export default function Header({ onBuyCredits }: HeaderProps) {
       {mobileOpen ? (
         <div className="border-t border-white/10 bg-[rgba(4,8,18,0.96)] shadow-[0_24px_80px_rgba(0,0,0,0.45)] lg:hidden">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
-            <nav className="flex flex-col gap-2">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {({ isActive }) => (
-                    <span
-                      className={cn(
-                        "flex rounded-2xl px-4 py-3 text-sm font-medium transition-all",
-                        isActive
-                          ? "bg-white/10 text-white"
-                          : "text-white/70 hover:bg-white/5 hover:text-white"
-                      )}
-                    >
-                      {item.label}
-                    </span>
-                  )}
-                </NavLink>
-              ))}
-            </nav>
-
-            <div className="h-px bg-white/10" />
-
             {loading ? (
               <div className="h-11 w-full animate-pulse rounded-2xl border border-white/10 bg-white/10" />
             ) : isAuthenticated ? (
               <div className="flex flex-col gap-2">
-                <div className="flex justify-start">
+                <div className="flex justify-start pb-2">
                   <CreditsDisplay onBuyCredits={onBuyCredits} />
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => goTo("/")}
+                  className="flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/8 hover:text-white"
+                >
+                  Home
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => goTo("/templates")}
+                  className="flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/8 hover:text-white"
+                >
+                  Templates
+                </button>
 
                 <button
                   type="button"
@@ -278,8 +260,33 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                 </button>
               </div>
             ) : (
-              <div className="flex justify-start">
-                <SignInButton />
+              <div className="flex flex-col gap-3">
+                <nav className="flex flex-col gap-2">
+                  {navItems.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {({ isActive }) => (
+                        <span
+                          className={cn(
+                            "flex rounded-2xl px-4 py-3 text-sm font-medium transition-all",
+                            isActive
+                              ? "bg-white/10 text-white"
+                              : "text-white/70 hover:bg-white/5 hover:text-white"
+                          )}
+                        >
+                          {item.label}
+                        </span>
+                      )}
+                    </NavLink>
+                  ))}
+                </nav>
+
+                <div className="flex justify-start">
+                  <SignInButton />
+                </div>
               </div>
             )}
           </div>

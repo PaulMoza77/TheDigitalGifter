@@ -1,17 +1,11 @@
+// FILE: src/components/client/AccountTopbar.tsx
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import {
-  LayoutGrid,
-  Wand2,
-  Menu,
-  Shield,
-  Plus,
-  Users,
-} from "lucide-react";
+import { LayoutGrid, Menu, Plus, Shield, Users, Wand2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
 import UserMenu from "@/components/UserMenu";
+import { useAccountOverview } from "@/hooks/useAccountOverview";
 import {
   Sheet,
   SheetContent,
@@ -35,142 +29,11 @@ type TopbarItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-type LedgerBalanceRow = {
-  direction: "in" | "out" | null;
-  credits: number | string | null;
-};
-
-type AffiliateEarningRow = {
-  amount: number | string | null;
-};
-
 export default function AccountTopbar() {
   const navigate = useNavigate();
 
-  const [isAdmin, setIsAdmin] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
-
-  const [credits, setCredits] = React.useState<number>(0);
-  const [creditsLoading, setCreditsLoading] = React.useState(true);
-
-  const [affiliateEarnings, setAffiliateEarnings] = React.useState<number>(0);
-  const [affiliateLoading, setAffiliateLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    let mounted = true;
-
-    async function load() {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (!mounted) return;
-
-        if (userError || !user) {
-          console.error("[AccountTopbar] getUser error:", userError);
-          setIsAdmin(false);
-          setCredits(0);
-          setAffiliateEarnings(0);
-          setLoading(false);
-          setCreditsLoading(false);
-          setAffiliateLoading(false);
-          return;
-        }
-
-        const email = user.email?.trim().toLowerCase() ?? "";
-
-        const [adminResult, creditsResult, earningsResult] = await Promise.all([
-          email
-            ? supabase
-                .from("admin_users")
-                .select("email")
-                .eq("email", email)
-                .maybeSingle()
-            : Promise.resolve({ data: null, error: null }),
-          email
-            ? supabase
-                .from("credits_ledger")
-                .select("direction, credits")
-                .eq("user_convex_id", email)
-                .order("occurred_at", { ascending: false })
-            : Promise.resolve({ data: [], error: null }),
-          supabase
-            .from("affiliate_earnings")
-            .select("amount")
-            .eq("user_id", user.id),
-        ]);
-
-        if (!mounted) return;
-
-        if (adminResult.error) {
-          console.error("[AccountTopbar] admin check error:", adminResult.error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(Boolean(adminResult.data?.email));
-        }
-
-        if (creditsResult.error) {
-          console.error(
-            "[AccountTopbar] credits ledger error:",
-            creditsResult.error
-          );
-          setCredits(0);
-        } else {
-          const balance = ((creditsResult.data ?? []) as LedgerBalanceRow[]).reduce(
-            (sum, row) => {
-              const value = Number(row.credits ?? 0);
-
-              if (!Number.isFinite(value)) return sum;
-              if (row.direction === "in") return sum + value;
-              if (row.direction === "out") return sum - value;
-              return sum;
-            },
-            0
-          );
-
-          setCredits(balance);
-        }
-
-        if (earningsResult.error) {
-          console.error(
-            "[AccountTopbar] affiliate earnings error:",
-            earningsResult.error
-          );
-          setAffiliateEarnings(0);
-        } else {
-          const totalEarnings = ((earningsResult.data ?? []) as AffiliateEarningRow[]).reduce(
-            (sum, row) => sum + Number(row.amount ?? 0),
-            0
-          );
-
-          setAffiliateEarnings(totalEarnings);
-        }
-
-        setLoading(false);
-        setCreditsLoading(false);
-        setAffiliateLoading(false);
-      } catch (error) {
-        console.error("[AccountTopbar] fatal:", error);
-
-        if (!mounted) return;
-
-        setIsAdmin(false);
-        setCredits(0);
-        setAffiliateEarnings(0);
-        setLoading(false);
-        setCreditsLoading(false);
-        setAffiliateLoading(false);
-      }
-    }
-
-    void load();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const { loading, isAdmin, creditsRemaining, affiliateEarnings } =
+    useAccountOverview();
 
   const items: TopbarItem[] = React.useMemo(() => {
     const base: TopbarItem[] = [
@@ -254,7 +117,7 @@ export default function AccountTopbar() {
             <Users size={17} />
             <span className="hidden sm:inline">Affiliate:</span>
             <span className="font-bold text-emerald-300">
-              {affiliateLoading ? "..." : `$${affiliateEarnings.toFixed(2)}`}
+              {loading ? "..." : `$${affiliateEarnings.toFixed(2)}`}
             </span>
           </button>
 
@@ -266,7 +129,7 @@ export default function AccountTopbar() {
             <Plus size={18} />
             <span className="hidden sm:inline">Credits:</span>
             <span className="font-bold text-[#ffd976]">
-              {creditsLoading ? "..." : credits}
+              {loading ? "..." : creditsRemaining}
             </span>
           </button>
 
@@ -313,7 +176,7 @@ export default function AccountTopbar() {
                     <Users size={17} />
                     <span>Affiliate:</span>
                     <span className="font-bold text-emerald-300">
-                      {affiliateLoading ? "..." : `$${affiliateEarnings.toFixed(2)}`}
+                      {loading ? "..." : `$${affiliateEarnings.toFixed(2)}`}
                     </span>
                   </button>
 
@@ -325,7 +188,7 @@ export default function AccountTopbar() {
                     <Plus size={18} />
                     <span>Credits:</span>
                     <span className="font-bold text-[#ffd976]">
-                      {creditsLoading ? "..." : credits}
+                      {loading ? "..." : creditsRemaining}
                     </span>
                   </button>
 
