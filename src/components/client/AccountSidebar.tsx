@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutGrid, Wand2, ChevronRight, Shield } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { ChevronRight, LayoutGrid, Shield, Users, Wand2 } from "lucide-react";
+import { useAccountOverview } from "@/hooks/useAccountOverview";
 
 function navClass(active: boolean) {
   return [
@@ -19,69 +19,7 @@ type SidebarItem = {
 };
 
 export default function AccountSidebar() {
-  const [isAdmin, setIsAdmin] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    let mounted = true;
-
-    async function load() {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (!mounted) return;
-
-        if (userError) {
-          console.error("[AccountSidebar] getUser error:", userError);
-          setIsAdmin(false);
-          setLoading(false);
-          return;
-        }
-
-        const email = user?.email?.trim().toLowerCase() ?? "";
-
-        if (!email) {
-          setIsAdmin(false);
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from("admin_users")
-          .select("email")
-          .eq("email", email)
-          .maybeSingle();
-
-        if (!mounted) return;
-
-        if (error) {
-          console.error("[AccountSidebar] admin check error:", error);
-          setIsAdmin(false);
-          setLoading(false);
-          return;
-        }
-
-        setIsAdmin(Boolean(data?.email));
-        setLoading(false);
-      } catch (e) {
-        console.error("[AccountSidebar] fatal:", e);
-
-        if (!mounted) return;
-
-        setIsAdmin(false);
-        setLoading(false);
-      }
-    }
-
-    void load();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const { loading, isAdmin } = useAccountOverview();
 
   const items: SidebarItem[] = React.useMemo(() => {
     const base: SidebarItem[] = [
@@ -89,6 +27,11 @@ export default function AccountSidebar() {
         label: "Dashboard",
         to: "/account/dashboard",
         icon: LayoutGrid,
+      },
+      {
+        label: "Affiliate",
+        to: "/account/affiliate",
+        icon: Users,
       },
     ];
 
@@ -102,7 +45,7 @@ export default function AccountSidebar() {
 
     base.push({
       label: "Generator",
-      to: "/account/generator",
+      to: "/generator",
       icon: Wand2,
     });
 
@@ -123,8 +66,8 @@ export default function AccountSidebar() {
 
           <p className="mt-1 text-sm leading-6 text-zinc-400">
             {isAdmin
-              ? "Access your dashboard, admin panel and generator from one workspace."
-              : "Manage your creations, credits and generator access."}
+              ? "Access your dashboard, affiliate area, admin panel and generator from one workspace."
+              : "Manage your creations, credits, affiliate area and generator access."}
           </p>
         </div>
 
@@ -138,7 +81,11 @@ export default function AccountSidebar() {
               const Icon = item.icon;
 
               return (
-                <NavLink key={item.to} to={item.to} className={({ isActive }) => navClass(isActive)}>
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) => navClass(isActive)}
+                >
                   {({ isActive }) => (
                     <>
                       <span
@@ -157,7 +104,9 @@ export default function AccountSidebar() {
                       <ChevronRight
                         className={[
                           "h-4 w-4 transition-transform",
-                          isActive ? "translate-x-0 text-white" : "text-zinc-600 group-hover:text-zinc-300",
+                          isActive
+                            ? "translate-x-0 text-white"
+                            : "text-zinc-600 group-hover:text-zinc-300",
                         ].join(" ")}
                       />
                     </>

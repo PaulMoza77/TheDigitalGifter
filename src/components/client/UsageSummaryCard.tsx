@@ -1,4 +1,3 @@
-// FILE: src/components/client/UsageSummaryCard.tsx
 import React from "react";
 import { BarChart3, CheckCircle2, Coins, TimerReset } from "lucide-react";
 
@@ -39,9 +38,12 @@ export default function UsageSummaryCard({
   ];
 
   return (
-    <div className="rounded-[28px] border border-white/10 bg-zinc-950/70 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur">
+    <div className="rounded-[24px] border border-white/10 bg-zinc-950/70 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-[28px] sm:p-5">
       <h3 className="text-lg font-semibold text-white">Usage Summary</h3>
-      <p className="mt-1 text-sm text-zinc-400">Quick overview of your current activity.</p>
+
+      <p className="mt-1 text-sm text-zinc-400">
+        Quick overview of your current activity.
+      </p>
 
       <div className="mt-5 space-y-3">
         {rows.map((row) => {
@@ -53,13 +55,18 @@ export default function UsageSummaryCard({
               className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
                   <Icon className="h-4 w-4 text-white" />
                 </span>
-                <span className="truncate text-sm text-zinc-300">{row.label}</span>
+
+                <span className="min-w-0 truncate text-sm text-zinc-300">
+                  {row.label}
+                </span>
               </div>
 
-              <span className="text-sm font-semibold text-white">{row.value}</span>
+              <span className="shrink-0 text-sm font-semibold text-white">
+                {row.value}
+              </span>
             </div>
           );
         })}
