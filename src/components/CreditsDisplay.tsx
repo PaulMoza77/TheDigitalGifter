@@ -12,6 +12,16 @@ type LedgerBalanceRow = {
   credits: number | string | null;
 };
 
+type AppUserRow = {
+  id: string | number | null;
+  convex_id: string | number | null;
+  email: string | null;
+};
+
+function unique(values: string[]) {
+  return Array.from(new Set(values.map((v) => v.trim()).filter(Boolean)));
+}
+
 export function CreditsDisplay({ onBuyCredits }: Props) {
   const { user, loading: authLoading } = useAuth();
   const [credits, setCredits] = React.useState<number>(0);
@@ -23,9 +33,12 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
     async function loadCredits() {
       if (authLoading) return;
 
-      const email = user?.email?.trim().toLowerCase() ?? "";
+      setLoading(true);
 
-      if (!email) {
+      const email = user?.email?.trim().toLowerCase() ?? "";
+      const authUserId = user?.id ? String(user.id) : "";
+
+      if (!email && !authUserId) {
         if (!cancelled) {
           setCredits(0);
           setLoading(false);
@@ -34,11 +47,45 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
       }
 
       try {
+        const keys: string[] = [];
+
+        if (email) keys.push(email);
+        if (authUserId) keys.push(authUserId);
+
+        if (email) {
+          const { data: appUser, error: appUserError } = await supabase
+            .from("app_users")
+            .select("id, convex_id, email")
+            .ilike("email", email)
+            .maybeSingle<AppUserRow>();
+
+          if (appUserError) {
+            console.error("[CreditsDisplay] app_users error:", appUserError);
+          }
+
+          if (appUser?.id !== null && appUser?.id !== undefined) {
+            keys.push(String(appUser.id));
+          }
+
+          if (appUser?.convex_id !== null && appUser?.convex_id !== undefined) {
+            keys.push(String(appUser.convex_id));
+          }
+        }
+
+        const userKeys = unique(keys);
+
+        if (userKeys.length === 0) {
+          if (!cancelled) {
+            setCredits(0);
+            setLoading(false);
+          }
+          return;
+        }
+
         const { data, error } = await supabase
           .from("credits_ledger")
           .select("direction, credits")
-          .eq("user_convex_id", email)
-          .order("occurred_at", { ascending: false });
+          .in("user_convex_id", userKeys);
 
         if (cancelled) return;
 
@@ -74,10 +121,26 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
 
     void loadCredits();
 
+    const channel = supabase
+      .channel(`credits-display-${user?.id ?? user?.email ?? "guest"}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "credits_ledger",
+        },
+        () => {
+          void loadCredits();
+        }
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      void supabase.removeChannel(channel);
     };
-  }, [user?.email, authLoading]);
+  }, [user?.id, user?.email, authLoading]);
 
   if (authLoading) {
     return (
@@ -97,9 +160,7 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
     >
       <Plus size={18} />
       <span className="hidden sm:inline">Credits:</span>
-      <span className="font-bold text-[#ffd976]">
-        {loading ? "0" : credits}
-      </span>
+      <span className="font-bold text-[#ffd976]">{loading ? "0" : credits}</span>
     </button>
   );
 }
