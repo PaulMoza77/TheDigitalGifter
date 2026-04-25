@@ -1,3 +1,4 @@
+// FILE: src/pages/admin/AdminDashboard.tsx
 import React from "react";
 import { CalendarDays, RefreshCcw } from "lucide-react";
 
@@ -28,8 +29,10 @@ function getDefaultTo() {
 }
 
 export default function AdminDashboard() {
-  const [from, setFrom] = React.useState(getDefaultFrom());
-  const [to, setTo] = React.useState(getDefaultTo());
+  const [from, setFrom] = React.useState(getDefaultFrom);
+  const [to, setTo] = React.useState(getDefaultTo);
+
+  const range = React.useMemo(() => ({ from, to }), [from, to]);
 
   const {
     loading,
@@ -43,7 +46,7 @@ export default function AdminDashboard() {
     topTemplates,
     customerBehaviour,
     refresh,
-  } = useAdminOverview({ from, to });
+  } = useAdminOverview(range);
 
   return (
     <div className="min-h-screen overflow-y-auto bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
@@ -104,48 +107,13 @@ export default function AdminDashboard() {
         ) : null}
 
         <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label="Total generated"
-            value={loading ? "..." : formatNumber(totals.totalGenerated)}
-            helper="Generated results"
-          />
-
-          <StatCard
-            label="Customers"
-            value={loading ? "..." : formatNumber(totals.customers)}
-            helper="Total customer records"
-          />
-
-          <StatCard
-            label="Orders"
-            value={loading ? "..." : formatNumber(totals.orders)}
-            helper={loading ? "..." : formatMoney(totals.totalRevenue)}
-          />
-
-          <StatCard
-            label="Generations"
-            value={loading ? "..." : formatNumber(totals.generations)}
-            helper="All generations"
-          />
-
-          <StatCard
-            label="Credits in circulation"
-            value={loading ? "..." : formatNumber(totals.creditsInCirculation)}
-            helper="Available customer credits"
-          />
-
-          <StatCard
-            label="Credits used"
-            value={loading ? "..." : formatNumber(totals.creditsUsed)}
-            helper="Spent credits"
-          />
-
-          <StatCard
-            label="Revenue"
-            value={loading ? "..." : formatMoney(totals.totalRevenue)}
-            helper="Selected period"
-          />
-
+          <StatCard label="Total generated" value={loading ? "..." : formatNumber(totals.totalGenerated)} helper="Generated results" />
+          <StatCard label="Customers" value={loading ? "..." : formatNumber(totals.customers)} helper="Total customer records" />
+          <StatCard label="Orders" value={loading ? "..." : formatNumber(totals.orders)} helper={loading ? "..." : formatMoney(totals.totalRevenue)} />
+          <StatCard label="Generations" value={loading ? "..." : formatNumber(totals.generations)} helper="All generations" />
+          <StatCard label="Credits in circulation" value={loading ? "..." : formatNumber(totals.creditsInCirculation)} helper="Available customer credits" />
+          <StatCard label="Credits used" value={loading ? "..." : formatNumber(totals.creditsUsed)} helper="Spent credits" />
+          <StatCard label="Revenue" value={loading ? "..." : formatMoney(totals.totalRevenue)} helper="Selected period" />
           <StatCard
             label="Average order value"
             value={
@@ -160,79 +128,37 @@ export default function AdminDashboard() {
         </section>
 
         <div className="mb-6 grid gap-5 xl:grid-cols-2">
-          <SectionCard
-            title="Subscriptions"
-            subtitle="Starter, Pro and Elite subscription revenue."
-          >
+          <SectionCard title="Subscriptions" subtitle="Starter, Pro and Elite subscription revenue.">
             <div className="grid gap-3 sm:grid-cols-3">
               {subscriptions.map((item) => (
-                <MoneyMiniCard
-                  key={item.label}
-                  label={item.label}
-                  count={item.value}
-                  revenue={item.revenue}
-                />
+                <MoneyMiniCard key={item.label} label={item.label} count={item.value} revenue={item.revenue} />
               ))}
             </div>
           </SectionCard>
 
-          <SectionCard
-            title="Bundle offers"
-            subtitle="One-time bundle purchases."
-          >
+          <SectionCard title="Bundle offers" subtitle="One-time bundle purchases.">
             <div className="grid gap-3 sm:grid-cols-2">
               {bundleOffers.map((item) => (
-                <MoneyMiniCard
-                  key={item.label}
-                  label={item.label}
-                  count={item.value}
-                  revenue={item.revenue}
-                />
+                <MoneyMiniCard key={item.label} label={item.label} count={item.value} revenue={item.revenue} />
               ))}
             </div>
           </SectionCard>
 
-          <SectionCard
-            title="Credits bought separately"
-            subtitle="Revenue from direct credit purchases."
-          >
+          <SectionCard title="Credits bought separately" subtitle="Revenue from direct credit purchases.">
             <div className="grid gap-3 sm:grid-cols-2">
               {creditsBought.map((item) => (
-                <MoneyMiniCard
-                  key={item.label}
-                  label={item.label}
-                  count={item.value}
-                  revenue={item.revenue}
-                />
+                <MoneyMiniCard key={item.label} label={item.label} count={item.value} revenue={item.revenue} />
               ))}
             </div>
           </SectionCard>
 
-          <ListCard
-            title="Customer behaviour"
-            subtitle="New, returning and credits usage."
-            items={customerBehaviour}
-          />
+          <ListCard title="Customer behaviour" subtitle="New, returning and credits usage." items={customerBehaviour} />
         </div>
 
         <div className="grid gap-5 xl:grid-cols-3">
-          <ListCard
-            title="Top regions by revenue"
-            subtitle="Requires country/region tracking for real segmentation."
-            items={topRegions}
-          />
-
-          <ListCard
-            title="Top performing categories"
-            subtitle="Calculated from generation occasion_slug."
-            items={topCategories}
-          />
-
-          <ListCard
-            title="Most purchased templates"
-            subtitle="Calculated from generation title/template title."
-            items={topTemplates}
-          />
+          <ListCard title="Top regions by revenue" subtitle="Requires country/region tracking for real segmentation." items={topRegions} />
+          <ListCard title="Top performing categories" subtitle="Calculated from generation occasion_slug." items={topCategories} />
+          <ListCard title="Most purchased templates" subtitle="Calculated from generation title/template title." items={topTemplates} />
         </div>
       </div>
     </div>

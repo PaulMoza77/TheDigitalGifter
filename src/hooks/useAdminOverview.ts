@@ -1,3 +1,4 @@
+// FILE: src/hooks/useAdminOverview.ts
 import * as React from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -46,7 +47,6 @@ type OrderRow = {
   pack: string | null;
   status: string | null;
   created_at: string | null;
-  inserted_at: string | null;
   currency: string | null;
   amount_total_cents: number | string | null;
   product_type: string | null;
@@ -59,13 +59,7 @@ type OrderRow = {
 type CustomerRow = {
   id: string;
   email: string | null;
-  full_name: string | null;
-  source: string | null;
-  source_funnel: string | null;
   created_at: string | null;
-  first_seen_at: string | null;
-  last_seen_at: string | null;
-  last_activity: string | null;
   user_id: string | null;
 };
 
@@ -73,14 +67,12 @@ type GenerationRow = {
   id: string;
   user_id: string | null;
   email: string | null;
-  order_id: string | null;
   status: string | null;
   title: string | null;
   occasion_slug: string | null;
   style_slug: string | null;
   is_saved: boolean | null;
   created_at: string | null;
-  completed_at: string | null;
 };
 
 type CreditLedgerRow = {
@@ -94,7 +86,16 @@ type CreditLedgerRow = {
   amount: number | string | null;
   currency: string | null;
   occurred_at: string | null;
-  created_at: string | null;
+};
+
+const emptyTotals = {
+  totalGenerated: 0,
+  customers: 0,
+  orders: 0,
+  generations: 0,
+  creditsInCirculation: 0,
+  creditsUsed: 0,
+  totalRevenue: 0,
 };
 
 function toNumber(value: unknown) {
@@ -102,82 +103,77 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function normalizeText(value: unknown) {
+function clean(value: unknown) {
   return String(value || "").trim();
 }
 
-function formatPercent(value: number) {
-  return `${value.toFixed(1)}%`;
+function normalizeStatus(value: unknown) {
+  return clean(value).toLowerCase();
 }
 
-function orderAmount(row: OrderRow) {
-  const cents = toNumber(row.amount_total_cents);
-  if (cents > 0) return cents / 100;
-
-  return toNumber(row.amount);
-}
-
-function isCompletedOrder(row: OrderRow) {
-  const status = normalizeText(row.status).toLowerCase();
+function isCompletedOrder(order: OrderRow) {
+  const status = normalizeStatus(order.status);
   return status === "completed" || status === "paid" || status === "succeeded";
 }
 
-function getRangeIso(range: AdminDateRange) {
+function orderAmount(order: OrderRow) {
+  const cents = toNumber(order.amount_total_cents);
+  if (cents > 0) return cents / 100;
+  return toNumber(order.amount);
+}
+
+function rangeToIso(from: string, to: string) {
   return {
-    fromIso: `${range.from}T00:00:00.000Z`,
-    toIso: `${range.to}T23:59:59.999Z`,
+    fromIso: `${from}T00:00:00.000Z`,
+    toIso: `${to}T23:59:59.999Z`,
   };
 }
 
-async function fetchRows<T>(
-  table: string,
-  columns: string,
-  dateColumn: string,
-  range: AdminDateRange
-): Promise<T[]> {
-  const { fromIso, toIso } = getRangeIso(range);
-
-  const ranged = await supabase
-    .from(table)
-    .select(columns)
-    .gte(dateColumn, fromIso)
-    .lte(dateColumn, toIso);
-
-  if (!ranged.error) return (ranged.data ?? []) as T[];
-
-  console.error(`[useAdminOverview] ${table} ranged error:`, ranged.error);
-
-  const fallback = await supabase.from(table).select(columns);
-
-  if (fallback.error) {
-    console.error(`[useAdminOverview] ${table} fallback error:`, fallback.error);
-    return [];
-  }
-
-  return (fallback.data ?? []) as T[];
-}
-
-async function countRows(table: string) {
+async function fetchCount(table: string) {
   const { count, error } = await supabase
     .from(table)
     .select("*", { count: "exact", head: true });
 
   if (error) {
-    console.error(`[useAdminOverview] count ${table} error:`, error);
+    console.error(`[useAdminOverview] count ${table}:`, error);
     return 0;
   }
 
   return count ?? 0;
 }
 
+async function fetchRows<T>(
+  table: string,
+  columns: string,
+  dateColumn: string,
+  from: string,
+  to: string
+): Promise<T[]> {
+  const { fromIso, toIso } = rangeToIso(from, to);
+
+  const { data, error } = await supabase
+    .from(table)
+    .select(columns)
+    .gte(dateColumn, fromIso)
+    .lte(dateColumn, toIso);
+
+  if (error) {
+    console.error(`[useAdminOverview] ${table} ranged error:`, error);
+    return [];
+  }
+
+  return (data ?? []) as T[];
+}
+
 function groupOrdersByPack(orders: OrderRow[], labels: string[]) {
   return labels.map((label) => {
-    const rows = orders.filter((order) => {
-      const pack = normalizeText(order.pack).toLowerCase();
-      const productType = normalizeText(order.product_type).toLowerCase();
-      const normalizedLabel = label.toLowerCase();
+    const target = label.toLowerCase();
 
-      return pack === normalizedLabel || productType === normalizedLabel;
+    const rows = orders.filter((order) => {
+      const pack = clean(order.pack).toLowerCase();
+      const productType = clean(order.product_type).toLowerCase();
+
+      return pack === target || productType === target;
     });
 
     return {
@@ -209,91 +205,52 @@ function groupByCount<T>(
     }));
 }
 
-function buildTopCategories(generations: GenerationRow[], orders: OrderRow[]) {
-  const fromGenerations = groupByCount(
-    generations,
-    (row) => normalizeText(row.occasion_slug) || "Unknown",
-    5
-  );
-
-  if (fromGenerations.length > 0) return fromGenerations;
-
-  return groupByCount(
-    orders,
-    (row) => normalizeText(row.pack) || normalizeText(row.product_type) || "Unknown",
-    5
-  );
-}
-
-function buildTopTemplates(generations: GenerationRow[], ledger: CreditLedgerRow[]) {
-  const generationTemplates = groupByCount(
-    generations,
-    (row) => normalizeText(row.title) || "Unknown",
-    5
-  );
-
-  if (generationTemplates.length > 0) return generationTemplates;
-
-  return groupByCount(
-    ledger,
-    (row) => normalizeText(row.template_title) || "Unknown",
-    5
-  );
-}
-
 function buildTopRegions(orders: OrderRow[]) {
-  const completed = orders.filter(isCompletedOrder);
-  const revenue = completed.reduce((sum, row) => sum + orderAmount(row), 0);
+  const revenue = orders.reduce((sum, order) => sum + orderAmount(order), 0);
 
   return [
     {
       label: "Unknown",
       value: `€${revenue.toFixed(2)}`,
-      helper: "No country/region column found in orders/customers.",
+      helper: "No country/region column exists yet in orders/customers.",
     },
   ];
 }
 
-function buildCustomerBehaviour(customers: CustomerRow[], orders: OrderRow[], ledger: CreditLedgerRow[]) {
-  const completedOrders = orders.filter(isCompletedOrder);
-  const knownCustomers = new Set(
-    completedOrders
-      .map((order) => order.user_convex_id || order.user_id || order.email)
-      .filter(Boolean)
-  );
+function buildCustomerBehaviour(
+  customers: CustomerRow[],
+  orders: OrderRow[],
+  ledger: CreditLedgerRow[]
+) {
+  const customerOrderCount = new Map<string, number>();
 
-  const returningCustomers = new Set<string>();
-
-  completedOrders.forEach((order) => {
+  orders.forEach((order) => {
     const key = order.user_convex_id || order.user_id || order.email || "";
     if (!key) return;
-
-    const count = completedOrders.filter(
-      (item) => (item.user_convex_id || item.user_id || item.email || "") === key
-    ).length;
-
-    if (count >= 2) returningCustomers.add(key);
+    customerOrderCount.set(key, (customerOrderCount.get(key) ?? 0) + 1);
   });
 
-  const newCustomers = Math.max(0, knownCustomers.size - returningCustomers.size);
-
-  const avgCreditsUsed =
-    completedOrders.length > 0
-      ? ledger
-          .filter((row) => normalizeText(row.direction).toLowerCase() === "out")
-          .reduce((sum, row) => sum + toNumber(row.credits), 0) / completedOrders.length
-      : 0;
-
-  const returningPercent =
-    knownCustomers.size > 0 ? (returningCustomers.size / knownCustomers.size) * 100 : 0;
+  const totalKnownCustomers = customerOrderCount.size;
+  const returningCustomers = Array.from(customerOrderCount.values()).filter(
+    (count) => count >= 2
+  ).length;
+  const newCustomers = Math.max(0, totalKnownCustomers - returningCustomers);
 
   const newPercent =
-    knownCustomers.size > 0 ? (newCustomers / knownCustomers.size) * 100 : 0;
+    totalKnownCustomers > 0 ? (newCustomers / totalKnownCustomers) * 100 : 0;
+  const returningPercent =
+    totalKnownCustomers > 0 ? (returningCustomers / totalKnownCustomers) * 100 : 0;
+
+  const creditsUsed = ledger
+    .filter((row) => clean(row.direction).toLowerCase() === "out")
+    .reduce((sum, row) => sum + toNumber(row.credits), 0);
+
+  const avgCreditsUsed = orders.length > 0 ? creditsUsed / orders.length : 0;
 
   return [
     {
       label: "New vs returning customers",
-      value: `${formatPercent(newPercent)} new · ${formatPercent(returningPercent)} returning`,
+      value: `${newPercent.toFixed(1)}% new · ${returningPercent.toFixed(1)}% returning`,
     },
     {
       label: "Total customer records",
@@ -305,7 +262,7 @@ function buildCustomerBehaviour(customers: CustomerRow[], orders: OrderRow[], le
     },
     {
       label: "Customers with 2+ orders",
-      value: String(returningCustomers.size),
+      value: String(returningCustomers),
     },
   ];
 }
@@ -314,16 +271,7 @@ export function useAdminOverview(range: AdminDateRange): AdminOverviewData {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
 
-  const [totals, setTotals] = React.useState<AdminOverviewData["totals"]>({
-    totalGenerated: 0,
-    customers: 0,
-    orders: 0,
-    generations: 0,
-    creditsInCirculation: 0,
-    creditsUsed: 0,
-    totalRevenue: 0,
-  });
-
+  const [totals, setTotals] = React.useState(emptyTotals);
   const [subscriptions, setSubscriptions] = React.useState<AdminValueCard[]>([]);
   const [bundleOffers, setBundleOffers] = React.useState<AdminValueCard[]>([]);
   const [creditsBought, setCreditsBought] = React.useState<AdminValueCard[]>([]);
@@ -332,62 +280,66 @@ export function useAdminOverview(range: AdminDateRange): AdminOverviewData {
   const [topTemplates, setTopTemplates] = React.useState<AdminListItem[]>([]);
   const [customerBehaviour, setCustomerBehaviour] = React.useState<AdminListItem[]>([]);
 
+  const from = range.from;
+  const to = range.to;
+
   const refresh = React.useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [customersCount, ordersCount, generationsCount] = await Promise.all([
-        countRows("customers"),
-        countRows("orders"),
-        countRows("generations"),
+      const [customersTotal, ordersTotal, generationsTotal] = await Promise.all([
+        fetchCount("customers"),
+        fetchCount("orders"),
+        fetchCount("generations"),
       ]);
 
-      const [orders, customers, generations, ledger] = await Promise.all([
+      const [ordersRaw, customers, generations, ledger] = await Promise.all([
         fetchRows<OrderRow>(
           "orders",
-          "id, convex_id, user_convex_id, amount, pack, status, stripe_session_id, created_at, inserted_at, email, currency, amount_total_cents, product_type, credits_granted, user_id",
+          "id, user_convex_id, amount, pack, status, created_at, email, currency, amount_total_cents, product_type, credits_granted, user_id",
           "created_at",
-          range
+          from,
+          to
         ),
         fetchRows<CustomerRow>(
           "customers",
-          "id, email, full_name, source, source_funnel, first_seen_at, last_seen_at, lead_count, created_at, updated_at, user_id, last_activity, name",
+          "id, email, created_at, user_id",
           "created_at",
-          range
+          from,
+          to
         ),
         fetchRows<GenerationRow>(
           "generations",
-          "id, user_id, email, order_id, status, title, occasion_slug, style_slug, is_saved, created_at, completed_at",
+          "id, user_id, email, status, title, occasion_slug, style_slug, is_saved, created_at",
           "created_at",
-          range
+          from,
+          to
         ),
         fetchRows<CreditLedgerRow>(
           "credits_ledger",
-          "id, user_convex_id, event_type, direction, credits, template_title, category, amount, currency, occurred_at, created_at",
+          "id, user_convex_id, event_type, direction, credits, template_title, category, amount, currency, occurred_at",
           "occurred_at",
-          range
+          from,
+          to
         ),
       ]);
 
-      const completedOrders = orders.filter(isCompletedOrder);
-
-      const totalRevenue = completedOrders.reduce(
-        (sum, order) => sum + orderAmount(order),
-        0
-      );
+      const orders = ordersRaw.filter(isCompletedOrder);
 
       const creditsIn = ledger
-        .filter((row) => normalizeText(row.direction).toLowerCase() === "in")
+        .filter((row) => clean(row.direction).toLowerCase() === "in")
         .reduce((sum, row) => sum + toNumber(row.credits), 0);
 
       const creditsOut = ledger
-        .filter((row) => normalizeText(row.direction).toLowerCase() === "out")
+        .filter((row) => clean(row.direction).toLowerCase() === "out")
         .reduce((sum, row) => sum + toNumber(row.credits), 0);
 
-      const subscriptionOrders = completedOrders.filter((order) => {
-        const productType = normalizeText(order.product_type).toLowerCase();
-        const pack = normalizeText(order.pack).toLowerCase();
+      const totalRevenue = orders.reduce((sum, order) => sum + orderAmount(order), 0);
+
+      const subscriptionOrders = orders.filter((order) => {
+        const pack = clean(order.pack).toLowerCase();
+        const productType = clean(order.product_type).toLowerCase();
 
         return (
           productType.includes("subscription") ||
@@ -395,9 +347,9 @@ export function useAdminOverview(range: AdminDateRange): AdminOverviewData {
         );
       });
 
-      const bundleOrders = completedOrders.filter((order) => {
-        const productType = normalizeText(order.product_type).toLowerCase();
-        const pack = normalizeText(order.pack).toLowerCase();
+      const bundleOrders = orders.filter((order) => {
+        const pack = clean(order.pack).toLowerCase();
+        const productType = clean(order.product_type).toLowerCase();
 
         return (
           productType.includes("bundle") ||
@@ -405,18 +357,16 @@ export function useAdminOverview(range: AdminDateRange): AdminOverviewData {
         );
       });
 
-      const creditOrders = completedOrders.filter((order) => {
-        const productType = normalizeText(order.product_type).toLowerCase();
-        const creditsGranted = toNumber(order.credits_granted);
-
-        return productType.includes("credit") || creditsGranted > 0;
+      const creditOrders = orders.filter((order) => {
+        const productType = clean(order.product_type).toLowerCase();
+        return productType.includes("credit") || toNumber(order.credits_granted) > 0;
       });
 
       setTotals({
-        totalGenerated: generations.length || generationsCount,
-        customers: customersCount,
-        orders: completedOrders.length || ordersCount,
-        generations: generations.length || generationsCount,
+        totalGenerated: generations.length || generationsTotal,
+        customers: customersTotal,
+        orders: orders.length || ordersTotal,
+        generations: generations.length || generationsTotal,
         creditsInCirculation: Math.max(0, creditsIn - creditsOut),
         creditsUsed: creditsOut,
         totalRevenue,
@@ -426,17 +376,21 @@ export function useAdminOverview(range: AdminDateRange): AdminOverviewData {
       setBundleOffers(groupOrdersByPack(bundleOrders, ["Starter", "Creator", "Pro", "Enterprise"]));
       setCreditsBought(groupOrdersByPack(creditOrders, ["Starter", "Creator", "Pro", "Enterprise"]));
 
-      setTopRegions(buildTopRegions(completedOrders));
-      setTopCategories(buildTopCategories(generations, completedOrders));
-      setTopTemplates(buildTopTemplates(generations, ledger));
-      setCustomerBehaviour(buildCustomerBehaviour(customers, completedOrders, ledger));
+      setTopRegions(buildTopRegions(orders));
+      setTopCategories(
+        groupByCount(generations, (row) => clean(row.occasion_slug) || "Unknown", 5)
+      );
+      setTopTemplates(
+        groupByCount(generations, (row) => clean(row.title) || "Unknown", 5)
+      );
+      setCustomerBehaviour(buildCustomerBehaviour(customers, orders, ledger));
     } catch (err) {
       console.error("[useAdminOverview] fatal:", err);
       setError(err instanceof Error ? err.message : "Failed to load admin overview.");
     } finally {
       setLoading(false);
     }
-  }, [range]);
+  }, [from, to]);
 
   React.useEffect(() => {
     void refresh();
