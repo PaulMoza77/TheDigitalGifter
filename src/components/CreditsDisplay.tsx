@@ -18,10 +18,6 @@ type AppUserRow = {
   email: string | null;
 };
 
-function unique(values: string[]) {
-  return Array.from(new Set(values.map((v) => v.trim()).filter(Boolean)));
-}
-
 export function CreditsDisplay({ onBuyCredits }: Props) {
   const { user, loading: authLoading } = useAuth();
   const [credits, setCredits] = React.useState<number>(0);
@@ -29,6 +25,7 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
 
   React.useEffect(() => {
     let cancelled = false;
+    let creditKey = "";
 
     async function loadCredits() {
       if (authLoading) return;
@@ -36,9 +33,8 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
       setLoading(true);
 
       const email = user?.email?.trim().toLowerCase() ?? "";
-      const authUserId = user?.id ? String(user.id) : "";
 
-      if (!email && !authUserId) {
+      if (!email) {
         if (!cancelled) {
           setCredits(0);
           setLoading(false);
@@ -47,45 +43,27 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
       }
 
       try {
-        const keys: string[] = [];
+        const { data: appUser, error: appUserError } = await supabase
+          .from("app_users")
+          .select("id, convex_id, email")
+          .ilike("email", email)
+          .maybeSingle<AppUserRow>();
 
-        if (email) keys.push(email);
-        if (authUserId) keys.push(authUserId);
-
-        if (email) {
-          const { data: appUser, error: appUserError } = await supabase
-            .from("app_users")
-            .select("id, convex_id, email")
-            .ilike("email", email)
-            .maybeSingle<AppUserRow>();
-
-          if (appUserError) {
-            console.error("[CreditsDisplay] app_users error:", appUserError);
-          }
-
-          if (appUser?.id !== null && appUser?.id !== undefined) {
-            keys.push(String(appUser.id));
-          }
-
-          if (appUser?.convex_id !== null && appUser?.convex_id !== undefined) {
-            keys.push(String(appUser.convex_id));
-          }
+        if (appUserError) {
+          console.error("[CreditsDisplay] app_users error:", appUserError);
         }
 
-        const userKeys = unique(keys);
-
-        if (userKeys.length === 0) {
-          if (!cancelled) {
-            setCredits(0);
-            setLoading(false);
-          }
-          return;
-        }
+        creditKey =
+          appUser?.convex_id !== null && appUser?.convex_id !== undefined
+            ? String(appUser.convex_id)
+            : appUser?.id !== null && appUser?.id !== undefined
+            ? String(appUser.id)
+            : email;
 
         const { data, error } = await supabase
           .from("credits_ledger")
           .select("direction, credits")
-          .in("user_convex_id", userKeys);
+          .eq("user_convex_id", creditKey);
 
         if (cancelled) return;
 
@@ -93,17 +71,14 @@ export function CreditsDisplay({ onBuyCredits }: Props) {
           console.error("[CreditsDisplay] credits ledger error:", error);
           setCredits(0);
         } else {
-          const balance = ((data ?? []) as LedgerBalanceRow[]).reduce(
-            (sum, row) => {
-              const value = Number(row.credits ?? 0);
+          const balance = ((data ?? []) as LedgerBalanceRow[]).reduce((sum, row) => {
+            const value = Number(row.credits ?? 0);
 
-              if (!Number.isFinite(value)) return sum;
-              if (row.direction === "in") return sum + value;
-              if (row.direction === "out") return sum - value;
-              return sum;
-            },
-            0
-          );
+            if (!Number.isFinite(value)) return sum;
+            if (row.direction === "in") return sum + value;
+            if (row.direction === "out") return sum - value;
+            return sum;
+          }, 0);
 
           setCredits(balance);
         }
