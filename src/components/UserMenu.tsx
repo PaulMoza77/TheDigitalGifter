@@ -1,28 +1,19 @@
+// FILE: src/components/UserMenu.tsx
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  LayoutGrid,
-  LogOut,
-  Shield,
-  Wand2,
-  Users,
-} from "lucide-react";
+import { LayoutGrid, LogOut, Shield, Users, Wand2, X } from "lucide-react";
+
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-
-type AffiliateEarningRow = {
-  amount: number | string | null;
-};
+import { useAccountOverview } from "@/hooks/useAccountOverview";
 
 export default function UserMenu() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [open, setOpen] = React.useState(false);
-  const [isAdmin, setIsAdmin] = React.useState(false);
-  const [affiliateEarnings, setAffiliateEarnings] = React.useState(0);
-  const [earningsLoading, setEarningsLoading] = React.useState(true);
+  const { loading, isAdmin, affiliateEarnings } = useAccountOverview();
 
+  const [open, setOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -47,65 +38,20 @@ export default function UserMenu() {
   }, []);
 
   React.useEffect(() => {
-    let mounted = true;
+    if (!open) return;
 
-    async function loadMenuData() {
-      try {
-        if (!user?.id) {
-          if (!mounted) return;
-          setIsAdmin(false);
-          setAffiliateEarnings(0);
-          setEarningsLoading(false);
-          return;
-        }
-
-        const [{ data: adminData, error: adminError }, { data: earningsRows, error: earningsError }] =
-          await Promise.all([
-            supabase.rpc("is_admin"),
-            supabase
-              .from("affiliate_earnings")
-              .select("amount")
-              .eq("user_id", user.id),
-          ]);
-
-        if (!mounted) return;
-
-        if (adminError) {
-          console.error("is_admin rpc error:", adminError);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(Boolean(adminData));
-        }
-
-        if (earningsError) {
-          console.error("affiliate_earnings query error:", earningsError);
-          setAffiliateEarnings(0);
-        } else {
-          const total = ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
-            (sum, row) => sum + Number(row.amount ?? 0),
-            0
-          );
-
-          setAffiliateEarnings(total);
-        }
-      } catch (error) {
-        console.error("UserMenu load error:", error);
-        if (!mounted) return;
-        setIsAdmin(false);
-        setAffiliateEarnings(0);
-      } finally {
-        if (mounted) {
-          setEarningsLoading(false);
-        }
+    function handleResize() {
+      if (window.innerWidth < 1024) {
+        setOpen(false);
       }
     }
 
-    void loadMenuData();
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      mounted = false;
+      window.removeEventListener("resize", handleResize);
     };
-  }, [user?.id]);
+  }, [open]);
 
   async function handleLogout() {
     setOpen(false);
@@ -113,29 +59,70 @@ export default function UserMenu() {
     navigate("/", { replace: true });
   }
 
+  function goTo(path: string) {
+    setOpen(false);
+    navigate(path);
+  }
+
   const avatar =
     (user?.user_metadata?.avatar_url as string | undefined) ||
     (user?.user_metadata?.picture as string | undefined) ||
     "";
 
-  const initials =
-    ((user?.user_metadata?.full_name as string | undefined) ||
-      (user?.user_metadata?.name as string | undefined) ||
-      user?.email ||
-      "U")
-      .trim()
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
+  const displayName =
+    (user?.user_metadata?.full_name as string | undefined) ||
+    (user?.user_metadata?.name as string | undefined) ||
+    user?.email ||
+    "Your account";
+
+  const email = user?.email ?? "";
+
+  const initials = displayName
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const navItems = [
+    {
+      label: "Dashboard",
+      icon: LayoutGrid,
+      action: () => goTo("/account/dashboard"),
+      badge: null,
+    },
+    {
+      label: "Affiliate",
+      icon: Users,
+      action: () => goTo("/account/affiliate"),
+      badge: loading ? "..." : `$${affiliateEarnings.toFixed(2)}`,
+    },
+    {
+      label: "Generator",
+      icon: Wand2,
+      action: () => goTo("/generator"),
+      badge: null,
+    },
+    ...(isAdmin
+      ? [
+          {
+            label: "Admin Panel",
+            icon: Shield,
+            action: () => goTo("/admin"),
+            badge: null,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="relative" ref={menuRef}>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5 transition hover:bg-white/10"
+        className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
         aria-label="Open user menu"
         aria-expanded={open}
       >
@@ -146,78 +133,88 @@ export default function UserMenu() {
             className="h-full w-full object-cover"
           />
         ) : (
-          <span className="text-sm font-semibold text-white">{initials}</span>
+          <span className="text-sm font-semibold text-white">{initials || "U"}</span>
         )}
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 overflow-hidden rounded-2xl border border-white/10 bg-[#11131c]/95 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              navigate("/account/dashboard");
-            }}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-white transition hover:bg-white/8"
-          >
-            <LayoutGrid className="h-4 w-4" />
-            Dashboard
-          </button>
+        <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[320px] overflow-hidden rounded-[28px] border border-white/10 bg-zinc-950/95 shadow-[0_24px_80px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5">
+                {avatar ? (
+                  <img
+                    src={avatar}
+                    alt="User avatar"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm font-semibold text-white">
+                    {initials || "U"}
+                  </span>
+                )}
+              </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              navigate("/account/affiliate");
-            }}
-            className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm text-white transition hover:bg-white/8"
-          >
-            <span className="flex items-center gap-3">
-              <Users className="h-4 w-4" />
-              Affiliate
-            </span>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-white">
+                  {displayName}
+                </div>
+                {email ? (
+                  <div className="truncate text-xs text-zinc-500">{email}</div>
+                ) : null}
+              </div>
+            </div>
 
-            <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[11px] font-semibold text-emerald-300">
-              {earningsLoading ? "..." : `$${affiliateEarnings.toFixed(2)}`}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              navigate("/generator");
-            }}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-white transition hover:bg-white/8"
-          >
-            <Wand2 className="h-4 w-4" />
-            Generator
-          </button>
-
-          {isAdmin ? (
             <button
               type="button"
-              onClick={() => {
-                setOpen(false);
-                navigate("/admin");
-              }}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-white transition hover:bg-white/8"
+              onClick={() => setOpen(false)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white/10"
+              aria-label="Close user menu"
             >
-              <Shield className="h-4 w-4" />
-              Admin Panel
+              <X className="h-4 w-4" />
             </button>
-          ) : null}
+          </div>
 
-          <div className="my-2 h-px bg-white/10" />
+          <div className="p-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-[#ffcece] transition hover:bg-[#ffffff0a]"
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </button>
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={item.action}
+                  className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm text-white transition hover:bg-white/[0.08]"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="truncate">{item.label}</span>
+                  </span>
+
+                  {item.badge ? (
+                    <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+
+            <div className="my-2 h-px bg-white/10" />
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm text-red-200 transition hover:bg-red-500/10"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-300/10 bg-red-500/10">
+                <LogOut className="h-4 w-4" />
+              </span>
+              Logout
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
