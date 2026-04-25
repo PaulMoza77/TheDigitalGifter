@@ -88,21 +88,26 @@ function safeTagsToString(tags: string[] | null | undefined) {
 function parseTags(input: string) {
   return String(input || "")
     .split(",")
-    .map((t) => t.trim())
+    .map((tag) => tag.trim())
     .filter(Boolean);
 }
 
 function safeExt(name: string) {
   const parts = String(name || "").split(".");
   const ext = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
-
-  if (ext && ext.length <= 6) return ext;
-
-  return "bin";
+  return ext && ext.length <= 6 ? ext : "bin";
 }
 
 function rand6() {
   return Math.random().toString(16).slice(2, 8);
+}
+
+function getOccasionLabel(value: string | null) {
+  return OCCASIONS.find((item) => item.value === value)?.label || value || "";
+}
+
+function getEffectiveCategory(category: string, occasion: string | null) {
+  return category.trim() || getOccasionLabel(occasion).trim();
 }
 
 async function uploadToSupabaseStorage(file: File, folder: string) {
@@ -119,10 +124,6 @@ async function uploadToSupabaseStorage(file: File, folder: string) {
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
-}
-
-function getOccasionLabel(value: string | null) {
-  return OCCASIONS.find((item) => item.value === value)?.label || value || "";
 }
 
 function buildAiPreviewPrompt(input: {
@@ -180,7 +181,7 @@ export function CreateTemplateDialog({
   const [saving, setSaving] = useState(false);
   const [generatingPreview, setGeneratingPreview] = useState(false);
 
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -194,7 +195,7 @@ export function CreateTemplateDialog({
 
   const [prompt, setPrompt] = useState("");
   const [textDefault, setTextDefault] = useState("");
-  const [creditCost, setCreditCost] = useState<number>(6);
+  const [creditCost, setCreditCost] = useState(6);
   const [tags, setTags] = useState("");
 
   const [sendEmailNotification, setSendEmailNotification] = useState(true);
@@ -208,18 +209,17 @@ export function CreateTemplateDialog({
   const [existingThumbnailUrl, setExistingThumbnailUrl] = useState("");
   const [aiPreviewUrl, setAiPreviewUrl] = useState("");
 
-  const [generateAudioDefault, setGenerateAudioDefault] = useState<boolean>(true);
-  const [defaultDuration] = useState<number>(8);
-  const [defaultAspectRatio] = useState<string>("16:9");
-  const [defaultResolution] = useState<string>("1080p");
+  const [generateAudioDefault, setGenerateAudioDefault] = useState(true);
+  const [defaultDuration] = useState(8);
+  const [defaultAspectRatio] = useState("16:9");
+  const [defaultResolution] = useState("1080p");
 
   const styleOptions = useMemo(() => {
-    const key = occasion || "";
-    return OCCASION_STYLES[key] || [];
+    return OCCASION_STYLES[occasion || ""] || [];
   }, [occasion]);
 
   const shouldShowStyle = styleOptions.length > 0;
-
+  const effectiveCategory = getEffectiveCategory(category, occasion);
   const visiblePreviewUrl = aiPreviewUrl || existingPreviewUrl || existingThumbnailUrl;
 
   useEffect(() => {
@@ -228,10 +228,10 @@ export function CreateTemplateDialog({
       return;
     }
 
-    if (styleId && !styleOptions.some((s) => s.value === styleId)) {
+    if (styleId && !styleOptions.some((style) => style.value === styleId)) {
       setStyleId(null);
     }
-  }, [occasion, shouldShowStyle, styleId, styleOptions]);
+  }, [shouldShowStyle, styleId, styleOptions]);
 
   function handleOccasionChange(value: string) {
     const label = getOccasionLabel(value);
@@ -243,7 +243,7 @@ export function CreateTemplateDialog({
     }
   }
 
-  const resetForm = () => {
+  function resetForm() {
     setTitle("");
     setOccasion(null);
     setCategory("");
@@ -273,7 +273,7 @@ export function CreateTemplateDialog({
     setSaving(false);
     setLoadingTemplate(false);
     setGeneratingPreview(false);
-  };
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -327,33 +327,31 @@ export function CreateTemplateDialog({
           return;
         }
 
-        const t = data as unknown as TemplateDbRow;
+        const template = data as unknown as TemplateDbRow;
 
-        setTitle(t.title || "");
-        setOccasion(t.occasion || null);
-        setCategory(t.category || "");
-        setSubCategory(t.sub_category || "");
-        setType((t.type === "video" ? "video" : "image") as TemplateType);
-        setScene(t.scene || "");
-        setOrientation(
-          (t.orientation === "landscape" ? "landscape" : "portrait") as Orientation
-        );
-        setPrompt(t.prompt || "");
-        setTextDefault(t.text_default || "");
-        setCreditCost(Number(t.credit_cost || 6));
-        setTags(safeTagsToString(t.tags));
-        setStyleId(t.style_id || null);
-        setGenerateAudioDefault(t.generate_audio_default ?? true);
+        setTitle(template.title || "");
+        setOccasion(template.occasion || null);
+        setCategory(template.category || getOccasionLabel(template.occasion || null) || "");
+        setSubCategory(template.sub_category || "");
+        setType(template.type === "video" ? "video" : "image");
+        setScene(template.scene || "");
+        setOrientation(template.orientation === "landscape" ? "landscape" : "portrait");
+        setPrompt(template.prompt || "");
+        setTextDefault(template.text_default || "");
+        setCreditCost(Number(template.credit_cost || 6));
+        setTags(safeTagsToString(template.tags));
+        setStyleId(template.style_id || null);
+        setGenerateAudioDefault(template.generate_audio_default ?? true);
 
-        setExistingPreviewUrl(t.preview_url || "");
-        setExistingThumbnailUrl(t.thumbnail_url || "");
+        setExistingPreviewUrl(template.preview_url || "");
+        setExistingThumbnailUrl(template.thumbnail_url || "");
         setAiPreviewUrl("");
 
         setPreviewImageFile(null);
         setThumbnailFile(null);
         setVideoFile(null);
-      } catch (e) {
-        console.error("[CreateTemplateDialog] load error:", e);
+      } catch (error) {
+        console.error("[CreateTemplateDialog] load error:", error);
         toast.error("Failed to load template data");
       } finally {
         if (!cancelled) setLoadingTemplate(false);
@@ -367,10 +365,10 @@ export function CreateTemplateDialog({
     };
   }, [open, templateId]);
 
-  const validate = () => {
+  function validate() {
     if (!title.trim()) return "Template Title is required";
     if (!occasion) return "Occasion is required";
-    if (!category.trim()) return "Category is required";
+    if (!effectiveCategory) return "Category is required";
     if (!scene.trim()) return "Scene is required";
     if (!orientation) return "Orientation is required";
     if (!prompt.trim()) return "Prompt is required";
@@ -390,7 +388,7 @@ export function CreateTemplateDialog({
     }
 
     return null;
-  };
+  }
 
   async function handleGenerateAiPreview() {
     if (!title.trim()) {
@@ -403,9 +401,15 @@ export function CreateTemplateDialog({
       return;
     }
 
-    if (!category.trim()) {
+    const resolvedCategory = getEffectiveCategory(category, occasion);
+
+    if (!resolvedCategory) {
       toast.error("Add a category first");
       return;
+    }
+
+    if (!category.trim()) {
+      setCategory(resolvedCategory);
     }
 
     try {
@@ -414,7 +418,7 @@ export function CreateTemplateDialog({
       const aiPrompt = buildAiPreviewPrompt({
         title,
         occasion,
-        category,
+        category: resolvedCategory,
         subCategory,
         scene,
         orientation,
@@ -428,7 +432,7 @@ export function CreateTemplateDialog({
             prompt: aiPrompt,
             title: title.trim(),
             occasion,
-            category: category.trim(),
+            category: resolvedCategory,
             sub_category: subCategory.trim() || null,
             scene: scene.trim() || null,
             orientation,
@@ -462,13 +466,13 @@ export function CreateTemplateDialog({
     }
   }
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
 
-    const err = validate();
+    const errorMessage = validate();
 
-    if (err) {
-      toast.error(err);
+    if (errorMessage) {
+      toast.error(errorMessage);
       return;
     }
 
@@ -505,8 +509,8 @@ export function CreateTemplateDialog({
       const payload: Record<string, any> = {
         title: title.trim(),
         occasion: (occasion || "").trim(),
-        category: category.trim(),
-        sub_category: subCategory ? subCategory.trim() : null,
+        category: effectiveCategory,
+        sub_category: subCategory.trim() || null,
         type,
         scene: scene.trim(),
         orientation,
@@ -578,10 +582,10 @@ export function CreateTemplateDialog({
       setIsUploading(false);
       setUploadProgress(0);
     }
-  };
+  }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !saving && onOpenChange(v)}>
+    <Dialog open={open} onOpenChange={(value) => !saving && onOpenChange(value)}>
       <DialogContent className="max-w-3xl border-slate-800 bg-slate-900 text-slate-50">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-slate-50">
@@ -608,7 +612,7 @@ export function CreateTemplateDialog({
                 </label>
                 <input
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(event) => setTitle(event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                   placeholder="e.g., Cozy Fireplace Gathering"
                 />
@@ -626,13 +630,13 @@ export function CreateTemplateDialog({
                     <SelectValue placeholder="Select occasion" />
                   </SelectTrigger>
                   <SelectContent className="border-slate-700 bg-slate-900 text-slate-200">
-                    {OCCASIONS.map((o) => (
+                    {OCCASIONS.map((item) => (
                       <SelectItem
-                        key={o.value}
-                        value={o.value}
+                        key={item.value}
+                        value={item.value}
                         className="focus:bg-slate-800 focus:text-slate-50"
                       >
-                        {o.label}
+                        {item.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -640,7 +644,7 @@ export function CreateTemplateDialog({
               </div>
             </div>
 
-            {shouldShowStyle && (
+            {shouldShowStyle ? (
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-2 md:col-span-1">
                   <label className="text-xs font-medium text-slate-300">
@@ -649,8 +653,8 @@ export function CreateTemplateDialog({
 
                   <Select
                     value={styleId ?? ALL_STYLES_SENTINEL}
-                    onValueChange={(v) =>
-                      setStyleId(v === ALL_STYLES_SENTINEL ? null : v)
+                    onValueChange={(value) =>
+                      setStyleId(value === ALL_STYLES_SENTINEL ? null : value)
                     }
                   >
                     <SelectTrigger className="h-[34px] w-full rounded-xl border border-slate-700 bg-slate-800/50 text-xs text-slate-200">
@@ -665,13 +669,13 @@ export function CreateTemplateDialog({
                         All styles
                       </SelectItem>
 
-                      {styleOptions.map((s) => (
+                      {styleOptions.map((style) => (
                         <SelectItem
-                          key={s.value}
-                          value={s.value}
+                          key={style.value}
+                          value={style.value}
                           className="focus:bg-slate-800 focus:text-slate-50"
                         >
-                          {s.label}
+                          {style.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -682,7 +686,7 @@ export function CreateTemplateDialog({
                   </p>
                 </div>
               </div>
-            )}
+            ) : null}
 
             <div className="grid gap-3 md:grid-cols-3">
               <div className="space-y-2">
@@ -690,8 +694,8 @@ export function CreateTemplateDialog({
                   Category *
                 </label>
                 <input
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={effectiveCategory}
+                  onChange={(event) => setCategory(event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                   placeholder="e.g., Classic"
                 />
@@ -706,7 +710,7 @@ export function CreateTemplateDialog({
                 </label>
                 <input
                   value={subCategory}
-                  onChange={(e) => setSubCategory(e.target.value)}
+                  onChange={(event) => setSubCategory(event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                   placeholder="e.g., Family / Group"
                 />
@@ -751,7 +755,7 @@ export function CreateTemplateDialog({
                 </label>
                 <input
                   value={scene}
-                  onChange={(e) => setScene(e.target.value)}
+                  onChange={(event) => setScene(event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                   placeholder="e.g., cozy living room"
                 />
@@ -826,8 +830,8 @@ export function CreateTemplateDialog({
                   id="preview-image-upload"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
                     setPreviewImageFile(file);
 
                     if (file) {
@@ -868,8 +872,8 @@ export function CreateTemplateDialog({
                     id="thumbnail-upload"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
                       setThumbnailFile(file);
                       if (file) toast.success(`Selected: ${file.name}`);
                     }}
@@ -898,8 +902,8 @@ export function CreateTemplateDialog({
                     id="video-upload"
                     accept="video/*"
                     className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
                       setVideoFile(file);
                       if (file) toast.success(`Selected: ${file.name}`);
                     }}
@@ -916,7 +920,7 @@ export function CreateTemplateDialog({
               </div>
             )}
 
-            {type === "video" && (
+            {type === "video" ? (
               <div className="space-y-3 rounded-xl border border-slate-700 bg-slate-800/30 p-3">
                 <h3 className="text-xs font-semibold text-slate-200">
                   Video Settings (Defaults)
@@ -956,7 +960,7 @@ export function CreateTemplateDialog({
                     type="checkbox"
                     id="generateAudio"
                     checked={generateAudioDefault}
-                    onChange={(e) => setGenerateAudioDefault(e.target.checked)}
+                    onChange={(event) => setGenerateAudioDefault(event.target.checked)}
                     className="h-4 w-4 rounded border-slate-700 bg-slate-800"
                   />
                   <label htmlFor="generateAudio" className="text-xs text-slate-300">
@@ -964,7 +968,7 @@ export function CreateTemplateDialog({
                   </label>
                 </div>
               </div>
-            )}
+            ) : null}
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -978,7 +982,7 @@ export function CreateTemplateDialog({
 
               <textarea
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                onChange={(event) => setPrompt(event.target.value)}
                 className="min-h-[120px] w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none ring-0 placeholder:text-slate-500 focus:border-slate-500"
                 placeholder="Describe the scene, style, and mood for this template..."
               />
@@ -991,7 +995,7 @@ export function CreateTemplateDialog({
                 </label>
                 <input
                   value={textDefault}
-                  onChange={(e) => setTextDefault(e.target.value)}
+                  onChange={(event) => setTextDefault(event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                   placeholder="e.g., Warm Holiday Moments"
                 />
@@ -1004,7 +1008,7 @@ export function CreateTemplateDialog({
                 <input
                   type="number"
                   value={creditCost}
-                  onChange={(e) => setCreditCost(Number(e.target.value))}
+                  onChange={(event) => setCreditCost(Number(event.target.value))}
                   min={1}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                 />
@@ -1015,7 +1019,7 @@ export function CreateTemplateDialog({
               <label className="text-xs font-medium text-slate-300">Tags</label>
               <input
                 value={tags}
-                onChange={(e) => setTags(e.target.value)}
+                onChange={(event) => setTags(event.target.value)}
                 className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                 placeholder="cozy, family, fireplace, landscape (comma-separated)"
               />
@@ -1024,13 +1028,13 @@ export function CreateTemplateDialog({
               </p>
             </div>
 
-            {!isEditing && (
+            {!isEditing ? (
               <div className="flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3">
                 <input
                   type="checkbox"
                   id="sendEmail"
                   checked={sendEmailNotification}
-                  onChange={(e) => setSendEmailNotification(e.target.checked)}
+                  onChange={(event) => setSendEmailNotification(event.target.checked)}
                   className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
                 />
                 <label
@@ -1044,9 +1048,9 @@ export function CreateTemplateDialog({
                   </span>
                 </label>
               </div>
-            )}
+            ) : null}
 
-            {isUploading && (
+            {isUploading ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-400">
                   <span>{saving ? "Saving..." : "Uploading..."}</span>
@@ -1059,7 +1063,7 @@ export function CreateTemplateDialog({
                   />
                 </div>
               </div>
-            )}
+            ) : null}
 
             <div className="flex justify-end gap-2 pt-2">
               <button
