@@ -104,7 +104,6 @@ type GenerationRow = {
   id: string;
   status: "pending" | "queued" | "processing" | "completed" | "failed" | "error";
   final_image_url: string | null;
-  error_message?: string | null;
 };
 
 type AnyTemplate = TemplateSummary & {
@@ -162,72 +161,23 @@ function normalizeTemplate(t: AnyTemplate): AnyTemplate {
   };
 }
 
-async function resolveGenerationIdFromResponse(params: {
-  response: any;
-  userId: string;
-  startedAt: string;
-}): Promise<string | null> {
-  const directGenerationId =
-    params.response?.generation_id ??
-    params.response?.generationId ??
-    params.response?.generation?.id ??
-    params.response?.data?.generation_id ??
-    params.response?.data?.generationId ??
-    params.response?.data?.generation?.id ??
+function getGenerationIdFromResponse(res: any): string | null {
+  const value =
+    res?.generation_id ??
+    res?.generationId ??
+    res?.generation?.id ??
+    res?.data?.generation_id ??
+    res?.data?.generationId ??
+    res?.data?.generation?.id ??
+    res?.jobId ??
+    res?.job_id ??
+    res?.id ??
+    res?.data?.jobId ??
+    res?.data?.job_id ??
+    res?.data?.id ??
     null;
 
-  if (directGenerationId) return String(directGenerationId);
-
-  const jobId =
-    params.response?.jobId ??
-    params.response?.job_id ??
-    params.response?.id ??
-    params.response?.data?.jobId ??
-    params.response?.data?.job_id ??
-    null;
-
-  if (jobId) {
-    for (let attempt = 0; attempt < 10; attempt += 1) {
-      await new Promise((resolve) => window.setTimeout(resolve, 2000));
-
-      const { data, error } = await supabase
-        .from("generations")
-        .select("id")
-        .eq("job_id", String(jobId))
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error("[resolveGenerationIdFromResponse] job_id fallback error", error);
-        continue;
-      }
-
-      if (data?.id) return String(data.id);
-    }
-  }
-
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    await new Promise((resolve) => window.setTimeout(resolve, 2000));
-
-    const { data, error } = await supabase
-      .from("generations")
-      .select("id")
-      .eq("user_id", params.userId)
-      .gte("created_at", params.startedAt)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      console.error("[resolveGenerationIdFromResponse] user fallback error", error);
-      continue;
-    }
-
-    if (data?.id) return String(data.id);
-  }
-
-  return null;
+  return value ? String(value) : null;
 }
 
 export default function GeneratorPage() {
@@ -365,10 +315,7 @@ export default function GeneratorPage() {
         }
 
         if (!data) {
-          stopGenerationPolling();
-          setIsGenerating(false);
-          setCurrentGenerationId(null);
-          toast.error("Generation not found. Please try again.");
+          console.warn("[generations poll] generation not found yet", generationId);
           return;
         }
 
@@ -688,8 +635,6 @@ export default function GeneratorPage() {
         setCurrentJobId(jobId);
         toast.success("Video generation started!");
       } else {
-        const generationStartedAt = new Date().toISOString();
-
         console.log("[handleGenerate] triggerCreateJob payload", {
           type: "image",
           templateId: template.id,
@@ -708,26 +653,12 @@ export default function GeneratorPage() {
 
         console.log("[handleGenerate] triggerCreateJob response", res);
 
-        const generationId = await resolveGenerationIdFromResponse({
-  response: res,
-  userId: user.id,
-  startedAt: generationStartedAt,
-});
+        const generationId = getGenerationIdFromResponse(res);
 
         if (!generationId) {
-          // Loghează răspunsul complet și orice mesaj de eroare primit
-          console.error("[handleGenerate] Generation response without ID", res);
-          let backendError =
-            res?.error?.message ||
-            res?.message ||
-            res?.error_description ||
-            (typeof res === "string" ? res : null);
-          toast.error(
-            backendError
-              ? `Generation failed: ${backendError}`
-              : "Generation started, but the generation record could not be found."
-          );
+          console.error("[handleGenerate] generation response without ID", res);
           setIsGenerating(false);
+          toast.error("Generation was created, but no generation_id was returned.");
           return;
         }
 
