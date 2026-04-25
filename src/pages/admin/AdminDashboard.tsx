@@ -1,254 +1,240 @@
 import React from "react";
+import { CalendarDays, RefreshCcw } from "lucide-react";
 
-const AdminDashboard: React.FC = () => {
+import { useAdminOverview } from "@/hooks/useAdminOverview";
+import {
+  ListCard,
+  MoneyMiniCard,
+  SectionCard,
+  StatCard,
+} from "@/components/admin/overview/AdminOverviewCards";
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("en-US").format(value);
+}
+
+function formatMoney(value: number) {
+  return `€${value.toFixed(2)}`;
+}
+
+function getDefaultFrom() {
+  const date = new Date();
+  date.setDate(date.getDate() - 30);
+  return date.toISOString().slice(0, 10);
+}
+
+function getDefaultTo() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export default function AdminDashboard() {
+  const [from, setFrom] = React.useState(getDefaultFrom());
+  const [to, setTo] = React.useState(getDefaultTo());
+
+  const {
+    loading,
+    error,
+    totals,
+    subscriptions,
+    bundleOffers,
+    creditsBought,
+    topRegions,
+    topCategories,
+    topTemplates,
+    customerBehaviour,
+    refresh,
+  } = useAdminOverview({ from, to });
+
   return (
-    <div className="bg-slate-950 px-8 py-6 overflow-y-auto">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-6">
+    <div className="min-h-screen overflow-y-auto bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
               Admin Panel
             </p>
-            <h1 className="mt-1 text-2xl font-semibold text-slate-50">
-              Analytics
+
+            <h1 className="mt-1 text-2xl font-semibold text-slate-50 sm:text-3xl">
+              Overview
             </h1>
-            <p className="mt-1 text-sm text-slate-400">
-              Full funnel overview: visitors, customers, categories, templates
-              and regions.
+
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
+              Business overview for customers, orders, generations, subscriptions,
+              bundles, credits and template performance.
             </p>
           </div>
-          <div className="flex gap-3">
-            <button className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800">
-              Last 30 days
-            </button>
-            <button className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800">
-              Filters
-            </button>
-            <button className="rounded-xl bg-indigo-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-400">
-              Export report
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/50 px-3 py-2">
+              <CalendarDays className="h-4 w-4 text-slate-400" />
+
+              <input
+                type="date"
+                value={from}
+                onChange={(event) => setFrom(event.target.value)}
+                className="bg-transparent text-sm text-slate-100 outline-none"
+              />
+
+              <span className="text-slate-600">—</span>
+
+              <input
+                type="date"
+                value={to}
+                onChange={(event) => setTo(event.target.value)}
+                className="bg-transparent text-sm text-slate-100 outline-none"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCcw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+              Refresh
             </button>
           </div>
         </header>
 
-        {/* KPI row */}
-        <section className="grid gap-4 md:grid-cols-4 mb-7">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-4">
-            <p className="text-xs text-slate-400">Total visitors</p>
-            <p className="mt-2 text-xl font-semibold text-slate-50">18,420</p>
-            <p className="mt-1 text-xs text-emerald-400">+32% vs last month</p>
+        {error ? (
+          <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+            {error}
           </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-4">
-            <p className="text-xs text-slate-400">Unique visitors</p>
-            <p className="mt-2 text-xl font-semibold text-slate-50">14,980</p>
-            <p className="mt-1 text-xs text-slate-400">81% of all sessions</p>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-4">
-            <p className="text-xs text-slate-400">Paying customers</p>
-            <p className="mt-2 text-xl font-semibold text-slate-50">1,245</p>
-            <p className="mt-1 text-xs text-slate-400">
-              7.2% visitor → customer
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-4">
-            <p className="text-xs text-slate-400">Total revenue</p>
-            <p className="mt-2 text-xl font-semibold text-slate-50">€6,980</p>
-            <p className="mt-1 text-xs text-slate-400">
-              Avg. order value €13.40
-            </p>
-          </div>
+        ) : null}
+
+        <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            label="Total generated"
+            value={loading ? "..." : formatNumber(totals.totalGenerated)}
+            helper="Generated results"
+          />
+
+          <StatCard
+            label="Customers"
+            value={loading ? "..." : formatNumber(totals.customers)}
+            helper="Total customer records"
+          />
+
+          <StatCard
+            label="Orders"
+            value={loading ? "..." : formatNumber(totals.orders)}
+            helper={loading ? "..." : formatMoney(totals.totalRevenue)}
+          />
+
+          <StatCard
+            label="Generations"
+            value={loading ? "..." : formatNumber(totals.generations)}
+            helper="All generations"
+          />
+
+          <StatCard
+            label="Credits in circulation"
+            value={loading ? "..." : formatNumber(totals.creditsInCirculation)}
+            helper="Available customer credits"
+          />
+
+          <StatCard
+            label="Credits used"
+            value={loading ? "..." : formatNumber(totals.creditsUsed)}
+            helper="Spent credits"
+          />
+
+          <StatCard
+            label="Revenue"
+            value={loading ? "..." : formatMoney(totals.totalRevenue)}
+            helper="Selected period"
+          />
+
+          <StatCard
+            label="Average order value"
+            value={
+              loading
+                ? "..."
+                : totals.orders > 0
+                  ? formatMoney(totals.totalRevenue / totals.orders)
+                  : "€0.00"
+            }
+            helper="Revenue / orders"
+          />
         </section>
 
-        {/* Funnel & behaviour */}
-        <section className="grid gap-4 md:grid-cols-3 mb-7">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <h2 className="text-sm font-semibold text-slate-50 mb-2">
-              Visitor → Purchase funnel
-            </h2>
-            <ul className="space-y-2 text-xs text-slate-300">
-              <li className="flex items-center justify-between">
-                <span>Visited site</span>
-                <span>18,420</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Generated at least 1 template</span>
-                <span>6,120 (33%)</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Added credits to cart</span>
-                <span>1,980 (11%)</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Completed purchase</span>
-                <span>1,245 (7.2%)</span>
-              </li>
-            </ul>
-          </div>
+        <div className="mb-6 grid gap-5 xl:grid-cols-2">
+          <SectionCard
+            title="Subscriptions"
+            subtitle="Starter, Pro and Elite subscription revenue."
+          >
+            <div className="grid gap-3 sm:grid-cols-3">
+              {subscriptions.map((item) => (
+                <MoneyMiniCard
+                  key={item.label}
+                  label={item.label}
+                  count={item.value}
+                  revenue={item.revenue}
+                />
+              ))}
+            </div>
+          </SectionCard>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <h2 className="text-sm font-semibold text-slate-50 mb-2">
-              Top performing categories
-            </h2>
-            <p className="mb-2 text-[11px] uppercase tracking-wide text-emerald-400">
-              #1 Most purchased: Christmas
-            </p>
-            <ul className="space-y-2 text-xs text-slate-300">
-              <li className="flex justify-between">
-                <span>Christmas</span>
-                <span>41% of all orders</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Birthdays</span>
-                <span>27%</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Couples & Anniversary</span>
-                <span>14%</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Other categories</span>
-                <span>18%</span>
-              </li>
-            </ul>
-          </div>
+          <SectionCard
+            title="Bundle offers"
+            subtitle="One-time bundle purchases."
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {bundleOffers.map((item) => (
+                <MoneyMiniCard
+                  key={item.label}
+                  label={item.label}
+                  count={item.value}
+                  revenue={item.revenue}
+                />
+              ))}
+            </div>
+          </SectionCard>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <h2 className="text-sm font-semibold text-slate-50 mb-2">
-              Most purchased templates
-            </h2>
-            <p className="mb-2 text-[11px] uppercase tracking-wide text-emerald-400">
-              #1 Template: "Family Snow Globe"
-            </p>
-            <ul className="space-y-2 text-xs text-slate-300">
-              <li className="flex justify-between">
-                <span>Family Snow Globe (Christmas)</span>
-                <span>1,320 orders</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Neon Party Frame (Birthday)</span>
-                <span>890 orders</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Cozy Fireplace Portrait (Christmas)</span>
-                <span>640 orders</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Other templates</span>
-                <span>2,170 orders</span>
-              </li>
-            </ul>
-          </div>
-        </section>
+          <SectionCard
+            title="Credits bought separately"
+            subtitle="Revenue from direct credit purchases."
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {creditsBought.map((item) => (
+                <MoneyMiniCard
+                  key={item.label}
+                  label={item.label}
+                  count={item.value}
+                  revenue={item.revenue}
+                />
+              ))}
+            </div>
+          </SectionCard>
 
-        {/* Regions & customers */}
-        <section className="grid gap-4 md:grid-cols-2 mb-7">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <h2 className="text-sm font-semibold text-slate-50 mb-2">
-              Top regions by revenue
-            </h2>
-            <ul className="space-y-2 text-xs text-slate-300">
-              <li className="flex justify-between">
-                <span>United States</span>
-                <span>€2,250 · 32%</span>
-              </li>
-              <li className="flex justify-between">
-                <span>United Kingdom</span>
-                <span>€1,220 · 18%</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Germany</span>
-                <span>€840 · 12%</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Romania</span>
-                <span>€630 · 9%</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Other countries</span>
-                <span>€2,040 · 29%</span>
-              </li>
-            </ul>
-          </div>
+          <ListCard
+            title="Customer behaviour"
+            subtitle="New, returning and credits usage."
+            items={customerBehaviour}
+          />
+        </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <h2 className="text-sm font-semibold text-slate-50 mb-2">
-              Customer behaviour
-            </h2>
-            <ul className="space-y-2 text-xs text-slate-300">
-              <li className="flex justify-between">
-                <span>New vs returning customers</span>
-                <span>62% new · 38% returning</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Average templates generated per customer</span>
-                <span>7.4</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Average credits used per order</span>
-                <span>46</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Customers with 3+ orders</span>
-                <span>184 (15%)</span>
-              </li>
-            </ul>
-          </div>
-        </section>
+        <div className="grid gap-5 xl:grid-cols-3">
+          <ListCard
+            title="Top regions by revenue"
+            subtitle="Requires country/region tracking for real segmentation."
+            items={topRegions}
+          />
 
-        {/* Quick highlights */}
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <h2 className="text-sm font-semibold text-slate-50 mb-1">
-              Best day of the week
-            </h2>
-            <p className="text-xs text-slate-400 mb-1">By revenue</p>
-            <p className="text-base font-semibold text-slate-50">Sunday</p>
-            <p className="text-xs text-slate-400">
-              19% of weekly sales happen on Sunday.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <h2 className="text-sm font-semibold text-slate-50 mb-1">
-              Device split
-            </h2>
-            <ul className="mt-1 space-y-1 text-xs text-slate-300">
-              <li className="flex justify-between">
-                <span>Mobile</span>
-                <span>72%</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Desktop</span>
-                <span>23%</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Tablet</span>
-                <span>5%</span>
-              </li>
-            </ul>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <h2 className="text-sm font-semibold text-slate-50 mb-1">
-              Email capture performance
-            </h2>
-            <ul className="mt-1 space-y-1 text-xs text-slate-300">
-              <li className="flex justify-between">
-                <span>Popup views</span>
-                <span>8,540</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Emails collected</span>
-                <span>1,430 (16.7%)</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Revenue from email campaigns</span>
-                <span>€1,120</span>
-              </li>
-            </ul>
-          </div>
-        </section>
+          <ListCard
+            title="Top performing categories"
+            subtitle="Calculated from generation occasion_slug."
+            items={topCategories}
+          />
+
+          <ListCard
+            title="Most purchased templates"
+            subtitle="Calculated from generation title/template title."
+            items={topTemplates}
+          />
+        </div>
       </div>
     </div>
   );
-};
-
-export default AdminDashboard;
+}
