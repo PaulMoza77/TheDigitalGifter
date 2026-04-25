@@ -28,9 +28,15 @@ function getDefaultTo() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getAllTimeFrom() {
+  return "2020-01-01";
+}
+
 export default function AdminDashboard() {
   const [from, setFrom] = React.useState(getDefaultFrom);
   const [to, setTo] = React.useState(getDefaultTo);
+
+  const isAllTime = from === getAllTimeFrom();
 
   const range = React.useMemo(() => ({ from, to }), [from, to]);
 
@@ -47,6 +53,16 @@ export default function AdminDashboard() {
     customerBehaviour,
     refresh,
   } = useAdminOverview(range);
+
+  function handleAllTime() {
+    setFrom(getAllTimeFrom());
+    setTo(getDefaultTo());
+  }
+
+  function handleLast30Days() {
+    setFrom(getDefaultFrom());
+    setTo(getDefaultTo());
+  }
 
   return (
     <div className="min-h-screen overflow-y-auto bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
@@ -68,6 +84,32 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={handleLast30Days}
+              className={[
+                "inline-flex items-center justify-center rounded-2xl border px-4 py-2 text-sm font-medium transition",
+                !isAllTime
+                  ? "border-indigo-400/40 bg-indigo-500/20 text-indigo-100"
+                  : "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800",
+              ].join(" ")}
+            >
+              Last 30 days
+            </button>
+
+            <button
+              type="button"
+              onClick={handleAllTime}
+              className={[
+                "inline-flex items-center justify-center rounded-2xl border px-4 py-2 text-sm font-medium transition",
+                isAllTime
+                  ? "border-indigo-400/40 bg-indigo-500/20 text-indigo-100"
+                  : "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800",
+              ].join(" ")}
+            >
+              All time
+            </button>
+
             <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/50 px-3 py-2">
               <CalendarDays className="h-4 w-4 text-slate-400" />
 
@@ -94,7 +136,9 @@ export default function AdminDashboard() {
               disabled={loading}
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <RefreshCcw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+              <RefreshCcw
+                className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"}
+              />
               Refresh
             </button>
           </div>
@@ -107,13 +151,48 @@ export default function AdminDashboard() {
         ) : null}
 
         <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Total generated" value={loading ? "..." : formatNumber(totals.totalGenerated)} helper="Generated results" />
-          <StatCard label="Customers" value={loading ? "..." : formatNumber(totals.customers)} helper="Total customer records" />
-          <StatCard label="Orders" value={loading ? "..." : formatNumber(totals.orders)} helper={loading ? "..." : formatMoney(totals.totalRevenue)} />
-          <StatCard label="Generations" value={loading ? "..." : formatNumber(totals.generations)} helper="All generations" />
-          <StatCard label="Credits in circulation" value={loading ? "..." : formatNumber(totals.creditsInCirculation)} helper="Available customer credits" />
-          <StatCard label="Credits used" value={loading ? "..." : formatNumber(totals.creditsUsed)} helper="Spent credits" />
-          <StatCard label="Revenue" value={loading ? "..." : formatMoney(totals.totalRevenue)} helper="Selected period" />
+          <StatCard
+            label="Total generated"
+            value={loading ? "..." : formatNumber(totals.totalGenerated)}
+            helper="Generated results"
+          />
+
+          <StatCard
+            label="Customers"
+            value={loading ? "..." : formatNumber(totals.customers)}
+            helper="Total customer records"
+          />
+
+          <StatCard
+            label="Orders"
+            value={loading ? "..." : formatNumber(totals.orders)}
+            helper={loading ? "..." : formatMoney(totals.totalRevenue)}
+          />
+
+          <StatCard
+            label="Generations"
+            value={loading ? "..." : formatNumber(totals.generations)}
+            helper="All generations"
+          />
+
+          <StatCard
+            label="Credits in circulation"
+            value={loading ? "..." : formatNumber(totals.creditsInCirculation)}
+            helper="Available customer credits"
+          />
+
+          <StatCard
+            label="Credits used"
+            value={loading ? "..." : formatNumber(totals.creditsUsed)}
+            helper="Spent credits"
+          />
+
+          <StatCard
+            label="Revenue"
+            value={loading ? "..." : formatMoney(totals.totalRevenue)}
+            helper="Selected period"
+          />
+
           <StatCard
             label="Average order value"
             value={
@@ -128,10 +207,18 @@ export default function AdminDashboard() {
         </section>
 
         <div className="mb-6 grid gap-5 xl:grid-cols-2">
-          <SectionCard title="Subscriptions" subtitle="Starter, Pro and Elite subscription revenue.">
+          <SectionCard
+            title="Subscriptions"
+            subtitle="Starter, Pro and Elite subscription revenue."
+          >
             <div className="grid gap-3 sm:grid-cols-3">
               {subscriptions.map((item) => (
-                <MoneyMiniCard key={item.label} label={item.label} count={item.value} revenue={item.revenue} />
+                <MoneyMiniCard
+                  key={item.label}
+                  label={item.label}
+                  count={item.value}
+                  revenue={item.revenue}
+                />
               ))}
             </div>
           </SectionCard>
@@ -139,26 +226,57 @@ export default function AdminDashboard() {
           <SectionCard title="Bundle offers" subtitle="One-time bundle purchases.">
             <div className="grid gap-3 sm:grid-cols-2">
               {bundleOffers.map((item) => (
-                <MoneyMiniCard key={item.label} label={item.label} count={item.value} revenue={item.revenue} />
+                <MoneyMiniCard
+                  key={item.label}
+                  label={item.label}
+                  count={item.value}
+                  revenue={item.revenue}
+                />
               ))}
             </div>
           </SectionCard>
 
-          <SectionCard title="Credits bought separately" subtitle="Revenue from direct credit purchases.">
+          <SectionCard
+            title="Credits bought separately"
+            subtitle="Revenue from direct credit purchases."
+          >
             <div className="grid gap-3 sm:grid-cols-2">
               {creditsBought.map((item) => (
-                <MoneyMiniCard key={item.label} label={item.label} count={item.value} revenue={item.revenue} />
+                <MoneyMiniCard
+                  key={item.label}
+                  label={item.label}
+                  count={item.value}
+                  revenue={item.revenue}
+                />
               ))}
             </div>
           </SectionCard>
 
-          <ListCard title="Customer behaviour" subtitle="New, returning and credits usage." items={customerBehaviour} />
+          <ListCard
+            title="Customer behaviour"
+            subtitle="New, returning and credits usage."
+            items={customerBehaviour}
+          />
         </div>
 
         <div className="grid gap-5 xl:grid-cols-3">
-          <ListCard title="Top regions by revenue" subtitle="Requires country/region tracking for real segmentation." items={topRegions} />
-          <ListCard title="Top performing categories" subtitle="Calculated from generation occasion_slug." items={topCategories} />
-          <ListCard title="Most purchased templates" subtitle="Calculated from generation title/template title." items={topTemplates} />
+          <ListCard
+            title="Top regions by revenue"
+            subtitle="Requires country/region tracking for real segmentation."
+            items={topRegions}
+          />
+
+          <ListCard
+            title="Top performing categories"
+            subtitle="Calculated from generation occasion_slug."
+            items={topCategories}
+          />
+
+          <ListCard
+            title="Most purchased templates"
+            subtitle="Calculated from generation title/template title."
+            items={topTemplates}
+          />
         </div>
       </div>
     </div>
