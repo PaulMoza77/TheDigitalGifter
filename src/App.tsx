@@ -1,3 +1,4 @@
+// FILE: src/App.tsx
 import { Suspense, useEffect, useState, lazy } from "react";
 import {
   BrowserRouter,
@@ -55,7 +56,6 @@ const AdminFunnelPage = lazy(
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
 const TemplatesPage = lazy(() => import("@/pages/website/TemplatesPage"));
 
-// Occasion pages
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
@@ -90,7 +90,6 @@ import FunnelResultPage from "@/components/funnelVersion/ResultPage";
 // ================= SUPABASE =================
 import { supabase } from "@/lib/supabase";
 
-// ================= HELPERS =================
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -224,6 +223,7 @@ function AppInner() {
         if (!user || cancelled) return;
 
         const conversionKey = `affiliate_conversion_recorded_${user.id}_${savedRef}`;
+
         if (localStorage.getItem(conversionKey) === "1") {
           return;
         }
