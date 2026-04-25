@@ -1,4 +1,3 @@
-// FILE: src/hooks/useAccountOverview.ts
 import * as React from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -9,6 +8,12 @@ type LedgerBalanceRow = {
 
 type AffiliateEarningRow = {
   amount: number | string | null;
+};
+
+type AppUserRow = {
+  id: string | number | null;
+  convex_id: string | number | null;
+  email: string | null;
 };
 
 export type AccountOverview = {
@@ -23,6 +28,36 @@ export type AccountOverview = {
 function toNumber(value: number | string | null | undefined) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function resolveCreditKey(input: {
+  email: string;
+  authUserId: string;
+}): Promise<string> {
+  const email = input.email.trim().toLowerCase();
+  const authUserId = input.authUserId.trim();
+
+  if (email) {
+    const { data: appUser, error } = await supabase
+      .from("app_users")
+      .select("id, convex_id, email")
+      .ilike("email", email)
+      .maybeSingle<AppUserRow>();
+
+    if (error) {
+      console.error("[useAccountOverview] app_users error:", error);
+    }
+
+    if (appUser?.convex_id !== null && appUser?.convex_id !== undefined) {
+      return String(appUser.convex_id);
+    }
+
+    if (appUser?.id !== null && appUser?.id !== undefined) {
+      return String(appUser.id);
+    }
+  }
+
+  return authUserId || email;
 }
 
 export function useAccountOverview(): AccountOverview {
@@ -50,20 +85,29 @@ export function useAccountOverview(): AccountOverview {
       }
 
       const email = user.email?.trim().toLowerCase() ?? "";
+      const authUserId = user.id ? String(user.id) : "";
+      const creditKey = await resolveCreditKey({ email, authUserId });
 
       const [adminResult, ledgerResult, earningsResult] = await Promise.all([
         email
-          ? supabase.from("admin_users").select("email").eq("email", email).maybeSingle()
+          ? supabase
+              .from("admin_users")
+              .select("email")
+              .eq("email", email)
+              .maybeSingle()
           : Promise.resolve({ data: null, error: null }),
 
-        email
+        creditKey
           ? supabase
               .from("credits_ledger")
               .select("direction, credits")
-              .eq("user_convex_id", email)
+              .eq("user_convex_id", creditKey)
           : Promise.resolve({ data: [], error: null }),
 
-        supabase.from("affiliate_earnings").select("amount").eq("user_id", user.id),
+        supabase
+          .from("affiliate_earnings")
+          .select("amount")
+          .eq("user_id", user.id),
       ]);
 
       if (adminResult.error) {
@@ -124,15 +168,20 @@ export function useAccountOverview(): AccountOverview {
     void refresh();
 
     const onFocus = () => void refresh();
+
+    const onCreditsRefresh = () => void refresh();
+
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") void refresh();
     };
 
     window.addEventListener("focus", onFocus);
+    window.addEventListener("credits:refresh", onCreditsRefresh);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("credits:refresh", onCreditsRefresh);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [refresh]);

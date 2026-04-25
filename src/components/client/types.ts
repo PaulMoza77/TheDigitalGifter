@@ -1,5 +1,3 @@
-// FILE: src/components/client/types.ts
-
 export type ClientStat = {
   label: string;
   value: string;
