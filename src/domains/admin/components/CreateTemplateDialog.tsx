@@ -25,7 +25,7 @@ interface CreateTemplateDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const OCCASIONS: Array<{ value: string; label: string }> = [
+const BASE_OCCASIONS: Array<{ value: string; label: string }> = [
   { value: "christmas", label: "Christmas" },
   { value: "birthday", label: "Birthday" },
   { value: "anniversary", label: "Anniversary" },
@@ -38,18 +38,10 @@ const OCCASIONS: Array<{ value: string; label: string }> = [
   { value: "mothers_day", label: "Mother’s Day" },
   { value: "fathers_day", label: "Father’s Day" },
   { value: "graduation", label: "Graduation" },
+  { value: "easter", label: "Easter" },
+  { value: "wedding", label: "Wedding" },
+  { value: "pregnancy", label: "Pregnancy" },
 ];
-
-const OCCASION_STYLES: Record<string, Array<{ value: string; label: string }>> = {
-  new_born: [
-    { value: "soft_pastel", label: "Soft Pastel" },
-    { value: "cozy_blanket", label: "Cozy Blanket" },
-    { value: "angel_sleep", label: "Angel Sleep" },
-    { value: "first_light", label: "First Light" },
-    { value: "minimal_studio", label: "Minimal Studio" },
-    { value: "golden_memory", label: "Golden Memory" },
-  ],
-};
 
 type TemplateType = "image" | "video";
 type Orientation = "portrait" | "landscape";
@@ -78,8 +70,37 @@ type TemplateDbRow = {
   is_active: boolean | null;
 };
 
+type OccasionOption = {
+  value: string;
+  label: string;
+};
+
 const BUCKET = "templates";
-const ALL_STYLES_SENTINEL = "__all__";
+const CUSTOM_OCCASION = "__custom_occasion__";
+
+function normalizeKey(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function formatLabel(value: unknown) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+
+  return raw
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/\bNew Years Eve\b/g, "New Year’s Eve")
+    .replace(/\bValentines Day\b/g, "Valentine’s Day")
+    .replace(/\bMothers Day\b/g, "Mother’s Day")
+    .replace(/\bFathers Day\b/g, "Father’s Day");
+}
 
 function safeTagsToString(tags: string[] | null | undefined) {
   return (tags || []).join(", ");
@@ -102,12 +123,13 @@ function rand6() {
   return Math.random().toString(16).slice(2, 8);
 }
 
-function getOccasionLabel(value: string | null) {
-  return OCCASIONS.find((item) => item.value === value)?.label || value || "";
+function getOccasionLabel(value: string | null, options: OccasionOption[]) {
+  if (!value) return "";
+  return options.find((item) => item.value === value)?.label || formatLabel(value);
 }
 
-function getEffectiveCategory(category: string, occasion: string | null) {
-  return category.trim() || getOccasionLabel(occasion).trim();
+function getEffectiveCategory(category: string, occasion: string | null, options: OccasionOption[]) {
+  return category.trim() || getOccasionLabel(occasion, options).trim();
 }
 
 async function uploadToSupabaseStorage(file: File, folder: string) {
@@ -128,24 +150,22 @@ async function uploadToSupabaseStorage(file: File, folder: string) {
 
 function buildAiPreviewPrompt(input: {
   title: string;
-  occasion: string | null;
+  occasionLabel: string;
   category: string;
   subCategory: string;
   scene: string;
   orientation: Orientation;
   prompt: string;
 }) {
-  const occasionLabel = getOccasionLabel(input.occasion) || "general occasion";
-
   return [
     "Create a premium preview image for an AI gift/card template.",
     `Template title: ${input.title || "Untitled template"}.`,
-    `Occasion: ${occasionLabel}.`,
-    `Category: ${input.category || "General"}.`,
+    `Occasion: ${input.occasionLabel || "general occasion"}.`,
+    `Category/style: ${input.category || "General"}.`,
     input.subCategory ? `Sub-category: ${input.subCategory}.` : "",
     input.scene ? `Scene: ${input.scene}.` : "",
     `Orientation: ${input.orientation}.`,
-    "The image should look polished, high-end, emotional, gift-ready, clean, and suitable as a marketplace template preview.",
+    "The image should look polished, emotional, gift-ready, cinematic, clean, and suitable as a marketplace template preview.",
     "Do not include readable UI text, watermarks, logos, distorted faces, or messy artifacts.",
     input.prompt ? `Template generation prompt context: ${input.prompt}` : "",
   ]
@@ -178,14 +198,18 @@ export function CreateTemplateDialog({
   const isEditing = !!templateId;
 
   const [loadingTemplate, setLoadingTemplate] = useState(false);
+  const [loadingOccasions, setLoadingOccasions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generatingPreview, setGeneratingPreview] = useState(false);
 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
+  const [dbOccasions, setDbOccasions] = useState<OccasionOption[]>([]);
+
   const [title, setTitle] = useState("");
   const [occasion, setOccasion] = useState<string | null>(null);
+  const [customOccasion, setCustomOccasion] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
 
@@ -214,29 +238,109 @@ export function CreateTemplateDialog({
   const [defaultAspectRatio] = useState("16:9");
   const [defaultResolution] = useState("1080p");
 
-  const styleOptions = useMemo(() => {
-    return OCCASION_STYLES[occasion || ""] || [];
-  }, [occasion]);
+  const occasionOptions = useMemo(() => {
+    const map = new Map<string, OccasionOption>();
 
-  const shouldShowStyle = styleOptions.length > 0;
-  const effectiveCategory = getEffectiveCategory(category, occasion);
+    BASE_OCCASIONS.forEach((item) => {
+      map.set(item.value, item);
+    });
+
+    dbOccasions.forEach((item) => {
+      if (item.value) {
+        map.set(item.value, item);
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [dbOccasions]);
+
+  const finalOccasion = useMemo(() => {
+    if (occasion === CUSTOM_OCCASION) return normalizeKey(customOccasion);
+    return occasion;
+  }, [occasion, customOccasion]);
+
+  const finalOccasionLabel = useMemo(() => {
+    if (occasion === CUSTOM_OCCASION) return formatLabel(customOccasion);
+    return getOccasionLabel(occasion, occasionOptions);
+  }, [occasion, customOccasion, occasionOptions]);
+
+  const effectiveCategory = getEffectiveCategory(category, finalOccasion, occasionOptions);
   const visiblePreviewUrl = aiPreviewUrl || existingPreviewUrl || existingThumbnailUrl;
 
+  const styleOptions = useMemo(() => {
+    const categories = new Map<string, { value: string; label: string }>();
+
+    if (effectiveCategory) {
+      categories.set(normalizeKey(effectiveCategory), {
+        value: normalizeKey(effectiveCategory),
+        label: formatLabel(effectiveCategory),
+      });
+    }
+
+    if (subCategory.trim()) {
+      categories.set(normalizeKey(subCategory), {
+        value: normalizeKey(subCategory),
+        label: formatLabel(subCategory),
+      });
+    }
+
+    return Array.from(categories.values());
+  }, [effectiveCategory, subCategory]);
+
   useEffect(() => {
-    if (!shouldShowStyle) {
-      setStyleId(null);
+    if (!open) return;
+
+    let cancelled = false;
+
+    async function loadOccasions() {
+      try {
+        setLoadingOccasions(true);
+
+        const { data, error } = await supabase
+          .from("templates")
+          .select("occasion")
+          .not("occasion", "is", null);
+
+        if (cancelled) return;
+        if (error) throw error;
+
+        const map = new Map<string, OccasionOption>();
+
+        (data || []).forEach((row: any) => {
+          const value = normalizeKey(row.occasion);
+          if (!value) return;
+
+          map.set(value, {
+            value,
+            label: formatLabel(row.occasion),
+          });
+        });
+
+        setDbOccasions(Array.from(map.values()));
+      } catch (error) {
+        console.error("[CreateTemplateDialog] load occasions error:", error);
+        toast.error("Failed to load occasions from database");
+      } finally {
+        if (!cancelled) setLoadingOccasions(false);
+      }
+    }
+
+    void loadOccasions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  function handleOccasionChange(value: string) {
+    setOccasion(value);
+
+    if (value === CUSTOM_OCCASION) {
+      setCustomOccasion("");
       return;
     }
 
-    if (styleId && !styleOptions.some((style) => style.value === styleId)) {
-      setStyleId(null);
-    }
-  }, [shouldShowStyle, styleId, styleOptions]);
-
-  function handleOccasionChange(value: string) {
-    const label = getOccasionLabel(value);
-
-    setOccasion(value);
+    const label = getOccasionLabel(value, occasionOptions);
 
     if (!category.trim()) {
       setCategory(label);
@@ -246,6 +350,7 @@ export function CreateTemplateDialog({
   function resetForm() {
     setTitle("");
     setOccasion(null);
+    setCustomOccasion("");
     setCategory("");
     setSubCategory("");
     setType("image");
@@ -328,10 +433,12 @@ export function CreateTemplateDialog({
         }
 
         const template = data as unknown as TemplateDbRow;
+        const normalizedOccasion = normalizeKey(template.occasion);
 
         setTitle(template.title || "");
-        setOccasion(template.occasion || null);
-        setCategory(template.category || getOccasionLabel(template.occasion || null) || "");
+        setOccasion(normalizedOccasion || null);
+        setCustomOccasion("");
+        setCategory(template.category || formatLabel(normalizedOccasion) || "");
         setSubCategory(template.sub_category || "");
         setType(template.type === "video" ? "video" : "image");
         setScene(template.scene || "");
@@ -367,7 +474,7 @@ export function CreateTemplateDialog({
 
   function validate() {
     if (!title.trim()) return "Template Title is required";
-    if (!occasion) return "Occasion is required";
+    if (!finalOccasion) return "Occasion is required";
     if (!effectiveCategory) return "Category is required";
     if (!scene.trim()) return "Scene is required";
     if (!orientation) return "Orientation is required";
@@ -396,12 +503,12 @@ export function CreateTemplateDialog({
       return;
     }
 
-    if (!occasion) {
-      toast.error("Select an occasion first");
+    if (!finalOccasion) {
+      toast.error("Select or create an occasion first");
       return;
     }
 
-    const resolvedCategory = getEffectiveCategory(category, occasion);
+    const resolvedCategory = getEffectiveCategory(category, finalOccasion, occasionOptions);
 
     if (!resolvedCategory) {
       toast.error("Add a category first");
@@ -417,7 +524,7 @@ export function CreateTemplateDialog({
 
       const aiPrompt = buildAiPreviewPrompt({
         title,
-        occasion,
+        occasionLabel: finalOccasionLabel,
         category: resolvedCategory,
         subCategory,
         scene,
@@ -425,21 +532,18 @@ export function CreateTemplateDialog({
         prompt,
       });
 
-      const { data, error } = await supabase.functions.invoke(
-        "generate-template-preview",
-        {
-          body: {
-            prompt: aiPrompt,
-            title: title.trim(),
-            occasion,
-            category: resolvedCategory,
-            sub_category: subCategory.trim() || null,
-            scene: scene.trim() || null,
-            orientation,
-            type: "image",
-          },
-        }
-      );
+      const { data, error } = await supabase.functions.invoke("generate-template-preview", {
+        body: {
+          prompt: aiPrompt,
+          title: title.trim(),
+          occasion: finalOccasion,
+          category: resolvedCategory,
+          sub_category: subCategory.trim() || null,
+          scene: scene.trim() || null,
+          orientation,
+          type: "image",
+        },
+      });
 
       if (error) throw error;
 
@@ -508,7 +612,7 @@ export function CreateTemplateDialog({
 
       const payload: Record<string, any> = {
         title: title.trim(),
-        occasion: (occasion || "").trim(),
+        occasion: finalOccasion,
         category: effectiveCategory,
         sub_category: subCategory.trim() || null,
         type,
@@ -551,17 +655,12 @@ export function CreateTemplateDialog({
       }
 
       if (isEditing && templateId) {
-        const { error } = await supabase
-          .from("templates")
-          .update(payload)
-          .eq("id", templateId);
-
+        const { error } = await supabase.from("templates").update(payload).eq("id", templateId);
         if (error) throw error;
 
         toast.success("Template updated successfully!");
       } else {
         const { error } = await supabase.from("templates").insert(payload);
-
         if (error) throw error;
 
         toast.success("Template created successfully!");
@@ -601,12 +700,9 @@ export function CreateTemplateDialog({
             </div>
           </div>
         ) : (
-          <form
-            onSubmit={onSubmit}
-            className="max-h-[75vh] space-y-4 overflow-y-auto pr-2"
-          >
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
+          <form onSubmit={onSubmit} className="max-h-[75vh] space-y-4 overflow-y-auto pr-2">
+            <div className="grid gap-3 md:grid-cols-[1fr_240px]">
+              <div>
                 <label className="text-xs font-medium text-slate-300">
                   Template Title *
                 </label>
@@ -618,19 +714,16 @@ export function CreateTemplateDialog({
                 />
               </div>
 
-              <div className="w-[220px]">
+              <div>
                 <label className="text-xs font-medium text-slate-300">
                   Occasion *
                 </label>
-                <Select
-                  value={occasion ?? undefined}
-                  onValueChange={handleOccasionChange}
-                >
+                <Select value={occasion ?? undefined} onValueChange={handleOccasionChange}>
                   <SelectTrigger className="h-[34px] w-full rounded-xl border border-slate-700 bg-slate-800/50 text-xs text-slate-200">
-                    <SelectValue placeholder="Select occasion" />
+                    <SelectValue placeholder={loadingOccasions ? "Loading..." : "Select occasion"} />
                   </SelectTrigger>
-                  <SelectContent className="border-slate-700 bg-slate-900 text-slate-200">
-                    {OCCASIONS.map((item) => (
+                  <SelectContent className="max-h-[360px] border-slate-700 bg-slate-900 text-slate-200">
+                    {occasionOptions.map((item) => (
                       <SelectItem
                         key={item.value}
                         value={item.value}
@@ -639,68 +732,51 @@ export function CreateTemplateDialog({
                         {item.label}
                       </SelectItem>
                     ))}
+
+                    <SelectItem
+                      value={CUSTOM_OCCASION}
+                      className="border-t border-slate-800 text-indigo-200 focus:bg-slate-800 focus:text-slate-50"
+                    >
+                      + Create new occasion
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {shouldShowStyle ? (
-              <div className="grid gap-3 md:grid-cols-3">
-                <div className="space-y-2 md:col-span-1">
-                  <label className="text-xs font-medium text-slate-300">
-                    Style (optional)
-                  </label>
-
-                  <Select
-                    value={styleId ?? ALL_STYLES_SENTINEL}
-                    onValueChange={(value) =>
-                      setStyleId(value === ALL_STYLES_SENTINEL ? null : value)
-                    }
-                  >
-                    <SelectTrigger className="h-[34px] w-full rounded-xl border border-slate-700 bg-slate-800/50 text-xs text-slate-200">
-                      <SelectValue placeholder="All styles" />
-                    </SelectTrigger>
-
-                    <SelectContent className="border-slate-700 bg-slate-900 text-slate-200">
-                      <SelectItem
-                        value={ALL_STYLES_SENTINEL}
-                        className="focus:bg-slate-800 focus:text-slate-50"
-                      >
-                        All styles
-                      </SelectItem>
-
-                      {styleOptions.map((style) => (
-                        <SelectItem
-                          key={style.value}
-                          value={style.value}
-                          className="focus:bg-slate-800 focus:text-slate-50"
-                        >
-                          {style.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <p className="text-[10px] text-slate-500">
-                    If set, this template will show only for that funnel style.
-                  </p>
-                </div>
+            {occasion === CUSTOM_OCCASION ? (
+              <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3">
+                <label className="text-xs font-medium text-slate-300">
+                  New Occasion Name *
+                </label>
+                <input
+                  value={customOccasion}
+                  onChange={(event) => {
+                    setCustomOccasion(event.target.value);
+                    if (!category.trim()) setCategory(formatLabel(event.target.value));
+                  }}
+                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
+                  placeholder="e.g., Engagement, Baptism, Halloween"
+                />
+                <p className="mt-2 text-[10px] text-slate-500">
+                  After saving, this occasion is stored in DB and will appear in this dropdown and in Generator filters.
+                </p>
               </div>
             ) : null}
 
             <div className="grid gap-3 md:grid-cols-3">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-slate-300">
-                  Category *
+                  Category / Style *
                 </label>
                 <input
-                  value={effectiveCategory}
+                  value={category}
                   onChange={(event) => setCategory(event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
-                  placeholder="e.g., Classic"
+                  placeholder="e.g., Classic, Cozy, Romantic"
                 />
                 <p className="text-[10px] text-slate-500">
-                  Auto-filled from occasion when empty. You can change it anytime.
+                  This becomes the style filter inside the selected occasion.
                 </p>
               </div>
 
@@ -747,6 +823,27 @@ export function CreateTemplateDialog({
                 </div>
               </div>
             </div>
+
+            {styleOptions.length > 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/30 p-3">
+                <p className="mb-2 text-xs font-medium text-slate-300">
+                  Generator filter preview
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full border border-indigo-400/30 bg-indigo-500/15 px-3 py-1 text-[11px] text-indigo-100">
+                    {finalOccasionLabel || "Occasion"}
+                  </span>
+                  {styleOptions.map((style) => (
+                    <span
+                      key={style.value}
+                      className="rounded-full border border-slate-700 bg-slate-800/70 px-3 py-1 text-[11px] text-slate-300"
+                    >
+                      {style.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
@@ -843,9 +940,7 @@ export function CreateTemplateDialog({
 
                 <button
                   type="button"
-                  onClick={() =>
-                    document.getElementById("preview-image-upload")?.click()
-                  }
+                  onClick={() => document.getElementById("preview-image-upload")?.click()}
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-800/50 px-3 py-6 text-xs text-slate-400 transition-colors hover:bg-slate-800"
                 >
                   <ImagePlus className="h-4 w-4" />
@@ -853,12 +948,6 @@ export function CreateTemplateDialog({
                     ? `Selected: ${previewImageFile.name}`
                     : "Click to upload preview image"}
                 </button>
-
-                <p className="text-[10px] text-slate-500">
-                  Recommended: 4:5 or 1:1 ratio, max 5MB. AI photo generation
-                  requires the Supabase Edge Function{" "}
-                  <span className="text-slate-300">generate-template-preview</span>.
-                </p>
               </div>
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
@@ -881,9 +970,7 @@ export function CreateTemplateDialog({
 
                   <button
                     type="button"
-                    onClick={() =>
-                      document.getElementById("thumbnail-upload")?.click()
-                    }
+                    onClick={() => document.getElementById("thumbnail-upload")?.click()}
                     className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-800/50 px-3 py-6 text-xs text-slate-400 transition-colors hover:bg-slate-800"
                   >
                     {thumbnailFile
@@ -927,31 +1014,14 @@ export function CreateTemplateDialog({
                 </h3>
 
                 <div className="grid gap-3 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300">
-                      Duration
-                    </label>
-                    <div className="w-full rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
-                      8 seconds
-                    </div>
+                  <div className="rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
+                    Duration: 8 seconds
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300">
-                      Aspect Ratio
-                    </label>
-                    <div className="w-full rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
-                      16:9 (Landscape)
-                    </div>
+                  <div className="rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
+                    Aspect: 16:9
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300">
-                      Resolution
-                    </label>
-                    <div className="w-full rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
-                      1080p
-                    </div>
+                  <div className="rounded-xl border border-slate-700 bg-slate-800/30 px-3 py-2 text-xs text-slate-400">
+                    Resolution: 1080p
                   </div>
                 </div>
 
@@ -971,19 +1041,14 @@ export function CreateTemplateDialog({
             ) : null}
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-slate-300">
-                  Prompt *
-                </label>
-                <span className="text-[10px] text-slate-500">
-                  Used to generate variations for this template
-                </span>
-              </div>
+              <label className="text-xs font-medium text-slate-300">
+                Prompt *
+              </label>
 
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
-                className="min-h-[120px] w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none ring-0 placeholder:text-slate-500 focus:border-slate-500"
+                className="min-h-[120px] w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-slate-500"
                 placeholder="Describe the scene, style, and mood for this template..."
               />
             </div>
@@ -1016,16 +1081,15 @@ export function CreateTemplateDialog({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-300">Tags</label>
+              <label className="text-xs font-medium text-slate-300">
+                Tags
+              </label>
               <input
                 value={tags}
                 onChange={(event) => setTags(event.target.value)}
                 className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
-                placeholder="cozy, family, fireplace, landscape (comma-separated)"
+                placeholder="cozy, family, fireplace, landscape"
               />
-              <p className="text-[10px] text-slate-500">
-                Separate tags with commas
-              </p>
             </div>
 
             {!isEditing ? (
@@ -1043,8 +1107,7 @@ export function CreateTemplateDialog({
                 >
                   <Mail className="mr-2 h-4 w-4" />
                   <span>
-                    Send email notification to all subscribed users about this new
-                    template
+                    Send email notification to all subscribed users about this new template
                   </span>
                 </label>
               </div>
