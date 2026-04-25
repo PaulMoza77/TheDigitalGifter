@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import VideoModal from "@/components/VideoModal";
 import TemplateCard from "@/components/TemplateCard";
@@ -182,6 +183,7 @@ function getGenerationIdFromResponse(res: any): string | null {
 
 export default function GeneratorPage() {
   const user = useBootstrapUser();
+  const queryClient = useQueryClient();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeCategory, setActiveCategory] = useState("All");
@@ -245,6 +247,15 @@ export default function GeneratorPage() {
     { label: "2:1", value: "2:1" },
     { label: "1:2", value: "1:2" },
   ];
+
+  const refreshCredits = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["userCredits"] });
+    void queryClient.invalidateQueries({ queryKey: ["credits"] });
+    void queryClient.invalidateQueries({ queryKey: ["user-credits"] });
+    void queryClient.invalidateQueries({ queryKey: ["userCreditsQuery"] });
+    void queryClient.refetchQueries({ queryKey: ["userCredits"] });
+    void queryClient.refetchQueries({ queryKey: ["credits"] });
+  }, [queryClient]);
 
   const filteredTemplates = useMemo(() => {
     let list = templatesList;
@@ -326,6 +337,7 @@ export default function GeneratorPage() {
           setPreviewAfter(generation.final_image_url);
           setIsGenerating(false);
           setCurrentGenerationId(null);
+          refreshCredits();
           toast.success("🎄 Your card is ready!");
           return;
         }
@@ -334,13 +346,14 @@ export default function GeneratorPage() {
           stopGenerationPolling();
           setIsGenerating(false);
           setCurrentGenerationId(null);
+          refreshCredits();
           toast.error("Failed to generate. Please try again.");
         }
       } finally {
         isPollingRef.current = false;
       }
     },
-    [stopGenerationPolling]
+    [stopGenerationPolling, refreshCredits]
   );
 
   useEffect(() => {
@@ -376,12 +389,14 @@ export default function GeneratorPage() {
     if (currentJob.status === "done" && currentJob.result_url) {
       setPreviewAfter(currentJob.result_url);
       setIsGenerating(false);
+      refreshCredits();
       toast.success("🎬 Your video is ready!");
     } else if (currentJob.status === "error") {
       setIsGenerating(false);
+      refreshCredits();
       toast.error(currentJob.error_message || "Failed to generate. Please try again.");
     }
-  }, [currentJob]);
+  }, [currentJob, refreshCredits]);
 
   const handleTemplateSelect = useCallback(
     (template: AnyTemplate) => {
@@ -633,6 +648,7 @@ export default function GeneratorPage() {
 
         const jobId = String(res?.jobId ?? res?.id ?? res);
         setCurrentJobId(jobId);
+        refreshCredits();
         toast.success("Video generation started!");
       } else {
         console.log("[handleGenerate] triggerCreateJob payload", {
@@ -658,16 +674,19 @@ export default function GeneratorPage() {
         if (!generationId) {
           console.error("[handleGenerate] generation response without ID", res);
           setIsGenerating(false);
+          refreshCredits();
           toast.error("Generation was created, but no generation_id was returned.");
           return;
         }
 
         setCurrentGenerationId(generationId);
+        refreshCredits();
         toast.success("Generation started!");
       }
     } catch (error: any) {
       console.error("[handleGenerate] error", error);
       setIsGenerating(false);
+      refreshCredits();
       toast.error(error?.message ?? "Failed to generate.");
     }
   }, [
@@ -686,6 +705,7 @@ export default function GeneratorPage() {
     jobs,
     selectedLanguage,
     stopGenerationPolling,
+    refreshCredits,
   ]);
 
   return (
