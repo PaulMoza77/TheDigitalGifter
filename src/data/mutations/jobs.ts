@@ -35,7 +35,6 @@ type TemplatePromptRow = {
   occasion: string | null;
   category: string | null;
   prompt: string | null;
-  description: string | null;
 };
 
 async function getAuthenticatedUser() {
@@ -77,7 +76,7 @@ async function getAccessToken(): Promise<string> {
 async function getTemplatePrompt(templateId: string): Promise<TemplatePromptRow> {
   const { data, error } = await supabase
     .from("templates")
-    .select("id,title,type,occasion,category,prompt,description")
+    .select("id,title,type,occasion,category,prompt")
     .eq("id", templateId)
     .maybeSingle<TemplatePromptRow>();
 
@@ -96,22 +95,29 @@ function buildImagePrompt(input: {
   template: TemplatePromptRow;
   userInstructions?: string;
 }) {
+  const templateTitle = String(input.template.title ?? "").trim();
   const templatePrompt = String(input.template.prompt ?? "").trim();
+  const occasion = String(input.template.occasion ?? "").trim();
+  const category = String(input.template.category ?? "").trim();
   const userInstructions = String(input.userInstructions ?? "").trim();
 
-  const fallbackTemplatePrompt = [
-    `Transform the uploaded reference image into a ${input.template.title || "premium digital gift"} design.`,
-    input.template.occasion ? `Occasion: ${input.template.occasion}.` : "",
-    input.template.category ? `Style/category: ${input.template.category}.` : "",
-    "Keep the main subject from the uploaded image clearly recognizable.",
-    "Do not replace the uploaded subject with a romantic couple, people, faces, or unrelated characters unless the template explicitly asks for that.",
-    "If the uploaded image is a car, keep the car as the main hero subject.",
-    "Create a polished, premium digital gift illustration based on the selected template.",
+  return [
+    "Use the uploaded image as the main reference image.",
+    "Preserve the exact main subject from the uploaded image.",
+    "The final image must be a transformation of the uploaded image, not a new unrelated image.",
+    "Keep the subject identity, shape, proportions, color, and key visual details recognizable.",
+    "Do not replace the uploaded subject with people, couples, faces, animals, or unrelated objects.",
+    "If the uploaded image contains a car, the final image must still show that same car as the main hero subject.",
+    "If the uploaded image contains a product/object, keep that product/object as the central subject.",
+    templateTitle ? `Apply the selected template style: ${templateTitle}.` : "",
+    occasion ? `Occasion/theme: ${occasion}.` : "",
+    category ? `Visual category/style: ${category}.` : "",
+    templatePrompt ? `Template instructions: ${templatePrompt}.` : "",
+    "Add only background, lighting, textures, decorations, atmosphere, and framing that match the selected template.",
+    "Do not add romantic couples, wedding characters, human portraits, or love-card elements unless explicitly requested by the selected template.",
+    "Create a polished premium digital gift artwork while keeping the uploaded subject dominant and clearly recognizable.",
+    userInstructions ? `Additional user instructions: ${userInstructions}.` : "",
   ]
-    .filter(Boolean)
-    .join(" ");
-
-  return [templatePrompt || fallbackTemplatePrompt, userInstructions]
     .filter(Boolean)
     .join(" ")
     .trim();
@@ -131,6 +137,7 @@ export function useCreateJobMutation() {
       }
 
       const template = await getTemplatePrompt(payload.templateId);
+
       const prompt = buildImagePrompt({
         template,
         userInstructions: payload.userInstructions,
@@ -149,9 +156,11 @@ export function useCreateJobMutation() {
             templateType: template.type,
             templateOccasion: template.occasion,
             templateCategory: template.category,
+            templatePrompt: template.prompt,
             aspectRatio: payload.aspectRatio,
             userInstructions: payload.userInstructions ?? null,
             sourceImageCount: payload.inputUrls.length,
+            promptMode: "template_style_transfer_preserve_subject",
           },
         })
         .select("id")
