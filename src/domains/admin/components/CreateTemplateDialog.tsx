@@ -29,6 +29,7 @@ const OCCASIONS: Array<{ value: string; label: string }> = [
   { value: "christmas", label: "Christmas" },
   { value: "birthday", label: "Birthday" },
   { value: "anniversary", label: "Anniversary" },
+  { value: "thanksgiving", label: "Thanksgiving" },
   { value: "thank_you", label: "Thank You" },
   { value: "new_born", label: "New Born" },
   { value: "baby_reveal", label: "Baby Reveal" },
@@ -94,7 +95,9 @@ function parseTags(input: string) {
 function safeExt(name: string) {
   const parts = String(name || "").split(".");
   const ext = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+
   if (ext && ext.length <= 6) return ext;
+
   return "bin";
 }
 
@@ -118,6 +121,10 @@ async function uploadToSupabaseStorage(file: File, folder: string) {
   return data.publicUrl;
 }
 
+function getOccasionLabel(value: string | null) {
+  return OCCASIONS.find((item) => item.value === value)?.label || value || "";
+}
+
 function buildAiPreviewPrompt(input: {
   title: string;
   occasion: string | null;
@@ -127,21 +134,18 @@ function buildAiPreviewPrompt(input: {
   orientation: Orientation;
   prompt: string;
 }) {
-  const occasionLabel =
-    OCCASIONS.find((item) => item.value === input.occasion)?.label ||
-    input.occasion ||
-    "general occasion";
+  const occasionLabel = getOccasionLabel(input.occasion) || "general occasion";
 
   return [
-    `Create a premium preview image for an AI gift/card template.`,
+    "Create a premium preview image for an AI gift/card template.",
     `Template title: ${input.title || "Untitled template"}.`,
     `Occasion: ${occasionLabel}.`,
     `Category: ${input.category || "General"}.`,
     input.subCategory ? `Sub-category: ${input.subCategory}.` : "",
     input.scene ? `Scene: ${input.scene}.` : "",
     `Orientation: ${input.orientation}.`,
-    `The image should look polished, high-end, emotional, gift-ready, clean, and suitable as a marketplace template preview.`,
-    `Do not include readable UI text, watermarks, logos, distorted faces, or messy artifacts.`,
+    "The image should look polished, high-end, emotional, gift-ready, clean, and suitable as a marketplace template preview.",
+    "Do not include readable UI text, watermarks, logos, distorted faces, or messy artifacts.",
     input.prompt ? `Template generation prompt context: ${input.prompt}` : "",
   ]
     .filter(Boolean)
@@ -229,6 +233,16 @@ export function CreateTemplateDialog({
     }
   }, [occasion, shouldShowStyle, styleId, styleOptions]);
 
+  function handleOccasionChange(value: string) {
+    const label = getOccasionLabel(value);
+
+    setOccasion(value);
+
+    if (!category.trim()) {
+      setCategory(label);
+    }
+  }
+
   const resetForm = () => {
     setTitle("");
     setOccasion(null);
@@ -307,6 +321,7 @@ export function CreateTemplateDialog({
 
         if (cancelled) return;
         if (error) throw error;
+
         if (!data) {
           toast.error("Template not found");
           return;
@@ -359,6 +374,7 @@ export function CreateTemplateDialog({
     if (!scene.trim()) return "Scene is required";
     if (!orientation) return "Orientation is required";
     if (!prompt.trim()) return "Prompt is required";
+
     if (!creditCost || Number.isNaN(Number(creditCost)) || Number(creditCost) < 1) {
       return "Credit Cost must be >= 1";
     }
@@ -450,6 +466,7 @@ export function CreateTemplateDialog({
     e.preventDefault();
 
     const err = validate();
+
     if (err) {
       toast.error(err);
       return;
@@ -580,7 +597,10 @@ export function CreateTemplateDialog({
             </div>
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="max-h-[75vh] space-y-4 overflow-y-auto pr-2">
+          <form
+            onSubmit={onSubmit}
+            className="max-h-[75vh] space-y-4 overflow-y-auto pr-2"
+          >
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <label className="text-xs font-medium text-slate-300">
@@ -598,7 +618,10 @@ export function CreateTemplateDialog({
                 <label className="text-xs font-medium text-slate-300">
                   Occasion *
                 </label>
-                <Select value={occasion ?? undefined} onValueChange={(v) => setOccasion(v)}>
+                <Select
+                  value={occasion ?? undefined}
+                  onValueChange={handleOccasionChange}
+                >
                   <SelectTrigger className="h-[34px] w-full rounded-xl border border-slate-700 bg-slate-800/50 text-xs text-slate-200">
                     <SelectValue placeholder="Select occasion" />
                   </SelectTrigger>
@@ -672,6 +695,9 @@ export function CreateTemplateDialog({
                   className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                   placeholder="e.g., Classic"
                 />
+                <p className="text-[10px] text-slate-500">
+                  Auto-filled from occasion when empty. You can change it anytime.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -803,6 +829,7 @@ export function CreateTemplateDialog({
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
                     setPreviewImageFile(file);
+
                     if (file) {
                       setAiPreviewUrl("");
                       toast.success(`Selected: ${file.name}`);
@@ -812,7 +839,9 @@ export function CreateTemplateDialog({
 
                 <button
                   type="button"
-                  onClick={() => document.getElementById("preview-image-upload")?.click()}
+                  onClick={() =>
+                    document.getElementById("preview-image-upload")?.click()
+                  }
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-800/50 px-3 py-6 text-xs text-slate-400 transition-colors hover:bg-slate-800"
                 >
                   <ImagePlus className="h-4 w-4" />
@@ -822,8 +851,8 @@ export function CreateTemplateDialog({
                 </button>
 
                 <p className="text-[10px] text-slate-500">
-                  Recommended: 4:5 or 1:1 ratio, max 5MB. AI photo generation requires
-                  the Supabase Edge Function{" "}
+                  Recommended: 4:5 or 1:1 ratio, max 5MB. AI photo generation
+                  requires the Supabase Edge Function{" "}
                   <span className="text-slate-300">generate-template-preview</span>.
                 </p>
               </div>
@@ -848,7 +877,9 @@ export function CreateTemplateDialog({
 
                   <button
                     type="button"
-                    onClick={() => document.getElementById("thumbnail-upload")?.click()}
+                    onClick={() =>
+                      document.getElementById("thumbnail-upload")?.click()
+                    }
                     className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-800/50 px-3 py-6 text-xs text-slate-400 transition-colors hover:bg-slate-800"
                   >
                     {thumbnailFile
@@ -988,7 +1019,9 @@ export function CreateTemplateDialog({
                 className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 outline-none focus:border-slate-500"
                 placeholder="cozy, family, fireplace, landscape (comma-separated)"
               />
-              <p className="text-[10px] text-slate-500">Separate tags with commas</p>
+              <p className="text-[10px] text-slate-500">
+                Separate tags with commas
+              </p>
             </div>
 
             {!isEditing && (
@@ -1006,7 +1039,8 @@ export function CreateTemplateDialog({
                 >
                   <Mail className="mr-2 h-4 w-4" />
                   <span>
-                    Send email notification to all subscribed users about this new template
+                    Send email notification to all subscribed users about this new
+                    template
                   </span>
                 </label>
               </div>
