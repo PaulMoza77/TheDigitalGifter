@@ -1,6 +1,7 @@
+// FILE: src/components/SupportTicketWidget.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { MessageCircle, X, Loader2, Send } from "lucide-react";
+import { Loader2, MessageCircle, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
@@ -14,8 +15,10 @@ type TicketRow = {
   email: string | null;
   subject: string;
   status: string;
+  priority: string | null;
   page_url: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 type MessageRow = {
@@ -27,10 +30,18 @@ type MessageRow = {
   created_at: string;
 };
 
+function makeChannelName(prefix: string) {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  return `${prefix}-${id}`;
+}
+
 export default function SupportTicketWidget() {
   const location = useLocation();
   const { user } = useAuth();
-
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const [open, setOpen] = useState(false);
@@ -40,19 +51,25 @@ export default function SupportTicketWidget() {
   const [ticket, setTicket] = useState<TicketRow | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
   const hidden =
     location.pathname.includes("/admin") ||
+    location.pathname.includes("/funnel") ||
     location.pathname.includes("/checkout") ||
     location.pathname.includes("/payment") ||
     location.pathname.includes("/credits");
 
-  const storageKey = useMemo(() => {
-    return user?.id ? `support_ticket_${user.id}` : "support_ticket_guest";
-  }, [user?.id]);
+  const storageKey = useMemo(
+    () => (user?.id ? `support_ticket_${user.id}` : "support_ticket_guest"),
+    [user?.id]
+  );
+
+  useEffect(() => {
+    if (user?.email) setEmail(user.email);
+  }, [user?.email]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,34 +77,57 @@ export default function SupportTicketWidget() {
     const savedTicketId = localStorage.getItem(storageKey);
     if (!savedTicketId) return;
 
+    let cancelled = false;
+
     async function loadTicket() {
-      const { data: ticketData } = await supabase
+      const { data: ticketData, error: ticketError } = await supabase
         .from("support_tickets")
         .select("*")
         .eq("id", savedTicketId)
         .maybeSingle();
 
-      if (!ticketData) return;
+      if (cancelled) return;
+
+      if (ticketError) {
+        console.error(ticketError);
+        return;
+      }
+
+      if (!ticketData) {
+        localStorage.removeItem(storageKey);
+        return;
+      }
 
       setTicket(ticketData as TicketRow);
 
-      const { data: messagesData } = await supabase
+      const { data: messagesData, error: messagesError } = await supabase
         .from("support_ticket_messages")
         .select("*")
         .eq("ticket_id", savedTicketId)
         .order("created_at", { ascending: true });
 
-      setMessages((messagesData || []) as MessageRow[]);
+      if (messagesError) {
+        console.error(messagesError);
+        return;
+      }
+
+      if (!cancelled) {
+        setMessages((messagesData || []) as MessageRow[]);
+      }
     }
 
     void loadTicket();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, storageKey]);
 
   useEffect(() => {
     if (!ticket?.id) return;
 
     const channel = supabase
-      .channel(`support-ticket-client-${ticket.id}`)
+      .channel(makeChannelName(`support-ticket-client-${ticket.id}`))
       .on(
         "postgres_changes",
         {
@@ -125,24 +165,43 @@ export default function SupportTicketWidget() {
   }, [ticket?.id]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, open]);
 
   if (hidden) return null;
 
+  async function updateTicketTimestamp(ticketId: string) {
+    const { data, error } = await supabase
+      .from("support_tickets")
+      .update({
+        status: ticket?.status === "closed" ? "open" : ticket?.status || "open",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", ticketId)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+    if (data) setTicket(data as TicketRow);
+  }
+
   async function createTicket() {
-    if (!subject.trim()) {
+    const cleanSubject = subject.trim();
+    const cleanMessage = message.trim();
+    const cleanEmail = (user?.email || email).trim();
+
+    if (!cleanEmail) {
+      toast.error("Email is required");
+      return;
+    }
+
+    if (!cleanSubject) {
       toast.error("Please add a subject");
       return;
     }
 
-    if (!message.trim()) {
+    if (!cleanMessage) {
       toast.error("Please write your message");
-      return;
-    }
-
-    if (!user && !email.trim()) {
-      toast.error("Email is required");
       return;
     }
 
@@ -157,12 +216,14 @@ export default function SupportTicketWidget() {
             user?.user_metadata?.full_name ||
             user?.user_metadata?.name ||
             user?.email ||
+            cleanEmail ||
             null,
-          email: user?.email ?? email.trim(),
-          subject: subject.trim(),
+          email: cleanEmail,
+          subject: cleanSubject,
           page_url: window.location.href,
           status: "open",
           priority: "normal",
+          updated_at: new Date().toISOString(),
         })
         .select("*")
         .single();
@@ -177,24 +238,25 @@ export default function SupportTicketWidget() {
           ticket_id: createdTicket.id,
           sender_id: user?.id ?? null,
           sender_type: "client",
-          message: message.trim(),
+          message: cleanMessage,
         })
         .select("*")
         .single();
 
       if (messageError) throw messageError;
 
+      const firstMessage = messageData as MessageRow;
+
       setTicket(createdTicket);
-      setMessages([messageData as MessageRow]);
+      setMessages([firstMessage]);
       localStorage.setItem(storageKey, createdTicket.id);
 
       setSubject("");
       setMessage("");
-      setEmail("");
 
       toast.success("Ticket created");
     } catch (error: any) {
-      console.error(error);
+      console.error("[SupportTicketWidget] createTicket error:", error);
       toast.error(error?.message || "Failed to create ticket");
     } finally {
       setCreating(false);
@@ -204,7 +266,9 @@ export default function SupportTicketWidget() {
   async function sendMessage() {
     if (!ticket?.id) return;
 
-    if (!message.trim()) {
+    const cleanMessage = message.trim();
+
+    if (!cleanMessage) {
       toast.error("Please write your message");
       return;
     }
@@ -212,26 +276,32 @@ export default function SupportTicketWidget() {
     try {
       setSending(true);
 
-      const { error } = await supabase.from("support_ticket_messages").insert({
-        ticket_id: ticket.id,
-        sender_id: user?.id ?? null,
-        sender_type: "client",
-        message: message.trim(),
-      });
+      const { data, error } = await supabase
+        .from("support_ticket_messages")
+        .insert({
+          ticket_id: ticket.id,
+          sender_id: user?.id ?? null,
+          sender_type: "client",
+          message: cleanMessage,
+        })
+        .select("*")
+        .single();
 
       if (error) throw error;
 
-      await supabase
-        .from("support_tickets")
-        .update({
-          status: ticket.status === "closed" ? "open" : ticket.status,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", ticket.id);
+      if (data) {
+        const insertedMessage = data as MessageRow;
+
+        setMessages((prev) => {
+          if (prev.some((item) => item.id === insertedMessage.id)) return prev;
+          return [...prev, insertedMessage];
+        });
+      }
 
       setMessage("");
+      await updateTicketTimestamp(ticket.id);
     } catch (error: any) {
-      console.error(error);
+      console.error("[SupportTicketWidget] sendMessage error:", error);
       toast.error(error?.message || "Failed to send message");
     } finally {
       setSending(false);
@@ -253,8 +323,8 @@ export default function SupportTicketWidget() {
         <div className="fixed inset-0 z-[60] flex items-end justify-end bg-black/40 p-4 backdrop-blur-sm">
           <div className="flex h-[620px] w-full max-w-[390px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b1220] shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-              <div>
-                <h3 className="text-sm font-semibold text-white">
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-semibold text-white">
                   {ticket ? ticket.subject : "Create Support Ticket"}
                 </h3>
                 <p className="text-xs text-zinc-400">
@@ -273,14 +343,13 @@ export default function SupportTicketWidget() {
 
             {!ticket ? (
               <div className="flex flex-1 flex-col p-4">
-                {!user ? (
-                  <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Your email"
-                    className="mb-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : null}
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={!!user?.email}
+                  placeholder="Your email"
+                  className="mb-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-70"
+                />
 
                 <input
                   value={subject}
@@ -299,7 +368,7 @@ export default function SupportTicketWidget() {
 
                 <button
                   type="button"
-                  onClick={createTicket}
+                  onClick={() => void createTicket()}
                   disabled={creating}
                   className={cn(
                     "mt-auto flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 py-2 text-sm font-semibold text-white transition hover:brightness-110",
@@ -312,17 +381,14 @@ export default function SupportTicketWidget() {
               </div>
             ) : (
               <>
-                <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
                   {messages.map((item) => {
                     const isClient = item.sender_type === "client";
 
                     return (
                       <div
                         key={item.id}
-                        className={cn(
-                          "flex",
-                          isClient ? "justify-end" : "justify-start"
-                        )}
+                        className={cn("flex", isClient ? "justify-end" : "justify-start")}
                       >
                         <div
                           className={cn(
@@ -332,7 +398,12 @@ export default function SupportTicketWidget() {
                               : "bg-white/10 text-zinc-100"
                           )}
                         >
-                          {item.message}
+                          <p className="whitespace-pre-wrap break-words">
+                            {item.message}
+                          </p>
+                          <p className="mt-1 text-[10px] opacity-60">
+                            {new Date(item.created_at).toLocaleTimeString()}
+                          </p>
                         </div>
                       </div>
                     );
@@ -359,7 +430,7 @@ export default function SupportTicketWidget() {
 
                     <button
                       type="button"
-                      onClick={sendMessage}
+                      onClick={() => void sendMessage()}
                       disabled={sending}
                       className="flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-blue-500 text-white transition hover:brightness-110 disabled:opacity-60"
                     >

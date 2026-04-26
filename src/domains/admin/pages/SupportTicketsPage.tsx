@@ -151,11 +151,7 @@ export default function SupportTicketsPage() {
           }
         }
       )
-      .subscribe((status) => {
-        if (status === "CHANNEL_ERROR") {
-          console.warn("[SupportTicketsPage] tickets realtime channel error");
-        }
-      });
+      .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
@@ -221,11 +217,7 @@ export default function SupportTicketsPage() {
           });
         }
       )
-      .subscribe((status) => {
-        if (status === "CHANNEL_ERROR") {
-          console.warn("[SupportTicketsPage] messages realtime channel error");
-        }
-      });
+      .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
@@ -233,25 +225,40 @@ export default function SupportTicketsPage() {
   }, [selectedTicketId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, selectedTicketId]);
 
   async function touchTicket(ticketId: string, status?: string) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("support_tickets")
       .update({
         ...(status ? { status } : {}),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", ticketId);
+      .eq("id", ticketId)
+      .select("*")
+      .single();
 
     if (error) throw error;
+
+    if (data) {
+      const updatedTicket = data as TicketRow;
+      setTickets((prev) =>
+        sortTickets(
+          prev.map((ticket) =>
+            ticket.id === updatedTicket.id ? updatedTicket : ticket
+          )
+        )
+      );
+    }
   }
 
   async function sendReply() {
     if (!selectedTicketId) return;
 
-    if (!reply.trim()) {
+    const cleanReply = reply.trim();
+
+    if (!cleanReply) {
       toast.error("Write a reply first");
       return;
     }
@@ -259,17 +266,30 @@ export default function SupportTicketsPage() {
     try {
       setSending(true);
 
-      const { error } = await supabase.from("support_ticket_messages").insert({
-        ticket_id: selectedTicketId,
-        sender_id: user?.id ?? null,
-        sender_type: "admin",
-        message: reply.trim(),
-      });
+      const { data, error } = await supabase
+        .from("support_ticket_messages")
+        .insert({
+          ticket_id: selectedTicketId,
+          sender_id: user?.id ?? null,
+          sender_type: "admin",
+          message: cleanReply,
+        })
+        .select("*")
+        .single();
 
       if (error) throw error;
 
-      await touchTicket(selectedTicketId, "open");
+      if (data) {
+        const insertedMessage = data as MessageRow;
+
+        setMessages((prev) => {
+          if (prev.some((message) => message.id === insertedMessage.id)) return prev;
+          return [...prev, insertedMessage];
+        });
+      }
+
       setReply("");
+      await touchTicket(selectedTicketId, "open");
     } catch (error: any) {
       console.error("[SupportTicketsPage] sendReply error:", error);
       toast.error(error?.message || "Failed to send reply");
@@ -294,23 +314,23 @@ export default function SupportTicketsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#05070d] p-4 text-white sm:p-6">
-      <div className="mb-6">
+    <div className="flex h-screen min-h-0 flex-col overflow-hidden bg-[#05070d] p-4 text-white sm:p-6">
+      <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-bold">Support Tickets</h1>
         <p className="text-sm text-zinc-400">
           Real-time support inbox for client messages.
         </p>
       </div>
 
-      <div className="grid h-[calc(100vh-150px)] grid-cols-1 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] lg:grid-cols-[360px_1fr]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] lg:grid-cols-[360px_1fr]">
         <aside className="min-h-0 border-b border-white/10 lg:border-b-0 lg:border-r lg:border-white/10">
-          <div className="border-b border-white/10 p-4">
+          <div className="shrink-0 border-b border-white/10 p-4">
             <p className="text-sm font-semibold">
               Tickets <span className="text-zinc-400">({tickets.length})</span>
             </p>
           </div>
 
-          <div className="h-[260px] overflow-y-auto lg:h-full">
+          <div className="h-[260px] overflow-y-auto lg:h-[calc(100%-53px)]">
             {loadingTickets ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
@@ -368,36 +388,38 @@ export default function SupportTicketsPage() {
             </div>
           ) : (
             <>
-              <div className="flex items-start justify-between gap-4 border-b border-white/10 p-4">
-                <div className="min-w-0">
-                  <h2 className="truncate font-semibold">{selectedTicket.subject}</h2>
-                  <p className="text-xs text-zinc-400">
-                    {selectedTicket.email || selectedTicket.name || "Guest"}
-                  </p>
-
-                  {selectedTicket.page_url ? (
-                    <p className="mt-1 max-w-[620px] truncate text-[11px] text-zinc-600">
-                      {selectedTicket.page_url}
+              <div className="shrink-0 border-b border-white/10">
+                <div className="flex items-start justify-between gap-4 p-4">
+                  <div className="min-w-0">
+                    <h2 className="truncate font-semibold">{selectedTicket.subject}</h2>
+                    <p className="text-xs text-zinc-400">
+                      {selectedTicket.email || selectedTicket.name || "Guest"}
                     </p>
-                  ) : null}
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => void closeTicket()}
-                  disabled={closing || selectedTicket.status === "closed"}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {closing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4" />
-                  )}
-                  {selectedTicket.status === "closed" ? "Closed" : "Close"}
-                </button>
+                    {selectedTicket.page_url ? (
+                      <p className="mt-1 max-w-[620px] truncate text-[11px] text-zinc-600">
+                        {selectedTicket.page_url}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => void closeTicket()}
+                    disabled={closing || selectedTicket.status === "closed"}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {closing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}
+                    {selectedTicket.status === "closed" ? "Closed" : "Close"}
+                  </button>
+                </div>
               </div>
 
-              <div className="flex-1 space-y-3 overflow-y-auto p-5">
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5">
                 {loadingMessages ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
@@ -423,7 +445,9 @@ export default function SupportTicketsPage() {
                               : "bg-white/10 text-zinc-100"
                           )}
                         >
-                          <p className="whitespace-pre-wrap break-words">{message.message}</p>
+                          <p className="whitespace-pre-wrap break-words">
+                            {message.message}
+                          </p>
                           <p className="mt-1 text-[10px] opacity-60">
                             {new Date(message.created_at).toLocaleTimeString()}
                           </p>
@@ -436,7 +460,7 @@ export default function SupportTicketsPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="border-t border-white/10 p-4">
+              <div className="shrink-0 border-t border-white/10 p-4">
                 <div className="flex gap-2">
                   <textarea
                     value={reply}
