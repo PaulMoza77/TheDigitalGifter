@@ -1,11 +1,13 @@
 // FILE: src/domains/admin/pages/SupportTicketsPage.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Inbox, Loader2, Send } from "lucide-react";
+import { Bot, CheckCircle2, Inbox, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+
+type SenderType = "client" | "admin" | "ai" | "system";
 
 type TicketRow = {
   id: string;
@@ -24,7 +26,7 @@ type MessageRow = {
   id: string;
   ticket_id: string;
   sender_id: string | null;
-  sender_type: "client" | "admin";
+  sender_type: SenderType;
   message: string;
   created_at: string;
 };
@@ -44,6 +46,13 @@ function sortTickets(tickets: TicketRow[]) {
       new Date(b.updated_at || b.created_at).getTime() -
       new Date(a.updated_at || a.created_at).getTime()
   );
+}
+
+function getStatusStyle(status: string) {
+  if (status === "closed") return "bg-emerald-500/15 text-emerald-300";
+  if (status === "needs_agent") return "bg-red-500/15 text-red-300";
+  if (status === "ai_replied") return "bg-cyan-500/15 text-cyan-300";
+  return "bg-blue-500/15 text-blue-300";
 }
 
 export default function SupportTicketsPage() {
@@ -228,11 +237,19 @@ export default function SupportTicketsPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, selectedTicketId]);
 
-  async function touchTicket(ticketId: string, status?: string) {
+  function addMessageInstant(message: MessageRow) {
+    setMessages((prev) => {
+      if (prev.some((item) => item.id === message.id)) return prev;
+      return [...prev, message];
+    });
+  }
+
+  async function touchTicket(ticketId: string, status?: string, priority?: string) {
     const { data, error } = await supabase
       .from("support_tickets")
       .update({
         ...(status ? { status } : {}),
+        ...(priority ? { priority } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", ticketId)
@@ -243,6 +260,7 @@ export default function SupportTicketsPage() {
 
     if (data) {
       const updatedTicket = data as TicketRow;
+
       setTickets((prev) =>
         sortTickets(
           prev.map((ticket) =>
@@ -279,17 +297,10 @@ export default function SupportTicketsPage() {
 
       if (error) throw error;
 
-      if (data) {
-        const insertedMessage = data as MessageRow;
-
-        setMessages((prev) => {
-          if (prev.some((message) => message.id === insertedMessage.id)) return prev;
-          return [...prev, insertedMessage];
-        });
-      }
+      if (data) addMessageInstant(data as MessageRow);
 
       setReply("");
-      await touchTicket(selectedTicketId, "open");
+      await touchTicket(selectedTicketId, "open", "normal");
     } catch (error: any) {
       console.error("[SupportTicketsPage] sendReply error:", error);
       toast.error(error?.message || "Failed to send reply");
@@ -303,7 +314,27 @@ export default function SupportTicketsPage() {
 
     try {
       setClosing(true);
-      await touchTicket(selectedTicketId, "closed");
+
+      const closingMessage =
+        "This support chat has been closed. If you need any further assistance, please open a new support ticket and our team will be happy to help.";
+
+      const { data: messageData, error: messageError } = await supabase
+        .from("support_ticket_messages")
+        .insert({
+          ticket_id: selectedTicketId,
+          sender_id: user?.id ?? null,
+          sender_type: "system",
+          message: closingMessage,
+        })
+        .select("*")
+        .single();
+
+      if (messageError) throw messageError;
+
+      if (messageData) addMessageInstant(messageData as MessageRow);
+
+      await touchTicket(selectedTicketId, "closed", "normal");
+
       toast.success("Ticket closed");
     } catch (error: any) {
       console.error("[SupportTicketsPage] closeTicket error:", error);
@@ -359,9 +390,7 @@ export default function SupportTicketsPage() {
                     <span
                       className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                        ticket.status === "closed"
-                          ? "bg-emerald-500/15 text-emerald-300"
-                          : "bg-blue-500/15 text-blue-300"
+                        getStatusStyle(ticket.status || "open")
                       )}
                     >
                       {ticket.status || "open"}
@@ -391,7 +420,21 @@ export default function SupportTicketsPage() {
               <div className="shrink-0 border-b border-white/10">
                 <div className="flex items-start justify-between gap-4 p-4">
                   <div className="min-w-0">
-                    <h2 className="truncate font-semibold">{selectedTicket.subject}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="truncate font-semibold">
+                        {selectedTicket.subject}
+                      </h2>
+
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                          getStatusStyle(selectedTicket.status || "open")
+                        )}
+                      >
+                        {selectedTicket.status || "open"}
+                      </span>
+                    </div>
+
                     <p className="text-xs text-zinc-400">
                       {selectedTicket.email || selectedTicket.name || "Guest"}
                     </p>
@@ -430,24 +473,45 @@ export default function SupportTicketsPage() {
                   </div>
                 ) : (
                   messages.map((message) => {
+                    const isClient = message.sender_type === "client";
                     const isAdmin = message.sender_type === "admin";
+                    const isAi = message.sender_type === "ai";
+                    const isSystem = message.sender_type === "system";
 
                     return (
                       <div
                         key={message.id}
-                        className={cn("flex", isAdmin ? "justify-end" : "justify-start")}
+                        className={cn(
+                          "flex",
+                          isClient || isAdmin ? "justify-end" : "justify-start"
+                        )}
                       >
                         <div
                           className={cn(
                             "max-w-[75%] rounded-2xl px-4 py-2 text-sm",
-                            isAdmin
-                              ? "bg-blue-500 text-white"
-                              : "bg-white/10 text-zinc-100"
+                            isClient && "bg-white/10 text-zinc-100",
+                            isAdmin && "bg-blue-500 text-white",
+                            isAi && "bg-cyan-500/10 text-cyan-50",
+                            isSystem && "bg-amber-500/10 text-amber-100"
                           )}
                         >
+                          {isAi ? (
+                            <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-200">
+                              <Bot className="h-3 w-3" />
+                              AI Assistant
+                            </div>
+                          ) : null}
+
+                          {isSystem ? (
+                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-200">
+                              System
+                            </div>
+                          ) : null}
+
                           <p className="whitespace-pre-wrap break-words">
                             {message.message}
                           </p>
+
                           <p className="mt-1 text-[10px] opacity-60">
                             {new Date(message.created_at).toLocaleTimeString()}
                           </p>
@@ -461,34 +525,40 @@ export default function SupportTicketsPage() {
               </div>
 
               <div className="shrink-0 border-t border-white/10 p-4">
-                <div className="flex gap-2">
-                  <textarea
-                    value={reply}
-                    onChange={(e) => setReply(e.target.value)}
-                    placeholder="Write a reply..."
-                    rows={1}
-                    className="max-h-28 min-h-[44px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        void sendReply();
-                      }
-                    }}
-                  />
+                {selectedTicket.status === "closed" ? (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-zinc-300">
+                    This support chat is closed. The client must open a new ticket for further help.
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <textarea
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      placeholder="Write a reply..."
+                      rows={1}
+                      className="max-h-28 min-h-[44px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          void sendReply();
+                        }
+                      }}
+                    />
 
-                  <button
-                    type="button"
-                    onClick={() => void sendReply()}
-                    disabled={sending}
-                    className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-blue-500 text-white transition hover:brightness-110 disabled:opacity-60"
-                  >
-                    {sending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => void sendReply()}
+                      disabled={sending}
+                      className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-blue-500 text-white transition hover:brightness-110 disabled:opacity-60"
+                    >
+                      {sending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
