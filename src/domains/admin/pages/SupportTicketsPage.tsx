@@ -1,5 +1,6 @@
+// FILE: src/domains/admin/pages/SupportTicketsPage.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Send, Inbox, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Inbox, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
@@ -13,7 +14,7 @@ type TicketRow = {
   email: string | null;
   subject: string;
   status: string;
-  priority: string;
+  priority: string | null;
   page_url: string | null;
   created_at: string;
   updated_at: string;
@@ -28,6 +29,14 @@ type MessageRow = {
   created_at: string;
 };
 
+function sortTickets(tickets: TicketRow[]) {
+  return [...tickets].sort(
+    (a, b) =>
+      new Date(b.updated_at || b.created_at).getTime() -
+      new Date(a.updated_at || a.created_at).getTime()
+  );
+}
+
 export default function SupportTicketsPage() {
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -39,12 +48,16 @@ export default function SupportTicketsPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
+  const [closing, setClosing] = useState(false);
 
-  const selectedTicket = useMemo(() => {
-    return tickets.find((ticket) => ticket.id === selectedTicketId) || null;
-  }, [tickets, selectedTicketId]);
+  const selectedTicket = useMemo(
+    () => tickets.find((ticket) => ticket.id === selectedTicketId) || null,
+    [tickets, selectedTicketId]
+  );
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadTickets() {
       try {
         setLoadingTickets(true);
@@ -56,21 +69,28 @@ export default function SupportTicketsPage() {
 
         if (error) throw error;
 
-        const rows = (data || []) as TicketRow[];
+        if (cancelled) return;
+
+        const rows = sortTickets((data || []) as TicketRow[]);
         setTickets(rows);
 
-        if (!selectedTicketId && rows[0]) {
-          setSelectedTicketId(rows[0].id);
-        }
+        setSelectedTicketId((current) => {
+          if (current && rows.some((ticket) => ticket.id === current)) return current;
+          return rows[0]?.id ?? null;
+        });
       } catch (error: any) {
-        console.error(error);
+        console.error("[SupportTicketsPage] loadTickets error:", error);
         toast.error(error?.message || "Failed to load tickets");
       } finally {
-        setLoadingTickets(false);
+        if (!cancelled) setLoadingTickets(false);
       }
     }
 
     void loadTickets();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -89,7 +109,7 @@ export default function SupportTicketsPage() {
 
             setTickets((prev) => {
               if (prev.some((ticket) => ticket.id === newTicket.id)) return prev;
-              return [newTicket, ...prev];
+              return sortTickets([newTicket, ...prev]);
             });
 
             setSelectedTicketId((current) => current || newTicket.id);
@@ -99,24 +119,27 @@ export default function SupportTicketsPage() {
             const updatedTicket = payload.new as TicketRow;
 
             setTickets((prev) =>
-              prev
-                .map((ticket) =>
+              sortTickets(
+                prev.map((ticket) =>
                   ticket.id === updatedTicket.id ? updatedTicket : ticket
                 )
-                .sort(
-                  (a, b) =>
-                    new Date(b.updated_at).getTime() -
-                    new Date(a.updated_at).getTime()
-                )
+              )
             );
           }
 
           if (payload.eventType === "DELETE") {
             const deletedTicket = payload.old as TicketRow;
 
-            setTickets((prev) =>
-              prev.filter((ticket) => ticket.id !== deletedTicket.id)
-            );
+            setTickets((prev) => {
+              const next = prev.filter((ticket) => ticket.id !== deletedTicket.id);
+
+              setSelectedTicketId((current) => {
+                if (current !== deletedTicket.id) return current;
+                return next[0]?.id ?? null;
+              });
+
+              return next;
+            });
           }
         }
       )
@@ -133,6 +156,8 @@ export default function SupportTicketsPage() {
       return;
     }
 
+    let cancelled = false;
+
     async function loadMessages() {
       try {
         setLoadingMessages(true);
@@ -144,17 +169,22 @@ export default function SupportTicketsPage() {
           .order("created_at", { ascending: true });
 
         if (error) throw error;
+        if (cancelled) return;
 
         setMessages((data || []) as MessageRow[]);
       } catch (error: any) {
-        console.error(error);
+        console.error("[SupportTicketsPage] loadMessages error:", error);
         toast.error(error?.message || "Failed to load messages");
       } finally {
-        setLoadingMessages(false);
+        if (!cancelled) setLoadingMessages(false);
       }
     }
 
     void loadMessages();
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedTicketId]);
 
   useEffect(() => {
@@ -190,6 +220,18 @@ export default function SupportTicketsPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, selectedTicketId]);
 
+  async function touchTicket(ticketId: string, status?: string) {
+    const { error } = await supabase
+      .from("support_tickets")
+      .update({
+        ...(status ? { status } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", ticketId);
+
+    if (error) throw error;
+  }
+
   async function sendReply() {
     if (!selectedTicketId) return;
 
@@ -210,17 +252,11 @@ export default function SupportTicketsPage() {
 
       if (error) throw error;
 
-      await supabase
-        .from("support_tickets")
-        .update({
-          status: "open",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", selectedTicketId);
+      await touchTicket(selectedTicketId, "open");
 
       setReply("");
     } catch (error: any) {
-      console.error(error);
+      console.error("[SupportTicketsPage] sendReply error:", error);
       toast.error(error?.message || "Failed to send reply");
     } finally {
       setSending(false);
@@ -230,24 +266,20 @@ export default function SupportTicketsPage() {
   async function closeTicket() {
     if (!selectedTicketId) return;
 
-    const { error } = await supabase
-      .from("support_tickets")
-      .update({
-        status: "closed",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", selectedTicketId);
-
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      setClosing(true);
+      await touchTicket(selectedTicketId, "closed");
+      toast.success("Ticket closed");
+    } catch (error: any) {
+      console.error("[SupportTicketsPage] closeTicket error:", error);
+      toast.error(error?.message || "Failed to close ticket");
+    } finally {
+      setClosing(false);
     }
-
-    toast.success("Ticket closed");
   }
 
   return (
-    <div className="min-h-screen bg-[#05070d] p-6 text-white">
+    <div className="min-h-screen bg-[#05070d] p-4 text-white sm:p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Support Tickets</h1>
         <p className="text-sm text-zinc-400">
@@ -256,15 +288,14 @@ export default function SupportTicketsPage() {
       </div>
 
       <div className="grid h-[calc(100vh-150px)] grid-cols-1 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] lg:grid-cols-[360px_1fr]">
-        <aside className="border-r border-white/10">
+        <aside className="min-h-0 border-b border-white/10 lg:border-b-0 lg:border-r">
           <div className="border-b border-white/10 p-4">
             <p className="text-sm font-semibold">
-              Tickets{" "}
-              <span className="text-zinc-400">({tickets.length})</span>
+              Tickets <span className="text-zinc-400">({tickets.length})</span>
             </p>
           </div>
 
-          <div className="h-full overflow-y-auto">
+          <div className="h-[260px] overflow-y-auto lg:h-full">
             {loadingTickets ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
@@ -289,15 +320,16 @@ export default function SupportTicketsPage() {
                     <p className="line-clamp-1 text-sm font-semibold text-white">
                       {ticket.subject}
                     </p>
+
                     <span
                       className={cn(
-                        "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                         ticket.status === "closed"
                           ? "bg-emerald-500/15 text-emerald-300"
                           : "bg-blue-500/15 text-blue-300"
                       )}
                     >
-                      {ticket.status}
+                      {ticket.status || "open"}
                     </span>
                   </div>
 
@@ -321,12 +353,13 @@ export default function SupportTicketsPage() {
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between border-b border-white/10 p-4">
-                <div>
-                  <h2 className="font-semibold">{selectedTicket.subject}</h2>
+              <div className="flex items-start justify-between gap-4 border-b border-white/10 p-4">
+                <div className="min-w-0">
+                  <h2 className="truncate font-semibold">{selectedTicket.subject}</h2>
                   <p className="text-xs text-zinc-400">
                     {selectedTicket.email || selectedTicket.name || "Guest"}
                   </p>
+
                   {selectedTicket.page_url ? (
                     <p className="mt-1 max-w-[620px] truncate text-[11px] text-zinc-600">
                       {selectedTicket.page_url}
@@ -337,10 +370,15 @@ export default function SupportTicketsPage() {
                 <button
                   type="button"
                   onClick={closeTicket}
-                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20"
+                  disabled={closing || selectedTicket.status === "closed"}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Close
+                  {closing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  {selectedTicket.status === "closed" ? "Closed" : "Close"}
                 </button>
               </div>
 
@@ -348,6 +386,10 @@ export default function SupportTicketsPage() {
                 {loadingMessages ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+                    No messages yet
                   </div>
                 ) : (
                   messages.map((message) => {
@@ -361,12 +403,10 @@ export default function SupportTicketsPage() {
                         <div
                           className={cn(
                             "max-w-[75%] rounded-2xl px-4 py-2 text-sm",
-                            isAdmin
-                              ? "bg-blue-500 text-white"
-                              : "bg-white/10 text-zinc-100"
+                            isAdmin ? "bg-blue-500 text-white" : "bg-white/10 text-zinc-100"
                           )}
                         >
-                          <p>{message.message}</p>
+                          <p className="whitespace-pre-wrap break-words">{message.message}</p>
                           <p className="mt-1 text-[10px] opacity-60">
                             {new Date(message.created_at).toLocaleTimeString()}
                           </p>
@@ -397,7 +437,7 @@ export default function SupportTicketsPage() {
 
                   <button
                     type="button"
-                    onClick={sendReply}
+                    onClick={() => void sendReply()}
                     disabled={sending}
                     className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-blue-500 text-white transition hover:brightness-110 disabled:opacity-60"
                   >
