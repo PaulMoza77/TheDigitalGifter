@@ -22,6 +22,7 @@ import AuthCallback from "@/pages/AuthCallback";
 import WebsiteHeader from "@/components/Header";
 import WebsiteFooter from "@/components/Footer";
 import { PricingModal } from "@/components/PricingModal";
+import SupportTicketWidget from "@/components/SupportTicketWidget";
 
 // ================= AUTH =================
 import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
@@ -40,7 +41,9 @@ import Templates from "@/pages/admin/Templates";
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
-
+const SupportTicketsPage = lazy(
+  () => import("@/domains/admin/pages/SupportTicketsPage")
+);
 // ================= ADMIN EMAIL =================
 import AdminEmailLayoutPage from "@/pages/admin/email/Index";
 import AdminEmailTemplatesPage from "@/pages/admin/email/Templates";
@@ -104,7 +107,7 @@ function WebsiteLayout() {
   const [showPricing, setShowPricing] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-black text-white">
+    <div className="flex min-h-screen flex-col bg-black text-white">
       <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
 
       <main className="flex-1">
@@ -216,17 +219,12 @@ function AppInner() {
           error: userError,
         } = await supabase.auth.getUser();
 
-        if (userError) {
-          throw userError;
-        }
-
+        if (userError) throw userError;
         if (!user || cancelled) return;
 
         const conversionKey = `affiliate_conversion_recorded_${user.id}_${savedRef}`;
 
-        if (localStorage.getItem(conversionKey) === "1") {
-          return;
-        }
+        if (localStorage.getItem(conversionKey) === "1") return;
 
         const { data: existingConversion, error: existingError } = await supabase
           .from("affiliate_conversions")
@@ -235,9 +233,7 @@ function AppInner() {
           .eq("code", savedRef)
           .maybeSingle<{ id: string }>();
 
-        if (existingError) {
-          throw existingError;
-        }
+        if (existingError) throw existingError;
 
         if (!existingConversion) {
           const { error: insertError } = await supabase
@@ -248,9 +244,7 @@ function AppInner() {
               amount: 0,
             });
 
-          if (insertError) {
-            throw insertError;
-          }
+          if (insertError) throw insertError;
         }
 
         if (!cancelled) {
@@ -274,7 +268,7 @@ function AppInner() {
 
       <Suspense
         fallback={
-          <div className="min-h-screen flex items-center justify-center bg-black text-white/80">
+          <div className="flex min-h-screen items-center justify-center bg-black text-white/80">
             Loading...
           </div>
         }
@@ -381,6 +375,7 @@ function AppInner() {
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="credits" element={<CreditsPage />} />
+            <Route path="support-tickets" element={<SupportTicketsPage />} />
 
             <Route path="email" element={<AdminEmailLayoutPage />}>
               <Route
@@ -396,6 +391,8 @@ function AppInner() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+
+      <SupportTicketWidget />
 
       <Toaster position="top-right" />
     </BrowserRouter>
