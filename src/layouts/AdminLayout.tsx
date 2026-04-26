@@ -1,3 +1,4 @@
+// FILE: src/layouts/AdminLayout.tsx
 import React, { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
@@ -15,6 +16,7 @@ import {
   ShoppingCart,
   Users,
   LayoutTemplate,
+  Inbox,
 } from "lucide-react";
 
 type NavItem = {
@@ -104,6 +106,10 @@ const SidebarNavigation: React.FC<{
       {
         label: "CONTENT",
         items: [{ label: "Templates", path: "/admin/templates", icon: LayoutTemplate }],
+      },
+      {
+        label: "INBOX",
+        items: [{ label: "Support Tickets", path: "/admin/support-tickets", icon: Inbox }],
       },
       {
         label: "EMAIL",
@@ -219,9 +225,7 @@ const AdminLayout: React.FC = () => {
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
-            className={cx(
-              "absolute top-4 -right-3 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 transition-colors hover:bg-slate-800/60"
-            )}
+            className="absolute -right-3 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 transition-colors hover:bg-slate-800/60"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand" : "Collapse"}
           >
