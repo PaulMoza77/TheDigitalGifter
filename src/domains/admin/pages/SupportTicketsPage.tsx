@@ -29,6 +29,15 @@ type MessageRow = {
   created_at: string;
 };
 
+function makeChannelName(prefix: string) {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  return `${prefix}-${id}`;
+}
+
 function sortTickets(tickets: TicketRow[]) {
   return [...tickets].sort(
     (a, b) =>
@@ -68,7 +77,6 @@ export default function SupportTicketsPage() {
           .order("updated_at", { ascending: false });
 
         if (error) throw error;
-
         if (cancelled) return;
 
         const rows = sortTickets((data || []) as TicketRow[]);
@@ -95,7 +103,7 @@ export default function SupportTicketsPage() {
 
   useEffect(() => {
     const channel = supabase
-      .channel("admin-support-tickets")
+      .channel(makeChannelName("admin-support-tickets"))
       .on(
         "postgres_changes",
         {
@@ -143,7 +151,11 @@ export default function SupportTicketsPage() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR") {
+          console.warn("[SupportTicketsPage] tickets realtime channel error");
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
@@ -191,7 +203,7 @@ export default function SupportTicketsPage() {
     if (!selectedTicketId) return;
 
     const channel = supabase
-      .channel(`admin-support-messages-${selectedTicketId}`)
+      .channel(makeChannelName(`admin-support-messages-${selectedTicketId}`))
       .on(
         "postgres_changes",
         {
@@ -209,7 +221,11 @@ export default function SupportTicketsPage() {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR") {
+          console.warn("[SupportTicketsPage] messages realtime channel error");
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
@@ -253,7 +269,6 @@ export default function SupportTicketsPage() {
       if (error) throw error;
 
       await touchTicket(selectedTicketId, "open");
-
       setReply("");
     } catch (error: any) {
       console.error("[SupportTicketsPage] sendReply error:", error);
@@ -288,7 +303,7 @@ export default function SupportTicketsPage() {
       </div>
 
       <div className="grid h-[calc(100vh-150px)] grid-cols-1 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] lg:grid-cols-[360px_1fr]">
-        <aside className="min-h-0 border-b border-white/10 lg:border-b-0 lg:border-r">
+        <aside className="min-h-0 border-b border-white/10 lg:border-b-0 lg:border-r lg:border-white/10">
           <div className="border-b border-white/10 p-4">
             <p className="text-sm font-semibold">
               Tickets <span className="text-zinc-400">({tickets.length})</span>
@@ -369,7 +384,7 @@ export default function SupportTicketsPage() {
 
                 <button
                   type="button"
-                  onClick={closeTicket}
+                  onClick={() => void closeTicket()}
                   disabled={closing || selectedTicket.status === "closed"}
                   className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -403,7 +418,9 @@ export default function SupportTicketsPage() {
                         <div
                           className={cn(
                             "max-w-[75%] rounded-2xl px-4 py-2 text-sm",
-                            isAdmin ? "bg-blue-500 text-white" : "bg-white/10 text-zinc-100"
+                            isAdmin
+                              ? "bg-blue-500 text-white"
+                              : "bg-white/10 text-zinc-100"
                           )}
                         >
                           <p className="whitespace-pre-wrap break-words">{message.message}</p>
