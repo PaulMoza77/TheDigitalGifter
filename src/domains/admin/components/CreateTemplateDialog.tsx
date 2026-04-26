@@ -158,21 +158,48 @@ function buildAiPreviewPrompt(input: {
   prompt: string;
 }) {
   return [
-    "Create a premium preview image for an AI gift/card template.",
-    `Template title: ${input.title || "Untitled template"}.`,
+    "Create a realistic premium preview image for an AI greeting card / personalized gift template.",
+    "The image must look like a real lifestyle photo, not an AI poster, not a stock mockup, not a fantasy render.",
+    "",
     `Occasion: ${input.occasionLabel || "general occasion"}.`,
-    `Category/style: ${input.category || "General"}.`,
-    input.subCategory ? `Sub-category: ${input.subCategory}.` : "",
-    input.scene ? `Scene: ${input.scene}.` : "",
+    `Template title: ${input.title || "Untitled template"}.`,
+    `Style/category: ${input.category || "Natural cinematic"}.`,
+    input.subCategory ? `People type: ${input.subCategory}.` : "",
+    input.scene ? `Scene/location: ${input.scene}.` : "",
     `Orientation: ${input.orientation}.`,
-    "The image should look polished, emotional, gift-ready, cinematic, clean, and suitable as a marketplace template preview.",
-    "Do not include readable UI text, watermarks, logos, distorted faces, or messy artifacts.",
-    input.prompt ? `Template generation prompt context: ${input.prompt}` : "",
+    "",
+    "Show a natural emotional moment connected clearly to the occasion.",
+    "Use realistic people, real skin texture, natural body posture, imperfect but beautiful candid expressions, natural lighting, believable clothes, and a real environment.",
+    "The occasion must be visually obvious from props, setting, outfits, decorations, or context.",
+    "",
+    "Composition rules:",
+    "- cinematic photo composition",
+    "- shallow depth of field",
+    "- clean premium background",
+    "- subject centered or rule-of-thirds",
+    "- leave subtle empty space for optional greeting-card text",
+    "- no clutter",
+    "",
+    "Avoid:",
+    "- fake AI faces",
+    "- plastic skin",
+    "- overly perfect smiles",
+    "- distorted hands",
+    "- readable random text",
+    "- logos",
+    "- watermarks",
+    "- cartoon style",
+    "- 3D render",
+    "- poster design",
+    "- text-heavy graphic design",
+    "",
+    input.prompt
+      ? `Use this template context as the main creative direction: ${input.prompt}`
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
 }
-
 function getGeneratedUrl(data: unknown) {
   if (!data || typeof data !== "object") return "";
 
