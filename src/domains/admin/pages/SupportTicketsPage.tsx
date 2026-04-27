@@ -9,13 +9,15 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type SenderType = "client" | "admin" | "ai" | "system";
 
+type TicketStatus = "open" | "closed" | "needs_agent" | "ai_replied";
+
 type TicketRow = {
   id: string;
   user_id: string | null;
   name: string | null;
   email: string | null;
   subject: string;
-  status: string;
+  status: TicketStatus | string;
   priority: string | null;
   page_url: string | null;
   created_at: string;
@@ -244,12 +246,14 @@ export default function SupportTicketsPage() {
     });
   }
 
-  async function touchTicket(ticketId: string, status?: string, priority?: string) {
+  async function touchTicket(
+    ticketId: string,
+    updates: Partial<Pick<TicketRow, "status" | "priority">>
+  ) {
     const { data, error } = await supabase
       .from("support_tickets")
       .update({
-        ...(status ? { status } : {}),
-        ...(priority ? { priority } : {}),
+        ...updates,
         updated_at: new Date().toISOString(),
       })
       .eq("id", ticketId)
@@ -272,7 +276,7 @@ export default function SupportTicketsPage() {
   }
 
   async function sendReply() {
-    if (!selectedTicketId) return;
+    if (!selectedTicketId || selectedTicket?.status === "closed") return;
 
     const cleanReply = reply.trim();
 
@@ -300,7 +304,11 @@ export default function SupportTicketsPage() {
       if (data) addMessageInstant(data as MessageRow);
 
       setReply("");
-      await touchTicket(selectedTicketId, "open", "normal");
+
+      await touchTicket(selectedTicketId, {
+        status: "open",
+        priority: "normal",
+      });
     } catch (error: any) {
       console.error("[SupportTicketsPage] sendReply error:", error);
       toast.error(error?.message || "Failed to send reply");
@@ -310,7 +318,7 @@ export default function SupportTicketsPage() {
   }
 
   async function closeTicket() {
-    if (!selectedTicketId) return;
+    if (!selectedTicketId || selectedTicket?.status === "closed") return;
 
     try {
       setClosing(true);
@@ -333,7 +341,10 @@ export default function SupportTicketsPage() {
 
       if (messageData) addMessageInstant(messageData as MessageRow);
 
-      await touchTicket(selectedTicketId, "closed", "normal");
+      await touchTicket(selectedTicketId, {
+        status: "closed",
+        priority: "normal",
+      });
 
       toast.success("Ticket closed");
     } catch (error: any) {
@@ -483,7 +494,7 @@ export default function SupportTicketsPage() {
                         key={message.id}
                         className={cn(
                           "flex",
-                          isClient || isAdmin ? "justify-end" : "justify-start"
+                          isAdmin ? "justify-end" : "justify-start"
                         )}
                       >
                         <div
@@ -527,7 +538,7 @@ export default function SupportTicketsPage() {
               <div className="shrink-0 border-t border-white/10 p-4">
                 {selectedTicket.status === "closed" ? (
                   <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-zinc-300">
-                    This support chat is closed. The client must open a new ticket for further help.
+                    This support chat is closed. The client can open a new support ticket if they need more help.
                   </div>
                 ) : (
                   <div className="flex gap-2">
