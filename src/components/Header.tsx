@@ -49,12 +49,33 @@ export default function Header({ onBuyCredits }: HeaderProps) {
     isAdmin,
     creditsRemaining,
     affiliateEarnings,
+    refresh,
   } = useAccountOverview();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const isAuthenticated = !!user;
   const loading = authLoading || overviewLoading;
+
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+
+    void refresh();
+
+    const onRefresh = () => {
+      void refresh();
+    };
+
+    window.addEventListener("credits:refresh", onRefresh);
+    window.addEventListener("affiliate:refresh", onRefresh);
+    window.addEventListener("focus", onRefresh);
+
+    return () => {
+      window.removeEventListener("credits:refresh", onRefresh);
+      window.removeEventListener("affiliate:refresh", onRefresh);
+      window.removeEventListener("focus", onRefresh);
+    };
+  }, [isAuthenticated, refresh]);
 
   async function handleLogout() {
     setMobileOpen(false);
@@ -184,7 +205,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                           Affiliate
                         </div>
                         <div className="mt-2 text-2xl font-semibold text-emerald-300">
-                          ${affiliateEarnings.toFixed(2)}
+                          ${Number(affiliateEarnings || 0).toFixed(2)}
                         </div>
                       </button>
                     </div>
