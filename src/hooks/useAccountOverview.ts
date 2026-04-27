@@ -1,3 +1,4 @@
+// FILE: src/hooks/useAccountOverview.ts
 import * as React from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -15,6 +16,10 @@ type AffiliateEarningRow = {
   amount: number | string | null;
 };
 
+type AffiliateConversionRow = {
+  commission_amount: number | string | null;
+};
+
 type AppUserRow = {
   id: string | number | null;
   convex_id: string | number | null;
@@ -30,7 +35,7 @@ export type AccountOverview = {
   refresh: () => Promise<void>;
 };
 
-function toNumber(value: number | string | null | undefined) {
+function toNumber(value: unknown) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
 }
@@ -62,30 +67,51 @@ async function resolveCreditKey(input: {
 }
 
 async function loadAffiliateEarnings(userId: string): Promise<number> {
-  const { data: profile, error: profileError } = await supabase
-    .from("affiliate_profiles")
-    .select("user_id, available_earnings")
-    .eq("user_id", userId)
-    .maybeSingle<AffiliateProfileRow>();
+  const [
+    { data: profile },
+    { data: earningsRows, error: earningsError },
+    { data: conversionRows, error: conversionError },
+  ] = await Promise.all([
+    supabase
+      .from("affiliate_profiles")
+      .select("user_id, available_earnings")
+      .eq("user_id", userId)
+      .maybeSingle<AffiliateProfileRow>(),
 
-  if (!profileError && profile) {
-    return toNumber(profile.available_earnings);
-  }
+    supabase
+      .from("affiliate_earnings")
+      .select("amount")
+      .eq("affiliate_user_id", userId)
+      .eq("status", "pending"),
 
-  const { data: earningsRows, error: earningsError } = await supabase
-    .from("affiliate_earnings")
-    .select("amount")
-    .eq("affiliate_user_id", userId);
+    supabase
+      .from("affiliate_conversions")
+      .select("commission_amount")
+      .eq("affiliate_user_id", userId),
+  ]);
 
   if (earningsError) {
-    console.error("[useAccountOverview] affiliate error:", earningsError);
-    return 0;
+    console.error("[useAccountOverview] affiliate earnings error:", earningsError);
   }
 
-  return ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
+  if (conversionError) {
+    console.error("[useAccountOverview] affiliate conversions error:", conversionError);
+  }
+
+  const earningsTotal = ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
     (sum, row) => sum + toNumber(row.amount),
-    0
+    0,
   );
+
+  const conversionsTotal = ((conversionRows ?? []) as AffiliateConversionRow[]).reduce(
+    (sum, row) => sum + toNumber(row.commission_amount),
+    0,
+  );
+
+  if (earningsTotal > 0) return earningsTotal;
+  if (conversionsTotal > 0) return conversionsTotal;
+
+  return toNumber(profile?.available_earnings);
 }
 
 export function useAccountOverview(): AccountOverview {
@@ -186,11 +212,16 @@ export function useAccountOverview(): AccountOverview {
     window.addEventListener("affiliate:refresh", onRefresh);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
+    const interval = window.setInterval(() => {
+      void refresh();
+    }, 30000);
+
     return () => {
       window.removeEventListener("focus", onRefresh);
       window.removeEventListener("credits:refresh", onRefresh);
       window.removeEventListener("affiliate:refresh", onRefresh);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.clearInterval(interval);
     };
   }, [refresh]);
 

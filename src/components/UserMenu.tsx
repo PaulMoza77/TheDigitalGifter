@@ -7,6 +7,10 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccountOverview } from "@/hooks/useAccountOverview";
 
+function formatMoney(value: number) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
 export default function UserMenu() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -18,9 +22,7 @@ export default function UserMenu() {
   React.useEffect(() => {
     void refresh();
 
-    const onRefresh = () => {
-      void refresh();
-    };
+    const onRefresh = () => void refresh();
 
     window.addEventListener("credits:refresh", onRefresh);
     window.addEventListener("affiliate:refresh", onRefresh);
@@ -53,6 +55,8 @@ export default function UserMenu() {
   React.useEffect(() => {
     if (!open) return;
 
+    void refresh();
+
     function handleResize() {
       if (window.innerWidth < 1024) setOpen(false);
     }
@@ -62,7 +66,7 @@ export default function UserMenu() {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [open]);
+  }, [open, refresh]);
 
   async function handleLogout() {
     setOpen(false);
@@ -97,7 +101,7 @@ export default function UserMenu() {
     .slice(0, 2)
     .toUpperCase();
 
-  const affiliateBadge = loading ? "..." : `$${Number(affiliateEarnings || 0).toFixed(2)}`;
+  const affiliateBadge = loading ? "..." : formatMoney(affiliateEarnings);
 
   const navItems = [
     {
