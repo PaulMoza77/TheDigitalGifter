@@ -6,13 +6,13 @@ type LedgerBalanceRow = {
   credits: number | string | null;
 };
 
-type AffiliateEarningRow = {
-  amount: number | string | null;
-};
-
 type AffiliateProfileRow = {
   user_id: string;
   available_earnings: number | string | null;
+};
+
+type AffiliateEarningRow = {
+  amount: number | string | null;
 };
 
 type AppUserRow = {
@@ -43,15 +43,11 @@ async function resolveCreditKey(input: {
   const authUserId = input.authUserId.trim();
 
   if (email) {
-    const { data: appUser, error } = await supabase
+    const { data: appUser } = await supabase
       .from("app_users")
       .select("id, convex_id, email")
       .ilike("email", email)
       .maybeSingle<AppUserRow>();
-
-    if (error) {
-      console.error("[useAccountOverview] app_users error:", error);
-    }
 
     if (appUser?.convex_id !== null && appUser?.convex_id !== undefined) {
       return String(appUser.convex_id);
@@ -66,32 +62,30 @@ async function resolveCreditKey(input: {
 }
 
 async function loadAffiliateEarnings(userId: string): Promise<number> {
-  const { data: earningsRows, error: earningsError } = await supabase
-    .from("affiliate_earnings")
-    .select("amount")
-    .eq("affiliate_user_id", userId);
-
-  if (!earningsError) {
-    return ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
-      (sum, row) => sum + toNumber(row.amount),
-      0
-    );
-  }
-
-  console.error("[useAccountOverview] affiliate_earnings error:", earningsError);
-
   const { data: profile, error: profileError } = await supabase
     .from("affiliate_profiles")
     .select("user_id, available_earnings")
     .eq("user_id", userId)
     .maybeSingle<AffiliateProfileRow>();
 
-  if (profileError) {
-    console.error("[useAccountOverview] affiliate_profiles error:", profileError);
+  if (!profileError && profile) {
+    return toNumber(profile.available_earnings);
+  }
+
+  const { data: earningsRows, error: earningsError } = await supabase
+    .from("affiliate_earnings")
+    .select("amount")
+    .eq("affiliate_user_id", userId);
+
+  if (earningsError) {
+    console.error("[useAccountOverview] affiliate error:", earningsError);
     return 0;
   }
 
-  return toNumber(profile?.available_earnings);
+  return ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
+    (sum, row) => sum + toNumber(row.amount),
+    0
+  );
 }
 
 export function useAccountOverview(): AccountOverview {
@@ -119,7 +113,7 @@ export function useAccountOverview(): AccountOverview {
       }
 
       const email = user.email?.trim().toLowerCase() ?? "";
-      const authUserId = user.id ? String(user.id) : "";
+      const authUserId = String(user.id ?? "");
       const creditKey = await resolveCreditKey({ email, authUserId });
 
       const [adminResult, ledgerResult, affiliateTotal] = await Promise.all([
@@ -141,12 +135,7 @@ export function useAccountOverview(): AccountOverview {
         loadAffiliateEarnings(authUserId),
       ]);
 
-      if (adminResult.error) {
-        console.error("[useAccountOverview] admin error:", adminResult.error);
-        setIsAdmin(false);
-      } else {
-        setIsAdmin(Boolean(adminResult.data?.email));
-      }
+      setIsAdmin(Boolean(adminResult.data?.email));
 
       if (ledgerResult.error) {
         console.error("[useAccountOverview] credits ledger error:", ledgerResult.error);
