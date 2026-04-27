@@ -10,18 +10,31 @@ import { useAccountOverview } from "@/hooks/useAccountOverview";
 export default function UserMenu() {
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  const { loading, isAdmin, affiliateEarnings } = useAccountOverview();
+  const { loading, isAdmin, affiliateEarnings, refresh } = useAccountOverview();
 
   const [open, setOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
+    void refresh();
+
+    const onRefresh = () => {
+      void refresh();
+    };
+
+    window.addEventListener("credits:refresh", onRefresh);
+    window.addEventListener("affiliate:refresh", onRefresh);
+
+    return () => {
+      window.removeEventListener("credits:refresh", onRefresh);
+      window.removeEventListener("affiliate:refresh", onRefresh);
+    };
+  }, [refresh]);
+
+  React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (!menuRef.current) return;
-      if (!menuRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
+      if (!menuRef.current.contains(event.target as Node)) setOpen(false);
     }
 
     function handleEscape(event: KeyboardEvent) {
@@ -41,9 +54,7 @@ export default function UserMenu() {
     if (!open) return;
 
     function handleResize() {
-      if (window.innerWidth < 1024) {
-        setOpen(false);
-      }
+      if (window.innerWidth < 1024) setOpen(false);
     }
 
     window.addEventListener("resize", handleResize);
@@ -86,6 +97,8 @@ export default function UserMenu() {
     .slice(0, 2)
     .toUpperCase();
 
+  const affiliateBadge = loading ? "..." : `$${Number(affiliateEarnings || 0).toFixed(2)}`;
+
   const navItems = [
     {
       label: "Dashboard",
@@ -97,7 +110,7 @@ export default function UserMenu() {
       label: "Affiliate",
       icon: Users,
       action: () => goTo("/account/affiliate"),
-      badge: loading ? "..." : `$${affiliateEarnings.toFixed(2)}`,
+      badge: affiliateBadge,
     },
     {
       label: "Generator",
@@ -121,17 +134,16 @@ export default function UserMenu() {
     <div className="relative" ref={menuRef}>
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          setOpen((value) => !value);
+          void refresh();
+        }}
         className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
         aria-label="Open user menu"
         aria-expanded={open}
       >
         {avatar ? (
-          <img
-            src={avatar}
-            alt="User avatar"
-            className="h-full w-full object-cover"
-          />
+          <img src={avatar} alt="User avatar" className="h-full w-full object-cover" />
         ) : (
           <span className="text-sm font-semibold text-white">{initials || "U"}</span>
         )}
@@ -143,25 +155,15 @@ export default function UserMenu() {
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5">
                 {avatar ? (
-                  <img
-                    src={avatar}
-                    alt="User avatar"
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={avatar} alt="User avatar" className="h-full w-full object-cover" />
                 ) : (
-                  <span className="text-sm font-semibold text-white">
-                    {initials || "U"}
-                  </span>
+                  <span className="text-sm font-semibold text-white">{initials || "U"}</span>
                 )}
               </div>
 
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold text-white">
-                  {displayName}
-                </div>
-                {email ? (
-                  <div className="truncate text-xs text-zinc-500">{email}</div>
-                ) : null}
+                <div className="truncate text-sm font-semibold text-white">{displayName}</div>
+                {email ? <div className="truncate text-xs text-zinc-500">{email}</div> : null}
               </div>
             </div>
 
