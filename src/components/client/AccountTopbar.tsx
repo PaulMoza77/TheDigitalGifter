@@ -31,16 +31,6 @@ type TopbarItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-type AffiliateProfileRow = {
-  user_id: string;
-  available_earnings: number | string | null;
-};
-
-type AffiliateEarningRow = {
-  amount: number | string | null;
-  status: string | null;
-};
-
 function desktopNavClass(active: boolean) {
   return [
     "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-medium transition-all xl:px-4",
@@ -63,41 +53,18 @@ function money(value: number) {
   return `$${Number(value || 0).toFixed(2)}`;
 }
 
-async function getAffiliateBalance(userId: string): Promise<number> {
-  const { data: earningsRows, error: earningsError } = await supabase
-    .from("affiliate_earnings")
-    .select("amount,status")
-    .eq("affiliate_user_id", userId)
-    .eq("status", "pending");
-
-  if (!earningsError && earningsRows) {
-    return (earningsRows as AffiliateEarningRow[]).reduce(
-      (sum, row) => sum + Number(row.amount ?? 0),
-      0
-    );
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("affiliate_profiles")
-    .select("user_id,available_earnings")
-    .eq("user_id", userId)
-    .maybeSingle<AffiliateProfileRow>();
-
-  if (profileError) throw profileError;
-
-  return Number(profile?.available_earnings ?? 0);
-}
-
 export default function AccountTopbar() {
   const navigate = useNavigate();
-  const { loading, isAdmin, creditsRemaining, affiliateEarnings, refresh } =
-    useAccountOverview();
+
+  const {
+    loading,
+    isAdmin,
+    creditsRemaining,
+    affiliateEarnings,
+    refresh,
+  } = useAccountOverview();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [affiliateBalance, setAffiliateBalance] = React.useState<number>(
-    Number(affiliateEarnings || 0)
-  );
-  const [affiliateLoading, setAffiliateLoading] = React.useState(true);
 
   const items: TopbarItem[] = React.useMemo(() => {
     const base: TopbarItem[] = [
@@ -114,54 +81,31 @@ export default function AccountTopbar() {
     return base;
   }, [isAdmin]);
 
-  const loadAffiliateBalance = React.useCallback(async () => {
-    try {
-      setAffiliateLoading(true);
-
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (error) throw error;
-
-      if (!user?.id) {
-        setAffiliateBalance(0);
-        return;
-      }
-
-      const balance = await getAffiliateBalance(user.id);
-      setAffiliateBalance(balance);
-    } catch (error) {
-      console.error("[AccountTopbar] affiliate balance error:", error);
-      setAffiliateBalance(Number(affiliateEarnings || 0));
-    } finally {
-      setAffiliateLoading(false);
-    }
-  }, [affiliateEarnings]);
-
   React.useEffect(() => {
-    void loadAffiliateBalance();
-  }, [loadAffiliateBalance]);
+    void refresh();
 
-  React.useEffect(() => {
-    setAffiliateBalance(Number(affiliateEarnings || 0));
-  }, [affiliateEarnings]);
-
-  React.useEffect(() => {
     const onRefresh = () => {
       void refresh();
-      void loadAffiliateBalance();
     };
 
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void refresh();
+      }
+    };
+
+    window.addEventListener("focus", onRefresh);
     window.addEventListener("credits:refresh", onRefresh);
     window.addEventListener("affiliate:refresh", onRefresh);
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
+      window.removeEventListener("focus", onRefresh);
       window.removeEventListener("credits:refresh", onRefresh);
       window.removeEventListener("affiliate:refresh", onRefresh);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [refresh, loadAffiliateBalance]);
+  }, [refresh]);
 
   async function handleLogout() {
     setMobileOpen(false);
@@ -174,13 +118,15 @@ export default function AccountTopbar() {
     navigate(path);
   }
 
-  const affiliateDisplayLoading = loading || affiliateLoading;
-
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between gap-3 px-4 sm:px-6 xl:px-8">
         <div className="flex min-w-0 items-center gap-3">
-          <Link to="/" className="flex shrink-0 items-center" aria-label="Go to homepage">
+          <Link
+            to="/"
+            className="flex shrink-0 items-center"
+            aria-label="Go to homepage"
+          >
             <img
               src="/TheDigitalGifter.png"
               alt="TheDigitalGifter"
@@ -219,7 +165,7 @@ export default function AccountTopbar() {
             <Users size={17} />
             <span className="hidden xl:inline">Affiliate:</span>
             <span className="font-bold text-emerald-300">
-              {affiliateDisplayLoading ? "..." : money(affiliateBalance)}
+              {loading ? "..." : money(affiliateEarnings)}
             </span>
           </button>
 
@@ -296,6 +242,7 @@ export default function AccountTopbar() {
                         <Plus className="h-4 w-4" />
                         Credits
                       </div>
+
                       <div className="mt-2 text-2xl font-semibold text-[#ffd976]">
                         {loading ? "..." : creditsRemaining}
                       </div>
@@ -310,8 +257,9 @@ export default function AccountTopbar() {
                         <Users className="h-4 w-4" />
                         Affiliate
                       </div>
+
                       <div className="mt-2 text-2xl font-semibold text-emerald-300">
-                        {affiliateDisplayLoading ? "..." : money(affiliateBalance)}
+                        {loading ? "..." : money(affiliateEarnings)}
                       </div>
                     </button>
                   </div>
