@@ -33,6 +33,10 @@ type AffiliateEarningRow = {
   amount: number | string | null;
 };
 
+type AffiliateConversionRow = {
+  commission_amount: number | string | null;
+};
+
 function sanitizeAffiliateCode(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 20);
 }
@@ -44,6 +48,15 @@ function sanitizeReferralSlug(value: string) {
     .replace(/-{2,}/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
+}
+
+function toMoneyNumber(value: unknown) {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatMoney(value: number) {
+  return `$${toMoneyNumber(value).toFixed(2)}`;
 }
 
 function buildBaseCode(user: {
@@ -79,10 +92,6 @@ function buildReferralLink(slug: string) {
   return `${origin}/?ref=${encodeURIComponent(slug)}`;
 }
 
-function formatMoney(value: number) {
-  return `$${Number(value || 0).toFixed(2)}`;
-}
-
 async function ensureUniqueAffiliateCode(baseCode: string, currentUserId: string) {
   let candidate = sanitizeAffiliateCode(baseCode) || "TDGUSER";
 
@@ -104,14 +113,19 @@ async function ensureUniqueAffiliateCode(baseCode: string, currentUserId: string
     candidate = sanitizeAffiliateCode(`${baseCode.slice(0, 20 - suffix.length)}${suffix}`);
   }
 
-  return sanitizeAffiliateCode(`${baseCode.slice(0, 14)}${currentUserId.replace(/-/g, "").slice(0, 6).toUpperCase()}`);
+  return sanitizeAffiliateCode(
+    `${baseCode.slice(0, 14)}${currentUserId.replace(/-/g, "").slice(0, 6).toUpperCase()}`
+  );
 }
 
-async function loadAffiliateStats(userId: string, profile: AffiliateProfileRow) {
+async function loadAffiliateStats(profile: AffiliateProfileRow) {
+  const affiliateUserId = profile.user_id;
+
   const [
     { count: clickCount, error: clickError },
     { count: conversionCount, error: conversionError },
     { data: earningsRows, error: earningsError },
+    { data: conversionRows, error: conversionSumError },
   ] = await Promise.all([
     supabase
       .from("affiliate_clicks")
@@ -121,28 +135,46 @@ async function loadAffiliateStats(userId: string, profile: AffiliateProfileRow) 
     supabase
       .from("affiliate_conversions")
       .select("*", { count: "exact", head: true })
-      .eq("affiliate_user_id", userId),
+      .eq("affiliate_user_id", affiliateUserId),
 
     supabase
       .from("affiliate_earnings")
       .select("amount")
-      .eq("affiliate_user_id", userId)
+      .eq("affiliate_user_id", affiliateUserId)
       .eq("status", "pending"),
+
+    supabase
+      .from("affiliate_conversions")
+      .select("commission_amount")
+      .eq("affiliate_user_id", affiliateUserId),
   ]);
 
   if (clickError) throw clickError;
   if (conversionError) throw conversionError;
   if (earningsError) throw earningsError;
+  if (conversionSumError) throw conversionSumError;
 
-  const earnings = ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
-    (sum, row) => sum + Number(row.amount ?? 0),
+  const earningsTotal = ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
+    (sum, row) => sum + toMoneyNumber(row.amount),
     0
   );
+
+  const conversionCommissionTotal = ((conversionRows ?? []) as AffiliateConversionRow[]).reduce(
+    (sum, row) => sum + toMoneyNumber(row.commission_amount),
+    0
+  );
+
+  const availableEarnings =
+    earningsTotal > 0
+      ? earningsTotal
+      : conversionCommissionTotal > 0
+        ? conversionCommissionTotal
+        : toMoneyNumber(profile.available_earnings);
 
   return {
     totalClicks: clickCount ?? profile.total_clicks ?? 0,
     totalConversions: conversionCount ?? profile.total_conversions ?? 0,
-    availableEarnings: earnings || Number(profile.available_earnings ?? 0),
+    availableEarnings,
   };
 }
 
@@ -209,7 +241,7 @@ export default function AccountAffiliate() {
         profile = insertedProfile;
       }
 
-      const stats = await loadAffiliateStats(user.id, profile);
+      const stats = await loadAffiliateStats(profile);
 
       setAffiliateCode(profile.affiliate_code);
       setDraftCode(profile.affiliate_code);
@@ -297,12 +329,12 @@ export default function AccountAffiliate() {
 
       if (updateError) throw updateError;
 
-      const refreshedStats = await loadAffiliateStats(user.id, updatedProfile);
+      const refreshedStats = await loadAffiliateStats(updatedProfile);
 
       setAffiliateCode(updatedProfile.affiliate_code);
       setDraftCode(updatedProfile.affiliate_code);
       setReferralSlug(updatedProfile.referral_slug);
-      setAffiliateLink(updatedProfile.referral_link);
+      setAffiliateLink(updatedProfile.referral_link || buildReferralLink(updatedProfile.referral_slug));
       setTotalClicks(refreshedStats.totalClicks);
       setTotalConversions(refreshedStats.totalConversions);
       setAvailableEarnings(refreshedStats.availableEarnings);
