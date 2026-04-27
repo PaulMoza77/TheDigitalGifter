@@ -4,9 +4,9 @@ import { supabase } from "@/lib/supabase";
 
 type Plan = "starter" | "pro" | "elite";
 
-type CheckoutArgs = {
+export type CheckoutArgs = {
   plan: Plan;
-  email?: string;
+  email?: string | null;
   name?: string | null;
   generation_id?: string | null;
   template_id?: string | null;
@@ -17,11 +17,16 @@ type CheckoutArgs = {
   photo_path?: string | null;
 };
 
-type CheckoutResponse = {
-  url?: string | null;
-  id?: string;
-  generation_id?: string;
+export type CheckoutResponse = {
+  url: string;
+  id: string;
+  generation_id?: string | null;
   user_id?: string | null;
+  promo_applied?: boolean;
+  promo_code?: string | null;
+  discount_percent?: number | null;
+  affiliate_applied?: boolean;
+  affiliate_code?: string | null;
 };
 
 export function useCheckoutMutation() {
@@ -41,30 +46,30 @@ export function useCheckoutMutation() {
         throw new Error("You must be logged in before checkout.");
       }
 
-      const { data, error } = await supabase.functions.invoke(
+      const payload = {
+        ...variables,
+        email: variables.email || session.user.email,
+      };
+
+      const { data, error } = await supabase.functions.invoke<CheckoutResponse>(
         "create-checkout-session",
         {
-          body: {
-            ...variables,
-            email: variables.email || session.user.email,
-          },
+          body: payload,
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
-        }
+        },
       );
 
       if (error) {
         throw new Error(error.message || "Checkout failed");
       }
 
-      const response = data as CheckoutResponse;
-
-      if (!response?.url) {
+      if (!data?.url) {
         throw new Error("Checkout URL missing.");
       }
 
-      return response;
+      return data;
     },
   });
 }
