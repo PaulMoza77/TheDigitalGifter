@@ -10,6 +10,11 @@ type AffiliateEarningRow = {
   amount: number | string | null;
 };
 
+type AffiliateProfileRow = {
+  user_id: string;
+  available_earnings: number | string | null;
+};
+
 type AppUserRow = {
   id: string | number | null;
   convex_id: string | number | null;
@@ -60,6 +65,35 @@ async function resolveCreditKey(input: {
   return authUserId || email;
 }
 
+async function loadAffiliateEarnings(userId: string): Promise<number> {
+  const { data: earningsRows, error: earningsError } = await supabase
+    .from("affiliate_earnings")
+    .select("amount")
+    .eq("affiliate_user_id", userId);
+
+  if (!earningsError) {
+    return ((earningsRows ?? []) as AffiliateEarningRow[]).reduce(
+      (sum, row) => sum + toNumber(row.amount),
+      0
+    );
+  }
+
+  console.error("[useAccountOverview] affiliate_earnings error:", earningsError);
+
+  const { data: profile, error: profileError } = await supabase
+    .from("affiliate_profiles")
+    .select("user_id, available_earnings")
+    .eq("user_id", userId)
+    .maybeSingle<AffiliateProfileRow>();
+
+  if (profileError) {
+    console.error("[useAccountOverview] affiliate_profiles error:", profileError);
+    return 0;
+  }
+
+  return toNumber(profile?.available_earnings);
+}
+
 export function useAccountOverview(): AccountOverview {
   const [loading, setLoading] = React.useState(true);
   const [isAdmin, setIsAdmin] = React.useState(false);
@@ -88,7 +122,7 @@ export function useAccountOverview(): AccountOverview {
       const authUserId = user.id ? String(user.id) : "";
       const creditKey = await resolveCreditKey({ email, authUserId });
 
-      const [adminResult, ledgerResult, earningsResult] = await Promise.all([
+      const [adminResult, ledgerResult, affiliateTotal] = await Promise.all([
         email
           ? supabase
               .from("admin_users")
@@ -104,10 +138,7 @@ export function useAccountOverview(): AccountOverview {
               .eq("user_convex_id", creditKey)
           : Promise.resolve({ data: [], error: null }),
 
-        supabase
-          .from("affiliate_earnings")
-          .select("amount")
-          .eq("user_id", user.id),
+        loadAffiliateEarnings(authUserId),
       ]);
 
       if (adminResult.error) {
@@ -126,10 +157,8 @@ export function useAccountOverview(): AccountOverview {
 
         const remaining = rows.reduce((sum, row) => {
           const value = toNumber(row.credits);
-
           if (row.direction === "in") return sum + value;
           if (row.direction === "out") return sum - value;
-
           return sum;
         }, 0);
 
@@ -142,17 +171,7 @@ export function useAccountOverview(): AccountOverview {
         setCreditsUsed(Math.max(0, used));
       }
 
-      if (earningsResult.error) {
-        console.error("[useAccountOverview] affiliate error:", earningsResult.error);
-        setAffiliateEarnings(0);
-      } else {
-        const total = ((earningsResult.data ?? []) as AffiliateEarningRow[]).reduce(
-          (sum, row) => sum + toNumber(row.amount),
-          0
-        );
-
-        setAffiliateEarnings(total);
-      }
+      setAffiliateEarnings(affiliateTotal);
     } catch (error) {
       console.error("[useAccountOverview] fatal:", error);
       setIsAdmin(false);
@@ -167,21 +186,21 @@ export function useAccountOverview(): AccountOverview {
   React.useEffect(() => {
     void refresh();
 
-    const onFocus = () => void refresh();
-
-    const onCreditsRefresh = () => void refresh();
+    const onRefresh = () => void refresh();
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") void refresh();
     };
 
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("credits:refresh", onCreditsRefresh);
+    window.addEventListener("focus", onRefresh);
+    window.addEventListener("credits:refresh", onRefresh);
+    window.addEventListener("affiliate:refresh", onRefresh);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("credits:refresh", onCreditsRefresh);
+      window.removeEventListener("focus", onRefresh);
+      window.removeEventListener("credits:refresh", onRefresh);
+      window.removeEventListener("affiliate:refresh", onRefresh);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [refresh]);
