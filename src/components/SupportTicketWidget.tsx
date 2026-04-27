@@ -1,7 +1,7 @@
 // FILE: src/components/SupportTicketWidget.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Bot, Loader2, MessageCircle, Send, X } from "lucide-react";
+import { Bot, Loader2, MessageCircle, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
@@ -33,6 +33,8 @@ type MessageRow = {
 };
 
 const LIVE_AGENT_KEYWORD = "live agent";
+const LIVE_AGENT_HINT_DELAY_MS = 60_000;
+const LIVE_AGENT_HINT_CLIENT_MESSAGES = 3;
 
 function makeChannelName(prefix: string) {
   const id =
@@ -43,8 +45,8 @@ function makeChannelName(prefix: string) {
   return `${prefix}-${id}`;
 }
 
-function hasLiveAgentRequest(text: string) {
-  return text.toLowerCase().includes(LIVE_AGENT_KEYWORD);
+function isExactLiveAgentRequest(text: string) {
+  return text.trim().toLowerCase() === LIVE_AGENT_KEYWORD;
 }
 
 function getGuestStorageKey() {
@@ -62,6 +64,17 @@ function getGuestStorageKey() {
   return `support_ticket_guest_${guestId}`;
 }
 
+function makeLocalSystemMessage(ticketId: string, text: string): MessageRow {
+  return {
+    id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    ticket_id: ticketId,
+    sender_id: null,
+    sender_type: "system",
+    message: text,
+    created_at: new Date().toISOString(),
+  };
+}
+
 export default function SupportTicketWidget() {
   const location = useLocation();
   const { user } = useAuth();
@@ -71,6 +84,7 @@ export default function SupportTicketWidget() {
   const [creating, setCreating] = useState(false);
   const [sending, setSending] = useState(false);
   const [aiTyping, setAiTyping] = useState(false);
+  const [showTimedLiveAgentHint, setShowTimedLiveAgentHint] = useState(false);
 
   const [ticket, setTicket] = useState<TicketRow | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
@@ -91,9 +105,30 @@ export default function SupportTicketWidget() {
     [user?.id]
   );
 
+  const clientMessageCount = useMemo(
+    () => messages.filter((item) => item.sender_type === "client").length,
+    [messages]
+  );
+
+  const shouldShowLiveAgentHint =
+    !!ticket &&
+    ticket.status !== "needs_agent" &&
+    ticket.status !== "closed" &&
+    (clientMessageCount >= LIVE_AGENT_HINT_CLIENT_MESSAGES || showTimedLiveAgentHint);
+
   useEffect(() => {
     if (user?.email) setEmail(user.email);
   }, [user?.email]);
+
+  useEffect(() => {
+    if (!open || ticket || showTimedLiveAgentHint) return;
+
+    const timer = window.setTimeout(() => {
+      setShowTimedLiveAgentHint(true);
+    }, LIVE_AGENT_HINT_DELAY_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [open, ticket, showTimedLiveAgentHint]);
 
   useEffect(() => {
     if (!open) return;
@@ -122,7 +157,16 @@ export default function SupportTicketWidget() {
         return;
       }
 
-      setTicket(ticketData as TicketRow);
+      const loadedTicket = ticketData as TicketRow;
+
+      if (loadedTicket.status === "closed") {
+        localStorage.removeItem(storageKey);
+        setTicket(null);
+        setMessages([]);
+        return;
+      }
+
+      setTicket(loadedTicket);
 
       const { data: messagesData, error: messagesError } = await supabase
         .from("support_ticket_messages")
@@ -178,7 +222,12 @@ export default function SupportTicketWidget() {
           filter: `id=eq.${ticket.id}`,
         },
         (payload) => {
-          setTicket(payload.new as TicketRow);
+          const updatedTicket = payload.new as TicketRow;
+          setTicket(updatedTicket);
+
+          if (updatedTicket.status === "closed") {
+            localStorage.removeItem(storageKey);
+          }
         }
       )
       .subscribe();
@@ -186,7 +235,7 @@ export default function SupportTicketWidget() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [ticket?.id]);
+  }, [ticket?.id, storageKey]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -199,6 +248,19 @@ export default function SupportTicketWidget() {
       if (prev.some((item) => item.id === messageRow.id)) return prev;
       return [...prev, messageRow];
     });
+  }
+
+  function resetWidgetForNewTicket() {
+    if (ticket?.id) localStorage.removeItem(storageKey);
+
+    setTicket(null);
+    setMessages([]);
+    setSubject("");
+    setMessage("");
+    setAiTyping(false);
+    setSending(false);
+    setCreating(false);
+    setShowTimedLiveAgentHint(false);
   }
 
   async function updateTicket(ticketId: string, updates?: Partial<TicketRow>) {
@@ -228,8 +290,25 @@ export default function SupportTicketWidget() {
       .select("*")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.warn("[SupportTicketWidget] system message insert warn:", error);
+      addMessageInstant(makeLocalSystemMessage(ticketId, text));
+      return;
+    }
+
     if (data) addMessageInstant(data as MessageRow);
+  }
+
+  async function handleLiveAgentRequest(ticketId: string) {
+    await updateTicket(ticketId, {
+      status: "needs_agent",
+      priority: "high",
+    } as Partial<TicketRow>);
+
+    await insertSystemMessage(
+      ticketId,
+      "A live agent has been requested. Our team has been notified and will reply here as soon as possible."
+    );
   }
 
   async function requestAiReply(ticketId: string, userMessage: string) {
@@ -261,25 +340,8 @@ export default function SupportTicketWidget() {
       const reply = String(
         data?.reply ||
           data?.message ||
-          "I’m not fully sure about that. Please type “Live Agent” and our team will help you directly."
+          "I’m not fully sure about that yet, but I can still try to help. If you need a human, type “Live Agent”."
       ).trim();
-
-      const needsAgent =
-        Boolean(data?.needsAgent) || hasLiveAgentRequest(reply) || !reply;
-
-      if (needsAgent) {
-        await updateTicket(ticketId, {
-          status: "needs_agent",
-          priority: "high",
-        } as Partial<TicketRow>);
-
-        await insertSystemMessage(
-          ticketId,
-          "A live agent has been requested. Our team has been notified and will reply here as soon as possible."
-        );
-
-        return;
-      }
 
       const { data: aiMessageData, error: aiMessageError } = await supabase
         .from("support_ticket_messages")
@@ -294,36 +356,26 @@ export default function SupportTicketWidget() {
 
       if (aiMessageError) throw aiMessageError;
 
-      if (aiMessageData) {
-        addMessageInstant(aiMessageData as MessageRow);
-      }
+      if (aiMessageData) addMessageInstant(aiMessageData as MessageRow);
 
       await updateTicket(ticketId, {
         status: "ai_replied",
         priority: "normal",
       } as Partial<TicketRow>);
+
+      if (Boolean(data?.needsAgent)) {
+        setShowTimedLiveAgentHint(true);
+      }
     } catch (error) {
       console.error("[SupportTicketWidget] AI reply error:", error);
 
       await insertSystemMessage(
         ticketId,
-        "I couldn’t answer that automatically. Please type “Live Agent” and our team will help you directly."
+        "I couldn’t answer that automatically right now. You can continue writing here, or type “Live Agent” if you want our team to help directly."
       );
     } finally {
       setAiTyping(false);
     }
-  }
-
-  async function handleLiveAgentRequest(ticketId: string) {
-    await updateTicket(ticketId, {
-      status: "needs_agent",
-      priority: "high",
-    } as Partial<TicketRow>);
-
-    await insertSystemMessage(
-      ticketId,
-      "A live agent has been requested. Our team has been notified and will reply here as soon as possible."
-    );
   }
 
   async function createTicket() {
@@ -349,7 +401,7 @@ export default function SupportTicketWidget() {
     try {
       setCreating(true);
 
-      const liveAgentRequested = hasLiveAgentRequest(cleanMessage);
+      const liveAgentRequested = isExactLiveAgentRequest(cleanMessage);
 
       const { data: ticketData, error: ticketError } = await supabase
         .from("support_tickets")
@@ -397,8 +449,6 @@ export default function SupportTicketWidget() {
       setSubject("");
       setMessage("");
 
-      toast.success("Ticket created");
-
       if (liveAgentRequested) {
         await handleLiveAgentRequest(createdTicket.id);
       } else {
@@ -413,7 +463,7 @@ export default function SupportTicketWidget() {
   }
 
   async function sendMessage() {
-    if (!ticket?.id) return;
+    if (!ticket?.id || ticket.status === "closed") return;
 
     const cleanMessage = message.trim();
 
@@ -425,7 +475,7 @@ export default function SupportTicketWidget() {
     try {
       setSending(true);
 
-      const liveAgentRequested = hasLiveAgentRequest(cleanMessage);
+      const liveAgentRequested = isExactLiveAgentRequest(cleanMessage);
 
       const { data, error } = await supabase
         .from("support_ticket_messages")
@@ -440,20 +490,21 @@ export default function SupportTicketWidget() {
 
       if (error) throw error;
 
-      if (data) {
-        addMessageInstant(data as MessageRow);
-      }
+      if (data) addMessageInstant(data as MessageRow);
 
       setMessage("");
 
-      await updateTicket(ticket.id, {
-        status: liveAgentRequested ? "needs_agent" : "open",
-        priority: liveAgentRequested ? "high" : ticket.priority || "normal",
-      } as Partial<TicketRow>);
-
       if (liveAgentRequested) {
         await handleLiveAgentRequest(ticket.id);
-      } else if (ticket.status !== "needs_agent" && ticket.status !== "closed") {
+        return;
+      }
+
+      await updateTicket(ticket.id, {
+        status: ticket.status === "needs_agent" ? "needs_agent" : "open",
+        priority: ticket.status === "needs_agent" ? "high" : "normal",
+      } as Partial<TicketRow>);
+
+      if (ticket.status !== "needs_agent") {
         await requestAiReply(ticket.id, cleanMessage);
       }
     } catch (error: any) {
@@ -464,23 +515,20 @@ export default function SupportTicketWidget() {
     }
   }
 
-  const showLiveAgentHint =
-    ticket?.status !== "needs_agent" && ticket?.status !== "closed";
-
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:brightness-110"
+        className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:brightness-110 sm:bottom-5 sm:right-5"
       >
         <MessageCircle className="h-4 w-4" />
         Help
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-[60] flex items-end justify-end bg-black/40 p-4 backdrop-blur-sm">
-          <div className="flex h-[620px] w-full max-w-[390px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b1220] shadow-2xl">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-end sm:justify-end sm:p-4">
+          <div className="flex h-[100dvh] w-full flex-col overflow-hidden border border-white/10 bg-[#0b1220] shadow-2xl sm:h-[620px] sm:max-h-[calc(100dvh-32px)] sm:max-w-[390px] sm:rounded-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
               <div className="min-w-0">
                 <h3 className="truncate text-sm font-semibold text-white">
@@ -497,7 +545,7 @@ export default function SupportTicketWidget() {
                         : "AI assistant online"}
                     </>
                   ) : (
-                    "Ask a question or request a live agent."
+                    "Ask a question and get instant help."
                   )}
                 </p>
               </div>
@@ -512,50 +560,48 @@ export default function SupportTicketWidget() {
             </div>
 
             {!ticket ? (
-              <div className="flex flex-1 flex-col p-4">
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={!!user?.email}
                   placeholder="Your email"
-                  className="mb-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="mb-2 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-70 sm:py-2"
                 />
 
                 <input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Subject"
-                  className="mb-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500"
+                  className="mb-2 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500 sm:py-2"
                 />
 
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder='Ask your question. Type "Live Agent" if you want a human support agent.'
+                  placeholder="Ask your question..."
                   rows={6}
-                  className="mb-3 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500"
+                  className="mb-3 min-h-[150px] resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500 sm:py-2"
                 />
 
-                <p className="mb-3 text-xs text-zinc-500">
-                  The AI assistant will answer instantly when possible. For human help, type{" "}
-                  <span className="font-semibold text-zinc-300">Live Agent</span>.
-                </p>
+                {showTimedLiveAgentHint ? (
+                  <p className="mb-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-zinc-400">
+                    Need a human? Type{" "}
+                    <span className="font-semibold text-zinc-200">Live Agent</span>.
+                  </p>
+                ) : null}
 
                 <button
                   type="button"
                   onClick={() => void createTicket()}
                   disabled={creating || aiTyping}
                   className={cn(
-                    "mt-auto flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 py-2 text-sm font-semibold text-white transition hover:brightness-110",
+                    "mt-auto flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 py-3 text-sm font-semibold text-white transition hover:brightness-110 sm:py-2",
                     (creating || aiTyping) && "cursor-not-allowed opacity-60"
                   )}
                 >
                   {creating || aiTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {creating
-                    ? "Creating..."
-                    : aiTyping
-                    ? "AI is replying..."
-                    : "Start Chat"}
+                  {creating ? "Creating..." : aiTyping ? "AI is replying..." : "Start Chat"}
                 </button>
               </div>
             ) : (
@@ -569,18 +615,16 @@ export default function SupportTicketWidget() {
                     return (
                       <div
                         key={item.id}
-                        className={cn(
-                          "flex",
-                          isClient ? "justify-end" : "justify-start"
-                        )}
+                        className={cn("flex", isClient ? "justify-end" : "justify-start")}
                       >
                         <div
                           className={cn(
-                            "max-w-[82%] rounded-2xl px-3 py-2 text-sm",
+                            "max-w-[86%] rounded-2xl px-3 py-2 text-sm sm:max-w-[82%]",
                             isClient && "bg-blue-500 text-white",
                             isAi && "bg-white/10 text-zinc-100",
                             isSystem && "bg-amber-500/10 text-amber-100",
-                            item.sender_type === "admin" && "bg-emerald-500/15 text-emerald-100"
+                            item.sender_type === "admin" &&
+                              "bg-emerald-500/15 text-emerald-100"
                           )}
                         >
                           {isAi ? (
@@ -614,7 +658,7 @@ export default function SupportTicketWidget() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {showLiveAgentHint ? (
+                {shouldShowLiveAgentHint ? (
                   <div className="border-t border-white/10 px-3 py-2 text-xs text-zinc-500">
                     Need a human? Type{" "}
                     <span className="font-semibold text-zinc-300">Live Agent</span>.
@@ -623,17 +667,26 @@ export default function SupportTicketWidget() {
 
                 <div className="border-t border-white/10 p-3">
                   {ticket.status === "closed" ? (
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-zinc-300">
-                      This support chat has been closed. If you need more help, please open a new support ticket.
+                    <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-zinc-300">
+                      <p>This support chat has been closed.</p>
+
+                      <button
+                        type="button"
+                        onClick={resetWidgetForNewTicket}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Open New Chat
+                      </button>
                     </div>
                   ) : (
                     <div className="flex gap-2">
                       <textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        placeholder='Write a reply...'
+                        placeholder="Write a reply..."
                         rows={1}
-                        className="max-h-24 min-h-[42px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500"
+                        className="max-h-24 min-h-[44px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-white outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500 sm:min-h-[42px] sm:py-2"
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
@@ -646,7 +699,7 @@ export default function SupportTicketWidget() {
                         type="button"
                         onClick={() => void sendMessage()}
                         disabled={sending || aiTyping}
-                        className="flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-blue-500 text-white transition hover:brightness-110 disabled:opacity-60"
+                        className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition hover:brightness-110 disabled:opacity-60 sm:h-[42px] sm:w-[42px]"
                       >
                         {sending || aiTyping ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
