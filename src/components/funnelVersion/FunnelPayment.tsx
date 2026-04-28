@@ -52,8 +52,23 @@ type AffiliateCodeRow = {
   active: boolean | null;
 };
 
+type FunnelContext = {
+  canceled: boolean;
+  email: string;
+  templateId: string;
+  photo: string;
+  photoBucket: string;
+  styleId: string;
+  funnelSlug: string;
+  occasion: string;
+};
+
 function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
+}
+
+function safeString(value: unknown): string {
+  return String(value ?? "").trim();
 }
 
 function readSession(): FunnelSession | null {
@@ -198,48 +213,54 @@ function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, discountPercent: 
   };
 }
 
-function resolveFunnelContext(search: string) {
+function resolveFunnelContext(search: string): FunnelContext {
   const params = new URLSearchParams(search);
   const session = readSession() || {};
 
-  const templateIdFromUrl = (params.get("template_id") || "").trim();
-  const emailFromUrl = (params.get("email") || "").trim();
+  const templateIdFromUrl = safeString(params.get("template_id"));
+  const emailFromUrl = safeString(params.get("email"));
 
   const email =
     emailFromUrl ||
-    String(session.email || "").trim() ||
-    (localStorage.getItem("tdg_email") || "").trim();
+    safeString(session.email) ||
+    safeString(localStorage.getItem("tdg_email"));
 
   const templateId =
     templateIdFromUrl ||
-    String(session.template_id || "").trim() ||
-    (localStorage.getItem("tdg_template_id") || "").trim();
+    safeString(session.template_id) ||
+    safeString(localStorage.getItem("tdg_template_id"));
 
   const photo =
-    String(session.photo_path || "").trim() ||
-    (localStorage.getItem("tdg_funnel_photo") || "").trim() ||
-    (localStorage.getItem("tdg_funnel_photo_path") || "").trim() ||
-    (localStorage.getItem("tdg_uploaded_photo_path") || "").trim() ||
-    (localStorage.getItem("tdg_uploaded_photo_url") || "").trim();
+    safeString(session.photo_path) ||
+    safeString(localStorage.getItem("tdg_funnel_photo")) ||
+    safeString(localStorage.getItem("tdg_funnel_photo_path")) ||
+    safeString(localStorage.getItem("tdg_uploaded_photo_path")) ||
+    safeString(localStorage.getItem("tdg_uploaded_photo_url"));
+
+  const photoBucket =
+    safeString(session.photo_bucket) ||
+    safeString(localStorage.getItem("tdg_funnel_bucket")) ||
+    "templates";
 
   const styleId =
-    String(session.style_id || "").trim() ||
-    (localStorage.getItem("tdg_funnel_style") || "").trim();
+    safeString(session.style_id) ||
+    safeString(localStorage.getItem("tdg_funnel_style"));
 
   const funnelSlug =
-    String(session.funnel_slug || "").trim() ||
-    (localStorage.getItem("tdg_funnel_slug") || "").trim();
+    safeString(session.funnel_slug) ||
+    safeString(localStorage.getItem("tdg_funnel_slug"));
 
   const occasion =
-    String(session.occasion || "").trim() ||
-    String(session.gift_type || "").trim() ||
-    (localStorage.getItem("tdg_funnel_occasion") || "").trim();
+    safeString(session.occasion) ||
+    safeString(session.gift_type) ||
+    safeString(localStorage.getItem("tdg_funnel_occasion"));
 
-  if (email || templateId || photo || styleId || funnelSlug || occasion) {
+  if (email || templateId || photo || photoBucket || styleId || funnelSlug || occasion) {
     mergeSession({
       ...session,
       email: email || session.email || "",
       template_id: templateId || session.template_id || null,
+      photo_bucket: photoBucket || session.photo_bucket || "templates",
       photo_path: photo || session.photo_path || null,
       style_id: styleId || session.style_id || undefined,
       funnel_slug: funnelSlug || session.funnel_slug || undefined,
@@ -250,12 +271,14 @@ function resolveFunnelContext(search: string) {
 
   if (email) localStorage.setItem("tdg_email", email);
   if (templateId) localStorage.setItem("tdg_template_id", templateId);
+  if (photoBucket) localStorage.setItem("tdg_funnel_bucket", photoBucket);
 
   return {
-    canceled: (params.get("canceled") || "").trim() === "1",
+    canceled: safeString(params.get("canceled")) === "1",
     email,
     templateId,
     photo,
+    photoBucket,
     styleId,
     funnelSlug,
     occasion,
@@ -358,11 +381,17 @@ export default function FunnelPayment(): JSX.Element {
       return;
     }
 
+    if (!funnel.templateId) {
+      toast.error("Choose a style/template first.");
+      navigate("/funnel/styleSelect", { replace: true });
+      return;
+    }
+
     if (!funnel.email) {
       toast.error("Please enter your email to continue.");
       navigate("/funnel/email", { replace: true });
     }
-  }, [navigate, funnel.photo, funnel.styleId, funnel.email]);
+  }, [navigate, funnel.photo, funnel.styleId, funnel.templateId, funnel.email]);
 
   useEffect(() => {
     const t = window.setInterval(() => {
@@ -417,7 +446,7 @@ export default function FunnelPayment(): JSX.Element {
       return;
     }
 
-    if (!funnel.styleId) {
+    if (!funnel.styleId || !funnel.templateId) {
       toast.error("Choose a style first.");
       navigate("/funnel/styleSelect", { replace: true });
       return;
@@ -435,6 +464,8 @@ export default function FunnelPayment(): JSX.Element {
       const { url: SUPABASE_URL, anon: ANON_KEY } = getPublicSupabaseConfig();
       const headers = await getEdgeFunctionHeaders(ANON_KEY);
 
+      const session = readSession();
+
       const payload = {
         plan: selected,
         email: funnel.email,
@@ -444,6 +475,7 @@ export default function FunnelPayment(): JSX.Element {
         funnel_slug: funnel.funnelSlug || null,
         occasion: funnel.occasion || null,
         photo_path: funnel.photo || null,
+        photo_bucket: funnel.photoBucket || session?.photo_bucket || "templates",
       };
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
@@ -466,6 +498,10 @@ export default function FunnelPayment(): JSX.Element {
       if (data?.generation_id) {
         mergeSession({
           generation_id: data.generation_id,
+          template_id: funnel.templateId || null,
+          style_id: funnel.styleId || undefined,
+          photo_bucket: funnel.photoBucket || "templates",
+          photo_path: funnel.photo || null,
         });
       }
 
@@ -703,7 +739,8 @@ export default function FunnelPayment(): JSX.Element {
 
           <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
             Selected: {selectedPlan.id} • Credits: {selectedPlan.credits} • Promo:{" "}
-            {promoApplied ? promo.toUpperCase() : "none"} • Style: {funnel.styleId || "missing"}
+            {promoApplied ? promo.toUpperCase() : "none"} • Style: {funnel.styleId || "missing"} • Template:{" "}
+            {funnel.templateId || "missing"}
           </div>
         </div>
       </div>
