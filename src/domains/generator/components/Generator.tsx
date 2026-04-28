@@ -1,23 +1,14 @@
-// FILE: src/pages/GeneratorPage.tsx
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
 import VideoModal from "@/components/VideoModal";
 import TemplateCard from "@/components/TemplateCard";
 import type { TemplateSummary } from "@/types/templates";
 
-import {
-  useTemplatesQuery,
-  useUserCreditsQuery,
-  useJobsQuery,
-} from "@/data";
-
-import {
-  useCreateJobMutation,
-  useCreateVideoJobMutation,
-} from "@/data";
+import { useTemplatesQuery, useUserCreditsQuery, useJobsQuery } from "@/data";
+import { useCreateVideoJobMutation } from "@/data";
 
 import {
   Select,
@@ -44,6 +35,7 @@ function SnowBackground() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -110,12 +102,25 @@ type GenerationRow = {
   id: string;
   status: "pending" | "queued" | "processing" | "completed" | "failed" | "error";
   final_image_url: string | null;
+  result_image_url?: string | null;
+  preview_image_url?: string | null;
+  error?: string | null;
 };
 
 type AnyTemplate = TemplateSummary & {
+  id?: string;
   _id?: string;
+  title?: string;
+  prompt?: string | null;
+  occasion?: string | null;
+  category?: string | null;
+  style_id?: string | null;
+  styleId?: string | null;
+  previewUrl?: string | null;
+  thumbnailUrl?: string | null;
   previewurl?: string | null;
   preview_url?: string | null;
+  preview_image_url?: string | null;
   thumbnailurl?: string | null;
   thumbnail_url?: string | null;
   image?: string | null;
@@ -123,10 +128,27 @@ type AnyTemplate = TemplateSummary & {
   mediaUrl?: string | null;
   creditCost?: number;
   creditcost?: number;
+  type?: string;
+};
+
+type EdgeResponse = {
+  success?: boolean;
+  error?: string;
+  message?: string;
+  imageUrl?: string;
+  generation_id?: string;
 };
 
 function normalizeKey(value: unknown) {
   return String(value ?? "").trim().toLowerCase();
+}
+
+function safeString(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function isHttpUrl(value: unknown) {
+  return /^https?:\/\//i.test(safeString(value));
 }
 
 function formatLabel(value: unknown) {
@@ -139,41 +161,100 @@ function formatLabel(value: unknown) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function getPublicSupabaseConfig(): { url: string; anon: string } {
+  const env = import.meta.env as {
+    VITE_SUPABASE_URL?: string;
+    VITE_SUPABASE_ANON_KEY?: string;
+  };
+
+  const url = (env.VITE_SUPABASE_URL || "").trim();
+  const anon = (env.VITE_SUPABASE_ANON_KEY || "").trim();
+
+  if (!url || !anon) {
+    throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
+  }
+
+  return { url, anon };
+}
+
+async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, string>> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token?.trim();
+
+  return {
+    "Content-Type": "application/json",
+    apikey: anonKey,
+    Authorization: `Bearer ${accessToken || anonKey}`,
+  };
+}
+
+async function safeReadJson(res: Response): Promise<EdgeResponse> {
+  try {
+    return (await res.json()) as EdgeResponse;
+  } catch {
+    return {};
+  }
+}
+
+function getTemplateId(template: AnyTemplate) {
+  return safeString(template.id || template._id);
+}
+
+function getTemplateStyleId(template: AnyTemplate) {
+  return (
+    safeString(template.style_id) ||
+    safeString(template.styleId) ||
+    normalizeKey(template.category || "general")
+  );
+}
+
+function getTemplateImageUrl(template: AnyTemplate) {
+  const candidates = [
+    template.previewUrl,
+    template.thumbnailUrl,
+    template.preview_image_url,
+    template.preview_url,
+    template.previewurl,
+    template.thumbnail_url,
+    template.thumbnailurl,
+    template.imageUrl,
+    template.image,
+    template.mediaUrl,
+  ];
+
+  for (const candidate of candidates) {
+    const url = safeString(candidate);
+    if (url) return url;
+  }
+
+  return "";
+}
+
 function normalizeTemplate(t: AnyTemplate): AnyTemplate {
-  const id = (t.id ?? t._id ?? "") as string;
+  const id = getTemplateId(t);
 
-  const previewUrl =
-    t.previewUrl ||
-    t.thumbnailUrl ||
-    t.preview_url ||
-    t.previewurl ||
-    t.thumbnail_url ||
-    t.thumbnailurl ||
-    t.imageUrl ||
-    t.image ||
-    t.mediaUrl ||
-    "";
-
+  const previewUrl = getTemplateImageUrl(t);
   const thumbnailUrl =
-    t.thumbnailUrl ||
-    t.thumbnail_url ||
-    t.thumbnailurl ||
-    t.preview_url ||
-    t.previewurl ||
-    t.previewUrl ||
-    "";
+    safeString(t.thumbnailUrl) ||
+    safeString(t.thumbnail_url) ||
+    safeString(t.thumbnailurl) ||
+    previewUrl;
 
   const creditCost =
     typeof t.creditCost === "number"
       ? t.creditCost
       : typeof t.creditcost === "number"
-      ? t.creditcost
-      : 0;
+        ? t.creditcost
+        : 1;
 
   return {
     ...(t as TemplateSummary),
     ...(t as any),
     id,
+    _id: id,
     previewUrl,
     thumbnailUrl,
     creditCost,
@@ -181,33 +262,37 @@ function normalizeTemplate(t: AnyTemplate): AnyTemplate {
   };
 }
 
-function getGenerationIdFromResponse(res: any): string | null {
-  const value =
-    res?.generation_id ??
-    res?.generationId ??
-    res?.generation?.id ??
-    res?.data?.generation_id ??
-    res?.data?.generationId ??
-    res?.data?.generation?.id ??
-    res?.jobId ??
-    res?.job_id ??
-    res?.id ??
-    res?.data?.jobId ??
-    res?.data?.job_id ??
-    res?.data?.id ??
-    null;
-
-  return value ? String(value) : null;
-}
-
 function dispatchCreditsRefresh() {
   window.dispatchEvent(new Event("credits:refresh"));
+}
+
+function buildPrompt(template: AnyTemplate, customInstructions: string) {
+  const templatePrompt = safeString((template as any).prompt);
+  const title = safeString(template.title);
+  const occasion = safeString(template.occasion);
+  const custom = safeString(customInstructions);
+
+  return [
+    "Create one premium realistic personalized gift image using the two provided input images.",
+    "Input image 1 is the customer's uploaded photo. Preserve the real people from image 1: face identity, age, skin tone, hair color, hairstyle, body shape, expression, and number of people.",
+    "Input image 2 is the selected template/reference image. Use image 2 for scene, composition, pose direction, camera angle, background, props, lighting, mood, colors, and premium style.",
+    "Final task: create a new image that looks like the template/reference image but personalized with the people from the customer's photo.",
+    "Do not copy the customer's original background unless it naturally fits the template.",
+    "Do not create extra people. Do not duplicate faces. Do not distort hands, eyes, mouths, or limbs.",
+    "Avoid random text, logos, watermarks, captions, signatures, or unreadable typography.",
+    "Make the result clean, beautiful, realistic, emotional, and gift-ready.",
+    title ? `Template title: ${title}.` : "",
+    occasion ? `Occasion: ${occasion}.` : "",
+    templatePrompt ? `Template-specific instruction: ${templatePrompt}` : "",
+    custom ? `User extra instruction: ${custom}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export default function GeneratorPage() {
   const user = useBootstrapUser();
   const queryClient = useQueryClient();
-
   const [searchParams, setSearchParams] = useSearchParams();
 
   const selectedTemplateId = searchParams.get("template") || null;
@@ -248,7 +333,7 @@ export default function GeneratorPage() {
   const { data: templates = [] } = useTemplatesQuery();
 
   const templatesList = useMemo(
-    () => (templates as AnyTemplate[]).map((t) => normalizeTemplate(t)).filter((t) => t.id),
+    () => (templates as AnyTemplate[]).map((t) => normalizeTemplate(t)).filter((t) => getTemplateId(t)),
     [templates]
   );
 
@@ -258,7 +343,6 @@ export default function GeneratorPage() {
   const { data: jobsRaw = [] } = useJobsQuery();
   const jobs = (jobsRaw as any[]).map((j) => j) as JobRow[];
 
-  const { mutateAsync: triggerCreateJob } = useCreateJobMutation();
   const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
 
   const occasionOptions = useMemo(() => {
@@ -412,15 +496,13 @@ export default function GeneratorPage() {
   const templateMap = useMemo(() => {
     const lookup = new Map<string, AnyTemplate>();
     templatesList.forEach((t) => {
-      const id = (t.id ?? t._id) as string;
+      const id = getTemplateId(t);
       lookup.set(id, normalizeTemplate(t));
     });
     return lookup;
   }, [templatesList]);
 
-  const selectedTemplateObj = selectedTemplateId
-    ? templateMap.get(selectedTemplateId) ?? null
-    : null;
+  const selectedTemplateObj = selectedTemplateId ? templateMap.get(selectedTemplateId) ?? null : null;
 
   const currentJob = useMemo(() => {
     if (!currentJobId) return null;
@@ -443,7 +525,7 @@ export default function GeneratorPage() {
       try {
         const { data, error } = await supabase
           .from("generations")
-          .select("id, status, final_image_url")
+          .select("id, status, final_image_url, result_image_url, preview_image_url, error")
           .eq("id", generationId)
           .maybeSingle();
 
@@ -458,10 +540,12 @@ export default function GeneratorPage() {
         }
 
         const generation = data as GenerationRow;
+        const imageUrl =
+          generation.final_image_url || generation.result_image_url || generation.preview_image_url || null;
 
-        if (generation.status === "completed" && generation.final_image_url) {
+        if (generation.status === "completed" && imageUrl) {
           stopGenerationPolling();
-          setPreviewAfter(generation.final_image_url);
+          setPreviewAfter(imageUrl);
           setIsGenerating(false);
           setCurrentGenerationId(null);
           refreshCredits();
@@ -474,7 +558,7 @@ export default function GeneratorPage() {
           setIsGenerating(false);
           setCurrentGenerationId(null);
           refreshCredits();
-          toast.error("Failed to generate. Please try again.");
+          toast.error(generation.error || "Failed to generate. Please try again.");
         }
       } finally {
         isPollingRef.current = false;
@@ -527,7 +611,7 @@ export default function GeneratorPage() {
 
   const handleTemplateSelect = useCallback(
     (template: AnyTemplate) => {
-      const id = (template.id ?? template._id) as string;
+      const id = getTemplateId(template);
 
       setSearchParams(
         (prev) => {
@@ -565,10 +649,12 @@ export default function GeneratorPage() {
         toast.error(`${f.name} is too large. Maximum 10MB.`);
         return false;
       }
+
       if (!f.type.startsWith("image/")) {
         toast.error(`${f.name} is not an image.`);
         return false;
       }
+
       return true;
     });
 
@@ -592,6 +678,7 @@ export default function GeneratorPage() {
         toast.error(`${f.name} is too large. Maximum 10MB.`);
         return false;
       }
+
       return true;
     });
 
@@ -637,6 +724,93 @@ export default function GeneratorPage() {
 
   const { openFunnel } = useCreditsFunnel();
 
+  async function createGenerationAndRun(input: {
+    template: AnyTemplate;
+    sourceImageUrl: string;
+    styleImageUrl: string;
+    prompt: string;
+    aspectRatio: string;
+  }) {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    const effectiveUserId = safeString(authUser?.id || (user as any)?.id) || null;
+    const effectiveEmail = safeString(authUser?.email || (user as any)?.email) || null;
+
+    const templateId = getTemplateId(input.template);
+    const styleId = getTemplateStyleId(input.template);
+
+    const metadata = {
+      source: "tdg_generator_page",
+      template_id: templateId,
+      style_id: styleId,
+      template_title: safeString(input.template.title),
+      template_prompt: safeString((input.template as any).prompt),
+      style_image_url: input.styleImageUrl,
+      source_image_url: input.sourceImageUrl,
+      aspect_ratio: input.aspectRatio,
+      user_id: effectiveUserId,
+      email: effectiveEmail,
+    };
+
+    const { data: created, error: createError } = await supabase
+      .from("generations")
+      .insert({
+        user_id: effectiveUserId,
+        email: effectiveEmail,
+        occasion_slug: safeString(input.template.occasion) || null,
+        style_slug: styleId || null,
+        style_id: styleId || null,
+        template_id: templateId || null,
+        title: safeString(input.template.title) || "tdg_generation",
+        source_image_url: input.sourceImageUrl,
+        preview_image_url: input.sourceImageUrl,
+        prompt: input.prompt,
+        status: "pending",
+        metadata,
+      })
+      .select("id")
+      .single();
+
+    if (createError || !created?.id) {
+      throw new Error(createError?.message || "Failed to create generation.");
+    }
+
+    const generationId = String(created.id);
+    setCurrentGenerationId(generationId);
+
+    const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
+    const headers = await getEdgeFunctionHeaders(anon);
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/generate-nano-banana`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        generation_id: generationId,
+      }),
+    });
+
+    const edgeData = await safeReadJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        safeString(edgeData.error || edgeData.message) ||
+          `Edge Function returned a non-2xx status code (${res.status})`
+      );
+    }
+
+    if (edgeData.imageUrl && isHttpUrl(edgeData.imageUrl)) {
+      setPreviewAfter(edgeData.imageUrl);
+      setCurrentGenerationId(null);
+      setIsGenerating(false);
+      refreshCredits();
+      toast.success("🎄 Your card is ready!");
+    }
+
+    return generationId;
+  }
+
   const handleGenerate = useCallback(async () => {
     if (!user) {
       toast.error("No authenticated user found.");
@@ -661,7 +835,7 @@ export default function GeneratorPage() {
       return;
     }
 
-    const requiredCredits = Number((template as any).creditCost ?? 0);
+    const requiredCredits = Number((template as any).creditCost ?? 1);
 
     if ((userCredits ?? 0) < requiredCredits) {
       const hasGeneratedBefore = jobs.length > 0;
@@ -730,7 +904,7 @@ export default function GeneratorPage() {
         }
 
         const res: any = await triggerCreateVideoJob({
-          templateId: template.id,
+          templateId: getTemplateId(template),
           inputUrls,
           userInstructions: finalUserInstructions || undefined,
           duration: 8,
@@ -744,29 +918,33 @@ export default function GeneratorPage() {
         setCurrentJobId(jobId);
         refreshCredits();
         toast.success("Video generation started!");
-      } else {
-        const res: any = await triggerCreateJob({
-          type: "image",
-          templateId: template.id,
-          inputUrls,
-          aspectRatio: selectedAspectRatio,
-          userInstructions: customInstructions.trim() || undefined,
-        });
-
-        const generationId = getGenerationIdFromResponse(res);
-
-        if (!generationId) {
-          console.error("[handleGenerate] generation response without ID", res);
-          setIsGenerating(false);
-          refreshCredits();
-          toast.error("Generation was created, but no generation_id was returned.");
-          return;
-        }
-
-        setCurrentGenerationId(generationId);
-        refreshCredits();
-        toast.success("Generation started!");
+        return;
       }
+
+      const sourceImageUrl = inputUrls[0];
+      const styleImageUrl = getTemplateImageUrl(template);
+
+      if (!sourceImageUrl || !isHttpUrl(sourceImageUrl)) {
+        throw new Error("Uploaded image URL is invalid.");
+      }
+
+      if (!styleImageUrl || !isHttpUrl(styleImageUrl)) {
+        throw new Error("Selected template has no valid public image URL.");
+      }
+
+      const prompt = buildPrompt(template, customInstructions);
+
+      const generationId = await createGenerationAndRun({
+        template,
+        sourceImageUrl,
+        styleImageUrl,
+        prompt,
+        aspectRatio: selectedAspectRatio,
+      });
+
+      setCurrentGenerationId(generationId);
+      refreshCredits();
+      toast.success("Generation started!");
     } catch (error: any) {
       console.error("[handleGenerate] error", error);
       setIsGenerating(false);
@@ -779,7 +957,6 @@ export default function GeneratorPage() {
     uploadedFiles,
     templateMap,
     userCredits,
-    triggerCreateJob,
     triggerCreateVideoJob,
     selectedAspectRatio,
     customInstructions,
@@ -989,7 +1166,7 @@ export default function GeneratorPage() {
       <div className="mx-auto grid max-w-5xl grid-cols-2 gap-5 px-4 pb-8 md:grid-cols-3 lg:grid-cols-4">
         {filteredTemplates.map((t) => {
           const normalized = normalizeTemplate(t);
-          const id = normalized.id as string;
+          const id = getTemplateId(normalized);
           const isSelected = selectedTemplateId === id;
 
           return (
@@ -997,7 +1174,7 @@ export default function GeneratorPage() {
               key={id}
               template={normalized as TemplateSummary}
               isSelected={isSelected}
-              onSelect={handleTemplateSelect}
+              onSelect={handleTemplateSelect as any}
               onOpenModal={(src, title) => setModal({ open: true, src, title })}
             />
           );
@@ -1027,8 +1204,8 @@ export default function GeneratorPage() {
           selectedTemplateObj && selectedTemplateObj.type === "video"
             ? "pb-72"
             : selectedTemplateObj?.type === "image"
-            ? "pb-64"
-            : ""
+              ? "pb-64"
+              : ""
         )}
       >
         <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)]">
