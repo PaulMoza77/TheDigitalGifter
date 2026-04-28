@@ -1,4 +1,3 @@
-// FILE: src/layouts/AdminLayout.tsx
 import React, { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
@@ -17,6 +16,7 @@ import {
   Users,
   LayoutTemplate,
   Inbox,
+  Settings,
 } from "lucide-react";
 
 type NavItem = {
@@ -75,7 +75,12 @@ function NavButton({
         collapsed && "justify-center px-2"
       )}
     >
-      <Icon className={cx("h-4 w-4 shrink-0", active ? "text-slate-100" : "text-slate-300")} />
+      <Icon
+        className={cx(
+          "h-4 w-4 shrink-0",
+          active ? "text-slate-100" : "text-slate-300"
+        )}
+      />
 
       {!collapsed ? (
         <div className="flex w-full min-w-0 items-center justify-between gap-2">
@@ -101,34 +106,89 @@ const SidebarNavigation: React.FC<{
     () => [
       {
         label: "MAIN",
-        items: [{ label: "Overview", path: "/admin", badge: "Main", icon: LayoutDashboard }],
+        items: [
+          {
+            label: "Overview",
+            path: "/admin",
+            badge: "Main",
+            icon: LayoutDashboard,
+          },
+        ],
       },
       {
         label: "CONTENT",
-        items: [{ label: "Templates", path: "/admin/templates", icon: LayoutTemplate }],
+        items: [
+          {
+            label: "Templates",
+            path: "/admin/templates",
+            icon: LayoutTemplate,
+          },
+        ],
       },
       {
         label: "INBOX",
-        items: [{ label: "Support Tickets", path: "/admin/support-tickets", icon: Inbox }],
+        items: [
+          {
+            label: "Support Tickets",
+            path: "/admin/support-tickets",
+            icon: Inbox,
+          },
+        ],
       },
       {
         label: "EMAIL",
         items: [
-          { label: "Email Templates", path: "/admin/email/templates", icon: FileText },
-          { label: "Offers", path: "/admin/email/offers", icon: BadgePercent },
-          { label: "Campaigns", path: "/admin/email/campaigns", icon: Send },
+          {
+            label: "Email Templates",
+            path: "/admin/email/templates",
+            icon: FileText,
+          },
+          {
+            label: "Offers",
+            path: "/admin/email/offers",
+            icon: BadgePercent,
+          },
+          {
+            label: "Campaigns",
+            path: "/admin/email/campaigns",
+            icon: Send,
+          },
         ],
       },
       {
         label: "FUNNEL",
-        items: [{ label: "Occasions & Styles", path: "/admin/funnel", icon: Sparkles }],
+        items: [
+          {
+            label: "Occasions & Styles",
+            path: "/admin/funnel",
+            icon: Sparkles,
+          },
+        ],
       },
       {
         label: "BUSINESS",
         items: [
-          { label: "Credits", path: "/admin/credits", icon: Coins },
-          { label: "Orders", path: "/admin/orders", icon: ShoppingCart },
-          { label: "Customers", path: "/admin/customers", icon: Users },
+          {
+            label: "Pricing",
+            path: "/admin/pricing",
+            icon: Settings,
+            badge: "New",
+          },
+          {
+            label: "Credits",
+            path: "/admin/credits",
+            icon: Coins,
+          },
+          {
+            label: "Orders",
+            path: "/admin/orders",
+            icon: ShoppingCart,
+          },
+          {
+            label: "Customers",
+            path: "/admin/customers",
+            icon: Users,
+          },
         ],
       },
     ],
