@@ -21,7 +21,14 @@ import {
   ShieldCheck,
   Download,
   ArrowLeft,
+  Home,
+  LayoutDashboard,
+  Plus,
 } from "lucide-react";
+
+const HOME_ROUTE = "/";
+const DASHBOARD_ROUTE = "/dashboard";
+const NEW_GIFT_ROUTE = "/funnel/uploadPhoto";
 
 function useQuery() {
   const { search } = useLocation();
@@ -267,6 +274,9 @@ export default function ResultPage() {
     [row?.status]
   );
 
+  const anyCheckoutLoading = Object.values(checkoutLoading).some(Boolean);
+  const canBuy = Boolean(imageUrl) && Boolean(row?.id) && !loading;
+
   useEffect(() => {
     if (upgradeSuccess) toast.success("Payment successful.");
     if (upgradeCanceled) toast.error("Checkout canceled.");
@@ -322,13 +332,8 @@ export default function ResultPage() {
     const safeGenId = String(genId || "").trim();
     const safeSess = String(sess || "").trim();
 
-    if (safeGenId) {
-      return fetchGenerationById(safeGenId);
-    }
-
-    if (safeSess) {
-      return fetchGenerationBySession(safeSess);
-    }
+    if (safeGenId) return fetchGenerationById(safeGenId);
+    if (safeSess) return fetchGenerationBySession(safeSess);
 
     return null;
   }
@@ -363,9 +368,7 @@ export default function ResultPage() {
     const res = await fetch(`${supabaseUrl}/functions/v1/generate-nano-banana`, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        generation_id: generationIdToStart,
-      }),
+      body: JSON.stringify({ generation_id: generationIdToStart }),
     });
 
     const data = await safeReadJson(res);
@@ -387,9 +390,7 @@ export default function ResultPage() {
     const status = normalizeStatus(existing?.status || null);
     const hasImage = !!(existing && (await resolveImageUrl(existing)));
 
-    if (existing) {
-      setRow(existing);
-    }
+    if (existing) setRow(existing);
 
     if (hasImage || isTerminalSuccess(status)) return;
 
@@ -499,6 +500,7 @@ export default function ResultPage() {
                 setErrorMessage(message);
                 setLoading(false);
               }
+
               return true;
             }
           }
@@ -525,9 +527,7 @@ export default function ResultPage() {
       while (!cancelled && Date.now() - start < maxMs) {
         const { data, error } = await supabase.rpc(
           "get_upgrade_result_by_checkout_session",
-          {
-            p_checkout_session_id: checkoutSessionId,
-          }
+          { p_checkout_session_id: checkoutSessionId }
         );
 
         if (error) {
@@ -535,15 +535,14 @@ export default function ResultPage() {
             setErrorMessage(error.message || "Failed to load upgrade result");
             setLoading(false);
           }
+
           return true;
         }
 
         const upgrade = normalizeUpgradeRpcRow(data);
 
         if (!upgrade) {
-          if (!cancelled) {
-            setUpgradeStatus("Waiting for upgrade fulfillment…");
-          }
+          if (!cancelled) setUpgradeStatus("Waiting for upgrade fulfillment…");
           await sleep(intervalMs);
           continue;
         }
@@ -569,6 +568,7 @@ export default function ResultPage() {
             setErrorMessage("Upgrade processing failed.");
             setLoading(false);
           }
+
           return true;
         }
 
@@ -634,8 +634,7 @@ export default function ResultPage() {
         }
       } catch (error: unknown) {
         if (!cancelled) {
-          const message =
-            error instanceof Error ? error.message : "Unexpected error";
+          const message = error instanceof Error ? error.message : "Unexpected error";
           setLoading(false);
           setErrorMessage(message);
         }
@@ -688,14 +687,11 @@ export default function ResultPage() {
       }
 
       const checkoutUrl = data?.url || data?.checkout_url || null;
-      if (!checkoutUrl) {
-        throw new Error("Missing checkout URL");
-      }
+      if (!checkoutUrl) throw new Error("Missing checkout URL");
 
       window.location.href = checkoutUrl;
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Failed to start checkout";
+      const message = error instanceof Error ? error.message : "Failed to start checkout";
       toast.error(message);
     } finally {
       setCheckoutLoading((prev) => ({ ...prev, [actionType]: false }));
@@ -715,18 +711,41 @@ export default function ResultPage() {
     a.remove();
   }
 
-  const anyCheckoutLoading = Object.values(checkoutLoading).some(Boolean);
-  const canBuy = Boolean(imageUrl) && Boolean(row?.id) && !loading;
+  function HeaderActions() {
+    return (
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          className="hidden text-zinc-700 hover:text-zinc-900 sm:inline-flex"
+          onClick={() => navigate(HOME_ROUTE)}
+        >
+          <Home className="mr-2 h-4 w-4" />
+          Home
+        </Button>
+
+        <Button
+          variant="ghost"
+          className="hidden text-zinc-700 hover:text-zinc-900 sm:inline-flex"
+          onClick={() => navigate(DASHBOARD_ROUTE)}
+        >
+          <LayoutDashboard className="mr-2 h-4 w-4" />
+          Dashboard
+        </Button>
+
+        <div className="text-sm text-zinc-600">{stepLabel}</div>
+      </div>
+    );
+  }
 
   if (!sessionId && !generationId && !checkoutSessionId) {
     return (
       <div className="min-h-screen" style={pageBg}>
         <header className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <Button
               variant="ghost"
               className="text-zinc-700 hover:text-zinc-900"
-              onClick={() => navigate("/")}
+              onClick={() => navigate(HOME_ROUTE)}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
@@ -736,7 +755,7 @@ export default function ResultPage() {
               TheDigitalGifter
             </div>
 
-            <div className="text-sm text-zinc-600">{stepLabel}</div>
+            <HeaderActions />
           </div>
 
           <div className="mt-4">
@@ -750,15 +769,24 @@ export default function ResultPage() {
               <h1 className="text-3xl font-semibold text-[#0b3b2e] sm:text-4xl">
                 We couldn’t open your result
               </h1>
+
               <p className="mt-3 text-zinc-700">
                 The payment session or generation id is missing. Please return and try again.
               </p>
 
-              <div className="mt-6 flex justify-center gap-3">
-                <Button onClick={() => navigate("/funnel/uploadPhoto")}>
+              <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                <Button onClick={() => navigate(NEW_GIFT_ROUTE)}>
+                  <Plus className="mr-2 h-4 w-4" />
                   Start again
                 </Button>
-                <Button variant="outline" onClick={() => navigate("/")}>
+
+                <Button variant="outline" onClick={() => navigate(DASHBOARD_ROUTE)}>
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Dashboard
+                </Button>
+
+                <Button variant="outline" onClick={() => navigate(HOME_ROUTE)}>
+                  <Home className="mr-2 h-4 w-4" />
                   Go home
                 </Button>
               </div>
@@ -772,7 +800,7 @@ export default function ResultPage() {
   return (
     <div className="min-h-screen" style={pageBg}>
       <header className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <Button
             variant="ghost"
             className="text-zinc-700 hover:text-zinc-900"
@@ -786,7 +814,7 @@ export default function ResultPage() {
             TheDigitalGifter
           </div>
 
-          <div className="text-sm text-zinc-600">{stepLabel}</div>
+          <HeaderActions />
         </div>
 
         <div className="mt-4">
@@ -815,11 +843,44 @@ export default function ResultPage() {
 
           <p className="mx-auto mt-3 max-w-2xl text-sm text-zinc-700 sm:text-base md:text-lg">
             {imageUrl
-              ? "Unlock premium upgrades, regenerate new variations, or download your final version."
+              ? "Download your gift, create another one, or open your dashboard anytime."
               : checkoutSessionId
                 ? "We’re processing your upgrade and will show the new result automatically."
                 : "We’re keeping this page updated while your final result is prepared."}
           </p>
+
+          {imageUrl ? (
+            <div className="mx-auto mt-6 flex max-w-2xl flex-col justify-center gap-3 sm:flex-row">
+              <Button
+                className="bg-[#0b3b2e] text-white hover:bg-[#082c22]"
+                onClick={downloadCurrent}
+                disabled={!imageUrl || anyCheckoutLoading}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download image
+              </Button>
+
+              <Button
+                variant="outline"
+                className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
+                onClick={() => navigate(NEW_GIFT_ROUTE)}
+                disabled={anyCheckoutLoading}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create another gift
+              </Button>
+
+              <Button
+                variant="outline"
+                className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
+                onClick={() => navigate(DASHBOARD_ROUTE)}
+                disabled={anyCheckoutLoading}
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Dashboard
+              </Button>
+            </div>
+          ) : null}
 
           {upgradeStatus ? (
             <div className="mx-auto mt-4 max-w-2xl rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900">
@@ -875,13 +936,22 @@ export default function ResultPage() {
 
               <div className="mt-4 flex flex-wrap gap-3">
                 <Button
-                  variant="outline"
-                  className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
-                  onClick={() => window.location.reload()}
+                  className="bg-[#0b3b2e] text-white hover:bg-[#082c22]"
+                  onClick={() => navigate(DASHBOARD_ROUTE)}
                   disabled={anyCheckoutLoading}
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Dashboard
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
+                  onClick={() => navigate(NEW_GIFT_ROUTE)}
+                  disabled={anyCheckoutLoading}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create another gift
                 </Button>
 
                 <Button
@@ -897,17 +967,18 @@ export default function ResultPage() {
                 <Button
                   variant="outline"
                   className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
-                  onClick={() => navigate("/funnel/uploadPhoto")}
+                  onClick={() => window.location.reload()}
                   disabled={anyCheckoutLoading}
                 >
-                  Start new gift
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
                 </Button>
               </div>
 
               <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-900">
                 <div className="flex items-start gap-2">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>Your image is safely stored and ready for premium upgrades.</span>
+                  <span>Your image is safely stored. You can return to your dashboard anytime.</span>
                 </div>
               </div>
 
@@ -954,12 +1025,14 @@ export default function ResultPage() {
                             <h3 className="text-base font-semibold text-zinc-900">
                               {offer.title}
                             </h3>
+
                             {offer.featured ? (
                               <Badge className="bg-amber-500 text-white hover:bg-amber-500">
                                 Best Value
                               </Badge>
                             ) : null}
                           </div>
+
                           <p className="mt-1 text-sm text-zinc-600">
                             {offer.description}
                           </p>
@@ -986,13 +1059,27 @@ export default function ResultPage() {
 
               <div className="rounded-2xl border border-zinc-200 bg-[#f8f5ef] p-4">
                 <div className="text-sm font-semibold text-[#0b3b2e]">
-                  Why upgrade?
+                  Next step
                 </div>
-                <ul className="mt-2 space-y-2 text-sm text-zinc-700">
-                  <li>• Sharper quality</li>
-                  <li>• Premium gift presentation</li>
-                  <li>• More shareable result</li>
-                </ul>
+
+                <div className="mt-3 grid gap-2">
+                  <Button
+                    className="bg-[#0b3b2e] text-white hover:bg-[#082c22]"
+                    onClick={() => navigate(NEW_GIFT_ROUTE)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create another gift
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
+                    onClick={() => navigate(DASHBOARD_ROUTE)}
+                  >
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Open dashboard
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
