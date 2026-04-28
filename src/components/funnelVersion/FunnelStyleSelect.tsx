@@ -13,6 +13,7 @@ type TemplateDbRow = {
 
 type FunnelStyle = {
   id: string;
+  templateId: string;
   name: string;
   script: string;
 };
@@ -160,13 +161,18 @@ export default function FunnelStyleSelect() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const bucket = safeString(searchParams.get("bucket")) || safeString(localStorage.getItem("tdg_funnel_bucket")) || "templates";
+  const bucket =
+    safeString(searchParams.get("bucket")) ||
+    safeString(localStorage.getItem("tdg_funnel_bucket")) ||
+    "templates";
+
   const photoPath =
     safeString(searchParams.get("photo")) ||
     safeString(localStorage.getItem("tdg_funnel_photo_path")) ||
     safeString(localStorage.getItem("tdg_funnel_photo"));
 
   const slugFromQs = safeString(searchParams.get("slug"));
+
   const occasion = useMemo(() => {
     const fromQs = safeString(searchParams.get("occasion"));
     const fromStorage = safeString(localStorage.getItem("tdg_funnel_occasion"));
@@ -215,18 +221,19 @@ export default function FunnelStyleSelect() {
       const primaryOccasion = occasion;
       const legacyOccasion = primaryOccasion === "newborn" ? "new_born" : null;
 
-      const runQuery = async (occ: string) => {
+      async function runQuery(occ: string) {
         return await supabase
           .from("templates")
           .select("id,title,prompt,occasion,style_id,isactive")
           .eq("isactive", true)
           .eq("occasion", occ)
           .order("title", { ascending: true });
-      };
+      }
 
       let rows: TemplateDbRow[] = [];
 
       const q1 = await runQuery(primaryOccasion);
+
       if (q1.error) {
         if (!alive) return;
         console.error("[FunnelStyleSelect] fetch templates error:", q1.error);
@@ -246,9 +253,10 @@ export default function FunnelStyleSelect() {
       if (!alive) return;
 
       const mapped: FunnelStyle[] = rows
-        .filter((r) => safeString(r.style_id).length > 0)
+        .filter((r) => safeString(r.id).length > 0 && safeString(r.style_id).length > 0)
         .map((r) => ({
           id: safeString(r.style_id),
+          templateId: safeString(r.id),
           name: safeString(r.title) || safeString(r.style_id),
           script: safeString(r.prompt),
         }));
@@ -272,6 +280,11 @@ export default function FunnelStyleSelect() {
       return;
     }
 
+    if (!style.templateId) {
+      setErrorMsg("Missing template reference. Please choose another style.");
+      return;
+    }
+
     mergeSession({
       gift_type: occasion,
       occasion,
@@ -280,9 +293,11 @@ export default function FunnelStyleSelect() {
       funnel_slug: slug,
       photo_bucket: bucket,
       photo_path: photoPath,
+      template_id: style.templateId,
     });
 
     localStorage.setItem("tdg_funnel_style", style.id);
+    localStorage.setItem("tdg_template_id", style.templateId);
     localStorage.setItem("tdg_funnel_slug", slug);
     localStorage.setItem("tdg_funnel_bucket", bucket);
     localStorage.setItem("tdg_funnel_photo_path", photoPath);
@@ -294,6 +309,7 @@ export default function FunnelStyleSelect() {
       slug,
       occasion,
       style: style.id,
+      template_id: style.templateId,
     });
 
     navigate(`${NEXT_ROUTE}?${qs.toString()}`);
@@ -361,7 +377,7 @@ export default function FunnelStyleSelect() {
 
                 return (
                   <button
-                    key={style.id}
+                    key={style.templateId}
                     type="button"
                     onClick={() => goNext(style)}
                     disabled={!photoPath}
@@ -386,7 +402,7 @@ export default function FunnelStyleSelect() {
           </div>
 
           <div className="mt-10 text-center text-[11px] text-[#111827]/45">
-            Your preview is generated instantly. Unlock the clean final after checkout.
+            Your preview is generated after checkout using your selected style.
           </div>
         </div>
       </div>

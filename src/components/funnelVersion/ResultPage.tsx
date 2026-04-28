@@ -37,7 +37,14 @@ type ResultRow = {
   final_image_url: string | null;
   result_image_url: string | null;
   preview_image_url: string | null;
+  source_image_url: string | null;
+  template_id: string | null;
+  style_id: string | null;
+  style_slug: string | null;
+  prompt: string | null;
+  error: string | null;
   created_at: string | null;
+  updated_at: string | null;
 };
 
 type UpgradeRpcRow = {
@@ -106,6 +113,20 @@ function isHttpUrl(value: string) {
   return /^https?:\/\//i.test((value || "").trim());
 }
 
+function normalizeStatus(status: string | null) {
+  return String(status || "").trim().toLowerCase();
+}
+
+function isTerminalSuccess(status: string | null) {
+  const s = normalizeStatus(status);
+  return ["completed", "ready", "succeeded", "saved"].includes(s);
+}
+
+function isTerminalFailure(status: string | null) {
+  const s = normalizeStatus(status);
+  return ["failed", "error", "canceled", "cancelled"].includes(s);
+}
+
 async function resolveImageUrl(row: ResultRow): Promise<string | null> {
   const candidates = [
     row.final_image_url,
@@ -135,7 +156,14 @@ function normalizeResultRow(input: unknown): ResultRow | null {
     final_image_url: (r.final_image_url as string | null) ?? null,
     result_image_url: (r.result_image_url as string | null) ?? null,
     preview_image_url: (r.preview_image_url as string | null) ?? null,
+    source_image_url: (r.source_image_url as string | null) ?? null,
+    template_id: (r.template_id as string | null) ?? null,
+    style_id: (r.style_id as string | null) ?? null,
+    style_slug: (r.style_slug as string | null) ?? null,
+    prompt: (r.prompt as string | null) ?? null,
+    error: (r.error as string | null) ?? null,
     created_at: (r.created_at as string | null) ?? null,
+    updated_at: (r.updated_at as string | null) ?? null,
   };
 }
 
@@ -200,7 +228,7 @@ const OFFER_CONFIG: Array<{
 ];
 
 function formatStatus(status: string | null) {
-  const s = String(status || "").trim().toLowerCase();
+  const s = normalizeStatus(status);
   if (!s) return "waiting";
   return s;
 }
@@ -248,7 +276,21 @@ export default function ResultPage() {
     const { data, error } = await supabase
       .from("generations")
       .select(
-        "id, status, final_image_url, result_image_url, preview_image_url, created_at"
+        [
+          "id",
+          "status",
+          "final_image_url",
+          "result_image_url",
+          "preview_image_url",
+          "source_image_url",
+          "template_id",
+          "style_id",
+          "style_slug",
+          "prompt",
+          "error",
+          "created_at",
+          "updated_at",
+        ].join(",")
       )
       .eq("id", genId)
       .maybeSingle();
@@ -296,6 +338,12 @@ export default function ResultPage() {
 
     setRow(nextRow);
 
+    if (isTerminalFailure(nextRow.status)) {
+      setImageUrl(null);
+      setErrorMessage(nextRow.error || "Generation failed.");
+      return true;
+    }
+
     const resolvedUrl = await resolveImageUrl(nextRow);
 
     if (resolvedUrl && isHttpUrl(resolvedUrl)) {
@@ -335,23 +383,23 @@ export default function ResultPage() {
     if (!generationIdToStart) return;
     if (generationStartedRef.current === generationIdToStart) return;
 
-    generationStartedRef.current = generationIdToStart;
-
     const existing = await fetchGenerationById(generationIdToStart);
-    const status = String(existing?.status || "").trim().toLowerCase();
+    const status = normalizeStatus(existing?.status || null);
+    const hasImage = !!(existing && (await resolveImageUrl(existing)));
 
-    if (
-      [
-        "processing",
-        "completed",
-        "ready",
-        "succeeded",
-        "pending_upgrade_render",
-        "saved",
-      ].includes(status)
-    ) {
+    if (existing) {
+      setRow(existing);
+    }
+
+    if (hasImage || isTerminalSuccess(status)) return;
+
+    if (isTerminalFailure(status)) {
+      setErrorMessage(existing?.error || "Generation failed.");
+      setLoading(false);
       return;
     }
+
+    generationStartedRef.current = generationIdToStart;
 
     try {
       await callGenerateNanoBanana(generationIdToStart);
@@ -383,10 +431,17 @@ export default function ResultPage() {
 
         if (nextRow?.id) {
           const ok = await applyRow(nextRow);
-          if (ok) {
+
+          if (isTerminalFailure(nextRow.status)) {
             setLoading(false);
             return true;
           }
+
+          if (ok && (await resolveImageUrl(nextRow))) {
+            setLoading(false);
+            return true;
+          }
+
           setRow(nextRow);
         }
 
@@ -414,14 +469,21 @@ export default function ResultPage() {
 
         if (nextRow?.id) {
           const ok = await applyRow(nextRow);
-          if (ok) {
+
+          if (isTerminalFailure(nextRow.status)) {
+            setLoading(false);
+            return true;
+          }
+
+          if (ok && (await resolveImageUrl(nextRow))) {
             setLoading(false);
             return true;
           }
 
           setRow(nextRow);
 
-          const status = String(nextRow.status || "").trim().toLowerCase();
+          const status = normalizeStatus(nextRow.status);
+
           if (
             !["processing", "completed", "ready", "succeeded", "saved"].includes(status) &&
             nextRow.id
@@ -515,7 +577,7 @@ export default function ResultPage() {
           if (cancelled) return true;
 
           const ok = await applyRow(nextRow);
-          if (ok) {
+          if (ok && nextRow && (await resolveImageUrl(nextRow))) {
             setLoading(false);
             return true;
           }
@@ -526,7 +588,7 @@ export default function ResultPage() {
           if (cancelled) return true;
 
           const ok = await applyRow(nextRow);
-          if (ok) {
+          if (ok && nextRow && (await resolveImageUrl(nextRow))) {
             setLoading(false);
             return true;
           }
@@ -746,14 +808,14 @@ export default function ResultPage() {
               ? "Your gift is ready"
               : loading
                 ? "Finishing your gift…"
-                : normalizedStatus === "ready"
-                  ? "Syncing your final image…"
+                : normalizedStatus === "failed"
+                  ? "Generation failed"
                   : "Almost there…"}
           </h1>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm text-zinc-700 sm:text-base md:text-lg">
             {imageUrl
-              ? "Unlock premium upgrades, regenerate new variations, or download a sharper final version."
+              ? "Unlock premium upgrades, regenerate new variations, or download your final version."
               : checkoutSessionId
                 ? "We’re processing your upgrade and will show the new result automatically."
                 : "We’re keeping this page updated while your final result is prepared."}
