@@ -1,4 +1,3 @@
-// FILE: src/App.tsx
 import { Suspense, useEffect, useState, lazy } from "react";
 import {
   BrowserRouter,
@@ -38,12 +37,15 @@ import ClientLayout from "@/layouts/ClientLayout";
 // ================= ADMIN CORE =================
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import Templates from "@/pages/admin/Templates";
+
+const PricingPage = lazy(() => import("@/pages/admin/PricingPage"));
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 const SupportTicketsPage = lazy(
   () => import("@/domains/admin/pages/SupportTicketsPage")
 );
+
 // ================= ADMIN EMAIL =================
 import AdminEmailLayoutPage from "@/pages/admin/email/Index";
 import AdminEmailTemplatesPage from "@/pages/admin/email/Templates";
@@ -85,9 +87,11 @@ import FunnelUploadPhoto from "@/components/funnelVersion/FunnelUploadPhoto";
 import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
 import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
 import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
+
 const FunnelEmailCapture = lazy(
   () => import("@/components/funnelVersion/FunnelEmailCapture")
 );
+
 import FunnelResultPage from "@/components/funnelVersion/ResultPage";
 
 // ================= SUPABASE =================
@@ -372,6 +376,7 @@ function AppInner() {
 
             <Route path="funnel" element={<AdminFunnelPage />} />
             <Route path="templates" element={<Templates />} />
+            <Route path="pricing" element={<PricingPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="credits" element={<CreditsPage />} />
