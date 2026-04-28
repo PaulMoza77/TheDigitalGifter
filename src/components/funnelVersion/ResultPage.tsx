@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 
 const HOME_ROUTE = "/";
-const DASHBOARD_ROUTE = "/dashboard";
+const DASHBOARD_ROUTE = "/account/dashboard";
 const NEW_GIFT_ROUTE = "/funnel/uploadPhoto";
 
 function useQuery() {
@@ -67,6 +67,32 @@ type UpgradeRpcRow = {
   generation_updated_at: string | null;
 };
 
+type PricingItemRow = {
+  id: string;
+  key: string;
+  category: string | null;
+  name: string | null;
+  description: string | null;
+  price_cents: number | string | null;
+  currency: string | null;
+  credits: number | string | null;
+  stripe_price_id: string | null;
+  active: boolean | null;
+  sort_order: number | string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+type OfferItem = {
+  actionType: ActionType;
+  title: string;
+  priceLabel: string;
+  description: string;
+  cta: string;
+  icon: React.ComponentType<{ className?: string }>;
+  featured: boolean;
+  sortOrder: number;
+};
+
 type EdgeJson = {
   url?: string;
   id?: string;
@@ -75,6 +101,51 @@ type EdgeJson = {
   imageUrl?: string;
   checkout_url?: string;
 };
+
+const FALLBACK_OFFERS: OfferItem[] = [
+  {
+    actionType: "full_hd",
+    title: "Unlock Full HD",
+    priceLabel: "€0.99",
+    description: "High-resolution, clean, sharp, and ready to download.",
+    cta: "Unlock Full HD",
+    icon: ImageIcon,
+    featured: false,
+    sortOrder: 10,
+  },
+  {
+    actionType: "golden_frame",
+    title: "Add Golden Frame",
+    priceLabel: "€4.99",
+    description:
+      "Your image is reprocessed with a premium golden-frame prompt for an elegant, gift-ready finish.",
+    cta: "Add Golden Frame",
+    icon: Crown,
+    featured: true,
+    sortOrder: 20,
+  },
+  {
+    actionType: "puzzle",
+    title: "Turn into Puzzle",
+    priceLabel: "€14.99",
+    description:
+      "Your image is reprocessed with a premium puzzle-style prompt for a printable puzzle gift look.",
+    cta: "Turn into Puzzle",
+    icon: Puzzle,
+    featured: false,
+    sortOrder: 30,
+  },
+  {
+    actionType: "regenerate",
+    title: "Regenerate",
+    priceLabel: "€0.70",
+    description: "Create a fresh variation of your current gift image.",
+    cta: "Regenerate",
+    icon: Sparkles,
+    featured: false,
+    sortOrder: 40,
+  },
+];
 
 function getPublicSupabaseConfig(): { url: string; anon: string } {
   const env = import.meta.env as {
@@ -132,6 +203,107 @@ function isTerminalSuccess(status: string | null) {
 function isTerminalFailure(status: string | null) {
   const s = normalizeStatus(status);
   return ["failed", "error", "canceled", "cancelled"].includes(s);
+}
+
+function formatStatus(status: string | null) {
+  const s = normalizeStatus(status);
+  if (!s) return "waiting";
+  return s;
+}
+
+function toNumber(value: unknown, fallback = 0) {
+  const n = Number(value ?? fallback);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeCurrency(value: unknown) {
+  const currency = String(value || "eur").trim().toUpperCase();
+  return currency || "EUR";
+}
+
+function formatMoney(cents: unknown, currency: unknown) {
+  const amount = toNumber(cents, 0) / 100;
+  const code = normalizeCurrency(currency);
+
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: code,
+      minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${code} ${amount.toFixed(2)}`;
+  }
+}
+
+function actionTypeFromPricingKey(key: string): ActionType | null {
+  const normalized = String(key || "").trim().toLowerCase();
+
+  if (normalized === "offer_full_hd" || normalized === "full_hd") return "full_hd";
+  if (normalized === "offer_regenerate" || normalized === "regenerate") return "regenerate";
+  if (normalized === "offer_golden_frame" || normalized === "golden_frame") {
+    return "golden_frame";
+  }
+  if (normalized === "offer_puzzle" || normalized === "puzzle") return "puzzle";
+
+  return null;
+}
+
+function fallbackOfferFor(actionType: ActionType) {
+  return FALLBACK_OFFERS.find((offer) => offer.actionType === actionType);
+}
+
+function iconForAction(actionType: ActionType) {
+  if (actionType === "full_hd") return ImageIcon;
+  if (actionType === "golden_frame") return Crown;
+  if (actionType === "puzzle") return Puzzle;
+  return Sparkles;
+}
+
+function boolFromMetadata(value: unknown, fallback = false) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    if (["true", "1", "yes"].includes(v)) return true;
+    if (["false", "0", "no"].includes(v)) return false;
+  }
+  return fallback;
+}
+
+function ctaFromAction(actionType: ActionType, title: string) {
+  if (actionType === "full_hd") return "Unlock Full HD";
+  if (actionType === "golden_frame") return "Add Golden Frame";
+  if (actionType === "puzzle") return "Turn into Puzzle";
+  if (actionType === "regenerate") return "Regenerate";
+  return title;
+}
+
+function mapPricingItemToOffer(item: PricingItemRow): OfferItem | null {
+  const actionType = actionTypeFromPricingKey(item.key);
+  if (!actionType) return null;
+
+  const fallback = fallbackOfferFor(actionType);
+
+  const title = String(item.name || fallback?.title || item.key).trim();
+  const description = String(item.description || fallback?.description || "").trim();
+  const priceLabel =
+    item.price_cents !== null && item.price_cents !== undefined
+      ? formatMoney(item.price_cents, item.currency)
+      : fallback?.priceLabel || "";
+  const sortOrder = toNumber(item.sort_order, fallback?.sortOrder ?? 999);
+  const featured = boolFromMetadata(item.metadata?.featured, fallback?.featured ?? false);
+
+  return {
+    actionType,
+    title,
+    priceLabel,
+    description,
+    cta: String(item.metadata?.cta || ctaFromAction(actionType, title)),
+    icon: iconForAction(actionType),
+    featured,
+    sortOrder,
+  };
 }
 
 async function resolveImageUrl(row: ResultRow): Promise<string | null> {
@@ -196,50 +368,6 @@ function normalizeUpgradeRpcRow(input: unknown): UpgradeRpcRow | null {
   };
 }
 
-const OFFER_CONFIG: Array<{
-  actionType: ActionType;
-  title: string;
-  priceLabel: string;
-  description: string;
-  cta: string;
-  icon: React.ComponentType<{ className?: string }>;
-  featured?: boolean;
-}> = [
-  {
-    actionType: "full_hd",
-    title: "Unlock Full HD",
-    priceLabel: "€0.99",
-    description: "High-resolution, clean, sharp, and ready to download.",
-    cta: "Unlock Full HD",
-    icon: ImageIcon,
-  },
-  {
-    actionType: "golden_frame",
-    title: "Add Golden Frame",
-    priceLabel: "€4.99",
-    description:
-      "Your image is reprocessed with a premium golden-frame prompt for an elegant, gift-ready finish.",
-    cta: "Add Golden Frame",
-    icon: Crown,
-    featured: true,
-  },
-  {
-    actionType: "puzzle",
-    title: "Turn into Puzzle",
-    priceLabel: "€14.99",
-    description:
-      "Your image is reprocessed with a premium puzzle-style prompt for a printable puzzle gift look.",
-    cta: "Turn into Puzzle",
-    icon: Puzzle,
-  },
-];
-
-function formatStatus(status: string | null) {
-  const s = normalizeStatus(status);
-  if (!s) return "waiting";
-  return s;
-}
-
 export default function ResultPage() {
   const q = useQuery();
   const navigate = useNavigate();
@@ -258,6 +386,8 @@ export default function ResultPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [upgradeStatus, setUpgradeStatus] = useState("");
+  const [offers, setOffers] = useState<OfferItem[]>(FALLBACK_OFFERS);
+  const [offersLoading, setOffersLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<CheckoutLoadingState>({
     full_hd: false,
     regenerate: false,
@@ -277,10 +407,83 @@ export default function ResultPage() {
   const anyCheckoutLoading = Object.values(checkoutLoading).some(Boolean);
   const canBuy = Boolean(imageUrl) && Boolean(row?.id) && !loading;
 
+  const regenerateOffer = useMemo(
+    () => offers.find((offer) => offer.actionType === "regenerate"),
+    [offers]
+  );
+
+  const visibleBundleOffers = useMemo(
+    () =>
+      offers
+        .filter((offer) => offer.actionType !== "regenerate")
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    [offers]
+  );
+
   useEffect(() => {
     if (upgradeSuccess) toast.success("Payment successful.");
     if (upgradeCanceled) toast.error("Checkout canceled.");
   }, [upgradeSuccess, upgradeCanceled]);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadOffers() {
+      setOffersLoading(true);
+
+      try {
+        const { data, error } = await supabase
+          .from("pricing_items")
+          .select(
+            "id,key,category,name,description,price_cents,currency,credits,stripe_price_id,active,sort_order,metadata"
+          )
+          .eq("active", true)
+          .in("key", [
+            "offer_full_hd",
+            "offer_regenerate",
+            "offer_golden_frame",
+            "offer_puzzle",
+          ])
+          .order("sort_order", { ascending: true });
+
+        if (error) {
+          console.warn("[ResultPage] pricing_items load failed:", error.message);
+          if (alive) setOffers(FALLBACK_OFFERS);
+          return;
+        }
+
+        const mapped = ((data ?? []) as PricingItemRow[])
+          .map(mapPricingItemToOffer)
+          .filter(Boolean) as OfferItem[];
+
+        const mergedByAction = new Map<ActionType, OfferItem>();
+
+        for (const fallback of FALLBACK_OFFERS) {
+          mergedByAction.set(fallback.actionType, fallback);
+        }
+
+        for (const item of mapped) {
+          mergedByAction.set(item.actionType, item);
+        }
+
+        if (alive) {
+          setOffers(
+            Array.from(mergedByAction.values()).sort(
+              (a, b) => a.sortOrder - b.sortOrder
+            )
+          );
+        }
+      } finally {
+        if (alive) setOffersLoading(false);
+      }
+    }
+
+    void loadOffers();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   async function fetchGenerationById(genId: string) {
     const { data, error } = await supabase
@@ -901,15 +1104,19 @@ export default function ResultPage() {
                       className="block h-auto w-full object-contain"
                     />
 
-                    <button
-                      type="button"
-                      onClick={() => void handleCheckout("regenerate")}
-                      disabled={!canBuy || checkoutLoading.regenerate}
-                      className="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#0b3b2e] px-3 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-[#082c22] disabled:cursor-not-allowed disabled:opacity-60 sm:right-4 sm:top-4"
-                    >
-                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                      {checkoutLoading.regenerate ? "Loading..." : "Regenerate – €0.70"}
-                    </button>
+                    {regenerateOffer ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleCheckout("regenerate")}
+                        disabled={!canBuy || checkoutLoading.regenerate}
+                        className="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#0b3b2e] px-3 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-[#082c22] disabled:cursor-not-allowed disabled:opacity-60 sm:right-4 sm:top-4"
+                      >
+                        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                        {checkoutLoading.regenerate
+                          ? "Loading..."
+                          : `${regenerateOffer.cta} – ${regenerateOffer.priceLabel}`}
+                      </button>
+                    ) : null}
                   </>
                 ) : (
                   <div className="flex min-h-[340px] items-center justify-center bg-gradient-to-b from-white to-[#f7f3ee] px-6 py-12 text-center sm:min-h-[420px]">
@@ -1001,7 +1208,13 @@ export default function ResultPage() {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {OFFER_CONFIG.map((offer) => {
+              {offersLoading ? (
+                <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
+                  Loading offers…
+                </div>
+              ) : null}
+
+              {visibleBundleOffers.map((offer) => {
                 const Icon = offer.icon;
                 const isLoading = checkoutLoading[offer.actionType];
 
