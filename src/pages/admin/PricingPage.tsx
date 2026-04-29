@@ -25,6 +25,9 @@ type PricingItem = {
   is_active: boolean | null;
   is_featured: boolean | null;
   sort_order: number | null;
+  metadata?: Record<string, unknown> | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 const categories: Array<{ key: Category; label: string; description: string }> = [
@@ -65,32 +68,89 @@ const emptyItem: PricingItem = {
   is_active: true,
   is_featured: false,
   sort_order: 10,
+  metadata: {},
 };
-
-function eurFromCents(cents: number | null) {
-  if (cents == null) return "";
-  return String((Number(cents) / 100).toFixed(2));
-}
-
-function centsFromEur(value: string) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return null;
-  return Math.round(n * 100);
-}
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function PricingManager() {
+function eurFromCents(cents: number | null | undefined) {
+  if (cents == null) return "";
+  return (Number(cents) / 100).toFixed(2);
+}
+
+function centsFromEur(value: string) {
+  const clean = value.trim().replace(",", ".");
+  if (!clean) return null;
+
+  const n = Number(clean);
+  if (!Number.isFinite(n)) return null;
+
+  return Math.round(n * 100);
+}
+
+function normalizeItem(row: Partial<PricingItem>): PricingItem {
+  return {
+    id: row.id,
+    key: String(row.key ?? ""),
+    category: (row.category || "funnel_subscription") as Category,
+    name: String(row.name ?? ""),
+    description: row.description ?? "",
+    price_cents:
+      row.price_cents === null || row.price_cents === undefined
+        ? null
+        : Number(row.price_cents),
+    credits:
+      row.credits === null || row.credits === undefined
+        ? null
+        : Number(row.credits),
+    currency: row.currency || "eur",
+    stripe_price_id: row.stripe_price_id || "",
+    stripe_product_id: row.stripe_product_id || "",
+    discount_percent:
+      row.discount_percent === null || row.discount_percent === undefined
+        ? null
+        : Number(row.discount_percent),
+    commission_percent:
+      row.commission_percent === null || row.commission_percent === undefined
+        ? null
+        : Number(row.commission_percent),
+    is_active: row.is_active ?? true,
+    is_featured: row.is_featured ?? false,
+    sort_order:
+      row.sort_order === null || row.sort_order === undefined
+        ? 10
+        : Number(row.sort_order),
+    metadata: row.metadata ?? {},
+    created_at: row.created_at ?? null,
+    updated_at: row.updated_at ?? null,
+  };
+}
+
+async function callPricingManager(body: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke("admin-pricing-manager", {
+    body,
+  });
+
+  if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
+
+  return data;
+}
+
+export default function PricingPage() {
   const [items, setItems] = useState<PricingItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category>("funnel_subscription");
-  const [selectedItem, setSelectedItem] = useState<PricingItem>(emptyItem);
+  const [selectedItem, setSelectedItem] = useState<PricingItem>({
+    ...emptyItem,
+  });
   const [priceInput, setPriceInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const selectedCategoryData = categories.find((c) => c.key === selectedCategory) ?? categories[0];
+  const selectedCategoryData =
+    categories.find((c) => c.key === selectedCategory) ?? categories[0];
 
   const filteredItems = useMemo(() => {
     return items
@@ -101,42 +161,41 @@ export default function PricingManager() {
   async function loadItems() {
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("pricing_items")
-      .select("*")
-      .order("category", { ascending: true })
-      .order("sort_order", { ascending: true });
+    try {
+      const data = await callPricingManager({ action: "list" });
+      const rows = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
 
-    if (error) {
-      toast.error(error.message);
+      setItems(rows.map((row: Partial<PricingItem>) => normalizeItem(row)));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load pricing items.");
+      setItems([]);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setItems((data ?? []) as PricingItem[]);
-    setLoading(false);
   }
 
   useEffect(() => {
     void loadItems();
   }, []);
 
-  function startCreate() {
-    const next = {
+  function startCreate(category: Category = selectedCategory) {
+    const next = normalizeItem({
       ...emptyItem,
-      category: selectedCategory,
-    };
+      category,
+      sort_order: filteredItems.length ? filteredItems.length * 10 + 10 : 10,
+    });
 
     setSelectedItem(next);
     setPriceInput("");
   }
 
   function startEdit(item: PricingItem) {
-    setSelectedItem(item);
-    setPriceInput(eurFromCents(item.price_cents));
+    const normalized = normalizeItem(item);
+    setSelectedItem(normalized);
+    setPriceInput(eurFromCents(normalized.price_cents));
   }
 
-  async function saveItem() {
+  async function saveItem(createNewStripePrice = false) {
     if (!selectedItem.key.trim()) {
       toast.error("Key is required.");
       return;
@@ -152,38 +211,53 @@ export default function PricingManager() {
     try {
       const price_cents = centsFromEur(priceInput);
 
-      const payload = {
+      const payload: PricingItem = normalizeItem({
         ...selectedItem,
         key: selectedItem.key.trim(),
         name: selectedItem.name.trim(),
         description: selectedItem.description || "",
         currency: selectedItem.currency || "eur",
         price_cents,
-        stripe_price_id: selectedItem.stripe_price_id || null,
-        stripe_product_id: selectedItem.stripe_product_id || null,
-        credits: selectedItem.credits == null ? null : Number(selectedItem.credits),
+        credits:
+          selectedItem.credits === null || selectedItem.credits === undefined
+            ? null
+            : Number(selectedItem.credits),
         discount_percent:
-          selectedItem.discount_percent == null ? null : Number(selectedItem.discount_percent),
+          selectedItem.discount_percent === null ||
+          selectedItem.discount_percent === undefined
+            ? null
+            : Number(selectedItem.discount_percent),
         commission_percent:
-          selectedItem.commission_percent == null ? null : Number(selectedItem.commission_percent),
-        sort_order: selectedItem.sort_order == null ? 10 : Number(selectedItem.sort_order),
+          selectedItem.commission_percent === null ||
+          selectedItem.commission_percent === undefined
+            ? null
+            : Number(selectedItem.commission_percent),
+        sort_order:
+          selectedItem.sort_order === null || selectedItem.sort_order === undefined
+            ? 10
+            : Number(selectedItem.sort_order),
         is_active: Boolean(selectedItem.is_active),
         is_featured: Boolean(selectedItem.is_featured),
-      };
-
-      const { data, error } = await supabase.functions.invoke("admin-pricing-manager", {
-        body: {
-          ...payload,
-          price: priceInput ? Number(priceInput) : null,
-          create_new_price: false,
-        },
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const data = await callPricingManager({
+        action: "save",
+        item: payload,
+        create_new_price: createNewStripePrice,
+        price_eur: priceInput ? Number(priceInput.replace(",", ".")) : null,
+      });
 
-      toast.success("Pricing item saved.");
+      toast.success(
+        createNewStripePrice
+          ? `Saved + Stripe price updated${data?.stripe_price_id ? `: ${data.stripe_price_id}` : ""}`
+          : "Pricing item saved."
+      );
+
       await loadItems();
+
+      if (data?.item) {
+        startEdit(normalizeItem(data.item));
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save item.");
     } finally {
@@ -191,56 +265,29 @@ export default function PricingManager() {
     }
   }
 
-  async function createNewStripePrice() {
-    if (!selectedItem.stripe_product_id) {
-      toast.error("Missing stripe_product_id.");
-      return;
-    }
-
-    if (!priceInput) {
-      toast.error("Enter a price first.");
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke("admin-pricing-manager", {
-        body: {
-          ...selectedItem,
-          price: Number(priceInput),
-          create_new_price: true,
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      toast.success(`New Stripe price created: ${data?.stripe_price_id || "saved"}`);
-      await loadItems();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create Stripe price.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function deleteItem(item: PricingItem) {
-    if (!item.id) return;
+    if (!item.id && !item.key) return;
 
     const ok = window.confirm(`Delete ${item.name}?`);
     if (!ok) return;
 
-    const { error } = await supabase.from("pricing_items").delete().eq("id", item.id);
+    setSaving(true);
 
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await callPricingManager({
+        action: "delete",
+        id: item.id,
+        key: item.key,
+      });
+
+      toast.success("Pricing item deleted.");
+      await loadItems();
+      startCreate();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete item.");
+    } finally {
+      setSaving(false);
     }
-
-    toast.success("Deleted.");
-    await loadItems();
-    startCreate();
   }
 
   return (
@@ -251,19 +298,22 @@ export default function PricingManager() {
             <div className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">
               Admin
             </div>
+
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Pricing Manager</h1>
+
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
               Manage funnel subscriptions, credit packs, result bundle offers, and affiliate
-              commission settings from one place.
+              settings from one place. UI reads from Supabase. Checkout uses the saved Stripe Price ID.
             </p>
           </div>
 
           <button
             type="button"
             onClick={() => void loadItems()}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className={cx("h-4 w-4", loading && "animate-spin")} />
             Refresh
           </button>
         </div>
@@ -279,8 +329,7 @@ export default function PricingManager() {
                 type="button"
                 onClick={() => {
                   setSelectedCategory(category.key);
-                  setSelectedItem({ ...emptyItem, category: category.key });
-                  setPriceInput("");
+                  startCreate(category.key);
                 }}
                 className={cx(
                   "rounded-2xl border p-5 text-left transition",
@@ -295,7 +344,10 @@ export default function PricingManager() {
                     {count}
                   </span>
                 </div>
-                <p className="mt-3 text-xs leading-5 text-slate-400">{category.description}</p>
+
+                <p className="mt-3 text-xs leading-5 text-slate-400">
+                  {category.description}
+                </p>
               </button>
             );
           })}
@@ -303,15 +355,17 @@ export default function PricingManager() {
 
         <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_420px]">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-bold">{selectedCategoryData.label}</h2>
-                <p className="mt-1 text-sm text-slate-400">{selectedCategoryData.description}</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  {selectedCategoryData.description}
+                </p>
               </div>
 
               <button
                 type="button"
-                onClick={startCreate}
+                onClick={() => startCreate()}
                 className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
               >
                 <Plus className="h-4 w-4" />
@@ -322,7 +376,7 @@ export default function PricingManager() {
             <div className="mt-6">
               {loading ? (
                 <div className="rounded-2xl border border-dashed border-slate-700 p-12 text-center text-slate-400">
-                  Loading...
+                  Loading pricing items...
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-700 p-12 text-center">
@@ -336,7 +390,12 @@ export default function PricingManager() {
                   {filteredItems.map((item) => (
                     <div
                       key={item.id || item.key}
-                      className="rounded-2xl border border-slate-800 bg-slate-950 p-4"
+                      className={cx(
+                        "rounded-2xl border bg-slate-950 p-4 transition",
+                        selectedItem.key === item.key
+                          ? "border-indigo-400"
+                          : "border-slate-800"
+                      )}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <button
@@ -346,11 +405,17 @@ export default function PricingManager() {
                         >
                           <div className="flex flex-wrap items-center gap-2">
                             <div className="font-bold">{item.name}</div>
+
                             {!item.is_active ? (
                               <span className="rounded-full bg-red-950 px-2 py-1 text-xs text-red-300">
                                 inactive
                               </span>
-                            ) : null}
+                            ) : (
+                              <span className="rounded-full bg-emerald-950 px-2 py-1 text-xs text-emerald-300">
+                                active
+                              </span>
+                            )}
+
                             {item.is_featured ? (
                               <span className="rounded-full bg-amber-950 px-2 py-1 text-xs text-amber-300">
                                 featured
@@ -359,7 +424,12 @@ export default function PricingManager() {
                           </div>
 
                           <div className="mt-1 text-xs text-slate-500">{item.key}</div>
-                          <div className="mt-2 text-sm text-slate-400">{item.description}</div>
+
+                          {item.description ? (
+                            <div className="mt-2 text-sm text-slate-400">
+                              {item.description}
+                            </div>
+                          ) : null}
 
                           <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
                             <span className="rounded-lg bg-slate-800 px-2 py-1">
@@ -368,10 +438,20 @@ export default function PricingManager() {
                                 ? "-"
                                 : `€${(item.price_cents / 100).toFixed(2)}`}
                             </span>
+
                             <span className="rounded-lg bg-slate-800 px-2 py-1">
                               Credits: {item.credits ?? "-"}
                             </span>
+
                             <span className="rounded-lg bg-slate-800 px-2 py-1">
+                              Discount: {item.discount_percent ?? "-"}%
+                            </span>
+
+                            <span className="rounded-lg bg-slate-800 px-2 py-1">
+                              Commission: {item.commission_percent ?? "-"}%
+                            </span>
+
+                            <span className="max-w-full truncate rounded-lg bg-slate-800 px-2 py-1">
                               Stripe: {item.stripe_price_id || "-"}
                             </span>
                           </div>
@@ -380,7 +460,8 @@ export default function PricingManager() {
                         <button
                           type="button"
                           onClick={() => void deleteItem(item)}
-                          className="rounded-xl border border-red-900/60 p-2 text-red-300 hover:bg-red-950/40"
+                          disabled={saving}
+                          className="rounded-xl border border-red-900/60 p-2 text-red-300 hover:bg-red-950/40 disabled:opacity-60"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -394,8 +475,10 @@ export default function PricingManager() {
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <h2 className="text-xl font-bold">Edit pricing item</h2>
+
             <p className="mt-1 text-sm text-slate-400">
-              Save changes to Supabase. Use “Create Stripe price” only when the amount changes.
+              Save changes to Supabase. Use “Create new Stripe price + save” only when the
+              amount changes.
             </p>
 
             <div className="mt-6 space-y-4">
@@ -403,7 +486,10 @@ export default function PricingManager() {
                 <select
                   value={selectedItem.category}
                   onChange={(e) =>
-                    setSelectedItem((p) => ({ ...p, category: e.target.value as Category }))
+                    setSelectedItem((p) => ({
+                      ...p,
+                      category: e.target.value as Category,
+                    }))
                   }
                   className="input"
                 >
@@ -418,7 +504,9 @@ export default function PricingManager() {
               <Field label="Key">
                 <input
                   value={selectedItem.key}
-                  onChange={(e) => setSelectedItem((p) => ({ ...p, key: e.target.value }))}
+                  onChange={(e) =>
+                    setSelectedItem((p) => ({ ...p, key: e.target.value }))
+                  }
                   placeholder="subscription_pro"
                   className="input"
                 />
@@ -427,7 +515,9 @@ export default function PricingManager() {
               <Field label="Name">
                 <input
                   value={selectedItem.name}
-                  onChange={(e) => setSelectedItem((p) => ({ ...p, name: e.target.value }))}
+                  onChange={(e) =>
+                    setSelectedItem((p) => ({ ...p, name: e.target.value }))
+                  }
                   placeholder="Pro"
                   className="input"
                 />
@@ -437,7 +527,10 @@ export default function PricingManager() {
                 <textarea
                   value={selectedItem.description || ""}
                   onChange={(e) =>
-                    setSelectedItem((p) => ({ ...p, description: e.target.value }))
+                    setSelectedItem((p) => ({
+                      ...p,
+                      description: e.target.value,
+                    }))
                   }
                   rows={3}
                   className="input resize-none"
@@ -469,11 +562,28 @@ export default function PricingManager() {
                 </Field>
               </div>
 
+              <Field label="Currency">
+                <input
+                  value={selectedItem.currency || "eur"}
+                  onChange={(e) =>
+                    setSelectedItem((p) => ({
+                      ...p,
+                      currency: e.target.value.toLowerCase(),
+                    }))
+                  }
+                  placeholder="eur"
+                  className="input"
+                />
+              </Field>
+
               <Field label="Stripe price ID">
                 <input
                   value={selectedItem.stripe_price_id || ""}
                   onChange={(e) =>
-                    setSelectedItem((p) => ({ ...p, stripe_price_id: e.target.value }))
+                    setSelectedItem((p) => ({
+                      ...p,
+                      stripe_price_id: e.target.value,
+                    }))
                   }
                   placeholder="price_xxx"
                   className="input"
@@ -484,7 +594,10 @@ export default function PricingManager() {
                 <input
                   value={selectedItem.stripe_product_id || ""}
                   onChange={(e) =>
-                    setSelectedItem((p) => ({ ...p, stripe_product_id: e.target.value }))
+                    setSelectedItem((p) => ({
+                      ...p,
+                      stripe_product_id: e.target.value,
+                    }))
                   }
                   placeholder="prod_xxx"
                   className="input"
@@ -540,7 +653,10 @@ export default function PricingManager() {
                     type="checkbox"
                     checked={Boolean(selectedItem.is_active)}
                     onChange={(e) =>
-                      setSelectedItem((p) => ({ ...p, is_active: e.target.checked }))
+                      setSelectedItem((p) => ({
+                        ...p,
+                        is_active: e.target.checked,
+                      }))
                     }
                   />
                   Active
@@ -551,7 +667,10 @@ export default function PricingManager() {
                     type="checkbox"
                     checked={Boolean(selectedItem.is_featured)}
                     onChange={(e) =>
-                      setSelectedItem((p) => ({ ...p, is_featured: e.target.checked }))
+                      setSelectedItem((p) => ({
+                        ...p,
+                        is_featured: e.target.checked,
+                      }))
                     }
                   />
                   Featured
@@ -560,7 +679,7 @@ export default function PricingManager() {
 
               <button
                 type="button"
-                onClick={() => void saveItem()}
+                onClick={() => void saveItem(false)}
                 disabled={saving}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-60"
               >
@@ -570,7 +689,7 @@ export default function PricingManager() {
 
               <button
                 type="button"
-                onClick={() => void createNewStripePrice()}
+                onClick={() => void saveItem(true)}
                 disabled={saving}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-60"
               >
@@ -611,7 +730,13 @@ export default function PricingManager() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
       <div className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
