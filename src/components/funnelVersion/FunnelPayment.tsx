@@ -45,11 +45,23 @@ type AffiliateCodeRow = {
   id: string;
   user_id: string;
   code: string;
-  discount_percent: number | null;
-  commission_percent: number | null;
-  max_uses: number | null;
-  times_used: number | null;
+  discount_percent: number | string | null;
+  commission_percent: number | string | null;
+  max_uses: number | string | null;
+  times_used: number | string | null;
   active: boolean | null;
+};
+
+type AffiliateProfileRow = {
+  user_id: string;
+  affiliate_code: string | null;
+  referral_slug: string | null;
+};
+
+type PromoValidationResult = {
+  code: string;
+  discountPercent: number;
+  affiliateUserId: string;
 };
 
 type FunnelContext = {
@@ -63,36 +75,23 @@ type FunnelContext = {
   occasion: string;
 };
 
-function cn(...classes: Array<string | false | null | undefined>): string {
-  return classes.filter(Boolean).join(" ");
-}
+type UiPrice = {
+  displayMain: string;
+  displaySub: string;
+  showThen: boolean;
+  thenText: string;
+  showWasOverride: boolean;
+  wasOverride: string;
+};
 
-function safeString(value: unknown): string {
-  return String(value ?? "").trim();
-}
+const DEFAULT_PROFILE_DISCOUNT_PERCENT = 70;
 
-function readSession(): FunnelSession | null {
-  try {
-    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
-  } catch {
-    return null;
-  }
-}
-
-function writeSession(next: FunnelSession): void {
-  try {
-    localStorage.setItem("tdg_funnel_session", JSON.stringify(next));
-  } catch {
-    // no-op
-  }
-}
-
-function mergeSession(partial: Partial<FunnelSession>): FunnelSession {
-  const current = readSession() || {};
-  const next: FunnelSession = { ...current, ...partial };
-  writeSession(next);
-  return next;
-}
+const PROMO_STORAGE_KEYS = {
+  code: "tdg_promo_code",
+  applied: "tdg_promo_applied",
+  discountPercent: "tdg_promo_discount_percent",
+  affiliateUserId: "tdg_affiliate_user_id",
+} as const;
 
 const plans: Plan[] = [
   {
@@ -128,6 +127,51 @@ const plans: Plan[] = [
   },
 ];
 
+function cn(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(" ");
+}
+
+function safeString(value: unknown): string {
+  return String(value ?? "").trim();
+}
+
+function normalizePromoCode(value: string): string {
+  return value.trim().toUpperCase();
+}
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function clampPercent(value: unknown, fallback = DEFAULT_PROFILE_DISCOUNT_PERCENT): number {
+  const parsed = toFiniteNumber(value, fallback);
+  return Math.max(0, Math.min(100, Math.trunc(parsed)));
+}
+
+function readSession(): FunnelSession | null {
+  try {
+    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(next: FunnelSession): void {
+  try {
+    localStorage.setItem("tdg_funnel_session", JSON.stringify(next));
+  } catch {
+    // no-op
+  }
+}
+
+function mergeSession(partial: Partial<FunnelSession>): FunnelSession {
+  const current = readSession() || {};
+  const next: FunnelSession = { ...current, ...partial };
+  writeSession(next);
+  return next;
+}
+
 function getDealExpiresAtMs(): number {
   const key = "tdg_payment_deal_expires_at";
   const existing = Number(localStorage.getItem(key) || "0");
@@ -142,9 +186,9 @@ function getDealExpiresAtMs(): number {
 }
 
 function formatMMSS(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${String(m).padStart(2, "0")} : ${String(s).padStart(2, "0")}`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")} : ${String(seconds).padStart(2, "0")}`;
 }
 
 function getPublicSupabaseConfig(): { url: string; anon: string } {
@@ -153,8 +197,8 @@ function getPublicSupabaseConfig(): { url: string; anon: string } {
     VITE_SUPABASE_ANON_KEY?: string;
   };
 
-  const url = (env.VITE_SUPABASE_URL || "").trim();
-  const anon = (env.VITE_SUPABASE_ANON_KEY || "").trim();
+  const url = safeString(env.VITE_SUPABASE_URL);
+  const anon = safeString(env.VITE_SUPABASE_ANON_KEY);
 
   if (!url || !anon) {
     throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
@@ -172,22 +216,15 @@ async function safeReadJson(res: Response): Promise<CheckoutResponse> {
 }
 
 function parseEuro(eur: string): number {
-  const n = Number(String(eur).replace("€", "").trim());
-  return Number.isFinite(n) ? n : 0;
+  const parsed = Number(String(eur).replace("€", "").trim());
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function formatEuro(n: number): string {
-  const v = Math.round(n * 100) / 100;
-  return `€${v.toFixed(2)}`;
+function formatEuro(value: number): string {
+  return `€${(Math.round(value * 100) / 100).toFixed(2)}`;
 }
 
-function clampPercent(value: unknown, fallback = 70): number {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(0, Math.min(100, Math.trunc(n)));
-}
-
-function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, discountPercent: number) {
+function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, discountPercent: number): UiPrice {
   const standard = parseEuro(plan.price);
 
   if (!promoApplied || discountPercent <= 0) {
@@ -201,11 +238,11 @@ function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, discountPercent: 
     };
   }
 
-  const first = standard * (1 - discountPercent / 100);
+  const firstMonthPrice = standard * (1 - discountPercent / 100);
 
   return {
-    displayMain: formatEuro(first),
-    displaySub: `first month (-${discountPercent}%)`,
+    displayMain: formatEuro(firstMonthPrice),
+    displaySub: `first month -${discountPercent}%`,
     showThen: true,
     thenText: `then ${formatEuro(standard)}/month`,
     showWasOverride: true,
@@ -290,7 +327,7 @@ async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, s
     data: { session },
   } = await supabase.auth.getSession();
 
-  const accessToken = session?.access_token?.trim();
+  const accessToken = safeString(session?.access_token);
 
   return {
     "Content-Type": "application/json",
@@ -299,56 +336,132 @@ async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, s
   };
 }
 
-async function validatePromoCode(codeRaw: string): Promise<{ code: string; discountPercent: number }> {
-  const code = codeRaw.trim().toUpperCase();
+function savePromo(result: PromoValidationResult): void {
+  localStorage.setItem(PROMO_STORAGE_KEYS.code, result.code);
+  localStorage.setItem(PROMO_STORAGE_KEYS.applied, "1");
+  localStorage.setItem(PROMO_STORAGE_KEYS.discountPercent, String(result.discountPercent));
+  localStorage.setItem(PROMO_STORAGE_KEYS.affiliateUserId, result.affiliateUserId);
+}
 
-  if (!code) {
-    throw new Error("Enter a promo code.");
-  }
+function clearPromo(): void {
+  localStorage.removeItem(PROMO_STORAGE_KEYS.code);
+  localStorage.removeItem(PROMO_STORAGE_KEYS.applied);
+  localStorage.removeItem(PROMO_STORAGE_KEYS.discountPercent);
+  localStorage.removeItem(PROMO_STORAGE_KEYS.affiliateUserId);
+}
 
-  if (code === "START70") {
-    return { code, discountPercent: 70 };
-  }
+function isTableMissingError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
 
+  const message = String(error.message || "").toLowerCase();
+
+  return (
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    message.includes("does not exist") ||
+    message.includes("schema cache") ||
+    message.includes("could not find the table")
+  );
+}
+
+function isAffiliateCodeUsable(row: AffiliateCodeRow): boolean {
+  if (row.active !== true) return false;
+
+  const maxUses = row.max_uses === null ? null : toFiniteNumber(row.max_uses, 0);
+  const timesUsed = toFiniteNumber(row.times_used, 0);
+
+  return !(maxUses !== null && maxUses > 0 && timesUsed >= maxUses);
+}
+
+async function findAffiliateCode(code: string): Promise<PromoValidationResult | null> {
   const { data, error } = await supabase
     .from("affiliate_codes")
     .select("id,user_id,code,discount_percent,commission_percent,max_uses,times_used,active")
     .ilike("code", code)
     .eq("active", true)
+    .limit(1)
     .maybeSingle();
 
   if (error) {
-    console.error("[FunnelPayment] affiliate code validation error:", error);
-    throw new Error("Could not validate promo code. Please try again.");
+    if (isTableMissingError(error)) return null;
+    return null;
   }
 
-  if (!data) {
-    throw new Error("Invalid promo code.");
-  }
+  const row = data as AffiliateCodeRow | null;
 
-  const affiliate = data as AffiliateCodeRow;
-  const maxUses = affiliate.max_uses;
-  const timesUsed = affiliate.times_used ?? 0;
-
-  if (typeof maxUses === "number" && maxUses > 0 && timesUsed >= maxUses) {
-    throw new Error("This promo code has expired.");
+  if (!row || !isAffiliateCodeUsable(row)) {
+    return null;
   }
 
   return {
-    code: affiliate.code.toUpperCase(),
-    discountPercent: clampPercent(affiliate.discount_percent, 70),
+    code: normalizePromoCode(row.code || code),
+    discountPercent: clampPercent(row.discount_percent, DEFAULT_PROFILE_DISCOUNT_PERCENT),
+    affiliateUserId: row.user_id,
   };
+}
+
+async function findAffiliateProfile(code: string): Promise<PromoValidationResult | null> {
+  const { data, error } = await supabase
+    .from("affiliate_profiles")
+    .select("user_id,affiliate_code,referral_slug")
+    .or(`affiliate_code.ilike.${code},referral_slug.ilike.${code}`)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    if (isTableMissingError(error)) return null;
+    return null;
+  }
+
+  const row = data as AffiliateProfileRow | null;
+
+  if (!row?.user_id) {
+    return null;
+  }
+
+  const matchedCode = row.affiliate_code || row.referral_slug || code;
+
+  return {
+    code: normalizePromoCode(matchedCode),
+    discountPercent: DEFAULT_PROFILE_DISCOUNT_PERCENT,
+    affiliateUserId: row.user_id,
+  };
+}
+
+async function validatePromoCode(codeRaw: string): Promise<PromoValidationResult> {
+  const code = normalizePromoCode(codeRaw);
+
+  if (!code) {
+    throw new Error("Enter a promo code.");
+  }
+
+  const affiliateCodeResult = await findAffiliateCode(code);
+  if (affiliateCodeResult) {
+    return affiliateCodeResult;
+  }
+
+  const profileResult = await findAffiliateProfile(code);
+  if (profileResult) {
+    return profileResult;
+  }
+
+  throw new Error("Invalid promo code");
 }
 
 export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [selected, setSelected] = useState<PlanId>(() => plans.find((p) => p.default)?.id ?? "pro");
-  const [promo, setPromo] = useState<string>(() => localStorage.getItem("tdg_promo_code") || "");
-  const [promoApplied, setPromoApplied] = useState<boolean>(() => localStorage.getItem("tdg_promo_applied") === "1");
+  const [selected, setSelected] = useState<PlanId>(() => plans.find((plan) => plan.default)?.id ?? "pro");
+  const [promo, setPromo] = useState<string>(() => localStorage.getItem(PROMO_STORAGE_KEYS.code) || "");
+  const [promoApplied, setPromoApplied] = useState<boolean>(
+    () => localStorage.getItem(PROMO_STORAGE_KEYS.applied) === "1"
+  );
   const [promoDiscountPercent, setPromoDiscountPercent] = useState<number>(() =>
-    clampPercent(localStorage.getItem("tdg_promo_discount_percent") || 0, 0)
+    clampPercent(localStorage.getItem(PROMO_STORAGE_KEYS.discountPercent), 0)
+  );
+  const [affiliateUserId, setAffiliateUserId] = useState<string>(
+    () => localStorage.getItem(PROMO_STORAGE_KEYS.affiliateUserId) || ""
   );
   const [applyingPromo, setApplyingPromo] = useState<boolean>(false);
   const [secondsLeft, setSecondsLeft] = useState<number>(() => {
@@ -358,9 +471,9 @@ export default function FunnelPayment(): JSX.Element {
   const [isPaying, setIsPaying] = useState<boolean>(false);
 
   const funnel = useMemo(() => resolveFunnelContext(location.search), [location.search]);
-
-  const selectedPlan = useMemo<Plan>(() => plans.find((p) => p.id === selected) ?? plans[1], [selected]);
+  const selectedPlan = useMemo<Plan>(() => plans.find((plan) => plan.id === selected) ?? plans[1], [selected]);
   const expired = secondsLeft <= 0;
+  const formattedTimer = useMemo(() => formatMMSS(secondsLeft).split(" : "), [secondsLeft]);
 
   useEffect(() => {
     if (funnel.canceled) {
@@ -394,12 +507,12 @@ export default function FunnelPayment(): JSX.Element {
   }, [navigate, funnel.photo, funnel.styleId, funnel.templateId, funnel.email]);
 
   useEffect(() => {
-    const t = window.setInterval(() => {
+    const intervalId = window.setInterval(() => {
       const ms = getDealExpiresAtMs() - Date.now();
       setSecondsLeft(Math.max(0, Math.floor(ms / 1000)));
     }, 1000);
 
-    return () => window.clearInterval(t);
+    return () => window.clearInterval(intervalId);
   }, []);
 
   async function applyPromo(): Promise<void> {
@@ -410,30 +523,28 @@ export default function FunnelPayment(): JSX.Element {
 
       const result = await validatePromoCode(promo);
 
-      localStorage.setItem("tdg_promo_code", result.code);
-      localStorage.setItem("tdg_promo_applied", "1");
-      localStorage.setItem("tdg_promo_discount_percent", String(result.discountPercent));
+      savePromo(result);
 
       setPromo(result.code);
       setPromoDiscountPercent(result.discountPercent);
+      setAffiliateUserId(result.affiliateUserId);
       setPromoApplied(true);
 
       toast.success(`${result.code} applied — ${result.discountPercent}% off first month.`);
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Invalid promo code.";
-      toast.error(msg);
+      const message = error instanceof Error ? error.message : "Invalid promo code";
+      toast.error(message);
     } finally {
       setApplyingPromo(false);
     }
   }
 
   function removePromo(): void {
-    localStorage.removeItem("tdg_promo_code");
-    localStorage.removeItem("tdg_promo_applied");
-    localStorage.removeItem("tdg_promo_discount_percent");
+    clearPromo();
     setPromo("");
     setPromoApplied(false);
     setPromoDiscountPercent(0);
+    setAffiliateUserId("");
     toast.message("Promo removed.");
   }
 
@@ -461,16 +572,17 @@ export default function FunnelPayment(): JSX.Element {
     setIsPaying(true);
 
     try {
-      const { url: SUPABASE_URL, anon: ANON_KEY } = getPublicSupabaseConfig();
-      const headers = await getEdgeFunctionHeaders(ANON_KEY);
-
+      const { url: supabaseUrl, anon: anonKey } = getPublicSupabaseConfig();
+      const headers = await getEdgeFunctionHeaders(anonKey);
       const session = readSession();
 
       const payload = {
         plan: selected,
         email: funnel.email,
         template_id: funnel.templateId || null,
-        promo_code: promoApplied ? promo.trim().toUpperCase() : "",
+        promo_code: promoApplied ? normalizePromoCode(promo) : "",
+        affiliate_user_id: promoApplied ? affiliateUserId || null : null,
+        promo_discount_percent: promoApplied ? promoDiscountPercent : 0,
         style_id: funnel.styleId || null,
         funnel_slug: funnel.funnelSlug || null,
         occasion: funnel.occasion || null,
@@ -478,7 +590,7 @@ export default function FunnelPayment(): JSX.Element {
         photo_bucket: funnel.photoBucket || session?.photo_bucket || "templates",
       };
 
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
+      const res = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
@@ -487,15 +599,15 @@ export default function FunnelPayment(): JSX.Element {
       const data = await safeReadJson(res);
 
       if (!res.ok) {
-        const msg = (data.error || data.message || `Checkout error (${res.status})`).toString();
-        throw new Error(msg);
+        const message = safeString(data.error || data.message || `Checkout error (${res.status})`);
+        throw new Error(message);
       }
 
-      if (data?.id) {
+      if (data.id) {
         localStorage.setItem("tdg_last_checkout_session_id", data.id);
       }
 
-      if (data?.generation_id) {
+      if (data.generation_id) {
         mergeSession({
           generation_id: data.generation_id,
           template_id: funnel.templateId || null,
@@ -505,16 +617,15 @@ export default function FunnelPayment(): JSX.Element {
         });
       }
 
-      const checkoutUrl = (data.url || "").toString();
+      const checkoutUrl = safeString(data.url);
       if (!checkoutUrl) {
         throw new Error("Missing checkout URL");
       }
 
       window.location.href = checkoutUrl;
-    } catch (err: unknown) {
-      console.error("[FunnelPayment] checkout error:", err);
-      const msg = err instanceof Error ? err.message : "Checkout failed. Please try again.";
-      toast.error(msg);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Checkout failed. Please try again.";
+      toast.error(message);
     } finally {
       setIsPaying(false);
     }
@@ -528,13 +639,9 @@ export default function FunnelPayment(): JSX.Element {
 
           <div className="mx-auto mt-6 flex max-w-xl items-center justify-center gap-4">
             <div className="flex items-end gap-3 rounded-2xl bg-transparent px-4 py-3">
-              <div className="text-4xl font-semibold tabular-nums leading-none">
-                {formatMMSS(secondsLeft).split(" : ")[0]}
-              </div>
+              <div className="text-4xl font-semibold tabular-nums leading-none">{formattedTimer[0]}</div>
               <div className="pb-1 text-4xl font-semibold leading-none">:</div>
-              <div className="text-4xl font-semibold tabular-nums leading-none">
-                {formatMMSS(secondsLeft).split(" : ")[1]}
-              </div>
+              <div className="text-4xl font-semibold tabular-nums leading-none">{formattedTimer[1]}</div>
               <div className="ml-2 pb-1 text-xs uppercase tracking-wide text-[#10221B]/55">
                 minutes&nbsp;&nbsp;&nbsp;seconds
               </div>
@@ -571,7 +678,7 @@ export default function FunnelPayment(): JSX.Element {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/5">%</span>
-              {promoApplied ? `Promo applied (${promo.toUpperCase()})` : "Have a promo code?"}
+              {promoApplied ? `Promo applied (${normalizePromoCode(promo)})` : "Have a promo code?"}
             </div>
 
             {promoApplied ? (
@@ -588,7 +695,7 @@ export default function FunnelPayment(): JSX.Element {
           <div className="mt-3 flex gap-3">
             <input
               value={promo}
-              onChange={(e) => setPromo(e.target.value)}
+              onChange={(event) => setPromo(event.target.value)}
               placeholder="Enter code"
               className="h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-sm outline-none placeholder:text-black/35"
               disabled={promoApplied || applyingPromo}
@@ -620,35 +727,36 @@ export default function FunnelPayment(): JSX.Element {
 
           {promoApplied ? (
             <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              ✅ {promo.toUpperCase()} applied — <b>{promoDiscountPercent}% off your first month</b>. Regular monthly price starts next month.
+              ✅ {normalizePromoCode(promo)} applied — <b>{promoDiscountPercent}% off your first month</b>. Regular
+              monthly price starts next month.
             </div>
           ) : null}
         </div>
 
         <div id="tdg-plans" className="mx-auto mt-10 max-w-xl space-y-4">
-          {plans.map((p) => {
-            const active = p.id === selected;
-            const uiPrice = calcUiPriceForPlan(p, promoApplied, promoDiscountPercent);
+          {plans.map((plan) => {
+            const active = plan.id === selected;
+            const uiPrice = calcUiPriceForPlan(plan, promoApplied, promoDiscountPercent);
 
             return (
               <button
-                key={p.id}
+                key={plan.id}
                 type="button"
-                onClick={() => setSelected(p.id)}
+                onClick={() => setSelected(plan.id)}
                 className={cn(
                   "w-full rounded-2xl border bg-white/55 text-left transition",
                   active ? "border-[#D44B4B] bg-white" : "border-black/10 hover:bg-white/70"
                 )}
               >
                 <div className="relative p-5">
-                  {p.badge ? (
+                  {plan.badge ? (
                     <div
                       className={cn(
                         "absolute -top-3 right-5 rounded-full px-3 py-1 text-[11px] font-semibold",
-                        p.badgeTone === "yellow" ? "bg-[#F3D35B] text-[#10221B]" : "bg-[#D44B4B] text-white"
+                        plan.badgeTone === "yellow" ? "bg-[#F3D35B] text-[#10221B]" : "bg-[#D44B4B] text-white"
                       )}
                     >
-                      {p.badge}
+                      {plan.badge}
                     </div>
                   ) : null}
 
@@ -664,9 +772,9 @@ export default function FunnelPayment(): JSX.Element {
                       </div>
 
                       <div>
-                        <div className="text-lg font-semibold">{p.title}</div>
+                        <div className="text-lg font-semibold">{plan.title}</div>
                         <div className="mt-0.5 text-sm text-[#10221B]/65">
-                          {p.subtitle} • ({p.generations} generations)
+                          {plan.subtitle} • ({plan.generations} generations)
                         </div>
 
                         {promoApplied && uiPrice.showThen ? (
@@ -678,8 +786,8 @@ export default function FunnelPayment(): JSX.Element {
                     <div className="text-right">
                       {uiPrice.showWasOverride ? (
                         <div className="text-xs text-[#10221B]/45 line-through">{uiPrice.wasOverride}</div>
-                      ) : p.was ? (
-                        <div className="text-xs text-[#10221B]/45 line-through">{p.was}</div>
+                      ) : plan.was ? (
+                        <div className="text-xs text-[#10221B]/45 line-through">{plan.was}</div>
                       ) : (
                         <div className="text-xs text-transparent">.</div>
                       )}
@@ -722,12 +830,12 @@ export default function FunnelPayment(): JSX.Element {
             </div>
 
             <div className="mt-4 flex items-center justify-center gap-3">
-              {["MC", "VISA", "Pay", "GPay"].map((x) => (
+              {["MC", "VISA", "Pay", "GPay"].map((label) => (
                 <div
-                  key={x}
+                  key={label}
                   className="flex h-9 min-w-[56px] items-center justify-center rounded-xl border border-black/10 bg-white/70 px-3 text-xs font-semibold text-[#10221B]/70"
                 >
-                  {x}
+                  {label}
                 </div>
               ))}
             </div>
@@ -739,7 +847,7 @@ export default function FunnelPayment(): JSX.Element {
 
           <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
             Selected: {selectedPlan.id} • Credits: {selectedPlan.credits} • Promo:{" "}
-            {promoApplied ? promo.toUpperCase() : "none"} • Style: {funnel.styleId || "missing"} • Template:{" "}
+            {promoApplied ? normalizePromoCode(promo) : "none"} • Style: {funnel.styleId || "missing"} • Template:{" "}
             {funnel.templateId || "missing"}
           </div>
         </div>
