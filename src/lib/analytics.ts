@@ -2,7 +2,7 @@ const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
 
 declare global {
   interface Window {
-    dataLayer: IArguments[];
+    dataLayer?: unknown[];
     gtag?: (...args: unknown[]) => void;
   }
 }
@@ -16,22 +16,22 @@ export function initAnalytics() {
 
   initialized = true;
 
+  window.dataLayer = window.dataLayer || [];
+
+  window.gtag = function gtag(...args: unknown[]) {
+    window.dataLayer?.push(args);
+  };
+
   const existingScript = document.querySelector(
     `script[src="https://www.googletagmanager.com/gtag/js?id=${GA_ID}"]`
   );
 
   if (!existingScript) {
     const script = document.createElement("script");
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
     script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
     document.head.appendChild(script);
   }
-
-  window.dataLayer = window.dataLayer || [];
-
-  window.gtag = function gtag() {
-    window.dataLayer.push(arguments);
-  };
 
   window.gtag("js", new Date());
 
@@ -43,9 +43,14 @@ export function initAnalytics() {
 export function trackPageView(path: string) {
   if (!GA_ID) return;
   if (typeof window === "undefined") return;
-  if (!window.gtag) return;
 
-  window.gtag("config", GA_ID, {
+  if (!window.gtag) {
+    initAnalytics();
+  }
+
+  window.gtag?.("event", "page_view", {
+    page_title: document.title,
+    page_location: window.location.href,
     page_path: path,
   });
 }
@@ -56,7 +61,10 @@ export function trackEvent(
 ) {
   if (!GA_ID) return;
   if (typeof window === "undefined") return;
-  if (!window.gtag) return;
 
-  window.gtag("event", eventName, params || {});
+  if (!window.gtag) {
+    initAnalytics();
+  }
+
+  window.gtag?.("event", eventName, params || {});
 }
