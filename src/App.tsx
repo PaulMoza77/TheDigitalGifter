@@ -70,11 +70,14 @@ const NewBornPage = lazy(() => import("@/pages/website/NewBornPage"));
 const PregnancyPage = lazy(() => import("@/pages/website/PregnancyPage"));
 const WeddingPage = lazy(() => import("@/pages/website/WeddingPage"));
 const EasterPage = lazy(() => import("@/pages/website/EasterPage"));
-const ValentinesDayPage = lazy(() => import("@/pages/website/ValentinesDayPage"));
+const ValentinesDayPage = lazy(
+  () => import("@/pages/website/ValentinesDayPage")
+);
 const AnniversaryPage = lazy(() => import("@/pages/website/AnniversaryPage"));
 const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
 const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
 const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
+const SorryPage = lazy(() => import("@/pages/website/SorryPage"));
 
 // ================= CLIENT ACCOUNT =================
 import AccountDashboard from "@/pages/account/AccountDashboard";
@@ -173,8 +176,12 @@ function AppInner() {
 
         localStorage.setItem("affiliate_visitor_id", visitorId);
 
-        const lastTrackedRef = localStorage.getItem("affiliate_last_tracked_ref");
-        const lastTrackedAt = localStorage.getItem("affiliate_last_tracked_at");
+        const lastTrackedRef = localStorage.getItem(
+          "affiliate_last_tracked_ref"
+        );
+        const lastTrackedAt = localStorage.getItem(
+          "affiliate_last_tracked_at"
+        );
         const now = Date.now();
 
         const shouldSkip =
@@ -230,12 +237,13 @@ function AppInner() {
 
         if (localStorage.getItem(conversionKey) === "1") return;
 
-        const { data: existingConversion, error: existingError } = await supabase
-          .from("affiliate_conversions")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("code", savedRef)
-          .maybeSingle<{ id: string }>();
+        const { data: existingConversion, error: existingError } =
+          await supabase
+            .from("affiliate_conversions")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("code", savedRef)
+            .maybeSingle<{ id: string }>();
 
         if (existingError) throw existingError;
 
@@ -296,6 +304,7 @@ function AppInner() {
             <Route path="/mothers-day" element={<MothersDayPage />} />
             <Route path="/fathers-day" element={<FathersDayPage />} />
             <Route path="/graduation" element={<GraduationPage />} />
+            <Route path="/sorry" element={<SorryPage />} />
 
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/generator" element={<GeneratorPage />} />

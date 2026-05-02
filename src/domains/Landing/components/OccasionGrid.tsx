@@ -19,11 +19,30 @@ type OccasionRow = {
 };
 
 function normalizeOccasionSlug(slug: string) {
-  return String(slug || "")
-    .trim()
-    .toLowerCase()
-    .replace(/_/g, "-")
-    .replace(/\s+/g, "-");
+  const s = String(slug || "").trim().toLowerCase();
+
+  if (s === "newborn") return "new-born";
+  if (s === "new_born") return "new-born";
+  if (s === "valentines_day") return "valentines-day";
+  if (s === "mothers_day") return "mothers-day";
+  if (s === "fathers_day") return "fathers-day";
+  if (s === "new_years_eve") return "new-years-eve";
+  if (s === "baby_reveal") return "baby-reveal";
+
+  return s.replace(/_/g, "-").replace(/\s+/g, "-");
+}
+
+function normalizeOccasionKey(slug: string) {
+  const s = normalizeOccasionSlug(slug);
+
+  if (s === "new-born") return "newborn";
+  if (s === "valentines-day") return "valentines_day";
+  if (s === "mothers-day") return "mothers_day";
+  if (s === "fathers-day") return "fathers_day";
+  if (s === "new-years-eve") return "new_years_eve";
+  if (s === "baby-reveal") return "baby_reveal";
+
+  return s;
 }
 
 function funnelHrefForSlug(slug: string) {
@@ -31,7 +50,7 @@ function funnelHrefForSlug(slug: string) {
 }
 
 function templatesHrefForSlug(slug: string) {
-  return `/templates?occasion=${encodeURIComponent(normalizeOccasionSlug(slug))}`;
+  return `/templates?occasion=${encodeURIComponent(normalizeOccasionKey(slug))}`;
 }
 
 function prettyLabelFromSlug(slug: string) {
@@ -43,7 +62,7 @@ function prettyLabelFromSlug(slug: string) {
   if (s.includes("thank") && s.includes("giving")) return "Warm family dinner";
   if (s.includes("birthday")) return "Party & confetti";
   if (s.includes("baby") && s.includes("reveal")) return "Soft pastel surprise";
-  if (s.includes("born")) return "Gentle & creamy";
+  if (s.includes("born") || s.includes("newborn")) return "Gentle & creamy";
   if (s.includes("pregnancy")) return "Soft glow";
   if (s.includes("wedding")) return "Timeless & elegant";
   if (s.includes("easter")) return "Spring & pastel";
@@ -52,6 +71,7 @@ function prettyLabelFromSlug(slug: string) {
   if (s.includes("mother")) return "Soft & floral";
   if (s.includes("father")) return "Warm family moment";
   if (s.includes("graduation")) return "Caps & celebration";
+  if (s.includes("sorry")) return "Emotional apology";
 
   return "New memories";
 }
@@ -83,7 +103,7 @@ function fallbackDescription(slug: string) {
     return "Dreamy pastel moments for your big baby reveal.";
   }
 
-  if (s.includes("born")) {
+  if (s.includes("born") || s.includes("newborn")) {
     return "Beautiful newborn layouts with soft, gentle warmth.";
   }
 
@@ -119,6 +139,10 @@ function fallbackDescription(slug: string) {
     return "Celebrate the big win with bold, joyful graduation energy.";
   }
 
+  if (s.includes("sorry")) {
+    return "Create a heartfelt apology card with soft, honest emotion.";
+  }
+
   return "Create something beautiful in seconds.";
 }
 
@@ -131,7 +155,7 @@ function fallbackGradientFrom(slug: string) {
   if (s.includes("thank") && s.includes("giving")) return "from-orange-700/40";
   if (s.includes("birthday")) return "from-fuchsia-700/40";
   if (s.includes("baby") && s.includes("reveal")) return "from-pink-700/40";
-  if (s.includes("born")) return "from-stone-700/40";
+  if (s.includes("born") || s.includes("newborn")) return "from-stone-700/40";
   if (s.includes("pregnancy")) return "from-rose-700/40";
   if (s.includes("wedding")) return "from-indigo-700/40";
   if (s.includes("easter")) return "from-emerald-700/40";
@@ -140,6 +164,7 @@ function fallbackGradientFrom(slug: string) {
   if (s.includes("mother")) return "from-pink-700/40";
   if (s.includes("father")) return "from-slate-700/40";
   if (s.includes("graduation")) return "from-sky-700/40";
+  if (s.includes("sorry")) return "from-rose-700/40";
 
   return "from-slate-700/40";
 }
@@ -153,11 +178,21 @@ function fallbackImage(slug: string) {
 
   if (s.includes("christmas")) return "/images/occasions/christmas.png";
   if (s.includes("birthday")) return "/images/occasions/happy-birthday.png";
-  if (s.includes("new") && s.includes("year")) return "/images/occasions/new-years-eve.png";
-  if (s.includes("thank") && s.includes("you")) return "/images/occasions/thank-you.png";
-  if (s.includes("thank") && s.includes("giving")) return "/images/occasions/thanks-giving.png";
-  if (s.includes("baby") && s.includes("reveal")) return "/images/occasions/gender-reveal.png";
-  if (s.includes("born")) return "/images/occasions/newborn.png";
+  if (s.includes("new") && s.includes("year")) {
+    return "/images/occasions/new-years-eve.png";
+  }
+  if (s.includes("thank") && s.includes("you")) {
+    return "/images/occasions/thank-you.png";
+  }
+  if (s.includes("thank") && s.includes("giving")) {
+    return "/images/occasions/thanks-giving.png";
+  }
+  if (s.includes("baby") && s.includes("reveal")) {
+    return "/images/occasions/gender-reveal.png";
+  }
+  if (s.includes("born") || s.includes("newborn")) {
+    return "/images/occasions/newborn.png";
+  }
   if (s.includes("pregnancy")) return "/images/occasions/pregnancy.png";
   if (s.includes("wedding")) return "/images/occasions/wedding.png";
   if (s.includes("easter")) return "/images/occasions/easter.png";
@@ -166,6 +201,7 @@ function fallbackImage(slug: string) {
   if (s.includes("mother")) return "/images/occasions/mothers-day.png";
   if (s.includes("father")) return "/images/occasions/fathers-day.png";
   if (s.includes("graduation")) return "/images/occasions/graduation.png";
+  if (s.includes("sorry")) return "/images/occasions/sorry.png";
 
   return "/images/occasions/default.png";
 }
@@ -186,6 +222,7 @@ const FALLBACK_OCCASIONS: OccasionRow[] = [
   { slug: "mothers-day", title: "Mother's Day", active: true, sort_order: 13 },
   { slug: "fathers-day", title: "Father's Day", active: true, sort_order: 14 },
   { slug: "graduation", title: "Graduation", active: true, sort_order: 15 },
+  { slug: "sorry", title: "Sorry", active: true, sort_order: 16 },
 ];
 
 export default function OccasionGrid() {
