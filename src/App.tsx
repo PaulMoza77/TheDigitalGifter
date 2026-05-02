@@ -293,8 +293,8 @@ function AppInner() {
 
   return (
     <BrowserRouter>
-      <ScrollToTop />
       <AnalyticsTracker />
+      <ScrollToTop />
 
       <Suspense
         fallback={
@@ -425,7 +425,6 @@ function AppInner() {
       </Suspense>
 
       <SupportTicketWidget />
-
       <Toaster position="top-right" />
     </BrowserRouter>
   );
