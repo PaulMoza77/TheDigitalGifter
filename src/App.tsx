@@ -100,12 +100,29 @@ import FunnelResultPage from "@/components/funnelVersion/ResultPage";
 // ================= SUPABASE =================
 import { supabase } from "@/lib/supabase";
 
+// ================= ANALYTICS =================
+import { initAnalytics, trackPageView } from "@/lib/analytics";
+
 function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
+
+  return null;
+}
+
+function AnalyticsTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
+    trackPageView(`${location.pathname}${location.search}`);
+  }, [location.pathname, location.search]);
 
   return null;
 }
@@ -277,6 +294,7 @@ function AppInner() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <AnalyticsTracker />
 
       <Suspense
         fallback={
