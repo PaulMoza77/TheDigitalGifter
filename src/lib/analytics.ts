@@ -1,4 +1,4 @@
-const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
+const GA_ID = "G-6FVX69WYFG";
 
 declare global {
   interface Window {
@@ -10,7 +10,6 @@ declare global {
 let initialized = false;
 
 export function initAnalytics() {
-  if (!GA_ID) return;
   if (typeof window === "undefined") return;
   if (initialized) return;
 
@@ -21,6 +20,16 @@ export function initAnalytics() {
   window.gtag = function gtag(...args: unknown[]) {
     window.dataLayer?.push(args);
   };
+
+  const oldScripts = Array.from(document.scripts).filter((script) =>
+    script.src.includes("googletagmanager.com/gtag/js")
+  );
+
+  oldScripts.forEach((script) => {
+    if (!script.src.includes(GA_ID)) {
+      script.remove();
+    }
+  });
 
   const existingScript = document.querySelector(
     `script[src="https://www.googletagmanager.com/gtag/js?id=${GA_ID}"]`
@@ -41,7 +50,6 @@ export function initAnalytics() {
 }
 
 export function trackPageView(path: string) {
-  if (!GA_ID) return;
   if (typeof window === "undefined") return;
 
   if (!window.gtag) {
@@ -59,7 +67,6 @@ export function trackEvent(
   eventName: string,
   params?: Record<string, string | number | boolean | null | undefined>
 ) {
-  if (!GA_ID) return;
   if (typeof window === "undefined") return;
 
   if (!window.gtag) {
