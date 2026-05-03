@@ -9,6 +9,19 @@ declare global {
 
 let initialized = false;
 
+function loadGoogleTagScript() {
+  const existingScript = document.querySelector<HTMLScriptElement>(
+    `script[src="https://www.googletagmanager.com/gtag/js?id=${GA_ID}"]`
+  );
+
+  if (existingScript) return;
+
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+  document.head.appendChild(script);
+}
+
 export function initAnalytics() {
   if (typeof window === "undefined") return;
   if (initialized) return;
@@ -21,32 +34,11 @@ export function initAnalytics() {
     window.dataLayer?.push(args);
   };
 
-  const oldScripts = Array.from(document.scripts).filter((script) =>
-    script.src.includes("googletagmanager.com/gtag/js")
-  );
-
-  oldScripts.forEach((script) => {
-    if (!script.src.includes(GA_ID)) {
-      script.remove();
-    }
-  });
-
-  const existingScript = document.querySelector(
-    `script[src="https://www.googletagmanager.com/gtag/js?id=${GA_ID}"]`
-  );
-
-  if (!existingScript) {
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
-    document.head.appendChild(script);
-  }
+  loadGoogleTagScript();
 
   window.gtag("js", new Date());
 
-  window.gtag("config", GA_ID, {
-    send_page_view: false,
-  });
+  window.gtag("config", GA_ID);
 }
 
 export function trackPageView(path: string) {
@@ -60,6 +52,7 @@ export function trackPageView(path: string) {
     page_title: document.title,
     page_location: window.location.href,
     page_path: path,
+    send_to: GA_ID,
   });
 }
 
@@ -73,5 +66,8 @@ export function trackEvent(
     initAnalytics();
   }
 
-  window.gtag?.("event", eventName, params || {});
+  window.gtag?.("event", eventName, {
+    ...(params || {}),
+    send_to: GA_ID,
+  });
 }
