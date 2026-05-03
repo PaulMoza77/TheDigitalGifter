@@ -100,8 +100,11 @@ import FunnelResultPage from "@/components/funnelVersion/ResultPage";
 // ================= SUPABASE =================
 import { supabase } from "@/lib/supabase";
 
-// ================= ANALYTICS =================
-import { initAnalytics, trackPageView } from "@/lib/analytics";
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -113,15 +116,18 @@ function ScrollToTop() {
   return null;
 }
 
-function AnalyticsTracker() {
+function GtagPageViewTracker() {
   const location = useLocation();
 
   useEffect(() => {
-    initAnalytics();
-  }, []);
+    if (typeof window === "undefined") return;
+    if (!window.gtag) return;
 
-  useEffect(() => {
-    trackPageView(`${location.pathname}${location.search}`);
+    window.gtag("config", "G-6FVX69WYFG", {
+      page_path: `${location.pathname}${location.search}`,
+      page_location: window.location.href,
+      page_title: document.title,
+    });
   }, [location.pathname, location.search]);
 
   return null;
@@ -293,7 +299,7 @@ function AppInner() {
 
   return (
     <BrowserRouter>
-      <AnalyticsTracker />
+      <GtagPageViewTracker />
       <ScrollToTop />
 
       <Suspense

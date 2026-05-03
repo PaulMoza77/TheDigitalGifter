@@ -5,7 +5,16 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- Primary Meta -->
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6FVX69WYFG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag("js", new Date());
+      gtag("config", "G-6FVX69WYFG");
+    </script>
+
     <title>TheDigitalGifter — Custom AI Holiday Cards & Memories</title>
     <meta
       name="description"
@@ -18,7 +27,6 @@
     <meta name="author" content="TheDigitalGifter" />
     <meta name="theme-color" content="#0b1220" />
 
-    <!-- Social / OpenGraph -->
     <meta
       property="og:title"
       content="TheDigitalGifter — Personalized AI Holiday Cards"
@@ -31,8 +39,11 @@
     <meta property="og:url" content="https://www.thedigitalgifter.com" />
     <meta property="og:image" content="/og-preview.svg" />
     <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
 
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@TheDigitalGifter" />
     <meta
@@ -45,16 +56,13 @@
     />
     <meta name="twitter:image" content="/og-preview.svg" />
 
-    <!-- Google -->
     <meta
       name="google-site-verification"
       content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
     />
 
-    <!-- Canonical -->
     <link rel="canonical" href="https://www.thedigitalgifter.com" />
 
-    <!-- Favicons & PWA manifest (using provided files in /public) -->
     <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -62,18 +70,14 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
 
-    <!-- Preconnect & fonts (performance) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://connect.facebook.net" />
-    <!-- Replace with your chosen font(s) -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
       rel="stylesheet"
     />
 
-    <!-- SEO: structured data (JSON-LD) -->
-    <!-- Organization Schema -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -94,7 +98,6 @@
       }
     </script>
 
-    <!-- WebSite + SearchAction Schema -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -109,7 +112,6 @@
       }
     </script>
 
-    <!-- Product/Service Schema -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -130,7 +132,6 @@
       }
     </script>
 
-    <!-- HowTo Schema (for "How It Works" section) -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -166,7 +167,6 @@
       }
     </script>
 
-    <!-- AggregateRating / Review Schema (for testimonials) -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -178,15 +178,8 @@
       }
     </script>
 
-    <!-- Robots & sitemap hint -->
     <meta name="robots" content="index,follow" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
-
-    <!-- Social preview fallback -->
-    <meta
-      property="og:image:alt"
-      content="TheDigitalGifter — AI-generated holiday cards"
-    />
 
     <script>
       !(function (f, b, e, v, n, t, s) {
@@ -198,11 +191,11 @@
         };
         if (!f._fbq) f._fbq = n;
         n.push = n;
-        n.loaded = !0;
+        n.loaded = true;
         n.version = "2.0";
         n.queue = [];
         t = b.createElement(e);
-        t.async = !0;
+        t.async = true;
         t.src = v;
         s = b.getElementsByTagName(e)[0];
         s.parentNode.insertBefore(t, s);
@@ -220,13 +213,15 @@
   </head>
 
   <body>
-    <noscript
-      ><img
+    <noscript>
+      <img
         height="1"
         width="1"
         style="display: none"
         src="https://www.facebook.com/tr?id=1673980440653322&ev=PageView&noscript=1"
-    /></noscript>
+      />
+    </noscript>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
