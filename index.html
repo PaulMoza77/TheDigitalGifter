@@ -6,13 +6,32 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6FVX69WYFG"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
       window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500,
+      });
+    </script>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-6FVX69WYFG"
+    ></script>
+    <script>
       gtag("js", new Date());
-      gtag("config", "G-6FVX69WYFG");
+
+      gtag("config", "G-6FVX69WYFG", {
+        send_page_view: true,
+        debug_mode: true,
+      });
     </script>
 
     <title>TheDigitalGifter — Custom AI Holiday Cards & Memories</title>
