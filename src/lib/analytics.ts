@@ -7,12 +7,12 @@ declare global {
   }
 }
 
-export function initAnalytics() {
-  if (typeof window === "undefined") return;
+function ensureGtag() {
+  if (typeof window === "undefined") return false;
+
+  window.dataLayer = window.dataLayer || [];
 
   if (!window.gtag) {
-    window.dataLayer = window.dataLayer || [];
-
     window.gtag = function gtag(...args: unknown[]) {
       window.dataLayer?.push(args);
     };
@@ -20,24 +20,29 @@ export function initAnalytics() {
     window.gtag("js", new Date());
   }
 
-  window.gtag("config", GA_ID, {
+  return true;
+}
+
+export function initAnalytics() {
+  if (!ensureGtag()) return;
+
+  window.gtag?.("config", GA_ID, {
+    send_page_view: true,
     page_path: window.location.pathname + window.location.search,
     page_location: window.location.href,
     page_title: document.title,
+    debug_mode: true,
   });
 }
 
 export function trackPageView(path: string) {
-  if (typeof window === "undefined") return;
-
-  if (!window.gtag) {
-    initAnalytics();
-  }
+  if (!ensureGtag()) return;
 
   window.gtag?.("config", GA_ID, {
     page_path: path,
     page_location: window.location.href,
     page_title: document.title,
+    debug_mode: true,
   });
 }
 
@@ -45,11 +50,11 @@ export function trackEvent(
   eventName: string,
   params?: Record<string, string | number | boolean | null | undefined>
 ) {
-  if (typeof window === "undefined") return;
+  if (!ensureGtag()) return;
 
-  if (!window.gtag) {
-    initAnalytics();
-  }
-
-  window.gtag?.("event", eventName, params || {});
+  window.gtag?.("event", eventName, {
+    ...(params || {}),
+    send_to: GA_ID,
+    debug_mode: true,
+  });
 }
