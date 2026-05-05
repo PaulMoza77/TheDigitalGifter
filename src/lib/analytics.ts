@@ -7,38 +7,18 @@ declare global {
   }
 }
 
-let initialized = false;
-
-function loadGoogleTagScript() {
-  if (typeof document === "undefined") return;
-
-  const existingScript = document.querySelector<HTMLScriptElement>(
-    `script[src="https://www.googletagmanager.com/gtag/js?id=${GA_ID}"]`
-  );
-
-  if (existingScript) return;
-
-  const script = document.createElement("script");
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
-  document.head.appendChild(script);
-}
-
 export function initAnalytics() {
   if (typeof window === "undefined") return;
-  if (initialized) return;
 
-  initialized = true;
+  if (!window.gtag) {
+    window.dataLayer = window.dataLayer || [];
 
-  window.dataLayer = window.dataLayer || [];
+    window.gtag = function gtag(...args: unknown[]) {
+      window.dataLayer?.push(args);
+    };
 
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer?.push(args);
-  };
-
-  loadGoogleTagScript();
-
-  window.gtag("js", new Date());
+    window.gtag("js", new Date());
+  }
 
   window.gtag("config", GA_ID, {
     page_path: window.location.pathname + window.location.search,
@@ -71,8 +51,5 @@ export function trackEvent(
     initAnalytics();
   }
 
-  window.gtag?.("event", eventName, {
-    ...(params || {}),
-    send_to: GA_ID,
-  });
-} 
+  window.gtag?.("event", eventName, params || {});
+}
