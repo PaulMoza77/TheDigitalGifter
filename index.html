@@ -18,19 +18,26 @@
         ad_storage: "granted",
         ad_user_data: "granted",
         ad_personalization: "granted",
-        wait_for_update: 500,
+        wait_for_update: 500
       });
     </script>
+
     <script
       async
       src="https://www.googletagmanager.com/gtag/js?id=G-6FVX69WYFG"
     ></script>
+
     <script>
       gtag("js", new Date());
 
+      gtag("event", "session_start", {
+        send_to: "G-6FVX69WYFG",
+        debug_mode: true
+      });
+
       gtag("config", "G-6FVX69WYFG", {
         send_page_view: true,
-        debug_mode: true,
+        debug_mode: true
       });
     </script>
 
@@ -224,6 +231,7 @@
         "script",
         "https://connect.facebook.net/en_US/fbevents.js"
       );
+
       fbq("init", "1673980440653322");
       fbq("track", "PageView");
     </script>
