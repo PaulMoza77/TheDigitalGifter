@@ -172,10 +172,16 @@ type AnyTemplate = TemplateSummary & {
   _id?: string;
   title?: string;
   prompt?: string | null;
+
+  main_category?: string | null;
+  mainCategory?: string | null;
+
   occasion?: string | null;
   category?: string | null;
+
   style_id?: string | null;
   styleId?: string | null;
+
   previewUrl?: string | null;
   thumbnailUrl?: string | null;
   previewurl?: string | null;
@@ -183,11 +189,15 @@ type AnyTemplate = TemplateSummary & {
   preview_image_url?: string | null;
   thumbnailurl?: string | null;
   thumbnail_url?: string | null;
+
   image?: string | null;
   imageUrl?: string | null;
   mediaUrl?: string | null;
+
   creditCost?: number;
   creditcost?: number;
+  credit_cost?: number;
+
   type?: string;
 };
 
@@ -204,7 +214,10 @@ function normalizeKey(value: unknown) {
 
   if (!raw || raw === "all") return raw;
 
-  if (raw === "new-born" || raw === "new_born") return "newborn";
+  if (raw === "new-born" || raw === "new_born" || raw === "newborn") {
+    return "new_born";
+  }
+
   if (raw === "valentines" || raw === "valentines-day") return "valentines_day";
   if (raw === "mothers-day") return "mothers_day";
   if (raw === "fathers-day") return "fathers_day";
@@ -248,7 +261,16 @@ function formatLabel(value: unknown) {
   return raw
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/\bNew Born\b/g, "Newborn")
+    .replace(/\bNew Years Eve\b/g, "New Year's Eve")
+    .replace(/\bValentines Day\b/g, "Valentine's Day")
+    .replace(/\bMothers Day\b/g, "Mother's Day")
+    .replace(/\bFathers Day\b/g, "Father's Day")
+    .replace(/\bBaby Reveal\b/g, "Baby Reveal")
+    .replace(/\bThank You\b/g, "Thank You")
+    .replace(/\bBible Verses\b/g, "Bible Verses")
+    .replace(/\bPet Loss\b/g, "Pet Loss");
 }
 
 function getPublicSupabaseConfig(): { url: string; anon: string } {
@@ -295,6 +317,17 @@ function getTemplateId(template: AnyTemplate) {
   return safeString(template.id || template._id);
 }
 
+function getTemplateMainCategory(template: AnyTemplate): CategoryKey {
+  const direct = normalizeCategory(template.main_category || template.mainCategory);
+
+  if (direct !== "all") return direct;
+
+  const occasionKey = normalizeKey(template.occasion);
+  const found = occasions.find((item) => normalizeKey(item.id) === occasionKey);
+
+  return normalizeCategory(found?.category || "occasions");
+}
+
 function getTemplateStyleId(template: AnyTemplate) {
   return (
     safeString(template.style_id) ||
@@ -325,14 +358,6 @@ function getTemplateImageUrl(template: AnyTemplate) {
   return "";
 }
 
-function getOccasionCategory(occasion: unknown): CategoryKey {
-  const key = normalizeKey(occasion);
-
-  const found = occasions.find((item) => normalizeKey(item.id) === key);
-
-  return normalizeCategory(found?.category);
-}
-
 function normalizeTemplate(t: AnyTemplate): AnyTemplate {
   const id = getTemplateId(t);
 
@@ -346,23 +371,25 @@ function normalizeTemplate(t: AnyTemplate): AnyTemplate {
   const creditCost =
     typeof t.creditCost === "number"
       ? t.creditCost
-      : typeof t.creditcost === "number"
-        ? t.creditcost
-        : 1;
+      : typeof t.credit_cost === "number"
+        ? t.credit_cost
+        : typeof t.creditcost === "number"
+          ? t.creditcost
+          : 1;
 
   const normalizedOccasion = normalizeKey(t.occasion || "");
-  const categoryFromOccasion = getOccasionCategory(normalizedOccasion);
+  const mainCategory = getTemplateMainCategory(t);
+  const style = safeString(t.category || "general");
 
   return {
     ...(t as TemplateSummary),
     ...(t as any),
     id,
     _id: id,
+    main_category: mainCategory,
+    mainCategory,
     occasion: normalizedOccasion || t.occasion,
-    category:
-      categoryFromOccasion !== "all"
-        ? categoryFromOccasion
-        : safeString(t.category || "general"),
+    category: style,
     previewUrl,
     thumbnailUrl,
     creditCost,
@@ -464,7 +491,7 @@ export default function GeneratorPage() {
   );
 
   const { data: creditsData = 0 } = useUserCreditsQuery();
-  const userCredits: number = Number(creditsData ?? 0);
+  const userCredits = Number(creditsData ?? 0);
 
   const { data: jobsRaw = [] } = useJobsQuery();
   const jobs = (jobsRaw as JobRow[]) || [];
@@ -475,12 +502,7 @@ export default function GeneratorPage() {
     if (selectedCategory === ALL_CATEGORIES) return templatesList;
 
     return templatesList.filter((template) => {
-      const occasionCategory = getOccasionCategory(template.occasion);
-      const templateCategory = normalizeCategory(template.category);
-
-      return (
-        occasionCategory === selectedCategory || templateCategory === selectedCategory
-      );
+      return getTemplateMainCategory(template) === selectedCategory;
     });
   }, [templatesList, selectedCategory]);
 
@@ -510,20 +532,21 @@ export default function GeneratorPage() {
   }, [categoryFilteredTemplates]);
 
   const styleOptions = useMemo(() => {
-    const source =
-      selectedOccasion === ALL_OCCASIONS
-        ? categoryFilteredTemplates
-        : categoryFilteredTemplates.filter(
-            (template) => normalizeKey(template.occasion) === selectedOccasion
-          );
+    if (selectedOccasion === ALL_OCCASIONS) return [];
+
+    const source = categoryFilteredTemplates.filter((template) => {
+      return normalizeKey(template.occasion) === selectedOccasion;
+    });
 
     const map = new Map<string, { value: string; label: string; count: number }>();
 
     source.forEach((template) => {
-      const styleRaw =
-        getOccasionCategory(template.occasion) !== "all"
-          ? safeString((template as any).style_id || (template as any).styleId || "general")
-          : safeString(template.category || "general");
+      const styleRaw = safeString(
+        (template as any).style_id ||
+          (template as any).styleId ||
+          template.category ||
+          "general"
+      );
 
       const key = normalizeKey(styleRaw || "general");
       if (!key) return;
@@ -828,7 +851,7 @@ export default function GeneratorPage() {
                 template.category ||
                 "general"
             );
-            const category = getOccasionCategory(occasion);
+            const category = getTemplateMainCategory(template);
 
             if (category !== "all") next.set("category", category);
             if (occasion) next.set("occasion", occasion);
@@ -963,7 +986,7 @@ export default function GeneratorPage() {
       aspect_ratio: input.aspectRatio,
       user_id: effectiveUserId,
       email: effectiveEmail,
-      category: getOccasionCategory(input.template.occasion),
+      category: getTemplateMainCategory(input.template),
     };
 
     const { data: created, error: createError } = await supabase
@@ -1276,14 +1299,18 @@ export default function GeneratorPage() {
             <div>
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-[#ffd976]" />
+
                 <h2 className="text-base font-semibold text-white">
-                  Choose category, occasion and style
+                  Choose a category and occasion
                 </h2>
               </div>
 
               <p className="mt-1 text-sm text-[#9ca8bd]">
-                {selectedCategoryLabel} · {selectedOccasionLabel} ·{" "}
-                {selectedStyleLabel} · {filteredTemplates.length} template
+                {selectedCategoryLabel} · {selectedOccasionLabel}
+                {selectedOccasion !== ALL_OCCASIONS
+                  ? ` · ${selectedStyleLabel}`
+                  : ""}{" "}
+                · {filteredTemplates.length} template
                 {filteredTemplates.length === 1 ? "" : "s"}
               </p>
             </div>
@@ -1308,7 +1335,7 @@ export default function GeneratorPage() {
             </div>
           </div>
 
-          <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
             {CATEGORY_OPTIONS.map((category) => {
               const Icon = category.icon;
               const isActive = selectedCategory === category.value;
@@ -1376,54 +1403,62 @@ export default function GeneratorPage() {
             ))}
           </div>
 
-          <div className="border-t border-white/10 pt-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9ca8bd]">
-                Styles for {selectedOccasionLabel}
-              </p>
+          {selectedOccasion !== ALL_OCCASIONS ? (
+            <div className="border-t border-white/10 pt-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9ca8bd]">
+                  Styles for {selectedOccasionLabel}
+                </p>
 
-              {selectedStyle !== ALL_STYLES && (
+                {selectedStyle !== ALL_STYLES && (
+                  <button
+                    type="button"
+                    onClick={() => updateFilterParams({ style: ALL_STYLES })}
+                    className="text-xs font-semibold text-[#ffd976] hover:underline"
+                  >
+                    Reset style
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => updateFilterParams({ style: ALL_STYLES })}
-                  className="text-xs font-semibold text-[#ffd976] hover:underline"
-                >
-                  Reset style
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => updateFilterParams({ style: ALL_STYLES })}
-                className={cn(
-                  "rounded-full border px-3.5 py-2 text-sm font-medium transition",
-                  selectedStyle === ALL_STYLES
-                    ? "border-white/25 bg-white text-black"
-                    : "border-white/10 bg-black/20 text-zinc-300 hover:bg-white/[0.08]"
-                )}
-              >
-                All Styles
-              </button>
-
-              {styleOptions.map((style) => (
-                <button
-                  key={style.value}
-                  type="button"
-                  onClick={() => updateFilterParams({ style: style.value })}
                   className={cn(
                     "rounded-full border px-3.5 py-2 text-sm font-medium transition",
-                    selectedStyle === style.value
+                    selectedStyle === ALL_STYLES
                       ? "border-white/25 bg-white text-black"
                       : "border-white/10 bg-black/20 text-zinc-300 hover:bg-white/[0.08]"
                   )}
                 >
-                  {style.label}
+                  All Styles
                 </button>
-              ))}
+
+                {styleOptions.map((style) => (
+                  <button
+                    key={style.value}
+                    type="button"
+                    onClick={() => updateFilterParams({ style: style.value })}
+                    className={cn(
+                      "rounded-full border px-3.5 py-2 text-sm font-medium transition",
+                      selectedStyle === style.value
+                        ? "border-white/25 bg-white text-black"
+                        : "border-white/10 bg-black/20 text-zinc-300 hover:bg-white/[0.08]"
+                    )}
+                  >
+                    {style.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-sm text-[#9ca8bd]">
+                Select an occasion first to see available styles.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -1453,8 +1488,7 @@ export default function GeneratorPage() {
             </p>
 
             <p className="mt-2 text-sm text-[#9ca8bd]">
-              Try All Categories, All Occasions, All Styles, or another media
-              type.
+              Try All Categories, All Occasions, or another media type.
             </p>
           </div>
         )}
