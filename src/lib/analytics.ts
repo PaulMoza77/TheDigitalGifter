@@ -10,6 +10,8 @@ declare global {
 let initialized = false;
 
 function loadGoogleTagScript() {
+  if (typeof document === "undefined") return;
+
   const existingScript = document.querySelector<HTMLScriptElement>(
     `script[src="https://www.googletagmanager.com/gtag/js?id=${GA_ID}"]`
   );
@@ -38,7 +40,11 @@ export function initAnalytics() {
 
   window.gtag("js", new Date());
 
-  window.gtag("config", GA_ID);
+  window.gtag("config", GA_ID, {
+    page_path: window.location.pathname + window.location.search,
+    page_location: window.location.href,
+    page_title: document.title,
+  });
 }
 
 export function trackPageView(path: string) {
@@ -48,11 +54,10 @@ export function trackPageView(path: string) {
     initAnalytics();
   }
 
-  window.gtag?.("event", "page_view", {
-    page_title: document.title,
-    page_location: window.location.href,
+  window.gtag?.("config", GA_ID, {
     page_path: path,
-    send_to: GA_ID,
+    page_location: window.location.href,
+    page_title: document.title,
   });
 }
 
