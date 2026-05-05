@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { X } from "lucide-react";
 
 import VideoModal from "./VideoModal";
@@ -14,13 +14,17 @@ import {
 
 import type { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
+import { occasions } from "@/constants/occasions";
 
 type Template = TemplateSummary;
+
+type CategoryKey = "all" | "occasions" | "personal" | "spiritual" | "pets";
 
 interface TemplatesGridProps {
   onPick?: (template: Template) => void;
   selectedTemplateId?: string | null;
   occasionFilter?: string | null;
+  categoryFilter?: CategoryKey | null;
 }
 
 function normalizeOccasion(value?: string | null) {
@@ -29,14 +33,42 @@ function normalizeOccasion(value?: string | null) {
   if (!v || v === "all") return "all";
 
   if (v === "new-born" || v === "new_born") return "newborn";
-  if (v === "valentines-day") return "valentines_day";
+  if (v === "valentines-day" || v === "valentines") return "valentines_day";
   if (v === "mothers-day") return "mothers_day";
   if (v === "fathers-day") return "fathers_day";
   if (v === "new-years-eve") return "new_years_eve";
   if (v === "baby-reveal") return "baby_reveal";
   if (v === "thank-you") return "thank_you";
+  if (v === "name-cards") return "name_cards";
+  if (v === "bible-verses") return "bible_verses";
+  if (v === "pet-loss") return "pet_loss";
 
   return v.replace(/-/g, "_");
+}
+
+function normalizeCategory(value?: string | null): CategoryKey {
+  const v = String(value || "").trim().toLowerCase();
+
+  if (
+    v === "occasions" ||
+    v === "personal" ||
+    v === "spiritual" ||
+    v === "pets"
+  ) {
+    return v;
+  }
+
+  return "all";
+}
+
+function getCategoryForOccasion(occasion?: string | null): CategoryKey {
+  const normalized = normalizeOccasion(occasion);
+
+  const match = occasions.find(
+    (item) => normalizeOccasion(item.id) === normalized
+  );
+
+  return normalizeCategory(match?.category);
 }
 
 function emojiForOccasion(occasion?: string | null) {
@@ -56,6 +88,10 @@ function emojiForOccasion(occasion?: string | null) {
   if (o.includes("father")) return "👨‍👧";
   if (o.includes("graduation")) return "🎓";
   if (o.includes("sorry")) return "💔";
+  if (o.includes("bible") || o.includes("prayer")) return "✝️";
+  if (o.includes("dog") || o.includes("cat") || o.includes("pet")) return "🐾";
+  if (o.includes("kid")) return "🧸";
+  if (o.includes("name")) return "✨";
 
   return "✨";
 }
@@ -63,7 +99,7 @@ function emojiForOccasion(occasion?: string | null) {
 function prettyOccasion(occasion?: string | null) {
   const o = normalizeOccasion(occasion);
 
-  if (!o || o === "all") return "this occasion";
+  if (!o || o === "all") return "this category";
 
   const map: Record<string, string> = {
     newborn: "Newborn",
@@ -81,6 +117,13 @@ function prettyOccasion(occasion?: string | null) {
     thanksgiving: "Thanksgiving",
     thank_you: "Thank You",
     sorry: "Sorry",
+    name_cards: "Name Cards",
+    kids: "Kids",
+    bible_verses: "Bible Verses",
+    prayer: "Prayer",
+    dogs: "Dogs",
+    cats: "Cats",
+    pet_loss: "Pet Loss",
   };
 
   return map[o] ?? o.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -104,6 +147,7 @@ function TemplatesGridComponent({
   onPick,
   selectedTemplateId,
   occasionFilter,
+  categoryFilter,
 }: TemplatesGridProps) {
   const [modal, setModal] = useState<{
     open: boolean;
@@ -130,13 +174,37 @@ function TemplatesGridComponent({
     [occasionFilter]
   );
 
-  const occasionTemplates = useMemo(() => {
-    if (!activeOccasion || activeOccasion === "all") return templatesArray;
+  const activeCategory = useMemo(
+    () => normalizeCategory(categoryFilter),
+    [categoryFilter]
+  );
 
-    return templatesArray.filter((template) => {
-      return normalizeOccasion(template.occasion) === activeOccasion;
-    });
-  }, [templatesArray, activeOccasion]);
+  const categoryOccasionKeys = useMemo(() => {
+    if (activeCategory === "all") return null;
+
+    return new Set(
+      occasions
+        .filter((item) => normalizeCategory(item.category) === activeCategory)
+        .map((item) => normalizeOccasion(item.id))
+    );
+  }, [activeCategory]);
+
+  const baseTemplates = useMemo(() => {
+    if (activeOccasion && activeOccasion !== "all") {
+      return templatesArray.filter((template) => {
+        return normalizeOccasion(template.occasion) === activeOccasion;
+      });
+    }
+
+    if (categoryOccasionKeys) {
+      return templatesArray.filter((template) => {
+        const occasion = normalizeOccasion(template.occasion);
+        return categoryOccasionKeys.has(occasion);
+      });
+    }
+
+    return templatesArray;
+  }, [templatesArray, activeOccasion, categoryOccasionKeys]);
 
   const handleClearFilters = useCallback(() => {
     setScene("all");
@@ -145,9 +213,9 @@ function TemplatesGridComponent({
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    const pr = priceRange !== "all" ? parseRange(priceRange) : null;
+    const parsedRange = priceRange !== "all" ? parseRange(priceRange) : null;
 
-    return occasionTemplates.filter((template) => {
+    return baseTemplates.filter((template) => {
       const matchesScene = scene !== "all" ? template.scene === scene : true;
 
       const matchesOrientation =
@@ -155,23 +223,23 @@ function TemplatesGridComponent({
 
       const matchesPrice =
         priceRange !== "all"
-          ? pr
-            ? Number(template.creditCost) >= pr.min &&
-              Number(template.creditCost) <= pr.max
+          ? parsedRange
+            ? Number(template.creditCost) >= parsedRange.min &&
+              Number(template.creditCost) <= parsedRange.max
             : true
           : true;
 
       return matchesScene && matchesOrientation && matchesPrice;
     });
-  }, [occasionTemplates, scene, orientation, priceRange]);
+  }, [baseTemplates, scene, orientation, priceRange]);
 
   const sceneCounts = useMemo(() => {
-    return occasionTemplates.reduce<Record<string, number>>((acc, template) => {
+    return baseTemplates.reduce<Record<string, number>>((acc, template) => {
       const key = template.scene || "unknown";
       acc[key] = (acc[key] ?? 0) + 1;
       return acc;
     }, {});
-  }, [occasionTemplates]);
+  }, [baseTemplates]);
 
   const uniqueScenes = useMemo(() => {
     return Object.keys(sceneCounts).sort();
@@ -179,15 +247,15 @@ function TemplatesGridComponent({
 
   const sceneOptions = useMemo(
     () => [
-      { label: `All Scenes (${occasionTemplates.length})`, value: "all" },
-      ...uniqueScenes.map((s) => ({
-        label: `${s.charAt(0).toUpperCase() + s.slice(1)} (${
-          sceneCounts[s] ?? 0
+      { label: `All Scenes (${baseTemplates.length})`, value: "all" },
+      ...uniqueScenes.map((item) => ({
+        label: `${item.charAt(0).toUpperCase() + item.slice(1)} (${
+          sceneCounts[item] ?? 0
         })`,
-        value: s,
+        value: item,
       })),
     ],
-    [uniqueScenes, sceneCounts, occasionTemplates.length]
+    [uniqueScenes, sceneCounts, baseTemplates.length]
   );
 
   const orientationOptions = useMemo(
@@ -212,11 +280,23 @@ function TemplatesGridComponent({
   const hasActiveFilters =
     scene !== "all" || orientation !== "all" || priceRange !== "all";
 
+  const emptyLabel =
+    activeOccasion && activeOccasion !== "all"
+      ? prettyOccasion(activeOccasion)
+      : activeCategory !== "all"
+        ? activeCategory
+        : "this category";
+
   return (
     <div className="space-y-8">
-      <div className="space-y-4">
+      <div className="space-y-4 rounded-3xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-[#fffef5]">Filters</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-[#fffef5]">Filters</h2>
+            <p className="mt-1 text-sm text-[#c1c8d8]">
+              Refine by scene, format and credit range.
+            </p>
+          </div>
 
           <p className="text-sm text-[#c1c8d8]">
             <span className="font-semibold text-[#dfe6f1]">
@@ -224,7 +304,7 @@ function TemplatesGridComponent({
             </span>
             {" of "}
             <span className="font-semibold text-[#dfe6f1]">
-              {occasionTemplates.length}
+              {baseTemplates.length}
             </span>
             {" templates found"}
           </p>
@@ -335,7 +415,7 @@ function TemplatesGridComponent({
           ))}
         </div>
       ) : (
-        <div className="px-6 py-16">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-16">
           <div className="mx-auto max-w-md text-center">
             <div className="mb-4 text-6xl">
               {emojiForOccasion(occasionFilter)}
@@ -347,7 +427,7 @@ function TemplatesGridComponent({
 
             <p className="mb-6 text-[#c1c8d8]">
               Try adjusting your filters to find the perfect template for{" "}
-              {prettyOccasion(occasionFilter)}.
+              {emptyLabel}.
             </p>
 
             <button

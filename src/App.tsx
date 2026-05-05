@@ -61,6 +61,17 @@ const AdminFunnelPage = lazy(
 const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
 const TemplatesPage = lazy(() => import("@/pages/website/TemplatesPage"));
 
+const OccasionsCategoryPage = lazy(
+  () => import("@/pages/website/OccasionsCategoryPage")
+);
+const PersonalCategoryPage = lazy(
+  () => import("@/pages/website/PersonalCategoryPage")
+);
+const SpiritualCategoryPage = lazy(
+  () => import("@/pages/website/SpiritualCategoryPage")
+);
+const PetsCategoryPage = lazy(() => import("@/pages/website/PetsCategoryPage"));
+
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
@@ -314,6 +325,23 @@ function AppInner() {
             <Route path="/" element={<Index />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
 
+            <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/generator" element={<GeneratorPage />} />
+
+            <Route
+              path="/categories/occasions"
+              element={<OccasionsCategoryPage />}
+            />
+            <Route
+              path="/categories/personal"
+              element={<PersonalCategoryPage />}
+            />
+            <Route
+              path="/categories/spiritual"
+              element={<SpiritualCategoryPage />}
+            />
+            <Route path="/categories/pets" element={<PetsCategoryPage />} />
+
             <Route path="/christmas" element={<ChristmasPage />} />
             <Route path="/birthday" element={<BirthdayPage />} />
             <Route path="/new-years-eve" element={<NewYearsEvePage />} />
@@ -330,8 +358,34 @@ function AppInner() {
             <Route path="/graduation" element={<GraduationPage />} />
             <Route path="/sorry" element={<SorryPage />} />
 
-            <Route path="/templates" element={<TemplatesPage />} />
-            <Route path="/generator" element={<GeneratorPage />} />
+            <Route
+              path="/name-cards"
+              element={<Navigate to="/templates?category=personal" replace />}
+            />
+            <Route
+              path="/kids"
+              element={<Navigate to="/templates?category=personal" replace />}
+            />
+            <Route
+              path="/bible-verses"
+              element={<Navigate to="/templates?category=spiritual" replace />}
+            />
+            <Route
+              path="/prayer"
+              element={<Navigate to="/templates?category=spiritual" replace />}
+            />
+            <Route
+              path="/dogs"
+              element={<Navigate to="/templates?category=pets" replace />}
+            />
+            <Route
+              path="/cats"
+              element={<Navigate to="/templates?category=pets" replace />}
+            />
+            <Route
+              path="/pet-loss"
+              element={<Navigate to="/templates?category=pets" replace />}
+            />
 
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsPage />} />
@@ -344,6 +398,10 @@ function AppInner() {
             />
             <Route
               path="/valentines_day"
+              element={<Navigate to="/valentines-day" replace />}
+            />
+            <Route
+              path="/valentines"
               element={<Navigate to="/valentines-day" replace />}
             />
             <Route
@@ -406,7 +464,6 @@ function AppInner() {
             }
           >
             <Route index element={<AdminDashboard />} />
-
             <Route path="funnel" element={<AdminFunnelPage />} />
             <Route path="templates" element={<Templates />} />
             <Route path="pricing" element={<PricingPage />} />

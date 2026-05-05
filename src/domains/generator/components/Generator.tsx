@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -19,15 +25,67 @@ import {
 } from "@/components/ui/Select";
 
 import { cn } from "@/lib/utils";
-import { Info, Sparkles, ImageIcon, Video } from "lucide-react";
+import {
+  Info,
+  Sparkles,
+  ImageIcon,
+  Video,
+  Heart,
+  Cross,
+  PawPrint,
+  CalendarDays,
+  LayoutGrid,
+} from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useCreditsFunnel } from "@/contexts/CreditsFunnelContext";
 import { useBootstrapUser } from "@/hooks/useBootstrapUser";
 import { uploadFileToStorage } from "@/lib/uploadFileToStorage";
 import { supabase } from "@/lib/supabase";
+import { occasions } from "@/constants/occasions";
 
+const ALL_CATEGORIES = "all";
 const ALL_OCCASIONS = "all";
 const ALL_STYLES = "all";
+
+type CategoryKey = "all" | "occasions" | "personal" | "spiritual" | "pets";
+
+const CATEGORY_OPTIONS: Array<{
+  value: CategoryKey;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+}> = [
+  {
+    value: "all",
+    label: "All",
+    description: "Everything",
+    icon: LayoutGrid,
+  },
+  {
+    value: "occasions",
+    label: "Occasions",
+    description: "Birthdays, holidays",
+    icon: CalendarDays,
+  },
+  {
+    value: "personal",
+    label: "Personal",
+    description: "Names, kids, love",
+    icon: Heart,
+  },
+  {
+    value: "spiritual",
+    label: "Spiritual",
+    description: "Faith, prayer, hope",
+    icon: Cross,
+  },
+  {
+    value: "pets",
+    label: "Pets",
+    description: "Dogs, cats, memories",
+    icon: PawPrint,
+  },
+];
 
 function SnowBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -87,7 +145,9 @@ function SnowBackground() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 -z-10 pointer-events-none" />;
+  return (
+    <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 -z-10" />
+  );
 }
 
 type JobRow = {
@@ -140,7 +200,37 @@ type EdgeResponse = {
 };
 
 function normalizeKey(value: unknown) {
-  return String(value ?? "").trim().toLowerCase();
+  const raw = String(value ?? "").trim().toLowerCase();
+
+  if (!raw || raw === "all") return raw;
+
+  if (raw === "new-born" || raw === "new_born") return "newborn";
+  if (raw === "valentines" || raw === "valentines-day") return "valentines_day";
+  if (raw === "mothers-day") return "mothers_day";
+  if (raw === "fathers-day") return "fathers_day";
+  if (raw === "new-years-eve") return "new_years_eve";
+  if (raw === "baby-reveal") return "baby_reveal";
+  if (raw === "thank-you") return "thank_you";
+  if (raw === "name-cards") return "name_cards";
+  if (raw === "bible-verses") return "bible_verses";
+  if (raw === "pet-loss") return "pet_loss";
+
+  return raw.replace(/-/g, "_");
+}
+
+function normalizeCategory(value: unknown): CategoryKey {
+  const key = normalizeKey(value);
+
+  if (
+    key === "occasions" ||
+    key === "personal" ||
+    key === "spiritual" ||
+    key === "pets"
+  ) {
+    return key;
+  }
+
+  return ALL_CATEGORIES;
 }
 
 function safeString(value: unknown) {
@@ -177,7 +267,9 @@ function getPublicSupabaseConfig(): { url: string; anon: string } {
   return { url, anon };
 }
 
-async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, string>> {
+async function getEdgeFunctionHeaders(
+  anonKey: string
+): Promise<Record<string, string>> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -233,6 +325,14 @@ function getTemplateImageUrl(template: AnyTemplate) {
   return "";
 }
 
+function getOccasionCategory(occasion: unknown): CategoryKey {
+  const key = normalizeKey(occasion);
+
+  const found = occasions.find((item) => normalizeKey(item.id) === key);
+
+  return normalizeCategory(found?.category);
+}
+
 function normalizeTemplate(t: AnyTemplate): AnyTemplate {
   const id = getTemplateId(t);
 
@@ -250,11 +350,19 @@ function normalizeTemplate(t: AnyTemplate): AnyTemplate {
         ? t.creditcost
         : 1;
 
+  const normalizedOccasion = normalizeKey(t.occasion || "");
+  const categoryFromOccasion = getOccasionCategory(normalizedOccasion);
+
   return {
     ...(t as TemplateSummary),
     ...(t as any),
     id,
     _id: id,
+    occasion: normalizedOccasion || t.occasion,
+    category:
+      categoryFromOccasion !== "all"
+        ? categoryFromOccasion
+        : safeString(t.category || "general"),
     previewUrl,
     thumbnailUrl,
     creditCost,
@@ -296,8 +404,11 @@ export default function GeneratorPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const selectedTemplateId = searchParams.get("template") || null;
+  const selectedCategoryParam = normalizeCategory(searchParams.get("category"));
   const selectedOccasionParam = normalizeKey(searchParams.get("occasion"));
   const selectedStyleParam = normalizeKey(searchParams.get("style"));
+
+  const selectedCategory = selectedCategoryParam;
 
   const selectedOccasion =
     selectedOccasionParam && selectedOccasionParam !== ALL_OCCASIONS
@@ -305,7 +416,9 @@ export default function GeneratorPage() {
       : ALL_OCCASIONS;
 
   const selectedStyle =
-    selectedStyleParam && selectedStyleParam !== ALL_STYLES ? selectedStyleParam : ALL_STYLES;
+    selectedStyleParam && selectedStyleParam !== ALL_STYLES
+      ? selectedStyleParam
+      : ALL_STYLES;
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -313,19 +426,29 @@ export default function GeneratorPage() {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState("match_input_image");
+  const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(
+    null
+  );
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState(
+    "match_input_image"
+  );
 
   const pollingRef = useRef<number | null>(null);
   const isPollingRef = useRef(false);
 
-  const [modal, setModal] = useState<{ open: boolean; src: string; title?: string }>({
+  const [modal, setModal] = useState<{
+    open: boolean;
+    src: string;
+    title?: string;
+  }>({
     open: false,
     src: "",
     title: "",
   });
 
-  const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">(
+    "all"
+  );
   const [generateAudio, setGenerateAudio] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
@@ -333,7 +456,10 @@ export default function GeneratorPage() {
   const { data: templates = [] } = useTemplatesQuery();
 
   const templatesList = useMemo(
-    () => (templates as AnyTemplate[]).map((t) => normalizeTemplate(t)).filter((t) => getTemplateId(t)),
+    () =>
+      (templates as AnyTemplate[])
+        .map((template) => normalizeTemplate(template))
+        .filter((template) => getTemplateId(template)),
     [templates]
   );
 
@@ -341,18 +467,32 @@ export default function GeneratorPage() {
   const userCredits: number = Number(creditsData ?? 0);
 
   const { data: jobsRaw = [] } = useJobsQuery();
-  const jobs = (jobsRaw as any[]).map((j) => j) as JobRow[];
+  const jobs = (jobsRaw as JobRow[]) || [];
 
   const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
+
+  const categoryFilteredTemplates = useMemo(() => {
+    if (selectedCategory === ALL_CATEGORIES) return templatesList;
+
+    return templatesList.filter((template) => {
+      const occasionCategory = getOccasionCategory(template.occasion);
+      const templateCategory = normalizeCategory(template.category);
+
+      return (
+        occasionCategory === selectedCategory || templateCategory === selectedCategory
+      );
+    });
+  }, [templatesList, selectedCategory]);
 
   const occasionOptions = useMemo(() => {
     const map = new Map<string, { value: string; label: string; count: number }>();
 
-    templatesList.forEach((template) => {
+    categoryFilteredTemplates.forEach((template) => {
       const key = normalizeKey(template.occasion || "other");
       if (!key) return;
 
       const existing = map.get(key);
+
       if (existing) {
         existing.count += 1;
       } else {
@@ -364,35 +504,47 @@ export default function GeneratorPage() {
       }
     });
 
-    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
-  }, [templatesList]);
+    return Array.from(map.values()).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+  }, [categoryFilteredTemplates]);
 
   const styleOptions = useMemo(() => {
     const source =
       selectedOccasion === ALL_OCCASIONS
-        ? templatesList
-        : templatesList.filter((template) => normalizeKey(template.occasion) === selectedOccasion);
+        ? categoryFilteredTemplates
+        : categoryFilteredTemplates.filter(
+            (template) => normalizeKey(template.occasion) === selectedOccasion
+          );
 
     const map = new Map<string, { value: string; label: string; count: number }>();
 
     source.forEach((template) => {
-      const key = normalizeKey(template.category || "general");
+      const styleRaw =
+        getOccasionCategory(template.occasion) !== "all"
+          ? safeString((template as any).style_id || (template as any).styleId || "general")
+          : safeString(template.category || "general");
+
+      const key = normalizeKey(styleRaw || "general");
       if (!key) return;
 
       const existing = map.get(key);
+
       if (existing) {
         existing.count += 1;
       } else {
         map.set(key, {
           value: key,
-          label: formatLabel(template.category || "General"),
+          label: formatLabel(styleRaw || "General"),
           count: 1,
         });
       }
     });
 
-    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
-  }, [templatesList, selectedOccasion]);
+    return Array.from(map.values()).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+  }, [categoryFilteredTemplates, selectedOccasion]);
 
   const aspectRatioOptions = [
     { label: "Match input", value: "match_input_image" },
@@ -411,6 +563,10 @@ export default function GeneratorPage() {
     { label: "1:2", value: "1:2" },
   ];
 
+  const selectedCategoryLabel =
+    CATEGORY_OPTIONS.find((item) => item.value === selectedCategory)?.label ||
+    "All";
+
   const selectedOccasionLabel =
     selectedOccasion === ALL_OCCASIONS
       ? "All Occasions"
@@ -420,13 +576,31 @@ export default function GeneratorPage() {
   const selectedStyleLabel =
     selectedStyle === ALL_STYLES
       ? "All Styles"
-      : styleOptions.find((item) => item.value === selectedStyle)?.label || formatLabel(selectedStyle);
+      : styleOptions.find((item) => item.value === selectedStyle)?.label ||
+        formatLabel(selectedStyle);
 
   const updateFilterParams = useCallback(
-    (updates: { occasion?: string; style?: string; type?: "all" | "image" | "video" }) => {
+    (updates: {
+      category?: CategoryKey;
+      occasion?: string;
+      style?: string;
+      type?: "all" | "image" | "video";
+    }) => {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
+
+          if (updates.category !== undefined) {
+            if (updates.category === ALL_CATEGORIES) {
+              next.delete("category");
+            } else {
+              next.set("category", updates.category);
+            }
+
+            next.delete("occasion");
+            next.delete("style");
+            next.delete("template");
+          }
 
           if (updates.occasion !== undefined) {
             if (updates.occasion === ALL_OCCASIONS) {
@@ -476,37 +650,54 @@ export default function GeneratorPage() {
   }, [queryClient]);
 
   const filteredTemplates = useMemo(() => {
-    let list = templatesList;
+    let list = categoryFilteredTemplates;
 
     if (selectedOccasion !== ALL_OCCASIONS) {
-      list = list.filter((t) => normalizeKey(t.occasion) === selectedOccasion);
+      list = list.filter((template) => {
+        return normalizeKey(template.occasion) === selectedOccasion;
+      });
     }
 
     if (selectedStyle !== ALL_STYLES) {
-      list = list.filter((t) => normalizeKey(t.category || "general") === selectedStyle);
+      list = list.filter((template) => {
+        const templateStyle = normalizeKey(
+          (template as any).style_id ||
+            (template as any).styleId ||
+            template.category ||
+            "general"
+        );
+
+        return templateStyle === selectedStyle;
+      });
     }
 
     if (typeFilter !== "all") {
-      list = list.filter((t) => String(t.type || "").toLowerCase() === typeFilter);
+      list = list.filter((template) => {
+        return String(template.type || "").toLowerCase() === typeFilter;
+      });
     }
 
     return list;
-  }, [templatesList, typeFilter, selectedOccasion, selectedStyle]);
+  }, [categoryFilteredTemplates, typeFilter, selectedOccasion, selectedStyle]);
 
   const templateMap = useMemo(() => {
     const lookup = new Map<string, AnyTemplate>();
-    templatesList.forEach((t) => {
-      const id = getTemplateId(t);
-      lookup.set(id, normalizeTemplate(t));
+
+    templatesList.forEach((template) => {
+      const id = getTemplateId(template);
+      lookup.set(id, normalizeTemplate(template));
     });
+
     return lookup;
   }, [templatesList]);
 
-  const selectedTemplateObj = selectedTemplateId ? templateMap.get(selectedTemplateId) ?? null : null;
+  const selectedTemplateObj = selectedTemplateId
+    ? templateMap.get(selectedTemplateId) ?? null
+    : null;
 
   const currentJob = useMemo(() => {
     if (!currentJobId) return null;
-    return jobs.find((j) => j.id === currentJobId) ?? null;
+    return jobs.find((job) => job.id === currentJobId) ?? null;
   }, [jobs, currentJobId]);
 
   const stopGenerationPolling = useCallback(() => {
@@ -514,18 +705,22 @@ export default function GeneratorPage() {
       window.clearInterval(pollingRef.current);
       pollingRef.current = null;
     }
+
     isPollingRef.current = false;
   }, []);
 
   const checkGenerationStatus = useCallback(
     async (generationId: string) => {
       if (isPollingRef.current) return;
+
       isPollingRef.current = true;
 
       try {
         const { data, error } = await supabase
           .from("generations")
-          .select("id, status, final_image_url, result_image_url, preview_image_url, error")
+          .select(
+            "id, status, final_image_url, result_image_url, preview_image_url, error"
+          )
           .eq("id", generationId)
           .maybeSingle();
 
@@ -541,7 +736,10 @@ export default function GeneratorPage() {
 
         const generation = data as GenerationRow;
         const imageUrl =
-          generation.final_image_url || generation.result_image_url || generation.preview_image_url || null;
+          generation.final_image_url ||
+          generation.result_image_url ||
+          generation.preview_image_url ||
+          null;
 
         if (generation.status === "completed" && imageUrl) {
           stopGenerationPolling();
@@ -549,7 +747,7 @@ export default function GeneratorPage() {
           setIsGenerating(false);
           setCurrentGenerationId(null);
           refreshCredits();
-          toast.success("🎄 Your card is ready!");
+          toast.success("Your card is ready!");
           return;
         }
 
@@ -585,11 +783,11 @@ export default function GeneratorPage() {
   }, [currentGenerationId, checkGenerationStatus, stopGenerationPolling]);
 
   useEffect(() => {
-    const urls = uploadedFiles.map((f) => URL.createObjectURL(f));
+    const urls = uploadedFiles.map((file) => URL.createObjectURL(file));
     setPreviewUrls(urls);
 
     return () => {
-      urls.forEach((u) => URL.revokeObjectURL(u));
+      urls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [uploadedFiles]);
 
@@ -601,7 +799,7 @@ export default function GeneratorPage() {
       setPreviewAfter(currentJob.result_url);
       setIsGenerating(false);
       refreshCredits();
-      toast.success("🎬 Your video is ready!");
+      toast.success("Your video is ready!");
     } else if (currentJob.status === "error") {
       setIsGenerating(false);
       refreshCredits();
@@ -624,8 +822,15 @@ export default function GeneratorPage() {
             next.set("template", id);
 
             const occasion = normalizeKey(template.occasion);
-            const style = normalizeKey(template.category || "general");
+            const style = normalizeKey(
+              (template as any).style_id ||
+                (template as any).styleId ||
+                template.category ||
+                "general"
+            );
+            const category = getOccasionCategory(occasion);
 
+            if (category !== "all") next.set("category", category);
             if (occasion) next.set("occasion", occasion);
             if (style) next.set("style", style);
 
@@ -640,42 +845,45 @@ export default function GeneratorPage() {
     [setSearchParams]
   );
 
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) return;
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || []);
+      if (files.length === 0) return;
 
-    const valid = files.filter((f) => {
-      if (f.size > 10 * 1024 * 1024) {
-        toast.error(`${f.name} is too large. Maximum 10MB.`);
-        return false;
+      const valid = files.filter((file) => {
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} is too large. Maximum 10MB.`);
+          return false;
+        }
+
+        if (!file.type.startsWith("image/")) {
+          toast.error(`${file.name} is not an image.`);
+          return false;
+        }
+
+        return true;
+      });
+
+      if (valid.length > 0) {
+        setUploadedFiles((prev) => [...prev, ...valid]);
+        toast.success(`${valid.length} photo(s) uploaded!`);
       }
 
-      if (!f.type.startsWith("image/")) {
-        toast.error(`${f.name} is not an image.`);
-        return false;
-      }
-
-      return true;
-    });
-
-    if (valid.length > 0) {
-      setUploadedFiles((prev) => [...prev, ...valid]);
-      toast.success(`${valid.length} photo(s) uploaded!`);
-    }
-
-    event.target.value = "";
-  }, []);
+      event.target.value = "";
+    },
+    []
+  );
 
   const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
 
-    const files = Array.from(event.dataTransfer.files).filter((f) =>
-      f.type.startsWith("image/")
+    const files = Array.from(event.dataTransfer.files).filter((file) =>
+      file.type.startsWith("image/")
     );
 
-    const valid = files.filter((f) => {
-      if (f.size > 10 * 1024 * 1024) {
-        toast.error(`${f.name} is too large. Maximum 10MB.`);
+    const valid = files.filter((file) => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Maximum 10MB.`);
         return false;
       }
 
@@ -709,6 +917,7 @@ export default function GeneratorPage() {
       link.href = blobUrl;
       link.download = filename;
       link.style.display = "none";
+
       document.body.appendChild(link);
       link.click();
 
@@ -735,8 +944,10 @@ export default function GeneratorPage() {
       data: { user: authUser },
     } = await supabase.auth.getUser();
 
-    const effectiveUserId = safeString(authUser?.id || (user as any)?.id) || null;
-    const effectiveEmail = safeString(authUser?.email || (user as any)?.email) || null;
+    const effectiveUserId =
+      safeString(authUser?.id || (user as any)?.id) || null;
+    const effectiveEmail =
+      safeString(authUser?.email || (user as any)?.email) || null;
 
     const templateId = getTemplateId(input.template);
     const styleId = getTemplateStyleId(input.template);
@@ -752,6 +963,7 @@ export default function GeneratorPage() {
       aspect_ratio: input.aspectRatio,
       user_id: effectiveUserId,
       email: effectiveEmail,
+      category: getOccasionCategory(input.template.occasion),
     };
 
     const { data: created, error: createError } = await supabase
@@ -805,7 +1017,7 @@ export default function GeneratorPage() {
       setCurrentGenerationId(null);
       setIsGenerating(false);
       refreshCredits();
-      toast.success("🎄 Your card is ready!");
+      toast.success("Your card is ready!");
     }
 
     return generationId;
@@ -849,6 +1061,7 @@ export default function GeneratorPage() {
           available: userCredits ?? 0,
         });
       }
+
       return;
     }
 
@@ -975,13 +1188,13 @@ export default function GeneratorPage() {
 
       <section
         onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
+        onDragOver={(event) => event.preventDefault()}
         onClick={() => document.getElementById("file-input")?.click()}
         role="button"
         tabIndex={0}
         aria-label="Upload photos. Drag and drop or click to select images."
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
             document.getElementById("file-input")?.click();
           }
         }}
@@ -999,7 +1212,9 @@ export default function GeneratorPage() {
 
         <h2 className="mb-2 text-xl font-semibold">
           {uploadedFiles.length > 0
-            ? `✅ ${uploadedFiles.length} photo${uploadedFiles.length > 1 ? "s" : ""} uploaded`
+            ? `✅ ${uploadedFiles.length} photo${
+                uploadedFiles.length > 1 ? "s" : ""
+              } uploaded`
             : "Drag & drop"}
         </h2>
 
@@ -1032,10 +1247,15 @@ export default function GeneratorPage() {
                 key={index}
                 className="group relative h-24 w-24 overflow-hidden rounded-xl border border-white/15 bg-white/[0.06]"
               >
-                <img src={url} alt={`Preview ${index + 1}`} className="h-full w-full object-cover" />
+                <img
+                  src={url}
+                  alt={`Preview ${index + 1}`}
+                  className="h-full w-full object-cover"
+                />
+
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={(event) => {
+                    event.stopPropagation();
                     handleRemoveFile(index);
                   }}
                   className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/90 text-xs font-bold text-white opacity-0 transition-opacity hover:bg-red-500 group-hover:opacity-100"
@@ -1056,10 +1276,14 @@ export default function GeneratorPage() {
             <div>
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-[#ffd976]" />
-                <h2 className="text-base font-semibold text-white">Choose your occasion and style</h2>
+                <h2 className="text-base font-semibold text-white">
+                  Choose category, occasion and style
+                </h2>
               </div>
+
               <p className="mt-1 text-sm text-[#9ca8bd]">
-                {selectedOccasionLabel} · {selectedStyleLabel} · {filteredTemplates.length} template
+                {selectedCategoryLabel} · {selectedOccasionLabel} ·{" "}
+                {selectedStyleLabel} · {filteredTemplates.length} template
                 {filteredTemplates.length === 1 ? "" : "s"}
               </p>
             </div>
@@ -1067,11 +1291,14 @@ export default function GeneratorPage() {
             <div className="flex flex-col gap-2 sm:flex-row">
               <Select
                 value={typeFilter}
-                onValueChange={(v) => setTypeFilter(v as "all" | "image" | "video")}
+                onValueChange={(value) =>
+                  setTypeFilter(value as "all" | "image" | "video")
+                }
               >
                 <SelectTrigger className="h-11 w-full min-w-[160px] rounded-2xl border-white/10 bg-black/25 text-white">
                   <SelectValue placeholder="Media type" />
                 </SelectTrigger>
+
                 <SelectContent className="border-white/15 bg-[#0b1220] text-white">
                   <SelectItem value="all">All Media</SelectItem>
                   <SelectItem value="image">Images</SelectItem>
@@ -1081,7 +1308,44 @@ export default function GeneratorPage() {
             </div>
           </div>
 
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            {CATEGORY_OPTIONS.map((category) => {
+              const Icon = category.icon;
+              const isActive = selectedCategory === category.value;
+
+              return (
+                <button
+                  key={category.value}
+                  type="button"
+                  onClick={() =>
+                    updateFilterParams({ category: category.value })
+                  }
+                  className={cn(
+                    "rounded-2xl border px-4 py-3 text-left transition",
+                    isActive
+                      ? "border-[#ffd976]/70 bg-[#ffd976] text-[#171717] shadow-[0_0_22px_rgba(255,217,118,.22)]"
+                      : "border-white/10 bg-white/[0.055] text-zinc-200 hover:bg-white/[0.09]"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4" />
+                    <span className="text-sm font-bold">{category.label}</span>
+                  </div>
+
+                  <p
+                    className={cn(
+                      "mt-1 text-xs",
+                      isActive ? "text-black/65" : "text-white/45"
+                    )}
+                  >
+                    {category.description}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mb-4 flex flex-wrap gap-2 border-t border-white/10 pt-4">
             <button
               type="button"
               onClick={() => updateFilterParams({ occasion: ALL_OCCASIONS })}
@@ -1164,8 +1428,8 @@ export default function GeneratorPage() {
       </section>
 
       <div className="mx-auto grid max-w-5xl grid-cols-2 gap-5 px-4 pb-8 md:grid-cols-3 lg:grid-cols-4">
-        {filteredTemplates.map((t) => {
-          const normalized = normalizeTemplate(t);
+        {filteredTemplates.map((template) => {
+          const normalized = normalizeTemplate(template);
           const id = getTemplateId(normalized);
           const isSelected = selectedTemplateId === id;
 
@@ -1175,16 +1439,22 @@ export default function GeneratorPage() {
               template={normalized as TemplateSummary}
               isSelected={isSelected}
               onSelect={handleTemplateSelect as any}
-              onOpenModal={(src, title) => setModal({ open: true, src, title })}
+              onOpenModal={(src, title) =>
+                setModal({ open: true, src, title })
+              }
             />
           );
         })}
 
         {filteredTemplates.length === 0 && (
           <div className="col-span-full rounded-[28px] border border-white/10 bg-white/[0.045] px-6 py-14 text-center">
-            <p className="text-lg font-semibold text-white">No templates found</p>
+            <p className="text-lg font-semibold text-white">
+              No templates found
+            </p>
+
             <p className="mt-2 text-sm text-[#9ca8bd]">
-              Try All Occasions, All Styles, or another media type.
+              Try All Categories, All Occasions, All Styles, or another media
+              type.
             </p>
           </div>
         )}
@@ -1211,11 +1481,11 @@ export default function GeneratorPage() {
         <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)]">
           {previewUrls.length > 0 ? (
             <div className="flex flex-wrap items-center justify-center gap-2">
-              {previewUrls.map((url, i) => (
+              {previewUrls.map((url, index) => (
                 <img
-                  key={i}
+                  key={index}
                   src={url}
-                  alt={`Input ${i + 1}`}
+                  alt={`Input ${index + 1}`}
                   className="max-h-[240px] max-w-full rounded-lg object-contain"
                 />
               ))}
@@ -1256,6 +1526,7 @@ export default function GeneratorPage() {
                     currentJob?.type === "video"
                       ? `video-${Date.now()}.${ext}`
                       : `generated-card-${Date.now()}.${ext}`;
+
                   void handleDownload(previewAfter, filename);
                 }}
                 className="absolute bottom-4 right-4 rounded-lg bg-[#ffd976] px-4 py-2 font-semibold text-[#1e1e1e] transition hover:brightness-110 active:scale-95"
@@ -1281,15 +1552,18 @@ export default function GeneratorPage() {
                       <Info size={18} />
                     </span>
                     <span>
-                      Video generation costs {selectedTemplateObj.creditCost ?? "X"} credits per second.
-                      Enabling "With Audio" will double the cost.
+                      Video generation costs{" "}
+                      {selectedTemplateObj.creditCost ?? "X"} credits per
+                      second. Enabling "With Audio" will double the cost.
                     </span>
                   </p>
 
                   <div className="flex flex-col gap-3 md:flex-row">
                     <textarea
                       value={customInstructions}
-                      onChange={(e) => setCustomInstructions(e.target.value)}
+                      onChange={(event) =>
+                        setCustomInstructions(event.target.value)
+                      }
                       placeholder="Optional: Add custom instructions..."
                       className="max-h-[80px] min-h-[40px] flex-1 resize-none rounded-xl border border-white/15 bg-white/[0.1] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
                       rows={3}
@@ -1298,7 +1572,9 @@ export default function GeneratorPage() {
 
                     <textarea
                       value={negativePrompt}
-                      onChange={(e) => setNegativePrompt(e.target.value.slice(0, 500))}
+                      onChange={(event) =>
+                        setNegativePrompt(event.target.value.slice(0, 500))
+                      }
                       placeholder="Negative Prompt (Optional)"
                       className="min-h-[40px] flex-1 resize-none rounded-xl border border-white/15 bg-white/[0.1] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
                       disabled={isGenerating}
@@ -1315,7 +1591,9 @@ export default function GeneratorPage() {
                         <input
                           type="checkbox"
                           checked={generateAudio}
-                          onChange={(e) => setGenerateAudio(e.target.checked)}
+                          onChange={(event) =>
+                            setGenerateAudio(event.target.checked)
+                          }
                           className="h-4 w-4"
                           disabled={isGenerating}
                         />
@@ -1337,7 +1615,9 @@ export default function GeneratorPage() {
                 <div className="flex w-full flex-col items-stretch gap-3 md:flex-row md:items-center">
                   <textarea
                     value={customInstructions}
-                    onChange={(e) => setCustomInstructions(e.target.value)}
+                    onChange={(event) =>
+                      setCustomInstructions(event.target.value)
+                    }
                     placeholder="Optional: Add custom instructions..."
                     className="max-h-[100px] min-h-[44px] flex-1 resize-none rounded-xl border border-white/15 bg-white/[0.1] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
                     rows={1}
@@ -1348,15 +1628,20 @@ export default function GeneratorPage() {
                     <Select
                       value={selectedAspectRatio}
                       onValueChange={setSelectedAspectRatio}
-                      disabled={isGenerating || uploadedFiles.length === 0 || !selectedTemplateId}
+                      disabled={
+                        isGenerating ||
+                        uploadedFiles.length === 0 ||
+                        !selectedTemplateId
+                      }
                     >
                       <SelectTrigger className="min-w-[120px] border-white/15 bg-white/[0.1] text-white">
                         <SelectValue placeholder="Aspect ratio" />
                       </SelectTrigger>
+
                       <SelectContent className="border-white/15 bg-[#0b1220] text-white">
-                        {aspectRatioOptions.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
+                        {aspectRatioOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1376,6 +1661,7 @@ export default function GeneratorPage() {
             ) : (
               <div className="flex items-center justify-between gap-3 text-sm text-[#c1c8d8]">
                 <span>Select a template to unlock generation options.</span>
+
                 <div className="hidden items-center gap-2 sm:flex">
                   <ImageIcon className="h-4 w-4" />
                   <Video className="h-4 w-4" />
