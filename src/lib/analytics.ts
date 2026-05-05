@@ -75,4 +75,4 @@ export function trackEvent(
     ...(params || {}),
     send_to: GA_ID,
   });
-}
+} 
