@@ -2,6 +2,7 @@ export const occasions = [
   {
     id: "christmas",
     title: "Christmas",
+    category: "occasions",
     label: "Cozy snowy magic",
     description: "Turn any photo into a warm, cinematic Christmas card.",
     gradientFrom: "from-[#020617]",
@@ -12,6 +13,7 @@ export const occasions = [
   {
     id: "new-years-eve",
     title: "New Year's Eve",
+    category: "occasions",
     label: "Gold & fireworks",
     description: "Sparkling countdown vibes with neon lights and confetti.",
     gradientFrom: "from-[#020617]",
@@ -22,6 +24,7 @@ export const occasions = [
   {
     id: "thanksgiving",
     title: "Thanksgiving",
+    category: "occasions",
     label: "Warm & cozy dinner",
     description: "Autumn colors, candles and a grateful, family feel.",
     gradientFrom: "from-[#7c2d12]",
@@ -32,8 +35,9 @@ export const occasions = [
   {
     id: "birthday",
     title: "Happy Birthday",
+    category: "occasions",
     label: "Party & confetti",
-    description: " balloons, cake and bright birthday energy.",
+    description: "Balloons, cake and bright birthday energy.",
     gradientFrom: "from-[#4f46e5]",
     gradientTo: "to-[#ec4899]",
     image:
@@ -42,6 +46,7 @@ export const occasions = [
   {
     id: "baby-reveal",
     title: "Baby Reveal",
+    category: "occasions",
     label: "Soft pastel surprise",
     description: "Gender reveal or baby news with dreamy pastel tones.",
     gradientFrom: "from-[#4c1d95]",
@@ -52,6 +57,7 @@ export const occasions = [
   {
     id: "new-born",
     title: "New Born",
+    category: "occasions",
     label: "Gentle & creamy",
     description: "Minimal, clean layouts that keep the baby in focus.",
     gradientFrom: "from-[#0f172a]",
@@ -62,6 +68,7 @@ export const occasions = [
   {
     id: "pregnancy",
     title: "Pregnancy",
+    category: "occasions",
     label: "Soft glow",
     description: "Elegant silhouettes, warm light and calm tones.",
     gradientFrom: "from-[#581c87]",
@@ -72,6 +79,7 @@ export const occasions = [
   {
     id: "wedding",
     title: "Wedding",
+    category: "occasions",
     label: "Timeless & elegant",
     description: "Luxury, editorial-style wedding announcement cards.",
     gradientFrom: "from-[#020617]",
@@ -82,6 +90,7 @@ export const occasions = [
   {
     id: "easter",
     title: "Easter",
+    category: "occasions",
     label: "Spring & pastel",
     description: "Fresh colors, flowers and soft daylight.",
     gradientFrom: "from-[#16a34a]",
@@ -90,8 +99,9 @@ export const occasions = [
       "https://images.unsplash.com/photo-1522071901873-411886a10004?w=400&h=300&fit=crop",
   },
   {
-    id: "valentines",
+    id: "valentines-day",
     title: "Valentine's Day",
+    category: "occasions",
     label: "Romantic glow",
     description: "Cinematic couples, roses and candlelight.",
     gradientFrom: "from-[#7f1d1d]",
@@ -102,6 +112,7 @@ export const occasions = [
   {
     id: "anniversary",
     title: "Anniversary",
+    category: "occasions",
     label: "Classy & intimate",
     description: "Elegant layouts to celebrate any milestone.",
     gradientFrom: "from-[#0f172a]",
@@ -112,6 +123,7 @@ export const occasions = [
   {
     id: "mothers-day",
     title: "Mother's Day",
+    category: "occasions",
     label: "Soft & floral",
     description: "Delicate florals and warm light for mom.",
     gradientFrom: "from-[#be123c]",
@@ -122,6 +134,7 @@ export const occasions = [
   {
     id: "fathers-day",
     title: "Father's Day",
+    category: "occasions",
     label: "Bold & clean",
     description: "Minimal, modern layouts with strong contrast.",
     gradientFrom: "from-[#0f172a]",
@@ -132,6 +145,7 @@ export const occasions = [
   {
     id: "graduation",
     title: "Graduation",
+    category: "occasions",
     label: "Caps & confetti",
     description: "Sharp, modern cards to celebrate the big day.",
     gradientFrom: "from-[#0f172a]",
@@ -139,4 +153,84 @@ export const occasions = [
     image:
       "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400&h=300&fit=crop",
   },
-];
+  {
+    id: "sorry",
+    title: "Sorry",
+    category: "personal",
+    label: "Emotional apology",
+    description: "Create a heartfelt apology card with soft, honest emotion.",
+    gradientFrom: "from-[#7f1d1d]",
+    gradientTo: "to-[#fb7185]",
+    image: "/images/occasions/sorry.png",
+  },
+  {
+    id: "name-cards",
+    title: "Name Cards",
+    category: "personal",
+    label: "Made for one person",
+    description: "Personal cards built around a name and a meaningful message.",
+    gradientFrom: "from-[#312e81]",
+    gradientTo: "to-[#ec4899]",
+    image: "/images/occasions/default.png",
+  },
+  {
+    id: "kids",
+    title: "Kids",
+    category: "personal",
+    label: "Sweet & playful",
+    description: "Colorful cards for children, family and joyful memories.",
+    gradientFrom: "from-[#0f172a]",
+    gradientTo: "to-[#38bdf8]",
+    image: "/images/occasions/default.png",
+  },
+  {
+    id: "bible-verses",
+    title: "Bible Verses",
+    category: "spiritual",
+    label: "Faith & hope",
+    description: "Beautiful spiritual cards with meaningful Bible-inspired messages.",
+    gradientFrom: "from-[#312e81]",
+    gradientTo: "to-[#f59e0b]",
+    image: "/images/occasions/default.png",
+  },
+  {
+    id: "prayer",
+    title: "Prayer",
+    category: "spiritual",
+    label: "Warm encouragement",
+    description: "Prayer cards for comfort, gratitude, hope and peace.",
+    gradientFrom: "from-[#1e1b4b]",
+    gradientTo: "to-[#a855f7]",
+    image: "/images/occasions/default.png",
+  },
+  {
+    id: "dogs",
+    title: "Dogs",
+    category: "pets",
+    label: "Cute dog moments",
+    description: "Funny, emotional and adorable cards for dog lovers.",
+    gradientFrom: "from-[#431407]",
+    gradientTo: "to-[#f97316]",
+    image: "/images/occasions/default.png",
+  },
+  {
+    id: "cats",
+    title: "Cats",
+    category: "pets",
+    label: "Playful cat cards",
+    description: "Sweet and funny cards for cat memories.",
+    gradientFrom: "from-[#0f172a]",
+    gradientTo: "to-[#22c55e]",
+    image: "/images/occasions/default.png",
+  },
+  {
+    id: "pet-loss",
+    title: "Pet Loss",
+    category: "pets",
+    label: "Gentle remembrance",
+    description: "Soft emotional cards for remembering a loved pet.",
+    gradientFrom: "from-[#111827]",
+    gradientTo: "to-[#64748b]",
+    image: "/images/occasions/default.png",
+  },
+] as const;
