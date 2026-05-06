@@ -235,7 +235,9 @@ export default function AdminFunnelPage() {
 
   const [boardSearch, setBoardSearch] = useState("");
   const [draggedSlug, setDraggedSlug] = useState<string | null>(null);
-  const [savingCollectionSlug, setSavingCollectionSlug] = useState<string | null>(null);
+  const [savingCollectionSlug, setSavingCollectionSlug] = useState<string | null>(
+    null
+  );
 
   const [selectedSlug, setSelectedSlug] = useState<string>("new_born");
   const [styleSearch, setStyleSearch] = useState("");
@@ -278,76 +280,93 @@ export default function AdminFunnelPage() {
   async function load() {
     setLoading(true);
 
-    const [templatesResult, collectionsResult] = await Promise.all([
-      supabase
-        .from("templates")
-        .select(
-          [
-            "id",
-            "title",
-            "prompt",
-            "occasion",
-            "category",
-            "main_category",
-            "style_id",
-            "isactive",
-            "is_active",
-            "preview_url",
-            "previewurl",
-            "thumbnail_url",
-            "thumbnailurl",
-            "preview_image_url",
-            "created_at",
-          ].join(",")
-        )
-        .order("created_at", { ascending: false }),
+    try {
+      const [templatesResult, collectionsResult] = await Promise.all([
+        supabase
+          .from("templates")
+          .select(
+            [
+              "id",
+              "title",
+              "prompt",
+              "occasion",
+              "category",
+              "main_category",
+              "style_id",
+              "isactive",
+              "is_active",
+              "preview_url",
+              "previewurl",
+              "thumbnail_url",
+              "thumbnailurl",
+              "preview_image_url",
+              "created_at",
+            ].join(",")
+          )
+          .order("created_at", { ascending: false }),
 
-      supabase
-        .from("occasion_collections")
-        .select(
-          [
-            "id",
-            "slug",
-            "title",
-            "main_category",
-            "label",
-            "description",
-            "image_url",
-            "gradient_from",
-            "gradient_to",
-            "sort_order",
-            "is_active",
-            "is_trending",
-            "created_at",
-            "updated_at",
-          ].join(",")
-        )
-        .order("main_category", { ascending: true })
-        .order("sort_order", { ascending: true })
-        .order("title", { ascending: true }),
-    ]);
+        supabase
+          .from("occasion_collections")
+          .select(
+            [
+              "id",
+              "slug",
+              "title",
+              "main_category",
+              "label",
+              "description",
+              "image_url",
+              "gradient_from",
+              "gradient_to",
+              "sort_order",
+              "is_active",
+              "is_trending",
+              "created_at",
+              "updated_at",
+            ].join(",")
+          )
+          .order("main_category", { ascending: true })
+          .order("sort_order", { ascending: true })
+          .order("title", { ascending: true }),
+      ]);
 
-    if (templatesResult.error) {
-      toast.error(templatesResult.error.message);
+      if (templatesResult.error) {
+        throw templatesResult.error;
+      }
+
+      if (collectionsResult.error) {
+        throw collectionsResult.error;
+      }
+
+      const nextTemplates = (templatesResult.data ?? []) as unknown as TemplateDbRow[];
+      const nextCollections = (collectionsResult.data ??
+        []) as unknown as OccasionCollectionRow[];
+
+      setTemplates(nextTemplates);
+      setCollections(nextCollections);
+
+      if (nextCollections.length > 0) {
+        const currentExists = nextCollections.some(
+          (item) => normalizeSlug(item.slug) === normalizeSlug(selectedSlug)
+        );
+
+        if (!currentExists) {
+          setSelectedSlug(normalizeSlug(nextCollections[0].slug));
+        }
+      }
+    } catch (error: any) {
+      console.error("[AdminFunnelPage] load error:", error);
+      toast.error(error?.message || "Failed to load admin funnel data");
       setTemplates([]);
-    } else {
-      setTemplates((templatesResult.data ?? []) as unknown as TemplateDbRow[]);
-    }
-
-    if (collectionsResult.error) {
-      toast.error(collectionsResult.error.message);
       setCollections([]);
-    } else {
-      setCollections(
-        (collectionsResult.data ?? []) as unknown as OccasionCollectionRow[]
-      );
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const templateStatsBySlug = useMemo(() => {
@@ -415,6 +434,7 @@ export default function AdminFunnelPage() {
           previewUrl: collection.image_url || stats?.previewUrl || null,
         };
       })
+      .filter((item) => item.slug)
       .sort((a, b) => {
         if (a.mainCategory !== b.mainCategory) {
           return a.mainCategory.localeCompare(b.mainCategory);
@@ -465,12 +485,12 @@ export default function AdminFunnelPage() {
     ).length;
 
     return {
-      totalCollections: collections.length,
+      totalCollections: groupedCollections.length,
       totalTemplates,
       activeTemplates,
       inactiveTemplates: totalTemplates - activeTemplates,
     };
-  }, [collections.length, templates]);
+  }, [groupedCollections.length, templates]);
 
   const collectionOptions = useMemo(() => {
     return groupedCollections.map((item) => ({
@@ -710,7 +730,10 @@ export default function AdminFunnelPage() {
     await load();
   }
 
-  async function moveCollectionToCategory(slugValue: string, nextCategory: MainCategory) {
+  async function moveCollectionToCategory(
+    slugValue: string,
+    nextCategory: MainCategory
+  ) {
     const slug = normalizeSlug(slugValue);
 
     if (!slug) return;
@@ -795,7 +818,9 @@ export default function AdminFunnelPage() {
 
     setCollections((current) =>
       current.map((item) =>
-        normalizeSlug(item.slug) === slug ? { ...item, is_trending: next } : item
+        normalizeSlug(item.slug) === slug
+          ? { ...item, is_trending: next }
+          : item
       )
     );
 
@@ -869,7 +894,8 @@ export default function AdminFunnelPage() {
             title: formatLabel(slug),
             label: formatLabel(slug),
             main_category: mainCategory,
-            description: "Create beautiful personalized cards for this collection.",
+            description:
+              "Create beautiful personalized cards for this collection.",
             sort_order: 999,
             is_active: true,
             is_trending: false,
@@ -1599,8 +1625,7 @@ export default function AdminFunnelPage() {
                     setCollectionForm((state) => ({
                       ...state,
                       title,
-                      slug:
-                        state.slug || (title ? normalizeSlug(title) : ""),
+                      slug: state.slug || (title ? normalizeSlug(title) : ""),
                       label: state.label || title,
                     }));
                   }}
