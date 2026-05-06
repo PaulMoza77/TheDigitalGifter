@@ -47,6 +47,7 @@ import {
   Cross,
   PawPrint,
   LayoutGrid,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -64,13 +65,39 @@ type TemplateDbRow = {
   is_active: boolean | null;
   preview_url: string | null;
   previewurl: string | null;
+  thumbnail_url: string | null;
+  thumbnailurl: string | null;
+  preview_image_url: string | null;
   created_at: string | null;
 };
 
+type OccasionCollectionRow = {
+  id: string;
+  slug: string;
+  title: string;
+  main_category: MainCategory;
+  label: string | null;
+  description: string | null;
+  image_url: string | null;
+  gradient_from: string | null;
+  gradient_to: string | null;
+  sort_order: number;
+  is_active: boolean;
+  is_trending: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 type OccasionGroup = {
-  occasion: string;
+  id: string;
+  slug: string;
+  title: string;
   label: string;
+  description: string | null;
   mainCategory: MainCategory;
+  sortOrder: number;
+  isActive: boolean;
+  isTrending: boolean;
   total: number;
   active: number;
   inactive: number;
@@ -109,77 +136,59 @@ const MAIN_CATEGORIES: Array<{
   },
 ];
 
-const OCCASIONS: Array<{ key: string; label: string }> = [
-  { key: "new_born", label: "Newborn" },
-  { key: "birthday", label: "Birthday" },
-  { key: "wedding", label: "Wedding" },
-  { key: "anniversary", label: "Anniversary" },
-  { key: "christmas", label: "Christmas" },
-  { key: "valentines_day", label: "Valentine’s Day" },
-  { key: "mothers_day", label: "Mother’s Day" },
-  { key: "fathers_day", label: "Father’s Day" },
-  { key: "graduation", label: "Graduation" },
-  { key: "baby_reveal", label: "Baby Reveal" },
-  { key: "pregnancy", label: "Pregnancy" },
-  { key: "new_years_eve", label: "New Year’s Eve" },
-  { key: "thanksgiving", label: "Thanksgiving" },
-  { key: "thank_you", label: "Thank You" },
-  { key: "sorry", label: "Sorry" },
-  { key: "name_cards", label: "Name Cards" },
-  { key: "kids", label: "Kids" },
-  { key: "bible_verses", label: "Bible Verses" },
-  { key: "prayer", label: "Prayer" },
-  { key: "dogs", label: "Dogs" },
-  { key: "cats", label: "Cats" },
-  { key: "pet_loss", label: "Pet Loss" },
-];
-
 function norm(value: unknown) {
   return String(value ?? "").trim();
 }
 
-function normalizeOccasion(value: unknown) {
-  const x = norm(value).toLowerCase();
+function normalizeSlug(value: unknown) {
+  const raw = norm(value).toLowerCase();
 
-  if (!x) return "new_born";
+  if (!raw) return "";
 
-  if (x === "newborn" || x === "new-born" || x === "new_born") {
+  if (raw === "newborn" || raw === "new-born" || raw === "new_born") {
     return "new_born";
   }
 
-  if (x === "valentines-day") return "valentines_day";
-  if (x === "mothers-day") return "mothers_day";
-  if (x === "fathers-day") return "fathers_day";
-  if (x === "new-years-eve") return "new_years_eve";
-  if (x === "baby-reveal") return "baby_reveal";
-  if (x === "thank-you") return "thank_you";
-  if (x === "name-cards") return "name_cards";
-  if (x === "bible-verses") return "bible_verses";
-  if (x === "pet-loss") return "pet_loss";
+  if (raw === "valentines-day") return "valentines_day";
+  if (raw === "mothers-day") return "mothers_day";
+  if (raw === "fathers-day") return "fathers_day";
+  if (raw === "new-years-eve") return "new_years_eve";
+  if (raw === "baby-reveal") return "baby_reveal";
+  if (raw === "thank-you") return "thank_you";
+  if (raw === "name-cards") return "name_cards";
+  if (raw === "bible-verses") return "bible_verses";
+  if (raw === "pet-loss") return "pet_loss";
 
-  return x.replace(/-/g, "_");
+  return raw
+    .replace(/[’']/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
 function normalizeMainCategory(value: unknown): MainCategory {
-  const x = norm(value).toLowerCase();
+  const raw = norm(value).toLowerCase();
 
-  if (x === "personal") return "personal";
-  if (x === "spiritual") return "spiritual";
-  if (x === "pets") return "pets";
+  if (raw === "personal") return "personal";
+  if (raw === "spiritual") return "spiritual";
+  if (raw === "pets") return "pets";
 
   return "occasions";
 }
 
-function labelForOccasion(key: string) {
-  const normalized = normalizeOccasion(key);
+function formatLabel(value: unknown) {
+  const raw = norm(value);
 
-  return (
-    OCCASIONS.find((item) => item.key === normalized)?.label ??
-    normalized
-      .replace(/[_-]+/g, " ")
-      .replace(/\s+/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase())
-  );
+  if (!raw) return "";
+
+  return raw
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/\bNew Years Eve\b/g, "New Year’s Eve")
+    .replace(/\bValentines Day\b/g, "Valentine’s Day")
+    .replace(/\bMothers Day\b/g, "Mother’s Day")
+    .replace(/\bFathers Day\b/g, "Father’s Day");
 }
 
 function labelForMainCategory(category: MainCategory) {
@@ -192,6 +201,17 @@ function makeStyleIdFromTitle(title: string) {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 60);
+}
+
+function getTemplatePreviewUrl(row: TemplateDbRow) {
+  return (
+    row.preview_url ||
+    row.previewurl ||
+    row.thumbnail_url ||
+    row.thumbnailurl ||
+    row.preview_image_url ||
+    null
+  );
 }
 
 function extractInvokeErrorMessage(err: any) {
@@ -210,21 +230,28 @@ function extractInvokeErrorMessage(err: any) {
 
 export default function AdminFunnelPage() {
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<TemplateDbRow[]>([]);
-
-  const [q, setQ] = useState("");
-  const [occasion, setOccasion] = useState<string>("new_born");
-
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [editing, setEditing] = useState<TemplateDbRow | null>(null);
+  const [templates, setTemplates] = useState<TemplateDbRow[]>([]);
+  const [collections, setCollections] = useState<OccasionCollectionRow[]>([]);
 
   const [boardSearch, setBoardSearch] = useState("");
-  const [draggedOccasion, setDraggedOccasion] = useState<string | null>(null);
-  const [savingOccasion, setSavingOccasion] = useState<string | null>(null);
+  const [draggedSlug, setDraggedSlug] = useState<string | null>(null);
+  const [savingCollectionSlug, setSavingCollectionSlug] = useState<string | null>(null);
 
-  const [form, setForm] = useState({
+  const [selectedSlug, setSelectedSlug] = useState<string>("new_born");
+  const [styleSearch, setStyleSearch] = useState("");
+
+  const [styleDialogOpen, setStyleDialogOpen] = useState(false);
+  const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
+
+  const [savingStyle, setSavingStyle] = useState(false);
+  const [savingCollection, setSavingCollection] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const [editingStyle, setEditingStyle] = useState<TemplateDbRow | null>(null);
+  const [editingCollection, setEditingCollection] =
+    useState<OccasionCollectionRow | null>(null);
+
+  const [styleForm, setStyleForm] = useState({
     occasion: "new_born",
     main_category: "occasions" as MainCategory,
     title: "",
@@ -234,37 +261,88 @@ export default function AdminFunnelPage() {
     ai_notes: "",
   });
 
+  const [collectionForm, setCollectionForm] = useState({
+    slug: "",
+    title: "",
+    main_category: "occasions" as MainCategory,
+    label: "",
+    description: "",
+    image_url: "",
+    gradient_from: "from-[#020617]",
+    gradient_to: "to-[#1d4ed8]",
+    sort_order: 999,
+    is_active: true,
+    is_trending: false,
+  });
+
   async function load() {
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("templates")
-      .select(
-        [
-          "id",
-          "title",
-          "prompt",
-          "occasion",
-          "category",
-          "main_category",
-          "style_id",
-          "isactive",
-          "is_active",
-          "preview_url",
-          "previewurl",
-          "created_at",
-        ].join(",")
-      )
-      .order("created_at", { ascending: false });
+    const [templatesResult, collectionsResult] = await Promise.all([
+      supabase
+        .from("templates")
+        .select(
+          [
+            "id",
+            "title",
+            "prompt",
+            "occasion",
+            "category",
+            "main_category",
+            "style_id",
+            "isactive",
+            "is_active",
+            "preview_url",
+            "previewurl",
+            "thumbnail_url",
+            "thumbnailurl",
+            "preview_image_url",
+            "created_at",
+          ].join(",")
+        )
+        .order("created_at", { ascending: false }),
 
-    if (error) {
-      toast.error(error.message);
-      setRows([]);
-      setLoading(false);
-      return;
+      supabase
+        .from("occasion_collections")
+        .select(
+          [
+            "id",
+            "slug",
+            "title",
+            "main_category",
+            "label",
+            "description",
+            "image_url",
+            "gradient_from",
+            "gradient_to",
+            "sort_order",
+            "is_active",
+            "is_trending",
+            "created_at",
+            "updated_at",
+          ].join(",")
+        )
+        .order("main_category", { ascending: true })
+        .order("sort_order", { ascending: true })
+        .order("title", { ascending: true }),
+    ]);
+
+    if (templatesResult.error) {
+      toast.error(templatesResult.error.message);
+      setTemplates([]);
+    } else {
+      setTemplates((templatesResult.data ?? []) as unknown as TemplateDbRow[]);
     }
 
-    setRows((data ?? []) as unknown as TemplateDbRow[]);
+    if (collectionsResult.error) {
+      toast.error(collectionsResult.error.message);
+      setCollections([]);
+    } else {
+      setCollections(
+        (collectionsResult.data ?? []) as unknown as OccasionCollectionRow[]
+      );
+    }
+
     setLoading(false);
   }
 
@@ -272,19 +350,25 @@ export default function AdminFunnelPage() {
     void load();
   }, []);
 
-  const groupedOccasions = useMemo(() => {
-    const map = new Map<string, OccasionGroup>();
+  const templateStatsBySlug = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        total: number;
+        active: number;
+        inactive: number;
+        previewUrl: string | null;
+      }
+    >();
 
-    rows.forEach((row) => {
-      const normalizedOccasion = normalizeOccasion(row.occasion);
+    templates.forEach((template) => {
+      const slug = normalizeSlug(template.occasion);
+      if (!slug) return;
 
-      if (!normalizedOccasion) return;
+      const isActive = template.is_active ?? template.isactive ?? true;
+      const previewUrl = getTemplatePreviewUrl(template);
 
-      const mainCategory = normalizeMainCategory(row.main_category);
-      const isActive = row.is_active ?? row.isactive ?? true;
-      const previewUrl = row.preview_url || row.previewurl || null;
-
-      const existing = map.get(normalizedOccasion);
+      const existing = map.get(slug);
 
       if (existing) {
         existing.total += 1;
@@ -298,10 +382,7 @@ export default function AdminFunnelPage() {
         return;
       }
 
-      map.set(normalizedOccasion, {
-        occasion: normalizedOccasion,
-        label: labelForOccasion(normalizedOccasion),
-        mainCategory,
+      map.set(slug, {
         total: 1,
         active: isActive ? 1 : 0,
         inactive: isActive ? 0 : 1,
@@ -309,26 +390,60 @@ export default function AdminFunnelPage() {
       });
     });
 
-    return Array.from(map.values()).sort((a, b) =>
-      a.label.localeCompare(b.label)
-    );
-  }, [rows]);
+    return map;
+  }, [templates]);
 
-  const boardFilteredOccasions = useMemo(() => {
+  const groupedCollections = useMemo(() => {
+    return collections
+      .map<OccasionGroup>((collection) => {
+        const slug = normalizeSlug(collection.slug);
+        const stats = templateStatsBySlug.get(slug);
+
+        return {
+          id: collection.id,
+          slug,
+          title: collection.title,
+          label: collection.label || collection.title,
+          description: collection.description,
+          mainCategory: normalizeMainCategory(collection.main_category),
+          sortOrder: collection.sort_order ?? 999,
+          isActive: collection.is_active !== false,
+          isTrending: collection.is_trending === true,
+          total: stats?.total ?? 0,
+          active: stats?.active ?? 0,
+          inactive: stats?.inactive ?? 0,
+          previewUrl: collection.image_url || stats?.previewUrl || null,
+        };
+      })
+      .sort((a, b) => {
+        if (a.mainCategory !== b.mainCategory) {
+          return a.mainCategory.localeCompare(b.mainCategory);
+        }
+
+        if (a.sortOrder !== b.sortOrder) {
+          return a.sortOrder - b.sortOrder;
+        }
+
+        return a.title.localeCompare(b.title);
+      });
+  }, [collections, templateStatsBySlug]);
+
+  const boardFilteredCollections = useMemo(() => {
     const search = boardSearch.trim().toLowerCase();
 
-    if (!search) return groupedOccasions;
+    if (!search) return groupedCollections;
 
-    return groupedOccasions.filter((item) => {
+    return groupedCollections.filter((item) => {
       return (
+        item.title.toLowerCase().includes(search) ||
         item.label.toLowerCase().includes(search) ||
-        item.occasion.toLowerCase().includes(search) ||
+        item.slug.toLowerCase().includes(search) ||
         item.mainCategory.toLowerCase().includes(search)
       );
     });
-  }, [groupedOccasions, boardSearch]);
+  }, [groupedCollections, boardSearch]);
 
-  const occasionsByCategory = useMemo(() => {
+  const collectionsByCategory = useMemo(() => {
     const grouped: Record<MainCategory, OccasionGroup[]> = {
       occasions: [],
       personal: [],
@@ -336,77 +451,130 @@ export default function AdminFunnelPage() {
       pets: [],
     };
 
-    boardFilteredOccasions.forEach((item) => {
+    boardFilteredCollections.forEach((item) => {
       grouped[item.mainCategory].push(item);
     });
 
     return grouped;
-  }, [boardFilteredOccasions]);
+  }, [boardFilteredCollections]);
 
   const dashboardStats = useMemo(() => {
-    const totalTemplates = rows.length;
-    const activeTemplates = rows.filter(
+    const totalTemplates = templates.length;
+    const activeTemplates = templates.filter(
       (row) => row.is_active ?? row.isactive ?? true
     ).length;
 
     return {
-      totalOccasions: groupedOccasions.length,
+      totalCollections: collections.length,
       totalTemplates,
       activeTemplates,
       inactiveTemplates: totalTemplates - activeTemplates,
     };
-  }, [groupedOccasions.length, rows]);
+  }, [collections.length, templates]);
 
-  const filtered = useMemo(() => {
-    const nq = q.trim().toLowerCase();
-    const occ = normalizeOccasion(occasion);
+  const collectionOptions = useMemo(() => {
+    return groupedCollections.map((item) => ({
+      value: item.slug,
+      label: item.title,
+      mainCategory: item.mainCategory,
+    }));
+  }, [groupedCollections]);
 
-    return (rows ?? []).filter((row) => {
-      const rocc = normalizeOccasion(row.occasion ?? "");
-      if (rocc !== occ) return false;
-      if (!nq) return true;
+  const selectedCollection = useMemo(() => {
+    return groupedCollections.find((item) => item.slug === selectedSlug) ?? null;
+  }, [groupedCollections, selectedSlug]);
+
+  const filteredStyles = useMemo(() => {
+    const search = styleSearch.trim().toLowerCase();
+
+    return templates.filter((row) => {
+      const slug = normalizeSlug(row.occasion);
+      if (slug !== selectedSlug) return false;
+
+      if (!search) return true;
 
       const hay = `${row.title ?? ""} ${row.style_id ?? ""} ${
         row.prompt ?? ""
-      }`.toLowerCase();
+      } ${row.category ?? ""}`.toLowerCase();
 
-      return hay.includes(nq);
+      return hay.includes(search);
     });
-  }, [rows, q, occasion]);
+  }, [templates, selectedSlug, styleSearch]);
 
-  const stats = useMemo(() => {
-    const occ = normalizeOccasion(occasion);
-    const inOcc = (rows ?? []).filter(
-      (row) => normalizeOccasion(row.occasion ?? "") === occ
-    );
+  const selectedStyleStats = useMemo(() => {
+    const stats = templateStatsBySlug.get(selectedSlug);
 
-    const total = inOcc.length;
-    const active = inOcc.filter(
-      (row) => row.is_active ?? row.isactive ?? true
-    ).length;
-    const inactive = total - active;
+    return {
+      total: stats?.total ?? 0,
+      active: stats?.active ?? 0,
+      inactive: stats?.inactive ?? 0,
+    };
+  }, [templateStatsBySlug, selectedSlug]);
 
-    return { total, active, inactive };
-  }, [rows, occasion]);
+  function getMainCategoryForSlug(slugValue: string): MainCategory {
+    const slug = normalizeSlug(slugValue);
 
-  function getMainCategoryForOccasion(occasionKey: string): MainCategory {
-    const normalized = normalizeOccasion(occasionKey);
+    const collection = groupedCollections.find((item) => item.slug === slug);
 
-    const found = groupedOccasions.find(
-      (item) => item.occasion === normalized
-    );
-
-    return found?.mainCategory ?? "occasions";
+    return collection?.mainCategory ?? "occasions";
   }
 
-  function openCreate() {
-    setEditing(null);
+  function openCreateCollection(category: MainCategory = "occasions") {
+    setEditingCollection(null);
 
-    const occ = normalizeOccasion(occasion);
+    setCollectionForm({
+      slug: "",
+      title: "",
+      main_category: category,
+      label: "",
+      description: "",
+      image_url: "",
+      gradient_from: "from-[#020617]",
+      gradient_to: "to-[#1d4ed8]",
+      sort_order: 999,
+      is_active: true,
+      is_trending: false,
+    });
 
-    setForm({
-      occasion: occ,
-      main_category: getMainCategoryForOccasion(occ),
+    setCollectionDialogOpen(true);
+  }
+
+  function openEditCollection(slugValue: string) {
+    const slug = normalizeSlug(slugValue);
+    const collection = collections.find(
+      (item) => normalizeSlug(item.slug) === slug
+    );
+
+    if (!collection) {
+      toast.error("Collection not found");
+      return;
+    }
+
+    setEditingCollection(collection);
+
+    setCollectionForm({
+      slug: collection.slug,
+      title: collection.title,
+      main_category: normalizeMainCategory(collection.main_category),
+      label: collection.label || "",
+      description: collection.description || "",
+      image_url: collection.image_url || "",
+      gradient_from: collection.gradient_from || "from-[#020617]",
+      gradient_to: collection.gradient_to || "to-[#1d4ed8]",
+      sort_order: collection.sort_order ?? 999,
+      is_active: collection.is_active !== false,
+      is_trending: collection.is_trending === true,
+    });
+
+    setCollectionDialogOpen(true);
+  }
+
+  function openCreateStyle() {
+    setEditingStyle(null);
+
+    setStyleForm({
+      occasion: selectedSlug,
+      main_category: getMainCategoryForSlug(selectedSlug),
       title: "",
       style_id: "",
       prompt: "",
@@ -414,17 +582,19 @@ export default function AdminFunnelPage() {
       ai_notes: "",
     });
 
-    setOpen(true);
+    setStyleDialogOpen(true);
   }
 
-  function openEdit(row: TemplateDbRow) {
-    setEditing(row);
+  function openEditStyle(row: TemplateDbRow) {
+    const slug = normalizeSlug(row.occasion ?? selectedSlug);
 
-    const occ = normalizeOccasion(row.occasion ?? occasion);
+    setEditingStyle(row);
 
-    setForm({
-      occasion: occ,
-      main_category: normalizeMainCategory(row.main_category),
+    setStyleForm({
+      occasion: slug,
+      main_category: normalizeMainCategory(
+        row.main_category || getMainCategoryForSlug(slug)
+      ),
       title: row.title ?? "",
       style_id: row.style_id ?? "",
       prompt: row.prompt ?? "",
@@ -432,109 +602,240 @@ export default function AdminFunnelPage() {
       ai_notes: "",
     });
 
-    setOpen(true);
+    setStyleDialogOpen(true);
   }
 
-  async function moveOccasionToCategory(
-    occasionKey: string,
-    nextCategory: MainCategory
-  ) {
-    const normalizedOccasion = normalizeOccasion(occasionKey);
+  async function saveCollection() {
+    const nextSlug = normalizeSlug(collectionForm.slug || collectionForm.title);
+    const nextTitle = norm(collectionForm.title);
 
-    if (!normalizedOccasion) return;
-
-    setSavingOccasion(normalizedOccasion);
-
-    const previousRows = rows;
-
-    setRows((currentRows) =>
-      currentRows.map((row) => {
-        if (normalizeOccasion(row.occasion) !== normalizedOccasion) return row;
-
-        return {
-          ...row,
-          main_category: nextCategory,
-        };
-      })
-    );
-
-    const { error } = await supabase
-      .from("templates")
-      .update({ main_category: nextCategory })
-      .eq("occasion", normalizedOccasion);
-
-    if (error) {
-      setRows(previousRows);
-      toast.error(error.message);
-      setSavingOccasion(null);
+    if (!nextSlug) {
+      toast.error("Slug is required");
       return;
     }
 
-    toast.success(
-      `${labelForOccasion(normalizedOccasion)} moved to ${labelForMainCategory(
-        nextCategory
-      )}`
-    );
+    if (!nextTitle) {
+      toast.error("Title is required");
+      return;
+    }
 
-    setSavingOccasion(null);
+    setSavingCollection(true);
+
+    try {
+      const payload = {
+        slug: nextSlug,
+        title: nextTitle,
+        main_category: normalizeMainCategory(collectionForm.main_category),
+        label: norm(collectionForm.label) || nextTitle,
+        description: norm(collectionForm.description) || null,
+        image_url: norm(collectionForm.image_url) || null,
+        gradient_from: norm(collectionForm.gradient_from) || "from-[#020617]",
+        gradient_to: norm(collectionForm.gradient_to) || "to-[#1d4ed8]",
+        sort_order: Number(collectionForm.sort_order || 999),
+        is_active: !!collectionForm.is_active,
+        is_trending: !!collectionForm.is_trending,
+      };
+
+      if (editingCollection?.id) {
+        const oldSlug = normalizeSlug(editingCollection.slug);
+
+        const { error: updateCollectionError } = await supabase
+          .from("occasion_collections")
+          .update(payload)
+          .eq("id", editingCollection.id);
+
+        if (updateCollectionError) throw updateCollectionError;
+
+        if (oldSlug !== nextSlug) {
+          const { error: updateTemplatesSlugError } = await supabase
+            .from("templates")
+            .update({
+              occasion: nextSlug,
+              main_category: payload.main_category,
+            })
+            .eq("occasion", oldSlug);
+
+          if (updateTemplatesSlugError) throw updateTemplatesSlugError;
+        } else {
+          const { error: updateTemplatesCategoryError } = await supabase
+            .from("templates")
+            .update({
+              main_category: payload.main_category,
+            })
+            .eq("occasion", nextSlug);
+
+          if (updateTemplatesCategoryError) throw updateTemplatesCategoryError;
+        }
+
+        toast.success("Collection updated");
+      } else {
+        const { error: insertError } = await supabase
+          .from("occasion_collections")
+          .insert(payload);
+
+        if (insertError) throw insertError;
+
+        toast.success("Collection created");
+      }
+
+      setSelectedSlug(nextSlug);
+      setCollectionDialogOpen(false);
+      await load();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save collection");
+    } finally {
+      setSavingCollection(false);
+    }
   }
 
-  async function toggleOccasionActive(occasionKey: string, next: boolean) {
-    const normalizedOccasion = normalizeOccasion(occasionKey);
+  async function deleteCollection(collection: OccasionGroup) {
+    if (collection.total > 0) {
+      toast.error("Cannot delete a collection that still has templates.");
+      return;
+    }
 
-    if (!normalizedOccasion) return;
-
-    const previousRows = rows;
-
-    setRows((currentRows) =>
-      currentRows.map((row) => {
-        if (normalizeOccasion(row.occasion) !== normalizedOccasion) return row;
-
-        return {
-          ...row,
-          isactive: next,
-          is_active: next,
-        };
-      })
-    );
+    if (!confirm(`Delete ${collection.title}?`)) return;
 
     const { error } = await supabase
-      .from("templates")
-      .update({
-        isactive: next,
-        is_active: next,
-      })
-      .eq("occasion", normalizedOccasion);
+      .from("occasion_collections")
+      .delete()
+      .eq("slug", collection.slug);
 
     if (error) {
-      setRows(previousRows);
       toast.error(error.message);
       return;
     }
 
-    toast.success(next ? "Occasion enabled" : "Occasion disabled");
+    toast.success("Collection deleted");
+    await load();
   }
 
-  async function save() {
+  async function moveCollectionToCategory(slugValue: string, nextCategory: MainCategory) {
+    const slug = normalizeSlug(slugValue);
+
+    if (!slug) return;
+
+    setSavingCollectionSlug(slug);
+
+    const previousCollections = collections;
+    const previousTemplates = templates;
+
+    setCollections((current) =>
+      current.map((item) =>
+        normalizeSlug(item.slug) === slug
+          ? { ...item, main_category: nextCategory }
+          : item
+      )
+    );
+
+    setTemplates((current) =>
+      current.map((item) =>
+        normalizeSlug(item.occasion) === slug
+          ? { ...item, main_category: nextCategory }
+          : item
+      )
+    );
+
+    try {
+      const { error: collectionError } = await supabase
+        .from("occasion_collections")
+        .update({ main_category: nextCategory })
+        .eq("slug", slug);
+
+      if (collectionError) throw collectionError;
+
+      const { error: templatesError } = await supabase
+        .from("templates")
+        .update({ main_category: nextCategory })
+        .eq("occasion", slug);
+
+      if (templatesError) throw templatesError;
+
+      toast.success(
+        `${formatLabel(slug)} moved to ${labelForMainCategory(nextCategory)}`
+      );
+    } catch (error: any) {
+      setCollections(previousCollections);
+      setTemplates(previousTemplates);
+      toast.error(error?.message || "Failed to move collection");
+    } finally {
+      setSavingCollectionSlug(null);
+    }
+  }
+
+  async function toggleCollectionActive(slugValue: string, next: boolean) {
+    const slug = normalizeSlug(slugValue);
+
+    const previousCollections = collections;
+
+    setCollections((current) =>
+      current.map((item) =>
+        normalizeSlug(item.slug) === slug ? { ...item, is_active: next } : item
+      )
+    );
+
+    const { error } = await supabase
+      .from("occasion_collections")
+      .update({ is_active: next })
+      .eq("slug", slug);
+
+    if (error) {
+      setCollections(previousCollections);
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success(next ? "Collection visible" : "Collection hidden");
+  }
+
+  async function toggleCollectionTrending(slugValue: string, next: boolean) {
+    const slug = normalizeSlug(slugValue);
+
+    const previousCollections = collections;
+
+    setCollections((current) =>
+      current.map((item) =>
+        normalizeSlug(item.slug) === slug ? { ...item, is_trending: next } : item
+      )
+    );
+
+    const { error } = await supabase
+      .from("occasion_collections")
+      .update({ is_trending: next })
+      .eq("slug", slug);
+
+    if (error) {
+      setCollections(previousCollections);
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success(next ? "Added to trending" : "Removed from trending");
+  }
+
+  async function saveStyle() {
+    const slug = normalizeSlug(styleForm.occasion);
+    const mainCategory = normalizeMainCategory(styleForm.main_category);
+
     const payload = {
-      occasion: normalizeOccasion(form.occasion),
-      main_category: normalizeMainCategory(form.main_category),
-      title: norm(form.title) || null,
+      occasion: slug,
+      main_category: mainCategory,
+      title: norm(styleForm.title) || null,
       style_id:
-        norm(form.style_id) ||
-        (norm(form.title) ? makeStyleIdFromTitle(form.title) : null),
-      prompt: norm(form.prompt) || null,
-      isactive: !!form.isactive,
-      is_active: !!form.isactive,
+        norm(styleForm.style_id) ||
+        (norm(styleForm.title) ? makeStyleIdFromTitle(styleForm.title) : null),
+      prompt: norm(styleForm.prompt) || null,
+      category: "General",
+      type: "image",
+      isactive: !!styleForm.isactive,
+      is_active: !!styleForm.isactive,
+      creditcost: 1,
+      credit_cost: 1,
+      tags: [],
     };
 
     if (!payload.occasion) {
-      toast.error("Occasion is required");
-      return;
-    }
-
-    if (!payload.main_category) {
-      toast.error("Main category is required");
+      toast.error("Collection is required");
       return;
     }
 
@@ -553,14 +854,37 @@ export default function AdminFunnelPage() {
       return;
     }
 
-    setSaving(true);
+    setSavingStyle(true);
 
     try {
-      if (editing?.id) {
+      const collectionExists = collections.some(
+        (item) => normalizeSlug(item.slug) === slug
+      );
+
+      if (!collectionExists) {
+        const { error: collectionError } = await supabase
+          .from("occasion_collections")
+          .insert({
+            slug,
+            title: formatLabel(slug),
+            label: formatLabel(slug),
+            main_category: mainCategory,
+            description: "Create beautiful personalized cards for this collection.",
+            sort_order: 999,
+            is_active: true,
+            is_trending: false,
+            gradient_from: "from-[#020617]",
+            gradient_to: "to-[#1d4ed8]",
+          });
+
+        if (collectionError) throw collectionError;
+      }
+
+      if (editingStyle?.id) {
         const { error } = await supabase
           .from("templates")
           .update(payload)
-          .eq("id", editing.id);
+          .eq("id", editingStyle.id);
 
         if (error) throw error;
 
@@ -573,23 +897,22 @@ export default function AdminFunnelPage() {
         toast.success("Style created");
       }
 
-      setOpen(false);
+      setSelectedSlug(slug);
+      setStyleDialogOpen(false);
       await load();
     } catch (error: any) {
-      toast.error(error?.message || "Failed to save");
+      toast.error(error?.message || "Failed to save style");
     } finally {
-      setSaving(false);
+      setSavingStyle(false);
     }
   }
 
-  async function toggleActive(row: TemplateDbRow, next: boolean) {
+  async function toggleStyleActive(row: TemplateDbRow, next: boolean) {
     const prev = row.is_active ?? row.isactive ?? true;
 
-    setRows((currentRows) =>
-      currentRows.map((item) =>
-        item.id === row.id
-          ? { ...item, isactive: next, is_active: next }
-          : item
+    setTemplates((current) =>
+      current.map((item) =>
+        item.id === row.id ? { ...item, isactive: next, is_active: next } : item
       )
     );
 
@@ -599,8 +922,8 @@ export default function AdminFunnelPage() {
       .eq("id", row.id);
 
     if (error) {
-      setRows((currentRows) =>
-        currentRows.map((item) =>
+      setTemplates((current) =>
+        current.map((item) =>
           item.id === row.id
             ? { ...item, isactive: prev, is_active: prev }
             : item
@@ -611,7 +934,7 @@ export default function AdminFunnelPage() {
     }
   }
 
-  async function del(row: TemplateDbRow) {
+  async function deleteStyle(row: TemplateDbRow) {
     if (!confirm("Delete this style?")) return;
 
     const { error } = await supabase.from("templates").delete().eq("id", row.id);
@@ -621,16 +944,16 @@ export default function AdminFunnelPage() {
       return;
     }
 
-    toast.success("Deleted");
+    toast.success("Style deleted");
     await load();
   }
 
   async function generateWithAI() {
-    const occ = normalizeOccasion(form.occasion);
-    const notes = norm(form.ai_notes);
+    const slug = normalizeSlug(styleForm.occasion);
+    const notes = norm(styleForm.ai_notes);
 
-    if (!occ) {
-      toast.error("Pick an occasion first");
+    if (!slug) {
+      toast.error("Pick a collection first");
       return;
     }
 
@@ -653,10 +976,10 @@ export default function AdminFunnelPage() {
 
       const { data, error } = await supabase.functions.invoke("generate-style", {
         body: {
-          occasion: occ,
+          occasion: slug,
           notes,
-          existing_style_ids: (rows ?? [])
-            .filter((row) => normalizeOccasion(row.occasion ?? "") === occ)
+          existing_style_ids: templates
+            .filter((row) => normalizeSlug(row.occasion) === slug)
             .map((row) => row.style_id)
             .filter(Boolean),
         },
@@ -672,20 +995,20 @@ export default function AdminFunnelPage() {
       }
 
       const title = norm((data as any)?.title);
-      const style_id =
+      const styleId =
         norm((data as any)?.style_id) ||
         (title ? makeStyleIdFromTitle(title) : "");
       const prompt = norm((data as any)?.prompt);
 
       if (!title || !prompt) {
-        toast.error("AI response invalid (missing title/prompt)");
+        toast.error("AI response invalid. Missing title/prompt.");
         return;
       }
 
-      setForm((state) => ({
+      setStyleForm((state) => ({
         ...state,
         title,
-        style_id: style_id || state.style_id,
+        style_id: styleId || state.style_id,
         prompt,
       }));
 
@@ -711,12 +1034,12 @@ export default function AdminFunnelPage() {
           </h1>
 
           <p className="mt-1 max-w-3xl text-sm text-slate-400">
-            Controlează categoriile principale, ocaziile și stilurile folosite
+            Controlează categoriile principale, colecțiile și stilurile folosite
             în Home, Templates, Generator și Funnel Style Select.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             className="rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
@@ -729,7 +1052,16 @@ export default function AdminFunnelPage() {
             Refresh
           </Button>
 
-          <Button className="rounded-xl" onClick={openCreate}>
+          <Button
+            variant="outline"
+            className="rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
+            onClick={() => openCreateCollection()}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New collection
+          </Button>
+
+          <Button className="rounded-xl" onClick={openCreateStyle}>
             <Plus className="mr-2 h-4 w-4" />
             New style
           </Button>
@@ -742,7 +1074,7 @@ export default function AdminFunnelPage() {
             <CardDescription className="text-slate-400">
               Collections
             </CardDescription>
-            <CardTitle>{dashboardStats.totalOccasions}</CardTitle>
+            <CardTitle>{dashboardStats.totalCollections}</CardTitle>
           </CardHeader>
         </Card>
 
@@ -757,9 +1089,7 @@ export default function AdminFunnelPage() {
 
         <Card className="rounded-2xl border-slate-800 bg-slate-950 text-slate-50">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400">
-              Active
-            </CardDescription>
+            <CardDescription className="text-slate-400">Active</CardDescription>
             <CardTitle className="text-emerald-300">
               {dashboardStats.activeTemplates}
             </CardTitle>
@@ -786,7 +1116,7 @@ export default function AdminFunnelPage() {
           </CardTitle>
 
           <CardDescription className="text-slate-400">
-            Drag & drop o ocazie între coloane pentru a o muta între
+            Drag & drop o colecție între coloane pentru a o muta între
             Occasions, Personal, Spiritual și Pets.
           </CardDescription>
         </CardHeader>
@@ -798,7 +1128,7 @@ export default function AdminFunnelPage() {
             <Input
               value={boardSearch}
               onChange={(event) => setBoardSearch(event.target.value)}
-              placeholder="Search occasion, collection or category..."
+              placeholder="Search collection or category..."
               className="rounded-xl border-slate-800 bg-slate-900 pl-9 text-slate-100 placeholder:text-slate-500"
             />
           </div>
@@ -806,7 +1136,7 @@ export default function AdminFunnelPage() {
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
             {MAIN_CATEGORIES.map((column) => {
               const Icon = column.icon;
-              const items = occasionsByCategory[column.key];
+              const items = collectionsByCategory[column.key];
 
               return (
                 <Card
@@ -815,16 +1145,16 @@ export default function AdminFunnelPage() {
                   onDrop={(event) => {
                     event.preventDefault();
 
-                    const droppedOccasion =
-                      draggedOccasion ||
+                    const droppedSlug =
+                      draggedSlug ||
                       event.dataTransfer.getData("text/plain") ||
                       "";
 
-                    setDraggedOccasion(null);
+                    setDraggedSlug(null);
 
-                    if (!droppedOccasion) return;
+                    if (!droppedSlug) return;
 
-                    void moveOccasionToCategory(droppedOccasion, column.key);
+                    void moveCollectionToCategory(droppedSlug, column.key);
                   }}
                   className="min-h-[460px] rounded-2xl border-slate-800 bg-slate-900/40 text-slate-50"
                 >
@@ -841,10 +1171,19 @@ export default function AdminFunnelPage() {
                         </CardDescription>
                       </div>
 
-                      <Badge className="rounded-xl border border-slate-800 bg-slate-950 text-slate-200">
-                        {items.length}
-                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
+                        onClick={() => openCreateCollection(column.key)}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
+
+                    <Badge className="mt-2 w-fit rounded-xl border border-slate-800 bg-slate-950 text-slate-200">
+                      {items.length} collections
+                    </Badge>
                   </CardHeader>
 
                   <CardContent className="space-y-3">
@@ -858,22 +1197,18 @@ export default function AdminFunnelPage() {
                       </div>
                     ) : (
                       items.map((item) => {
-                        const isSaving = savingOccasion === item.occasion;
-                        const isEnabled = item.active > 0;
+                        const isSaving = savingCollectionSlug === item.slug;
 
                         return (
                           <div
-                            key={item.occasion}
+                            key={item.slug}
                             draggable
                             onDragStart={(event) => {
-                              setDraggedOccasion(item.occasion);
-                              event.dataTransfer.setData(
-                                "text/plain",
-                                item.occasion
-                              );
+                              setDraggedSlug(item.slug);
+                              event.dataTransfer.setData("text/plain", item.slug);
                               event.dataTransfer.effectAllowed = "move";
                             }}
-                            onDragEnd={() => setDraggedOccasion(null)}
+                            onDragEnd={() => setDraggedSlug(null)}
                             className={cn(
                               "group cursor-grab rounded-2xl border border-slate-800 bg-slate-950/80 p-3 transition active:cursor-grabbing",
                               "hover:border-slate-700 hover:bg-slate-950",
@@ -885,7 +1220,7 @@ export default function AdminFunnelPage() {
                                 {item.previewUrl ? (
                                   <img
                                     src={item.previewUrl}
-                                    alt={item.label}
+                                    alt={item.title}
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
@@ -895,15 +1230,19 @@ export default function AdminFunnelPage() {
 
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedSlug(item.slug)}
+                                    className="min-w-0 text-left"
+                                  >
                                     <div className="truncate text-sm font-semibold text-slate-50">
-                                      {item.label}
+                                      {item.title}
                                     </div>
 
                                     <div className="truncate text-xs text-slate-500">
-                                      {item.occasion}
+                                      {item.slug}
                                     </div>
-                                  </div>
+                                  </button>
 
                                   <GripVertical className="h-4 w-4 shrink-0 text-slate-500 group-hover:text-slate-300" />
                                 </div>
@@ -916,34 +1255,59 @@ export default function AdminFunnelPage() {
                                   <Badge className="rounded-lg border border-slate-800 bg-emerald-950/30 text-[10px] text-emerald-200">
                                     {item.active} active
                                   </Badge>
+
+                                  {item.isTrending ? (
+                                    <Badge className="rounded-lg border border-amber-500/20 bg-amber-950/30 text-[10px] text-amber-200">
+                                      trending
+                                    </Badge>
+                                  ) : null}
                                 </div>
                               </div>
                             </div>
 
                             <Separator className="my-3 bg-slate-800" />
 
-                            <div className="flex items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                               <div className="flex items-center gap-2 text-xs text-slate-400">
-                                {isEnabled ? (
+                                {item.isActive ? (
                                   <Eye className="h-3.5 w-3.5 text-emerald-300" />
                                 ) : (
                                   <EyeOff className="h-3.5 w-3.5 text-rose-300" />
                                 )}
-                                {isEnabled ? "Visible" : "Hidden"}
+                                {item.isActive ? "Visible" : "Hidden"}
                               </div>
 
                               <div className="flex items-center gap-2">
-                                <Label className="text-xs text-slate-500">
-                                  Active
-                                </Label>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void toggleCollectionTrending(
+                                      item.slug,
+                                      !item.isTrending
+                                    )
+                                  }
+                                  className={cn(
+                                    "rounded-lg border px-2 py-1 text-xs transition",
+                                    item.isTrending
+                                      ? "border-amber-400/30 bg-amber-500/15 text-amber-200"
+                                      : "border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200"
+                                  )}
+                                >
+                                  <Star className="h-3.5 w-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => openEditCollection(item.slug)}
+                                  className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
 
                                 <Switch
-                                  checked={isEnabled}
+                                  checked={item.isActive}
                                   onCheckedChange={(value) =>
-                                    void toggleOccasionActive(
-                                      item.occasion,
-                                      value
-                                    )
+                                    void toggleCollectionActive(item.slug, value)
                                   }
                                 />
                               </div>
@@ -963,32 +1327,31 @@ export default function AdminFunnelPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <Card className="rounded-2xl border-slate-800 bg-slate-950 text-slate-50 lg:col-span-8">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Occasion & Search</CardTitle>
+            <CardTitle className="text-base">Collection & Search</CardTitle>
             <CardDescription className="text-slate-400">
-              Alege o ocazie și gestionează stilurile care apar în Style Select.
+              Alege o colecție și gestionează stilurile/template-urile care apar
+              în Style Select.
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label className="text-slate-300">Occasion</Label>
+                <Label className="text-slate-300">Collection</Label>
 
                 <Select
-                  value={normalizeOccasion(occasion)}
-                  onValueChange={(value) =>
-                    setOccasion(normalizeOccasion(value))
-                  }
+                  value={selectedSlug}
+                  onValueChange={(value) => setSelectedSlug(normalizeSlug(value))}
                 >
                   <SelectTrigger className="rounded-xl border-slate-800 bg-slate-900 text-slate-100">
-                    <SelectValue placeholder="Select occasion" />
+                    <SelectValue placeholder="Select collection" />
                   </SelectTrigger>
 
-                  <SelectContent className="z-50 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl">
-                    {OCCASIONS.map((item) => (
+                  <SelectContent className="z-50 max-h-[360px] rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl">
+                    {collectionOptions.map((item) => (
                       <SelectItem
-                        key={item.key}
-                        value={item.key}
+                        key={item.value}
+                        value={item.value}
                         className="focus:bg-slate-800 focus:text-slate-50 data-[highlighted]:bg-slate-800 data-[highlighted]:text-slate-50"
                       >
                         {item.label}
@@ -999,14 +1362,14 @@ export default function AdminFunnelPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Search</Label>
+                <Label className="text-slate-300">Search styles</Label>
 
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
 
                   <Input
-                    value={q}
-                    onChange={(event) => setQ(event.target.value)}
+                    value={styleSearch}
+                    onChange={(event) => setStyleSearch(event.target.value)}
                     placeholder="Search styles..."
                     className="rounded-xl border-slate-800 bg-slate-900 pl-9 text-slate-100 placeholder:text-slate-500"
                   />
@@ -1018,37 +1381,41 @@ export default function AdminFunnelPage() {
 
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <Badge className="rounded-xl border border-slate-800 bg-slate-900 text-slate-200">
-                Occasion: {labelForOccasion(occasion)}
+                Collection: {selectedCollection?.title || formatLabel(selectedSlug)}
               </Badge>
 
               <Badge className="rounded-xl border border-slate-800 bg-slate-900 text-slate-200">
-                Category: {labelForMainCategory(getMainCategoryForOccasion(occasion))}
+                Category:{" "}
+                {labelForMainCategory(
+                  selectedCollection?.mainCategory ||
+                    getMainCategoryForSlug(selectedSlug)
+                )}
               </Badge>
 
               <Badge className="rounded-xl border border-slate-800 bg-slate-900 text-slate-200">
-                Total: {stats.total}
+                Total: {selectedStyleStats.total}
               </Badge>
 
               <Badge className="rounded-xl border border-slate-800 bg-slate-900 text-emerald-200">
-                Active: {stats.active}
+                Active: {selectedStyleStats.active}
               </Badge>
 
               <Badge className="rounded-xl border border-slate-800 bg-slate-900 text-rose-200">
-                Inactive: {stats.inactive}
+                Inactive: {selectedStyleStats.inactive}
               </Badge>
 
-              {q.trim() ? (
+              {styleSearch.trim() ? (
                 <Button
                   variant="outline"
                   size="sm"
                   className="ml-auto rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
-                  onClick={() => setQ("")}
+                  onClick={() => setStyleSearch("")}
                 >
                   Clear search
                 </Button>
               ) : (
                 <span className="ml-auto text-xs text-slate-500">
-                  Search filters only current occasion
+                  Search filters only current collection
                 </span>
               )}
             </div>
@@ -1059,8 +1426,8 @@ export default function AdminFunnelPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Tip</CardTitle>
             <CardDescription className="text-slate-400">
-              În FunnelStyleSelect se face query pe <b>templates</b> filtrat după{" "}
-              <b>occasion</b> + <b>isactive</b>.
+              Collections se salvează în <b>occasion_collections</b>. Templates
+              rămân în <b>templates</b>.
             </CardDescription>
           </CardHeader>
 
@@ -1069,8 +1436,7 @@ export default function AdminFunnelPage() {
               <div className="font-medium text-slate-100">Recomandare</div>
 
               <div className="mt-1 text-slate-400">
-                Păstrează <b>style_id</b> stabil (slug), iar <b>title</b> poate
-                fi “pretty”.
+                Creează întâi colecția, apoi adaugă templates/stiluri în ea.
               </div>
             </div>
           </CardContent>
@@ -1079,17 +1445,27 @@ export default function AdminFunnelPage() {
 
       <Card className="rounded-2xl border-slate-800 bg-slate-950 text-slate-50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Styles</CardTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-base">Styles</CardTitle>
 
-          <CardDescription className="text-slate-400">
-            {labelForOccasion(occasion)} • {filtered.length} shown
-          </CardDescription>
+              <CardDescription className="text-slate-400">
+                {selectedCollection?.title || formatLabel(selectedSlug)} •{" "}
+                {filteredStyles.length} shown
+              </CardDescription>
+            </div>
+
+            <Button className="rounded-xl" onClick={openCreateStyle}>
+              <Plus className="mr-2 h-4 w-4" />
+              New style
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-3">
           {loading ? (
             <div className="py-6 text-sm text-slate-400">Loading…</div>
-          ) : filtered.length === 0 ? (
+          ) : filteredStyles.length === 0 ? (
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center">
               <div className="text-sm font-semibold text-slate-100">
                 No styles found
@@ -1097,18 +1473,18 @@ export default function AdminFunnelPage() {
 
               <div className="mt-1 text-xs text-slate-400">
                 Creează primul style pentru{" "}
-                <b>{labelForOccasion(occasion)}</b>.
+                <b>{selectedCollection?.title || formatLabel(selectedSlug)}</b>.
               </div>
 
               <div className="mt-4">
-                <Button className="rounded-xl" onClick={openCreate}>
+                <Button className="rounded-xl" onClick={openCreateStyle}>
                   <Plus className="mr-2 h-4 w-4" />
                   New style
                 </Button>
               </div>
             </div>
           ) : (
-            filtered.map((row) => {
+            filteredStyles.map((row) => {
               const isActive = row.is_active ?? row.isactive ?? true;
 
               return (
@@ -1125,11 +1501,13 @@ export default function AdminFunnelPage() {
                       </div>
 
                       <Badge className="rounded-xl border border-slate-800 bg-slate-950 text-slate-200">
-                        {normalizeOccasion(row.occasion ?? "")}
+                        {normalizeSlug(row.occasion)}
                       </Badge>
 
                       <Badge className="rounded-xl border border-slate-800 bg-slate-950 text-slate-200">
-                        {labelForMainCategory(normalizeMainCategory(row.main_category))}
+                        {labelForMainCategory(
+                          normalizeMainCategory(row.main_category)
+                        )}
                       </Badge>
 
                       <Badge
@@ -1165,14 +1543,16 @@ export default function AdminFunnelPage() {
 
                       <Switch
                         checked={isActive}
-                        onCheckedChange={(value) => toggleActive(row, value)}
+                        onCheckedChange={(value) =>
+                          void toggleStyleActive(row, value)
+                        }
                       />
                     </div>
 
                     <Button
                       variant="outline"
                       className="rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
-                      onClick={() => openEdit(row)}
+                      onClick={() => openEditStyle(row)}
                     >
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
@@ -1181,7 +1561,7 @@ export default function AdminFunnelPage() {
                     <Button
                       variant="destructive"
                       className="rounded-xl"
-                      onClick={() => del(row)}
+                      onClick={() => void deleteStyle(row)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
@@ -1194,28 +1574,318 @@ export default function AdminFunnelPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={collectionDialogOpen} onOpenChange={setCollectionDialogOpen}>
         <DialogContent className="max-w-3xl rounded-2xl border-slate-800 bg-slate-950 text-slate-50">
           <DialogHeader>
             <DialogTitle>
-              {editing ? "Edit style" : "Create style"}
+              {editingCollection ? "Edit collection" : "Create collection"}
             </DialogTitle>
 
             <DialogDescription className="text-slate-400">
-              Aceste valori se folosesc în <b>FunnelStyleSelect</b> (title +
-              prompt) pentru ocazia aleasă.
+              Colecțiile controlează ce apare în Home, Templates și Generator.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-slate-300">Title</Label>
+
+                <Input
+                  value={collectionForm.title}
+                  onChange={(event) => {
+                    const title = event.target.value;
+
+                    setCollectionForm((state) => ({
+                      ...state,
+                      title,
+                      slug:
+                        state.slug || (title ? normalizeSlug(title) : ""),
+                      label: state.label || title,
+                    }));
+                  }}
+                  placeholder="Bible Verses"
+                  className="rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-300">Main Category</Label>
+
+                <Select
+                  value={collectionForm.main_category}
+                  onValueChange={(value) =>
+                    setCollectionForm((state) => ({
+                      ...state,
+                      main_category: normalizeMainCategory(value),
+                    }))
+                  }
+                >
+                  <SelectTrigger className="rounded-xl border-slate-800 bg-slate-900 text-slate-100">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+
+                  <SelectContent className="z-50 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl">
+                    {MAIN_CATEGORIES.map((item) => (
+                      <SelectItem
+                        key={item.key}
+                        value={item.key}
+                        className="focus:bg-slate-800 focus:text-slate-50 data-[highlighted]:bg-slate-800 data-[highlighted]:text-slate-50"
+                      >
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Slug</Label>
+
+                <Input
+                  value={collectionForm.slug}
+                  onChange={(event) =>
+                    setCollectionForm((state) => ({
+                      ...state,
+                      slug: normalizeSlug(event.target.value),
+                    }))
+                  }
+                  placeholder="bible_verses"
+                  className="rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-300">Label</Label>
+
+                <Input
+                  value={collectionForm.label}
+                  onChange={(event) =>
+                    setCollectionForm((state) => ({
+                      ...state,
+                      label: event.target.value,
+                    }))
+                  }
+                  placeholder="Faith & hope"
+                  className="rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300">Description</Label>
+
+              <Textarea
+                value={collectionForm.description}
+                onChange={(event) =>
+                  setCollectionForm((state) => ({
+                    ...state,
+                    description: event.target.value,
+                  }))
+                }
+                placeholder="Beautiful spiritual cards with meaningful Bible-inspired messages."
+                className="min-h-[100px] rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300">Image URL</Label>
+
+              <Input
+                value={collectionForm.image_url}
+                onChange={(event) =>
+                  setCollectionForm((state) => ({
+                    ...state,
+                    image_url: event.target.value,
+                  }))
+                }
+                placeholder="https://..."
+                className="rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Gradient From</Label>
+
+                <Input
+                  value={collectionForm.gradient_from}
+                  onChange={(event) =>
+                    setCollectionForm((state) => ({
+                      ...state,
+                      gradient_from: event.target.value,
+                    }))
+                  }
+                  className="rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-300">Gradient To</Label>
+
+                <Input
+                  value={collectionForm.gradient_to}
+                  onChange={(event) =>
+                    setCollectionForm((state) => ({
+                      ...state,
+                      gradient_to: event.target.value,
+                    }))
+                  }
+                  className="rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-300">Sort Order</Label>
+
+                <Input
+                  type="number"
+                  value={collectionForm.sort_order}
+                  onChange={(event) =>
+                    setCollectionForm((state) => ({
+                      ...state,
+                      sort_order: Number(event.target.value || 999),
+                    }))
+                  }
+                  className="rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-3 py-2">
+                <span className="text-sm text-slate-200">Visible</span>
+
+                <Switch
+                  checked={collectionForm.is_active}
+                  onCheckedChange={(value) =>
+                    setCollectionForm((state) => ({
+                      ...state,
+                      is_active: value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-3 py-2">
+                <span className="text-sm text-slate-200">Trending</span>
+
+                <Switch
+                  checked={collectionForm.is_trending}
+                  onCheckedChange={(value) =>
+                    setCollectionForm((state) => ({
+                      ...state,
+                      is_trending: value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              {editingCollection ? (
+                <Button
+                  variant="destructive"
+                  className="rounded-xl"
+                  onClick={() => {
+                    const group = groupedCollections.find(
+                      (item) =>
+                        normalizeSlug(item.slug) ===
+                        normalizeSlug(editingCollection.slug)
+                    );
+
+                    if (group) {
+                      void deleteCollection(group);
+                      setCollectionDialogOpen(false);
+                    }
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              ) : (
+                <span />
+              )}
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
+                  onClick={() => setCollectionDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  className="rounded-xl"
+                  onClick={() => void saveCollection()}
+                  disabled={savingCollection}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {savingCollection ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={styleDialogOpen} onOpenChange={setStyleDialogOpen}>
+        <DialogContent className="max-w-3xl rounded-2xl border-slate-800 bg-slate-950 text-slate-50">
+          <DialogHeader>
+            <DialogTitle>
+              {editingStyle ? "Edit style" : "Create style"}
+            </DialogTitle>
+
+            <DialogDescription className="text-slate-400">
+              Aceste valori se folosesc în FunnelStyleSelect.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="space-y-2">
+                <Label className="text-slate-300">Collection</Label>
+
+                <Select
+                  value={styleForm.occasion}
+                  onValueChange={(value) => {
+                    const slug = normalizeSlug(value);
+
+                    setStyleForm((state) => ({
+                      ...state,
+                      occasion: slug,
+                      main_category: getMainCategoryForSlug(slug),
+                    }));
+                  }}
+                >
+                  <SelectTrigger className="rounded-xl border-slate-800 bg-slate-900 text-slate-100">
+                    <SelectValue placeholder="Select collection" />
+                  </SelectTrigger>
+
+                  <SelectContent className="z-50 max-h-[360px] rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl">
+                    {collectionOptions.map((item) => (
+                      <SelectItem
+                        key={item.value}
+                        value={item.value}
+                        className="focus:bg-slate-800 focus:text-slate-50 data-[highlighted]:bg-slate-800 data-[highlighted]:text-slate-50"
+                      >
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label className="text-slate-300">Main Category</Label>
 
                 <Select
-                  value={form.main_category}
+                  value={styleForm.main_category}
                   onValueChange={(value) =>
-                    setForm((state) => ({
+                    setStyleForm((state) => ({
                       ...state,
                       main_category: normalizeMainCategory(value),
                     }))
@@ -1240,48 +1910,20 @@ export default function AdminFunnelPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Occasion</Label>
-
-                <Select
-                  value={normalizeOccasion(form.occasion)}
-                  onValueChange={(value) =>
-                    setForm((state) => ({
-                      ...state,
-                      occasion: normalizeOccasion(value),
-                      main_category: getMainCategoryForOccasion(value),
-                    }))
-                  }
-                >
-                  <SelectTrigger className="rounded-xl border-slate-800 bg-slate-900 text-slate-100">
-                    <SelectValue placeholder="Select occasion" />
-                  </SelectTrigger>
-
-                  <SelectContent className="z-50 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl">
-                    {OCCASIONS.map((item) => (
-                      <SelectItem
-                        key={item.key}
-                        value={item.key}
-                        className="focus:bg-slate-800 focus:text-slate-50 data-[highlighted]:bg-slate-800 data-[highlighted]:text-slate-50"
-                      >
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
                 <Label className="text-slate-300">Active</Label>
 
                 <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-3 py-2">
                   <span className="text-sm text-slate-200">
-                    {form.isactive ? "Enabled" : "Disabled"}
+                    {styleForm.isactive ? "Enabled" : "Disabled"}
                   </span>
 
                   <Switch
-                    checked={!!form.isactive}
+                    checked={!!styleForm.isactive}
                     onCheckedChange={(value) =>
-                      setForm((state) => ({ ...state, isactive: value }))
+                      setStyleForm((state) => ({
+                        ...state,
+                        isactive: value,
+                      }))
                     }
                   />
                 </div>
@@ -1290,12 +1932,12 @@ export default function AdminFunnelPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="space-y-2 sm:col-span-2">
-                <Label className="text-slate-300">AI notes (optional)</Label>
+                <Label className="text-slate-300">AI notes optional</Label>
 
                 <Input
-                  value={form.ai_notes}
+                  value={styleForm.ai_notes}
                   onChange={(event) =>
-                    setForm((state) => ({
+                    setStyleForm((state) => ({
                       ...state,
                       ai_notes: event.target.value,
                     }))
@@ -1312,7 +1954,7 @@ export default function AdminFunnelPage() {
                   type="button"
                   variant="outline"
                   className="w-full rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
-                  onClick={generateWithAI}
+                  onClick={() => void generateWithAI()}
                   disabled={aiGenerating}
                 >
                   <Sparkles
@@ -1331,11 +1973,11 @@ export default function AdminFunnelPage() {
                 <Label className="text-slate-300">Title</Label>
 
                 <Input
-                  value={form.title}
+                  value={styleForm.title}
                   onChange={(event) => {
                     const title = event.target.value;
 
-                    setForm((state) => ({
+                    setStyleForm((state) => ({
                       ...state,
                       title,
                       style_id:
@@ -1349,14 +1991,14 @@ export default function AdminFunnelPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">style_id (slug)</Label>
+                <Label className="text-slate-300">style_id slug</Label>
 
                 <Input
-                  value={form.style_id}
+                  value={styleForm.style_id}
                   onChange={(event) =>
-                    setForm((state) => ({
+                    setStyleForm((state) => ({
                       ...state,
-                      style_id: event.target.value,
+                      style_id: normalizeSlug(event.target.value),
                     }))
                   }
                   placeholder="golden_memory"
@@ -1369,14 +2011,14 @@ export default function AdminFunnelPage() {
               <Label className="text-slate-300">Prompt</Label>
 
               <Textarea
-                value={form.prompt}
+                value={styleForm.prompt}
                 onChange={(event) =>
-                  setForm((state) => ({
+                  setStyleForm((state) => ({
                     ...state,
                     prompt: event.target.value,
                   }))
                 }
-                placeholder="Write the exact Replicate prompt here..."
+                placeholder="Write the exact prompt here..."
                 className={cn(
                   "min-h-[240px] rounded-xl font-mono text-xs",
                   "border border-slate-700 bg-white text-slate-900",
@@ -1386,8 +2028,7 @@ export default function AdminFunnelPage() {
               />
 
               <div className="text-xs text-slate-500">
-                Tip: ține prompturile consistente per ocazie (același format),
-                ca să fie ușor de întreținut.
+                Tip: păstrează prompturile consistente per colecție.
               </div>
             </div>
 
@@ -1395,14 +2036,18 @@ export default function AdminFunnelPage() {
               <Button
                 variant="outline"
                 className="rounded-xl border-slate-800 bg-slate-950 text-slate-200 hover:bg-slate-900"
-                onClick={() => setOpen(false)}
+                onClick={() => setStyleDialogOpen(false)}
               >
                 Cancel
               </Button>
 
-              <Button className="rounded-xl" onClick={save} disabled={saving}>
+              <Button
+                className="rounded-xl"
+                onClick={() => void saveStyle()}
+                disabled={savingStyle}
+              >
                 <Save className="mr-2 h-4 w-4" />
-                {saving ? "Saving..." : "Save"}
+                {savingStyle ? "Saving..." : "Save"}
               </Button>
             </div>
           </div>
