@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -48,6 +48,8 @@ import {
   PawPrint,
   LayoutGrid,
   Star,
+  Upload,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -103,6 +105,8 @@ type OccasionGroup = {
   inactive: number;
   previewUrl: string | null;
 };
+
+const COLLECTION_BUCKET = "occasion-collections";
 
 const MAIN_CATEGORIES: Array<{
   key: MainCategory;
@@ -214,6 +218,44 @@ function getTemplatePreviewUrl(row: TemplateDbRow) {
   );
 }
 
+function safeFileExt(file: File) {
+  const fromName = file.name.split(".").pop()?.toLowerCase() || "";
+  if (fromName && fromName.length <= 6) return fromName;
+
+  if (file.type === "image/png") return "png";
+  if (file.type === "image/webp") return "webp";
+  if (file.type === "image/jpeg") return "jpg";
+
+  return "jpg";
+}
+
+function makeStoragePath(slug: string, file: File) {
+  const ext = safeFileExt(file);
+  const cleanSlug = normalizeSlug(slug || "collection") || "collection";
+  const random =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return `${cleanSlug}/${random}.${ext}`;
+}
+
+async function uploadCollectionImage(file: File, slug: string) {
+  const path = makeStoragePath(slug, file);
+
+  const { error } = await supabase.storage.from(COLLECTION_BUCKET).upload(path, file, {
+    upsert: false,
+    contentType: file.type || "image/jpeg",
+    cacheControl: "3600",
+  });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from(COLLECTION_BUCKET).getPublicUrl(path);
+
+  return data.publicUrl;
+}
+
 function extractInvokeErrorMessage(err: any) {
   const status = err?.context?.status ?? err?.status;
   const body = err?.context?.body ?? err?.body;
@@ -229,15 +271,15 @@ function extractInvokeErrorMessage(err: any) {
 }
 
 export default function AdminFunnelPage() {
+  const collectionImageInputRef = useRef<HTMLInputElement | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<TemplateDbRow[]>([]);
   const [collections, setCollections] = useState<OccasionCollectionRow[]>([]);
 
   const [boardSearch, setBoardSearch] = useState("");
   const [draggedSlug, setDraggedSlug] = useState<string | null>(null);
-  const [savingCollectionSlug, setSavingCollectionSlug] = useState<string | null>(
-    null
-  );
+  const [savingCollectionSlug, setSavingCollectionSlug] = useState<string | null>(null);
 
   const [selectedSlug, setSelectedSlug] = useState<string>("new_born");
   const [styleSearch, setStyleSearch] = useState("");
@@ -247,6 +289,7 @@ export default function AdminFunnelPage() {
 
   const [savingStyle, setSavingStyle] = useState(false);
   const [savingCollection, setSavingCollection] = useState(false);
+  const [uploadingCollectionImage, setUploadingCollectionImage] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
 
   const [editingStyle, setEditingStyle] = useState<TemplateDbRow | null>(null);
@@ -330,17 +373,11 @@ export default function AdminFunnelPage() {
           .order("title", { ascending: true }),
       ]);
 
-      if (templatesResult.error) {
-        throw templatesResult.error;
-      }
-
-      if (collectionsResult.error) {
-        throw collectionsResult.error;
-      }
+      if (templatesResult.error) throw templatesResult.error;
+      if (collectionsResult.error) throw collectionsResult.error;
 
       const nextTemplates = (templatesResult.data ?? []) as unknown as TemplateDbRow[];
-      const nextCollections = (collectionsResult.data ??
-        []) as unknown as OccasionCollectionRow[];
+      const nextCollections = (collectionsResult.data ?? []) as unknown as OccasionCollectionRow[];
 
       setTemplates(nextTemplates);
       setCollections(nextCollections);
@@ -533,7 +570,6 @@ export default function AdminFunnelPage() {
 
   function getMainCategoryForSlug(slugValue: string): MainCategory {
     const slug = normalizeSlug(slugValue);
-
     const collection = groupedCollections.find((item) => item.slug === slug);
 
     return collection?.mainCategory ?? "occasions";
@@ -623,6 +659,49 @@ export default function AdminFunnelPage() {
     });
 
     setStyleDialogOpen(true);
+  }
+
+  async function handleCollectionImageUpload(file: File | null) {
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file.");
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Image is too large. Maximum 8MB.");
+      return;
+    }
+
+    const slug = normalizeSlug(collectionForm.slug || collectionForm.title || "collection");
+
+    if (!slug) {
+      toast.error("Add a title or slug before uploading image.");
+      return;
+    }
+
+    setUploadingCollectionImage(true);
+
+    try {
+      const publicUrl = await uploadCollectionImage(file, slug);
+
+      setCollectionForm((state) => ({
+        ...state,
+        image_url: publicUrl,
+      }));
+
+      toast.success("Image uploaded");
+    } catch (error: any) {
+      console.error("[AdminFunnelPage] image upload error:", error);
+      toast.error(error?.message || "Failed to upload image");
+    } finally {
+      setUploadingCollectionImage(false);
+
+      if (collectionImageInputRef.current) {
+        collectionImageInputRef.current.value = "";
+      }
+    }
   }
 
   async function saveCollection() {
@@ -788,7 +867,6 @@ export default function AdminFunnelPage() {
 
   async function toggleCollectionActive(slugValue: string, next: boolean) {
     const slug = normalizeSlug(slugValue);
-
     const previousCollections = collections;
 
     setCollections((current) =>
@@ -813,7 +891,6 @@ export default function AdminFunnelPage() {
 
   async function toggleCollectionTrending(slugValue: string, next: boolean) {
     const slug = normalizeSlug(slugValue);
-
     const previousCollections = collections;
 
     setCollections((current) =>
@@ -894,8 +971,7 @@ export default function AdminFunnelPage() {
             title: formatLabel(slug),
             label: formatLabel(slug),
             main_category: mainCategory,
-            description:
-              "Create beautiful personalized cards for this collection.",
+            description: "Create beautiful personalized cards for this collection.",
             sort_order: 999,
             is_active: true,
             is_trending: false,
@@ -1097,18 +1173,14 @@ export default function AdminFunnelPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card className="rounded-2xl border-slate-800 bg-slate-950 text-slate-50">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400">
-              Collections
-            </CardDescription>
+            <CardDescription className="text-slate-400">Collections</CardDescription>
             <CardTitle>{dashboardStats.totalCollections}</CardTitle>
           </CardHeader>
         </Card>
 
         <Card className="rounded-2xl border-slate-800 bg-slate-950 text-slate-50">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400">
-              Templates
-            </CardDescription>
+            <CardDescription className="text-slate-400">Templates</CardDescription>
             <CardTitle>{dashboardStats.totalTemplates}</CardTitle>
           </CardHeader>
         </Card>
@@ -1124,9 +1196,7 @@ export default function AdminFunnelPage() {
 
         <Card className="rounded-2xl border-slate-800 bg-slate-950 text-slate-50">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400">
-              Inactive
-            </CardDescription>
+            <CardDescription className="text-slate-400">Inactive</CardDescription>
             <CardTitle className="text-rose-300">
               {dashboardStats.inactiveTemplates}
             </CardTitle>
@@ -1238,6 +1308,7 @@ export default function AdminFunnelPage() {
                             className={cn(
                               "group cursor-grab rounded-2xl border border-slate-800 bg-slate-950/80 p-3 transition active:cursor-grabbing",
                               "hover:border-slate-700 hover:bg-slate-950",
+                              selectedSlug === item.slug && "border-indigo-500/60",
                               isSaving && "opacity-60"
                             )}
                           >
@@ -1716,19 +1787,48 @@ export default function AdminFunnelPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-slate-300">Image URL</Label>
+              <Label className="text-slate-300">Collection Image</Label>
 
-              <Input
-                value={collectionForm.image_url}
+              {collectionForm.image_url ? (
+                <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+                  <img
+                    src={collectionForm.image_url}
+                    alt="Collection preview"
+                    className="h-52 w-full object-cover"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCollectionForm((state) => ({ ...state, image_url: "" }))
+                    }
+                    className="absolute right-3 top-3 rounded-full border border-slate-700 bg-slate-950/80 p-2 text-slate-200 hover:bg-slate-900"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : null}
+
+              <input
+                ref={collectionImageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
                 onChange={(event) =>
-                  setCollectionForm((state) => ({
-                    ...state,
-                    image_url: event.target.value,
-                  }))
+                  void handleCollectionImageUpload(event.target.files?.[0] || null)
                 }
-                placeholder="https://..."
-                className="rounded-xl border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500"
               />
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full rounded-xl border-dashed border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
+                disabled={uploadingCollectionImage}
+                onClick={() => collectionImageInputRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {uploadingCollectionImage ? "Uploading..." : "Upload picture"}
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -1846,7 +1946,7 @@ export default function AdminFunnelPage() {
                 <Button
                   className="rounded-xl"
                   onClick={() => void saveCollection()}
-                  disabled={savingCollection}
+                  disabled={savingCollection || uploadingCollectionImage}
                 >
                   <Save className="mr-2 h-4 w-4" />
                   {savingCollection ? "Saving..." : "Save"}
@@ -1860,9 +1960,7 @@ export default function AdminFunnelPage() {
       <Dialog open={styleDialogOpen} onOpenChange={setStyleDialogOpen}>
         <DialogContent className="max-w-3xl rounded-2xl border-slate-800 bg-slate-950 text-slate-50">
           <DialogHeader>
-            <DialogTitle>
-              {editingStyle ? "Edit style" : "Create style"}
-            </DialogTitle>
+            <DialogTitle>{editingStyle ? "Edit style" : "Create style"}</DialogTitle>
 
             <DialogDescription className="text-slate-400">
               Aceste valori se folosesc în FunnelStyleSelect.
