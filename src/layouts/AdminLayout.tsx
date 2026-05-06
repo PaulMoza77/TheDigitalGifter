@@ -126,6 +126,16 @@ const SidebarNavigation: React.FC<{
         ],
       },
       {
+        label: "CONTROL",
+        items: [
+          {
+            label: "Occasions & Categories",
+            path: "/admin/funnel",
+            icon: Sparkles,
+          },
+        ],
+      },
+      {
         label: "INBOX",
         items: [
           {
@@ -152,16 +162,6 @@ const SidebarNavigation: React.FC<{
             label: "Campaigns",
             path: "/admin/email/campaigns",
             icon: Send,
-          },
-        ],
-      },
-      {
-        label: "FUNNEL",
-        items: [
-          {
-            label: "Occasions & Styles",
-            path: "/admin/funnel",
-            icon: Sparkles,
           },
         ],
       },
@@ -266,7 +266,7 @@ const AdminLayout: React.FC = () => {
                 <SidebarNavigation
                   collapsed={false}
                   isActive={isActive}
-                  navigateTo={(p) => navigate(p)}
+                  navigateTo={(path) => navigate(path)}
                   onNavigate={() => setMobileMenuOpen(false)}
                 />
               </div>
@@ -284,7 +284,7 @@ const AdminLayout: React.FC = () => {
         >
           <button
             type="button"
-            onClick={() => setCollapsed((v) => !v)}
+            onClick={() => setCollapsed((value) => !value)}
             className="absolute -right-3 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 transition-colors hover:bg-slate-800/60"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand" : "Collapse"}
@@ -300,7 +300,7 @@ const AdminLayout: React.FC = () => {
             <SidebarNavigation
               collapsed={collapsed}
               isActive={isActive}
-              navigateTo={(p) => navigate(p)}
+              navigateTo={(path) => navigate(path)}
             />
           </div>
         </aside>
