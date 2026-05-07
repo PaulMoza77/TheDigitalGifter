@@ -1,13 +1,23 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Grid2X2,
+  Heart,
+  PawPrint,
+  Plus,
+  Sparkles,
+} from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+type CategoryKey = "occasions" | "personal" | "spiritual" | "pets";
 
 type OccasionRow = {
   id?: string | null;
@@ -17,6 +27,42 @@ type OccasionRow = {
   sort_order?: number | null;
   updated_at?: string | null;
 };
+
+type OccasionItem = OccasionRow & {
+  group: CategoryKey;
+};
+
+const categoryTabs: {
+  key: CategoryKey;
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+}[] = [
+  {
+    key: "occasions",
+    title: "Occasions",
+    subtitle: "Birthdays, holidays",
+    icon: CalendarDays,
+  },
+  {
+    key: "personal",
+    title: "Personal",
+    subtitle: "Names, kids, love",
+    icon: Heart,
+  },
+  {
+    key: "spiritual",
+    title: "Spiritual",
+    subtitle: "Faith, prayer, hope",
+    icon: Plus,
+  },
+  {
+    key: "pets",
+    title: "Pets",
+    subtitle: "Dogs, cats, memories",
+    icon: PawPrint,
+  },
+];
 
 function normalizeOccasionSlug(slug: string) {
   const s = String(slug || "").trim().toLowerCase();
@@ -28,6 +74,9 @@ function normalizeOccasionSlug(slug: string) {
   if (s === "fathers_day") return "fathers-day";
   if (s === "new_years_eve") return "new-years-eve";
   if (s === "baby_reveal") return "baby-reveal";
+  if (s === "name_cards") return "name-cards";
+  if (s === "bible_verses") return "bible-verses";
+  if (s === "pet_loss") return "pet-loss";
 
   return s.replace(/_/g, "-").replace(/\s+/g, "-");
 }
@@ -35,22 +84,43 @@ function normalizeOccasionSlug(slug: string) {
 function normalizeOccasionKey(slug: string) {
   const s = normalizeOccasionSlug(slug);
 
-  if (s === "new-born") return "newborn";
+  if (s === "new-born") return "new_born";
   if (s === "valentines-day") return "valentines_day";
   if (s === "mothers-day") return "mothers_day";
   if (s === "fathers-day") return "fathers_day";
   if (s === "new-years-eve") return "new_years_eve";
   if (s === "baby-reveal") return "baby_reveal";
+  if (s === "name-cards") return "name_cards";
+  if (s === "bible-verses") return "bible_verses";
+  if (s === "pet-loss") return "pet_loss";
 
   return s;
 }
 
-function funnelHrefForSlug(slug: string) {
-  return `/funnel/homepage/${encodeURIComponent(normalizeOccasionSlug(slug))}`;
+function groupFromSlug(slug: string): CategoryKey {
+  const s = normalizeOccasionKey(slug);
+
+  if (
+    ["name_cards", "kids", "sorry", "valentines_day", "anniversary"].includes(s)
+  ) {
+    return "personal";
+  }
+
+  if (["bible_verses", "prayer"].includes(s)) {
+    return "spiritual";
+  }
+
+  if (["dogs", "cats", "pet_loss"].includes(s)) {
+    return "pets";
+  }
+
+  return "occasions";
 }
 
 function templatesHrefForSlug(slug: string) {
-  return `/templates?occasion=${encodeURIComponent(normalizeOccasionKey(slug))}`;
+  return `/generator?category=${encodeURIComponent(
+    groupFromSlug(slug)
+  )}&occasion=${encodeURIComponent(normalizeOccasionKey(slug))}`;
 }
 
 function prettyLabelFromSlug(slug: string) {
@@ -72,6 +142,13 @@ function prettyLabelFromSlug(slug: string) {
   if (s.includes("father")) return "Warm family moment";
   if (s.includes("graduation")) return "Caps & celebration";
   if (s.includes("sorry")) return "Emotional apology";
+  if (s.includes("name")) return "Name portraits";
+  if (s.includes("kids")) return "Playful memories";
+  if (s.includes("bible")) return "Faith & peace";
+  if (s.includes("prayer")) return "Hope & comfort";
+  if (s.includes("dogs")) return "Dog memories";
+  if (s.includes("cats")) return "Cat memories";
+  if (s.includes("pet")) return "Forever remembered";
 
   return "New memories";
 }
@@ -81,6 +158,10 @@ function fallbackDescription(slug: string) {
 
   if (s.includes("christmas")) {
     return "Turn any photo into a warm, cinematic Christmas memory.";
+  }
+
+  if (s.includes("birthday")) {
+    return "Balloons, cake and bright birthday emotion.";
   }
 
   if (s.includes("new") && s.includes("year")) {
@@ -93,10 +174,6 @@ function fallbackDescription(slug: string) {
 
   if (s.includes("thank") && s.includes("giving")) {
     return "Cozy autumn tones, gratitude and beautiful family dinner energy.";
-  }
-
-  if (s.includes("birthday")) {
-    return "Balloons, cake and bright birthday emotion.";
   }
 
   if (s.includes("baby") && s.includes("reveal")) {
@@ -143,34 +220,35 @@ function fallbackDescription(slug: string) {
     return "Create a heartfelt apology card with soft, honest emotion.";
   }
 
-  return "Create something beautiful in seconds.";
-}
+  if (s.includes("name")) {
+    return "Create a personal name portrait with a face, mood and signature style.";
+  }
 
-function fallbackGradientFrom(slug: string) {
-  const s = normalizeOccasionSlug(slug);
+  if (s.includes("kids")) {
+    return "Fun, colorful creations made for children and playful moments.";
+  }
 
-  if (s.includes("christmas")) return "from-blue-700/40";
-  if (s.includes("new") && s.includes("year")) return "from-amber-700/40";
-  if (s.includes("thank") && s.includes("you")) return "from-rose-700/40";
-  if (s.includes("thank") && s.includes("giving")) return "from-orange-700/40";
-  if (s.includes("birthday")) return "from-fuchsia-700/40";
-  if (s.includes("baby") && s.includes("reveal")) return "from-pink-700/40";
-  if (s.includes("born") || s.includes("newborn")) return "from-stone-700/40";
-  if (s.includes("pregnancy")) return "from-rose-700/40";
-  if (s.includes("wedding")) return "from-indigo-700/40";
-  if (s.includes("easter")) return "from-emerald-700/40";
-  if (s.includes("valentine")) return "from-red-700/40";
-  if (s.includes("anniversary")) return "from-yellow-700/40";
-  if (s.includes("mother")) return "from-pink-700/40";
-  if (s.includes("father")) return "from-slate-700/40";
-  if (s.includes("graduation")) return "from-sky-700/40";
-  if (s.includes("sorry")) return "from-rose-700/40";
+  if (s.includes("bible")) {
+    return "Create meaningful verse visuals filled with peace and hope.";
+  }
 
-  return "from-slate-700/40";
-}
+  if (s.includes("prayer")) {
+    return "Turn a prayer or message into a comforting visual keepsake.";
+  }
 
-function fallbackGradientTo() {
-  return "to-slate-950/85";
+  if (s.includes("dogs")) {
+    return "Celebrate your dog with a warm, personal memory.";
+  }
+
+  if (s.includes("cats")) {
+    return "Create beautiful cat portraits and emotional pet memories.";
+  }
+
+  if (s.includes("pet")) {
+    return "Honor a pet memory with something gentle and meaningful.";
+  }
+
+  return "Create something beautiful and personal.";
 }
 
 function fallbackImage(slug: string) {
@@ -178,21 +256,11 @@ function fallbackImage(slug: string) {
 
   if (s.includes("christmas")) return "/images/occasions/christmas.png";
   if (s.includes("birthday")) return "/images/occasions/happy-birthday.png";
-  if (s.includes("new") && s.includes("year")) {
-    return "/images/occasions/new-years-eve.png";
-  }
-  if (s.includes("thank") && s.includes("you")) {
-    return "/images/occasions/thank-you.png";
-  }
-  if (s.includes("thank") && s.includes("giving")) {
-    return "/images/occasions/thanks-giving.png";
-  }
-  if (s.includes("baby") && s.includes("reveal")) {
-    return "/images/occasions/gender-reveal.png";
-  }
-  if (s.includes("born") || s.includes("newborn")) {
-    return "/images/occasions/newborn.png";
-  }
+  if (s.includes("new") && s.includes("year")) return "/images/occasions/new-years-eve.png";
+  if (s.includes("thank") && s.includes("you")) return "/images/occasions/thank-you.png";
+  if (s.includes("thank") && s.includes("giving")) return "/images/occasions/thanks-giving.png";
+  if (s.includes("baby") && s.includes("reveal")) return "/images/occasions/gender-reveal.png";
+  if (s.includes("born") || s.includes("newborn")) return "/images/occasions/newborn.png";
   if (s.includes("pregnancy")) return "/images/occasions/pregnancy.png";
   if (s.includes("wedding")) return "/images/occasions/wedding.png";
   if (s.includes("easter")) return "/images/occasions/easter.png";
@@ -202,13 +270,32 @@ function fallbackImage(slug: string) {
   if (s.includes("father")) return "/images/occasions/fathers-day.png";
   if (s.includes("graduation")) return "/images/occasions/graduation.png";
   if (s.includes("sorry")) return "/images/occasions/sorry.png";
+  if (s.includes("name")) return "/images/occasions/name-cards.png";
+  if (s.includes("kids")) return "/images/occasions/kids.png";
+  if (s.includes("bible")) return "/images/occasions/bible-verses.png";
+  if (s.includes("prayer")) return "/images/occasions/prayer.png";
+  if (s.includes("dogs")) return "/images/occasions/dogs.png";
+  if (s.includes("cats")) return "/images/occasions/cats.png";
+  if (s.includes("pet")) return "/images/occasions/pet-loss.png";
 
   return "/images/occasions/default.png";
 }
 
+function fallbackGradientFrom(slug: string) {
+  const s = normalizeOccasionSlug(slug);
+
+  if (s.includes("christmas")) return "from-blue-700/40";
+  if (s.includes("birthday")) return "from-fuchsia-700/40";
+  if (s.includes("sorry")) return "from-rose-700/40";
+  if (s.includes("name")) return "from-yellow-700/40";
+  if (s.includes("pet") || s.includes("dogs") || s.includes("cats")) return "from-emerald-700/40";
+
+  return "from-slate-700/40";
+}
+
 const FALLBACK_OCCASIONS: OccasionRow[] = [
-  { slug: "christmas", title: "Christmas", active: true, sort_order: 1 },
-  { slug: "birthday", title: "Birthday", active: true, sort_order: 2 },
+  { slug: "birthday", title: "Birthday", active: true, sort_order: 1 },
+  { slug: "christmas", title: "Christmas", active: true, sort_order: 2 },
   { slug: "new-years-eve", title: "New Year's Eve", active: true, sort_order: 3 },
   { slug: "thank-you", title: "Thank You", active: true, sort_order: 4 },
   { slug: "thanksgiving", title: "Thanksgiving", active: true, sort_order: 5 },
@@ -222,12 +309,21 @@ const FALLBACK_OCCASIONS: OccasionRow[] = [
   { slug: "mothers-day", title: "Mother's Day", active: true, sort_order: 13 },
   { slug: "fathers-day", title: "Father's Day", active: true, sort_order: 14 },
   { slug: "graduation", title: "Graduation", active: true, sort_order: 15 },
-  { slug: "sorry", title: "Sorry", active: true, sort_order: 16 },
+  { slug: "name-cards", title: "Name Cards", active: true, sort_order: 16 },
+  { slug: "sorry", title: "Sorry", active: true, sort_order: 17 },
+  { slug: "kids", title: "Kids", active: true, sort_order: 18 },
+  { slug: "bible-verses", title: "Bible Verses", active: true, sort_order: 19 },
+  { slug: "prayer", title: "Prayer", active: true, sort_order: 20 },
+  { slug: "dogs", title: "Dogs", active: true, sort_order: 21 },
+  { slug: "cats", title: "Cats", active: true, sort_order: 22 },
+  { slug: "pet-loss", title: "Pet Loss", active: true, sort_order: 23 },
 ];
 
 export default function OccasionGrid() {
   const navigate = useNavigate();
   const [rows, setRows] = useState<OccasionRow[] | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryKey>("occasions");
 
   useEffect(() => {
     let cancelled = false;
@@ -251,7 +347,18 @@ export default function OccasionGrid() {
         (x) => x?.slug && x?.title
       );
 
-      setRows(safeRows.length > 0 ? safeRows : FALLBACK_OCCASIONS);
+      const merged = [...safeRows];
+
+      for (const fallback of FALLBACK_OCCASIONS) {
+        const exists = merged.some(
+          (item) =>
+            normalizeOccasionKey(item.slug) === normalizeOccasionKey(fallback.slug)
+        );
+
+        if (!exists) merged.push(fallback);
+      }
+
+      setRows(merged);
     }
 
     void load();
@@ -261,31 +368,38 @@ export default function OccasionGrid() {
     };
   }, []);
 
-  const occasions = useMemo(() => {
+  const occasions = useMemo<OccasionItem[]>(() => {
     const source = rows ?? FALLBACK_OCCASIONS;
 
-    return [...source].sort((a, b) => {
-      const aOrder = typeof a.sort_order === "number" ? a.sort_order : 999999;
-      const bOrder = typeof b.sort_order === "number" ? b.sort_order : 999999;
+    return [...source]
+      .map((item) => ({
+        ...item,
+        group: groupFromSlug(item.slug),
+      }))
+      .sort((a, b) => {
+        const aOrder = typeof a.sort_order === "number" ? a.sort_order : 999999;
+        const bOrder = typeof b.sort_order === "number" ? b.sort_order : 999999;
 
-      if (aOrder !== bOrder) return aOrder - bOrder;
-      return String(a.title || "").localeCompare(String(b.title || ""));
-    });
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return String(a.title || "").localeCompare(String(b.title || ""));
+      });
   }, [rows]);
+
+  const visibleOccasions = useMemo(
+    () => occasions.filter((item) => item.group === selectedCategory),
+    [occasions, selectedCategory]
+  );
 
   if (rows === null) {
     return (
       <section id="categories" className="w-full px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-16 space-y-4 text-center">
-            <div className="mx-auto h-10 w-[520px] max-w-full rounded-xl bg-white/10" />
-            <div className="mx-auto h-6 w-[720px] max-w-full rounded-xl bg-white/10" />
-          </div>
+          <div className="mb-10 h-40 rounded-[2rem] border border-white/10 bg-white/[0.04]" />
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: 6 }).map((_, index) => (
               <div
-                key={i}
+                key={index}
                 className="overflow-hidden rounded-3xl border border-white/10 bg-white/5"
               >
                 <div className="h-64 bg-white/10" />
@@ -306,104 +420,141 @@ export default function OccasionGrid() {
     <section id="categories" className="w-full px-4 py-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <motion.div
-          className="mb-16 space-y-4 text-center"
-          initial={{ opacity: 0, y: 20 }}
+          className="mb-10"
+          initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.45 }}
         >
-          <h2 className="text-4xl font-bold text-white sm:text-5xl">
-            Choose Your Perfect{" "}
-            <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-              Occasion
-            </span>
-          </h2>
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 sm:p-8">
+            <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="mb-3 flex items-center gap-3">
+                  <Sparkles className="h-7 w-7 text-yellow-200" />
+                  <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+                    Choose a category and occasion
+                  </h2>
+                </div>
 
-          <p className="mx-auto max-w-2xl text-xl text-slate-400">
-            From festive holidays to milestone celebrations, find the perfect
-            style for every special moment.
-          </p>
+                <p className="text-lg font-medium text-white/55">
+                  Start with the moment, then personalize it.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => navigate("/templates")}
+                variant="ghost"
+                className="rounded-2xl border border-white/10 bg-black/20 px-6 py-6 text-base font-bold text-white hover:bg-white/10"
+              >
+                View all
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {categoryTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = selectedCategory === tab.key;
+
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setSelectedCategory(tab.key)}
+                    className={cn(
+                      "flex items-center gap-4 rounded-3xl border p-5 text-left transition",
+                      isActive
+                        ? "border-yellow-300 bg-yellow-300 text-black shadow-2xl shadow-yellow-500/10"
+                        : "border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07]"
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "h-7 w-7 shrink-0",
+                        isActive ? "text-black" : "text-white/80"
+                      )}
+                    />
+
+                    <span>
+                      <span className="block text-xl font-black">
+                        {tab.title}
+                      </span>
+                      <span
+                        className={cn(
+                          "mt-1 block text-sm font-medium",
+                          isActive ? "text-black/65" : "text-white/45"
+                        )}
+                      >
+                        {tab.subtitle}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </motion.div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {occasions.map((occ, index) => {
+          {visibleOccasions.map((occ, index) => {
             const slug = String(occ.slug || "").trim();
             const key = String(occ.id || slug || index);
-
-            const funnelHref = funnelHrefForSlug(slug);
-            const templatesHref = templatesHrefForSlug(slug);
-
-            const label = prettyLabelFromSlug(slug);
-            const description = fallbackDescription(slug);
-            const image = fallbackImage(slug);
-            const gradientFrom = fallbackGradientFrom(slug);
-            const gradientTo = fallbackGradientTo();
+            const generatorHref = templatesHrefForSlug(slug);
 
             return (
               <motion.div
                 key={key}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.08, duration: 0.5 }}
+                transition={{ delay: index * 0.05, duration: 0.35 }}
                 whileHover={{ y: -4 }}
               >
-                <Card className="group overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 transition-all duration-300 hover:border-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/10">
+                <Card className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] transition duration-300 hover:border-yellow-300/35 hover:shadow-2xl hover:shadow-yellow-500/10">
                   <CardContent className="p-0">
                     <div className="relative h-64 overflow-hidden">
                       <img
-                        src={image}
+                        src={fallbackImage(slug)}
                         alt={occ.title}
                         loading="lazy"
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
 
                       <div
                         className={cn(
                           "absolute inset-0 bg-gradient-to-br opacity-80",
-                          gradientFrom,
-                          gradientTo
+                          fallbackGradientFrom(slug),
+                          "to-black"
                         )}
                       />
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/15 to-transparent" />
 
-                      <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/35 px-3 py-1 text-xs text-white backdrop-blur-sm">
-                        {label}
+                      <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/40 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+                        {prettyLabelFromSlug(slug)}
                       </div>
                     </div>
 
-                    <div className="space-y-4 p-5">
+                    <div className="space-y-5 p-5">
                       <div>
-                        <h3 className="mb-2 text-2xl font-bold text-white transition-colors group-hover:text-blue-400">
+                        <h3 className="mb-2 text-2xl font-black text-white transition-colors group-hover:text-yellow-200">
                           {occ.title}
                         </h3>
 
-                        <p className="text-sm leading-6 text-slate-400">
-                          {description}
+                        <p className="text-sm leading-6 text-white/55">
+                          {fallbackDescription(slug)}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          onClick={() => navigate(funnelHref)}
-                          variant="ghost"
-                          className="w-full rounded-xl bg-white/5 text-white hover:bg-white/10"
-                        >
-                          See More
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-
-                        <Button
-                          type="button"
-                          onClick={() => navigate(templatesHref)}
-                          className="w-full rounded-xl bg-blue-600 text-white hover:bg-blue-700"
-                        >
-                          Explore Templates
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => navigate(generatorHref)}
+                        className="w-full rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 py-6 font-black text-black hover:opacity-95"
+                      >
+                        Create
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

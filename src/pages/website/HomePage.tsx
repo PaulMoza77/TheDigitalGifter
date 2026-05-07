@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Gift, Heart, Sparkles } from "lucide-react";
 
 import { HeroSection } from "@/domains/Landing/components/HeroSection";
+import OccasionGrid from "@/domains/Landing/components/OccasionGrid";
 import { HowItWorks } from "@/domains/Landing/components/HowItWorks";
 import { FeaturesHighlight } from "@/domains/Landing/components/FeaturesHighlight";
 import { Testimonials } from "@/domains/Landing/components/Testimonials";
@@ -88,6 +89,8 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      <OccasionGrid />
 
       <HowItWorks />
       <FeaturesHighlight />
