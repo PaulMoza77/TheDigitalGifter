@@ -1,94 +1,94 @@
-import { Upload, Wand2, Sparkles, Download } from "lucide-react";
+import { Download, Gift, Heart, Upload } from "lucide-react";
 import { motion } from "framer-motion";
 
 const steps = [
   {
-    icon: Wand2,
-    title: "Choose Your Style",
+    icon: Gift,
+    title: "Choose the Moment",
     description:
-      "Browse 100+ premium templates across Christmas, birthdays, weddings, and more special occasions.",
-    color: "from-blue-500 to-cyan-500",
+      "Pick the occasion that matters — birthday, love, apology, family memory, pets, names, or something deeply personal.",
+    color: "from-yellow-300 to-orange-400",
   },
   {
     icon: Upload,
-    title: "Upload Your Photos",
+    title: "Add Your Photo",
     description:
-      "Add 1-4 photos. Our AI will intelligently match faces and compose the perfect card layout.",
-    color: "from-purple-500 to-pink-500",
+      "Upload the photo that carries the emotion. A smile, a memory, a face, a place, or someone you never want to forget.",
+    color: "from-pink-400 to-rose-500",
   },
   {
-    icon: Sparkles,
-    title: "AI Generates Magic",
+    icon: Heart,
+    title: "Make It Personal",
     description:
-      "In ~30 seconds, our AI creates a stunning personalized card or cinematic video with VEO3 technology.",
-    color: "from-orange-500 to-amber-500",
+      "Add a name, message, date, or small detail that turns a simple image into something made only for them.",
+    color: "from-purple-400 to-pink-500",
   },
   {
     icon: Download,
-    title: "Download & Share",
+    title: "Send the Feeling",
     description:
-      "Get high-resolution cards ready for print or digital sharing. Unlimited downloads included.",
-    color: "from-green-500 to-emerald-500",
+      "Download your finished creation and share it as a gift, message, keepsake, or beautiful surprise.",
+    color: "from-cyan-400 to-blue-500",
   },
 ];
 
 export const HowItWorks = () => {
   return (
-    <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-950/50 to-transparent">
-      <div className="max-w-7xl mx-auto">
-        {/* Section header */}
+    <section className="w-full bg-gradient-to-b from-black via-slate-950/70 to-black px-4 py-24 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
         <motion.div
-          className="text-center mb-20 space-y-4"
-          initial={{ opacity: 0, y: 20 }}
+          className="mx-auto mb-20 max-w-3xl text-center"
+          initial={{ opacity: 0, y: 22 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.55 }}
         >
-          <h2 className="text-4xl sm:text-5xl font-bold text-white">
-            How It Works
+          <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-yellow-200">
+            Simple to create
+          </p>
+
+          <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+            From a small idea to a meaningful gift.
           </h2>
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            Create professional AI cards in 4 simple steps. No design skills
-            required.
+
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/60">
+            Create something personal in just a few steps — no design skills,
+            no stress, just a beautiful moment made for someone special.
           </p>
         </motion.div>
 
-        {/* Steps grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, index) => (
             <motion.div
-              key={index}
-              className="relative group"
-              initial={{ opacity: 0, y: 30 }}
+              key={step.title}
+              className="group relative"
+              initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.15, duration: 0.5 }}
+              transition={{ delay: index * 0.12, duration: 0.45 }}
             >
-              {/* Connector line (desktop only) */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-16 left-full w-full h-0.5 bg-gradient-to-r from-slate-700 to-transparent z-0" />
+                <div className="absolute left-full top-16 z-0 hidden h-px w-full bg-gradient-to-r from-white/20 to-transparent lg:block" />
               )}
 
-              <div className="relative bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 h-full">
-                {/* Step number */}
-                <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 flex items-center justify-center text-xl font-bold text-blue-400">
+              <div className="relative h-full rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-xl transition duration-300 hover:-translate-y-1 hover:border-yellow-300/35 hover:shadow-yellow-500/10">
+                <div className="absolute -left-4 -top-4 flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-black text-lg font-black text-yellow-200 shadow-lg">
                   {index + 1}
                 </div>
 
-                {/* Icon */}
                 <div
-                  className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} p-0.5 mb-6 group-hover:scale-110 transition-transform duration-300`}
+                  className={`mb-7 h-16 w-16 rounded-2xl bg-gradient-to-br ${step.color} p-0.5 transition duration-300 group-hover:scale-110`}
                 >
-                  <div className="w-full h-full rounded-2xl bg-slate-950 flex items-center justify-center">
-                    <step.icon className="w-8 h-8 text-white" />
+                  <div className="flex h-full w-full items-center justify-center rounded-2xl bg-black">
+                    <step.icon className="h-8 w-8 text-white" />
                   </div>
                 </div>
 
-                {/* Content */}
-                <h3 className="text-xl font-bold mb-3 text-white">
+                <h3 className="mb-3 text-xl font-black text-white">
                   {step.title}
                 </h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
+
+                <p className="text-sm leading-7 text-white/55">
                   {step.description}
                 </p>
               </div>
@@ -96,19 +96,16 @@ export const HowItWorks = () => {
           ))}
         </div>
 
-        {/* CTA below steps */}
-        <div
-          className="text-center mt-16 animate-fade-in"
-          style={{ animationDelay: "0.6s" }}
-        >
-          <p className="text-slate-400 mb-4">
-            Ready to create your first card?
+        <div className="mt-16 text-center">
+          <p className="mb-4 text-white/55">
+            Ready to make someone smile?
           </p>
+
           <a
             href="/generator"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-2xl font-semibold shadow-lg shadow-blue-500/50 transition-all hover:scale-105"
+            className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 px-8 py-4 font-black text-black shadow-2xl shadow-yellow-500/20 transition hover:scale-[1.02]"
           >
-            Start Creating Free
+            Start Creating
           </a>
         </div>
       </div>

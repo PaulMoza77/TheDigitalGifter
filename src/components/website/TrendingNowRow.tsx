@@ -15,7 +15,7 @@ const priorityOccasions = [
 
 const trendingItems = priorityOccasions
   .map((id) => occasions.find((item) => item.id === id))
-  .filter(Boolean)
+  .filter((item): item is NonNullable<typeof item> => Boolean(item))
   .slice(0, 8);
 
 export function TrendingNowRow() {
@@ -33,8 +33,8 @@ export function TrendingNowRow() {
           </h2>
 
           <p className="mt-2 max-w-xl text-sm leading-6 text-white/55 sm:text-base">
-            Choose what you want to create and turn it into a personalized AI
-            gift, card or memory.
+            Choose the occasion and create something personal, emotional and
+            worth remembering.
           </p>
         </div>
 
@@ -48,53 +48,49 @@ export function TrendingNowRow() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {trendingItems.map((item, index) => {
-          if (!item) return null;
+        {trendingItems.map((item, index) => (
+          <Link
+            key={item.id}
+            to={`/generator?category=${encodeURIComponent(
+              item.category
+            )}&occasion=${encodeURIComponent(item.id)}`}
+            className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-xl transition duration-300 hover:-translate-y-1 hover:border-yellow-300/40 hover:shadow-yellow-500/10"
+          >
+            <div className="relative aspect-[4/5] overflow-hidden">
+              <img
+                src={item.image}
+                alt={item.title}
+                className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+              />
 
-          return (
-            <Link
-              key={item.id}
-              to={`/generator?category=${encodeURIComponent(
-                item.category
-              )}&occasion=${encodeURIComponent(item.id)}`}
-              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-xl transition duration-300 hover:-translate-y-1 hover:border-yellow-300/40 hover:shadow-yellow-500/10"
-            >
-              <div className="relative aspect-[4/5] overflow-hidden">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
-                />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
+              <div className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white/80 backdrop-blur">
+                {item.category}
+              </div>
 
-                <div className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white/80 backdrop-blur">
-                  {item.category}
-                </div>
+              <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-semibold text-white/80 backdrop-blur">
+                <Eye className="h-3 w-3" />
+                {(12.5 - index * 0.6).toFixed(1)}K
+              </div>
 
-                <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-semibold text-white/80 backdrop-blur">
-                  <Eye className="h-3 w-3" />
-                  {(12.5 - index * 0.6).toFixed(1)}K
-                </div>
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <h3 className="line-clamp-2 text-base font-black text-white sm:text-lg">
+                  {item.title}
+                </h3>
 
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="line-clamp-2 text-base font-black text-white sm:text-lg">
-                    {item.title}
-                  </h3>
+                <p className="mt-1 line-clamp-1 text-xs font-medium text-white/60">
+                  {item.label}
+                </p>
 
-                  <p className="mt-1 line-clamp-1 text-xs font-medium text-white/60">
-                    {item.label}
-                  </p>
-
-                  <div className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-yellow-200 opacity-0 transition group-hover:opacity-100">
-                    Create now
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </div>
+                <div className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-yellow-200 opacity-0 transition group-hover:opacity-100">
+                  Create now
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               </div>
-            </Link>
-          );
-        })}
+            </div>
+          </Link>
+        ))}
       </div>
 
       <div className="mt-8 flex justify-center sm:hidden">
