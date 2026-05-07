@@ -15,6 +15,8 @@ const HomePage: React.FC = () => {
     <main className="min-h-screen overflow-hidden bg-black text-white">
       <HeroSection />
 
+      <OccasionGrid />
+
       <section className="relative border-y border-white/10 bg-gradient-to-b from-black via-slate-950 to-black px-4 py-20 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,214,102,0.12),transparent_45%)]" />
 
@@ -89,8 +91,6 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      <OccasionGrid />
 
       <HowItWorks />
       <FeaturesHighlight />

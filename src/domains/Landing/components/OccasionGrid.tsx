@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
   CalendarDays,
-  Grid2X2,
   Heart,
   PawPrint,
   Plus,
@@ -26,6 +25,20 @@ type OccasionRow = {
   active?: boolean | null;
   sort_order?: number | null;
   updated_at?: string | null;
+};
+
+type TemplateImageRow = {
+  title?: string | null;
+  occasion?: string | null;
+  category?: string | null;
+  previewurl?: string | null;
+  preview_url?: string | null;
+  preview_image_url?: string | null;
+  thumbnailurl?: string | null;
+  thumbnail_url?: string | null;
+  isactive?: boolean | null;
+  is_active?: boolean | null;
+  created_at?: string | null;
 };
 
 type OccasionItem = OccasionRow & {
@@ -117,10 +130,19 @@ function groupFromSlug(slug: string): CategoryKey {
   return "occasions";
 }
 
-function templatesHrefForSlug(slug: string) {
-  return `/generator?category=${encodeURIComponent(
-    groupFromSlug(slug)
-  )}&occasion=${encodeURIComponent(normalizeOccasionKey(slug))}`;
+function funnelHrefForSlug(slug: string) {
+  return `/funnel/homepage/${encodeURIComponent(normalizeOccasionSlug(slug))}`;
+}
+
+function getTemplateImage(row: TemplateImageRow) {
+  return (
+    row.preview_image_url ||
+    row.preview_url ||
+    row.previewurl ||
+    row.thumbnail_url ||
+    row.thumbnailurl ||
+    null
+  );
 }
 
 function prettyLabelFromSlug(slug: string) {
@@ -256,11 +278,21 @@ function fallbackImage(slug: string) {
 
   if (s.includes("christmas")) return "/images/occasions/christmas.png";
   if (s.includes("birthday")) return "/images/occasions/happy-birthday.png";
-  if (s.includes("new") && s.includes("year")) return "/images/occasions/new-years-eve.png";
-  if (s.includes("thank") && s.includes("you")) return "/images/occasions/thank-you.png";
-  if (s.includes("thank") && s.includes("giving")) return "/images/occasions/thanks-giving.png";
-  if (s.includes("baby") && s.includes("reveal")) return "/images/occasions/gender-reveal.png";
-  if (s.includes("born") || s.includes("newborn")) return "/images/occasions/newborn.png";
+  if (s.includes("new") && s.includes("year")) {
+    return "/images/occasions/new-years-eve.png";
+  }
+  if (s.includes("thank") && s.includes("you")) {
+    return "/images/occasions/thank-you.png";
+  }
+  if (s.includes("thank") && s.includes("giving")) {
+    return "/images/occasions/thanks-giving.png";
+  }
+  if (s.includes("baby") && s.includes("reveal")) {
+    return "/images/occasions/gender-reveal.png";
+  }
+  if (s.includes("born") || s.includes("newborn")) {
+    return "/images/occasions/newborn.png";
+  }
   if (s.includes("pregnancy")) return "/images/occasions/pregnancy.png";
   if (s.includes("wedding")) return "/images/occasions/wedding.png";
   if (s.includes("easter")) return "/images/occasions/easter.png";
@@ -288,7 +320,9 @@ function fallbackGradientFrom(slug: string) {
   if (s.includes("birthday")) return "from-fuchsia-700/40";
   if (s.includes("sorry")) return "from-rose-700/40";
   if (s.includes("name")) return "from-yellow-700/40";
-  if (s.includes("pet") || s.includes("dogs") || s.includes("cats")) return "from-emerald-700/40";
+  if (s.includes("pet") || s.includes("dogs") || s.includes("cats")) {
+    return "from-emerald-700/40";
+  }
 
   return "from-slate-700/40";
 }
@@ -322,6 +356,9 @@ const FALLBACK_OCCASIONS: OccasionRow[] = [
 export default function OccasionGrid() {
   const navigate = useNavigate();
   const [rows, setRows] = useState<OccasionRow[] | null>(null);
+  const [templateImagesByOccasion, setTemplateImagesByOccasion] = useState<
+    Record<string, string>
+  >({});
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryKey>("occasions");
 
@@ -329,36 +366,71 @@ export default function OccasionGrid() {
     let cancelled = false;
 
     async function load() {
-      const { data, error } = await supabase
-        .from("occasions")
-        .select("id, slug, title, active, sort_order, updated_at")
-        .eq("active", true)
-        .order("sort_order", { ascending: true });
+      const [occasionsResult, templatesResult] = await Promise.all([
+        supabase
+          .from("occasions")
+          .select("id, slug, title, active, sort_order, updated_at")
+          .eq("active", true)
+          .order("sort_order", { ascending: true }),
+
+        supabase
+          .from("templates")
+          .select(
+            "title, occasion, category, previewurl, preview_url, preview_image_url, thumbnailurl, thumbnail_url, isactive, is_active, created_at"
+          )
+          .not("occasion", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(300),
+      ]);
 
       if (cancelled) return;
 
-      if (error) {
-        console.error("[OccasionGrid] supabase error:", error);
+      if (occasionsResult.error) {
+        console.error("[OccasionGrid] occasions error:", occasionsResult.error);
         setRows(FALLBACK_OCCASIONS);
+      } else {
+        const safeRows = ((occasionsResult.data as OccasionRow[]) || []).filter(
+          (item) => item?.slug && item?.title
+        );
+
+        const merged = [...safeRows];
+
+        for (const fallback of FALLBACK_OCCASIONS) {
+          const exists = merged.some(
+            (item) =>
+              normalizeOccasionKey(item.slug) ===
+              normalizeOccasionKey(fallback.slug)
+          );
+
+          if (!exists) merged.push(fallback);
+        }
+
+        setRows(merged.length > 0 ? merged : FALLBACK_OCCASIONS);
+      }
+
+      if (templatesResult.error) {
+        console.error("[OccasionGrid] templates error:", templatesResult.error);
+        setTemplateImagesByOccasion({});
         return;
       }
 
-      const safeRows = ((data as OccasionRow[]) || []).filter(
-        (x) => x?.slug && x?.title
-      );
+      const imageMap: Record<string, string> = {};
+      const templateRows = (templatesResult.data as TemplateImageRow[]) || [];
 
-      const merged = [...safeRows];
+      for (const template of templateRows) {
+        const occasion = String(template.occasion || "").trim();
+        const image = getTemplateImage(template);
 
-      for (const fallback of FALLBACK_OCCASIONS) {
-        const exists = merged.some(
-          (item) =>
-            normalizeOccasionKey(item.slug) === normalizeOccasionKey(fallback.slug)
-        );
+        if (!occasion || !image) continue;
 
-        if (!exists) merged.push(fallback);
+        const key = normalizeOccasionKey(occasion);
+        const slugKey = normalizeOccasionSlug(occasion);
+
+        if (!imageMap[key]) imageMap[key] = image;
+        if (!imageMap[slugKey]) imageMap[slugKey] = image;
       }
 
-      setRows(merged);
+      setTemplateImagesByOccasion(imageMap);
     }
 
     void load();
@@ -392,7 +464,7 @@ export default function OccasionGrid() {
 
   if (rows === null) {
     return (
-      <section id="categories" className="w-full px-4 py-24 sm:px-6 lg:px-8">
+      <section id="categories" className="w-full px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 h-40 rounded-[2rem] border border-white/10 bg-white/[0.04]" />
 
@@ -417,7 +489,7 @@ export default function OccasionGrid() {
   }
 
   return (
-    <section id="categories" className="w-full px-4 py-24 sm:px-6 lg:px-8">
+    <section id="categories" className="w-full px-4 py-14 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <motion.div
           className="mb-10"
@@ -499,8 +571,14 @@ export default function OccasionGrid() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {visibleOccasions.map((occ, index) => {
             const slug = String(occ.slug || "").trim();
+            const normalizedKey = normalizeOccasionKey(slug);
+            const normalizedSlug = normalizeOccasionSlug(slug);
             const key = String(occ.id || slug || index);
-            const generatorHref = templatesHrefForSlug(slug);
+            const funnelHref = funnelHrefForSlug(slug);
+            const image =
+              templateImagesByOccasion[normalizedKey] ||
+              templateImagesByOccasion[normalizedSlug] ||
+              fallbackImage(slug);
 
             return (
               <motion.div
@@ -513,49 +591,54 @@ export default function OccasionGrid() {
               >
                 <Card className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] transition duration-300 hover:border-yellow-300/35 hover:shadow-2xl hover:shadow-yellow-500/10">
                   <CardContent className="p-0">
-                    <div className="relative h-64 overflow-hidden">
-                      <img
-                        src={fallbackImage(slug)}
-                        alt={occ.title}
-                        loading="lazy"
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
+                    <button
+                      type="button"
+                      onClick={() => navigate(funnelHref)}
+                      className="block w-full text-left"
+                    >
+                      <div className="relative h-64 overflow-hidden bg-white/5">
+                        <img
+                          src={image}
+                          alt={occ.title}
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          onError={(event) => {
+                            event.currentTarget.src = fallbackImage(slug);
+                          }}
+                        />
 
-                      <div
-                        className={cn(
-                          "absolute inset-0 bg-gradient-to-br opacity-80",
-                          fallbackGradientFrom(slug),
-                          "to-black"
-                        )}
-                      />
+                        <div
+                          className={cn(
+                            "absolute inset-0 bg-gradient-to-br opacity-65",
+                            fallbackGradientFrom(slug),
+                            "to-black"
+                          )}
+                        />
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/15 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
-                      <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/40 px-3 py-1 text-xs font-bold text-white backdrop-blur">
-                        {prettyLabelFromSlug(slug)}
-                      </div>
-                    </div>
-
-                    <div className="space-y-5 p-5">
-                      <div>
-                        <h3 className="mb-2 text-2xl font-black text-white transition-colors group-hover:text-yellow-200">
-                          {occ.title}
-                        </h3>
-
-                        <p className="text-sm leading-6 text-white/55">
-                          {fallbackDescription(slug)}
-                        </p>
+                        <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+                          {prettyLabelFromSlug(slug)}
+                        </div>
                       </div>
 
-                      <Button
-                        type="button"
-                        onClick={() => navigate(generatorHref)}
-                        className="w-full rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 py-6 font-black text-black hover:opacity-95"
-                      >
-                        Create
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
+                      <div className="space-y-5 p-5">
+                        <div>
+                          <h3 className="mb-2 text-2xl font-black text-white transition-colors group-hover:text-yellow-200">
+                            {occ.title}
+                          </h3>
+
+                          <p className="text-sm leading-6 text-white/55">
+                            {fallbackDescription(slug)}
+                          </p>
+                        </div>
+
+                        <div className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 py-4 font-black text-black transition hover:opacity-95">
+                          Create
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </div>
+                      </div>
+                    </button>
                   </CardContent>
                 </Card>
               </motion.div>
