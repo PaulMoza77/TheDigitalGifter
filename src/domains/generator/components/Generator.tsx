@@ -1,297 +1,52 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import VideoModal from "@/components/VideoModal";
-import TemplateCard from "@/components/TemplateCard";
-import type { TemplateSummary } from "@/types/templates";
-
 import { useTemplatesQuery, useUserCreditsQuery, useJobsQuery } from "@/data";
 import { useCreateVideoJobMutation } from "@/data";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/Select";
-
-import { cn } from "@/lib/utils";
-import {
-  Info,
-  Sparkles,
-  ImageIcon,
-  Video,
-  Heart,
-  Cross,
-  PawPrint,
-  CalendarDays,
-  LayoutGrid,
-} from "lucide-react";
-import LanguageSelector from "@/components/LanguageSelector";
 import { useCreditsFunnel } from "@/contexts/CreditsFunnelContext";
 import { useBootstrapUser } from "@/hooks/useBootstrapUser";
 import { uploadFileToStorage } from "@/lib/uploadFileToStorage";
 import { supabase } from "@/lib/supabase";
-import { occasions } from "@/constants/occasions";
 
-const ALL_CATEGORIES = "all";
-const ALL_OCCASIONS = "all";
-const ALL_STYLES = "all";
+import SnowBackground from "@/domains/generator/components/SnowBackground";
+import UploadSection from "@/domains/generator/components/UploadSection";
+import UploadedPreviewStrip from "@/domains/generator/components/UploadedPreviewStrip";
+import GeneratorFilters from "@/domains/generator/components/GeneratorFilters";
+import TemplatesGrid from "@/domains/generator/components/TemplatesGrid";
+import BeforeAfterPreview from "@/domains/generator/components/BeforeAfterPreview";
+import GenerationBar from "@/domains/generator/components/GenerationBar";
 
-type CategoryKey = "all" | "occasions" | "personal" | "spiritual" | "pets";
+import {
+  ALL_CATEGORIES,
+  ALL_OCCASIONS,
+  ALL_STYLES,
+  type AnyTemplate,
+  type CategoryKey,
+  type GenerationRow,
+  type JobRow,
+} from "@/domains/generator/components/generatorTypes";
 
-const CATEGORY_OPTIONS: Array<{
-  value: CategoryKey;
-  label: string;
-  description: string;
-  icon: React.ElementType;
-}> = [
-  {
-    value: "all",
-    label: "All",
-    description: "Everything",
-    icon: LayoutGrid,
-  },
-  {
-    value: "occasions",
-    label: "Occasions",
-    description: "Birthdays, holidays",
-    icon: CalendarDays,
-  },
-  {
-    value: "personal",
-    label: "Personal",
-    description: "Names, kids, love",
-    icon: Heart,
-  },
-  {
-    value: "spiritual",
-    label: "Spiritual",
-    description: "Faith, prayer, hope",
-    icon: Cross,
-  },
-  {
-    value: "pets",
-    label: "Pets",
-    description: "Dogs, cats, memories",
-    icon: PawPrint,
-  },
-];
+import {
+  buildPrompt,
+  dispatchCreditsRefresh,
+  formatLabel,
+  getPublicSupabaseConfig,
+  getTemplateId,
+  getTemplateImageUrl,
+  getTemplateMainCategory,
+  getTemplateStyleId,
+  isHttpUrl,
+  normalizeCategory,
+  normalizeKey,
+  normalizeTemplate,
+  safeReadJson,
+  safeString,
+} from "@/domains/generator/components/generatorUtils";
 
-function SnowBackground() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let w = (canvas.width = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
-
-    const flakes = Array.from({ length: 50 }, () => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      r: Math.random() * 2 + 0.5,
-      o: Math.random() * 0.4 + 0.3,
-      s: Math.random() * 0.5 + 0.2,
-    }));
-
-    let raf = 0;
-
-    const draw = () => {
-      const gradient = ctx.createLinearGradient(0, 0, 0, h);
-      gradient.addColorStop(0, "#060a12");
-      gradient.addColorStop(1, "#0b1220");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, w, h);
-
-      flakes.forEach((f) => {
-        f.y += f.s;
-        if (f.y > h + 4) f.y = -4;
-        f.x += Math.sin(f.y * 0.01) * 0.3;
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${f.o})`;
-        ctx.fill();
-      });
-
-      raf = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    const handleResize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  return (
-    <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 -z-10" />
-  );
-}
-
-type JobRow = {
-  id: string;
-  type: "image" | "video";
-  status: "queued" | "processing" | "done" | "error";
-  result_url: string | null;
-  error_message: string | null;
-};
-
-type GenerationRow = {
-  id: string;
-  status: "pending" | "queued" | "processing" | "completed" | "failed" | "error";
-  final_image_url: string | null;
-  result_image_url?: string | null;
-  preview_image_url?: string | null;
-  error?: string | null;
-};
-
-type AnyTemplate = TemplateSummary & {
-  id?: string;
-  _id?: string;
-  title?: string;
-  prompt?: string | null;
-
-  main_category?: string | null;
-  mainCategory?: string | null;
-
-  occasion?: string | null;
-  category?: string | null;
-
-  style_id?: string | null;
-  styleId?: string | null;
-
-  previewUrl?: string | null;
-  thumbnailUrl?: string | null;
-  previewurl?: string | null;
-  preview_url?: string | null;
-  preview_image_url?: string | null;
-  thumbnailurl?: string | null;
-  thumbnail_url?: string | null;
-
-  image?: string | null;
-  imageUrl?: string | null;
-  mediaUrl?: string | null;
-
-  creditCost?: number;
-  creditcost?: number;
-  credit_cost?: number;
-
-  type?: string;
-};
-
-type EdgeResponse = {
-  success?: boolean;
-  error?: string;
-  message?: string;
-  imageUrl?: string;
-  generation_id?: string;
-};
-
-function normalizeKey(value: unknown) {
-  const raw = String(value ?? "").trim().toLowerCase();
-
-  if (!raw || raw === "all") return raw;
-
-  if (raw === "new-born" || raw === "new_born" || raw === "newborn") {
-    return "new_born";
-  }
-
-  if (raw === "valentines" || raw === "valentines-day") return "valentines_day";
-  if (raw === "mothers-day") return "mothers_day";
-  if (raw === "fathers-day") return "fathers_day";
-  if (raw === "new-years-eve") return "new_years_eve";
-  if (raw === "baby-reveal") return "baby_reveal";
-  if (raw === "thank-you") return "thank_you";
-  if (raw === "name-cards") return "name_cards";
-  if (raw === "bible-verses") return "bible_verses";
-  if (raw === "pet-loss") return "pet_loss";
-
-  return raw.replace(/-/g, "_");
-}
-
-function normalizeCategory(value: unknown): CategoryKey {
-  const key = normalizeKey(value);
-
-  if (
-    key === "occasions" ||
-    key === "personal" ||
-    key === "spiritual" ||
-    key === "pets"
-  ) {
-    return key;
-  }
-
-  return ALL_CATEGORIES;
-}
-
-function safeString(value: unknown) {
-  return String(value ?? "").trim();
-}
-
-function isHttpUrl(value: unknown) {
-  return /^https?:\/\//i.test(safeString(value));
-}
-
-function formatLabel(value: unknown) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return "Other";
-
-  return raw
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-    .replace(/\bNew Born\b/g, "Newborn")
-    .replace(/\bNew Years Eve\b/g, "New Year's Eve")
-    .replace(/\bValentines Day\b/g, "Valentine's Day")
-    .replace(/\bMothers Day\b/g, "Mother's Day")
-    .replace(/\bFathers Day\b/g, "Father's Day")
-    .replace(/\bBaby Reveal\b/g, "Baby Reveal")
-    .replace(/\bThank You\b/g, "Thank You")
-    .replace(/\bBible Verses\b/g, "Bible Verses")
-    .replace(/\bPet Loss\b/g, "Pet Loss");
-}
-
-function getPublicSupabaseConfig(): { url: string; anon: string } {
-  const env = import.meta.env as {
-    VITE_SUPABASE_URL?: string;
-    VITE_SUPABASE_ANON_KEY?: string;
-  };
-
-  const url = (env.VITE_SUPABASE_URL || "").trim();
-  const anon = (env.VITE_SUPABASE_ANON_KEY || "").trim();
-
-  if (!url || !anon) {
-    throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
-  }
-
-  return { url, anon };
-}
-
-async function getEdgeFunctionHeaders(
-  anonKey: string
-): Promise<Record<string, string>> {
+async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, string>> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -303,126 +58,6 @@ async function getEdgeFunctionHeaders(
     apikey: anonKey,
     Authorization: `Bearer ${accessToken || anonKey}`,
   };
-}
-
-async function safeReadJson(res: Response): Promise<EdgeResponse> {
-  try {
-    return (await res.json()) as EdgeResponse;
-  } catch {
-    return {};
-  }
-}
-
-function getTemplateId(template: AnyTemplate) {
-  return safeString(template.id || template._id);
-}
-
-function getTemplateMainCategory(template: AnyTemplate): CategoryKey {
-  const direct = normalizeCategory(template.main_category || template.mainCategory);
-
-  if (direct !== "all") return direct;
-
-  const occasionKey = normalizeKey(template.occasion);
-  const found = occasions.find((item) => normalizeKey(item.id) === occasionKey);
-
-  return normalizeCategory(found?.category || "occasions");
-}
-
-function getTemplateStyleId(template: AnyTemplate) {
-  return (
-    safeString(template.style_id) ||
-    safeString(template.styleId) ||
-    normalizeKey(template.category || "general")
-  );
-}
-
-function getTemplateImageUrl(template: AnyTemplate) {
-  const candidates = [
-    template.previewUrl,
-    template.thumbnailUrl,
-    template.preview_image_url,
-    template.preview_url,
-    template.previewurl,
-    template.thumbnail_url,
-    template.thumbnailurl,
-    template.imageUrl,
-    template.image,
-    template.mediaUrl,
-  ];
-
-  for (const candidate of candidates) {
-    const url = safeString(candidate);
-    if (url) return url;
-  }
-
-  return "";
-}
-
-function normalizeTemplate(t: AnyTemplate): AnyTemplate {
-  const id = getTemplateId(t);
-
-  const previewUrl = getTemplateImageUrl(t);
-  const thumbnailUrl =
-    safeString(t.thumbnailUrl) ||
-    safeString(t.thumbnail_url) ||
-    safeString(t.thumbnailurl) ||
-    previewUrl;
-
-  const creditCost =
-    typeof t.creditCost === "number"
-      ? t.creditCost
-      : typeof t.credit_cost === "number"
-        ? t.credit_cost
-        : typeof t.creditcost === "number"
-          ? t.creditcost
-          : 1;
-
-  const normalizedOccasion = normalizeKey(t.occasion || "");
-  const mainCategory = getTemplateMainCategory(t);
-  const style = safeString(t.category || "general");
-
-  return {
-    ...(t as TemplateSummary),
-    ...(t as any),
-    id,
-    _id: id,
-    main_category: mainCategory,
-    mainCategory,
-    occasion: normalizedOccasion || t.occasion,
-    category: style,
-    previewUrl,
-    thumbnailUrl,
-    creditCost,
-    type: String(t.type ?? "image").toLowerCase(),
-  };
-}
-
-function dispatchCreditsRefresh() {
-  window.dispatchEvent(new Event("credits:refresh"));
-}
-
-function buildPrompt(template: AnyTemplate, customInstructions: string) {
-  const templatePrompt = safeString((template as any).prompt);
-  const title = safeString(template.title);
-  const occasion = safeString(template.occasion);
-  const custom = safeString(customInstructions);
-
-  return [
-    "Create one premium realistic personalized gift image using the two provided input images.",
-    "Input image 1 is the customer's uploaded photo. Preserve the real people from image 1: face identity, age, skin tone, hair color, hairstyle, body shape, expression, and number of people.",
-    "Input image 2 is the selected template/reference image. Use image 2 for scene, composition, pose direction, camera angle, background, props, lighting, mood, colors, and premium style.",
-    "Final task: create a new image that looks like the template/reference image but personalized with the people from the customer's photo.",
-    "Do not copy the customer's original background unless it naturally fits the template.",
-    "Do not create extra people. Do not duplicate faces. Do not distort hands, eyes, mouths, or limbs.",
-    "Avoid random text, logos, watermarks, captions, signatures, or unreadable typography.",
-    "Make the result clean, beautiful, realistic, emotional, and gift-ready.",
-    title ? `Template title: ${title}.` : "",
-    occasion ? `Occasion: ${occasion}.` : "",
-    templatePrompt ? `Template-specific instruction: ${templatePrompt}` : "",
-    custom ? `User extra instruction: ${custom}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
 }
 
 export default function GeneratorPage() {
@@ -451,31 +86,22 @@ export default function GeneratorPage() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [previewAfter, setPreviewAfter] = useState<string | null>(null);
   const [customInstructions, setCustomInstructions] = useState("");
+  const [personalizedName, setPersonalizedName] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(
-    null
-  );
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState(
-    "match_input_image"
-  );
+  const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState("match_input_image");
 
   const pollingRef = useRef<number | null>(null);
   const isPollingRef = useRef(false);
 
-  const [modal, setModal] = useState<{
-    open: boolean;
-    src: string;
-    title?: string;
-  }>({
+  const [modal, setModal] = useState({
     open: false,
     src: "",
     title: "",
   });
 
-  const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">(
-    "all"
-  );
+  const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">("all");
   const [generateAudio, setGenerateAudio] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
@@ -497,6 +123,7 @@ export default function GeneratorPage() {
   const jobs = (jobsRaw as JobRow[]) || [];
 
   const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
+  const { openFunnel } = useCreditsFunnel();
 
   const categoryFilteredTemplates = useMemo(() => {
     if (selectedCategory === ALL_CATEGORIES) return templatesList;
@@ -526,9 +153,7 @@ export default function GeneratorPage() {
       }
     });
 
-    return Array.from(map.values()).sort((a, b) =>
-      a.label.localeCompare(b.label)
-    );
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [categoryFilteredTemplates]);
 
   const styleOptions = useMemo(() => {
@@ -564,9 +189,7 @@ export default function GeneratorPage() {
       }
     });
 
-    return Array.from(map.values()).sort((a, b) =>
-      a.label.localeCompare(b.label)
-    );
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [categoryFilteredTemplates, selectedOccasion]);
 
   const aspectRatioOptions = [
@@ -587,8 +210,7 @@ export default function GeneratorPage() {
   ];
 
   const selectedCategoryLabel =
-    CATEGORY_OPTIONS.find((item) => item.value === selectedCategory)?.label ||
-    "All";
+    selectedCategory === "all" ? "All" : formatLabel(selectedCategory);
 
   const selectedOccasionLabel =
     selectedOccasion === ALL_OCCASIONS
@@ -614,11 +236,8 @@ export default function GeneratorPage() {
           const next = new URLSearchParams(prev);
 
           if (updates.category !== undefined) {
-            if (updates.category === ALL_CATEGORIES) {
-              next.delete("category");
-            } else {
-              next.set("category", updates.category);
-            }
+            if (updates.category === ALL_CATEGORIES) next.delete("category");
+            else next.set("category", updates.category);
 
             next.delete("occasion");
             next.delete("style");
@@ -626,22 +245,16 @@ export default function GeneratorPage() {
           }
 
           if (updates.occasion !== undefined) {
-            if (updates.occasion === ALL_OCCASIONS) {
-              next.delete("occasion");
-            } else {
-              next.set("occasion", updates.occasion);
-            }
+            if (updates.occasion === ALL_OCCASIONS) next.delete("occasion");
+            else next.set("occasion", updates.occasion);
 
             next.delete("style");
             next.delete("template");
           }
 
           if (updates.style !== undefined) {
-            if (updates.style === ALL_STYLES) {
-              next.delete("style");
-            } else {
-              next.set("style", updates.style);
-            }
+            if (updates.style === ALL_STYLES) next.delete("style");
+            else next.set("style", updates.style);
 
             next.delete("template");
           }
@@ -651,9 +264,7 @@ export default function GeneratorPage() {
         { replace: true }
       );
 
-      if (updates.type) {
-        setTypeFilter(updates.type);
-      }
+      if (updates.type) setTypeFilter(updates.type);
     },
     [setSearchParams]
   );
@@ -676,9 +287,7 @@ export default function GeneratorPage() {
     let list = categoryFilteredTemplates;
 
     if (selectedOccasion !== ALL_OCCASIONS) {
-      list = list.filter((template) => {
-        return normalizeKey(template.occasion) === selectedOccasion;
-      });
+      list = list.filter((template) => normalizeKey(template.occasion) === selectedOccasion);
     }
 
     if (selectedStyle !== ALL_STYLES) {
@@ -695,9 +304,7 @@ export default function GeneratorPage() {
     }
 
     if (typeFilter !== "all") {
-      list = list.filter((template) => {
-        return String(template.type || "").toLowerCase() === typeFilter;
-      });
+      list = list.filter((template) => String(template.type || "").toLowerCase() === typeFilter);
     }
 
     return list;
@@ -741,9 +348,7 @@ export default function GeneratorPage() {
       try {
         const { data, error } = await supabase
           .from("generations")
-          .select(
-            "id, status, final_image_url, result_image_url, preview_image_url, error"
-          )
+          .select("id, status, final_image_url, result_image_url, preview_image_url, error")
           .eq("id", generationId)
           .maybeSingle();
 
@@ -868,34 +473,31 @@ export default function GeneratorPage() {
     [setSearchParams]
   );
 
-  const handleFileSelect = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(event.target.files || []);
-      if (files.length === 0) return;
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
 
-      const valid = files.filter((file) => {
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name} is too large. Maximum 10MB.`);
-          return false;
-        }
-
-        if (!file.type.startsWith("image/")) {
-          toast.error(`${file.name} is not an image.`);
-          return false;
-        }
-
-        return true;
-      });
-
-      if (valid.length > 0) {
-        setUploadedFiles((prev) => [...prev, ...valid]);
-        toast.success(`${valid.length} photo(s) uploaded!`);
+    const valid = files.filter((file) => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Maximum 10MB.`);
+        return false;
       }
 
-      event.target.value = "";
-    },
-    []
-  );
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image.`);
+        return false;
+      }
+
+      return true;
+    });
+
+    if (valid.length > 0) {
+      setUploadedFiles((prev) => [...prev, ...valid]);
+      toast.success(`${valid.length} photo(s) uploaded!`);
+    }
+
+    event.target.value = "";
+  }, []);
 
   const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -954,8 +556,6 @@ export default function GeneratorPage() {
     }
   }, []);
 
-  const { openFunnel } = useCreditsFunnel();
-
   async function createGenerationAndRun(input: {
     template: AnyTemplate;
     sourceImageUrl: string;
@@ -967,10 +567,8 @@ export default function GeneratorPage() {
       data: { user: authUser },
     } = await supabase.auth.getUser();
 
-    const effectiveUserId =
-      safeString(authUser?.id || (user as any)?.id) || null;
-    const effectiveEmail =
-      safeString(authUser?.email || (user as any)?.email) || null;
+    const effectiveUserId = safeString(authUser?.id || (user as any)?.id) || null;
+    const effectiveEmail = safeString(authUser?.email || (user as any)?.email) || null;
 
     const templateId = getTemplateId(input.template);
     const styleId = getTemplateStyleId(input.template);
@@ -1067,6 +665,11 @@ export default function GeneratorPage() {
 
     if (!template) {
       toast.error("Template not found. Please pick another option.");
+      return;
+    }
+
+    if (normalizeKey(template.occasion) === "name_cards" && !personalizedName.trim()) {
+      toast.error("Please add the name you want on the card.");
       return;
     }
 
@@ -1168,7 +771,11 @@ export default function GeneratorPage() {
         throw new Error("Selected template has no valid public image URL.");
       }
 
-      const prompt = buildPrompt(template, customInstructions);
+      const prompt = buildPrompt({
+        template,
+        customInstructions,
+        personalizedName,
+      });
 
       const generationId = await createGenerationAndRun({
         template,
@@ -1192,67 +799,30 @@ export default function GeneratorPage() {
     selectedTemplateId,
     uploadedFiles,
     templateMap,
+    personalizedName,
     userCredits,
-    triggerCreateVideoJob,
-    selectedAspectRatio,
-    customInstructions,
-    generateAudio,
-    negativePrompt,
-    openFunnel,
     jobs,
-    selectedLanguage,
+    openFunnel,
     stopGenerationPolling,
+    customInstructions,
+    negativePrompt,
+    selectedLanguage,
+    triggerCreateVideoJob,
+    generateAudio,
     refreshCredits,
+    selectedAspectRatio,
   ]);
 
   return (
     <div className="relative min-h-screen overflow-x-hidden text-[#f6f8ff]">
       <SnowBackground />
 
-      <section
+      <UploadSection
+        uploadedFilesLength={uploadedFiles.length}
+        hasSelectedTemplate={!!selectedTemplateId}
         onDrop={handleDrop}
-        onDragOver={(event) => event.preventDefault()}
-        onClick={() => document.getElementById("file-input")?.click()}
-        role="button"
-        tabIndex={0}
-        aria-label="Upload photos. Drag and drop or click to select images."
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            document.getElementById("file-input")?.click();
-          }
-        }}
-        className="mx-auto my-8 max-w-4xl cursor-pointer rounded-[28px] border border-white/15 bg-white/[0.055] p-8 text-center shadow-[0_18px_60px_rgba(0,0,0,.35)] transition hover:border-white/25 hover:bg-white/[0.085]"
-      >
-        <input
-          id="file-input"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFileSelect}
-          aria-label="Select image files"
-          className="hidden"
-        />
-
-        <h2 className="mb-2 text-xl font-semibold">
-          {uploadedFiles.length > 0
-            ? `✅ ${uploadedFiles.length} photo${
-                uploadedFiles.length > 1 ? "s" : ""
-              } uploaded`
-            : "Drag & drop"}
-        </h2>
-
-        <p className="text-[#c1c8d8]">
-          {uploadedFiles.length > 0
-            ? "Click to add more photos"
-            : "or click to upload your reference photos"}
-        </p>
-
-        <p className="mt-4 text-sm text-[#c1c8d8]">
-          {uploadedFiles.length > 0 && !selectedTemplateId
-            ? "Now select your desired template below ⬇️"
-            : ""}
-        </p>
-      </section>
+        onFileSelect={handleFileSelect}
+      />
 
       {modal.open && (
         <VideoModal
@@ -1262,449 +832,62 @@ export default function GeneratorPage() {
         />
       )}
 
-      {uploadedFiles.length > 0 && (
-        <div className="mx-auto my-6 max-w-4xl px-4">
-          <div className="flex flex-wrap justify-center gap-3">
-            {previewUrls.map((url, index) => (
-              <div
-                key={index}
-                className="group relative h-24 w-24 overflow-hidden rounded-xl border border-white/15 bg-white/[0.06]"
-              >
-                <img
-                  src={url}
-                  alt={`Preview ${index + 1}`}
-                  className="h-full w-full object-cover"
-                />
+      <UploadedPreviewStrip
+        previewUrls={previewUrls}
+        onRemoveFile={handleRemoveFile}
+      />
 
-                <button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleRemoveFile(index);
-                  }}
-                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/90 text-xs font-bold text-white opacity-0 transition-opacity hover:bg-red-500 group-hover:opacity-100"
-                  aria-label="Remove image"
-                  type="button"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <GeneratorFilters
+        selectedCategory={selectedCategory}
+        selectedOccasion={selectedOccasion}
+        selectedStyle={selectedStyle}
+        selectedCategoryLabel={selectedCategoryLabel}
+        selectedOccasionLabel={selectedOccasionLabel}
+        selectedStyleLabel={selectedStyleLabel}
+        filteredTemplatesLength={filteredTemplates.length}
+        typeFilter={typeFilter}
+        setTypeFilter={setTypeFilter}
+        occasionOptions={occasionOptions}
+        styleOptions={styleOptions}
+        updateFilterParams={updateFilterParams}
+      />
 
-      <section className="mx-auto mb-7 max-w-5xl px-4">
-        <div className="rounded-[28px] border border-white/10 bg-white/[0.045] p-4 shadow-[0_18px_60px_rgba(0,0,0,.28)] backdrop-blur-xl">
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#ffd976]" />
+      <TemplatesGrid
+        filteredTemplates={filteredTemplates}
+        selectedTemplateId={selectedTemplateId}
+        onTemplateSelect={handleTemplateSelect}
+        onOpenModal={(src, title) => setModal({ open: true, src, title: title || "" })}
+      />
 
-                <h2 className="text-base font-semibold text-white">
-                  Choose a category and occasion
-                </h2>
-              </div>
+      <BeforeAfterPreview
+        previewUrls={previewUrls}
+        previewAfter={previewAfter}
+        isGenerating={isGenerating}
+        currentJob={currentJob}
+        selectedTemplateObj={selectedTemplateObj}
+        onDownload={handleDownload}
+      />
 
-              <p className="mt-1 text-sm text-[#9ca8bd]">
-                {selectedCategoryLabel} · {selectedOccasionLabel}
-                {selectedOccasion !== ALL_OCCASIONS
-                  ? ` · ${selectedStyleLabel}`
-                  : ""}{" "}
-                · {filteredTemplates.length} template
-                {filteredTemplates.length === 1 ? "" : "s"}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Select
-                value={typeFilter}
-                onValueChange={(value) =>
-                  setTypeFilter(value as "all" | "image" | "video")
-                }
-              >
-                <SelectTrigger className="h-11 w-full min-w-[160px] rounded-2xl border-white/10 bg-black/25 text-white">
-                  <SelectValue placeholder="Media type" />
-                </SelectTrigger>
-
-                <SelectContent className="border-white/15 bg-[#0b1220] text-white">
-                  <SelectItem value="all">All Media</SelectItem>
-                  <SelectItem value="image">Images</SelectItem>
-                  <SelectItem value="video">Videos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
-            {CATEGORY_OPTIONS.map((category) => {
-              const Icon = category.icon;
-              const isActive = selectedCategory === category.value;
-
-              return (
-                <button
-                  key={category.value}
-                  type="button"
-                  onClick={() =>
-                    updateFilterParams({ category: category.value })
-                  }
-                  className={cn(
-                    "rounded-2xl border px-4 py-3 text-left transition",
-                    isActive
-                      ? "border-[#ffd976]/70 bg-[#ffd976] text-[#171717] shadow-[0_0_22px_rgba(255,217,118,.22)]"
-                      : "border-white/10 bg-white/[0.055] text-zinc-200 hover:bg-white/[0.09]"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" />
-                    <span className="text-sm font-bold">{category.label}</span>
-                  </div>
-
-                  <p
-                    className={cn(
-                      "mt-1 text-xs",
-                      isActive ? "text-black/65" : "text-white/45"
-                    )}
-                  >
-                    {category.description}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mb-4 flex flex-wrap gap-2 border-t border-white/10 pt-4">
-            <button
-              type="button"
-              onClick={() => updateFilterParams({ occasion: ALL_OCCASIONS })}
-              className={cn(
-                "rounded-2xl border px-4 py-2 text-sm font-semibold transition",
-                selectedOccasion === ALL_OCCASIONS
-                  ? "border-[#ffd976]/70 bg-[#ffd976] text-[#171717] shadow-[0_0_22px_rgba(255,217,118,.22)]"
-                  : "border-white/10 bg-white/[0.055] text-zinc-200 hover:bg-white/[0.09]"
-              )}
-            >
-              All Occasions
-            </button>
-
-            {occasionOptions.map((occasion) => (
-              <button
-                key={occasion.value}
-                type="button"
-                onClick={() => updateFilterParams({ occasion: occasion.value })}
-                className={cn(
-                  "rounded-2xl border px-4 py-2 text-sm font-semibold transition",
-                  selectedOccasion === occasion.value
-                    ? "border-[#ffd976]/70 bg-[#ffd976] text-[#171717] shadow-[0_0_22px_rgba(255,217,118,.22)]"
-                    : "border-white/10 bg-white/[0.055] text-zinc-200 hover:bg-white/[0.09]"
-                )}
-              >
-                {occasion.label}
-              </button>
-            ))}
-          </div>
-
-          {selectedOccasion !== ALL_OCCASIONS ? (
-            <div className="border-t border-white/10 pt-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9ca8bd]">
-                  Styles for {selectedOccasionLabel}
-                </p>
-
-                {selectedStyle !== ALL_STYLES && (
-                  <button
-                    type="button"
-                    onClick={() => updateFilterParams({ style: ALL_STYLES })}
-                    className="text-xs font-semibold text-[#ffd976] hover:underline"
-                  >
-                    Reset style
-                  </button>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => updateFilterParams({ style: ALL_STYLES })}
-                  className={cn(
-                    "rounded-full border px-3.5 py-2 text-sm font-medium transition",
-                    selectedStyle === ALL_STYLES
-                      ? "border-white/25 bg-white text-black"
-                      : "border-white/10 bg-black/20 text-zinc-300 hover:bg-white/[0.08]"
-                  )}
-                >
-                  All Styles
-                </button>
-
-                {styleOptions.map((style) => (
-                  <button
-                    key={style.value}
-                    type="button"
-                    onClick={() => updateFilterParams({ style: style.value })}
-                    className={cn(
-                      "rounded-full border px-3.5 py-2 text-sm font-medium transition",
-                      selectedStyle === style.value
-                        ? "border-white/25 bg-white text-black"
-                        : "border-white/10 bg-black/20 text-zinc-300 hover:bg-white/[0.08]"
-                    )}
-                  >
-                    {style.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="border-t border-white/10 pt-4">
-              <p className="text-sm text-[#9ca8bd]">
-                Select an occasion first to see available styles.
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <div className="mx-auto grid max-w-5xl grid-cols-2 gap-5 px-4 pb-8 md:grid-cols-3 lg:grid-cols-4">
-        {filteredTemplates.map((template) => {
-          const normalized = normalizeTemplate(template);
-          const id = getTemplateId(normalized);
-          const isSelected = selectedTemplateId === id;
-
-          return (
-            <TemplateCard
-              key={id}
-              template={normalized as TemplateSummary}
-              isSelected={isSelected}
-              onSelect={handleTemplateSelect as any}
-              onOpenModal={(src, title) =>
-                setModal({ open: true, src, title })
-              }
-            />
-          );
-        })}
-
-        {filteredTemplates.length === 0 && (
-          <div className="col-span-full rounded-[28px] border border-white/10 bg-white/[0.045] px-6 py-14 text-center">
-            <p className="text-lg font-semibold text-white">
-              No templates found
-            </p>
-
-            <p className="mt-2 text-sm text-[#9ca8bd]">
-              Try All Categories, All Occasions, or another media type.
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div
-        id="preview-section"
-        className="mx-auto mt-4 grid w-[92%] max-w-5xl grid-cols-2 gap-6 text-center font-bold text-[#c1c8d8]"
-      >
-        <span>Before</span>
-        <span>After</span>
-      </div>
-
-      <div
-        className={cn(
-          "mx-auto mt-2 grid w-[92%] max-w-5xl grid-cols-1 gap-6 px-4 pb-32 sm:grid-cols-2",
-          selectedTemplateObj && selectedTemplateObj.type === "video"
-            ? "pb-72"
-            : selectedTemplateObj?.type === "image"
-              ? "pb-64"
-              : ""
-        )}
-      >
-        <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)]">
-          {previewUrls.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {previewUrls.map((url, index) => (
-                <img
-                  key={index}
-                  src={url}
-                  alt={`Input ${index + 1}`}
-                  className="max-h-[240px] max-w-full rounded-lg object-contain"
-                />
-              ))}
-            </div>
-          ) : (
-            <span>No images uploaded</span>
-          )}
-        </div>
-
-        <div className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)]">
-          {isGenerating ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#ffd976] border-t-transparent" />
-              <span className="text-sm">Generating magic...</span>
-            </div>
-          ) : previewAfter ? (
-            <>
-              {currentJob?.type === "video" ? (
-                <video
-                  src={previewAfter}
-                  controls
-                  className="max-h-full max-w-full rounded-lg object-contain"
-                  autoPlay
-                  loop
-                />
-              ) : (
-                <img
-                  src={previewAfter}
-                  alt="After"
-                  className="max-h-full max-w-full rounded-lg object-contain"
-                />
-              )}
-
-              <button
-                onClick={() => {
-                  const ext = currentJob?.type === "video" ? "mp4" : "png";
-                  const filename =
-                    currentJob?.type === "video"
-                      ? `video-${Date.now()}.${ext}`
-                      : `generated-card-${Date.now()}.${ext}`;
-
-                  void handleDownload(previewAfter, filename);
-                }}
-                className="absolute bottom-4 right-4 rounded-lg bg-[#ffd976] px-4 py-2 font-semibold text-[#1e1e1e] transition hover:brightness-110 active:scale-95"
-                type="button"
-              >
-                Download
-              </button>
-            </>
-          ) : (
-            <span>No image generated yet</span>
-          )}
-        </div>
-      </div>
-
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/15 bg-[rgba(6,10,18,0.95)] px-4 py-3 shadow-[0_-8px_32px_rgba(0,0,0,.5)] backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col gap-3">
-            {selectedTemplateObj ? (
-              selectedTemplateObj.type === "video" ? (
-                <>
-                  <p className="mt-2 flex items-start gap-2 text-xs text-[#c1c8d8] sm:items-center">
-                    <span className="mt-0.5">
-                      <Info size={18} />
-                    </span>
-                    <span>
-                      Video generation costs{" "}
-                      {selectedTemplateObj.creditCost ?? "X"} credits per
-                      second. Enabling "With Audio" will double the cost.
-                    </span>
-                  </p>
-
-                  <div className="flex flex-col gap-3 md:flex-row">
-                    <textarea
-                      value={customInstructions}
-                      onChange={(event) =>
-                        setCustomInstructions(event.target.value)
-                      }
-                      placeholder="Optional: Add custom instructions..."
-                      className="max-h-[80px] min-h-[40px] flex-1 resize-none rounded-xl border border-white/15 bg-white/[0.1] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
-                      rows={3}
-                      disabled={isGenerating}
-                    />
-
-                    <textarea
-                      value={negativePrompt}
-                      onChange={(event) =>
-                        setNegativePrompt(event.target.value.slice(0, 500))
-                      }
-                      placeholder="Negative Prompt (Optional)"
-                      className="min-h-[40px] flex-1 resize-none rounded-xl border border-white/15 bg-white/[0.1] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
-                      disabled={isGenerating}
-                    />
-
-                    <div className="flex flex-row justify-between gap-2 md:flex-col">
-                      <LanguageSelector
-                        value={selectedLanguage}
-                        onChange={setSelectedLanguage}
-                        disabled={isGenerating}
-                      />
-
-                      <label className="flex items-center gap-2 whitespace-nowrap text-sm text-white">
-                        <input
-                          type="checkbox"
-                          checked={generateAudio}
-                          onChange={(event) =>
-                            setGenerateAudio(event.target.checked)
-                          }
-                          className="h-4 w-4"
-                          disabled={isGenerating}
-                        />
-                        With Audio
-                      </label>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => void handleGenerate()}
-                      disabled={isGenerating || !selectedTemplateId}
-                      className="ml-auto h-10 whitespace-nowrap rounded-xl border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] px-5 py-2 font-semibold text-[#1e1e1e] transition hover:brightness-110 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isGenerating ? "Generating..." : "Generate"}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="flex w-full flex-col items-stretch gap-3 md:flex-row md:items-center">
-                  <textarea
-                    value={customInstructions}
-                    onChange={(event) =>
-                      setCustomInstructions(event.target.value)
-                    }
-                    placeholder="Optional: Add custom instructions..."
-                    className="max-h-[100px] min-h-[44px] flex-1 resize-none rounded-xl border border-white/15 bg-white/[0.1] p-2.5 text-sm text-white placeholder:text-[#c1c8d8] focus:outline-none focus:ring-2 focus:ring-[#ffd976]"
-                    rows={1}
-                    disabled={isGenerating}
-                  />
-
-                  <div className="flex items-center justify-end gap-3">
-                    <Select
-                      value={selectedAspectRatio}
-                      onValueChange={setSelectedAspectRatio}
-                      disabled={
-                        isGenerating ||
-                        uploadedFiles.length === 0 ||
-                        !selectedTemplateId
-                      }
-                    >
-                      <SelectTrigger className="min-w-[120px] border-white/15 bg-white/[0.1] text-white">
-                        <SelectValue placeholder="Aspect ratio" />
-                      </SelectTrigger>
-
-                      <SelectContent className="border-white/15 bg-[#0b1220] text-white">
-                        {aspectRatioOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <button
-                      type="button"
-                      onClick={() => void handleGenerate()}
-                      disabled={isGenerating || !selectedTemplateId}
-                      className="whitespace-nowrap rounded-xl border border-transparent bg-[linear-gradient(135deg,#ff4d4d,#ff9866,#ffd976)] px-5 py-2 font-semibold text-[#1e1e1e] transition hover:brightness-110 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isGenerating ? "Generating..." : "Generate"}
-                    </button>
-                  </div>
-                </div>
-              )
-            ) : (
-              <div className="flex items-center justify-between gap-3 text-sm text-[#c1c8d8]">
-                <span>Select a template to unlock generation options.</span>
-
-                <div className="hidden items-center gap-2 sm:flex">
-                  <ImageIcon className="h-4 w-4" />
-                  <Video className="h-4 w-4" />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <GenerationBar
+        selectedTemplateObj={selectedTemplateObj}
+        selectedTemplateId={selectedTemplateId}
+        uploadedFilesLength={uploadedFiles.length}
+        isGenerating={isGenerating}
+        customInstructions={customInstructions}
+        setCustomInstructions={setCustomInstructions}
+        personalizedName={personalizedName}
+        setPersonalizedName={setPersonalizedName}
+        negativePrompt={negativePrompt}
+        setNegativePrompt={setNegativePrompt}
+        selectedLanguage={selectedLanguage}
+        setSelectedLanguage={setSelectedLanguage}
+        generateAudio={generateAudio}
+        setGenerateAudio={setGenerateAudio}
+        selectedAspectRatio={selectedAspectRatio}
+        setSelectedAspectRatio={setSelectedAspectRatio}
+        aspectRatioOptions={aspectRatioOptions}
+        onGenerate={() => void handleGenerate()}
+      />
     </div>
   );
 }
