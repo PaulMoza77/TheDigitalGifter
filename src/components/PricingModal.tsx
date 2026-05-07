@@ -8,18 +8,19 @@ import {
   Zap,
   X,
   BadgeCheck,
+  Heart,
+  Check,
+  Plus,
+  Minus,
 } from "lucide-react";
+
 import { useLoggedInUserQuery } from "@/data";
-import { handleCheckout } from "@/lib/checkoutHandler";
 import {
   useCreditsFunnel,
   CreditsFunnelMode,
 } from "@/contexts/CreditsFunnelContext";
 import { SignInButton } from "./SignInButton";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
+import { supabase } from "@/lib/supabase";
 
 type PackKey = "starter" | "creator" | "pro" | "enterprise";
 
@@ -30,7 +31,8 @@ type Pack = {
   credits: number;
   bonusCredits?: number;
   badge?: string;
-  tag?: string;
+  tag: string;
+  description: string;
 };
 
 interface PricingModalProps {
@@ -41,54 +43,98 @@ interface PricingModalProps {
   availableCredits?: number | null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
+type CheckoutResponse = {
+  url?: string;
+  checkoutUrl?: string;
+  sessionUrl?: string;
+  error?: string;
+};
 
 const PACKS: Pack[] = [
-  { key: "starter", name: "Starter", price: 4.98, credits: 100, bonusCredits: 10, tag: "Perfect to try" },
-  { key: "creator", name: "Creator", price: 9.98, credits: 250, bonusCredits: 50, badge: "Most popular", tag: "Best value" },
-  { key: "pro", name: "Pro", price: 78.98, credits: 4000, bonusCredits: 600, tag: "For power users" },
-  { key: "enterprise", name: "Enterprise", price: 499.98, credits: 50000, bonusCredits: 10000, tag: "Teams & agencies" },
+  {
+    key: "starter",
+    name: "Starter",
+    price: 4.98,
+    credits: 100,
+    bonusCredits: 10,
+    tag: "Perfect to try",
+    description: "Start creating personal cards, name portraits and memories.",
+  },
+  {
+    key: "creator",
+    name: "Creator",
+    price: 9.98,
+    credits: 250,
+    bonusCredits: 50,
+    badge: "Most popular",
+    tag: "Best value",
+    description: "Best for birthdays, love, apologies and family moments.",
+  },
+  {
+    key: "pro",
+    name: "Pro",
+    price: 78.98,
+    credits: 4000,
+    bonusCredits: 600,
+    tag: "For power users",
+    description: "For creators, agencies and people creating often.",
+  },
+  {
+    key: "enterprise",
+    name: "Enterprise",
+    price: 499.98,
+    credits: 50000,
+    bonusCredits: 10000,
+    tag: "Teams & agencies",
+    description: "For high-volume campaigns, teams and business use.",
+  },
 ];
 
 const SOCIAL_PROOF_MESSAGES = [
-  "👨‍👩‍👧‍👦 12,483 families created Christmas memories this week",
-  "⭐ Rated 4.9/5 by parents worldwide",
-  '❤️ "My kids replayed it 10 times" — Verified Parent',
-  "⚡ Instant delivery — no apps, no editing",
+  "✨ People are creating birthdays, apologies, love notes and name portraits right now.",
+  "💛 Small details make gifts feel personal, emotional and unforgettable.",
+  "⚡ Instant delivery — create, download and share in minutes.",
+  "🎁 One-time payment. Credits stay available for future creations.",
 ];
 
 const RESERVATION_SECONDS = 10 * 60;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Utilities
-// ─────────────────────────────────────────────────────────────────────────────
 
 function euro(n: number) {
   return `€${n.toFixed(2)}`;
 }
 
-function getTotalCredits(p: Pack) {
-  return p.credits + (p.bonusCredits ?? 0);
+function getTotalCredits(pack: Pack) {
+  return pack.credits + (pack.bonusCredits ?? 0);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Hooks
-// ─────────────────────────────────────────────────────────────────────────────
+function getCheckoutUrl(data: CheckoutResponse | string | null): string | null {
+  if (!data) return null;
+
+  if (typeof data === "string") {
+    return data.startsWith("http") ? data : null;
+  }
+
+  return data.checkoutUrl ?? data.url ?? data.sessionUrl ?? null;
+}
 
 function useCountdown(seconds: number, isActive: boolean) {
   const [left, setLeft] = useState(seconds);
 
   useEffect(() => {
     if (!isActive) return;
+
     setLeft(seconds);
-    const t = setInterval(() => setLeft((s) => (s <= 1 ? 0 : s - 1)), 1000);
-    return () => clearInterval(t);
+
+    const timer = window.setInterval(() => {
+      setLeft((current) => (current <= 1 ? 0 : current - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
   }, [seconds, isActive]);
 
   const mm = String(Math.floor(left / 60)).padStart(2, "0");
   const ss = String(left % 60).padStart(2, "0");
+
   return { left, label: `${mm}:${ss}` };
 }
 
@@ -97,24 +143,23 @@ function useSocialProofTicker(isActive: boolean) {
 
   useEffect(() => {
     if (!isActive) return;
-    let i = 0;
-    const t = setInterval(() => {
-      i = (i + 1) % SOCIAL_PROOF_MESSAGES.length;
-      setTicker(SOCIAL_PROOF_MESSAGES[i]);
+
+    let index = 0;
+
+    const timer = window.setInterval(() => {
+      index = (index + 1) % SOCIAL_PROOF_MESSAGES.length;
+      setTicker(SOCIAL_PROOF_MESSAGES[index]);
     }, 4200);
-    return () => clearInterval(t);
+
+    return () => window.clearInterval(timer);
   }, [isActive]);
 
   return ticker;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sub-components
-// ─────────────────────────────────────────────────────────────────────────────
-
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-medium text-white/75">
       {children}
     </span>
   );
@@ -134,28 +179,28 @@ function GlowCard({
       type="button"
       onClick={onClick}
       className={
-        "group relative w-full rounded-xl border bg-gradient-to-b p-4 text-left transition " +
+        "group relative w-full overflow-hidden rounded-3xl border p-4 text-left transition " +
         (selected
-          ? "border-white/25 from-white/10 to-white/5 shadow-[0_0_0_1px_rgba(255,255,255,0.06)]"
-          : "border-white/10 from-white/6 to-white/3 hover:border-white/20")
+          ? "border-yellow-300/45 bg-yellow-300/[0.08] shadow-2xl shadow-yellow-500/10"
+          : "border-white/10 bg-white/[0.04] hover:border-yellow-300/25 hover:bg-white/[0.06]")
       }
     >
-      <div
-        className={
-          "pointer-events-none absolute inset-0 rounded-xl opacity-0 blur-2xl transition group-hover:opacity-100 " +
-          (selected ? "opacity-100" : "")
-        }
-        style={{
-          background:
-            "radial-gradient(60% 60% at 50% 20%, rgba(56,189,248,0.18), rgba(34,197,94,0.10), transparent)",
-        }}
-      />
-      {children}
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,230,120,0.16),transparent_38%),radial-gradient(circle_at_100%_100%,rgba(255,83,165,0.12),transparent_34%)]" />
+      </div>
+
+      <div className="relative">{children}</div>
     </button>
   );
 }
 
-function ReminderToast({ open, onClose }: { open: boolean; onClose: () => void }) {
+function ReminderToast({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   return (
     <AnimatePresence>
       {open && (
@@ -166,22 +211,27 @@ function ReminderToast({ open, onClose }: { open: boolean; onClose: () => void }
           transition={{ duration: 0.18 }}
           className="fixed bottom-6 left-1/2 z-[80] w-[min(520px,calc(100%-24px))] -translate-x-1/2"
         >
-          <div className="rounded-2xl border border-white/10 bg-black/80 p-4 backdrop-blur-xl shadow-2xl">
+          <div className="rounded-3xl border border-white/10 bg-black/85 p-4 shadow-2xl backdrop-blur-xl">
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
-                <Gift className="h-5 w-5 text-white" />
+              <div className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-yellow-300/15">
+                <Gift className="h-5 w-5 text-yellow-200" />
               </div>
+
               <div className="flex-1">
-                <div className="text-sm font-semibold text-white">
-                  Don't miss it — Christmas is closer than you think.
+                <div className="text-sm font-black text-white">
+                  Your next personal gift is one step away.
                 </div>
-                <div className="mt-1 text-xs text-white/70">
-                  Your Santa message takes less than 1 minute. Come back anytime to unlock credits.
+
+                <div className="mt-1 text-xs leading-5 text-white/60">
+                  Come back anytime to unlock credits and create something
+                  meaningful.
                 </div>
               </div>
+
               <button
+                type="button"
                 onClick={onClose}
-                className="rounded-xl p-2 text-white/70 hover:bg-white/10 hover:text-white"
+                className="rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
                 aria-label="Close toast"
               >
                 <X className="h-4 w-4" />
@@ -194,10 +244,6 @@ function ReminderToast({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Header content based on funnel mode
-// ─────────────────────────────────────────────────────────────────────────────
-
 function getHeaderContent(
   mode: CreditsFunnelMode | null,
   requiredCredits: number | null,
@@ -207,36 +253,35 @@ function getHeaderContent(
     case "not_logged_in":
       return {
         emoji: "🔐",
-        title: "Create an Account",
+        title: "Create your account",
         subtitle:
-          "Sign in to start generating magical cards and receive free bonus credits!",
+          "Sign in to save your creations, manage credits and continue securely.",
       };
+
     case "first_generation":
       return {
         emoji: "🎉",
-        title: "Welcome! Let's Get Started",
+        title: "Keep creating personal gifts",
         subtitle:
-          "You've used your bonus credits. Purchase a pack to continue creating beautiful cards!",
+          "Your bonus credits were used. Choose a credit pack to continue creating beautiful memories.",
       };
+
     case "insufficient_credits":
       return {
         emoji: "⚡",
-        title: "Need More Credits",
-        subtitle: `This template needs ${requiredCredits ?? "?"} credits, but you only have ${availableCredits ?? 0}. Top up to continue!`,
+        title: "You need more credits",
+        subtitle: `This creation needs ${requiredCredits ?? "?"} credits. You currently have ${availableCredits ?? 0}. Top up to continue.`,
       };
+
     default:
       return {
         emoji: "🎁",
-        title: "Unlock your personalized Christmas magic",
+        title: "Unlock personalized creations",
         subtitle:
-          "Create unforgettable reactions in minutes. Credits unlock instant Santa messages your family will replay again and again.",
+          "Create emotional cards, name portraits, apology gifts, birthday surprises, love notes and memories in minutes.",
       };
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Main Component
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function PricingModal({
   isOpen,
@@ -251,6 +296,7 @@ export function PricingModal({
   const [bundleCount, setBundleCount] = useState(1);
   const [showToast, setShowToast] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const mode = propMode ?? null;
   const requiredCredits = propRequired ?? null;
@@ -269,8 +315,8 @@ export function PricingModal({
     availableCredits
   );
 
-  const selPack = useMemo(
-    () => PACKS.find((p) => p.key === selected) ?? PACKS[1],
+  const selectedPack = useMemo(
+    () => PACKS.find((pack) => pack.key === selected) ?? PACKS[1],
     [selected]
   );
 
@@ -280,34 +326,94 @@ export function PricingModal({
     if (count >= 2) return 0.1;
     return 0;
   };
+
   const getDiscountLabel = (count: number) => {
     if (count >= 4) return "20% OFF";
     if (count >= 3) return "15% OFF";
     if (count >= 2) return "10% OFF";
-    return "offer";
+    return "bundle offer";
   };
 
   const bundleDiscount = getDiscount(bundleCount);
-  const priceNow = selPack.price * bundleCount * (1 - bundleDiscount);
-  const totalCredits = getTotalCredits(selPack) * bundleCount;
+  const priceNow = selectedPack.price * bundleCount * (1 - bundleDiscount);
+  const totalCredits = getTotalCredits(selectedPack) * bundleCount;
 
   async function doCheckout(pack: PackKey, quantity: number) {
     if (isPaying) return;
+
+    setErrorMessage("");
+
+    if (!me?.email) {
+      setErrorMessage("Please sign in first so we can attach credits to your account.");
+      return;
+    }
+
     setIsPaying(true);
+
     try {
-      await handleCheckout({ pack, quantity, user: me ?? null });
+      const successUrl = `${window.location.origin}/account/dashboard?checkout=success`;
+      const cancelUrl = `${window.location.origin}/?checkout=cancelled`;
+
+      const { data, error } = await supabase.functions.invoke<CheckoutResponse>(
+        "create-checkout-session",
+        {
+          body: {
+            pack,
+            plan: pack,
+            product_type: "credits",
+            source: "tdg",
+            email: me.email,
+            user_id: me.id ?? null,
+            quantity,
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+          },
+        }
+      );
+
+      if (error) {
+        console.error("[PricingModal] checkout function error:", error);
+        setErrorMessage(error.message || "Checkout failed. Please try again.");
+        return;
+      }
+
+      if (data?.error) {
+        console.error("[PricingModal] checkout response error:", data.error);
+        setErrorMessage(data.error);
+        return;
+      }
+
+      const checkoutUrl = getCheckoutUrl(data);
+
+      if (!checkoutUrl) {
+        console.error("[PricingModal] missing checkout URL:", data);
+        setErrorMessage("Checkout error: missing Stripe URL.");
+        return;
+      }
+
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      console.error("[PricingModal] checkout fatal error:", error);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Checkout failed. Please try again."
+      );
     } finally {
       setIsPaying(false);
     }
   }
 
   const closeModal = () => {
+    if (isPaying) return;
+
     onClose();
     setShowToast(true);
+    setErrorMessage("");
   };
 
   if (!isOpen) {
-    return <ReminderToast open={showToast} onClose={() => setShowToast(false)} />;
+    return (
+      <ReminderToast open={showToast} onClose={() => setShowToast(false)} />
+    );
   }
 
   return (
@@ -319,10 +425,11 @@ export function PricingModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/75 backdrop-blur-md"
             onClick={closeModal}
-            aria-hidden="true"
+            aria-label="Close pricing modal"
           />
 
           <motion.div
@@ -330,174 +437,207 @@ export function PricingModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 18, scale: 0.98 }}
             transition={{ duration: 0.18 }}
-            className="relative w-[min(980px,calc(100%-16px))] max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-3xl border border-white/12 bg-[#0B1020]/90 shadow-2xl backdrop-blur-xl"
+            className="relative max-h-[90vh] w-[min(980px,calc(100%-16px))] overflow-y-auto overflow-x-hidden rounded-[2rem] border border-white/10 bg-[#050711]/95 shadow-2xl backdrop-blur-xl"
             role="dialog"
             aria-modal="true"
             aria-label="Purchase credits"
           >
-            <div
-              className="absolute inset-0 opacity-70 pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(700px 420px at 30% 0%, rgba(56,189,248,0.18), transparent 60%), radial-gradient(700px 420px at 85% 30%, rgba(34,197,94,0.14), transparent 58%)",
-              }}
-            />
+            <div className="pointer-events-none absolute inset-0 opacity-90">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,230,120,0.16),transparent_34%),radial-gradient(circle_at_88%_22%,rgba(255,83,165,0.13),transparent_32%),radial-gradient(circle_at_45%_100%,rgba(56,189,248,0.09),transparent_42%)]" />
+            </div>
 
             <div className="relative p-6 md:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">
-                    <Clock className="h-4 w-4" /> Reserved for {holdLabel} minutes
+                  <div className="inline-flex items-center gap-2 rounded-full border border-yellow-300/25 bg-yellow-300/10 px-3 py-1 text-xs font-bold text-yellow-100">
+                    <Clock className="h-4 w-4" />
+                    Reserved for {holdLabel}
                   </div>
 
-                  <h2 className="mt-3 text-xl font-semibold md:text-2xl text-white">
+                  <h2 className="mt-4 max-w-2xl text-2xl font-black leading-tight tracking-tight text-white md:text-3xl">
                     {emoji} {title}
                   </h2>
-                  <p className="mt-1 text-sm text-white/70 max-w-lg">
+
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">
                     {subtitle}
                   </p>
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Pill>
-                      <BadgeCheck className="h-4 w-4" /> No subscriptions
+                      <BadgeCheck className="h-4 w-4" /> One-time payment
                     </Pill>
+
                     <Pill>
-                      <Zap className="h-4 w-4" /> Instant delivery
+                      <Zap className="h-4 w-4" /> Instant credits
                     </Pill>
+
                     <Pill>
                       <ShieldCheck className="h-4 w-4" /> Secure checkout
+                    </Pill>
+
+                    <Pill>
+                      <Heart className="h-4 w-4" /> Made for emotions
                     </Pill>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={closeModal}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-2 text-white/70 hover:bg-white/10 hover:text-white transition"
+                  className="rounded-2xl border border-white/10 bg-white/5 p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
                   aria-label="Close"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="mt-3 text-sm text-white/70">
-                Average families spend <span className="text-white">€19–€29</span>{" "}
-                per personalized Christmas gift. Credits start from{" "}
-                <span className="text-white">€4.98</span>.
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-6 text-white/65">
+                Credits can be used for personal cards, name portraits, love
+                gifts, apology visuals, birthday surprises and more. Packs start
+                from <span className="font-bold text-white">€4.98</span>.
               </div>
 
-              {mode === "not_logged_in" && (
-                <div className="mt-6 p-5 rounded-2xl border border-white/10 bg-white/5 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-rose-500 to-emerald-400" />
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              {mode === "not_logged_in" || !me?.email ? (
+                <div className="mt-6 overflow-hidden rounded-3xl border border-yellow-300/25 bg-yellow-300/[0.08] p-5">
+                  <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
                     <div className="text-center sm:text-left">
-                      <p className="text-white font-semibold text-lg">
-                        Connect your account to get started with free bonus credits!
+                      <p className="text-lg font-black text-white">
+                        Sign in before purchasing credits.
                       </p>
-                      <p className="text-white/50 text-sm mt-1">
-                        Or purchase credits after signing in ↓
+
+                      <p className="mt-1 text-sm leading-6 text-white/60">
+                        This lets us attach your credits to your account
+                        instantly after checkout.
                       </p>
                     </div>
+
                     <SignInButton variant="gradient" />
                   </div>
                 </div>
-              )}
+              ) : null}
 
               <div className="mt-6 grid gap-3 md:grid-cols-2">
-                {PACKS.map((p) => {
-                  const isSel = p.key === selected;
-                  const qty = isSel ? bundleCount : 1;
+                {PACKS.map((pack) => {
+                  const isSelected = pack.key === selected;
+                  const quantity = isSelected ? bundleCount : 1;
 
                   return (
-                    <div key={p.key} className="relative">
-                      {p.badge && (
+                    <div key={pack.key} className="relative">
+                      {pack.badge ? (
                         <div className="absolute -top-3 left-5 z-10">
-                          <span className="inline-flex items-center rounded-full bg-gradient-to-r from-sky-400/20 to-emerald-300/20 px-3 py-1 text-[11px] font-semibold text-white border border-white/10">
-                            {p.badge}
+                          <span className="inline-flex items-center rounded-full border border-yellow-300/25 bg-gradient-to-r from-yellow-300 to-pink-400 px-3 py-1 text-[11px] font-black text-black shadow-lg">
+                            {pack.badge}
                           </span>
                         </div>
-                      )}
+                      ) : null}
 
-                      <GlowCard selected={isSel} onClick={() => setSelected(p.key)}>
+                      <GlowCard
+                        selected={isSelected}
+                        onClick={() => setSelected(pack.key)}
+                      >
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <div className="text-sm font-semibold text-white">
-                              {p.name}
+                            <div className="text-sm font-black text-white">
+                              {pack.name}
                             </div>
-                            <div className="mt-1 text-xl font-semibold tracking-tight text-white">
-                              {euro(p.price)}
+
+                            <div className="mt-1 text-2xl font-black tracking-tight text-white">
+                              {euro(pack.price)}
                             </div>
+
                             <div className="mt-1 text-sm text-white/70">
-                              <span className="text-white">{p.credits}</span> credits
-                              {p.bonusCredits ? (
+                              <span className="font-bold text-white">
+                                {pack.credits}
+                              </span>{" "}
+                              credits
+                              {pack.bonusCredits ? (
                                 <>
                                   {" "}
-                                  <span className="text-white/60">+</span>{" "}
-                                  <span className="text-white">{p.bonusCredits}</span>{" "}
-                                  <span className="text-white/70">bonus</span>
+                                  <span className="text-white/45">+</span>{" "}
+                                  <span className="font-bold text-white">
+                                    {pack.bonusCredits}
+                                  </span>{" "}
+                                  bonus
                                 </>
                               ) : null}
                             </div>
-                            <div className="mt-2 text-xs text-white/60">{p.tag}</div>
 
-                            <div className="mt-3 inline-flex items-center gap-2">
-                              <div className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden">
+                            <div className="mt-2 text-xs font-medium text-white/55">
+                              {pack.tag}
+                            </div>
+
+                            <p className="mt-3 max-w-sm text-xs leading-5 text-white/50">
+                              {pack.description}
+                            </p>
+
+                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                              <div className="inline-flex items-center overflow-hidden rounded-xl border border-white/10 bg-black/25">
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelected(p.key);
-                                    setBundleCount((c) => Math.max(1, c - 1));
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelected(pack.key);
+                                    setBundleCount((current) =>
+                                      Math.max(1, current - 1)
+                                    );
                                   }}
-                                  className="h-7 w-7 grid place-items-center text-sm font-semibold text-white/70 hover:bg-white/10"
+                                  className="grid h-8 w-8 place-items-center text-white/70 transition hover:bg-white/10 hover:text-white"
                                 >
-                                  −
+                                  <Minus className="h-4 w-4" />
                                 </button>
-                                <div className="px-2 text-[11px] font-medium text-white/80">
-                                  {qty}
+
+                                <div className="px-3 text-xs font-black text-white/85">
+                                  {quantity}
                                 </div>
+
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelected(p.key);
-                                    setBundleCount((c) => Math.min(4, c + 1));
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelected(pack.key);
+                                    setBundleCount((current) =>
+                                      Math.min(4, current + 1)
+                                    );
                                   }}
-                                  className="h-7 w-7 grid place-items-center text-sm font-semibold text-emerald-400 hover:bg-emerald-500/10"
+                                  className="grid h-8 w-8 place-items-center text-yellow-200 transition hover:bg-yellow-300/10"
                                 >
-                                  +
+                                  <Plus className="h-4 w-4" />
                                 </button>
                               </div>
 
-                              <div className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white/80">
-                                🎁 Buy {qty} & unlock {getDiscountLabel(qty)}
+                              <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-[11px] font-bold text-white/75">
+                                Buy {quantity} & unlock{" "}
+                                {getDiscountLabel(quantity)}
                               </div>
                             </div>
                           </div>
 
-                          <div className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10">
-                            <Sparkles className="h-5 w-5 text-white/80" />
+                          <div className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06]">
+                            <Sparkles className="h-5 w-5 text-yellow-100" />
                           </div>
                         </div>
 
-                        <div className="mt-4">
+                        <div className="mt-5">
                           <button
                             type="button"
-                            disabled={isPaying}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelected(p.key);
-                              void doCheckout(p.key, qty);
+                            disabled={isPaying || !me?.email}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelected(pack.key);
+                              void doCheckout(pack.key, quantity);
                             }}
                             className={
-                              "h-10 w-full rounded-xl bg-gradient-to-r from-orange-500 via-rose-500 to-emerald-400 text-sm font-semibold text-white transition " +
-                              (isPaying ? "opacity-70 cursor-not-allowed" : "hover:opacity-90")
+                              "h-11 w-full rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 text-sm font-black text-black transition " +
+                              (isPaying || !me?.email
+                                ? "cursor-not-allowed opacity-60"
+                                : "hover:scale-[1.01] hover:opacity-95")
                             }
                           >
                             {isPaying
-                              ? "Processing…"
-                              : qty > 1
-                              ? `Purchase ${qty}x`
-                              : "Purchase"}
+                              ? "Opening checkout..."
+                              : quantity > 1
+                                ? `Purchase ${quantity}x`
+                                : "Purchase"}
                           </button>
                         </div>
                       </GlowCard>
@@ -506,53 +646,93 @@ export function PricingModal({
                 })}
               </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="text-xs text-white/70">Live social proof</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
+              <div className="mt-6 grid gap-4 md:grid-cols-[1fr_400px] md:items-stretch">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-white/40">
+                    Live activity
+                  </div>
+
+                  <div className="mt-2 text-sm font-bold leading-6 text-white">
                     {ticker}
                   </div>
-                  <div className="mt-2 text-xs text-white/60">
-                    ⏳ Credits valid until Dec 24 • ✔ No subscriptions • ⚡ Instant delivery
+
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/55">
+                    <span className="inline-flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5 text-green-400" />
+                      Credits never expire
+                    </span>
+
+                    <span className="inline-flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5 text-green-400" />
+                      No subscription
+                    </span>
+
+                    <span className="inline-flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5 text-green-400" />
+                      Instant delivery
+                    </span>
                   </div>
+
+                  {errorMessage ? (
+                    <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-200">
+                      {errorMessage}
+                    </div>
+                  ) : null}
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 min-w-[280px]">
+                <div className="rounded-3xl border border-yellow-300/20 bg-yellow-300/[0.07] p-5">
                   <div className="flex items-center justify-between">
-                    <div className="text-xs text-white/70">Total</div>
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">
+                      Total
+                    </div>
+
+                    <div className="text-lg font-black text-white">
                       {euro(priceNow)}
                     </div>
                   </div>
-                  <div className="mt-1 text-xs text-white/60">
-                    You'll get <span className="text-white">{totalCredits}</span> credits (incl. bonus)
+
+                  <div className="mt-2 text-sm leading-6 text-white/65">
+                    You'll get{" "}
+                    <span className="font-black text-white">
+                      {totalCredits}
+                    </span>{" "}
+                    credits including bonus.
                     {bundleDiscount > 0 ? (
-                      <span className="text-white"> • {getDiscountLabel(bundleCount)} applied</span>
+                      <span className="font-bold text-yellow-100">
+                        {" "}
+                        {getDiscountLabel(bundleCount)} applied.
+                      </span>
                     ) : (
-                      <span className="text-white/70"> • Add 1 more pack to unlock 10% OFF</span>
+                      <span className="text-white/55">
+                        {" "}
+                        Add one more pack to unlock 10% OFF.
+                      </span>
                     )}
                   </div>
 
                   <button
-                    disabled={isPaying}
+                    type="button"
+                    disabled={isPaying || !me?.email}
                     onClick={() => void doCheckout(selected, bundleCount)}
                     className={
-                      "mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-rose-500 to-emerald-400 px-4 py-3 text-sm font-semibold text-white shadow-2xl shadow-orange-500/10 transition " +
-                      (isPaying ? "opacity-70 cursor-not-allowed" : "hover:opacity-95")
+                      "mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 px-4 py-4 text-sm font-black text-black shadow-2xl shadow-yellow-500/10 transition " +
+                      (isPaying || !me?.email
+                        ? "cursor-not-allowed opacity-60"
+                        : "hover:scale-[1.01] hover:opacity-95")
                     }
                   >
-                    🎅 Create my Santa message <span className="text-white/90">→</span>
+                    Continue to Stripe <span>→</span>
                   </button>
 
-                  <div className="mt-2 text-center text-[11px] text-white/60">
-                    Secure checkout • Instant delivery • One-time payment
+                  <div className="mt-3 text-center text-[11px] font-medium text-white/45">
+                    Secure checkout • One-time payment • Instant credits
                   </div>
 
-                  {holdLeft <= 60 && (
-                    <div className="mt-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-white/80">
-                      ⚠️ Reservation ends soon. Don't lose your spot.
+                  {holdLeft <= 60 ? (
+                    <div className="mt-3 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 px-3 py-2 text-[11px] font-medium text-yellow-100">
+                      Reservation ends soon.
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
