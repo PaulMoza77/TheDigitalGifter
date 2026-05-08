@@ -34,6 +34,8 @@ type Plan = {
 
 type CheckoutResponse = {
   url?: string;
+  checkoutUrl?: string;
+  sessionUrl?: string;
   id?: string;
   error?: string;
   message?: string;
@@ -96,7 +98,7 @@ const PROMO_STORAGE_KEYS = {
 const plans: Plan[] = [
   {
     id: "starter",
-    title: "Starter",
+    title: "Silver",
     subtitle: "30 credits / month",
     credits: 30,
     generations: 6,
@@ -107,7 +109,7 @@ const plans: Plan[] = [
   },
   {
     id: "pro",
-    title: "Pro ⭐",
+    title: "Gold ⭐",
     subtitle: "100 credits / month",
     credits: 100,
     generations: 20,
@@ -119,7 +121,7 @@ const plans: Plan[] = [
   },
   {
     id: "elite",
-    title: "Elite",
+    title: "Platinum",
     subtitle: "300 credits / month",
     credits: 300,
     generations: 60,
@@ -144,14 +146,19 @@ function toFiniteNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function clampPercent(value: unknown, fallback = DEFAULT_PROFILE_DISCOUNT_PERCENT): number {
+function clampPercent(
+  value: unknown,
+  fallback = DEFAULT_PROFILE_DISCOUNT_PERCENT
+): number {
   const parsed = toFiniteNumber(value, fallback);
   return Math.max(0, Math.min(100, Math.trunc(parsed)));
 }
 
 function readSession(): FunnelSession | null {
   try {
-    return JSON.parse(localStorage.getItem("tdg_funnel_session") || "null") as FunnelSession | null;
+    return JSON.parse(
+      localStorage.getItem("tdg_funnel_session") || "null"
+    ) as FunnelSession | null;
   } catch {
     return null;
   }
@@ -188,7 +195,11 @@ function getDealExpiresAtMs(): number {
 function formatMMSS(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, "0")} : ${String(seconds).padStart(2, "0")}`;
+
+  return `${String(minutes).padStart(2, "0")} : ${String(seconds).padStart(
+    2,
+    "0"
+  )}`;
 }
 
 function getPublicSupabaseConfig(): { url: string; anon: string } {
@@ -224,7 +235,11 @@ function formatEuro(value: number): string {
   return `€${(Math.round(value * 100) / 100).toFixed(2)}`;
 }
 
-function calcUiPriceForPlan(plan: Plan, promoApplied: boolean, discountPercent: number): UiPrice {
+function calcUiPriceForPlan(
+  plan: Plan,
+  promoApplied: boolean,
+  discountPercent: number
+): UiPrice {
   const standard = parseEuro(plan.price);
 
   if (!promoApplied || discountPercent <= 0) {
@@ -292,7 +307,15 @@ function resolveFunnelContext(search: string): FunnelContext {
     safeString(session.gift_type) ||
     safeString(localStorage.getItem("tdg_funnel_occasion"));
 
-  if (email || templateId || photo || photoBucket || styleId || funnelSlug || occasion) {
+  if (
+    email ||
+    templateId ||
+    photo ||
+    photoBucket ||
+    styleId ||
+    funnelSlug ||
+    occasion
+  ) {
     mergeSession({
       ...session,
       email: email || session.email || "",
@@ -322,7 +345,9 @@ function resolveFunnelContext(search: string): FunnelContext {
   };
 }
 
-async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, string>> {
+async function getEdgeFunctionHeaders(
+  anonKey: string
+): Promise<Record<string, string>> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -339,7 +364,10 @@ async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, s
 function savePromo(result: PromoValidationResult): void {
   localStorage.setItem(PROMO_STORAGE_KEYS.code, result.code);
   localStorage.setItem(PROMO_STORAGE_KEYS.applied, "1");
-  localStorage.setItem(PROMO_STORAGE_KEYS.discountPercent, String(result.discountPercent));
+  localStorage.setItem(
+    PROMO_STORAGE_KEYS.discountPercent,
+    String(result.discountPercent)
+  );
   localStorage.setItem(PROMO_STORAGE_KEYS.affiliateUserId, result.affiliateUserId);
 }
 
@@ -373,10 +401,14 @@ function isAffiliateCodeUsable(row: AffiliateCodeRow): boolean {
   return !(maxUses !== null && maxUses > 0 && timesUsed >= maxUses);
 }
 
-async function findAffiliateCode(code: string): Promise<PromoValidationResult | null> {
+async function findAffiliateCode(
+  code: string
+): Promise<PromoValidationResult | null> {
   const { data, error } = await supabase
     .from("affiliate_codes")
-    .select("id,user_id,code,discount_percent,commission_percent,max_uses,times_used,active")
+    .select(
+      "id,user_id,code,discount_percent,commission_percent,max_uses,times_used,active"
+    )
     .ilike("code", code)
     .eq("active", true)
     .limit(1)
@@ -395,12 +427,17 @@ async function findAffiliateCode(code: string): Promise<PromoValidationResult | 
 
   return {
     code: normalizePromoCode(row.code || code),
-    discountPercent: clampPercent(row.discount_percent, DEFAULT_PROFILE_DISCOUNT_PERCENT),
+    discountPercent: clampPercent(
+      row.discount_percent,
+      DEFAULT_PROFILE_DISCOUNT_PERCENT
+    ),
     affiliateUserId: row.user_id,
   };
 }
 
-async function findAffiliateProfile(code: string): Promise<PromoValidationResult | null> {
+async function findAffiliateProfile(
+  code: string
+): Promise<PromoValidationResult | null> {
   const { data, error } = await supabase
     .from("affiliate_profiles")
     .select("user_id,affiliate_code,referral_slug")
@@ -436,14 +473,10 @@ async function validatePromoCode(codeRaw: string): Promise<PromoValidationResult
   }
 
   const affiliateCodeResult = await findAffiliateCode(code);
-  if (affiliateCodeResult) {
-    return affiliateCodeResult;
-  }
+  if (affiliateCodeResult) return affiliateCodeResult;
 
   const profileResult = await findAffiliateProfile(code);
-  if (profileResult) {
-    return profileResult;
-  }
+  if (profileResult) return profileResult;
 
   throw new Error("Invalid promo code");
 }
@@ -452,28 +485,51 @@ export default function FunnelPayment(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [selected, setSelected] = useState<PlanId>(() => plans.find((plan) => plan.default)?.id ?? "pro");
-  const [promo, setPromo] = useState<string>(() => localStorage.getItem(PROMO_STORAGE_KEYS.code) || "");
+  const [selected, setSelected] = useState<PlanId>(
+    () => plans.find((plan) => plan.default)?.id ?? "pro"
+  );
+
+  const [promo, setPromo] = useState<string>(
+    () => localStorage.getItem(PROMO_STORAGE_KEYS.code) || ""
+  );
+
   const [promoApplied, setPromoApplied] = useState<boolean>(
     () => localStorage.getItem(PROMO_STORAGE_KEYS.applied) === "1"
   );
+
   const [promoDiscountPercent, setPromoDiscountPercent] = useState<number>(() =>
     clampPercent(localStorage.getItem(PROMO_STORAGE_KEYS.discountPercent), 0)
   );
+
   const [affiliateUserId, setAffiliateUserId] = useState<string>(
     () => localStorage.getItem(PROMO_STORAGE_KEYS.affiliateUserId) || ""
   );
+
   const [applyingPromo, setApplyingPromo] = useState<boolean>(false);
+
   const [secondsLeft, setSecondsLeft] = useState<number>(() => {
     const ms = getDealExpiresAtMs() - Date.now();
     return Math.max(0, Math.floor(ms / 1000));
   });
+
   const [isPaying, setIsPaying] = useState<boolean>(false);
 
-  const funnel = useMemo(() => resolveFunnelContext(location.search), [location.search]);
-  const selectedPlan = useMemo<Plan>(() => plans.find((plan) => plan.id === selected) ?? plans[1], [selected]);
+  const funnel = useMemo(
+    () => resolveFunnelContext(location.search),
+    [location.search]
+  );
+
+  const selectedPlan = useMemo<Plan>(
+    () => plans.find((plan) => plan.id === selected) ?? plans[1],
+    [selected]
+  );
+
   const expired = secondsLeft <= 0;
-  const formattedTimer = useMemo(() => formatMMSS(secondsLeft).split(" : "), [secondsLeft]);
+
+  const formattedTimer = useMemo(
+    () => formatMMSS(secondsLeft).split(" : "),
+    [secondsLeft]
+  );
 
   useEffect(() => {
     if (funnel.canceled) {
@@ -530,9 +586,12 @@ export default function FunnelPayment(): JSX.Element {
       setAffiliateUserId(result.affiliateUserId);
       setPromoApplied(true);
 
-      toast.success(`${result.code} applied — ${result.discountPercent}% off first month.`);
+      toast.success(
+        `${result.code} applied — ${result.discountPercent}% off first month.`
+      );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Invalid promo code";
+      const message =
+        error instanceof Error ? error.message : "Invalid promo code";
       toast.error(message);
     } finally {
       setApplyingPromo(false);
@@ -599,7 +658,9 @@ export default function FunnelPayment(): JSX.Element {
       const data = await safeReadJson(res);
 
       if (!res.ok) {
-        const message = safeString(data.error || data.message || `Checkout error (${res.status})`);
+        const message = safeString(
+          data.error || data.message || `Checkout error (${res.status})`
+        );
         throw new Error(message);
       }
 
@@ -617,14 +678,18 @@ export default function FunnelPayment(): JSX.Element {
         });
       }
 
-      const checkoutUrl = safeString(data.url);
+      const checkoutUrl = safeString(data.url || data.checkoutUrl || data.sessionUrl);
+
       if (!checkoutUrl) {
         throw new Error("Missing checkout URL");
       }
 
       window.location.href = checkoutUrl;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Checkout failed. Please try again.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Checkout failed. Please try again.";
       toast.error(message);
     } finally {
       setIsPaying(false);
@@ -635,13 +700,19 @@ export default function FunnelPayment(): JSX.Element {
     <div className="min-h-screen w-full bg-[#F6F0E6] text-[#10221B]">
       <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
         <div className="text-center">
-          <div className="text-2xl font-semibold tracking-tight">thedigitalgifter</div>
+          <div className="text-2xl font-semibold tracking-tight">
+            thedigitalgifter
+          </div>
 
           <div className="mx-auto mt-6 flex max-w-xl items-center justify-center gap-4">
             <div className="flex items-end gap-3 rounded-2xl bg-transparent px-4 py-3">
-              <div className="text-4xl font-semibold tabular-nums leading-none">{formattedTimer[0]}</div>
+              <div className="text-4xl font-semibold tabular-nums leading-none">
+                {formattedTimer[0]}
+              </div>
               <div className="pb-1 text-4xl font-semibold leading-none">:</div>
-              <div className="text-4xl font-semibold tabular-nums leading-none">{formattedTimer[1]}</div>
+              <div className="text-4xl font-semibold tabular-nums leading-none">
+                {formattedTimer[1]}
+              </div>
               <div className="ml-2 pb-1 text-xs uppercase tracking-wide text-[#10221B]/55">
                 minutes&nbsp;&nbsp;&nbsp;seconds
               </div>
@@ -670,15 +741,20 @@ export default function FunnelPayment(): JSX.Element {
           </h1>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm text-[#10221B]/70 sm:text-base">
-            Pick a monthly plan to unlock credits. Reset monthly • recurring • cancel anytime.
+            Pick a monthly plan to unlock credits. Reset monthly • recurring •
+            cancel anytime.
           </p>
         </div>
 
         <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-black/10 bg-white/55 p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-medium">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/5">%</span>
-              {promoApplied ? `Promo applied (${normalizePromoCode(promo)})` : "Have a promo code?"}
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/5">
+                %
+              </span>
+              {promoApplied
+                ? `Promo applied (${normalizePromoCode(promo)})`
+                : "Have a promo code?"}
             </div>
 
             {promoApplied ? (
@@ -727,7 +803,8 @@ export default function FunnelPayment(): JSX.Element {
 
           {promoApplied ? (
             <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              ✅ {normalizePromoCode(promo)} applied — <b>{promoDiscountPercent}% off your first month</b>. Regular
+              ✅ {normalizePromoCode(promo)} applied —{" "}
+              <b>{promoDiscountPercent}% off your first month</b>. Regular
               monthly price starts next month.
             </div>
           ) : null}
@@ -736,7 +813,11 @@ export default function FunnelPayment(): JSX.Element {
         <div id="tdg-plans" className="mx-auto mt-10 max-w-xl space-y-4">
           {plans.map((plan) => {
             const active = plan.id === selected;
-            const uiPrice = calcUiPriceForPlan(plan, promoApplied, promoDiscountPercent);
+            const uiPrice = calcUiPriceForPlan(
+              plan,
+              promoApplied,
+              promoDiscountPercent
+            );
 
             return (
               <button
@@ -745,7 +826,9 @@ export default function FunnelPayment(): JSX.Element {
                 onClick={() => setSelected(plan.id)}
                 className={cn(
                   "w-full rounded-2xl border bg-white/55 text-left transition",
-                  active ? "border-[#D44B4B] bg-white" : "border-black/10 hover:bg-white/70"
+                  active
+                    ? "border-[#D44B4B] bg-white"
+                    : "border-black/10 hover:bg-white/70"
                 )}
               >
                 <div className="relative p-5">
@@ -753,7 +836,9 @@ export default function FunnelPayment(): JSX.Element {
                     <div
                       className={cn(
                         "absolute -top-3 right-5 rounded-full px-3 py-1 text-[11px] font-semibold",
-                        plan.badgeTone === "yellow" ? "bg-[#F3D35B] text-[#10221B]" : "bg-[#D44B4B] text-white"
+                        plan.badgeTone === "yellow"
+                          ? "bg-[#F3D35B] text-[#10221B]"
+                          : "bg-[#D44B4B] text-white"
                       )}
                     >
                       {plan.badge}
@@ -768,7 +853,9 @@ export default function FunnelPayment(): JSX.Element {
                           active ? "border-[#D44B4B]" : "border-black/15"
                         )}
                       >
-                        {active ? <div className="h-2.5 w-2.5 rounded-full bg-[#D44B4B]" /> : null}
+                        {active ? (
+                          <div className="h-2.5 w-2.5 rounded-full bg-[#D44B4B]" />
+                        ) : null}
                       </div>
 
                       <div>
@@ -778,22 +865,32 @@ export default function FunnelPayment(): JSX.Element {
                         </div>
 
                         {promoApplied && uiPrice.showThen ? (
-                          <div className="mt-2 text-xs text-[#10221B]/60">{uiPrice.thenText}</div>
+                          <div className="mt-2 text-xs text-[#10221B]/60">
+                            {uiPrice.thenText}
+                          </div>
                         ) : null}
                       </div>
                     </div>
 
                     <div className="text-right">
                       {uiPrice.showWasOverride ? (
-                        <div className="text-xs text-[#10221B]/45 line-through">{uiPrice.wasOverride}</div>
+                        <div className="text-xs text-[#10221B]/45 line-through">
+                          {uiPrice.wasOverride}
+                        </div>
                       ) : plan.was ? (
-                        <div className="text-xs text-[#10221B]/45 line-through">{plan.was}</div>
+                        <div className="text-xs text-[#10221B]/45 line-through">
+                          {plan.was}
+                        </div>
                       ) : (
                         <div className="text-xs text-transparent">.</div>
                       )}
 
-                      <div className="text-2xl font-semibold">{uiPrice.displayMain}</div>
-                      <div className="text-xs text-[#10221B]/60">{uiPrice.displaySub}</div>
+                      <div className="text-2xl font-semibold">
+                        {uiPrice.displayMain}
+                      </div>
+                      <div className="text-xs text-[#10221B]/60">
+                        {uiPrice.displaySub}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -841,13 +938,14 @@ export default function FunnelPayment(): JSX.Element {
             </div>
 
             <div className="mt-6 text-center text-xs text-[#10221B]/55">
-              ✔ Reset lunar (nu se acumulează) • ✔ Recurent automat • ✔ Anulare oricând
+              ✔ Reset monthly • ✔ Recurring automatically • ✔ Cancel anytime
             </div>
           </div>
 
           <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
-            Selected: {selectedPlan.id} • Credits: {selectedPlan.credits} • Promo:{" "}
-            {promoApplied ? normalizePromoCode(promo) : "none"} • Style: {funnel.styleId || "missing"} • Template:{" "}
+            Selected: {selectedPlan.id} • Credits: {selectedPlan.credits} •
+            Promo: {promoApplied ? normalizePromoCode(promo) : "none"} • Style:{" "}
+            {funnel.styleId || "missing"} • Template:{" "}
             {funnel.templateId || "missing"}
           </div>
         </div>
