@@ -17,7 +17,10 @@ type FunnelSession = {
   photo_path?: string | null;
 };
 
-type PlanId = "starter" | "pro" | "elite";
+type PlanId =
+  | "subscription_starter"
+  | "subscription_pro"
+  | "subscription_elite";
 
 type Plan = {
   id: PlanId;
@@ -97,7 +100,7 @@ const PROMO_STORAGE_KEYS = {
 
 const plans: Plan[] = [
   {
-    id: "starter",
+    id: "subscription_starter",
     title: "Silver",
     subtitle: "30 credits / month",
     credits: 30,
@@ -108,7 +111,7 @@ const plans: Plan[] = [
     badgeTone: "red",
   },
   {
-    id: "pro",
+    id: "subscription_pro",
     title: "Gold ⭐",
     subtitle: "100 credits / month",
     credits: 100,
@@ -120,7 +123,7 @@ const plans: Plan[] = [
     default: true,
   },
   {
-    id: "elite",
+    id: "subscription_elite",
     title: "Platinum",
     subtitle: "300 credits / month",
     credits: 300,
@@ -486,7 +489,7 @@ export default function FunnelPayment(): JSX.Element {
   const location = useLocation();
 
   const [selected, setSelected] = useState<PlanId>(
-    () => plans.find((plan) => plan.default)?.id ?? "pro"
+    () => plans.find((plan) => plan.default)?.id ?? "subscription_pro"
   );
 
   const [promo, setPromo] = useState<string>(
@@ -647,6 +650,8 @@ export default function FunnelPayment(): JSX.Element {
         occasion: funnel.occasion || null,
         photo_path: funnel.photo || null,
         photo_bucket: funnel.photoBucket || session?.photo_bucket || "templates",
+        product_type: selected,
+        source: "tdg_funnel",
       };
 
       const res = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
