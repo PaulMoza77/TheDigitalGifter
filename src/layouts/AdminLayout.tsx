@@ -17,6 +17,7 @@ import {
   LayoutTemplate,
   Inbox,
   Settings,
+  Newspaper,
 } from "lucide-react";
 
 type NavItem = {
@@ -123,6 +124,12 @@ const SidebarNavigation: React.FC<{
             path: "/admin/templates",
             icon: LayoutTemplate,
           },
+          {
+            label: "Blog",
+            path: "/admin/blog",
+            icon: Newspaper,
+            badge: "SEO",
+          },
         ],
       },
       {
@@ -208,7 +215,10 @@ const SidebarNavigation: React.FC<{
 
       <div className="flex w-full flex-col gap-6">
         {sections.map((section) => (
-          <div key={section.label} className={cx("w-full", collapsed ? "px-1" : "")}>
+          <div
+            key={section.label}
+            className={cx("w-full", collapsed ? "px-1" : "")}
+          >
             {!collapsed ? (
               <div className="px-2 text-xs font-semibold tracking-[0.2em] text-slate-400">
                 {section.label}
@@ -217,7 +227,12 @@ const SidebarNavigation: React.FC<{
               <div className="my-1 h-px w-full bg-slate-800" />
             )}
 
-            <div className={cx("mt-3 flex flex-col gap-2", collapsed ? "items-center" : "")}>
+            <div
+              className={cx(
+                "mt-3 flex flex-col gap-2",
+                collapsed ? "items-center" : ""
+              )}
+            >
               {section.items.map((item) => (
                 <NavButton
                   key={item.path}
@@ -261,7 +276,10 @@ const AdminLayout: React.FC = () => {
               </button>
             </SheetTrigger>
 
-            <SheetContent side="left" className="w-72 border-slate-800 bg-slate-950 p-0">
+            <SheetContent
+              side="left"
+              className="w-72 border-slate-800 bg-slate-950 p-0"
+            >
               <div className="px-5 py-6">
                 <SidebarNavigation
                   collapsed={false}
@@ -296,7 +314,12 @@ const AdminLayout: React.FC = () => {
             )}
           </button>
 
-          <div className={cx("h-full overflow-y-auto", collapsed ? "px-2 py-6" : "px-5 py-6")}>
+          <div
+            className={cx(
+              "h-full overflow-y-auto",
+              collapsed ? "px-2 py-6" : "px-5 py-6"
+            )}
+          >
             <SidebarNavigation
               collapsed={collapsed}
               isActive={isActive}
