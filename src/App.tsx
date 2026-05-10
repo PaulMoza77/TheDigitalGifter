@@ -37,6 +37,7 @@ import ClientLayout from "@/layouts/ClientLayout";
 // ================= ADMIN CORE =================
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import Templates from "@/pages/admin/Templates";
+import AdminBlogPage from "@/pages/admin/AdminBlogPage";
 
 const PricingPage = lazy(() => import("@/pages/admin/PricingPage"));
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
@@ -89,6 +90,11 @@ const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
 const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
 const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
 const SorryPage = lazy(() => import("@/pages/website/SorryPage"));
+
+// ================= SEO PUBLIC PAGES =================
+const SeoPage = lazy(() => import("@/pages/seo/SeoPage"));
+const BlogIndexPage = lazy(() => import("@/pages/blog/BlogIndexPage"));
+const BlogPostPage = lazy(() => import("@/pages/blog/BlogPostPage"));
 
 // ================= CLIENT ACCOUNT =================
 import AccountDashboard from "@/pages/account/AccountDashboard";
@@ -358,6 +364,11 @@ function AppInner() {
             <Route path="/graduation" element={<GraduationPage />} />
             <Route path="/sorry" element={<SorryPage />} />
 
+            <Route path="/blog" element={<BlogIndexPage />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
+
+            <Route path="/:pageType/:slug" element={<SeoPage />} />
+
             <Route
               path="/name-cards"
               element={<Navigate to="/templates?category=personal" replace />}
@@ -466,6 +477,7 @@ function AppInner() {
             <Route index element={<AdminDashboard />} />
             <Route path="funnel" element={<AdminFunnelPage />} />
             <Route path="templates" element={<Templates />} />
+            <Route path="blog" element={<AdminBlogPage />} />
             <Route path="pricing" element={<PricingPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
