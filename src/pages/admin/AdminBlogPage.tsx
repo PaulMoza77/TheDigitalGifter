@@ -7,8 +7,22 @@ import {
   Plus,
   Save,
   Trash2,
+  Wand2,
+  Search,
+  FilePlus2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+
+type InternalLink = {
+  anchor_text: string;
+  url: string;
+  placement_note: string;
+};
+
+type FaqItem = {
+  question: string;
+  answer: string;
+};
 
 type BlogPost = {
   id: string;
@@ -20,6 +34,7 @@ type BlogPost = {
   content: string;
   cover_image_url: string | null;
   cover_image_path: string | null;
+  image_prompt: string | null;
   cta_label: string | null;
   cta_url: string | null;
   internal_links: InternalLink[];
@@ -27,16 +42,7 @@ type BlogPost = {
   author_name: string;
   is_published: boolean;
   published_at: string | null;
-};
-
-type InternalLink = {
-  label: string;
-  url: string;
-};
-
-type FaqItem = {
-  question: string;
-  answer: string;
+  updated_at: string | null;
 };
 
 type BlogForm = {
@@ -49,6 +55,7 @@ type BlogForm = {
   content: string;
   cover_image_url: string;
   cover_image_path: string;
+  image_prompt: string;
   cta_label: string;
   cta_url: string;
   internal_links: InternalLink[];
@@ -67,6 +74,7 @@ const emptyForm: BlogForm = {
   content: "",
   cover_image_url: "",
   cover_image_path: "",
+  image_prompt: "",
   cta_label: "Create your AI gift",
   cta_url: "/generator",
   internal_links: [],
@@ -92,16 +100,66 @@ function labelClass() {
   return "mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400";
 }
 
+function normalizeLinks(value: unknown): InternalLink[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      const row = item as Partial<InternalLink> & {
+        label?: string;
+      };
+
+      return {
+        anchor_text: String(row.anchor_text ?? row.label ?? ""),
+        url: String(row.url ?? ""),
+        placement_note: String(row.placement_note ?? ""),
+      };
+    })
+    .filter((item) => item.anchor_text || item.url || item.placement_note);
+}
+
+function normalizeFaq(value: unknown): FaqItem[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      const row = item as Partial<FaqItem>;
+
+      return {
+        question: String(row.question ?? ""),
+        answer: String(row.answer ?? ""),
+      };
+    })
+    .filter((item) => item.question || item.answer);
+}
+
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [form, setForm] = useState<BlogForm>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const [search, setSearch] = useState("");
+  const [aiTopic, setAiTopic] = useState("");
+  const [generating, setGenerating] = useState(false);
+
   const publicUrl = useMemo(() => {
     if (!form.slug) return "";
     return `/blog/${form.slug}`;
   }, [form.slug]);
+
+  const filteredPosts = useMemo(() => {
+    const clean = search.trim().toLowerCase();
+    if (!clean) return posts;
+
+    return posts.filter((post) => {
+      return (
+        post.title.toLowerCase().includes(clean) ||
+        post.slug.toLowerCase().includes(clean) ||
+        post.meta_title.toLowerCase().includes(clean)
+      );
+    });
+  }, [posts, search]);
 
   async function loadPosts() {
     setLoading(true);
@@ -109,7 +167,7 @@ export default function AdminBlogPage() {
     const { data, error } = await supabase
       .from("blog_posts")
       .select(
-        "id,slug,title,meta_title,meta_description,excerpt,content,cover_image_url,cover_image_path,cta_label,cta_url,internal_links,faq,author_name,is_published,published_at"
+        "id,slug,title,meta_title,meta_description,excerpt,content,cover_image_url,cover_image_path,image_prompt,cta_label,cta_url,internal_links,faq,author_name,is_published,published_at,updated_at"
       )
       .order("updated_at", { ascending: false });
 
@@ -135,7 +193,8 @@ export default function AdminBlogPage() {
   }
 
   function startNewPost() {
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
+    setAiTopic("");
   }
 
   function editPost(post: BlogPost) {
@@ -149,12 +208,11 @@ export default function AdminBlogPage() {
       content: post.content,
       cover_image_url: post.cover_image_url ?? "",
       cover_image_path: post.cover_image_path ?? "",
-      cta_label: post.cta_label ?? "",
-      cta_url: post.cta_url ?? "",
-      internal_links: Array.isArray(post.internal_links)
-        ? post.internal_links
-        : [],
-      faq: Array.isArray(post.faq) ? post.faq : [],
+      image_prompt: post.image_prompt ?? "",
+      cta_label: post.cta_label ?? "Create your AI gift",
+      cta_url: post.cta_url ?? "/generator",
+      internal_links: normalizeLinks(post.internal_links),
+      faq: normalizeFaq(post.faq),
       author_name: post.author_name,
       is_published: post.is_published,
     });
@@ -165,7 +223,8 @@ export default function AdminBlogPage() {
     if (!file) return;
 
     const extension = file.name.split(".").pop() || "jpg";
-    const filePath = `covers/${Date.now()}-${slugify(file.name)}.${extension}`;
+    const cleanName = slugify(file.name.replace(/\.[^/.]+$/, ""));
+    const filePath = `covers/${Date.now()}-${cleanName}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from("blog-images")
@@ -186,13 +245,17 @@ export default function AdminBlogPage() {
     updateField("cover_image_url", data.publicUrl);
     updateField("cover_image_path", filePath);
 
-    toast.success("Image uploaded");
+    toast.success("Cover image uploaded");
   }
 
   function addInternalLink() {
     updateField("internal_links", [
       ...form.internal_links,
-      { label: "", url: "" },
+      {
+        anchor_text: "",
+        url: "",
+        placement_note: "",
+      },
     ]);
   }
 
@@ -236,6 +299,64 @@ export default function AdminBlogPage() {
       "faq",
       form.faq.filter((_, itemIndex) => itemIndex !== index)
     );
+  }
+
+  async function generateWithAI() {
+    const topic = aiTopic.trim() || form.title.trim();
+
+    if (!topic) {
+      toast.error("Add a blog topic or title first");
+      return;
+    }
+
+    setGenerating(true);
+
+    const { data, error } = await supabase.functions.invoke(
+      "generate-blog-draft",
+      {
+        body: {
+          topic,
+          current_title: form.title,
+          target_brand: "TheDigitalGifter",
+          target_audience:
+            "people looking for emotional digital gifts, AI photo gifts, apology gifts, birthday gifts, romantic surprises, and last-minute online gifts",
+        },
+      }
+    );
+
+    if (error) {
+      toast.error(error.message);
+      setGenerating(false);
+      return;
+    }
+
+    const draft = data as Partial<BlogForm>;
+
+    const nextTitle = draft.title?.trim() || form.title || topic;
+
+    setForm((current) => ({
+      ...current,
+      title: nextTitle,
+      slug: draft.slug?.trim() || current.slug || slugify(nextTitle),
+      meta_title:
+        draft.meta_title?.trim() ||
+        current.meta_title ||
+        `${nextTitle} | TheDigitalGifter`,
+      meta_description:
+        draft.meta_description?.trim() || current.meta_description,
+      excerpt: draft.excerpt?.trim() || current.excerpt,
+      content: draft.content?.trim() || current.content,
+      image_prompt: draft.image_prompt?.trim() || current.image_prompt,
+      cta_label: draft.cta_label?.trim() || current.cta_label,
+      cta_url: draft.cta_url?.trim() || current.cta_url,
+      internal_links: Array.isArray(draft.internal_links)
+        ? normalizeLinks(draft.internal_links)
+        : current.internal_links,
+      faq: Array.isArray(draft.faq) ? normalizeFaq(draft.faq) : current.faq,
+    }));
+
+    toast.success("AI draft generated");
+    setGenerating(false);
   }
 
   async function savePost() {
@@ -282,10 +403,11 @@ export default function AdminBlogPage() {
       content: form.content.trim(),
       cover_image_url: form.cover_image_url || null,
       cover_image_path: form.cover_image_path || null,
+      image_prompt: form.image_prompt || null,
       cta_label: form.cta_label || null,
       cta_url: form.cta_url || null,
       internal_links: form.internal_links.filter(
-        (link) => link.label.trim() && link.url.trim()
+        (link) => link.anchor_text.trim() && link.url.trim()
       ),
       faq: form.faq.filter(
         (item) => item.question.trim() && item.answer.trim()
@@ -321,12 +443,11 @@ export default function AdminBlogPage() {
       content: saved.content,
       cover_image_url: saved.cover_image_url ?? "",
       cover_image_path: saved.cover_image_path ?? "",
-      cta_label: saved.cta_label ?? "",
-      cta_url: saved.cta_url ?? "",
-      internal_links: Array.isArray(saved.internal_links)
-        ? saved.internal_links
-        : [],
-      faq: Array.isArray(saved.faq) ? saved.faq : [],
+      image_prompt: saved.image_prompt ?? "",
+      cta_label: saved.cta_label ?? "Create your AI gift",
+      cta_url: saved.cta_url ?? "/generator",
+      internal_links: normalizeLinks(saved.internal_links),
+      faq: normalizeFaq(saved.faq),
       author_name: saved.author_name,
       is_published: saved.is_published,
     });
@@ -352,7 +473,7 @@ export default function AdminBlogPage() {
     }
 
     toast.success("Blog post deleted");
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
     await loadPosts();
   }
 
@@ -385,7 +506,7 @@ export default function AdminBlogPage() {
               onClick={startNewPost}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
             >
-              <Plus className="h-4 w-4" />
+              <FilePlus2 className="h-4 w-4" />
               New post
             </button>
 
@@ -401,19 +522,66 @@ export default function AdminBlogPage() {
           </div>
         </div>
 
+        <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+          <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+            <div>
+              <label className={labelClass()}>
+                AI topic / keyword
+              </label>
+              <input
+                className={inputClass()}
+                value={aiTopic}
+                onChange={(event) => setAiTopic(event.target.value)}
+                placeholder="Example: last-minute birthday gift ideas for girlfriend"
+              />
+              <p className="mt-2 text-xs text-slate-500">
+                AI will generate title, slug, meta title, meta description,
+                excerpt, blog body, FAQs, internal link suggestions and image
+                prompt.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={generateWithAI}
+              disabled={generating}
+              className="inline-flex h-[46px] items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 text-sm font-semibold text-slate-950 disabled:opacity-60"
+            >
+              <Wand2 className="h-4 w-4" />
+              {generating ? "Generating..." : "Generate with AI"}
+            </button>
+          </div>
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
           <aside className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Posts
-            </h2>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Posts
+              </h2>
+
+              <span className="text-xs text-slate-500">
+                {filteredPosts.length}
+              </span>
+            </div>
+
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2">
+              <Search className="h-4 w-4 text-slate-500" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search posts..."
+                className="w-full bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
+              />
+            </div>
 
             {loading ? (
               <p className="text-sm text-slate-400">Loading...</p>
-            ) : posts.length === 0 ? (
-              <p className="text-sm text-slate-400">No blog posts yet.</p>
+            ) : filteredPosts.length === 0 ? (
+              <p className="text-sm text-slate-400">No blog posts found.</p>
             ) : (
-              <div className="space-y-2">
-                {posts.map((post) => (
+              <div className="max-h-[720px] space-y-2 overflow-y-auto pr-1">
+                {filteredPosts.map((post) => (
                   <button
                     type="button"
                     key={post.id}
@@ -542,19 +710,20 @@ export default function AdminBlogPage() {
               <div className="mt-5">
                 <label className={labelClass()}>Blog content</label>
                 <textarea
-                  className={`${inputClass()} min-h-[420px] font-mono leading-7`}
+                  className={`${inputClass()} min-h-[460px] font-mono leading-7`}
                   value={form.content}
                   onChange={(event) =>
                     updateField("content", event.target.value)
                   }
                   placeholder={`Write your blog here.
 
-Use normal paragraphs.
+Use markdown-style structure:
 
-You can include section titles like:
-## Best ideas
-## Why it works
-## Final thoughts`}
+## Section title
+Paragraph text.
+
+## Another section
+Paragraph text.`}
                 />
               </div>
             </div>
@@ -577,6 +746,21 @@ You can include section titles like:
                   className="hidden"
                 />
               </label>
+
+              <div className="mt-5">
+                <label className={labelClass()}>
+                  AI image prompt
+                </label>
+                <textarea
+                  className={inputClass()}
+                  rows={4}
+                  value={form.image_prompt}
+                  onChange={(event) =>
+                    updateField("image_prompt", event.target.value)
+                  }
+                  placeholder="AI image idea based on this article..."
+                />
+              </div>
 
               {form.cover_image_url ? (
                 <img
@@ -619,7 +803,13 @@ You can include section titles like:
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
               <div className="mb-5 flex items-center justify-between gap-4">
-                <h2 className="text-lg font-semibold">Internal links</h2>
+                <div>
+                  <h2 className="text-lg font-semibold">Internal links</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Add exact anchor text + destination URL. Use the anchor text
+                    naturally inside the article.
+                  </p>
+                </div>
 
                 <button
                   type="button"
@@ -639,11 +829,15 @@ You can include section titles like:
                   >
                     <input
                       className={inputClass()}
-                      value={link.label}
+                      value={link.anchor_text}
                       onChange={(event) =>
-                        updateInternalLink(index, "label", event.target.value)
+                        updateInternalLink(
+                          index,
+                          "anchor_text",
+                          event.target.value
+                        )
                       }
-                      placeholder="Birthday gift"
+                      placeholder="Anchor text: AI birthday gift"
                     />
 
                     <input
@@ -662,13 +856,27 @@ You can include section titles like:
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
+
+                    <textarea
+                      className={`${inputClass()} md:col-span-3`}
+                      rows={2}
+                      value={link.placement_note}
+                      onChange={(event) =>
+                        updateInternalLink(
+                          index,
+                          "placement_note",
+                          event.target.value
+                        )
+                      }
+                      placeholder="Placement note: Add this in the section about last-minute birthday ideas."
+                    />
                   </div>
                 ))}
 
                 {form.internal_links.length === 0 ? (
                   <p className="text-sm text-slate-500">
-                    Add links to SEO pages like /occasion/birthday,
-                    /recipient/girlfriend or /generator/ai-birthday-video-generator.
+                    Example: anchor text “AI birthday gift” → URL
+                    /occasion/birthday
                   </p>
                 ) : null}
               </div>
@@ -723,12 +931,6 @@ You can include section titles like:
                     </button>
                   </div>
                 ))}
-
-                {form.faq.length === 0 ? (
-                  <p className="text-sm text-slate-500">
-                    FAQ helps SEO and can appear in structured data later.
-                  </p>
-                ) : null}
               </div>
             </div>
 
