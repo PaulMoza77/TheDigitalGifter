@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Eye,
@@ -10,6 +10,11 @@ import {
   Wand2,
   Search,
   FilePlus2,
+  Bold,
+  Italic,
+  List,
+  Heading2,
+  ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -105,9 +110,7 @@ function normalizeLinks(value: unknown): InternalLink[] {
 
   return value
     .map((item) => {
-      const row = item as Partial<InternalLink> & {
-        label?: string;
-      };
+      const row = item as Partial<InternalLink> & { label?: string };
 
       return {
         anchor_text: String(row.anchor_text ?? row.label ?? ""),
@@ -134,6 +137,8 @@ function normalizeFaq(value: unknown): FaqItem[] {
 }
 
 export default function AdminBlogPage() {
+  const contentRef = useRef<HTMLTextAreaElement | null>(null);
+
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [form, setForm] = useState<BlogForm>(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -142,6 +147,7 @@ export default function AdminBlogPage() {
   const [search, setSearch] = useState("");
   const [aiTopic, setAiTopic] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
 
   const publicUrl = useMemo(() => {
     if (!form.slug) return "";
@@ -218,6 +224,91 @@ export default function AdminBlogPage() {
     });
   }
 
+  function insertAroundSelection(before: string, after = "") {
+    const textarea = contentRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = form.content.slice(start, end);
+    const nextContent =
+      form.content.slice(0, start) +
+      before +
+      selected +
+      after +
+      form.content.slice(end);
+
+    updateField("content", nextContent);
+
+    window.requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.selectionStart = start + before.length;
+      textarea.selectionEnd = start + before.length + selected.length;
+    });
+  }
+
+  function insertAtSelection(value: string) {
+    const textarea = contentRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const nextContent =
+      form.content.slice(0, start) + value + form.content.slice(end);
+
+    updateField("content", nextContent);
+
+    window.requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.selectionStart = start + value.length;
+      textarea.selectionEnd = start + value.length;
+    });
+  }
+
+  function addLinkToSelectedText() {
+    const textarea = contentRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = form.content.slice(start, end).trim();
+
+    if (!selected) {
+      toast.error("Select text first, then click link.");
+      return;
+    }
+
+    const url = window.prompt("Paste internal or external URL:");
+    if (!url?.trim()) return;
+
+    const linkMarkdown = `[${selected}](${url.trim()})`;
+    const nextContent =
+      form.content.slice(0, start) + linkMarkdown + form.content.slice(end);
+
+    updateField("content", nextContent);
+
+    const existing = form.internal_links.some(
+      (link) => link.anchor_text === selected && link.url === url.trim()
+    );
+
+    if (!existing) {
+      updateField("internal_links", [
+        ...form.internal_links,
+        {
+          anchor_text: selected,
+          url: url.trim(),
+          placement_note: "Inserted directly inside article content.",
+        },
+      ]);
+    }
+
+    window.requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.selectionStart = start;
+      textarea.selectionEnd = start + linkMarkdown.length;
+    });
+  }
+
   async function uploadCoverImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -246,6 +337,60 @@ export default function AdminBlogPage() {
     updateField("cover_image_path", filePath);
 
     toast.success("Cover image uploaded");
+  }
+
+  async function generateCoverWithAI() {
+    const prompt = form.image_prompt.trim();
+
+    if (!prompt) {
+      toast.error("Add an AI image prompt first.");
+      return;
+    }
+
+    setGeneratingImage(true);
+
+    const { data, error } = await supabase.functions.invoke(
+      "generate-blog-cover",
+      {
+        body: {
+          title: form.title,
+          slug: form.slug || slugify(form.title || "blog-cover"),
+          prompt,
+          style:
+            "premium emotional editorial image, realistic people, warm human moment, meaningful gift emotion, soft cinematic light, elegant composition, no text, no logos, no watermark",
+        },
+      }
+    );
+
+    if (error) {
+      toast.error(error.message);
+      setGeneratingImage(false);
+      return;
+    }
+
+    const result = data as {
+      cover_image_url?: string;
+      cover_image_path?: string;
+      error?: string;
+    };
+
+    if (result.error) {
+      toast.error(result.error);
+      setGeneratingImage(false);
+      return;
+    }
+
+    if (!result.cover_image_url || !result.cover_image_path) {
+      toast.error("Image generation failed");
+      setGeneratingImage(false);
+      return;
+    }
+
+    updateField("cover_image_url", result.cover_image_url);
+    updateField("cover_image_path", result.cover_image_path);
+
+    toast.success("AI cover generated");
+    setGeneratingImage(false);
   }
 
   function addInternalLink() {
@@ -525,9 +670,7 @@ export default function AdminBlogPage() {
         <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
           <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
             <div>
-              <label className={labelClass()}>
-                AI topic / keyword
-              </label>
+              <label className={labelClass()}>AI topic / keyword</label>
               <input
                 className={inputClass()}
                 value={aiTopic}
@@ -536,8 +679,7 @@ export default function AdminBlogPage() {
               />
               <p className="mt-2 text-xs text-slate-500">
                 AI will generate title, slug, meta title, meta description,
-                excerpt, blog body, FAQs, internal link suggestions and image
-                prompt.
+                excerpt, article body, FAQs, internal links and image prompt.
               </p>
             </div>
 
@@ -708,16 +850,78 @@ export default function AdminBlogPage() {
               </div>
 
               <div className="mt-5">
-                <label className={labelClass()}>Blog content</label>
+                <label className={labelClass()}>Blog content editor</label>
+
+                <div className="rounded-t-xl border border-b-0 border-slate-700 bg-slate-900 px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => insertAtSelection("\n## Section title\n")}
+                      className="rounded-lg p-2 hover:bg-slate-800"
+                      title="Heading"
+                    >
+                      <Heading2 className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => insertAroundSelection("**", "**")}
+                      className="rounded-lg p-2 hover:bg-slate-800"
+                      title="Bold"
+                    >
+                      <Bold className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => insertAroundSelection("_", "_")}
+                      className="rounded-lg p-2 hover:bg-slate-800"
+                      title="Italic"
+                    >
+                      <Italic className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => insertAtSelection("\n- List item")}
+                      className="rounded-lg p-2 hover:bg-slate-800"
+                      title="List"
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={addLinkToSelectedText}
+                      className="rounded-lg p-2 hover:bg-slate-800"
+                      title="Add link to selected text"
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        insertAtSelection("\n![Image alt text](image-url)\n")
+                      }
+                      className="rounded-lg p-2 hover:bg-slate-800"
+                      title="Insert image markdown"
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
                 <textarea
-                  className={`${inputClass()} min-h-[460px] font-mono leading-7`}
+                  ref={contentRef}
+                  className="min-h-[520px] w-full rounded-b-xl border border-slate-700 bg-slate-900 px-4 py-3 font-mono text-sm leading-7 text-slate-100 outline-none transition focus:border-emerald-400"
                   value={form.content}
                   onChange={(event) =>
                     updateField("content", event.target.value)
                   }
                   placeholder={`Write your blog here.
 
-Use markdown-style structure:
+Select text and press the link icon to add a URL.
 
 ## Section title
 Paragraph text.
@@ -749,7 +953,7 @@ Paragraph text.`}
 
               <div className="mt-5">
                 <label className={labelClass()}>
-                  AI image prompt
+                  AI image prompt — emotional, premium, with people
                 </label>
                 <textarea
                   className={inputClass()}
@@ -758,9 +962,21 @@ Paragraph text.`}
                   onChange={(event) =>
                     updateField("image_prompt", event.target.value)
                   }
-                  placeholder="AI image idea based on this article..."
+                  placeholder="Example: A warm emotional moment of a young woman receiving a digital birthday gift on her phone, soft cinematic light, premium editorial style, realistic people, no text."
                 />
               </div>
+
+              <button
+                type="button"
+                onClick={generateCoverWithAI}
+                disabled={generatingImage}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 disabled:opacity-60"
+              >
+                <Wand2 className="h-4 w-4" />
+                {generatingImage
+                  ? "Generating cover..."
+                  : "Generate cover with AI"}
+              </button>
 
               {form.cover_image_url ? (
                 <img
@@ -806,8 +1022,8 @@ Paragraph text.`}
                 <div>
                   <h2 className="text-lg font-semibold">Internal links</h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Add exact anchor text + destination URL. Use the anchor text
-                    naturally inside the article.
+                    Links added through the editor are stored here. You can also
+                    add manual suggestions.
                   </p>
                 </div>
 
@@ -868,15 +1084,15 @@ Paragraph text.`}
                           event.target.value
                         )
                       }
-                      placeholder="Placement note: Add this in the section about last-minute birthday ideas."
+                      placeholder="Placement note"
                     />
                   </div>
                 ))}
 
                 {form.internal_links.length === 0 ? (
                   <p className="text-sm text-slate-500">
-                    Example: anchor text “AI birthday gift” → URL
-                    /occasion/birthday
+                    Select text in the article and click the link icon to insert
+                    a link like WordPress.
                   </p>
                 ) : null}
               </div>
