@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
 type PageType = "occasion" | "recipient" | "style" | "generator";
@@ -33,6 +33,13 @@ type SeoPageRow = {
   related_pages: RelatedPage[];
 };
 
+const allowedPageTypes: PageType[] = [
+  "occasion",
+  "recipient",
+  "style",
+  "generator",
+];
+
 const pageTypeToBasePath: Record<PageType, string> = {
   occasion: "occasion",
   recipient: "recipient",
@@ -42,26 +49,87 @@ const pageTypeToBasePath: Record<PageType, string> = {
 
 const pageTypeToFunnelPrefix: Record<PageType, string> = {
   occasion: "/funnel/homepage",
-  recipient: "/funnel/recipient",
-  style: "/funnel/style",
+  recipient: "/funnel/homepage",
+  style: "/funnel/homepage",
   generator: "/funnel/homepage",
 };
 
+function isPageType(value: string | undefined): value is PageType {
+  return !!value && allowedPageTypes.includes(value as PageType);
+}
+
+function normalizeArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function upsertMeta(name: string, content: string) {
+  let tag = document.querySelector(`meta[name="${name}"]`);
+
+  if (!tag) {
+    tag = document.createElement("meta");
+    tag.setAttribute("name", name);
+    document.head.appendChild(tag);
+  }
+
+  tag.setAttribute("content", content);
+}
+
+function upsertPropertyMeta(property: string, content: string) {
+  let tag = document.querySelector(`meta[property="${property}"]`);
+
+  if (!tag) {
+    tag = document.createElement("meta");
+    tag.setAttribute("property", property);
+    document.head.appendChild(tag);
+  }
+
+  tag.setAttribute("content", content);
+}
+
+function upsertCanonical(url: string) {
+  let canonical = document.querySelector("link[rel='canonical']");
+
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.setAttribute("rel", "canonical");
+    document.head.appendChild(canonical);
+  }
+
+  canonical.setAttribute("href", url);
+}
+
+function upsertJsonLd(id: string, data: Record<string, unknown>) {
+  let script = document.getElementById(id) as HTMLScriptElement | null;
+
+  if (!script) {
+    script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.id = id;
+    document.head.appendChild(script);
+  }
+
+  script.textContent = JSON.stringify(data);
+}
+
 export default function SeoPage() {
   const { pageType, slug } = useParams<{
-    pageType: PageType;
+    pageType: string;
     slug: string;
   }>();
 
   const [page, setPage] = useState<SeoPageRow | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const safePageType = pageType as PageType | undefined;
-  const safeSlug = slug?.trim().toLowerCase();
+  const safePageType = isPageType(pageType) ? pageType : null;
+  const safeSlug = slug?.trim().toLowerCase() || "";
 
   useEffect(() => {
     async function loadPage() {
-      if (!safePageType || !safeSlug) return;
+      if (!safePageType || !safeSlug) {
+        setLoading(false);
+        setPage(null);
+        return;
+      }
 
       setLoading(true);
 
@@ -73,51 +141,81 @@ export default function SeoPage() {
         .eq("page_type", safePageType)
         .eq("slug", safeSlug)
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         setPage(null);
       } else {
-        setPage(data as SeoPageRow);
+        setPage({
+          ...(data as SeoPageRow),
+          benefits: normalizeArray<Benefit>(data.benefits),
+          faq: normalizeArray<FaqItem>(data.faq),
+          related_pages: normalizeArray<RelatedPage>(data.related_pages),
+        });
       }
 
       setLoading(false);
     }
 
-    loadPage();
+    void loadPage();
   }, [safePageType, safeSlug]);
 
   useEffect(() => {
     if (!page) return;
 
+    const canonicalUrl = `https://thedigitalgifter.com/${
+      pageTypeToBasePath[page.page_type]
+    }/${page.slug}`;
+
     document.title = page.meta_title;
 
-    let description = document.querySelector("meta[name='description']");
-    if (!description) {
-      description = document.createElement("meta");
-      description.setAttribute("name", "description");
-      document.head.appendChild(description);
+    upsertMeta("description", page.meta_description);
+    upsertMeta("robots", "index, follow");
+
+    upsertPropertyMeta("og:title", page.meta_title);
+    upsertPropertyMeta("og:description", page.meta_description);
+    upsertPropertyMeta("og:type", "website");
+    upsertPropertyMeta("og:url", canonicalUrl);
+
+    upsertCanonical(canonicalUrl);
+
+    upsertJsonLd("seo-page-jsonld", {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: page.meta_title,
+      description: page.meta_description,
+      url: canonicalUrl,
+      isPartOf: {
+        "@type": "WebSite",
+        name: "TheDigitalGifter",
+        url: "https://thedigitalgifter.com",
+      },
+    });
+
+    if (page.faq.length > 0) {
+      upsertJsonLd("seo-faq-jsonld", {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: page.faq.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer,
+          },
+        })),
+      });
     }
-
-    description.setAttribute("content", page.meta_description);
-
-    let canonical = document.querySelector("link[rel='canonical']");
-    if (!canonical) {
-      canonical = document.createElement("link");
-      canonical.setAttribute("rel", "canonical");
-      document.head.appendChild(canonical);
-    }
-
-    canonical.setAttribute(
-      "href",
-      `https://thedigitalgifter.com/${pageTypeToBasePath[page.page_type]}/${page.slug}`
-    );
   }, [page]);
 
   const funnelUrl = useMemo(() => {
     if (!page) return "/";
     return `${pageTypeToFunnelPrefix[page.page_type]}/${page.slug}`;
   }, [page]);
+
+  if (!safePageType) {
+    return <Navigate to="/" replace />;
+  }
 
   if (loading) {
     return (
@@ -133,6 +231,11 @@ export default function SeoPage() {
         <h1 className="text-4xl font-semibold text-[#063f2f]">
           Page not found
         </h1>
+
+        <p className="mx-auto mt-4 max-w-xl text-[#3f5f55]">
+          This SEO page is not active yet or does not exist in the database.
+        </p>
+
         <Link
           to="/"
           className="mt-6 inline-block rounded-full bg-[#063f2f] px-6 py-3 text-white"
@@ -162,29 +265,32 @@ export default function SeoPage() {
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
               to={funnelUrl}
-              className="rounded-full bg-[#063f2f] px-7 py-4 text-sm font-semibold text-white"
+              className="rounded-full bg-[#063f2f] px-7 py-4 text-sm font-semibold text-white transition hover:opacity-90"
             >
               {page.cta_text}
             </Link>
 
-            <a
-              href="#faq"
-              className="rounded-full border border-[#063f2f]/20 px-7 py-4 text-sm font-semibold text-[#063f2f]"
-            >
-              Read FAQ
-            </a>
+            {page.faq.length > 0 ? (
+              <a
+                href="#faq"
+                className="rounded-full border border-[#063f2f]/20 px-7 py-4 text-sm font-semibold text-[#063f2f]"
+              >
+                Read FAQ
+              </a>
+            ) : null}
           </div>
         </div>
 
         <div className="rounded-[2rem] border border-[#063f2f]/10 bg-white/70 p-6 shadow-xl">
           <div className="aspect-[4/3] rounded-[1.5rem] bg-gradient-to-br from-[#fff7d6] to-[#eaf4eb]" />
+
           <p className="mt-5 text-sm text-[#3f5f55]">
             Upload a photo. Choose a style. Create a meaningful digital gift.
           </p>
         </div>
       </section>
 
-      {page.benefits?.length > 0 && (
+      {page.benefits.length > 0 && (
         <section className="border-y border-[#063f2f]/10 bg-white/40 px-6 py-16">
           <div className="mx-auto max-w-5xl">
             <h2 className="text-3xl font-semibold">
@@ -198,6 +304,7 @@ export default function SeoPage() {
                   className="rounded-3xl bg-white p-6 shadow-sm"
                 >
                   <h3 className="font-semibold">{benefit.title}</h3>
+
                   <p className="mt-3 text-sm leading-6 text-[#3f5f55]">
                     {benefit.text}
                   </p>
@@ -208,7 +315,7 @@ export default function SeoPage() {
         </section>
       )}
 
-      {page.faq?.length > 0 && (
+      {page.faq.length > 0 && (
         <section id="faq" className="mx-auto max-w-4xl px-6 py-16">
           <h2 className="text-3xl font-semibold">FAQ</h2>
 
@@ -216,6 +323,7 @@ export default function SeoPage() {
             {page.faq.map((item) => (
               <div key={item.question} className="rounded-3xl bg-white p-6">
                 <h3 className="font-semibold">{item.question}</h3>
+
                 <p className="mt-3 text-sm leading-6 text-[#3f5f55]">
                   {item.answer}
                 </p>
@@ -225,14 +333,14 @@ export default function SeoPage() {
         </section>
       )}
 
-      {page.related_pages?.length > 0 && (
+      {page.related_pages.length > 0 && (
         <section className="mx-auto max-w-5xl px-6 pb-20">
           <h2 className="text-2xl font-semibold">Related gift ideas</h2>
 
           <div className="mt-6 flex flex-wrap gap-3">
             {page.related_pages.map((related) => (
               <Link
-                key={related.url}
+                key={`${related.label}-${related.url}`}
                 to={related.url}
                 className="rounded-full border border-[#063f2f]/15 bg-white px-5 py-3 text-sm font-semibold"
               >
