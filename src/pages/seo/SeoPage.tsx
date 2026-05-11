@@ -31,6 +31,9 @@ type SeoPageRow = {
   benefits: Benefit[];
   faq: FaqItem[];
   related_pages: RelatedPage[];
+  hero_image_url: string | null;
+  hero_image_path: string | null;
+  image_alt: string | null;
 };
 
 const allowedPageTypes: PageType[] = [
@@ -52,6 +55,17 @@ const pageTypeToFunnelPrefix: Record<PageType, string> = {
   recipient: "/funnel/homepage",
   style: "/funnel/homepage",
   generator: "/funnel/homepage",
+};
+
+const fallbackHeroByType: Record<PageType, string> = {
+  occasion:
+    "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=1200&q=80",
+  recipient:
+    "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80",
+  style:
+    "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1200&q=80",
+  generator:
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
 };
 
 function isPageType(value: string | undefined): value is PageType {
@@ -136,7 +150,7 @@ export default function SeoPage() {
       const { data, error } = await supabase
         .from("seo_pages")
         .select(
-          "page_type,slug,title,meta_title,meta_description,h1,intro,cta_text,benefits,faq,related_pages"
+          "page_type,slug,title,meta_title,meta_description,h1,intro,cta_text,benefits,faq,related_pages,hero_image_url,hero_image_path,image_alt"
         )
         .eq("page_type", safePageType)
         .eq("slug", safeSlug)
@@ -151,6 +165,9 @@ export default function SeoPage() {
           benefits: normalizeArray<Benefit>(data.benefits),
           faq: normalizeArray<FaqItem>(data.faq),
           related_pages: normalizeArray<RelatedPage>(data.related_pages),
+          hero_image_url: data.hero_image_url ?? null,
+          hero_image_path: data.hero_image_path ?? null,
+          image_alt: data.image_alt ?? null,
         });
       }
 
@@ -159,6 +176,16 @@ export default function SeoPage() {
 
     void loadPage();
   }, [safePageType, safeSlug]);
+
+  const heroImageUrl = useMemo(() => {
+    if (!page) return "";
+    return page.hero_image_url || fallbackHeroByType[page.page_type];
+  }, [page]);
+
+  const heroImageAlt = useMemo(() => {
+    if (!page) return "TheDigitalGifter digital gift preview";
+    return page.image_alt || page.h1 || page.title;
+  }, [page]);
 
   useEffect(() => {
     if (!page) return;
@@ -176,6 +203,12 @@ export default function SeoPage() {
     upsertPropertyMeta("og:description", page.meta_description);
     upsertPropertyMeta("og:type", "website");
     upsertPropertyMeta("og:url", canonicalUrl);
+    upsertPropertyMeta("og:image", heroImageUrl);
+
+    upsertMeta("twitter:card", "summary_large_image");
+    upsertMeta("twitter:title", page.meta_title);
+    upsertMeta("twitter:description", page.meta_description);
+    upsertMeta("twitter:image", heroImageUrl);
 
     upsertCanonical(canonicalUrl);
 
@@ -185,6 +218,7 @@ export default function SeoPage() {
       name: page.meta_title,
       description: page.meta_description,
       url: canonicalUrl,
+      image: heroImageUrl,
       isPartOf: {
         "@type": "WebSite",
         name: "TheDigitalGifter",
@@ -206,7 +240,7 @@ export default function SeoPage() {
         })),
       });
     }
-  }, [page]);
+  }, [page, heroImageUrl]);
 
   const funnelUrl = useMemo(() => {
     if (!page) return "/";
@@ -282,7 +316,12 @@ export default function SeoPage() {
         </div>
 
         <div className="rounded-[2rem] border border-[#063f2f]/10 bg-white/70 p-6 shadow-xl">
-          <div className="aspect-[4/3] rounded-[1.5rem] bg-gradient-to-br from-[#fff7d6] to-[#eaf4eb]" />
+          <img
+            src={heroImageUrl}
+            alt={heroImageAlt}
+            className="aspect-[4/3] w-full rounded-[1.5rem] object-cover"
+            loading="eager"
+          />
 
           <p className="mt-5 text-sm text-[#3f5f55]">
             Upload a photo. Choose a style. Create a meaningful digital gift.
