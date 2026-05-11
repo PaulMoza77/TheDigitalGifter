@@ -36,6 +36,10 @@ type SeoPageRow = {
   image_alt: string | null;
 };
 
+const SITE_URL = "https://thedigitalgifter.com";
+const STORAGE_BUCKET = "seo-images";
+const IMAGE_EXTENSION = "png";
+
 const allowedPageTypes: PageType[] = [
   "occasion",
   "recipient",
@@ -57,15 +61,11 @@ const pageTypeToFunnelPrefix: Record<PageType, string> = {
   generator: "/funnel/homepage",
 };
 
-const fallbackHeroByType: Record<PageType, string> = {
-  occasion:
-    "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=1200&q=80",
-  recipient:
-    "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80",
-  style:
-    "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1200&q=80",
-  generator:
-    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
+const fallbackHeroPathByType: Record<PageType, string> = {
+  occasion: `fallback/occasion.${IMAGE_EXTENSION}`,
+  recipient: `fallback/recipient.${IMAGE_EXTENSION}`,
+  style: `fallback/style.${IMAGE_EXTENSION}`,
+  generator: `fallback/generator.${IMAGE_EXTENSION}`,
 };
 
 function isPageType(value: string | undefined): value is PageType {
@@ -74,6 +74,32 @@ function isPageType(value: string | undefined): value is PageType {
 
 function normalizeArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function getPublicImageUrl(path: string): string {
+  const cleanPath = path.replace(/^\/+/, "");
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(cleanPath);
+  return data.publicUrl;
+}
+
+function getPrimaryImagePath(page: SeoPageRow): string {
+  if (page.hero_image_path?.trim()) {
+    return page.hero_image_path.trim().replace(/^\/+/, "");
+  }
+
+  return `${page.page_type}/${page.slug}.${IMAGE_EXTENSION}`;
+}
+
+function getPrimaryImageUrl(page: SeoPageRow): string {
+  if (page.hero_image_url?.trim()) {
+    return page.hero_image_url.trim();
+  }
+
+  return getPublicImageUrl(getPrimaryImagePath(page));
+}
+
+function getFallbackImageUrl(pageType: PageType): string {
+  return getPublicImageUrl(fallbackHeroPathByType[pageType]);
 }
 
 function upsertMeta(name: string, content: string) {
@@ -112,6 +138,22 @@ function upsertCanonical(url: string) {
   canonical.setAttribute("href", url);
 }
 
+function upsertPreloadImage(url: string) {
+  let preload = document.querySelector(
+    "link[data-seo-hero-preload='true']"
+  ) as HTMLLinkElement | null;
+
+  if (!preload) {
+    preload = document.createElement("link");
+    preload.rel = "preload";
+    preload.as = "image";
+    preload.setAttribute("data-seo-hero-preload", "true");
+    document.head.appendChild(preload);
+  }
+
+  preload.href = url;
+}
+
 function upsertJsonLd(id: string, data: Record<string, unknown>) {
   let script = document.getElementById(id) as HTMLScriptElement | null;
 
@@ -125,6 +167,14 @@ function upsertJsonLd(id: string, data: Record<string, unknown>) {
   script.textContent = JSON.stringify(data);
 }
 
+function removeJsonLd(id: string) {
+  const script = document.getElementById(id);
+
+  if (script) {
+    script.remove();
+  }
+}
+
 export default function SeoPage() {
   const { pageType, slug } = useParams<{
     pageType: string;
@@ -133,6 +183,7 @@ export default function SeoPage() {
 
   const [page, setPage] = useState<SeoPageRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [visibleHeroImageUrl, setVisibleHeroImageUrl] = useState("");
 
   const safePageType = isPageType(pageType) ? pageType : null;
   const safeSlug = slug?.trim().toLowerCase() || "";
@@ -177,22 +228,41 @@ export default function SeoPage() {
     void loadPage();
   }, [safePageType, safeSlug]);
 
-  const heroImageUrl = useMemo(() => {
+  const canonicalUrl = useMemo(() => {
+    if (!page) return SITE_URL;
+
+    return `${SITE_URL}/${pageTypeToBasePath[page.page_type]}/${page.slug}`;
+  }, [page]);
+
+  const primaryHeroImageUrl = useMemo(() => {
     if (!page) return "";
-    return page.hero_image_url || fallbackHeroByType[page.page_type];
+
+    return getPrimaryImageUrl(page);
+  }, [page]);
+
+  const fallbackHeroImageUrl = useMemo(() => {
+    if (!page) return "";
+
+    return getFallbackImageUrl(page.page_type);
   }, [page]);
 
   const heroImageAlt = useMemo(() => {
-    if (!page) return "TheDigitalGifter digital gift preview";
-    return page.image_alt || page.h1 || page.title;
+    if (!page) return "TheDigitalGifter AI digital gift preview";
+
+    return (
+      page.image_alt?.trim() ||
+      `${page.h1 || page.title} - AI digital gift by TheDigitalGifter`
+    );
   }, [page]);
 
   useEffect(() => {
-    if (!page) return;
+    if (!primaryHeroImageUrl) return;
 
-    const canonicalUrl = `https://thedigitalgifter.com/${
-      pageTypeToBasePath[page.page_type]
-    }/${page.slug}`;
+    setVisibleHeroImageUrl(primaryHeroImageUrl);
+  }, [primaryHeroImageUrl]);
+
+  useEffect(() => {
+    if (!page || !primaryHeroImageUrl) return;
 
     document.title = page.meta_title;
 
@@ -203,14 +273,21 @@ export default function SeoPage() {
     upsertPropertyMeta("og:description", page.meta_description);
     upsertPropertyMeta("og:type", "website");
     upsertPropertyMeta("og:url", canonicalUrl);
-    upsertPropertyMeta("og:image", heroImageUrl);
+    upsertPropertyMeta("og:image", primaryHeroImageUrl);
+    upsertPropertyMeta("og:image:secure_url", primaryHeroImageUrl);
+    upsertPropertyMeta("og:image:alt", heroImageAlt);
+    upsertPropertyMeta("og:image:width", "1600");
+    upsertPropertyMeta("og:image:height", "900");
+    upsertPropertyMeta("og:site_name", "TheDigitalGifter");
 
     upsertMeta("twitter:card", "summary_large_image");
     upsertMeta("twitter:title", page.meta_title);
     upsertMeta("twitter:description", page.meta_description);
-    upsertMeta("twitter:image", heroImageUrl);
+    upsertMeta("twitter:image", primaryHeroImageUrl);
+    upsertMeta("twitter:image:alt", heroImageAlt);
 
     upsertCanonical(canonicalUrl);
+    upsertPreloadImage(primaryHeroImageUrl);
 
     upsertJsonLd("seo-page-jsonld", {
       "@context": "https://schema.org",
@@ -218,11 +295,18 @@ export default function SeoPage() {
       name: page.meta_title,
       description: page.meta_description,
       url: canonicalUrl,
-      image: heroImageUrl,
+      image: primaryHeroImageUrl,
+      primaryImageOfPage: {
+        "@type": "ImageObject",
+        url: primaryHeroImageUrl,
+        width: 1600,
+        height: 900,
+        caption: heroImageAlt,
+      },
       isPartOf: {
         "@type": "WebSite",
         name: "TheDigitalGifter",
-        url: "https://thedigitalgifter.com",
+        url: SITE_URL,
       },
     });
 
@@ -239,11 +323,14 @@ export default function SeoPage() {
           },
         })),
       });
+    } else {
+      removeJsonLd("seo-faq-jsonld");
     }
-  }, [page, heroImageUrl]);
+  }, [page, primaryHeroImageUrl, heroImageAlt, canonicalUrl]);
 
   const funnelUrl = useMemo(() => {
     if (!page) return "/";
+
     return `${pageTypeToFunnelPrefix[page.page_type]}/${page.slug}`;
   }, [page]);
 
@@ -317,10 +404,19 @@ export default function SeoPage() {
 
         <div className="rounded-[2rem] border border-[#063f2f]/10 bg-white/70 p-6 shadow-xl">
           <img
-            src={heroImageUrl}
+            src={visibleHeroImageUrl || fallbackHeroImageUrl}
             alt={heroImageAlt}
+            width={1600}
+            height={900}
             className="aspect-[4/3] w-full rounded-[1.5rem] object-cover"
             loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            onError={() => {
+              if (fallbackHeroImageUrl) {
+                setVisibleHeroImageUrl(fallbackHeroImageUrl);
+              }
+            }}
           />
 
           <p className="mt-5 text-sm text-[#3f5f55]">
