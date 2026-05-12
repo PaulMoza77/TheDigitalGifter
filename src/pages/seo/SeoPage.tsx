@@ -167,12 +167,16 @@ function upsertJsonLd(id: string, data: Record<string, unknown>) {
   script.textContent = JSON.stringify(data);
 }
 
-function removeJsonLd(id: string) {
-  const script = document.getElementById(id);
+function removeElementById(id: string) {
+  const element = document.getElementById(id);
+  if (element) element.remove();
+}
 
-  if (script) {
-    script.remove();
-  }
+function removeInvalidReviewSchema() {
+  removeElementById("seo-rating-jsonld");
+  removeElementById("seo-review-jsonld");
+  removeElementById("review-snippet-jsonld");
+  removeElementById("aggregate-rating-jsonld");
 }
 
 export default function SeoPage() {
@@ -230,39 +234,38 @@ export default function SeoPage() {
 
   const canonicalUrl = useMemo(() => {
     if (!page) return SITE_URL;
-
     return `${SITE_URL}/${pageTypeToBasePath[page.page_type]}/${page.slug}`;
   }, [page]);
 
   const primaryHeroImageUrl = useMemo(() => {
     if (!page) return "";
-
     return getPrimaryImageUrl(page);
   }, [page]);
 
   const fallbackHeroImageUrl = useMemo(() => {
     if (!page) return "";
-
     return getFallbackImageUrl(page.page_type);
   }, [page]);
 
   const heroImageAlt = useMemo(() => {
-    if (!page) return "TheDigitalGifter AI digital gift preview";
+    if (!page) return "TheDigitalGifter digital gift preview";
 
     return (
       page.image_alt?.trim() ||
-      `${page.h1 || page.title} - AI digital gift by TheDigitalGifter`
+      `${page.h1 || page.title} by TheDigitalGifter`
     );
   }, [page]);
 
   useEffect(() => {
-    if (!primaryHeroImageUrl) return;
-
-    setVisibleHeroImageUrl(primaryHeroImageUrl);
+    if (primaryHeroImageUrl) {
+      setVisibleHeroImageUrl(primaryHeroImageUrl);
+    }
   }, [primaryHeroImageUrl]);
 
   useEffect(() => {
     if (!page || !primaryHeroImageUrl) return;
+
+    removeInvalidReviewSchema();
 
     document.title = page.meta_title;
 
@@ -324,13 +327,12 @@ export default function SeoPage() {
         })),
       });
     } else {
-      removeJsonLd("seo-faq-jsonld");
+      removeElementById("seo-faq-jsonld");
     }
   }, [page, primaryHeroImageUrl, heroImageAlt, canonicalUrl]);
 
   const funnelUrl = useMemo(() => {
     if (!page) return "/";
-
     return `${pageTypeToFunnelPrefix[page.page_type]}/${page.slug}`;
   }, [page]);
 
@@ -413,7 +415,10 @@ export default function SeoPage() {
             decoding="async"
             fetchPriority="high"
             onError={() => {
-              if (fallbackHeroImageUrl) {
+              if (
+                fallbackHeroImageUrl &&
+                visibleHeroImageUrl !== fallbackHeroImageUrl
+              ) {
                 setVisibleHeroImageUrl(fallbackHeroImageUrl);
               }
             }}
