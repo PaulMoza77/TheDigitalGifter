@@ -691,7 +691,14 @@ function HowItWorks({
                   </p>
 
                   <div className="mt-5">
-                    <PhotoMock variant={cfg.heroAfterVariant} label="Style preview" labelTone="mint" />
+                    <PhotoMock
+                      variant={
+                        cfg.heroAfterVariant.replace(/-after$/, "-ex2-after") ||
+                        cfg.heroAfterVariant
+                      }
+                      label="Style preview"
+                      labelTone="mint"
+                    />
                   </div>
                 </CardContent>
               </Card>

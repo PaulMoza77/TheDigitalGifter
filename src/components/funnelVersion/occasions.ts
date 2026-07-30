@@ -65,7 +65,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("christmas-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Emily R.",
         location: "Portland, OR",
         quote:
@@ -73,39 +73,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "christmas-before",
         afterVariant: "christmas-after",
       },
-      {
+{
         name: "Marcus T.",
         location: "Chicago, IL",
         quote:
           "Sent this as a digital Christmas card. Relatives thought we hired a studio.",
-        beforeVariant: "christmas-before",
-        afterVariant: "christmas-after",
+        beforeVariant: "christmas-ex2-before",
+        afterVariant: "christmas-ex2-after",
       },
-      {
+{
         name: "Sofia L.",
         location: "Denver, CO",
         quote:
           "Subtle snowfall vibe without looking fake. Perfect holiday surprise.",
-        beforeVariant: "christmas-before",
-        afterVariant: "christmas-after",
-      },
+        beforeVariant: "christmas-ex3-before",
+        afterVariant: "christmas-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Bring holiday photos to life",
         desc: "Watch Christmas smiles gently move — cozy lights, warm emotion, gift-ready.",
         variant: "christmas-after",
       },
-      {
+{
         title: "Share a Christmas keepake",
         desc: "Send a moving holiday memory that feels personal, not like a template.",
-        variant: "christmas-after",
+        variant: "christmas-ex2-after",
       },
-      {
+{
         title: "Preserve this year’s magic",
         desc: "Turn one photo into a Christmas moment you’ll want to reopen every year.",
-        variant: "christmas-after",
-      },
+        variant: "christmas-ex3-after",
+      }
     ],
   },
 
@@ -120,7 +120,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("birthday-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Avery",
         location: "Cheyenne, WY",
         quote:
@@ -128,39 +128,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "birthday-before",
         afterVariant: "birthday-after",
       },
-      {
+{
         name: "Nina P.",
         location: "Austin, TX",
         quote:
           "Used a cake photo and got a celebration card that felt premium.",
-        beforeVariant: "birthday-before",
-        afterVariant: "birthday-after",
+        beforeVariant: "birthday-ex2-before",
+        afterVariant: "birthday-ex2-after",
       },
-      {
+{
         name: "Jordan K.",
         location: "Seattle, WA",
         quote:
           "Perfect surprise for my sister — personal, fun, and ready in minutes.",
-        beforeVariant: "birthday-before",
-        afterVariant: "birthday-after",
-      },
+        beforeVariant: "birthday-ex3-before",
+        afterVariant: "birthday-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Celebrate with motion",
         desc: "Candles, smiles, and soft movement that make birthdays feel bigger.",
         variant: "birthday-after",
       },
-      {
+{
         title: "Surprise the guest of honor",
         desc: "Turn one photo into a shareable birthday moment they’ll replay.",
-        variant: "birthday-after",
+        variant: "birthday-ex2-after",
       },
-      {
+{
         title: "Keep the party forever",
         desc: "A moving keepsake from the day — warm, joyful, and gift-ready.",
-        variant: "birthday-after",
-      },
+        variant: "birthday-ex3-after",
+      }
     ],
   },
 
@@ -175,7 +175,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("pregnancy-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Maya S.",
         location: "San Diego, CA",
         quote:
@@ -183,39 +183,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "pregnancy-before",
         afterVariant: "pregnancy-after",
       },
-      {
+{
         name: "Elena V.",
         location: "Boston, MA",
         quote:
           "Family kept rewatching it. It felt intimate and beautiful.",
-        beforeVariant: "pregnancy-before",
-        afterVariant: "pregnancy-after",
+        beforeVariant: "pregnancy-ex2-before",
+        afterVariant: "pregnancy-ex2-after",
       },
-      {
+{
         name: "Priya N.",
         location: "Toronto, ON",
         quote:
           "Exactly the calm, glowing vibe we wanted for the baby news.",
-        beforeVariant: "pregnancy-before",
-        afterVariant: "pregnancy-after",
-      },
+        beforeVariant: "pregnancy-ex3-before",
+        afterVariant: "pregnancy-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Honor this chapter",
         desc: "Gentle motion that celebrates the wait — calm, glowing, emotional.",
         variant: "pregnancy-after",
       },
-      {
+{
         title: "Share the news beautifully",
         desc: "A maternity moment ready for family chats and keepsake albums.",
-        variant: "pregnancy-after",
+        variant: "pregnancy-ex2-after",
       },
-      {
+{
         title: "Keep the glow forever",
         desc: "Preserve this season of anticipation in a moving memory.",
-        variant: "pregnancy-after",
-      },
+        variant: "pregnancy-ex3-after",
+      }
     ],
   },
 
@@ -230,7 +230,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("wedding-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Anna K.",
         location: "Omaha, NE",
         quote:
@@ -238,39 +238,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "wedding-before",
         afterVariant: "wedding-after",
       },
-      {
+{
         name: "Chris & Lea",
         location: "Nashville, TN",
         quote:
           "Guests thought it was a professional wedding film still.",
-        beforeVariant: "wedding-before",
-        afterVariant: "wedding-after",
+        beforeVariant: "wedding-ex2-before",
+        afterVariant: "wedding-ex2-after",
       },
-      {
+{
         name: "Olivia M.",
         location: "London, UK",
         quote:
           "Elegant motion — perfect anniversary follow-up from our wedding day.",
-        beforeVariant: "wedding-before",
-        afterVariant: "wedding-after",
-      },
+        beforeVariant: "wedding-ex3-before",
+        afterVariant: "wedding-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Relive the vows",
         desc: "Soft cinematic motion that honors the romance of the day.",
         variant: "wedding-after",
       },
-      {
+{
         title: "Share with guests",
         desc: "A wedding keepake that feels premium and personal.",
-        variant: "wedding-after",
+        variant: "wedding-ex2-after",
       },
-      {
+{
         title: "A gift for years ahead",
         desc: "Preserve your favorite frame as a living memory.",
-        variant: "wedding-after",
-      },
+        variant: "wedding-ex3-after",
+      }
     ],
   },
 
@@ -285,7 +285,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("anniversary-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Daniel R.",
         location: "Miami, FL",
         quote:
@@ -293,39 +293,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "anniversary-before",
         afterVariant: "anniversary-after",
       },
-      {
+{
         name: "Hannah & Theo",
         location: "Paris, FR",
         quote:
           "Romantic without being cheesy. Exactly our vibe.",
-        beforeVariant: "anniversary-before",
-        afterVariant: "anniversary-after",
+        beforeVariant: "anniversary-ex2-before",
+        afterVariant: "anniversary-ex2-after",
       },
-      {
+{
         name: "Laura B.",
         location: "Dublin, IE",
         quote:
           "A quiet, beautiful reminder of why we chose each other.",
-        beforeVariant: "anniversary-before",
-        afterVariant: "anniversary-after",
-      },
+        beforeVariant: "anniversary-ex3-before",
+        afterVariant: "anniversary-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Celebrate your years together",
         desc: "Soft romantic motion for the milestone that matters.",
         variant: "anniversary-after",
       },
-      {
+{
         title: "A love note that moves",
         desc: "More personal than flowers — and ready to share instantly.",
-        variant: "anniversary-after",
+        variant: "anniversary-ex2-after",
       },
-      {
+{
         title: "Keep the spark visible",
         desc: "Turn one favorite photo into an anniversary keepsake.",
-        variant: "anniversary-after",
-      },
+        variant: "anniversary-ex3-after",
+      }
     ],
   },
 
@@ -340,7 +340,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("valentines-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Sam W.",
         location: "Brooklyn, NY",
         quote:
@@ -348,39 +348,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "valentines-before",
         afterVariant: "valentines-after",
       },
-      {
+{
         name: "Isla C.",
         location: "Edinburgh, UK",
         quote:
           "Felt handmade even though it took minutes.",
-        beforeVariant: "valentines-before",
-        afterVariant: "valentines-after",
+        beforeVariant: "valentines-ex2-before",
+        afterVariant: "valentines-ex2-after",
       },
-      {
+{
         name: "Noah D.",
         location: "Phoenix, AZ",
         quote:
           "She said it was better than a store-bought card.",
-        beforeVariant: "valentines-before",
-        afterVariant: "valentines-after",
-      },
+        beforeVariant: "valentines-ex3-before",
+        afterVariant: "valentines-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Say it with motion",
         desc: "A Valentine that feels intimate, warm, and share-ready.",
         variant: "valentines-after",
       },
-      {
+{
         title: "Skip the generic card",
         desc: "Your photo becomes the gift — romantic and personal.",
-        variant: "valentines-after",
+        variant: "valentines-ex2-after",
       },
-      {
+{
         title: "Made for love notes",
         desc: "Subtle motion that puts emotion first.",
-        variant: "valentines-after",
-      },
+        variant: "valentines-ex3-after",
+      }
     ],
   },
 
@@ -395,7 +395,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("newyears-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Alex J.",
         location: "Las Vegas, NV",
         quote:
@@ -403,39 +403,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "newyears-before",
         afterVariant: "newyears-after",
       },
-      {
+{
         name: "Kim R.",
         location: "New York, NY",
         quote:
           "Sent it at midnight. Instant group-chat favorite.",
-        beforeVariant: "newyears-before",
-        afterVariant: "newyears-after",
+        beforeVariant: "newyears-ex2-before",
+        afterVariant: "newyears-ex2-after",
       },
-      {
+{
         name: "Tom H.",
         location: "Berlin, DE",
         quote:
           "Celebratory and clean — exactly the vibe we wanted.",
-        beforeVariant: "newyears-before",
-        afterVariant: "newyears-after",
-      },
+        beforeVariant: "newyears-ex3-before",
+        afterVariant: "newyears-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Celebrate the countdown",
         desc: "Soft sparkle and motion for your New Year’s moment.",
         variant: "newyears-after",
       },
-      {
+{
         title: "Share the first memory",
         desc: "A moving toast for friends and family.",
-        variant: "newyears-after",
+        variant: "newyears-ex2-after",
       },
-      {
+{
         title: "Keep the night alive",
         desc: "One photo, a whole celebration feeling.",
-        variant: "newyears-after",
-      },
+        variant: "newyears-ex3-after",
+      }
     ],
   },
 
@@ -450,7 +450,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("thanksgiving-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Grace P.",
         location: "Minneapolis, MN",
         quote:
@@ -458,39 +458,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "thanksgiving-before",
         afterVariant: "thanksgiving-after",
       },
-      {
+{
         name: "Ben C.",
         location: "Columbus, OH",
         quote:
           "Warm autumn tones and gentle motion — felt homemade.",
-        beforeVariant: "thanksgiving-before",
-        afterVariant: "thanksgiving-after",
+        beforeVariant: "thanksgiving-ex2-before",
+        afterVariant: "thanksgiving-ex2-after",
       },
-      {
+{
         name: "Ruth A.",
         location: "Atlanta, GA",
         quote:
           "Grandma printed it. Best compliment possible.",
-        beforeVariant: "thanksgiving-before",
-        afterVariant: "thanksgiving-after",
-      },
+        beforeVariant: "thanksgiving-ex3-before",
+        afterVariant: "thanksgiving-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Thank them with motion",
         desc: "A warm family keepake that feels grateful and personal.",
         variant: "thanksgiving-after",
       },
-      {
+{
         title: "Celebrate togetherness",
         desc: "Autumn warmth, soft movement, shareable emotion.",
-        variant: "thanksgiving-after",
+        variant: "thanksgiving-ex2-after",
       },
-      {
+{
         title: "Preserve the gathering",
         desc: "One dinner photo, a memory that keeps giving.",
-        variant: "thanksgiving-after",
-      },
+        variant: "thanksgiving-ex3-after",
+      }
     ],
   },
 
@@ -505,7 +505,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("babyreveal-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Tara & Mike",
         location: "Dallas, TX",
         quote:
@@ -513,39 +513,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "babyreveal-before",
         afterVariant: "babyreveal-after",
       },
-      {
+{
         name: "Jess L.",
         location: "Orlando, FL",
         quote:
           "Family group chat exploded. Worth every second.",
-        beforeVariant: "babyreveal-before",
-        afterVariant: "babyreveal-after",
+        beforeVariant: "babyreveal-ex2-before",
+        afterVariant: "babyreveal-ex2-after",
       },
-      {
+{
         name: "Omar H.",
         location: "Detroit, MI",
         quote:
           "Clear, joyful, and not gimmicky — perfect big-news vibe.",
-        beforeVariant: "babyreveal-before",
-        afterVariant: "babyreveal-after",
-      },
+        beforeVariant: "babyreveal-ex3-before",
+        afterVariant: "babyreveal-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Announce with emotion",
         desc: "A reveal moment that feels exciting and gift-ready.",
         variant: "babyreveal-after",
       },
-      {
+{
         title: "Share the big news",
         desc: "Soft motion that makes the surprise land beautifully.",
-        variant: "babyreveal-after",
+        variant: "babyreveal-ex2-after",
       },
-      {
+{
         title: "Keep the reveal forever",
         desc: "A keepsake from the day you told the world.",
-        variant: "babyreveal-after",
-      },
+        variant: "babyreveal-ex3-after",
+      }
     ],
   },
 
@@ -560,7 +560,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("newborn-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Claire M.",
         location: "Vancouver, BC",
         quote:
@@ -568,39 +568,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "newborn-before",
         afterVariant: "newborn-after",
       },
-      {
+{
         name: "Diego F.",
         location: "Madrid, ES",
         quote:
           "Sent it to grandparents abroad. They said it felt like holding the baby.",
-        beforeVariant: "newborn-before",
-        afterVariant: "newborn-after",
+        beforeVariant: "newborn-ex2-before",
+        afterVariant: "newborn-ex2-after",
       },
-      {
+{
         name: "Amelia W.",
         location: "Sydney, AU",
         quote:
           "Soft, private, perfect — no winter stock photos, just our baby.",
-        beforeVariant: "newborn-before",
-        afterVariant: "newborn-after",
-      },
+        beforeVariant: "newborn-ex3-before",
+        afterVariant: "newborn-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Honor those first days",
         desc: "Gentle motion that protects the tenderness of newborn photos.",
         variant: "newborn-after",
       },
-      {
+{
         title: "Share with family",
         desc: "A moving welcome for grandparents, aunts, and friends.",
-        variant: "newborn-after",
+        variant: "newborn-ex2-after",
       },
-      {
+{
         title: "Keep the beginning forever",
         desc: "One tiny photo becomes a lifelong keepsake.",
-        variant: "newborn-after",
-      },
+        variant: "newborn-ex3-after",
+      }
     ],
   },
 
@@ -615,7 +615,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("easter-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Lily T.",
         location: "Charleston, SC",
         quote:
@@ -623,39 +623,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "easter-before",
         afterVariant: "easter-after",
       },
-      {
+{
         name: "Henry G.",
         location: "Cleveland, OH",
         quote:
           "Pastel and joyful without looking childish.",
-        beforeVariant: "easter-before",
-        afterVariant: "easter-after",
+        beforeVariant: "easter-ex2-before",
+        afterVariant: "easter-ex2-after",
       },
-      {
+{
         name: "Nora S.",
         location: "Bath, UK",
         quote:
           "Perfect little Easter surprise for the cousins.",
-        beforeVariant: "easter-before",
-        afterVariant: "easter-after",
-      },
+        beforeVariant: "easter-ex3-before",
+        afterVariant: "easter-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Celebrate spring joy",
         desc: "Pastel warmth and gentle motion for Easter mornings.",
         variant: "easter-after",
       },
-      {
+{
         title: "Share the hunt",
         desc: "A moving memory from baskets, blooms, and smiles.",
-        variant: "easter-after",
+        variant: "easter-ex2-after",
       },
-      {
+{
         title: "Keep the season",
         desc: "One photo, a spring keepsake worth revisiting.",
-        variant: "easter-after",
-      },
+        variant: "easter-ex3-after",
+      }
     ],
   },
 
@@ -670,7 +670,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("mothersday-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Rachel D.",
         location: "Philadelphia, PA",
         quote:
@@ -678,39 +678,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "mothersday-before",
         afterVariant: "mothersday-after",
       },
-      {
+{
         name: "Kevin O.",
         location: "Dublin, IE",
         quote:
           "Used an old photo with my sister — felt intimate and modern.",
-        beforeVariant: "mothersday-before",
-        afterVariant: "mothersday-after",
+        beforeVariant: "mothersday-ex2-before",
+        afterVariant: "mothersday-ex2-after",
       },
-      {
+{
         name: "Sophie Y.",
         location: "Melbourne, AU",
         quote:
           "Soft motion, zero clutter. She watched it on loop.",
-        beforeVariant: "mothersday-before",
-        afterVariant: "mothersday-after",
-      },
+        beforeVariant: "mothersday-ex3-before",
+        afterVariant: "mothersday-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Honor Mom with motion",
         desc: "A personal keepake that feels warmer than flowers alone.",
         variant: "mothersday-after",
       },
-      {
+{
         title: "Made from your photo",
         desc: "Her smile, gently alive — thoughtful and share-ready.",
-        variant: "mothersday-after",
+        variant: "mothersday-ex2-after",
       },
-      {
+{
         title: "A gift she’ll reopen",
         desc: "Preserve a favorite mom moment for years.",
-        variant: "mothersday-after",
-      },
+        variant: "mothersday-ex3-after",
+      }
     ],
   },
 
@@ -725,7 +725,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("fathersday-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Ryan P.",
         location: "Houston, TX",
         quote:
@@ -733,39 +733,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "fathersday-before",
         afterVariant: "fathersday-after",
       },
-      {
+{
         name: "Mia L.",
         location: "Calgary, AB",
         quote:
           "Used a fishing trip photo. Felt like us, not a template.",
-        beforeVariant: "fathersday-before",
-        afterVariant: "fathersday-after",
+        beforeVariant: "fathersday-ex2-before",
+        afterVariant: "fathersday-ex2-after",
       },
-      {
+{
         name: "Ethan B.",
         location: "Manchester, UK",
         quote:
           "Simple and emotional. Perfect Father’s Day surprise.",
-        beforeVariant: "fathersday-before",
-        afterVariant: "fathersday-after",
-      },
+        beforeVariant: "fathersday-ex3-before",
+        afterVariant: "fathersday-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Celebrate Dad",
         desc: "A moving memory that feels genuine, not gimmicky.",
         variant: "fathersday-after",
       },
-      {
+{
         title: "Surprise him simply",
         desc: "One photo becomes a gift with quiet emotion.",
-        variant: "fathersday-after",
+        variant: "fathersday-ex2-after",
       },
-      {
+{
         title: "Keep the bond",
         desc: "Preserve a favorite dad moment forever.",
-        variant: "fathersday-after",
-      },
+        variant: "fathersday-ex3-after",
+      }
     ],
   },
 
@@ -780,7 +780,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     heroAfterVariant: asset("graduation-after"),
     ctaTo: "/funnel/uploadPhoto",
     examples: [
-      {
+{
         name: "Priya K.",
         location: "Ann Arbor, MI",
         quote:
@@ -788,39 +788,39 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         beforeVariant: "graduation-before",
         afterVariant: "graduation-after",
       },
-      {
+{
         name: "Lucas M.",
         location: "Barcelona, ES",
         quote:
           "Parents shared it everywhere. Perfect graduation card.",
-        beforeVariant: "graduation-before",
-        afterVariant: "graduation-after",
+        beforeVariant: "graduation-ex2-before",
+        afterVariant: "graduation-ex2-after",
       },
-      {
+{
         name: "Zoe F.",
         location: "Boston, MA",
         quote:
           "Clean cinematic motion for a milestone day.",
-        beforeVariant: "graduation-before",
-        afterVariant: "graduation-after",
-      },
+        beforeVariant: "graduation-ex3-before",
+        afterVariant: "graduation-ex3-after",
+      }
     ],
     valueTrio: [
-      {
+{
         title: "Honor the milestone",
         desc: "Proud motion for caps, gowns, and hard-earned smiles.",
         variant: "graduation-after",
       },
-      {
+{
         title: "Share the achievement",
         desc: "A graduation gift families love to replay.",
-        variant: "graduation-after",
+        variant: "graduation-ex2-after",
       },
-      {
+{
         title: "Keep the day forever",
         desc: "One photo becomes a lifelong celebration keepake.",
-        variant: "graduation-after",
-      },
+        variant: "graduation-ex3-after",
+      }
     ],
   },
 };
