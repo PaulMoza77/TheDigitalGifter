@@ -11,17 +11,34 @@ import { Toaster } from "sonner";
 
 // ================= WEBSITE CORE =================
 import Index from "@/pages/website/HomePage";
-import { PrivacyPolicyPage } from "@/pages/website/PrivacyPolicyPage";
-import { TermsPage } from "@/pages/website/TermsPage";
-import { RefundPolicyPage } from "@/pages/website/RefundPolicyPage";
-import { UnsubscribePage } from "@/pages/website/UnsubscribePage";
 import AuthCallback from "@/pages/AuthCallback";
+
+const PrivacyPolicyPage = lazy(() =>
+  import("@/pages/website/PrivacyPolicyPage").then((m) => ({
+    default: m.PrivacyPolicyPage,
+  }))
+);
+const TermsPage = lazy(() =>
+  import("@/pages/website/TermsPage").then((m) => ({ default: m.TermsPage }))
+);
+const RefundPolicyPage = lazy(() =>
+  import("@/pages/website/RefundPolicyPage").then((m) => ({
+    default: m.RefundPolicyPage,
+  }))
+);
+const UnsubscribePage = lazy(() =>
+  import("@/pages/website/UnsubscribePage").then((m) => ({
+    default: m.UnsubscribePage,
+  }))
+);
 
 // ================= WEBSITE UI =================
 import WebsiteHeader from "@/components/Header";
 import WebsiteFooter from "@/components/Footer";
 import { PricingModal } from "@/components/PricingModal";
-import SupportTicketWidget from "@/components/SupportTicketWidget";
+const SupportTicketWidget = lazy(
+  () => import("@/components/SupportTicketWidget")
+);
 
 // ================= AUTH =================
 import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
@@ -31,13 +48,13 @@ import ProtectedClientRoute from "@/routes/ProtectedClientRoute";
 import { CreditsFunnelProvider } from "@/contexts/CreditsFunnelContext";
 
 // ================= LAYOUTS =================
-import AdminLayout from "@/layouts/AdminLayout";
-import ClientLayout from "@/layouts/ClientLayout";
+const AdminLayout = lazy(() => import("@/layouts/AdminLayout"));
+const ClientLayout = lazy(() => import("@/layouts/ClientLayout"));
 
 // ================= ADMIN CORE =================
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import Templates from "@/pages/admin/Templates";
-import AdminBlogPage from "@/pages/admin/AdminBlogPage";
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const Templates = lazy(() => import("@/pages/admin/Templates"));
+const AdminBlogPage = lazy(() => import("@/pages/admin/AdminBlogPage"));
 
 const PricingPage = lazy(() => import("@/pages/admin/PricingPage"));
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
@@ -48,10 +65,14 @@ const SupportTicketsPage = lazy(
 );
 
 // ================= ADMIN EMAIL =================
-import AdminEmailLayoutPage from "@/pages/admin/email/Index";
-import AdminEmailTemplatesPage from "@/pages/admin/email/Templates";
-import AdminEmailOffersPage from "@/pages/admin/email/Offers";
-import AdminEmailCampaignsPage from "@/pages/admin/email/Campaigns";
+const AdminEmailLayoutPage = lazy(() => import("@/pages/admin/email/Index"));
+const AdminEmailTemplatesPage = lazy(
+  () => import("@/pages/admin/email/Templates")
+);
+const AdminEmailOffersPage = lazy(() => import("@/pages/admin/email/Offers"));
+const AdminEmailCampaignsPage = lazy(
+  () => import("@/pages/admin/email/Campaigns")
+);
 
 // ================= ADMIN FUNNEL =================
 const AdminFunnelPage = lazy(
@@ -97,22 +118,34 @@ const BlogIndexPage = lazy(() => import("@/pages/blog/BlogIndexPage"));
 const BlogPostPage = lazy(() => import("@/pages/blog/BlogPostPage"));
 
 // ================= CLIENT ACCOUNT =================
-import AccountDashboard from "@/pages/account/AccountDashboard";
-import AccountAffiliate from "@/pages/account/AccountAffiliate";
-import AccountGeneratorRedirect from "@/pages/account/AccountGeneratorRedirect";
+const AccountDashboard = lazy(() => import("@/pages/account/AccountDashboard"));
+const AccountAffiliate = lazy(() => import("@/pages/account/AccountAffiliate"));
+const AccountGeneratorRedirect = lazy(
+  () => import("@/pages/account/AccountGeneratorRedirect")
+);
 
 // ================= FUNNEL =================
-import FunnelHomePage from "@/components/funnelVersion/FunnelHomePage";
-import FunnelUploadPhoto from "@/components/funnelVersion/FunnelUploadPhoto";
-import FunnelStyleSelect from "@/components/funnelVersion/FunnelStyleSelect";
-import FunnelPreview from "@/components/funnelVersion/FunnelPreview";
-import FunnelPayment from "@/components/funnelVersion/FunnelPayment";
-
+const FunnelHomePage = lazy(
+  () => import("@/components/funnelVersion/FunnelHomePage")
+);
+const FunnelUploadPhoto = lazy(
+  () => import("@/components/funnelVersion/FunnelUploadPhoto")
+);
+const FunnelStyleSelect = lazy(
+  () => import("@/components/funnelVersion/FunnelStyleSelect")
+);
+const FunnelPreview = lazy(
+  () => import("@/components/funnelVersion/FunnelPreview")
+);
+const FunnelPayment = lazy(
+  () => import("@/components/funnelVersion/FunnelPayment")
+);
 const FunnelEmailCapture = lazy(
   () => import("@/components/funnelVersion/FunnelEmailCapture")
 );
-
-import FunnelResultPage from "@/components/funnelVersion/ResultPage";
+const FunnelResultPage = lazy(
+  () => import("@/components/funnelVersion/ResultPage")
+);
 
 // ================= SUPABASE =================
 import { supabase } from "@/lib/supabase";
@@ -499,7 +532,9 @@ function AppInner() {
         </Routes>
       </Suspense>
 
-      <SupportTicketWidget />
+      <Suspense fallback={null}>
+        <SupportTicketWidget />
+      </Suspense>
       <Toaster position="top-right" />
     </BrowserRouter>
   );

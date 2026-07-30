@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { getPublicSupabaseConfig } from "@/lib/env";
 import { Separator } from "@/components/ui/separator";
 import {
   Card,
@@ -146,22 +147,6 @@ const FALLBACK_OFFERS: OfferItem[] = [
     sortOrder: 40,
   },
 ];
-
-function getPublicSupabaseConfig(): { url: string; anon: string } {
-  const env = import.meta.env as {
-    VITE_SUPABASE_URL?: string;
-    VITE_SUPABASE_ANON_KEY?: string;
-  };
-
-  const url = (env.VITE_SUPABASE_URL || "").trim();
-  const anon = (env.VITE_SUPABASE_ANON_KEY || "").trim();
-
-  if (!url || !anon) {
-    throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
-  }
-
-  return { url, anon };
-}
 
 async function getEdgeFunctionHeaders(
   anonKey: string

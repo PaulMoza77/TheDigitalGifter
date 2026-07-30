@@ -1,0 +1,35 @@
+# Supabase local config — project is linked manually to kjlsocejpmnzhhduyumy
+project_id = "kjlsocejpmnzhhduyumy"
+
+[functions.generate-nano-banana]
+verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.cancel-subscription]
+verify_jwt = true
+
+[functions.admin-pricing-manager]
+verify_jwt = true
+
+[functions.generate-style]
+verify_jwt = true
+
+[functions.generate-template-preview]
+verify_jwt = true
+
+[functions.generate-blog-cover]
+verify_jwt = true
+
+[functions.generate-blog-draft]
+verify_jwt = true
+
+[functions.support-ai-chat]
+verify_jwt = false
+
+[functions.request-affiliate-withdrawal]
+verify_jwt = true

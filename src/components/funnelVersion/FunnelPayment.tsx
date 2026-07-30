@@ -2,6 +2,7 @@ import React, { JSX, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { getPublicSupabaseConfig } from "@/lib/env";
 
 type FunnelSession = {
   gift_type?: string;
@@ -203,22 +204,6 @@ function formatMMSS(totalSeconds: number): string {
     2,
     "0"
   )}`;
-}
-
-function getPublicSupabaseConfig(): { url: string; anon: string } {
-  const env = import.meta.env as {
-    VITE_SUPABASE_URL?: string;
-    VITE_SUPABASE_ANON_KEY?: string;
-  };
-
-  const url = safeString(env.VITE_SUPABASE_URL);
-  const anon = safeString(env.VITE_SUPABASE_ANON_KEY);
-
-  if (!url || !anon) {
-    throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
-  }
-
-  return { url, anon };
 }
 
 async function safeReadJson(res: Response): Promise<CheckoutResponse> {
