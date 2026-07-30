@@ -678,6 +678,10 @@ export default function GeneratorPage() {
     if ((userCredits ?? 0) < requiredCredits) {
       const hasGeneratedBefore = jobs.length > 0;
 
+      toast.error(
+        `You need ${requiredCredits} credit${requiredCredits === 1 ? "" : "s"} to generate. You have ${userCredits ?? 0}.`
+      );
+
       if (!hasGeneratedBefore && (userCredits ?? 0) === 0) {
         openFunnel({ mode: "first_generation" });
       } else {
