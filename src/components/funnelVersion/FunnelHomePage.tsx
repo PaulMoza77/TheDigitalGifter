@@ -13,7 +13,9 @@ import {
 
 import {
   FUNNEL_OCCASIONS,
-  type FunnelOccasionKey,
+  toFunnelOccasionKey,
+  toFunnelUploadSlug,
+  type FunnelOccasionConfig,
 } from "@/components/funnelVersion/occasions";
 
 /**
@@ -26,7 +28,7 @@ import {
  *   /funnel/uploadPhoto?occasion=<occasion>&slug=<occasion>
  */
 
-const CTA_LABEL = "Try now — Bring your photos to life";
+const DEFAULT_CTA_LABEL = "Try now — Bring your photos to life";
 
 type Point = { x: number; y: number };
 type AnchorSide = "left" | "right" | "top" | "bottom";
@@ -35,22 +37,8 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-function normalizeOccasion(raw: string) {
-  const x = String(raw ?? "").trim().toLowerCase();
-
-  if (!x) return "christmas";
-  if (x === "new_born" || x === "new-born") return "newborn";
-  if (x === "valentines-day") return "valentines_day";
-  if (x === "mothers-day") return "mothers_day";
-  if (x === "fathers-day") return "fathers_day";
-  if (x === "new-years-eve") return "new_years_eve";
-  if (x === "baby-reveal") return "baby_reveal";
-
-  return x.replace(/-/g, "_");
-}
-
 function buildUploadHref(occasion: string) {
-  const occ = normalizeOccasion(occasion);
+  const occ = toFunnelUploadSlug(occasion);
   return `/funnel/uploadPhoto?occasion=${encodeURIComponent(occ)}&slug=${encodeURIComponent(occ)}`;
 }
 
@@ -189,23 +177,6 @@ function SoftBg() {
   );
 }
 
-type PhotoVariant =
-  | "warm"
-  | "vintage"
-  | "winter"
-  | "love"
-  | "cinematic"
-  | "download"
-  | "averybefore"
-  | "averyafter"
-  | "emilybefore"
-  | "emilyafter"
-  | "annabefore"
-  | "annaafter"
-  | "family"
-  | "moments"
-  | "preserve";
-
 function PhotoMock({
   variant = "warm",
   className = "",
@@ -214,23 +185,27 @@ function PhotoMock({
   labelTone,
   footer,
 }: {
-  variant?: PhotoVariant;
+  variant?: string;
   className?: string;
   rounded?: string;
   label?: string;
   labelTone?: "sun" | "mint" | "ink";
   footer?: string;
 }) {
+  const tone = String(variant || "warm").toLowerCase();
   const bg =
-    variant === "warm"
-      ? "bg-[linear-gradient(135deg,rgba(253,224,71,0.25),rgba(16,185,129,0.10),rgba(6,78,59,0.12))]"
-      : variant === "vintage"
-        ? "bg-[linear-gradient(135deg,rgba(6,78,59,0.10),rgba(253,224,71,0.18),rgba(0,0,0,0.03))]"
-        : variant === "winter"
-          ? "bg-[linear-gradient(135deg,rgba(59,130,246,0.10),rgba(16,185,129,0.08),rgba(253,224,71,0.10))]"
-          : variant === "love"
-            ? "bg-[linear-gradient(135deg,rgba(244,63,94,0.10),rgba(253,224,71,0.12),rgba(6,78,59,0.10))]"
-            : "bg-[linear-gradient(135deg,rgba(6,78,59,0.14),rgba(2,132,199,0.08),rgba(253,224,71,0.10))]";
+    tone.includes("winter") || tone.includes("christmas") || tone.includes("newyear")
+      ? "bg-[linear-gradient(135deg,rgba(59,130,246,0.10),rgba(16,185,129,0.08),rgba(253,224,71,0.10))]"
+      : tone.includes("love") ||
+          tone.includes("valentine") ||
+          tone.includes("anniversary") ||
+          tone.includes("wedding")
+        ? "bg-[linear-gradient(135deg,rgba(244,63,94,0.10),rgba(253,224,71,0.12),rgba(6,78,59,0.10))]"
+        : tone.includes("newborn") ||
+            tone.includes("baby") ||
+            tone.includes("pregnancy")
+          ? "bg-[linear-gradient(135deg,rgba(253,224,71,0.18),rgba(244,114,182,0.10),rgba(6,78,59,0.08))]"
+          : "bg-[linear-gradient(135deg,rgba(6,78,59,0.14),rgba(2,132,199,0.08),rgba(253,224,71,0.10))]";
 
   return (
     <div
@@ -261,7 +236,7 @@ function PhotoMock({
             const src = img.src;
             if (src.endsWith(".png")) img.src = `/assets/funnel/${variant}.svg`;
             else if (src.endsWith(".svg")) img.src = `/assets/funnel/${variant}.jpg`;
-            else img.src = `/assets/funnel/default.png`;
+            else img.src = `/assets/funnel/warm.png`;
           }}
         />
       </div>
@@ -474,9 +449,11 @@ function Nav() {
 function CTAButton({
   className = "",
   to,
+  label = DEFAULT_CTA_LABEL,
 }: {
   className?: string;
   to: string;
+  label?: string;
 }) {
   const navigate = useNavigate();
 
@@ -488,7 +465,7 @@ function CTAButton({
         className
       }
     >
-      {CTA_LABEL}
+      {label}
     </Button>
   );
 }
@@ -497,7 +474,7 @@ function Hero({
   cfg,
   uploadTo,
 }: {
-  cfg: typeof FUNNEL_OCCASIONS[FunnelOccasionKey];
+  cfg: FunnelOccasionConfig;
   uploadTo: string;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -518,8 +495,9 @@ function Hero({
     []
   );
 
-  const beforeVariant = (cfg.heroBeforeVariant ?? "vintage") as PhotoVariant;
-  const afterVariant = (cfg.heroAfterVariant ?? "winter") as PhotoVariant;
+  const beforeVariant = cfg.heroBeforeVariant || "warm";
+  const afterVariant = cfg.heroAfterVariant || "cinematic";
+  const ctaLabel = cfg.ctaLabel || DEFAULT_CTA_LABEL;
 
   return (
     <section id="top" className="relative overflow-hidden bg-[#F6F2EA]">
@@ -540,7 +518,7 @@ function Hero({
           </p>
 
           <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
-            <CTAButton to={uploadTo} />
+            <CTAButton to={uploadTo} label={ctaLabel} />
             <div className="flex items-center gap-2 text-sm text-emerald-950/70">
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-950/10">
                 ✓
@@ -590,7 +568,8 @@ function Hero({
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-emerald-950/60">
-                  Gentle motion, warm emotion — made to be shared.
+                  {cfg.heroCaption ||
+                    "Gentle motion, warm emotion — made to be shared."}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-emerald-950/60">
                   <span className="inline-flex items-center gap-2">
@@ -628,7 +607,15 @@ function Hero({
   );
 }
 
-function HowItWorks({ uploadTo }: { uploadTo: string }) {
+function HowItWorks({
+  cfg,
+  uploadTo,
+  ctaLabel = DEFAULT_CTA_LABEL,
+}: {
+  cfg: FunnelOccasionConfig;
+  uploadTo: string;
+  ctaLabel?: string;
+}) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const s1 = useRef<HTMLDivElement | null>(null);
   const s2 = useRef<HTMLDivElement | null>(null);
@@ -675,11 +662,11 @@ function HowItWorks({ uploadTo }: { uploadTo: string }) {
                   </div>
 
                   <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                    Choose a memory — family, friends, love, or a special moment.
+                    Choose a photo that fits this occasion — one clear moment is enough.
                   </p>
 
                   <div className="mt-5">
-                    <PhotoMock variant="warm" label="Your photo" labelTone="sun" />
+                    <PhotoMock variant={cfg.heroBeforeVariant} label="Your photo" labelTone="sun" />
                   </div>
                 </CardContent>
               </Card>
@@ -700,11 +687,11 @@ function HowItWorks({ uploadTo }: { uploadTo: string }) {
                   </div>
 
                   <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                    Winter, Birthday, Love, Retro, Cinematic — choose the vibe.
+                    Pick a style made for this occasion — soft motion, premium finish.
                   </p>
 
                   <div className="mt-5">
-                    <PhotoMock variant="cinematic" label="Style preview" labelTone="mint" />
+                    <PhotoMock variant={cfg.heroAfterVariant} label="Style preview" labelTone="mint" />
                   </div>
                 </CardContent>
               </Card>
@@ -729,7 +716,7 @@ function HowItWorks({ uploadTo }: { uploadTo: string }) {
                   </p>
 
                   <div className="mt-5">
-                    <PhotoMock variant="download" label="TDG result ✨" labelTone="ink" />
+                    <PhotoMock variant={cfg.heroAfterVariant} label="TDG result ✨" labelTone="ink" />
                   </div>
                 </CardContent>
               </Card>
@@ -737,7 +724,7 @@ function HowItWorks({ uploadTo }: { uploadTo: string }) {
           </div>
 
           <div className="mt-10 flex justify-center">
-            <CTAButton to={uploadTo} />
+            <CTAButton to={uploadTo} label={ctaLabel} />
           </div>
         </div>
       </div>
@@ -745,7 +732,7 @@ function HowItWorks({ uploadTo }: { uploadTo: string }) {
   );
 }
 
-function Examples() {
+function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const a1 = useRef<HTMLDivElement | null>(null);
@@ -764,35 +751,43 @@ function Examples() {
     []
   );
 
-  const items = [
+  const refs = [
+    { a: a1, b: b1 },
+    { a: a2, b: b2 },
+    { a: a3, b: b3 },
+  ];
+
+  const fallback = [
     {
       name: "Emily R.",
       location: "Portland, OR",
       quote:
         "Watching our old photo feel alive again gave me chills — it was like stepping back into that day.",
-      before: "emilybefore" as const,
-      after: "emilyafter" as const,
-      refs: { a: a1, b: b1 },
+      beforeVariant: cfg.heroBeforeVariant,
+      afterVariant: cfg.heroAfterVariant,
     },
     {
       name: "Avery",
       location: "Cheyenne, WY",
       quote:
-        "The motion is subtle and beautiful. I made a birthday surprise and everyone asked how I did it.",
-      before: "averybefore" as const,
-      after: "averyafter" as const,
-      refs: { a: a2, b: b2 },
+        "The motion is subtle and beautiful. Everyone asked how I made it.",
+      beforeVariant: cfg.heroBeforeVariant,
+      afterVariant: cfg.heroAfterVariant,
     },
     {
       name: "Anna K.",
       location: "Omaha, NE",
       quote:
-        "Perfect for love notes and winter greetings. It feels personal, not like a template.",
-      before: "annabefore" as const,
-      after: "annaafter" as const,
-      refs: { a: a3, b: b3 },
+        "It feels personal, not like a template — perfect for sharing.",
+      beforeVariant: cfg.heroBeforeVariant,
+      afterVariant: cfg.heroAfterVariant,
     },
   ];
+
+  const items = (cfg.examples?.length ? cfg.examples : fallback).map((it, i) => ({
+    ...it,
+    refs: refs[i] || refs[0],
+  }));
 
   return (
     <section id="examples" className="relative bg-[#F6F2EA] py-14 md:py-20">
@@ -801,8 +796,8 @@ function Examples() {
           title={<>See the magic of moving memories</>}
           subtitle={
             <>
-              A “before → after” flow you can feel. Each example shows how a photo
-              turns into a gift-worthy moment.
+              A “before → after” flow for this occasion. Each example shows how a
+              photo turns into a gift-worthy moment.
             </>
           }
         />
@@ -838,7 +833,7 @@ function Examples() {
                     <div className="mt-5 grid grid-cols-2 gap-3">
                       <div ref={it.refs.a} className="relative">
                         <PhotoMock
-                          variant={it.before}
+                          variant={it.beforeVariant}
                           label="Before"
                           labelTone="sun"
                           rounded="rounded-3xl"
@@ -847,7 +842,7 @@ function Examples() {
 
                       <div ref={it.refs.b} className="relative">
                         <PhotoMock
-                          variant={it.after}
+                          variant={it.afterVariant}
                           label="After"
                           labelTone="ink"
                           rounded="rounded-3xl"
@@ -883,33 +878,40 @@ function Examples() {
   );
 }
 
-function ValueTrio({ uploadTo }: { uploadTo: string }) {
-  const items = [
+function ValueTrio({
+  cfg,
+  uploadTo,
+  ctaLabel = DEFAULT_CTA_LABEL,
+}: {
+  cfg: FunnelOccasionConfig;
+  uploadTo: string;
+  ctaLabel?: string;
+}) {
+  const fallback = [
     {
-      title: "Bring your family’s memories to life",
-      desc:
-        "Watch treasured photos gently move and tell the story behind every smile and moment.",
-      variant: "family" as const,
+      title: "Bring your memories to life",
+      desc: "Watch treasured photos gently move and tell the story behind every smile.",
+      variant: cfg.heroAfterVariant,
     },
     {
       title: "Celebrate the moments that shape us",
-      desc:
-        "Turn everyday snapshots into shareable keepsakes with cinematic warmth.",
-      variant: "moments" as const,
+      desc: "Turn everyday snapshots into shareable keepsakes with cinematic warmth.",
+      variant: cfg.heroBeforeVariant,
     },
     {
       title: "Preserve your story for tomorrow",
-      desc:
-        "Create animated gifts from your photos — moving and vibrant for years to come.",
-      variant: "preserve" as const,
+      desc: "Create animated gifts from your photos — moving and vibrant for years to come.",
+      variant: cfg.heroAfterVariant,
     },
   ];
+
+  const items = cfg.valueTrio?.length ? cfg.valueTrio : fallback;
 
   return (
     <section className="bg-[#F6F2EA] py-10 md:py-14">
       <div className="mx-auto max-w-6xl px-4">
         <div className="flex justify-center">
-          <CTAButton to={uploadTo} />
+          <CTAButton to={uploadTo} label={ctaLabel} />
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -990,7 +992,13 @@ function ResultsBand() {
   );
 }
 
-function FAQ({ uploadTo }: { uploadTo: string }) {
+function FAQ({
+  uploadTo,
+  ctaLabel = DEFAULT_CTA_LABEL,
+}: {
+  uploadTo: string;
+  ctaLabel?: string;
+}) {
   const faqs = [
     {
       q: "Do I need any technical skills to use this?",
@@ -1050,7 +1058,7 @@ function FAQ({ uploadTo }: { uploadTo: string }) {
           </Card>
 
           <div className="mt-10 flex justify-center">
-            <CTAButton to={uploadTo} />
+            <CTAButton to={uploadTo} label={ctaLabel} />
           </div>
         </div>
       </div>
@@ -1060,8 +1068,8 @@ function FAQ({ uploadTo }: { uploadTo: string }) {
 
 function runSmokeChecks() {
   try {
-    if (!CTA_LABEL || CTA_LABEL.trim().length < 3) {
-      console.warn("[TDG Landing] CTA_LABEL looks empty or too short.");
+    if (!DEFAULT_CTA_LABEL || DEFAULT_CTA_LABEL.trim().length < 3) {
+      console.warn("[TDG Landing] CTA label looks empty or too short.");
     }
 
     if (
@@ -1077,17 +1085,19 @@ function runSmokeChecks() {
 
 function useOccasionConfig() {
   const params = useParams();
-  const raw = normalizeOccasion(String(params.occasion ?? "christmas"));
+  const key = toFunnelOccasionKey(String(params.occasion ?? "christmas"));
 
   return useMemo(() => {
-    const key = raw as FunnelOccasionKey;
     return FUNNEL_OCCASIONS[key] ?? FUNNEL_OCCASIONS.christmas;
-  }, [raw]);
+  }, [key]);
 }
 
 function useOccasionSlug() {
   const params = useParams();
-  return useMemo(() => normalizeOccasion(String(params.occasion ?? "christmas")), [params]);
+  return useMemo(
+    () => toFunnelUploadSlug(String(params.occasion ?? "christmas")),
+    [params]
+  );
 }
 
 export default function FunnelHomePage() {
@@ -1098,16 +1108,17 @@ export default function FunnelHomePage() {
   const cfg = useOccasionConfig();
   const occasionSlug = useOccasionSlug();
   const uploadTo = useMemo(() => buildUploadHref(occasionSlug), [occasionSlug]);
+  const ctaLabel = cfg.ctaLabel || DEFAULT_CTA_LABEL;
 
   return (
     <div className="min-h-screen bg-[#F6F2EA] text-emerald-950">
       <Nav />
       <Hero cfg={cfg} uploadTo={uploadTo} />
-      <HowItWorks uploadTo={uploadTo} />
-      <Examples />
-      <ValueTrio uploadTo={uploadTo} />
+      <HowItWorks cfg={cfg} uploadTo={uploadTo} ctaLabel={ctaLabel} />
+      <Examples cfg={cfg} />
+      <ValueTrio cfg={cfg} uploadTo={uploadTo} ctaLabel={ctaLabel} />
       <ResultsBand />
-      <FAQ uploadTo={uploadTo} />
+      <FAQ uploadTo={uploadTo} ctaLabel={ctaLabel} />
     </div>
   );
 }
