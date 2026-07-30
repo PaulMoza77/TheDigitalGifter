@@ -35,7 +35,7 @@ const UnsubscribePage = lazy(() =>
 // ================= WEBSITE UI =================
 import WebsiteHeader from "@/components/Header";
 import WebsiteFooter from "@/components/Footer";
-import { PricingModal } from "@/components/PricingModal";
+import { PricingModal, CreditsFunnelModal } from "@/components/PricingModal";
 const SupportTicketWidget = lazy(
   () => import("@/components/SupportTicketWidget")
 );
@@ -536,6 +536,7 @@ function AppInner() {
         <SupportTicketWidget />
       </Suspense>
       <Toaster position="top-right" />
+      <CreditsFunnelModal />
     </BrowserRouter>
   );
 }
