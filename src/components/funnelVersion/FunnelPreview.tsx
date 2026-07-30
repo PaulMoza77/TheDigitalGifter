@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getPublicSupabaseConfig } from "@/lib/env";
 
 type FunnelSession = {
   gift_type?: string;
@@ -43,14 +44,13 @@ function isHttpUrl(url: string) {
   return /^https?:\/\//i.test(url);
 }
 
-const SUPABASE_URL = "https://rmdsnpckutsucabledqz.supabase.co";
-
 function resolvePublicObjectUrl(bucket: string, path: string) {
   const p = (path || "").replace(/^\/+/, "");
   if (!p) return "";
   if (isHttpUrl(p)) return p;
-  if (p.startsWith("/storage/v1/")) return `${SUPABASE_URL}${p}`;
-  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${p}`;
+  const { url: supabaseUrl } = getPublicSupabaseConfig();
+  if (p.startsWith("/storage/v1/")) return `${supabaseUrl}${p}`;
+  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${p}`;
 }
 
 function getStoredPhotoRef(): { bucket: string; path: string } | null {

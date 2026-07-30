@@ -3,13 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 
 const SITE_URL = "https://thedigitalgifter.com";
 
-const supabaseUrl =
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.VITE_SUPABASE_ANON_KEY ||
-  "";
+function requiredServerEnv(name: "SUPABASE_URL" | "SUPABASE_SERVICE_ROLE_KEY") {
+  const value = String(process.env[name] ?? "").trim();
+  if (!value) {
+    throw new Error(`Missing required server environment variable: ${name}`);
+  }
+  return value;
+}
 
 type SeoPageRow = {
   page_type: string;
@@ -61,12 +61,9 @@ function createUrlXml({
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {
-    if (!supabaseUrl || !supabaseKey) {
-      res.status(500).send("Missing Supabase env vars");
-      return;
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseUrl = requiredServerEnv("SUPABASE_URL");
+    const serviceRoleKey = requiredServerEnv("SUPABASE_SERVICE_ROLE_KEY");
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const staticUrls = [
       "/",

@@ -56,21 +56,7 @@ export function formatLabel(value: unknown) {
     .replace(/\bPet Loss\b/g, "Pet Loss");
 }
 
-export function getPublicSupabaseConfig(): { url: string; anon: string } {
-  const env = import.meta.env as {
-    VITE_SUPABASE_URL?: string;
-    VITE_SUPABASE_ANON_KEY?: string;
-  };
-
-  const url = (env.VITE_SUPABASE_URL || "").trim();
-  const anon = (env.VITE_SUPABASE_ANON_KEY || "").trim();
-
-  if (!url || !anon) {
-    throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
-  }
-
-  return { url, anon };
-}
+export { getPublicSupabaseConfig } from "@/lib/env";
 
 export async function safeReadJson(res: Response): Promise<EdgeResponse> {
   try {
