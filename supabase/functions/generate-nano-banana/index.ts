@@ -165,17 +165,31 @@ Deno.serve(async (req) => {
       .eq("id", generationId);
 
     // Best-effort credit debit when authenticated user present
-    const debitEmail = (user?.email || generation.user_email || "").toString().trim().toLowerCase();
+    const debitEmail = (
+      user?.email ||
+      generation.email ||
+      generation.user_email ||
+      ""
+    )
+      .toString()
+      .trim()
+      .toLowerCase();
     if (debitEmail) {
       const cost = Number(generation.credit_cost ?? generation.credits ?? 1) || 1;
-      await service.from("credits_ledger").insert({
+      const { error: debitError } = await service.from("credits_ledger").insert({
         user_convex_id: debitEmail,
         user_id: user?.id ?? generation.user_id ?? null,
         direction: "out",
         credits: cost,
-        reason: "generation",
-        generation_id: generationId,
+        event_type: "generation",
+        category: "generation",
+        note: `generation:${generationId}`,
+        template_id: generation.template_id ?? null,
+        template_title: generation.title ?? null,
       });
+      if (debitError) {
+        console.warn("[generate-nano-banana] credit debit failed:", debitError.message);
+      }
     }
 
     return jsonResponse({ imageUrl: publicUrl, generation_id: generationId, status: "completed" });
