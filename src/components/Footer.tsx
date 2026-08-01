@@ -96,6 +96,14 @@ export default function Footer() {
             </h3>
 
             <div className="space-y-3">
+              <Link
+                to="/support"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
+              >
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
+                Support
+              </Link>
+
               <a
                 href="mailto:support@thedigitalgifter.com"
                 className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
