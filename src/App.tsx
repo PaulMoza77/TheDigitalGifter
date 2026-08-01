@@ -26,6 +26,11 @@ const RefundPolicyPage = lazy(() =>
     default: m.RefundPolicyPage,
   }))
 );
+const SupportPage = lazy(() =>
+  import("@/pages/website/SupportPage").then((m) => ({
+    default: m.SupportPage,
+  }))
+);
 const UnsubscribePage = lazy(() =>
   import("@/pages/website/UnsubscribePage").then((m) => ({
     default: m.UnsubscribePage,
@@ -434,6 +439,7 @@ function AppInner() {
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/refunds" element={<RefundPolicyPage />} />
+            <Route path="/support" element={<SupportPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
             <Route
