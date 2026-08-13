@@ -20,7 +20,6 @@ import {
   Crown,
   Puzzle,
   Image as ImageIcon,
-  ShieldCheck,
   Download,
   ArrowLeft,
   Home,
@@ -1093,7 +1092,7 @@ export default function ResultPage() {
                       className="block h-auto w-full object-contain"
                     />
 
-                    {regenerateOffer ? (
+                    {isCheckoutEnabled && regenerateOffer ? (
                       <button
                         type="button"
                         onClick={() => void handleCheckout("regenerate")}
@@ -1171,11 +1170,8 @@ export default function ResultPage() {
                 </Button>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-900">
-                <div className="flex items-start gap-2">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>Your image is safely stored. You can return to your dashboard anytime.</span>
-                </div>
+              <div className="mt-5 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700">
+                You can return to your dashboard anytime.
               </div>
 
               {errorMessage ? (
@@ -1187,14 +1183,20 @@ export default function ResultPage() {
           </Card>
 
           <Card className="border-zinc-200 bg-white/85 shadow-[0_10px_40px_rgba(17,24,39,0.08)]">
+            {!isCheckoutEnabled ? (
+              <CardContent className="p-5">
+                <p className="text-sm leading-6 text-zinc-700">
+                  {productTruth.copy.checkoutUnavailable}
+                </p>
+              </CardContent>
+            ) : (
+              <>
             <CardHeader className="pb-3">
               <CardTitle className="text-2xl text-[#0b3b2e]">
                 More ways to enjoy your gift
               </CardTitle>
               <CardDescription className="text-zinc-600">
-                {!isCheckoutEnabled
-                  ? productTruth.copy.checkoutUnavailable
-                  : "Optional add-ons for this result."}
+                Optional add-ons for this result.
               </CardDescription>
             </CardHeader>
 
@@ -1276,6 +1278,8 @@ export default function ResultPage() {
                 </div>
               </div>
             </CardContent>
+              </>
+            )}
           </Card>
         </div>
       </main>

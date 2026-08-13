@@ -75,8 +75,8 @@ const PACKS: Pack[] = [
     price: 78.98,
     credits: 4000,
     bonusCredits: 600,
-    tag: "For power users",
-    description: "For creators, agencies and people creating often.",
+    tag: "For frequent use",
+    description: "For people creating often.",
   },
   {
     key: "enterprise",
@@ -84,8 +84,8 @@ const PACKS: Pack[] = [
     price: 499.98,
     credits: 50000,
     bonusCredits: 10000,
-    tag: "Teams & agencies",
-    description: "For high-volume campaigns, teams and business use.",
+    tag: "Largest pack",
+    description: "For high-volume use.",
   },
 ];
 
@@ -209,7 +209,7 @@ function getHeaderContent(
         emoji: "🔐",
         title: "Create your account",
         subtitle:
-          "Sign in to save your creations, manage credits and continue securely.",
+          "Sign in to save your creations and manage credits.",
       };
 
     case "first_generation":
