@@ -10,14 +10,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Star } from "lucide-react";
-
 import {
   FUNNEL_OCCASIONS,
   toFunnelOccasionKey,
   toFunnelUploadSlug,
   type FunnelOccasionConfig,
 } from "@/components/funnelVersion/occasions";
+import { productTruth } from "@/config/productTruth";
 
 /**
  * TDG — AliveMoment-inspired landing
@@ -29,7 +28,7 @@ import {
  *   /funnel/uploadPhoto?occasion=<occasion>&slug=<occasion>
  */
 
-const DEFAULT_CTA_LABEL = "Try now — Bring your photos to life";
+const DEFAULT_CTA_LABEL = "Try now — Create a personalized gift";
 
 type Point = { x: number; y: number };
 type AnchorSide = "left" | "right" | "top" | "bottom";
@@ -135,10 +134,10 @@ function LogoMark() {
 
       <div className="leading-tight">
         <div className="text-sm font-semibold tracking-tight text-emerald-950">
-          TheDigitalGifter
+          {productTruth.brandName}
         </div>
         <div className="text-[11px] text-emerald-950/60">
-          Moving gifts from your photos
+          Personalized still images from your photos
         </div>
       </div>
     </div>
@@ -367,43 +366,6 @@ function ConnectorOverlay({
   );
 }
 
-const RATING = 4.8;
-
-function RatingStar({ fill }: { fill: number }) {
-  const pct = Math.max(0, Math.min(1, fill)) * 100;
-  return (
-    <span className="relative inline-flex h-[18px] w-[18px] shrink-0" aria-hidden>
-      <Star className="h-[18px] w-[18px] fill-[#E8EAED] text-[#E8EAED]" strokeWidth={0} />
-      <span className="absolute inset-0 overflow-hidden" style={{ width: `${pct}%` }}>
-        <Star className="h-[18px] w-[18px] fill-[#FBBC04] text-[#FBBC04]" strokeWidth={0} />
-      </span>
-    </span>
-  );
-}
-
-function StarRow() {
-  return (
-    <div className="flex flex-wrap items-center gap-3 text-sm">
-      <div className="inline-flex items-center gap-2">
-        <span className="text-emerald-950/70">Excellent</span>
-        <div
-          className="inline-flex items-center gap-px"
-          role="img"
-          aria-label={`${RATING} out of 5 stars`}
-        >
-          {Array.from({ length: 5 }).map((_, i) => (
-            <RatingStar key={i} fill={RATING - i} />
-          ))}
-        </div>
-      </div>
-      <div className="text-emerald-950/70">
-        <span className="font-semibold text-emerald-950">{RATING}/5</span> out of{" "}
-        <span className="underline">2,700+ reviews</span>
-      </div>
-    </div>
-  );
-}
-
 function SectionTitle({
   eyebrow,
   title,
@@ -524,10 +486,6 @@ function Hero({
 
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-12 md:grid-cols-2 md:py-20">
         <div className="flex flex-col justify-center">
-          <div className="mb-5">
-            <StarRow />
-          </div>
-
           <h1 className="text-balance font-serif text-4xl tracking-tight text-emerald-950 sm:text-5xl md:text-6xl">
             {cfg.heroTitle}
           </h1>
@@ -538,18 +496,16 @@ function Hero({
 
           <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
             <CTAButton to={uploadTo} label={ctaLabel} />
-            <div className="flex items-center gap-2 text-sm text-emerald-950/70">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-950/10">
-                ✓
-              </span>
-              100% private — your memories are yours
-            </div>
           </div>
 
+          <p className="mt-5 max-w-xl text-sm leading-relaxed text-emerald-950/65">
+            {productTruth.copy.photoHandling}
+          </p>
+
           <div className="mt-10 flex flex-wrap items-center gap-3 text-xs text-emerald-950/60">
-            <Pill tone="mint">Takes ~1 minute to start</Pill>
-            <Pill tone="mint">No tech skills needed</Pill>
-            <Pill tone="mint">Made for meaningful gifts</Pill>
+            <Pill tone="mint">Upload a photo</Pill>
+            <Pill tone="mint">Choose a style</Pill>
+            <Pill tone="mint">Generate a still image</Pill>
           </div>
         </div>
 
@@ -588,16 +544,12 @@ function Hero({
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-emerald-950/60">
                   {cfg.heroCaption ||
-                    "Gentle motion, warm emotion — made to be shared."}
+                    "A still-image example of a photo and a selected style."}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-emerald-950/60">
                   <span className="inline-flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-yellow-300/70" />
-                    subtle motion
-                  </span>
-                  <span className="inline-flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/40" />
-                    premium styles
+                    still-image styles
                   </span>
                 </div>
               </div>
@@ -608,16 +560,15 @@ function Hero({
 
       <div className="border-t border-emerald-950/10 bg-[#F6F2EA]">
         <div className="mx-auto max-w-6xl px-4 py-8">
-          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+          <div className="flex flex-col items-center justify-center gap-2 text-center">
             <div className="text-sm font-medium text-emerald-950/70">
-              Trusted by creators & families
+              How it works
             </div>
             <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-950/40">
-              <span>Creator Community</span>
-              <span>Family Albums</span>
-              <span>Holiday Makers</span>
-              <span>Memory Lovers</span>
-              <span>Gift Givers</span>
+              <span>Upload</span>
+              <span>Choose a style</span>
+              <span>Checkout</span>
+              <span>Generate</span>
             </div>
           </div>
         </div>
@@ -656,8 +607,8 @@ function HowItWorks({
           title={<>Meaningful should never be complicated</>}
           subtitle={
             <>
-              A simple flow: upload a photo, pick a style, and share a moving gift
-              that feels personal.
+              A simple flow: upload a photo, pick a style, and generate a
+              personalized still image after checkout.
             </>
           }
         />
@@ -706,7 +657,7 @@ function HowItWorks({
                   </div>
 
                   <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                    Pick a style made for this occasion — soft motion, premium finish.
+                    Pick a still-image style made for this occasion.
                   </p>
 
                   <div className="mt-5">
@@ -738,7 +689,7 @@ function HowItWorks({
                   </div>
 
                   <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                    Save your animated memory and send it to someone who matters.
+                    Download the still image and send it to someone who matters.
                   </p>
 
                   <div className="mt-5">
@@ -785,26 +736,14 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
 
   const fallback = [
     {
-      name: "Emily R.",
-      location: "Portland, OR",
-      quote:
-        "Watching our old photo feel alive again gave me chills — it was like stepping back into that day.",
       beforeVariant: cfg.heroBeforeVariant,
       afterVariant: cfg.heroAfterVariant,
     },
     {
-      name: "Avery",
-      location: "Cheyenne, WY",
-      quote:
-        "The motion is subtle and beautiful. Everyone asked how I made it.",
       beforeVariant: cfg.heroBeforeVariant,
       afterVariant: cfg.heroAfterVariant,
     },
     {
-      name: "Anna K.",
-      location: "Omaha, NE",
-      quote:
-        "It feels personal, not like a template — perfect for sharing.",
       beforeVariant: cfg.heroBeforeVariant,
       afterVariant: cfg.heroAfterVariant,
     },
@@ -813,17 +752,18 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
   const items = (cfg.examples?.length ? cfg.examples : fallback).map((it, i) => ({
     ...it,
     refs: refs[i] || refs[0],
+    label: `Example ${i + 1}`,
   }));
 
   return (
     <section id="examples" className="relative bg-[#F6F2EA] py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
         <SectionTitle
-          title={<>See the magic of moving memories</>}
+          title={<>See a photo become a still-image gift</>}
           subtitle={
             <>
-              A “before → after” flow for this occasion. Each example shows how a
-              photo turns into a gift-worthy moment.
+              Style mockups for this occasion. Each example shows a photo and a
+              selected look — not a live generated result.
             </>
           }
         />
@@ -833,24 +773,11 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {items.map((it) => (
-              <div key={it.name} className="relative">
+              <div key={it.label} className="relative">
                 <Card className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-emerald-950">
-                          {it.name}
-                        </div>
-                        <div className="text-xs text-emerald-950/50">
-                          {it.location}
-                        </div>
-                      </div>
-
-                      <div className="inline-flex items-center gap-px" aria-label="5 out of 5 stars">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <RatingStar key={i} fill={1} />
-                        ))}
-                      </div>
+                    <div className="text-sm font-semibold text-emerald-950">
+                      {it.label}
                     </div>
 
                     <div className="mt-5 grid grid-cols-2 gap-3">
@@ -869,31 +796,14 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
                           label="After"
                           labelTone="ink"
                           rounded="rounded-3xl"
-                          footer="TDG result ✨"
+                          footer="Style example"
                         />
                       </div>
-                    </div>
-
-                    <p className="mt-5 text-sm italic leading-relaxed text-emerald-950/70">
-                      “{it.quote}”
-                    </p>
-
-                    <div className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-950/70">
-                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-950/10">
-                        ✓
-                      </span>
-                      <span className="text-sm font-medium">Verified</span>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             ))}
-          </div>
-
-          <div className="mt-10 flex justify-center">
-            <Pill tone="sun">
-              Trusted by more than <span className="font-semibold">120,000+</span> users
-            </Pill>
           </div>
         </div>
       </div>
@@ -912,18 +822,18 @@ function ValueTrio({
 }) {
   const fallback = [
     {
-      title: "Bring your memories to life",
-      desc: "Watch treasured photos gently move and tell the story behind every smile.",
+      title: "Start with one photo",
+      desc: "Upload a clear photo for this occasion. That image is what the selected style is applied to.",
       variant: cfg.heroAfterVariant,
     },
     {
-      title: "Celebrate the moments that shape us",
-      desc: "Turn everyday snapshots into shareable keepsakes with cinematic warmth.",
+      title: "Choose a still-image style",
+      desc: "Pick a look made for this occasion, then continue through checkout.",
       variant: cfg.heroBeforeVariant,
     },
     {
-      title: "Preserve your story for tomorrow",
-      desc: "Create animated gifts from your photos — moving and vibrant for years to come.",
+      title: "Generate after checkout",
+      desc: "The personalized still image is created after successful payment — not on this page.",
       variant: cfg.heroAfterVariant,
     },
   ];
@@ -962,19 +872,19 @@ function ValueTrio({
 function ResultsBand() {
   const cards = [
     {
-      big: "Tens of thousands+",
-      label: "Moments Created",
-      desc: "Real people turning precious photos into moving memories.",
+      big: "1",
+      label: "Upload",
+      desc: "Choose a photo that fits the occasion.",
     },
     {
-      big: "Daily creations",
-      label: "Worldwide",
-      desc: "Each one crafted with care and lifelike emotion.",
+      big: "2",
+      label: "Style",
+      desc: "Pick a still-image template for the look you want.",
     },
     {
-      big: "High satisfaction",
-      label: "From recipients",
-      desc: "Loved by families, friends, and gift-givers.",
+      big: "3",
+      label: "Generate",
+      desc: "The personalized result is created after successful checkout.",
     },
   ];
 
@@ -983,10 +893,11 @@ function ResultsBand() {
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl">
           <h3 className="font-serif text-4xl tracking-tight text-emerald-50 md:text-5xl">
-            Results You Can Feel
+            Three clear steps
           </h3>
           <p className="mt-3 text-base leading-relaxed text-emerald-100/80">
-            Powerful reactions, heartfelt surprises, and help always within reach.
+            Upload a photo, choose a still-image style, then generate after
+            checkout.
           </p>
         </div>
 
@@ -1025,23 +936,23 @@ function FAQ({
   const faqs = [
     {
       q: "Do I need any technical skills to use this?",
-      a: "No. Upload a photo, pick a style, and generate. The flow is designed to feel simple and fast.",
+      a: "No. Upload a photo, pick a style, and continue. The personalized still image is generated after checkout.",
     },
     {
-      q: "How long does it take to create the animated result?",
-      a: "Usually just a few moments depending on the style and current demand. You’ll see progress as it generates.",
+      q: "When is the personalized image created?",
+      a: "After successful checkout. The photo shown before payment is your selected upload, not a generated result.",
     },
     {
-      q: "Can I choose how the photo is animated?",
-      a: "Yes. Pick from styles like Winter, Birthday, Love, Retro, or Cinematic to guide the look and motion.",
+      q: "Can I choose the look of the still image?",
+      a: "Yes. Pick from still-image styles for this occasion, then continue with the selected template.",
     },
     {
-      q: "Is my photo safe and private?",
-      a: "Your content stays private. Use TDG to create gifts for people you care about, without public sharing by default.",
+      q: "How is my photo used?",
+      a: productTruth.copy.photoHandling,
     },
     {
-      q: "What formats can I download?",
-      a: "You can download and share your result in common formats suitable for social sharing and messaging.",
+      q: "How do I contact support?",
+      a: `Email ${productTruth.supportEmail}. ${productTruth.copy.supportResponseSentence}`,
     },
   ];
 
@@ -1052,8 +963,8 @@ function FAQ({
           title={<>Common questions, simple answers</>}
           subtitle={
             <>
-              If you’re unsure about anything, the flow is intentionally
-              straightforward — and support is always within reach.
+              If you’re unsure about anything, email{" "}
+              {productTruth.supportEmail}. {productTruth.copy.supportResponseSentence}
             </>
           }
         />

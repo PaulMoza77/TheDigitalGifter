@@ -35,7 +35,7 @@ export default function ValentinesDayPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
-              Turn your favorite couple moment into a premium design in seconds.
+              Turn your favorite couple moment into a premium design.
               Upload a photo, pick a style, and let AI do the magic.
             </p>
 

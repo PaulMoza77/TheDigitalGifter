@@ -35,7 +35,7 @@ export default function GraduationPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
-              Celebrate the achievement with a premium design in seconds.
+              Celebrate the achievement with a premium design.
               Upload a photo, choose a style, and let AI do the magic.
             </p>
 

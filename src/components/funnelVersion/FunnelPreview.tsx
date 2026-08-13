@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPublicSupabaseConfig } from "@/lib/env";
+import { productTruth } from "@/config/productTruth";
 
 type FunnelSession = {
   gift_type?: string;
@@ -166,10 +167,10 @@ export default function FunnelPreview() {
             className="text-[28px] leading-tight sm:text-[40px] sm:leading-tight font-semibold"
             style={{ fontFamily: "ui-serif, Georgia, serif", color: "#0F3D2E" }}
           >
-            ✓ Your preview is ready
+            {productTruth.copy.previewHeading}
           </h1>
           <p className="mt-3 text-sm sm:text-base text-[#111827]/70">
-            You’re one step away from unlocking the clean, full-quality version.
+            {productTruth.copy.resultAfterCheckout}.
           </p>
         </div>
 
@@ -184,7 +185,7 @@ export default function FunnelPreview() {
                         <>
                           <img
                             src={photoUrl}
-                            alt="Your photo (blurred preview)"
+                            alt={productTruth.copy.selectedPhotoLabel}
                             className="h-full w-full object-cover"
                             style={{
                               filter: "blur(18px)",
@@ -216,12 +217,12 @@ export default function FunnelPreview() {
 
                 <div className="mt-8 flex justify-center">
                   <Button onClick={goNext} disabled={!hasPhoto} className="w-full max-w-[420px]">
-                    Unlock Full Quality
+                    Continue to checkout
                   </Button>
                 </div>
 
                 <div className="mt-3 text-center text-xs text-[#111827]/55">
-                  You’ll unlock the clean result after checkout.
+                  {productTruth.copy.resultAfterCheckout}.
                 </div>
               </div>
             </div>

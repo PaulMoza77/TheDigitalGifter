@@ -106,10 +106,10 @@ type EdgeJson = {
 const FALLBACK_OFFERS: OfferItem[] = [
   {
     actionType: "full_hd",
-    title: "Unlock Full HD",
+    title: "Unlock additional download",
     priceLabel: "€0.99",
-    description: "High-resolution, clean, sharp, and ready to download.",
-    cta: "Unlock Full HD",
+    description: "An additional download option for this result.",
+    cta: "Continue",
     icon: ImageIcon,
     featured: false,
     sortOrder: 10,
@@ -257,7 +257,7 @@ function boolFromMetadata(value: unknown, fallback = false) {
 }
 
 function ctaFromAction(actionType: ActionType, title: string) {
-  if (actionType === "full_hd") return "Unlock Full HD";
+  if (actionType === "full_hd") return title || "Additional download";
   if (actionType === "golden_frame") return "Add Golden Frame";
   if (actionType === "puzzle") return "Turn into Puzzle";
   if (actionType === "regenerate") return "Regenerate";

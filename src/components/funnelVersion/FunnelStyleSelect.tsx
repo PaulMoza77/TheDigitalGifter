@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { isVideoGenerationEnabled, productTruth } from "@/config/productTruth";
 
 type TemplateDbRow = {
   id: string;
@@ -9,6 +10,7 @@ type TemplateDbRow = {
   occasion: string | null;
   style_id: string | null;
   isactive: boolean | null;
+  type: string | null;
 };
 
 type FunnelStyle = {
@@ -102,34 +104,34 @@ function descriptionForTemplateTitle(title: string) {
   const s = safeString(title).toLowerCase();
 
   if (s === "angel sleep") {
-    return "A serene, dreamy motion that feels like a lullaby — calm, tender, and instantly heart-melting.";
+    return "A calm, tender still-image style for quiet newborn moments.";
   }
   if (s === "cozy blanket") {
-    return "Warm, comforting movement with a soft “home” feeling — perfect for snuggly, intimate moments.";
+    return "A warm, homely still-image style for snug, intimate photos.";
   }
   if (s === "first light") {
-    return "A gentle sunrise-style reveal — clean, hopeful, and beautifully cinematic without feeling overdone.";
+    return "A clean, hopeful still-image style with a sunrise look.";
   }
   if (s === "golden memory") {
-    return "A premium golden glow that elevates the moment — nostalgic, radiant, and made to be shared.";
+    return "A warm golden still-image style for a shareable keepsake.";
   }
   if (s === "minimal studio") {
-    return "Modern, clean, and editorial — subtle motion with a polished finish that looks expensive.";
+    return "A modern, editorial still-image style with a clean finish.";
   }
   if (s === "soft pastel") {
-    return "A delicate pastel touch with smooth, airy motion — sweet, elegant, and gift-ready.";
+    return "A delicate pastel still-image style for a gift-ready look.";
   }
 
-  if (s.includes("angel")) return "Soft, heavenly motion with a gentle glow — tender, peaceful, and emotionally rich.";
-  if (s.includes("sleep") || s.includes("dream")) return "A dreamy, slow-motion feel — soothing, intimate, and perfect for quiet memories.";
-  if (s.includes("cozy") || s.includes("blanket") || s.includes("warm")) return "Warm, comforting movement — like a hug in motion, soft and reassuring.";
-  if (s.includes("first") || s.includes("light") || s.includes("sunrise")) return "A bright, uplifting reveal — clean, cinematic, and naturally beautiful.";
-  if (s.includes("gold") || s.includes("golden") || s.includes("glow")) return "A premium glow that adds warmth and depth — timeless, radiant, and share-worthy.";
-  if (s.includes("minimal") || s.includes("studio") || s.includes("editorial")) return "Minimal, modern, and polished — subtle motion that feels premium and intentional.";
-  if (s.includes("pastel") || s.includes("soft") || s.includes("pink")) return "Soft, delicate color energy — gentle motion with a sweet, elegant finish.";
-  if (s.includes("cinema") || s.includes("film") || s.includes("movie")) return "Cinematic motion with tasteful depth — dramatic in a subtle, premium way.";
+  if (s.includes("angel")) return "A soft, peaceful still-image style with a gentle glow.";
+  if (s.includes("sleep") || s.includes("dream")) return "A quiet, intimate still-image style for restful photos.";
+  if (s.includes("cozy") || s.includes("blanket") || s.includes("warm")) return "A warm, comforting still-image style.";
+  if (s.includes("first") || s.includes("light") || s.includes("sunrise")) return "A bright, clean still-image style.";
+  if (s.includes("gold") || s.includes("golden") || s.includes("glow")) return "A warm golden still-image style.";
+  if (s.includes("minimal") || s.includes("studio") || s.includes("editorial")) return "A modern, polished still-image style.";
+  if (s.includes("pastel") || s.includes("soft") || s.includes("pink")) return "A soft pastel still-image style.";
+  if (s.includes("cinema") || s.includes("film") || s.includes("movie")) return "A cinematic still-image style with depth.";
 
-  return "A premium motion style designed to make your photo feel alive — elegant, emotional, and gift-ready.";
+  return "A still-image style for a personalized gift from your photo.";
 }
 
 function headerForOccasion(occasion: string) {
@@ -137,22 +139,22 @@ function headerForOccasion(occasion: string) {
     case "newborn":
       return {
         title: "Choose the style for your newborn memory",
-        subtitle: "Pick a vibe — we’ll generate a beautiful preview in seconds.",
+        subtitle: "Pick a style for your still image.",
       };
     case "birthday":
       return {
         title: "Choose the style for your birthday gift",
-        subtitle: "Pick the mood you want and continue to your preview.",
+        subtitle: "Pick a style, then continue with your selected photo.",
       };
     case "wedding":
       return {
         title: "Choose the style for your wedding memory",
-        subtitle: "Elegant templates, romantic motion, beautiful final result.",
+        subtitle: "Elegant templates for a still-image keepsake.",
       };
     default:
       return {
         title: "Choose the style for your digital gift",
-        subtitle: "Pick a vibe — we’ll generate a beautiful preview in seconds.",
+        subtitle: "Pick a style for your still image.",
       };
   }
 }
@@ -224,7 +226,7 @@ export default function FunnelStyleSelect() {
       async function runQuery(occ: string) {
         return await supabase
           .from("templates")
-          .select("id,title,prompt,occasion,style_id,isactive")
+          .select("id,title,prompt,occasion,style_id,isactive,type")
           .eq("isactive", true)
           .eq("occasion", occ)
           .order("title", { ascending: true });
@@ -253,7 +255,15 @@ export default function FunnelStyleSelect() {
       if (!alive) return;
 
       const mapped: FunnelStyle[] = rows
-        .filter((r) => safeString(r.id).length > 0 && safeString(r.style_id).length > 0)
+        .filter((r) => {
+          if (
+            !isVideoGenerationEnabled &&
+            String(r.type || "").toLowerCase() === "video"
+          ) {
+            return false;
+          }
+          return safeString(r.id).length > 0 && safeString(r.style_id).length > 0;
+        })
         .map((r) => ({
           id: safeString(r.style_id),
           templateId: safeString(r.id),
@@ -402,7 +412,7 @@ export default function FunnelStyleSelect() {
           </div>
 
           <div className="mt-10 text-center text-[11px] text-[#111827]/45">
-            Your preview is generated after checkout using your selected style.
+            {productTruth.copy.resultAfterCheckout}.
           </div>
         </div>
       </div>

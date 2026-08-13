@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { productTruth } from "@/config/productTruth";
 
 type CustomerSubscriptionRow = {
   subscription_status: string | null;
@@ -135,13 +136,14 @@ export default function NeedHelpCard() {
         <h3 className="mt-5 text-lg font-semibold text-white">Need Help?</h3>
 
         <p className="mt-2 text-sm leading-6 text-zinc-400">
-          Support, troubleshooting and account assistance can be connected here.
+          Email {productTruth.supportEmail}.{" "}
+          {productTruth.copy.supportResponseSentence}
         </p>
 
         <div className="mt-5 space-y-3">
           <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm text-zinc-300">
             <Mail className="h-4 w-4 shrink-0 text-zinc-400" />
-            <span className="min-w-0 truncate">support@yourproject.com</span>
+            <span className="min-w-0 truncate">{productTruth.supportEmail}</span>
           </div>
 
           <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm text-zinc-300">

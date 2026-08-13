@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { occasions } from "@/constants/occasions";
 import { toast } from "sonner";
 import { TrendingNowRow } from "@/components/website/TrendingNowRow";
+import { productTruth } from "@/config/productTruth";
 
 export const HeroSection = () => {
   const [currentMockup, setCurrentMockup] = useState(0);
@@ -60,7 +61,7 @@ export const HeroSection = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                THE DIGITAL GIFTER
+                {productTruth.brandName}
               </motion.div>
 
               <motion.h1
@@ -81,7 +82,7 @@ export const HeroSection = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                Turn one meaningful photo into a beautiful card or video made
+                Turn one meaningful photo into a personalized still image made
                 for birthdays, love, family moments, faith, pets, and every
                 message that deserves to be remembered.
               </motion.p>
@@ -114,19 +115,7 @@ export const HeroSection = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
               >
-                <div className="flex items-center gap-2">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map((item) => (
-                      <div
-                        key={item}
-                        className="h-8 w-8 rounded-full border-2 border-slate-950 bg-gradient-to-br from-blue-500 to-cyan-500"
-                      />
-                    ))}
-                  </div>
-                  <span>50,000+ heartfelt creations</span>
-                </div>
-
-                <div>⭐ 4.9/5 average rating</div>
+                <span>Upload a photo. Choose a style. Create a still image.</span>
               </motion.div>
             </motion.div>
 

@@ -1,5 +1,6 @@
 import { Download, Heart, Image, Lock, Palette, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { productTruth } from "@/config/productTruth";
 
 const features = [
   {
@@ -39,9 +40,8 @@ const features = [
   },
   {
     icon: Lock,
-    title: "Private by Design",
-    description:
-      "Your personal photos and memories are handled with care, so you can create with confidence.",
+    title: "Photo handling",
+    description: productTruth.copy.photoHandling,
     gradient: "from-indigo-400 to-violet-500",
   },
 ];

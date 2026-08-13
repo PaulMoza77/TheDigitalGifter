@@ -1,15 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   Gift,
-  Clock,
   ShieldCheck,
-  Zap,
   X,
-  BadgeCheck,
   Heart,
-  Check,
   Plus,
   Minus,
 } from "lucide-react";
@@ -21,6 +17,10 @@ import {
 } from "@/contexts/CreditsFunnelContext";
 import { SignInButton } from "./SignInButton";
 import { supabase } from "@/lib/supabase";
+import {
+  isBonusCreditsVisible,
+  productTruth,
+} from "@/config/productTruth";
 
 type PackKey = "starter" | "creator" | "pro" | "enterprise";
 
@@ -90,21 +90,16 @@ const PACKS: Pack[] = [
   },
 ];
 
-const SOCIAL_PROOF_MESSAGES = [
-  "✨ People are creating birthdays, apologies, love notes and name portraits right now.",
-  "💛 Small details make gifts feel personal, emotional and unforgettable.",
-  "⚡ Instant delivery — create, download and share in minutes.",
-  "🎁 One-time payment. Credits stay available for future creations.",
-];
-
-const RESERVATION_SECONDS = 10 * 60;
-
 function euro(n: number) {
   return `€${n.toFixed(2)}`;
 }
 
-function getTotalCredits(pack: Pack) {
-  return pack.credits + (pack.bonusCredits ?? 0);
+function getDisplayedCredits(pack: Pack) {
+  if (isBonusCreditsVisible) {
+    return pack.credits + (pack.bonusCredits ?? 0);
+  }
+
+  return pack.credits;
 }
 
 function getCheckoutUrl(data: CheckoutResponse | string | null): string | null {
@@ -115,46 +110,6 @@ function getCheckoutUrl(data: CheckoutResponse | string | null): string | null {
   }
 
   return data.checkoutUrl ?? data.url ?? data.sessionUrl ?? null;
-}
-
-function useCountdown(seconds: number, isActive: boolean) {
-  const [left, setLeft] = useState(seconds);
-
-  useEffect(() => {
-    if (!isActive) return;
-
-    setLeft(seconds);
-
-    const timer = window.setInterval(() => {
-      setLeft((current) => (current <= 1 ? 0 : current - 1));
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, [seconds, isActive]);
-
-  const mm = String(Math.floor(left / 60)).padStart(2, "0");
-  const ss = String(left % 60).padStart(2, "0");
-
-  return { left, label: `${mm}:${ss}` };
-}
-
-function useSocialProofTicker(isActive: boolean) {
-  const [ticker, setTicker] = useState(SOCIAL_PROOF_MESSAGES[0]);
-
-  useEffect(() => {
-    if (!isActive) return;
-
-    let index = 0;
-
-    const timer = window.setInterval(() => {
-      index = (index + 1) % SOCIAL_PROOF_MESSAGES.length;
-      setTicker(SOCIAL_PROOF_MESSAGES[index]);
-    }, 4200);
-
-    return () => window.clearInterval(timer);
-  }, [isActive]);
-
-  return ticker;
 }
 
 function Pill({ children }: { children: React.ReactNode }) {
@@ -263,7 +218,7 @@ function getHeaderContent(
         emoji: "🎉",
         title: "Keep creating personal gifts",
         subtitle:
-          "Your bonus credits were used. Choose a credit pack to continue creating beautiful memories.",
+          "Choose a credit pack to continue creating.",
       };
 
     case "insufficient_credits":
@@ -278,7 +233,7 @@ function getHeaderContent(
         emoji: "🎁",
         title: "Unlock personalized creations",
         subtitle:
-          "Create emotional cards, name portraits, apology gifts, birthday surprises, love notes and memories in minutes.",
+          "Create cards, name portraits, apology gifts, birthday surprises, love notes and memories.",
       };
   }
 }
@@ -302,13 +257,6 @@ export function PricingModal({
   const requiredCredits = propRequired ?? null;
   const availableCredits = propAvailable ?? null;
 
-  const { label: holdLabel, left: holdLeft } = useCountdown(
-    RESERVATION_SECONDS,
-    isOpen
-  );
-
-  const ticker = useSocialProofTicker(isOpen);
-
   const { emoji, title, subtitle } = getHeaderContent(
     mode,
     requiredCredits,
@@ -320,23 +268,8 @@ export function PricingModal({
     [selected]
   );
 
-  const getDiscount = (count: number) => {
-    if (count >= 4) return 0.2;
-    if (count >= 3) return 0.15;
-    if (count >= 2) return 0.1;
-    return 0;
-  };
-
-  const getDiscountLabel = (count: number) => {
-    if (count >= 4) return "20% OFF";
-    if (count >= 3) return "15% OFF";
-    if (count >= 2) return "10% OFF";
-    return "bundle offer";
-  };
-
-  const bundleDiscount = getDiscount(bundleCount);
-  const priceNow = selectedPack.price * bundleCount * (1 - bundleDiscount);
-  const totalCredits = getTotalCredits(selectedPack) * bundleCount;
+  const priceNow = selectedPack.price * bundleCount;
+  const totalCredits = getDisplayedCredits(selectedPack) * bundleCount;
 
   async function doCheckout(pack: PackKey, quantity: number) {
     if (isPaying) return;
@@ -450,8 +383,7 @@ export function PricingModal({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-yellow-300/25 bg-yellow-300/10 px-3 py-1 text-xs font-bold text-yellow-100">
-                    <Clock className="h-4 w-4" />
-                    Reserved for {holdLabel}
+                    Credit packs
                   </div>
 
                   <h2 className="mt-4 max-w-2xl text-2xl font-black leading-tight tracking-tight text-white md:text-3xl">
@@ -464,19 +396,11 @@ export function PricingModal({
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Pill>
-                      <BadgeCheck className="h-4 w-4" /> One-time payment
-                    </Pill>
-
-                    <Pill>
-                      <Zap className="h-4 w-4" /> Instant credits
-                    </Pill>
-
-                    <Pill>
                       <ShieldCheck className="h-4 w-4" /> Secure checkout
                     </Pill>
 
                     <Pill>
-                      <Heart className="h-4 w-4" /> Made for emotions
+                      <Heart className="h-4 w-4" /> Made for {productTruth.brandName}
                     </Pill>
                   </div>
                 </div>
@@ -506,8 +430,8 @@ export function PricingModal({
                       </p>
 
                       <p className="mt-1 text-sm leading-6 text-white/60">
-                        This lets us attach your credits to your account
-                        instantly after checkout.
+                        This lets us attach credits to your account after
+                        checkout.
                       </p>
                     </div>
 
@@ -550,7 +474,7 @@ export function PricingModal({
                                 {pack.credits}
                               </span>{" "}
                               credits
-                              {pack.bonusCredits ? (
+                              {isBonusCreditsVisible && pack.bonusCredits ? (
                                 <>
                                   {" "}
                                   <span className="text-white/45">+</span>{" "}
@@ -649,28 +573,11 @@ export function PricingModal({
               <div className="mt-6 grid gap-4 md:grid-cols-[1fr_400px] md:items-stretch">
                 <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                   <div className="text-xs font-bold uppercase tracking-[0.18em] text-white/40">
-                    Live activity
+                    Credits
                   </div>
 
                   <div className="mt-2 text-sm font-bold leading-6 text-white">
-                    {ticker}
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/55">
-                    <span className="inline-flex items-center gap-1">
-                      <Check className="h-3.5 w-3.5 text-green-400" />
-                      Credits never expire
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <Check className="h-3.5 w-3.5 text-green-400" />
-                      No subscription
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <Check className="h-3.5 w-3.5 text-green-400" />
-                      Instant delivery
-                    </span>
+                    Credits are added to your account after checkout completes.
                   </div>
 
                   {errorMessage ? (
@@ -696,18 +603,7 @@ export function PricingModal({
                     <span className="font-black text-white">
                       {totalCredits}
                     </span>{" "}
-                    credits including bonus.
-                    {bundleDiscount > 0 ? (
-                      <span className="font-bold text-yellow-100">
-                        {" "}
-                        {getDiscountLabel(bundleCount)} applied.
-                      </span>
-                    ) : (
-                      <span className="text-white/55">
-                        {" "}
-                        Add one more pack to unlock 10% OFF.
-                      </span>
-                    )}
+                    credits.
                   </div>
 
                   <button
@@ -725,14 +621,8 @@ export function PricingModal({
                   </button>
 
                   <div className="mt-3 text-center text-[11px] font-medium text-white/45">
-                    Secure checkout • One-time payment • Instant credits
+                    Secure checkout
                   </div>
-
-                  {holdLeft <= 60 ? (
-                    <div className="mt-3 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 px-3 py-2 text-[11px] font-medium text-yellow-100">
-                      Reservation ends soon.
-                    </div>
-                  ) : null}
                 </div>
               </div>
             </div>

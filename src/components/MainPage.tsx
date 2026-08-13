@@ -1,10 +1,11 @@
 import React, { useMemo, useState, useEffect, memo } from "react";
-import { ChevronRight, Star } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import VideoModal from "./VideoModal";
 import TemplateCard from "./TemplateCard";
 import { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
+import { isVideoGenerationEnabled, productTruth } from "@/config/productTruth";
 
 interface TheDigitalGifterMainPageProps {
   onStartCreating: () => void;
@@ -19,46 +20,21 @@ export default function TheDigitalGifterMainPage({
   createHref: _createHref = "/generator",
   occasion,
 }: TheDigitalGifterMainPageProps) {
-  const stats = [
-    { value: "50,000+", label: "Cards Created" },
-    { value: "98%", label: "Happy Customers" },
-    { value: "< 60s", label: "Average Creation Time" },
-    { value: "4.9/5", label: "Customer Rating" },
-  ];
-
   const features = [
     {
-      title: "AI-Powered Design",
-      desc: "Smart algorithms create stunning layouts automatically",
+      title: "Still-image styles",
+      desc: "Choose a template and apply it to an uploaded photo.",
       icon: "✨",
     },
     {
-      title: "High Quality",
-      desc: "Professional-grade outputs ready for print or digital sharing",
-      icon: "🛡️",
-    },
-    {
-      title: "Personal Touch",
-      desc: "Customize every detail to match your unique style",
+      title: "Made for occasions",
+      desc: "Birthday, holiday, family, and other still-image gift looks.",
       icon: "🎁",
     },
-  ];
-
-  const testimonials = [
     {
-      name: "Sarah Johnson",
-      role: "Mom of 3",
-      text: "TheDigitalGifter made our family Christmas cards absolutely beautiful! The AI understood exactly what I wanted.",
-    },
-    {
-      name: "Michael Chen",
-      role: "Small Business Owner",
-      text: "Perfect for creating professional holiday cards for my clients. The quality is outstanding and it's so fast!",
-    },
-    {
-      name: "Emma Williams",
-      role: "Grandmother",
-      text: "I'm not tech-savvy, but this was so easy to use. My grandchildren loved the personalized cards I made!",
+      title: "Clear steps",
+      desc: "Upload a photo, pick a style, then generate after you have credits or complete checkout.",
+      icon: "🛡️",
     },
   ];
 
@@ -106,7 +82,7 @@ export default function TheDigitalGifterMainPage({
         {/* HERO */}
         <section className="relative z-[2] max-w-4xl mx-auto text-center py-12 px-4">
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-white/20 bg-[linear-gradient(90deg,rgba(46,230,162,.18),rgba(255,90,90,.18))] font-semibold">
-            ❄️ Christmas Special – Limited Time
+            ❄️ Christmas
           </div>
           <h1 className="mt-6 text-5xl md:text-6xl font-extrabold leading-[1.05] text-[#fffef5]">
             Create Magical{" "}
@@ -116,9 +92,9 @@ export default function TheDigitalGifterMainPage({
             with AI
           </h1>
           <p className="mt-4 text-[#dfe6f1] max-w-2xl mx-auto">
-            Transform your holiday memories into stunning, personalized
-            Christmas cards in seconds. No design skills needed — just upload,
-            customize, and let our AI work its magic.
+            Transform your holiday memories into personalized Christmas still
+            images. No design skills needed — upload a photo, choose a style,
+            and generate.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
             <button
@@ -140,20 +116,6 @@ export default function TheDigitalGifterMainPage({
 
         {/* CAROUSEL */}
         <TemplatesCarousel occasion={occasion} />
-
-        {/* STATS */}
-        <section className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 text-center py-8 gap-8 relative z-[2]">
-          {stats.map((s, i) => (
-            <div key={i}>
-              <h3 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)]">
-                {s.value}
-              </h3>
-              <p className="mt-2 text-[#cfd6e3] text-sm md:text-base">
-                {s.label}
-              </p>
-            </div>
-          ))}
-        </section>
 
         {/* HOW IT WORKS */}
         <section className="max-w-4xl mx-auto text-center py-12 px-4">
@@ -204,7 +166,7 @@ export default function TheDigitalGifterMainPage({
         {/* WHY CHOOSE */}
         <section className="max-w-5xl mx-auto py-12 px-4">
           <h2 className="text-3xl font-extrabold text-center mb-10 text-[#fffef5]">
-            Why Choose TheDigitalGifter?
+            Why Choose {productTruth.brandName}?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {features.map((f, i) => (
@@ -220,43 +182,6 @@ export default function TheDigitalGifterMainPage({
           </div>
         </section>
 
-        {/* TESTIMONIALS */}
-        <section className="max-w-4xl mx-auto py-12 px-4">
-          <h2 className="text-3xl font-extrabold text-center mb-10 text-[#fffef5]">
-            What Our Customers Say
-          </h2>
-          <div className="grid grid-cols-1 gap-6">
-            {testimonials.map((t, i) => (
-              <div
-                key={i}
-                className="bg-white/10 border border-white/20 rounded-2xl p-6 shadow-[0_6px_12px_rgba(0,0,0,.2)]"
-                itemScope
-                itemType="https://schema.org/Review"
-              >
-                <div
-                  className="flex items-center mb-3"
-                  aria-label="5 out of 5 stars"
-                >
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star
-                      key={j}
-                      size={18}
-                      className="text-yellow-400 fill-yellow-400"
-                    />
-                  ))}
-                </div>
-                <p className="text-[#e9ecf3] mb-3 italic" itemProp="reviewBody">
-                  "{t.text}"
-                </p>
-                <h4 className="font-bold text-white" itemProp="author">
-                  {t.name}
-                </h4>
-                <p className="text-sm text-[#b8c2d1]">{t.role}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* FINAL CTA */}
         <section className="text-center py-16 px-6">
           <div className="max-w-2xl mx-auto bg-white/10 border border-white/20 rounded-2xl p-10">
@@ -264,8 +189,7 @@ export default function TheDigitalGifterMainPage({
               Ready to Create Magic?
             </h2>
             <p className="text-[#dfe6f1] mb-6">
-              Join thousands of families creating beautiful Christmas memories
-              with AI
+              Create a Christmas still image from a photo and a selected style.
             </p>
             <button
               onClick={onStartCreating}
@@ -291,10 +215,11 @@ const TemplatesCarousel = memo(function TemplatesCarousel({
   const categories = ["All", "Classic", "Cozy", "Snowy", "Romantic"];
 
   const { data: templates = [] } = useTemplatesQuery();
-  const templatesArr = useMemo(
-    () => (templates ?? []) as TemplateSummary[],
-    [templates]
-  );
+  const templatesArr = useMemo(() => {
+    const list = (templates ?? []) as TemplateSummary[];
+    if (isVideoGenerationEnabled) return list;
+    return list.filter((template) => template.type !== "video");
+  }, [templates]);
 
   const [active, setActive] = useState("All");
   const filtered = useMemo(

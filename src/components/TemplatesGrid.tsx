@@ -15,6 +15,7 @@ import {
 import type { TemplateSummary } from "@/types/templates";
 import { useTemplatesQuery } from "@/data";
 import { occasions } from "@/constants/occasions";
+import { isVideoGenerationEnabled } from "@/config/productTruth";
 
 type Template = TemplateSummary;
 
@@ -166,7 +167,11 @@ function TemplatesGridComponent({
   const { data: allTemplates = [] } = useTemplatesQuery();
 
   const templatesArray = useMemo(() => {
-    return Array.isArray(allTemplates) ? (allTemplates as TemplateSummary[]) : [];
+    const list = Array.isArray(allTemplates)
+      ? (allTemplates as TemplateSummary[])
+      : [];
+    if (isVideoGenerationEnabled) return list;
+    return list.filter((template) => template.type !== "video");
   }, [allTemplates]);
 
   const activeOccasion = useMemo(

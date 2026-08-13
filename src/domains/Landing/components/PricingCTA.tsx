@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { productTruth } from "@/config/productTruth";
 
 const plans = [
   {
@@ -9,13 +10,7 @@ const plans = [
     credits: "100 credits",
     price: "€4.98",
     pack: "starter",
-    features: [
-      "100 credits",
-      "All premium templates",
-      "High-resolution downloads",
-      "Email support",
-      "Print-quality output",
-    ],
+    features: ["100 credits", "All premium templates", "Email support"],
     popular: false,
   },
   {
@@ -23,14 +18,7 @@ const plans = [
     credits: "250 credits",
     price: "€9.98",
     pack: "creator",
-    features: [
-      "250 credits",
-      "All premium templates",
-      "Priority processing",
-      "High-resolution downloads",
-      "Priority email support",
-      "Commercial use license",
-    ],
+    features: ["250 credits", "All premium templates", "Email support"],
     popular: true,
   },
   {
@@ -38,14 +26,7 @@ const plans = [
     credits: "4000 credits",
     price: "€78.98",
     pack: "pro",
-    features: [
-      "4000 credits",
-      "All premium templates",
-      "Fastest delivery",
-      "Bulk creation tools",
-      "Commercial use license",
-      "Dedicated support",
-    ],
+    features: ["4000 credits", "All premium templates", "Email support"],
     popular: false,
   },
   {
@@ -53,14 +34,7 @@ const plans = [
     credits: "50,000 credits",
     price: "€499.98",
     pack: "enterprise",
-    features: [
-      "50,000 credits",
-      "White-label options",
-      "Custom integrations",
-      "Priority support 24/7",
-      "Bulk creation tools",
-      "Dedicated account manager",
-    ],
+    features: ["50,000 credits", "All premium templates", "Email support"],
     popular: false,
   },
 ] as const;
@@ -279,7 +253,7 @@ export const PricingCTA = () => {
         </div>
 
         <p className="mt-8 text-center text-sm text-white/40">
-          High-resolution downloads included • Credits never expire
+          Credit packs for still-image generation. {productTruth.copy.supportResponseSentence}
         </p>
       </div>
 

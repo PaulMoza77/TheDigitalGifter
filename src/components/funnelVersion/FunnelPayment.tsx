@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { getPublicSupabaseConfig } from "@/lib/env";
+import { productTruth } from "@/config/productTruth";
 
 type FunnelSession = {
   gift_type?: string;
@@ -30,9 +31,6 @@ type Plan = {
   credits: number;
   generations: number;
   price: string;
-  was?: string;
-  badge?: string;
-  badgeTone?: "yellow" | "red";
   default?: boolean;
 };
 
@@ -107,9 +105,6 @@ const plans: Plan[] = [
     credits: 30,
     generations: 6,
     price: "€1.99",
-    was: "€3.98",
-    badge: "Special offer • save 50%",
-    badgeTone: "red",
   },
   {
     id: "subscription_pro",
@@ -118,9 +113,6 @@ const plans: Plan[] = [
     credits: 100,
     generations: 20,
     price: "€4.99",
-    was: "€14.25",
-    badge: "Special value • save 65%",
-    badgeTone: "yellow",
     default: true,
   },
   {
@@ -181,29 +173,6 @@ function mergeSession(partial: Partial<FunnelSession>): FunnelSession {
   const next: FunnelSession = { ...current, ...partial };
   writeSession(next);
   return next;
-}
-
-function getDealExpiresAtMs(): number {
-  const key = "tdg_payment_deal_expires_at";
-  const existing = Number(localStorage.getItem(key) || "0");
-
-  if (existing && Number.isFinite(existing) && existing > Date.now()) {
-    return existing;
-  }
-
-  const next = Date.now() + 30 * 60 * 1000;
-  localStorage.setItem(key, String(next));
-  return next;
-}
-
-function formatMMSS(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  return `${String(minutes).padStart(2, "0")} : ${String(seconds).padStart(
-    2,
-    "0"
-  )}`;
 }
 
 async function safeReadJson(res: Response): Promise<CheckoutResponse> {
@@ -495,11 +464,6 @@ export default function FunnelPayment(): JSX.Element {
 
   const [applyingPromo, setApplyingPromo] = useState<boolean>(false);
 
-  const [secondsLeft, setSecondsLeft] = useState<number>(() => {
-    const ms = getDealExpiresAtMs() - Date.now();
-    return Math.max(0, Math.floor(ms / 1000));
-  });
-
   const [isPaying, setIsPaying] = useState<boolean>(false);
 
   const funnel = useMemo(
@@ -510,13 +474,6 @@ export default function FunnelPayment(): JSX.Element {
   const selectedPlan = useMemo<Plan>(
     () => plans.find((plan) => plan.id === selected) ?? plans[1],
     [selected]
-  );
-
-  const expired = secondsLeft <= 0;
-
-  const formattedTimer = useMemo(
-    () => formatMMSS(secondsLeft).split(" : "),
-    [secondsLeft]
   );
 
   useEffect(() => {
@@ -549,15 +506,6 @@ export default function FunnelPayment(): JSX.Element {
       navigate("/funnel/email", { replace: true });
     }
   }, [navigate, funnel.photo, funnel.styleId, funnel.templateId, funnel.email]);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      const ms = getDealExpiresAtMs() - Date.now();
-      setSecondsLeft(Math.max(0, Math.floor(ms / 1000)));
-    }, 1000);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
 
   async function applyPromo(): Promise<void> {
     if (applyingPromo || promoApplied) return;
@@ -691,48 +639,16 @@ export default function FunnelPayment(): JSX.Element {
       <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
         <div className="text-center">
           <div className="text-2xl font-semibold tracking-tight">
-            thedigitalgifter
-          </div>
-
-          <div className="mx-auto mt-6 flex max-w-xl items-center justify-center gap-4">
-            <div className="flex items-end gap-3 rounded-2xl bg-transparent px-4 py-3">
-              <div className="text-4xl font-semibold tabular-nums leading-none">
-                {formattedTimer[0]}
-              </div>
-              <div className="pb-1 text-4xl font-semibold leading-none">:</div>
-              <div className="text-4xl font-semibold tabular-nums leading-none">
-                {formattedTimer[1]}
-              </div>
-              <div className="ml-2 pb-1 text-xs uppercase tracking-wide text-[#10221B]/55">
-                minutes&nbsp;&nbsp;&nbsp;seconds
-              </div>
-            </div>
-
-            <button
-              type="button"
-              disabled={expired}
-              className={cn(
-                "h-11 rounded-full px-6 text-sm font-semibold transition",
-                expired
-                  ? "cursor-not-allowed bg-[#1B3A30]/10 text-[#10221B]/45"
-                  : "bg-[#1B3A30] text-white hover:brightness-105 active:brightness-95"
-              )}
-              onClick={() => {
-                const el = document.getElementById("tdg-plans");
-                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              Claim my offer
-            </button>
+            {productTruth.brandName}
           </div>
 
           <h1 className="mx-auto mt-10 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">
-            Bring your memories to life
+            Choose a plan to continue
           </h1>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm text-[#10221B]/70 sm:text-base">
-            Pick a monthly plan to unlock credits. Reset monthly • recurring •
-            cancel anytime.
+            Pick a monthly plan to continue to checkout. The personalized
+            result is generated after successful payment.
           </p>
         </div>
 
@@ -780,15 +696,6 @@ export default function FunnelPayment(): JSX.Element {
             >
               {applyingPromo ? "Checking..." : promoApplied ? "Applied" : "Apply"}
             </button>
-
-            <div
-              className={cn(
-                "flex h-11 min-w-[92px] items-center justify-center rounded-xl px-3 text-sm font-semibold",
-                expired ? "bg-black/5 text-black/45" : "bg-black/5 text-black/70"
-              )}
-            >
-              {expired ? "Expired" : "Active"}
-            </div>
           </div>
 
           {promoApplied ? (
@@ -822,19 +729,6 @@ export default function FunnelPayment(): JSX.Element {
                 )}
               >
                 <div className="relative p-5">
-                  {plan.badge ? (
-                    <div
-                      className={cn(
-                        "absolute -top-3 right-5 rounded-full px-3 py-1 text-[11px] font-semibold",
-                        plan.badgeTone === "yellow"
-                          ? "bg-[#F3D35B] text-[#10221B]"
-                          : "bg-[#D44B4B] text-white"
-                      )}
-                    >
-                      {plan.badge}
-                    </div>
-                  ) : null}
-
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
                       <div
@@ -863,13 +757,9 @@ export default function FunnelPayment(): JSX.Element {
                     </div>
 
                     <div className="text-right">
-                      {uiPrice.showWasOverride ? (
+                      {promoApplied && uiPrice.showWasOverride ? (
                         <div className="text-xs text-[#10221B]/45 line-through">
                           {uiPrice.wasOverride}
-                        </div>
-                      ) : plan.was ? (
-                        <div className="text-xs text-[#10221B]/45 line-through">
-                          {plan.was}
                         </div>
                       ) : (
                         <div className="text-xs text-transparent">.</div>
@@ -892,28 +782,26 @@ export default function FunnelPayment(): JSX.Element {
             <button
               type="button"
               onClick={() => void onCheckout()}
-              disabled={isPaying || expired}
+              disabled={isPaying}
               className={cn(
                 "h-12 w-full rounded-full text-sm font-semibold transition",
-                isPaying || expired
+                isPaying
                   ? "cursor-not-allowed bg-black/10 text-black/45"
                   : "bg-[#F3D35B] text-[#10221B] hover:brightness-105 active:brightness-95"
               )}
             >
               {isPaying
                 ? "Redirecting…"
-                : expired
-                  ? "Offer expired"
-                  : promoApplied
-                    ? `Continue to checkout (${promoDiscountPercent}% off first month)`
-                    : "Claim my plan"}
+                : promoApplied
+                  ? `Continue to checkout (${promoDiscountPercent}% off first month)`
+                  : "Continue to checkout"}
             </button>
 
             <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#10221B]/65">
               <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-black/10 bg-white">
                 ✓
               </span>
-              Secure checkout • Monthly reset • Cancel anytime
+              Secure checkout
             </div>
 
             <div className="mt-4 flex items-center justify-center gap-3">
@@ -928,7 +816,7 @@ export default function FunnelPayment(): JSX.Element {
             </div>
 
             <div className="mt-6 text-center text-xs text-[#10221B]/55">
-              ✔ Reset monthly • ✔ Recurring automatically • ✔ Cancel anytime
+              Monthly plans billed through Stripe Checkout.
             </div>
           </div>
 

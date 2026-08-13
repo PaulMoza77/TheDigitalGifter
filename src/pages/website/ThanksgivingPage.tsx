@@ -35,7 +35,7 @@ export default function ThanksgivingPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
-              Turn your favorite moment into a warm gratitude card in seconds.
+              Turn your favorite moment into a warm gratitude card.
               Upload a photo, pick a style, and let AI do the magic.
             </p>
 

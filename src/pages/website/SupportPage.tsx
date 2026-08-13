@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { Mail, MessageCircle, Clock, FileText, Shield, Scale } from "lucide-react";
 import { PageHead } from "@/components/PageHead";
+import { productTruth } from "@/config/productTruth";
 
-const SUPPORT_EMAIL = "support@thedigitalgifter.com";
+const SUPPORT_EMAIL = productTruth.supportEmail;
 
 export function SupportPage() {
   return (
@@ -32,8 +33,7 @@ export function SupportPage() {
         <section className="rounded-lg border border-white/10 bg-white/5 p-8">
           <p className="leading-relaxed text-white/80">
             Need help with your account, AI generations, billing, or a refund?
-            Reach us directly — we read every message and typically reply within
-            1–2 business days.
+            Reach us directly. {productTruth.copy.supportResponseSentence}
           </p>
         </section>
 

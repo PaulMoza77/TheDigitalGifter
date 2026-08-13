@@ -35,7 +35,7 @@ export default function PregnancyPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
-              Celebrate the next chapter with a stunning announcement in seconds.
+              Celebrate the next chapter with a stunning announcement.
               Upload a photo, choose a style, and let AI do the magic.
             </p>
 
