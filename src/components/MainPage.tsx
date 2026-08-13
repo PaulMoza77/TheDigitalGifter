@@ -33,7 +33,7 @@ export default function TheDigitalGifterMainPage({
     },
     {
       title: "Clear steps",
-      desc: "Upload a photo, pick a style, then generate after you have credits or complete checkout.",
+      desc: "Upload a photo, choose a style, then continue.",
       icon: "🛡️",
     },
   ];

@@ -939,7 +939,7 @@ function FAQ({
     },
     {
       q: "When is the personalized image created?",
-      a: "Image generation after payment is still being verified. The photo shown here is your selected upload, not a generated result.",
+      a: "Upload a photo, choose a style, then continue. The photo shown here is your selected upload, not a generated result.",
     },
     {
       q: "Can I choose the look of the still image?",
