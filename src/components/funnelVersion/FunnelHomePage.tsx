@@ -10,6 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Star } from "lucide-react";
 
 import {
   FUNNEL_OCCASIONS,
@@ -366,19 +367,37 @@ function ConnectorOverlay({
   );
 }
 
+const RATING = 4.8;
+
+function RatingStar({ fill }: { fill: number }) {
+  const pct = Math.max(0, Math.min(1, fill)) * 100;
+  return (
+    <span className="relative inline-flex h-[18px] w-[18px] shrink-0" aria-hidden>
+      <Star className="h-[18px] w-[18px] fill-[#E8EAED] text-[#E8EAED]" strokeWidth={0} />
+      <span className="absolute inset-0 overflow-hidden" style={{ width: `${pct}%` }}>
+        <Star className="h-[18px] w-[18px] fill-[#FBBC04] text-[#FBBC04]" strokeWidth={0} />
+      </span>
+    </span>
+  );
+}
+
 function StarRow() {
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
       <div className="inline-flex items-center gap-2">
         <span className="text-emerald-950/70">Excellent</span>
-        <div className="inline-flex items-center gap-1">
+        <div
+          className="inline-flex items-center gap-px"
+          role="img"
+          aria-label={`${RATING} out of 5 stars`}
+        >
           {Array.from({ length: 5 }).map((_, i) => (
-            <span key={i} className="h-4 w-4 rounded-[6px] bg-emerald-600/90" />
+            <RatingStar key={i} fill={RATING - i} />
           ))}
         </div>
       </div>
       <div className="text-emerald-950/70">
-        <span className="font-semibold text-emerald-950">4.8/5</span> out of{" "}
+        <span className="font-semibold text-emerald-950">{RATING}/5</span> out of{" "}
         <span className="underline">2,700+ reviews</span>
       </div>
     </div>
@@ -827,12 +846,9 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
                         </div>
                       </div>
 
-                      <div className="inline-flex items-center gap-1">
+                      <div className="inline-flex items-center gap-px" aria-label="5 out of 5 stars">
                         {Array.from({ length: 5 }).map((_, i) => (
-                          <span
-                            key={i}
-                            className="h-3.5 w-3.5 rounded-[6px] bg-emerald-600/90"
-                          />
+                          <RatingStar key={i} fill={1} />
                         ))}
                       </div>
                     </div>
