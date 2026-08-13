@@ -1,4 +1,4 @@
-import { ArrowRight, Eye, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { occasions } from "@/constants/occasions";
 
@@ -25,7 +25,7 @@ export function TrendingNowRow() {
         <div>
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-yellow-200">
             <Sparkles className="h-3.5 w-3.5" />
-            Popular right now
+            Choose an occasion
           </div>
 
           <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
@@ -48,7 +48,7 @@ export function TrendingNowRow() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {trendingItems.map((item, index) => (
+        {trendingItems.map((item) => (
           <Link
             key={item.id}
             to={`/generator?category=${encodeURIComponent(
@@ -67,11 +67,6 @@ export function TrendingNowRow() {
 
               <div className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white/80 backdrop-blur">
                 {item.category}
-              </div>
-
-              <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-semibold text-white/80 backdrop-blur">
-                <Eye className="h-3 w-3" />
-                {(12.5 - index * 0.6).toFixed(1)}K
               </div>
 
               <div className="absolute bottom-0 left-0 right-0 p-4">
