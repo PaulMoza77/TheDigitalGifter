@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite --open",
     "dev:frontend": "vite --open",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit --pretty false && tsc -p tsconfig.node.json --noEmit --pretty false",
     "build": "vite build",
-    "lint": "tsc -p . -noEmit --pretty false && vite build"
+    "lint": "npm run typecheck && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

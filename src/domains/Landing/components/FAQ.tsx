@@ -20,7 +20,7 @@ const faqs = [
   {
     question: "What can I create?",
     answer:
-      "You can create a personalized still image from an uploaded photo and a selected style. Choose an occasion, pick a template, and generate after you have credits or complete checkout.",
+      "You can create a personalized still image from an uploaded photo and a selected style. Choose an occasion and pick a template. Payment and image delivery are still being verified.",
   },
   {
     question: "What event categories do you support?",

@@ -40,6 +40,7 @@ export type ProductTruthFlags = {
   enterpriseWhiteLabel: boolean;
   support247: boolean;
   fakeUrgency: boolean;
+  checkoutEnabled: boolean;
 };
 
 export type ProductTruthCopy = {
@@ -48,7 +49,8 @@ export type ProductTruthCopy = {
   photoHandling: string;
   previewHeading: string;
   selectedPhotoLabel: string;
-  resultAfterCheckout: string;
+  selectedPhotoNote: string;
+  checkoutUnavailable: string;
 };
 
 export type ProductTruthStatus = {
@@ -66,6 +68,8 @@ export type ProductTruthStatus = {
   currency: VerificationStatusValue;
   supportResponseTime: VerificationStatusValue;
   brand: VerificationStatusValue;
+  creditDelivery: VerificationStatusValue;
+  postPaymentGeneration: VerificationStatusValue;
 };
 
 export type ProductTruth = {
@@ -100,6 +104,7 @@ export const productTruth: ProductTruth = {
     enterpriseWhiteLabel: false,
     support247: false,
     fakeUrgency: false,
+    checkoutEnabled: false,
   },
 
   copy: {
@@ -109,8 +114,10 @@ export const productTruth: ProductTruth = {
       "Your photo is processed to create the selected result. Data handling details will be available in our updated Privacy Policy.",
     previewHeading: "Your photo is ready for personalization",
     selectedPhotoLabel: "Selected photo",
-    resultAfterCheckout:
-      "The personalized result will be generated after successful checkout",
+    selectedPhotoNote:
+      "This is your selected photo, not a generated result.",
+    checkoutUnavailable:
+      "Checkout is temporarily unavailable while payment and delivery are being verified.",
   },
 
   status: {
@@ -128,6 +135,8 @@ export const productTruth: ProductTruth = {
     generationTime: VerificationStatus.HIDDEN_UNTIL_VERIFIED,
     outputFormat: VerificationStatus.HIDDEN_UNTIL_VERIFIED,
     printQuality: VerificationStatus.HIDDEN_UNTIL_VERIFIED,
+    creditDelivery: VerificationStatus.REQUIRES_END_TO_END_TEST,
+    postPaymentGeneration: VerificationStatus.REQUIRES_END_TO_END_TEST,
   },
 };
 
@@ -149,3 +158,4 @@ export const isPrivacyDeletionClaimEnabled =
   productTruth.flags.privacyDeletionClaims;
 export const isSupport247Enabled = productTruth.flags.support247;
 export const isReviewsEnabled = productTruth.flags.reviews;
+export const isCheckoutEnabled = productTruth.flags.checkoutEnabled;

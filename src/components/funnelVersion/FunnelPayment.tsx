@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { getPublicSupabaseConfig } from "@/lib/env";
-import { productTruth } from "@/config/productTruth";
+import { productTruth, isCheckoutEnabled } from "@/config/productTruth";
 
 type FunnelSession = {
   gift_type?: string;
@@ -546,6 +546,11 @@ export default function FunnelPayment(): JSX.Element {
   async function onCheckout(): Promise<void> {
     if (isPaying) return;
 
+    if (!isCheckoutEnabled) {
+      toast.error(productTruth.copy.checkoutUnavailable);
+      return;
+    }
+
     if (!funnel.photo) {
       toast.error("Upload a photo first.");
       navigate("/funnel/uploadPhoto", { replace: true });
@@ -647,8 +652,7 @@ export default function FunnelPayment(): JSX.Element {
           </h1>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm text-[#10221B]/70 sm:text-base">
-            Pick a monthly plan to continue to checkout. The personalized
-            result is generated after successful payment.
+            {productTruth.copy.checkoutUnavailable}
           </p>
         </div>
 
@@ -782,26 +786,23 @@ export default function FunnelPayment(): JSX.Element {
             <button
               type="button"
               onClick={() => void onCheckout()}
-              disabled={isPaying}
+              disabled={!isCheckoutEnabled || isPaying}
               className={cn(
                 "h-12 w-full rounded-full text-sm font-semibold transition",
-                isPaying
+                !isCheckoutEnabled || isPaying
                   ? "cursor-not-allowed bg-black/10 text-black/45"
                   : "bg-[#F3D35B] text-[#10221B] hover:brightness-105 active:brightness-95"
               )}
             >
-              {isPaying
-                ? "Redirecting…"
-                : promoApplied
-                  ? `Continue to checkout (${promoDiscountPercent}% off first month)`
-                  : "Continue to checkout"}
+              {!isCheckoutEnabled
+                ? "Checkout unavailable"
+                : isPaying
+                  ? "Redirecting…"
+                  : "Continue"}
             </button>
 
             <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#10221B]/65">
-              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-black/10 bg-white">
-                ✓
-              </span>
-              Secure checkout
+              {productTruth.copy.checkoutUnavailable}
             </div>
 
             <div className="mt-4 flex items-center justify-center gap-3">
@@ -816,7 +817,7 @@ export default function FunnelPayment(): JSX.Element {
             </div>
 
             <div className="mt-6 text-center text-xs text-[#10221B]/55">
-              Monthly plans billed through Stripe Checkout.
+              {productTruth.copy.checkoutUnavailable}
             </div>
           </div>
 

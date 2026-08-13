@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   Gift,
-  ShieldCheck,
   X,
   Heart,
   Plus,
@@ -19,6 +18,7 @@ import { SignInButton } from "./SignInButton";
 import { supabase } from "@/lib/supabase";
 import {
   isBonusCreditsVisible,
+  isCheckoutEnabled,
   productTruth,
 } from "@/config/productTruth";
 
@@ -66,9 +66,8 @@ const PACKS: Pack[] = [
     price: 9.98,
     credits: 250,
     bonusCredits: 50,
-    badge: "Most popular",
-    tag: "Best value",
-    description: "Best for birthdays, love, apologies and family moments.",
+    tag: "Creator pack",
+    description: "For birthdays, love, apologies and family moments.",
   },
   {
     key: "pro",
@@ -276,8 +275,13 @@ export function PricingModal({
 
     setErrorMessage("");
 
+    if (!isCheckoutEnabled) {
+      setErrorMessage(productTruth.copy.checkoutUnavailable);
+      return;
+    }
+
     if (!me?.email) {
-      setErrorMessage("Please sign in first so we can attach credits to your account.");
+      setErrorMessage("Please sign in before continuing.");
       return;
     }
 
@@ -373,7 +377,7 @@ export function PricingModal({
             className="relative max-h-[90vh] w-[min(980px,calc(100%-16px))] overflow-y-auto overflow-x-hidden rounded-[2rem] border border-white/10 bg-[#050711]/95 shadow-2xl backdrop-blur-xl"
             role="dialog"
             aria-modal="true"
-            aria-label="Purchase credits"
+            aria-label="Credit packs"
           >
             <div className="pointer-events-none absolute inset-0 opacity-90">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,230,120,0.16),transparent_34%),radial-gradient(circle_at_88%_22%,rgba(255,83,165,0.13),transparent_32%),radial-gradient(circle_at_45%_100%,rgba(56,189,248,0.09),transparent_42%)]" />
@@ -395,10 +399,6 @@ export function PricingModal({
                   </p>
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <Pill>
-                      <ShieldCheck className="h-4 w-4" /> Secure checkout
-                    </Pill>
-
                     <Pill>
                       <Heart className="h-4 w-4" /> Made for {productTruth.brandName}
                     </Pill>
@@ -430,8 +430,8 @@ export function PricingModal({
                       </p>
 
                       <p className="mt-1 text-sm leading-6 text-white/60">
-                        This lets us attach credits to your account after
-                        checkout.
+                        Sign in so a purchase can be linked to your account
+                        when checkout is available.
                       </p>
                     </div>
 
@@ -528,11 +528,6 @@ export function PricingModal({
                                   <Plus className="h-4 w-4" />
                                 </button>
                               </div>
-
-                              <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-[11px] font-bold text-white/75">
-                                Buy {quantity} & unlock{" "}
-                                {getDiscountLabel(quantity)}
-                              </div>
                             </div>
                           </div>
 
@@ -544,7 +539,7 @@ export function PricingModal({
                         <div className="mt-5">
                           <button
                             type="button"
-                            disabled={isPaying || !me?.email}
+                            disabled={!isCheckoutEnabled || isPaying || !me?.email}
                             onClick={(event) => {
                               event.stopPropagation();
                               setSelected(pack.key);
@@ -552,16 +547,18 @@ export function PricingModal({
                             }}
                             className={
                               "h-11 w-full rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 text-sm font-black text-black transition " +
-                              (isPaying || !me?.email
+                              (!isCheckoutEnabled || isPaying || !me?.email
                                 ? "cursor-not-allowed opacity-60"
                                 : "hover:scale-[1.01] hover:opacity-95")
                             }
                           >
-                            {isPaying
-                              ? "Opening checkout..."
-                              : quantity > 1
-                                ? `Purchase ${quantity}x`
-                                : "Purchase"}
+                            {!isCheckoutEnabled
+                              ? "Checkout unavailable"
+                              : isPaying
+                                ? "Opening checkout..."
+                                : quantity > 1
+                                  ? `Select ${quantity}x`
+                                  : "Select pack"}
                           </button>
                         </div>
                       </GlowCard>
@@ -577,7 +574,7 @@ export function PricingModal({
                   </div>
 
                   <div className="mt-2 text-sm font-bold leading-6 text-white">
-                    Credits are added to your account after checkout completes.
+                    {productTruth.copy.checkoutUnavailable}
                   </div>
 
                   {errorMessage ? (
@@ -599,29 +596,43 @@ export function PricingModal({
                   </div>
 
                   <div className="mt-2 text-sm leading-6 text-white/65">
-                    You'll get{" "}
+                    Selected pack:{" "}
                     <span className="font-black text-white">
-                      {totalCredits}
-                    </span>{" "}
-                    credits.
+                      {selectedPack.name}
+                    </span>
+                    {isBonusCreditsVisible ? (
+                      <>
+                        {" "}
+                        · {totalCredits} credits
+                      </>
+                    ) : (
+                      <>
+                        {" "}
+                        · {selectedPack.credits} credits
+                      </>
+                    )}
                   </div>
 
                   <button
                     type="button"
-                    disabled={isPaying || !me?.email}
+                    disabled={!isCheckoutEnabled || isPaying || !me?.email}
                     onClick={() => void doCheckout(selected, bundleCount)}
                     className={
                       "mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 px-4 py-4 text-sm font-black text-black shadow-2xl shadow-yellow-500/10 transition " +
-                      (isPaying || !me?.email
+                      (!isCheckoutEnabled || isPaying || !me?.email
                         ? "cursor-not-allowed opacity-60"
                         : "hover:scale-[1.01] hover:opacity-95")
                     }
                   >
-                    Continue to Stripe <span>→</span>
+                    {!isCheckoutEnabled
+                      ? "Checkout unavailable"
+                      : isPaying
+                        ? "Opening checkout..."
+                        : "Continue"}
                   </button>
 
                   <div className="mt-3 text-center text-[11px] font-medium text-white/45">
-                    Secure checkout
+                    {productTruth.copy.checkoutUnavailable}
                   </div>
                 </div>
               </div>

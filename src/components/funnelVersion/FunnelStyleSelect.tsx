@@ -412,7 +412,7 @@ export default function FunnelStyleSelect() {
           </div>
 
           <div className="mt-10 text-center text-[11px] text-[#111827]/45">
-            {productTruth.copy.resultAfterCheckout}.
+            {productTruth.copy.selectedPhotoNote}
           </div>
         </div>
       </div>

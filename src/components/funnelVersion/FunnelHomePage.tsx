@@ -515,15 +515,17 @@ function Hero({
           <Card className="mx-auto max-w-[560px] rounded-[32px] border-emerald-950/10 bg-white/55 shadow-[0_30px_90px_rgba(6,78,59,0.12)] backdrop-blur">
             <CardContent className="p-4 sm:p-5">
               <div className="mb-3 flex items-center justify-between">
-                <Pill tone="sun">Before → After</Pill>
-                <span className="text-xs text-emerald-950/60">a single photo, transformed</span>
+                <Pill tone="sun">Style example</Pill>
+                <span className="text-xs text-emerald-950/60">
+                  Illustrative mockup, not a generated result
+                </span>
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                 <div ref={beforeRef} className="relative">
                   <PhotoMock
                     variant={beforeVariant}
-                    label="Your photo"
+                    label="Photo"
                     labelTone="sun"
                     rounded="rounded-[28px]"
                   />
@@ -532,10 +534,10 @@ function Hero({
                 <div ref={afterRef} className="relative">
                   <PhotoMock
                     variant={afterVariant}
-                    label="TDG result ✨"
+                    label="Style example"
                     labelTone="ink"
                     rounded="rounded-[28px]"
-                    footer="Brought beautifully to life ✨"
+                    footer="Concept example"
                     className="shadow-[0_40px_120px_rgba(6,78,59,0.16)]"
                   />
                 </div>
@@ -567,8 +569,7 @@ function Hero({
             <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-950/40">
               <span>Upload</span>
               <span>Choose a style</span>
-              <span>Checkout</span>
-              <span>Generate</span>
+              <span>Continue</span>
             </div>
           </div>
         </div>
@@ -607,8 +608,7 @@ function HowItWorks({
           title={<>Meaningful should never be complicated</>}
           subtitle={
             <>
-              A simple flow: upload a photo, pick a style, and generate a
-              personalized still image after checkout.
+              A simple flow: upload a photo, pick a style, then continue.
             </>
           }
         />
@@ -636,7 +636,7 @@ function HowItWorks({
                   </p>
 
                   <div className="mt-5">
-                    <PhotoMock variant={cfg.heroBeforeVariant} label="Your photo" labelTone="sun" />
+                    <PhotoMock variant={cfg.heroBeforeVariant} label="Photo" labelTone="sun" />
                   </div>
                 </CardContent>
               </Card>
@@ -666,7 +666,7 @@ function HowItWorks({
                         cfg.heroAfterVariant.replace(/-after$/, "-ex2-after") ||
                         cfg.heroAfterVariant
                       }
-                      label="Style preview"
+                      label="Concept example"
                       labelTone="mint"
                     />
                   </div>
@@ -681,19 +681,19 @@ function HowItWorks({
                     <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">
                       STEP 3
                     </Badge>
-                    <span className="text-xs text-emerald-950/60">Share</span>
+                    <span className="text-xs text-emerald-950/60">Continue</span>
                   </div>
 
                   <div className="text-xl font-semibold text-emerald-950">
-                    Download & Share
+                    Continue
                   </div>
 
                   <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                    Download the still image and send it to someone who matters.
+                    Payment and image delivery are still being verified.
                   </p>
 
                   <div className="mt-5">
-                    <PhotoMock variant={cfg.heroAfterVariant} label="TDG result ✨" labelTone="ink" />
+                    <PhotoMock variant={cfg.heroAfterVariant} label="Style example" labelTone="ink" />
                   </div>
                 </CardContent>
               </Card>
@@ -759,7 +759,7 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
     <section id="examples" className="relative bg-[#F6F2EA] py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
         <SectionTitle
-          title={<>See a photo become a still-image gift</>}
+          title={<>Style examples for this occasion</>}
           subtitle={
             <>
               Style mockups for this occasion. Each example shows a photo and a
@@ -784,7 +784,7 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
                       <div ref={it.refs.a} className="relative">
                         <PhotoMock
                           variant={it.beforeVariant}
-                          label="Before"
+                          label="Photo"
                           labelTone="sun"
                           rounded="rounded-3xl"
                         />
@@ -793,7 +793,7 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
                       <div ref={it.refs.b} className="relative">
                         <PhotoMock
                           variant={it.afterVariant}
-                          label="After"
+                          label="Style example"
                           labelTone="ink"
                           rounded="rounded-3xl"
                           footer="Style example"
@@ -828,12 +828,12 @@ function ValueTrio({
     },
     {
       title: "Choose a still-image style",
-      desc: "Pick a look made for this occasion, then continue through checkout.",
+      desc: "Pick a look made for this occasion, then continue.",
       variant: cfg.heroBeforeVariant,
     },
     {
-      title: "Generate after checkout",
-      desc: "The personalized still image is created after successful payment — not on this page.",
+      title: "Continue when ready",
+      desc: "Payment and image delivery are still being verified.",
       variant: cfg.heroAfterVariant,
     },
   ];
@@ -883,8 +883,8 @@ function ResultsBand() {
     },
     {
       big: "3",
-      label: "Generate",
-      desc: "The personalized result is created after successful checkout.",
+      label: "Continue",
+      desc: "Payment and image delivery are still being verified.",
     },
   ];
 
@@ -896,8 +896,7 @@ function ResultsBand() {
             Three clear steps
           </h3>
           <p className="mt-3 text-base leading-relaxed text-emerald-100/80">
-            Upload a photo, choose a still-image style, then generate after
-            checkout.
+            Upload a photo, choose a still-image style, then continue.
           </p>
         </div>
 
@@ -936,11 +935,11 @@ function FAQ({
   const faqs = [
     {
       q: "Do I need any technical skills to use this?",
-      a: "No. Upload a photo, pick a style, and continue. The personalized still image is generated after checkout.",
+      a: "No. Upload a photo, pick a style, and continue.",
     },
     {
       q: "When is the personalized image created?",
-      a: "After successful checkout. The photo shown before payment is your selected upload, not a generated result.",
+      a: "Image generation after payment is still being verified. The photo shown here is your selected upload, not a generated result.",
     },
     {
       q: "Can I choose the look of the still image?",

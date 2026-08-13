@@ -170,7 +170,7 @@ export default function FunnelPreview() {
             {productTruth.copy.previewHeading}
           </h1>
           <p className="mt-3 text-sm sm:text-base text-[#111827]/70">
-            {productTruth.copy.resultAfterCheckout}.
+            {productTruth.copy.selectedPhotoNote}
           </p>
         </div>
 
@@ -217,12 +217,12 @@ export default function FunnelPreview() {
 
                 <div className="mt-8 flex justify-center">
                   <Button onClick={goNext} disabled={!hasPhoto} className="w-full max-w-[420px]">
-                    Continue to checkout
+                    Continue
                   </Button>
                 </div>
 
                 <div className="mt-3 text-center text-xs text-[#111827]/55">
-                  {productTruth.copy.resultAfterCheckout}.
+                  {productTruth.copy.selectedPhotoNote}
                 </div>
               </div>
             </div>

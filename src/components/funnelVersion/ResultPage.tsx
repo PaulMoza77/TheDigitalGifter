@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { isCheckoutEnabled, productTruth } from "@/config/productTruth";
 import {
   RefreshCw,
   Sparkles,
@@ -837,6 +838,11 @@ export default function ResultPage() {
   }, [sessionId, generationId, checkoutSessionId]);
 
   async function handleCheckout(actionType: ActionType) {
+    if (!isCheckoutEnabled) {
+      toast.error(productTruth.copy.checkoutUnavailable);
+      return;
+    }
+
     if (!row?.id) {
       toast.error("Generation not found yet.");
       return;
@@ -1032,9 +1038,7 @@ export default function ResultPage() {
           <p className="mx-auto mt-3 max-w-2xl text-sm text-zinc-700 sm:text-base md:text-lg">
             {imageUrl
               ? "Download your gift, create another one, or open your dashboard anytime."
-              : checkoutSessionId
-                ? "We’re processing your upgrade and will show the new result automatically."
-                : "We’re keeping this page updated while your final result is prepared."}
+              : "This page will update if a result becomes available."}
           </p>
 
           {imageUrl ? (
@@ -1093,7 +1097,7 @@ export default function ResultPage() {
                       <button
                         type="button"
                         onClick={() => void handleCheckout("regenerate")}
-                        disabled={!canBuy || checkoutLoading.regenerate}
+                        disabled={!isCheckoutEnabled || !canBuy || checkoutLoading.regenerate}
                         className="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#0b3b2e] px-3 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-[#082c22] disabled:cursor-not-allowed disabled:opacity-60 sm:right-4 sm:top-4"
                       >
                         <Sparkles className="mr-1.5 h-3.5 w-3.5" />
@@ -1188,7 +1192,9 @@ export default function ResultPage() {
                 More ways to enjoy your gift
               </CardTitle>
               <CardDescription className="text-zinc-600">
-                Premium upgrades designed to increase quality, presentation, and gifting value.
+                {!isCheckoutEnabled
+                  ? productTruth.copy.checkoutUnavailable
+                  : "Optional add-ons for this result."}
               </CardDescription>
             </CardHeader>
 
@@ -1206,11 +1212,7 @@ export default function ResultPage() {
                 return (
                   <div
                     key={offer.actionType}
-                    className={`rounded-2xl border p-4 transition ${
-                      offer.featured
-                        ? "border-amber-200 bg-amber-50/60"
-                        : "border-zinc-200 bg-white"
-                    } ${!canBuy ? "opacity-60" : ""}`}
+                    className="rounded-2xl border border-zinc-200 bg-white p-4 transition"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3">
@@ -1223,12 +1225,6 @@ export default function ResultPage() {
                             <h3 className="text-base font-semibold text-zinc-900">
                               {offer.title}
                             </h3>
-
-                            {offer.featured ? (
-                              <Badge className="bg-amber-500 text-white hover:bg-amber-500">
-                                Best Value
-                              </Badge>
-                            ) : null}
                           </div>
 
                           <p className="mt-1 text-sm text-zinc-600">
@@ -1247,7 +1243,7 @@ export default function ResultPage() {
                     <Button
                       className="mt-4 w-full bg-[#0b3b2e] text-white hover:bg-[#082c22]"
                       onClick={() => void handleCheckout(offer.actionType)}
-                      disabled={!canBuy || isLoading}
+                      disabled={!isCheckoutEnabled || !canBuy || isLoading}
                     >
                       {isLoading ? "Loading..." : offer.cta}
                     </Button>
