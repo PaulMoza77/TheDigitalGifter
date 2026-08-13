@@ -51,6 +51,9 @@ export type ProductTruthCopy = {
   selectedPhotoLabel: string;
   selectedPhotoNote: string;
   checkoutUnavailable: string;
+  aiGeneratedDisclosure: string;
+  licenseSentence: string;
+  digitalContentConsent: string;
 };
 
 export type ProductTruthStatus = {
@@ -111,19 +114,24 @@ export const productTruth: ProductTruth = {
     supportResponseTime: "1–2 business days",
     supportResponseSentence: "Usually within 1–2 business days.",
     photoHandling:
-      "Your photo is processed to create the selected result. Data handling details will be available in our updated Privacy Policy.",
+      "Uploaded photos are stored privately and deleted after 24 hours. Generated results are stored privately for 30 days, then deleted. Access is via time-limited signed links.",
     previewHeading: "Your photo is ready for personalization",
     selectedPhotoLabel: "Selected photo",
     selectedPhotoNote:
       "This is your selected photo, not a generated result.",
     checkoutUnavailable:
       "Checkout is temporarily unavailable while payment and delivery are being verified.",
+    aiGeneratedDisclosure: "AI-generated",
+    licenseSentence:
+      "For personal use until a commercial licence is published.",
+    digitalContentConsent:
+      "I want the digital image supplied immediately after payment and I understand that I lose the 14-day withdrawal right once generation starts.",
   },
 
   status: {
     brand: VerificationStatus.VERIFIED,
-    supportResponseTime: VerificationStatus.REQUIRES_BUSINESS_INPUT,
-    currency: VerificationStatus.REQUIRES_BUSINESS_INPUT,
+    supportResponseTime: VerificationStatus.VERIFIED,
+    currency: VerificationStatus.VERIFIED,
     stillImage: VerificationStatus.REQUIRES_END_TO_END_TEST,
     video: VerificationStatus.HIDDEN_UNTIL_VERIFIED,
     socialProof: VerificationStatus.HIDDEN_UNTIL_VERIFIED,

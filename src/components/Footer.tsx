@@ -82,6 +82,14 @@ export default function Footer() {
               </Link>
 
               <Link
+                to="/cookies"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
+              >
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
+                Cookie Policy
+              </Link>
+
+              <Link
                 to="/unsubscribe"
                 className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >

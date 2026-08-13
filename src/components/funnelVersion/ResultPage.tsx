@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { getPublicSupabaseConfig } from "@/lib/env";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { isCheckoutEnabled, productTruth } from "@/config/productTruth";
+import { productModel } from "@/config/productModel";
 import {
   RefreshCw,
   Sparkles,
@@ -362,6 +363,7 @@ export default function ResultPage() {
   const generationId = generationIdFromId || generationIdFromUrl;
 
   const sessionId = String(q.get("session_id") || "").trim();
+  const orderId = String(q.get("order_id") || "").trim();
   const checkoutSessionId = String(q.get("checkout_session_id") || "").trim();
   const upgradeSuccess = String(q.get("upgrade_success") || "").trim() === "1";
   const upgradeCanceled = String(q.get("upgrade_canceled") || "").trim() === "1";
@@ -380,7 +382,12 @@ export default function ResultPage() {
     puzzle: false,
   });
 
-  const generationStartedRef = useRef<string | null>(null);
+  const [includedRegenLoading, setIncludedRegenLoading] = useState(false);
+  const [regenUsed, setRegenUsed] = useState(0);
+  const [regenAllowed, setRegenAllowed] = useState<number>(
+    productModel.includedRegenerations,
+  );
+  const [resolvedOrderId, setResolvedOrderId] = useState(orderId);
 
   const stepLabel = useMemo(() => "3 of 3", []);
   const pageBg = useMemo(() => ({ background: "#f6f1ea" as const }), []);
@@ -549,53 +556,45 @@ export default function ResultPage() {
     return false;
   }
 
-  async function callGenerateNanoBanana(generationIdToStart: string) {
+  async function fetchSignedResult(ids: {
+    genId?: string | null;
+    sess?: string | null;
+    order?: string | null;
+  }) {
     const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
     const headers = await getEdgeFunctionHeaders(anon);
-
-    const res = await fetch(`${supabaseUrl}/functions/v1/generate-nano-banana`, {
+    const res = await fetch(`${supabaseUrl}/functions/v1/get-signed-result`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ generation_id: generationIdToStart }),
+      body: JSON.stringify({
+        generation_id: ids.genId || null,
+        session_id: ids.sess || null,
+        order_id: ids.order || null,
+      }),
     });
-
-    const data = await safeReadJson(res);
-
+    const data = (await safeReadJson(res)) as EdgeJson & {
+      order_id?: string;
+      generation_id?: string;
+      order_status?: string;
+      generation_status?: string;
+      image_url?: string | null;
+      regenerations_used?: number;
+      regenerations_allowed?: number;
+    };
     if (!res.ok) {
-      throw new Error(
-        String(data.error || data.message || `generate-nano-banana failed (${res.status})`)
-      );
+      throw new Error(String(data.error || data.message || "Could not load result"));
     }
-
     return data;
   }
 
-  async function startGenerationIfNeeded(generationIdToStart: string) {
-    if (!generationIdToStart) return;
-    if (generationStartedRef.current === generationIdToStart) return;
+  async function callGenerateNanoBanana(_generationIdToStart: string) {
+    throw new Error(
+      "Generation is started by the payment webhook, not by this page.",
+    );
+  }
 
-    const existing = await fetchGenerationById(generationIdToStart);
-    const status = normalizeStatus(existing?.status || null);
-    const hasImage = !!(existing && (await resolveImageUrl(existing)));
-
-    if (existing) setRow(existing);
-
-    if (hasImage || isTerminalSuccess(status)) return;
-
-    if (isTerminalFailure(status)) {
-      setErrorMessage(existing?.error || "Generation failed.");
-      setLoading(false);
-      return;
-    }
-
-    generationStartedRef.current = generationIdToStart;
-
-    try {
-      await callGenerateNanoBanana(generationIdToStart);
-    } catch (error) {
-      generationStartedRef.current = null;
-      throw error;
-    }
+  async function startGenerationIfNeeded(_generationIdToStart: string) {
+    return;
   }
 
   useEffect(() => {
@@ -606,16 +605,52 @@ export default function ResultPage() {
     }
 
     async function loadDirectGeneration() {
-      if (!generationId) return false;
-
-      await startGenerationIfNeeded(generationId);
+      if (!generationId && !orderId && !sessionId) return false;
 
       const start = Date.now();
       const maxMs = 180000;
       const intervalMs = 1500;
 
       while (!cancelled && Date.now() - start < maxMs) {
-        const nextRow = await fetchGeneration(generationId, null);
+        try {
+          const signed = await fetchSignedResult({
+            genId: generationId,
+            sess: sessionId,
+            order: orderId,
+          });
+          if (cancelled) return true;
+          if (signed.order_id) setResolvedOrderId(String(signed.order_id));
+          if (typeof signed.regenerations_used === "number") {
+            setRegenUsed(signed.regenerations_used);
+          }
+          if (typeof signed.regenerations_allowed === "number") {
+            setRegenAllowed(signed.regenerations_allowed);
+          }
+          if (signed.image_url && isHttpUrl(signed.image_url)) {
+            setImageUrl(signed.image_url);
+            setErrorMessage("");
+            setLoading(false);
+            if (signed.generation_id) {
+              const nextRow = await fetchGeneration(String(signed.generation_id), null);
+              if (nextRow) setRow(nextRow);
+            }
+            return true;
+          }
+          if (isTerminalFailure(signed.generation_status || null)) {
+            setErrorMessage(String(signed.error || "Generation failed."));
+            setLoading(false);
+            return true;
+          }
+        } catch {
+          // Fall through to table polling if the signed-result function is not deployed yet.
+        }
+
+        await sleep(intervalMs);
+      }
+
+      const fallbackStart = Date.now();
+      while (!cancelled && Date.now() - fallbackStart < maxMs) {
+        const nextRow = await fetchGeneration(generationId, sessionId || null);
         if (cancelled) return true;
 
         if (nextRow?.id) {
@@ -673,24 +708,8 @@ export default function ResultPage() {
 
           const status = normalizeStatus(nextRow.status);
 
-          if (
-            !["processing", "completed", "ready", "succeeded", "saved"].includes(status) &&
-            nextRow.id
-          ) {
-            try {
-              await startGenerationIfNeeded(nextRow.id);
-            } catch (error: unknown) {
-              if (!cancelled) {
-                const message =
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to send a request to the Edge Function";
-                setErrorMessage(message);
-                setLoading(false);
-              }
-
-              return true;
-            }
+          if (isTerminalFailure(nextRow.status) || isTerminalSuccess(status)) {
+            // Webhook fulfillment owns generation. This page only polls.
           }
         }
 
@@ -801,7 +820,7 @@ export default function ResultPage() {
         setErrorMessage("");
         setUpgradeStatus("");
 
-        if (!sessionId && !generationId && !checkoutSessionId) {
+        if (!sessionId && !generationId && !checkoutSessionId && !orderId) {
           setLoading(false);
           setErrorMessage("Missing payment session or generation id.");
           return;
@@ -812,7 +831,7 @@ export default function ResultPage() {
           if (handled) return;
         }
 
-        if (generationId) {
+        if (generationId || orderId || sessionId) {
           const handled = await loadDirectGeneration();
           if (handled) return;
         }
@@ -834,61 +853,47 @@ export default function ResultPage() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, generationId, checkoutSessionId]);
+  }, [sessionId, generationId, checkoutSessionId, orderId]);
 
-  async function handleCheckout(actionType: ActionType) {
-    if (!isCheckoutEnabled) {
-      toast.error(productTruth.copy.checkoutUnavailable);
+  async function handleIncludedRegeneration() {
+    const id = resolvedOrderId || orderId;
+    if (!id && !sessionId) {
+      toast.error("Missing order. Refresh this page from your payment email.");
+      return;
+    }
+    if (regenUsed >= regenAllowed) {
+      toast.error("The included regeneration has already been used.");
       return;
     }
 
-    if (!row?.id) {
-      toast.error("Generation not found yet.");
-      return;
-    }
-
-    setCheckoutLoading((prev) => ({ ...prev, [actionType]: true }));
-
+    setIncludedRegenLoading(true);
     try {
       const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
       const headers = await getEdgeFunctionHeaders(anon);
-
-      const successUrl = `${window.location.origin}/funnel/result?generation_id=${encodeURIComponent(
-        row.id
-      )}`;
-      const cancelUrl = `${window.location.origin}/funnel/result?generation_id=${encodeURIComponent(
-        row.id
-      )}`;
-
-      const res = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
+      const res = await fetch(`${supabaseUrl}/functions/v1/request-included-regeneration`, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          generation_id: row.id,
-          action_type: actionType,
-          success_url: successUrl,
-          cancel_url: cancelUrl,
-        }),
+        body: JSON.stringify({ order_id: id || null, session_id: sessionId || null }),
       });
-
       const data = await safeReadJson(res);
-
       if (!res.ok) {
-        throw new Error(
-          String(data.error || data.message || `Failed to start checkout (${res.status})`)
-        );
+        throw new Error(String(data.error || data.message || "Regeneration failed"));
       }
-
-      const checkoutUrl = data?.url || data?.checkout_url || null;
-      if (!checkoutUrl) throw new Error("Missing checkout URL");
-
-      window.location.href = checkoutUrl;
+      toast.success("Creating a new image. This page will update when it is ready.");
+      window.location.reload();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to start checkout";
-      toast.error(message);
+      toast.error(error instanceof Error ? error.message : "Regeneration failed");
     } finally {
-      setCheckoutLoading((prev) => ({ ...prev, [actionType]: false }));
+      setIncludedRegenLoading(false);
     }
+  }
+
+  async function handleCheckout(actionType: ActionType) {
+    if (actionType === "regenerate") {
+      await handleIncludedRegeneration();
+      return;
+    }
+    toast.error("Add-ons are not part of the launch product.");
   }
 
   function downloadCurrent() {
@@ -930,7 +935,7 @@ export default function ResultPage() {
     );
   }
 
-  if (!sessionId && !generationId && !checkoutSessionId) {
+  if (!sessionId && !generationId && !checkoutSessionId && !orderId) {
     return (
       <div className="min-h-screen" style={pageBg}>
         <header className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
@@ -1021,7 +1026,7 @@ export default function ResultPage() {
             variant="outline"
             className="border-[#0b3b2e]/15 bg-white/70 px-3 py-1 text-[#0b3b2e]"
           >
-            Premium Result
+            {productTruth.copy.aiGeneratedDisclosure}
           </Badge>
 
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[#0b3b2e] sm:text-4xl md:text-5xl">
@@ -1092,17 +1097,19 @@ export default function ResultPage() {
                       className="block h-auto w-full object-contain"
                     />
 
-                    {isCheckoutEnabled && regenerateOffer ? (
+                    {imageUrl ? (
                       <button
                         type="button"
-                        onClick={() => void handleCheckout("regenerate")}
-                        disabled={!isCheckoutEnabled || !canBuy || checkoutLoading.regenerate}
+                        onClick={() => void handleIncludedRegeneration()}
+                        disabled={includedRegenLoading || regenUsed >= regenAllowed}
                         className="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#0b3b2e] px-3 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-[#082c22] disabled:cursor-not-allowed disabled:opacity-60 sm:right-4 sm:top-4"
                       >
                         <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                        {checkoutLoading.regenerate
+                        {includedRegenLoading
                           ? "Loading..."
-                          : `${regenerateOffer.cta} – ${regenerateOffer.priceLabel}`}
+                          : regenUsed >= regenAllowed
+                            ? "Regeneration used"
+                            : "Included regeneration"}
                       </button>
                     ) : null}
                   </>
@@ -1183,103 +1190,35 @@ export default function ResultPage() {
           </Card>
 
           <Card className="border-zinc-200 bg-white/85 shadow-[0_10px_40px_rgba(17,24,39,0.08)]">
-            {!isCheckoutEnabled ? (
-              <CardContent className="p-5">
-                <p className="text-sm leading-6 text-zinc-700">
-                  {productTruth.copy.checkoutUnavailable}
-                </p>
-              </CardContent>
-            ) : (
-              <>
             <CardHeader className="pb-3">
-              <CardTitle className="text-2xl text-[#0b3b2e]">
-                More ways to enjoy your gift
-              </CardTitle>
+              <CardTitle className="text-2xl text-[#0b3b2e]">Your purchase</CardTitle>
               <CardDescription className="text-zinc-600">
-                Optional add-ons for this result.
+                {productModel.displayPrice} still image · personal use · one included
+                regeneration.
               </CardDescription>
             </CardHeader>
-
             <CardContent className="space-y-4">
-              {offersLoading ? (
-                <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
-                  Loading offers…
-                </div>
-              ) : null}
-
-              {visibleBundleOffers.map((offer) => {
-                const Icon = offer.icon;
-                const isLoading = checkoutLoading[offer.actionType];
-
-                return (
-                  <div
-                    key={offer.actionType}
-                    className="rounded-2xl border border-zinc-200 bg-white p-4 transition"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white">
-                          <Icon className="h-5 w-5 text-[#0b3b2e]" />
-                        </div>
-
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-base font-semibold text-zinc-900">
-                              {offer.title}
-                            </h3>
-                          </div>
-
-                          <p className="mt-1 text-sm text-zinc-600">
-                            {offer.description}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 text-right">
-                        <div className="text-lg font-bold text-[#0b3b2e]">
-                          {offer.priceLabel}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      className="mt-4 w-full bg-[#0b3b2e] text-white hover:bg-[#082c22]"
-                      onClick={() => void handleCheckout(offer.actionType)}
-                      disabled={!isCheckoutEnabled || !canBuy || isLoading}
-                    >
-                      {isLoading ? "Loading..." : offer.cta}
-                    </Button>
-                  </div>
-                );
-              })}
-
-              <div className="rounded-2xl border border-zinc-200 bg-[#f8f5ef] p-4">
-                <div className="text-sm font-semibold text-[#0b3b2e]">
-                  Next step
-                </div>
-
-                <div className="mt-3 grid gap-2">
-                  <Button
-                    className="bg-[#0b3b2e] text-white hover:bg-[#082c22]"
-                    onClick={() => navigate(NEW_GIFT_ROUTE)}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create another gift
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
-                    onClick={() => navigate(DASHBOARD_ROUTE)}
-                  >
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Open dashboard
-                  </Button>
-                </div>
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm leading-6 text-zinc-700">
+                This image is {productTruth.copy.aiGeneratedDisclosure.toLowerCase()}.{" "}
+                {productTruth.copy.licenseSentence} Uploads are kept 24 hours and
+                results 30 days.
               </div>
+              <Button
+                className="w-full bg-[#0b3b2e] text-white hover:bg-[#082c22]"
+                onClick={() => void handleIncludedRegeneration()}
+                disabled={includedRegenLoading || regenUsed >= regenAllowed || !imageUrl}
+              >
+                {includedRegenLoading
+                  ? "Starting…"
+                  : regenUsed >= regenAllowed
+                    ? "Included regeneration used"
+                    : "Use included regeneration"}
+              </Button>
+              <p className="text-xs leading-5 text-zinc-500">
+                Generation starts only after Stripe confirms payment. Refreshing this
+                page does not charge you again and does not start a second generation.
+              </p>
             </CardContent>
-              </>
-            )}
           </Card>
         </div>
       </main>

@@ -26,6 +26,11 @@ const RefundPolicyPage = lazy(() =>
     default: m.RefundPolicyPage,
   }))
 );
+const CookiePolicyPage = lazy(() =>
+  import("@/pages/website/CookiePolicyPage").then((m) => ({
+    default: m.CookiePolicyPage,
+  }))
+);
 const SupportPage = lazy(() =>
   import("@/pages/website/SupportPage").then((m) => ({
     default: m.SupportPage,
@@ -154,6 +159,8 @@ const FunnelResultPage = lazy(
 
 // ================= SUPABASE =================
 import { supabase } from "@/lib/supabase";
+import CookieBanner from "@/components/CookieBanner";
+import { initAnalytics, trackPageView } from "@/lib/analytics";
 
 declare global {
   interface Window {
@@ -175,14 +182,11 @@ function GtagPageViewTracker() {
   const location = useLocation();
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!window.gtag) return;
+    initAnalytics();
+  }, []);
 
-    window.gtag("config", "G-6FVX69WYFG", {
-      page_path: `${location.pathname}${location.search}`,
-      page_location: window.location.href,
-      page_title: document.title,
-    });
+  useEffect(() => {
+    trackPageView(`${location.pathname}${location.search}`);
   }, [location.pathname, location.search]);
 
   return null;
@@ -355,6 +359,7 @@ function AppInner() {
   return (
     <BrowserRouter>
       <GtagPageViewTracker />
+      <CookieBanner />
       <ScrollToTop />
 
       <Suspense
@@ -439,6 +444,7 @@ function AppInner() {
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/refunds" element={<RefundPolicyPage />} />
+            <Route path="/cookies" element={<CookiePolicyPage />} />
             <Route path="/support" element={<SupportPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
