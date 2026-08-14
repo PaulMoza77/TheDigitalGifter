@@ -1,9 +1,26 @@
 -- Minimal schema for Postgres function tests. No PII. No live data.
+-- PGlite does not ship pgcrypto; provide a local UUID helper.
 
-create extension if not exists pgcrypto;
+create or replace function public.gen_random_uuid()
+returns uuid
+language plpgsql
+as $$
+declare
+  v text;
+begin
+  v := md5(random()::text || clock_timestamp()::text || random()::text);
+  return (
+    substr(v, 1, 8) || '-' ||
+    substr(v, 9, 4) || '-' ||
+    '4' || substr(v, 13, 3) || '-' ||
+    substr('89ab', 1 + floor(random() * 4)::int, 1) || substr(v, 17, 3) || '-' ||
+    substr(v, 21, 12)
+  )::uuid;
+end;
+$$;
 
 create table if not exists public.generations (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default public.gen_random_uuid(),
   status text not null default 'pending',
   attempt_count integer default 0,
   error text,
@@ -16,7 +33,7 @@ create table if not exists public.generations (
 );
 
 create table if not exists public.mvp_orders (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default public.gen_random_uuid(),
   email text not null default 'test@example.com',
   user_id uuid,
   status text not null default 'pending',
@@ -46,7 +63,7 @@ create table if not exists public.stripe_webhook_events (
 );
 
 create table if not exists public.upload_sessions (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default public.gen_random_uuid(),
   bucket text not null default 'customer-uploads',
   path text not null unique,
   declared_mime text,
@@ -62,7 +79,7 @@ create table if not exists public.upload_sessions (
 );
 
 create table if not exists public.fulfillment_jobs (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default public.gen_random_uuid(),
   order_id uuid not null,
   generation_id uuid not null,
   kind text not null default 'initial',

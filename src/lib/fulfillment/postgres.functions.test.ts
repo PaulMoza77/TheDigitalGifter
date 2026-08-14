@@ -7,10 +7,19 @@ import { PGlite } from "@electric-sql/pglite";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
+function sqlForPglite(raw: string) {
+  return raw
+    .replace(/drop policy if exists access_redeem_codes_no_direct_access on public.access_redeem_codes;/gi, "")
+    .replace(/create policy access_redeem_codes_no_direct_access[\s\S]*?;/gi, "")
+    .replace(/revoke all on function[\s\S]*?;/gi, "")
+    .replace(/grant execute on function[\s\S]*?;/gi, "")
+    .replace(/alter table public.access_redeem_codes enable row level security;/gi, "");
+}
+
 async function openDb() {
   const db = new PGlite();
   await db.exec(readFileSync(join(root, "supabase/tests/pg_harness.sql"), "utf8"));
-  await db.exec(readFileSync(join(root, "supabase/migrations/20260815_scheduler_recovery.sql"), "utf8"));
+  await db.exec(sqlForPglite(readFileSync(join(root, "supabase/migrations/20260815_scheduler_recovery.sql"), "utf8")));
   return db;
 }
 
@@ -19,7 +28,7 @@ describe("postgres fulfillment functions", () => {
     const db = await openDb();
     const order = await db.query<{ id: string; generation_id: string }>(
       `insert into public.mvp_orders (email, status, generation_id)
-       values ('a@example.com', 'pending', gen_random_uuid())
+       values ('a@example.com', 'pending', public.gen_random_uuid())
        returning id, generation_id`,
     );
     const orderId = order.rows[0].id;
@@ -44,7 +53,7 @@ describe("postgres fulfillment functions", () => {
     const db = await openDb();
     const order = await db.query<{ id: string; generation_id: string }>(
       `insert into public.mvp_orders (email, status, generation_id)
-       values ('b@example.com', 'paid', gen_random_uuid())
+       values ('b@example.com', 'paid', public.gen_random_uuid())
        returning id, generation_id`,
     );
     const job = await db.query<{ id: string }>(
@@ -77,7 +86,7 @@ describe("postgres fulfillment functions", () => {
     const db = await openDb();
     const order = await db.query<{ id: string; generation_id: string }>(
       `insert into public.mvp_orders (email, status, generation_id)
-       values ('c@example.com', 'fulfilling', gen_random_uuid())
+       values ('c@example.com', 'fulfilling', public.gen_random_uuid())
        returning id, generation_id`,
     );
     await db.query(
