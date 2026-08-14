@@ -4,7 +4,7 @@ import { claimPaidOrder, rescheduleFailedJob } from "./stateMachine.ts";
 import { authorizeOrderAccess, authorizeUploadAccess, signAccessToken, verifyAccessToken } from "./guestToken.ts";
 import { validatePaidStripeSession } from "./stripePayment.ts";
 import { simulateTwoSimultaneousRegenerations } from "./regenClaim.ts";
-import { chunkPages, cleanupOneRow, cleanupPager, cleanupRowsPaged, verifyCleanupPage } from "./cleanup.ts";
+import { chunkPages, cleanupOneRow, cleanupPager, cleanupRowsPaged, isAbandonedUploadCandidate, verifyCleanupPage } from "./cleanup.ts";
 import { isServerManagedUploadPath, serverUploadPath } from "./uploadPath.ts";
 import { validateImageUpload } from "../imageValidation.ts";
 import { checkoutReturnUrls, configuredAppOrigin, requireAccessTokenSecret, resultEmailHref } from "./appOrigin.ts";
@@ -13,7 +13,9 @@ import {
   isStillImageTemplate,
   reuseExistingPredictionId,
   shouldCreateNewPrediction,
+  TEMPLATE_ACTIVE_COLUMN,
 } from "./generationRecovery.ts";
+import { shouldStampResultEmailedAt, stripeCheckoutIdempotencyKey, stripeExpireSessionPath } from "./stripePayment.ts";
 
 describe("claimPaidOrder", () => {
   it("enqueues a job exactly once for a pending order", () => {
@@ -269,6 +271,7 @@ describe("cleanup failure and retry", () => {
       deleteObject,
       clearReference: async (id) => {
         cleared.push(id);
+        return { ok: true as const };
       },
     });
     assert.equal(first, "retry");
@@ -278,6 +281,7 @@ describe("cleanup failure and retry", () => {
       deleteObject,
       clearReference: async (id) => {
         cleared.push(id);
+        return { ok: true as const };
       },
     });
     assert.equal(second, "cleared");
@@ -302,6 +306,7 @@ describe("cleanup failure and retry", () => {
       },
       clearReference: async (id) => {
         cleared.push(id);
+        return { ok: true as const };
       },
     });
     assert.equal(result.pages, 5);
@@ -310,6 +315,62 @@ describe("cleanup failure and retry", () => {
     assert.equal(cleared.includes("row-7"), false);
     assert.equal(cleared.length, 249);
     assert.equal(deleted.length, 249);
+  });
+
+  it("does not count cleared when the DB update fails", async () => {
+    const action = await cleanupOneRow({
+      row: { id: "row-db", bucket: "customer-uploads", path: "uploads/a.jpg" },
+      deleteObject: async () => ({ ok: true as const }),
+      clearReference: async () => ({ ok: false as const, error: "db update failed" }),
+    });
+    assert.equal(action, "retry");
+  });
+
+  it("purges confirmed expired unconsumed uploads and skips consumed ones", () => {
+    const now = "2026-08-14T12:00:00.000Z";
+    assert.equal(
+      isAbandonedUploadCandidate({
+        status: "confirmed",
+        consumed_order_id: null,
+        expires_at: "2026-08-13T12:00:00.000Z",
+        now,
+      }),
+      true,
+    );
+    assert.equal(
+      isAbandonedUploadCandidate({
+        status: "pending_upload",
+        consumed_order_id: null,
+        expires_at: "2026-08-13T12:00:00.000Z",
+        now,
+      }),
+      true,
+    );
+    assert.equal(
+      isAbandonedUploadCandidate({
+        status: "confirmed",
+        consumed_order_id: "order-1",
+        expires_at: "2026-08-13T12:00:00.000Z",
+        now,
+      }),
+      false,
+    );
+  });
+});
+
+describe("result email stamp", () => {
+  it("stamps result_emailed_at only after Resend success", () => {
+    assert.equal(shouldStampResultEmailedAt({ ok: true }), true);
+    assert.equal(shouldStampResultEmailedAt({ ok: false, skipped: false, error: "500" }), false);
+    assert.equal(shouldStampResultEmailedAt({ ok: false, skipped: true, error: "resend_missing" }), false);
+  });
+});
+
+describe("checkout template and stripe helpers", () => {
+  it("uses a single canonical isactive column and Stripe idempotency plus expire", () => {
+    assert.equal(TEMPLATE_ACTIVE_COLUMN, "isactive");
+    assert.equal(stripeCheckoutIdempotencyKey("ord-1"), "checkout:ord-1");
+    assert.equal(stripeExpireSessionPath("cs_test_1"), "/v1/checkout/sessions/cs_test_1/expire");
   });
 });
 

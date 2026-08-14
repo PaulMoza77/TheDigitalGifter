@@ -192,7 +192,7 @@ export default function ResultPage() {
   async function handleIncludedRegeneration() {
     const id = resolvedOrderId || orderId;
     if (!id) {
-      toast.error("Missing order. Refresh this page from your payment email.");
+      toast.error("Missing order. Refresh this page from the result link or while signed in.");
       return;
     }
     if (regenUsed >= regenAllowed) {
@@ -260,7 +260,7 @@ export default function ResultPage() {
               </h1>
               <p className="mt-3 text-zinc-700">
                 {unauthorized
-                  ? "This result is private. Open it from your payment email or while signed in to the same account."
+                  ? "This result is private. Open it from the result link or while signed in to the same account."
                   : "The order id is missing. Please return and try again."}
               </p>
               <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">

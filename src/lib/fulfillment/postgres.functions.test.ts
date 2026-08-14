@@ -1,30 +1,21 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
-
-const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
-
-function sqlForPglite(raw: string) {
-  return raw
-    .replace(/drop policy if exists access_redeem_codes_no_direct_access on public.access_redeem_codes;/gi, "")
-    .replace(/create policy access_redeem_codes_no_direct_access[\s\S]*?;/gi, "")
-    .replace(/revoke all on function[\s\S]*?;/gi, "")
-    .replace(/grant execute on function[\s\S]*?;/gi, "")
-    .replace(/alter table public.access_redeem_codes enable row level security;/gi, "");
-}
+import { fulfillmentSqlForUnitTests } from "./pgTestSql.ts";
 
 async function openDb() {
   const db = new PGlite();
-  await db.exec(readFileSync(join(root, "supabase/tests/pg_harness.sql"), "utf8"));
-  await db.exec(sqlForPglite(readFileSync(join(root, "supabase/migrations/20260815_scheduler_recovery.sql"), "utf8")));
+  await db.exec(fulfillmentSqlForUnitTests());
   return db;
 }
 
 describe("postgres fulfillment functions", () => {
-  it("ignores a duplicated webhook and does not enqueue a second job", async () => {
+  it("does not load pg_cron; PGlite covers claim/backoff/redeem SQL only", () => {
+    const sql = fulfillmentSqlForUnitTests();
+    assert.equal(sql.includes("cron.schedule"), false);
+    assert.equal(sql.includes("create extension if not exists pg_cron"), false);
+    assert.equal(sql.includes("consume_access_redeem_code"), true);
+  });  it("ignores a duplicated webhook and does not enqueue a second job", async () => {
     const db = await openDb();
     const order = await db.query<{ id: string; generation_id: string }>(
       `insert into public.mvp_orders (email, status, generation_id)
@@ -101,7 +92,7 @@ describe("postgres fulfillment functions", () => {
     await db.close();
   });
 
-  it("lets only one of two sequential included regenerations succeed", async () => {
+  it("lets only one of two sequential included regenerations succeed (SQL unit; concurrent coverage is concurrentRegen.test.ts)", async () => {
     const db = await openDb();
     const order = await db.query<{ id: string }>(
       `insert into public.mvp_orders (email, status, included_regenerations_allowed, included_regenerations_used)
@@ -143,6 +134,37 @@ describe("postgres fulfillment functions", () => {
       [gen.rows[0].id],
     );
     assert.equal(retry.rows[0].claim_mvp_generation_start.run_generation, true);
+    await db.close();
+  });
+
+  it("redeems the same unused-or-used code twice for one order after a lost response", async () => {
+    const db = await openDb();
+    const order = await db.query<{ id: string }>(
+      `insert into public.mvp_orders (email, status) values ('redeem@example.com', 'completed') returning id`,
+    );
+    const other = await db.query<{ id: string }>(
+      `insert into public.mvp_orders (email, status) values ('other@example.com', 'completed') returning id`,
+    );
+    await db.query(
+      `insert into public.access_redeem_codes (code_hash, order_id, expires_at)
+       values ('hash-1', $1, now() + interval '1 day')`,
+      [order.rows[0].id],
+    );
+    const first = await db.query<{ consume_access_redeem_code: { ok: boolean; kind: string } }>(
+      `select public.consume_access_redeem_code('hash-1', $1) as consume_access_redeem_code`,
+      [order.rows[0].id],
+    );
+    const retry = await db.query<{ consume_access_redeem_code: { ok: boolean; kind: string } }>(
+      `select public.consume_access_redeem_code('hash-1', $1) as consume_access_redeem_code`,
+      [order.rows[0].id],
+    );
+    const mismatch = await db.query<{ consume_access_redeem_code: { ok: boolean } }>(
+      `select public.consume_access_redeem_code('hash-1', $1) as consume_access_redeem_code`,
+      [other.rows[0].id],
+    );
+    assert.equal(first.rows[0].consume_access_redeem_code.ok, true);
+    assert.equal(retry.rows[0].consume_access_redeem_code.ok, true);
+    assert.equal(mismatch.rows[0].consume_access_redeem_code.ok, false);
     await db.close();
   });
 });

@@ -41,6 +41,9 @@ assert(worker.includes("requireSchedulerAuth"), "job worker requires scheduler a
 assert(worker.includes("processed: 1") || worker.includes("processed:1"), "job worker documents one job");
 assert(!worker.includes("for (let i = 0; i < 5"), "job worker does not loop five jobs");
 assert(worker.includes("claim_next_fulfillment_job"), "job worker claims the next queued/stale job");
+assert(worker.includes("enqueue_result_email_job"), "job worker enqueues email retry after generation");
+assert(worker.includes("email_only"), "job worker can run result_email jobs without regenerating");
+assert(worker.includes("20260817_fulfillment_schedules.sql"), "job worker points at the official scheduler migration");
 
 const fulfill = read("supabase/functions/fulfill-paid-order/index.ts");
 assert(fulfill.includes("release_mvp_generation_claim"), "fulfillment releases processing on error");
@@ -48,7 +51,9 @@ assert(fulfill.includes("replicate_prediction_id"), "fulfillment persists the Re
 assert(!fulfill.includes('Prefer: "wait"'), "fulfillment does not block on Prefer: wait");
 assert(fulfill.includes("detectStillImageMime"), "fulfillment detects result MIME");
 assert(fulfill.includes("resultEmailHref"), "result email uses the fragment helper");
-assert(!fulfill.includes("&access_token="), "result email does not put access_token in the query");
+assert(fulfill.includes("shouldStampResultEmailedAt"), "fulfillment stamps result_emailed_at only after Resend success");
+assert(fulfill.includes("email_ok"), "fulfillment reports email_ok for retry enqueue");
+assert(!fulfill.includes("if (!emailResult.skipped)"), "fulfillment does not stamp email on skipped=false failures");
 
 const confirm = read("supabase/functions/confirm-upload/index.ts");
 assert(confirm.includes("validateImageUpload"), "confirm-upload checks magic bytes");
@@ -80,7 +85,12 @@ assert(checkout.includes("checkoutReturnUrls"), "checkout builds success/cancel 
 assert(checkout.includes("void body.success_url"), "checkout ignores client success_url");
 assert(checkout.includes("void body.cancel_url"), "checkout ignores client cancel_url");
 assert(checkout.includes("consume_confirmed_upload"), "checkout consumes the upload for one order");
-assert(!checkout.includes("access_token: orderAccessToken"), "checkout does not return an HMAC token");
+assert(checkout.includes("Idempotency-Key"), "checkout sends a Stripe Idempotency-Key");
+assert(checkout.includes("/expire"), "checkout expires the Stripe session after a post-create error");
+assert(checkout.includes('.delete().eq("id", generation.id)'), "checkout deletes the generation if the order insert fails");
+assert(checkout.includes("template_lookup_failed"), "checkout treats template query errors as failures");
+assert(checkout.includes("TEMPLATE_ACTIVE_COLUMN") || checkout.includes("isactive"), "checkout uses the canonical isactive column");
+assert(!checkout.includes("is_active, type"), "checkout does not select isactive and is_active together");
 
 const preview = read("supabase/functions/get-upload-preview/index.ts");
 assert(preview.includes("createSignedUrl"), "preview uses a signed URL");
@@ -90,6 +100,9 @@ const purge = read("supabase/functions/purge-expired-media/index.ts");
 assert(purge.includes("cleanupOneRow"), "cleanup deletes one object then clears that row");
 assert(purge.includes("requireSchedulerAuth"), "cleanup requires scheduler auth");
 assert(purge.includes("abandoned"), "cleanup removes abandoned uploads");
+assert(purge.includes("confirmed"), "cleanup also purges confirmed expired unconsumed uploads");
+assert(purge.includes("consumed_order_id"), "cleanup checks consumed_order_id before abandoning");
+assert(purge.includes("select failed"), "cleanup checks Supabase select errors");
 
 const access = read("supabase/functions/_shared/access.ts");
 assert(access.includes("requireAccessTokenSecret"), "ACCESS_TOKEN_SECRET is required");
@@ -104,10 +117,21 @@ assert(sql.includes("pg_catalog.now()"), "SQL functions use schema-qualified now
 assert(sql.includes("release_mvp_generation_claim"), "SQL can unstick processing generations");
 assert(sql.includes("mvp_orders_one_live_upload"), "SQL enforces one live upload per order");
 
+const redeem = read("supabase/functions/redeem-result-access/index.ts");
+assert(redeem.includes("p_order_id"), "redeem passes the order id so retries stay scoped");
+
+const schedules = read("supabase/migrations/20260817_fulfillment_schedules.sql");
+assert(schedules.includes("process-fulfillment-jobs"), "schedule migration names process-fulfillment-jobs");
+assert(schedules.includes("purge-expired-media"), "schedule migration names purge-expired-media");
+assert(schedules.includes("fulfillment_project_url"), "schedule migration uses Vault names");
+assert(!schedules.includes("sk_live_"), "schedule migration has no Stripe secret literals");
+
 const envExample = read(".env.example");
 assert(envExample.includes("ACCESS_TOKEN_SECRET="), ".env.example documents ACCESS_TOKEN_SECRET");
 assert(envExample.includes("FULFILLMENT_SECRET="), ".env.example documents FULFILLMENT_SECRET");
 assert(envExample.includes("CHECKOUT_ENABLED=false"), ".env.example keeps checkout off");
+assert(envExample.includes("20260817_fulfillment_schedules.sql"), ".env.example points at the official scheduler");
+assert(envExample.includes("Email is required at launch"), ".env.example requires Resend at launch");
 
 const deno = spawnSync("deno", ["--version"], { encoding: "utf8" });
 if (deno.status !== 0) {

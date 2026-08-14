@@ -11,7 +11,9 @@ import {
   isStillImageTemplate,
   reuseExistingPredictionId,
   shouldCreateNewPrediction,
+  TEMPLATE_ACTIVE_COLUMN,
 } from "../_shared/generationRecovery.ts";
+import { shouldStampResultEmailedAt, type ResultEmailSendResult } from "../_shared/stripePayment.ts";
 
 type Body = {
   order_id?: string;
@@ -19,6 +21,7 @@ type Body = {
   generation_id?: string;
   generationId?: string;
   job_id?: string;
+  email_only?: boolean;
 };
 
 type ReplicatePrediction = {
@@ -48,11 +51,11 @@ async function sendResultEmail(args: {
   email: string;
   orderId: string;
   accessToken: string;
-}) {
+}): Promise<ResultEmailSendResult> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) {
-    console.warn("[fulfill-paid-order] RESEND_API_KEY missing; skipping email");
-    return { skipped: true as const };
+    console.warn("[fulfill-paid-order] RESEND_API_KEY missing; email required at launch, retrying later");
+    return { ok: false as const, skipped: true, error: "resend_missing" };
   }
 
   const from = Deno.env.get("RESULT_EMAIL_FROM") || "TheDigitalGifter <support@thedigitalgifter.com>";
@@ -64,8 +67,8 @@ async function sendResultEmail(args: {
       args.accessToken,
     );
   } catch (err) {
-    console.warn("[fulfill-paid-order] SITE_URL missing; skipping email", err);
-    return { skipped: true as const };
+    console.warn("[fulfill-paid-order] SITE_URL missing; email retry later", err);
+    return { ok: false as const, skipped: true, error: "site_url_missing" };
   }
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -86,9 +89,9 @@ async function sendResultEmail(args: {
   if (!res.ok) {
     const text = await res.text();
     console.warn("[fulfill-paid-order] email failed:", text);
-    return { skipped: false as const, error: text };
+    return { ok: false as const, skipped: false, error: text };
   }
-  return { skipped: false as const };
+  return { ok: true as const };
 }
 
 function extractOutputUrl(output: unknown): string | null {
@@ -199,6 +202,55 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "order_id and generation_id are required", ok: false }, 400);
     }
 
+    if (body.email_only === true) {
+      const { data: order, error: orderErr } = await service
+        .from("mvp_orders")
+        .select("id, email, result_emailed_at, status")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (orderErr) throw orderErr;
+      if (!order) return jsonResponse({ error: "order not found", ok: false, email_ok: false }, 404);
+      if (order.result_emailed_at) {
+        return jsonResponse({ ok: true, email_ok: true, status: "already_emailed", order_id: orderId });
+      }
+      const { data: generation, error: genErr } = await service
+        .from("generations")
+        .select("id, status, result_path")
+        .eq("id", generationId)
+        .maybeSingle();
+      if (genErr) throw genErr;
+      if (!generation?.result_path || !["completed", "ready", "succeeded", "saved"].includes(String(generation.status))) {
+        return jsonResponse({ error: "result_not_ready", ok: false, email_ok: false }, 409);
+      }
+      const orderAccessToken = await signAccessToken(
+        {
+          typ: "order",
+          id: orderId,
+          exp: Math.floor(Date.now() / 1000) + mvpProduct.resultRetentionDays * 24 * 3600,
+        },
+        accessTokenSecret(),
+      );
+      const emailResult = await sendResultEmail({
+        email: String(order.email),
+        orderId,
+        accessToken: orderAccessToken,
+      });
+      if (shouldStampResultEmailedAt(emailResult)) {
+        const { error: stampErr } = await service
+          .from("mvp_orders")
+          .update({ result_emailed_at: new Date().toISOString() })
+          .eq("id", orderId);
+        if (stampErr) throw stampErr;
+      }
+      return jsonResponse({
+        ok: emailResult.ok,
+        email_ok: emailResult.ok,
+        status: emailResult.ok ? "emailed" : "email_retry",
+        order_id: orderId,
+        generation_id: generationId,
+      }, emailResult.ok ? 200 : 502);
+    }
+
     const { data: claimed, error: claimErr } = await service.rpc("claim_mvp_generation_start", {
       p_generation_id: generationId,
       p_max_attempts: mvpProduct.maxGenerationAttempts,
@@ -245,14 +297,18 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "template_required", ok: false }, 400);
     }
 
-    const { data: template } = await service
+    const { data: template, error: templateErr } = await service
       .from("templates")
-      .select("id, prompt, isactive, is_active, type")
+      .select(`id, prompt, ${TEMPLATE_ACTIVE_COLUMN}, type`)
       .eq("id", templateId)
       .maybeSingle();
+    if (templateErr) {
+      await release("template_lookup_failed");
+      return jsonResponse({ error: "template_lookup_failed", ok: false }, 500);
+    }
     const templateCheck = isStillImageTemplate({
       exists: Boolean(template),
-      active: template?.is_active === true || template?.isactive === true,
+      active: template?.isactive === true,
       type: template?.type ?? null,
       prompt: String(order.template_prompt || template?.prompt || ""),
     });
@@ -382,11 +438,12 @@ Deno.serve(async (req) => {
       orderId,
       accessToken: orderAccessToken,
     });
-    if (!emailResult.skipped) {
-      await service
+    if (shouldStampResultEmailedAt(emailResult)) {
+      const { error: stampErr } = await service
         .from("mvp_orders")
         .update({ result_emailed_at: new Date().toISOString() })
         .eq("id", orderId);
+      if (stampErr) throw stampErr;
     }
 
     return jsonResponse({
@@ -395,7 +452,8 @@ Deno.serve(async (req) => {
       order_id: orderId,
       generation_id: generationId,
       result_mime: detected.mime,
-      email_skipped: Boolean(emailResult.skipped),
+      email_ok: emailResult.ok,
+      email_skipped: !emailResult.ok,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

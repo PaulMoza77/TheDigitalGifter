@@ -1,11 +1,9 @@
 /**
  * Scheduler recovery for fulfillment jobs.
  *
- * Supabase Dashboard → Edge Functions → process-fulfillment-jobs → Schedules:
- *   cron: * * * * *
- *   HTTP headers:
- *     x-fulfillment-secret: <FULFILLMENT_SECRET>
- *     (or Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>)
+ * Official installer: supabase/migrations/20260817_fulfillment_schedules.sql
+ * and docs/fulfillment-schedules.md (pg_cron + Vault names, no secrets in Git).
+ * config.toml comments are not a scheduler. PGlite tests do not cover cron.
  *
  * Processes at most one job per invocation. Backoff (`run_after`) and stale
  * `running` jobs are reclaimed by claim_next_fulfillment_job — no new webhook
@@ -22,6 +20,7 @@ type ClaimedJob = {
     id: string;
     order_id: string;
     generation_id: string;
+    kind?: string;
   };
 };
 
@@ -51,6 +50,7 @@ Deno.serve(async (req) => {
   }
 
   const job = claimed.job;
+  const emailOnly = job.kind === "result_email";
   const fulfillRes = await fetch(`${url}/functions/v1/fulfill-paid-order`, {
     method: "POST",
     headers: {
@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
       order_id: job.order_id,
       generation_id: job.generation_id,
       job_id: job.id,
+      email_only: emailOnly,
     }),
   });
   const payload = await fulfillRes.json().catch(() => ({}));
@@ -74,10 +75,18 @@ Deno.serve(async (req) => {
     p_error: ok ? null : String(payload?.error || `fulfill failed (${fulfillRes.status})`).slice(0, 500),
   });
 
+  if (!emailOnly && ok && payload?.email_ok !== true) {
+    await service.rpc("enqueue_result_email_job", {
+      p_order_id: job.order_id,
+      p_generation_id: job.generation_id,
+    });
+  }
+
   return jsonResponse({
     processed: 1,
     job_id: job.id,
     ok,
+    email_ok: payload?.email_ok === true,
     maxAttempts: mvpProduct.maxGenerationAttempts,
   });
 });

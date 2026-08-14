@@ -22,3 +22,19 @@ export function validatePaidStripeSession(args: {
   }
   return { ok: true };
 }
+
+export function stripeCheckoutIdempotencyKey(orderId: string): string {
+  return `checkout:${orderId}`;
+}
+
+export function stripeExpireSessionPath(sessionId: string): string {
+  return `/v1/checkout/sessions/${encodeURIComponent(sessionId)}/expire`;
+}
+
+export type ResultEmailSendResult =
+  | { ok: true }
+  | { ok: false; skipped: boolean; error?: string };
+
+export function shouldStampResultEmailedAt(result: ResultEmailSendResult): boolean {
+  return result.ok === true;
+}

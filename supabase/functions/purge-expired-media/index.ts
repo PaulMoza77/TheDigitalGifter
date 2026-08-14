@@ -1,13 +1,13 @@
 /**
- * Scheduler for abandoned uploads / expired results.
+ * Abandoned uploads / expired results.
  *
- * Dashboard schedule (hourly):
- *   cron: 15 * * * *
- *   headers: x-fulfillment-secret or Authorization: Bearer <service role>
+ * Official installer: supabase/migrations/20260817_fulfillment_schedules.sql
+ * and docs/fulfillment-schedules.md. config.toml comments are not a scheduler.
  *
  * Deletes one storage object at a time. DB references are cleared only after
- * Storage confirms the object is gone. Storage errors leave the row eligible
- * for the next cron tick.
+ * Storage confirms the object is gone. A failed DB update is never counted as
+ * cleared. Failed row ids are skipped inside this invocation so pagination
+ * can advance.
  */
 import { jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
@@ -15,15 +15,19 @@ import { requireSchedulerAuth } from "../_shared/access.ts";
 import { RESULT_BUCKET, UPLOAD_BUCKET } from "../_shared/uploadPath.ts";
 import {
   cleanupOneRow,
+  supabaseNotInFilter,
   type CleanupRow,
+  type ClearReferenceResult,
   type StorageDeleteResult,
 } from "../_shared/cleanup.ts";
 
 const PAGE_SIZE = 50;
 const MAX_PAGES = 8;
 
+type ServiceClient = ReturnType<typeof getServiceClient>;
+
 async function deleteObject(
-  service: ReturnType<typeof getServiceClient>,
+  service: ServiceClient,
   bucket: string,
   path: string,
 ): Promise<StorageDeleteResult> {
@@ -33,19 +37,20 @@ async function deleteObject(
 }
 
 async function purgeTable(
-  service: ReturnType<typeof getServiceClient>,
+  service: ServiceClient,
   args: {
-    listPage: () => Promise<CleanupRow[]>;
-    clearReference: (id: string) => Promise<void>;
+    listPage: (skipIds: string[]) => Promise<CleanupRow[]>;
+    clearReference: (id: string) => Promise<ClearReferenceResult>;
   },
 ): Promise<{ cleared: number; retried: number; skipped: number; pages: number }> {
   let cleared = 0;
   let retried = 0;
   let skipped = 0;
   let pages = 0;
+  const skipIds: string[] = [];
 
   for (let page = 0; page < MAX_PAGES; page += 1) {
-    const rows = await args.listPage();
+    const rows = await args.listPage(skipIds);
     if (!rows.length) break;
     pages += 1;
     for (const row of rows) {
@@ -55,13 +60,21 @@ async function purgeTable(
         clearReference: args.clearReference,
       });
       if (action === "cleared") cleared += 1;
-      if (action === "retry") retried += 1;
+      if (action === "retry") {
+        retried += 1;
+        skipIds.push(row.id);
+      }
       if (action === "skipped") skipped += 1;
     }
     if (rows.length < PAGE_SIZE) break;
   }
 
   return { cleared, retried, skipped, pages };
+}
+
+function applySkip(query: { not: (column: string, op: string, value: string) => typeof query }, skipIds: string[]) {
+  if (!skipIds.length) return query;
+  return query.not("id", "in", supabaseNotInFilter(skipIds));
 }
 
 Deno.serve(async (req) => {
@@ -75,14 +88,19 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
 
     const abandoned = await purgeTable(service, {
-      listPage: async () => {
-        const { data } = await service
+      listPage: async (skipIds) => {
+        let query = service
           .from("upload_sessions")
-          .select("id, bucket, path")
-          .in("status", ["pending_upload"])
+          .select("id, bucket, path, status, consumed_order_id")
+          .in("status", ["pending_upload", "confirmed"])
+          .is("consumed_order_id", null)
           .lt("expires_at", now)
           .order("created_at", { ascending: true })
+          .order("id", { ascending: true })
           .range(0, PAGE_SIZE - 1);
+        query = applySkip(query, skipIds);
+        const { data, error } = await query;
+        if (error) throw new Error(`upload_sessions select failed: ${error.message}`);
         return (data || []).map((row) => ({
           id: String(row.id),
           bucket: String(row.bucket || UPLOAD_BUCKET),
@@ -90,19 +108,25 @@ Deno.serve(async (req) => {
         }));
       },
       clearReference: async (id) => {
-        await service.from("upload_sessions").update({ status: "abandoned" }).eq("id", id);
+        const { error } = await service.from("upload_sessions").update({ status: "abandoned" }).eq("id", id);
+        if (error) return { ok: false, error: error.message };
+        return { ok: true };
       },
     });
 
     const expiredUploads = await purgeTable(service, {
-      listPage: async () => {
-        const { data } = await service
+      listPage: async (skipIds) => {
+        let query = service
           .from("mvp_orders")
           .select("id, photo_bucket, photo_path, upload_expires_at")
           .not("photo_path", "is", null)
           .lt("upload_expires_at", now)
           .order("upload_expires_at", { ascending: true })
+          .order("id", { ascending: true })
           .range(0, PAGE_SIZE - 1);
+        query = applySkip(query, skipIds);
+        const { data, error } = await query;
+        if (error) throw new Error(`mvp_orders select failed: ${error.message}`);
         return (data || []).map((row) => ({
           id: String(row.id),
           bucket: String(row.photo_bucket || UPLOAD_BUCKET),
@@ -110,19 +134,25 @@ Deno.serve(async (req) => {
         }));
       },
       clearReference: async (id) => {
-        await service.from("mvp_orders").update({ photo_path: null }).eq("id", id);
+        const { error } = await service.from("mvp_orders").update({ photo_path: null }).eq("id", id);
+        if (error) return { ok: false, error: error.message };
+        return { ok: true };
       },
     });
 
     const expiredResults = await purgeTable(service, {
-      listPage: async () => {
-        const { data } = await service
+      listPage: async (skipIds) => {
+        let query = service
           .from("generations")
           .select("id, result_bucket, result_path, result_expires_at")
           .not("result_path", "is", null)
           .lt("result_expires_at", now)
           .order("result_expires_at", { ascending: true })
+          .order("id", { ascending: true })
           .range(0, PAGE_SIZE - 1);
+        query = applySkip(query, skipIds);
+        const { data, error } = await query;
+        if (error) throw new Error(`generations select failed: ${error.message}`);
         return (data || []).map((row) => ({
           id: String(row.id),
           bucket: String(row.result_bucket || RESULT_BUCKET),
@@ -130,7 +160,7 @@ Deno.serve(async (req) => {
         }));
       },
       clearReference: async (id) => {
-        await service
+        const { error } = await service
           .from("generations")
           .update({
             result_path: null,
@@ -139,6 +169,8 @@ Deno.serve(async (req) => {
             preview_image_url: null,
           })
           .eq("id", id);
+        if (error) return { ok: false, error: error.message };
+        return { ok: true };
       },
     });
 

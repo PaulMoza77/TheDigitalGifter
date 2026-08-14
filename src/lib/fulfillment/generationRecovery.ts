@@ -43,3 +43,6 @@ export function isStillImageTemplate(args: {
   if (!prompt) return { ok: false, error: "template_prompt_missing" };
   return { ok: true, prompt };
 }
+
+/** Canonical templates.isactive column. Do not select is_active alongside it. */
+export const TEMPLATE_ACTIVE_COLUMN = "isactive" as const;

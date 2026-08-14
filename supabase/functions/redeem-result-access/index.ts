@@ -27,9 +27,10 @@ Deno.serve(async (req) => {
     const service = getServiceClient();
     const { data, error } = await service.rpc("consume_access_redeem_code", {
       p_code_hash: await sha256Hex(code),
+      p_order_id: orderId,
     });
     if (error) throw error;
-    if (!data?.ok || String(data.order_id || "") !== orderId) {
+    if (!data?.ok) {
       return jsonResponse({ error: "Invalid or expired code" }, 401);
     }
 

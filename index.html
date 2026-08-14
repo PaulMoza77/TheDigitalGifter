@@ -23,21 +23,20 @@
     <script>
       (function () {
         try {
+          if (location.pathname !== "/funnel/result") return;
           var params = new URLSearchParams(location.search);
           var orderId = params.get("order_id") || "";
+          if (!orderId) return;
           var hash = location.hash || "";
           var token = "";
           if (hash.indexOf("#t=") === 0) {
-            token = decodeURIComponent(hash.slice(3));
+            token = decodeURIComponent(hash.slice(3).split("&")[0] || "");
           } else if (hash.charAt(0) === "#") {
             token = new URLSearchParams(hash.slice(1)).get("t") || "";
           }
-          if (orderId && token) {
-            sessionStorage.setItem("tdg.orderAccess." + orderId, token);
-          }
-          if (hash) {
-            history.replaceState({}, "", location.pathname + location.search);
-          }
+          if (!token) return;
+          sessionStorage.setItem("tdg.orderAccess." + orderId, token);
+          history.replaceState({}, "", location.pathname + location.search);
         } catch (e) {}
       })();
     </script>

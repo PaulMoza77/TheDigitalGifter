@@ -5,7 +5,11 @@ import { authorizeUploadAccess, verifyAccessToken } from "../_shared/guestToken.
 import { accessTokenSecret, sha256Hex } from "../_shared/access.ts";
 import { isServerManagedUploadPath, UPLOAD_BUCKET } from "../_shared/uploadPath.ts";
 import { checkoutReturnUrls, configuredAppOrigin, randomRedeemCode } from "../_shared/appOrigin.ts";
-import { isStillImageTemplate } from "../_shared/generationRecovery.ts";
+import { isStillImageTemplate, TEMPLATE_ACTIVE_COLUMN } from "../_shared/generationRecovery.ts";
+import {
+  stripeCheckoutIdempotencyKey,
+  stripeExpireSessionPath,
+} from "../_shared/stripePayment.ts";
 
 type Body = {
   email?: string;
@@ -35,9 +39,22 @@ function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+async function expireStripeCheckoutSession(stripeKey: string, sessionId: string) {
+  const id = String(sessionId || "").trim();
+  if (!id) return;
+  await fetch(`https://api.stripe.com${stripeExpireSessionPath(id)}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${stripeKey}` },
+  }).catch(() => undefined);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+
+  let stripeKey = "";
+  let stripeSessionId = "";
+  let createdOrderId = "";
 
   try {
     if (!isCheckoutEnabledOnServer()) {
@@ -50,7 +67,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
     if (!stripeKey) {
       return jsonResponse({ error: "STRIPE_SECRET_KEY is not configured." }, 503);
     }
@@ -113,14 +130,17 @@ Deno.serve(async (req) => {
     if (!templateId) {
       return jsonResponse({ error: "A valid template is required." }, 400);
     }
-    const { data: tmpl } = await service
+    const { data: tmpl, error: tmplErr } = await service
       .from("templates")
-      .select("id, prompt, isactive, is_active, type")
+      .select(`id, prompt, ${TEMPLATE_ACTIVE_COLUMN}, type`)
       .eq("id", templateId)
       .maybeSingle();
+    if (tmplErr) {
+      return jsonResponse({ error: "template_lookup_failed", detail: tmplErr.message }, 500);
+    }
     const templateCheck = isStillImageTemplate({
       exists: Boolean(tmpl),
-      active: tmpl?.is_active === true || tmpl?.isactive === true,
+      active: tmpl?.isactive === true,
       type: tmpl?.type ?? null,
       prompt: tmpl?.prompt ?? null,
     });
@@ -188,6 +208,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (orderErr || !order?.id) {
+      await service.from("generations").delete().eq("id", generation.id);
       const duplicate = String(orderErr?.message || "").toLowerCase().includes("mvp_orders_one_live_upload")
         || String(orderErr?.code || "") === "23505";
       if (duplicate) {
@@ -195,6 +216,7 @@ Deno.serve(async (req) => {
       }
       throw new Error(orderErr?.message || "Could not create order");
     }
+    createdOrderId = order.id;
 
     await service.from("generations").update({ order_id: order.id }).eq("id", generation.id);
 
@@ -245,6 +267,7 @@ Deno.serve(async (req) => {
       headers: {
         Authorization: `Bearer ${stripeKey}`,
         "Content-Type": "application/x-www-form-urlencoded",
+        "Idempotency-Key": stripeCheckoutIdempotencyKey(order.id),
       },
       body: params,
     });
@@ -256,31 +279,45 @@ Deno.serve(async (req) => {
         .eq("id", order.id);
       return jsonResponse({ error: session.error?.message || "Stripe checkout failed" }, 502);
     }
+    stripeSessionId = String(session.id || "");
+
+    const cancelAfterStripe = async (error: string, status = 409) => {
+      await expireStripeCheckoutSession(stripeKey, stripeSessionId);
+      await service
+        .from("mvp_orders")
+        .update({ status: "canceled", error, updated_at: new Date().toISOString() })
+        .eq("id", order.id);
+      return jsonResponse({ error: error === "upload_unavailable"
+        ? "This upload is no longer available for checkout."
+        : error }, status);
+    };
 
     const { data: consumed, error: consumeErr } = await service.rpc("consume_confirmed_upload", {
       p_upload_id: uploadId,
       p_order_id: order.id,
     });
     if (consumeErr || !consumed?.ok) {
-      await service
-        .from("mvp_orders")
-        .update({ status: "canceled", error: "upload_unavailable", updated_at: new Date().toISOString() })
-        .eq("id", order.id);
-      return jsonResponse({ error: "This upload is no longer available for checkout." }, 409);
+      return await cancelAfterStripe("upload_unavailable", 409);
     }
 
-    await service
+    const { error: orderUpdateErr } = await service
       .from("mvp_orders")
       .update({ stripe_checkout_session_id: session.id, updated_at: new Date().toISOString() })
       .eq("id", order.id);
+    if (orderUpdateErr) {
+      return await cancelAfterStripe("order_update_failed", 500);
+    }
 
-    await service
+    const { error: genUpdateErr } = await service
       .from("generations")
       .update({
         stripe_session_id: session.id,
         checkout_session_id: session.id,
       })
       .eq("id", generation.id);
+    if (genUpdateErr) {
+      return await cancelAfterStripe("generation_update_failed", 500);
+    }
 
     return jsonResponse({
       url: session.url,
@@ -292,6 +329,20 @@ Deno.serve(async (req) => {
       generation_id: generation.id,
     });
   } catch (err) {
+    if (stripeSessionId && stripeKey) {
+      await expireStripeCheckoutSession(stripeKey, stripeSessionId);
+    }
+    if (createdOrderId && stripeSessionId) {
+      try {
+        const service = getServiceClient();
+        await service
+          .from("mvp_orders")
+          .update({ status: "canceled", error: "checkout_failed_after_stripe", updated_at: new Date().toISOString() })
+          .eq("id", createdOrderId);
+      } catch {
+        // Best-effort cancel; the expired Stripe session cannot be paid.
+      }
+    }
     const message = err instanceof Error ? err.message : String(err);
     return jsonResponse({ error: message }, 500);
   }
