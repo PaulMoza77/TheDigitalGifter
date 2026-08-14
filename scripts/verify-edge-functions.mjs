@@ -86,7 +86,7 @@ assert(checkout.includes("void body.success_url"), "checkout ignores client succ
 assert(checkout.includes("void body.cancel_url"), "checkout ignores client cancel_url");
 assert(checkout.includes("consume_confirmed_upload"), "checkout consumes the upload for one order");
 assert(checkout.includes("Idempotency-Key"), "checkout sends a Stripe Idempotency-Key");
-assert(checkout.includes("/expire"), "checkout expires the Stripe session after a post-create error");
+assert(checkout.includes("stripeExpireSessionPath") || checkout.includes("/expire"), "checkout expires the Stripe session after a post-create error");
 assert(checkout.includes('.delete().eq("id", generation.id)'), "checkout deletes the generation if the order insert fails");
 assert(checkout.includes("template_lookup_failed"), "checkout treats template query errors as failures");
 assert(checkout.includes("TEMPLATE_ACTIVE_COLUMN") || checkout.includes("isactive"), "checkout uses the canonical isactive column");

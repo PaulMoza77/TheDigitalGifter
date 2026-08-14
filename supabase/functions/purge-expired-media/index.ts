@@ -72,11 +72,6 @@ async function purgeTable(
   return { cleared, retried, skipped, pages };
 }
 
-function applySkip(query: { not: (column: string, op: string, value: string) => typeof query }, skipIds: string[]) {
-  if (!skipIds.length) return query;
-  return query.not("id", "in", supabaseNotInFilter(skipIds));
-}
-
 Deno.serve(async (req) => {
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
   if (!requireSchedulerAuth(req)) {
@@ -98,8 +93,10 @@ Deno.serve(async (req) => {
           .order("created_at", { ascending: true })
           .order("id", { ascending: true })
           .range(0, PAGE_SIZE - 1);
-        query = applySkip(query, skipIds);
-        const { data, error } = await query;
+        const skipped = skipIds.length
+          ? query.not("id", "in", supabaseNotInFilter(skipIds))
+          : query;
+        const { data, error } = await skipped;
         if (error) throw new Error(`upload_sessions select failed: ${error.message}`);
         return (data || []).map((row) => ({
           id: String(row.id),
@@ -124,8 +121,10 @@ Deno.serve(async (req) => {
           .order("upload_expires_at", { ascending: true })
           .order("id", { ascending: true })
           .range(0, PAGE_SIZE - 1);
-        query = applySkip(query, skipIds);
-        const { data, error } = await query;
+        const skipped = skipIds.length
+          ? query.not("id", "in", supabaseNotInFilter(skipIds))
+          : query;
+        const { data, error } = await skipped;
         if (error) throw new Error(`mvp_orders select failed: ${error.message}`);
         return (data || []).map((row) => ({
           id: String(row.id),
@@ -150,8 +149,10 @@ Deno.serve(async (req) => {
           .order("result_expires_at", { ascending: true })
           .order("id", { ascending: true })
           .range(0, PAGE_SIZE - 1);
-        query = applySkip(query, skipIds);
-        const { data, error } = await query;
+        const skipped = skipIds.length
+          ? query.not("id", "in", supabaseNotInFilter(skipIds))
+          : query;
+        const { data, error } = await skipped;
         if (error) throw new Error(`generations select failed: ${error.message}`);
         return (data || []).map((row) => ({
           id: String(row.id),
