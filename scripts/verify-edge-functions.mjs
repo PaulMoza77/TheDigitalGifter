@@ -32,7 +32,7 @@ function walkTs(dir, acc = []) {
 const webhook = read("supabase/functions/stripe-webhook/index.ts");
 assert(!webhook.includes("generateWithReplicate"), "stripe-webhook does not generate synchronously");
 assert(webhook.includes("claim_mvp_order_paid"), "stripe-webhook claims paid orders");
-assert(webhook.includes("process-fulfillment-jobs"), "stripe-webhook enqueues the job worker");
+assert(webhook.includes("kickFulfillmentWorker"), "stripe-webhook enqueues the job worker");
 assert(webhook.includes("validatePaidStripeSession"), "stripe-webhook validates amount/currency/SKU");
 assert(!webhook.includes("await invokeFulfill"), "stripe-webhook does not await fulfillment");
 
