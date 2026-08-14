@@ -1,6 +1,6 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
-import { authorizeOrderAccess, verifyAccessToken } from "../_shared/guestToken.ts";
+import { authorizeUploadAccess, verifyAccessToken } from "../_shared/guestToken.ts";
 import { accessTokenSecret } from "../_shared/access.ts";
 import { UPLOAD_BUCKET } from "../_shared/uploadPath.ts";
 
@@ -30,17 +30,18 @@ Deno.serve(async (req) => {
     const service = getServiceClient();
     const { data: session } = await service
       .from("upload_sessions")
-      .select("id, bucket, path, status, user_id")
+      .select("id, bucket, path, status, user_id, expires_at")
       .eq("id", uploadId)
       .maybeSingle();
     if (!session || session.status !== "confirmed") {
       return jsonResponse({ error: "Upload not confirmed" }, 404);
     }
 
-    const allowed = authorizeOrderAccess({
-      orderUserId: session.user_id ? String(session.user_id) : null,
+    const allowed = authorizeUploadAccess({
+      uploadUserId: session.user_id ? String(session.user_id) : null,
       authUserId: user?.id ?? null,
       tokenOk: Boolean(token),
+      expiresAt: session.expires_at ? String(session.expires_at) : null,
     });
     if (!allowed) return jsonResponse({ error: "Unauthorized" }, 401);
     if (session.bucket !== UPLOAD_BUCKET) {

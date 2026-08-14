@@ -46,14 +46,14 @@ describe("claimGenerationStart", () => {
     assert.equal(result.kind, "claimed");
   });
 
-  it("does not duplicate an in-flight generation", () => {
+  it("reclaims a stale processing generation under the attempt cap", () => {
     const result = claimGenerationStart({
       generationStatus: "processing",
       attemptCount: 1,
       maxAttempts: 3,
     });
-    assert.equal(result.runGeneration, false);
-    assert.equal(result.kind, "already_running");
+    assert.equal(result.runGeneration, true);
+    assert.equal(result.kind, "stale_reclaim");
   });
 
   it("allows a failed generation to retry under the attempt cap", () => {

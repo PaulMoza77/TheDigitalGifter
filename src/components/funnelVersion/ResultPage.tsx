@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { productTruth } from "@/config/productTruth";
 import { productModel } from "@/config/productModel";
+import { readOrderAccessToken } from "@/lib/orderAccess";
 import {
   RefreshCw,
   Sparkles,
@@ -80,9 +81,7 @@ export default function ResultPage() {
 
   const generationId = String(q.get("generation_id") || q.get("id") || "").trim();
   const orderId = String(q.get("order_id") || "").trim();
-  const accessToken = String(
-    q.get("access_token") || localStorage.getItem("tdg_order_access_token") || "",
-  ).trim();
+  const accessToken = readOrderAccessToken(orderId);
 
   const [loading, setLoading] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -123,8 +122,8 @@ export default function ResultPage() {
   }
 
   useEffect(() => {
-    if (accessToken) localStorage.setItem("tdg_order_access_token", accessToken);
-  }, [accessToken]);
+    localStorage.removeItem("tdg_order_access_token");
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -325,7 +324,7 @@ export default function ResultPage() {
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-zinc-700 sm:text-base md:text-lg">
             {imageUrl
-              ? "Download your gift or create another one. Add-ons and extra regenerations are not part of this product."
+              ? "Download your gift or create another one."
               : "This page will update when the image is ready."}
           </p>
         </div>

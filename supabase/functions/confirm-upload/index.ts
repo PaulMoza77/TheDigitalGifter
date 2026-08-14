@@ -32,11 +32,14 @@ Deno.serve(async (req) => {
     const service = getServiceClient();
     const { data: session, error } = await service
       .from("upload_sessions")
-      .select("id, bucket, path, status, declared_mime")
+      .select("id, bucket, path, status, declared_mime, expires_at")
       .eq("id", uploadId)
       .maybeSingle();
     if (error) throw error;
     if (!session) return jsonResponse({ error: "Upload not found" }, 404);
+    if (session.expires_at && new Date(String(session.expires_at)).getTime() <= Date.now()) {
+      return jsonResponse({ error: "Upload expired" }, 400);
+    }
     if (session.bucket !== UPLOAD_BUCKET || !isServerManagedUploadPath(session.path)) {
       return jsonResponse({ error: "Invalid upload path" }, 400);
     }

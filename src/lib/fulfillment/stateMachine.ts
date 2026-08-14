@@ -63,6 +63,7 @@ export type ClaimGenerationResult =
   | { kind: "already_running"; runGeneration: false }
   | { kind: "already_complete"; runGeneration: false }
   | { kind: "retry_allowed"; runGeneration: true }
+  | { kind: "stale_reclaim"; runGeneration: true }
   | { kind: "blocked"; runGeneration: false; reason: string };
 
 export function claimGenerationStart(args: {
@@ -77,7 +78,14 @@ export function claimGenerationStart(args: {
   }
 
   if (status === "processing") {
-    return { kind: "already_running", runGeneration: false };
+    if (args.attemptCount >= args.maxAttempts) {
+      return {
+        kind: "blocked",
+        runGeneration: false,
+        reason: "max_attempts_reached",
+      };
+    }
+    return { kind: "stale_reclaim", runGeneration: true };
   }
 
   if (status === "completed") {

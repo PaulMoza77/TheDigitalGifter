@@ -256,9 +256,7 @@ export default function FunnelPayment(): JSX.Element {
 
       if (data.id) localStorage.setItem("tdg_last_checkout_session_id", data.id);
       if (data.order_id) localStorage.setItem("tdg_last_order_id", data.order_id);
-      if (data.access_token) {
-        localStorage.setItem("tdg_order_access_token", data.access_token);
-      }
+      localStorage.removeItem("tdg_order_access_token");
 
       mergeSession({
         generation_id: data.generation_id || null,

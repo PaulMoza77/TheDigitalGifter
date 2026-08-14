@@ -24,6 +24,10 @@ export function allowRateLimit(countInWindow: number, max = MAX_UPLOADS_PER_HOUR
   return countInWindow < max;
 }
 
-export function resultObjectPath(orderId: string, generationId: string): string {
-  return `orders/${orderId}/${generationId}.jpg`;
+export function resultObjectPath(
+  orderId: string,
+  generationId: string,
+  ext: "jpg" | "png" | "webp" = "jpg",
+): string {
+  return `orders/${orderId}/${generationId}.${ext}`;
 }

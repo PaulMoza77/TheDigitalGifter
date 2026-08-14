@@ -9,11 +9,6 @@ import { productTruth } from "@/config/productTruth";
 
 const faqs = [
   {
-    question: "How does the credit system work?",
-    answer:
-      "Credits are used when you generate. The amount required is shown on each template before you generate.",
-  },
-  {
     question: "How are my photos used?",
     answer: productTruth.copy.photoHandling,
   },

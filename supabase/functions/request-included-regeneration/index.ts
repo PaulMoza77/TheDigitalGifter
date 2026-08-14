@@ -54,9 +54,10 @@ Deno.serve(async (req) => {
       Date.now() + mvpProduct.resultRetentionDays * 24 * 60 * 60 * 1000,
     ).toISOString();
 
-    const prompt = String(
-      order.template_prompt || "Create a personalized still image from the uploaded photo.",
-    ).trim();
+    const prompt = String(order.template_prompt || "").trim();
+    if (!prompt) {
+      return jsonResponse({ error: "template_prompt_missing" }, 400);
+    }
 
     const { data: generation, error: genErr } = await service
       .from("generations")

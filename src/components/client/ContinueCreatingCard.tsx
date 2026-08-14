@@ -18,7 +18,7 @@ export default function ContinueCreatingCard() {
         </h3>
 
         <p className="mt-2 text-sm leading-6 text-zinc-400">
-          Jump back into the generator and create new visuals, gifts and special moments.
+          Jump back in to create a new still image for a special moment.
         </p>
 
         <Button
@@ -26,7 +26,7 @@ export default function ContinueCreatingCard() {
           className="mt-6 w-full rounded-2xl border border-white/10 bg-white text-zinc-950 hover:bg-zinc-200 sm:w-auto"
         >
           <Link to="/funnel/uploadPhoto">
-            Open Generator
+            Open Create
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>

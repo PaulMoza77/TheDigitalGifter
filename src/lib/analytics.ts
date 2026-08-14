@@ -54,7 +54,7 @@ export function loadMarketingScripts() {
   }
 
   window.gtag?.("config", GA_ID, {
-    send_page_view: true,
+    send_page_view: false,
     anonymize_ip: true,
   });
 
@@ -94,9 +94,11 @@ export function initAnalytics() {
 export function trackPageView(path: string) {
   if (!hasAnalyticsConsent(readCookieConsent())) return;
   if (!ensureGtag()) return;
+  const origin = window.location.origin;
+  const location = `${origin}${path}`;
   window.gtag?.("config", GA_ID, {
     page_path: path,
-    page_location: window.location.href,
+    page_location: location,
     page_title: document.title,
   });
 }

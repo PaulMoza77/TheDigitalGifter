@@ -1,12 +1,19 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { claimPaidOrder, rescheduleFailedJob } from "./stateMachine.ts";
-import { authorizeOrderAccess, signAccessToken, verifyAccessToken } from "./guestToken.ts";
+import { authorizeOrderAccess, authorizeUploadAccess, signAccessToken, verifyAccessToken } from "./guestToken.ts";
 import { validatePaidStripeSession } from "./stripePayment.ts";
 import { simulateTwoSimultaneousRegenerations } from "./regenClaim.ts";
-import { chunkPages, cleanupPager, verifyCleanupPage } from "./cleanup.ts";
+import { chunkPages, cleanupOneRow, cleanupPager, cleanupRowsPaged, verifyCleanupPage } from "./cleanup.ts";
 import { isServerManagedUploadPath, serverUploadPath } from "./uploadPath.ts";
 import { validateImageUpload } from "../imageValidation.ts";
+import { checkoutReturnUrls, configuredAppOrigin, requireAccessTokenSecret, resultEmailHref } from "./appOrigin.ts";
+import {
+  detectStillImageMime,
+  isStillImageTemplate,
+  reuseExistingPredictionId,
+  shouldCreateNewPrediction,
+} from "./generationRecovery.ts";
 
 describe("claimPaidOrder", () => {
   it("enqueues a job exactly once for a pending order", () => {
@@ -161,3 +168,148 @@ describe("fake file upload", () => {
     assert.equal(result.ok, false);
   });
 });
+
+describe("upload ownership", () => {
+  it("does not let a signed-in user claim a guest upload without a token", () => {
+    assert.equal(
+      authorizeUploadAccess({
+        uploadUserId: null,
+        authUserId: "user-1",
+        tokenOk: false,
+      }),
+      false,
+    );
+    assert.equal(
+      authorizeUploadAccess({
+        uploadUserId: "user-1",
+        authUserId: "user-1",
+        tokenOk: false,
+      }),
+      true,
+    );
+    assert.equal(
+      authorizeUploadAccess({
+        uploadUserId: null,
+        authUserId: "user-1",
+        tokenOk: true,
+        expiresAt: new Date(Date.now() - 1000).toISOString(),
+      }),
+      false,
+    );
+  });
+});
+
+describe("server origin urls", () => {
+  it("requires ACCESS_TOKEN_SECRET and builds allowlisted return urls without HMAC in the query", () => {
+    assert.throws(() => requireAccessTokenSecret(""), /ACCESS_TOKEN_SECRET/);
+    const origin = configuredAppOrigin("https://www.thedigitalgifter.com/app");
+    assert.equal(origin, "https://www.thedigitalgifter.com");
+    const urls = checkoutReturnUrls(origin, {
+      orderId: "ord-1",
+      generationId: "gen-1",
+      redeemCode: "abc",
+    });
+    assert.equal(urls.successUrl.includes("access_token"), false);
+    assert.equal(urls.successUrl.includes("rc=abc"), true);
+    const email = resultEmailHref(origin, "ord-1", "hmac-token");
+    assert.equal(email.includes("?access_token="), false);
+    assert.equal(email.includes("#t=hmac-token"), true);
+  });
+});
+
+describe("template validation", () => {
+  it("rejects missing, inactive, video, or empty-prompt templates without a generic fallback", () => {
+    assert.equal(isStillImageTemplate({ exists: false, active: true, type: "image", prompt: "x" }).ok, false);
+    assert.equal(isStillImageTemplate({ exists: true, active: false, type: "image", prompt: "x" }).ok, false);
+    assert.equal(isStillImageTemplate({ exists: true, active: true, type: "video", prompt: "x" }).ok, false);
+    assert.equal(isStillImageTemplate({ exists: true, active: true, type: "image", prompt: "  " }).ok, false);
+    const ok = isStillImageTemplate({ exists: true, active: true, type: "image", prompt: "real prompt" });
+    assert.equal(ok.ok, true);
+    if (ok.ok) assert.equal(ok.prompt, "real prompt");
+  });
+});
+
+describe("prediction reuse", () => {
+  it("reuses an existing prediction id unless it already failed", () => {
+    assert.equal(reuseExistingPredictionId("pred_1"), "pred_1");
+    assert.equal(shouldCreateNewPrediction("starting"), false);
+    assert.equal(shouldCreateNewPrediction("succeeded"), false);
+    assert.equal(shouldCreateNewPrediction("failed"), true);
+    assert.equal(shouldCreateNewPrediction("canceled"), true);
+  });
+
+  it("detects PNG/WebP/JPEG and refuses other bytes as JPEG", () => {
+    const png = detectStillImageMime(Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    assert.equal(png.ok, true);
+    if (png.ok) {
+      assert.equal(png.mime, "image/png");
+      assert.equal(png.ext, "png");
+    }
+    const jpeg = detectStillImageMime(Uint8Array.from([0xff, 0xd8, 0xff, 0xe0]));
+    assert.equal(jpeg.ok, true);
+    if (jpeg.ok) assert.equal(jpeg.mime, "image/jpeg");
+    const fake = detectStillImageMime(Uint8Array.from([0x00, 0x01, 0x02, 0x03]));
+    assert.equal(fake.ok, false);
+  });
+});
+
+describe("cleanup failure and retry", () => {
+  it("keeps the DB reference when storage fails and clears it after a successful retry", async () => {
+    const cleared: string[] = [];
+    let fail = true;
+    const deleteObject = async () => {
+      if (fail) {
+        fail = false;
+        return { ok: false as const, error: "storage" };
+      }
+      return { ok: true as const };
+    };
+    const first = await cleanupOneRow({
+      row: { id: "row-1", bucket: "customer-uploads", path: "uploads/a.jpg" },
+      deleteObject,
+      clearReference: async (id) => {
+        cleared.push(id);
+      },
+    });
+    assert.equal(first, "retry");
+    assert.deepEqual(cleared, []);
+    const second = await cleanupOneRow({
+      row: { id: "row-1", bucket: "customer-uploads", path: "uploads/a.jpg" },
+      deleteObject,
+      clearReference: async (id) => {
+        cleared.push(id);
+      },
+    });
+    assert.equal(second, "cleared");
+    assert.deepEqual(cleared, ["row-1"]);
+  });
+
+  it("processes more than 200 objects per row without clearing unprocessed rows", async () => {
+    const rows = Array.from({ length: 250 }, (_, i) => ({
+      id: `row-${i}`,
+      bucket: "generated-results",
+      path: `orders/o/${i}.jpg`,
+    }));
+    const deleted: string[] = [];
+    const cleared: string[] = [];
+    const result = await cleanupRowsPaged({
+      rows,
+      pageSize: 50,
+      deleteObject: async (_bucket, path) => {
+        if (path.endsWith("/7.jpg")) return { ok: false as const, error: "storage" };
+        deleted.push(path);
+        return { ok: true as const };
+      },
+      clearReference: async (id) => {
+        cleared.push(id);
+      },
+    });
+    assert.equal(result.pages, 5);
+    assert.equal(result.retried, 1);
+    assert.equal(result.cleared, 249);
+    assert.equal(cleared.includes("row-7"), false);
+    assert.equal(cleared.length, 249);
+    assert.equal(deleted.length, 249);
+  });
+});
+

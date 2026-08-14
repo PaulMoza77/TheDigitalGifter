@@ -67,7 +67,7 @@ export default function AccountSidebar() {
           <p className="mt-1 text-sm leading-6 text-zinc-400">
             {isAdmin
               ? "Access your dashboard, affiliate area, admin panel and generator from one workspace."
-              : "Manage your creations, credits, affiliate area and generator access."}
+              : "Manage your creations, affiliate area and still-image orders."}
           </p>
         </div>
 

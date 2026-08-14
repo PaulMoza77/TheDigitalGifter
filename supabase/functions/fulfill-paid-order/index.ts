@@ -5,6 +5,13 @@ import { mvpProduct } from "../_shared/mvpProduct.ts";
 import { signAccessToken } from "../_shared/guestToken.ts";
 import { accessTokenSecret } from "../_shared/access.ts";
 import { RESULT_BUCKET, resultObjectPath, UPLOAD_BUCKET } from "../_shared/uploadPath.ts";
+import { configuredAppOrigin, resultEmailHref } from "../_shared/appOrigin.ts";
+import {
+  detectStillImageMime,
+  isStillImageTemplate,
+  reuseExistingPredictionId,
+  shouldCreateNewPrediction,
+} from "../_shared/generationRecovery.ts";
 
 type Body = {
   order_id?: string;
@@ -13,6 +20,17 @@ type Body = {
   generationId?: string;
   job_id?: string;
 };
+
+type ReplicatePrediction = {
+  id?: string;
+  status?: string;
+  error?: string | null;
+  detail?: string;
+  output?: unknown;
+};
+
+const REPLICATE_POLL_MS = 2000;
+const REPLICATE_MAX_POLLS = 45;
 
 async function signedDownloadUrl(
   service: ReturnType<typeof getServiceClient>,
@@ -38,8 +56,18 @@ async function sendResultEmail(args: {
   }
 
   const from = Deno.env.get("RESULT_EMAIL_FROM") || "TheDigitalGifter <support@thedigitalgifter.com>";
-  const siteUrl = Deno.env.get("SITE_URL") || "https://www.thedigitalgifter.com";
-  const resultHref = `${siteUrl}/funnel/result?order_id=${encodeURIComponent(args.orderId)}&access_token=${encodeURIComponent(args.accessToken)}`;
+  let resultHref: string;
+  try {
+    resultHref = resultEmailHref(
+      configuredAppOrigin(Deno.env.get("SITE_URL")),
+      args.orderId,
+      args.accessToken,
+    );
+  } catch (err) {
+    console.warn("[fulfill-paid-order] SITE_URL missing; skipping email", err);
+    return { skipped: true as const };
+  }
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -63,10 +91,52 @@ async function sendResultEmail(args: {
   return { skipped: false as const };
 }
 
-async function generateWithReplicate(prompt: string, imageUrl: string | null) {
-  const token = Deno.env.get("REPLICATE_API_TOKEN");
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
+function extractOutputUrl(output: unknown): string | null {
+  if (typeof output === "string" && output.startsWith("http")) return output;
+  if (Array.isArray(output)) {
+    const first = output.find((item) => typeof item === "string" && item.startsWith("http"));
+    return typeof first === "string" ? first : null;
+  }
+  if (output && typeof output === "object" && "url" in output) {
+    const url = (output as { url?: unknown }).url;
+    return typeof url === "string" ? url : null;
+  }
+  return null;
+}
 
+function replicateHeaders(token: string, extra?: Record<string, string>) {
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    ...(extra || {}),
+  };
+}
+
+async function getPrediction(token: string, id: string): Promise<ReplicatePrediction> {
+  const res = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
+    headers: replicateHeaders(token),
+  });
+  const body = (await res.json()) as ReplicatePrediction;
+  if (!res.ok) throw new Error(body.detail || body.error || `Replicate GET ${res.status}`);
+  return body;
+}
+
+async function pollPrediction(token: string, id: string): Promise<ReplicatePrediction> {
+  for (let i = 0; i < REPLICATE_MAX_POLLS; i += 1) {
+    const prediction = await getPrediction(token, id);
+    if (["succeeded", "failed", "canceled"].includes(String(prediction.status || ""))) {
+      return prediction;
+    }
+    await new Promise((r) => setTimeout(r, REPLICATE_POLL_MS));
+  }
+  throw new Error("replicate_poll_timeout");
+}
+
+async function createPrediction(
+  token: string,
+  prompt: string,
+  imageUrl: string | null,
+): Promise<ReplicatePrediction> {
   const model =
     Deno.env.get("REPLICATE_NANO_BANANA_MODEL") ||
     Deno.env.get("REPLICATE_IMAGE_MODEL") ||
@@ -80,59 +150,26 @@ async function generateWithReplicate(prompt: string, imageUrl: string | null) {
 
   const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait",
-    },
+    headers: replicateHeaders(token),
     body: JSON.stringify({ input }),
   });
+  let prediction = (await createRes.json()) as ReplicatePrediction;
+  if (createRes.ok && prediction.id) return prediction;
 
-  let prediction = await createRes.json();
-  if (!createRes.ok) {
-    const version = Deno.env.get("REPLICATE_MODEL_VERSION");
-    if (!version) {
-      throw new Error(prediction?.detail || prediction?.error || "Replicate prediction failed");
-    }
-    const res2 = await fetch("https://api.replicate.com/v1/predictions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        Prefer: "wait",
-      },
-      body: JSON.stringify({ version, input }),
-    });
-    prediction = await res2.json();
-    if (!res2.ok) {
-      throw new Error(prediction?.detail || prediction?.error || "Replicate prediction failed");
-    }
+  const version = Deno.env.get("REPLICATE_MODEL_VERSION");
+  if (!version) {
+    throw new Error(prediction.detail || prediction.error || "Replicate prediction failed");
   }
-
-  let guard = 0;
-  while (
-    prediction?.status &&
-    !["succeeded", "failed", "canceled"].includes(prediction.status) &&
-    guard < 60
-  ) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    prediction = await poll.json();
-    guard += 1;
+  const res2 = await fetch("https://api.replicate.com/v1/predictions", {
+    method: "POST",
+    headers: replicateHeaders(token),
+    body: JSON.stringify({ version, input }),
+  });
+  prediction = (await res2.json()) as ReplicatePrediction;
+  if (!res2.ok || !prediction.id) {
+    throw new Error(prediction.detail || prediction.error || "Replicate prediction failed");
   }
-
-  if (prediction.status !== "succeeded") {
-    throw new Error(prediction?.error || `Generation ${prediction?.status || "failed"}`);
-  }
-
-  const out = prediction.output;
-  if (typeof out === "string") return { url: out, predictionId: String(prediction.id || "") };
-  if (Array.isArray(out) && typeof out[0] === "string") {
-    return { url: out[0], predictionId: String(prediction.id || "") };
-  }
-  throw new Error("Replicate returned no image URL");
+  return prediction;
 }
 
 Deno.serve(async (req) => {
@@ -141,15 +178,27 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Forbidden" }, 403);
   }
 
+  const service = getServiceClient();
+  let generationId = "";
+  let claimedRun = false;
+
+  const release = async (reason: string) => {
+    if (!claimedRun || !generationId) return;
+    claimedRun = false;
+    await service.rpc("release_mvp_generation_claim", {
+      p_generation_id: generationId,
+      p_error: reason,
+    });
+  };
+
   try {
     const body = await readJson<Body>(req);
     const orderId = String(body.order_id || body.orderId || "").trim();
-    const generationId = String(body.generation_id || body.generationId || "").trim();
+    generationId = String(body.generation_id || body.generationId || "").trim();
     if (!orderId || !generationId) {
       return jsonResponse({ error: "order_id and generation_id are required", ok: false }, 400);
     }
 
-    const service = getServiceClient();
     const { data: claimed, error: claimErr } = await service.rpc("claim_mvp_generation_start", {
       p_generation_id: generationId,
       p_max_attempts: mvpProduct.maxGenerationAttempts,
@@ -166,6 +215,7 @@ Deno.serve(async (req) => {
         generation_id: generationId,
       }, ok ? 200 : 409);
     }
+    claimedRun = true;
 
     const { data: generation, error: genErr } = await service
       .from("generations")
@@ -173,7 +223,10 @@ Deno.serve(async (req) => {
       .eq("id", generationId)
       .maybeSingle();
     if (genErr) throw genErr;
-    if (!generation) return jsonResponse({ error: "generation not found", ok: false }, 404);
+    if (!generation) {
+      await release("generation_not_found");
+      return jsonResponse({ error: "generation not found", ok: false }, 404);
+    }
 
     const { data: order, error: orderErr } = await service
       .from("mvp_orders")
@@ -181,7 +234,32 @@ Deno.serve(async (req) => {
       .eq("id", orderId)
       .maybeSingle();
     if (orderErr) throw orderErr;
-    if (!order) return jsonResponse({ error: "order not found", ok: false }, 404);
+    if (!order) {
+      await release("order_not_found");
+      return jsonResponse({ error: "order not found", ok: false }, 404);
+    }
+
+    const templateId = String(order.template_id || generation.template_id || "").trim();
+    if (!templateId) {
+      await release("template_required");
+      return jsonResponse({ error: "template_required", ok: false }, 400);
+    }
+
+    const { data: template } = await service
+      .from("templates")
+      .select("id, prompt, isactive, is_active, type")
+      .eq("id", templateId)
+      .maybeSingle();
+    const templateCheck = isStillImageTemplate({
+      exists: Boolean(template),
+      active: template?.is_active === true || template?.isactive === true,
+      type: template?.type ?? null,
+      prompt: String(order.template_prompt || template?.prompt || ""),
+    });
+    if (!templateCheck.ok) {
+      await release(templateCheck.error);
+      return jsonResponse({ error: templateCheck.error, ok: false }, 400);
+    }
 
     const photoBucket = String(order.photo_bucket || UPLOAD_BUCKET);
     const photoPath = String(order.photo_path || "");
@@ -190,64 +268,105 @@ Deno.serve(async (req) => {
       sourceUrl = await signedDownloadUrl(service, photoBucket, photoPath);
     }
 
-    const prompt = String(
-      order.template_prompt ||
-        generation.prompt ||
-        "Create a personalized still image from the uploaded photo.",
-    ).trim();
+    const token = Deno.env.get("REPLICATE_API_TOKEN");
+    if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
 
-    let imageUrl: string;
-    let predictionId = "";
-    try {
-      const generated = await generateWithReplicate(prompt, sourceUrl);
-      imageUrl = generated.url;
-      predictionId = generated.predictionId;
-    } catch (genError) {
-      const message = genError instanceof Error ? genError.message : String(genError);
-      await service
-        .from("generations")
-        .update({ status: "failed", error: message, updated_at: new Date().toISOString() })
-        .eq("id", generationId);
-      // Order stays paid/fulfilling. The job queue retries until dead.
-      return jsonResponse({ error: message, recoverable: true, ok: false }, 502);
+    let predictionId = reuseExistingPredictionId(generation.replicate_prediction_id);
+    let prediction: ReplicatePrediction | null = null;
+
+    if (predictionId) {
+      prediction = await getPrediction(token, predictionId);
+      if (shouldCreateNewPrediction(prediction.status)) {
+        predictionId = null;
+        prediction = null;
+      } else if (prediction.status !== "succeeded") {
+        prediction = await pollPrediction(token, predictionId);
+      }
     }
 
-    const imgRes = await fetch(imageUrl);
-    if (!imgRes.ok) throw new Error("Failed to download generated image");
+    if (!predictionId) {
+      const created = await createPrediction(token, templateCheck.prompt, sourceUrl);
+      predictionId = String(created.id || "");
+      if (!predictionId) throw new Error("replicate_prediction_id_missing");
+      const { error: persistErr } = await service
+        .from("generations")
+        .update({
+          replicate_prediction_id: predictionId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", generationId);
+      if (persistErr) throw persistErr;
+      prediction = created.status === "succeeded" ? created : await pollPrediction(token, predictionId);
+    }
+
+    if (!prediction || prediction.status !== "succeeded") {
+      await release(prediction?.error || "replicate_failed");
+      return jsonResponse({ error: "replicate_failed", recoverable: true, ok: false }, 502);
+    }
+
+    const outputUrl = extractOutputUrl(prediction.output);
+    if (!outputUrl) {
+      await release("replicate_output_missing");
+      return jsonResponse({ error: "replicate_output_missing", recoverable: true, ok: false }, 502);
+    }
+
+    const imgRes = await fetch(outputUrl);
+    if (!imgRes.ok) {
+      await release("result_download_failed");
+      return jsonResponse({ error: "result_download_failed", recoverable: true, ok: false }, 502);
+    }
     const bytes = new Uint8Array(await imgRes.arrayBuffer());
-    const objectPath = resultObjectPath(orderId, generationId);
+    const detected = detectStillImageMime(bytes);
+    if (!detected.ok) {
+      await release("result_not_still_image");
+      return jsonResponse({ error: "result_not_still_image", recoverable: true, ok: false }, 502);
+    }
+
+    const objectPath = resultObjectPath(orderId, generationId, detected.ext);
     const { error: upErr } = await service.storage
       .from(RESULT_BUCKET)
-      .upload(objectPath, bytes, { contentType: "image/jpeg", upsert: true });
-    if (upErr) throw upErr;
+      .upload(objectPath, bytes, { contentType: detected.mime, upsert: true });
+    if (upErr) {
+      await release("result_upload_failed");
+      return jsonResponse({ error: "result_upload_failed", recoverable: true, ok: false }, 500);
+    }
 
     const signed = await signedDownloadUrl(service, RESULT_BUCKET, objectPath);
-
-    await service
+    const now = new Date().toISOString();
+    const { error: genUpdateErr } = await service
       .from("generations")
       .update({
         status: "completed",
         result_bucket: RESULT_BUCKET,
         result_path: objectPath,
+        result_mime: detected.mime,
         result_image_url: signed,
         final_image_url: signed,
         preview_image_url: signed,
-        replicate_prediction_id: predictionId || null,
-        completed_at: new Date().toISOString(),
+        replicate_prediction_id: predictionId,
+        completed_at: now,
         error: null,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       })
-      .eq("id", generationId);
+      .eq("id", generationId)
+      .in("status", ["queued", "pending", "processing", "failed"]);
+    if (genUpdateErr) {
+      await release("generation_update_failed");
+      return jsonResponse({ error: "generation_update_failed", ok: false }, 500);
+    }
 
     await service
       .from("mvp_orders")
       .update({
         status: "completed",
-        fulfilled_at: new Date().toISOString(),
+        fulfilled_at: now,
         error: null,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .neq("status", "refunded");
+
+    claimedRun = false;
 
     const orderAccessToken = await signAccessToken(
       {
@@ -275,10 +394,12 @@ Deno.serve(async (req) => {
       status: "completed",
       order_id: orderId,
       generation_id: generationId,
+      result_mime: detected.mime,
       email_skipped: Boolean(emailResult.skipped),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    await release(message);
     return jsonResponse({ error: message, ok: false }, 500);
   }
 });

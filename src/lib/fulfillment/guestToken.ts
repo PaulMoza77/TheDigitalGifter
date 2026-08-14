@@ -85,3 +85,22 @@ export function authorizeOrderAccess(args: {
   }
   return args.tokenOk;
 }
+
+/** Token or exact ownership. Auth alone cannot claim a guest (null user) upload. */
+export function authorizeUploadAccess(args: {
+  uploadUserId: string | null;
+  authUserId: string | null;
+  tokenOk: boolean;
+  expiresAt?: string | null;
+  nowMs?: number;
+}): boolean {
+  if (args.expiresAt) {
+    const exp = Date.parse(args.expiresAt);
+    if (Number.isFinite(exp) && exp <= (args.nowMs ?? Date.now())) return false;
+  }
+  return authorizeOrderAccess({
+    orderUserId: args.uploadUserId,
+    authUserId: args.authUserId,
+    tokenOk: args.tokenOk,
+  });
+}

@@ -130,20 +130,6 @@ function prettyOccasion(occasion?: string | null) {
   return map[o] ?? o.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function parseRange(range: string): { min: number; max: number } | null {
-  const parts = String(range || "")
-    .split("-")
-    .map((n) => Number(n));
-
-  if (parts.length !== 2) return null;
-
-  const [min, max] = parts;
-
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
-
-  return { min, max };
-}
-
 function TemplatesGridComponent({
   onPick,
   selectedTemplateId,
@@ -162,7 +148,6 @@ function TemplatesGridComponent({
 
   const [scene, setScene] = useState<string>("all");
   const [orientation, setOrientation] = useState<string>("all");
-  const [priceRange, setPriceRange] = useState<string>("all");
 
   const { data: allTemplates = [] } = useTemplatesQuery();
 
@@ -214,29 +199,18 @@ function TemplatesGridComponent({
   const handleClearFilters = useCallback(() => {
     setScene("all");
     setOrientation("all");
-    setPriceRange("all");
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    const parsedRange = priceRange !== "all" ? parseRange(priceRange) : null;
-
     return baseTemplates.filter((template) => {
       const matchesScene = scene !== "all" ? template.scene === scene : true;
 
       const matchesOrientation =
         orientation !== "all" ? template.orientation === orientation : true;
 
-      const matchesPrice =
-        priceRange !== "all"
-          ? parsedRange
-            ? Number(template.creditCost) >= parsedRange.min &&
-              Number(template.creditCost) <= parsedRange.max
-            : true
-          : true;
-
-      return matchesScene && matchesOrientation && matchesPrice;
+      return matchesScene && matchesOrientation;
     });
-  }, [baseTemplates, scene, orientation, priceRange]);
+  }, [baseTemplates, scene, orientation]);
 
   const sceneCounts = useMemo(() => {
     return baseTemplates.reduce<Record<string, number>>((acc, template) => {
@@ -272,18 +246,8 @@ function TemplatesGridComponent({
     []
   );
 
-  const priceRangeOptions = useMemo(
-    () => [
-      { label: "All", value: "all" },
-      { label: "Budget (10-12)", value: "10-12" },
-      { label: "Premium (13-16)", value: "13-16" },
-      { label: "Luxury (17-20)", value: "17-20" },
-    ],
-    []
-  );
-
   const hasActiveFilters =
-    scene !== "all" || orientation !== "all" || priceRange !== "all";
+    scene !== "all" || orientation !== "all";
 
   const emptyLabel =
     activeOccasion && activeOccasion !== "all"
@@ -299,7 +263,7 @@ function TemplatesGridComponent({
           <div>
             <h2 className="text-lg font-semibold text-[#fffef5]">Filters</h2>
             <p className="mt-1 text-sm text-[#c1c8d8]">
-              Refine by scene, format and credit range.
+              Refine by scene and format.
             </p>
           </div>
 
@@ -327,7 +291,7 @@ function TemplatesGridComponent({
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-2 block text-xs font-medium text-[#c1c8d8]">
               Scene
@@ -364,30 +328,6 @@ function TemplatesGridComponent({
 
               <SelectContent className="border-[rgba(255,255,255,.2)] bg-[#0b1220] text-white">
                 {orientationOptions.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="focus:bg-[rgba(255,255,255,.1)] focus:text-white"
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-xs font-medium text-[#c1c8d8]">
-              Price Range
-            </label>
-
-            <Select value={priceRange} onValueChange={setPriceRange}>
-              <SelectTrigger className="w-full border-[rgba(255,255,255,.2)] bg-[rgba(255,255,255,.1)] text-white">
-                <SelectValue placeholder="Select price range" />
-              </SelectTrigger>
-
-              <SelectContent className="border-[rgba(255,255,255,.2)] bg-[#0b1220] text-white">
-                {priceRangeOptions.map((option) => (
                   <SelectItem
                     key={option.value}
                     value={option.value}

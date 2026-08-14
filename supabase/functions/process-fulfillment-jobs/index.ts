@@ -1,7 +1,20 @@
+/**
+ * Scheduler recovery for fulfillment jobs.
+ *
+ * Supabase Dashboard → Edge Functions → process-fulfillment-jobs → Schedules:
+ *   cron: * * * * *
+ *   HTTP headers:
+ *     x-fulfillment-secret: <FULFILLMENT_SECRET>
+ *     (or Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>)
+ *
+ * Processes at most one job per invocation. Backoff (`run_after`) and stale
+ * `running` jobs are reclaimed by claim_next_fulfillment_job — no new webhook
+ * is required. kickFulfillmentWorker() is only a waitUntil optimization.
+ */
 import { jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
-import { requireFulfillmentSecret } from "../_shared/stripe.ts";
 import { mvpProduct } from "../_shared/mvpProduct.ts";
+import { requireSchedulerAuth } from "../_shared/access.ts";
 
 type ClaimedJob = {
   kind?: string;
@@ -14,7 +27,7 @@ type ClaimedJob = {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
-  if (!requireFulfillmentSecret(req)) {
+  if (!requireSchedulerAuth(req)) {
     return jsonResponse({ error: "Forbidden" }, 403);
   }
 
@@ -26,44 +39,45 @@ Deno.serve(async (req) => {
   const secret = Deno.env.get("FULFILLMENT_SECRET") || "";
   if (!url || !anon) return jsonResponse({ error: "Missing SUPABASE_URL/ANON" }, 500);
 
-  const processed: Array<{ jobId: string; ok: boolean }> = [];
+  const { data, error } = await service.rpc("claim_next_fulfillment_job");
+  if (error) return jsonResponse({ error: error.message, processed: 0 }, 500);
 
-  for (let i = 0; i < 5; i += 1) {
-    const { data, error } = await service.rpc("claim_next_fulfillment_job");
-    if (error) return jsonResponse({ error: error.message, processed }, 500);
-
-    const claimed = data as ClaimedJob | null;
-    if (!claimed?.job?.id || claimed.kind === "empty") break;
-
-    const job = claimed.job;
-    const fulfillRes = await fetch(`${url}/functions/v1/fulfill-paid-order`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: anon,
-        Authorization: `Bearer ${anon}`,
-        "x-fulfillment-secret": secret,
-      },
-      body: JSON.stringify({
-        order_id: job.order_id,
-        generation_id: job.generation_id,
-        job_id: job.id,
-      }),
+  const claimed = data as ClaimedJob | null;
+  if (!claimed?.job?.id || claimed.kind === "empty") {
+    return jsonResponse({
+      processed: 0,
+      maxAttempts: mvpProduct.maxGenerationAttempts,
     });
-    const payload = await fulfillRes.json().catch(() => ({}));
-    const ok = fulfillRes.ok && payload?.ok === true;
-
-    await service.rpc("finish_fulfillment_job", {
-      p_job_id: job.id,
-      p_ok: ok,
-      p_error: ok ? null : String(payload?.error || `fulfill failed (${fulfillRes.status})`).slice(0, 500),
-    });
-
-    processed.push({ jobId: job.id, ok });
   }
 
+  const job = claimed.job;
+  const fulfillRes = await fetch(`${url}/functions/v1/fulfill-paid-order`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: anon,
+      Authorization: `Bearer ${anon}`,
+      "x-fulfillment-secret": secret,
+    },
+    body: JSON.stringify({
+      order_id: job.order_id,
+      generation_id: job.generation_id,
+      job_id: job.id,
+    }),
+  });
+  const payload = await fulfillRes.json().catch(() => ({}));
+  const ok = fulfillRes.ok && payload?.ok === true;
+
+  await service.rpc("finish_fulfillment_job", {
+    p_job_id: job.id,
+    p_ok: ok,
+    p_error: ok ? null : String(payload?.error || `fulfill failed (${fulfillRes.status})`).slice(0, 500),
+  });
+
   return jsonResponse({
-    processed,
+    processed: 1,
+    job_id: job.id,
+    ok,
     maxAttempts: mvpProduct.maxGenerationAttempts,
   });
 });
