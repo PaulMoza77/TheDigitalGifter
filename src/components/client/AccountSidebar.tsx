@@ -44,8 +44,8 @@ export default function AccountSidebar() {
     }
 
     base.push({
-      label: "Generator",
-      to: "/generator",
+      label: "Create",
+      to: "/funnel/uploadPhoto",
       icon: Wand2,
     });
 

@@ -25,7 +25,7 @@ export default function ContinueCreatingCard() {
           asChild
           className="mt-6 w-full rounded-2xl border border-white/10 bg-white text-zinc-950 hover:bg-zinc-200 sm:w-auto"
         >
-          <Link to="/generator">
+          <Link to="/funnel/uploadPhoto">
             Open Generator
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>

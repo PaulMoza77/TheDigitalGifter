@@ -1,6 +1,9 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
 import { isCheckoutEnabledOnServer, mvpProduct } from "../_shared/mvpProduct.ts";
+import { signAccessToken, verifyAccessToken } from "../_shared/guestToken.ts";
+import { accessTokenSecret } from "../_shared/access.ts";
+import { isServerManagedUploadPath, UPLOAD_BUCKET } from "../_shared/uploadPath.ts";
 
 type Body = {
   email?: string;
@@ -8,6 +11,9 @@ type Body = {
   style_id?: string;
   funnel_slug?: string;
   occasion?: string;
+  upload_id?: string;
+  access_token?: string;
+  accessToken?: string;
   photo_path?: string;
   photo_bucket?: string;
   digital_content_consent?: boolean;
@@ -47,6 +53,9 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "STRIPE_SECRET_KEY is not configured." }, 503);
     }
 
+    const secret = accessTokenSecret();
+    if (!secret) return jsonResponse({ error: "Access token secret is not configured." }, 503);
+
     const { user } = await getAuthUser(req);
     const body = await readJson<Body>(req);
     const email = firstString(body.email, user?.email).toLowerCase();
@@ -61,11 +70,51 @@ Deno.serve(async (req) => {
       );
     }
 
-    const photoPath = firstString(body.photo_path);
-    const photoBucket = firstString(body.photo_bucket, "customer-uploads");
-    if (!photoPath) return jsonResponse({ error: "Upload a photo first." }, 400);
+    const uploadId = firstString(body.upload_id);
+    const uploadToken = firstString(body.access_token, body.accessToken);
+    if (!uploadId || !uploadToken) {
+      return jsonResponse({ error: "A confirmed upload is required." }, 400);
+    }
+    void body.photo_path;
+    void body.photo_bucket;
+
+    const token = await verifyAccessToken(uploadToken, secret, { typ: "upload", id: uploadId });
+    if (!token && !user?.id) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
 
     const service = getServiceClient();
+    const { data: upload, error: uploadErr } = await service
+      .from("upload_sessions")
+      .select("*")
+      .eq("id", uploadId)
+      .maybeSingle();
+    if (uploadErr) throw uploadErr;
+    if (!upload || upload.status !== "confirmed") {
+      return jsonResponse({ error: "Confirm the photo upload before checkout." }, 400);
+    }
+    if (upload.bucket !== UPLOAD_BUCKET || !isServerManagedUploadPath(String(upload.path))) {
+      return jsonResponse({ error: "Invalid upload path" }, 400);
+    }
+    if (user?.id && upload.user_id && String(upload.user_id) !== user.id && !token) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+    if (!token && upload.user_id && user?.id !== String(upload.user_id)) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+
+    const templateId = firstString(body.template_id);
+    let templatePrompt = "Create a personalized still image from the uploaded photo.";
+    if (templateId) {
+      const { data: tmpl } = await service
+        .from("templates")
+        .select("prompt")
+        .eq("id", templateId)
+        .maybeSingle();
+      const loaded = String(tmpl?.prompt || "").trim();
+      if (loaded) templatePrompt = loaded;
+    }
+
     const siteUrl =
       Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_APP_URL") || "http://127.0.0.1:5173";
 
@@ -82,16 +131,16 @@ Deno.serve(async (req) => {
         status: "pending",
         email,
         user_email: email,
-        user_id: user?.id ?? null,
-        template_id: firstString(body.template_id) || null,
+        user_id: user?.id ?? upload.user_id ?? null,
+        template_id: templateId || null,
         style_id: firstString(body.style_id) || null,
         style_slug: firstString(body.style_id, body.funnel_slug) || null,
-        source_image_url: `${photoBucket}/${photoPath}`,
+        source_image_url: `${UPLOAD_BUCKET}/${upload.path}`,
         attempt_kind: "initial",
         attempt_count: 0,
         upload_expires_at: uploadExpires,
         result_expires_at: resultExpires,
-        prompt: firstString(body.style_id, body.occasion, "personalized still image"),
+        prompt: templatePrompt,
       })
       .select("id")
       .single();
@@ -104,17 +153,19 @@ Deno.serve(async (req) => {
       .from("mvp_orders")
       .insert({
         email,
-        user_id: user?.id ?? null,
+        user_id: user?.id ?? upload.user_id ?? null,
         status: "pending",
         sku: mvpProduct.sku,
         amount_cents: mvpProduct.amountCents,
         currency: mvpProduct.currency,
         generation_id: generation.id,
-        template_id: firstString(body.template_id) || null,
+        template_id: templateId || null,
         style_id: firstString(body.style_id) || null,
         occasion: firstString(body.occasion, body.funnel_slug) || null,
-        photo_bucket: photoBucket,
-        photo_path: photoPath,
+        photo_bucket: UPLOAD_BUCKET,
+        photo_path: upload.path,
+        upload_id: uploadId,
+        template_prompt: templatePrompt,
         included_regenerations_allowed: mvpProduct.includedRegenerations,
         included_regenerations_used: 0,
         digital_content_consent: true,
@@ -131,9 +182,18 @@ Deno.serve(async (req) => {
 
     await service.from("generations").update({ order_id: order.id }).eq("id", generation.id);
 
+    const orderAccessToken = await signAccessToken(
+      {
+        typ: "order",
+        id: order.id,
+        exp: Math.floor(Date.now() / 1000) + mvpProduct.resultRetentionDays * 24 * 3600,
+      },
+      secret,
+    );
+
     const successUrl =
       firstString(body.success_url) ||
-      `${siteUrl}/funnel/result?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}&generation_id=${generation.id}`;
+      `${siteUrl}/funnel/result?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}&generation_id=${generation.id}&access_token=${encodeURIComponent(orderAccessToken)}`;
     const cancelUrl =
       firstString(body.cancel_url) ||
       `${siteUrl}/funnel/payment?canceled=1`;
@@ -200,6 +260,7 @@ Deno.serve(async (req) => {
       id: session.id,
       order_id: order.id,
       generation_id: generation.id,
+      access_token: orderAccessToken,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

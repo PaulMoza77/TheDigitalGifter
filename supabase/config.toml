@@ -28,6 +28,15 @@ verify_jwt = false
 [functions.purge-expired-media]
 verify_jwt = false
 
+[functions.confirm-upload]
+verify_jwt = false
+
+[functions.get-upload-preview]
+verify_jwt = false
+
+[functions.process-fulfillment-jobs]
+verify_jwt = false
+
 [functions.cancel-subscription]
 verify_jwt = true
 

@@ -17,7 +17,7 @@ interface TheDigitalGifterMainPageProps {
 export default function TheDigitalGifterMainPage({
   onStartCreating,
   onViewTemplates,
-  createHref: _createHref = "/generator",
+  createHref: _createHref = "/funnel/uploadPhoto",
   occasion,
 }: TheDigitalGifterMainPageProps) {
   const features = [
@@ -277,8 +277,8 @@ const TemplatesCarousel = memo(function TemplatesCarousel({
               const templateOccasion =
                 item.occasion?.toLowerCase().trim() || occasion;
               if (templateOccasion) params.set("occasion", templateOccasion);
-              params.set("template", item._id);
-              navigate(`/generator?${params.toString()}`);
+              params.set("template_id", item._id);
+              navigate(`/funnel/uploadPhoto?${params.toString()}`);
             };
 
             return (

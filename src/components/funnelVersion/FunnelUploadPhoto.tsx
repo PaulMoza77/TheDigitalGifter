@@ -20,6 +20,8 @@ type FunnelSession = {
   occasion?: string | null;
   photo_bucket?: string | null;
   photo_path?: string | null;
+  upload_id?: string | null;
+  access_token?: string | null;
 };
 
 function cn(...classes: Array<string | false | null | undefined>) {
@@ -311,9 +313,11 @@ export default function FunnelUploadPhoto() {
         bucket?: string;
         path?: string;
         signed_url?: string;
+        upload_id?: string;
+        access_token?: string;
         error?: string;
       };
-      if (!urlRes.ok || !urlData.signed_url || !urlData.path) {
+      if (!urlRes.ok || !urlData.signed_url || !urlData.path || !urlData.upload_id || !urlData.access_token) {
         throw new Error(urlData.error || "Could not start a private upload.");
       }
 
@@ -328,6 +332,23 @@ export default function FunnelUploadPhoto() {
         throw new Error("Upload failed. Please try a smaller JPG, PNG, or WebP.");
       }
 
+      const confirmRes = await fetch(`${supabaseUrl}/functions/v1/confirm-upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anon,
+          Authorization: `Bearer ${session?.access_token || anon}`,
+        },
+        body: JSON.stringify({
+          upload_id: urlData.upload_id,
+          access_token: urlData.access_token,
+        }),
+      });
+      const confirmData = (await confirmRes.json()) as { error?: string; ok?: boolean };
+      if (!confirmRes.ok || !confirmData.ok) {
+        throw new Error(confirmData.error || "That file was rejected. Please upload a real JPG, PNG, or WebP.");
+      }
+
       const bucket = urlData.bucket || "customer-uploads";
       const path = urlData.path;
 
@@ -337,6 +358,8 @@ export default function FunnelUploadPhoto() {
       localStorage.setItem("tdg_funnel_occasion", occasion);
       localStorage.setItem("tdg_funnel_photo", path);
       localStorage.setItem("tdg_uploaded_photo_path", path);
+      localStorage.setItem("tdg_upload_id", urlData.upload_id);
+      localStorage.setItem("tdg_upload_access_token", urlData.access_token);
       localStorage.removeItem("tdg_uploaded_photo_url");
 
       mergeSession({
@@ -346,12 +369,12 @@ export default function FunnelUploadPhoto() {
         occasion,
         photo_bucket: bucket,
         photo_path: path,
+        upload_id: urlData.upload_id,
+        access_token: urlData.access_token,
       });
 
       const qs = new URLSearchParams();
 
-      qs.set("bucket", bucket);
-      qs.set("photo", path);
       qs.set("slug", slug);
       qs.set("occasion", occasion);
 

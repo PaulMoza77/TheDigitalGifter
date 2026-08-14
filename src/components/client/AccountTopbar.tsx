@@ -5,7 +5,6 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
-  Plus,
   Shield,
   Users,
   Wand2,
@@ -59,7 +58,6 @@ export default function AccountTopbar() {
   const {
     loading,
     isAdmin,
-    creditsRemaining,
     affiliateEarnings,
     refresh,
   } = useAccountOverview();
@@ -76,7 +74,7 @@ export default function AccountTopbar() {
       base.push({ label: "Admin Panel", to: "/admin", icon: Shield });
     }
 
-    base.push({ label: "Generator", to: "/generator", icon: Wand2 });
+    base.push({ label: "Create", to: "/funnel/uploadPhoto", icon: Wand2 });
 
     return base;
   }, [isAdmin]);
@@ -169,24 +167,12 @@ export default function AccountTopbar() {
             </span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => navigate("/pricing")}
-            className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-sm text-white/90 sm:flex"
-          >
-            <Plus size={18} />
-            <span className="hidden xl:inline">Credits:</span>
-            <span className="font-bold text-[#ffd976]">
-              {loading ? "..." : creditsRemaining}
-            </span>
-          </button>
-
           <Button
             asChild
             variant="secondary"
             className="hidden rounded-2xl border border-white/10 bg-white/10 text-white hover:bg-white/15 xl:inline-flex"
           >
-            <Link to="/generator">Open Generator</Link>
+            <Link to="/funnel/uploadPhoto">Create</Link>
           </Button>
 
           <div className="hidden lg:block">
@@ -232,22 +218,7 @@ export default function AccountTopbar() {
                 </SheetHeader>
 
                 <div className="px-5 py-6">
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleNavigate("/pricing")}
-                      className="rounded-2xl border border-white/15 bg-white/10 p-4 text-left"
-                    >
-                      <div className="flex items-center gap-2 text-sm text-zinc-300">
-                        <Plus className="h-4 w-4" />
-                        Credits
-                      </div>
-
-                      <div className="mt-2 text-2xl font-semibold text-[#ffd976]">
-                        {loading ? "..." : creditsRemaining}
-                      </div>
-                    </button>
-
+                  <div className="grid grid-cols-1 gap-3">
                     <button
                       type="button"
                       onClick={() => handleNavigate("/account/affiliate")}

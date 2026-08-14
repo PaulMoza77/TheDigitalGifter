@@ -5,14 +5,12 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
-  Plus,
   Shield,
   Users,
   Wand2,
   X,
 } from "lucide-react";
 
-import { CreditsDisplay } from "./CreditsDisplay";
 import { SignInButton } from "./SignInButton";
 import UserMenu from "./UserMenu";
 import { Logo } from "./ui/logo";
@@ -37,17 +35,16 @@ interface HeaderProps {
 const desktopNavItems = [
   { label: "Home", to: "/" },
   { label: "Templates", to: "/templates" },
-  { label: "Generator", to: "/generator" },
+  { label: "Create", to: "/funnel/uploadPhoto" },
 ];
 
-export default function Header({ onBuyCredits }: HeaderProps) {
+export default function Header(_props: HeaderProps) {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
   const {
     loading: overviewLoading,
     isAdmin,
-    creditsRemaining,
     affiliateEarnings,
     refresh,
   } = useAccountOverview();
@@ -129,8 +126,6 @@ export default function Header({ onBuyCredits }: HeaderProps) {
           ) : (
             <SignInButton />
           )}
-
-          <CreditsDisplay onBuyCredits={onBuyCredits} />
         </div>
 
         <div className="lg:hidden">
@@ -177,24 +172,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                   </div>
                 ) : isAuthenticated ? (
                   <>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMobileOpen(false);
-                          onBuyCredits?.();
-                        }}
-                        className="rounded-2xl border border-white/15 bg-white/10 p-4 text-left"
-                      >
-                        <div className="flex items-center gap-2 text-sm text-zinc-300">
-                          <Plus className="h-4 w-4" />
-                          Credits
-                        </div>
-                        <div className="mt-2 text-2xl font-semibold text-[#ffd976]">
-                          {creditsRemaining}
-                        </div>
-                      </button>
-
+                    <div className="grid grid-cols-1 gap-3">
                       <button
                         type="button"
                         onClick={() => goTo("/account/affiliate")}
@@ -242,11 +220,11 @@ export default function Header({ onBuyCredits }: HeaderProps) {
 
                       <button
                         type="button"
-                        onClick={() => goTo("/generator")}
+                        onClick={() => goTo("/funnel/uploadPhoto")}
                         className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
                       >
                         <Wand2 className="h-5 w-5 shrink-0" />
-                        Generator
+                        Create
                       </button>
                     </nav>
 
@@ -266,11 +244,11 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                     <nav className="space-y-2">
                       <button
                         type="button"
-                        onClick={() => goTo("/generator")}
+                        onClick={() => goTo("/funnel/uploadPhoto")}
                         className="flex w-full items-center gap-3 rounded-2xl bg-white/10 px-4 py-4 text-base font-semibold text-white"
                       >
                         <Wand2 className="h-5 w-5 shrink-0" />
-                        Generator
+                        Create
                       </button>
                     </nav>
 

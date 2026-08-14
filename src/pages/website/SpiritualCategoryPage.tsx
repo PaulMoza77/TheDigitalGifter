@@ -8,28 +8,28 @@ const spiritualTemplates = [
     title: "Bible Verses",
     description: "Beautiful cards with meaningful scripture-inspired messages.",
     icon: BookOpen,
-    path: "/generator?category=spiritual&type=bible-verses",
+    path: "/funnel/uploadPhoto?category=spiritual&type=bible-verses",
   },
   {
     id: "prayers",
     title: "Prayers",
     description: "Warm prayer cards for comfort, hope and gratitude.",
     icon: Cross,
-    path: "/generator?category=spiritual&type=prayers",
+    path: "/funnel/uploadPhoto?category=spiritual&type=prayers",
   },
   {
     id: "encouragement",
     title: "Encouragement",
     description: "Faith-filled messages for hard days and new beginnings.",
     icon: HeartHandshake,
-    path: "/generator?category=spiritual&type=encouragement",
+    path: "/funnel/uploadPhoto?category=spiritual&type=encouragement",
   },
   {
     id: "gratitude",
     title: "Gratitude",
     description: "Cards made to say thank you with depth and meaning.",
     icon: Sparkles,
-    path: "/generator?category=spiritual&type=gratitude",
+    path: "/funnel/uploadPhoto?category=spiritual&type=gratitude",
   },
 ];
 

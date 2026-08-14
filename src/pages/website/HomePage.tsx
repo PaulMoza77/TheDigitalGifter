@@ -75,7 +75,7 @@ const HomePage: React.FC = () => {
 
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              to="/generator"
+              to="/funnel/uploadPhoto"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 px-8 py-4 text-base font-black text-black shadow-2xl shadow-yellow-500/20 transition hover:scale-[1.02]"
             >
               Start Creating
@@ -118,7 +118,7 @@ const HomePage: React.FC = () => {
 
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
-                to="/generator"
+                to="/funnel/uploadPhoto"
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-9 py-5 text-lg font-black text-black shadow-2xl transition hover:scale-[1.02]"
               >
                 Create Now

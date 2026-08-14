@@ -51,9 +51,7 @@ export function TrendingNowRow() {
         {trendingItems.map((item) => (
           <Link
             key={item.id}
-            to={`/generator?category=${encodeURIComponent(
-              item.category
-            )}&occasion=${encodeURIComponent(item.id)}`}
+            to={`/funnel/uploadPhoto?occasion=${encodeURIComponent(item.id)}`}
             className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-xl transition duration-300 hover:-translate-y-1 hover:border-yellow-300/40 hover:shadow-yellow-500/10"
           >
             <div className="relative aspect-[4/5] overflow-hidden">

@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState, lazy } from "react";
+import { Suspense, useEffect, lazy } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -45,7 +45,6 @@ const UnsubscribePage = lazy(() =>
 // ================= WEBSITE UI =================
 import WebsiteHeader from "@/components/Header";
 import WebsiteFooter from "@/components/Footer";
-import { PricingModal, CreditsFunnelModal } from "@/components/PricingModal";
 const SupportTicketWidget = lazy(
   () => import("@/components/SupportTicketWidget")
 );
@@ -55,7 +54,6 @@ import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
 import { AdminRoute } from "@/components/AdminRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedClientRoute from "@/routes/ProtectedClientRoute";
-import { CreditsFunnelProvider } from "@/contexts/CreditsFunnelContext";
 
 // ================= LAYOUTS =================
 const AdminLayout = lazy(() => import("@/layouts/AdminLayout"));
@@ -90,7 +88,6 @@ const AdminFunnelPage = lazy(
 );
 
 // ================= WEBSITE PAGES =================
-const GeneratorPage = lazy(() => import("@/pages/website/GeneratorPage"));
 const TemplatesPage = lazy(() => import("@/pages/website/TemplatesPage"));
 
 const OccasionsCategoryPage = lazy(
@@ -193,20 +190,13 @@ function GtagPageViewTracker() {
 }
 
 function WebsiteLayout() {
-  const [showPricing, setShowPricing] = useState(false);
-
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
-      <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
+      <WebsiteHeader />
 
       <main className="flex-1">
         <Outlet />
       </main>
-
-      <PricingModal
-        isOpen={showPricing}
-        onClose={() => setShowPricing(false)}
-      />
 
       <WebsiteFooter />
     </div>
@@ -375,7 +365,10 @@ function AppInner() {
             <Route path="/auth/callback" element={<AuthCallback />} />
 
             <Route path="/templates" element={<TemplatesPage />} />
-            <Route path="/generator" element={<GeneratorPage />} />
+            <Route
+              path="/generator"
+              element={<Navigate to="/funnel/uploadPhoto" replace />}
+            />
 
             <Route
               path="/categories/occasions"
@@ -548,7 +541,6 @@ function AppInner() {
         <SupportTicketWidget />
       </Suspense>
       <Toaster position="top-right" />
-      <CreditsFunnelModal />
     </BrowserRouter>
   );
 }
@@ -556,9 +548,7 @@ function AppInner() {
 export default function App() {
   return (
     <AuthProvider>
-      <CreditsFunnelProvider>
-        <AppInner />
-      </CreditsFunnelProvider>
+      <AppInner />
     </AuthProvider>
   );
 }

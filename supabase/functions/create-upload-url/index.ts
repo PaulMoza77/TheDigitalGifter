@@ -1,6 +1,14 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
 import { mvpProduct } from "../_shared/mvpProduct.ts";
+import { signAccessToken } from "../_shared/guestToken.ts";
+import { accessTokenSecret, hashClientIp } from "../_shared/access.ts";
+import {
+  allowRateLimit,
+  extensionFromMime,
+  serverUploadPath,
+  UPLOAD_BUCKET,
+} from "../_shared/uploadPath.ts";
 
 type Body = {
   file_name?: string;
@@ -8,52 +16,80 @@ type Body = {
   size_bytes?: number;
 };
 
-const JPEG = [0xff, 0xd8, 0xff];
-
-function extFromName(name: string) {
-  return String(name.split(".").pop() || "").toLowerCase();
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
   try {
+    const secret = accessTokenSecret();
+    if (!secret) return jsonResponse({ error: "Access token secret is not configured." }, 503);
+
     const body = await readJson<Body>(req);
-    const fileName = String(body.file_name || "photo.jpg");
     const contentType = String(body.content_type || "image/jpeg").toLowerCase();
     const sizeBytes = Number(body.size_bytes || 0);
-    const ext = extFromName(fileName);
+    const ext = extensionFromMime(contentType);
+    void body.file_name;
 
     if (sizeBytes <= 0 || sizeBytes > mvpProduct.uploadMaxBytes) {
       return jsonResponse({ error: "Image must be a JPG, PNG, or WebP under 10 MB." }, 400);
     }
-
-    if (!["jpg", "jpeg", "png", "webp"].includes(ext)) {
-      return jsonResponse({ error: "File extension must be .jpg, .png, or .webp." }, 400);
-    }
-
-    if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(contentType)) {
+    if (!ext) {
       return jsonResponse({ error: "Please upload a JPG, PNG, or WebP image." }, 400);
     }
 
-    void JPEG;
     const { user } = await getAuthUser(req);
-    const folder = user?.id || "guest";
-    const safe = fileName.toLowerCase().replace(/[^a-z0-9.]+/g, "-").slice(0, 60);
-    const path = `${folder}/${Date.now()}-${crypto.randomUUID()}-${safe}`;
-
+    const ipHash = await hashClientIp(req);
     const service = getServiceClient();
-    const { data, error } = await service.storage
-      .from("customer-uploads")
-      .createSignedUploadUrl(path);
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count, error: countErr } = await service
+      .from("upload_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_hash", ipHash)
+      .gte("created_at", hourAgo);
+    if (countErr) throw countErr;
+    if (!allowRateLimit(count ?? 0)) {
+      return jsonResponse({ error: "Too many uploads. Please wait and try again." }, 429);
+    }
 
+    const uploadId = crypto.randomUUID();
+    const path = serverUploadPath(uploadId, ext);
+    const expiresAt = new Date(
+      Date.now() + mvpProduct.uploadRetentionHours * 60 * 60 * 1000,
+    ).toISOString();
+
+    const { error: insertErr } = await service.from("upload_sessions").insert({
+      id: uploadId,
+      bucket: UPLOAD_BUCKET,
+      path,
+      declared_mime: contentType,
+      declared_size: sizeBytes,
+      status: "pending_upload",
+      user_id: user?.id ?? null,
+      ip_hash: ipHash,
+      expires_at: expiresAt,
+    });
+    if (insertErr) throw insertErr;
+
+    const { data, error } = await service.storage
+      .from(UPLOAD_BUCKET)
+      .createSignedUploadUrl(path);
     if (error || !data?.signedUrl) {
       throw new Error(error?.message || "Could not create upload URL");
     }
 
+    const accessToken = await signAccessToken(
+      {
+        typ: "upload",
+        id: uploadId,
+        exp: Math.floor(Date.now() / 1000) + mvpProduct.uploadRetentionHours * 3600,
+      },
+      secret,
+    );
+
     return jsonResponse({
-      bucket: "customer-uploads",
+      upload_id: uploadId,
+      access_token: accessToken,
+      bucket: UPLOAD_BUCKET,
       path,
       signed_url: data.signedUrl,
       token: data.token,

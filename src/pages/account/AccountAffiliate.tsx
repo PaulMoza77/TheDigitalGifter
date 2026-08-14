@@ -563,8 +563,8 @@ export default function AccountAffiliate() {
 
           <div className="flex flex-wrap gap-3">
             <Button asChild className="rounded-2xl border border-white/10 bg-white text-zinc-950 hover:bg-zinc-200">
-              <Link to="/generator">
-                Open Generator
+              <Link to="/funnel/uploadPhoto">
+                Create
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

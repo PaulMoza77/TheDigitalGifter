@@ -2,33 +2,11 @@ import { jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { verifyStripeSignature } from "../_shared/stripe.ts";
 import { mvpProduct } from "../_shared/mvpProduct.ts";
+import { validatePaidStripeSession } from "../_shared/stripePayment.ts";
+import { kickFulfillmentWorker } from "../_shared/access.ts";
 
 function header(name: string, req: Request) {
   return req.headers.get(name) || req.headers.get(name.toLowerCase()) || "";
-}
-
-async function invokeFulfill(orderId: string, generationId: string) {
-  const url = Deno.env.get("SUPABASE_URL");
-  const anon = Deno.env.get("SUPABASE_ANON_KEY");
-  const secret = Deno.env.get("FULFILLMENT_SECRET") || "";
-  if (!url || !anon) throw new Error("Missing SUPABASE_URL/ANON");
-
-  const res = await fetch(`${url}/functions/v1/fulfill-paid-order`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: anon,
-      Authorization: `Bearer ${anon}`,
-      "x-fulfillment-secret": secret,
-    },
-    body: JSON.stringify({ order_id: orderId, generation_id: generationId }),
-  });
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.error || `fulfill-paid-order failed (${res.status})`);
-  }
-  return data;
 }
 
 Deno.serve(async (req) => {
@@ -58,14 +36,24 @@ Deno.serve(async (req) => {
   const type = String(event.type || "");
   const obj = (event.data?.object || {}) as Record<string, unknown>;
   const metadata = (obj.metadata || {}) as Record<string, string>;
-
   const service = getServiceClient();
 
   try {
     if (type === "checkout.session.completed" || type === "checkout.session.async_payment_succeeded") {
-      const paymentStatus = String(obj.payment_status || "");
-      if (type === "checkout.session.completed" && paymentStatus && paymentStatus !== "paid") {
-        return jsonResponse({ received: true, ignored: "unpaid_session" });
+      const amountTotal = typeof obj.amount_total === "number"
+        ? obj.amount_total
+        : Number(obj.amount_total);
+      const paidCheck = validatePaidStripeSession({
+        paymentStatus: String(obj.payment_status || ""),
+        amountTotal: Number.isFinite(amountTotal) ? amountTotal : null,
+        currency: String(obj.currency || ""),
+        metadataSku: String(metadata.sku || ""),
+        expectedAmountCents: mvpProduct.amountCents,
+        expectedCurrency: mvpProduct.currency,
+        expectedSku: mvpProduct.sku,
+      });
+      if (!paidCheck.ok) {
+        return jsonResponse({ error: paidCheck.error, received: false }, 400);
       }
 
       const orderId = String(metadata.order_id || obj.client_reference_id || "").trim();
@@ -87,14 +75,13 @@ Deno.serve(async (req) => {
 
       const claimed = data as {
         kind?: string;
-        should_start_generation?: boolean;
+        enqueue_job?: boolean;
         order?: { generation_id?: string; id?: string };
       };
 
-      if (claimed?.should_start_generation) {
-        const generationId = String(claimed.order?.generation_id || metadata.generation_id || "");
-        if (!generationId) throw new Error("generation_id missing after paid claim");
-        await invokeFulfill(orderId, generationId);
+      // Fast ack. Generation runs on the persistent job queue, never here.
+      if (claimed?.enqueue_job) {
+        kickFulfillmentWorker("stripe-webhook");
       }
 
       return jsonResponse({ received: true, kind: claimed?.kind || "ok" });

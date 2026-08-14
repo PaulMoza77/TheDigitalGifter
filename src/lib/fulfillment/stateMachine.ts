@@ -1,6 +1,6 @@
 /**
  * Pure order/generation state machine used by webhook fulfillment.
- * Generation is started only after an idempotent pending → paid claim.
+ * The webhook never runs generation. It only claims paid and enqueues a job.
  */
 
 export const ORDER_STATUSES = [
@@ -25,30 +25,35 @@ export const GENERATION_STATUSES = [
 export type GenerationStatus = (typeof GENERATION_STATUSES)[number];
 
 export type ClaimPaidResult =
-  | { kind: "claimed"; shouldStartGeneration: true }
-  | { kind: "duplicate_event"; shouldStartGeneration: false }
-  | { kind: "already_paid"; shouldStartGeneration: false }
-  | { kind: "not_pending"; shouldStartGeneration: false; status: string };
+  | { kind: "claimed"; enqueueJob: true }
+  | { kind: "duplicate_event"; enqueueJob: false }
+  | { kind: "already_paid"; enqueueJob: false }
+  | { kind: "not_pending"; enqueueJob: false; status: string };
 
 export function claimPaidOrder(args: {
   eventAlreadyProcessed: boolean;
   orderStatus: string;
 }): ClaimPaidResult {
   if (args.eventAlreadyProcessed) {
-    return { kind: "duplicate_event", shouldStartGeneration: false };
+    return { kind: "duplicate_event", enqueueJob: false };
   }
 
   if (args.orderStatus === "pending") {
-    return { kind: "claimed", shouldStartGeneration: true };
+    return { kind: "claimed", enqueueJob: true };
   }
 
-  if (args.orderStatus === "paid" || args.orderStatus === "fulfilling" || args.orderStatus === "completed") {
-    return { kind: "already_paid", shouldStartGeneration: false };
+  if (
+    args.orderStatus === "paid" ||
+    args.orderStatus === "fulfilling" ||
+    args.orderStatus === "completed" ||
+    args.orderStatus === "failed"
+  ) {
+    return { kind: "already_paid", enqueueJob: false };
   }
 
   return {
     kind: "not_pending",
-    shouldStartGeneration: false,
+    enqueueJob: false,
     status: args.orderStatus,
   };
 }
@@ -97,13 +102,36 @@ export function claimGenerationStart(args: {
   };
 }
 
+export function jobBackoffMs(attempts: number): number {
+  const capped = Math.min(Math.max(attempts, 1), 6);
+  return 1000 * 2 ** capped;
+}
+
+export function rescheduleFailedJob(args: {
+  attempts: number;
+  maxAttempts: number;
+}): { status: "queued" | "dead"; retry: boolean; runAfterMs: number } {
+  if (args.attempts >= args.maxAttempts) {
+    return { status: "dead", retry: false, runAfterMs: 0 };
+  }
+  return { status: "queued", retry: true, runAfterMs: jobBackoffMs(args.attempts) };
+}
+
+export function recoverStaleRunningJob(args: {
+  status: string;
+  lockedAtMs: number | null;
+  nowMs: number;
+  staleAfterMs: number;
+}): boolean {
+  if (args.status !== "running" || args.lockedAtMs == null) return false;
+  return args.nowMs - args.lockedAtMs >= args.staleAfterMs;
+}
+
 export function canUseIncludedRegeneration(args: {
   orderStatus: string;
   allowed: number;
   used: number;
 }): boolean {
-  if (args.orderStatus !== "completed" && args.orderStatus !== "paid" && args.orderStatus !== "fulfilling") {
-    return false;
-  }
+  if (args.orderStatus !== "completed" && args.orderStatus !== "paid") return false;
   return args.used < args.allowed;
 }

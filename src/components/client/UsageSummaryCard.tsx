@@ -1,25 +1,18 @@
 import React from "react";
-import { BarChart3, CheckCircle2, Coins, TimerReset } from "lucide-react";
+import { BarChart3, CheckCircle2, TimerReset } from "lucide-react";
 
 type Props = {
-  creditsAvailable: number;
   completedCreations: number;
   inProgress: number;
   savedItems: number;
 };
 
 export default function UsageSummaryCard({
-  creditsAvailable,
   completedCreations,
   inProgress,
   savedItems,
 }: Props) {
   const rows = [
-    {
-      icon: Coins,
-      label: "Credits available",
-      value: String(creditsAvailable),
-    },
     {
       icon: CheckCircle2,
       label: "Completed creations",

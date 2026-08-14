@@ -2,13 +2,23 @@ import { jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
 import { requireFulfillmentSecret } from "../_shared/stripe.ts";
 import { mvpProduct } from "../_shared/mvpProduct.ts";
+import { signAccessToken } from "../_shared/guestToken.ts";
+import { accessTokenSecret } from "../_shared/access.ts";
+import { RESULT_BUCKET, resultObjectPath, UPLOAD_BUCKET } from "../_shared/uploadPath.ts";
 
 type Body = {
   order_id?: string;
+  orderId?: string;
   generation_id?: string;
+  generationId?: string;
+  job_id?: string;
 };
 
-async function signedDownloadUrl(service: ReturnType<typeof getServiceClient>, bucket: string, path: string) {
+async function signedDownloadUrl(
+  service: ReturnType<typeof getServiceClient>,
+  bucket: string,
+  path: string,
+) {
   const { data, error } = await service.storage
     .from(bucket)
     .createSignedUrl(path, mvpProduct.signedUrlTtlSeconds);
@@ -19,7 +29,7 @@ async function signedDownloadUrl(service: ReturnType<typeof getServiceClient>, b
 async function sendResultEmail(args: {
   email: string;
   orderId: string;
-  resultUrl: string;
+  accessToken: string;
 }) {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) {
@@ -29,6 +39,7 @@ async function sendResultEmail(args: {
 
   const from = Deno.env.get("RESULT_EMAIL_FROM") || "TheDigitalGifter <support@thedigitalgifter.com>";
   const siteUrl = Deno.env.get("SITE_URL") || "https://www.thedigitalgifter.com";
+  const resultHref = `${siteUrl}/funnel/result?order_id=${encodeURIComponent(args.orderId)}&access_token=${encodeURIComponent(args.accessToken)}`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -40,7 +51,7 @@ async function sendResultEmail(args: {
       to: [args.email],
       subject: "Your TheDigitalGifter image is ready",
       html: `<p>Your personalized still image is ready.</p>
-<p><a href="${siteUrl}/funnel/result?order_id=${args.orderId}">Open your result</a></p>
+<p><a href="${resultHref}">Open your result</a></p>
 <p>This image is AI-generated. Personal use only. Results are kept for 30 days.</p>`,
     }),
   });
@@ -132,10 +143,10 @@ Deno.serve(async (req) => {
 
   try {
     const body = await readJson<Body>(req);
-    const orderId = String(body.order_id || "").trim();
-    const generationId = String(body.generation_id || "").trim();
+    const orderId = String(body.order_id || body.orderId || "").trim();
+    const generationId = String(body.generation_id || body.generationId || "").trim();
     if (!orderId || !generationId) {
-      return jsonResponse({ error: "order_id and generation_id are required" }, 400);
+      return jsonResponse({ error: "order_id and generation_id are required", ok: false }, 400);
     }
 
     const service = getServiceClient();
@@ -146,11 +157,14 @@ Deno.serve(async (req) => {
     if (claimErr) throw claimErr;
 
     if (!claimed?.run_generation) {
+      const kind = String(claimed?.kind || "blocked");
+      const ok = kind === "already_complete";
       return jsonResponse({
+        ok,
         status: "skipped",
-        kind: claimed?.kind || "blocked",
+        kind,
         generation_id: generationId,
-      });
+      }, ok ? 200 : 409);
     }
 
     const { data: generation, error: genErr } = await service
@@ -159,7 +173,7 @@ Deno.serve(async (req) => {
       .eq("id", generationId)
       .maybeSingle();
     if (genErr) throw genErr;
-    if (!generation) return jsonResponse({ error: "generation not found" }, 404);
+    if (!generation) return jsonResponse({ error: "generation not found", ok: false }, 404);
 
     const { data: order, error: orderErr } = await service
       .from("mvp_orders")
@@ -167,16 +181,20 @@ Deno.serve(async (req) => {
       .eq("id", orderId)
       .maybeSingle();
     if (orderErr) throw orderErr;
-    if (!order) return jsonResponse({ error: "order not found" }, 404);
+    if (!order) return jsonResponse({ error: "order not found", ok: false }, 404);
 
-    const photoBucket = String(order.photo_bucket || "customer-uploads");
+    const photoBucket = String(order.photo_bucket || UPLOAD_BUCKET);
     const photoPath = String(order.photo_path || "");
     let sourceUrl: string | null = null;
     if (photoPath) {
       sourceUrl = await signedDownloadUrl(service, photoBucket, photoPath);
     }
 
-    const prompt = String(generation.prompt || "Create a personalized still image from the uploaded photo.").trim();
+    const prompt = String(
+      order.template_prompt ||
+        generation.prompt ||
+        "Create a personalized still image from the uploaded photo.",
+    ).trim();
 
     let imageUrl: string;
     let predictionId = "";
@@ -190,29 +208,26 @@ Deno.serve(async (req) => {
         .from("generations")
         .update({ status: "failed", error: message, updated_at: new Date().toISOString() })
         .eq("id", generationId);
-      await service
-        .from("mvp_orders")
-        .update({ status: "failed", error: message, updated_at: new Date().toISOString() })
-        .eq("id", orderId);
-      return jsonResponse({ error: message, recoverable: true }, 502);
+      // Order stays paid/fulfilling. The job queue retries until dead.
+      return jsonResponse({ error: message, recoverable: true, ok: false }, 502);
     }
 
     const imgRes = await fetch(imageUrl);
     if (!imgRes.ok) throw new Error("Failed to download generated image");
     const bytes = new Uint8Array(await imgRes.arrayBuffer());
-    const objectPath = `orders/${orderId}/${generationId}.jpg`;
+    const objectPath = resultObjectPath(orderId, generationId);
     const { error: upErr } = await service.storage
-      .from("generated-results")
+      .from(RESULT_BUCKET)
       .upload(objectPath, bytes, { contentType: "image/jpeg", upsert: true });
     if (upErr) throw upErr;
 
-    const signed = await signedDownloadUrl(service, "generated-results", objectPath);
+    const signed = await signedDownloadUrl(service, RESULT_BUCKET, objectPath);
 
     await service
       .from("generations")
       .update({
         status: "completed",
-        result_bucket: "generated-results",
+        result_bucket: RESULT_BUCKET,
         result_path: objectPath,
         result_image_url: signed,
         final_image_url: signed,
@@ -234,10 +249,19 @@ Deno.serve(async (req) => {
       })
       .eq("id", orderId);
 
+    const orderAccessToken = await signAccessToken(
+      {
+        typ: "order",
+        id: orderId,
+        exp: Math.floor(Date.now() / 1000) + mvpProduct.resultRetentionDays * 24 * 3600,
+      },
+      accessTokenSecret(),
+    );
+
     const emailResult = await sendResultEmail({
       email: String(order.email),
       orderId,
-      resultUrl: signed,
+      accessToken: orderAccessToken,
     });
     if (!emailResult.skipped) {
       await service
@@ -247,6 +271,7 @@ Deno.serve(async (req) => {
     }
 
     return jsonResponse({
+      ok: true,
       status: "completed",
       order_id: orderId,
       generation_id: generationId,
@@ -254,6 +279,6 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return jsonResponse({ error: message }, 500);
+    return jsonResponse({ error: message, ok: false }, 500);
   }
 });

@@ -19,6 +19,8 @@ type FunnelSession = {
   occasion?: string | null;
   photo_bucket?: string | null;
   photo_path?: string | null;
+  upload_id?: string | null;
+  access_token?: string | null;
 };
 
 type CheckoutResponse = {
@@ -30,6 +32,7 @@ type CheckoutResponse = {
   message?: string;
   generation_id?: string;
   order_id?: string;
+  access_token?: string;
 };
 
 type FunnelContext = {
@@ -41,6 +44,8 @@ type FunnelContext = {
   styleId: string;
   funnelSlug: string;
   occasion: string;
+  uploadId: string;
+  accessToken: string;
 };
 
 function cn(...classes: Array<string | false | null | undefined>): string {
@@ -109,6 +114,14 @@ function resolveFunnelContext(search: string): FunnelContext {
     safeString(localStorage.getItem("tdg_funnel_bucket")) ||
     "customer-uploads";
 
+  const uploadId =
+    safeString(session.upload_id) ||
+    safeString(localStorage.getItem("tdg_upload_id"));
+
+  const accessToken =
+    safeString(session.access_token) ||
+    safeString(localStorage.getItem("tdg_upload_access_token"));
+
   const styleId =
     safeString(session.style_id) ||
     safeString(localStorage.getItem("tdg_funnel_style"));
@@ -128,6 +141,8 @@ function resolveFunnelContext(search: string): FunnelContext {
     template_id: templateId || session.template_id || null,
     photo_bucket: photoBucket,
     photo_path: photo || session.photo_path || null,
+    upload_id: uploadId || session.upload_id || null,
+    access_token: accessToken || session.access_token || null,
     style_id: styleId || session.style_id || undefined,
     funnel_slug: funnelSlug || session.funnel_slug || undefined,
     occasion: occasion || session.occasion || null,
@@ -146,6 +161,8 @@ function resolveFunnelContext(search: string): FunnelContext {
     styleId,
     funnelSlug,
     occasion,
+    uploadId,
+    accessToken,
   };
 }
 
@@ -179,7 +196,7 @@ export default function FunnelPayment(): JSX.Element {
   }, [funnel.canceled]);
 
   useEffect(() => {
-    if (!funnel.photo) {
+    if (!funnel.uploadId || !funnel.accessToken) {
       toast.error("Upload a photo first.");
       navigate("/funnel/uploadPhoto", { replace: true });
       return;
@@ -193,7 +210,7 @@ export default function FunnelPayment(): JSX.Element {
       toast.error("Please enter your email to continue.");
       navigate("/funnel/email", { replace: true });
     }
-  }, [navigate, funnel.photo, funnel.styleId, funnel.templateId, funnel.email]);
+  }, [navigate, funnel.uploadId, funnel.accessToken, funnel.styleId, funnel.templateId, funnel.email]);
 
   async function onCheckout(): Promise<void> {
     if (isPaying) return;
@@ -223,8 +240,8 @@ export default function FunnelPayment(): JSX.Element {
           style_id: funnel.styleId || null,
           funnel_slug: funnel.funnelSlug || null,
           occasion: funnel.occasion || null,
-          photo_path: funnel.photo || null,
-          photo_bucket: funnel.photoBucket || "customer-uploads",
+          upload_id: funnel.uploadId,
+          access_token: funnel.accessToken,
           digital_content_consent: true,
           source: "tdg_funnel_mvp",
         }),
@@ -239,6 +256,9 @@ export default function FunnelPayment(): JSX.Element {
 
       if (data.id) localStorage.setItem("tdg_last_checkout_session_id", data.id);
       if (data.order_id) localStorage.setItem("tdg_last_order_id", data.order_id);
+      if (data.access_token) {
+        localStorage.setItem("tdg_order_access_token", data.access_token);
+      }
 
       mergeSession({
         generation_id: data.generation_id || null,
@@ -247,6 +267,8 @@ export default function FunnelPayment(): JSX.Element {
         style_id: funnel.styleId || undefined,
         photo_bucket: funnel.photoBucket || "customer-uploads",
         photo_path: funnel.photo || null,
+        upload_id: funnel.uploadId,
+        access_token: funnel.accessToken,
       });
 
       const checkoutUrl = safeString(data.url || data.checkoutUrl || data.sessionUrl);

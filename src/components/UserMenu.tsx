@@ -117,9 +117,9 @@ export default function UserMenu() {
       badge: affiliateBadge,
     },
     {
-      label: "Generator",
+      label: "Create",
       icon: Wand2,
-      action: () => goTo("/generator"),
+      action: () => goTo("/funnel/uploadPhoto"),
       badge: null,
     },
     ...(isAdmin

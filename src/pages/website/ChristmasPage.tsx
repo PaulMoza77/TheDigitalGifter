@@ -12,9 +12,9 @@ export default function ChristmasPage() {
         description="Generate beautiful, personalized holiday cards and videos using AI. Choose templates, upload family photos, and create professional results in seconds."
       />
       <MainPage
-        onStartCreating={() => void navigate("/generator?occasion=christmas")}
+        onStartCreating={() => void navigate("/funnel/uploadPhoto?occasion=christmas")}
         onViewTemplates={() => void navigate("/templates?occasion=christmas")}
-        createHref="/generator?occasion=christmas"
+        createHref="/funnel/uploadPhoto?occasion=christmas"
         occasion="christmas"
       />
     </>

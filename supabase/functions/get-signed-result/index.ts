@@ -1,11 +1,16 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
-import { getServiceClient, readJson } from "../_shared/supabase.ts";
+import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
 import { mvpProduct } from "../_shared/mvpProduct.ts";
+import { authorizeOrderAccess, verifyAccessToken } from "../_shared/guestToken.ts";
+import { accessTokenSecret } from "../_shared/access.ts";
+import { RESULT_BUCKET } from "../_shared/uploadPath.ts";
 
 type Body = {
-  session_id?: string;
   order_id?: string;
   generation_id?: string;
+  access_token?: string;
+  accessToken?: string;
+  session_id?: string;
 };
 
 Deno.serve(async (req) => {
@@ -14,27 +19,39 @@ Deno.serve(async (req) => {
 
   try {
     const body = await readJson<Body>(req);
-    const sessionId = String(body.session_id || "").trim();
     const orderId = String(body.order_id || "").trim();
     const generationId = String(body.generation_id || "").trim();
+    const accessToken = String(body.access_token || body.accessToken || "").trim();
+    void body.session_id;
 
-    if (!sessionId && !orderId && !generationId) {
-      return jsonResponse({ error: "session_id, order_id, or generation_id is required" }, 400);
+    if (!orderId && !generationId) {
+      return jsonResponse({ error: "order_id or generation_id is required" }, 400);
     }
 
+    const { user } = await getAuthUser(req);
     const service = getServiceClient();
+
     let orderQuery = service.from("mvp_orders").select("*");
     if (orderId) orderQuery = orderQuery.eq("id", orderId);
-    else if (sessionId) orderQuery = orderQuery.eq("stripe_checkout_session_id", sessionId);
     else orderQuery = orderQuery.eq("generation_id", generationId);
 
     const { data: order, error: orderErr } = await orderQuery.maybeSingle();
     if (orderErr) throw orderErr;
     if (!order) {
-      return jsonResponse({
-        status: "waiting",
-        message: "Waiting for payment confirmation.",
-      });
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+
+    const token = await verifyAccessToken(accessToken, accessTokenSecret(), {
+      typ: "order",
+      id: String(order.id),
+    });
+    const allowed = authorizeOrderAccess({
+      orderUserId: order.user_id ? String(order.user_id) : null,
+      authUserId: user?.id ?? null,
+      tokenOk: Boolean(token),
+    });
+    if (!allowed) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
     const genId = String(order.generation_id || generationId || "");
@@ -43,9 +60,9 @@ Deno.serve(async (req) => {
       : { data: null };
 
     let signedUrl: string | null = null;
-    const bucket = String(generation?.result_bucket || "");
+    const bucket = String(generation?.result_bucket || RESULT_BUCKET);
     const path = String(generation?.result_path || "");
-    if (bucket && path && String(generation?.status || "") === "completed") {
+    if (path && String(generation?.status || "") === "completed") {
       const signed = await service.storage
         .from(bucket)
         .createSignedUrl(path, mvpProduct.signedUrlTtlSeconds);

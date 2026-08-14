@@ -13,7 +13,7 @@ describe("claimPaidOrder", () => {
       orderStatus: "pending",
     });
     assert.equal(first.kind, "claimed");
-    assert.equal(first.shouldStartGeneration, true);
+    assert.equal(first.enqueueJob, true);
   });
 
   it("ignores a duplicated Stripe webhook event", () => {
@@ -22,7 +22,7 @@ describe("claimPaidOrder", () => {
       orderStatus: "paid",
     });
     assert.equal(again.kind, "duplicate_event");
-    assert.equal(again.shouldStartGeneration, false);
+    assert.equal(again.enqueueJob, false);
   });
 
   it("does not start a second generation when the order is already paid", () => {
@@ -31,7 +31,7 @@ describe("claimPaidOrder", () => {
       orderStatus: "paid",
     });
     assert.equal(again.kind, "already_paid");
-    assert.equal(again.shouldStartGeneration, false);
+    assert.equal(again.enqueueJob, false);
   });
 });
 
