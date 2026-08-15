@@ -167,10 +167,15 @@ assert(schedules.includes("purge-expired-media"), "schedule migration names purg
 assert(schedules.includes("fulfillment_project_url"), "schedule migration uses Vault names");
 assert(!schedules.includes("sk_live_"), "schedule migration has no Stripe secret literals");
 
+const mvp = read("supabase/functions/_shared/mvpProduct.ts");
 const envExample = read(".env.example");
+assert(mvp.includes("sk_test_"), "server checkout requires a Stripe test secret");
+assert(mvp.includes("ALLOW_STAGING_CHECKOUT"), "server checkout requires an explicit staging allow flag");
 assert(envExample.includes("ACCESS_TOKEN_SECRET="), ".env.example documents ACCESS_TOKEN_SECRET");
 assert(envExample.includes("FULFILLMENT_SECRET="), ".env.example documents FULFILLMENT_SECRET");
 assert(envExample.includes("CHECKOUT_ENABLED=false"), ".env.example keeps checkout off");
+assert(envExample.includes("ALLOW_STAGING_CHECKOUT=true"), ".env.example documents staging checkout as a commented Preview-only flag");
+assert(!/^ALLOW_STAGING_CHECKOUT=true$/m.test(envExample), ".env.example does not enable staging checkout by default");
 assert(envExample.includes("20260817_fulfillment_schedules.sql"), ".env.example points at the official scheduler");
 assert(envExample.includes("Email is required at launch"), ".env.example requires Resend at launch");
 

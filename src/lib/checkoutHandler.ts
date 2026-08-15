@@ -1,6 +1,6 @@
 // src/lib/checkoutHandler.ts
 import { supabase } from "@/lib/supabase";
-import { productTruth } from "@/config/productTruth";
+import { isCheckoutEnabled, productTruth } from "@/config/productTruth";
 
 export type LoggedInUserLite = {
   id: string;
@@ -16,7 +16,7 @@ export type CheckoutArgs = {
 export async function handleCheckout(args: CheckoutArgs): Promise<void> {
   const { pack, quantity = 1, user } = args;
 
-  if (!productTruth.flags.checkoutEnabled) {
+  if (!isCheckoutEnabled()) {
     throw new Error(productTruth.copy.checkoutUnavailable);
   }
 

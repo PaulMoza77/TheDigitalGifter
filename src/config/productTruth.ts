@@ -166,4 +166,4 @@ export const isPrivacyDeletionClaimEnabled =
   productTruth.flags.privacyDeletionClaims;
 export const isSupport247Enabled = productTruth.flags.support247;
 export const isReviewsEnabled = productTruth.flags.reviews;
-export const isCheckoutEnabled = productTruth.flags.checkoutEnabled;
+export { isCheckoutEnabled } from "./checkoutGate";

@@ -1,7 +1,7 @@
 // FILE: src/data/mutations/useCheckoutMutation.ts
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { productTruth } from "@/config/productTruth";
+import { isCheckoutEnabled, productTruth } from "@/config/productTruth";
 
 type Plan = "starter" | "pro" | "elite";
 
@@ -34,7 +34,7 @@ export function useCheckoutMutation() {
   return useMutation<CheckoutResponse, Error, CheckoutArgs>({
     mutationKey: ["checkout", "create"],
     mutationFn: async (variables) => {
-      if (!productTruth.flags.checkoutEnabled) {
+      if (!isCheckoutEnabled()) {
         throw new Error(productTruth.copy.checkoutUnavailable);
       }
 

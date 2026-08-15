@@ -19,6 +19,24 @@ export const mvpProduct = {
   checkoutEnabledDefault: false,
 } as const;
 
+export function isStripeTestSecret(key: string): boolean {
+  return key.startsWith("sk_test_");
+}
+
+export function isStagingCheckoutEnabledOnServer(env: {
+  checkoutEnabled?: string;
+  allowStagingCheckout?: string;
+  stripeSecretKey?: string;
+}): boolean {
+  if (env.checkoutEnabled !== "true") return false;
+  if (env.allowStagingCheckout !== "true") return false;
+  return isStripeTestSecret(String(env.stripeSecretKey || ""));
+}
+
 export function isCheckoutEnabledOnServer(): boolean {
-  return Deno.env.get("CHECKOUT_ENABLED") === "true";
+  return isStagingCheckoutEnabledOnServer({
+    checkoutEnabled: Deno.env.get("CHECKOUT_ENABLED"),
+    allowStagingCheckout: Deno.env.get("ALLOW_STAGING_CHECKOUT"),
+    stripeSecretKey: Deno.env.get("STRIPE_SECRET_KEY"),
+  });
 }
