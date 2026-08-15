@@ -2,7 +2,8 @@
 
 **Verdict: NO-GO** for a controlled live test.
 
-**Source commit:** `b22b32f` (PR #2 HEAD) plus this staging branch `cursor/staging-e2e-b22b32f`.  
+**Source commit:** `b22b32f` (PR #2 HEAD) plus this staging branch `cursor/staging-e2e-b22b32f` (`d600613`).  
+**Related drafts:** [PR #2](https://github.com/PaulMoza77/TheDigitalGifter/pull/2) (fulfillment), [PR #3](https://github.com/PaulMoza77/TheDigitalGifter/pull/3) (this staging branch), [PR #4](https://github.com/PaulMoza77/TheDigitalGifter/pull/4) (production deploy gate from `main`). PR #1 stays draft.  
 **Date:** 2026-08-15  
 **Checkout in production:** still **OFF** (`productTruth.flags.checkoutEnabled = false`, `CHECKOUT_ENABLED=false`).  
 **PR #1 and PR #2:** remain **draft**. Nothing was merged. Production was not deployed. No live Stripe charge and no Replicate call were made.
