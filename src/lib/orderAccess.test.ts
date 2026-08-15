@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
+  abortAfter,
   analyticsLocation,
   captureOrderAccessFromUrl,
   captureResultHashToken,
@@ -13,6 +14,7 @@ import {
   orderRedeemStorageKey,
   parseAccessFragment,
   readOrderRedeemCode,
+  REDEEM_BOOTSTRAP_TIMEOUT_MS,
   shouldCaptureOrderAccess,
   storeOrderRedeemCode,
   stripResultSecretsFromUrl,
@@ -165,5 +167,20 @@ describe("order access capture", () => {
     assert.match(html, /#t=/);
     assert.equal(html.includes("history.replaceState({}, \"\", location.pathname + location.search);"), true);
     assert.equal(/if\s*\(\s*!token\s*\)\s*return/.test(html), true);
+  });
+
+  it("times out bootstrap redeem so the app can still render", async () => {
+    const { signal, cancel } = abortAfter(20);
+    await new Promise<void>((resolve) => {
+      signal.addEventListener("abort", () => resolve(), { once: true });
+    });
+    cancel();
+    assert.equal(signal.aborted, true);
+    assert.equal(REDEEM_BOOTSTRAP_TIMEOUT_MS, 8000);
+
+    const boot = readFileSync(join(root, "src/main.tsx"), "utf8");
+    assert.equal(boot.includes("abortAfter(REDEEM_BOOTSTRAP_TIMEOUT_MS)"), true);
+    assert.equal(boot.includes("signal: timeout.signal"), true);
+    assert.equal(boot.includes("await captureOrderAccessFromUrl"), true);
   });
 });

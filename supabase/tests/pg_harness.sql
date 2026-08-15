@@ -27,6 +27,7 @@ create table if not exists public.generations (
   started_at timestamptz,
   updated_at timestamptz not null default now(),
   order_id uuid,
+  user_id uuid,
   replicate_prediction_id text,
   completed_at timestamptz,
   result_mime text
@@ -50,7 +51,9 @@ create table if not exists public.mvp_orders (
   error text,
   paid_at timestamptz,
   fulfilled_at timestamptz,
+  result_emailed_at timestamptz,
   upload_id uuid,
+  checkout_request_id uuid,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

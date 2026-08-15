@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { getPublicSupabaseConfig } from "@/lib/env";
 import { productTruth, isCheckoutEnabled } from "@/config/productTruth";
 import { productModel } from "@/config/productModel";
+import { readOrCreateCheckoutRequestId } from "@/lib/checkoutRequest";
 
 type FunnelSession = {
   gift_type?: string;
@@ -230,6 +231,7 @@ export default function FunnelPayment(): JSX.Element {
     try {
       const { url: supabaseUrl, anon: anonKey } = getPublicSupabaseConfig();
       const headers = await getEdgeFunctionHeaders(anonKey);
+      const checkoutRequestId = readOrCreateCheckoutRequestId(funnel.uploadId);
 
       const res = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
         method: "POST",
@@ -242,6 +244,7 @@ export default function FunnelPayment(): JSX.Element {
           occasion: funnel.occasion || null,
           upload_id: funnel.uploadId,
           access_token: funnel.accessToken,
+          checkout_request_id: checkoutRequestId,
           digital_content_consent: true,
           source: "tdg_funnel_mvp",
         }),

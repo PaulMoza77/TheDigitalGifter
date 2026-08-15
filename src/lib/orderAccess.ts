@@ -2,6 +2,16 @@ const ORDER_KEY_PREFIX = "tdg.orderAccess.";
 const REDEEM_KEY_PREFIX = "tdg.orderRedeem.";
 const RESULT_PATH = "/funnel/result";
 const AUTH_CALLBACK_PATH = "/auth/callback";
+export const REDEEM_BOOTSTRAP_TIMEOUT_MS = 8000;
+
+export function abortAfter(ms: number): { signal: AbortSignal; cancel: () => void } {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return {
+    signal: controller.signal,
+    cancel: () => clearTimeout(timer),
+  };
+}
 
 export function orderAccessStorageKey(orderId: string): string {
   return `${ORDER_KEY_PREFIX}${orderId}`;

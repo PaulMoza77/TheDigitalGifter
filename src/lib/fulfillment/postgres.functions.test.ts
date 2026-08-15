@@ -15,7 +15,9 @@ describe("postgres fulfillment functions", () => {
     assert.equal(sql.includes("cron.schedule"), false);
     assert.equal(sql.includes("create extension if not exists pg_cron"), false);
     assert.equal(sql.includes("consume_access_redeem_code"), true);
-  });  it("ignores a duplicated webhook and does not enqueue a second job", async () => {
+  });
+
+  it("ignores a duplicated webhook and does not enqueue a second job", async () => {
     const db = await openDb();
     const order = await db.query<{ id: string; generation_id: string }>(
       `insert into public.mvp_orders (email, status, generation_id)
@@ -165,6 +167,93 @@ describe("postgres fulfillment functions", () => {
     assert.equal(first.rows[0].consume_access_redeem_code.ok, true);
     assert.equal(retry.rows[0].consume_access_redeem_code.ok, true);
     assert.equal(mismatch.rows[0].consume_access_redeem_code.ok, false);
+    await db.close();
+  });
+
+  it("does not mark a completed order failed when a result_email job dies", async () => {
+    const db = await openDb();
+    const order = await db.query<{ id: string; generation_id: string }>(
+      `insert into public.mvp_orders (email, status, generation_id)
+       values ('email-dead@example.com', 'completed', public.gen_random_uuid())
+       returning id, generation_id`,
+    );
+    const job = await db.query<{ id: string }>(
+      `insert into public.fulfillment_jobs
+         (order_id, generation_id, kind, status, attempts, max_attempts)
+       values ($1, $2, 'result_email', 'running', 8, 8)
+       returning id`,
+      [order.rows[0].id, order.rows[0].generation_id],
+    );
+    const finished = await db.query<{ finish_fulfillment_job: { kind: string; order_status_unchanged: boolean } }>(
+      `select public.finish_fulfillment_job($1, false, 'resend_dead') as finish_fulfillment_job`,
+      [job.rows[0].id],
+    );
+    const status = await db.query<{ status: string }>(
+      `select status from public.mvp_orders where id = $1`,
+      [order.rows[0].id],
+    );
+    assert.equal(finished.rows[0].finish_fulfillment_job.kind, "dead");
+    assert.equal(finished.rows[0].finish_fulfillment_job.order_status_unchanged, true);
+    assert.equal(status.rows[0].status, "completed");
+    await db.close();
+  });
+
+  it("finishes the main job and enqueues result_email in one RPC", async () => {
+    const db = await openDb();
+    const order = await db.query<{ id: string; generation_id: string }>(
+      `insert into public.mvp_orders (email, status, generation_id)
+       values ('atomic-email@example.com', 'completed', public.gen_random_uuid())
+       returning id, generation_id`,
+    );
+    const job = await db.query<{ id: string }>(
+      `insert into public.fulfillment_jobs
+         (order_id, generation_id, kind, status, attempts, max_attempts)
+       values ($1, $2, 'initial', 'running', 1, 3)
+       returning id`,
+      [order.rows[0].id, order.rows[0].generation_id],
+    );
+    const finished = await db.query<{
+      finish_fulfillment_job_and_enqueue_email: { kind: string; email: { kind: string } };
+    }>(
+      `select public.finish_fulfillment_job_and_enqueue_email($1, true, null, false)
+         as finish_fulfillment_job_and_enqueue_email`,
+      [job.rows[0].id],
+    );
+    const jobs = await db.query<{ kind: string; status: string }>(
+      `select kind, status from public.fulfillment_jobs where order_id = $1 order by kind`,
+      [order.rows[0].id],
+    );
+    assert.equal(finished.rows[0].finish_fulfillment_job_and_enqueue_email.kind, "succeeded");
+    assert.equal(finished.rows[0].finish_fulfillment_job_and_enqueue_email.email.kind, "queued");
+    assert.deepEqual(
+      jobs.rows.map((row) => `${row.kind}:${row.status}`),
+      ["initial:succeeded", "result_email:queued"],
+    );
+    await db.close();
+  });
+
+  it("treats consume_confirmed_upload as success when the same order already consumed it", async () => {
+    const db = await openDb();
+    const order = await db.query<{ id: string }>(
+      `insert into public.mvp_orders (email, status) values ('retry-upload@example.com', 'pending') returning id`,
+    );
+    const upload = await db.query<{ id: string }>(
+      `insert into public.upload_sessions (path, status, expires_at)
+       values ('u/retry.jpg', 'confirmed', now() + interval '1 hour')
+       returning id`,
+    );
+    const first = await db.query<{ consume_confirmed_upload: { ok: boolean; kind: string } }>(
+      `select public.consume_confirmed_upload($1, $2) as consume_confirmed_upload`,
+      [upload.rows[0].id, order.rows[0].id],
+    );
+    const retry = await db.query<{ consume_confirmed_upload: { ok: boolean; kind: string } }>(
+      `select public.consume_confirmed_upload($1, $2) as consume_confirmed_upload`,
+      [upload.rows[0].id, order.rows[0].id],
+    );
+    assert.equal(first.rows[0].consume_confirmed_upload.ok, true);
+    assert.equal(first.rows[0].consume_confirmed_upload.kind, "consumed");
+    assert.equal(retry.rows[0].consume_confirmed_upload.ok, true);
+    assert.equal(retry.rows[0].consume_confirmed_upload.kind, "already_consumed");
     await db.close();
   });
 });

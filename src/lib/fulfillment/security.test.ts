@@ -15,7 +15,13 @@ import {
   shouldCreateNewPrediction,
   TEMPLATE_ACTIVE_COLUMN,
 } from "./generationRecovery.ts";
-import { shouldStampResultEmailedAt, stripeCheckoutIdempotencyKey, stripeExpireSessionPath } from "./stripePayment.ts";
+import { shouldStampResultEmailedAt, stripeCheckoutIdempotencyKey, stripeExpireConfirmed, stripeExpireSessionPath, stripeSessionRetrievePath } from "./stripePayment.ts";
+import {
+  canReusePendingCheckout,
+  checkoutRedeemKey,
+  parseCheckoutRequestId,
+  stripeCheckoutReuseAction,
+} from "./checkoutRetry.ts";
 
 describe("claimPaidOrder", () => {
   it("enqueues a job exactly once for a pending order", () => {
@@ -371,6 +377,90 @@ describe("checkout template and stripe helpers", () => {
     assert.equal(TEMPLATE_ACTIVE_COLUMN, "isactive");
     assert.equal(stripeCheckoutIdempotencyKey("ord-1"), "checkout:ord-1");
     assert.equal(stripeExpireSessionPath("cs_test_1"), "/v1/checkout/sessions/cs_test_1/expire");
+    assert.equal(stripeSessionRetrievePath("cs_test_1"), "/v1/checkout/sessions/cs_test_1");
+  });
+
+  it("does not confirm Stripe expiry without HTTP success and session status expired", () => {
+    assert.equal(
+      stripeExpireConfirmed({
+        expireHttpOk: true,
+        expireHttpStatus: 200,
+        expireSessionStatus: "expired",
+      }).confirmedExpired,
+      true,
+    );
+    assert.equal(
+      stripeExpireConfirmed({
+        expireHttpOk: false,
+        expireHttpStatus: 0,
+        expireSessionStatus: null,
+        getHttpOk: true,
+        getHttpStatus: 200,
+        getSessionStatus: "complete",
+      }).confirmedExpired,
+      false,
+    );
+    assert.equal(
+      stripeExpireConfirmed({
+        expireHttpOk: false,
+        expireHttpStatus: 500,
+        expireSessionStatus: null,
+        getHttpOk: false,
+        getHttpStatus: 0,
+        getSessionStatus: null,
+      }).confirmedExpired,
+      false,
+    );
+    assert.equal(
+      stripeExpireConfirmed({
+        expireHttpOk: true,
+        expireHttpStatus: 200,
+        expireSessionStatus: "open",
+      }).confirmedExpired,
+      false,
+    );
+    assert.equal(
+      stripeExpireConfirmed({
+        expireHttpOk: false,
+        expireHttpStatus: 400,
+        expireSessionStatus: null,
+        getHttpOk: true,
+        getHttpStatus: 200,
+        getSessionStatus: "expired",
+      }).confirmedExpired,
+      true,
+    );
+  });
+
+  it("replays the same pending checkout instead of creating another order", () => {
+    assert.equal(canReusePendingCheckout("pending"), true);
+    assert.equal(canReusePendingCheckout("canceled"), false);
+    assert.equal(parseCheckoutRequestId("2c1a0f6a-7c2b-4b1d-9e3a-1234567890ab"), "2c1a0f6a-7c2b-4b1d-9e3a-1234567890ab");
+    assert.equal(parseCheckoutRequestId("not-a-uuid"), "");
+    assert.equal(checkoutRedeemKey("req-1"), "checkout-redeem:req-1");
+    assert.equal(
+      stripeCheckoutReuseAction({
+        sessionId: "cs_1",
+        sessionStatus: "open",
+        sessionUrl: "https://checkout.stripe.com/c/pay/cs_1",
+      }),
+      "return_existing",
+    );
+    assert.equal(
+      stripeCheckoutReuseAction({
+        sessionId: "cs_1",
+        sessionStatus: "complete",
+        sessionUrl: "https://checkout.stripe.com/c/pay/cs_1",
+      }),
+      "paid_keep_pending",
+    );
+    assert.equal(
+      stripeCheckoutReuseAction({
+        sessionId: null,
+        sessionStatus: null,
+        sessionUrl: null,
+      }),
+      "replay_idempotent_create",
+    );
   });
 });
-

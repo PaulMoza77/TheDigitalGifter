@@ -7,7 +7,7 @@
     "dev": "vite --open",
     "dev:frontend": "vite --open",
     "typecheck": "tsc -p tsconfig.app.json --noEmit --pretty false && tsc -p tsconfig.node.json --noEmit --pretty false",
-    "test": "node --experimental-strip-types --test src/lib/fulfillment/stateMachine.test.ts src/lib/fulfillment/security.test.ts src/lib/imageValidation.test.ts src/lib/orderAccess.test.ts src/lib/fulfillment/postgres.functions.test.ts src/lib/fulfillment/concurrentRegen.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/fulfillment/stateMachine.test.ts src/lib/fulfillment/security.test.ts src/lib/imageValidation.test.ts src/lib/orderAccess.test.ts src/lib/checkoutRequest.test.ts src/lib/fulfillment/postgres.functions.test.ts src/lib/fulfillment/concurrentRegen.test.ts src/lib/fulfillment/generationsRls.test.ts",
     "verify:edge": "node scripts/verify-edge-functions.mjs",
     "verify:schedules": "node scripts/verify-fulfillment-schedules.mjs",
     "build": "vite build",

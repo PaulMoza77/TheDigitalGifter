@@ -27,8 +27,39 @@ export function stripeCheckoutIdempotencyKey(orderId: string): string {
   return `checkout:${orderId}`;
 }
 
+export function stripeSessionRetrievePath(sessionId: string): string {
+  return `/v1/checkout/sessions/${encodeURIComponent(sessionId)}`;
+}
+
 export function stripeExpireSessionPath(sessionId: string): string {
   return `/v1/checkout/sessions/${encodeURIComponent(sessionId)}/expire`;
+}
+
+export function stripeExpireConfirmed(args: {
+  expireHttpOk: boolean;
+  expireHttpStatus: number;
+  expireSessionStatus?: string | null;
+  getHttpOk?: boolean;
+  getHttpStatus?: number;
+  getSessionStatus?: string | null;
+}): { confirmedExpired: boolean; sessionStatus: string | null } {
+  const expireStatus = String(args.expireSessionStatus || "").toLowerCase();
+  const getStatus = String(args.getSessionStatus || "").toLowerCase();
+  if (
+    args.expireHttpOk &&
+    args.expireHttpStatus >= 200 &&
+    args.expireHttpStatus < 300 &&
+    expireStatus === "expired"
+  ) {
+    return { confirmedExpired: true, sessionStatus: "expired" };
+  }
+  if (args.getHttpOk && (args.getHttpStatus ?? 200) >= 200 && (args.getHttpStatus ?? 200) < 300 && getStatus === "expired") {
+    return { confirmedExpired: true, sessionStatus: "expired" };
+  }
+  return {
+    confirmedExpired: false,
+    sessionStatus: expireStatus || getStatus || null,
+  };
 }
 
 export type ResultEmailSendResult =

@@ -5,19 +5,15 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, it } from "node:test";
 import { createRequire } from "node:module";
-import { fulfillmentSqlForUnitTests } from "./pgTestSql.ts";
+import { fulfillmentSqlForUnitTests, resolvePgBin } from "./pgTestSql.ts";
 
 const { Client } = createRequire(import.meta.url)("pg") as typeof import("pg");
 
-function binExists(file: string) {
-  const which = spawnSync("bash", ["-lc", `command -v ${file}`], { encoding: "utf8" });
-  return which.status === 0 ? String(which.stdout).trim() : "";
-}
-
 function startEphemeralPostgres(): { url: string; stop: () => void } | null {
-  const initdb = binExists("initdb") || "/usr/lib/postgresql/16/bin/initdb";
-  const pgCtl = binExists("pg_ctl") || "/usr/lib/postgresql/16/bin/pg_ctl";
-  const postgres = binExists("postgres") || "/usr/lib/postgresql/16/bin/postgres";
+  const initdb = resolvePgBin("initdb");
+  const pgCtl = resolvePgBin("pg_ctl");
+  const postgres = resolvePgBin("postgres");
+  if (!initdb || !pgCtl) return null;
   const version = spawnSync(initdb, ["--version"], { encoding: "utf8" });
   if (version.status !== 0) return null;
 

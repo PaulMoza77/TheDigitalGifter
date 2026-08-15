@@ -26,6 +26,8 @@ jobs:
       PG_CONCURRENT_TEST_URL: postgres://postgres:postgres@localhost:5432/tdg_test
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -39,3 +41,5 @@ jobs:
       - run: npm run verify:edge
       - run: npm run verify:schedules
       - run: npm run build
+      - run: git fetch --no-tags origin cursor/product-truth-cleanup-0c35
+      - run: git diff --check origin/cursor/product-truth-cleanup-0c35...HEAD

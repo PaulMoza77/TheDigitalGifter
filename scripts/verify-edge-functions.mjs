@@ -41,7 +41,9 @@ assert(worker.includes("requireSchedulerAuth"), "job worker requires scheduler a
 assert(worker.includes("processed: 1") || worker.includes("processed:1"), "job worker documents one job");
 assert(!worker.includes("for (let i = 0; i < 5"), "job worker does not loop five jobs");
 assert(worker.includes("claim_next_fulfillment_job"), "job worker claims the next queued/stale job");
-assert(worker.includes("enqueue_result_email_job"), "job worker enqueues email retry after generation");
+assert(worker.includes("finish_fulfillment_job_and_enqueue_email"), "job worker finishes the main job and enqueues email atomically");
+assert(worker.includes('rpc: "claim_next_fulfillment_job"'), "job worker checks claim RPC errors");
+assert(worker.includes('rpc: "finish_fulfillment_job_and_enqueue_email"'), "job worker checks finish/enqueue RPC errors");
 assert(worker.includes("email_only"), "job worker can run result_email jobs without regenerating");
 assert(worker.includes("20260817_fulfillment_schedules.sql"), "job worker points at the official scheduler migration");
 
@@ -86,11 +88,32 @@ assert(checkout.includes("void body.success_url"), "checkout ignores client succ
 assert(checkout.includes("void body.cancel_url"), "checkout ignores client cancel_url");
 assert(checkout.includes("consume_confirmed_upload"), "checkout consumes the upload for one order");
 assert(checkout.includes("Idempotency-Key"), "checkout sends a Stripe Idempotency-Key");
+assert(checkout.includes("checkout_request_id"), "checkout reuses checkout_request_id after a lost response");
+assert(checkout.includes("stripeCheckoutReuseAction") || checkout.includes("return_existing"), "checkout recovers an existing Stripe session");
+assert(checkout.includes("stripeExpireConfirmed"), "checkout confirms Stripe expiry from HTTP and session status");
+assert(checkout.includes("reconcilable: true"), "checkout keeps unconfirmed expiry orders reconcilable");
 assert(checkout.includes("stripeExpireSessionPath") || checkout.includes("/expire"), "checkout expires the Stripe session after a post-create error");
 assert(checkout.includes('.delete().eq("id", generation.id)'), "checkout deletes the generation if the order insert fails");
 assert(checkout.includes("template_lookup_failed"), "checkout treats template query errors as failures");
 assert(checkout.includes("TEMPLATE_ACTIVE_COLUMN") || checkout.includes("isactive"), "checkout uses the canonical isactive column");
 assert(!checkout.includes("is_active, type"), "checkout does not select isactive and is_active together");
+assert(checkout.includes("checkoutRedeemKey"), "checkout derives the same redeem code on retry");
+assert(checkout.includes("stripeCheckoutIdempotencyKey(orderId)"), "checkout keeps checkout:<orderId> as the Stripe Idempotency-Key");
+
+const boot = read("src/main.tsx");
+assert(boot.includes("REDEEM_BOOTSTRAP_TIMEOUT_MS"), "bootstrap redeem has a timeout");
+assert(boot.includes("signal: timeout.signal"), "bootstrap redeem aborts the fetch");
+
+const payment = read("src/components/funnelVersion/FunnelPayment.tsx");
+assert(payment.includes("checkout_request_id"), "funnel checkout sends checkout_request_id");
+assert(payment.includes("readOrCreateCheckoutRequestId"), "funnel checkout reuses the stored request id");
+
+const blockers = read("supabase/migrations/20260818_review_blockers.sql");
+assert(blockers.includes("order_status_unchanged"), "dead result_email does not fail completed orders");
+assert(blockers.includes("finish_fulfillment_job_and_enqueue_email"), "SQL finishes the main job and enqueues email atomically");
+assert(blockers.includes("generations_anon_no_access"), "generations RLS denies anon");
+assert(blockers.includes("user_id = auth.uid()"), "generations RLS limits owners to their rows");
+assert(blockers.includes("is_generation_admin()"), "generations RLS keeps admin access explicit");
 
 const preview = read("supabase/functions/get-upload-preview/index.ts");
 assert(preview.includes("createSignedUrl"), "preview uses a signed URL");

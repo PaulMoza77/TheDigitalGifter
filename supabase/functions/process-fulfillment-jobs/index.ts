@@ -2,12 +2,16 @@
  * Scheduler recovery for fulfillment jobs.
  *
  * Official installer: supabase/migrations/20260817_fulfillment_schedules.sql
- * and docs/fulfillment-schedules.md (pg_cron + Vault names, no secrets in Git).
+ * and docs/fulfillment-schedules.md (pg_cron + pg_net + Vault names, no secrets in Git).
  * config.toml comments are not a scheduler. PGlite tests do not cover cron.
  *
  * Processes at most one job per invocation. Backoff (`run_after`) and stale
  * `running` jobs are reclaimed by claim_next_fulfillment_job — no new webhook
  * is required. kickFulfillmentWorker() is only a waitUntil optimization.
+ *
+ * Main-job success and result_email enqueue are one RPC
+ * (finish_fulfillment_job_and_enqueue_email). A dead result_email job must not
+ * fail a completed order.
  */
 import { jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
@@ -38,8 +42,10 @@ Deno.serve(async (req) => {
   const secret = Deno.env.get("FULFILLMENT_SECRET") || "";
   if (!url || !anon) return jsonResponse({ error: "Missing SUPABASE_URL/ANON" }, 500);
 
-  const { data, error } = await service.rpc("claim_next_fulfillment_job");
-  if (error) return jsonResponse({ error: error.message, processed: 0 }, 500);
+  const { data, error: claimErr } = await service.rpc("claim_next_fulfillment_job");
+  if (claimErr) {
+    return jsonResponse({ error: claimErr.message, rpc: "claim_next_fulfillment_job", processed: 0 }, 500);
+  }
 
   const claimed = data as ClaimedJob | null;
   if (!claimed?.job?.id || claimed.kind === "empty") {
@@ -69,17 +75,23 @@ Deno.serve(async (req) => {
   const payload = await fulfillRes.json().catch(() => ({}));
   const ok = fulfillRes.ok && payload?.ok === true;
 
-  await service.rpc("finish_fulfillment_job", {
-    p_job_id: job.id,
-    p_ok: ok,
-    p_error: ok ? null : String(payload?.error || `fulfill failed (${fulfillRes.status})`).slice(0, 500),
-  });
-
-  if (!emailOnly && ok && payload?.email_ok !== true) {
-    await service.rpc("enqueue_result_email_job", {
-      p_order_id: job.order_id,
-      p_generation_id: job.generation_id,
-    });
+  const { data: finishData, error: finishErr } = await service.rpc(
+    "finish_fulfillment_job_and_enqueue_email",
+    {
+      p_job_id: job.id,
+      p_ok: ok,
+      p_error: ok ? null : String(payload?.error || `fulfill failed (${fulfillRes.status})`).slice(0, 500),
+      p_email_ok: payload?.email_ok === true,
+    },
+  );
+  if (finishErr) {
+    return jsonResponse({
+      error: finishErr.message,
+      rpc: "finish_fulfillment_job_and_enqueue_email",
+      processed: 1,
+      job_id: job.id,
+      ok,
+    }, 500);
   }
 
   return jsonResponse({
@@ -87,6 +99,7 @@ Deno.serve(async (req) => {
     job_id: job.id,
     ok,
     email_ok: payload?.email_ok === true,
+    finish: finishData,
     maxAttempts: mvpProduct.maxGenerationAttempts,
   });
 });

@@ -6,7 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 
 import { queryClient } from "./data";
 import { getPublicSupabaseConfig } from "@/lib/env";
-import { captureOrderAccessFromUrl } from "@/lib/orderAccess";
+import { abortAfter, captureOrderAccessFromUrl, REDEEM_BOOTSTRAP_TIMEOUT_MS } from "@/lib/orderAccess";
 
 function injectSupabasePreconnect() {
   try {
@@ -31,6 +31,7 @@ function injectSupabasePreconnect() {
 }
 
 async function redeemResultAccess(orderId: string, code: string): Promise<string | null> {
+  const timeout = abortAfter(REDEEM_BOOTSTRAP_TIMEOUT_MS);
   try {
     const { url, anon } = getPublicSupabaseConfig();
     const res = await fetch(`${url}/functions/v1/redeem-result-access`, {
@@ -41,12 +42,15 @@ async function redeemResultAccess(orderId: string, code: string): Promise<string
         Authorization: `Bearer ${anon}`,
       },
       body: JSON.stringify({ order_id: orderId, code }),
+      signal: timeout.signal,
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { access_token?: string };
     return String(data.access_token || "").trim() || null;
   } catch {
     return null;
+  } finally {
+    timeout.cancel();
   }
 }
 
