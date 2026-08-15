@@ -271,4 +271,3 @@ create policy generations_insert_own
 
 grant select, insert on table public.generations to authenticated;
 grant execute on function public.is_generation_admin() to anon, authenticated, service_role;
-
