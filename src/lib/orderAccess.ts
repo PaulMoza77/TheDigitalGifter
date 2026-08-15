@@ -3,6 +3,164 @@ const REDEEM_KEY_PREFIX = "tdg.orderRedeem.";
 const RESULT_PATH = "/funnel/result";
 const AUTH_CALLBACK_PATH = "/auth/callback";
 export const REDEEM_BOOTSTRAP_TIMEOUT_MS = 8000;
+export const REDEEM_RETRY_BACKOFF_MS = [1000, 2000, 4000] as const;
+
+export type RedeemOutcome =
+  | { status: "ok"; token: string }
+  | { status: "invalid" }
+  | { status: "expired" }
+  | { status: "transient"; error?: string };
+
+export type RedeemBootstrapStatus = "idle" | "pending" | "ok" | "invalid" | "expired" | "transient";
+
+export type RedeemBootstrapState = {
+  orderId: string;
+  status: RedeemBootstrapStatus;
+  token: string;
+  redeemPending: boolean;
+};
+
+let redeemBootstrap: RedeemBootstrapState = {
+  orderId: "",
+  status: "idle",
+  token: "",
+  redeemPending: false,
+};
+
+export function getRedeemBootstrapState(): RedeemBootstrapState {
+  return { ...redeemBootstrap };
+}
+
+export function setRedeemBootstrapState(next: RedeemBootstrapState): RedeemBootstrapState {
+  redeemBootstrap = { ...next };
+  return getRedeemBootstrapState();
+}
+
+export function resetRedeemBootstrapState(): RedeemBootstrapState {
+  return setRedeemBootstrapState({
+    orderId: "",
+    status: "idle",
+    token: "",
+    redeemPending: false,
+  });
+}
+
+export function shouldClearRedeemCode(outcome: RedeemOutcome): boolean {
+  return outcome.status === "ok" || outcome.status === "invalid" || outcome.status === "expired";
+}
+
+export function shouldFetchSignedResult(args: {
+  redeemPending?: boolean;
+  bootstrapStatus: RedeemBootstrapStatus;
+}): boolean {
+  if (args.redeemPending) return false;
+  return args.bootstrapStatus === "idle" || args.bootstrapStatus === "ok";
+}
+
+export function classifyRedeemHttp(args: {
+  ok?: boolean;
+  status?: number;
+  kind?: string;
+  accessToken?: string;
+  aborted?: boolean;
+  networkError?: boolean;
+}): RedeemOutcome {
+  if (args.aborted || args.networkError) {
+    return { status: "transient", error: args.aborted ? "timeout" : "network" };
+  }
+  const token = String(args.accessToken || "").trim();
+  if (args.ok && token) return { status: "ok", token };
+  const kind = String(args.kind || "").trim();
+  if (kind === "expired" || args.status === 410) return { status: "expired" };
+  if (kind === "invalid" || kind === "mismatch" || args.status === 401) return { status: "invalid" };
+  if ((args.status ?? 0) >= 500 || args.status === 408 || args.status === 429 || args.status === 0) {
+    return { status: "transient", error: `http_${args.status || 0}` };
+  }
+  if ((args.status ?? 0) >= 400 && (args.status ?? 0) < 500) return { status: "invalid" };
+  return { status: "transient", error: "unknown" };
+}
+
+export async function retryRedeemWithBackoff(args: {
+  redeem: () => Promise<RedeemOutcome>;
+  delaysMs?: readonly number[];
+  sleep?: (ms: number) => Promise<void>;
+  shouldContinue?: () => boolean;
+}): Promise<RedeemOutcome> {
+  const delays = args.delaysMs ?? REDEEM_RETRY_BACKOFF_MS;
+  const sleep = args.sleep ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+  let last: RedeemOutcome = { status: "transient", error: "untried" };
+  for (let i = 0; i <= delays.length; i += 1) {
+    if (args.shouldContinue && !args.shouldContinue()) return last;
+    last = await args.redeem();
+    if (last.status !== "transient") return last;
+    if (i === delays.length) break;
+    await sleep(delays[i]);
+  }
+  return last;
+}
+
+export async function redeemResultAccessRequest(args: {
+  url: string;
+  anon: string;
+  orderId: string;
+  code: string;
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+}): Promise<RedeemOutcome> {
+  const timeout = abortAfter(args.timeoutMs ?? REDEEM_BOOTSTRAP_TIMEOUT_MS);
+  try {
+    const res = await (args.fetchImpl || fetch)(`${args.url}/functions/v1/redeem-result-access`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: args.anon,
+        Authorization: `Bearer ${args.anon}`,
+      },
+      body: JSON.stringify({ order_id: args.orderId, code: args.code }),
+      signal: timeout.signal,
+    });
+    const data = await res.json().catch(() => ({})) as { access_token?: string; kind?: string };
+    return classifyRedeemHttp({
+      ok: res.ok,
+      status: res.status,
+      kind: data.kind,
+      accessToken: data.access_token,
+    });
+  } catch (err) {
+    const aborted = typeof err === "object" && err !== null && "name" in err && (err as { name?: string }).name === "AbortError";
+    return classifyRedeemHttp({ aborted, networkError: !aborted });
+  } finally {
+    timeout.cancel();
+  }
+}
+
+export function applyRedeemOutcome(orderId: string, outcome: RedeemOutcome): RedeemBootstrapState {
+  if (outcome.status === "ok") {
+    storeOrderAccessToken(orderId, outcome.token);
+    clearOrderRedeemCode(orderId);
+    return setRedeemBootstrapState({
+      orderId,
+      status: "ok",
+      token: outcome.token,
+      redeemPending: false,
+    });
+  }
+  if (shouldClearRedeemCode(outcome)) {
+    clearOrderRedeemCode(orderId);
+    return setRedeemBootstrapState({
+      orderId,
+      status: outcome.status,
+      token: orderId ? readOrderAccessToken(orderId) : "",
+      redeemPending: false,
+    });
+  }
+  return setRedeemBootstrapState({
+    orderId,
+    status: "transient",
+    token: orderId ? readOrderAccessToken(orderId) : "",
+    redeemPending: true,
+  });
+}
 
 export function abortAfter(ms: number): { signal: AbortSignal; cancel: () => void } {
   const controller = new AbortController();
@@ -107,14 +265,22 @@ export function analyticsLocation(origin: string, pathname: string): string {
 export async function captureOrderAccessFromUrl(args?: {
   href?: string;
   replaceState?: (url: string) => void;
-  redeem?: (orderId: string, code: string) => Promise<string | null>;
-}): Promise<{ orderId: string; token: string; stripped: boolean; redeemPending: boolean }> {
+  redeem?: (orderId: string, code: string) => Promise<RedeemOutcome>;
+}): Promise<{
+  orderId: string;
+  token: string;
+  stripped: boolean;
+  redeemPending: boolean;
+  redeemStatus: RedeemBootstrapStatus;
+}> {
   const href = args?.href || (typeof window === "undefined" ? "" : window.location.href);
-  if (!href) return { orderId: "", token: "", stripped: false, redeemPending: false };
+  if (!href) {
+    return { orderId: "", token: "", stripped: false, redeemPending: false, redeemStatus: "idle" };
+  }
 
   const url = new URL(href, typeof window === "undefined" ? "https://www.thedigitalgifter.com" : window.location.origin);
   if (!shouldCaptureOrderAccess(href)) {
-    return { orderId: "", token: "", stripped: false, redeemPending: false };
+    return { orderId: "", token: "", stripped: false, redeemPending: false, redeemStatus: "idle" };
   }
 
   const orderId = String(url.searchParams.get("order_id") || "").trim();
@@ -131,18 +297,31 @@ export async function captureOrderAccessFromUrl(args?: {
   }
 
   let redeemPending = Boolean(orderId && redeemCode);
+  let redeemStatus: RedeemBootstrapStatus = redeemPending ? "pending" : "idle";
   if (orderId && redeemCode && args?.redeem) {
     try {
-      const redeemed = await args.redeem(orderId, redeemCode);
-      if (redeemed) {
-        token = redeemed;
-        storeOrderAccessToken(orderId, redeemed);
-        clearOrderRedeemCode(orderId);
-        redeemPending = false;
-      }
+      const outcome = await args.redeem(orderId, redeemCode);
+      const applied = applyRedeemOutcome(orderId, outcome);
+      if (outcome.status === "ok") token = outcome.token;
+      redeemPending = applied.redeemPending;
+      redeemStatus = applied.status;
     } catch {
       redeemPending = true;
+      redeemStatus = "transient";
+      setRedeemBootstrapState({
+        orderId,
+        status: "transient",
+        token: token || (orderId ? readOrderAccessToken(orderId) : ""),
+        redeemPending: true,
+      });
     }
+  } else if (orderId) {
+    setRedeemBootstrapState({
+      orderId,
+      status: redeemStatus,
+      token: token || readOrderAccessToken(orderId),
+      redeemPending,
+    });
   }
 
   const cleaned = stripResultSecretsFromUrl(href);
@@ -160,5 +339,6 @@ export async function captureOrderAccessFromUrl(args?: {
     token: token || (orderId ? readOrderAccessToken(orderId) : ""),
     stripped: hadSecrets,
     redeemPending,
+    redeemStatus,
   };
 }

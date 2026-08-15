@@ -6,8 +6,10 @@ import { dirname, join } from "node:path";
 import {
   abortAfter,
   analyticsLocation,
+  applyRedeemOutcome,
   captureOrderAccessFromUrl,
   captureResultHashToken,
+  classifyRedeemHttp,
   clearOrderRedeemCode,
   isAuthCallbackPath,
   orderAccessStorageKey,
@@ -15,7 +17,11 @@ import {
   parseAccessFragment,
   readOrderRedeemCode,
   REDEEM_BOOTSTRAP_TIMEOUT_MS,
+  redeemResultAccessRequest,
+  resetRedeemBootstrapState,
+  retryRedeemWithBackoff,
   shouldCaptureOrderAccess,
+  shouldFetchSignedResult,
   storeOrderRedeemCode,
   stripResultSecretsFromUrl,
 } from "./orderAccess.ts";
@@ -37,6 +43,7 @@ function mockSessionStorage() {
     length: 0,
   };
   Object.defineProperty(globalThis, "sessionStorage", { value: sessionStorage, configurable: true });
+  resetRedeemBootstrapState();
   return store;
 }
 
@@ -122,14 +129,17 @@ describe("order access capture", () => {
     storeOrderRedeemCode("ord-1", "one-time");
     const failed = await captureOrderAccessFromUrl({
       href: "https://www.thedigitalgifter.com/funnel/result?order_id=ord-1",
-      redeem: async () => null,
+      redeem: async () => ({ status: "transient", error: "timeout" }),
     });
     assert.equal(failed.redeemPending, true);
+    assert.equal(failed.redeemStatus, "transient");
     assert.equal(readOrderRedeemCode("ord-1"), "one-time");
 
     const refreshed = await captureOrderAccessFromUrl({
       href: "https://www.thedigitalgifter.com/funnel/result?order_id=ord-1",
-      redeem: async (_orderId, code) => (code === "one-time" ? "hmac-from-retry" : null),
+      redeem: async (_orderId, code) => (
+        code === "one-time" ? { status: "ok", token: "hmac-from-retry" } : { status: "invalid" }
+      ),
     });
     assert.equal(refreshed.token, "hmac-from-retry");
     assert.equal(refreshed.redeemPending, false);
@@ -143,14 +153,14 @@ describe("order access capture", () => {
       href,
       redeem: async () => {
         redeemCalls += 1;
-        return "tok-a";
+        return { status: "ok", token: "tok-a" };
       },
     });
     const second = await captureOrderAccessFromUrl({
       href,
       redeem: async () => {
         redeemCalls += 1;
-        return "tok-a";
+        return { status: "ok", token: "tok-a" };
       },
     });
     assert.equal(first.token, "tok-a");
@@ -179,8 +189,79 @@ describe("order access capture", () => {
     assert.equal(REDEEM_BOOTSTRAP_TIMEOUT_MS, 8000);
 
     const boot = readFileSync(join(root, "src/main.tsx"), "utf8");
-    assert.equal(boot.includes("abortAfter(REDEEM_BOOTSTRAP_TIMEOUT_MS)"), true);
-    assert.equal(boot.includes("signal: timeout.signal"), true);
+    const access = readFileSync(join(root, "src/lib/orderAccess.ts"), "utf8");
+    assert.equal(boot.includes("redeemResultAccessRequest"), true);
     assert.equal(boot.includes("await captureOrderAccessFromUrl"), true);
+    assert.equal(access.includes("abortAfter(args.timeoutMs ?? REDEEM_BOOTSTRAP_TIMEOUT_MS)"), true);
+    assert.equal(access.includes("signal: timeout.signal"), true);
+  });
+
+  it("recovers from a redeem timeout and does not fetch the signed result until bootstrap is final", async () => {
+    mockSessionStorage();
+    storeOrderRedeemCode("ord-timeout", "keep-me");
+    const timedOut = await captureOrderAccessFromUrl({
+      href: "https://www.thedigitalgifter.com/funnel/result?order_id=ord-timeout",
+      redeem: async () => ({ status: "transient", error: "timeout" }),
+    });
+    assert.equal(timedOut.redeemStatus, "transient");
+    assert.equal(timedOut.redeemPending, true);
+    assert.equal(readOrderRedeemCode("ord-timeout"), "keep-me");
+    assert.equal(shouldFetchSignedResult({
+      redeemPending: timedOut.redeemPending,
+      bootstrapStatus: timedOut.redeemStatus,
+    }), false);
+
+    const sleeps: number[] = [];
+    let attempts = 0;
+    const recovered = await retryRedeemWithBackoff({
+      delaysMs: [1, 2],
+      sleep: async (ms) => {
+        sleeps.push(ms);
+      },
+      redeem: async () => {
+        attempts += 1;
+        if (attempts < 3) return { status: "transient", error: "timeout" };
+        return { status: "ok", token: "hmac-after-timeout" };
+      },
+    });
+    const applied = applyRedeemOutcome("ord-timeout", recovered);
+    assert.equal(recovered.status, "ok");
+    assert.equal(applied.status, "ok");
+    assert.equal(applied.redeemPending, false);
+    assert.equal(readOrderRedeemCode("ord-timeout"), "");
+    assert.deepEqual(sleeps, [1, 2]);
+    assert.equal(shouldFetchSignedResult({
+      redeemPending: applied.redeemPending,
+      bootstrapStatus: applied.status,
+    }), true);
+  });
+
+  it("clears an invalid redeem code and never treats it as unauthorized-until-refresh", async () => {
+    mockSessionStorage();
+    storeOrderRedeemCode("ord-bad", "bad-code");
+    const invalid = await captureOrderAccessFromUrl({
+      href: "https://www.thedigitalgifter.com/funnel/result?order_id=ord-bad",
+      redeem: async () => ({ status: "invalid" }),
+    });
+    assert.equal(invalid.redeemStatus, "invalid");
+    assert.equal(invalid.redeemPending, false);
+    assert.equal(readOrderRedeemCode("ord-bad"), "");
+    assert.equal(shouldFetchSignedResult({
+      redeemPending: invalid.redeemPending,
+      bootstrapStatus: invalid.redeemStatus,
+    }), false);
+    assert.equal(classifyRedeemHttp({ ok: false, status: 401, kind: "invalid" }).status, "invalid");
+    assert.equal(classifyRedeemHttp({ ok: false, status: 410, kind: "expired" }).status, "expired");
+    assert.equal(classifyRedeemHttp({ aborted: true }).status, "transient");
+    assert.equal(classifyRedeemHttp({ ok: false, status: 500 }).status, "transient");
+
+    const outcome = await redeemResultAccessRequest({
+      url: "https://example.test",
+      anon: "anon",
+      orderId: "ord-bad",
+      code: "bad-code",
+      fetchImpl: async () => new Response(JSON.stringify({ kind: "invalid" }), { status: 401 }),
+    });
+    assert.equal(outcome.status, "invalid");
   });
 });

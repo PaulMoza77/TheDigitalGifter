@@ -30,7 +30,12 @@ create table if not exists public.generations (
   user_id uuid,
   replicate_prediction_id text,
   completed_at timestamptz,
-  result_mime text
+  result_mime text,
+  result_bucket text,
+  result_path text,
+  result_image_url text,
+  final_image_url text,
+  preview_image_url text
 );
 
 create table if not exists public.mvp_orders (

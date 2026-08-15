@@ -19,6 +19,7 @@ import {
   parseCheckoutRequestId,
   stripeCheckoutReuseAction,
 } from "../_shared/checkoutRetry.ts";
+import { persistedRowCount, requirePersistedWrite } from "../_shared/persistWrite.ts";
 
 type Body = {
   email?: string;
@@ -331,16 +332,26 @@ Deno.serve(async (req) => {
         .single();
 
       if (orderErr || !order?.id) {
-        await service.from("generations").delete().eq("id", generation.id);
+        const { data: deleted, error: delErr } = await service
+          .from("generations")
+          .delete()
+          .eq("id", generation.id)
+          .select("id");
+        requirePersistedWrite({
+          error: delErr,
+          rowCount: persistedRowCount(deleted),
+          label: "generation_cleanup",
+        });
         const duplicate = String(orderErr?.message || "").toLowerCase().includes("mvp_orders_one_live_upload")
           || String(orderErr?.code || "") === "23505";
         if (duplicate) {
-          const { data: raced } = await service
+          const { data: raced, error: racedErr } = await service
             .from("mvp_orders")
             .select("id, generation_id, stripe_checkout_session_id, status, checkout_request_id")
             .eq("upload_id", uploadId)
             .neq("status", "canceled")
             .maybeSingle();
+          if (racedErr) throw racedErr;
           if (raced && canReusePendingCheckout(raced.status) && raced.generation_id) {
             existingOrder = raced;
             orderId = raced.id;
@@ -356,8 +367,16 @@ Deno.serve(async (req) => {
         orderId = order.id;
         generationId = generation.id;
         createdOrderId = order.id;
-        const { error: linkErr } = await service.from("generations").update({ order_id: order.id }).eq("id", generation.id);
-        if (linkErr) throw linkErr;
+        const { data: linked, error: linkErr } = await service
+          .from("generations")
+          .update({ order_id: order.id })
+          .eq("id", generation.id)
+          .select("id");
+        requirePersistedWrite({
+          error: linkErr,
+          rowCount: persistedRowCount(linked),
+          label: "generation_order_link",
+        });
       }
     }
 
@@ -485,27 +504,29 @@ Deno.serve(async (req) => {
       return await cancelAfterStripe("upload_unavailable", 409);
     }
 
-    const { error: orderUpdateErr } = await service
+    const { data: updatedOrder, error: orderUpdateErr } = await service
       .from("mvp_orders")
       .update({
         stripe_checkout_session_id: session.id,
         checkout_request_id: storedRequestId,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", orderId);
-    if (orderUpdateErr) {
-      return await cancelAfterStripe("order_update_failed", 500);
+      .eq("id", orderId)
+      .select("id");
+    if (orderUpdateErr || persistedRowCount(updatedOrder) < 1) {
+      return await cancelAfterStripe(orderUpdateErr?.message || "order_update_failed", 500);
     }
 
-    const { error: genUpdateErr } = await service
+    const { data: updatedGen, error: genUpdateErr } = await service
       .from("generations")
       .update({
         stripe_session_id: session.id,
         checkout_session_id: session.id,
       })
-      .eq("id", generationId);
-    if (genUpdateErr) {
-      return await cancelAfterStripe("generation_update_failed", 500);
+      .eq("id", generationId)
+      .select("id");
+    if (genUpdateErr || persistedRowCount(updatedGen) < 1) {
+      return await cancelAfterStripe(genUpdateErr?.message || "generation_update_failed", 500);
     }
 
     return checkoutResponse(

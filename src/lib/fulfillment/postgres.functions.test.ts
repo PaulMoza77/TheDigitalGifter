@@ -256,4 +256,96 @@ describe("postgres fulfillment functions", () => {
     assert.equal(retry.rows[0].consume_confirmed_upload.kind, "already_consumed");
     await db.close();
   });
+
+  it("persists generation completion without overwriting a refunded order or enqueueing email", async () => {
+    const db = await openDb();
+    const gen = await db.query<{ id: string }>(
+      `insert into public.generations (status) values ('processing') returning id`,
+    );
+    const order = await db.query<{ id: string }>(
+      `insert into public.mvp_orders
+         (email, status, generation_id, stripe_payment_intent_id)
+       values ('refund-race@example.com', 'fulfilling', $1, 'pi_race_1')
+       returning id`,
+      [gen.rows[0].id],
+    );
+    await db.query(
+      `insert into public.fulfillment_jobs
+         (order_id, generation_id, kind, status, attempts, max_attempts)
+       values ($1, $2, 'initial', 'running', 1, 3)`,
+      [order.rows[0].id, gen.rows[0].id],
+    );
+    const refunded = await db.query<{ claim_mvp_order_refunded: { ok: boolean; kind: string } }>(
+      `select public.claim_mvp_order_refunded('evt_refund_race', 'charge.refunded', 'pi_race_1')
+         as claim_mvp_order_refunded`,
+    );
+    const completed = await db.query<{
+      complete_mvp_fulfillment: { ok: boolean; kind: string; skip_email: boolean; completed: boolean };
+    }>(
+      `select public.complete_mvp_fulfillment(
+         $1, $2, 'generated-results', 'results/x.jpg', 'image/jpeg', 'https://example.test/x.jpg', 'pred_1'
+       ) as complete_mvp_fulfillment`,
+      [gen.rows[0].id, order.rows[0].id],
+    );
+    const enqueued = await db.query<{ enqueue_result_email_job: { ok: boolean; kind: string } }>(
+      `select public.enqueue_result_email_job($1, $2) as enqueue_result_email_job`,
+      [order.rows[0].id, gen.rows[0].id],
+    );
+    const status = await db.query<{ status: string }>(
+      `select status from public.mvp_orders where id = $1`,
+      [order.rows[0].id],
+    );
+    const genStatus = await db.query<{ status: string }>(
+      `select status from public.generations where id = $1`,
+      [gen.rows[0].id],
+    );
+    const emailJobs = await db.query<{ n: number }>(
+      `select count(*)::int as n from public.fulfillment_jobs where kind = 'result_email'`,
+    );
+    const again = await db.query<{ claim_mvp_order_refunded: { ok: boolean; kind: string } }>(
+      `select public.claim_mvp_order_refunded('evt_refund_race', 'charge.refunded', 'pi_race_1')
+         as claim_mvp_order_refunded`,
+    );
+    assert.equal(refunded.rows[0].claim_mvp_order_refunded.ok, true);
+    assert.equal(refunded.rows[0].claim_mvp_order_refunded.kind, "refunded");
+    assert.equal(completed.rows[0].complete_mvp_fulfillment.ok, true);
+    assert.equal(completed.rows[0].complete_mvp_fulfillment.skip_email, true);
+    assert.equal(completed.rows[0].complete_mvp_fulfillment.completed, false);
+    assert.equal(enqueued.rows[0].enqueue_result_email_job.kind, "skipped_terminal");
+    assert.equal(status.rows[0].status, "refunded");
+    assert.equal(genStatus.rows[0].status, "completed");
+    assert.equal(emailJobs.rows[0].n, 0);
+    assert.equal(again.rows[0].claim_mvp_order_refunded.kind, "already_refunded");
+    await db.close();
+  });
+
+  it("completes generation and order together when the order is still paid", async () => {
+    const db = await openDb();
+    const gen = await db.query<{ id: string }>(
+      `insert into public.generations (status) values ('processing') returning id`,
+    );
+    const order = await db.query<{ id: string }>(
+      `insert into public.mvp_orders (email, status, generation_id)
+       values ('complete@example.com', 'fulfilling', $1)
+       returning id`,
+      [gen.rows[0].id],
+    );
+    const completed = await db.query<{
+      complete_mvp_fulfillment: { ok: boolean; kind: string; skip_email: boolean; completed: boolean };
+    }>(
+      `select public.complete_mvp_fulfillment(
+         $1, $2, 'generated-results', 'results/y.jpg', 'image/jpeg', 'https://example.test/y.jpg', 'pred_2'
+       ) as complete_mvp_fulfillment`,
+      [gen.rows[0].id, order.rows[0].id],
+    );
+    const status = await db.query<{ status: string }>(
+      `select status from public.mvp_orders where id = $1`,
+      [order.rows[0].id],
+    );
+    assert.equal(completed.rows[0].complete_mvp_fulfillment.ok, true);
+    assert.equal(completed.rows[0].complete_mvp_fulfillment.completed, true);
+    assert.equal(completed.rows[0].complete_mvp_fulfillment.skip_email, false);
+    assert.equal(status.rows[0].status, "completed");
+    await db.close();
+  });
 });

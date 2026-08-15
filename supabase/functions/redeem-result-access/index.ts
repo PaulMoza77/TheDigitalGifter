@@ -31,7 +31,9 @@ Deno.serve(async (req) => {
     });
     if (error) throw error;
     if (!data?.ok) {
-      return jsonResponse({ error: "Invalid or expired code" }, 401);
+      const kind = String(data?.kind || "invalid");
+      const status = kind === "expired" ? 410 : 401;
+      return jsonResponse({ error: "Invalid or expired code", kind }, status);
     }
 
     const accessToken = await signAccessToken(

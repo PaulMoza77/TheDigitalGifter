@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { getPublicSupabaseConfig } from "@/lib/env";
 import { Separator } from "@/components/ui/separator";
 import {
   Card,
@@ -15,7 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { productTruth } from "@/config/productTruth";
 import { productModel } from "@/config/productModel";
-import { readOrderAccessToken } from "@/lib/orderAccess";
+import {
+  applyRedeemOutcome,
+  getRedeemBootstrapState,
+  readOrderAccessToken,
+  readOrderRedeemCode,
+  redeemResultAccessRequest,
+  retryRedeemWithBackoff,
+  shouldFetchSignedResult,
+  type RedeemBootstrapStatus,
+} from "@/lib/orderAccess";
+import { getPublicSupabaseConfig } from "@/lib/env";
 import {
   RefreshCw,
   Sparkles,
@@ -81,7 +90,15 @@ export default function ResultPage() {
 
   const generationId = String(q.get("generation_id") || q.get("id") || "").trim();
   const orderId = String(q.get("order_id") || "").trim();
-  const accessToken = readOrderAccessToken(orderId);
+  const bootstrap = getRedeemBootstrapState();
+  const [accessToken, setAccessToken] = useState(() => readOrderAccessToken(orderId) || bootstrap.token);
+  const [redeemStatus, setRedeemStatus] = useState<RedeemBootstrapStatus>(
+    bootstrap.orderId === orderId ? bootstrap.status : "idle",
+  );
+  const [redeemPending, setRedeemPending] = useState(
+    bootstrap.orderId === orderId ? bootstrap.redeemPending : false,
+  );
+  const [retryingAccess, setRetryingAccess] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -94,6 +111,24 @@ export default function ResultPage() {
   const [resolvedOrderId, setResolvedOrderId] = useState(orderId);
   const [generationStatus, setGenerationStatus] = useState("waiting");
   const [unauthorized, setUnauthorized] = useState(false);
+  const accessBlocked = redeemStatus === "invalid" || redeemStatus === "expired";
+  const accessRetryable = redeemStatus === "transient" || redeemPending;
+
+  async function redeemStoredCode(): Promise<boolean> {
+    const code = readOrderRedeemCode(orderId);
+    if (!orderId || !code) return false;
+    const { url, anon } = getPublicSupabaseConfig();
+    const outcome = await redeemResultAccessRequest({ url, anon, orderId, code });
+    const applied = applyRedeemOutcome(orderId, outcome);
+    setRedeemStatus(applied.status);
+    setRedeemPending(applied.redeemPending);
+    if (outcome.status === "ok") {
+      setAccessToken(outcome.token);
+      setUnauthorized(false);
+      return true;
+    }
+    return false;
+  }
 
   const pageBg = useMemo(() => ({ background: "#f6f1ea" as const }), []);
   const canOpen = Boolean(orderId || generationId);
@@ -133,6 +168,50 @@ export default function ResultPage() {
         setLoading(false);
         setErrorMessage("Missing order or generation id.");
         return;
+      }
+
+      if (accessBlocked) {
+        setLoading(false);
+        setUnauthorized(true);
+        setErrorMessage("This result link is invalid or expired.");
+        return;
+      }
+
+      if (!shouldFetchSignedResult({ redeemPending, bootstrapStatus: redeemStatus })) {
+        setLoading(true);
+        setErrorMessage("");
+        setUnauthorized(false);
+        if (redeemStatus === "transient" || redeemPending) {
+          const recovered = await retryRedeemWithBackoff({
+            redeem: async () => {
+              const code = readOrderRedeemCode(orderId);
+              if (!orderId || !code) return { status: "invalid" as const };
+              const { url, anon } = getPublicSupabaseConfig();
+              return redeemResultAccessRequest({ url, anon, orderId, code });
+            },
+            shouldContinue: () => !cancelled,
+          });
+          if (cancelled) return;
+          const applied = applyRedeemOutcome(orderId, recovered);
+          setRedeemStatus(applied.status);
+          setRedeemPending(applied.redeemPending);
+          if (recovered.status === "ok") {
+            setAccessToken(recovered.token);
+            setUnauthorized(false);
+            return;
+          } else if (recovered.status === "invalid" || recovered.status === "expired") {
+            setUnauthorized(true);
+            setLoading(false);
+            setErrorMessage("This result link is invalid or expired.");
+            return;
+          } else {
+            setLoading(false);
+            setErrorMessage("We couldn’t verify access. Retry access to continue.");
+            return;
+          }
+        } else {
+          return;
+        }
       }
 
       const start = Date.now();
@@ -187,7 +266,7 @@ export default function ResultPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId, generationId, accessToken]);
+  }, [orderId, generationId, accessToken, redeemPending, redeemStatus]);
 
   async function handleIncludedRegeneration() {
     const id = resolvedOrderId || orderId;
@@ -234,7 +313,8 @@ export default function ResultPage() {
     a.remove();
   }
 
-  if (!canOpen || unauthorized) {
+  if (!canOpen || unauthorized || accessBlocked || (accessRetryable && !accessToken)) {
+    const retryable = accessRetryable && !accessBlocked;
     return (
       <div className="min-h-screen" style={pageBg}>
         <header className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
@@ -256,18 +336,35 @@ export default function ResultPage() {
           <Card className="border-zinc-200 bg-white/80 shadow-sm">
             <CardContent className="p-8 text-center">
               <h1 className="text-3xl font-semibold text-[#0b3b2e] sm:text-4xl">
-                We couldn’t open your result
+                {retryable ? "We’re verifying access" : "We couldn’t open your result"}
               </h1>
               <p className="mt-3 text-zinc-700">
-                {unauthorized
-                  ? "This result is private. Open it from the result link or while signed in to the same account."
-                  : "The order id is missing. Please return and try again."}
+                {accessBlocked
+                  ? "This result link is invalid or expired."
+                  : retryable
+                    ? "Access timed out. Your code is still saved. Retry access without refreshing."
+                    : unauthorized
+                      ? "This result is private. Open it from the result link or while signed in to the same account."
+                      : "The order id is missing. Please return and try again."}
               </p>
               <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-                <Button onClick={() => navigate(NEW_GIFT_ROUTE)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Start again
-                </Button>
+                {retryable ? (
+                  <Button
+                    onClick={() => {
+                      setRetryingAccess(true);
+                      void redeemStoredCode().finally(() => setRetryingAccess(false));
+                    }}
+                    disabled={retryingAccess}
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${retryingAccess ? "animate-spin" : ""}`} />
+                    {retryingAccess ? "Retrying…" : "Retry access"}
+                  </Button>
+                ) : (
+                  <Button onClick={() => navigate(NEW_GIFT_ROUTE)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Start again
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => navigate(HOME_ROUTE)}>
                   <Home className="mr-2 h-4 w-4" />
                   Go home

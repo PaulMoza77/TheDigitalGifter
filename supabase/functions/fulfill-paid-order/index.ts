@@ -14,6 +14,13 @@ import {
   TEMPLATE_ACTIVE_COLUMN,
 } from "../_shared/generationRecovery.ts";
 import { shouldStampResultEmailedAt, type ResultEmailSendResult } from "../_shared/stripePayment.ts";
+import { persistedRowCount, requirePersistedWrite } from "../_shared/persistWrite.ts";
+
+const TERMINAL_ORDER_STATUSES = new Set(["refunded", "canceled"]);
+
+function isTerminalOrderStatus(status: unknown): boolean {
+  return TERMINAL_ORDER_STATUSES.has(String(status || ""));
+}
 
 type Body = {
   order_id?: string;
@@ -188,10 +195,11 @@ Deno.serve(async (req) => {
   const release = async (reason: string) => {
     if (!claimedRun || !generationId) return;
     claimedRun = false;
-    await service.rpc("release_mvp_generation_claim", {
+    const { error } = await service.rpc("release_mvp_generation_claim", {
       p_generation_id: generationId,
       p_error: reason,
     });
+    if (error) throw new Error(`release_mvp_generation_claim: ${error.message}`);
   };
 
   try {
@@ -210,6 +218,15 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (orderErr) throw orderErr;
       if (!order) return jsonResponse({ error: "order not found", ok: false, email_ok: false }, 404);
+      if (isTerminalOrderStatus(order.status)) {
+        return jsonResponse({
+          ok: true,
+          email_ok: true,
+          skip_email: true,
+          status: String(order.status),
+          order_id: orderId,
+        });
+      }
       if (order.result_emailed_at) {
         return jsonResponse({ ok: true, email_ok: true, status: "already_emailed", order_id: orderId });
       }
@@ -236,11 +253,32 @@ Deno.serve(async (req) => {
         accessToken: orderAccessToken,
       });
       if (shouldStampResultEmailedAt(emailResult)) {
-        const { error: stampErr } = await service
+        const { data: stamped, error: stampErr } = await service
           .from("mvp_orders")
           .update({ result_emailed_at: new Date().toISOString() })
-          .eq("id", orderId);
+          .eq("id", orderId)
+          .neq("status", "refunded")
+          .neq("status", "canceled")
+          .select("id");
         if (stampErr) throw stampErr;
+        if (persistedRowCount(stamped) < 1) {
+          const { data: live, error: liveErr } = await service
+            .from("mvp_orders")
+            .select("status")
+            .eq("id", orderId)
+            .maybeSingle();
+          if (liveErr) throw liveErr;
+          if (isTerminalOrderStatus(live?.status)) {
+            return jsonResponse({
+              ok: true,
+              email_ok: true,
+              skip_email: true,
+              status: String(live?.status),
+              order_id: orderId,
+            });
+          }
+          requirePersistedWrite({ error: null, rowCount: 0, label: "result_emailed_at" });
+        }
       }
       return jsonResponse({
         ok: emailResult.ok,
@@ -260,12 +298,30 @@ Deno.serve(async (req) => {
     if (!claimed?.run_generation) {
       const kind = String(claimed?.kind || "blocked");
       const ok = kind === "already_complete";
+      if (!ok) {
+        return jsonResponse({
+          ok: false,
+          status: "skipped",
+          kind,
+          generation_id: generationId,
+        }, 409);
+      }
+      const { data: skipOrder, error: skipOrderErr } = await service
+        .from("mvp_orders")
+        .select("id, status, result_emailed_at")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (skipOrderErr) throw skipOrderErr;
+      const skipEmail = isTerminalOrderStatus(skipOrder?.status) || Boolean(skipOrder?.result_emailed_at);
       return jsonResponse({
-        ok,
+        ok: true,
         status: "skipped",
         kind,
+        skip_email: skipEmail,
+        email_ok: skipEmail,
         generation_id: generationId,
-      }, ok ? 200 : 409);
+        order_id: orderId,
+      });
     }
     claimedRun = true;
 
@@ -344,14 +400,19 @@ Deno.serve(async (req) => {
       const created = await createPrediction(token, templateCheck.prompt, sourceUrl);
       predictionId = String(created.id || "");
       if (!predictionId) throw new Error("replicate_prediction_id_missing");
-      const { error: persistErr } = await service
+      const { data: persistedPrediction, error: persistErr } = await service
         .from("generations")
         .update({
           replicate_prediction_id: predictionId,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", generationId);
-      if (persistErr) throw persistErr;
+        .eq("id", generationId)
+        .select("id");
+      requirePersistedWrite({
+        error: persistErr,
+        rowCount: persistedRowCount(persistedPrediction),
+        label: "replicate_prediction_id",
+      });
       prediction = created.status === "succeeded" ? created : await pollPrediction(token, predictionId);
     }
 
@@ -388,41 +449,53 @@ Deno.serve(async (req) => {
     }
 
     const signed = await signedDownloadUrl(service, RESULT_BUCKET, objectPath);
-    const now = new Date().toISOString();
-    const { error: genUpdateErr } = await service
-      .from("generations")
-      .update({
-        status: "completed",
-        result_bucket: RESULT_BUCKET,
-        result_path: objectPath,
+    const { data: completed, error: completeErr } = await service.rpc("complete_mvp_fulfillment", {
+      p_generation_id: generationId,
+      p_order_id: orderId,
+      p_result_bucket: RESULT_BUCKET,
+      p_result_path: objectPath,
+      p_result_mime: detected.mime,
+      p_result_image_url: signed,
+      p_prediction_id: predictionId,
+    });
+    if (completeErr || completed?.ok !== true) {
+      await release(String(completeErr?.message || completed?.kind || "fulfillment_persist_failed"));
+      return jsonResponse({
+        error: completeErr?.message || completed?.kind || "fulfillment_persist_failed",
+        ok: false,
+      }, 500);
+    }
+    claimedRun = false;
+
+    if (completed.skip_email === true) {
+      return jsonResponse({
+        ok: true,
+        status: String(completed.kind || "skipped"),
+        skip_email: true,
+        email_ok: true,
+        order_id: orderId,
+        generation_id: generationId,
         result_mime: detected.mime,
-        result_image_url: signed,
-        final_image_url: signed,
-        preview_image_url: signed,
-        replicate_prediction_id: predictionId,
-        completed_at: now,
-        error: null,
-        updated_at: now,
-      })
-      .eq("id", generationId)
-      .in("status", ["queued", "pending", "processing", "failed"]);
-    if (genUpdateErr) {
-      await release("generation_update_failed");
-      return jsonResponse({ error: "generation_update_failed", ok: false }, 500);
+      });
     }
 
-    await service
+    const { data: liveOrder, error: liveOrderErr } = await service
       .from("mvp_orders")
-      .update({
-        status: "completed",
-        fulfilled_at: now,
-        error: null,
-        updated_at: now,
-      })
+      .select("id, status")
       .eq("id", orderId)
-      .neq("status", "refunded");
-
-    claimedRun = false;
+      .maybeSingle();
+    if (liveOrderErr) throw liveOrderErr;
+    if (isTerminalOrderStatus(liveOrder?.status)) {
+      return jsonResponse({
+        ok: true,
+        status: String(liveOrder?.status || "skipped"),
+        skip_email: true,
+        email_ok: true,
+        order_id: orderId,
+        generation_id: generationId,
+        result_mime: detected.mime,
+      });
+    }
 
     const orderAccessToken = await signAccessToken(
       {
@@ -439,11 +512,34 @@ Deno.serve(async (req) => {
       accessToken: orderAccessToken,
     });
     if (shouldStampResultEmailedAt(emailResult)) {
-      const { error: stampErr } = await service
+      const { data: stamped, error: stampErr } = await service
         .from("mvp_orders")
         .update({ result_emailed_at: new Date().toISOString() })
-        .eq("id", orderId);
+        .eq("id", orderId)
+        .neq("status", "refunded")
+        .neq("status", "canceled")
+        .select("id");
       if (stampErr) throw stampErr;
+      if (persistedRowCount(stamped) < 1) {
+        const { data: live, error: liveErr } = await service
+          .from("mvp_orders")
+          .select("status")
+          .eq("id", orderId)
+          .maybeSingle();
+        if (liveErr) throw liveErr;
+        if (isTerminalOrderStatus(live?.status)) {
+          return jsonResponse({
+            ok: true,
+            status: String(live?.status || "skipped"),
+            skip_email: true,
+            email_ok: true,
+            order_id: orderId,
+            generation_id: generationId,
+            result_mime: detected.mime,
+          });
+        }
+        requirePersistedWrite({ error: null, rowCount: 0, label: "result_emailed_at" });
+      }
     }
 
     return jsonResponse({
@@ -457,7 +553,12 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    await release(message);
+    try {
+      await release(message);
+    } catch (releaseErr) {
+      const releaseMessage = releaseErr instanceof Error ? releaseErr.message : String(releaseErr);
+      return jsonResponse({ error: message, release_error: releaseMessage, ok: false }, 500);
+    }
     return jsonResponse({ error: message, ok: false }, 500);
   }
 });

@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       p_job_id: job.id,
       p_ok: ok,
       p_error: ok ? null : String(payload?.error || `fulfill failed (${fulfillRes.status})`).slice(0, 500),
-      p_email_ok: payload?.email_ok === true,
+      p_email_ok: payload?.email_ok === true || payload?.skip_email === true,
     },
   );
   if (finishErr) {
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
     processed: 1,
     job_id: job.id,
     ok,
-    email_ok: payload?.email_ok === true,
+    email_ok: payload?.email_ok === true || payload?.skip_email === true,
     finish: finishData,
     maxAttempts: mvpProduct.maxGenerationAttempts,
   });

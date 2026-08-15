@@ -55,9 +55,10 @@ Deno.serve(async (req) => {
     }
 
     const genId = String(order.generation_id || generationId || "");
-    const { data: generation } = genId
+    const { data: generation, error: genErr } = genId
       ? await service.from("generations").select("*").eq("id", genId).maybeSingle()
-      : { data: null };
+      : { data: null, error: null };
+    if (genErr) throw genErr;
 
     let signedUrl: string | null = null;
     const bucket = String(generation?.result_bucket || RESULT_BUCKET);
@@ -66,7 +67,9 @@ Deno.serve(async (req) => {
       const signed = await service.storage
         .from(bucket)
         .createSignedUrl(path, mvpProduct.signedUrlTtlSeconds);
+      if (signed.error) throw signed.error;
       signedUrl = signed.data?.signedUrl || null;
+      if (!signedUrl) throw new Error("signed_url_missing");
     }
 
     return jsonResponse({

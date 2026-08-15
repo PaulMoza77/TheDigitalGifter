@@ -3,6 +3,7 @@ import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts"
 import { mvpProduct } from "../_shared/mvpProduct.ts";
 import { authorizeOrderAccess, verifyAccessToken } from "../_shared/guestToken.ts";
 import { accessTokenSecret, kickFulfillmentWorker } from "../_shared/access.ts";
+import { persistedRowCount, requirePersistedWrite } from "../_shared/persistWrite.ts";
 
 type Body = {
   order_id?: string;
@@ -89,7 +90,16 @@ Deno.serve(async (req) => {
 
     const outcome = claimed as { kind?: string; ok?: boolean };
     if (!outcome?.ok) {
-      await service.from("generations").delete().eq("id", generation.id);
+      const { data: deleted, error: delErr } = await service
+        .from("generations")
+        .delete()
+        .eq("id", generation.id)
+        .select("id");
+      requirePersistedWrite({
+        error: delErr,
+        rowCount: persistedRowCount(deleted),
+        label: "regeneration_cleanup",
+      });
       const message = outcome?.kind === "in_flight"
         ? "A regeneration is already in progress."
         : "The included regeneration has already been used.";

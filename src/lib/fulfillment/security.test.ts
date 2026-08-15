@@ -16,6 +16,7 @@ import {
   TEMPLATE_ACTIVE_COLUMN,
 } from "./generationRecovery.ts";
 import { shouldStampResultEmailedAt, stripeCheckoutIdempotencyKey, stripeExpireConfirmed, stripeExpireSessionPath, stripeSessionRetrievePath } from "./stripePayment.ts";
+import { persistedRowCount, requirePersistedWrite } from "./persistWrite.ts";
 import {
   canReusePendingCheckout,
   checkoutRedeemKey,
@@ -369,6 +370,22 @@ describe("result email stamp", () => {
     assert.equal(shouldStampResultEmailedAt({ ok: true }), true);
     assert.equal(shouldStampResultEmailedAt({ ok: false, skipped: false, error: "500" }), false);
     assert.equal(shouldStampResultEmailedAt({ ok: false, skipped: true, error: "resend_missing" }), false);
+  });
+});
+
+describe("persisted writes", () => {
+  it("treats Supabase errors and zero-row updates as failures", () => {
+    assert.equal(persistedRowCount([{ id: "1" }]), 1);
+    assert.equal(persistedRowCount([]), 0);
+    assert.equal(requirePersistedWrite({ error: null, rowCount: 1, label: "ok" }), 1);
+    assert.throws(
+      () => requirePersistedWrite({ error: { message: "boom" }, rowCount: 1, label: "gen_update" }),
+      /gen_update: boom/,
+    );
+    assert.throws(
+      () => requirePersistedWrite({ error: null, rowCount: 0, label: "order_update" }),
+      /order_update_no_rows/,
+    );
   });
 });
 

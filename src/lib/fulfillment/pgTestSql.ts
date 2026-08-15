@@ -28,7 +28,7 @@ export function sqlForPglite(raw: string) {
     .replace(/drop policy if exists [\w]+ on public\.\w+;/gi, "")
     .replace(/create policy [\w]+[\s\S]*?;/gi, "")
     .replace(/revoke all on (?:function|table)[\s\S]*?;/gi, "")
-    .replace(/grant (?:execute on function|select, insert on table)[\s\S]*?;/gi, "")
+    .replace(/grant (?:execute on function|select, insert on table|all on table)[\s\S]*?;/gi, "")
     .replace(/alter table public\.\w+ enable row level security;/gi, "");
 }
 
@@ -44,5 +44,8 @@ export function fulfillmentSqlForUnitTests() {
   const blockers = sqlForPglite(
     readFileSync(join(repoRoot, "supabase/migrations/20260818_review_blockers.sql"), "utf8"),
   );
-  return `${harness}\n${recovery}\n${redeem}\n${blockers}`;
+  const hardening = sqlForPglite(
+    readFileSync(join(repoRoot, "supabase/migrations/20260819_fulfillment_hardening.sql"), "utf8"),
+  );
+  return `${harness}\n${recovery}\n${redeem}\n${blockers}\n${hardening}`;
 }

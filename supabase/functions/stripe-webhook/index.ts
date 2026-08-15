@@ -88,20 +88,27 @@ Deno.serve(async (req) => {
     }
 
     if (type === "charge.refunded" || type === "refund.created") {
+      const eventId = String(event.id || "").trim();
       const paymentIntent = String(
         obj.payment_intent || (obj as { payment_intent?: string }).payment_intent || "",
-      );
-      if (paymentIntent) {
-        await service
-          .from("mvp_orders")
-          .update({ status: "refunded", updated_at: new Date().toISOString() })
-          .eq("stripe_payment_intent_id", paymentIntent);
+      ).trim();
+      if (!eventId || !paymentIntent) {
+        return jsonResponse({ error: "refund_event_invalid", received: false }, 400);
       }
-      await service.from("stripe_webhook_events").upsert({
-        event_id: String(event.id || crypto.randomUUID()),
-        event_type: type,
+      const { data, error } = await service.rpc("claim_mvp_order_refunded", {
+        p_event_id: eventId,
+        p_event_type: type,
+        p_payment_intent_id: paymentIntent,
       });
-      return jsonResponse({ received: true, kind: "refunded" });
+      if (error) throw error;
+      if (!data?.ok) {
+        return jsonResponse({
+          error: data?.kind || "refund_persist_failed",
+          received: false,
+          kind: data?.kind || "refund_persist_failed",
+        }, data?.kind === "invalid" ? 400 : 500);
+      }
+      return jsonResponse({ received: true, kind: data.kind || "refunded" });
     }
 
     return jsonResponse({ received: true, ignored: type, maxAttempts: mvpProduct.maxGenerationAttempts });
