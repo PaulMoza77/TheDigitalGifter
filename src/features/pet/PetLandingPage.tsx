@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BadgeCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PET_OFFER, PET_SCENES } from "./catalog";
@@ -12,12 +13,17 @@ import {
   StickyCta,
 } from "./components";
 import { PET_PRODUCT_NAME, PET_PRODUCT_PROMISE, type PetFunnelNavigation } from "./types";
+import { trackMetaViewContent } from "@/lib/metaPixel";
 
 export type PetLandingPageProps = {
   navigation?: PetFunnelNavigation;
 };
 
 export function PetLandingPage({ navigation }: PetLandingPageProps) {
+  useEffect(() => {
+    trackMetaViewContent();
+  }, []);
+
   function start() {
     navigation?.goToCreate();
   }

@@ -150,6 +150,14 @@ export default function AdminDashboard() {
           </div>
         ) : null}
 
+        <section className="mb-6 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <a href="/admin/pet-orders" className="font-medium underline-offset-2 hover:underline">
+            Pet Orders
+          </a>
+          {" — "}
+          My Pet’s Secret Life ($59 one-time). QC and delivery live in a dedicated queue so credit packs stay unchanged.
+        </section>
+
         <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="Total generated"

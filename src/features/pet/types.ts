@@ -62,10 +62,14 @@ export type PetOrderStatus =
   | "awaiting_upload"
   | "awaiting_payment"
   | "paid"
+  | "generating"
   | "processing"
+  | "awaiting_qc"
   | "quality_control"
   | "complete"
+  | "partial_failure"
   | "failed"
+  | "refunded"
   | "canceled";
 
 export type PetResultFormatKind = "high_res" | "wallpaper" | "social" | "poster";
@@ -146,6 +150,7 @@ export type PetOrder = {
   createdAt: string;
   paidAt: string | null;
   completedAt: string | null;
+  purchaseEventId?: string;
 };
 
 export type PetResultAsset = {

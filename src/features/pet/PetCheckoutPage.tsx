@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { BadgeCheck, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PET_OFFER, PET_PERSONALITY_OPTIONS, PET_SPECIES_OPTIONS } from "./catalog";
-import { PetApiError, unimplementedPetApi, startPetCheckout } from "./api";
+import { PetApiError, startPetCheckout } from "./api";
+import { petFunnelApi } from "./supabaseApi";
 import {
   OfferStack,
   PetShell,
@@ -13,6 +14,7 @@ import type { PetFunnelApi } from "./api";
 import type { PetFunnelNavigation } from "./types";
 import { usePetDraft } from "./usePetDraft";
 import { validatePetDraft } from "./validation";
+import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 
 export type PetCheckoutPageProps = {
   navigation?: PetFunnelNavigation;
@@ -21,7 +23,7 @@ export type PetCheckoutPageProps = {
 
 export function PetCheckoutPage({
   navigation,
-  api = unimplementedPetApi,
+  api = petFunnelApi,
 }: PetCheckoutPageProps) {
   const { draft } = usePetDraft();
   const [submitting, setSubmitting] = useState(false);
@@ -71,9 +73,13 @@ export function PetCheckoutPage({
         personality: formCheck.values.personality,
         photo: formCheck.values.photo,
         file: photoFile,
-        successUrl: `${window.location.origin}/pet/order?token=PENDING`,
+        successUrl: `${window.location.origin}/pet/order`,
         cancelUrl: `${window.location.origin}/pet/checkout`,
       });
+
+      if (result.sessionId) {
+        trackMetaInitiateCheckout(`pet_ic_${result.orderId}`);
+      }
 
       if (result.checkoutUrl.startsWith("preview://")) {
         navigation?.goToOrder(result.publicToken);
@@ -184,7 +190,7 @@ export function PetCheckoutPage({
           </Button>
           <p className="mt-3 inline-flex items-center gap-2 text-xs text-[#f6efe4]/60">
             <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-            Stripe checkout will open after the backend is connected.
+            Stripe checkout opens in a secure one-time $59 payment. No subscription.
           </p>
           <p className="mt-2 inline-flex items-center gap-2 text-xs font-medium text-[#d4a84b]">
             <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />

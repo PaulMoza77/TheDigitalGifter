@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PetApiError, unimplementedPetApi, type PetFunnelApi } from "./api";
+import { PetApiError, type PetFunnelApi } from "./api";
+import { petFunnelApi } from "./supabaseApi";
 import { OrderStatusList, PetShell, ResultsGrid } from "./components";
 import type {
   PetFunnelNavigation,
@@ -10,6 +11,7 @@ import type {
   PetOrderResults,
 } from "./types";
 import { createPreviewResults } from "./previewApi";
+import { trackMetaPurchaseOnce } from "@/lib/metaPixel";
 
 export type PetOrderPageProps = {
   navigation?: PetFunnelNavigation;
@@ -21,7 +23,7 @@ export type PetOrderPageProps = {
 
 export function PetOrderPage({
   navigation,
-  api = unimplementedPetApi,
+  api = petFunnelApi,
   publicToken,
   previewOrder,
   previewResults,
@@ -59,7 +61,11 @@ export function PetOrderPage({
         setError(null);
         setLoading(false);
 
-        if (nextOrder.status === "complete" || nextProgress.readyCount > 0) {
+        if (nextOrder.paidAt) {
+          trackMetaPurchaseOnce(nextOrder.purchaseEventId || `pet_purchase_${nextOrder.id}`);
+        }
+
+        if (nextOrder.status === "complete") {
           const nextResults = await api.getOrderResults({ publicToken: publicToken! });
           if (!cancelled) setResults(nextResults);
         }
@@ -96,9 +102,7 @@ export function PetOrderPage({
     return Math.round(scenes.reduce((sum, scene) => sum + scene.progressPercent, 0) / scenes.length);
   }, [progress, scenes]);
 
-  const showResults =
-    Boolean(results) &&
-    (order?.status === "complete" || (results?.scenes.some((scene) => scene.status === "ready") ?? false));
+  const showResults = Boolean(results) && order?.status === "complete";
 
   return (
     <PetShell
@@ -167,7 +171,15 @@ export function PetOrderPage({
           </div>
         ) : null}
 
-        {showResults && results ? <ResultsGrid results={results} /> : null}
+        {showResults && results ? (
+          <div className="space-y-3">
+            <ResultsGrid results={results} />
+            <p className="text-sm text-[#f6efe4]/60">
+              High-resolution portraits are live. Wallpaper, social, and poster crops are disabled until a
+              dedicated crop pipeline exists — those buttons are not fake downloads.
+            </p>
+          </div>
+        ) : null}
 
         {!order && !loading && !error ? (
           <p className="text-sm text-[#f6efe4]/70">
@@ -181,14 +193,20 @@ export function PetOrderPage({
 
 function statusCopy(status: PetOrder["status"] | undefined): string {
   switch (status) {
+    case "generating":
     case "processing":
       return "The studio is painting the twelve lives now.";
+    case "awaiting_qc":
     case "quality_control":
       return "A person is checking that every portrait still looks like your pet.";
+    case "partial_failure":
+      return "Most scenes finished. A few need a retry before quality control can release the gallery.";
     case "complete":
-      return "The gallery is ready. Download high-resolution files, wallpapers, social crops, and posters.";
+      return "The gallery is ready. Download high-resolution files after human quality control.";
     case "failed":
       return "Generation paused. Nothing extra was charged.";
+    case "refunded":
+      return "This order was refunded. Downloads stay closed.";
     case "paid":
       return "Payment received. The twelve scenes are lining up.";
     default:

@@ -18,6 +18,7 @@ import {
   Inbox,
   Settings,
   Newspaper,
+  PawPrint,
 } from "lucide-react";
 
 type NavItem = {
@@ -190,6 +191,11 @@ const SidebarNavigation: React.FC<{
             label: "Orders",
             path: "/admin/orders",
             icon: ShoppingCart,
+          },
+          {
+            label: "Pet Orders",
+            path: "/admin/pet-orders",
+            icon: PawPrint,
           },
           {
             label: "Customers",
