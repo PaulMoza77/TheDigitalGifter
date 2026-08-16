@@ -14,7 +14,7 @@ import {
   Shield,
 } from "lucide-react";
 import { sceneImageSrc } from "../catalog";
-import type { PetSceneDefinition, PetSceneId } from "../types";
+import type { PetSceneDefinition, PetSceneId, PetSpecies } from "../types";
 
 const SCENE_ICONS: Record<PetSceneId, LucideIcon> = {
   "royal-portrait": Crown,
@@ -35,16 +35,18 @@ export function SceneImage({
   sceneId,
   alt,
   className,
+  species = "dog",
   eager = false,
 }: {
   sceneId: PetSceneId;
   alt: string;
   className?: string;
+  species?: PetSpecies;
   eager?: boolean;
 }) {
   return (
     <img
-      src={sceneImageSrc(sceneId)}
+      src={sceneImageSrc(sceneId, species)}
       alt={alt}
       className={className}
       width={720}
@@ -57,9 +59,13 @@ export function SceneImage({
 
 export function SceneCard({
   scene,
+  species = "dog",
+  overlayTitle,
   eager = false,
 }: {
   scene: PetSceneDefinition;
+  species?: PetSpecies;
+  overlayTitle?: string;
   eager?: boolean;
 }) {
   return (
@@ -67,13 +73,17 @@ export function SceneCard({
       <div className="relative aspect-[3/4] w-full">
         <SceneImage
           sceneId={scene.id}
-          alt={`${scene.title} example`}
+          species={species}
+          alt={`${overlayTitle ?? scene.title} example`}
           eager={eager}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent p-3 pt-12">
+          {overlayTitle && overlayTitle !== scene.title ? (
+            <p className="text-[11px] uppercase tracking-[0.14em] text-white/70">{scene.title}</p>
+          ) : null}
           <h3 className="text-sm font-semibold tracking-tight text-white sm:text-base">
-            {scene.title}
+            {overlayTitle ?? scene.title}
           </h3>
         </div>
       </div>

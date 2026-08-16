@@ -283,8 +283,8 @@ export type PetFunnelApiErrorCode =
 export type PetPageId = "landing" | "create" | "checkout" | "order";
 
 export type PetFunnelNavigation = {
-  goToLanding: () => void;
-  goToCreate: () => void;
+  goToLanding: (species?: PetSpecies) => void;
+  goToCreate: (species?: PetSpecies) => void;
   goToCheckout: () => void;
   goToOrder: (publicToken?: string) => void;
 };

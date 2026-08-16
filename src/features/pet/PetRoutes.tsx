@@ -1,36 +1,44 @@
 import { useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { parsePetSpecies, petLandingPath } from "./catalog";
 import { PetCheckoutPage } from "./PetCheckoutPage";
 import { PetCreatePage } from "./PetCreatePage";
 import { PetLandingPage } from "./PetLandingPage";
 import { PetOrderPage } from "./PetOrderPage";
 import { petFunnelApi } from "./supabaseApi";
-import type { PetFunnelNavigation } from "./types";
+import type { PetFunnelNavigation, PetSpecies } from "./types";
 
-function usePetNavigation(): PetFunnelNavigation {
+function usePetNavigation(species: PetSpecies = "dog"): PetFunnelNavigation {
   const navigate = useNavigate();
   return useMemo(
     () => ({
-      goToLanding: () => navigate("/pet"),
-      goToCreate: () => navigate("/pet/create"),
+      goToLanding: (nextSpecies) => navigate(petLandingPath(nextSpecies ?? species)),
+      goToCreate: (nextSpecies) => {
+        const selected = nextSpecies ?? species;
+        navigate(`/pet/create?species=${encodeURIComponent(selected)}`);
+      },
       goToCheckout: () => navigate("/pet/checkout"),
       goToOrder: (publicToken) => {
         const token = publicToken || new URLSearchParams(window.location.search).get("token") || "";
         navigate(token ? `/pet/order?token=${encodeURIComponent(token)}` : "/pet/order");
       },
     }),
-    [navigate],
+    [navigate, species],
   );
 }
 
 export function PetLandingRoute() {
-  const navigation = usePetNavigation();
-  return <PetLandingPage navigation={navigation} />;
+  const { pathname } = useLocation();
+  const species = parsePetSpecies(pathname.split("/")[2]);
+  const navigation = usePetNavigation(species);
+  return <PetLandingPage navigation={navigation} species={species} />;
 }
 
 export function PetCreateRoute() {
-  const navigation = usePetNavigation();
-  return <PetCreatePage navigation={navigation} />;
+  const [params] = useSearchParams();
+  const species = parsePetSpecies(params.get("species"));
+  const navigation = usePetNavigation(species);
+  return <PetCreatePage navigation={navigation} species={species} />;
 }
 
 export function PetCheckoutRoute() {

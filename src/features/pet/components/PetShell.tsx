@@ -3,11 +3,14 @@ import { ArrowLeft, PawPrint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PET_OFFER } from "../catalog";
 import { PET_PRODUCT_NAME } from "../types";
-import type { PetFunnelNavigation } from "../types";
+import type { PetFunnelNavigation, PetSpecies } from "../types";
+import { SpeciesSwitch } from "./SpeciesSwitch";
 
 export function PetShell({
   children,
   navigation,
+  species = "dog",
+  showSpeciesSwitch = false,
   showBack = false,
   backLabel = "Back",
   onBack,
@@ -15,6 +18,8 @@ export function PetShell({
 }: {
   children: ReactNode;
   navigation?: PetFunnelNavigation;
+  species?: PetSpecies;
+  showSpeciesSwitch?: boolean;
   showBack?: boolean;
   backLabel?: string;
   onBack?: () => void;
@@ -26,7 +31,7 @@ export function PetShell({
         <header className="flex items-center justify-between gap-3 py-2">
           <button
             type="button"
-            onClick={() => navigation?.goToLanding()}
+            onClick={() => navigation?.goToLanding(species)}
             className="flex items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a84b]"
           >
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#d4a84b] text-[#1a140e]">
@@ -34,10 +39,14 @@ export function PetShell({
             </span>
             <span className="text-sm font-semibold tracking-tight">{PET_PRODUCT_NAME}</span>
           </button>
-          <p className="text-xs text-[#f6efe4]/55">
-            {PET_OFFER.priceDisplay} once
-          </p>
+          <p className="text-xs text-[#f6efe4]/55">{PET_OFFER.priceDisplay} once</p>
         </header>
+
+        {showSpeciesSwitch ? (
+          <div className="mx-auto mt-3 w-full max-w-sm">
+            <SpeciesSwitch value={species} navigation={navigation} />
+          </div>
+        ) : null}
 
         {showBack ? (
           <div className="mt-1">

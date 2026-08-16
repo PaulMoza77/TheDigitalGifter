@@ -1,26 +1,27 @@
 import { useEffect } from "react";
 import { BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PET_OFFER, PET_SCENES } from "./catalog";
+import { PET_OFFER, PET_OTHER_SUBJECTS, PET_SCENES } from "./catalog";
 import { HowItWorks, PetFaq, PetShell, SceneGrid, SceneImage, StickyCta } from "./components";
-import { PET_PRODUCT_PROMISE, type PetFunnelNavigation } from "./types";
+import { PET_PRODUCT_PROMISE, type PetFunnelNavigation, type PetSpecies } from "./types";
 import { trackMetaViewContent } from "@/lib/metaPixel";
 
 export type PetLandingPageProps = {
   navigation?: PetFunnelNavigation;
+  species?: PetSpecies;
 };
 
-export function PetLandingPage({ navigation }: PetLandingPageProps) {
+export function PetLandingPage({ navigation, species = "dog" }: PetLandingPageProps) {
   useEffect(() => {
     trackMetaViewContent();
-  }, []);
+  }, [species]);
 
   function start() {
-    navigation?.goToCreate();
+    navigation?.goToCreate(species);
   }
 
   return (
-    <PetShell navigation={navigation}>
+    <PetShell navigation={navigation} species={species} showSpeciesSwitch>
       <div className="space-y-14 pb-24 md:pb-8">
         <section className="grid items-center gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
           <div>
@@ -60,7 +61,12 @@ export function PetLandingPage({ navigation }: PetLandingPageProps) {
               <div key={scene.id} className="overflow-hidden rounded-xl sm:rounded-2xl">
                 <SceneImage
                   sceneId={scene.id}
-                  alt={`${scene.title} example`}
+                  species={species}
+                  alt={
+                    species === "other"
+                      ? `${PET_OTHER_SUBJECTS[scene.id]} ${scene.title} example`
+                      : `${scene.title} example`
+                  }
                   eager={index < 3}
                   className="aspect-[3/4] h-full w-full object-cover"
                 />
@@ -69,7 +75,7 @@ export function PetLandingPage({ navigation }: PetLandingPageProps) {
           </div>
         </section>
 
-        <SceneGrid />
+        <SceneGrid species={species} />
         <HowItWorks />
         <PetFaq />
 

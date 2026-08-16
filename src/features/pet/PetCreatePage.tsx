@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PET_OFFER } from "./catalog";
+import { PET_OFFER, petSourceImage } from "./catalog";
 import {
   FieldError,
   PersonalityPicker,
@@ -13,16 +13,21 @@ import {
 } from "./components";
 import type { FieldErrors } from "./validation";
 import { validatePetDraft } from "./validation";
-import type { PetFunnelNavigation } from "./types";
+import type { PetFunnelNavigation, PetSpecies } from "./types";
 import { usePetDraft } from "./usePetDraft";
 
 export type PetCreatePageProps = {
   navigation?: PetFunnelNavigation;
+  species?: PetSpecies;
   /** Preview-only: show validation errors without submitting. */
   forceErrors?: boolean;
 };
 
-export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePageProps) {
+export function PetCreatePage({
+  navigation,
+  species = "dog",
+  forceErrors = false,
+}: PetCreatePageProps) {
   const { draft, previewUrl, hasOriginalFile, storageMessage, setPhotoFromFile, clearPhoto } =
     usePetDraft();
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -31,6 +36,13 @@ export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePage
   const emailId = useId();
   const nameErrorId = useId();
   const emailErrorId = useId();
+  const selectedSpecies = draft.species ?? species;
+
+  useEffect(() => {
+    draft.setSpecies(species);
+    // Landing CTA chooses the type. Do not re-run when the local draft object identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [species]);
 
   useEffect(() => {
     if (!forceErrors) return;
@@ -72,9 +84,10 @@ export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePage
   return (
     <PetShell
       navigation={navigation}
+      species={selectedSpecies}
       showBack
       backLabel="Back"
-      onBack={() => navigation?.goToLanding()}
+      onBack={() => navigation?.goToLanding(selectedSpecies)}
     >
       <form
         className="mx-auto max-w-xl space-y-6"
@@ -99,6 +112,7 @@ export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePage
           byteSize={draft.photo?.byteSize}
           needsOriginalFile={Boolean(draft.photo) && !hasOriginalFile}
           error={photoError ?? errors.photo}
+          exampleImage={petSourceImage(selectedSpecies)}
           onFileAccepted={async (file) => {
             const result = await setPhotoFromFile(file);
             if (!result.ok) {

@@ -12,4 +12,5 @@ export { PriceBadge } from "./PriceBadge";
 export { ResultsGrid } from "./ResultsGrid";
 export { SceneCard, SceneImage, sceneIcon } from "./SceneCard";
 export { SceneGrid } from "./SceneGrid";
+export { SpeciesSwitch } from "./SpeciesSwitch";
 export { StickyCta } from "./StickyCta";

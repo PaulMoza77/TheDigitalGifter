@@ -11,6 +11,7 @@ type PhotoUploaderProps = {
   fileName?: string | null;
   byteSize?: number | null;
   needsOriginalFile?: boolean;
+  exampleImage?: string;
   error?: string;
   onFileAccepted: (file: File) => void;
   onFileRejected: (message: string) => void;
@@ -22,6 +23,7 @@ export function PhotoUploader({
   fileName,
   byteSize,
   needsOriginalFile = false,
+  exampleImage = PET_DEMO_SOURCE_IMAGE,
   error,
   onFileAccepted,
   onFileRejected,
@@ -141,7 +143,7 @@ export function PhotoUploader({
           )}
         >
           <img
-            src={PET_DEMO_SOURCE_IMAGE}
+            src={exampleImage}
             alt=""
             className="absolute inset-0 h-full w-full object-cover opacity-35"
             width={640}

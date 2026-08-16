@@ -107,9 +107,10 @@ export function PetOrderPage({
   return (
     <PetShell
       navigation={navigation}
+      species={order?.species ?? "dog"}
       showBack
       backLabel="Back"
-      onBack={() => navigation?.goToLanding()}
+      onBack={() => navigation?.goToLanding(order?.species)}
     >
       <div className="space-y-8">
         <section>
@@ -165,11 +166,13 @@ export function PetOrderPage({
 
         {order && scenes.length > 0 ? (
           <div aria-live="polite">
-            <OrderStatusList scenes={scenes} petName={order.petName} />
+            <OrderStatusList scenes={scenes} petName={order.petName} species={order.species} />
           </div>
         ) : null}
 
-        {showResults && results ? <ResultsGrid results={results} /> : null}
+        {showResults && results ? (
+          <ResultsGrid results={results} species={order?.species} />
+        ) : null}
 
         {!order && !loading && !error ? (
           <p className="text-sm text-[#f6efe4]/70">

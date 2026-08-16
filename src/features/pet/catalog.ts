@@ -1,6 +1,7 @@
 import type {
   PetPersonalityOption,
   PetSceneDefinition,
+  PetSpecies,
   PetSpeciesOption,
 } from "./types";
 import {
@@ -31,11 +32,63 @@ export const PET_OFFER = {
   ] as const,
 } as const;
 
-export const PET_DEMO_SOURCE_IMAGE = "/pet/source.webp";
+export const PET_DEMO_SOURCE_IMAGE = "/pet/dog/source.webp";
 
-export function sceneImageSrc(id: PetSceneDefinition["id"]): string {
-  return `/pet/scenes/${id}.webp`;
+export function petLandingPath(species: PetSpecies): string {
+  return `/pet/${species}`;
 }
+
+export function petSourceImage(species: PetSpecies = "dog"): string {
+  return `/pet/${species}/source.webp`;
+}
+
+export function sceneImageSrc(
+  id: PetSceneDefinition["id"],
+  species: PetSpecies = "dog",
+): string {
+  return `/pet/${species}/scenes/${id}.webp`;
+}
+
+export function isPetSpecies(value: string | null | undefined): value is PetSpecies {
+  return value === "dog" || value === "cat" || value === "other";
+}
+
+export function parsePetSpecies(value: string | null | undefined): PetSpecies {
+  return isPetSpecies(value) ? value : "dog";
+}
+
+export const PET_OTHER_SUBJECTS: Record<PetSceneDefinition["id"], string> = {
+  "royal-portrait": "Turtle",
+  "luxury-ceo": "Macaw",
+  astronaut: "Hamster",
+  "formula-racer": "Rabbit",
+  "spa-bathtub": "Hedgehog",
+  newspaper: "Guinea pig",
+  "cinema-boss": "Bearded dragon",
+  renaissance: "Ferret",
+  "beach-vacation": "Goldfish",
+  "head-chef": "Mini pig",
+  "original-superhero": "Chameleon",
+  "christmas-portrait": "Cockatiel",
+};
+
+export const PET_LANDING_COPY: Record<
+  PetSpecies,
+  { heading: string; description: string }
+> = {
+  dog: {
+    heading: "Twelve secret lives",
+    description: "Same pet. A different world in every frame.",
+  },
+  cat: {
+    heading: "Twelve secret lives",
+    description: "Same cat. A different world in every frame.",
+  },
+  other: {
+    heading: "Hamsters, turtles, birds, and the rest",
+    description: "If they have a face, they get a gallery.",
+  },
+};
 
 export const PET_SPECIES_OPTIONS: readonly PetSpeciesOption[] = [
   { id: "dog", label: "Dog", hint: "Dog" },

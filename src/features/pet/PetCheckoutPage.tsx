@@ -49,13 +49,13 @@ export function PetCheckoutPage({
 
     if (!formCheck.ok) {
       setError("Finish the photo, name, and email first.");
-      navigation?.goToCreate();
+      navigation?.goToCreate(draft.species ?? undefined);
       return;
     }
 
     if (!photoFile || !draft.photo) {
       setError("Re-attach the original photo before paying.");
-      navigation?.goToCreate();
+      navigation?.goToCreate(draft.species ?? undefined);
       return;
     }
 
@@ -106,9 +106,10 @@ export function PetCheckoutPage({
   return (
     <PetShell
       navigation={navigation}
+      species={draft.species ?? "dog"}
       showBack
       backLabel="Edit"
-      onBack={() => navigation?.goToCreate()}
+      onBack={() => navigation?.goToCreate(draft.species ?? undefined)}
     >
       <div className="mx-auto max-w-md space-y-6">
         <div>

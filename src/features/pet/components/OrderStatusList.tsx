@@ -1,4 +1,4 @@
-import type { PetSceneProgress, PetSceneStatus } from "../types";
+import type { PetSceneProgress, PetSceneStatus, PetSpecies } from "../types";
 import { cn } from "@/lib/utils";
 import { SceneImage } from "./SceneCard";
 
@@ -13,9 +13,11 @@ const STATUS_COPY: Record<PetSceneStatus, string> = {
 export function OrderStatusList({
   scenes,
   petName,
+  species = "dog",
 }: {
   scenes: PetSceneProgress[];
   petName: string;
+  species?: PetSpecies;
 }) {
   const readyCount = scenes.filter((scene) => scene.status === "ready").length;
 
@@ -39,6 +41,7 @@ export function OrderStatusList({
             <div className="h-14 w-11 overflow-hidden rounded-lg">
               <SceneImage
                 sceneId={scene.sceneId}
+                species={species}
                 alt=""
                 className="h-full w-full object-cover"
               />

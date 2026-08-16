@@ -1,15 +1,17 @@
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import type { PetOrderResults, PetSceneResult } from "../types";
+import type { PetOrderResults, PetSceneResult, PetSpecies } from "../types";
 import { getSceneById } from "../catalog";
 import { SceneImage } from "./SceneCard";
 
 export function ResultsGrid({
   results,
+  species = "dog",
   onPlaceholderDownload,
 }: {
   results: PetOrderResults;
+  species?: PetSpecies;
   onPlaceholderDownload?: (sceneTitle: string, formatLabel: string) => void;
 }) {
   return (
@@ -26,6 +28,7 @@ export function ResultsGrid({
           <ResultCard
             key={scene.sceneId}
             scene={scene}
+            species={species}
             onPlaceholderDownload={onPlaceholderDownload}
           />
         ))}
@@ -36,9 +39,11 @@ export function ResultsGrid({
 
 function ResultCard({
   scene,
+  species = "dog",
   onPlaceholderDownload,
 }: {
   scene: PetSceneResult;
+  species?: PetSpecies;
   onPlaceholderDownload?: (sceneTitle: string, formatLabel: string) => void;
 }) {
   const definition = getSceneById(scene.sceneId);
@@ -59,6 +64,7 @@ function ResultCard({
         ) : (
           <SceneImage
             sceneId={scene.sceneId}
+            species={species}
             alt={`${definition.title} preview`}
             className={`h-full w-full object-cover ${ready ? "" : "opacity-70"}`}
           />

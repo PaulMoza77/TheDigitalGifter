@@ -50,13 +50,19 @@ export {
   PET_DEMO_SOURCE_IMAGE,
   PET_FAQS,
   PET_HOW_IT_WORKS,
+  PET_LANDING_COPY,
   PET_OFFER,
+  PET_OTHER_SUBJECTS,
   PET_PERSONALITY_OPTIONS,
   PET_RESULT_FORMATS,
   PET_SCENES,
   PET_SPECIES_OPTIONS,
   formatPetPrice,
   getSceneById,
+  isPetSpecies,
+  parsePetSpecies,
+  petLandingPath,
+  petSourceImage,
   sceneImageSrc,
 } from "./catalog";
 
@@ -114,6 +120,7 @@ export {
   SceneCard,
   SceneGrid,
   SceneImage,
+  SpeciesSwitch,
   StickyCta,
   sceneIcon,
 } from "./components";

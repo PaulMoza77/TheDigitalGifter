@@ -516,7 +516,10 @@ function AppInner() {
             <Route path="/funnel/email" element={<FunnelEmailCapture />} />
             <Route path="/funnel/payment" element={<FunnelPayment />} />
             <Route path="/funnel/result" element={<FunnelResultPage />} />
-            <Route path="/pet" element={<PetLandingRoute />} />
+            <Route path="/pet" element={<Navigate to="/pet/dog" replace />} />
+            <Route path="/pet/dog" element={<PetLandingRoute />} />
+            <Route path="/pet/cat" element={<PetLandingRoute />} />
+            <Route path="/pet/other" element={<PetLandingRoute />} />
             <Route path="/pet/create" element={<PetCreateRoute />} />
             <Route path="/pet/checkout" element={<PetCheckoutRoute />} />
             <Route path="/pet/order" element={<PetOrderRoute />} />
