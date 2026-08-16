@@ -158,8 +158,8 @@ export type PetResultAsset = {
   label: string;
   url: string | null;
   mimeType: string;
-  width: number;
-  height: number;
+  width: number | null;
+  height: number | null;
   dpi: number | null;
   ready: boolean;
 };

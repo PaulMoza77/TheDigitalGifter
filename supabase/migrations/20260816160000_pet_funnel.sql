@@ -89,6 +89,19 @@ create unique index if not exists pet_orders_stripe_session_uidx
   where stripe_checkout_session_id is not null
     and length(trim(stripe_checkout_session_id)) > 0;
 
+create table if not exists public.pet_checkout_sessions (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.pet_orders (id) on delete cascade,
+  stripe_session_id text not null,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists pet_checkout_sessions_session_uidx
+  on public.pet_checkout_sessions (stripe_session_id);
+
+create index if not exists pet_checkout_sessions_order_idx
+  on public.pet_checkout_sessions (order_id);
+
 create index if not exists pet_orders_email_normalized_idx
   on public.pet_orders (email_normalized);
 
@@ -268,6 +281,7 @@ alter table public.pet_order_events enable row level security;
 alter table public.pet_generation_jobs enable row level security;
 alter table public.pet_processed_replicate_events enable row level security;
 alter table public.pet_email_deliveries enable row level security;
+alter table public.pet_checkout_sessions enable row level security;
 
 drop policy if exists pet_orders_admin_read on public.pet_orders;
 create policy pet_orders_admin_read
@@ -294,6 +308,11 @@ create policy pet_email_deliveries_admin_read
   on public.pet_email_deliveries for select
   using (public.is_admin());
 
+drop policy if exists pet_checkout_sessions_admin_read on public.pet_checkout_sessions;
+create policy pet_checkout_sessions_admin_read
+  on public.pet_checkout_sessions for select
+  using (public.is_admin());
+
 -- No storage object policies for these private buckets: service role + signed URLs only.
 drop policy if exists pet_source_photos_admin_read on storage.objects;
 drop policy if exists pet_generated_admin_read on storage.objects;
@@ -304,6 +323,7 @@ revoke all on table public.pet_order_events from anon, public;
 revoke all on table public.pet_generation_jobs from anon, public;
 revoke all on table public.pet_processed_replicate_events from anon, authenticated, public;
 revoke all on table public.pet_email_deliveries from anon, public;
+revoke all on table public.pet_checkout_sessions from anon, authenticated, public;
 
 grant select on table public.pet_orders to authenticated;
 grant select on table public.pet_order_scenes to authenticated;
@@ -317,6 +337,7 @@ grant all on table public.pet_order_events to service_role;
 grant all on table public.pet_generation_jobs to service_role;
 grant all on table public.pet_processed_replicate_events to service_role;
 grant all on table public.pet_email_deliveries to service_role;
+grant all on table public.pet_checkout_sessions to service_role;
 
 -- ---------------------------------------------------------------------------
 -- Helpers / RPCs (service_role only)
@@ -495,11 +516,10 @@ begin
     raise exception 'pet payment amount mismatch';
   end if;
 
-  if p_session_id is not null
-     and length(trim(p_session_id)) > 0
-     and order_row.stripe_checkout_session_id is not null
-     and order_row.stripe_checkout_session_id <> trim(p_session_id) then
-    raise exception 'stripe session does not match pet order';
+  if p_session_id is not null and length(trim(p_session_id)) > 0 then
+    insert into public.pet_checkout_sessions (order_id, stripe_session_id)
+    values (order_row.id, trim(p_session_id))
+    on conflict (stripe_session_id) do nothing;
   end if;
 
   already_paid := order_row.status in (
@@ -510,7 +530,7 @@ begin
     update public.pet_orders
     set
       status = 'paid',
-      stripe_checkout_session_id = coalesce(nullif(trim(p_session_id), ''), stripe_checkout_session_id),
+      stripe_checkout_session_id = coalesce(stripe_checkout_session_id, nullif(trim(p_session_id), '')),
       stripe_payment_intent_id = coalesce(nullif(trim(p_payment_intent_id), ''), stripe_payment_intent_id),
       stripe_payment_status = coalesce(nullif(trim(p_payment_status), ''), stripe_payment_status),
       paid_at = now(),
@@ -604,6 +624,51 @@ begin
 end;
 $$;
 
+create or replace function public.attach_pet_checkout_session(
+  p_order_id uuid,
+  p_session_id text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  order_row public.pet_orders%rowtype;
+begin
+  if p_order_id is null or p_session_id is null or length(trim(p_session_id)) = 0 then
+    raise exception 'order and session required';
+  end if;
+
+  select * into order_row from public.pet_orders where id = p_order_id for update;
+  if not found then
+    raise exception 'pet order not found';
+  end if;
+
+  insert into public.pet_checkout_sessions (order_id, stripe_session_id)
+  values (p_order_id, trim(p_session_id))
+  on conflict (stripe_session_id) do nothing;
+
+  update public.pet_orders
+  set stripe_checkout_session_id = trim(p_session_id)
+  where id = p_order_id
+    and (
+      stripe_checkout_session_id is null
+      or stripe_checkout_session_id = trim(p_session_id)
+    )
+  returning * into order_row;
+
+  if not found then
+    select * into order_row from public.pet_orders where id = p_order_id;
+  end if;
+
+  return jsonb_build_object(
+    'stripe_checkout_session_id', order_row.stripe_checkout_session_id,
+    'attached', order_row.stripe_checkout_session_id = trim(p_session_id)
+  );
+end;
+$$;
+
 create or replace function public.pet_apply_scene_prediction_result(
   p_prediction_id text,
   p_webhook_id text,
@@ -615,7 +680,10 @@ create or replace function public.pet_apply_scene_prediction_result(
   p_error text,
   p_duration_ms integer,
   p_model_name text,
-  p_model_version text
+  p_model_version text,
+  p_result_width integer default null,
+  p_result_height integer default null,
+  p_result_byte_size integer default null
 )
 returns jsonb
 language plpgsql
@@ -678,6 +746,9 @@ begin
       result_bucket = p_result_bucket,
       result_path = p_result_path,
       result_content_type = p_result_content_type,
+      result_width = p_result_width,
+      result_height = p_result_height,
+      result_byte_size = p_result_byte_size,
       last_error = null,
       completed_at = now(),
       duration_ms = p_duration_ms,
@@ -764,9 +835,12 @@ begin
     and status in ('paid', 'generating', 'partial_failure', 'awaiting_qc');
 
   update public.pet_generation_jobs
-  set status = 'completed', finished_at = now()
+  set
+    status = case when next_status = 'awaiting_qc' then 'completed' else 'failed' end,
+    last_error = case when next_status = 'awaiting_qc' then null else next_status end,
+    finished_at = now()
   where order_id = p_order_id
-    and status in ('running', 'queued', 'held');
+    and status in ('running', 'queued', 'held', 'failed');
 
   perform public.pet_log_event(
     p_order_id,
@@ -802,7 +876,9 @@ set search_path = public
 as $$
 declare
   order_row public.pet_orders%rowtype;
-  ready_count integer;
+  total_count integer;
+  ready_or_succeeded integer;
+  blocking_count integer;
 begin
   select * into order_row from public.pet_orders where id = p_order_id for update;
   if not found then
@@ -813,12 +889,26 @@ begin
     raise exception 'unpaid order cannot be released';
   end if;
 
+  if order_row.status <> 'awaiting_qc' then
+    raise exception 'order is not awaiting QC';
+  end if;
+
+  select
+    count(*),
+    count(*) filter (where status in ('succeeded', 'ready')),
+    count(*) filter (where status in ('queued', 'generating', 'failed'))
+  into total_count, ready_or_succeeded, blocking_count
+  from public.pet_order_scenes
+  where order_id = p_order_id;
+
+  if total_count <> 12 or ready_or_succeeded <> 12 or blocking_count <> 0 then
+    raise exception 'all 12 scenes must be succeeded or ready before release';
+  end if;
+
   update public.pet_order_scenes
   set status = 'ready'
   where order_id = p_order_id
     and status = 'succeeded';
-
-  get diagnostics ready_count = row_count;
 
   update public.pet_orders
   set
@@ -837,10 +927,10 @@ begin
     'admin',
     p_actor_email,
     null,
-    jsonb_build_object('ready_count', ready_count, 'notes_present', p_notes is not null)
+    jsonb_build_object('ready_count', 12, 'notes_present', p_notes is not null)
   );
 
-  return jsonb_build_object('status', order_row.status, 'ready_count', ready_count);
+  return jsonb_build_object('status', order_row.status, 'ready_count', 12);
 end;
 $$;
 
@@ -859,17 +949,19 @@ revoke all on function public.pet_seed_scenes(uuid) from anon, authenticated, pu
 revoke all on function public.pet_log_event(uuid, text, text, text, text, jsonb) from anon, authenticated, public;
 revoke all on function public.fulfill_pet_order_payment(text, text, text, text, text, integer, text, uuid) from anon, authenticated, public;
 revoke all on function public.claim_pet_generation_job(uuid) from anon, authenticated, public;
-revoke all on function public.pet_apply_scene_prediction_result(text, text, text, text, text, text, text, text, integer, text, text) from anon, authenticated, public;
+revoke all on function public.pet_apply_scene_prediction_result(text, text, text, text, text, text, text, text, integer, text, text, integer, integer, integer) from anon, authenticated, public;
 revoke all on function public.pet_finalize_generation_if_done(uuid) from anon, authenticated, public;
 revoke all on function public.pet_release_delivery(uuid, text, text) from anon, authenticated, public;
+revoke all on function public.attach_pet_checkout_session(uuid, text) from anon, authenticated, public;
 
 grant execute on function public.pet_sha256_hex(text) to service_role;
 grant execute on function public.pet_seed_scenes(uuid) to service_role;
 grant execute on function public.pet_log_event(uuid, text, text, text, text, jsonb) to service_role;
 grant execute on function public.fulfill_pet_order_payment(text, text, text, text, text, integer, text, uuid) to service_role;
 grant execute on function public.claim_pet_generation_job(uuid) to service_role;
-grant execute on function public.pet_apply_scene_prediction_result(text, text, text, text, text, text, text, text, integer, text, text) to service_role;
+grant execute on function public.pet_apply_scene_prediction_result(text, text, text, text, text, text, text, text, integer, text, text, integer, integer, integer) to service_role;
 grant execute on function public.pet_finalize_generation_if_done(uuid) to service_role;
 grant execute on function public.pet_release_delivery(uuid, text, text) to service_role;
+grant execute on function public.attach_pet_checkout_session(uuid, text) to service_role;
 
 commit;

@@ -166,25 +166,47 @@ Deno.serve(async (req) => {
         .eq("id", scene.id)
         .neq("status", "succeeded")
         .neq("status", "ready");
-      const prediction = await createReplicatePrediction({
-        prompt,
-        imageUrl: signed.signedUrl,
-        orderId,
-        sceneKey: scene.scene_key,
-      });
-      await service
-        .from("pet_order_scenes")
-        .update({
-          replicate_prediction_id: prediction.id,
-          model_name: prediction.model || model,
-          model_version: prediction.version || version,
-        })
-        .eq("id", scene.id);
-      started += 1;
+      try {
+        const prediction = await createReplicatePrediction({
+          prompt,
+          imageUrl: signed.signedUrl,
+          orderId,
+          sceneKey: scene.scene_key,
+        });
+        await service
+          .from("pet_order_scenes")
+          .update({
+            replicate_prediction_id: prediction.id,
+            model_name: prediction.model || model,
+            model_version: prediction.version || version,
+          })
+          .eq("id", scene.id);
+        started += 1;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        await service
+          .from("pet_order_scenes")
+          .update({
+            status: "failed",
+            progress_percent: 100,
+            last_error: message.slice(0, 500),
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", scene.id)
+          .neq("status", "succeeded")
+          .neq("status", "ready");
+      }
     });
 
     await service.from("pet_orders").update({ model_name: model, model_version: version }).eq("id", orderId);
-    return jsonResponse({ ok: true, status: "started", started, total: PET_SCENE_DEFINITIONS.length });
+    const finalized = await service.rpc("pet_finalize_generation_if_done", { p_order_id: orderId });
+    if (finalized.error) throw finalized.error;
+    return jsonResponse({
+      ok: true,
+      status: (finalized.data as { status?: string } | null)?.status || "started",
+      started,
+      total: PET_SCENE_DEFINITIONS.length,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return jsonResponse({ error: message }, 500);

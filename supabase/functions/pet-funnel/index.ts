@@ -29,7 +29,7 @@ import {
 } from "../_shared/pet/guards.ts";
 import { toCustomerOrder, toProgress, type PetOrderRow, type PetSceneRow } from "../_shared/pet/mapOrder.ts";
 import { petInitiateCheckoutEventId, petPurchaseEventId } from "../_shared/pet/meta.ts";
-import { PET_SCENE_DEFINITIONS } from "../_shared/pet/scenes.ts";
+import { decideCheckoutSessionAction } from "../_shared/pet/checkout.ts";
 
 type Body = Record<string, unknown>;
 
@@ -246,6 +246,42 @@ Deno.serve(async (req) => {
       const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
       if (!stripeKey) return apiError("INVALID_REQUEST", "Stripe is not configured.", 503);
 
+      const { count: issuedCount } = await service
+        .from("pet_checkout_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", order.id);
+
+      let existingSession: { id: string; status?: string; url?: string; expires_at?: number } | null = null;
+      const storedSessionId = asString(order.stripe_checkout_session_id);
+      if (storedSessionId) {
+        const existingRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${storedSessionId}`, {
+          headers: { Authorization: `Bearer ${stripeKey}` },
+        });
+        if (existingRes.ok) {
+          existingSession = await existingRes.json();
+        }
+      }
+
+      const decision = decideCheckoutSessionAction({
+        existingSession: existingSession ? { ...existingSession, id: existingSession.id || storedSessionId } : null,
+        orderId: order.id,
+        issuedCount: issuedCount || 0,
+      });
+
+      if (decision.action === "reuse" && existingSession?.url) {
+        await service.rpc("attach_pet_checkout_session", {
+          p_order_id: order.id,
+          p_session_id: existingSession.id,
+        });
+        return jsonResponse({
+          sessionId: existingSession.id,
+          checkoutUrl: existingSession.url,
+          eventId: petInitiateCheckoutEventId(order.id),
+          purchaseEventId: petPurchaseEventId(order.id),
+          reused: true,
+        });
+      }
+
       const successUrl = `${siteOrigin()}/pet/order?token=${encodeURIComponent(publicToken)}&session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl = safeReturnUrl(asString(body.cancelUrl), `${siteOrigin()}/pet/checkout`);
       const params = new URLSearchParams();
@@ -257,7 +293,7 @@ Deno.serve(async (req) => {
       params.set("line_items[0][price_data][currency]", PET_CURRENCY);
       params.set("line_items[0][price_data][unit_amount]", String(PET_PRICE_CENTS));
       params.set("line_items[0][price_data][product_data][name]", "My Pet’s Secret Life");
-      params.set("line_items[0][price_data][product_data][description]", "One-time 12-scene pet portrait pack. No subscription.");
+      params.set("line_items[0][price_data][product_data][description]", "One-time 12 QC-approved pet portraits. No subscription.");
       params.set("line_items[0][quantity]", "1");
       params.set("metadata[sku]", PET_SKU);
       params.set("metadata[product_type]", "pet_secret_life");
@@ -272,6 +308,7 @@ Deno.serve(async (req) => {
         headers: {
           Authorization: `Bearer ${stripeKey}`,
           "Content-Type": "application/x-www-form-urlencoded",
+          "Idempotency-Key": decision.idempotencyKey,
         },
         body: params,
       });
@@ -279,10 +316,27 @@ Deno.serve(async (req) => {
       if (!stripeRes.ok) {
         return apiError("INVALID_REQUEST", session.error?.message || "Stripe checkout failed", 502);
       }
-      await service
-        .from("pet_orders")
-        .update({ stripe_checkout_session_id: session.id })
-        .eq("id", order.id);
+
+      const attached = await service.rpc("attach_pet_checkout_session", {
+        p_order_id: order.id,
+        p_session_id: session.id,
+      });
+      if (attached.error) throw attached.error;
+      const attachedId = asString((attached.data as { stripe_checkout_session_id?: string } | null)?.stripe_checkout_session_id);
+      if (attachedId && attachedId !== asString(session.id)) {
+        const winnerRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${attachedId}`, {
+          headers: { Authorization: `Bearer ${stripeKey}` },
+        });
+        const winner = winnerRes.ok ? await winnerRes.json() : session;
+        return jsonResponse({
+          sessionId: winner.id || attachedId,
+          checkoutUrl: winner.url || session.url,
+          eventId: petInitiateCheckoutEventId(order.id),
+          purchaseEventId: petPurchaseEventId(order.id),
+          reused: true,
+        });
+      }
+
       await service.rpc("pet_log_event", {
         p_order_id: order.id,
         p_action: "checkout_session_created",
@@ -325,6 +379,9 @@ Deno.serve(async (req) => {
         started_at: null,
         completed_at: null,
         result_path: null,
+        result_content_type: null,
+        result_width: null,
+        result_height: null,
       }))) {
         const mapped = toProgress(order, [scene], publicToken).scenes[0];
         const previewUrl =
@@ -332,6 +389,8 @@ Deno.serve(async (req) => {
             ? await signedDownload(service, PET_RESULT_BUCKET, scene.result_path)
             : null;
         const ready = unlocked && mapped.status === "ready" && Boolean(previewUrl);
+        const detectedWidth = Number(scene.result_width || 0) || null;
+        const detectedHeight = Number(scene.result_height || 0) || null;
         sceneResults.push({
           sceneId: mapped.sceneId,
           title: mapped.title,
@@ -340,42 +399,42 @@ Deno.serve(async (req) => {
           assets: [
             {
               format: "high_res",
-              label: "High-resolution",
+              label: "QC-approved portrait",
               url: ready ? previewUrl : null,
-              mimeType: "image/jpeg",
-              width: 2400,
-              height: 3000,
-              dpi: 300,
+              mimeType: scene.result_content_type || "image/jpeg",
+              width: detectedWidth,
+              height: detectedHeight,
+              dpi: null,
               ready,
             },
             {
               format: "wallpaper",
-              label: "Phone wallpaper",
+              label: "Phone wallpaper (Coming later)",
               url: null,
               mimeType: "image/jpeg",
-              width: 1290,
-              height: 2796,
+              width: null,
+              height: null,
               dpi: null,
               ready: false,
             },
             {
               format: "social",
-              label: "Social format",
+              label: "Social format (Coming later)",
               url: null,
               mimeType: "image/jpeg",
-              width: 1080,
-              height: 1080,
+              width: null,
+              height: null,
               dpi: null,
               ready: false,
             },
             {
               format: "poster",
-              label: "Printable poster",
+              label: "Printable poster (Coming later)",
               url: null,
               mimeType: "image/jpeg",
-              width: 3600,
-              height: 4800,
-              dpi: 300,
+              width: null,
+              height: null,
+              dpi: null,
               ready: false,
             },
           ],
@@ -388,7 +447,7 @@ Deno.serve(async (req) => {
         status: toCustomerOrder(order, scenes, publicToken).status,
         scenes: sceneResults,
         formatNote:
-          "High-resolution portraits are released after QC. Wallpaper, social, and poster crops are not generated yet; those buttons stay disabled rather than offering fake files.",
+          "This purchase includes 12 QC-approved portraits. File dimensions are the real generated size. Wallpaper, social, and poster crops are not included and are labelled Coming later.",
         totalCount: PET_SCENE_COUNT,
       });
     }
@@ -396,6 +455,9 @@ Deno.serve(async (req) => {
     return apiError("INVALID_REQUEST", "Unknown pet funnel action.");
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("PET_TOKEN_ENCRYPTION_KEY")) {
+      return apiError("INVALID_REQUEST", "Pet order tokens are not configured.", 503);
+    }
     return jsonResponse({ error: message, code: "GENERATION_FAILED" }, 500);
   }
 });

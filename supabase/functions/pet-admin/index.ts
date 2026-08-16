@@ -6,7 +6,7 @@ import {
   PET_SOURCE_BUCKET,
 } from "../_shared/pet/constants.ts";
 import { asString, decryptPublicToken, sha256Hex } from "../_shared/pet/crypto.ts";
-import { canStartGeneration, retryTargets } from "../_shared/pet/guards.ts";
+import { canReleaseDelivery, canStartGeneration, retryTargets } from "../_shared/pet/guards.ts";
 import { sendPetDeliveryEmail } from "../_shared/pet/email.ts";
 
 type Body = Record<string, unknown>;
@@ -170,6 +170,16 @@ Deno.serve(async (req) => {
     }
 
     if (action === "qcApprove" || action === "markComplete") {
+      const { data: sceneRows } = await service
+        .from("pet_order_scenes")
+        .select("status")
+        .eq("order_id", orderId);
+      const releaseCheck = canReleaseDelivery({
+        paidAt: order.paid_at,
+        orderStatus: String(order.status),
+        scenes: sceneRows ?? [],
+      });
+      if (!releaseCheck.ok) return apiError(releaseCheck.message);
       const released = await service.rpc("pet_release_delivery", {
         p_order_id: orderId,
         p_actor_email: user?.email || null,

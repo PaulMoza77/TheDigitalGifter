@@ -4,6 +4,7 @@ import {
   PET_PHOTO_MAX_BYTES,
   PET_PRICE_CENTS,
   PET_PRODUCT_SKU,
+  PET_SCENE_COUNT,
 } from "./types";
 
 export const PAID_STATUSES = [
@@ -142,4 +143,129 @@ export function isAdminAuthorized(input: { callerIsAdmin: boolean; mutation: boo
 
 export function customerCannotEnumerateByUuid(token: string, orderId: string): boolean {
   return token !== orderId && tokenEnumerationRejected(orderId);
+}
+
+export function stripeCheckoutIdempotencyKey(orderId: string, issuedCount = 0): string {
+  if (issuedCount <= 0) return `pet-checkout-${orderId}`;
+  return `pet-checkout-${orderId}-${issuedCount}`;
+}
+
+export function shouldReuseCheckoutSession(session: {
+  status?: string | null;
+  url?: string | null;
+  expires_at?: number | null;
+} | null): boolean {
+  if (!session?.url) return false;
+  if (session.status && session.status !== "open") return false;
+  if (session.expires_at && session.expires_at * 1000 <= Date.now()) return false;
+  return true;
+}
+
+export function decideCheckoutSessionAction(input: {
+  existingSession: {
+    id: string;
+    status?: string | null;
+    url?: string | null;
+    expires_at?: number | null;
+  } | null;
+  orderId: string;
+  issuedCount: number;
+}): { action: "reuse"; sessionId: string } | { action: "create"; idempotencyKey: string } {
+  if (input.existingSession && shouldReuseCheckoutSession(input.existingSession)) {
+    return { action: "reuse", sessionId: input.existingSession.id };
+  }
+  const issuedCount =
+    input.existingSession && !shouldReuseCheckoutSession(input.existingSession)
+      ? Math.max(input.issuedCount, 1)
+      : input.issuedCount;
+  return {
+    action: "create",
+    idempotencyKey: stripeCheckoutIdempotencyKey(input.orderId, issuedCount),
+  };
+}
+
+export function attachCheckoutSessionCas(input: {
+  storedSessionId: string | null;
+  incomingSessionId: string;
+}): { storedSessionId: string; firstWriter: boolean } {
+  if (!input.storedSessionId) {
+    return { storedSessionId: input.incomingSessionId, firstWriter: true };
+  }
+  return {
+    storedSessionId: input.storedSessionId,
+    firstWriter: input.storedSessionId === input.incomingSessionId,
+  };
+}
+
+export function fulfillmentAcceptsIssuedSession(input: {
+  orderId: string;
+  metadataOrderId: string;
+  paidSessionId: string;
+  issuedSessionIds: string[];
+}): boolean {
+  if (input.orderId !== input.metadataOrderId) return false;
+  if (!input.paidSessionId) return false;
+  return input.issuedSessionIds.includes(input.paidSessionId);
+}
+
+export function canReleaseDelivery(input: {
+  paidAt: string | null;
+  orderStatus: string;
+  scenes: Array<{ status: string }>;
+}): { ok: true } | { ok: false; message: string } {
+  if (!input.paidAt) return { ok: false, message: "unpaid order cannot be released" };
+  if (input.orderStatus !== "awaiting_qc") return { ok: false, message: "order is not awaiting QC" };
+  if (input.scenes.length !== PET_SCENE_COUNT) {
+    return { ok: false, message: `expected ${PET_SCENE_COUNT} scenes` };
+  }
+  const blocking = input.scenes.filter((scene) => !["succeeded", "ready"].includes(scene.status));
+  if (blocking.length > 0) {
+    return { ok: false, message: "all 12 scenes must be succeeded or ready" };
+  }
+  return { ok: true };
+}
+
+export function kontextProInput(prompt: string, inputImage: string) {
+  return {
+    prompt,
+    input_image: inputImage,
+    aspect_ratio: "4:5" as const,
+    output_format: "jpg" as const,
+  };
+}
+
+export function applyPredictionCreateFailure(input: {
+  scenes: Array<{ sceneKey: string; status: string; lastError: string | null }>;
+  failedSceneKey: string;
+  error: string;
+}): Array<{ sceneKey: string; status: string; lastError: string | null }> {
+  return input.scenes.map((scene) =>
+    scene.sceneKey === input.failedSceneKey
+      ? { ...scene, status: "failed", lastError: input.error }
+      : scene,
+  );
+}
+
+export function generationBatchState(
+  scenes: Array<{ status: string }>,
+): "generating" | "awaiting_qc" | "partial_failure" | "failed" {
+  const total = scenes.length;
+  const terminal = scenes.filter((scene) => ["succeeded", "failed", "ready"].includes(scene.status));
+  if (terminal.length < total) return "generating";
+  const succeeded = scenes.filter((scene) => ["succeeded", "ready"].includes(scene.status)).length;
+  const failed = scenes.filter((scene) => scene.status === "failed").length;
+  if (succeeded === 0) return "failed";
+  if (failed > 0) return "partial_failure";
+  return "awaiting_qc";
+}
+
+export function requirePetTokenEncryptionKey(
+  getEnv: (name: string) => string | undefined = (name) =>
+    typeof process !== "undefined" ? process.env[name] : undefined,
+): string {
+  const value = String(getEnv("PET_TOKEN_ENCRYPTION_KEY") ?? "").trim();
+  if (value.length < 32) {
+    throw new Error("PET_TOKEN_ENCRYPTION_KEY is required");
+  }
+  return value;
 }

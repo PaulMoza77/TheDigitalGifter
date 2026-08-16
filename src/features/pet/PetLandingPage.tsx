@@ -74,7 +74,7 @@ export function PetLandingPage({ navigation }: PetLandingPageProps) {
               </li>
               <li className="inline-flex items-center gap-1.5">
                 <BadgeCheck className="h-4 w-4 text-[#d4a84b]" aria-hidden="true" />
-                Print + phone + social files
+                12 QC-approved portraits
               </li>
             </ul>
           </div>
@@ -108,7 +108,7 @@ export function PetLandingPage({ navigation }: PetLandingPageProps) {
             </h2>
             <p className="mt-3 text-base leading-7 text-[#f6efe4]/72">
               No membership. No surprise renewal. You pay once, we make twelve portraits, a person
-              checks that it is still your pet, and you download everything.
+              checks that it is still your pet, and you download the 12 QC-approved files.
             </p>
           </div>
           <OfferStack />

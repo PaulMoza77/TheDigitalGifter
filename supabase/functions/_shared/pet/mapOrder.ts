@@ -32,6 +32,10 @@ export type PetSceneRow = {
   started_at: string | null;
   completed_at: string | null;
   result_path: string | null;
+  result_content_type?: string | null;
+  result_width?: number | null;
+  result_height?: number | null;
+  result_byte_size?: number | null;
 };
 
 export function toCustomerOrder(order: PetOrderRow, scenes: PetSceneRow[], publicToken: string) {

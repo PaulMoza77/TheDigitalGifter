@@ -1,16 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { PET_PRICE_CENTS, PET_PRODUCT_SKU } from "./types";
+import { readImageSize } from "./imageSize";
 import {
+  applyPredictionCreateFailure,
   assertUploadAllowed,
+  attachCheckoutSessionCas,
+  canReleaseDelivery,
   canStartGeneration,
   customerCannotEnumerateByUuid,
+  decideCheckoutSessionAction,
   deliveryAllowed,
+  fulfillmentAcceptsIssuedSession,
+  generationBatchState,
   isAdminAuthorized,
+  kontextProInput,
   metaPurchaseShouldEmit,
   rejectClientPriceTampering,
   replicateCallbackShouldApply,
+  requirePetTokenEncryptionKey,
   retryTargets,
   serverOwnedAmount,
+  stripeCheckoutIdempotencyKey,
   stripeFulfillmentDecision,
   tokenEnumerationRejected,
 } from "./funnelGuards";
@@ -141,5 +151,156 @@ describe("pet funnel production guards", () => {
         requestedEventId: "pet_purchase_2",
       }),
     ).toBe(false);
+  });
+
+  it("uses a stable Stripe idempotency key and reuses an open checkout session", () => {
+    const orderId = "11111111-2222-4333-8333-444444444444";
+    expect(stripeCheckoutIdempotencyKey(orderId)).toBe(`pet-checkout-${orderId}`);
+    expect(stripeCheckoutIdempotencyKey(orderId, 0)).toBe(stripeCheckoutIdempotencyKey(orderId));
+    const open = decideCheckoutSessionAction({
+      existingSession: {
+        id: "cs_open",
+        status: "open",
+        url: "https://checkout.stripe.com/c/pay/cs_open",
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+      },
+      orderId,
+      issuedCount: 1,
+    });
+    expect(open).toEqual({ action: "reuse", sessionId: "cs_open" });
+    const duplicateCreate = decideCheckoutSessionAction({
+      existingSession: null,
+      orderId,
+      issuedCount: 0,
+    });
+    const concurrentCreate = decideCheckoutSessionAction({
+      existingSession: null,
+      orderId,
+      issuedCount: 0,
+    });
+    expect(duplicateCreate).toEqual(concurrentCreate);
+    expect(duplicateCreate).toEqual({
+      action: "create",
+      idempotencyKey: `pet-checkout-${orderId}`,
+    });
+  });
+
+  it("keeps the first attached checkout session and still fulfills any issued session", () => {
+    const first = attachCheckoutSessionCas({
+      storedSessionId: null,
+      incomingSessionId: "cs_first",
+    });
+    const second = attachCheckoutSessionCas({
+      storedSessionId: first.storedSessionId,
+      incomingSessionId: "cs_second",
+    });
+    expect(first.firstWriter).toBe(true);
+    expect(second.firstWriter).toBe(false);
+    expect(second.storedSessionId).toBe("cs_first");
+    expect(
+      fulfillmentAcceptsIssuedSession({
+        orderId: "order-1",
+        metadataOrderId: "order-1",
+        paidSessionId: "cs_second",
+        issuedSessionIds: ["cs_first", "cs_second"],
+      }),
+    ).toBe(true);
+    expect(
+      fulfillmentAcceptsIssuedSession({
+        orderId: "order-1",
+        metadataOrderId: "order-1",
+        paidSessionId: "cs_first",
+        issuedSessionIds: ["cs_first", "cs_second"],
+      }),
+    ).toBe(true);
+  });
+
+  it("cannot release a paid order with 0, 11, or partially failed scenes, including markComplete", () => {
+    const paid = "2026-08-16T00:00:00Z";
+    expect(canReleaseDelivery({ paidAt: paid, orderStatus: "awaiting_qc", scenes: [] }).ok).toBe(false);
+    expect(
+      canReleaseDelivery({
+        paidAt: paid,
+        orderStatus: "awaiting_qc",
+        scenes: Array.from({ length: 11 }, () => ({ status: "succeeded" })),
+      }).ok,
+    ).toBe(false);
+    expect(
+      canReleaseDelivery({
+        paidAt: paid,
+        orderStatus: "awaiting_qc",
+        scenes: [
+          ...Array.from({ length: 11 }, () => ({ status: "succeeded" })),
+          { status: "failed" },
+        ],
+      }).ok,
+    ).toBe(false);
+    expect(
+      canReleaseDelivery({
+        paidAt: paid,
+        orderStatus: "paid",
+        scenes: Array.from({ length: 12 }, () => ({ status: "succeeded" })),
+      }).ok,
+    ).toBe(false);
+    expect(
+      canReleaseDelivery({
+        paidAt: paid,
+        orderStatus: "awaiting_qc",
+        scenes: Array.from({ length: 12 }, () => ({ status: "succeeded" })),
+      }).ok,
+    ).toBe(true);
+  });
+
+  it("sends only Kontext Pro inputs and recovers when one prediction create fails", () => {
+    const input = kontextProInput("a prompt", "https://signed.example/pet.jpg");
+    expect(input).toEqual({
+      prompt: "a prompt",
+      input_image: "https://signed.example/pet.jpg",
+      aspect_ratio: "4:5",
+      output_format: "jpg",
+    });
+    expect("image" in input).toBe(false);
+    const started = [
+      { sceneKey: "royal-portrait", status: "generating", lastError: null },
+      { sceneKey: "astronaut", status: "generating", lastError: null },
+      { sceneKey: "head-chef", status: "generating", lastError: null },
+    ];
+    const afterOneFailure = applyPredictionCreateFailure({
+      scenes: started,
+      failedSceneKey: "astronaut",
+      error: "Replicate rejected unsupported input",
+    });
+    expect(afterOneFailure.find((scene) => scene.sceneKey === "astronaut")).toEqual({
+      sceneKey: "astronaut",
+      status: "failed",
+      lastError: "Replicate rejected unsupported input",
+    });
+    expect(afterOneFailure.find((scene) => scene.sceneKey === "royal-portrait")?.status).toBe("generating");
+    expect(afterOneFailure.find((scene) => scene.sceneKey === "head-chef")?.status).toBe("generating");
+    const terminal = afterOneFailure.map((scene) =>
+      scene.sceneKey === "astronaut" ? scene : { ...scene, status: "succeeded" },
+    );
+    expect(generationBatchState(terminal)).toBe("partial_failure");
+  });
+
+  it("requires PET_TOKEN_ENCRYPTION_KEY and does not fall back to the service-role key", () => {
+    expect(() =>
+      requirePetTokenEncryptionKey((name) => (name === "SUPABASE_SERVICE_ROLE_KEY" ? "service-role-secret-key-value" : "")),
+    ).toThrow(/PET_TOKEN_ENCRYPTION_KEY is required/);
+    expect(() => requirePetTokenEncryptionKey(() => "short-key")).toThrow(/PET_TOKEN_ENCRYPTION_KEY is required/);
+    expect(
+      requirePetTokenEncryptionKey((name) =>
+        name === "PET_TOKEN_ENCRYPTION_KEY" ? "pet-token-encryption-key-32chars!!" : "service-role",
+      ),
+    ).toBe("pet-token-encryption-key-32chars!!");
+  });
+
+  it("reads real image dimensions instead of assuming 2400x3000", () => {
+    const png = Uint8Array.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+      0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00,
+    ]);
+    expect(readImageSize(png)).toEqual({ width: 2, height: 3 });
   });
 });

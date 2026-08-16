@@ -116,8 +116,8 @@ export function PetCheckoutPage({
             One payment. Twelve lives.
           </h1>
           <p className="mt-3 max-w-xl text-base leading-7 text-[#f6efe4]/72">
-            Review the star of the gallery, then pay once. There is no trial, no renewal, and no
-            subscription checkbox hiding under the button.
+            Review the star of the gallery, then pay once for 12 QC-approved portraits. There is no
+            trial, no renewal, and no subscription checkbox hiding under the button.
           </p>
 
           <div className="mt-8 overflow-hidden rounded-3xl border border-[#f6efe4]/10 bg-[#1a1410]">

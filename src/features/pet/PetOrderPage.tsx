@@ -175,8 +175,8 @@ export function PetOrderPage({
           <div className="space-y-3">
             <ResultsGrid results={results} />
             <p className="text-sm text-[#f6efe4]/60">
-              High-resolution portraits are live. Wallpaper, social, and poster crops are disabled until a
-              dedicated crop pipeline exists — those buttons are not fake downloads.
+              These are the 12 QC-approved portraits. Dimensions shown are the real generated file size.
+              Wallpaper, social, and poster crops are Coming later and are not included.
             </p>
           </div>
         ) : null}

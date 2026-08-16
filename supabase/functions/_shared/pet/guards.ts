@@ -127,6 +127,23 @@ export function deliveryAllowed(input: {
   return input.orderStatus === "complete" && Boolean(input.completedAt || input.qcStatus === "approved");
 }
 
+export function canReleaseDelivery(input: {
+  paidAt: string | null;
+  orderStatus: string;
+  scenes: Array<{ status: string }>;
+}): { ok: true } | { ok: false; message: string } {
+  if (!input.paidAt) return { ok: false, message: "unpaid order cannot be released" };
+  if (input.orderStatus !== "awaiting_qc") return { ok: false, message: "order is not awaiting QC" };
+  if (input.scenes.length !== 12) {
+    return { ok: false, message: "expected 12 scenes" };
+  }
+  const blocking = input.scenes.filter((scene) => !["succeeded", "ready"].includes(scene.status));
+  if (blocking.length > 0) {
+    return { ok: false, message: "all 12 scenes must be succeeded or ready" };
+  }
+  return { ok: true };
+}
+
 export function metaPurchaseShouldEmit(input: {
   alreadySentAt: string | null;
   eventId: string;

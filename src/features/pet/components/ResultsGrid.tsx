@@ -27,7 +27,8 @@ export function ResultsGrid({
           {results.petName}’s secret gallery
         </h2>
         <p className="mt-2 text-sm leading-6 text-[#f6efe4]/70">
-          High-resolution files, wallpapers, social crops, and printable posters. Same pet in every scene.
+          12 QC-approved portraits of the same pet. Extra wallpaper, social, and poster crops are Coming
+          later and are not part of this purchase.
         </p>
       </div>
 

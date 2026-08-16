@@ -37,6 +37,15 @@ export function webhookCallbackUrl(orderId: string, sceneKey: string): string {
   return url.toString();
 }
 
+export function kontextProInput(prompt: string, inputImage: string) {
+  return {
+    prompt,
+    input_image: inputImage,
+    aspect_ratio: "4:5",
+    output_format: "jpg",
+  };
+}
+
 export async function createReplicatePrediction(input: {
   prompt: string;
   imageUrl: string;
@@ -49,13 +58,7 @@ export async function createReplicatePrediction(input: {
   const model = petImageModel();
   const version = petImageModelVersion();
   const body: Record<string, unknown> = {
-    input: {
-      prompt: input.prompt,
-      input_image: input.imageUrl,
-      image: input.imageUrl,
-      output_format: "jpg",
-      aspect_ratio: "4:5",
-    },
+    input: kontextProInput(input.prompt, input.imageUrl),
     webhook: webhookCallbackUrl(input.orderId, input.sceneKey),
     webhook_events_filter: ["completed"],
   };

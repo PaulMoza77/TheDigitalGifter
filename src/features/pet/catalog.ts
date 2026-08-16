@@ -25,11 +25,8 @@ export const PET_OFFER = {
   subscription: false,
   subscriptionCopy: "No subscription",
   includes: [
-    "12 personalized portraits of the same pet",
-    "High-resolution downloads",
-    "Phone wallpapers",
-    "Social formats",
-    "Printable posters",
+    "12 QC-approved portraits of the same pet",
+    "Downloads of the generated portraits after human review",
     "Human quality control before you download",
   ] as const,
 } as const;
@@ -176,23 +173,27 @@ export const PET_SCENES: readonly PetSceneDefinition[] = [
 export const PET_RESULT_FORMATS = [
   {
     kind: "high_res" as const,
-    label: "High-resolution",
-    description: "Full-quality file for keeping and printing later.",
+    label: "QC-approved portrait",
+    description: "The generated portrait file, released after a person confirms it is the same pet.",
+    comingLater: false,
   },
   {
     kind: "wallpaper" as const,
     label: "Phone wallpaper",
-    description: "Vertical crop ready for a lock screen.",
+    description: "Vertical crop for a lock screen.",
+    comingLater: true,
   },
   {
     kind: "social" as const,
     label: "Social format",
     description: "Square crop for a post, story, or gift reveal.",
+    comingLater: true,
   },
   {
     kind: "poster" as const,
     label: "Printable poster",
     description: "Poster-ready file with print-safe margins.",
+    comingLater: true,
   },
 ] as const;
 
@@ -238,7 +239,7 @@ export const PET_FAQS = [
   {
     question: "What files do I receive?",
     answer:
-      "Each of the 12 portraits includes a high-resolution download, a phone wallpaper, a social format, and a printable poster file.",
+      "You receive 12 QC-approved portraits of the same pet. Each download is the generated image file at its real pixel size. Wallpaper, social, and poster crops are not included in this purchase and are marked Coming later.",
   },
   {
     question: "Can I gift this?",
