@@ -144,6 +144,12 @@ export function metaPurchaseShouldEmit(input: {
   return true;
 }
 
+export function mapOrderStatusForCustomer(status: string): string {
+  if (status === "generating") return "processing";
+  if (status === "awaiting_qc") return "quality_control";
+  return status;
+}
+
 export function mapSceneStatusForCustomer(input: {
   sceneStatus: string;
   orderStatus: string;
