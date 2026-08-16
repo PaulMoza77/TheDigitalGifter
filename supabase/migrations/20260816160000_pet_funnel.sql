@@ -624,9 +624,13 @@ begin
 end;
 $$;
 
+drop function if exists public.attach_pet_checkout_session(uuid, text);
+drop function if exists public.attach_pet_checkout_session(uuid, text, text);
+
 create or replace function public.attach_pet_checkout_session(
   p_order_id uuid,
-  p_session_id text
+  p_session_id text,
+  p_expected_session_id text default null
 )
 returns jsonb
 language plpgsql
@@ -635,10 +639,15 @@ set search_path = public
 as $$
 declare
   order_row public.pet_orders%rowtype;
+  incoming text;
+  expected text;
 begin
   if p_order_id is null or p_session_id is null or length(trim(p_session_id)) = 0 then
     raise exception 'order and session required';
   end if;
+
+  incoming := trim(p_session_id);
+  expected := nullif(trim(coalesce(p_expected_session_id, '')), '');
 
   select * into order_row from public.pet_orders where id = p_order_id for update;
   if not found then
@@ -646,15 +655,19 @@ begin
   end if;
 
   insert into public.pet_checkout_sessions (order_id, stripe_session_id)
-  values (p_order_id, trim(p_session_id))
+  values (p_order_id, incoming)
   on conflict (stripe_session_id) do nothing;
 
   update public.pet_orders
-  set stripe_checkout_session_id = trim(p_session_id)
+  set stripe_checkout_session_id = incoming
   where id = p_order_id
     and (
       stripe_checkout_session_id is null
-      or stripe_checkout_session_id = trim(p_session_id)
+      or stripe_checkout_session_id = incoming
+      or (
+        expected is not null
+        and stripe_checkout_session_id = expected
+      )
     )
   returning * into order_row;
 
@@ -664,7 +677,7 @@ begin
 
   return jsonb_build_object(
     'stripe_checkout_session_id', order_row.stripe_checkout_session_id,
-    'attached', order_row.stripe_checkout_session_id = trim(p_session_id)
+    'attached', order_row.stripe_checkout_session_id = incoming
   );
 end;
 $$;
@@ -952,7 +965,7 @@ revoke all on function public.claim_pet_generation_job(uuid) from anon, authenti
 revoke all on function public.pet_apply_scene_prediction_result(text, text, text, text, text, text, text, text, integer, text, text, integer, integer, integer) from anon, authenticated, public;
 revoke all on function public.pet_finalize_generation_if_done(uuid) from anon, authenticated, public;
 revoke all on function public.pet_release_delivery(uuid, text, text) from anon, authenticated, public;
-revoke all on function public.attach_pet_checkout_session(uuid, text) from anon, authenticated, public;
+revoke all on function public.attach_pet_checkout_session(uuid, text, text) from anon, authenticated, public;
 
 grant execute on function public.pet_sha256_hex(text) to service_role;
 grant execute on function public.pet_seed_scenes(uuid) to service_role;
@@ -962,6 +975,6 @@ grant execute on function public.claim_pet_generation_job(uuid) to service_role;
 grant execute on function public.pet_apply_scene_prediction_result(text, text, text, text, text, text, text, text, integer, text, text, integer, integer, integer) to service_role;
 grant execute on function public.pet_finalize_generation_if_done(uuid) to service_role;
 grant execute on function public.pet_release_delivery(uuid, text, text) to service_role;
-grant execute on function public.attach_pet_checkout_session(uuid, text) to service_role;
+grant execute on function public.attach_pet_checkout_session(uuid, text, text) to service_role;
 
 commit;

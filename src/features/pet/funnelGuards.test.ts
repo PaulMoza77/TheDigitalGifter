@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PET_PRICE_CENTS, PET_PRODUCT_SKU } from "./types";
 import { readImageSize } from "./imageSize";
 import {
+  applyPetPaymentEvent,
   applyPredictionCreateFailure,
   assertUploadAllowed,
   attachCheckoutSessionCas,
@@ -14,6 +15,7 @@ import {
   generationBatchState,
   isAdminAuthorized,
   kontextProInput,
+  matchedOpenCheckoutResponse,
   metaPurchaseShouldEmit,
   rejectClientPriceTampering,
   replicateCallbackShouldApply,
@@ -167,7 +169,11 @@ describe("pet funnel production guards", () => {
       orderId,
       issuedCount: 1,
     });
-    expect(open).toEqual({ action: "reuse", sessionId: "cs_open" });
+    expect(open).toEqual({
+      action: "reuse",
+      sessionId: "cs_open",
+      checkoutUrl: "https://checkout.stripe.com/c/pay/cs_open",
+    });
     const duplicateCreate = decideCheckoutSessionAction({
       existingSession: null,
       orderId,
@@ -182,35 +188,145 @@ describe("pet funnel production guards", () => {
     expect(duplicateCreate).toEqual({
       action: "create",
       idempotencyKey: `pet-checkout-${orderId}`,
+      expectedSessionId: null,
     });
   });
 
-  it("keeps the first attached checkout session and still fulfills any issued session", () => {
+  it("replaces an expired stored session with expected-value CAS", () => {
+    const orderId = "order-expired";
+    const decision = decideCheckoutSessionAction({
+      existingSession: { id: "cs_old", status: "expired", url: null },
+      orderId,
+      issuedCount: 1,
+    });
+    expect(decision).toEqual({
+      action: "create",
+      idempotencyKey: `pet-checkout-${orderId}-1`,
+      expectedSessionId: "cs_old",
+    });
+    const replaced = attachCheckoutSessionCas({
+      storedSessionId: "cs_old",
+      incomingSessionId: "cs_new",
+      expectedSessionId: "cs_old",
+    });
+    expect(replaced).toEqual({ storedSessionId: "cs_new", attached: true });
+  });
+
+  it("keeps one winner when two replacements race", () => {
     const first = attachCheckoutSessionCas({
-      storedSessionId: null,
-      incomingSessionId: "cs_first",
+      storedSessionId: "cs_old",
+      incomingSessionId: "cs_a",
+      expectedSessionId: "cs_old",
     });
     const second = attachCheckoutSessionCas({
       storedSessionId: first.storedSessionId,
-      incomingSessionId: "cs_second",
+      incomingSessionId: "cs_b",
+      expectedSessionId: "cs_old",
     });
-    expect(first.firstWriter).toBe(true);
-    expect(second.firstWriter).toBe(false);
-    expect(second.storedSessionId).toBe("cs_first");
+    expect(first).toEqual({ storedSessionId: "cs_a", attached: true });
+    expect(second).toEqual({ storedSessionId: "cs_a", attached: false });
+    const createFirst = attachCheckoutSessionCas({
+      storedSessionId: null,
+      incomingSessionId: "cs_first",
+      expectedSessionId: null,
+    });
+    const createSecond = attachCheckoutSessionCas({
+      storedSessionId: createFirst.storedSessionId,
+      incomingSessionId: "cs_second",
+      expectedSessionId: null,
+    });
+    expect(createFirst).toEqual({ storedSessionId: "cs_first", attached: true });
+    expect(createSecond).toEqual({ storedSessionId: "cs_first", attached: false });
+  });
+
+  it("returns a matching sessionId and checkoutUrl or a recoverable conflict", () => {
     expect(
-      fulfillmentAcceptsIssuedSession({
-        orderId: "order-1",
-        metadataOrderId: "order-1",
-        paidSessionId: "cs_second",
-        issuedSessionIds: ["cs_first", "cs_second"],
+      matchedOpenCheckoutResponse({
+        id: "cs_1",
+        status: "open",
+        url: "https://checkout.stripe.com/c/pay/cs_1",
       }),
-    ).toBe(true);
+    ).toEqual({
+      ok: true,
+      sessionId: "cs_1",
+      checkoutUrl: "https://checkout.stripe.com/c/pay/cs_1",
+    });
+    expect(
+      matchedOpenCheckoutResponse({
+        id: "cs_winner",
+        status: "open",
+        url: "https://checkout.stripe.com/c/pay/cs_other",
+      }),
+    ).toEqual({ ok: false, reason: "conflict" });
+    expect(
+      matchedOpenCheckoutResponse({
+        id: "cs_winner",
+        status: "expired",
+        url: "https://checkout.stripe.com/c/pay/cs_winner",
+      }),
+    ).toEqual({ ok: false, reason: "conflict" });
+  });
+
+  it("does not create another checkout for complete or async payment-pending sessions", () => {
+    const orderId = "order-paid";
+    expect(
+      decideCheckoutSessionAction({
+        existingSession: {
+          id: "cs_complete",
+          status: "complete",
+          payment_status: "paid",
+          url: "https://checkout.stripe.com/c/pay/cs_complete",
+        },
+        orderId,
+        issuedCount: 1,
+      }),
+    ).toEqual({ action: "payment_processing", sessionId: "cs_complete" });
+    expect(
+      decideCheckoutSessionAction({
+        existingSession: {
+          id: "cs_async",
+          status: "complete",
+          payment_status: "unpaid",
+          url: "https://checkout.stripe.com/c/pay/cs_async",
+        },
+        orderId,
+        issuedCount: 1,
+      }),
+    ).toEqual({ action: "payment_processing", sessionId: "cs_async" });
+  });
+
+  it("fulfills an older issued session exactly once after a replacement", () => {
+    const issued = ["cs_old", "cs_new"];
+    const first = applyPetPaymentEvent({
+      alreadyPaid: false,
+      orderId: "order-1",
+      metadataOrderId: "order-1",
+      paidSessionId: "cs_old",
+      issuedSessionIds: issued,
+    });
+    expect(first).toEqual({ alreadyPaid: true, fulfilledThisEvent: true });
+    const duplicate = applyPetPaymentEvent({
+      alreadyPaid: first.alreadyPaid,
+      orderId: "order-1",
+      metadataOrderId: "order-1",
+      paidSessionId: "cs_old",
+      issuedSessionIds: issued,
+    });
+    expect(duplicate).toEqual({ alreadyPaid: true, fulfilledThisEvent: false });
+    const newer = applyPetPaymentEvent({
+      alreadyPaid: duplicate.alreadyPaid,
+      orderId: "order-1",
+      metadataOrderId: "order-1",
+      paidSessionId: "cs_new",
+      issuedSessionIds: issued,
+    });
+    expect(newer).toEqual({ alreadyPaid: true, fulfilledThisEvent: false });
     expect(
       fulfillmentAcceptsIssuedSession({
         orderId: "order-1",
         metadataOrderId: "order-1",
-        paidSessionId: "cs_first",
-        issuedSessionIds: ["cs_first", "cs_second"],
+        paidSessionId: "cs_old",
+        issuedSessionIds: issued,
       }),
     ).toBe(true);
   });

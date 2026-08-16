@@ -254,7 +254,9 @@ export type CreateStripeCheckoutRequest = {
 
 export type CreateStripeCheckoutResponse = {
   sessionId: string;
-  checkoutUrl: string;
+  checkoutUrl: string | null;
+  status?: "open" | "payment_processing";
+  reused?: boolean;
 };
 
 export type GetOrderByPublicTokenRequest = {
@@ -275,7 +277,8 @@ export type PetFunnelApiErrorCode =
   | "UPLOAD_FAILED"
   | "ORDER_NOT_FOUND"
   | "PAYMENT_REQUIRED"
-  | "GENERATION_FAILED";
+  | "GENERATION_FAILED"
+  | "CHECKOUT_CONFLICT";
 
 export type PetPageId = "landing" | "create" | "checkout" | "order";
 

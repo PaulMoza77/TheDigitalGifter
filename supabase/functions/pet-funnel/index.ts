@@ -29,12 +29,37 @@ import {
 } from "../_shared/pet/guards.ts";
 import { toCustomerOrder, toProgress, type PetOrderRow, type PetSceneRow } from "../_shared/pet/mapOrder.ts";
 import { petInitiateCheckoutEventId, petPurchaseEventId } from "../_shared/pet/meta.ts";
-import { decideCheckoutSessionAction } from "../_shared/pet/checkout.ts";
+import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
 
 type Body = Record<string, unknown>;
 
 function apiError(code: string, message: string, status = 400) {
   return jsonResponse({ error: message, code }, status);
+}
+
+async function fetchStripeCheckoutSession(
+  stripeKey: string,
+  sessionId: string,
+): Promise<{
+  id?: string;
+  status?: string;
+  url?: string;
+  expires_at?: number;
+  payment_status?: string;
+} | null> {
+  const existingRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
+    headers: { Authorization: `Bearer ${stripeKey}` },
+  });
+  if (!existingRes.ok) return null;
+  return await existingRes.json();
+}
+
+function checkoutConflict() {
+  return apiError(
+    "CHECKOUT_CONFLICT",
+    "Checkout changed while starting payment. Refresh and try again.",
+    409,
+  );
 }
 
 function safeReturnUrl(input: string, fallback: string): string {
@@ -251,31 +276,49 @@ Deno.serve(async (req) => {
         .select("id", { count: "exact", head: true })
         .eq("order_id", order.id);
 
-      let existingSession: { id: string; status?: string; url?: string; expires_at?: number } | null = null;
       const storedSessionId = asString(order.stripe_checkout_session_id);
-      if (storedSessionId) {
-        const existingRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${storedSessionId}`, {
-          headers: { Authorization: `Bearer ${stripeKey}` },
-        });
-        if (existingRes.ok) {
-          existingSession = await existingRes.json();
-        }
+      const existingSession = storedSessionId
+        ? await fetchStripeCheckoutSession(stripeKey, storedSessionId)
+        : null;
+      if (storedSessionId && !existingSession) {
+        return checkoutConflict();
       }
 
       const decision = decideCheckoutSessionAction({
-        existingSession: existingSession ? { ...existingSession, id: existingSession.id || storedSessionId } : null,
+        existingSession: existingSession
+          ? { ...existingSession, id: existingSession.id || storedSessionId }
+          : null,
         orderId: order.id,
         issuedCount: issuedCount || 0,
       });
 
-      if (decision.action === "reuse" && existingSession?.url) {
+      if (decision.action === "payment_processing") {
         await service.rpc("attach_pet_checkout_session", {
           p_order_id: order.id,
-          p_session_id: existingSession.id,
+          p_session_id: decision.sessionId,
+          p_expected_session_id: storedSessionId || null,
         });
         return jsonResponse({
-          sessionId: existingSession.id,
-          checkoutUrl: existingSession.url,
+          sessionId: decision.sessionId,
+          checkoutUrl: null,
+          status: "payment_processing",
+          eventId: petInitiateCheckoutEventId(order.id),
+          purchaseEventId: petPurchaseEventId(order.id),
+        });
+      }
+
+      if (decision.action === "reuse") {
+        const matched = matchedOpenCheckoutResponse(existingSession);
+        if (!matched.ok) return checkoutConflict();
+        await service.rpc("attach_pet_checkout_session", {
+          p_order_id: order.id,
+          p_session_id: matched.sessionId,
+          p_expected_session_id: storedSessionId || null,
+        });
+        return jsonResponse({
+          sessionId: matched.sessionId,
+          checkoutUrl: matched.checkoutUrl,
+          status: "open",
           eventId: petInitiateCheckoutEventId(order.id),
           purchaseEventId: petPurchaseEventId(order.id),
           reused: true,
@@ -320,23 +363,29 @@ Deno.serve(async (req) => {
       const attached = await service.rpc("attach_pet_checkout_session", {
         p_order_id: order.id,
         p_session_id: session.id,
+        p_expected_session_id: decision.expectedSessionId,
       });
       if (attached.error) throw attached.error;
-      const attachedId = asString((attached.data as { stripe_checkout_session_id?: string } | null)?.stripe_checkout_session_id);
+      const attachedId = asString(
+        (attached.data as { stripe_checkout_session_id?: string } | null)?.stripe_checkout_session_id,
+      );
+
       if (attachedId && attachedId !== asString(session.id)) {
-        const winnerRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${attachedId}`, {
-          headers: { Authorization: `Bearer ${stripeKey}` },
-        });
-        const winner = winnerRes.ok ? await winnerRes.json() : session;
+        const winner = await fetchStripeCheckoutSession(stripeKey, attachedId);
+        const matched = matchedOpenCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
+        if (!matched.ok) return checkoutConflict();
         return jsonResponse({
-          sessionId: winner.id || attachedId,
-          checkoutUrl: winner.url || session.url,
+          sessionId: matched.sessionId,
+          checkoutUrl: matched.checkoutUrl,
+          status: "open",
           eventId: petInitiateCheckoutEventId(order.id),
           purchaseEventId: petPurchaseEventId(order.id),
           reused: true,
         });
       }
 
+      const matched = matchedOpenCheckoutResponse(session);
+      if (!matched.ok) return checkoutConflict();
       await service.rpc("pet_log_event", {
         p_order_id: order.id,
         p_action: "checkout_session_created",
@@ -344,8 +393,9 @@ Deno.serve(async (req) => {
         p_payload: { session_present: true, initiate_event_id: petInitiateCheckoutEventId(order.id) },
       });
       return jsonResponse({
-        sessionId: session.id,
-        checkoutUrl: session.url,
+        sessionId: matched.sessionId,
+        checkoutUrl: matched.checkoutUrl,
+        status: "open",
         eventId: petInitiateCheckoutEventId(order.id),
         purchaseEventId: petPurchaseEventId(order.id),
       });

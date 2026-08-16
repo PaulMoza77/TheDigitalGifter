@@ -77,6 +77,11 @@ export function PetCheckoutPage({
         cancelUrl: `${window.location.origin}/pet/checkout`,
       });
 
+      if (result.status === "payment_processing" || !result.checkoutUrl) {
+        navigation?.goToOrder(result.publicToken);
+        return;
+      }
+
       if (result.sessionId) {
         trackMetaInitiateCheckout(`pet_ic_${result.orderId}`);
       }
@@ -91,6 +96,10 @@ export function PetCheckoutPage({
       if (caught instanceof PetApiError && caught.code === "PET_API_NOT_CONNECTED") {
         setError(
           "Checkout is designed and typed, but the backend is not connected yet. No payment was taken."
+        );
+      } else if (caught instanceof PetApiError && caught.code === "CHECKOUT_CONFLICT") {
+        setError(
+          "Checkout changed while starting payment. Refresh and try again. No extra charge was created.",
         );
       } else if (caught instanceof Error) {
         setError(caught.message);
