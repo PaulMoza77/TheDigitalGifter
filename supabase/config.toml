@@ -33,3 +33,12 @@ verify_jwt = false
 
 [functions.request-affiliate-withdrawal]
 verify_jwt = true
+
+[functions.verify-apple-purchase]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.delete-my-account]
+verify_jwt = true

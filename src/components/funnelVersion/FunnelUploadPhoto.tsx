@@ -293,8 +293,8 @@ export default function FunnelUploadPhoto() {
     setErrorMsg(null);
 
     try {
-      const bucket = "templates";
-      const folder = "previews";
+      const bucket = "uploads";
+      const folder = "funnel";
 
       const { safeBase, ext } = slugifyFilename(uploaded.file.name);
       const uniq = `${Date.now()}-${Math.random().toString(16).slice(2)}`;

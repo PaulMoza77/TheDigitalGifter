@@ -23,12 +23,27 @@ dist-ssr
 *.sln
 *.sw?
 
-# Ignored for the template, you probably want to remove it:
-package-lock.json
-# secrets / local
-.env
-.env.*
-!.env.example
 .migration/
+.env.local
+.env*.local
 .vercel
+.env*
+.env.example.bak
+
+# Local Supabase / backups (may contain schema dumps; never commit DB passwords)
+supabase/.temp/
+supabase/backups/
+*.sql.gz
+
+# Customer / order / job exports — real PII and payment identifiers
+users.csv
+users.json
+users_raw.txt
+orders.csv
+orders.json
+orders_raw.txt
+orders_convex.js
+jobs.json
+jobs_supabase.csv
+credit_transactions_orders.csv
 storage-export/

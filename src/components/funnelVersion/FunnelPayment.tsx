@@ -392,26 +392,22 @@ function isAffiliateCodeUsable(row: AffiliateCodeRow): boolean {
 async function findAffiliateCode(
   code: string
 ): Promise<PromoValidationResult | null> {
-  const { data, error } = await supabase
-    .from("affiliate_codes")
-    .select(
-      "id,user_id,code,discount_percent,commission_percent,max_uses,times_used,active"
-    )
-    .ilike("code", code)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("lookup_affiliate_promo", {
+    p_code: code,
+  });
 
   if (error) {
     if (isTableMissingError(error)) return null;
     return null;
   }
 
-  const row = data as AffiliateCodeRow | null;
+  const row = (Array.isArray(data) ? data[0] : data) as {
+    code?: string;
+    discount_percent?: number | string | null;
+    affiliate_user_id?: string | null;
+  } | null;
 
-  if (!row || !isAffiliateCodeUsable(row)) {
-    return null;
-  }
+  if (!row?.affiliate_user_id && !row?.code) return null;
 
   return {
     code: normalizePromoCode(row.code || code),
@@ -419,7 +415,7 @@ async function findAffiliateCode(
       row.discount_percent,
       DEFAULT_PROFILE_DISCOUNT_PERCENT
     ),
-    affiliateUserId: row.user_id,
+    affiliateUserId: String(row.affiliate_user_id || ""),
   };
 }
 
@@ -462,9 +458,6 @@ async function validatePromoCode(codeRaw: string): Promise<PromoValidationResult
 
   const affiliateCodeResult = await findAffiliateCode(code);
   if (affiliateCodeResult) return affiliateCodeResult;
-
-  const profileResult = await findAffiliateProfile(code);
-  if (profileResult) return profileResult;
 
   throw new Error("Invalid promo code");
 }
