@@ -9,6 +9,7 @@ import { getPetPhotoFile, getPetPhotoObjectUrl } from "./storage";
 import type { PetFunnelApi } from "./api";
 import type { PetFunnelNavigation } from "./types";
 import { usePetDraft } from "./usePetDraft";
+import { usePublicPetOffer } from "./usePublicPetOffer";
 import { validatePetDraft } from "./validation";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 
@@ -22,6 +23,7 @@ export function PetCheckoutPage({
   api = petFunnelApi,
 }: PetCheckoutPageProps) {
   const { draft } = usePetDraft();
+  const { priceDisplay } = usePublicPetOffer();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const previewUrl = getPetPhotoObjectUrl() ?? draft.photoPreviewDataUrl;
@@ -115,7 +117,7 @@ export function PetCheckoutPage({
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-[#f6efe4]">Pay once</h1>
           <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-            {PET_OFFER.priceDisplay} for 12 portraits. No subscription.
+            {priceDisplay} for 12 portraits and 2 cinematic clips. No subscription.
           </p>
         </div>
 
@@ -150,7 +152,7 @@ export function PetCheckoutPage({
         <div className="rounded-2xl border border-[#d4a84b]/25 p-5">
           <div className="flex items-center justify-between text-lg font-semibold text-[#f6efe4]">
             <span>Due today</span>
-            <span>{PET_OFFER.priceDisplay}</span>
+            <span>{priceDisplay}</span>
           </div>
           <Button
             type="button"
@@ -158,7 +160,7 @@ export function PetCheckoutPage({
             onClick={() => void pay()}
             className="mt-5 h-12 w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
           >
-            {submitting ? "Starting checkout…" : `Pay ${PET_OFFER.priceDisplay}`}
+            {submitting ? "Starting checkout…" : `Pay ${priceDisplay}`}
           </Button>
           <p className="mt-3 inline-flex items-center gap-2 text-xs text-[#f6efe4]/55">
             <Lock className="h-3.5 w-3.5" aria-hidden="true" />

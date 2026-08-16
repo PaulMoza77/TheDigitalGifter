@@ -5,6 +5,7 @@ import { asString } from "../_shared/pet/crypto.ts";
 import { readImageSize } from "../_shared/pet/imageSize.ts";
 import { replicateOutputUrl, verifyReplicateWebhook, type ReplicatePrediction } from "../_shared/pet/replicate.ts";
 import { finalizeAiCostPrediction } from "../_shared/pet/costLedger.ts";
+import { videoStoragePath } from "../_shared/pet/videoGuards.ts";
 
 async function copyRemoteImage(
   service: ReturnType<typeof getServiceClient>,
@@ -22,6 +23,23 @@ async function copyRemoteImage(
   if (error) throw error;
   const size = readImageSize(bytes);
   return { contentType, size: bytes.byteLength, width: size?.width ?? null, height: size?.height ?? null };
+}
+
+async function copyRemoteVideo(
+  service: ReturnType<typeof getServiceClient>,
+  videoUrl: string,
+  path: string,
+): Promise<{ contentType: string; size: number }> {
+  const res = await fetch(videoUrl);
+  if (!res.ok) throw new Error(`Could not fetch generated video (${res.status})`);
+  const contentType = res.headers.get("content-type") || "video/mp4";
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const { error } = await service.storage.from(PET_RESULT_BUCKET).upload(path, bytes, {
+    contentType: "video/mp4",
+    upsert: true,
+  });
+  if (error) throw error;
+  return { contentType: "video/mp4", size: bytes.byteLength };
 }
 
 Deno.serve(async (req) => {
@@ -43,6 +61,104 @@ Deno.serve(async (req) => {
 
     if (!["succeeded", "failed", "canceled"].includes(status)) {
       return jsonResponse({ ok: true, ignored: true, status });
+    }
+
+    const { data: clip } = await service
+      .from("pet_order_video_clips")
+      .select("id, pet_order_id, source_scene_id, slot, status, attempt_number")
+      .eq("replicate_prediction_id", predictionId)
+      .maybeSingle();
+
+    if (clip) {
+      await finalizeAiCostPrediction(service, {
+        predictionId,
+        providerStatus: status,
+        modelName: prediction.model || null,
+        modelVersion: prediction.version || null,
+        orderId: clip.pet_order_id,
+        sceneId: clip.source_scene_id,
+        sceneKey: `video-slot-${clip.slot}`,
+      });
+
+      let resultPath: string | null = null;
+      let contentType: string | null = null;
+      let resultByteSize: number | null = null;
+      if (status === "succeeded") {
+        const outputUrl = replicateOutputUrl(prediction.output);
+        if (!outputUrl) {
+          const applied = await service.rpc("pet_apply_video_prediction_result", {
+            p_prediction_id: predictionId,
+            p_webhook_id: webhookId,
+            p_event_status: status,
+            p_clip_status: "failed",
+            p_result_bucket: null,
+            p_result_path: null,
+            p_result_content_type: null,
+            p_error: "Replicate returned no video URL",
+            p_output_duration_seconds: 5,
+            p_result_width: null,
+            p_result_height: null,
+            p_result_byte_size: null,
+            p_model_name: prediction.model || null,
+            p_model_version: prediction.version || null,
+          });
+          if (applied.error) throw applied.error;
+          return jsonResponse({ ok: true, result: applied.data });
+        }
+        if (clip.status === "succeeded" || clip.status === "ready") {
+          return jsonResponse({ ok: true, status: "already_succeeded" });
+        }
+        resultPath = videoStoragePath(clip.pet_order_id, clip.id, Number(clip.attempt_number || 1));
+        try {
+          const copied = await copyRemoteVideo(service, outputUrl, resultPath);
+          contentType = copied.contentType;
+          resultByteSize = copied.size;
+        } catch (copyErr) {
+          const message = copyErr instanceof Error ? copyErr.message : String(copyErr);
+          const applied = await service.rpc("pet_apply_video_prediction_result", {
+            p_prediction_id: predictionId,
+            p_webhook_id: webhookId,
+            p_event_status: status,
+            p_clip_status: "failed",
+            p_result_bucket: null,
+            p_result_path: null,
+            p_result_content_type: null,
+            p_error: `Storage copy failed after provider success: ${message}`.slice(0, 500),
+            p_output_duration_seconds: 5,
+            p_result_width: null,
+            p_result_height: null,
+            p_result_byte_size: null,
+            p_model_name: prediction.model || null,
+            p_model_version: prediction.version || null,
+          });
+          if (applied.error) throw applied.error;
+          return jsonResponse({
+            ok: true,
+            result: applied.data,
+            storageCopyFailed: true,
+            billed: true,
+          });
+        }
+      }
+
+      const applied = await service.rpc("pet_apply_video_prediction_result", {
+        p_prediction_id: predictionId,
+        p_webhook_id: webhookId,
+        p_event_status: status,
+        p_clip_status: status === "succeeded" ? "succeeded" : "failed",
+        p_result_bucket: status === "succeeded" ? PET_RESULT_BUCKET : null,
+        p_result_path: resultPath,
+        p_result_content_type: contentType,
+        p_error: status === "succeeded" ? null : asString(prediction.error) || status,
+        p_output_duration_seconds: 5,
+        p_result_width: null,
+        p_result_height: null,
+        p_result_byte_size: resultByteSize,
+        p_model_name: prediction.model || null,
+        p_model_version: prediction.version || null,
+      });
+      if (applied.error) throw applied.error;
+      return jsonResponse({ ok: true, result: applied.data });
     }
 
     const { data: scene } = await service

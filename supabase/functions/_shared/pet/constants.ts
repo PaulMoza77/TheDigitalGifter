@@ -3,6 +3,7 @@ export const PET_PRODUCT_NAME = "My Pet’s Secret Life";
 export const PET_PRICE_CENTS = 5900;
 export const PET_CURRENCY = "usd";
 export const PET_SCENE_COUNT = 12;
+export const PET_VIDEO_CLIP_COUNT = 2;
 export const PET_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
 export const PET_SOURCE_BUCKET = "pet-source-photos";
 export const PET_RESULT_BUCKET = "pet-generated";
@@ -11,6 +12,12 @@ export const PET_SIGNED_UPLOAD_SECONDS = 15 * 60;
 export const PET_SIGNED_DOWNLOAD_SECONDS = 15 * 60;
 export const PET_MAX_SCENE_ATTEMPTS = 3;
 export const PET_GENERATE_CONCURRENCY = 3;
+
+export const DEFAULT_PET_IMAGE_MODEL = "black-forest-labs/flux-kontext-pro";
+export const DEFAULT_PET_VIDEO_MODEL = "bytedance/seedance-1-pro-fast";
+export const DEFAULT_PET_VIDEO_DURATION_SECONDS = 5;
+export const DEFAULT_PET_VIDEO_RESOLUTION = "720p";
+export const DEFAULT_PET_VIDEO_MAX_ATTEMPTS = 1;
 
 export const PET_SPECIES = ["dog", "cat", "other"] as const;
 export const PET_PERSONALITIES = [
@@ -39,8 +46,6 @@ export const PET_SCENE_KEYS = [
 
 export type PetSceneKey = (typeof PET_SCENE_KEYS)[number];
 
-export const DEFAULT_PET_IMAGE_MODEL = "black-forest-labs/flux-kontext-pro";
-
 export function siteOrigin(): string {
   return (
     Deno.env.get("SITE_URL") ||
@@ -64,4 +69,31 @@ export function petImageModel(): string {
 export function petImageModelVersion(): string | null {
   const value = (Deno.env.get("PET_IMAGE_MODEL_VERSION") || "").trim();
   return value || null;
+}
+
+export function videoGenerationEnabled(): boolean {
+  return String(Deno.env.get("PET_VIDEO_GENERATION_ENABLED") || "").toLowerCase() === "true";
+}
+
+export function videoGenerationMock(): boolean {
+  return String(Deno.env.get("PET_VIDEO_GENERATION_MOCK") || "").toLowerCase() === "true";
+}
+
+export function petVideoModel(): string {
+  return (Deno.env.get("PET_VIDEO_MODEL") || DEFAULT_PET_VIDEO_MODEL).trim();
+}
+
+export function petVideoDurationSeconds(): number {
+  const parsed = Number(Deno.env.get("PET_VIDEO_DURATION_SECONDS") || DEFAULT_PET_VIDEO_DURATION_SECONDS);
+  return Number.isFinite(parsed) && parsed >= 2 && parsed <= 12 ? parsed : DEFAULT_PET_VIDEO_DURATION_SECONDS;
+}
+
+export function petVideoResolution(): string {
+  const value = (Deno.env.get("PET_VIDEO_RESOLUTION") || DEFAULT_PET_VIDEO_RESOLUTION).trim();
+  return value === "720p" ? value : DEFAULT_PET_VIDEO_RESOLUTION;
+}
+
+export function petVideoMaxAttempts(): number {
+  const parsed = Number(Deno.env.get("PET_VIDEO_MAX_ATTEMPTS") || DEFAULT_PET_VIDEO_MAX_ATTEMPTS);
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.min(parsed, 10) : DEFAULT_PET_VIDEO_MAX_ATTEMPTS;
 }

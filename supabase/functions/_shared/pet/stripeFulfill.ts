@@ -101,7 +101,7 @@ export async function handlePetStripeEvent(input: {
   if (result?.status === "fulfilled" || result?.status === "already_paid") {
     const { data: order } = await input.service
       .from("pet_orders")
-      .select("id, email, meta_event_id, meta_purchase_sent_at")
+      .select("id, email, meta_event_id, meta_purchase_sent_at, amount_cents")
       .eq("id", orderId)
       .maybeSingle();
     if (order && !order.meta_purchase_sent_at) {
@@ -110,6 +110,7 @@ export async function handlePetStripeEvent(input: {
         email: order.email,
         alreadySentAt: order.meta_purchase_sent_at,
         sourceUrl: `${siteOrigin()}/pet/order`,
+        amountCents: Number(order.amount_cents || PET_PRICE_CENTS),
       });
       if (capi.sent) {
         await input.service

@@ -26,6 +26,7 @@ export async function sendMetaCapiPurchase(input: {
   alreadySentAt?: string | null;
   eventTime?: number;
   sourceUrl?: string;
+  amountCents?: number;
 }): Promise<{ sent: boolean; reason?: string }> {
   if (!metaPurchaseShouldEmit({ alreadySentAt: input.alreadySentAt ?? null, eventId: input.eventId })) {
     return { sent: false, reason: "duplicate" };
@@ -38,6 +39,7 @@ export async function sendMetaCapiPurchase(input: {
   }
 
   const hashedEmail = input.email ? await hashIdentifier(input.email) : null;
+  const value = (input.amountCents ?? PET_PRICE_CENTS) / 100;
   const payload = {
     data: [
       {
@@ -49,10 +51,10 @@ export async function sendMetaCapiPurchase(input: {
         user_data: hashedEmail ? { em: [hashedEmail] } : {},
         custom_data: {
           currency: "USD",
-          value: PET_PRICE_CENTS / 100,
+          value,
           content_ids: [PET_SKU],
           content_type: "product",
-          contents: [{ id: PET_SKU, quantity: 1, item_price: 59.0 }],
+          contents: [{ id: PET_SKU, quantity: 1, item_price: value }],
         },
       },
     ],

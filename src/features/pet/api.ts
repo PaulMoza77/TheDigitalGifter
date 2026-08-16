@@ -13,6 +13,7 @@ import type {
   PetOrder,
   PetOrderResults,
   PollGenerationProgressRequest,
+  PublicPetOffer,
   SignedUploadUrlResponse,
 } from "./types";
 
@@ -35,6 +36,7 @@ export interface PetFunnelApi {
     input: PollGenerationProgressRequest
   ): Promise<PetGenerationProgress>;
   getOrderResults(input: GetOrderResultsRequest): Promise<PetOrderResults>;
+  getPublicOffer?(): Promise<PublicPetOffer>;
 }
 
 export class PetApiError extends Error {
@@ -68,6 +70,17 @@ export function createUnimplementedPetApi(): PetFunnelApi {
     getOrderByPublicToken: reject("getOrderByPublicToken"),
     pollGenerationProgress: reject("pollGenerationProgress"),
     getOrderResults: reject("getOrderResults"),
+    getPublicOffer: async () => ({
+      sku: "pet-secret-life-12",
+      name: "My Pet’s Secret Life",
+      amountCents: 5900,
+      currency: "usd",
+      imageCount: 12,
+      videoCount: 2,
+      subscription: false,
+      active: true,
+      priceDisplay: "$59",
+    }),
   };
 }
 

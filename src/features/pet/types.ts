@@ -5,11 +5,14 @@
 
 export const PET_PRODUCT_SKU = "pet-secret-life-12" as const;
 export const PET_PRODUCT_NAME = "My Pet’s Secret Life" as const;
-export const PET_PRODUCT_PROMISE = "One photo. 12 secret lives. Same pet every time." as const;
+export const PET_PRODUCT_PROMISE = "One photo. 12 secret lives. 2 cinematic clips. Same pet every time." as const;
 export const PET_PRICE_CENTS = 5900 as const;
 export const PET_PRICE_DISPLAY = "$59" as const;
 export const PET_CURRENCY = "usd" as const;
 export const PET_SCENE_COUNT = 12 as const;
+export const PET_VIDEO_CLIP_COUNT = 2 as const;
+export const PET_VIDEO_DURATION_SECONDS = 5 as const;
+export const PET_VIDEO_RESOLUTION = "720p" as const;
 export const PET_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
 export const PET_DRAFT_STORAGE_KEY = "tdg.petFunnel.draft.v1" as const;
 
@@ -66,11 +69,31 @@ export type PetOrderStatus =
   | "processing"
   | "awaiting_qc"
   | "quality_control"
+  | "selecting_video_scenes"
+  | "generating_videos"
+  | "awaiting_video_qc"
   | "complete"
   | "partial_failure"
   | "failed"
   | "refunded"
   | "canceled";
+
+export type PetOrderPhase =
+  | "generating_portraits"
+  | "portrait_qc"
+  | "selecting_video_scenes"
+  | "generating_clips"
+  | "video_qc"
+  | "complete"
+  | "partial_failure"
+  | "failed";
+
+export type PetVideoClipStatus =
+  | "queued"
+  | "generating"
+  | "quality_control"
+  | "ready"
+  | "failed";
 
 export type PetResultFormatKind = "high_res" | "wallpaper" | "social" | "poster";
 
@@ -142,15 +165,31 @@ export type PetOrder = {
   petName: string;
   species: PetSpecies;
   personality: PetPersonality;
-  amountCents: typeof PET_PRICE_CENTS;
+  amountCents: number;
   currency: typeof PET_CURRENCY;
   noSubscription: true;
   photo: PetPhotoMeta | null;
   scenes: PetSceneProgress[];
+  clips?: PetVideoClipProgress[];
   createdAt: string;
   paidAt: string | null;
   completedAt: string | null;
   purchaseEventId?: string;
+  phase?: PetOrderPhase;
+};
+
+export type PetVideoClipProgress = {
+  id: string;
+  slot: 1 | 2;
+  sourceSceneId: string | null;
+  title: string;
+  status: PetVideoClipStatus;
+  progressPercent: number;
+  errorMessage: string | null;
+  durationSeconds: number;
+  resolution: string;
+  previewUrl: string | null;
+  downloadUrl: string | null;
 };
 
 export type PetResultAsset = {
@@ -172,23 +211,44 @@ export type PetSceneResult = {
   assets: PetResultAsset[];
 };
 
+export type PetVideoClipResult = {
+  id: string;
+  slot: 1 | 2;
+  sourceSceneId: string | null;
+  title: string;
+  status: PetVideoClipStatus;
+  previewUrl: string | null;
+  downloadUrl: string | null;
+  mimeType: string;
+  durationSeconds: number | null;
+  width: number | null;
+  height: number | null;
+  ready: boolean;
+};
+
 export type PetOrderResults = {
   orderId: string;
   publicToken: string;
   petName: string;
   status: PetOrderStatus;
   scenes: PetSceneResult[];
+  clips: PetVideoClipResult[];
 };
 
 export type PetGenerationProgress = {
   orderId: string;
   publicToken: string;
   orderStatus: PetOrderStatus;
+  phase: PetOrderPhase | "other";
   overallPercent: number;
   readyCount: number;
   failedCount: number;
   totalCount: typeof PET_SCENE_COUNT;
+  videoReadyCount: number;
+  videoFailedCount: number;
+  videoTotalCount: typeof PET_VIDEO_CLIP_COUNT;
   scenes: PetSceneProgress[];
+  clips: PetVideoClipProgress[];
   humanQualityControl: boolean;
 };
 
@@ -205,9 +265,21 @@ export type CreatePetOrderResponse = {
   orderId: string;
   publicToken: string;
   status: Extract<PetOrderStatus, "awaiting_upload">;
-  amountCents: typeof PET_PRICE_CENTS;
+  amountCents: number;
   currency: typeof PET_CURRENCY;
   sku: typeof PET_PRODUCT_SKU;
+};
+
+export type PublicPetOffer = {
+  sku: typeof PET_PRODUCT_SKU;
+  name: string;
+  amountCents: number;
+  currency: typeof PET_CURRENCY;
+  imageCount: typeof PET_SCENE_COUNT;
+  videoCount: typeof PET_VIDEO_CLIP_COUNT;
+  subscription: false;
+  active: true;
+  priceDisplay: string;
 };
 
 export type GetSignedUploadUrlRequest = {

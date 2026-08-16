@@ -333,29 +333,36 @@ describe("pet funnel production guards", () => {
 
   it("cannot release a paid order with 0, 11, or partially failed scenes, including markComplete", () => {
     const paid = "2026-08-16T00:00:00Z";
+    const readyClips = [
+      { status: "ready", qcStatus: "approved" as const },
+      { status: "ready", qcStatus: "approved" as const },
+    ];
     expect(canReleaseDelivery({ paidAt: paid, orderStatus: "awaiting_qc", scenes: [] }).ok).toBe(false);
     expect(
       canReleaseDelivery({
         paidAt: paid,
-        orderStatus: "awaiting_qc",
-        scenes: Array.from({ length: 11 }, () => ({ status: "succeeded" })),
+        orderStatus: "awaiting_video_qc",
+        scenes: Array.from({ length: 11 }, () => ({ status: "ready" })),
+        clips: readyClips,
       }).ok,
     ).toBe(false);
     expect(
       canReleaseDelivery({
         paidAt: paid,
-        orderStatus: "awaiting_qc",
+        orderStatus: "awaiting_video_qc",
         scenes: [
-          ...Array.from({ length: 11 }, () => ({ status: "succeeded" })),
+          ...Array.from({ length: 11 }, () => ({ status: "ready" })),
           { status: "failed" },
         ],
+        clips: readyClips,
       }).ok,
     ).toBe(false);
     expect(
       canReleaseDelivery({
         paidAt: paid,
         orderStatus: "paid",
-        scenes: Array.from({ length: 12 }, () => ({ status: "succeeded" })),
+        scenes: Array.from({ length: 12 }, () => ({ status: "ready" })),
+        clips: readyClips,
       }).ok,
     ).toBe(false);
     expect(
@@ -363,6 +370,14 @@ describe("pet funnel production guards", () => {
         paidAt: paid,
         orderStatus: "awaiting_qc",
         scenes: Array.from({ length: 12 }, () => ({ status: "succeeded" })),
+      }).ok,
+    ).toBe(false);
+    expect(
+      canReleaseDelivery({
+        paidAt: paid,
+        orderStatus: "awaiting_video_qc",
+        scenes: Array.from({ length: 12 }, () => ({ status: "ready" })),
+        clips: readyClips,
       }).ok,
     ).toBe(true);
   });

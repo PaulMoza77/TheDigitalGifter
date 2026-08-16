@@ -5,9 +5,11 @@ import { cn } from "@/lib/utils";
 export function PriceBadge({
   className,
   size = "md",
+  priceDisplay = PET_OFFER.priceDisplay,
 }: {
   className?: string;
   size?: "sm" | "md" | "lg";
+  priceDisplay?: string;
 }) {
   return (
     <div
@@ -22,7 +24,7 @@ export function PriceBadge({
           size === "lg" ? "text-2xl" : size === "sm" ? "text-sm" : "text-lg"
         )}
       >
-        {PET_OFFER.priceDisplay}
+        {priceDisplay}
       </span>
       <span className="text-xs uppercase tracking-[0.16em] text-[#f6efe4]/70">
         one-time

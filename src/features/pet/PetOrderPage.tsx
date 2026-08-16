@@ -62,7 +62,10 @@ export function PetOrderPage({
         setLoading(false);
 
         if (nextOrder.paidAt) {
-          trackMetaPurchaseOnce(nextOrder.purchaseEventId || `pet_purchase_${nextOrder.id}`);
+          trackMetaPurchaseOnce(
+            nextOrder.purchaseEventId || `pet_purchase_${nextOrder.id}`,
+            nextOrder.amountCents,
+          );
         }
 
         if (nextOrder.status === "complete") {
@@ -118,7 +121,7 @@ export function PetOrderPage({
             {order ? `${order.petName}’s portraits` : "Your pet portraits"}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[#f6efe4]/65">
-            {statusCopy(order?.status)}
+            {statusCopy(order?.status, progress?.phase || order?.phase)}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-4">
             <div className="min-w-[180px] flex-1">
@@ -166,7 +169,12 @@ export function PetOrderPage({
 
         {order && scenes.length > 0 ? (
           <div aria-live="polite">
-            <OrderStatusList scenes={scenes} petName={order.petName} species={order.species} />
+            <OrderStatusList
+              scenes={scenes}
+              petName={order.petName}
+              species={order.species}
+              clips={progress?.clips ?? order.clips ?? []}
+            />
           </div>
         ) : null}
 
@@ -184,7 +192,21 @@ export function PetOrderPage({
   );
 }
 
-function statusCopy(status: PetOrder["status"] | undefined): string {
+function statusCopy(status: PetOrder["status"] | undefined, phase?: string): string {
+  switch (phase) {
+    case "generating_portraits":
+      return "Creating the twelve portraits now.";
+    case "portrait_qc":
+      return "A person is checking that every portrait still looks like your pet.";
+    case "selecting_video_scenes":
+      return "Portraits passed review. Two scenes will be turned into cinematic clips.";
+    case "generating_clips":
+      return "Creating two 5-second cinematic clips from the approved portraits.";
+    case "video_qc":
+      return "A person is checking both cinematic clips before release.";
+    default:
+      break;
+  }
   switch (status) {
     case "generating":
     case "processing":
@@ -192,10 +214,16 @@ function statusCopy(status: PetOrder["status"] | undefined): string {
     case "awaiting_qc":
     case "quality_control":
       return "A person is checking that every portrait still looks like your pet.";
+    case "selecting_video_scenes":
+      return "Portraits passed review. Two scenes will be turned into cinematic clips.";
+    case "generating_videos":
+      return "Creating two 5-second cinematic clips from the approved portraits.";
+    case "awaiting_video_qc":
+      return "A person is checking both cinematic clips before release.";
     case "partial_failure":
-      return "Most scenes finished. A few need a retry.";
+      return "Most of the pack finished. A failed portrait or clip needs a retry.";
     case "complete":
-      return "Ready. Download the portraits below.";
+      return "Ready. Download the portraits and clips below.";
     case "failed":
       return "Paused. Nothing extra was charged.";
     case "refunded":
@@ -203,6 +231,6 @@ function statusCopy(status: PetOrder["status"] | undefined): string {
     case "paid":
       return "Paid. The twelve scenes are lining up.";
     default:
-      return "Watch each portrait move from queued to ready.";
+      return "Watch each portrait and clip move from queued to ready. Delivery only after QC.";
   }
 }

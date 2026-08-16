@@ -35,7 +35,7 @@ export async function sendPetDeliveryEmail(input: {
     .maybeSingle();
 
   const url = orderUrl(input.publicToken);
-  const subject = asString(template?.subject) || `${input.petName}’s portraits are ready`;
+  const subject = asString(template?.subject) || `${input.petName}’s portraits and clips are ready`;
   const html = (asString(template?.html) || defaultHtml())
     .replaceAll("{{pet_name}}", escapeHtml(input.petName))
     .replaceAll("{{order_url}}", url)
@@ -98,7 +98,7 @@ export async function sendPetDeliveryEmail(input: {
 }
 
 function defaultHtml(): string {
-  return `<!doctype html><html><body style="background:#140e0a;color:#f6efe4;font-family:Georgia,serif;padding:32px"><h1 style="color:#d4a84b">${PET_PRODUCT_NAME}</h1><p>{{pet_name}}’s portraits are ready after human quality control.</p><p><a href="{{order_url}}" style="color:#1a140e;background:#d4a84b;padding:12px 20px;border-radius:999px;text-decoration:none">Open the gallery</a></p></body></html>`;
+  return `<!doctype html><html><body style="background:#140e0a;color:#f6efe4;font-family:Georgia,serif;padding:32px"><h1 style="color:#d4a84b">${PET_PRODUCT_NAME}</h1><p>{{pet_name}}’s twelve portraits and two cinematic clips are ready after human quality control.</p><p><a href="{{order_url}}" style="color:#1a140e;background:#d4a84b;padding:12px 20px;border-radius:999px;text-decoration:none">Open the gallery</a></p></body></html>`;
 }
 
 function escapeHtml(value: string): string {

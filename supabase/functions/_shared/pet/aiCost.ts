@@ -1,4 +1,4 @@
-import { PET_PRICE_CENTS, PET_SKU as PET_PRODUCT_SKU, PET_SCENE_COUNT } from "./constants.ts";
+import { PET_PRICE_CENTS, PET_SKU as PET_PRODUCT_SKU, PET_SCENE_COUNT, PET_VIDEO_CLIP_COUNT } from "./constants.ts";
 
 export const AI_COST_PROVIDER_REPLICATE = "replicate" as const;
 export const AI_COST_PRODUCT_FAMILY = "pet_funnel" as const;
@@ -6,13 +6,22 @@ export const KONTEXT_PRO_MODEL = "black-forest-labs/flux-kontext-pro";
 export const KONTEXT_PRO_PRICING_METHOD = "per_successful_output" as const;
 export const KONTEXT_PRO_UNIT_COST_USD = 0.04;
 export const KONTEXT_PRO_PRICING_SOURCE = "ai_model_pricing";
-export const PROJECTED_STANDARD_PACK_COST_USD = roundUsd(KONTEXT_PRO_UNIT_COST_USD * PET_SCENE_COUNT);
+export const SEEDANCE_FAST_MODEL = "bytedance/seedance-1-pro-fast";
+export const SEEDANCE_PRICING_METHOD = "per_second" as const;
+export const SEEDANCE_PRICE_PER_SECOND_USD = 0.025;
+export const SEEDANCE_CLIP_SECONDS = 5;
+export const SEEDANCE_CLIP_COST_USD = 0.125;
+export const PROJECTED_IMAGE_PACK_COST_USD = roundUsd(KONTEXT_PRO_UNIT_COST_USD * PET_SCENE_COUNT);
+export const PROJECTED_VIDEO_PACK_COST_USD = roundUsd(SEEDANCE_CLIP_COST_USD * PET_VIDEO_CLIP_COUNT);
+export const PROJECTED_STANDARD_PACK_COST_USD = roundUsd(
+  PROJECTED_IMAGE_PACK_COST_USD + PROJECTED_VIDEO_PACK_COST_USD,
+);
 export const REPLICATE_BILLING_URL = "https://replicate.com/account/billing";
 export const AI_COST_SCOPE_LABEL = "Tracked pet-funnel Replicate usage";
 export const AI_COST_TOOLTIP =
   "Recorded application usage based on the tariff snapshot for each prediction. Account balance and invoice reconciliation remain in Replicate.";
 export const GROSS_AFTER_AI_DISCLAIMER =
-  "Before Stripe fees, advertising, and other operating costs.";
+  "Excluding Stripe fees, advertising, refunds, support and other operating costs.";
 export const FINALIZED_COST_STATES = ["exact", "estimated", "reconciled"] as const;
 export const LEDGER_COST_STATES = ["pending", "exact", "estimated", "reconciled"] as const;
 
@@ -36,6 +45,12 @@ export type TariffSnapshot = {
   pricingRowId: string | null;
   capturedAt: string;
   notes?: string;
+  mediaType?: "image" | "video";
+  resolution?: string;
+  requestedSeconds?: number;
+  billableSeconds?: number;
+  clipId?: string | null;
+  sourceSceneId?: string | null;
 };
 
 export type AiCostLedgerRow = {
@@ -64,6 +79,12 @@ export type AiCostLedgerRow = {
   started_at: string;
   completed_at: string | null;
   cost_notes: string | null;
+  media_type: "image" | "video";
+  clip_id: string | null;
+  source_scene_id: string | null;
+  resolution: string | null;
+  requested_seconds: number | null;
+  billable_seconds: number | null;
 };
 
 export type PaidPetOrder = {
@@ -97,6 +118,15 @@ export function formatUsd(value: number): string {
   }).format(moneyUsd(value));
 }
 
+export function formatUsd3(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  }).format(roundUsd(value, 3));
+}
+
 export function rangeToIso(from: string, to: string): { fromIso: string; toIso: string } {
   return {
     fromIso: `${from}T00:00:00.000Z`,
@@ -126,6 +156,40 @@ export function snapshotKontextProTariff(input?: {
     pricingRowId: input?.pricingRowId ?? null,
     capturedAt: input?.capturedAt ?? "1970-01-01T00:00:00.000Z",
     notes: "Kontext Pro per successful output",
+    mediaType: "image",
+  };
+}
+
+export function snapshotSeedanceTariff(input?: {
+  capturedAt?: string;
+  modelVersion?: string | null;
+  pricingRowId?: string | null;
+  unitCostUsd?: number;
+  source?: string;
+  requestedSeconds?: number;
+  billableSeconds?: number;
+  resolution?: string;
+  clipId?: string | null;
+  sourceSceneId?: string | null;
+}): TariffSnapshot {
+  const seconds = input?.requestedSeconds ?? SEEDANCE_CLIP_SECONDS;
+  return {
+    provider: AI_COST_PROVIDER_REPLICATE,
+    model: SEEDANCE_FAST_MODEL,
+    modelVersion: input?.modelVersion ?? null,
+    pricingMethod: SEEDANCE_PRICING_METHOD,
+    unitCostUsd: roundUsd(input?.unitCostUsd ?? SEEDANCE_PRICE_PER_SECOND_USD),
+    currency: "usd",
+    source: input?.source ?? KONTEXT_PRO_PRICING_SOURCE,
+    pricingRowId: input?.pricingRowId ?? null,
+    capturedAt: input?.capturedAt ?? "1970-01-01T00:00:00.000Z",
+    notes: "Seedance 720p $0.025 per output second",
+    mediaType: "video",
+    resolution: input?.resolution ?? "720p",
+    requestedSeconds: seconds,
+    billableSeconds: input?.billableSeconds ?? seconds,
+    clipId: input?.clipId ?? null,
+    sourceSceneId: input?.sourceSceneId ?? null,
   };
 }
 
@@ -199,11 +263,28 @@ export function computeFinalCost(input: {
   }
   const unit = roundUsd(input.tariff.unitCostUsd);
   const method = input.tariff.pricingMethod;
+  const requested = toUsd(input.tariff.requestedSeconds ?? 0);
+  const billable = toUsd(input.tariff.billableSeconds ?? requested);
   if (input.providerStatus === "succeeded") {
-    const billable = method === KONTEXT_PRO_PRICING_METHOD ? 1 : 0;
+    if (method === KONTEXT_PRO_PRICING_METHOD) {
+      return {
+        cost_usd: roundUsd(unit),
+        billable_units: 1,
+        cost_state: "exact",
+        provider_status: "succeeded",
+      };
+    }
+    if (method === SEEDANCE_PRICING_METHOD) {
+      return {
+        cost_usd: roundUsd(unit * billable),
+        billable_units: billable,
+        cost_state: "exact",
+        provider_status: "succeeded",
+      };
+    }
     return {
-      cost_usd: roundUsd(unit * billable),
-      billable_units: billable,
+      cost_usd: 0,
+      billable_units: 0,
       cost_state: "exact",
       provider_status: "succeeded",
     };
@@ -212,9 +293,25 @@ export function computeFinalCost(input: {
     return { cost_usd: 0, billable_units: 0, cost_state: "exact", provider_status: "failed" };
   }
   if (input.providerStatus === "canceled") {
+    if (method === KONTEXT_PRO_PRICING_METHOD) {
+      return {
+        cost_usd: unit,
+        billable_units: 1,
+        cost_state: "estimated",
+        provider_status: "canceled",
+      };
+    }
+    if (method === SEEDANCE_PRICING_METHOD) {
+      return {
+        cost_usd: roundUsd(unit * requested),
+        billable_units: requested,
+        cost_state: "estimated",
+        provider_status: "canceled",
+      };
+    }
     return {
       cost_usd: unit,
-      billable_units: method === KONTEXT_PRO_PRICING_METHOD ? 1 : 0,
+      billable_units: 0,
       cost_state: "estimated",
       provider_status: "canceled",
     };
@@ -241,8 +338,14 @@ export function buildPendingLedgerRow(input: {
   isMock?: boolean;
   createFailed?: boolean;
   sku?: string;
+  mediaType?: "image" | "video";
+  clipId?: string | null;
+  sourceSceneId?: string | null;
+  resolution?: string | null;
+  requestedSeconds?: number | null;
 }): AiCostLedgerRow {
   const attemptNumber = Math.max(1, Number(input.attemptNumber) || 1);
+  const mediaType = input.mediaType ?? input.tariff.mediaType ?? "image";
   const computed = computeFinalCost({
     providerStatus: input.isMock ? "mock" : input.createFailed ? "create_failed" : "starting",
     isMock: input.isMock,
@@ -280,6 +383,12 @@ export function buildPendingLedgerRow(input: {
       : input.createFailed
         ? "create_failed_no_prediction_id"
         : null,
+    media_type: mediaType,
+    clip_id: input.clipId ?? input.tariff.clipId ?? null,
+    source_scene_id: input.sourceSceneId ?? input.tariff.sourceSceneId ?? null,
+    resolution: input.resolution ?? input.tariff.resolution ?? null,
+    requested_seconds: input.requestedSeconds ?? input.tariff.requestedSeconds ?? null,
+    billable_seconds: pending ? 0 : computed.billable_units,
   };
 }
 
@@ -403,8 +512,20 @@ export function sumTrackedCostUsd(rows: AiCostLedgerRow[]): number {
   );
 }
 
-export function projectedStandardPackCostUsd(tariff = snapshotKontextProTariff()): number {
+export function projectedImagePackCostUsd(tariff = snapshotKontextProTariff()): number {
   return moneyUsd(toUsd(tariff.unitCostUsd) * PET_SCENE_COUNT);
+}
+
+export function projectedVideoPackCostUsd(tariff = snapshotSeedanceTariff()): number {
+  const seconds = toUsd(tariff.requestedSeconds ?? SEEDANCE_CLIP_SECONDS);
+  return moneyUsd(toUsd(tariff.unitCostUsd) * seconds * PET_VIDEO_CLIP_COUNT);
+}
+
+export function projectedStandardPackCostUsd(
+  imageTariff = snapshotKontextProTariff(),
+  videoTariff = snapshotSeedanceTariff(),
+): number {
+  return moneyUsd(projectedImagePackCostUsd(imageTariff) + projectedVideoPackCostUsd(videoTariff));
 }
 
 export type AdminAiCostReport = {
@@ -422,6 +543,14 @@ export type AdminAiCostReport = {
     avgCostPerSuccessfulPortraitUsd: number;
     retryRegenerationCostUsd: number;
     projectedStandardPackCostUsd: number;
+    projectedImagePackCostUsd: number;
+    projectedVideoPackCostUsd: number;
+    imageGenerationSpendUsd: number;
+    videoGenerationSpendUsd: number;
+    combinedSpendUsd: number;
+    successfulVideoClips: number;
+    failedCanceledVideoAttempts: number;
+    avgCostPerCompletedPetPackUsd: number;
   };
   breakdown: {
     byDate: Array<{ date: string; costUsd: number; count: number }>;
@@ -467,6 +596,7 @@ export function buildAdminAiCostReport(input: {
   paidOrdersInPeriod: PaidPetOrder[];
   ledgerForPaidOrders: AiCostLedgerRow[];
   currentTariff: TariffSnapshot;
+  currentVideoTariff?: TariffSnapshot;
 }): AdminAiCostReport {
   const period = input.periodLedger.filter(
     (row) => isTrackedBillableRow(row) && inInclusiveRange(occurredAt(row), input.fromIso, input.toIso),
@@ -495,8 +625,17 @@ export function buildAdminAiCostReport(input: {
   const aiCostAcrossPaidOrders = roundUsd(
     paidOrders.reduce((sum, order) => sum + (costByPaidOrder.get(order.id) || 0), 0),
   );
-  const succeededPortraits = period.filter((row) => row.provider_status === "succeeded");
+  const succeededPortraits = period.filter(
+    (row) => row.provider_status === "succeeded" && (row.media_type || "image") === "image",
+  );
+  const videoRows = period.filter((row) => row.media_type === "video");
+  const imageRows = period.filter((row) => (row.media_type || "image") === "image");
+  const successfulVideoClips = videoRows.filter((row) => row.provider_status === "succeeded").length;
+  const failedCanceledVideoAttempts = videoRows.filter((row) =>
+    ["failed", "canceled"].includes(row.provider_status),
+  ).length;
   const retryRows = period.filter((row) => row.is_retry);
+  const completedPacks = paidOrders.filter((order) => order.status === "complete").length;
   const byOrder = paidOrders
     .map((order) => {
       const costUsd = moneyUsd(costByPaidOrder.get(order.id) || 0);
@@ -528,7 +667,21 @@ export function buildAdminAiCostReport(input: {
         ? moneyUsd(sumTrackedCostUsd(succeededPortraits) / succeededPortraits.length)
         : 0,
       retryRegenerationCostUsd: moneyUsd(sumTrackedCostUsd(retryRows)),
-      projectedStandardPackCostUsd: projectedStandardPackCostUsd(input.currentTariff),
+      projectedStandardPackCostUsd: projectedStandardPackCostUsd(input.currentTariff, input.currentVideoTariff),
+      projectedImagePackCostUsd: projectedImagePackCostUsd(input.currentTariff),
+      projectedVideoPackCostUsd: projectedVideoPackCostUsd(input.currentVideoTariff ?? snapshotSeedanceTariff()),
+      imageGenerationSpendUsd: moneyUsd(sumTrackedCostUsd(imageRows)),
+      videoGenerationSpendUsd: moneyUsd(sumTrackedCostUsd(videoRows)),
+      combinedSpendUsd: replicateCostPeriodUsd,
+      successfulVideoClips,
+      failedCanceledVideoAttempts,
+      avgCostPerCompletedPetPackUsd: completedPacks
+        ? moneyUsd(
+            paidOrders
+              .filter((order) => order.status === "complete")
+              .reduce((sum, order) => sum + (costByPaidOrder.get(order.id) || 0), 0) / completedPacks,
+          )
+        : 0,
     },
     breakdown: {
       byDate: groupSum(period, (row) => utcDateKey(occurredAt(row))).map((row) => ({
@@ -582,10 +735,13 @@ export type OrderSceneCost = {
 export type OrderCostDetails = {
   revenueUsd: number;
   replicateUsd: number;
+  imageAiUsd: number;
+  videoAiUsd: number;
   grossAfterAiUsd: number;
   currency: "usd";
   disclaimer: typeof GROSS_AFTER_AI_DISCLAIMER;
   byScene: OrderSceneCost[];
+  byClip: OrderSceneCost[];
   attempts: OrderSceneCost["attempts"];
 };
 
@@ -595,7 +751,6 @@ export function buildOrderCostDetails(input: {
   ledger: AiCostLedgerRow[];
 }): OrderCostDetails {
   const revenueUsd = moneyUsd(toUsd(input.amountCents ?? PET_PRICE_CENTS) / 100);
-  const replicateUsd = moneyUsd(sumTrackedCostUsd(input.ledger));
   const attempts = [...input.ledger]
     .sort((a, b) => a.attempt_number - b.attempt_number || a.started_at.localeCompare(b.started_at))
     .map((row) => ({
@@ -608,17 +763,22 @@ export function buildOrderCostDetails(input: {
       modelVersion: row.model_version,
       tariffUnitCostUsd: toUsd(row.tariff_snapshot?.unitCostUsd ?? row.unit_cost_usd),
       pricingMethod: row.pricing_method,
-      costUsd: moneyUsd(toUsd(row.cost_usd)),
+      costUsd: roundUsd(toUsd(row.cost_usd), row.media_type === "video" ? 3 : 2),
       costState: row.cost_state,
     }));
   const sceneKeys = [
     ...new Set([
       ...(input.scenes || []).map((scene) => scene.scene_key || scene.sceneKey || "").filter(Boolean),
-      ...input.ledger.map((row) => row.scene_key || "").filter(Boolean),
+      ...input.ledger
+        .filter((row) => (row.media_type || "image") === "image")
+        .map((row) => row.scene_key || "")
+        .filter(Boolean),
     ]),
   ];
   const byScene = sceneKeys.map((sceneKey) => {
-    const rows = input.ledger.filter((row) => row.scene_key === sceneKey);
+    const rows = input.ledger.filter(
+      (row) => row.scene_key === sceneKey && (row.media_type || "image") === "image",
+    );
     const scene = (input.scenes || []).find((item) => (item.scene_key || item.sceneKey) === sceneKey);
     return {
       sceneKey,
@@ -629,13 +789,35 @@ export function buildOrderCostDetails(input: {
       ),
     };
   });
+  const imageRows = input.ledger.filter((row) => (row.media_type || "image") === "image");
+  const videoRows = input.ledger.filter((row) => row.media_type === "video");
+  const imageAiUsd = moneyUsd(sumTrackedCostUsd(imageRows));
+  const videoAiUsd = roundUsd(sumTrackedCostUsd(videoRows), 3);
+  const replicateUsd = moneyUsd(imageAiUsd + videoAiUsd);
+  const clipIds = [
+    ...new Set(videoRows.map((row) => row.clip_id || row.scene_key || "").filter(Boolean)),
+  ];
+  const byClip = clipIds.map((clipId) => {
+    const rows = videoRows.filter((row) => (row.clip_id || row.scene_key) === clipId);
+    return {
+      sceneKey: String(clipId),
+      sceneId: rows[0]?.clip_id || null,
+      totalUsd: roundUsd(sumTrackedCostUsd(rows), 3),
+      attempts: attempts.filter((attempt) =>
+        rows.some((row) => row.prediction_id === attempt.predictionId),
+      ),
+    };
+  });
   return {
     revenueUsd,
     replicateUsd,
+    imageAiUsd,
+    videoAiUsd,
     grossAfterAiUsd: moneyUsd(revenueUsd - replicateUsd),
     currency: "usd",
     disclaimer: GROSS_AFTER_AI_DISCLAIMER,
     byScene,
+    byClip,
     attempts,
   };
 }
@@ -674,10 +856,22 @@ export function mapDbLedgerRow(row: Record<string, unknown>): AiCostLedgerRow {
       pricingRowId: snapshot.pricingRowId ?? null,
       capturedAt: String(snapshot.capturedAt || row.started_at || ""),
       notes: snapshot.notes,
+      mediaType: snapshot.mediaType ?? (row.media_type === "video" ? "video" : "image"),
+      resolution: snapshot.resolution ?? (row.resolution ? String(row.resolution) : undefined),
+      requestedSeconds: snapshot.requestedSeconds ?? (row.requested_seconds != null ? Number(row.requested_seconds) : undefined),
+      billableSeconds: snapshot.billableSeconds ?? (row.billable_seconds != null ? Number(row.billable_seconds) : undefined),
+      clipId: snapshot.clipId ?? (row.clip_id ? String(row.clip_id) : null),
+      sourceSceneId: snapshot.sourceSceneId ?? (row.source_scene_id ? String(row.source_scene_id) : null),
     },
     currency: "usd",
     started_at: String(row.started_at || ""),
     completed_at: row.completed_at ? String(row.completed_at) : null,
     cost_notes: row.cost_notes ? String(row.cost_notes) : null,
+    media_type: row.media_type === "video" ? "video" : "image",
+    clip_id: row.clip_id ? String(row.clip_id) : null,
+    source_scene_id: row.source_scene_id ? String(row.source_scene_id) : null,
+    resolution: row.resolution ? String(row.resolution) : null,
+    requested_seconds: row.requested_seconds != null ? Number(row.requested_seconds) : null,
+    billable_seconds: row.billable_seconds != null ? Number(row.billable_seconds) : null,
   };
 }

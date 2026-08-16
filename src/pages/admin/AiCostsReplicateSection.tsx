@@ -138,9 +138,39 @@ export function AiCostsReplicateSection({ loading, report }: Props) {
           helper="USD · attempt number > 1"
         />
         <StatCard
-          label="Projected standard 12-scene pack cost"
+          label="Image generation spend"
+          value={loading || !cards ? "..." : formatUsd(cards.imageGenerationSpendUsd ?? cards.replicateCostPeriodUsd)}
+          helper="USD · Kontext Pro portraits"
+        />
+        <StatCard
+          label="Video generation spend"
+          value={loading || !cards ? "..." : formatUsd(cards.videoGenerationSpendUsd ?? 0)}
+          helper="USD · Seedance clips"
+        />
+        <StatCard
+          label="Combined Replicate spend"
+          value={loading || !cards ? "..." : formatUsd(cards.combinedSpendUsd ?? cards.replicateCostPeriodUsd)}
+          helper="USD · images + videos"
+        />
+        <StatCard
+          label="Successful video clips"
+          value={loading || !cards ? "..." : String(cards.successfulVideoClips ?? 0)}
+          helper="Succeeded Seedance predictions"
+        />
+        <StatCard
+          label="Failed/canceled video attempts"
+          value={loading || !cards ? "..." : String(cards.failedCanceledVideoAttempts ?? 0)}
+          helper="Video predictions that did not succeed"
+        />
+        <StatCard
+          label="Average cost per completed pet pack"
+          value={loading || !cards ? "..." : formatUsd(cards.avgCostPerCompletedPetPackUsd ?? cards.avgAiCostPerPaidPetOrderUsd)}
+          helper="USD · complete paid orders"
+        />
+        <StatCard
+          label="Projected full pack cost"
           value={loading || !cards ? "..." : formatUsd(cards.projectedStandardPackCostUsd)}
-          helper="USD · current Kontext Pro tariff × 12"
+          helper="USD · $0.48 images + $0.25 videos = $0.73"
         />
       </div>
 

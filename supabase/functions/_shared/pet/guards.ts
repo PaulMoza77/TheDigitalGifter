@@ -5,11 +5,18 @@ import {
   PET_PRICE_CENTS,
   PET_SKU,
 } from "./constants.ts";
+import {
+  canReleaseDelivery as canReleaseDeliveryWithVideos,
+  rejectClientPriceTampering as rejectClientPriceAgainstOffer,
+} from "./videoGuards.ts";
 
 export const PAID_STATUSES = [
   "paid",
   "generating",
   "awaiting_qc",
+  "selecting_video_scenes",
+  "generating_videos",
+  "awaiting_video_qc",
   "complete",
   "partial_failure",
 ] as const;
@@ -28,17 +35,8 @@ export function rejectClientPriceTampering(input: {
   amountCents?: unknown;
   currency?: unknown;
   sku?: unknown;
-}): { ok: true } | { ok: false; code: "INVALID_REQUEST"; message: string } {
-  if (input.sku != null && String(input.sku).trim() && String(input.sku).trim() !== PET_SKU) {
-    return { ok: false, code: "INVALID_REQUEST", message: "Unknown SKU." };
-  }
-  if (input.amountCents != null && input.amountCents !== "" && Number(input.amountCents) !== PET_PRICE_CENTS) {
-    return { ok: false, code: "INVALID_REQUEST", message: "Price is server-owned." };
-  }
-  if (input.currency != null && String(input.currency).trim() && String(input.currency).trim().toLowerCase() !== PET_CURRENCY) {
-    return { ok: false, code: "INVALID_REQUEST", message: "Currency is server-owned." };
-  }
-  return { ok: true };
+}, serverAmountCents = PET_PRICE_CENTS): { ok: true } | { ok: false; code: "INVALID_REQUEST"; message: string } {
+  return rejectClientPriceAgainstOffer(input, serverAmountCents);
 }
 
 export function assertUploadAllowed(
@@ -130,18 +128,10 @@ export function deliveryAllowed(input: {
 export function canReleaseDelivery(input: {
   paidAt: string | null;
   orderStatus: string;
-  scenes: Array<{ status: string }>;
+  scenes: Array<{ status: string; qcStatus?: string | null }>;
+  clips?: Array<{ status: string; qcStatus?: string | null }>;
 }): { ok: true } | { ok: false; message: string } {
-  if (!input.paidAt) return { ok: false, message: "unpaid order cannot be released" };
-  if (input.orderStatus !== "awaiting_qc") return { ok: false, message: "order is not awaiting QC" };
-  if (input.scenes.length !== 12) {
-    return { ok: false, message: "expected 12 scenes" };
-  }
-  const blocking = input.scenes.filter((scene) => !["succeeded", "ready"].includes(scene.status));
-  if (blocking.length > 0) {
-    return { ok: false, message: "all 12 scenes must be succeeded or ready" };
-  }
-  return { ok: true };
+  return canReleaseDeliveryWithVideos(input);
 }
 
 export function metaPurchaseShouldEmit(input: {
@@ -167,8 +157,14 @@ export function mapSceneStatusForCustomer(input: {
   return "queued";
 }
 
-export function mapOrderStatusForCustomer(status: string): string {
-  if (status === "generating") return "processing";
-  if (status === "awaiting_qc") return "quality_control";
-  return status;
+export function mapClipStatusForCustomer(input: {
+  clipStatus: string;
+  deliveryUnlocked: boolean;
+}): "queued" | "generating" | "quality_control" | "ready" | "failed" {
+  if (input.clipStatus === "failed") return "failed";
+  if (input.clipStatus === "queued") return "queued";
+  if (input.clipStatus === "generating") return "generating";
+  if (input.clipStatus === "ready" && input.deliveryUnlocked) return "ready";
+  if (input.clipStatus === "succeeded" || input.clipStatus === "ready") return "quality_control";
+  return "queued";
 }

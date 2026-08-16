@@ -318,6 +318,8 @@ export default function PricingPage() {
           </button>
         </div>
 
+        <PetOfferSettings />
+
         <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-4">
           {categories.map((category) => {
             const count = items.filter((item) => item.category === category.key).length;
@@ -727,6 +729,92 @@ export default function PricingPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+function PetOfferSettings() {
+  const [amount, setAmount] = useState("59.00");
+  const [version, setVersion] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("pet-admin", {
+        body: { action: "getPetOffer" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
+      const offer = data?.offer;
+      if (!offer) throw new Error("Active pet offer is missing");
+      setAmount((Number(offer.amount_cents) / 100).toFixed(2));
+      setVersion(Number(offer.version || 1));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not load pet offer");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function save() {
+    const cents = Math.round(Number(amount.replace(",", ".")) * 100);
+    if (!Number.isFinite(cents) || cents <= 0) {
+      toast.error("Enter a valid USD price.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("pet-admin", {
+        body: { action: "updatePetOffer", amountCents: cents },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
+      toast.success("Pet offer price saved. Existing orders keep their snapshotted price.");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save pet offer");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="mt-8 rounded-2xl border border-amber-400/20 bg-slate-900/50 p-5">
+      <h2 className="text-lg font-semibold">Pet Offer Settings</h2>
+      <p className="mt-1 text-sm text-slate-400">
+        My Pet’s Secret Life is a one-time USD payment: 12 portraits + 2 cinematic clips. No
+        subscription. Checkout uses the order snapshot, so later price changes do not rewrite paid
+        orders.
+      </p>
+      <div className="mt-4 flex flex-wrap items-end gap-3">
+        <label className="text-sm">
+          <span className="mb-1 block text-xs uppercase tracking-wide text-slate-500">Price USD</span>
+          <input
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            className="w-32 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            inputMode="decimal"
+          />
+        </label>
+        <button
+          type="button"
+          disabled={loading || saving}
+          onClick={() => void save()}
+          className="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2 text-sm font-semibold text-slate-950"
+        >
+          <Save className="h-4 w-4" />
+          Save pet price
+        </button>
+        <span className="text-xs text-slate-500">
+          SKU pet-secret-life-12 · version {version ?? "—"} · 12 images · 2 videos · not a subscription
+        </span>
+      </div>
+    </section>
   );
 }
 

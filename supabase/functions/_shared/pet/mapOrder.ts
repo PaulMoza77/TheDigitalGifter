@@ -1,5 +1,6 @@
-import { PET_CURRENCY, PET_PRICE_CENTS, PET_SCENE_COUNT, PET_SKU } from "./constants.ts";
-import { deliveryAllowed, mapOrderStatusForCustomer, mapSceneStatusForCustomer } from "./guards.ts";
+import { deliveryAllowed, mapClipStatusForCustomer, mapOrderStatusForCustomer, mapSceneStatusForCustomer } from "./guards.ts";
+import { mapOrderPhase } from "./videoGuards.ts";
+import { PET_CURRENCY, PET_SCENE_COUNT, PET_SKU, PET_VIDEO_CLIP_COUNT } from "./constants.ts";
 import { sceneByKey } from "./scenes.ts";
 
 export type PetOrderRow = {
@@ -38,7 +39,26 @@ export type PetSceneRow = {
   result_byte_size?: number | null;
 };
 
-export function toCustomerOrder(order: PetOrderRow, scenes: PetSceneRow[], publicToken: string) {
+export type PetClipRow = {
+  id: string;
+  slot: number;
+  source_scene_id: string | null;
+  status: string;
+  provider_error: string | null;
+  result_path: string | null;
+  result_content_type?: string | null;
+  result_width?: number | null;
+  result_height?: number | null;
+  requested_duration_seconds?: number | null;
+  output_duration_seconds?: number | null;
+};
+
+export function toCustomerOrder(
+  order: PetOrderRow,
+  scenes: PetSceneRow[],
+  publicToken: string,
+  clips: PetClipRow[] = [],
+) {
   const deliveryUnlocked = deliveryAllowed({
     orderStatus: order.status,
     qcStatus: order.qc_status,
@@ -53,7 +73,7 @@ export function toCustomerOrder(order: PetOrderRow, scenes: PetSceneRow[], publi
     petName: order.pet_name,
     species: order.species,
     personality: order.personality,
-    amountCents: PET_PRICE_CENTS,
+    amountCents: Number(order.amount_cents),
     currency: PET_CURRENCY,
     noSubscription: true as const,
     photo: order.photo_content_type
@@ -66,10 +86,12 @@ export function toCustomerOrder(order: PetOrderRow, scenes: PetSceneRow[], publi
         }
       : null,
     scenes: scenes.map((scene) => toCustomerScene(scene, order.status, deliveryUnlocked)),
+    clips: clips.map((clip) => toCustomerClip(clip, deliveryUnlocked)),
     createdAt: order.created_at,
     paidAt: order.paid_at,
     completedAt: order.completed_at,
     purchaseEventId: `pet_purchase_${order.id}`,
+    phase: mapOrderPhase(order.status),
   };
 }
 
@@ -95,34 +117,68 @@ export function toCustomerScene(
   };
 }
 
-export function toProgress(order: PetOrderRow, scenes: PetSceneRow[], publicToken: string) {
-  const mapped = scenes.map((scene) =>
-    toCustomerScene(
-      scene,
-      order.status,
-      deliveryAllowed({
-        orderStatus: order.status,
-        qcStatus: order.qc_status,
-        completedAt: order.completed_at,
-      }),
-    ),
-  );
+export function toCustomerClip(clip: PetClipRow, deliveryUnlocked: boolean) {
+  const status = mapClipStatusForCustomer({
+    clipStatus: clip.status,
+    deliveryUnlocked,
+  });
+  const ready = status === "ready" && deliveryUnlocked && Boolean(clip.result_path);
+  return {
+    id: clip.id,
+    slot: clip.slot === 2 ? 2 : 1,
+    sourceSceneId: clip.source_scene_id,
+    title: `Cinematic clip ${clip.slot}`,
+    status,
+    progressPercent: clip.status === "ready" || clip.status === "succeeded" ? 100 : clip.status === "generating" ? 45 : 0,
+    errorMessage: clip.provider_error,
+    durationSeconds: Number(clip.output_duration_seconds || clip.requested_duration_seconds || 5),
+    resolution: "720p",
+    previewUrl: null as string | null,
+    downloadUrl: ready ? null : null,
+  };
+}
+
+export function toProgress(order: PetOrderRow, scenes: PetSceneRow[], publicToken: string, clips: PetClipRow[] = []) {
+  const deliveryUnlocked = deliveryAllowed({
+    orderStatus: order.status,
+    qcStatus: order.qc_status,
+    completedAt: order.completed_at,
+  });
+  const mapped = scenes.map((scene) => toCustomerScene(scene, order.status, deliveryUnlocked));
+  const mappedClips = clips.map((clip) => toCustomerClip(clip, deliveryUnlocked));
   const readyCount = mapped.filter((scene) => scene.status === "ready").length;
   const failedCount = mapped.filter((scene) => scene.status === "failed").length;
+  const videoReadyCount = mappedClips.filter((clip) => clip.status === "ready").length;
+  const videoFailedCount = mappedClips.filter((clip) => clip.status === "failed").length;
   const overallPercent = mapped.length
-    ? Math.round(mapped.reduce((sum, scene) => sum + scene.progressPercent, 0) / mapped.length)
+    ? Math.round(
+        (mapped.reduce((sum, scene) => sum + scene.progressPercent, 0) +
+          mappedClips.reduce((sum, clip) => sum + clip.progressPercent, 0)) /
+          (mapped.length + Math.max(mappedClips.length, PET_VIDEO_CLIP_COUNT)),
+      )
     : 0;
+  const customerStatus = mapOrderStatusForCustomer(order.status);
   return {
     orderId: order.id,
     publicToken,
-    orderStatus: mapOrderStatusForCustomer(order.status),
+    orderStatus: customerStatus,
+    phase: mapOrderPhase(order.status),
     overallPercent,
     readyCount,
     failedCount,
     totalCount: PET_SCENE_COUNT,
+    videoReadyCount,
+    videoFailedCount,
+    videoTotalCount: PET_VIDEO_CLIP_COUNT,
     scenes: mapped,
-    humanQualityControl: ["awaiting_qc", "complete", "partial_failure", "quality_control"].includes(
-      mapOrderStatusForCustomer(order.status),
-    ),
+    clips: mappedClips,
+    humanQualityControl: [
+      "awaiting_qc",
+      "selecting_video_scenes",
+      "awaiting_video_qc",
+      "complete",
+      "partial_failure",
+      "quality_control",
+    ].includes(customerStatus),
   };
 }
