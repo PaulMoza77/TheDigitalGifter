@@ -111,8 +111,9 @@ export type StartPetCheckoutInput = {
 export type StartPetCheckoutResult = {
   orderId: string;
   publicToken: string;
-  checkoutUrl: string;
+  checkoutUrl: string | null;
   sessionId: string;
+  status?: "open" | "payment_processing";
 };
 
 /**
@@ -160,5 +161,6 @@ export async function startPetCheckout(
     publicToken: order.publicToken,
     checkoutUrl: checkout.checkoutUrl,
     sessionId: checkout.sessionId,
+    status: checkout.status,
   };
 }

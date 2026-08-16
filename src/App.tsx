@@ -63,6 +63,7 @@ const AdminBlogPage = lazy(() => import("@/pages/admin/AdminBlogPage"));
 
 const PricingPage = lazy(() => import("@/pages/admin/PricingPage"));
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
+const PetOrdersPage = lazy(() => import("@/pages/admin/PetOrders"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 const SupportTicketsPage = lazy(
@@ -150,6 +151,18 @@ const FunnelEmailCapture = lazy(
 );
 const FunnelResultPage = lazy(
   () => import("@/components/funnelVersion/ResultPage")
+);
+const PetLandingRoute = lazy(() =>
+  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetLandingRoute }))
+);
+const PetCreateRoute = lazy(() =>
+  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetCreateRoute }))
+);
+const PetCheckoutRoute = lazy(() =>
+  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetCheckoutRoute }))
+);
+const PetOrderRoute = lazy(() =>
+  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetOrderRoute }))
 );
 
 // ================= SUPABASE =================
@@ -503,6 +516,10 @@ function AppInner() {
             <Route path="/funnel/email" element={<FunnelEmailCapture />} />
             <Route path="/funnel/payment" element={<FunnelPayment />} />
             <Route path="/funnel/result" element={<FunnelResultPage />} />
+            <Route path="/pet" element={<PetLandingRoute />} />
+            <Route path="/pet/create" element={<PetCreateRoute />} />
+            <Route path="/pet/checkout" element={<PetCheckoutRoute />} />
+            <Route path="/pet/order" element={<PetOrderRoute />} />
           </Route>
 
           <Route
@@ -520,6 +537,7 @@ function AppInner() {
             <Route path="pricing" element={<PricingPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="pet-orders" element={<PetOrdersPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
 

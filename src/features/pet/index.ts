@@ -94,6 +94,7 @@ export type { PetCheckoutPageProps } from "./PetCheckoutPage";
 export { PetOrderPage } from "./PetOrderPage";
 export type { PetOrderPageProps } from "./PetOrderPage";
 export { PetFunnelPreview } from "./PetFunnelPreview";
+export { petFunnelApi, createPetFunnelApi } from "./supabaseApi";
 
 export {
   FieldError,

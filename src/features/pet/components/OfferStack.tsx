@@ -1,15 +1,7 @@
-import {
-  BadgeCheck,
-  Download,
-  Printer,
-  Share2,
-  Smartphone,
-  Sparkles,
-  UserRoundCheck,
-} from "lucide-react";
+import { BadgeCheck, Download, Sparkles, UserRoundCheck } from "lucide-react";
 import { PET_OFFER } from "../catalog";
 
-const ICONS = [Sparkles, Download, Smartphone, Share2, Printer, UserRoundCheck];
+const ICONS = [Sparkles, Download, UserRoundCheck];
 
 export function OfferStack() {
   return (

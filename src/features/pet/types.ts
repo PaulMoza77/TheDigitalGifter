@@ -62,10 +62,14 @@ export type PetOrderStatus =
   | "awaiting_upload"
   | "awaiting_payment"
   | "paid"
+  | "generating"
   | "processing"
+  | "awaiting_qc"
   | "quality_control"
   | "complete"
+  | "partial_failure"
   | "failed"
+  | "refunded"
   | "canceled";
 
 export type PetResultFormatKind = "high_res" | "wallpaper" | "social" | "poster";
@@ -146,6 +150,7 @@ export type PetOrder = {
   createdAt: string;
   paidAt: string | null;
   completedAt: string | null;
+  purchaseEventId?: string;
 };
 
 export type PetResultAsset = {
@@ -153,8 +158,8 @@ export type PetResultAsset = {
   label: string;
   url: string | null;
   mimeType: string;
-  width: number;
-  height: number;
+  width: number | null;
+  height: number | null;
   dpi: number | null;
   ready: boolean;
 };
@@ -249,7 +254,9 @@ export type CreateStripeCheckoutRequest = {
 
 export type CreateStripeCheckoutResponse = {
   sessionId: string;
-  checkoutUrl: string;
+  checkoutUrl: string | null;
+  status?: "open" | "payment_processing";
+  reused?: boolean;
 };
 
 export type GetOrderByPublicTokenRequest = {
@@ -270,7 +277,8 @@ export type PetFunnelApiErrorCode =
   | "UPLOAD_FAILED"
   | "ORDER_NOT_FOUND"
   | "PAYMENT_REQUIRED"
-  | "GENERATION_FAILED";
+  | "GENERATION_FAILED"
+  | "CHECKOUT_CONFLICT";
 
 export type PetPageId = "landing" | "create" | "checkout" | "order";
 

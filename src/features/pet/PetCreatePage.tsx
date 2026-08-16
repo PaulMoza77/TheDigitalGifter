@@ -204,7 +204,7 @@ export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePage
           <PriceBadge />
           <p className="mt-4 text-sm leading-6 text-[#f6efe4]/72">
             You are not starting a subscription. Checkout is a single {PET_OFFER.priceDisplay} payment
-            for twelve portraits, every file format, and human quality control.
+            for 12 QC-approved portraits after human quality control. Extra crops are not included.
           </p>
           <ul className="mt-4 space-y-2 text-sm text-[#f6efe4]/75">
             {PET_OFFER.includes.map((item) => (

@@ -32,8 +32,17 @@ export function bearerToken(req: Request): string {
 
 export function isServiceRoleRequest(req: Request): boolean {
   const token = bearerToken(req);
+  if (!token) return false;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  return token.length > 0 && serviceKey.length > 0 && token === serviceKey;
+  if (serviceKey && token === serviceKey) return true;
+  try {
+    const payload = token.split(".")[1] || "";
+    const padded = payload.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (payload.length % 4)) % 4);
+    const json = JSON.parse(atob(padded)) as { role?: string };
+    return json.role === "service_role";
+  } catch {
+    return false;
+  }
 }
 
 export async function getAuthUser(req: Request) {

@@ -185,6 +185,7 @@ async function loadCustomers(): Promise<CustomerRow[]> {
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
+  const [petOrderCounts, setPetOrderCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -192,6 +193,24 @@ export default function CustomersPage() {
   const fetchRows = useCallback(async (showToast = false) => {
     const rows = await loadCustomers();
     setCustomers(rows);
+    const emails = rows
+      .map((row) => (row.email || "").trim().toLowerCase())
+      .filter(Boolean)
+      .slice(0, 200);
+    if (emails.length) {
+      const { data, error } = await supabase
+        .from("pet_orders")
+        .select("email_normalized")
+        .in("email_normalized", emails);
+      if (!error) {
+        const counts: Record<string, number> = {};
+        for (const item of data ?? []) {
+          const email = String(item.email_normalized || "");
+          counts[email] = (counts[email] || 0) + 1;
+        }
+        setPetOrderCounts(counts);
+      }
+    }
     if (showToast) toast.success("Customers refreshed");
   }, []);
 
@@ -489,7 +508,8 @@ export default function CustomersPage() {
                     const last = parseISOToDate(c.last_activity);
                     const promoSent = parseISOToDate(c.promo_sent_at);
 
-                    const purchased = asBool(c.has_purchased) || spent > 0 || ordersCount > 0;
+                    const petOrders = petOrderCounts[(c.email || "").trim().toLowerCase()] || 0;
+                    const purchased = asBool(c.has_purchased) || spent > 0 || ordersCount > 0 || petOrders > 0;
 
                     const statusLabel = purchased ? "Purchased" : "Lead";
                     const statusClass = purchased
@@ -568,7 +588,14 @@ export default function CustomersPage() {
 
                         <TableCell className="text-slate-300">{moneyEUR(spent)}</TableCell>
 
-                        <TableCell className="text-slate-400">{ordersCount}</TableCell>
+                        <TableCell className="text-slate-400">
+                          {ordersCount}
+                          {petOrders > 0 ? (
+                            <span className="ml-2 text-[10px] uppercase tracking-wide text-amber-300">
+                              {petOrders} pet
+                            </span>
+                          ) : null}
+                        </TableCell>
 
                         <TableCell className="text-xs text-slate-400">
                           {joined ? joined.toLocaleDateString() : "—"}

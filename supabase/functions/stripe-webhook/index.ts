@@ -1,5 +1,6 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { handlePetStripeEvent, isPetCheckoutMetadata } from "../_shared/pet/stripeFulfill.ts";
 
 type StripeEvent = {
   id?: string;
@@ -104,6 +105,21 @@ Deno.serve(async (req) => {
 
     const obj = (event.data?.object || {}) as Record<string, unknown>;
     const metadata = (obj.metadata || {}) as Record<string, unknown>;
+
+    if (
+      eventType === "checkout.session.completed" ||
+      eventType === "checkout.session.async_payment_succeeded" ||
+      (eventType === "invoice.paid" && isPetCheckoutMetadata(metadata))
+    ) {
+      const petResponse = await handlePetStripeEvent({
+        service,
+        eventId,
+        eventType,
+        obj,
+        metadata,
+      });
+      if (petResponse) return petResponse;
+    }
 
     if (eventType === "checkout.session.completed") {
       const sessionId = asString(obj.id);
