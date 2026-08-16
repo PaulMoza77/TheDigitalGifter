@@ -1,0 +1,290 @@
+/**
+ * Domain types for the isolated "My Pet's Secret Life" funnel.
+ * These contracts are the source of truth for a future Supabase + Stripe wiring pass.
+ */
+
+export const PET_PRODUCT_SKU = "pet-secret-life-12" as const;
+export const PET_PRODUCT_NAME = "My Pet’s Secret Life" as const;
+export const PET_PRODUCT_PROMISE = "One photo. 12 secret lives. Same pet every time." as const;
+export const PET_PRICE_CENTS = 5900 as const;
+export const PET_PRICE_DISPLAY = "$59" as const;
+export const PET_CURRENCY = "usd" as const;
+export const PET_SCENE_COUNT = 12 as const;
+export const PET_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
+export const PET_DRAFT_STORAGE_KEY = "tdg.petFunnel.draft.v1" as const;
+
+export const PET_PHOTO_CONTENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+export type PetPhotoContentType = (typeof PET_PHOTO_CONTENT_TYPES)[number];
+
+export const PET_SPECIES = ["dog", "cat", "other"] as const;
+export type PetSpecies = (typeof PET_SPECIES)[number];
+
+export const PET_PERSONALITIES = [
+  "funny",
+  "royal",
+  "cute",
+  "badass",
+  "luxury",
+  "adventure",
+] as const;
+export type PetPersonality = (typeof PET_PERSONALITIES)[number];
+
+export const PET_SCENE_IDS = [
+  "royal-portrait",
+  "luxury-ceo",
+  "astronaut",
+  "formula-racer",
+  "spa-bathtub",
+  "newspaper",
+  "cinema-boss",
+  "renaissance",
+  "beach-vacation",
+  "head-chef",
+  "original-superhero",
+  "christmas-portrait",
+] as const;
+export type PetSceneId = (typeof PET_SCENE_IDS)[number];
+
+export type PetSceneStatus =
+  | "queued"
+  | "generating"
+  | "quality_control"
+  | "ready"
+  | "failed";
+
+export type PetOrderStatus =
+  | "draft"
+  | "awaiting_upload"
+  | "awaiting_payment"
+  | "paid"
+  | "processing"
+  | "quality_control"
+  | "complete"
+  | "failed"
+  | "canceled";
+
+export type PetResultFormatKind = "high_res" | "wallpaper" | "social" | "poster";
+
+export type PetSceneDefinition = {
+  id: PetSceneId;
+  number: number;
+  title: string;
+  tagline: string;
+  promptHint: string;
+  art: {
+    from: string;
+    to: string;
+    accent: string;
+  };
+};
+
+export type PetPersonalityOption = {
+  id: PetPersonality;
+  label: string;
+  description: string;
+};
+
+export type PetSpeciesOption = {
+  id: PetSpecies;
+  label: string;
+  hint: string;
+};
+
+export type PetPhotoMeta = {
+  fileName: string;
+  contentType: PetPhotoContentType;
+  byteSize: number;
+  width: number | null;
+  height: number | null;
+};
+
+export type PetFunnelDraft = {
+  petName: string;
+  species: PetSpecies | null;
+  personality: PetPersonality | null;
+  email: string;
+  photo: PetPhotoMeta | null;
+  /** Small, resized data URL for local restore. Never the original file. */
+  photoPreviewDataUrl: string | null;
+  updatedAt: string;
+};
+
+export type PetPersistedDraft = {
+  version: 1;
+  draft: PetFunnelDraft;
+};
+
+export type PetSceneProgress = {
+  sceneId: PetSceneId;
+  title: string;
+  status: PetSceneStatus;
+  progressPercent: number;
+  errorMessage: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+};
+
+export type PetOrder = {
+  id: string;
+  publicToken: string;
+  sku: typeof PET_PRODUCT_SKU;
+  status: PetOrderStatus;
+  email: string;
+  petName: string;
+  species: PetSpecies;
+  personality: PetPersonality;
+  amountCents: typeof PET_PRICE_CENTS;
+  currency: typeof PET_CURRENCY;
+  noSubscription: true;
+  photo: PetPhotoMeta | null;
+  scenes: PetSceneProgress[];
+  createdAt: string;
+  paidAt: string | null;
+  completedAt: string | null;
+};
+
+export type PetResultAsset = {
+  format: PetResultFormatKind;
+  label: string;
+  url: string | null;
+  mimeType: string;
+  width: number;
+  height: number;
+  dpi: number | null;
+  ready: boolean;
+};
+
+export type PetSceneResult = {
+  sceneId: PetSceneId;
+  title: string;
+  status: PetSceneStatus;
+  previewUrl: string | null;
+  assets: PetResultAsset[];
+};
+
+export type PetOrderResults = {
+  orderId: string;
+  publicToken: string;
+  petName: string;
+  status: PetOrderStatus;
+  scenes: PetSceneResult[];
+};
+
+export type PetGenerationProgress = {
+  orderId: string;
+  publicToken: string;
+  orderStatus: PetOrderStatus;
+  overallPercent: number;
+  readyCount: number;
+  failedCount: number;
+  totalCount: typeof PET_SCENE_COUNT;
+  scenes: PetSceneProgress[];
+  humanQualityControl: boolean;
+};
+
+export type CreatePetOrderRequest = {
+  email: string;
+  petName: string;
+  species: PetSpecies;
+  personality: PetPersonality;
+  photo: PetPhotoMeta;
+  sku: typeof PET_PRODUCT_SKU;
+};
+
+export type CreatePetOrderResponse = {
+  orderId: string;
+  publicToken: string;
+  status: Extract<PetOrderStatus, "awaiting_upload">;
+  amountCents: typeof PET_PRICE_CENTS;
+  currency: typeof PET_CURRENCY;
+  sku: typeof PET_PRODUCT_SKU;
+};
+
+export type GetSignedUploadUrlRequest = {
+  orderId: string;
+  publicToken: string;
+  contentType: PetPhotoContentType;
+  fileName: string;
+  byteSize: number;
+};
+
+export type SignedUploadUrlResponse = {
+  uploadUrl: string;
+  method: "PUT";
+  headers: Record<string, string>;
+  objectPath: string;
+  expiresAt: string;
+  /**
+   * Preview-only flag. Production implementations must omit this
+   * so the client performs a real signed PUT.
+   */
+  skipNetworkUpload?: boolean;
+};
+
+export type ConfirmUploadRequest = {
+  orderId: string;
+  publicToken: string;
+  objectPath: string;
+};
+
+export type ConfirmUploadResponse = {
+  orderId: string;
+  publicToken: string;
+  status: Extract<PetOrderStatus, "awaiting_payment">;
+  photoStored: true;
+};
+
+export type CreateStripeCheckoutRequest = {
+  orderId: string;
+  publicToken: string;
+  successUrl: string;
+  cancelUrl: string;
+  customerEmail: string;
+};
+
+export type CreateStripeCheckoutResponse = {
+  sessionId: string;
+  checkoutUrl: string;
+};
+
+export type GetOrderByPublicTokenRequest = {
+  publicToken: string;
+};
+
+export type PollGenerationProgressRequest = {
+  publicToken: string;
+};
+
+export type GetOrderResultsRequest = {
+  publicToken: string;
+};
+
+export type PetFunnelApiErrorCode =
+  | "PET_API_NOT_CONNECTED"
+  | "INVALID_REQUEST"
+  | "UPLOAD_FAILED"
+  | "ORDER_NOT_FOUND"
+  | "PAYMENT_REQUIRED"
+  | "GENERATION_FAILED";
+
+export type PetPageId = "landing" | "create" | "checkout" | "order";
+
+export type PetFunnelNavigation = {
+  goToLanding: () => void;
+  goToCreate: () => void;
+  goToCheckout: () => void;
+  goToOrder: (publicToken?: string) => void;
+};
+
+export type PetOrderPageState =
+  | "processing"
+  | "quality_control"
+  | "complete"
+  | "partial_failure"
+  | "failed"
+  | "not_found";
