@@ -139,11 +139,9 @@ export default function SupportTicketWidget() {
     let cancelled = false;
 
     async function loadTicket() {
-      const { data: ticketData, error: ticketError } = await supabase
-        .from("support_tickets")
-        .select("*")
-        .eq("id", savedTicketId)
-        .maybeSingle();
+      const { data, error: ticketError } = await supabase.rpc("load_support_thread", {
+        p_ticket_id: savedTicketId,
+      });
 
       if (cancelled) return;
 
@@ -151,6 +149,9 @@ export default function SupportTicketWidget() {
         console.error("[SupportTicketWidget] load ticket error:", ticketError);
         return;
       }
+
+      const bundle = data as { ticket?: TicketRow; messages?: MessageRow[] } | null;
+      const ticketData = bundle?.ticket;
 
       if (!ticketData) {
         localStorage.removeItem(storageKey);
@@ -168,16 +169,7 @@ export default function SupportTicketWidget() {
 
       setTicket(loadedTicket);
 
-      const { data: messagesData, error: messagesError } = await supabase
-        .from("support_ticket_messages")
-        .select("*")
-        .eq("ticket_id", savedTicketId)
-        .order("created_at", { ascending: true });
-
-      if (messagesError) {
-        console.error("[SupportTicketWidget] load messages error:", messagesError);
-        return;
-      }
+      const messagesData = bundle?.messages ?? [];
 
       if (!cancelled) {
         setMessages((messagesData || []) as MessageRow[]);
@@ -264,31 +256,22 @@ export default function SupportTicketWidget() {
   }
 
   async function updateTicket(ticketId: string, updates?: Partial<TicketRow>) {
-    const { data, error } = await supabase
-      .from("support_tickets")
-      .update({
-        ...(updates || {}),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", ticketId)
-      .select("*")
-      .single();
+    const { data, error } = await supabase.rpc("update_support_ticket", {
+      p_ticket_id: ticketId,
+      p_status: updates?.status ?? null,
+      p_priority: updates?.priority ?? null,
+    });
 
     if (error) throw error;
     if (data) setTicket(data as TicketRow);
   }
 
   async function insertSystemMessage(ticketId: string, text: string) {
-    const { data, error } = await supabase
-      .from("support_ticket_messages")
-      .insert({
-        ticket_id: ticketId,
-        sender_id: null,
-        sender_type: "system",
-        message: text,
-      })
-      .select("*")
-      .single();
+    const { data, error } = await supabase.rpc("add_support_message", {
+      p_ticket_id: ticketId,
+      p_message: text,
+      p_sender_type: "system",
+    });
 
     if (error) {
       console.warn("[SupportTicketWidget] system message insert warn:", error);
@@ -343,16 +326,14 @@ export default function SupportTicketWidget() {
           "I’m not fully sure about that yet, but I can still try to help. If you need a human, type “Live Agent”."
       ).trim();
 
-      const { data: aiMessageData, error: aiMessageError } = await supabase
-        .from("support_ticket_messages")
-        .insert({
-          ticket_id: ticketId,
-          sender_id: null,
-          sender_type: "ai",
-          message: reply,
-        })
-        .select("*")
-        .single();
+      const { data: aiMessageData, error: aiMessageError } = await supabase.rpc(
+        "add_support_message",
+        {
+          p_ticket_id: ticketId,
+          p_message: reply,
+          p_sender_type: "ai",
+        }
+      );
 
       if (aiMessageError) throw aiMessageError;
 
@@ -403,44 +384,29 @@ export default function SupportTicketWidget() {
 
       const liveAgentRequested = isExactLiveAgentRequest(cleanMessage);
 
-      const { data: ticketData, error: ticketError } = await supabase
-        .from("support_tickets")
-        .insert({
-          user_id: user?.id ?? null,
-          name:
+      const { data: created, error: ticketError } = await supabase.rpc(
+        "create_support_ticket",
+        {
+          p_subject: cleanSubject,
+          p_message: cleanMessage,
+          p_name:
             user?.user_metadata?.full_name ||
             user?.user_metadata?.name ||
             user?.email ||
             cleanEmail ||
             null,
-          email: cleanEmail,
-          subject: cleanSubject,
-          page_url: window.location.href,
-          status: liveAgentRequested ? "needs_agent" : "open",
-          priority: liveAgentRequested ? "high" : "normal",
-          updated_at: new Date().toISOString(),
-        })
-        .select("*")
-        .single();
+          p_email: cleanEmail,
+          p_page_url: window.location.href,
+          p_status: liveAgentRequested ? "needs_agent" : "open",
+          p_priority: liveAgentRequested ? "high" : "normal",
+        }
+      );
 
       if (ticketError) throw ticketError;
 
-      const createdTicket = ticketData as TicketRow;
-
-      const { data: messageData, error: messageError } = await supabase
-        .from("support_ticket_messages")
-        .insert({
-          ticket_id: createdTicket.id,
-          sender_id: user?.id ?? null,
-          sender_type: "client",
-          message: cleanMessage,
-        })
-        .select("*")
-        .single();
-
-      if (messageError) throw messageError;
-
-      const firstMessage = messageData as MessageRow;
+      const bundle = created as { ticket?: TicketRow; message?: MessageRow } | null;
+      const createdTicket = bundle?.ticket as TicketRow;
+      const firstMessage = bundle?.message as MessageRow;
 
       setTicket(createdTicket);
       setMessages([firstMessage]);
@@ -477,16 +443,11 @@ export default function SupportTicketWidget() {
 
       const liveAgentRequested = isExactLiveAgentRequest(cleanMessage);
 
-      const { data, error } = await supabase
-        .from("support_ticket_messages")
-        .insert({
-          ticket_id: ticket.id,
-          sender_id: user?.id ?? null,
-          sender_type: "client",
-          message: cleanMessage,
-        })
-        .select("*")
-        .single();
+      const { data, error } = await supabase.rpc("add_support_message", {
+        p_ticket_id: ticket.id,
+        p_message: cleanMessage,
+        p_sender_type: "client",
+      });
 
       if (error) throw error;
 

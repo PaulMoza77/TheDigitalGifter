@@ -25,9 +25,21 @@ export function getUserClient(authHeader: string | null): SupabaseClient {
   );
 }
 
+export function bearerToken(req: Request): string {
+  const authHeader = req.headers.get("Authorization") || "";
+  return authHeader.replace(/^Bearer\s+/i, "").trim();
+}
+
+export function isServiceRoleRequest(req: Request): boolean {
+  const token = bearerToken(req);
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  return token.length > 0 && serviceKey.length > 0 && token === serviceKey;
+}
+
 export async function getAuthUser(req: Request) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return { user: null, authHeader: null };
+  if (isServiceRoleRequest(req)) return { user: null, authHeader };
   const client = getUserClient(authHeader);
   const { data, error } = await client.auth.getUser();
   if (error || !data.user) return { user: null, authHeader };

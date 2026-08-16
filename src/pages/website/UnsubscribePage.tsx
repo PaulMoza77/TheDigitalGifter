@@ -40,38 +40,12 @@ export function UnsubscribePage() {
           return;
         }
 
-        // ✅ choose match column
-        const matchCol = userId ? "user_id" : "email";
-        const matchVal = userId ? userId : email;
-
-        // ✅ try update first
-        const { data: updated, error: updateErr } = await supabase
-          .from("email_preferences")
-          .update({
-            marketing: false,
-            updated_at: new Date().toISOString(),
-          })
-          .eq(matchCol, matchVal)
-          .select("id")
-          .maybeSingle();
+        const { error: updateErr } = await supabase.rpc("unsubscribe_marketing", {
+          p_email: email || null,
+          p_user_id: userId || null,
+        });
 
         if (updateErr) throw updateErr;
-
-        // If no row existed, create it (upsert behavior)
-        if (!updated) {
-          const insertPayload: Record<string, any> = {
-            marketing: false,
-            updated_at: new Date().toISOString(),
-          };
-          if (userId) insertPayload.user_id = userId;
-          if (!userId && email) insertPayload.email = email;
-
-          const { error: insertErr } = await supabase
-            .from("email_preferences")
-            .upsert(insertPayload, { onConflict: userId ? "user_id" : "email" });
-
-          if (insertErr) throw insertErr;
-        }
 
         if (!cancelled) setStatus("success");
       } catch (e) {

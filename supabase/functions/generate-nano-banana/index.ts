@@ -1,5 +1,21 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
-import { getAuthUser, getServiceClient, readJson, requiredEnv } from "../_shared/supabase.ts";
+import {
+  assertAdmin,
+  getAuthUser,
+  getServiceClient,
+  isServiceRoleRequest,
+  readJson,
+  requiredEnv,
+} from "../_shared/supabase.ts";
+import { assertRateLimit, clientIp } from "../_shared/rateLimit.ts";
+import {
+  REQUEST_UNAVAILABLE_MESSAGE,
+  TEMPLATE_UNAVAILABLE_MESSAGE,
+  describesExplicitContent,
+  describesIntimateContact,
+  isProhibitedIdentity,
+  isTemplateAllowed,
+} from "../_shared/contentPolicy.ts";
 
 async function generateWithReplicate(prompt: string, imageUrl: string | null) {
   const token = Deno.env.get("REPLICATE_API_TOKEN");
@@ -84,17 +100,41 @@ async function generateWithGoogle(prompt: string, imageUrl: string | null) {
   );
 }
 
+function ledgerBalance(rows: Array<{ direction?: string | null; credits?: number | string | null }> | null) {
+  return (rows ?? []).reduce((sum, row) => {
+    const value = Number(row.credits ?? 0);
+    if (!Number.isFinite(value)) return sum;
+    if (row.direction === "in") return sum + value;
+    if (row.direction === "out") return sum - value;
+    return sum;
+  }, 0);
+}
+
+function isPaidStatus(status: string | null | undefined) {
+  return ["paid", "complete", "completed", "succeeded"].includes(String(status || "").toLowerCase());
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
   try {
     const { user } = await getAuthUser(req);
-    const body = await readJson<{ generation_id?: string }>(req);
+    const serviceRole = isServiceRoleRequest(req);
+    const body = await readJson<{ generation_id?: string; session_id?: string }>(req);
     const generationId = String(body.generation_id || "").trim();
+    const sessionId = String(body.session_id || "").trim();
     if (!generationId) return jsonResponse({ error: "generation_id is required" }, 400);
 
     const service = getServiceClient();
+    const allowed = await assertRateLimit(
+      service,
+      `generate:${user?.id || clientIp(req)}`,
+      20,
+      3600,
+    );
+    if (!allowed) return jsonResponse({ error: "Too many generation attempts. Please wait." }, 429);
+
     const { data: generation, error } = await service
       .from("generations")
       .select("*")
@@ -102,6 +142,73 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (error) throw error;
     if (!generation) return jsonResponse({ error: "generation not found" }, 404);
+
+    let admin = false;
+    if (user?.email) {
+      try {
+        await assertAdmin(user.email);
+        admin = true;
+      } catch {
+        admin = false;
+      }
+    }
+
+    const ownerId = String(generation.user_id || "").trim();
+    const ownerEmail = String(generation.email || generation.user_email || "").trim().toLowerCase();
+    const userEmail = String(user?.email || "").trim().toLowerCase();
+    const isOwner = Boolean(
+      user &&
+        ((ownerId && ownerId === user.id) || (ownerEmail && userEmail && ownerEmail === userEmail)),
+    );
+
+    const linkedSession = (
+      sessionId ||
+      String(generation.stripe_session_id || generation.checkout_session_id || generation.metadata?.stripe_session_id || "")
+    ).trim();
+
+    let paid = String(generation.metadata?.payment_status || "").toLowerCase() === "paid";
+    if (linkedSession) {
+      const { data: order } = await service
+        .from("orders")
+        .select("id,status,user_id,email,stripe_session_id")
+        .eq("stripe_session_id", linkedSession)
+        .maybeSingle();
+      if (order && isPaidStatus(order.status)) {
+        const orderEmail = String(order.email || "").trim().toLowerCase();
+        const sessionMatchesGeneration =
+          String(generation.stripe_session_id || "") === linkedSession ||
+          String(generation.checkout_session_id || "") === linkedSession ||
+          String(generation.metadata?.stripe_session_id || "") === linkedSession;
+        if (sessionMatchesGeneration || (user && (order.user_id === user.id || (orderEmail && orderEmail === userEmail)))) {
+          paid = true;
+        }
+      }
+    }
+
+    if (!serviceRole && !admin && !isOwner && !paid) {
+      return jsonResponse(
+        { error: "Authentication required. Generation must belong to a signed-in owner or a verified paid order." },
+        401,
+      );
+    }
+
+    if (!serviceRole && !admin && isOwner && !paid) {
+      const creditKey = userEmail || ownerEmail;
+      const cost = Number(generation.credit_cost ?? generation.credits ?? 1) || 1;
+      const { data: ledgerRows } = await service
+        .from("credits_ledger")
+        .select("direction, credits")
+        .eq("user_convex_id", creditKey);
+      const balance = ledgerBalance(
+        ledgerRows as Array<{ direction?: string | null; credits?: number | string | null }>,
+      );
+      if (balance < cost) {
+        return jsonResponse(
+          { error: "Not enough credits. Purchase credits or complete checkout before generating." },
+          402,
+        );
+      }
+    }
 
     await service
       .from("generations")
@@ -119,6 +226,44 @@ Deno.serve(async (req) => {
         .update({ status: "failed", error: "Missing prompt" })
         .eq("id", generationId);
       return jsonResponse({ error: "Missing prompt" }, 400);
+    }
+
+    const templateId = String(generation.template_id || "").trim();
+    if (templateId) {
+      const { data: templateRow } = await service
+        .from("templates")
+        .select("id,title,style_id,slug,prompt,is_active")
+        .eq("id", templateId)
+        .maybeSingle();
+      if (
+        templateRow &&
+        (templateRow.is_active === false || !isTemplateAllowed(templateRow))
+      ) {
+        await service
+          .from("generations")
+          .update({ status: "failed", error: TEMPLATE_UNAVAILABLE_MESSAGE })
+          .eq("id", generationId);
+        return jsonResponse({ error: TEMPLATE_UNAVAILABLE_MESSAGE }, 403);
+      }
+    }
+
+    const identity = {
+      id: generation.template_id,
+      style_id: generation.style_id || generation.style_slug,
+      slug: generation.style_slug,
+      title: generation.title,
+      prompt,
+    };
+    if (
+      isProhibitedIdentity(identity) ||
+      describesIntimateContact(prompt) ||
+      describesExplicitContent(prompt)
+    ) {
+      await service
+        .from("generations")
+        .update({ status: "failed", error: REQUEST_UNAVAILABLE_MESSAGE })
+        .eq("id", generationId);
+      return jsonResponse({ error: REQUEST_UNAVAILABLE_MESSAGE }, 403);
     }
 
     let imageUrl: string;
@@ -163,34 +308,6 @@ Deno.serve(async (req) => {
         error: null,
       })
       .eq("id", generationId);
-
-    // Best-effort credit debit when authenticated user present
-    const debitEmail = (
-      user?.email ||
-      generation.email ||
-      generation.user_email ||
-      ""
-    )
-      .toString()
-      .trim()
-      .toLowerCase();
-    if (debitEmail) {
-      const cost = Number(generation.credit_cost ?? generation.credits ?? 1) || 1;
-      const { error: debitError } = await service.from("credits_ledger").insert({
-        user_convex_id: debitEmail,
-        user_id: user?.id ?? generation.user_id ?? null,
-        direction: "out",
-        credits: cost,
-        event_type: "generation",
-        category: "generation",
-        note: `generation:${generationId}`,
-        template_id: generation.template_id ?? null,
-        template_title: generation.title ?? null,
-      });
-      if (debitError) {
-        console.warn("[generate-nano-banana] credit debit failed:", debitError.message);
-      }
-    }
 
     return jsonResponse({ imageUrl: publicUrl, generation_id: generationId, status: "completed" });
   } catch (err) {
