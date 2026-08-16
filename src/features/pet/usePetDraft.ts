@@ -1,0 +1,93 @@
+import { useCallback, useRef, useState } from "react";
+import type { PetFunnelDraft, PetPersonality, PetPhotoMeta, PetSpecies } from "./types";
+import {
+  createEmptyPetDraft,
+  createSafePhotoPreview,
+  getPetPhotoFile,
+  getPetPhotoObjectUrl,
+  loadPetDraft,
+  savePetDraft,
+  setPetPhotoFile,
+} from "./storage";
+import { validatePetPhotoFile } from "./validation";
+
+export function usePetDraft() {
+  const [draft, setDraft] = useState<PetFunnelDraft>(() => loadPetDraft());
+  const [storageMessage, setStorageMessage] = useState<string | null>(null);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+
+  const persist = useCallback((next: PetFunnelDraft) => {
+    const stamped = { ...next, updatedAt: new Date().toISOString() };
+    const result = savePetDraft(stamped);
+    setStorageMessage(result.message ?? null);
+    draftRef.current = stamped;
+    setDraft(stamped);
+  }, []);
+
+  const update = useCallback(
+    (patch: Partial<PetFunnelDraft>) => {
+      persist({ ...draftRef.current, ...patch });
+    },
+    [persist]
+  );
+
+  const setPhotoFromFile = useCallback(
+    async (file: File) => {
+      const validation = validatePetPhotoFile(file);
+      if (!validation.ok) {
+        return { ok: false as const, message: validation.message };
+      }
+
+      setPetPhotoFile(file);
+      const preview = await createSafePhotoPreview(file);
+      const meta: PetPhotoMeta = {
+        fileName: file.name,
+        contentType: validation.contentType,
+        byteSize: file.size,
+        width: null,
+        height: null,
+      };
+
+      persist({
+        ...draftRef.current,
+        photo: meta,
+        photoPreviewDataUrl: preview,
+      });
+
+      return { ok: true as const };
+    },
+    [persist]
+  );
+
+  const clearPhoto = useCallback(() => {
+    setPetPhotoFile(null);
+    persist({
+      ...draftRef.current,
+      photo: null,
+      photoPreviewDataUrl: null,
+    });
+  }, [persist]);
+
+  const reset = useCallback(() => {
+    setPetPhotoFile(null);
+    persist(createEmptyPetDraft());
+  }, [persist]);
+
+  return {
+    draft: {
+      ...draft,
+      setPetName: (petName: string) => update({ petName }),
+      setSpecies: (species: PetSpecies) => update({ species }),
+      setPersonality: (personality: PetPersonality) => update({ personality }),
+      setEmail: (email: string) => update({ email }),
+    },
+    previewUrl: getPetPhotoObjectUrl() ?? draft.photoPreviewDataUrl,
+    hasOriginalFile: Boolean(getPetPhotoFile()),
+    storageMessage,
+    setPhotoFromFile,
+    clearPhoto,
+    reset,
+    photoFile: getPetPhotoFile(),
+  };
+}
