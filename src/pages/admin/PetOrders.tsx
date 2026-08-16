@@ -5,6 +5,7 @@ import { RefreshCw, Search, PawPrint } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatUsd, GROSS_AFTER_AI_DISCLAIMER, type OrderCostDetails } from "@/features/pet/aiCost";
 import {
   Table,
   TableBody,
@@ -26,6 +27,10 @@ type PetOrderListItem = {
   qc_status: string | null;
   last_error: string | null;
   model_name: string | null;
+  ai_cost_usd?: number;
+  revenue_usd?: number;
+  gross_after_ai_usd?: number;
+  cost_badge?: "exact" | "estimated" | null;
 };
 
 type PetScene = {
@@ -49,6 +54,19 @@ type PetEvent = {
   scene_key: string | null;
   created_at: string;
 };
+
+function CostBadge({ state }: { state?: string | null }) {
+  if (!state) return <span className="text-xs text-slate-500">—</span>;
+  const estimated = state === "estimated" || state === "pending";
+  return (
+    <Badge
+      variant="outline"
+      className={estimated ? "border-amber-400/40 text-amber-200" : "border-emerald-400/40 text-emerald-200"}
+    >
+      {estimated ? "estimated" : "exact"}
+    </Badge>
+  );
+}
 
 async function petAdmin<T>(action: string, body: Record<string, unknown> = {}): Promise<T> {
   const { data, error } = await supabase.functions.invoke<T>("pet-admin", {
@@ -74,6 +92,7 @@ export default function PetOrdersPage() {
     scenes: PetScene[];
     events: PetEvent[];
     sourcePreviewUrl: string | null;
+    costs?: OrderCostDetails;
   } | null>(null);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -108,6 +127,7 @@ export default function PetOrdersPage() {
         scenes: PetScene[];
         events: PetEvent[];
         sourcePreviewUrl: string | null;
+        costs?: OrderCostDetails;
       }>("get", { orderId: id });
       setDetail(result);
     } catch (error) {
@@ -141,7 +161,8 @@ export default function PetOrdersPage() {
               Pet Orders
             </h1>
             <p className="mt-1 text-sm text-slate-400">
-              My Pet’s Secret Life — $59 one-time, human QC before delivery.
+              My Pet’s Secret Life — $59 one-time, human QC before delivery. Tracked pet-funnel
+              Replicate usage only.
             </p>
           </div>
           <button
@@ -202,6 +223,7 @@ export default function PetOrdersPage() {
                   <TableHead>Pet</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>AI cost</TableHead>
                   <TableHead>Paid</TableHead>
                   <TableHead>Stripe</TableHead>
                 </TableRow>
@@ -217,6 +239,12 @@ export default function PetOrdersPage() {
                     <TableCell>{item.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{item.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-cyan-100">
+                      <div className="flex items-center gap-2">
+                        <span>{formatUsd(item.ai_cost_usd || 0)}</span>
+                        <CostBadge state={item.cost_badge} />
+                      </div>
                     </TableCell>
                     <TableCell>{item.paid_at ? "Yes" : "No"}</TableCell>
                     <TableCell className="max-w-[140px] truncate text-xs text-slate-400">
@@ -258,6 +286,58 @@ export default function PetOrdersPage() {
                     {detail.order.model_version ? ` @ ${String(detail.order.model_version)}` : ""}
                   </p>
                 </div>
+                {detail.costs ? (
+                  <div className="rounded-xl border border-cyan-400/20 bg-slate-950/70 p-3 text-sm">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                      Tracked pet-funnel Replicate usage
+                    </p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span>Revenue</span>
+                      <span>{formatUsd(detail.costs.revenueUsd)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span>Replicate</span>
+                      <span className="font-medium text-cyan-100">{formatUsd(detail.costs.replicateUsd)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span>Gross after AI</span>
+                      <span className="font-medium text-emerald-100">
+                        {formatUsd(detail.costs.grossAfterAiUsd)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-[11px] leading-4 text-slate-500">{GROSS_AFTER_AI_DISCLAIMER}</p>
+                    <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                      This is not the entire Replicate account invoice.
+                    </p>
+                    <div className="mt-3 space-y-2">
+                      {detail.costs.byScene.map((scene) => (
+                        <div key={scene.sceneKey} className="rounded-lg border border-slate-800 p-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span>{scene.sceneKey}</span>
+                            <span>{formatUsd(scene.totalUsd)}</span>
+                          </div>
+                          {scene.attempts.map((attempt) => (
+                            <div
+                              key={attempt.predictionId}
+                              className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-400"
+                            >
+                              <span>
+                                Attempt {attempt.attemptNumber}
+                                {attempt.isRetry ? " · retry" : ""}
+                                {attempt.isMock ? " · mock" : ""} · {attempt.providerStatus} · {attempt.modelName} ·{" "}
+                                {attempt.pricingMethod} @ {formatUsd(attempt.tariffUnitCostUsd)}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                {formatUsd(attempt.costUsd)}
+                                <CostBadge state={attempt.costState} />
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 {detail.sourcePreviewUrl ? (
                   <img
                     src={detail.sourcePreviewUrl}
@@ -281,6 +361,28 @@ export default function PetOrdersPage() {
                       <p className="px-1 pb-1 text-[10px] text-slate-500">
                         {scene.attempts} tries · {scene.replicate_prediction_id || "no prediction"}
                       </p>
+                      {detail.costs?.byScene
+                        .filter((item) => item.sceneKey === scene.scene_key)
+                        .map((item) => (
+                          <div key={`${scene.id}-cost`} className="px-1 pb-1 text-[10px] text-cyan-100">
+                            <p>Scene AI: {formatUsd(item.totalUsd)}</p>
+                            {item.attempts.map((attempt) => (
+                              <p key={attempt.predictionId} className="text-slate-400">
+                                #{attempt.attemptNumber}
+                                {attempt.isRetry ? " retry" : ""}
+                                {attempt.isMock ? " mock" : ""} · {formatUsd(attempt.costUsd)} ·{" "}
+                                {attempt.modelName} · {attempt.pricingMethod} @{" "}
+                                {formatUsd(attempt.tariffUnitCostUsd)}
+                                <Badge
+                                  variant="outline"
+                                  className="ml-1 px-1 py-0 text-[9px]"
+                                >
+                                  {attempt.costState}
+                                </Badge>
+                              </p>
+                            ))}
+                          </div>
+                        ))}
                       {scene.last_error ? (
                         <p className="px-1 pb-1 text-[10px] text-red-300">{scene.last_error}</p>
                       ) : null}

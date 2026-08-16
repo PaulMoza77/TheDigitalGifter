@@ -3,6 +3,8 @@ import React from "react";
 import { CalendarDays, RefreshCcw } from "lucide-react";
 
 import { useAdminOverview } from "@/hooks/useAdminOverview";
+import { usePetAiCostReport } from "@/hooks/usePetAiCostReport";
+import { AiCostsReplicateSection } from "@/pages/admin/AiCostsReplicateSection";
 import {
   ListCard,
   MoneyMiniCard,
@@ -53,6 +55,12 @@ export default function AdminDashboard() {
     customerBehaviour,
     refresh,
   } = useAdminOverview(range);
+  const {
+    loading: aiCostLoading,
+    error: aiCostError,
+    report: aiCostReport,
+    refresh: refreshAiCosts,
+  } = usePetAiCostReport(range);
 
   function handleAllTime() {
     setFrom(getAllTimeFrom());
@@ -132,21 +140,24 @@ export default function AdminDashboard() {
 
             <button
               type="button"
-              onClick={() => void refresh()}
-              disabled={loading}
+              onClick={() => {
+                void refresh();
+                void refreshAiCosts();
+              }}
+              disabled={loading || aiCostLoading}
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCcw
-                className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"}
+                className={loading || aiCostLoading ? "h-4 w-4 animate-spin" : "h-4 w-4"}
               />
               Refresh
             </button>
           </div>
         </header>
 
-        {error ? (
+        {error || aiCostError ? (
           <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
-            {error}
+            {error || aiCostError}
           </div>
         ) : null}
 
@@ -157,6 +168,8 @@ export default function AdminDashboard() {
           {" — "}
           My Pet’s Secret Life ($59 one-time). QC and delivery live in a dedicated queue so credit packs stay unchanged.
         </section>
+
+        <AiCostsReplicateSection loading={aiCostLoading} report={aiCostReport} />
 
         <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard

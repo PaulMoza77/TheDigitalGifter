@@ -4,6 +4,7 @@ import { PET_RESULT_BUCKET } from "../_shared/pet/constants.ts";
 import { asString } from "../_shared/pet/crypto.ts";
 import { readImageSize } from "../_shared/pet/imageSize.ts";
 import { replicateOutputUrl, verifyReplicateWebhook, type ReplicatePrediction } from "../_shared/pet/replicate.ts";
+import { finalizeAiCostPrediction } from "../_shared/pet/costLedger.ts";
 
 async function copyRemoteImage(
   service: ReturnType<typeof getServiceClient>,
@@ -44,6 +45,22 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, ignored: true, status });
     }
 
+    const { data: scene } = await service
+      .from("pet_order_scenes")
+      .select("id, order_id, scene_key, status")
+      .eq("replicate_prediction_id", predictionId)
+      .maybeSingle();
+
+    await finalizeAiCostPrediction(service, {
+      predictionId,
+      providerStatus: status,
+      modelName: prediction.model || null,
+      modelVersion: prediction.version || null,
+      orderId: scene?.order_id || new URL(req.url).searchParams.get("order_id"),
+      sceneId: scene?.id || null,
+      sceneKey: scene?.scene_key || new URL(req.url).searchParams.get("scene_key"),
+    });
+
     let resultPath: string | null = null;
     let contentType: string | null = null;
     let resultWidth: number | null = null;
@@ -71,16 +88,18 @@ Deno.serve(async (req) => {
         if (applied.error) throw applied.error;
         return jsonResponse({ ok: true, result: applied.data });
       }
-      const { data: scene } = await service
-        .from("pet_order_scenes")
-        .select("order_id, scene_key, status")
-        .eq("replicate_prediction_id", predictionId)
-        .maybeSingle();
-      if (scene?.status === "succeeded" || scene?.status === "ready") {
+      const { data: sceneForCopy } = scene
+        ? { data: scene }
+        : await service
+            .from("pet_order_scenes")
+            .select("order_id, scene_key, status")
+            .eq("replicate_prediction_id", predictionId)
+            .maybeSingle();
+      if (sceneForCopy?.status === "succeeded" || sceneForCopy?.status === "ready") {
         return jsonResponse({ ok: true, status: "already_succeeded" });
       }
-      const orderId = scene?.order_id || new URL(req.url).searchParams.get("order_id");
-      const sceneKey = scene?.scene_key || new URL(req.url).searchParams.get("scene_key");
+      const orderId = sceneForCopy?.order_id || new URL(req.url).searchParams.get("order_id");
+      const sceneKey = sceneForCopy?.scene_key || new URL(req.url).searchParams.get("scene_key");
       resultPath = `${orderId}/scenes/${sceneKey}.jpg`;
       const copied = await copyRemoteImage(service, outputUrl, resultPath);
       contentType = copied.contentType;

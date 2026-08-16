@@ -8,6 +8,20 @@ import {
 import { asString, decryptPublicToken, sha256Hex } from "../_shared/pet/crypto.ts";
 import { canReleaseDelivery, canStartGeneration, retryTargets } from "../_shared/pet/guards.ts";
 import { sendPetDeliveryEmail } from "../_shared/pet/email.ts";
+import {
+  AI_COST_PRODUCT_FAMILY,
+  AI_COST_PROVIDER_REPLICATE,
+  buildAdminAiCostReport,
+  buildOrderCostDetails,
+  KONTEXT_PRO_MODEL,
+  mapDbLedgerRow,
+  rangeToIso,
+  rejectClientCostTampering,
+  snapshotKontextProTariff,
+  sumTrackedCostUsd,
+  type AiCostLedgerRow,
+  type PaidPetOrder,
+} from "../_shared/pet/aiCost.ts";
 
 type Body = Record<string, unknown>;
 
@@ -37,6 +51,112 @@ async function signed(service: ReturnType<typeof getServiceClient>, bucket: stri
   return data?.signedUrl ?? null;
 }
 
+async function fetchAllRows<T>(
+  queryFactory: (from: number, to: number) => Promise<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
+  const pageSize = 1000;
+  const rows: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await queryFactory(from, from + pageSize - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+  return rows;
+}
+
+function todayUtcDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function loadLedgerRows(
+  service: ReturnType<typeof getServiceClient>,
+  fromIso?: string,
+  toIso?: string,
+  orderIds?: string[],
+): Promise<AiCostLedgerRow[]> {
+  const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
+    let query = service
+      .from("ai_cost_ledger")
+      .select("*")
+      .eq("provider", AI_COST_PROVIDER_REPLICATE)
+      .eq("product_family", AI_COST_PRODUCT_FAMILY)
+      .order("occurred_at", { ascending: false })
+      .range(from, to);
+    if (fromIso) query = query.gte("occurred_at", fromIso);
+    if (toIso) query = query.lte("occurred_at", toIso);
+    if (orderIds?.length) query = query.in("pet_order_id", orderIds);
+    return query;
+  });
+  return rows.map(mapDbLedgerRow);
+}
+
+async function loadPaidOrders(
+  service: ReturnType<typeof getServiceClient>,
+  fromIso: string,
+  toIso: string,
+): Promise<PaidPetOrder[]> {
+  return fetchAllRows<PaidPetOrder>(async (from, to) => {
+    return service
+      .from("pet_orders")
+      .select("id, amount_cents, currency, paid_at, status, pet_name, email")
+      .not("paid_at", "is", null)
+      .neq("status", "refunded")
+      .gte("paid_at", fromIso)
+      .lte("paid_at", toIso)
+      .order("paid_at", { ascending: false })
+      .range(from, to);
+  });
+}
+
+async function loadCurrentTariff(service: ReturnType<typeof getServiceClient>) {
+  const { data } = await service
+    .from("ai_model_pricing")
+    .select("id, model_name, model_version, pricing_method, unit_cost_usd, source, notes")
+    .eq("provider", AI_COST_PROVIDER_REPLICATE)
+    .eq("model_name", KONTEXT_PRO_MODEL)
+    .eq("is_active", true)
+    .maybeSingle();
+  return snapshotKontextProTariff({
+    capturedAt: new Date().toISOString(),
+    modelVersion: data?.model_version ?? null,
+    pricingRowId: data?.id ?? null,
+    unitCostUsd: data?.unit_cost_usd != null ? Number(data.unit_cost_usd) : undefined,
+    source: data?.source || undefined,
+  });
+}
+
+async function buildCostReport(
+  service: ReturnType<typeof getServiceClient>,
+  from: string,
+  to: string,
+) {
+  const period = rangeToIso(from, to);
+  const today = rangeToIso(todayUtcDate(), todayUtcDate());
+  const [periodLedger, todayLedger, paidOrdersInPeriod, currentTariff] = await Promise.all([
+    loadLedgerRows(service, period.fromIso, period.toIso),
+    loadLedgerRows(service, today.fromIso, today.toIso),
+    loadPaidOrders(service, period.fromIso, period.toIso),
+    loadCurrentTariff(service),
+  ]);
+  const paidIds = paidOrdersInPeriod.map((order) => order.id);
+  const ledgerForPaidOrders = paidIds.length ? await loadLedgerRows(service, undefined, undefined, paidIds) : [];
+  return buildAdminAiCostReport({
+    fromIso: period.fromIso,
+    toIso: period.toIso,
+    todayFromIso: today.fromIso,
+    todayToIso: today.toIso,
+    periodLedger,
+    todayLedger,
+    paidOrdersInPeriod,
+    ledgerForPaidOrders,
+    currentTariff,
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -45,6 +165,8 @@ Deno.serve(async (req) => {
     const { user } = await getAuthUser(req);
     await assertAdmin(user?.email);
     const body = await readJson<Body>(req);
+    const costCheck = rejectClientCostTampering(body);
+    if (!costCheck.ok) return apiError(costCheck.message, 400);
     const action = asString(body.action) || "list";
     const service = getServiceClient();
 
@@ -71,7 +193,59 @@ Deno.serve(async (req) => {
       }
       const { data, error, count } = await query;
       if (error) throw error;
-      return jsonResponse({ items: data ?? [], total: count ?? 0, page, pageSize });
+      const items = data ?? [];
+      const orderIds = items.map((item) => String(item.id));
+      const ledger = orderIds.length ? await loadLedgerRows(service, undefined, undefined, orderIds) : [];
+      return jsonResponse({
+        items: items.map((item) => {
+          const orderRows = ledger.filter((row) => row.pet_order_id === String(item.id));
+          const aiCostUsd = sumTrackedCostUsd(orderRows);
+          const revenueUsd = Number(item.amount_cents || 0) / 100;
+          const hasEstimated = orderRows.some(
+            (row) => row.cost_state === "estimated" || row.cost_state === "pending",
+          );
+          const hasExact = orderRows.some(
+            (row) => row.cost_state === "exact" || row.cost_state === "reconciled",
+          );
+          return {
+            ...item,
+            ai_cost_usd: aiCostUsd,
+            revenue_usd: revenueUsd,
+            gross_after_ai_usd: revenueUsd - aiCostUsd,
+            cost_badge: hasEstimated ? "estimated" : hasExact ? "exact" : null,
+          };
+        }),
+        total: count ?? 0,
+        page,
+        pageSize,
+      });
+    }
+
+    if (action === "costSummary" || action === "costBreakdown") {
+      const from = asString(body.from) || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const to = asString(body.to) || todayUtcDate();
+      const report = await buildCostReport(service, from, to);
+      if (action === "costSummary") {
+        return jsonResponse({
+          scope: report.scope,
+          currency: report.currency,
+          billingUrl: report.billingUrl,
+          tooltip: report.tooltip,
+          disclaimer: report.disclaimer,
+          cards: report.cards,
+          breakdown: report.breakdown,
+          currentTariff: report.currentTariff,
+        });
+      }
+      return jsonResponse({
+        scope: report.scope,
+        currency: report.currency,
+        billingUrl: report.billingUrl,
+        tooltip: report.tooltip,
+        disclaimer: report.disclaimer,
+        breakdown: report.breakdown,
+        currentTariff: report.currentTariff,
+      });
     }
 
     const orderId = asString(body.orderId || body.order_id);
@@ -82,10 +256,11 @@ Deno.serve(async (req) => {
     if (!order) return apiError("Order not found", 404);
 
     if (action === "get") {
-      const [{ data: scenes }, { data: events }, { data: job }] = await Promise.all([
+      const [{ data: scenes }, { data: events }, { data: job }, ledgerRows] = await Promise.all([
         service.from("pet_order_scenes").select("*").eq("order_id", orderId).order("scene_number"),
         service.from("pet_order_events").select("*").eq("order_id", orderId).order("created_at", { ascending: false }).limit(100),
         service.from("pet_generation_jobs").select("*").eq("order_id", orderId).maybeSingle(),
+        loadLedgerRows(service, undefined, undefined, [orderId]),
       ]);
       const sourcePreviewUrl = await signed(service, PET_SOURCE_BUCKET, order.photo_path);
       const sceneViews = [];
@@ -95,13 +270,31 @@ Deno.serve(async (req) => {
           previewUrl: await signed(service, PET_RESULT_BUCKET, scene.result_path),
         });
       }
+      const costs = buildOrderCostDetails({
+        amountCents: Number(order.amount_cents || 0),
+        scenes: scenes ?? [],
+        ledger: ledgerRows,
+      });
       return jsonResponse({
         order,
         job,
         scenes: sceneViews,
         events: events ?? [],
         sourcePreviewUrl,
+        costs,
       });
+    }
+
+    if (action === "orderCost") {
+      const { data: scenes } = await service.from("pet_order_scenes").select("*").eq("order_id", orderId).order("scene_number");
+      const ledgerRows = await loadLedgerRows(service, undefined, undefined, [orderId]);
+      return jsonResponse(
+        buildOrderCostDetails({
+          amountCents: Number(order.amount_cents || 0),
+          scenes: scenes ?? [],
+          ledger: ledgerRows,
+        }),
+      );
     }
 
     if (action === "retryFailed" || action === "retryScene" || action === "regenerateScene") {

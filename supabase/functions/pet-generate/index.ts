@@ -15,6 +15,11 @@ import { asString } from "../_shared/pet/crypto.ts";
 import { canStartGeneration } from "../_shared/pet/guards.ts";
 import { createReplicatePrediction } from "../_shared/pet/replicate.ts";
 import { buildScenePrompt, PET_SCENE_DEFINITIONS } from "../_shared/pet/scenes.ts";
+import {
+  createFailedPredictionId,
+  mockPredictionId,
+  recordAiCostAttempt,
+} from "../_shared/pet/costLedger.ts";
 
 type Body = {
   order_id?: string;
@@ -126,12 +131,13 @@ Deno.serve(async (req) => {
           resultPath,
           order.photo_content_type || "image/jpeg",
         );
+        const attemptNumber = Number(scene.attempts || 0) + 1;
         await service
           .from("pet_order_scenes")
           .update({
             status: "succeeded",
             progress_percent: 100,
-            attempts: Number(scene.attempts || 0) + 1,
+            attempts: attemptNumber,
             result_bucket: PET_RESULT_BUCKET,
             result_path: resultPath,
             result_content_type: order.photo_content_type || "image/jpeg",
@@ -139,6 +145,16 @@ Deno.serve(async (req) => {
             completed_at: new Date().toISOString(),
           })
           .eq("id", scene.id);
+        await recordAiCostAttempt(service, {
+          predictionId: mockPredictionId(orderId, scene.scene_key, attemptNumber),
+          orderId,
+          sceneId: scene.id,
+          sceneKey: scene.scene_key,
+          attemptNumber,
+          modelName: "mock",
+          isMock: true,
+          costNotes: "mock_generation",
+        });
         started += 1;
       }
       await service.rpc("pet_finalize_generation_if_done", { p_order_id: orderId });
@@ -152,12 +168,13 @@ Deno.serve(async (req) => {
         species: order.species,
         personality: order.personality,
       });
+      const attemptNumber = Number(scene.attempts || 0) + 1;
       await service
         .from("pet_order_scenes")
         .update({
           status: "generating",
           progress_percent: 15,
-          attempts: Number(scene.attempts || 0) + 1,
+          attempts: attemptNumber,
           started_at: new Date().toISOString(),
           model_name: model,
           model_version: version,
@@ -181,6 +198,29 @@ Deno.serve(async (req) => {
             model_version: prediction.version || version,
           })
           .eq("id", scene.id);
+        if (prediction.id) {
+          await recordAiCostAttempt(service, {
+            predictionId: prediction.id,
+            orderId,
+            sceneId: scene.id,
+            sceneKey: scene.scene_key,
+            attemptNumber,
+            modelName: prediction.model || model,
+            modelVersion: prediction.version || version,
+          });
+        } else {
+          await recordAiCostAttempt(service, {
+            predictionId: createFailedPredictionId(crypto.randomUUID()),
+            orderId,
+            sceneId: scene.id,
+            sceneKey: scene.scene_key,
+            attemptNumber,
+            modelName: model,
+            modelVersion: version,
+            createFailed: true,
+            costNotes: "create_failed_no_prediction_id",
+          });
+        }
         started += 1;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -195,6 +235,17 @@ Deno.serve(async (req) => {
           .eq("id", scene.id)
           .neq("status", "succeeded")
           .neq("status", "ready");
+        await recordAiCostAttempt(service, {
+          predictionId: createFailedPredictionId(crypto.randomUUID()),
+          orderId,
+          sceneId: scene.id,
+          sceneKey: scene.scene_key,
+          attemptNumber,
+          modelName: model,
+          modelVersion: version,
+          createFailed: true,
+          costNotes: "create_failed_no_prediction_id",
+        });
       }
     });
 
