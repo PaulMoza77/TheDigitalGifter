@@ -298,24 +298,24 @@ security definer
 set search_path = public
 as $$
 declare
-  prediction_id text := nullif(trim(coalesce(p_prediction_id, '')), '');
+  v_prediction_id text := nullif(trim(coalesce(p_prediction_id, '')), '');
   tariff jsonb;
   computed jsonb;
-  attempt_number integer := greatest(coalesce(p_attempt_number, 1), 1);
-  model_name text := coalesce(nullif(trim(p_model_name), ''), 'black-forest-labs/flux-kontext-pro');
+  v_attempt_number integer := greatest(coalesce(p_attempt_number, 1), 1);
+  v_model_name text := coalesce(nullif(trim(p_model_name), ''), 'black-forest-labs/flux-kontext-pro');
   ledger_row public.ai_cost_ledger%rowtype;
   notes text := nullif(trim(coalesce(p_cost_notes, '')), '');
 begin
-  if coalesce(p_is_mock, false) and prediction_id is null then
-    prediction_id := 'mock:' || coalesce(p_pet_order_id::text, 'unknown') || ':' || coalesce(p_scene_key, 'unknown') || ':' || attempt_number;
+  if coalesce(p_is_mock, false) and v_prediction_id is null then
+    v_prediction_id := 'mock:' || coalesce(p_pet_order_id::text, 'unknown') || ':' || coalesce(p_scene_key, 'unknown') || ':' || v_attempt_number;
   end if;
 
-  if coalesce(p_create_failed, false) and prediction_id is null then
-    prediction_id := 'create-failed:' || gen_random_uuid()::text;
+  if coalesce(p_create_failed, false) and v_prediction_id is null then
+    v_prediction_id := 'create-failed:' || gen_random_uuid()::text;
     notes := coalesce(notes, 'create_failed_no_prediction_id');
   end if;
 
-  if prediction_id is null then
+  if v_prediction_id is null then
     raise exception 'prediction_id required';
   end if;
 
@@ -323,11 +323,11 @@ begin
     notes := coalesce(notes, 'mock_generation');
   end if;
 
-  tariff := public.ai_cost_lookup_tariff(p_provider, model_name, p_model_version);
+  tariff := public.ai_cost_lookup_tariff(p_provider, v_model_name, p_model_version);
   if tariff is null then
     tariff := jsonb_build_object(
       'provider', coalesce(nullif(trim(p_provider), ''), 'replicate'),
-      'model', model_name,
+      'model', v_model_name,
       'modelVersion', nullif(trim(coalesce(p_model_version, '')), ''),
       'pricingMethod', 'none',
       'unitCostUsd', 0,
@@ -378,16 +378,16 @@ begin
   )
   values (
     coalesce(nullif(trim(p_provider), ''), 'replicate'),
-    prediction_id,
+    v_prediction_id,
     'pet_funnel',
     p_pet_order_id,
     p_scene_id,
     nullif(trim(coalesce(p_scene_key, '')), ''),
-    attempt_number,
-    attempt_number > 1,
+    v_attempt_number,
+    v_attempt_number > 1,
     coalesce(p_is_mock, false),
     coalesce(nullif(trim(p_product_sku), ''), 'pet-secret-life-12'),
-    model_name,
+    v_model_name,
     nullif(trim(coalesce(p_model_version, '')), ''),
     computed->>'provider_status',
     coalesce(tariff->>'pricingMethod', 'none'),
@@ -408,14 +408,14 @@ begin
     case when computed->>'cost_state' = 'pending' then null else now() end,
     notes
   )
-  on conflict (provider, prediction_id) do nothing
+  on conflict on constraint ai_cost_ledger_provider_prediction_key do nothing
   returning * into ledger_row;
 
   if ledger_row.id is null then
     select * into ledger_row
     from public.ai_cost_ledger as ledger
     where ledger.provider = coalesce(nullif(trim(p_provider), ''), 'replicate')
-      and ledger.prediction_id = prediction_id;
+      and ledger.prediction_id = v_prediction_id;
   end if;
 
   return to_jsonb(ledger_row);
@@ -438,25 +438,25 @@ security definer
 set search_path = public
 as $$
 declare
-  prediction_id text := nullif(trim(coalesce(p_prediction_id, '')), '');
+  v_prediction_id text := nullif(trim(coalesce(p_prediction_id, '')), '');
   ledger_row public.ai_cost_ledger%rowtype;
   computed jsonb;
   tariff jsonb;
 begin
-  if prediction_id is null then
+  if v_prediction_id is null then
     raise exception 'prediction_id required';
   end if;
 
   select * into ledger_row
   from public.ai_cost_ledger as ledger
   where ledger.provider = coalesce(nullif(trim(p_provider), ''), 'replicate')
-    and ledger.prediction_id = prediction_id
+    and ledger.prediction_id = v_prediction_id
   for update;
 
   if not found then
     perform public.ai_cost_ledger_record_attempt(
       coalesce(nullif(trim(p_provider), ''), 'replicate'),
-      prediction_id,
+      v_prediction_id,
       p_pet_order_id,
       p_scene_id,
       p_scene_key,
@@ -472,7 +472,7 @@ begin
     select * into ledger_row
     from public.ai_cost_ledger as ledger
     where ledger.provider = coalesce(nullif(trim(p_provider), ''), 'replicate')
-      and ledger.prediction_id = prediction_id
+      and ledger.prediction_id = v_prediction_id
     for update;
   end if;
 
