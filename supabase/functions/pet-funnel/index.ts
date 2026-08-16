@@ -27,10 +27,18 @@ import {
   rejectClientPriceTampering,
   tokenEnumerationRejected,
 } from "../_shared/pet/guards.ts";
-import { toCustomerOrder, toProgress, type PetOrderRow, type PetSceneRow } from "../_shared/pet/mapOrder.ts";
+import {
+  toCustomerOrder,
+  toProgress,
+  type PetClipRow,
+  type PetOrderRow,
+  type PetSceneRow,
+} from "../_shared/pet/mapOrder.ts";
+import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, resolveServerOwnedOffer, resolveServerOwnedPromo } from "../_shared/pet/videoGuards.ts";
 import { PET_SCENE_DEFINITIONS } from "../_shared/pet/scenes.ts";
 import { petInitiateCheckoutEventId, petPurchaseEventId } from "../_shared/pet/meta.ts";
 import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
+import { invokePetGenerate } from "../_shared/pet/stripeFulfill.ts";
 
 type Body = Record<string, unknown>;
 
@@ -93,6 +101,23 @@ async function requireOrder(
   return order;
 }
 
+async function loadClips(service: ReturnType<typeof getServiceClient>, orderId: string) {
+  const { data, error } = await service
+    .from("pet_order_video_clips")
+    .select("*")
+    .eq("pet_order_id", orderId)
+    .order("slot", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as PetClipRow[];
+}
+
+async function loadActiveOffer(service: ReturnType<typeof getServiceClient>) {
+  const { data, error } = await service.rpc("get_public_pet_offer");
+  if (error) throw error;
+  const offer = typeof data === "string" ? JSON.parse(data) : data;
+  return resolveServerOwnedOffer(offer);
+}
+
 async function loadScenes(service: ReturnType<typeof getServiceClient>, orderId: string) {
   const { data, error } = await service
     .from("pet_order_scenes")
@@ -125,17 +150,38 @@ Deno.serve(async (req) => {
     const allowed = await assertRateLimit(service, `pet-funnel:${clientIp(req)}:${action || "unknown"}`, 60, 3600);
     if (!allowed) return apiError("INVALID_REQUEST", "Too many requests. Please wait.", 429);
 
+    if (action === "getPublicOffer") {
+      const offer = await loadActiveOffer(service);
+      if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
+      return jsonResponse({
+        sku: offer.sku,
+        name: "My Pet’s Secret Life",
+        amountCents: offer.amountCents,
+        currency: offer.currency,
+        imageCount: 12,
+        videoCount: 2,
+        subscription: false,
+        active: true,
+        priceDisplay: formatOfferPrice(offer.amountCents),
+      });
+    }
+
     if (action === "createOrder") {
       const email = asString(body.email).toLowerCase();
       const petName = asString(body.petName).slice(0, 40);
       const species = asString(body.species);
       const personality = asString(body.personality);
       const photo = (body.photo || {}) as Record<string, unknown>;
-      const priceCheck = rejectClientPriceTampering({
-        amountCents: body.amountCents,
-        currency: body.currency,
-        sku: body.sku,
-      });
+      const offer = await loadActiveOffer(service);
+      if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
+      const priceCheck = rejectAgainstOffer(
+        {
+          amountCents: body.amountCents,
+          currency: body.currency,
+          sku: body.sku,
+        },
+        offer.amountCents,
+      );
       if (!priceCheck.ok) return apiError(priceCheck.code, priceCheck.message);
       if (!email || !email.includes("@")) return apiError("INVALID_REQUEST", "A valid email is required.");
       if (petName.length < 2) return apiError("INVALID_REQUEST", "Pet name is required.");
@@ -150,6 +196,14 @@ Deno.serve(async (req) => {
 
       const publicToken = generatePublicToken();
       const publicTokenHash = await sha256Hex(publicToken);
+      const { data: offerRow } = await service
+        .from("pet_offers")
+        .select("id, version")
+        .eq("sku", offer.sku)
+        .eq("active", true)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
       const insert = {
         public_token_hash: publicTokenHash,
         email,
@@ -157,9 +211,14 @@ Deno.serve(async (req) => {
         pet_name: petName,
         species,
         personality,
-        sku: PET_SKU,
-        amount_cents: PET_PRICE_CENTS,
-        currency: PET_CURRENCY,
+        sku: offer.sku,
+        amount_cents: offer.amountCents,
+        charged_amount_cents: offer.amountCents,
+        currency: offer.currency,
+        offer_id: offerRow?.id ?? null,
+        offer_version: offerRow?.version ?? 1,
+        image_count: 12,
+        video_count: 2,
         status: "awaiting_upload",
         photo_file_name: asString(photo.fileName).slice(0, 180) || "pet.jpg",
         photo_content_type: asString(photo.contentType),
@@ -177,15 +236,15 @@ Deno.serve(async (req) => {
         p_order_id: data.id,
         p_action: "order_created",
         p_actor_type: "customer",
-        p_payload: { sku: PET_SKU, amount_cents: PET_PRICE_CENTS },
+        p_payload: { sku: offer.sku, amount_cents: offer.amountCents, offer_version: offerRow?.version ?? 1 },
       });
       return jsonResponse({
         orderId: data.id,
         publicToken,
         status: "awaiting_upload",
-        amountCents: PET_PRICE_CENTS,
-        currency: PET_CURRENCY,
-        sku: PET_SKU,
+        amountCents: offer.amountCents,
+        currency: offer.currency,
+        sku: offer.sku,
       });
     }
 
@@ -269,6 +328,44 @@ Deno.serve(async (req) => {
       if (!order.photo_path || !order.photo_confirmed_at) {
         return apiError("INVALID_REQUEST", "Upload and confirm the pet photo first.");
       }
+      const promo = resolveServerOwnedPromo(body.promoCode ?? body.promo_code, body.discountPercent ?? body.discount_percent);
+      if (!promo.ok) return apiError("INVALID_REQUEST", promo.message);
+      if (promo.code) {
+        const charged = promo.chargedAmountCents;
+        await service
+          .from("pet_orders")
+          .update({
+            promo_code: promo.code,
+            discount_percent: promo.discountPercent,
+            charged_amount_cents: charged,
+          })
+          .eq("id", order.id);
+        const fulfilled = await service.rpc("fulfill_pet_order_payment", {
+          p_event_id: `promo_${promo.code}_${order.id}`,
+          p_session_id: `promo:${promo.code}:${order.id}`,
+          p_event_type: "promo.comp",
+          p_payment_status: "no_payment_required",
+          p_payment_intent_id: null,
+          p_amount_cents: charged,
+          p_currency: order.currency || PET_CURRENCY,
+          p_order_id: order.id,
+        });
+        if (fulfilled.error) throw fulfilled.error;
+        const result = fulfilled.data as { should_enqueue?: boolean; status?: string };
+        if (result?.should_enqueue) {
+          await invokePetGenerate(order.id);
+        }
+        return jsonResponse({
+          sessionId: `promo_${promo.code}_${order.id}`,
+          checkoutUrl: null,
+          status: "comped",
+          promoCode: promo.code,
+          chargedAmountCents: charged,
+          eventId: petInitiateCheckoutEventId(order.id),
+          purchaseEventId: petPurchaseEventId(order.id),
+        });
+      }
+
       const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
       if (!stripeKey) return apiError("INVALID_REQUEST", "Stripe is not configured.", 503);
 
@@ -334,10 +431,10 @@ Deno.serve(async (req) => {
       params.set("cancel_url", cancelUrl);
       params.set("customer_email", order.email);
       params.set("client_reference_id", order.id);
-      params.set("line_items[0][price_data][currency]", PET_CURRENCY);
-      params.set("line_items[0][price_data][unit_amount]", String(PET_PRICE_CENTS));
+      params.set("line_items[0][price_data][currency]", String(order.currency || PET_CURRENCY));
+      params.set("line_items[0][price_data][unit_amount]", String(order.amount_cents));
       params.set("line_items[0][price_data][product_data][name]", "My Pet’s Secret Life");
-      params.set("line_items[0][price_data][product_data][description]", "One-time 12 QC-approved pet portraits. No subscription.");
+      params.set("line_items[0][price_data][product_data][description]", "One-time 12 QC-approved pet portraits and 2 cinematic clips. No subscription.");
       params.set("line_items[0][quantity]", "1");
       params.set("metadata[sku]", PET_SKU);
       params.set("metadata[product_type]", "pet_secret_life");
@@ -407,12 +504,13 @@ Deno.serve(async (req) => {
       const order = await findOrderByToken(service, publicToken);
       if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
       const scenes = await loadScenes(service, order.id);
+      const clips = await loadClips(service, order.id);
 
       if (action === "getOrderByPublicToken") {
-        return jsonResponse(toCustomerOrder(order, scenes, publicToken));
+        return jsonResponse(toCustomerOrder(order, scenes, publicToken, clips));
       }
       if (action === "pollGenerationProgress") {
-        return jsonResponse(toProgress(order, scenes, publicToken));
+        return jsonResponse(toProgress(order, scenes, publicToken, clips));
       }
 
       const unlocked = deliveryAllowed({
@@ -491,14 +589,38 @@ Deno.serve(async (req) => {
           ],
         });
       }
+      const clipResults = [];
+      for (const clip of clips) {
+        const mapped = toProgress(order, scenes, publicToken, [clip]).clips[0];
+        const previewUrl =
+          unlocked && clip.result_path
+            ? await signedDownload(service, PET_RESULT_BUCKET, clip.result_path)
+            : null;
+        const ready = unlocked && mapped?.status === "ready" && Boolean(previewUrl);
+        clipResults.push({
+          id: clip.id,
+          slot: clip.slot === 2 ? 2 : 1,
+          sourceSceneId: clip.source_scene_id,
+          title: mapped?.title || `Cinematic clip ${clip.slot}`,
+          status: mapped?.status || "queued",
+          previewUrl: ready ? previewUrl : null,
+          downloadUrl: ready ? previewUrl : null,
+          mimeType: "video/mp4",
+          durationSeconds: Number(clip.output_duration_seconds || clip.requested_duration_seconds || 5),
+          width: clip.result_width ?? null,
+          height: clip.result_height ?? null,
+          ready,
+        });
+      }
       return jsonResponse({
         orderId: order.id,
         publicToken,
         petName: order.pet_name,
-        status: toCustomerOrder(order, scenes, publicToken).status,
+        status: toCustomerOrder(order, scenes, publicToken, clips).status,
         scenes: sceneResults,
+        clips: clipResults,
         formatNote:
-          "This purchase includes 12 QC-approved portraits. File dimensions are the real generated size. Wallpaper, social, and poster crops are not included and are labelled Coming later.",
+          "This purchase includes 12 QC-approved portraits and 2 cinematic 5-second clips. File dimensions are the real generated size. Wallpaper, social, and poster crops are not included and are labelled Coming later.",
         totalCount: PET_SCENE_COUNT,
       });
     }

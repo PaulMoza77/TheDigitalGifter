@@ -52,6 +52,51 @@ export async function recordAiCostAttempt(
   }
 }
 
+export async function recordVideoAiCostAttempt(
+  service: RpcClient,
+  input: {
+    predictionId: string;
+    orderId: string;
+    clipId: string;
+    sourceSceneId: string;
+    sceneKey?: string | null;
+    attemptNumber: number;
+    modelName: string;
+    modelVersion?: string | null;
+    resolution: string;
+    requestedSeconds: number;
+    isMock?: boolean;
+    createFailed?: boolean;
+    costNotes?: string | null;
+  },
+) {
+  const { error } = await service.rpc("ai_cost_ledger_record_video_attempt", {
+    p_provider: AI_COST_PROVIDER_REPLICATE,
+    p_prediction_id: input.predictionId,
+    p_pet_order_id: input.orderId,
+    p_clip_id: input.clipId,
+    p_source_scene_id: input.sourceSceneId,
+    p_scene_key: input.sceneKey ?? null,
+    p_attempt_number: input.attemptNumber,
+    p_product_sku: PET_SKU,
+    p_model_name: input.modelName,
+    p_model_version: input.modelVersion ?? null,
+    p_resolution: input.resolution,
+    p_requested_seconds: input.requestedSeconds,
+    p_is_mock: Boolean(input.isMock),
+    p_create_failed: Boolean(input.createFailed),
+    p_cost_notes: input.costNotes ?? null,
+  });
+  if (error) {
+    await service.rpc("pet_log_event", {
+      p_order_id: input.orderId,
+      p_action: "ai_cost_record_failed",
+      p_actor_type: "system",
+      p_payload: { message: error.message, prediction_id: input.predictionId, clip_id: input.clipId },
+    });
+  }
+}
+
 export async function finalizeAiCostPrediction(
   service: RpcClient,
   input: {

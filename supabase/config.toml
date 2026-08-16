@@ -49,6 +49,9 @@ verify_jwt = false
 [functions.pet-generate]
 verify_jwt = false
 
+[functions.pet-generate-video]
+verify_jwt = false
+
 [functions.pet-replicate-webhook]
 verify_jwt = false
 

@@ -347,7 +347,7 @@ describe("Replicate cost accounting", () => {
     expect(report.cards.grossAfterAiUsd).toBe(58.96);
     expect(report.cards.avgAiCostPerPaidPetOrderUsd).toBe(0.04);
     expect(report.cards.avgCostPerSuccessfulPortraitUsd).toBe(0.04);
-    expect(report.cards.projectedStandardPackCostUsd).toBe(0.48);
+    expect(report.cards.projectedStandardPackCostUsd).toBe(0.73);
     expect(report.breakdown.byOrder).toEqual([
       {
         orderId: "order-b",
@@ -392,9 +392,9 @@ describe("Replicate cost accounting", () => {
     expect(sumTrackedCostUsd([row])).toBe(0);
   });
 
-  it("projects a standard 12-scene Kontext Pro pack at $0.48", () => {
-    expect(PROJECTED_STANDARD_PACK_COST_USD).toBe(0.48);
-    expect(projectedStandardPackCostUsd()).toBe(0.48);
+  it("projects a standard 12-portrait + 2-clip pack at $0.73", () => {
+    expect(PROJECTED_STANDARD_PACK_COST_USD).toBe(0.73);
+    expect(projectedStandardPackCostUsd()).toBe(0.73);
     expect(formatUsd(KONTEXT_PRO_UNIT_COST_USD)).toBe("$0.04");
     expect(KONTEXT_PRO_MODEL).toBe("black-forest-labs/flux-kontext-pro");
   });

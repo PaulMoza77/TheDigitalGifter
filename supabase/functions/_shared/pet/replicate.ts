@@ -1,4 +1,4 @@
-import { petImageModel, petImageModelVersion, siteOrigin } from "./constants.ts";
+import { petImageModel, petImageModelVersion, petVideoModel, petVideoDurationSeconds, petVideoResolution, siteOrigin } from "./constants.ts";
 import { hmacSha256Base64, timingSafeEqual } from "./crypto.ts";
 
 export type ReplicatePrediction = {
@@ -29,11 +29,16 @@ export function replicateOutputUrl(output: unknown): string | null {
   return null;
 }
 
-export function webhookCallbackUrl(orderId: string, sceneKey: string): string {
+export function webhookCallbackUrl(orderId: string, sceneKey: string, extra?: Record<string, string>): string {
   const base = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
   const url = new URL(`${base}/functions/v1/pet-replicate-webhook`);
   url.searchParams.set("order_id", orderId);
   url.searchParams.set("scene_key", sceneKey);
+  if (extra) {
+    for (const [key, value] of Object.entries(extra)) {
+      url.searchParams.set(key, value);
+    }
+  }
   return url.toString();
 }
 
@@ -44,6 +49,51 @@ export function kontextProInput(prompt: string, inputImage: string) {
     aspect_ratio: "4:5",
     output_format: "jpg",
   };
+}
+
+export function seedanceInput(prompt: string, imageUrl: string) {
+  return {
+    prompt,
+    image: imageUrl,
+    duration: petVideoDurationSeconds(),
+    resolution: petVideoResolution(),
+    camera_fixed: false,
+  };
+}
+
+export async function createReplicateVideoPrediction(input: {
+  prompt: string;
+  imageUrl: string;
+  orderId: string;
+  clipId: string;
+  slot: number;
+}): Promise<ReplicatePrediction> {
+  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
+  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
+
+  const model = petVideoModel();
+  const body: Record<string, unknown> = {
+    input: seedanceInput(input.prompt, input.imageUrl),
+    webhook: webhookCallbackUrl(input.orderId, `video-slot-${input.slot}`, {
+      media_type: "video",
+      clip_id: input.clipId,
+    }),
+    webhook_events_filter: ["completed"],
+  };
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  const res = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json?.detail || json?.error || "Replicate video prediction failed");
+  return json as ReplicatePrediction;
 }
 
 export async function createReplicatePrediction(input: {

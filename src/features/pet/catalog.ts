@@ -22,13 +22,16 @@ export const PET_OFFER = {
   priceDisplay: PET_PRICE_DISPLAY,
   currency: PET_CURRENCY,
   sceneCount: PET_SCENE_COUNT,
+  videoCount: 2,
+  clipDurationSeconds: 5,
   billing: "one_time" as const,
   subscription: false,
   subscriptionCopy: "No subscription",
   includes: [
     "12 portraits of the same pet",
+    "2 cinematic 5-second clips",
     "Human review before download",
-    "One-time $59 — no subscription",
+    "One-time price — no subscription",
   ] as const,
 } as const;
 
@@ -240,29 +243,29 @@ export const PET_HOW_IT_WORKS = [
   },
   {
     step: 2,
-    title: "Pay $59 once",
+    title: "Pay once",
     body: "No subscription. No renewal.",
   },
   {
     step: 3,
-    title: "Get 12 portraits",
-    body: "Same pet. Human-checked. Then you download.",
+    title: "Get 12 portraits and 2 clips",
+    body: "Same pet. Human-checked. Delivery only after QC.",
   },
 ] as const;
 
 export const PET_FAQS = [
   {
     question: "Is this a subscription?",
-    answer: "No. $59 once. Nothing renews.",
+    answer: "No. One-time payment. Nothing renews.",
   },
   {
     question: "Will it look like my pet?",
     answer:
-      "Yes — that is the product. One photo, twelve scenes, the same face. A person checks before you download.",
+      "Yes — that is the product. One photo, twelve scenes, two cinematic clips, the same face. A person checks before you download.",
   },
   {
     question: "How long does it take?",
-    answer: "Most galleries are ready in under an hour. We email you the link.",
+    answer: "Portraits are generated first, then a person reviews them, then two clips are made and reviewed. We email you when the gallery is ready.",
   },
   {
     question: "What photo works best?",

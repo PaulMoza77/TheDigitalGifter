@@ -2,7 +2,8 @@ import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PET_OFFER, petSourceImage } from "./catalog";
+import { petSourceImage } from "./catalog";
+import { usePublicPetOffer } from "./usePublicPetOffer";
 import {
   FieldError,
   PersonalityPicker,
@@ -28,6 +29,7 @@ export function PetCreatePage({
   species = "dog",
   forceErrors = false,
 }: PetCreatePageProps) {
+  const { priceDisplay } = usePublicPetOffer();
   const { draft, previewUrl, hasOriginalFile, storageMessage, setPhotoFromFile, clearPhoto } =
     usePetDraft();
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -102,7 +104,7 @@ export function PetCreatePage({
             Start with one photo
           </h1>
           <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-            We keep this face in all twelve portraits.
+            We keep this face in all twelve portraits and both cinematic clips.
           </p>
         </div>
 
@@ -204,10 +206,10 @@ export function PetCreatePage({
           type="submit"
           className="h-12 w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
         >
-          Continue — {PET_OFFER.priceDisplay}
+          Continue — {priceDisplay}
         </Button>
         <p className="text-center text-xs text-[#f6efe4]/50">
-          {PET_OFFER.priceDisplay} once · No subscription
+          {priceDisplay} once · No subscription
         </p>
       </form>
     </PetShell>

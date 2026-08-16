@@ -7,6 +7,13 @@ import {
 } from "../_shared/pet/constants.ts";
 import { asString, decryptPublicToken, sha256Hex } from "../_shared/pet/crypto.ts";
 import { canReleaseDelivery, canStartGeneration, retryTargets } from "../_shared/pet/guards.ts";
+import {
+  canApproveVideoClip,
+  canGenerateVideoClips,
+  canRetryVideoClip,
+  canSelectVideoSources,
+  rejectClientVideoTampering,
+} from "../_shared/pet/videoGuards.ts";
 import { sendPetDeliveryEmail } from "../_shared/pet/email.ts";
 import {
   AI_COST_PRODUCT_FAMILY,
@@ -17,7 +24,9 @@ import {
   mapDbLedgerRow,
   rangeToIso,
   rejectClientCostTampering,
+  SEEDANCE_FAST_MODEL,
   snapshotKontextProTariff,
+  snapshotSeedanceTariff,
   sumTrackedCostUsd,
   type AiCostLedgerRow,
   type PaidPetOrder,
@@ -41,6 +50,22 @@ async function invokeGenerate(orderId: string, sceneKeys?: string[]) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ order_id: orderId, scene_keys: sceneKeys }),
+  });
+  return res.json();
+}
+
+async function invokeGenerateVideo(orderId: string, clipId?: string) {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) throw new Error("Missing Supabase service credentials");
+  const res = await fetch(`${url.replace(/\/$/, "")}/functions/v1/pet-generate-video`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      apikey: key,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ order_id: orderId, clip_id: clipId, retry: Boolean(clipId) }),
   });
   return res.json();
 }
@@ -112,6 +137,23 @@ async function loadPaidOrders(
   });
 }
 
+async function loadCurrentVideoTariff(service: ReturnType<typeof getServiceClient>) {
+  const { data } = await service
+    .from("ai_model_pricing")
+    .select("id, model_name, model_version, pricing_method, unit_cost_usd, source, notes")
+    .eq("provider", AI_COST_PROVIDER_REPLICATE)
+    .eq("model_name", SEEDANCE_FAST_MODEL)
+    .eq("is_active", true)
+    .maybeSingle();
+  return snapshotSeedanceTariff({
+    capturedAt: new Date().toISOString(),
+    modelVersion: data?.model_version ?? null,
+    pricingRowId: data?.id ?? null,
+    unitCostUsd: data?.unit_cost_usd != null ? Number(data.unit_cost_usd) : undefined,
+    source: data?.source || undefined,
+  });
+}
+
 async function loadCurrentTariff(service: ReturnType<typeof getServiceClient>) {
   const { data } = await service
     .from("ai_model_pricing")
@@ -136,11 +178,12 @@ async function buildCostReport(
 ) {
   const period = rangeToIso(from, to);
   const today = rangeToIso(todayUtcDate(), todayUtcDate());
-  const [periodLedger, todayLedger, paidOrdersInPeriod, currentTariff] = await Promise.all([
+  const [periodLedger, todayLedger, paidOrdersInPeriod, currentTariff, currentVideoTariff] = await Promise.all([
     loadLedgerRows(service, period.fromIso, period.toIso),
     loadLedgerRows(service, today.fromIso, today.toIso),
     loadPaidOrders(service, period.fromIso, period.toIso),
     loadCurrentTariff(service),
+    loadCurrentVideoTariff(service),
   ]);
   const paidIds = paidOrdersInPeriod.map((order) => order.id);
   const ledgerForPaidOrders = paidIds.length ? await loadLedgerRows(service, undefined, undefined, paidIds) : [];
@@ -154,6 +197,7 @@ async function buildCostReport(
     paidOrdersInPeriod,
     ledgerForPaidOrders,
     currentTariff,
+    currentVideoTariff,
   });
 }
 
@@ -168,7 +212,74 @@ Deno.serve(async (req) => {
     const costCheck = rejectClientCostTampering(body);
     if (!costCheck.ok) return apiError(costCheck.message, 400);
     const action = asString(body.action) || "list";
+    if (
+      [
+        "selectVideoSources",
+        "generateVideoClips",
+        "retryVideoClip",
+        "qcApproveClip",
+        "qcRejectClip",
+      ].includes(action)
+    ) {
+      const videoCheck = rejectClientVideoTampering(body);
+      if (!videoCheck.ok) return apiError(videoCheck.message, 400);
+    }
     const service = getServiceClient();
+
+    if (action === "getPetOffer") {
+      const { data, error } = await service
+        .from("pet_offers")
+        .select("*")
+        .eq("sku", "pet-secret-life-12")
+        .eq("active", true)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return jsonResponse({ offer: data });
+    }
+
+    if (action === "updatePetOffer") {
+      const amountCents = Math.round(Number(body.amountCents ?? body.amount_cents));
+      if (!Number.isFinite(amountCents) || amountCents <= 0) {
+        return apiError("A valid USD amount in cents is required");
+      }
+      if (body.subscription === true || asString(body.mode) === "subscription") {
+        return apiError("Pet offer cannot be a subscription");
+      }
+      const { data: current, error: currentError } = await service
+        .from("pet_offers")
+        .select("*")
+        .eq("sku", "pet-secret-life-12")
+        .eq("active", true)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (currentError) throw currentError;
+      if (!current) return apiError("Active pet offer is missing", 503);
+      if (Number(current.amount_cents) === amountCents) {
+        return jsonResponse({ offer: current, unchanged: true });
+      }
+      await service.from("pet_offers").update({ active: false }).eq("id", current.id);
+      const { data: next, error: insertError } = await service
+        .from("pet_offers")
+        .insert({
+          sku: "pet-secret-life-12",
+          name: current.name,
+          amount_cents: amountCents,
+          currency: "usd",
+          image_count: 12,
+          video_count: 2,
+          subscription: false,
+          active: true,
+          version: Number(current.version || 1) + 1,
+          created_by_email: user?.email || null,
+        })
+        .select("*")
+        .single();
+      if (insertError) throw insertError;
+      return jsonResponse({ offer: next });
+    }
 
     if (action === "list") {
       const q = asString(body.q).toLowerCase().replace(/[,()%]/g, "").slice(0, 80);
@@ -196,9 +307,27 @@ Deno.serve(async (req) => {
       const items = data ?? [];
       const orderIds = items.map((item) => String(item.id));
       const ledger = orderIds.length ? await loadLedgerRows(service, undefined, undefined, orderIds) : [];
+      const clipRows = orderIds.length
+        ? (
+            await service
+              .from("pet_order_video_clips")
+              .select("pet_order_id, status, slot, source_scene_id")
+              .in("pet_order_id", orderIds)
+          ).data ?? []
+        : [];
+      const sceneRows = orderIds.length
+        ? (
+            await service
+              .from("pet_order_scenes")
+              .select("order_id, status")
+              .in("order_id", orderIds)
+          ).data ?? []
+        : [];
       return jsonResponse({
         items: items.map((item) => {
           const orderRows = ledger.filter((row) => row.pet_order_id === String(item.id));
+          const imageRows = orderRows.filter((row) => (row.media_type || "image") === "image");
+          const videoRows = orderRows.filter((row) => row.media_type === "video");
           const aiCostUsd = sumTrackedCostUsd(orderRows);
           const revenueUsd = Number(item.amount_cents || 0) / 100;
           const hasEstimated = orderRows.some(
@@ -207,12 +336,24 @@ Deno.serve(async (req) => {
           const hasExact = orderRows.some(
             (row) => row.cost_state === "exact" || row.cost_state === "reconciled",
           );
+          const images = sceneRows.filter((scene) => scene.order_id === item.id);
+          const videos = clipRows.filter((clip) => clip.pet_order_id === item.id);
           return {
             ...item,
             ai_cost_usd: aiCostUsd,
+            image_ai_cost_usd: sumTrackedCostUsd(imageRows),
+            video_ai_cost_usd: sumTrackedCostUsd(videoRows),
             revenue_usd: revenueUsd,
             gross_after_ai_usd: revenueUsd - aiCostUsd,
             cost_badge: hasEstimated ? "estimated" : hasExact ? "exact" : null,
+            image_progress: {
+              total: images.length,
+              succeeded: images.filter((scene) => ["succeeded", "ready"].includes(String(scene.status))).length,
+            },
+            video_progress: {
+              total: videos.length,
+              succeeded: videos.filter((clip) => ["succeeded", "ready"].includes(String(clip.status))).length,
+            },
           };
         }),
         total: count ?? 0,
@@ -256,10 +397,11 @@ Deno.serve(async (req) => {
     if (!order) return apiError("Order not found", 404);
 
     if (action === "get") {
-      const [{ data: scenes }, { data: events }, { data: job }, ledgerRows] = await Promise.all([
+      const [{ data: scenes }, { data: events }, { data: job }, { data: clips }, ledgerRows] = await Promise.all([
         service.from("pet_order_scenes").select("*").eq("order_id", orderId).order("scene_number"),
         service.from("pet_order_events").select("*").eq("order_id", orderId).order("created_at", { ascending: false }).limit(100),
         service.from("pet_generation_jobs").select("*").eq("order_id", orderId).maybeSingle(),
+        service.from("pet_order_video_clips").select("*").eq("pet_order_id", orderId).order("slot"),
         loadLedgerRows(service, undefined, undefined, [orderId]),
       ]);
       const sourcePreviewUrl = await signed(service, PET_SOURCE_BUCKET, order.photo_path);
@@ -268,6 +410,14 @@ Deno.serve(async (req) => {
         sceneViews.push({
           ...scene,
           previewUrl: await signed(service, PET_RESULT_BUCKET, scene.result_path),
+        });
+      }
+      const clipViews = [];
+      for (const clip of clips ?? []) {
+        clipViews.push({
+          ...clip,
+          previewUrl: await signed(service, PET_RESULT_BUCKET, clip.result_path),
+          downloadUrl: await signed(service, PET_RESULT_BUCKET, clip.result_path),
         });
       }
       const costs = buildOrderCostDetails({
@@ -279,6 +429,7 @@ Deno.serve(async (req) => {
         order,
         job,
         scenes: sceneViews,
+        clips: clipViews,
         events: events ?? [],
         sourcePreviewUrl,
         costs,
@@ -363,14 +514,15 @@ Deno.serve(async (req) => {
     }
 
     if (action === "qcApprove" || action === "markComplete") {
-      const { data: sceneRows } = await service
-        .from("pet_order_scenes")
-        .select("status")
-        .eq("order_id", orderId);
+      const [{ data: sceneRows }, { data: clipRows }] = await Promise.all([
+        service.from("pet_order_scenes").select("status, qc_status").eq("order_id", orderId),
+        service.from("pet_order_video_clips").select("status, qc_status").eq("pet_order_id", orderId),
+      ]);
       const releaseCheck = canReleaseDelivery({
         paidAt: order.paid_at,
         orderStatus: String(order.status),
-        scenes: sceneRows ?? [],
+        scenes: (sceneRows ?? []).map((scene) => ({ status: scene.status, qcStatus: scene.qc_status })),
+        clips: (clipRows ?? []).map((clip) => ({ status: clip.status, qcStatus: clip.qc_status })),
       });
       if (!releaseCheck.ok) return apiError(releaseCheck.message);
       const released = await service.rpc("pet_release_delivery", {
@@ -434,6 +586,170 @@ Deno.serve(async (req) => {
         p_actor_email: user?.email || null,
       });
       return jsonResponse({ ok: true, sent });
+    }
+
+    if (action === "selectVideoSources") {
+      const selected = Array.isArray(body.sceneIds)
+        ? body.sceneIds.map((value) => asString(value)).filter(Boolean)
+        : [asString(body.sceneId1), asString(body.sceneId2)].filter(Boolean);
+      const { data: scenes } = await service.from("pet_order_scenes").select("id, order_id, status").eq("order_id", orderId);
+      const check = canSelectVideoSources({
+        callerIsAdmin: true,
+        paidAt: order.paid_at,
+        orderStatus: String(order.status),
+        scenes: (scenes ?? []).map((scene) => ({ id: scene.id, orderId: scene.order_id, status: scene.status })),
+        selectedSceneIds: selected,
+        orderId,
+      });
+      if (!check.ok) return jsonResponse({ error: check.message, code: check.code }, check.code === "FORBIDDEN" ? 403 : 400);
+      const { data: existing } = await service.from("pet_order_video_clips").select("*").eq("pet_order_id", orderId);
+      if ((existing ?? []).some((clip) => ["generating", "succeeded", "ready"].includes(String(clip.status)))) {
+        return apiError("Video clips were already generated for this order.");
+      }
+      await service.from("pet_order_video_clips").delete().eq("pet_order_id", orderId).in("status", ["queued", "failed"]);
+      for (const [index, sceneId] of selected.entries()) {
+        const { error } = await service.from("pet_order_video_clips").insert({
+          pet_order_id: orderId,
+          source_scene_id: sceneId,
+          slot: index + 1,
+          status: "queued",
+        });
+        if (error) throw error;
+      }
+      await service.from("pet_orders").update({ status: "selecting_video_scenes" }).eq("id", orderId);
+      await service.rpc("pet_log_event", {
+        p_order_id: orderId,
+        p_action: "video_sources_selected",
+        p_actor_type: "admin",
+        p_actor_email: user?.email || null,
+        p_payload: { scene_ids: selected },
+      });
+      return jsonResponse({ ok: true, sceneIds: selected });
+    }
+
+    if (action === "generateVideoClips") {
+      const { data: scenes } = await service.from("pet_order_scenes").select("id, order_id, status").eq("order_id", orderId);
+      const { data: clips } = await service.from("pet_order_video_clips").select("*").eq("pet_order_id", orderId);
+      const check = canGenerateVideoClips({
+        callerIsAdmin: true,
+        paidAt: order.paid_at,
+        orderStatus: String(order.status),
+        scenes: (scenes ?? []).map((scene) => ({ id: scene.id, orderId: scene.order_id, status: scene.status })),
+        selectedSceneIds: (clips ?? []).map((clip) => String(clip.source_scene_id)),
+        orderId,
+        existingClips: (clips ?? []).map((clip) => ({
+          id: clip.id,
+          petOrderId: clip.pet_order_id,
+          sourceSceneId: clip.source_scene_id,
+          slot: clip.slot,
+          status: clip.status,
+          replicatePredictionId: clip.replicate_prediction_id,
+        })),
+        videoGenerationEnabled: String(Deno.env.get("PET_VIDEO_GENERATION_ENABLED") || "").toLowerCase() === "true",
+        videoGenerationMock: String(Deno.env.get("PET_VIDEO_GENERATION_MOCK") || "").toLowerCase() === "true",
+      });
+      if (!check.ok) {
+        if (check.status === "held") {
+          return jsonResponse({ ok: true, status: "held", message: check.message });
+        }
+        return jsonResponse({ error: check.message, code: check.code }, check.code === "PAYMENT_REQUIRED" ? 402 : 400);
+      }
+      const result = await invokeGenerateVideo(orderId);
+      return jsonResponse({ ok: true, result });
+    }
+
+    if (action === "retryVideoClip") {
+      const clipId = asString(body.clipId);
+      const { data: clip } = await service.from("pet_order_video_clips").select("*").eq("id", clipId).maybeSingle();
+      const check = canRetryVideoClip({
+        callerIsAdmin: true,
+        paidAt: order.paid_at,
+        clip: clip
+          ? {
+              id: clip.id,
+              petOrderId: clip.pet_order_id,
+              sourceSceneId: clip.source_scene_id,
+              slot: clip.slot,
+              status: clip.status,
+            }
+          : null,
+        orderId,
+      });
+      if (!check.ok) return jsonResponse({ error: check.message, code: check.code }, 400);
+      await service
+        .from("pet_order_video_clips")
+        .update({
+          status: "queued",
+          retried_from_prediction_id: clip?.replicate_prediction_id,
+          replicate_prediction_id: null,
+          provider_error: null,
+        })
+        .eq("id", clipId);
+      const result = await invokeGenerateVideo(orderId, clipId);
+      return jsonResponse({ ok: true, result });
+    }
+
+    if (action === "qcApprovePortraits") {
+      const { data: scenes } = await service.from("pet_order_scenes").select("id, status").eq("order_id", orderId);
+      const blocking = (scenes ?? []).filter((scene) => !["succeeded", "ready"].includes(String(scene.status)));
+      if ((scenes ?? []).length !== 12 || blocking.length) {
+        return apiError("all 12 portraits must succeed before QC approval");
+      }
+      await service
+        .from("pet_order_scenes")
+        .update({
+          status: "ready",
+          qc_status: "approved",
+          qc_actor_email: user?.email || null,
+          qc_at: new Date().toISOString(),
+        })
+        .eq("order_id", orderId)
+        .in("status", ["succeeded", "ready"]);
+      await service.from("pet_orders").update({ status: "selecting_video_scenes" }).eq("id", orderId);
+      return jsonResponse({ ok: true });
+    }
+
+    if (action === "qcApproveClip" || action === "qcRejectClip") {
+      const clipId = asString(body.clipId);
+      const { data: clip } = await service.from("pet_order_video_clips").select("*").eq("id", clipId).maybeSingle();
+      const check = canApproveVideoClip({
+        callerIsAdmin: true,
+        clip: clip
+          ? {
+              id: clip.id,
+              petOrderId: clip.pet_order_id,
+              sourceSceneId: clip.source_scene_id,
+              slot: clip.slot,
+              status: clip.status,
+            }
+          : null,
+        orderId,
+      });
+      if (!check.ok) return jsonResponse({ error: check.message, code: check.code }, 400);
+      if (action === "qcApproveClip") {
+        await service
+          .from("pet_order_video_clips")
+          .update({
+            status: "ready",
+            qc_status: "approved",
+            qc_notes: asString(body.notes).slice(0, 2000) || null,
+            qc_actor_email: user?.email || null,
+            qc_at: new Date().toISOString(),
+          })
+          .eq("id", clipId);
+      } else {
+        await service
+          .from("pet_order_video_clips")
+          .update({
+            qc_status: "rejected",
+            qc_notes: asString(body.notes).slice(0, 2000) || null,
+            qc_actor_email: user?.email || null,
+            qc_at: new Date().toISOString(),
+            status: "failed",
+          })
+          .eq("id", clipId);
+      }
+      return jsonResponse({ ok: true });
     }
 
     return apiError("Unknown admin action");

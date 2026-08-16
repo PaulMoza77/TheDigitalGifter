@@ -4,13 +4,19 @@ import {
   PET_PHOTO_MAX_BYTES,
   PET_PRICE_CENTS,
   PET_PRODUCT_SKU,
-  PET_SCENE_COUNT,
 } from "./types";
+import {
+  canReleaseDelivery as canReleaseDeliveryWithVideos,
+  rejectClientPriceTampering as rejectClientPriceAgainstOffer,
+} from "./videoGuards";
 
 export const PAID_STATUSES = [
   "paid",
   "generating",
   "awaiting_qc",
+  "selecting_video_scenes",
+  "generating_videos",
+  "awaiting_video_qc",
   "complete",
   "partial_failure",
 ] as const;
@@ -24,20 +30,7 @@ export function rejectClientPriceTampering(input: {
   currency?: unknown;
   sku?: unknown;
 }): { ok: true } | { ok: false; code: "INVALID_REQUEST"; message: string } {
-  if (input.sku != null && String(input.sku).trim() && String(input.sku).trim() !== PET_PRODUCT_SKU) {
-    return { ok: false, code: "INVALID_REQUEST", message: "Unknown SKU." };
-  }
-  if (input.amountCents != null && input.amountCents !== "" && Number(input.amountCents) !== PET_PRICE_CENTS) {
-    return { ok: false, code: "INVALID_REQUEST", message: "Price is server-owned." };
-  }
-  if (
-    input.currency != null &&
-    String(input.currency).trim() &&
-    String(input.currency).trim().toLowerCase() !== PET_CURRENCY
-  ) {
-    return { ok: false, code: "INVALID_REQUEST", message: "Currency is server-owned." };
-  }
-  return { ok: true };
+  return rejectClientPriceAgainstOffer(input, PET_PRICE_CENTS);
 }
 
 export function assertUploadAllowed(
@@ -284,18 +277,16 @@ export function applyPetPaymentEvent(input: {
 export function canReleaseDelivery(input: {
   paidAt: string | null;
   orderStatus: string;
-  scenes: Array<{ status: string }>;
+  scenes: Array<{ status: string; qcStatus?: string | null }>;
+  clips?: Array<{ status: string; qcStatus?: string | null }>;
 }): { ok: true } | { ok: false; message: string } {
-  if (!input.paidAt) return { ok: false, message: "unpaid order cannot be released" };
-  if (input.orderStatus !== "awaiting_qc") return { ok: false, message: "order is not awaiting QC" };
-  if (input.scenes.length !== PET_SCENE_COUNT) {
-    return { ok: false, message: `expected ${PET_SCENE_COUNT} scenes` };
-  }
-  const blocking = input.scenes.filter((scene) => !["succeeded", "ready"].includes(scene.status));
-  if (blocking.length > 0) {
-    return { ok: false, message: "all 12 scenes must be succeeded or ready" };
-  }
-  return { ok: true };
+  return canReleaseDeliveryWithVideos(input);
+}
+
+export function mapOrderStatusForCustomer(status: string): string {
+  if (status === "generating") return "processing";
+  if (status === "awaiting_qc") return "quality_control";
+  return status;
 }
 
 export function kontextProInput(prompt: string, inputImage: string) {

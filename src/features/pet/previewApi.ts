@@ -12,6 +12,7 @@ import type {
   PetSceneStatus,
 } from "./types";
 import { PET_PRICE_CENTS, PET_PRODUCT_SKU, PET_SCENE_COUNT } from "./types";
+import { mapOrderPhase } from "./videoGuards";
 
 export type PreviewOrderPreset =
   | "processing"
@@ -61,6 +62,7 @@ export function createPreviewPetApi(): PetFunnelApi {
         noSubscription: true,
         photo: input.photo,
         scenes: buildQueuedScenes(),
+        clips: buildQueuedClips(),
         createdAt: now,
         paidAt: null,
         completedAt: null,
@@ -126,11 +128,16 @@ export function createPreviewPetApi(): PetFunnelApi {
         orderId: order.id,
         publicToken: order.publicToken,
         orderStatus: order.status,
+        phase: mapOrderPhase(order.status),
         overallPercent,
         readyCount,
         failedCount,
         totalCount: PET_SCENE_COUNT,
+        videoReadyCount: (order.clips ?? []).filter((clip) => clip.status === "ready").length,
+        videoFailedCount: (order.clips ?? []).filter((clip) => clip.status === "failed").length,
+        videoTotalCount: 2,
         scenes: order.scenes.map((scene) => ({ ...scene })),
+        clips: order.clips ?? [],
         humanQualityControl: order.status === "quality_control" || order.status === "complete",
       };
       return progress;
@@ -139,6 +146,20 @@ export function createPreviewPetApi(): PetFunnelApi {
     async getOrderResults(input) {
       const order = ensurePreviewOrder(input.publicToken);
       return toResults(order);
+    },
+
+    async getPublicOffer() {
+      return {
+        sku: PET_PRODUCT_SKU,
+        name: "My Pet’s Secret Life",
+        amountCents: PET_PRICE_CENTS,
+        currency: "usd",
+        imageCount: 12,
+        videoCount: 2,
+        subscription: false,
+        active: true,
+        priceDisplay: "$59",
+      };
     },
   };
 }
@@ -168,6 +189,7 @@ export function createPreviewOrderFixture(
       height: 1600,
     },
     scenes: buildQueuedScenes(),
+    clips: buildQueuedClips(),
     createdAt: now,
     paidAt: now,
     completedAt: null,
@@ -214,12 +236,40 @@ function applyPreset(order: PetOrder, preset: PreviewOrderPreset): PetOrder {
     next.scenes = next.scenes.map((scene, index) =>
       index < 10 ? readyScene(scene) : qcScene(scene)
     );
+    next.clips = buildQueuedClips();
   }
 
   if (preset === "complete") {
     next.status = "complete";
     next.completedAt = new Date().toISOString();
-    next.scenes = next.scenes.map((scene) => readyScene(scene));
+    next.clips = [
+      {
+        id: "preview-clip-1",
+        slot: 1,
+        sourceSceneId: next.scenes[0]?.sceneId ?? null,
+        title: "Cinematic clip 1",
+        status: "ready",
+        progressPercent: 100,
+        errorMessage: null,
+        durationSeconds: 5,
+        resolution: "720p",
+        previewUrl: null,
+        downloadUrl: null,
+      },
+      {
+        id: "preview-clip-2",
+        slot: 2,
+        sourceSceneId: next.scenes[1]?.sceneId ?? null,
+        title: "Cinematic clip 2",
+        status: "ready",
+        progressPercent: 100,
+        errorMessage: null,
+        durationSeconds: 5,
+        resolution: "720p",
+        previewUrl: null,
+        downloadUrl: null,
+      },
+    ];
   }
 
   if (preset === "partial_failure") {
@@ -241,6 +291,37 @@ function applyPreset(order: PetOrder, preset: PreviewOrderPreset): PetOrder {
   }
 
   return next;
+}
+
+function buildQueuedClips(): PetOrder["clips"] {
+  return [
+    {
+      id: "preview-clip-1",
+      slot: 1,
+      sourceSceneId: null,
+      title: "Cinematic clip 1",
+      status: "queued",
+      progressPercent: 0,
+      errorMessage: null,
+      durationSeconds: 5,
+      resolution: "720p",
+      previewUrl: null,
+      downloadUrl: null,
+    },
+    {
+      id: "preview-clip-2",
+      slot: 2,
+      sourceSceneId: null,
+      title: "Cinematic clip 2",
+      status: "queued",
+      progressPercent: 0,
+      errorMessage: null,
+      durationSeconds: 5,
+      resolution: "720p",
+      previewUrl: null,
+      downloadUrl: null,
+    },
+  ];
 }
 
 function buildQueuedScenes(): PetSceneProgress[] {
@@ -317,6 +398,20 @@ function toResults(order: PetOrder): PetOrderResults {
     petName: order.petName,
     status: order.status,
     scenes: order.scenes.map((scene) => toSceneResult(scene, order.status)),
+    clips: (order.clips ?? []).map((clip) => ({
+      id: clip.id,
+      slot: clip.slot,
+      sourceSceneId: clip.sourceSceneId,
+      title: clip.title,
+      status: clip.status,
+      previewUrl: clip.status === "ready" ? clip.previewUrl : null,
+      downloadUrl: null,
+      mimeType: "video/mp4",
+      durationSeconds: clip.durationSeconds,
+      width: null,
+      height: null,
+      ready: false,
+    })),
   };
 }
 

@@ -1,7 +1,7 @@
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import type { PetOrderResults, PetSceneResult, PetSpecies } from "../types";
+import type { PetOrderResults, PetSceneResult, PetSpecies, PetVideoClipResult } from "../types";
 import { getSceneById } from "../catalog";
 import { SceneImage } from "./SceneCard";
 
@@ -20,7 +20,7 @@ export function ResultsGrid({
         <h2 id="pet-results-heading" className="text-2xl font-semibold tracking-tight text-[#f6efe4]">
           {results.petName}’s gallery
         </h2>
-        <p className="mt-1 text-sm text-[#f6efe4]/65">12 portraits. Same pet.</p>
+        <p className="mt-1 text-sm text-[#f6efe4]/65">12 portraits and 2 cinematic clips. Same pet.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -33,7 +33,59 @@ export function ResultsGrid({
           />
         ))}
       </div>
+
+      <ClipResults clips={results.clips || []} />
     </section>
+  );
+}
+
+function ClipResults({ clips }: { clips: PetVideoClipResult[] }) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-xl font-semibold tracking-tight text-[#f6efe4]">Cinematic clips</h3>
+      <div className="grid gap-3 md:grid-cols-2">
+        {clips.map((clip) => (
+          <article key={clip.id} className="overflow-hidden rounded-2xl bg-[#1a1410]">
+            {clip.ready && clip.previewUrl ? (
+              <video
+                src={clip.previewUrl}
+                muted
+                controls
+                playsInline
+                preload="metadata"
+                className="aspect-video w-full bg-black"
+              >
+                Your browser cannot play this MP4 clip.
+              </video>
+            ) : (
+              <div className="grid aspect-video place-items-center bg-[#2a2018] px-4 text-center text-sm text-[#f6efe4]/60">
+                {clip.status === "failed"
+                  ? clip.title + " needs a retry."
+                  : clip.status === "generating"
+                    ? "Creating this 5-second clip…"
+                    : "Clip available after QC."}
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2 p-3">
+              <p className="text-sm font-semibold text-[#f6efe4]">{clip.title}</p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!clip.ready || !clip.downloadUrl}
+                className="h-9 rounded-xl border-[#f6efe4]/12 bg-transparent text-sm text-[#f6efe4] hover:bg-[#f6efe4]/8 disabled:opacity-40"
+                onClick={() => {
+                  if (!clip.ready || !clip.downloadUrl) return;
+                  window.open(clip.downloadUrl, "_blank", "noopener,noreferrer");
+                }}
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                {clip.ready ? "Download MP4" : "Waiting"}
+              </Button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
   );
 }
 

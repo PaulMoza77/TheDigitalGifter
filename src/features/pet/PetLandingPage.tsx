@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PET_OFFER, PET_OTHER_SUBJECTS, PET_SCENES } from "./catalog";
+import { PET_OTHER_SUBJECTS, PET_SCENES } from "./catalog";
 import { HowItWorks, PetFaq, PetShell, SceneGrid, SceneImage, StickyCta } from "./components";
 import { PET_PRODUCT_PROMISE, type PetFunnelNavigation, type PetSpecies } from "./types";
 import { trackMetaViewContent } from "@/lib/metaPixel";
+import { usePublicPetOffer } from "./usePublicPetOffer";
 
 export type PetLandingPageProps = {
   navigation?: PetFunnelNavigation;
@@ -12,6 +13,7 @@ export type PetLandingPageProps = {
 };
 
 export function PetLandingPage({ navigation, species = "dog" }: PetLandingPageProps) {
+  const { priceDisplay } = usePublicPetOffer();
   useEffect(() => {
     trackMetaViewContent();
   }, [species]);
@@ -29,21 +31,27 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
               One photo.
               <br />
               Twelve secret lives.
+              <br />
+              Two cinematic clips.
             </h1>
             <p className="mt-4 max-w-md text-lg leading-7 text-[#f6efe4]/72">
-              {PET_PRODUCT_PROMISE} {PET_OFFER.priceDisplay} once.
+              {PET_PRODUCT_PROMISE} {priceDisplay} once.
             </p>
             <Button
               type="button"
               onClick={start}
               className="mt-6 h-12 rounded-full bg-[#d4a84b] px-7 text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
             >
-              Create theirs — {PET_OFFER.priceDisplay}
+              Create theirs — {priceDisplay}
             </Button>
             <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#f6efe4]/68">
               <li className="inline-flex items-center gap-1.5">
                 <BadgeCheck className="h-4 w-4 text-[#d4a84b]" aria-hidden="true" />
                 12 portraits
+              </li>
+              <li className="inline-flex items-center gap-1.5">
+                <BadgeCheck className="h-4 w-4 text-[#d4a84b]" aria-hidden="true" />
+                2 cinematic clips
               </li>
               <li className="inline-flex items-center gap-1.5">
                 <BadgeCheck className="h-4 w-4 text-[#d4a84b]" aria-hidden="true" />
@@ -84,18 +92,18 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
             Ready in one photo.
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#1a140e]/75">
-            Pay once. We make twelve portraits of the same pet. A person checks the faces. You download.
+            Pay once. We make twelve portraits and two cinematic clips of the same pet. A person checks the faces. You download after QC.
           </p>
           <Button
             type="button"
             onClick={start}
             className="mt-5 h-12 rounded-full bg-[#1a140e] px-7 text-base font-semibold text-[#f6efe4] hover:bg-[#2a2018]"
           >
-            Create theirs — {PET_OFFER.priceDisplay}
+            Create theirs — {priceDisplay}
           </Button>
         </section>
       </div>
-      <StickyCta onClick={start} label={`Create theirs — ${PET_OFFER.priceDisplay}`} />
+      <StickyCta onClick={start} label={`Create theirs — ${priceDisplay}`} />
     </PetShell>
   );
 }

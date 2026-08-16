@@ -27,7 +27,7 @@ export function trackMetaInitiateCheckout(eventId: string) {
   }, { eventID: eventId });
 }
 
-export function trackMetaPurchaseOnce(eventId: string) {
+export function trackMetaPurchaseOnce(eventId: string, amountCents: number = PET_PRICE_CENTS) {
   if (typeof window === "undefined" || !eventId) return;
   const key = `tdg.meta.purchase.${eventId}`;
   try {
@@ -39,7 +39,7 @@ export function trackMetaPurchaseOnce(eventId: string) {
   pixel()?.("track", "Purchase", {
     content_ids: [PET_PRODUCT_SKU],
     content_type: "product",
-    value: 59.0,
+    value: amountCents / 100,
     currency: "USD",
     num_items: 1,
   }, { eventID: eventId });

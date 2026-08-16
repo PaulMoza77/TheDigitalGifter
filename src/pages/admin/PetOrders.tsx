@@ -5,7 +5,7 @@ import { RefreshCw, Search, PawPrint } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatUsd, GROSS_AFTER_AI_DISCLAIMER, type OrderCostDetails } from "@/features/pet/aiCost";
+import { formatUsd, formatUsd3, GROSS_AFTER_AI_DISCLAIMER, type OrderCostDetails } from "@/features/pet/aiCost";
 import {
   Table,
   TableBody,
@@ -31,6 +31,10 @@ type PetOrderListItem = {
   revenue_usd?: number;
   gross_after_ai_usd?: number;
   cost_badge?: "exact" | "estimated" | null;
+  image_progress?: { total: number; succeeded: number };
+  video_progress?: { total: number; succeeded: number };
+  image_ai_cost_usd?: number;
+  video_ai_cost_usd?: number;
 };
 
 type PetScene = {
@@ -44,6 +48,22 @@ type PetScene = {
   model_version: string | null;
   last_error: string | null;
   previewUrl: string | null;
+};
+
+type PetClip = {
+  id: string;
+  slot: number;
+  source_scene_id: string;
+  status: string;
+  attempt_number: number;
+  replicate_prediction_id: string | null;
+  model_name: string | null;
+  provider_error: string | null;
+  previewUrl: string | null;
+  downloadUrl: string | null;
+  qc_status: string | null;
+  requested_duration_seconds?: number;
+  requested_resolution?: string;
 };
 
 type PetEvent = {
@@ -88,14 +108,16 @@ export default function PetOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<{
-    order: Record<string, unknown>;
-    scenes: PetScene[];
-    events: PetEvent[];
-    sourcePreviewUrl: string | null;
-    costs?: OrderCostDetails;
-  } | null>(null);
+        order: Record<string, unknown>;
+        scenes: PetScene[];
+        clips?: PetClip[];
+        events: PetEvent[];
+        sourcePreviewUrl: string | null;
+        costs?: OrderCostDetails;
+      } | null>(null);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [selectedSceneIds, setSelectedSceneIds] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -125,11 +147,13 @@ export default function PetOrdersPage() {
       const result = await petAdmin<{
         order: Record<string, unknown>;
         scenes: PetScene[];
+        clips?: PetClip[];
         events: PetEvent[];
         sourcePreviewUrl: string | null;
         costs?: OrderCostDetails;
       }>("get", { orderId: id });
       setDetail(result);
+      setSelectedSceneIds((result.clips || []).map((clip) => clip.source_scene_id).filter(Boolean));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not load order");
     }
@@ -139,8 +163,16 @@ export default function PetOrdersPage() {
     if (!selectedId) return;
     setBusy(true);
     try {
-      await petAdmin(action, { orderId: selectedId, notes, ...extra });
-      toast.success("Updated");
+      const result = await petAdmin<{ status?: string; message?: string }>(action, {
+        orderId: selectedId,
+        notes,
+        ...extra,
+      });
+      if (result?.status === "held") {
+        toast.message(result.message || "Video generation is disabled.");
+      } else {
+        toast.success("Updated");
+      }
       await openDetail(selectedId);
       await load();
     } catch (error) {
@@ -161,8 +193,7 @@ export default function PetOrdersPage() {
               Pet Orders
             </h1>
             <p className="mt-1 text-sm text-slate-400">
-              My Pet’s Secret Life — $59 one-time, human QC before delivery. Tracked pet-funnel
-              Replicate usage only.
+              My Pet’s Secret Life — one-time payment, 12 portraits + 2 clips, human QC before delivery.
             </p>
           </div>
           <button
@@ -203,6 +234,9 @@ export default function PetOrdersPage() {
               "paid",
               "generating",
               "awaiting_qc",
+              "selecting_video_scenes",
+              "generating_videos",
+              "awaiting_video_qc",
               "complete",
               "partial_failure",
               "failed",
@@ -239,6 +273,10 @@ export default function PetOrdersPage() {
                     <TableCell>{item.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{item.status}</Badge>
+                      <p className="mt-1 text-[10px] text-slate-500">
+                        img {item.image_progress?.succeeded ?? 0}/{item.image_progress?.total ?? 12} · vid{" "}
+                        {item.video_progress?.succeeded ?? 0}/{item.video_progress?.total ?? 2}
+                      </p>
                     </TableCell>
                     <TableCell className="text-sm text-cyan-100">
                       <div className="flex items-center gap-2">
@@ -294,6 +332,14 @@ export default function PetOrdersPage() {
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <span>Revenue</span>
                       <span>{formatUsd(detail.costs.revenueUsd)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span>Image AI</span>
+                      <span>{formatUsd(detail.costs.imageAiUsd ?? 0)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span>Video AI</span>
+                      <span>{formatUsd3(detail.costs.videoAiUsd ?? 0)}</span>
                     </div>
                     <div className="mt-1 flex items-center justify-between gap-2">
                       <span>Replicate</span>
@@ -357,7 +403,21 @@ export default function PetOrdersPage() {
                           {scene.status}
                         </div>
                       )}
-                      <p className="truncate px-1 py-1 text-[10px]">{scene.title}</p>
+                      <label className="flex items-center gap-1 px-1 py-1 text-[10px]">
+                        <input
+                          type="checkbox"
+                          checked={selectedSceneIds.includes(scene.id)}
+                          disabled={!["succeeded", "ready"].includes(scene.status)}
+                          onChange={() => {
+                            setSelectedSceneIds((current) => {
+                              if (current.includes(scene.id)) return current.filter((id) => id !== scene.id);
+                              if (current.length >= 2) return [current[1], scene.id];
+                              return [...current, scene.id];
+                            });
+                          }}
+                        />
+                        <span className="truncate">{scene.title}</span>
+                      </label>
                       <p className="px-1 pb-1 text-[10px] text-slate-500">
                         {scene.attempts} tries · {scene.replicate_prediction_id || "no prediction"}
                       </p>
@@ -393,6 +453,84 @@ export default function PetOrdersPage() {
                       >
                         Retry/regenerate
                       </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    disabled={busy || selectedSceneIds.length !== 2}
+                    variant="outline"
+                    onClick={() => void mutate("selectVideoSources", { sceneIds: selectedSceneIds })}
+                  >
+                    Save 2 source scenes
+                  </Button>
+                  <Button disabled={busy} onClick={() => void mutate("generateVideoClips")}>
+                    Generate 2 clips
+                  </Button>
+                  <Button disabled={busy} variant="outline" onClick={() => void mutate("qcApprovePortraits")}>
+                    Approve 12 portraits
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {(detail.clips || []).map((clip) => (
+                    <div key={clip.id} className="rounded-xl border border-slate-800 p-2">
+                      <p className="text-xs font-medium">
+                        Clip {clip.slot} · {clip.status}
+                        {clip.qc_status ? ` · QC ${clip.qc_status}` : ""}
+                      </p>
+                      {clip.previewUrl ? (
+                        <video src={clip.previewUrl} muted controls className="mt-2 h-28 w-full rounded-lg bg-black" />
+                      ) : (
+                        <p className="mt-1 text-[11px] text-slate-500">No MP4 yet</p>
+                      )}
+                      <p className="mt-1 text-[10px] text-slate-400">
+                        {clip.requested_duration_seconds || 5}s · {clip.requested_resolution || "720p"} · attempt{" "}
+                        {clip.attempt_number} · {clip.replicate_prediction_id || "no prediction"}
+                      </p>
+                      {detail.costs?.byClip
+                        ?.filter((item) => item.sceneId === clip.id || item.sceneKey === clip.id)
+                        .map((item) => (
+                          <p key={item.sceneKey} className="text-[10px] text-cyan-100">
+                            Clip AI {formatUsd3(item.totalUsd)}
+                            {item.attempts.map((attempt) => (
+                              <span key={attempt.predictionId}>
+                                {" "}
+                                · #{attempt.attemptNumber} {formatUsd3(attempt.costUsd)} {attempt.costState}
+                              </span>
+                            ))}
+                          </p>
+                        ))}
+                      {clip.provider_error ? (
+                        <p className="text-[10px] text-red-300">{clip.provider_error}</p>
+                      ) : null}
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <button
+                          type="button"
+                          className="text-[10px] text-amber-300"
+                          onClick={() => void mutate("retryVideoClip", { clipId: clip.id })}
+                        >
+                          Retry failed clip
+                        </button>
+                        <button
+                          type="button"
+                          className="text-[10px] text-emerald-300"
+                          onClick={() => void mutate("qcApproveClip", { clipId: clip.id })}
+                        >
+                          Approve clip
+                        </button>
+                        <button
+                          type="button"
+                          className="text-[10px] text-red-300"
+                          onClick={() => void mutate("qcRejectClip", { clipId: clip.id })}
+                        >
+                          Reject clip
+                        </button>
+                        {clip.downloadUrl ? (
+                          <a href={clip.downloadUrl} className="text-[10px] text-cyan-300" target="_blank" rel="noreferrer">
+                            Signed download
+                          </a>
+                        ) : null}
+                      </div>
                     </div>
                   ))}
                 </div>
