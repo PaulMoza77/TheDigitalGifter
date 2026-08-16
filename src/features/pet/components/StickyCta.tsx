@@ -3,7 +3,7 @@ import { PET_OFFER } from "../catalog";
 
 export function StickyCta({
   onClick,
-  label = `Create their secret lives — ${PET_OFFER.priceDisplay}`,
+  label = `Create theirs — ${PET_OFFER.priceDisplay}`,
 }: {
   onClick: () => void;
   label?: string;
@@ -17,9 +17,6 @@ export function StickyCta({
       >
         {label}
       </Button>
-      <p className="mt-2 text-center text-xs text-[#f6efe4]/60">
-        {PET_OFFER.priceDisplay} one-time · {PET_OFFER.subscriptionCopy}
-      </p>
     </div>
   );
 }

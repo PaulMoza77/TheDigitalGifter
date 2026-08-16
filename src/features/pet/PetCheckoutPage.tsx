@@ -4,11 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PET_OFFER, PET_PERSONALITY_OPTIONS, PET_SPECIES_OPTIONS } from "./catalog";
 import { PetApiError, startPetCheckout } from "./api";
 import { petFunnelApi } from "./supabaseApi";
-import {
-  OfferStack,
-  PetShell,
-  PriceBadge,
-} from "./components";
+import { PetShell } from "./components";
 import { getPetPhotoFile, getPetPhotoObjectUrl } from "./storage";
 import type { PetFunnelApi } from "./api";
 import type { PetFunnelNavigation } from "./types";
@@ -52,13 +48,13 @@ export function PetCheckoutPage({
     setError(null);
 
     if (!formCheck.ok) {
-      setError("Finish the create step before paying. We still need the photo, name, and email.");
+      setError("Finish the photo, name, and email first.");
       navigation?.goToCreate();
       return;
     }
 
     if (!photoFile || !draft.photo) {
-      setError("Re-attach the original photo before paying. Drafts never store the full file.");
+      setError("Re-attach the original photo before paying.");
       navigation?.goToCreate();
       return;
     }
@@ -94,17 +90,13 @@ export function PetCheckoutPage({
       window.location.assign(result.checkoutUrl);
     } catch (caught) {
       if (caught instanceof PetApiError && caught.code === "PET_API_NOT_CONNECTED") {
-        setError(
-          "Checkout is designed and typed, but the backend is not connected yet. No payment was taken."
-        );
+        setError("Checkout is not connected yet. No payment was taken.");
       } else if (caught instanceof PetApiError && caught.code === "CHECKOUT_CONFLICT") {
-        setError(
-          "Checkout changed while starting payment. Refresh and try again. No extra charge was created.",
-        );
+        setError("Checkout changed. Refresh and try again. No extra charge was created.");
       } else if (caught instanceof Error) {
         setError(caught.message);
       } else {
-        setError("Something went wrong starting checkout. No payment was taken.");
+        setError("Could not start checkout. No payment was taken.");
       }
     } finally {
       setSubmitting(false);
@@ -115,102 +107,68 @@ export function PetCheckoutPage({
     <PetShell
       navigation={navigation}
       showBack
-      backLabel="Edit details"
+      backLabel="Edit"
       onBack={() => navigation?.goToCreate()}
     >
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <section>
-          <p className="text-xs uppercase tracking-[0.22em] text-[#d4a84b]">Checkout</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#f6efe4] sm:text-4xl">
-            One payment. Twelve lives.
-          </h1>
-          <p className="mt-3 max-w-xl text-base leading-7 text-[#f6efe4]/72">
-            Review the star of the gallery, then pay once for 12 QC-approved portraits. There is no
-            trial, no renewal, and no subscription checkbox hiding under the button.
+      <div className="mx-auto max-w-md space-y-6">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-[#f6efe4]">Pay once</h1>
+          <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
+            {PET_OFFER.priceDisplay} for 12 portraits. No subscription.
           </p>
+        </div>
 
-          <div className="mt-8 overflow-hidden rounded-3xl border border-[#f6efe4]/10 bg-[#1a1410]">
-            <div className="grid gap-0 sm:grid-cols-[180px_minmax(0,1fr)]">
-              <div className="aspect-square bg-[#2a2018] sm:aspect-auto">
-                {previewUrl ? (
-                  <img
-                    src={previewUrl}
-                    alt={draft.petName ? `${draft.petName} photo` : "Pet photo"}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="grid h-full min-h-[180px] place-items-center text-sm text-[#f6efe4]/50">
-                    No photo yet
-                  </div>
-                )}
-              </div>
-              <div className="space-y-3 p-5">
-                <h2 className="text-xl font-semibold text-[#f6efe4]">
-                  {draft.petName || "Unnamed legend"}
-                </h2>
-                <p className="text-sm text-[#f6efe4]/70">
-                  {speciesLabel ?? "Species not selected"} · {personalityLabel ?? "Personality not selected"}
-                </p>
-                <p className="text-sm text-[#f6efe4]/70">{draft.email || "Email still needed"}</p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-9 px-0 text-[#d4a84b] hover:bg-transparent"
-                  onClick={() => navigation?.goToCreate()}
-                >
-                  Edit photo and details
-                </Button>
-              </div>
-            </div>
+        <div className="flex items-center gap-4 rounded-2xl border border-[#f6efe4]/10 p-3">
+          <div className="h-20 w-16 overflow-hidden rounded-xl bg-[#2a2018]">
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt={draft.petName ? `${draft.petName} photo` : "Pet photo"}
+                className="h-full w-full object-cover"
+              />
+            ) : null}
           </div>
-
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold text-[#f6efe4]">Included in this one-time order</h2>
-            <div className="mt-4">
-              <OfferStack />
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold text-[#f6efe4]">{draft.petName || "Unnamed"}</p>
+            <p className="truncate text-sm text-[#f6efe4]/60">
+              {speciesLabel} · {personalityLabel}
+            </p>
+            <p className="truncate text-sm text-[#f6efe4]/60">{draft.email}</p>
           </div>
-        </section>
+        </div>
 
-        <aside className="h-fit rounded-3xl border border-[#d4a84b]/25 bg-[#1f1712] p-5 lg:sticky lg:top-6">
-          <PriceBadge size="lg" />
-          <div className="mt-5 space-y-3 text-sm">
-            <div className="flex items-center justify-between text-[#f6efe4]">
-              <span>My Pet’s Secret Life</span>
-              <span>{PET_OFFER.priceDisplay}</span>
-            </div>
-            <div className="flex items-center justify-between text-[#f6efe4]/65">
-              <span>Subscription</span>
-              <span>None</span>
-            </div>
-            <div className="flex items-center justify-between border-t border-[#f6efe4]/10 pt-3 text-base font-semibold text-[#f6efe4]">
-              <span>Due today</span>
-              <span>{PET_OFFER.priceDisplay}</span>
-            </div>
+        <ul className="space-y-2 text-sm text-[#f6efe4]/75">
+          {PET_OFFER.includes.map((item) => (
+            <li key={item} className="flex items-center gap-2">
+              <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a84b]" aria-hidden="true" />
+              {item}
+            </li>
+          ))}
+        </ul>
+
+        <div className="rounded-2xl border border-[#d4a84b]/25 p-5">
+          <div className="flex items-center justify-between text-lg font-semibold text-[#f6efe4]">
+            <span>Due today</span>
+            <span>{PET_OFFER.priceDisplay}</span>
           </div>
-
           <Button
             type="button"
             disabled={submitting}
             onClick={() => void pay()}
-            className="mt-6 h-12 w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
+            className="mt-5 h-12 w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
           >
-            {submitting ? "Starting secure checkout…" : `Pay ${PET_OFFER.priceDisplay} once`}
+            {submitting ? "Starting checkout…" : `Pay ${PET_OFFER.priceDisplay}`}
           </Button>
-          <p className="mt-3 inline-flex items-center gap-2 text-xs text-[#f6efe4]/60">
+          <p className="mt-3 inline-flex items-center gap-2 text-xs text-[#f6efe4]/55">
             <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-            Stripe checkout opens in a secure one-time $59 payment. No subscription.
-          </p>
-          <p className="mt-2 inline-flex items-center gap-2 text-xs font-medium text-[#d4a84b]">
-            <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
-            No subscription. No automatic renewals.
+            Secure one-time payment. Nothing renews.
           </p>
           {error ? (
-            <p className="mt-4 text-sm text-[#f0b4a0]" role="alert">
+            <p className="mt-3 text-sm text-[#f0b4a0]" role="alert">
               {error}
             </p>
           ) : null}
-        </aside>
+        </div>
       </div>
     </PetShell>
   );

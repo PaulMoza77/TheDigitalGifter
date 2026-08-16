@@ -17,21 +17,19 @@ export function PetTypePicker({
 
   return (
     <fieldset aria-describedby={error ? errorId : undefined}>
-      <legend className="mb-3 text-sm font-medium text-[#f6efe4]">
-        What kind of legend is this?
-      </legend>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <legend className="mb-2 text-sm font-medium text-[#f6efe4]">Pet type</legend>
+      <div className="grid grid-cols-3 gap-2">
         {PET_SPECIES_OPTIONS.map((option) => {
           const selected = value === option.id;
           return (
             <label
               key={option.id}
               className={cn(
-                "cursor-pointer rounded-2xl border px-4 py-3 transition-colors",
+                "cursor-pointer rounded-xl border px-3 py-2.5 text-center text-sm font-medium transition-colors",
                 "focus-within:ring-2 focus-within:ring-[#d4a84b]",
                 selected
-                  ? "border-[#d4a84b] bg-[#d4a84b]/12"
-                  : "border-[#f6efe4]/12 bg-[#1a1410]/50 hover:border-[#f6efe4]/25"
+                  ? "border-[#d4a84b] bg-[#d4a84b] text-[#1a140e]"
+                  : "border-[#f6efe4]/12 text-[#f6efe4] hover:border-[#f6efe4]/30"
               )}
             >
               <input
@@ -42,12 +40,7 @@ export function PetTypePicker({
                 onChange={() => onChange(option.id)}
                 value={option.id}
               />
-              <span className="block text-sm font-semibold text-[#f6efe4]">
-                {option.label}
-              </span>
-              <span className="mt-1 block text-xs leading-5 text-[#f6efe4]/65">
-                {option.hint}
-              </span>
+              {option.label}
             </label>
           );
         })}

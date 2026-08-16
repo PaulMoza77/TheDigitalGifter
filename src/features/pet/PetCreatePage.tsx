@@ -9,7 +9,6 @@ import {
   PetShell,
   PetTypePicker,
   PhotoUploader,
-  PriceBadge,
   petFieldClass,
 } from "./components";
 import type { FieldErrors } from "./validation";
@@ -61,9 +60,7 @@ export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePage
     }
 
     if (!hasOriginalFile && draft.photo) {
-      setPhotoError(
-        "Re-attach the original photo before continuing. The saved preview is only for display."
-      );
+      setPhotoError("Re-attach the original photo. The saved preview is only for display.");
       return;
     }
 
@@ -76,50 +73,49 @@ export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePage
     <PetShell
       navigation={navigation}
       showBack
-      backLabel="Back to the offer"
+      backLabel="Back"
       onBack={() => navigation?.goToLanding()}
     >
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <form
-          className="space-y-8"
-          onSubmit={(event) => {
-            event.preventDefault();
-            continueToCheckout();
+      <form
+        className="mx-auto max-w-xl space-y-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          continueToCheckout();
+        }}
+        noValidate
+      >
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-[#f6efe4]">
+            Start with one photo
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
+            We keep this face in all twelve portraits.
+          </p>
+        </div>
+
+        <PhotoUploader
+          previewUrl={previewUrl}
+          fileName={draft.photo?.fileName}
+          byteSize={draft.photo?.byteSize}
+          needsOriginalFile={Boolean(draft.photo) && !hasOriginalFile}
+          error={photoError ?? errors.photo}
+          onFileAccepted={async (file) => {
+            const result = await setPhotoFromFile(file);
+            if (!result.ok) {
+              setPhotoError(result.message);
+              return;
+            }
+            setPhotoError(undefined);
+            setErrors((current) => ({ ...current, photo: undefined }));
           }}
-          noValidate
-        >
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-[#d4a84b]">Create</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#f6efe4] sm:text-4xl">
-              Introduce the star of the gallery
-            </h1>
-            <p className="mt-3 max-w-xl text-base leading-7 text-[#f6efe4]/72">
-              One photo. A name. A vibe. We keep that face consistent across all twelve secret lives.
-            </p>
-          </div>
+          onFileRejected={(message) => setPhotoError(message)}
+          onClear={() => {
+            clearPhoto();
+            setPhotoError(undefined);
+          }}
+        />
 
-          <PhotoUploader
-            previewUrl={previewUrl}
-            fileName={draft.photo?.fileName}
-            byteSize={draft.photo?.byteSize}
-            needsOriginalFile={Boolean(draft.photo) && !hasOriginalFile}
-            error={photoError ?? errors.photo}
-            onFileAccepted={async (file) => {
-              const result = await setPhotoFromFile(file);
-              if (!result.ok) {
-                setPhotoError(result.message);
-                return;
-              }
-              setPhotoError(undefined);
-              setErrors((current) => ({ ...current, photo: undefined }));
-            }}
-            onFileRejected={(message) => setPhotoError(message)}
-            onClear={() => {
-              clearPhoto();
-              setPhotoError(undefined);
-            }}
-          />
-
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor={nameId} className="text-[#f6efe4]">
               Pet name
@@ -130,7 +126,7 @@ export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePage
               value={draft.petName}
               autoComplete="off"
               maxLength={40}
-              placeholder="Maple, Chairman Meow, Sir Barksalot…"
+              placeholder="Maple"
               aria-invalid={Boolean(errors.petName)}
               aria-describedby={errors.petName ? nameErrorId : undefined}
               className={`mt-2 ${petFieldClass(Boolean(errors.petName))}`}
@@ -142,27 +138,9 @@ export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePage
             <FieldError id={nameErrorId} message={errors.petName} />
           </div>
 
-          <PetTypePicker
-            value={draft.species}
-            error={errors.species}
-            onChange={(species) => {
-              draft.setSpecies(species);
-              setErrors((current) => ({ ...current, species: undefined }));
-            }}
-          />
-
-          <PersonalityPicker
-            value={draft.personality}
-            error={errors.personality}
-            onChange={(personality) => {
-              draft.setPersonality(personality);
-              setErrors((current) => ({ ...current, personality: undefined }));
-            }}
-          />
-
           <div>
             <Label htmlFor={emailId} className="text-[#f6efe4]">
-              Email for the gallery
+              Email
             </Label>
             <Input
               id={emailId}
@@ -180,39 +158,44 @@ export function PetCreatePage({ navigation, forceErrors = false }: PetCreatePage
                 setErrors((current) => ({ ...current, email: undefined }));
               }}
             />
-            <p className="mt-1.5 text-xs text-[#f6efe4]/55">
-              Used only for this order, payment receipt, and download link.
-            </p>
             <FieldError id={emailErrorId} message={errors.email} />
           </div>
+        </div>
 
-          {storageMessage ? (
-            <p className="text-sm text-[#f3d48a]" role="status">
-              {storageMessage}
-            </p>
-          ) : null}
+        <PetTypePicker
+          value={draft.species}
+          error={errors.species}
+          onChange={(species) => {
+            draft.setSpecies(species);
+            setErrors((current) => ({ ...current, species: undefined }));
+          }}
+        />
 
-          <Button
-            type="submit"
-            className="h-12 w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63] sm:w-auto sm:px-8"
-          >
-            Continue to checkout — {PET_OFFER.priceDisplay}
-          </Button>
-        </form>
+        <PersonalityPicker
+          value={draft.personality}
+          error={errors.personality}
+          onChange={(personality) => {
+            draft.setPersonality(personality);
+            setErrors((current) => ({ ...current, personality: undefined }));
+          }}
+        />
 
-        <aside className="h-fit rounded-3xl border border-[#f6efe4]/10 bg-[#1f1712]/80 p-5 lg:sticky lg:top-6">
-          <PriceBadge />
-          <p className="mt-4 text-sm leading-6 text-[#f6efe4]/72">
-            You are not starting a subscription. Checkout is a single {PET_OFFER.priceDisplay} payment
-            for 12 QC-approved portraits after human quality control. Extra crops are not included.
+        {storageMessage ? (
+          <p className="text-sm text-[#f3d48a]" role="status">
+            {storageMessage}
           </p>
-          <ul className="mt-4 space-y-2 text-sm text-[#f6efe4]/75">
-            {PET_OFFER.includes.map((item) => (
-              <li key={item}>• {item}</li>
-            ))}
-          </ul>
-        </aside>
-      </div>
+        ) : null}
+
+        <Button
+          type="submit"
+          className="h-12 w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
+        >
+          Continue — {PET_OFFER.priceDisplay}
+        </Button>
+        <p className="text-center text-xs text-[#f6efe4]/50">
+          {PET_OFFER.priceDisplay} once · No subscription
+        </p>
+      </form>
     </PetShell>
   );
 }

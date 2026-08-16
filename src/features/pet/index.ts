@@ -47,6 +47,7 @@ export type {
 } from "./types";
 
 export {
+  PET_DEMO_SOURCE_IMAGE,
   PET_FAQS,
   PET_HOW_IT_WORKS,
   PET_OFFER,
@@ -56,6 +57,7 @@ export {
   PET_SPECIES_OPTIONS,
   formatPetPrice,
   getSceneById,
+  sceneImageSrc,
 } from "./catalog";
 
 export {
@@ -111,6 +113,7 @@ export {
   ResultsGrid,
   SceneCard,
   SceneGrid,
+  SceneImage,
   StickyCta,
   sceneIcon,
 } from "./components";

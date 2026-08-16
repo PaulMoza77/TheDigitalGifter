@@ -25,49 +25,31 @@ export const PET_OFFER = {
   subscription: false,
   subscriptionCopy: "No subscription",
   includes: [
-    "12 QC-approved portraits of the same pet",
-    "Downloads of the generated portraits after human review",
-    "Human quality control before you download",
+    "12 portraits of the same pet",
+    "Human review before download",
+    "One-time $59 — no subscription",
   ] as const,
 } as const;
 
+export const PET_DEMO_SOURCE_IMAGE = "/pet/source.webp";
+
+export function sceneImageSrc(id: PetSceneDefinition["id"]): string {
+  return `/pet/scenes/${id}.webp`;
+}
+
 export const PET_SPECIES_OPTIONS: readonly PetSpeciesOption[] = [
-  { id: "dog", label: "Dog", hint: "The loyal lead. The side-eye specialist." },
-  { id: "cat", label: "Cat", hint: "Already running the house. Now the gallery." },
-  { id: "other", label: "Other", hint: "Rabbit, bird, or a very serious hamster." },
+  { id: "dog", label: "Dog", hint: "Dog" },
+  { id: "cat", label: "Cat", hint: "Cat" },
+  { id: "other", label: "Other", hint: "Other pet" },
 ] as const;
 
 export const PET_PERSONALITY_OPTIONS: readonly PetPersonalityOption[] = [
-  {
-    id: "funny",
-    label: "Funny",
-    description: "Comedy gold. Slightly unhinged. Perfect gift energy.",
-  },
-  {
-    id: "royal",
-    label: "Royal",
-    description: "Velvet, posture, and a look that files taxes for you.",
-  },
-  {
-    id: "cute",
-    label: "Cute",
-    description: "Soft lighting. Big eyes. Immediate heart-melting.",
-  },
-  {
-    id: "badass",
-    label: "Badass",
-    description: "Wind in the fur. Zero apologies. Main character walk.",
-  },
-  {
-    id: "luxury",
-    label: "Luxury",
-    description: "Quiet wealth. Better lighting. Treat budget unlimited.",
-  },
-  {
-    id: "adventure",
-    label: "Adventure",
-    description: "Maps, missions, and a snack hidden in every scene.",
-  },
+  { id: "funny", label: "Funny", description: "Funny" },
+  { id: "royal", label: "Royal", description: "Royal" },
+  { id: "cute", label: "Cute", description: "Cute" },
+  { id: "badass", label: "Badass", description: "Badass" },
+  { id: "luxury", label: "Luxury", description: "Luxury" },
+  { id: "adventure", label: "Adventure", description: "Adventure" },
 ] as const;
 
 export const PET_SCENES: readonly PetSceneDefinition[] = [
@@ -201,50 +183,42 @@ export const PET_HOW_IT_WORKS = [
   {
     step: 1,
     title: "Upload one photo",
-    body: "A clear, well-lit shot of their face. JPEG, PNG or WebP, up to 15 MB.",
+    body: "A clear face, looking forward.",
   },
   {
     step: 2,
-    title: "Name the legend",
-    body: "Tell us who they are, dog or cat or otherwise, and the vibe they deserve.",
+    title: "Pay $59 once",
+    body: "No subscription. No renewal.",
   },
   {
     step: 3,
-    title: "Pay once. Get twelve.",
-    body: "No subscription. We generate 12 scenes of the same pet, then a human checks the faces.",
+    title: "Get 12 portraits",
+    body: "Same pet. Human-checked. Then you download.",
   },
 ] as const;
 
 export const PET_FAQS = [
   {
     question: "Is this a subscription?",
-    answer:
-      "No. My Pet’s Secret Life is a one-time $59 payment. You are not enrolled in anything recurring.",
+    answer: "No. $59 once. Nothing renews.",
   },
   {
-    question: "Will every portrait look like my pet?",
+    question: "Will it look like my pet?",
     answer:
-      "That is the product. One source photo, twelve scenes, the same face throughout. A person reviews identity before downloads are released.",
+      "Yes — that is the product. One photo, twelve scenes, the same face. A person checks before you download.",
   },
   {
     question: "How long does it take?",
-    answer:
-      "Most orders finish in under an hour after payment. You can watch scene-by-scene progress on the order page, and we email you when the gallery is ready.",
+    answer: "Most galleries are ready in under an hour. We email you the link.",
   },
   {
     question: "What photo works best?",
     answer:
-      "A sharp, front-facing photo with even light and both eyes visible. Avoid heavy filters, sunglasses covering the face, and group shots. JPEG, PNG or WebP up to 15 MB.",
-  },
-  {
-    question: "What files do I receive?",
-    answer:
-      "You receive 12 QC-approved portraits of the same pet. Each download is the generated image file at its real pixel size. Wallpaper, social, and poster crops are not included in this purchase and are marked Coming later.",
+      "One pet, face toward the camera, both eyes visible, even light. No group shots or heavy filters.",
   },
   {
     question: "Can I gift this?",
-    answer:
-      "Yes. Use the recipient’s pet photo, pay once, and send them the order link when the gallery is ready. It is built as a gift, not a membership.",
+    answer: "Yes. Use their pet’s photo, pay once, and send the gallery link.",
   },
 ] as const;
 

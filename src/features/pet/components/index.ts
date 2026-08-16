@@ -10,6 +10,6 @@ export { PetTypePicker } from "./PetTypePicker";
 export { PhotoUploader } from "./PhotoUploader";
 export { PriceBadge } from "./PriceBadge";
 export { ResultsGrid } from "./ResultsGrid";
-export { SceneCard, sceneIcon } from "./SceneCard";
+export { SceneCard, SceneImage, sceneIcon } from "./SceneCard";
 export { SceneGrid } from "./SceneGrid";
 export { StickyCta } from "./StickyCta";

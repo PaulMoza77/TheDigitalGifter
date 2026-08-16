@@ -2,6 +2,7 @@ import { useId, useRef, useState } from "react";
 import { ImagePlus, Replace, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PET_DEMO_SOURCE_IMAGE } from "../catalog";
 import { formatFileSize, validatePetPhotoFile } from "../validation";
 import { FieldError } from "./FieldError";
 
@@ -48,13 +49,13 @@ export function PhotoUploader({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-end justify-between gap-3">
         <label htmlFor={inputId} className="text-sm font-medium text-[#f6efe4]">
           Pet photo
         </label>
-        <span id={helpId} className="text-xs text-[#f6efe4]/55">
-          JPEG, PNG or WebP · max 15 MB
+        <span id={helpId} className="text-xs text-[#f6efe4]/50">
+          Face forward · JPEG, PNG, WebP
         </span>
       </div>
 
@@ -73,14 +74,14 @@ export function PhotoUploader({
       />
 
       {previewUrl ? (
-        <div className="overflow-hidden rounded-3xl border border-[#f6efe4]/12 bg-[#1a1410]">
+        <div className="overflow-hidden rounded-2xl border border-[#f6efe4]/12 bg-[#1a1410]">
           <div className="relative aspect-[4/5] sm:aspect-[5/4]">
             <img
               src={previewUrl}
               alt={fileName ? `Preview of ${fileName}` : "Uploaded pet photo preview"}
               className="h-full w-full object-cover"
             />
-            <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-2 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-2 bg-gradient-to-t from-black/80 to-transparent p-3">
               <div>
                 <p className="text-sm font-medium text-[#f6efe4]">{fileName ?? "Pet photo"}</p>
                 {typeof byteSize === "number" ? (
@@ -91,7 +92,7 @@ export function PhotoUploader({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="h-10 rounded-full bg-[#f6efe4] text-[#1a140e] hover:bg-white"
+                  className="h-9 rounded-full bg-[#f6efe4] text-[#1a140e] hover:bg-white"
                   onClick={openPicker}
                 >
                   <Replace className="h-4 w-4" aria-hidden="true" />
@@ -100,7 +101,7 @@ export function PhotoUploader({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-10 rounded-full border-[#f6efe4]/30 bg-transparent text-[#f6efe4] hover:bg-[#f6efe4]/10"
+                  className="h-9 rounded-full border-[#f6efe4]/30 bg-transparent text-[#f6efe4] hover:bg-[#f6efe4]/10"
                   onClick={onClear}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -111,7 +112,7 @@ export function PhotoUploader({
           </div>
           {needsOriginalFile ? (
             <p className="border-t border-[#f6efe4]/10 px-4 py-3 text-sm text-[#f3d48a]">
-              Preview restored. Re-attach the original photo before paying — we never store the full file in this browser.
+              Re-attach the original photo before paying.
             </p>
           ) : null}
         </div>
@@ -134,21 +135,25 @@ export function PhotoUploader({
             handleFiles(event.dataTransfer.files);
           }}
           className={cn(
-            "flex min-h-[240px] w-full flex-col items-center justify-center rounded-3xl border border-dashed px-6 py-10 text-center transition-colors",
+            "relative flex min-h-[220px] w-full overflow-hidden rounded-2xl border border-dashed text-center transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a84b]",
-            dragging
-              ? "border-[#d4a84b] bg-[#d4a84b]/12"
-              : "border-[#f6efe4]/20 bg-[#1a1410]/60 hover:border-[#d4a84b]/70"
+            dragging ? "border-[#d4a84b]" : "border-[#f6efe4]/20 hover:border-[#d4a84b]/70"
           )}
         >
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d4a84b]/15 text-[#d4a84b]">
-            {dragging ? <Upload className="h-6 w-6" /> : <ImagePlus className="h-6 w-6" />}
-          </span>
-          <span className="mt-4 text-base font-semibold text-[#f6efe4]">
-            Drop a photo or browse
-          </span>
-          <span className="mt-2 max-w-sm text-sm leading-6 text-[#f6efe4]/65">
-            One clear face photo. Same pet, twelve lives. No group shots if we can help it.
+          <img
+            src={PET_DEMO_SOURCE_IMAGE}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-35"
+            width={640}
+            height={960}
+          />
+          <span className="absolute inset-0 bg-[#140e0a]/55" />
+          <span className="relative z-10 flex w-full flex-col items-center justify-center px-6 py-10">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#d4a84b] text-[#1a140e]">
+              {dragging ? <Upload className="h-5 w-5" /> : <ImagePlus className="h-5 w-5" />}
+            </span>
+            <span className="mt-3 text-base font-semibold text-[#f6efe4]">Drop a photo</span>
+            <span className="mt-1 text-sm text-[#f6efe4]/70">One clear face, like this.</span>
           </span>
         </button>
       )}

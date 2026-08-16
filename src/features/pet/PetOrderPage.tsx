@@ -108,23 +108,21 @@ export function PetOrderPage({
     <PetShell
       navigation={navigation}
       showBack
-      backLabel="Back to the offer"
+      backLabel="Back"
       onBack={() => navigation?.goToLanding()}
     >
       <div className="space-y-8">
-        <section className="rounded-[28px] border border-[#f6efe4]/10 bg-[#1f1712]/80 p-5 sm:p-7">
-          <p className="text-xs uppercase tracking-[0.22em] text-[#d4a84b]">Order studio</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#f6efe4] sm:text-4xl">
-            {order ? `${order.petName}’s secret lives` : "Your pet portraits"}
+        <section>
+          <h1 className="text-3xl font-semibold tracking-tight text-[#f6efe4] sm:text-4xl">
+            {order ? `${order.petName}’s portraits` : "Your pet portraits"}
           </h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-[#f6efe4]/72">
-            {statusCopy(order?.status)} We keep the same pet in every scene, then a person checks the
-            faces before downloads unlock.
+          <p className="mt-2 max-w-xl text-sm leading-6 text-[#f6efe4]/65">
+            {statusCopy(order?.status)}
           </p>
-          <div className="mt-5 flex flex-wrap items-center gap-4">
+          <div className="mt-4 flex flex-wrap items-center gap-4">
             <div className="min-w-[180px] flex-1">
               <div
-                className="h-2 overflow-hidden rounded-full bg-[#f6efe4]/10"
+                className="h-1.5 overflow-hidden rounded-full bg-[#f6efe4]/10"
                 role="progressbar"
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -136,11 +134,11 @@ export function PetOrderPage({
                   style={{ width: `${overallPercent}%` }}
                 />
               </div>
-              <p className="mt-2 text-sm text-[#f6efe4]/65">{overallPercent}% complete</p>
+              <p className="mt-2 text-sm text-[#f6efe4]/55">{overallPercent}% complete</p>
             </div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-[#d4a84b]/12 px-3 py-1.5 text-sm text-[#f3d48a]">
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              Human quality control
+            <p className="inline-flex items-center gap-2 text-sm text-[#f6efe4]/60">
+              <ShieldCheck className="h-4 w-4 text-[#d4a84b]" aria-hidden="true" />
+              Human QC
             </p>
           </div>
         </section>
@@ -171,15 +169,7 @@ export function PetOrderPage({
           </div>
         ) : null}
 
-        {showResults && results ? (
-          <div className="space-y-3">
-            <ResultsGrid results={results} />
-            <p className="text-sm text-[#f6efe4]/60">
-              These are the 12 QC-approved portraits. Dimensions shown are the real generated file size.
-              Wallpaper, social, and poster crops are Coming later and are not included.
-            </p>
-          </div>
-        ) : null}
+        {showResults && results ? <ResultsGrid results={results} /> : null}
 
         {!order && !loading && !error ? (
           <p className="text-sm text-[#f6efe4]/70">
@@ -195,21 +185,21 @@ function statusCopy(status: PetOrder["status"] | undefined): string {
   switch (status) {
     case "generating":
     case "processing":
-      return "The studio is painting the twelve lives now.";
+      return "Creating the twelve portraits now.";
     case "awaiting_qc":
     case "quality_control":
       return "A person is checking that every portrait still looks like your pet.";
     case "partial_failure":
-      return "Most scenes finished. A few need a retry before quality control can release the gallery.";
+      return "Most scenes finished. A few need a retry.";
     case "complete":
-      return "The gallery is ready. Download high-resolution files after human quality control.";
+      return "Ready. Download the portraits below.";
     case "failed":
-      return "Generation paused. Nothing extra was charged.";
+      return "Paused. Nothing extra was charged.";
     case "refunded":
-      return "This order was refunded. Downloads stay closed.";
+      return "This order was refunded.";
     case "paid":
-      return "Payment received. The twelve scenes are lining up.";
+      return "Paid. The twelve scenes are lining up.";
     default:
-      return "Watch each secret life move from queued to ready.";
+      return "Watch each portrait move from queued to ready.";
   }
 }
