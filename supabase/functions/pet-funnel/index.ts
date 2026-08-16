@@ -28,6 +28,7 @@ import {
   tokenEnumerationRejected,
 } from "../_shared/pet/guards.ts";
 import { toCustomerOrder, toProgress, type PetOrderRow, type PetSceneRow } from "../_shared/pet/mapOrder.ts";
+import { PET_SCENE_DEFINITIONS } from "../_shared/pet/scenes.ts";
 import { petInitiateCheckoutEventId, petPurchaseEventId } from "../_shared/pet/meta.ts";
 import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
 
