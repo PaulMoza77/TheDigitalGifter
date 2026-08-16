@@ -13,8 +13,8 @@ type Props = {
 export default function ClientEmptyState({
   title,
   description,
-  ctaLabel = "Go to Generator",
-  ctaTo = "/generator",
+  ctaLabel = "Create a still image",
+  ctaTo = "/funnel/uploadPhoto",
 }: Props) {
   return (
     <div className="flex min-h-[240px] flex-col items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-white/[0.02] px-4 py-8 text-center sm:min-h-[260px] sm:rounded-[28px] sm:px-6 sm:py-10">

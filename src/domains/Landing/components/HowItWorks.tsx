@@ -102,7 +102,7 @@ export const HowItWorks = () => {
           </p>
 
           <a
-            href="/generator"
+            href="/funnel/uploadPhoto"
             className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 px-8 py-4 font-black text-black shadow-2xl shadow-yellow-500/20 transition hover:scale-[1.02]"
           >
             Start Creating

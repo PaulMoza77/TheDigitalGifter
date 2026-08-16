@@ -3,6 +3,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { getPublicSupabaseConfig } from "@/lib/env";
+import { productModel } from "@/config/productModel";
+import { validateImageUpload } from "@/lib/imageValidation";
 import { productTruth } from "@/config/productTruth";
 
 type FunnelSession = {
@@ -17,6 +20,8 @@ type FunnelSession = {
   occasion?: string | null;
   photo_bucket?: string | null;
   photo_path?: string | null;
+  upload_id?: string | null;
+  access_token?: string | null;
 };
 
 function cn(...classes: Array<string | false | null | undefined>) {
@@ -78,27 +83,6 @@ function formatBytes(bytes: number) {
   }
 
   return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-}
-
-function slugifyFilename(name: string) {
-  const parts = name.split(".");
-  const ext = parts.length > 1 ? parts.pop() : "";
-  const base = parts.join(".");
-
-  const safe = base
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 60);
-
-  return {
-    safeBase: safe || "photo",
-    ext: (ext || "jpg").toLowerCase(),
-  };
-}
-
-async function fileToArrayBuffer(file: File): Promise<ArrayBuffer> {
-  return await file.arrayBuffer();
 }
 
 type UploadedFile = {
@@ -218,23 +202,36 @@ export default function FunnelUploadPhoto() {
   const acceptFile = useCallback((file: File) => {
     setErrorMsg(null);
 
-    if (!file.type.startsWith("image/")) {
-      setErrorMsg("Please upload an image file (JPG, PNG or WebP).");
-      return;
-    }
-
-    const maxBytes = 15 * 1024 * 1024;
+    const maxBytes = productModel.upload.maxBytes;
     if (file.size > maxBytes) {
-      setErrorMsg("Image is too large. Please upload a file under 15 MB.");
+      setErrorMsg("Image is too large. Please upload a file under 10 MB.");
       return;
     }
 
-    const localUrl = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const header = new Uint8Array(reader.result as ArrayBuffer);
+      const validated = validateImageUpload({
+        fileName: file.name,
+        reportedMime: file.type,
+        sizeBytes: file.size,
+        headerBytes: header,
+      });
+      if (!validated.ok) {
+        setErrorMsg(validated.error);
+        return;
+      }
 
-    setUploaded((prev) => {
-      if (prev?.localUrl) URL.revokeObjectURL(prev.localUrl);
-      return { file, localUrl };
-    });
+      const localUrl = URL.createObjectURL(file);
+      setUploaded((prev) => {
+        if (prev?.localUrl) URL.revokeObjectURL(prev.localUrl);
+        return { file, localUrl };
+      });
+    };
+    reader.onerror = () => {
+      setErrorMsg("Could not read this file.");
+    };
+    reader.readAsArrayBuffer(file.slice(0, 16));
   }, []);
 
   const onInputChange = useCallback(
@@ -294,24 +291,66 @@ export default function FunnelUploadPhoto() {
     setErrorMsg(null);
 
     try {
-      const bucket = "templates";
-      const folder = "previews";
+      const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      const { safeBase, ext } = slugifyFilename(uploaded.file.name);
-      const uniq = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      const path = `${folder}/${uniq}-${safeBase}.${ext}`;
-
-      const bytes = await fileToArrayBuffer(uploaded.file);
-
-      const { error } = await supabase.storage.from(bucket).upload(path, bytes, {
-        contentType: uploaded.file.type || "image/jpeg",
-        upsert: false,
-        cacheControl: "3600",
+      const urlRes = await fetch(`${supabaseUrl}/functions/v1/create-upload-url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anon,
+          Authorization: `Bearer ${session?.access_token || anon}`,
+        },
+        body: JSON.stringify({
+          file_name: uploaded.file.name,
+          content_type: uploaded.file.type,
+          size_bytes: uploaded.file.size,
+        }),
       });
-
-      if (error) {
-        throw new Error(error.message || "Upload failed");
+      const urlData = (await urlRes.json()) as {
+        bucket?: string;
+        path?: string;
+        signed_url?: string;
+        upload_id?: string;
+        access_token?: string;
+        error?: string;
+      };
+      if (!urlRes.ok || !urlData.signed_url || !urlData.path || !urlData.upload_id || !urlData.access_token) {
+        throw new Error(urlData.error || "Could not start a private upload.");
       }
+
+      const putRes = await fetch(urlData.signed_url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": uploaded.file.type || "image/jpeg",
+        },
+        body: uploaded.file,
+      });
+      if (!putRes.ok) {
+        throw new Error("Upload failed. Please try a smaller JPG, PNG, or WebP.");
+      }
+
+      const confirmRes = await fetch(`${supabaseUrl}/functions/v1/confirm-upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anon,
+          Authorization: `Bearer ${session?.access_token || anon}`,
+        },
+        body: JSON.stringify({
+          upload_id: urlData.upload_id,
+          access_token: urlData.access_token,
+        }),
+      });
+      const confirmData = (await confirmRes.json()) as { error?: string; ok?: boolean };
+      if (!confirmRes.ok || !confirmData.ok) {
+        throw new Error(confirmData.error || "That file was rejected. Please upload a real JPG, PNG, or WebP.");
+      }
+
+      const bucket = urlData.bucket || "customer-uploads";
+      const path = urlData.path;
 
       localStorage.setItem("tdg_funnel_photo_path", path);
       localStorage.setItem("tdg_funnel_bucket", bucket);
@@ -319,13 +358,9 @@ export default function FunnelUploadPhoto() {
       localStorage.setItem("tdg_funnel_occasion", occasion);
       localStorage.setItem("tdg_funnel_photo", path);
       localStorage.setItem("tdg_uploaded_photo_path", path);
-
-      const publicRes = supabase.storage.from(bucket).getPublicUrl(path);
-      const publicUrl = safeString(publicRes?.data?.publicUrl);
-
-      if (publicUrl) {
-        localStorage.setItem("tdg_uploaded_photo_url", publicUrl);
-      }
+      localStorage.setItem("tdg_upload_id", urlData.upload_id);
+      localStorage.setItem("tdg_upload_access_token", urlData.access_token);
+      localStorage.removeItem("tdg_uploaded_photo_url");
 
       mergeSession({
         email: initial.email || undefined,
@@ -334,12 +369,12 @@ export default function FunnelUploadPhoto() {
         occasion,
         photo_bucket: bucket,
         photo_path: path,
+        upload_id: urlData.upload_id,
+        access_token: urlData.access_token,
       });
 
       const qs = new URLSearchParams();
 
-      qs.set("bucket", bucket);
-      qs.set("photo", path);
       qs.set("slug", slug);
       qs.set("occasion", occasion);
 

@@ -23,8 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Ignored for the template, you probably want to remove it:
-package-lock.json
 # secrets / local
 .env
 .env.*
@@ -32,3 +30,24 @@ package-lock.json
 .migration/
 .vercel
 storage-export/
+
+# Inventoried dumps / converters. Completing .gitignore does not untrack
+# files already in Git. Do not git rm --cached or rewrite history without
+# explicit approval. See the PR notes for the remaining PII steps.
+users.csv
+users.json
+users_raw.txt
+orders.csv
+orders.json
+orders_raw.txt
+jobs.json
+jobs_supabase.csv
+credit_transactions_orders.csv
+orders_convex.js
+templates_supabase.csv
+templates_supabase.json
+convert_jobs.cjs
+convert_orders.cjs
+convert_templates.cjs
+export_jobs_to_supabase.cjs
+export_orders_to_supabase.cjs

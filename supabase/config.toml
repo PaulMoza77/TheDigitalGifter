@@ -10,6 +10,42 @@ verify_jwt = false
 [functions.create-checkout]
 verify_jwt = false
 
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.fulfill-paid-order]
+verify_jwt = false
+
+[functions.get-signed-result]
+verify_jwt = false
+
+[functions.create-upload-url]
+verify_jwt = false
+
+[functions.request-included-regeneration]
+verify_jwt = false
+
+[functions.purge-expired-media]
+verify_jwt = false
+# Official scheduler: supabase/migrations/20260817_fulfillment_schedules.sql
+# Runbook: docs/fulfillment-schedules.md
+# These comments are not a scheduler.
+
+[functions.confirm-upload]
+verify_jwt = false
+
+[functions.get-upload-preview]
+verify_jwt = false
+
+[functions.process-fulfillment-jobs]
+verify_jwt = false
+# Official scheduler: supabase/migrations/20260817_fulfillment_schedules.sql
+# Runbook: docs/fulfillment-schedules.md
+# These comments are not a scheduler.
+
+[functions.redeem-result-access]
+verify_jwt = false
+
 [functions.cancel-subscription]
 verify_jwt = true
 

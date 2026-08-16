@@ -8,28 +8,28 @@ const petTemplates = [
     title: "Dogs",
     description: "Cute, funny and emotional cards for dog lovers.",
     icon: Dog,
-    path: "/generator?category=pets&type=dogs",
+    path: "/funnel/uploadPhoto?category=pets&type=dogs",
   },
   {
     id: "cats",
     title: "Cats",
     description: "Sweet and playful cards for cat memories.",
     icon: Cat,
-    path: "/generator?category=pets&type=cats",
+    path: "/funnel/uploadPhoto?category=pets&type=cats",
   },
   {
     id: "pet-loss",
     title: "Pet Loss",
     description: "Gentle cards for remembering a loved pet.",
     icon: Heart,
-    path: "/generator?category=pets&type=pet-loss",
+    path: "/funnel/uploadPhoto?category=pets&type=pet-loss",
   },
   {
     id: "funny-pets",
     title: "Funny Pets",
     description: "Light, viral-style cards made for sharing.",
     icon: Smile,
-    path: "/generator?category=pets&type=funny-pets",
+    path: "/funnel/uploadPhoto?category=pets&type=funny-pets",
   },
 ];
 

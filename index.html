@@ -5,40 +5,40 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- Google tag (gtag.js) -->
+    <!-- Consent Mode: analytics/ads denied until the cookie banner accepts. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         window.dataLayer.push(arguments);
       }
       window.gtag = gtag;
-
       gtag("consent", "default", {
-        analytics_storage: "granted",
-        ad_storage: "granted",
-        ad_user_data: "granted",
-        ad_personalization: "granted",
+        analytics_storage: "denied",
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
         wait_for_update: 500
       });
     </script>
-
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-6FVX69WYFG"
-    ></script>
-
     <script>
-      gtag("js", new Date());
-
-      gtag("event", "session_start", {
-        send_to: "G-6FVX69WYFG",
-        debug_mode: true
-      });
-
-      gtag("config", "G-6FVX69WYFG", {
-        send_page_view: true,
-        debug_mode: true
-      });
+      (function () {
+        try {
+          if (location.pathname !== "/funnel/result") return;
+          var params = new URLSearchParams(location.search);
+          var orderId = params.get("order_id") || "";
+          if (!orderId) return;
+          var hash = location.hash || "";
+          var token = "";
+          if (hash.indexOf("#t=") === 0) {
+            token = decodeURIComponent(hash.slice(3).split("&")[0] || "");
+          } else if (hash.charAt(0) === "#") {
+            token = new URLSearchParams(hash.slice(1)).get("t") || "";
+          }
+          if (!token) return;
+          sessionStorage.setItem("tdg.orderAccess." + orderId, token);
+          history.replaceState({}, "", location.pathname + location.search);
+        } catch (e) {}
+      })();
     </script>
 
     <title>TheDigitalGifter — Custom AI Holiday Cards & Memories</title>
@@ -204,48 +204,10 @@
     <meta name="robots" content="index,follow" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
 
-    <script>
-      !(function (f, b, e, v, n, t, s) {
-        if (f.fbq) return;
-        n = f.fbq = function () {
-          n.callMethod
-            ? n.callMethod.apply(n, arguments)
-            : n.queue.push(arguments);
-        };
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = true;
-        n.version = "2.0";
-        n.queue = [];
-        t = b.createElement(e);
-        t.async = true;
-        t.src = v;
-        s = b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t, s);
-      })(
-        window,
-        document,
-        "script",
-        "https://connect.facebook.net/en_US/fbevents.js"
-      );
-
-      fbq("init", "1673980440653322");
-      fbq("track", "PageView");
-    </script>
-
     <link rel="stylesheet" href="/src/index.css" />
   </head>
 
   <body>
-    <noscript>
-      <img
-        height="1"
-        width="1"
-        style="display: none"
-        src="https://www.facebook.com/tr?id=1673980440653322&ev=PageView&noscript=1"
-      />
-    </noscript>
-
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

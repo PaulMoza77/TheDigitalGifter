@@ -141,8 +141,6 @@ export default function AccountDashboard() {
   const {
     loading: overviewLoading,
     isAdmin,
-    creditsRemaining,
-    creditsUsed,
     refresh,
   } = useAccountOverview();
 
@@ -272,12 +270,6 @@ export default function AccountDashboard() {
       icon: "sparkles",
     },
     {
-      label: "Remaining Credits",
-      value: overviewLoading ? "..." : String(creditsRemaining),
-      helper: overviewLoading ? "Loading..." : `${creditsUsed} used so far`,
-      icon: "coins",
-    },
-    {
       label: "Saved Results",
       value: loading ? "..." : String(savedResults),
       helper: "Saved in your account",
@@ -324,7 +316,7 @@ export default function AccountDashboard() {
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
-              Access your creations, monitor credits and continue building new visuals from one premium workspace.
+              Access your creations and continue building new still images from one workspace.
             </p>
           </div>
 
@@ -333,8 +325,8 @@ export default function AccountDashboard() {
               asChild
               className="rounded-2xl border border-white/10 bg-white text-zinc-950 hover:bg-zinc-200"
             >
-              <Link to="/generator">
-                Open Generator
+              <Link to="/funnel/uploadPhoto">
+                Create
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -411,7 +403,6 @@ export default function AccountDashboard() {
         <div className="space-y-6">
           <ContinueCreatingCard />
           <UsageSummaryCard
-            creditsAvailable={creditsRemaining}
             completedCreations={completedCreations}
             inProgress={inProgress}
             savedItems={savedResults}

@@ -94,7 +94,7 @@ export const HeroSection = () => {
                 transition={{ delay: 0.5 }}
               >
                 <Link
-                  to="/generator"
+                  to="/funnel/uploadPhoto"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-500/50 transition-all hover:scale-105 hover:from-blue-700 hover:to-cyan-700"
                 >
                   Start Creating

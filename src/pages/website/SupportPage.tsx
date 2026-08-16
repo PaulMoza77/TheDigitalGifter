@@ -113,6 +113,13 @@ export function SupportPage() {
               <FileText size={16} className="text-[#ffd976]" />
               Refund Policy
             </Link>
+            <Link
+              to="/cookies"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm font-medium text-white transition-colors hover:border-white/25 hover:bg-white/10"
+            >
+              <FileText size={16} className="text-[#ffd976]" />
+              Cookie Policy
+            </Link>
           </nav>
         </section>
       </div>

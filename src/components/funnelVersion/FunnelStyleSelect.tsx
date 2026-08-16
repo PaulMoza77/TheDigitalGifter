@@ -32,6 +32,8 @@ type FunnelSession = {
   occasion?: string | null;
   photo_bucket?: string | null;
   photo_path?: string | null;
+  upload_id?: string | null;
+  access_token?: string | null;
 };
 
 function readSession(): FunnelSession | null {
@@ -295,6 +297,7 @@ export default function FunnelStyleSelect() {
       return;
     }
 
+    const session = readSession() || {};
     mergeSession({
       gift_type: occasion,
       occasion,
@@ -304,6 +307,8 @@ export default function FunnelStyleSelect() {
       photo_bucket: bucket,
       photo_path: photoPath,
       template_id: style.templateId,
+      upload_id: session.upload_id || localStorage.getItem("tdg_upload_id"),
+      access_token: session.access_token || localStorage.getItem("tdg_upload_access_token"),
     });
 
     localStorage.setItem("tdg_funnel_style", style.id);

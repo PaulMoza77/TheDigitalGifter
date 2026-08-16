@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPublicSupabaseConfig } from "@/lib/env";
+import { supabase } from "@/lib/supabase";
 import { productTruth } from "@/config/productTruth";
 
 type FunnelSession = {
@@ -15,6 +16,8 @@ type FunnelSession = {
   occasion?: string | null;
   photo_bucket?: string | null;
   photo_path?: string | null;
+  upload_id?: string | null;
+  access_token?: string | null;
 };
 
 function readSession(): FunnelSession | null {
@@ -45,34 +48,15 @@ function isHttpUrl(url: string) {
   return /^https?:\/\//i.test(url);
 }
 
-function resolvePublicObjectUrl(bucket: string, path: string) {
-  const p = (path || "").replace(/^\/+/, "");
-  if (!p) return "";
-  if (isHttpUrl(p)) return p;
-  const { url: supabaseUrl } = getPublicSupabaseConfig();
-  if (p.startsWith("/storage/v1/")) return `${supabaseUrl}${p}`;
-  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${p}`;
-}
-
-function getStoredPhotoRef(): { bucket: string; path: string } | null {
+function getStoredUpload(): { uploadId: string; accessToken: string } | null {
   const s = readSession();
-
-  const bucket =
-    safeString(s?.photo_bucket) ||
-    safeString(localStorage.getItem("tdg_funnel_bucket")) ||
-    "templates";
-
-  const p1 =
-    safeString(s?.photo_path) ||
-    safeString(localStorage.getItem("tdg_funnel_photo_path")) ||
-    safeString(localStorage.getItem("tdg_funnel_photo"));
-
-  if (p1) return { bucket, path: p1 };
-
-  const p2 = safeString(localStorage.getItem("tdg_uploaded_photo_path"));
-  if (p2) return { bucket, path: p2 };
-
-  return null;
+  const uploadId =
+    safeString(s?.upload_id) || safeString(localStorage.getItem("tdg_upload_id"));
+  const accessToken =
+    safeString(s?.access_token) ||
+    safeString(localStorage.getItem("tdg_upload_access_token"));
+  if (!uploadId || !accessToken) return null;
+  return { uploadId, accessToken };
 }
 
 function Button(props: {
@@ -115,10 +99,10 @@ export default function FunnelPreview() {
   }, [navigate]);
 
   useEffect(() => {
-    const ref = getStoredPhotoRef();
+    const ref = getStoredUpload();
     const s = readSession() || {};
 
-    if (!ref?.path) {
+    if (!ref) {
       redirectTimerRef.current = window.setTimeout(() => {
         navigate("/funnel/uploadPhoto", { replace: true });
       }, 250);
@@ -127,15 +111,44 @@ export default function FunnelPreview() {
 
     writeSession({
       ...s,
-      photo_bucket: ref.bucket,
-      photo_path: ref.path,
+      upload_id: ref.uploadId,
+      access_token: ref.accessToken,
     });
 
-    const url = resolvePublicObjectUrl(ref.bucket || "templates", ref.path);
-    setPhotoUrl(url);
-    setHasPhoto(!!url);
+    const upload = ref;
+    let cancelled = false;
+
+    async function loadSignedPreview() {
+      const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch(`${supabaseUrl}/functions/v1/get-upload-preview`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anon,
+          Authorization: `Bearer ${session?.access_token || anon}`,
+        },
+        body: JSON.stringify({
+          upload_id: upload.uploadId,
+          access_token: upload.accessToken,
+        }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (cancelled) return;
+      if (!res.ok || !data.url || !isHttpUrl(data.url)) {
+        navigate("/funnel/uploadPhoto", { replace: true });
+        return;
+      }
+      setPhotoUrl(data.url);
+      setHasPhoto(true);
+    }
+
+    void loadSignedPreview();
 
     return () => {
+      cancelled = true;
       if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
     };
   }, [navigate]);

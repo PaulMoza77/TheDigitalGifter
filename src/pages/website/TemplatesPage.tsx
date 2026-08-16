@@ -132,9 +132,9 @@ export default function TemplatesPage() {
       urlParams.set("occasion", occasion);
     }
 
-    urlParams.set("template", String(template._id));
+    urlParams.set("template_id", String(template._id));
 
-    navigate(`/generator?${urlParams.toString()}`);
+    navigate(`/funnel/uploadPhoto?${urlParams.toString()}`);
   };
 
   return (
@@ -217,10 +217,10 @@ export default function TemplatesPage() {
               </div>
 
               <Link
-                to="/generator"
+                to="/funnel/uploadPhoto"
                 className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 sm:inline-flex"
               >
-                Open generator
+                Open funnel
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

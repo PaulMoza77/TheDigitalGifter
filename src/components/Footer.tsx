@@ -34,11 +34,11 @@ export default function Footer() {
               </Link>
 
               <Link
-                to="/generator"
+                to="/funnel/uploadPhoto"
                 className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >
                 <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
-                Generator
+                Create
               </Link>
 
               <Link
@@ -79,6 +79,14 @@ export default function Footer() {
               >
                 <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Refund Policy
+              </Link>
+
+              <Link
+                to="/cookies"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
+              >
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
+                Cookie Policy
               </Link>
 
               <Link

@@ -92,7 +92,7 @@ export default function RecentGenerations({ items }: Props) {
           variant="secondary"
           className="w-full rounded-2xl border border-white/10 bg-white/10 text-white hover:bg-white/15 sm:w-auto"
         >
-          <Link to="/generator">
+          <Link to="/funnel/uploadPhoto">
             <Wand2 className="mr-2 h-4 w-4" />
             Create New
           </Link>
