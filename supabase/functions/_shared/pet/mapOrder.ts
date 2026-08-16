@@ -22,6 +22,8 @@ export type PetOrderRow = {
   paid_at: string | null;
   completed_at: string | null;
   qc_status: string | null;
+  promo_code?: string | null;
+  charged_amount_cents?: number | null;
 };
 
 export type PetSceneRow = {
@@ -74,6 +76,8 @@ export function toCustomerOrder(
     species: order.species,
     personality: order.personality,
     amountCents: Number(order.amount_cents),
+    chargedAmountCents: Number(order.charged_amount_cents ?? order.amount_cents),
+    promoCode: order.promo_code ?? null,
     currency: PET_CURRENCY,
     noSubscription: true as const,
     photo: order.photo_content_type

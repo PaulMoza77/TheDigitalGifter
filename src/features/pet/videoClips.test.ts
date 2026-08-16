@@ -31,6 +31,7 @@ import {
   rejectClientVideoTampering,
   rejectUnsignedReplicateWebhook,
   resolveServerOwnedOffer,
+  resolveServerOwnedPromo,
   seedanceInput,
   stripeCheckoutIsOneTimePayment,
 } from "./videoGuards";
@@ -485,6 +486,20 @@ describe("pet video clips", () => {
       }).fulfill,
     ).toBe(false);
     expect(resolveServerOwnedOffer(null).ok).toBe(false);
+  });
+
+  it("applies vtm99 as a server-owned 100% promo and ignores client percent", () => {
+    expect(resolveServerOwnedPromo("vtm99").ok).toBe(true);
+    const applied = resolveServerOwnedPromo("VTM99");
+    expect(applied.ok).toBe(true);
+    if (applied.ok && applied.code) {
+      expect(applied.code).toBe("VTM99");
+      expect(applied.discountPercent).toBe(100);
+      expect(applied.chargedAmountCents).toBe(0);
+    }
+    expect(resolveServerOwnedPromo("vtm99", 100).ok).toBe(false);
+    expect(resolveServerOwnedPromo("FREE100").ok).toBe(false);
+    expect(resolveServerOwnedPromo("").ok).toBe(true);
   });
 
   it("uses server-controlled Seedance inputs", () => {

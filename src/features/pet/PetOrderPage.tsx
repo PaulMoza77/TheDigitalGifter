@@ -61,10 +61,10 @@ export function PetOrderPage({
         setError(null);
         setLoading(false);
 
-        if (nextOrder.paidAt) {
+        if (nextOrder.paidAt && (nextOrder.chargedAmountCents ?? nextOrder.amountCents) > 0) {
           trackMetaPurchaseOnce(
             nextOrder.purchaseEventId || `pet_purchase_${nextOrder.id}`,
-            nextOrder.amountCents,
+            nextOrder.chargedAmountCents ?? nextOrder.amountCents,
           );
         }
 

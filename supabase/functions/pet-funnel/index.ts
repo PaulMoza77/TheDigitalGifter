@@ -34,10 +34,11 @@ import {
   type PetOrderRow,
   type PetSceneRow,
 } from "../_shared/pet/mapOrder.ts";
-import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, resolveServerOwnedOffer } from "../_shared/pet/videoGuards.ts";
+import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, resolveServerOwnedOffer, resolveServerOwnedPromo } from "../_shared/pet/videoGuards.ts";
 import { PET_SCENE_DEFINITIONS } from "../_shared/pet/scenes.ts";
 import { petInitiateCheckoutEventId, petPurchaseEventId } from "../_shared/pet/meta.ts";
 import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
+import { invokePetGenerate } from "../_shared/pet/stripeFulfill.ts";
 
 type Body = Record<string, unknown>;
 
@@ -212,6 +213,7 @@ Deno.serve(async (req) => {
         personality,
         sku: offer.sku,
         amount_cents: offer.amountCents,
+        charged_amount_cents: offer.amountCents,
         currency: offer.currency,
         offer_id: offerRow?.id ?? null,
         offer_version: offerRow?.version ?? 1,
@@ -326,6 +328,44 @@ Deno.serve(async (req) => {
       if (!order.photo_path || !order.photo_confirmed_at) {
         return apiError("INVALID_REQUEST", "Upload and confirm the pet photo first.");
       }
+      const promo = resolveServerOwnedPromo(body.promoCode ?? body.promo_code, body.discountPercent ?? body.discount_percent);
+      if (!promo.ok) return apiError("INVALID_REQUEST", promo.message);
+      if (promo.code) {
+        const charged = promo.chargedAmountCents;
+        await service
+          .from("pet_orders")
+          .update({
+            promo_code: promo.code,
+            discount_percent: promo.discountPercent,
+            charged_amount_cents: charged,
+          })
+          .eq("id", order.id);
+        const fulfilled = await service.rpc("fulfill_pet_order_payment", {
+          p_event_id: `promo_${promo.code}_${order.id}`,
+          p_session_id: `promo:${promo.code}:${order.id}`,
+          p_event_type: "promo.comp",
+          p_payment_status: "no_payment_required",
+          p_payment_intent_id: null,
+          p_amount_cents: charged,
+          p_currency: order.currency || PET_CURRENCY,
+          p_order_id: order.id,
+        });
+        if (fulfilled.error) throw fulfilled.error;
+        const result = fulfilled.data as { should_enqueue?: boolean; status?: string };
+        if (result?.should_enqueue) {
+          await invokePetGenerate(order.id);
+        }
+        return jsonResponse({
+          sessionId: `promo_${promo.code}_${order.id}`,
+          checkoutUrl: null,
+          status: "comped",
+          promoCode: promo.code,
+          chargedAmountCents: charged,
+          eventId: petInitiateCheckoutEventId(order.id),
+          purchaseEventId: petPurchaseEventId(order.id),
+        });
+      }
+
       const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
       if (!stripeKey) return apiError("INVALID_REQUEST", "Stripe is not configured.", 503);
 

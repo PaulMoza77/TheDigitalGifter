@@ -402,3 +402,44 @@ export function formatOfferPrice(amountCents: number): string {
   if (Number.isInteger(dollars)) return `$${dollars}`;
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(dollars);
 }
+
+export const PET_COMP_PROMO_CODE = "VTM99" as const;
+export const PET_COMP_PROMO_PERCENT = 100 as const;
+
+export function normalizePromoCode(code: unknown): string {
+  return String(code || "").trim().toUpperCase();
+}
+
+export function resolveServerOwnedPromo(
+  code: unknown,
+  clientDiscountPercent?: unknown,
+):
+  | { ok: true; code: typeof PET_COMP_PROMO_CODE; discountPercent: typeof PET_COMP_PROMO_PERCENT; chargedAmountCents: 0 }
+  | { ok: true; code: null; discountPercent: 0; chargedAmountCents: null }
+  | { ok: false; message: string } {
+  if (clientDiscountPercent != null && clientDiscountPercent !== "") {
+    return { ok: false, message: "Discount percent is server-owned." };
+  }
+  const normalized = normalizePromoCode(code);
+  if (!normalized) {
+    return { ok: true, code: null, discountPercent: 0, chargedAmountCents: null };
+  }
+  if (normalized === PET_COMP_PROMO_CODE) {
+    return {
+      ok: true,
+      code: PET_COMP_PROMO_CODE,
+      discountPercent: PET_COMP_PROMO_PERCENT,
+      chargedAmountCents: 0,
+    };
+  }
+  return { ok: false, message: "Invalid promo code." };
+}
+
+export function chargedAmountForPromo(
+  listAmountCents: number,
+  discountPercent: number,
+): number {
+  if (discountPercent >= 100) return 0;
+  if (discountPercent <= 0) return listAmountCents;
+  return Math.max(0, Math.round(listAmountCents * (1 - discountPercent / 100)));
+}

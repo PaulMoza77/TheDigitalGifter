@@ -119,6 +119,7 @@ export type StartPetCheckoutInput = {
   file: File;
   successUrl: string;
   cancelUrl: string;
+  promoCode?: string;
 };
 
 export type StartPetCheckoutResult = {
@@ -126,7 +127,7 @@ export type StartPetCheckoutResult = {
   publicToken: string;
   checkoutUrl: string | null;
   sessionId: string;
-  status?: "open" | "payment_processing";
+  status?: "open" | "payment_processing" | "comped";
 };
 
 /**
@@ -167,6 +168,7 @@ export async function startPetCheckout(
     successUrl: input.successUrl,
     cancelUrl: input.cancelUrl,
     customerEmail: input.email,
+    promoCode: input.promoCode,
   });
 
   return {

@@ -76,6 +76,26 @@ function safeReturnUrl(input: string, fallback: string): string {
   return fallback;
 }
 
+async function ensureOnceCoupon(stripeKey: string, code: string, percentOff: number): Promise<string> {
+  const id = code.replace(/[^A-Za-z0-9]/g, "").toUpperCase() || "PROMO";
+  const headers = { Authorization: `Bearer ${stripeKey}` };
+  const existing = await fetch(`https://api.stripe.com/v1/coupons/${id}`, { headers });
+  if (existing.ok) return id;
+  const params = new URLSearchParams();
+  params.set("id", id);
+  params.set("percent_off", String(Math.min(100, Math.max(1, Math.round(percentOff)))));
+  params.set("duration", "once");
+  params.set("name", id);
+  const created = await fetch("https://api.stripe.com/v1/coupons", {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/x-www-form-urlencoded" },
+    body: params,
+  });
+  const json = await created.json();
+  if (!created.ok) throw new Error(json?.error?.message || "Could not create promo coupon");
+  return id;
+}
+
 async function findPricing(
   service: ReturnType<typeof getServiceClient>,
   key: string,
@@ -171,16 +191,22 @@ Deno.serve(async (req) => {
 
     let promoCode = firstString(body.promo_code).toUpperCase();
     let promoDiscount: number | null = null;
+    void body.promo_discount_percent;
     if (promoCode) {
-      const { data: promo } = await service.rpc("lookup_affiliate_promo", { p_code: promoCode });
-      const row = Array.isArray(promo) ? promo[0] : promo;
-      if (row?.code) {
-        promoCode = String(row.code);
-        promoDiscount = Number(row.discount_percent || 0);
+      if (promoCode === "VTM99") {
+        promoDiscount = 100;
         metadata.promo_code = promoCode;
-        if (row.affiliate_user_id) metadata.affiliate_user_id = String(row.affiliate_user_id);
       } else {
-        promoCode = "";
+        const { data: promo } = await service.rpc("lookup_affiliate_promo", { p_code: promoCode });
+        const row = Array.isArray(promo) ? promo[0] : promo;
+        if (row?.code) {
+          promoCode = String(row.code);
+          promoDiscount = Number(row.discount_percent || 0);
+          metadata.promo_code = promoCode;
+          if (row.affiliate_user_id) metadata.affiliate_user_id = String(row.affiliate_user_id);
+        } else {
+          return jsonResponse({ error: "Invalid promo code." }, 400);
+        }
       }
     }
 
@@ -245,6 +271,13 @@ Deno.serve(async (req) => {
     metadata.credits = String(pricing.credits ?? 0);
     metadata.price_key = pricing.key;
     metadata.price_cents = String(pricing.price_cents ?? 0);
+    if (promoCode && promoDiscount && promoDiscount > 0) {
+      const couponId = await ensureOnceCoupon(stripeKey, promoCode, promoDiscount);
+      params.set("discounts[0][coupon]", couponId);
+      if (promoDiscount >= 100) {
+        params.set("payment_method_collection", "if_required");
+      }
+    }
     for (const [k, v] of Object.entries(metadata)) {
       if (v) params.set(`metadata[${k}]`, v);
     }

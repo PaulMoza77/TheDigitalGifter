@@ -8,7 +8,7 @@ export function isPetCheckoutMetadata(metadata: Record<string, unknown>): boolea
   return asString(metadata.sku) === "pet-secret-life-12" || asString(metadata.product_type) === "pet_secret_life";
 }
 
-async function invokePetGenerate(orderId: string) {
+export async function invokePetGenerate(orderId: string) {
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !key) return;
@@ -84,7 +84,7 @@ export async function handlePetStripeEvent(input: {
     p_event_type: input.eventType,
     p_payment_status: asString(input.obj.payment_status) || "paid",
     p_payment_intent_id: asString(input.obj.payment_intent),
-    p_amount_cents: asInt(input.obj.amount_total) || PET_PRICE_CENTS,
+    p_amount_cents: input.obj.amount_total == null ? PET_PRICE_CENTS : asInt(input.obj.amount_total),
     p_currency: asString(input.obj.currency) || "usd",
     p_order_id: orderId,
   });
@@ -101,22 +101,25 @@ export async function handlePetStripeEvent(input: {
   if (result?.status === "fulfilled" || result?.status === "already_paid") {
     const { data: order } = await input.service
       .from("pet_orders")
-      .select("id, email, meta_event_id, meta_purchase_sent_at, amount_cents")
+      .select("id, email, meta_event_id, meta_purchase_sent_at, amount_cents, charged_amount_cents")
       .eq("id", orderId)
       .maybeSingle();
     if (order && !order.meta_purchase_sent_at) {
-      const capi = await sendMetaCapiPurchase({
-        eventId: order.meta_event_id,
-        email: order.email,
-        alreadySentAt: order.meta_purchase_sent_at,
-        sourceUrl: `${siteOrigin()}/pet/order`,
-        amountCents: Number(order.amount_cents || PET_PRICE_CENTS),
-      });
-      if (capi.sent) {
-        await input.service
-          .from("pet_orders")
-          .update({ meta_purchase_sent_at: new Date().toISOString() })
-          .eq("id", orderId);
+      const charged = Number(order.charged_amount_cents ?? order.amount_cents ?? PET_PRICE_CENTS);
+      if (charged > 0) {
+        const capi = await sendMetaCapiPurchase({
+          eventId: order.meta_event_id,
+          email: order.email,
+          alreadySentAt: order.meta_purchase_sent_at,
+          sourceUrl: `${siteOrigin()}/pet/order`,
+          amountCents: charged,
+        });
+        if (capi.sent) {
+          await input.service
+            .from("pet_orders")
+            .update({ meta_purchase_sent_at: new Date().toISOString() })
+            .eq("id", orderId);
+        }
       }
     }
   }

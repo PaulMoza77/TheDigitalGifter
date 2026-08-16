@@ -176,6 +176,8 @@ export type PetOrder = {
   completedAt: string | null;
   purchaseEventId?: string;
   phase?: PetOrderPhase;
+  promoCode?: string | null;
+  chargedAmountCents?: number;
 };
 
 export type PetVideoClipProgress = {
@@ -322,13 +324,16 @@ export type CreateStripeCheckoutRequest = {
   successUrl: string;
   cancelUrl: string;
   customerEmail: string;
+  promoCode?: string;
 };
 
 export type CreateStripeCheckoutResponse = {
   sessionId: string;
   checkoutUrl: string | null;
-  status?: "open" | "payment_processing";
+  status?: "open" | "payment_processing" | "comped";
   reused?: boolean;
+  promoCode?: string | null;
+  chargedAmountCents?: number;
 };
 
 export type GetOrderByPublicTokenRequest = {

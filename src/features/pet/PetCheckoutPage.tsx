@@ -12,6 +12,7 @@ import { usePetDraft } from "./usePetDraft";
 import { usePublicPetOffer } from "./usePublicPetOffer";
 import { validatePetDraft } from "./validation";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
+import { formatOfferPrice, resolveServerOwnedPromo } from "./videoGuards";
 
 export type PetCheckoutPageProps = {
   navigation?: PetFunnelNavigation;
@@ -26,6 +27,13 @@ export function PetCheckoutPage({
   const { priceDisplay } = usePublicPetOffer();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [promoInput, setPromoInput] = useState("");
+  const [promoMessage, setPromoMessage] = useState<string | null>(null);
+  const appliedPromo = resolveServerOwnedPromo(promoInput);
+  const dueDisplay =
+    appliedPromo.ok && appliedPromo.code
+      ? formatOfferPrice(appliedPromo.chargedAmountCents)
+      : priceDisplay;
   const previewUrl = getPetPhotoObjectUrl() ?? draft.photoPreviewDataUrl;
   const photoFile = getPetPhotoFile();
 
@@ -73,9 +81,10 @@ export function PetCheckoutPage({
         file: photoFile,
         successUrl: `${window.location.origin}/pet/order`,
         cancelUrl: `${window.location.origin}/pet/checkout`,
+        promoCode: promoInput.trim() || undefined,
       });
 
-      if (result.status === "payment_processing" || !result.checkoutUrl) {
+      if (result.status === "payment_processing" || result.status === "comped" || !result.checkoutUrl) {
         navigation?.goToOrder(result.publicToken);
         return;
       }
@@ -152,15 +161,55 @@ export function PetCheckoutPage({
         <div className="rounded-2xl border border-[#d4a84b]/25 p-5">
           <div className="flex items-center justify-between text-lg font-semibold text-[#f6efe4]">
             <span>Due today</span>
-            <span>{priceDisplay}</span>
+            <span>{dueDisplay}</span>
           </div>
+          <div className="mt-4 flex gap-2">
+            <input
+              value={promoInput}
+              onChange={(event) => {
+                setPromoInput(event.target.value);
+                setPromoMessage(null);
+              }}
+              placeholder="Promo code"
+              autoCapitalize="characters"
+              className="h-11 flex-1 rounded-xl border border-[#f6efe4]/15 bg-transparent px-3 text-sm text-[#f6efe4] outline-none placeholder:text-[#f6efe4]/35"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 rounded-xl border-[#f6efe4]/20 bg-transparent text-[#f6efe4] hover:bg-[#f6efe4]/8"
+              onClick={() => {
+                const resolved = resolveServerOwnedPromo(promoInput);
+                if (!resolved.ok) {
+                  setPromoMessage(resolved.message);
+                  return;
+                }
+                if (!resolved.code) {
+                  setPromoMessage("Enter a promo code.");
+                  return;
+                }
+                setPromoMessage(`${resolved.code} applied — 100% off. Due today $0.`);
+              }}
+            >
+              Apply
+            </Button>
+          </div>
+          {promoMessage ? (
+            <p className="mt-2 text-sm text-[#d4a84b]" role="status">
+              {promoMessage}
+            </p>
+          ) : null}
           <Button
             type="button"
             disabled={submitting}
             onClick={() => void pay()}
             className="mt-5 h-12 w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
           >
-            {submitting ? "Starting checkout…" : `Pay ${priceDisplay}`}
+            {submitting
+              ? "Starting checkout…"
+              : appliedPromo.ok && appliedPromo.code
+                ? "Start free order"
+                : `Pay ${dueDisplay}`}
           </Button>
           <p className="mt-3 inline-flex items-center gap-2 text-xs text-[#f6efe4]/55">
             <Lock className="h-3.5 w-3.5" aria-hidden="true" />
