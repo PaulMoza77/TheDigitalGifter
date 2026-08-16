@@ -471,33 +471,45 @@ export default function ResultPage() {
   }, []);
 
   async function fetchGenerationById(genId: string) {
-    const { data, error } = await supabase
-      .from("generations")
-      .select(
-        [
-          "id",
-          "status",
-          "final_image_url",
-          "result_image_url",
-          "preview_image_url",
-          "source_image_url",
-          "template_id",
-          "style_id",
-          "style_slug",
-          "prompt",
-          "error",
-          "created_at",
-          "updated_at",
-        ].join(",")
-      )
-      .eq("id", genId)
-      .maybeSingle();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (error) {
-      throw new Error(error.message || "Failed to load generation");
+    if (user) {
+      const { data, error } = await supabase
+        .from("generations")
+        .select(
+          [
+            "id",
+            "status",
+            "final_image_url",
+            "result_image_url",
+            "preview_image_url",
+            "source_image_url",
+            "template_id",
+            "style_id",
+            "style_slug",
+            "prompt",
+            "error",
+            "created_at",
+            "updated_at",
+          ].join(",")
+        )
+        .eq("id", genId)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(error.message || "Failed to load generation");
+      }
+
+      if (data) return normalizeResultRow(data);
     }
 
-    return normalizeResultRow(data);
+    if (sessionId) {
+      return fetchGenerationBySession(sessionId);
+    }
+
+    return null;
   }
 
   async function fetchGenerationBySession(sess: string) {
@@ -556,7 +568,10 @@ export default function ResultPage() {
     const res = await fetch(`${supabaseUrl}/functions/v1/generate-nano-banana`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ generation_id: generationIdToStart }),
+      body: JSON.stringify({
+        generation_id: generationIdToStart,
+        session_id: sessionId || undefined,
+      }),
     });
 
     const data = await safeReadJson(res);
@@ -848,7 +863,7 @@ export default function ResultPage() {
       const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
       const headers = await getEdgeFunctionHeaders(anon);
 
-      const successUrl = `${window.location.origin}/funnel/result?generation_id=${encodeURIComponent(
+      const successUrl = `${window.location.origin}/funnel/result?session_id={CHECKOUT_SESSION_ID}&generation_id=${encodeURIComponent(
         row.id
       )}`;
       const cancelUrl = `${window.location.origin}/funnel/result?generation_id=${encodeURIComponent(

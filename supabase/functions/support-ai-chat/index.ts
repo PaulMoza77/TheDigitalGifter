@@ -1,5 +1,6 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
-import { readJson } from "../_shared/supabase.ts";
+import { getServiceClient, readJson } from "../_shared/supabase.ts";
+import { assertRateLimit, clientIp } from "../_shared/rateLimit.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
@@ -16,6 +17,11 @@ Deno.serve(async (req) => {
 
     const message = String(body.message || "").trim();
     if (!message) return jsonResponse({ error: "message required" }, 400);
+    if (message.length > 4000) return jsonResponse({ error: "message too long" }, 400);
+
+    const service = getServiceClient();
+    const allowed = await assertRateLimit(service, `support:${clientIp(req)}`, 30, 3600);
+    if (!allowed) return jsonResponse({ error: "Too many support requests. Please wait." }, 429);
 
     const recent = Array.isArray(body.recentMessages) ? body.recentMessages.slice(-12) : [];
     const system =

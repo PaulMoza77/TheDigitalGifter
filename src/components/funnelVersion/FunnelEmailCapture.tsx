@@ -129,25 +129,19 @@ export default function FunnelEmailCapture(): JSX.Element {
         String(localStorage.getItem("tdg_funnel_slug") || "").trim() ||
         "newborn";
 
-      const payload: FunnelLeadUpsert = {
-        email: e,
-        occasion,
-        style_id,
-        funnel_slug,
-      };
-
-      const { data, error } = await supabase
-        .from("funnel_leads")
-        .upsert(payload, { onConflict: "email" })
-        .select("id")
-        .single<FunnelLeadRow>();
+      const { data, error } = await supabase.rpc("upsert_funnel_lead", {
+        p_email: e,
+        p_occasion: occasion,
+        p_style_id: style_id,
+        p_funnel_slug: funnel_slug,
+      });
 
       if (error) throw error;
 
       const nextSession: FunnelSession = {
         ...(s || {}),
         email: e,
-        lead_id: data?.id ?? null,
+        lead_id: (data as string | null) ?? null,
         funnel_slug,
       };
 

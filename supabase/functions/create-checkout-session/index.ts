@@ -3,8 +3,8 @@ import {
   getAuthUser,
   getServiceClient,
   readJson,
-  requiredEnv,
 } from "../_shared/supabase.ts";
+import { assertRateLimit, clientIp } from "../_shared/rateLimit.ts";
 
 type Body = {
   plan?: string;
@@ -30,6 +30,24 @@ type Body = {
   cancel_url?: string;
 };
 
+type PricingRow = {
+  stripe_price_id: string | null;
+  key: string;
+  credits: number | null;
+  price_cents: number | null;
+  name: string | null;
+  category: string | null;
+  currency: string | null;
+};
+
+const CREDIT_PACKS = new Set(["starter", "creator", "pro", "enterprise", "credits"]);
+const ACTION_MAP: Record<string, string> = {
+  full_hd: "offer_full_hd",
+  regenerate: "offer_regenerate",
+  golden_frame: "offer_golden_frame",
+  puzzle: "offer_puzzle",
+};
+
 function firstString(...vals: unknown[]) {
   for (const v of vals) {
     const s = String(v ?? "").trim();
@@ -38,20 +56,43 @@ function firstString(...vals: unknown[]) {
   return "";
 }
 
-async function findPriceId(service: ReturnType<typeof getServiceClient>, key: string) {
+function siteOrigin(): string {
+  return (
+    Deno.env.get("SITE_URL") ||
+    Deno.env.get("PUBLIC_APP_URL") ||
+    "http://127.0.0.1:5173"
+  ).replace(/\/$/, "");
+}
+
+function safeReturnUrl(input: string, fallback: string): string {
+  if (!input) return fallback;
+  try {
+    const candidate = new URL(input);
+    const allowed = new URL(siteOrigin());
+    if (candidate.origin === allowed.origin) return input;
+  } catch {
+    /* ignore */
+  }
+  return fallback;
+}
+
+async function findPricing(
+  service: ReturnType<typeof getServiceClient>,
+  key: string,
+): Promise<PricingRow | null> {
   const { data } = await service
     .from("pricing_items")
-    .select("stripe_price_id, key, credits, price_cents, name, category")
+    .select("stripe_price_id, key, credits, price_cents, name, category, currency")
     .eq("key", key)
     .maybeSingle();
-  if (data?.stripe_price_id) return data;
+  if (data) return data as PricingRow;
 
   const { data: rows } = await service
     .from("pricing_items")
-    .select("stripe_price_id, key, credits, price_cents, name, category")
+    .select("stripe_price_id, key, credits, price_cents, name, category, currency")
     .or(`key.eq.${key},name.ilike.${key}`)
     .limit(5);
-  return rows?.[0] ?? null;
+  return (rows?.[0] as PricingRow) ?? null;
 }
 
 Deno.serve(async (req) => {
@@ -73,51 +114,50 @@ Deno.serve(async (req) => {
     const { user } = await getAuthUser(req);
     const body = await readJson<Body>(req);
     const service = getServiceClient();
-    const siteUrl = Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_APP_URL") || "http://127.0.0.1:5173";
 
-    const email = firstString(body.email, user?.email);
+    const allowed = await assertRateLimit(
+      service,
+      `checkout:${user?.id || clientIp(req)}`,
+      30,
+      3600,
+    );
+    if (!allowed) return jsonResponse({ error: "Too many checkout attempts. Please wait." }, 429);
+
+    const email = firstString(body.email, user?.email).toLowerCase();
     if (!email) return jsonResponse({ error: "email is required" }, 400);
 
-    // Mode detection
     const actionType = firstString(body.action_type);
-    const plan = firstString(body.plan, body.pack, body.product_type);
-    const quantity = Math.max(1, Number(body.quantity || 1));
+    const requestedPlan = firstString(body.plan, body.pack, body.product_type);
+    const productType = firstString(body.product_type);
+    const quantity = Math.min(10, Math.max(1, Number(body.quantity || 1)));
 
     let priceKey = "";
     let mode: "payment" | "subscription" = "payment";
-    let metadata: Record<string, string> = {
+    const metadata: Record<string, string> = {
       email,
       source: firstString(body.source, "tdg"),
     };
 
     if (actionType) {
-      const map: Record<string, string> = {
-        full_hd: "offer_full_hd",
-        regenerate: "offer_regenerate",
-        golden_frame: "offer_golden_frame",
-        puzzle: "offer_puzzle",
-      };
-      priceKey = map[actionType] || `offer_${actionType}`;
+      priceKey = ACTION_MAP[actionType] || `offer_${actionType}`;
       metadata.action_type = actionType;
       if (body.generation_id) metadata.generation_id = String(body.generation_id);
       mode = "payment";
-    } else if (plan.startsWith("subscription_") || ["starter", "pro", "elite"].includes(plan)) {
-      const normalized = plan.startsWith("subscription_")
-        ? plan
-        : `subscription_${plan}`;
-      priceKey = normalized;
-      // also try funnel keys
-      mode = "subscription";
-      metadata.plan = normalized;
-    } else if (plan === "credits" || body.product_type === "credits" || body.pack) {
-      priceKey = firstString(body.pack, body.plan, "starter");
+    } else if (productType === "credits" || CREDIT_PACKS.has(requestedPlan) || CREDIT_PACKS.has(firstString(body.pack))) {
+      priceKey = firstString(body.pack, requestedPlan === "credits" ? "starter" : requestedPlan, "starter");
+      if (priceKey.startsWith("subscription_")) {
+        return jsonResponse({ error: "Invalid credit pack" }, 400);
+      }
       mode = "payment";
       metadata.product_type = "credits";
       metadata.pack = priceKey;
+    } else if (requestedPlan.startsWith("subscription_")) {
+      priceKey = requestedPlan;
+      mode = "subscription";
+      metadata.plan = requestedPlan;
+      metadata.product_type = "subscription";
     } else {
-      priceKey = plan || "subscription_pro";
-      mode = priceKey.includes("subscription") ? "subscription" : "payment";
-      metadata.plan = priceKey;
+      return jsonResponse({ error: `Unsupported plan "${requestedPlan}"` }, 400);
     }
 
     if (body.generation_id) metadata.generation_id = String(body.generation_id);
@@ -127,40 +167,55 @@ Deno.serve(async (req) => {
     if (body.occasion) metadata.occasion = String(body.occasion);
     if (body.photo_path) metadata.photo_path = String(body.photo_path);
     if (body.photo_bucket) metadata.photo_bucket = String(body.photo_bucket);
-    if (body.promo_code) metadata.promo_code = String(body.promo_code);
-    if (body.affiliate_user_id) metadata.affiliate_user_id = String(body.affiliate_user_id);
     if (user?.id) metadata.user_id = user.id;
 
-    let pricing = await findPriceId(service, priceKey);
-    if (!pricing?.stripe_price_id) {
-      // fallback common aliases
+    let promoCode = firstString(body.promo_code).toUpperCase();
+    let promoDiscount: number | null = null;
+    if (promoCode) {
+      const { data: promo } = await service.rpc("lookup_affiliate_promo", { p_code: promoCode });
+      const row = Array.isArray(promo) ? promo[0] : promo;
+      if (row?.code) {
+        promoCode = String(row.code);
+        promoDiscount = Number(row.discount_percent || 0);
+        metadata.promo_code = promoCode;
+        if (row.affiliate_user_id) metadata.affiliate_user_id = String(row.affiliate_user_id);
+      } else {
+        promoCode = "";
+      }
+    }
+
+    let pricing = await findPricing(service, priceKey);
+    if (!pricing) {
       const aliases = [
-        priceKey,
         priceKey.replace("subscription_", ""),
         `funnel_${priceKey}`,
         `credit_${priceKey}`,
         `credits_${priceKey}`,
       ];
       for (const alias of aliases) {
-        pricing = await findPriceId(service, alias);
-        if (pricing?.stripe_price_id) break;
+        pricing = await findPricing(service, alias);
+        if (pricing) break;
       }
     }
 
-    if (!pricing?.stripe_price_id) {
+    if (!pricing) {
       return jsonResponse(
         {
-          error: `No stripe_price_id configured for pricing key "${priceKey}". Set it in admin pricing (test mode until production approval).`,
+          error: `No pricing configured for key "${priceKey}". Set it in admin pricing.`,
           key: priceKey,
         },
         400,
       );
     }
 
-    const successUrl =
-      firstString(body.success_url) ||
-      `${siteUrl}/funnel/result?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = firstString(body.cancel_url) || `${siteUrl}/funnel/payment`;
+    const successUrl = safeReturnUrl(
+      firstString(body.success_url),
+      `${siteOrigin()}/funnel/result?session_id={CHECKOUT_SESSION_ID}`,
+    );
+    const cancelUrl = safeReturnUrl(
+      firstString(body.cancel_url),
+      `${siteOrigin()}/funnel/payment`,
+    );
 
     const params = new URLSearchParams();
     params.set("mode", mode);
@@ -168,8 +223,28 @@ Deno.serve(async (req) => {
     params.set("cancel_url", cancelUrl);
     params.set("customer_email", email);
     params.set("client_reference_id", firstString(user?.id, body.generation_id, email));
-    params.set("line_items[0][price]", String(pricing.stripe_price_id));
-    params.set("line_items[0][quantity]", String(quantity));
+    params.set("metadata[email]", email);
+    if (pricing.stripe_price_id) {
+      params.set("line_items[0][price]", String(pricing.stripe_price_id));
+    } else {
+      const unitAmount = Math.round(Number(pricing.price_cents || 0));
+      if (!Number.isFinite(unitAmount) || unitAmount <= 0) {
+        return jsonResponse(
+          { error: `Pricing key "${priceKey}" has no stripe_price_id or price_cents` },
+          400,
+        );
+      }
+      params.set("line_items[0][price_data][currency]", String(pricing.currency || "eur"));
+      params.set("line_items[0][price_data][unit_amount]", String(unitAmount));
+      params.set("line_items[0][price_data][product_data][name]", String(pricing.name || priceKey));
+      if (mode === "subscription") {
+        params.set("line_items[0][price_data][recurring][interval]", "month");
+      }
+    }
+    params.set("line_items[0][quantity]", String(mode === "subscription" ? 1 : quantity));
+    metadata.credits = String(pricing.credits ?? 0);
+    metadata.price_key = pricing.key;
+    metadata.price_cents = String(pricing.price_cents ?? 0);
     for (const [k, v] of Object.entries(metadata)) {
       if (v) params.set(`metadata[${k}]`, v);
     }
@@ -187,7 +262,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: session.error?.message || "Stripe checkout failed" }, 502);
     }
 
-    // Optional: attach session id on generation
     if (body.generation_id) {
       await service
         .from("generations")
@@ -207,9 +281,9 @@ Deno.serve(async (req) => {
       id: session.id,
       generation_id: body.generation_id ?? null,
       user_id: user?.id ?? null,
-      promo_applied: Boolean(body.promo_code),
-      promo_code: body.promo_code ?? null,
-      discount_percent: body.promo_discount_percent ?? null,
+      promo_applied: Boolean(promoCode),
+      promo_code: promoCode || null,
+      discount_percent: promoDiscount,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

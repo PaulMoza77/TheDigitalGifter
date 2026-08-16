@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     const { data: pending } = await service
       .from("affiliate_withdrawals")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("affiliate_user_id", user.id)
       .eq("status", "pending")
       .limit(1);
     if (pending && pending.length > 0) {
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     }
 
     const { error: insertErr } = await service.from("affiliate_withdrawals").insert({
-      user_id: user.id,
+      affiliate_user_id: user.id,
       amount,
       currency: body.currency || "USD",
       method: body.method || "paypal",
