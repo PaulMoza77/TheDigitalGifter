@@ -6,8 +6,9 @@
 
 export const releaseControl = {
   /**
-   * Customer checkout. Must stay false until webhook fulfillment, Stripe
-   * test payments, and one live €4.99 charge + refund are verified.
+   * Customer checkout. Compile-time default stays false. Preview may enable
+   * Stripe *test* checkout only via VITE_CHECKOUT_ENABLED + VITE_STRIPE_TEST_MODE
+   * when VITE_VERCEL_ENV is not production. See src/config/checkoutGate.ts.
    */
   checkoutEnabled: false,
   livePaymentsEnabled: false,

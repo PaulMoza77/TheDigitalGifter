@@ -275,7 +275,7 @@ export function PricingModal({
 
     setErrorMessage("");
 
-    if (!isCheckoutEnabled) {
+    if (!isCheckoutEnabled()) {
       setErrorMessage(productTruth.copy.checkoutUnavailable);
       return;
     }
@@ -539,7 +539,7 @@ export function PricingModal({
                         <div className="mt-5">
                           <button
                             type="button"
-                            disabled={!isCheckoutEnabled || isPaying || !me?.email}
+                            disabled={!isCheckoutEnabled() || isPaying || !me?.email}
                             onClick={(event) => {
                               event.stopPropagation();
                               setSelected(pack.key);
@@ -547,12 +547,12 @@ export function PricingModal({
                             }}
                             className={
                               "h-11 w-full rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 text-sm font-black text-black transition " +
-                              (!isCheckoutEnabled || isPaying || !me?.email
+                              (!isCheckoutEnabled() || isPaying || !me?.email
                                 ? "cursor-not-allowed opacity-60"
                                 : "hover:scale-[1.01] hover:opacity-95")
                             }
                           >
-                            {!isCheckoutEnabled
+                            {!isCheckoutEnabled()
                               ? "Checkout unavailable"
                               : isPaying
                                 ? "Opening checkout..."
@@ -615,16 +615,16 @@ export function PricingModal({
 
                   <button
                     type="button"
-                    disabled={!isCheckoutEnabled || isPaying || !me?.email}
+                    disabled={!isCheckoutEnabled() || isPaying || !me?.email}
                     onClick={() => void doCheckout(selected, bundleCount)}
                     className={
                       "mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 px-4 py-4 text-sm font-black text-black shadow-2xl shadow-yellow-500/10 transition " +
-                      (!isCheckoutEnabled || isPaying || !me?.email
+                      (!isCheckoutEnabled() || isPaying || !me?.email
                         ? "cursor-not-allowed opacity-60"
                         : "hover:scale-[1.01] hover:opacity-95")
                     }
                   >
-                    {!isCheckoutEnabled
+                    {!isCheckoutEnabled()
                       ? "Checkout unavailable"
                       : isPaying
                         ? "Opening checkout..."

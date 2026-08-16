@@ -9,6 +9,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    "import.meta.env.VITE_VERCEL_ENV": JSON.stringify(process.env.VERCEL_ENV || process.env.VITE_VERCEL_ENV || ""),
+  },
   build: {
     target: "es2020",
     cssCodeSplit: true,

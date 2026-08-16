@@ -216,7 +216,7 @@ export default function FunnelPayment(): JSX.Element {
   async function onCheckout(): Promise<void> {
     if (isPaying) return;
 
-    if (!isCheckoutEnabled) {
+    if (!isCheckoutEnabled()) {
       toast.error(productTruth.copy.checkoutUnavailable);
       return;
     }
@@ -344,7 +344,7 @@ export default function FunnelPayment(): JSX.Element {
             </span>
           </label>
 
-          {!isCheckoutEnabled ? (
+          {!isCheckoutEnabled() ? (
             <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
               {productTruth.copy.checkoutUnavailable}
             </p>
@@ -352,16 +352,16 @@ export default function FunnelPayment(): JSX.Element {
 
           <button
             type="button"
-            disabled={!isCheckoutEnabled || isPaying || !consent}
+            disabled={!isCheckoutEnabled() || isPaying || !consent}
             className={cn(
               "mt-5 h-12 w-full rounded-full text-sm font-semibold transition",
-              !isCheckoutEnabled || isPaying || !consent
+              !isCheckoutEnabled() || isPaying || !consent
                 ? "cursor-not-allowed bg-[#1B3A30]/15 text-[#10221B]/45"
                 : "bg-[#1B3A30] text-white hover:brightness-105",
             )}
             onClick={() => void onCheckout()}
           >
-            {!isCheckoutEnabled
+            {!isCheckoutEnabled()
               ? "Checkout unavailable"
               : isPaying
                 ? "Opening checkout…"

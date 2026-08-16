@@ -52,9 +52,9 @@ export const PricingCTA = () => {
             to="/funnel/uploadPhoto"
             className="mt-8 block w-full rounded-2xl bg-[#ffd976] py-4 text-center text-base font-black text-[#0b1220]"
           >
-            {isCheckoutEnabled ? "Create your image" : "Start with a photo"}
+            {isCheckoutEnabled() ? "Create your image" : "Start with a photo"}
           </Link>
-          {!isCheckoutEnabled ? (
+          {!isCheckoutEnabled() ? (
             <p className="mt-4 text-center text-sm text-white/50">
               {productTruth.copy.checkoutUnavailable}
             </p>
