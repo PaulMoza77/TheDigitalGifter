@@ -35,8 +35,8 @@ export default function WeddingPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
-              From save-the-dates to thank-you cards, design something timeless in
-              seconds. Upload a photo, pick a style, and let AI do the magic.
+              From save-the-dates to thank-you cards, design something timeless.
+              Upload a photo, pick a style, and let AI do the magic.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">

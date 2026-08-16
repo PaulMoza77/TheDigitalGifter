@@ -11,6 +11,7 @@ import {
 
 import type { AnyTemplate } from "./generatorTypes";
 import { normalizeKey } from "./generatorUtils";
+import { isVideoGenerationEnabled } from "@/config/productTruth";
 
 type Props = {
   selectedTemplateObj: AnyTemplate | null;
@@ -61,7 +62,7 @@ export default function GenerationBar({
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-3">
           {selectedTemplateObj ? (
-            selectedTemplateObj.type === "video" ? (
+            isVideoGenerationEnabled && selectedTemplateObj.type === "video" ? (
               <>
                 <p className="mt-2 flex items-start gap-2 text-xs text-[#c1c8d8] sm:items-center">
                   <span className="mt-0.5">
@@ -177,7 +178,7 @@ export default function GenerationBar({
 
               <div className="hidden items-center gap-2 sm:flex">
                 <ImageIcon className="h-4 w-4" />
-                <Video className="h-4 w-4" />
+                {isVideoGenerationEnabled ? <Video className="h-4 w-4" /> : null}
               </div>
             </div>
           )}

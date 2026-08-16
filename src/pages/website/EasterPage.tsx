@@ -35,8 +35,8 @@ export default function EasterPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
-              Turn your favorite spring moment into a joyful Easter design in
-              seconds. Upload a photo, pick a style, and let AI do the magic.
+              Turn your favorite spring moment into a joyful Easter design.
+              Upload a photo, pick a style, and let AI do the magic.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">

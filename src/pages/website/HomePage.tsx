@@ -64,7 +64,7 @@ const HomePage: React.FC = () => {
             <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl">
               <Sparkles className="mb-4 h-7 w-7 text-cyan-300" />
               <h3 className="text-lg font-black text-white">
-                Beautiful in seconds
+                Simple to create
               </h3>
               <p className="mt-2 text-sm leading-6 text-white/55">
                 Choose a template, add your details, and create a polished gift

@@ -35,7 +35,7 @@ export default function BabyRevealPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
-              Announce your newest chapter with a stunning design in seconds.
+              Announce your newest chapter with a stunning design.
               Upload a photo (or use a silhouette), choose a style, and let AI do
               the magic.
             </p>

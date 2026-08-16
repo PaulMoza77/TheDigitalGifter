@@ -5,47 +5,36 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { motion } from "framer-motion";
+import { productTruth } from "@/config/productTruth";
 
 const faqs = [
   {
     question: "How does the credit system work?",
     answer:
-      "Each AI card generation costs upto 10 credit. Video generations cost 12 credits without audio and with audio it will be 24. Credits are purchased in packs and never expire. You only pay for what you actually use, with no monthly commitments required.",
+      "Credits are used when you generate. The amount required is shown on each template before you generate.",
   },
   {
-    question: "How does AI handle my photos?",
-    answer:
-      "Our advanced AI uses face detection and composition algorithms to perfectly position your photos within the chosen template. The AI preserves facial features while seamlessly blending them into the design. All photos are processed securely and automatically deleted after generation.",
+    question: "How are my photos used?",
+    answer: productTruth.copy.photoHandling,
   },
   {
-    question: "How fast is video generation?",
+    question: "What can I create?",
     answer:
-      "AI card generation takes approximately 30 seconds. Video generation using Google VEO3.1 technology typically completes in under 2 minutes. Processing time may vary slightly based on server load and complexity.",
-  },
-  {
-    question: "What about privacy and data security?",
-    answer:
-      "We take privacy seriously. Your photos are encrypted during upload, processed securely, and automatically deleted from our servers immediately after generation. We never store, share, or use your photos for any other purpose. Read our full privacy policy for details.",
+      "You can create a personalized still image from an uploaded photo and a selected style. Choose an occasion and pick a template. Payment and image delivery are still being verified.",
   },
   {
     question: "What event categories do you support?",
     answer:
-      "We support 14+ categories including Christmas, New Year's Eve, Birthday, Wedding, Baby Reveal, Pregnancy, Easter, Valentine's Day, Anniversary, Mother's Day, Father's Day, Graduation, Thanksgiving, and more. New categories are added regularly based on user requests.",
-  },
-  {
-    question: "Can I use the cards commercially?",
-    answer:
-      "Creator and Pro plans include commercial use licenses, allowing you to use generated cards for business purposes, client work, and resale. Starter plan is for personal use only. Check our terms of service for full details.",
-  },
-  {
-    question: "What's the resolution and print quality?",
-    answer:
-      "All cards are generated at 300 DPI (dots per inch), which is professional print quality. Downloads are available in high-resolution PNG and JPG formats, suitable for both digital sharing and professional printing services.",
+      "Available occasions include Christmas, New Year's Eve, Birthday, Wedding, Baby Reveal, Pregnancy, Easter, Valentine's Day, Anniversary, Mother's Day, Father's Day, Graduation, and Thanksgiving, plus personal, spiritual, and pet templates in the gallery.",
   },
   {
     question: "Do I need design skills?",
     answer:
-      "No design skills required! Simply choose a template, upload your photo(s), and let our AI do all the work. The system automatically handles composition, lighting adjustments, and perfect positioning.",
+      "No design skills are required. Choose a template, upload your photo, and generate the still image.",
+  },
+  {
+    question: "How do I contact support?",
+    answer: `Email ${productTruth.supportEmail}. ${productTruth.copy.supportResponseSentence}`,
   },
 ];
 
@@ -53,7 +42,6 @@ export const FAQ = () => {
   return (
     <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-950/50 to-transparent">
       <div className="max-w-4xl mx-auto">
-        {/* Section header */}
         <motion.div
           className="text-center mb-16 space-y-4"
           initial={{ opacity: 0, y: 20 }}
@@ -68,11 +56,10 @@ export const FAQ = () => {
             </span>
           </h2>
           <p className="text-xl text-slate-400">
-            Everything you need to know about TheDigitalGifter
+            Everything you need to know about {productTruth.brandName}
           </p>
         </motion.div>
 
-        {/* FAQ Accordion */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -97,14 +84,13 @@ export const FAQ = () => {
           </Accordion>
         </motion.div>
 
-        {/* Still have questions CTA */}
         <div
           className="text-center mt-16 animate-fade-in"
           style={{ animationDelay: "0.3s" }}
         >
           <p className="text-slate-400 mb-4">Still have questions?</p>
           <a
-            href="mailto:support@thedigitalgifter.com"
+            href={`mailto:${productTruth.supportEmail}`}
             className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors"
           >
             Contact Support

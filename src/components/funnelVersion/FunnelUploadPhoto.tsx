@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { productTruth } from "@/config/productTruth";
 
 type FunnelSession = {
   gift_type?: string;
@@ -120,12 +121,12 @@ function headerForOccasion(occasion: string) {
     case "newborn":
       return {
         title: "Start with a photo you love",
-        subtitle: "Upload a special moment. We’ll turn it into a gift-worthy image in minutes.",
+        subtitle: "Upload a special moment, then choose a style.",
       };
     default:
       return {
         title: "Start with a photo you love",
-        subtitle: "Upload a special moment. We’ll turn it into a gift-worthy image in minutes.",
+        subtitle: "Upload a special moment, then choose a style.",
       };
   }
 }
@@ -562,7 +563,7 @@ export default function FunnelUploadPhoto() {
                   </button>
 
                   <div className="mt-2 text-xs text-black/55">
-                    Your photo stays private. You control what you share.
+                    {productTruth.copy.photoHandling}
                   </div>
                 </div>
               ) : null}
@@ -570,7 +571,7 @@ export default function FunnelUploadPhoto() {
           </div>
 
           <div className="mt-6 text-center text-xs text-black/50">
-            Create a gift-worthy image in minutes. No subscription required.
+            Upload a photo, then choose a style.
           </div>
         </div>
       </main>

@@ -39,7 +39,7 @@ export default function NewBornPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
-              Celebrate your little one with a beautiful announcement in seconds.
+              Celebrate your little one with a beautiful announcement.
               Upload a photo, choose a style, and let AI create something truly
               special.
             </p>

@@ -36,7 +36,7 @@ export default function AnniversaryPage() {
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
               From couples to family milestones, design a premium anniversary
-              card in seconds. Upload a photo, pick a style, and let AI do the
+              card. Upload a photo, pick a style, and let AI do the
               magic.
             </p>
 

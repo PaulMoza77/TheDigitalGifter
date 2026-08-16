@@ -45,6 +45,7 @@ import {
   safeReadJson,
   safeString,
 } from "@/domains/generator/components/generatorUtils";
+import { isVideoGenerationEnabled } from "@/config/productTruth";
 
 async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, string>> {
   const {
@@ -101,7 +102,9 @@ export default function GeneratorPage() {
     title: "",
   });
 
-  const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">(
+    isVideoGenerationEnabled ? "all" : "image"
+  );
   const [generateAudio, setGenerateAudio] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
@@ -112,7 +115,11 @@ export default function GeneratorPage() {
     () =>
       (templates as AnyTemplate[])
         .map((template) => normalizeTemplate(template))
-        .filter((template) => getTemplateId(template)),
+        .filter((template) => getTemplateId(template))
+        .filter((template) => {
+          if (isVideoGenerationEnabled) return true;
+          return String(template.type || "").toLowerCase() !== "video";
+        }),
     [templates]
   );
 
@@ -264,7 +271,10 @@ export default function GeneratorPage() {
         { replace: true }
       );
 
-      if (updates.type) setTypeFilter(updates.type);
+      if (updates.type) {
+        if (!isVideoGenerationEnabled && updates.type === "video") return;
+        setTypeFilter(isVideoGenerationEnabled ? updates.type : "image");
+      }
     },
     [setSearchParams]
   );
@@ -303,7 +313,7 @@ export default function GeneratorPage() {
       });
     }
 
-    if (typeFilter !== "all") {
+    if (isVideoGenerationEnabled && typeFilter !== "all") {
       list = list.filter((template) => String(template.type || "").toLowerCase() === typeFilter);
     }
 
@@ -707,7 +717,9 @@ export default function GeneratorPage() {
     stopGenerationPolling();
 
     try {
-      const isVideo = String(template.type || "image").toLowerCase() === "video";
+      const isVideo =
+        isVideoGenerationEnabled &&
+        String(template.type || "image").toLowerCase() === "video";
 
       if (isVideo && uploadedFiles.length > 3) {
         toast.error("You can upload up to 3 photos for video generation.");

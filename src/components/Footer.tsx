@@ -1,6 +1,7 @@
 // FILE: src/components/Footer.tsx
 import { Link } from "react-router-dom";
 import { Logo } from "./ui/logo";
+import { productTruth } from "@/config/productTruth";
 
 export default function Footer() {
   return (
@@ -13,8 +14,8 @@ export default function Footer() {
             </Link>
 
             <p className="mt-3 text-sm leading-relaxed text-[#c1c8d8]">
-              Create stunning AI-powered cards and share-ready visuals for holidays,
-              celebrations and meaningful moments.
+              Create AI-powered still images for holidays, celebrations and
+              meaningful moments.
             </p>
           </div>
 
@@ -105,16 +106,16 @@ export default function Footer() {
               </Link>
 
               <a
-                href="mailto:support@thedigitalgifter.com"
+                href={`mailto:${productTruth.supportEmail}`}
                 className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
               >
                 <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
-                support@thedigitalgifter.com
+                {productTruth.supportEmail}
               </a>
 
               <div className="flex items-start gap-2 text-sm text-[#c1c8d8]">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-[#ffd976]" />
-                <span>Available 24/7 for your assistance.</span>
+                <span>{productTruth.copy.supportResponseSentence}</span>
               </div>
             </div>
           </div>
@@ -124,7 +125,7 @@ export default function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
           <p className="text-xs text-[#8892a8]">
-            © 2026 TheDigitalGifter. All rights reserved.
+            © 2026 {productTruth.brandName}. All rights reserved.
           </p>
         </div>
       </div>

@@ -1,15 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   Gift,
-  Clock,
-  ShieldCheck,
-  Zap,
   X,
-  BadgeCheck,
   Heart,
-  Check,
   Plus,
   Minus,
 } from "lucide-react";
@@ -21,6 +16,11 @@ import {
 } from "@/contexts/CreditsFunnelContext";
 import { SignInButton } from "./SignInButton";
 import { supabase } from "@/lib/supabase";
+import {
+  isBonusCreditsVisible,
+  isCheckoutEnabled,
+  productTruth,
+} from "@/config/productTruth";
 
 type PackKey = "starter" | "creator" | "pro" | "enterprise";
 
@@ -66,9 +66,8 @@ const PACKS: Pack[] = [
     price: 9.98,
     credits: 250,
     bonusCredits: 50,
-    badge: "Most popular",
-    tag: "Best value",
-    description: "Best for birthdays, love, apologies and family moments.",
+    tag: "Creator pack",
+    description: "For birthdays, love, apologies and family moments.",
   },
   {
     key: "pro",
@@ -76,8 +75,8 @@ const PACKS: Pack[] = [
     price: 78.98,
     credits: 4000,
     bonusCredits: 600,
-    tag: "For power users",
-    description: "For creators, agencies and people creating often.",
+    tag: "For frequent use",
+    description: "For people creating often.",
   },
   {
     key: "enterprise",
@@ -85,26 +84,21 @@ const PACKS: Pack[] = [
     price: 499.98,
     credits: 50000,
     bonusCredits: 10000,
-    tag: "Teams & agencies",
-    description: "For high-volume campaigns, teams and business use.",
+    tag: "Largest pack",
+    description: "For high-volume use.",
   },
 ];
-
-const SOCIAL_PROOF_MESSAGES = [
-  "✨ People are creating birthdays, apologies, love notes and name portraits right now.",
-  "💛 Small details make gifts feel personal, emotional and unforgettable.",
-  "⚡ Instant delivery — create, download and share in minutes.",
-  "🎁 One-time payment. Credits stay available for future creations.",
-];
-
-const RESERVATION_SECONDS = 10 * 60;
 
 function euro(n: number) {
   return `€${n.toFixed(2)}`;
 }
 
-function getTotalCredits(pack: Pack) {
-  return pack.credits + (pack.bonusCredits ?? 0);
+function getDisplayedCredits(pack: Pack) {
+  if (isBonusCreditsVisible) {
+    return pack.credits + (pack.bonusCredits ?? 0);
+  }
+
+  return pack.credits;
 }
 
 function getCheckoutUrl(data: CheckoutResponse | string | null): string | null {
@@ -115,46 +109,6 @@ function getCheckoutUrl(data: CheckoutResponse | string | null): string | null {
   }
 
   return data.checkoutUrl ?? data.url ?? data.sessionUrl ?? null;
-}
-
-function useCountdown(seconds: number, isActive: boolean) {
-  const [left, setLeft] = useState(seconds);
-
-  useEffect(() => {
-    if (!isActive) return;
-
-    setLeft(seconds);
-
-    const timer = window.setInterval(() => {
-      setLeft((current) => (current <= 1 ? 0 : current - 1));
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, [seconds, isActive]);
-
-  const mm = String(Math.floor(left / 60)).padStart(2, "0");
-  const ss = String(left % 60).padStart(2, "0");
-
-  return { left, label: `${mm}:${ss}` };
-}
-
-function useSocialProofTicker(isActive: boolean) {
-  const [ticker, setTicker] = useState(SOCIAL_PROOF_MESSAGES[0]);
-
-  useEffect(() => {
-    if (!isActive) return;
-
-    let index = 0;
-
-    const timer = window.setInterval(() => {
-      index = (index + 1) % SOCIAL_PROOF_MESSAGES.length;
-      setTicker(SOCIAL_PROOF_MESSAGES[index]);
-    }, 4200);
-
-    return () => window.clearInterval(timer);
-  }, [isActive]);
-
-  return ticker;
 }
 
 function Pill({ children }: { children: React.ReactNode }) {
@@ -255,7 +209,7 @@ function getHeaderContent(
         emoji: "🔐",
         title: "Create your account",
         subtitle:
-          "Sign in to save your creations, manage credits and continue securely.",
+          "Sign in to save your creations and manage credits.",
       };
 
     case "first_generation":
@@ -263,7 +217,7 @@ function getHeaderContent(
         emoji: "🎉",
         title: "Keep creating personal gifts",
         subtitle:
-          "Your bonus credits were used. Choose a credit pack to continue creating beautiful memories.",
+          "Choose a credit pack to continue creating.",
       };
 
     case "insufficient_credits":
@@ -278,7 +232,7 @@ function getHeaderContent(
         emoji: "🎁",
         title: "Unlock personalized creations",
         subtitle:
-          "Create emotional cards, name portraits, apology gifts, birthday surprises, love notes and memories in minutes.",
+          "Create cards, name portraits, apology gifts, birthday surprises, love notes and memories.",
       };
   }
 }
@@ -302,13 +256,6 @@ export function PricingModal({
   const requiredCredits = propRequired ?? null;
   const availableCredits = propAvailable ?? null;
 
-  const { label: holdLabel, left: holdLeft } = useCountdown(
-    RESERVATION_SECONDS,
-    isOpen
-  );
-
-  const ticker = useSocialProofTicker(isOpen);
-
   const { emoji, title, subtitle } = getHeaderContent(
     mode,
     requiredCredits,
@@ -320,31 +267,21 @@ export function PricingModal({
     [selected]
   );
 
-  const getDiscount = (count: number) => {
-    if (count >= 4) return 0.2;
-    if (count >= 3) return 0.15;
-    if (count >= 2) return 0.1;
-    return 0;
-  };
-
-  const getDiscountLabel = (count: number) => {
-    if (count >= 4) return "20% OFF";
-    if (count >= 3) return "15% OFF";
-    if (count >= 2) return "10% OFF";
-    return "bundle offer";
-  };
-
-  const bundleDiscount = getDiscount(bundleCount);
-  const priceNow = selectedPack.price * bundleCount * (1 - bundleDiscount);
-  const totalCredits = getTotalCredits(selectedPack) * bundleCount;
+  const priceNow = selectedPack.price * bundleCount;
+  const totalCredits = getDisplayedCredits(selectedPack) * bundleCount;
 
   async function doCheckout(pack: PackKey, quantity: number) {
     if (isPaying) return;
 
     setErrorMessage("");
 
+    if (!isCheckoutEnabled) {
+      setErrorMessage(productTruth.copy.checkoutUnavailable);
+      return;
+    }
+
     if (!me?.email) {
-      setErrorMessage("Please sign in first so we can attach credits to your account.");
+      setErrorMessage("Please sign in before continuing.");
       return;
     }
 
@@ -440,7 +377,7 @@ export function PricingModal({
             className="relative max-h-[90vh] w-[min(980px,calc(100%-16px))] overflow-y-auto overflow-x-hidden rounded-[2rem] border border-white/10 bg-[#050711]/95 shadow-2xl backdrop-blur-xl"
             role="dialog"
             aria-modal="true"
-            aria-label="Purchase credits"
+            aria-label="Credit packs"
           >
             <div className="pointer-events-none absolute inset-0 opacity-90">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,230,120,0.16),transparent_34%),radial-gradient(circle_at_88%_22%,rgba(255,83,165,0.13),transparent_32%),radial-gradient(circle_at_45%_100%,rgba(56,189,248,0.09),transparent_42%)]" />
@@ -450,8 +387,7 @@ export function PricingModal({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-yellow-300/25 bg-yellow-300/10 px-3 py-1 text-xs font-bold text-yellow-100">
-                    <Clock className="h-4 w-4" />
-                    Reserved for {holdLabel}
+                    Credit packs
                   </div>
 
                   <h2 className="mt-4 max-w-2xl text-2xl font-black leading-tight tracking-tight text-white md:text-3xl">
@@ -464,19 +400,7 @@ export function PricingModal({
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Pill>
-                      <BadgeCheck className="h-4 w-4" /> One-time payment
-                    </Pill>
-
-                    <Pill>
-                      <Zap className="h-4 w-4" /> Instant credits
-                    </Pill>
-
-                    <Pill>
-                      <ShieldCheck className="h-4 w-4" /> Secure checkout
-                    </Pill>
-
-                    <Pill>
-                      <Heart className="h-4 w-4" /> Made for emotions
+                      <Heart className="h-4 w-4" /> Made for {productTruth.brandName}
                     </Pill>
                   </div>
                 </div>
@@ -506,8 +430,8 @@ export function PricingModal({
                       </p>
 
                       <p className="mt-1 text-sm leading-6 text-white/60">
-                        This lets us attach your credits to your account
-                        instantly after checkout.
+                        Sign in so a purchase can be linked to your account
+                        when checkout is available.
                       </p>
                     </div>
 
@@ -550,7 +474,7 @@ export function PricingModal({
                                 {pack.credits}
                               </span>{" "}
                               credits
-                              {pack.bonusCredits ? (
+                              {isBonusCreditsVisible && pack.bonusCredits ? (
                                 <>
                                   {" "}
                                   <span className="text-white/45">+</span>{" "}
@@ -604,11 +528,6 @@ export function PricingModal({
                                   <Plus className="h-4 w-4" />
                                 </button>
                               </div>
-
-                              <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-[11px] font-bold text-white/75">
-                                Buy {quantity} & unlock{" "}
-                                {getDiscountLabel(quantity)}
-                              </div>
                             </div>
                           </div>
 
@@ -620,7 +539,7 @@ export function PricingModal({
                         <div className="mt-5">
                           <button
                             type="button"
-                            disabled={isPaying || !me?.email}
+                            disabled={!isCheckoutEnabled || isPaying || !me?.email}
                             onClick={(event) => {
                               event.stopPropagation();
                               setSelected(pack.key);
@@ -628,16 +547,18 @@ export function PricingModal({
                             }}
                             className={
                               "h-11 w-full rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 text-sm font-black text-black transition " +
-                              (isPaying || !me?.email
+                              (!isCheckoutEnabled || isPaying || !me?.email
                                 ? "cursor-not-allowed opacity-60"
                                 : "hover:scale-[1.01] hover:opacity-95")
                             }
                           >
-                            {isPaying
-                              ? "Opening checkout..."
-                              : quantity > 1
-                                ? `Purchase ${quantity}x`
-                                : "Purchase"}
+                            {!isCheckoutEnabled
+                              ? "Checkout unavailable"
+                              : isPaying
+                                ? "Opening checkout..."
+                                : quantity > 1
+                                  ? `Select ${quantity}x`
+                                  : "Select pack"}
                           </button>
                         </div>
                       </GlowCard>
@@ -649,28 +570,11 @@ export function PricingModal({
               <div className="mt-6 grid gap-4 md:grid-cols-[1fr_400px] md:items-stretch">
                 <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                   <div className="text-xs font-bold uppercase tracking-[0.18em] text-white/40">
-                    Live activity
+                    Credits
                   </div>
 
                   <div className="mt-2 text-sm font-bold leading-6 text-white">
-                    {ticker}
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/55">
-                    <span className="inline-flex items-center gap-1">
-                      <Check className="h-3.5 w-3.5 text-green-400" />
-                      Credits never expire
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <Check className="h-3.5 w-3.5 text-green-400" />
-                      No subscription
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <Check className="h-3.5 w-3.5 text-green-400" />
-                      Instant delivery
-                    </span>
+                    {productTruth.copy.checkoutUnavailable}
                   </div>
 
                   {errorMessage ? (
@@ -692,47 +596,44 @@ export function PricingModal({
                   </div>
 
                   <div className="mt-2 text-sm leading-6 text-white/65">
-                    You'll get{" "}
+                    Selected pack:{" "}
                     <span className="font-black text-white">
-                      {totalCredits}
-                    </span>{" "}
-                    credits including bonus.
-                    {bundleDiscount > 0 ? (
-                      <span className="font-bold text-yellow-100">
+                      {selectedPack.name}
+                    </span>
+                    {isBonusCreditsVisible ? (
+                      <>
                         {" "}
-                        {getDiscountLabel(bundleCount)} applied.
-                      </span>
+                        · {totalCredits} credits
+                      </>
                     ) : (
-                      <span className="text-white/55">
+                      <>
                         {" "}
-                        Add one more pack to unlock 10% OFF.
-                      </span>
+                        · {selectedPack.credits} credits
+                      </>
                     )}
                   </div>
 
                   <button
                     type="button"
-                    disabled={isPaying || !me?.email}
+                    disabled={!isCheckoutEnabled || isPaying || !me?.email}
                     onClick={() => void doCheckout(selected, bundleCount)}
                     className={
                       "mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 px-4 py-4 text-sm font-black text-black shadow-2xl shadow-yellow-500/10 transition " +
-                      (isPaying || !me?.email
+                      (!isCheckoutEnabled || isPaying || !me?.email
                         ? "cursor-not-allowed opacity-60"
                         : "hover:scale-[1.01] hover:opacity-95")
                     }
                   >
-                    Continue to Stripe <span>→</span>
+                    {!isCheckoutEnabled
+                      ? "Checkout unavailable"
+                      : isPaying
+                        ? "Opening checkout..."
+                        : "Continue"}
                   </button>
 
                   <div className="mt-3 text-center text-[11px] font-medium text-white/45">
-                    Secure checkout • One-time payment • Instant credits
+                    {productTruth.copy.checkoutUnavailable}
                   </div>
-
-                  {holdLeft <= 60 ? (
-                    <div className="mt-3 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 px-3 py-2 text-[11px] font-medium text-yellow-100">
-                      Reservation ends soon.
-                    </div>
-                  ) : null}
                 </div>
               </div>
             </div>

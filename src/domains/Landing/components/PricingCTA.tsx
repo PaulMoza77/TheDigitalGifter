@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { productTruth, isCheckoutEnabled } from "@/config/productTruth";
 
 const plans = [
   {
@@ -9,59 +10,28 @@ const plans = [
     credits: "100 credits",
     price: "€4.98",
     pack: "starter",
-    features: [
-      "100 credits",
-      "All premium templates",
-      "High-resolution downloads",
-      "Email support",
-      "Print-quality output",
-    ],
-    popular: false,
+    features: ["100 credits", "All premium templates", "Email support"],
   },
   {
     name: "Creator",
     credits: "250 credits",
     price: "€9.98",
     pack: "creator",
-    features: [
-      "250 credits",
-      "All premium templates",
-      "Priority processing",
-      "High-resolution downloads",
-      "Priority email support",
-      "Commercial use license",
-    ],
-    popular: true,
+    features: ["250 credits", "All premium templates", "Email support"],
   },
   {
     name: "Pro",
     credits: "4000 credits",
     price: "€78.98",
     pack: "pro",
-    features: [
-      "4000 credits",
-      "All premium templates",
-      "Fastest delivery",
-      "Bulk creation tools",
-      "Commercial use license",
-      "Dedicated support",
-    ],
-    popular: false,
+    features: ["4000 credits", "All premium templates", "Email support"],
   },
   {
     name: "Enterprise",
     credits: "50,000 credits",
     price: "€499.98",
     pack: "enterprise",
-    features: [
-      "50,000 credits",
-      "White-label options",
-      "Custom integrations",
-      "Priority support 24/7",
-      "Bulk creation tools",
-      "Dedicated account manager",
-    ],
-    popular: false,
+    features: ["50,000 credits", "All premium templates", "Email support"],
   },
 ] as const;
 
@@ -97,6 +67,11 @@ export const PricingCTA = () => {
   const selectedPlan = plans.find((plan) => plan.pack === selectedPack) ?? null;
 
   const openEmailModal = async (pack: Pack) => {
+    if (!isCheckoutEnabled) {
+      setErrorMessage(productTruth.copy.checkoutUnavailable);
+      return;
+    }
+
     setErrorMessage("");
     setSelectedPack(pack);
 
@@ -118,6 +93,11 @@ export const PricingCTA = () => {
 
   const handleCheckout = async () => {
     if (!selectedPack || loadingPack) return;
+
+    if (!isCheckoutEnabled) {
+      setErrorMessage(productTruth.copy.checkoutUnavailable);
+      return;
+    }
 
     const cleanEmail = email.trim().toLowerCase();
 
@@ -207,8 +187,8 @@ export const PricingCTA = () => {
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/60">
-            Buy credits once and use them whenever you want to create something
-            personal, beautiful, and meaningful.
+            Credit packs for still-image generation.{" "}
+            {productTruth.copy.checkoutUnavailable}
           </p>
         </motion.div>
 
@@ -219,23 +199,12 @@ export const PricingCTA = () => {
             return (
               <motion.div
                 key={plan.pack}
-                className={`relative flex h-full flex-col rounded-3xl border bg-white/[0.04] p-8 shadow-xl ${
-                  plan.popular
-                    ? "scale-[1.02] border-yellow-300/45 shadow-yellow-500/10"
-                    : "border-white/10"
-                }`}
+                className="relative flex h-full flex-col rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-xl"
                 initial={{ opacity: 0, y: 28 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.08, duration: 0.45 }}
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 px-4 py-1 text-sm font-black text-black">
-                    <Sparkles className="h-4 w-4" />
-                    Most Popular
-                  </div>
-                )}
-
                 <div className="mb-8 text-center">
                   <h3 className="mb-2 text-2xl font-black text-white">
                     {plan.name}
@@ -263,15 +232,18 @@ export const PricingCTA = () => {
 
                 <button
                   type="button"
-                  onClick={() => void openEmailModal(plan.pack)}
-                  disabled={Boolean(loadingPack)}
-                  className={`mt-auto w-full rounded-2xl py-4 text-base font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                    plan.popular
-                      ? "bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 text-black shadow-2xl shadow-yellow-500/20 hover:scale-[1.02]"
-                      : "bg-white/10 text-white hover:bg-white/15"
-                  }`}
+                  onClick={() => {
+                    if (!isCheckoutEnabled) return;
+                    void openEmailModal(plan.pack);
+                  }}
+                  disabled={!isCheckoutEnabled || Boolean(loadingPack)}
+                  className="mt-auto w-full rounded-2xl bg-white/10 py-4 text-base font-black text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isLoading ? "Opening checkout..." : "Get Started"}
+                  {isCheckoutEnabled
+                    ? isLoading
+                      ? "Opening checkout..."
+                      : "Get Started"
+                    : "Checkout unavailable"}
                 </button>
               </motion.div>
             );
@@ -279,7 +251,7 @@ export const PricingCTA = () => {
         </div>
 
         <p className="mt-8 text-center text-sm text-white/40">
-          High-resolution downloads included • Credits never expire
+          Credit packs for still-image generation. {productTruth.copy.supportResponseSentence}
         </p>
       </div>
 
@@ -300,11 +272,13 @@ export const PricingCTA = () => {
               </div>
 
               <h3 className="text-2xl font-black text-white">
-                Where should we send your credits?
+                Continue with {selectedPlan.name}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-white/55">
-                Enter your email to continue securely to Stripe checkout.
+                {isCheckoutEnabled
+                  ? "Enter your email to continue."
+                  : productTruth.copy.checkoutUnavailable}
               </p>
             </div>
 
@@ -339,10 +313,14 @@ export const PricingCTA = () => {
             <button
               type="button"
               onClick={() => void handleCheckout()}
-              disabled={Boolean(loadingPack)}
+              disabled={!isCheckoutEnabled || Boolean(loadingPack)}
               className="mt-6 w-full rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 py-4 font-black text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loadingPack ? "Opening checkout..." : "Continue to Stripe"}
+              {isCheckoutEnabled
+                ? loadingPack
+                  ? "Opening checkout..."
+                  : "Continue"
+                : "Checkout unavailable"}
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Play, Maximize, Coins, ImageIcon } from "lucide-react";
 import { TemplateSummary } from "@/types/templates";
+import { isVideoGenerationEnabled } from "@/config/productTruth";
 
 type WrapperType = "div" | "button";
 
@@ -52,7 +53,7 @@ export default function TemplateCard({
 
   const imageUrl = useMemo(() => readTemplateImage(template), [template]);
   const hasImage = Boolean(imageUrl) && !imageFailed;
-  const isVideo = template.type === "video";
+  const isVideo = isVideoGenerationEnabled && template.type === "video";
 
   return (
     <Container

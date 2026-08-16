@@ -25,7 +25,7 @@ export default function NewYearsEvePage() {
 
           <div className="relative">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80">
-              🎆 New Year’s Eve — Limited Time
+              🎆 New Year’s Eve
             </div>
 
             <h1 className="text-4xl font-extrabold tracking-tight text-white md:text-6xl">
@@ -35,7 +35,7 @@ export default function NewYearsEvePage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base text-white/70 md:text-lg">
-              Turn your best moments into sparkling countdown designs in seconds.
+              Turn your best moments into sparkling countdown designs.
               Upload a photo, pick a style, and let AI do the magic.
             </p>
 
