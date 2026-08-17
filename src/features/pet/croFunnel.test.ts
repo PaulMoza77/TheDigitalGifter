@@ -24,6 +24,7 @@ import {
   orderRetainsSnapshottedPrice,
   stripeCheckoutIsOneTimePayment,
 } from "./videoGuards";
+import { occasionHref } from "../../constants/occasions";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -70,6 +71,19 @@ describe("pet funnel CRO", () => {
     expect(landing).toContain("PET_HERO_PROMISE");
     expect(landing).toContain("NameCapture");
     expect(readSrc("src/features/pet/components/NameCapture.tsx")).toContain("Enter your pet’s name");
+  });
+
+  it("home and shortcut links send dogs/cats to the pet landings", () => {
+    const app = readSrc("src/App.tsx");
+    expect(app).toMatch(/path="\/dogs"[\s\S]*to="\/pet\/dog"/);
+    expect(app).toMatch(/path="\/cats"[\s\S]*to="\/pet\/cat"/);
+    expect(occasionHref("dogs")).toBe("/pet/dog");
+    expect(occasionHref("cats")).toBe("/pet/cat");
+    expect(occasionHref("other-pets")).toBe("/pet/other");
+    expect(app).toContain('path="/pet-loss"');
+    expect(app).toContain("PetLossPage");
+    expect(occasionHref("pet-loss")).toBe("/pet-loss");
+    expect(occasionHref("birthday")).toContain("/funnel/homepage/birthday");
   });
 
   it("2. name submission requires a valid trimmed name", () => {

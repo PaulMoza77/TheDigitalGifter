@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { occasions } from "@/constants/occasions";
+import { occasionHref, occasions } from "@/constants/occasions";
 import { toast } from "sonner";
 import { TrendingNowRow } from "@/components/website/TrendingNowRow";
 
@@ -25,7 +25,7 @@ export const HeroSection = () => {
   const handleOccasionClick = useCallback(() => {
     if (!currentOccasion) return;
 
-    void navigate(`/funnel/homepage/${currentOccasion.id}`);
+    void navigate(occasionHref(currentOccasion.id));
   }, [currentOccasion, navigate]);
 
   if (!currentOccasion) return null;

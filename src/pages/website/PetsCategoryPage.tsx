@@ -6,30 +6,30 @@ const petTemplates = [
   {
     id: "dogs",
     title: "Dogs",
-    description: "Cute, funny and emotional cards for dog lovers.",
+    description: "Turn one photo into 12 secret-life portraits and 2 cinematic clips.",
     icon: Dog,
-    path: "/generator?category=pets&type=dogs",
+    path: "/pet/dog",
   },
   {
     id: "cats",
     title: "Cats",
-    description: "Sweet and playful cards for cat memories.",
+    description: "Turn one photo into 12 secret-life portraits and 2 cinematic clips.",
     icon: Cat,
-    path: "/generator?category=pets&type=cats",
+    path: "/pet/cat",
+  },
+  {
+    id: "other-pets",
+    title: "Other Pets",
+    description: "Rabbits, birds, reptiles and more — one photo, twelve secret lives.",
+    icon: Smile,
+    path: "/pet/other",
   },
   {
     id: "pet-loss",
     title: "Pet Loss",
     description: "Gentle cards for remembering a loved pet.",
     icon: Heart,
-    path: "/generator?category=pets&type=pet-loss",
-  },
-  {
-    id: "funny-pets",
-    title: "Funny Pets",
-    description: "Light, viral-style cards made for sharing.",
-    icon: Smile,
-    path: "/generator?category=pets&type=funny-pets",
+    path: "/pet-loss",
   },
 ];
 

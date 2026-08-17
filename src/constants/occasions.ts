@@ -171,7 +171,8 @@ export const occasions = [
     description: "Personal cards built around a name and a meaningful message.",
     gradientFrom: "from-[#312e81]",
     gradientTo: "to-[#ec4899]",
-    image: "/images/occasions/default.png",
+    image:
+      "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&h=1000&fit=crop",
   },
   {
     id: "kids",
@@ -181,7 +182,8 @@ export const occasions = [
     description: "Colorful cards for children, family and joyful memories.",
     gradientFrom: "from-[#0f172a]",
     gradientTo: "to-[#38bdf8]",
-    image: "/images/occasions/default.png",
+    image:
+      "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&h=1000&fit=crop",
   },
   {
     id: "bible-verses",
@@ -191,7 +193,8 @@ export const occasions = [
     description: "Beautiful spiritual cards with meaningful Bible-inspired messages.",
     gradientFrom: "from-[#312e81]",
     gradientTo: "to-[#f59e0b]",
-    image: "/images/occasions/default.png",
+    image:
+      "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800&h=1000&fit=crop",
   },
   {
     id: "prayer",
@@ -201,36 +204,84 @@ export const occasions = [
     description: "Prayer cards for comfort, gratitude, hope and peace.",
     gradientFrom: "from-[#1e1b4b]",
     gradientTo: "to-[#a855f7]",
-    image: "/images/occasions/default.png",
+    image:
+      "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=800&h=1000&fit=crop",
   },
   {
     id: "dogs",
     title: "Dogs",
     category: "pets",
-    label: "Cute dog moments",
-    description: "Funny, emotional and adorable cards for dog lovers.",
+    label: "12 secret lives",
+    description:
+      "Turn one photo of your dog into 12 portraits and 2 cinematic clips.",
     gradientFrom: "from-[#431407]",
     gradientTo: "to-[#f97316]",
-    image: "/images/occasions/default.png",
+    image:
+      "https://images.unsplash.com/photo-1552053831-71594a27632d?w=800&h=1000&fit=crop",
   },
   {
     id: "cats",
     title: "Cats",
     category: "pets",
-    label: "Playful cat cards",
-    description: "Sweet and funny cards for cat memories.",
+    label: "12 secret lives",
+    description:
+      "Turn one photo of your cat into 12 portraits and 2 cinematic clips.",
     gradientFrom: "from-[#0f172a]",
     gradientTo: "to-[#22c55e]",
-    image: "/images/occasions/default.png",
+    image:
+      "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&h=1000&fit=crop",
+  },
+  {
+    id: "other-pets",
+    title: "Other Pets",
+    category: "pets",
+    label: "Every pet counts",
+    description:
+      "Rabbits, birds, reptiles and more — one photo, twelve secret lives.",
+    gradientFrom: "from-[#14532d]",
+    gradientTo: "to-[#84cc16]",
+    image:
+      "https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=800&h=1000&fit=crop",
   },
   {
     id: "pet-loss",
     title: "Pet Loss",
     category: "pets",
-    label: "Gentle remembrance",
-    description: "Soft emotional cards for remembering a loved pet.",
+    label: "Forever remembered",
+    description: "Honor a pet memory with something gentle and meaningful.",
     gradientFrom: "from-[#111827]",
     gradientTo: "to-[#64748b]",
-    image: "/images/occasions/default.png",
+    image:
+      "https://images.unsplash.com/photo-1544568100-847a948890b0?w=800&h=1000&fit=crop",
   },
 ] as const;
+
+export type OccasionId = (typeof occasions)[number]["id"];
+
+function normalizeOccasionId(value: string | null | undefined) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-");
+}
+
+/** Where Home / Templates / Hero should send each occasion. */
+export function occasionHref(id: string | null | undefined): string {
+  const slug = normalizeOccasionId(id);
+
+  if (slug === "dogs" || slug === "dog") return "/pet/dog";
+  if (slug === "cats" || slug === "cat") return "/pet/cat";
+  if (slug === "other-pets" || slug === "other") return "/pet/other";
+  if (slug === "pet-loss") return "/pet-loss";
+  if (slug === "funny-pets") {
+    return "/generator?category=pets&type=funny-pets";
+  }
+  if (slug === "sorry") return "/sorry";
+
+  return `/funnel/homepage/${encodeURIComponent(slug || "christmas")}`;
+}
+
+export function occasionById(id: string | null | undefined) {
+  const slug = normalizeOccasionId(id);
+  return occasions.find((item) => item.id === slug);
+}

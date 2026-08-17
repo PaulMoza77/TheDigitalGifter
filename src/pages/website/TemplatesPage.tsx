@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import TemplatesGrid from "@/components/TemplatesGrid";
 import { PageHead } from "@/components/PageHead";
-import { occasions } from "@/constants/occasions";
+import { occasionHref, occasions } from "@/constants/occasions";
 import { TemplateSummary } from "@/types/templates";
 
 type CategoryKey = "all" | "occasions" | "personal" | "spiritual" | "pets";
@@ -230,7 +230,7 @@ export default function TemplatesPage() {
                 {visibleCategories.map((item) => (
                   <Link
                     key={item.id}
-                    to={`/funnel/homepage/${item.id}`}
+                    to={occasionHref(item.id)}
                     className="group relative w-[220px] shrink-0 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] transition hover:-translate-y-1 hover:border-cyan-300/40 hover:bg-white/[0.07] sm:w-[260px]"
                   >
                     <div className="relative aspect-[4/5] overflow-hidden">

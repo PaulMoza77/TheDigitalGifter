@@ -123,6 +123,7 @@ const MothersDayPage = lazy(() => import("@/pages/website/MothersDayPage"));
 const FathersDayPage = lazy(() => import("@/pages/website/FathersDayPage"));
 const GraduationPage = lazy(() => import("@/pages/website/GraduationPage"));
 const SorryPage = lazy(() => import("@/pages/website/SorryPage"));
+const PetLossPage = lazy(() => import("@/pages/website/PetLossPage"));
 
 // ================= SEO PUBLIC PAGES =================
 const SeoPage = lazy(() => import("@/pages/seo/SeoPage"));
@@ -419,6 +420,7 @@ function AppInner() {
             <Route path="/fathers-day" element={<FathersDayPage />} />
             <Route path="/graduation" element={<GraduationPage />} />
             <Route path="/sorry" element={<SorryPage />} />
+            <Route path="/pet-loss" element={<PetLossPage />} />
 
             <Route path="/blog" element={<BlogIndexPage />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />
@@ -443,15 +445,11 @@ function AppInner() {
             />
             <Route
               path="/dogs"
-              element={<Navigate to="/templates?category=pets" replace />}
+              element={<Navigate to="/pet/dog" replace />}
             />
             <Route
               path="/cats"
-              element={<Navigate to="/templates?category=pets" replace />}
-            />
-            <Route
-              path="/pet-loss"
-              element={<Navigate to="/templates?category=pets" replace />}
+              element={<Navigate to="/pet/cat" replace />}
             />
 
             <Route path="/privacy" element={<PrivacyPolicyPage />} />

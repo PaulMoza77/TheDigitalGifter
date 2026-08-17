@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { occasions } from "@/constants/occasions";
+import { occasionHref, occasions } from "@/constants/occasions";
 
 export default function OccasionsCategoryPage() {
   return (
@@ -29,7 +29,9 @@ export default function OccasionsCategoryPage() {
         </motion.div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {occasions.map((occasion, index) => (
+          {occasions
+            .filter((occasion) => occasion.category === "occasions")
+            .map((occasion, index) => (
             <motion.div
               key={occasion.id}
               initial={{ opacity: 0, y: 18 }}
@@ -37,7 +39,7 @@ export default function OccasionsCategoryPage() {
               transition={{ delay: index * 0.04 }}
             >
               <Link
-                to={`/funnel/homepage/${occasion.id}`}
+                to={occasionHref(occasion.id)}
                 className="group block overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-xl transition hover:-translate-y-1 hover:border-cyan-400/40 hover:bg-white/[0.07]"
               >
                 <div className="relative aspect-[4/5] overflow-hidden">

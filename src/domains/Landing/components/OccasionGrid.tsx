@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { occasionById, occasionHref, occasions } from "@/constants/occasions";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +73,7 @@ const categoryTabs: {
   {
     key: "pets",
     title: "Pets",
-    subtitle: "Dogs, cats, memories",
+    subtitle: "Dogs, cats, other pets",
     icon: PawPrint,
   },
 ];
@@ -90,6 +91,7 @@ function normalizeOccasionSlug(slug: string) {
   if (s === "name_cards") return "name-cards";
   if (s === "bible_verses") return "bible-verses";
   if (s === "pet_loss") return "pet-loss";
+  if (s === "other" || s === "other_pets") return "other-pets";
 
   return s.replace(/_/g, "-").replace(/\s+/g, "-");
 }
@@ -106,6 +108,7 @@ function normalizeOccasionKey(slug: string) {
   if (s === "name-cards") return "name_cards";
   if (s === "bible-verses") return "bible_verses";
   if (s === "pet-loss") return "pet_loss";
+  if (s === "other-pets") return "other_pets";
 
   return s;
 }
@@ -123,15 +126,15 @@ function groupFromSlug(slug: string): CategoryKey {
     return "spiritual";
   }
 
-  if (["dogs", "cats", "pet_loss"].includes(s)) {
+  if (["dogs", "cats", "other_pets", "pet_loss", "funny_pets"].includes(s)) {
     return "pets";
   }
 
   return "occasions";
 }
 
-function funnelHrefForSlug(slug: string) {
-  return `/funnel/homepage/${encodeURIComponent(normalizeOccasionSlug(slug))}`;
+function destinationForSlug(slug: string) {
+  return occasionHref(normalizeOccasionSlug(slug));
 }
 
 function getTemplateImage(row: TemplateImageRow) {
@@ -168,8 +171,9 @@ function prettyLabelFromSlug(slug: string) {
   if (s.includes("kids")) return "Playful memories";
   if (s.includes("bible")) return "Faith & peace";
   if (s.includes("prayer")) return "Hope & comfort";
-  if (s.includes("dogs")) return "Dog memories";
-  if (s.includes("cats")) return "Cat memories";
+  if (s.includes("dogs")) return "12 secret lives";
+  if (s.includes("cats")) return "12 secret lives";
+  if (s.includes("other")) return "Every pet counts";
   if (s.includes("pet")) return "Forever remembered";
 
   return "New memories";
@@ -259,11 +263,15 @@ function fallbackDescription(slug: string) {
   }
 
   if (s.includes("dogs")) {
-    return "Celebrate your dog with a warm, personal memory.";
+    return "Turn one photo of your dog into 12 portraits and 2 cinematic clips.";
   }
 
   if (s.includes("cats")) {
-    return "Create beautiful cat portraits and emotional pet memories.";
+    return "Turn one photo of your cat into 12 portraits and 2 cinematic clips.";
+  }
+
+  if (s.includes("other")) {
+    return "Rabbits, birds, reptiles and more — one photo, twelve secret lives.";
   }
 
   if (s.includes("pet")) {
@@ -306,9 +314,21 @@ function fallbackImage(slug: string) {
   if (s.includes("kids")) return "/images/occasions/kids.png";
   if (s.includes("bible")) return "/images/occasions/bible-verses.png";
   if (s.includes("prayer")) return "/images/occasions/prayer.png";
-  if (s.includes("dogs")) return "/images/occasions/dogs.png";
-  if (s.includes("cats")) return "/images/occasions/cats.png";
-  if (s.includes("pet")) return "/images/occasions/pet-loss.png";
+  const fromCatalog = occasionById(s)?.image;
+  if (fromCatalog) return fromCatalog;
+
+  if (s.includes("dogs")) {
+    return occasions.find((item) => item.id === "dogs")?.image || "";
+  }
+  if (s.includes("cats")) {
+    return occasions.find((item) => item.id === "cats")?.image || "";
+  }
+  if (s.includes("other")) {
+    return occasions.find((item) => item.id === "other-pets")?.image || "";
+  }
+  if (s.includes("pet")) {
+    return occasions.find((item) => item.id === "pet-loss")?.image || "";
+  }
 
   return "/images/occasions/default.png";
 }
@@ -350,7 +370,8 @@ const FALLBACK_OCCASIONS: OccasionRow[] = [
   { slug: "prayer", title: "Prayer", active: true, sort_order: 20 },
   { slug: "dogs", title: "Dogs", active: true, sort_order: 21 },
   { slug: "cats", title: "Cats", active: true, sort_order: 22 },
-  { slug: "pet-loss", title: "Pet Loss", active: true, sort_order: 23 },
+  { slug: "other-pets", title: "Other Pets", active: true, sort_order: 23 },
+  { slug: "pet-loss", title: "Pet Loss", active: true, sort_order: 24 },
 ];
 
 export default function OccasionGrid() {
@@ -574,11 +595,19 @@ export default function OccasionGrid() {
             const normalizedKey = normalizeOccasionKey(slug);
             const normalizedSlug = normalizeOccasionSlug(slug);
             const key = String(occ.id || slug || index);
-            const funnelHref = funnelHrefForSlug(slug);
-            const image =
+            const href = destinationForSlug(slug);
+            const catalogImage = occasionById(normalizedSlug)?.image;
+            const isPetCard =
+              normalizedSlug === "dogs" ||
+              normalizedSlug === "cats" ||
+              normalizedSlug === "other-pets" ||
+              normalizedSlug === "pet-loss";
+            const templateImage =
               templateImagesByOccasion[normalizedKey] ||
-              templateImagesByOccasion[normalizedSlug] ||
-              fallbackImage(slug);
+              templateImagesByOccasion[normalizedSlug];
+            const image = isPetCard
+              ? catalogImage || templateImage || fallbackImage(slug)
+              : templateImage || catalogImage || fallbackImage(slug);
 
             return (
               <motion.div
@@ -593,7 +622,7 @@ export default function OccasionGrid() {
                   <CardContent className="p-0">
                     <button
                       type="button"
-                      onClick={() => navigate(funnelHref)}
+                      onClick={() => navigate(href)}
                       className="block w-full text-left"
                     >
                       <div className="relative h-64 overflow-hidden bg-white/5">
@@ -603,6 +632,10 @@ export default function OccasionGrid() {
                           loading="lazy"
                           className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                           onError={(event) => {
+                            if (event.currentTarget.dataset.fallbackApplied === "1") {
+                              return;
+                            }
+                            event.currentTarget.dataset.fallbackApplied = "1";
                             event.currentTarget.src = fallbackImage(slug);
                           }}
                         />

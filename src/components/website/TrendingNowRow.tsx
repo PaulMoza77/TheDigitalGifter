@@ -1,16 +1,16 @@
 import { ArrowRight, Eye, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { occasions } from "@/constants/occasions";
+import { occasionHref, occasions } from "@/constants/occasions";
 
 const priorityOccasions = [
   "birthday",
-  "name_cards",
   "sorry",
+  "dogs",
   "anniversary",
-  "mothers_day",
-  "baby_reveal",
+  "cats",
   "christmas",
-  "valentines_day",
+  "mothers-day",
+  "valentines-day",
 ];
 
 const trendingItems = priorityOccasions
@@ -51,9 +51,7 @@ export function TrendingNowRow() {
         {trendingItems.map((item, index) => (
           <Link
             key={item.id}
-            to={`/generator?category=${encodeURIComponent(
-              item.category
-            )}&occasion=${encodeURIComponent(item.id)}`}
+            to={occasionHref(item.id)}
             className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-xl transition duration-300 hover:-translate-y-1 hover:border-yellow-300/40 hover:shadow-yellow-500/10"
           >
             <div className="relative aspect-[4/5] overflow-hidden">
