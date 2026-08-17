@@ -20,6 +20,7 @@ import {
   mockPredictionId,
   projectedStandardPackCostUsd,
   rangeToIso,
+  recognizedRevenueCents,
   rejectClientCostTampering,
   snapshotKontextProTariff,
   sumTrackedCostUsd,
@@ -110,6 +111,60 @@ describe("Replicate cost accounting", () => {
     expect(details.grossAfterAiUsd).toBe(58.52);
     expect(formatUsd(details.grossAfterAiUsd)).toBe("$58.52");
     expect(details.disclaimer).toBe(GROSS_AFTER_AI_DISCLAIMER);
+  });
+
+  it("does not count 100% promo comps as revenue", () => {
+    expect(
+      recognizedRevenueCents({
+        amount_cents: PET_PRICE_CENTS,
+        charged_amount_cents: 0,
+        discount_percent: 100,
+        promo_code: "VTM99",
+        stripe_checkout_session_id: "promo:VTM99:order-1",
+      }),
+    ).toBe(0);
+    expect(
+      recognizedRevenueCents({
+        amount_cents: PET_PRICE_CENTS,
+        charged_amount_cents: PET_PRICE_CENTS,
+        discount_percent: 100,
+        promo_code: "VTM99",
+        stripe_checkout_session_id: "promo:VTM99:order-1",
+      }),
+    ).toBe(0);
+    expect(
+      recognizedRevenueCents({
+        amount_cents: PET_PRICE_CENTS,
+        stripe_checkout_session_id: "promo:VTM99:order-1",
+      }),
+    ).toBe(0);
+    expect(
+      recognizedRevenueCents({
+        amount_cents: PET_PRICE_CENTS,
+        charged_amount_cents: 2950,
+        discount_percent: 50,
+      }),
+    ).toBe(2950);
+    expect(
+      recognizedRevenueCents({
+        amount_cents: PET_PRICE_CENTS,
+        charged_amount_cents: PET_PRICE_CENTS,
+      }),
+    ).toBe(PET_PRICE_CENTS);
+
+    const details = buildOrderCostDetails({
+      amountCents: PET_PRICE_CENTS,
+      chargedAmountCents: 0,
+      discountPercent: 100,
+      promoCode: "VTM99",
+      stripeCheckoutSessionId: "promo:VTM99:order-1",
+      ledger: [],
+    });
+    expect(details.revenueUsd).toBe(0);
+    expect(details.listPriceUsd).toBe(59);
+    expect(details.promoCode).toBe("VTM99");
+    expect(details.discountPercent).toBe(100);
+    expect(details.grossAfterAiUsd).toBe(0);
   });
 
   it("records a failed prediction as exact $0", () => {
@@ -359,6 +414,39 @@ describe("Replicate cost accounting", () => {
       },
     ]);
     expect(report.breakdown.byDate.map((row) => row.date)).toEqual(["2026-08-16"]);
+  });
+
+  it("excludes 100% promo orders from period revenue", () => {
+    const { fromIso, toIso } = rangeToIso("2026-08-16", "2026-08-16");
+    const today = rangeToIso("2026-08-16", "2026-08-16");
+    const report = buildAdminAiCostReport({
+      fromIso,
+      toIso,
+      todayFromIso: today.fromIso,
+      todayToIso: today.toIso,
+      periodLedger: [],
+      todayLedger: [],
+      paidOrdersInPeriod: [
+        {
+          id: "comp-order",
+          amount_cents: PET_PRICE_CENTS,
+          charged_amount_cents: 0,
+          discount_percent: 100,
+          promo_code: "VTM99",
+          stripe_checkout_session_id: "promo:VTM99:comp-order",
+          currency: "usd",
+          paid_at: "2026-08-16T09:00:00.000Z",
+          status: "paid",
+          pet_name: "Maple",
+          email: "owner@example.com",
+        },
+      ],
+      ledgerForPaidOrders: [],
+      currentTariff: snapshotKontextProTariff(),
+    });
+    expect(report.cards.petRevenuePeriodUsd).toBe(0);
+    expect(report.breakdown.byOrder[0]?.revenueUsd).toBe(0);
+    expect(report.breakdown.byOrder[0]?.grossAfterAiUsd).toBe(0);
   });
 
   it("keeps a provider success billable after a later storage or processing failure", () => {

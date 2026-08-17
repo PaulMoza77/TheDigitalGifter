@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -98,12 +98,15 @@ function NavButton({
   );
 }
 
+const SIDEBAR_COLLAPSED_KEY = "admin-sidebar-collapsed";
+
 const SidebarNavigation: React.FC<{
   collapsed: boolean;
   isActive: (path: string) => boolean;
   navigateTo: (path: string) => void;
   onNavigate?: () => void;
-}> = ({ collapsed, isActive, navigateTo, onNavigate }) => {
+  showLogo?: boolean;
+}> = ({ collapsed, isActive, navigateTo, onNavigate, showLogo = true }) => {
   const sections: NavSection[] = useMemo(
     () => [
       {
@@ -215,9 +218,11 @@ const SidebarNavigation: React.FC<{
 
   return (
     <div className={cx("flex flex-col gap-6", collapsed ? "items-center" : "")}>
-      <div className={cx("pt-1", collapsed ? "flex w-full justify-center" : "")}>
-        <Logo />
-      </div>
+      {showLogo ? (
+        <div className={cx("pt-1", collapsed ? "flex w-full justify-center" : "")}>
+          <Logo />
+        </div>
+      ) : null}
 
       <div className="flex w-full flex-col gap-6">
         {sections.map((section) => (
@@ -263,13 +268,25 @@ const AdminLayout: React.FC = () => {
   const isActive = useIsActivePath();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
 
-  const sidebarWidth = collapsed ? 72 : 288;
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [collapsed]);
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-slate-950 font-sans text-slate-50">
-      <header className="sticky top-0 z-50 flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 px-4 py-3 md:hidden">
+    <div className="flex h-dvh w-full overflow-hidden bg-slate-950 font-sans text-slate-50">
+      <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 px-4 py-3 md:hidden">
         <div className="flex items-center gap-3">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
@@ -286,7 +303,7 @@ const AdminLayout: React.FC = () => {
               side="left"
               className="w-72 border-slate-800 bg-slate-950 p-0"
             >
-              <div className="px-5 py-6">
+              <div className="h-full overflow-y-auto px-5 py-6">
                 <SidebarNavigation
                   collapsed={false}
                   isActive={isActive}
@@ -301,49 +318,58 @@ const AdminLayout: React.FC = () => {
         </div>
       </header>
 
-      <div className="hidden min-h-0 flex-1 md:flex">
-        <aside
-          className="relative min-h-0 shrink-0 border-r border-slate-800 bg-slate-950"
-          style={{ width: sidebarWidth }}
+      <aside
+        className={cx(
+          "hidden h-full min-h-0 shrink-0 flex-col border-r border-slate-800 bg-slate-950 md:flex",
+          "transition-[width] duration-200 ease-out",
+          collapsed ? "w-[72px]" : "w-72"
+        )}
+      >
+        <div
+          className={cx(
+            "flex h-14 shrink-0 items-center border-b border-slate-800",
+            collapsed ? "justify-center px-2" : "justify-between gap-2 px-3"
+          )}
         >
+          {!collapsed ? (
+            <div className="min-w-0 truncate">
+              <Logo />
+            </div>
+          ) : null}
+
           <button
             type="button"
             onClick={() => setCollapsed((value) => !value)}
-            className="absolute -right-3 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 transition-colors hover:bg-slate-800/60"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand" : "Collapse"}
           >
             {collapsed ? (
-              <ChevronRight className="h-4 w-4 text-slate-200" />
+              <ChevronRight className="h-4 w-4" />
             ) : (
-              <ChevronLeft className="h-4 w-4 text-slate-200" />
+              <ChevronLeft className="h-4 w-4" />
             )}
           </button>
+        </div>
 
-          <div
-            className={cx(
-              "h-full overflow-y-auto",
-              collapsed ? "px-2 py-6" : "px-5 py-6"
-            )}
-          >
-            <SidebarNavigation
-              collapsed={collapsed}
-              isActive={isActive}
-              navigateTo={(path) => navigate(path)}
-            />
-          </div>
-        </aside>
+        <nav
+          className={cx(
+            "min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain",
+            collapsed ? "px-2 py-4" : "px-3 py-4"
+          )}
+        >
+          <SidebarNavigation
+            collapsed={collapsed}
+            isActive={isActive}
+            navigateTo={(path) => navigate(path)}
+            showLogo={false}
+          />
+        </nav>
+      </aside>
 
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-slate-950">
-          <Outlet />
-        </main>
-      </div>
-
-      <div className="min-h-0 flex-1 md:hidden">
-        <main className="min-h-0 overflow-y-auto bg-slate-950">
-          <Outlet />
-        </main>
-      </div>
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-950 pt-14 md:pt-0">
+        <Outlet />
+      </main>
     </div>
   );
 };
