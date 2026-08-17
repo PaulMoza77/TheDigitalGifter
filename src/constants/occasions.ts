@@ -251,8 +251,7 @@ export const occasions = [
     description: "Honor a pet memory with something gentle and meaningful.",
     gradientFrom: "from-[#111827]",
     gradientTo: "to-[#64748b]",
-    image:
-      "https://images.unsplash.com/photo-1544568100-847a948890b0?w=800&h=1000&fit=crop",
+    image: "/images/pet-loss/hero-dog.jpg",
   },
 ] as const;
 
