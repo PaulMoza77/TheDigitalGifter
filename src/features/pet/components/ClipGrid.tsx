@@ -3,9 +3,10 @@ import {
   PET_DEMO_CLIP_IDS,
   PET_OTHER_SUBJECTS,
   getSceneById,
+  sceneClipSrc,
+  sceneImageSrc,
 } from "../catalog";
 import type { PetSpecies } from "../types";
-import { SceneImage } from "./SceneCard";
 
 export function ClipGrid({ species = "dog" }: { species?: PetSpecies }) {
   const copy = PET_CLIP_COPY[species];
@@ -28,11 +29,16 @@ export function ClipGrid({ species = "dog" }: { species?: PetSpecies }) {
           return (
             <article key={id} className="group relative overflow-hidden rounded-2xl bg-[#1a1410]">
               <div className="relative aspect-[3/4] w-full">
-                <SceneImage
-                  sceneId={id}
-                  species={species}
-                  alt={`${overlayTitle} 5-second clip example`}
+                <video
+                  src={sceneClipSrc(id, species)}
+                  poster={sceneImageSrc(id, species)}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
                   className="h-full w-full object-cover"
+                  aria-label={`${overlayTitle} 5-second clip example`}
                 />
                 <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white/90">
                   5s clip

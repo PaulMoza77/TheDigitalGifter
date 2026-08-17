@@ -558,12 +558,16 @@ describe("pet video clips", () => {
 
 describe("hover gallery clips", () => {
   it("maps every scene and species to a local mp4 poster pair", async () => {
-    const { PET_SCENES, sceneClipSrc, sceneImageSrc } = await import("./catalog");
+    const { PET_DEMO_CLIP_IDS, PET_SCENES, sceneClipSrc, sceneHasMotionClip, sceneImageSrc } = await import("./catalog");
     for (const species of ["dog", "cat", "other"] as const) {
       for (const scene of PET_SCENES) {
         expect(sceneImageSrc(scene.id, species)).toBe(`/pet/${species}/scenes/${scene.id}.webp`);
         expect(sceneClipSrc(scene.id, species)).toBe(`/pet/${species}/clips/${scene.id}.mp4`);
       }
     }
+    expect(sceneHasMotionClip("formula-racer")).toBe(true);
+    expect(sceneHasMotionClip("spa-bathtub")).toBe(true);
+    expect(sceneHasMotionClip("royal-portrait")).toBe(false);
+    expect(PET_DEMO_CLIP_IDS).toHaveLength(2);
   });
 });
