@@ -6,6 +6,7 @@ interface PageHeadProps {
   description: string;
   image?: string;
   url?: string;
+  exactTitle?: boolean;
 }
 
 /**
@@ -13,9 +14,9 @@ interface PageHeadProps {
  * Updates document title, meta description, and OG/Twitter tags.
  * Note: For more advanced use cases, consider react-helmet-async.
  */
-export function PageHead({ title, description, image, url }: PageHeadProps) {
+export function PageHead({ title, description, image, url, exactTitle = false }: PageHeadProps) {
   const location = useLocation();
-  const fullTitle = `${title} — TheDigitalGifter`;
+  const fullTitle = exactTitle ? title : `${title} — TheDigitalGifter`;
   const pageUrl = url || `https://www.thedigitalgifter.com${location.pathname}`;
   const ogImage = image || "https://www.thedigitalgifter.com/og-preview.png";
 
@@ -39,6 +40,7 @@ export function PageHead({ title, description, image, url }: PageHeadProps) {
     updateMetaProperty("og:image", ogImage);
 
     // Update Twitter tags
+    updateMetaName("twitter:card", "summary_large_image");
     updateMetaName("twitter:title", fullTitle);
     updateMetaName("twitter:description", description);
     updateMetaName("twitter:image", ogImage);

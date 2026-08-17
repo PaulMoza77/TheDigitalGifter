@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { PetFunnelDraft, PetPersonality, PetPhotoMeta, PetSpecies } from "./types";
+import type { PetFunnelDraft, PetPersonality, PetPhotoMeta, PetSpecies, PetSubtype } from "./types";
 import {
   createEmptyPetDraft,
   createSafePhotoPreview,
@@ -78,7 +78,14 @@ export function usePetDraft() {
     draft: {
       ...draft,
       setPetName: (petName: string) => update({ petName }),
-      setSpecies: (species: PetSpecies) => update({ species }),
+      setSpecies: (species: PetSpecies) =>
+        update({
+          species,
+          subtype: species === "other" ? draftRef.current.subtype : null,
+          subtypeDetail: species === "other" ? draftRef.current.subtypeDetail : null,
+        }),
+      setSubtype: (subtype: PetSubtype | null, subtypeDetail: string | null = null) =>
+        update({ subtype, subtypeDetail: subtype === "other" ? subtypeDetail : null }),
       setPersonality: (personality: PetPersonality) => update({ personality }),
       setEmail: (email: string) => update({ email }),
     },

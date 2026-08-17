@@ -6,7 +6,7 @@ export function HowItWorks() {
       <h2 id="pet-how-heading" className="text-2xl font-semibold tracking-tight text-[#f6efe4] sm:text-3xl">
         How it works
       </h2>
-      <ol className="mt-5 grid gap-3 md:grid-cols-3">
+      <ol className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {PET_HOW_IT_WORKS.map((item) => (
           <li key={item.step} className="rounded-2xl border border-[#f6efe4]/10 px-4 py-4">
             <span className="text-xs font-medium uppercase tracking-[0.16em] text-[#d4a84b]">

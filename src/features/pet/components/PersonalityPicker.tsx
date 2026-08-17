@@ -17,7 +17,7 @@ export function PersonalityPicker({
 
   return (
     <fieldset aria-describedby={error ? errorId : undefined}>
-      <legend className="mb-2 text-sm font-medium text-[#f6efe4]">Vibe</legend>
+      <legend className="mb-2 text-sm font-medium text-[#f6efe4]">Choose a vibe (optional)</legend>
       <div className="grid grid-cols-3 gap-2">
         {PET_PERSONALITY_OPTIONS.map((option) => {
           const selected = value === option.id;
@@ -25,7 +25,7 @@ export function PersonalityPicker({
             <label
               key={option.id}
               className={cn(
-                "cursor-pointer rounded-xl border px-3 py-2.5 text-center text-sm font-medium transition-colors",
+                "flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-center text-sm font-medium transition-colors",
                 "focus-within:ring-2 focus-within:ring-[#d4a84b]",
                 selected
                   ? "border-[#d4a84b] bg-[#d4a84b] text-[#1a140e]"

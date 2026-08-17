@@ -1,11 +1,14 @@
 import { z } from "zod";
+import { validateOtherSubtype, validatePetName } from "./croGuards";
 import {
+  PET_DEFAULT_PERSONALITY,
   PET_PERSONALITIES,
   PET_PHOTO_CONTENT_TYPES,
   PET_PHOTO_MAX_BYTES,
   PET_SPECIES,
   type PetPhotoContentType,
   type PetPhotoMeta,
+  type PetSubtype,
 } from "./types";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,12 +33,17 @@ export const petDraftSchema = z.object({
   photo: z.custom<PetPhotoMeta>((value) => Boolean(value), {
     message: "Upload a photo of your pet first.",
   }),
+  subtype: z.enum(["rabbit", "bird", "small_pet", "reptile", "horse", "other"]).nullable().optional(),
+  subtypeDetail: z.string().trim().max(40).nullable().optional(),
 });
 
 export type PetDraftFormValues = z.infer<typeof petDraftSchema>;
 
 export type FieldErrors = Partial<
-  Record<"petName" | "species" | "personality" | "email" | "photo", string>
+  Record<
+    "petName" | "species" | "personality" | "email" | "photo" | "subtype" | "subtypeDetail",
+    string
+  >
 >;
 
 export function validatePetDraft(input: {
@@ -44,34 +52,74 @@ export function validatePetDraft(input: {
   personality: string | null;
   email: string;
   photo: PetPhotoMeta | null;
+  subtype?: string | null;
+  subtypeDetail?: string | null;
 }): { ok: true; values: PetDraftFormValues } | { ok: false; errors: FieldErrors } {
+  const named = validatePetName(input.petName);
+  const subtypeCheck = validateOtherSubtype({
+    species: (PET_SPECIES as readonly string[]).includes(String(input.species))
+      ? (input.species as (typeof PET_SPECIES)[number])
+      : null,
+    subtype: input.subtype ?? null,
+    subtypeDetail: input.subtypeDetail,
+  });
   const parsed = petDraftSchema.safeParse({
-    petName: input.petName,
+    petName: named.ok ? named.name : input.petName,
     species: input.species,
-    personality: input.personality,
+    personality: input.personality || PET_DEFAULT_PERSONALITY,
     email: input.email,
     photo: input.photo,
+    subtype: subtypeCheck.ok ? subtypeCheck.subtype : input.subtype,
+    subtypeDetail: subtypeCheck.ok ? subtypeCheck.subtypeDetail : input.subtypeDetail,
   });
 
-  if (parsed.success) {
-    return { ok: true, values: parsed.data };
+  if (parsed.success && named.ok && subtypeCheck.ok) {
+    return {
+      ok: true,
+      values: {
+        ...parsed.data,
+        petName: named.name,
+        subtype: subtypeCheck.subtype,
+        subtypeDetail: subtypeCheck.subtypeDetail,
+      },
+    };
   }
 
   const errors: FieldErrors = {};
-  for (const issue of parsed.error.issues) {
-    const key = issue.path[0];
-    if (
-      key === "petName" ||
-      key === "species" ||
-      key === "personality" ||
-      key === "email" ||
-      key === "photo"
-    ) {
-      if (!errors[key]) errors[key] = issue.message;
+  if (!named.ok) errors.petName = named.message;
+  if (!subtypeCheck.ok) errors.subtype = subtypeCheck.message;
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      const key = issue.path[0];
+      if (
+        key === "petName" ||
+        key === "species" ||
+        key === "personality" ||
+        key === "email" ||
+        key === "photo" ||
+        key === "subtype" ||
+        key === "subtypeDetail"
+      ) {
+        if (!errors[key]) errors[key] = issue.message;
+      }
     }
   }
   return { ok: false, errors };
 }
+
+export function validateCreateStep(input: {
+  petName: string;
+  species: string | null;
+  personality: string | null;
+  email: string;
+  photo: PetPhotoMeta | null;
+  subtype?: string | null;
+  subtypeDetail?: string | null;
+}) {
+  return validatePetDraft(input);
+}
+
+export type { PetSubtype };
 
 const EXTENSION_BY_TYPE: Record<PetPhotoContentType, readonly string[]> = {
   "image/jpeg": [".jpg", ".jpeg"],

@@ -25,7 +25,7 @@ export function SpeciesSwitch({
             aria-selected={selected}
             onClick={() => navigation?.goToLanding(option.id)}
             className={cn(
-              "h-9 rounded-full text-sm font-semibold tracking-tight transition-colors",
+                "h-11 min-h-[44px] rounded-full text-sm font-semibold tracking-tight transition-colors",
               selected
                 ? "bg-[#d4a84b] text-[#1a140e]"
                 : "text-[#f6efe4]/70 hover:text-[#f6efe4]"

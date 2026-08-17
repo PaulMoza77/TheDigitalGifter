@@ -125,6 +125,7 @@ export function PetOrderPage({
           <p className="mt-2 max-w-xl text-sm leading-6 text-[#f6efe4]/65">
             {statusCopy(order?.status, progress?.phase || order?.phase)}
           </p>
+          <p className="mt-2 text-sm text-[#f6efe4]/55">Usually ready within 24–48 hours after payment and human review.</p>
           <div className="mt-4 flex flex-wrap items-center gap-4">
             <div className="min-w-[180px] flex-1">
               <div

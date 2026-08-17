@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { parsePetSpecies, petLandingPath } from "./catalog";
+import { parsePetSpecies, petCreatePath, petLandingPath } from "./catalog";
 import { PetCheckoutPage } from "./PetCheckoutPage";
 import { PetCreatePage } from "./PetCreatePage";
 import { PetLandingPage } from "./PetLandingPage";
@@ -12,15 +12,19 @@ function usePetNavigation(species: PetSpecies = "dog"): PetFunnelNavigation {
   const navigate = useNavigate();
   return useMemo(
     () => ({
-      goToLanding: (nextSpecies) => navigate(petLandingPath(nextSpecies ?? species)),
+      goToLanding: (nextSpecies) => {
+        void navigate(petLandingPath(nextSpecies ?? species));
+      },
       goToCreate: (nextSpecies) => {
         const selected = nextSpecies ?? species;
-        navigate(`/pet/create?species=${encodeURIComponent(selected)}`);
+        void navigate(petCreatePath(selected));
       },
-      goToCheckout: () => navigate("/pet/checkout"),
+      goToCheckout: () => {
+        void navigate("/pet/checkout");
+      },
       goToOrder: (publicToken) => {
         const token = publicToken || new URLSearchParams(window.location.search).get("token") || "";
-        navigate(token ? `/pet/order?token=${encodeURIComponent(token)}` : "/pet/order");
+        void navigate(token ? `/pet/order?token=${encodeURIComponent(token)}` : "/pet/order");
       },
     }),
     [navigate, species],

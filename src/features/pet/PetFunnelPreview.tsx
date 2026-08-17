@@ -180,6 +180,8 @@ async function seedFilledDraft() {
   savePetDraft({
     petName: "Maple",
     species: "dog",
+    subtype: null,
+    subtypeDetail: null,
     personality: "funny",
     email: "gift@example.com",
     photo: {

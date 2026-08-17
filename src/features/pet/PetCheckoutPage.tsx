@@ -1,10 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BadgeCheck, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PET_OFFER, PET_PERSONALITY_OPTIONS, PET_SPECIES_OPTIONS } from "./catalog";
+import { PageHead } from "@/components/PageHead";
+import {
+  PET_PERSONALITY_OPTIONS,
+  PET_SPECIES_OPTIONS,
+  PET_SUBTYPE_OPTIONS,
+} from "./catalog";
 import { PetApiError, startPetCheckout } from "./api";
 import { petFunnelApi } from "./supabaseApi";
-import { PetShell } from "./components";
+import { FunnelProgress, PetShell, SamePetGuarantee } from "./components";
 import { getPetPhotoFile, getPetPhotoObjectUrl } from "./storage";
 import type { PetFunnelApi } from "./api";
 import type { PetFunnelNavigation } from "./types";
@@ -12,6 +17,8 @@ import { usePetDraft } from "./usePetDraft";
 import { usePublicPetOffer } from "./usePublicPetOffer";
 import { validatePetDraft } from "./validation";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
+import { trackFunnelEvent } from "./funnelAnalytics";
+import { petPossessive } from "./croGuards";
 import { formatOfferPrice, resolveServerOwnedPromo } from "./videoGuards";
 
 export type PetCheckoutPageProps = {
@@ -24,20 +31,32 @@ export function PetCheckoutPage({
   api = petFunnelApi,
 }: PetCheckoutPageProps) {
   const { draft } = usePetDraft();
-  const { priceDisplay, amountCents, offerVerified } = usePublicPetOffer();
+  const { priceDisplay, amountCents, deliveryEstimate, offerVerified, offerError, loading, checkoutAllowed, refresh } =
+    usePublicPetOffer();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promoInput, setPromoInput] = useState("");
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const appliedPromo = resolveServerOwnedPromo(promoInput);
+  const verifiedDisplay =
+    offerVerified && amountCents
+      ? formatOfferPrice(amountCents)
+      : priceDisplay;
   const dueDisplay =
     appliedPromo.ok && appliedPromo.code
       ? formatOfferPrice(appliedPromo.chargedAmountCents)
-      : priceDisplay;
+      : verifiedDisplay;
   const previewUrl = getPetPhotoObjectUrl() ?? draft.photoPreviewDataUrl;
   const photoFile = getPetPhotoFile();
 
   const speciesLabel = PET_SPECIES_OPTIONS.find((item) => item.id === draft.species)?.label;
+  const subtypeLabel =
+    draft.species === "other"
+      ? draft.subtype === "other"
+        ? draft.subtypeDetail
+        : PET_SUBTYPE_OPTIONS.find((item) => item.id === draft.subtype)?.label
+      : null;
   const personalityLabel = PET_PERSONALITY_OPTIONS.find(
     (item) => item.id === draft.personality
   )?.label;
@@ -50,12 +69,28 @@ export function PetCheckoutPage({
         personality: draft.personality,
         email: draft.email,
         photo: draft.photo,
+        subtype: draft.subtype,
+        subtypeDetail: draft.subtypeDetail,
       }),
-    [draft.petName, draft.species, draft.personality, draft.email, draft.photo]
+    [draft.petName, draft.species, draft.personality, draft.email, draft.photo, draft.subtype, draft.subtypeDetail]
   );
+
+  useEffect(() => {
+    headingRef.current?.focus();
+    trackFunnelEvent(
+      "PetOrderReviewViewed",
+      { species: draft.species },
+      { onceKey: "tdg.funnel.PetOrderReviewViewed" },
+    );
+  }, [draft.species]);
 
   async function pay() {
     setError(null);
+
+    if (!checkoutAllowed || !offerVerified || !amountCents) {
+      setError(offerError || "The current price could not be verified. Refresh and try again. No payment was taken.");
+      return;
+    }
 
     if (!formCheck.ok) {
       setError("Finish the photo, name, and email first.");
@@ -82,6 +117,8 @@ export function PetCheckoutPage({
         successUrl: `${window.location.origin}/pet/order`,
         cancelUrl: `${window.location.origin}/pet/checkout`,
         promoCode: promoInput.trim() || undefined,
+        subtype: formCheck.values.subtype,
+        subtypeDetail: formCheck.values.subtypeDetail,
       });
 
       if (result.status === "payment_processing" || result.status === "comped" || !result.checkoutUrl) {
@@ -115,6 +152,7 @@ export function PetCheckoutPage({
 
       window.location.assign(result.checkoutUrl);
     } catch (caught) {
+      trackFunnelEvent("CheckoutError", { species: draft.species });
       if (caught instanceof PetApiError && caught.code === "PET_API_NOT_CONNECTED") {
         setError("Checkout is not connected yet. No payment was taken.");
       } else if (caught instanceof PetApiError && caught.code === "CHECKOUT_CONFLICT") {
@@ -138,10 +176,22 @@ export function PetCheckoutPage({
       onBack={() => navigation?.goToCreate(draft.species ?? undefined)}
     >
       <div className="mx-auto max-w-md space-y-6">
+        <PageHead
+          title="Review your pet order | My Pet’s Secret Life"
+          description="Review your pet photo, portraits, cinematic clips, and one-time $59 payment. No subscription."
+          exactTitle
+        />
+        <FunnelProgress current={3} />
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-[#f6efe4]">Pay once</h1>
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-3xl font-semibold tracking-tight text-[#f6efe4] outline-none"
+          >
+            Ready to create {petPossessive(draft.petName)} secret lives?
+          </h1>
           <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-            {priceDisplay} for 12 portraits and 2 cinematic clips. No subscription.
+            Review the order, then continue to Stripe. Nothing is generated until payment is confirmed.
           </p>
         </div>
 
@@ -150,7 +200,7 @@ export function PetCheckoutPage({
             {previewUrl ? (
               <img
                 src={previewUrl}
-                alt={draft.petName ? `${draft.petName} photo` : "Pet photo"}
+                alt={draft.petName ? `${draft.petName} photo` : "Uploaded pet photo"}
                 className="h-full w-full object-cover"
               />
             ) : null}
@@ -158,26 +208,52 @@ export function PetCheckoutPage({
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold text-[#f6efe4]">{draft.petName || "Unnamed"}</p>
             <p className="truncate text-sm text-[#f6efe4]/60">
-              {speciesLabel} · {personalityLabel}
+              {speciesLabel}
+              {subtypeLabel ? ` · ${subtypeLabel}` : ""}
+              {personalityLabel ? ` · ${personalityLabel}` : ""}
             </p>
             <p className="truncate text-sm text-[#f6efe4]/60">{draft.email}</p>
           </div>
         </div>
 
         <ul className="space-y-2 text-sm text-[#f6efe4]/75">
-          {PET_OFFER.includes.map((item) => (
-            <li key={item} className="flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a84b]" aria-hidden="true" />
-              {item}
-            </li>
-          ))}
+          <li className="flex items-center gap-2">
+            <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a84b]" aria-hidden="true" />
+            12 personalized portraits
+          </li>
+          <li className="flex items-center gap-2">
+            <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a84b]" aria-hidden="true" />
+            2 cinematic 5-second clips
+          </li>
+          <li className="flex items-center gap-2">
+            <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a84b]" aria-hidden="true" />
+            Human quality check
+          </li>
+          <li className="flex items-center gap-2">
+            <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a84b]" aria-hidden="true" />
+            {deliveryEstimate}
+          </li>
         </ul>
+
+        <SamePetGuarantee />
 
         <div className="rounded-2xl border border-[#d4a84b]/25 p-5">
           <div className="flex items-center justify-between text-lg font-semibold text-[#f6efe4]">
-            <span>Due today</span>
+            <span>{verifiedDisplay} USD today</span>
             <span>{dueDisplay}</span>
           </div>
+          <p className="mt-1 text-sm text-[#f6efe4]/60">Subscription: None</p>
+          {loading ? (
+            <p className="mt-2 text-sm text-[#f6efe4]/50">Verifying the current price…</p>
+          ) : null}
+          {offerError ? (
+            <p className="mt-2 text-sm text-[#f3d48a]" role="alert">
+              {offerError}{" "}
+              <button type="button" className="underline" onClick={() => void refresh()}>
+                Try again
+              </button>
+            </p>
+          ) : null}
           <div className="mt-4 flex gap-2">
             <input
               value={promoInput}
@@ -187,12 +263,12 @@ export function PetCheckoutPage({
               }}
               placeholder="Promo code"
               autoCapitalize="characters"
-              className="h-11 flex-1 rounded-xl border border-[#f6efe4]/15 bg-transparent px-3 text-sm text-[#f6efe4] outline-none placeholder:text-[#f6efe4]/35"
+              className="h-11 min-h-[44px] flex-1 rounded-xl border border-[#f6efe4]/15 bg-transparent px-3 text-sm text-[#f6efe4] outline-none placeholder:text-[#f6efe4]/35"
             />
             <Button
               type="button"
               variant="outline"
-              className="h-11 rounded-xl border-[#f6efe4]/20 bg-transparent text-[#f6efe4] hover:bg-[#f6efe4]/8"
+              className="h-11 min-h-[44px] rounded-xl border-[#f6efe4]/20 bg-transparent text-[#f6efe4] hover:bg-[#f6efe4]/8"
               onClick={() => {
                 const resolved = resolveServerOwnedPromo(promoInput);
                 if (!resolved.ok) {
@@ -216,19 +292,19 @@ export function PetCheckoutPage({
           ) : null}
           <Button
             type="button"
-            disabled={submitting}
+            disabled={submitting || !checkoutAllowed}
             onClick={() => void pay()}
-            className="mt-5 h-12 w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
+            className="mt-5 h-12 min-h-[44px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
           >
             {submitting
               ? "Starting checkout…"
               : appliedPromo.ok && appliedPromo.code
                 ? "Start free order"
-                : `Pay ${dueDisplay}`}
+                : `Continue to secure checkout — ${dueDisplay.replace(" USD", "")}`}
           </Button>
           <p className="mt-3 inline-flex items-center gap-2 text-xs text-[#f6efe4]/55">
             <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-            Secure one-time payment. Nothing renews.
+            Secure payment by Stripe · No subscription · No automatic renewal
           </p>
           {error ? (
             <p className="mt-3 text-sm text-[#f0b4a0]" role="alert">
