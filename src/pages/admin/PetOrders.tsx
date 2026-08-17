@@ -5,7 +5,7 @@ import { RefreshCw, Search, PawPrint } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatUsd, formatUsd3, GROSS_AFTER_AI_DISCLAIMER, type OrderCostDetails } from "@/features/pet/aiCost";
+import { formatUsd, formatUsd3, GROSS_AFTER_AI_DISCLAIMER, recognizedRevenueCents, type OrderCostDetails } from "@/features/pet/aiCost";
 import { WAITING_FOR_PROVIDER_RATE_LIMIT, adminPortraitStatusLabel } from "@/features/pet/replicateRateLimit";
 import {
   Table,
@@ -86,6 +86,109 @@ function CostBadge({ state }: { state?: string | null }) {
     >
       {estimated ? "estimated" : "exact"}
     </Badge>
+  );
+}
+
+function recognizedOrderRevenue(
+  order: Record<string, unknown>,
+  costs?: OrderCostDetails,
+) {
+  const revenueUsd =
+    recognizedRevenueCents({
+      amount_cents: order.amount_cents,
+      charged_amount_cents: order.charged_amount_cents,
+      discount_percent: order.discount_percent ?? costs?.discountPercent,
+      promo_code: order.promo_code ?? costs?.promoCode,
+      stripe_checkout_session_id: order.stripe_checkout_session_id,
+    }) / 100;
+  const promoCode = String(order.promo_code || costs?.promoCode || "").trim() || null;
+  const discountPercent = Number(order.discount_percent ?? costs?.discountPercent ?? 0);
+  const listCents = Number(order.amount_cents);
+  const listPriceUsd = Number.isFinite(listCents)
+    ? listCents / 100
+    : Number(costs?.listPriceUsd || 0);
+  return {
+    revenueUsd,
+    listPriceUsd: Number.isFinite(listPriceUsd) ? listPriceUsd : 0,
+    promoCode,
+    discountPercent: Number.isFinite(discountPercent) ? discountPercent : 0,
+    grossAfterAiUsd: revenueUsd - (costs?.replicateUsd ?? 0),
+  };
+}
+
+function OrderCostPanel({
+  order,
+  costs,
+}: {
+  order: Record<string, unknown>;
+  costs: OrderCostDetails;
+}) {
+  const revenue = recognizedOrderRevenue(order, costs);
+  return (
+    <div className="rounded-xl border border-cyan-400/20 bg-slate-950/70 p-3 text-sm">
+      <p className="text-xs uppercase tracking-wide text-slate-500">
+        Tracked pet-funnel Replicate usage
+      </p>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <span>Revenue</span>
+        <span>{formatUsd(revenue.revenueUsd)}</span>
+      </div>
+      {revenue.discountPercent > 0 || revenue.promoCode ? (
+        <p className="mt-1 text-[11px] leading-4 text-amber-200/80">
+          Promo{revenue.promoCode ? ` ${revenue.promoCode}` : ""}
+          {revenue.discountPercent > 0 ? ` · ${revenue.discountPercent}% off` : ""}
+          {revenue.listPriceUsd > 0 ? ` · list ${formatUsd(revenue.listPriceUsd)}` : ""} — not counted as
+          revenue
+        </p>
+      ) : null}
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <span>Image AI</span>
+        <span>{formatUsd(costs.imageAiUsd ?? 0)}</span>
+      </div>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <span>Video AI</span>
+        <span>{formatUsd3(costs.videoAiUsd ?? 0)}</span>
+      </div>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <span>Replicate</span>
+        <span className="font-medium text-cyan-100">{formatUsd(costs.replicateUsd)}</span>
+      </div>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <span>Gross after AI</span>
+        <span className="font-medium text-emerald-100">{formatUsd(revenue.grossAfterAiUsd)}</span>
+      </div>
+      <p className="mt-2 text-[11px] leading-4 text-slate-500">{GROSS_AFTER_AI_DISCLAIMER}</p>
+      <p className="mt-1 text-[11px] leading-4 text-slate-500">
+        This is not the entire Replicate account invoice.
+      </p>
+      <div className="mt-3 space-y-2">
+        {costs.byScene.map((scene) => (
+          <div key={scene.sceneKey} className="rounded-lg border border-slate-800 p-2">
+            <div className="flex items-center justify-between text-xs">
+              <span>{scene.sceneKey}</span>
+              <span>{formatUsd(scene.totalUsd)}</span>
+            </div>
+            {scene.attempts.map((attempt) => (
+              <div
+                key={attempt.predictionId}
+                className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-400"
+              >
+                <span>
+                  Attempt {attempt.attemptNumber}
+                  {attempt.isRetry ? " · retry" : ""}
+                  {attempt.isMock ? " · mock" : ""} · {attempt.providerStatus} · {attempt.modelName} ·{" "}
+                  {attempt.pricingMethod} @ {formatUsd(attempt.tariffUnitCostUsd)}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  {formatUsd(attempt.costUsd)}
+                  <CostBadge state={attempt.costState} />
+                </span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -325,66 +428,7 @@ export default function PetOrdersPage() {
                     {detail.order.model_version ? ` @ ${String(detail.order.model_version)}` : ""}
                   </p>
                 </div>
-                {detail.costs ? (
-                  <div className="rounded-xl border border-cyan-400/20 bg-slate-950/70 p-3 text-sm">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Tracked pet-funnel Replicate usage
-                    </p>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <span>Revenue</span>
-                      <span>{formatUsd(detail.costs.revenueUsd)}</span>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <span>Image AI</span>
-                      <span>{formatUsd(detail.costs.imageAiUsd ?? 0)}</span>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <span>Video AI</span>
-                      <span>{formatUsd3(detail.costs.videoAiUsd ?? 0)}</span>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <span>Replicate</span>
-                      <span className="font-medium text-cyan-100">{formatUsd(detail.costs.replicateUsd)}</span>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <span>Gross after AI</span>
-                      <span className="font-medium text-emerald-100">
-                        {formatUsd(detail.costs.grossAfterAiUsd)}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-[11px] leading-4 text-slate-500">{GROSS_AFTER_AI_DISCLAIMER}</p>
-                    <p className="mt-1 text-[11px] leading-4 text-slate-500">
-                      This is not the entire Replicate account invoice.
-                    </p>
-                    <div className="mt-3 space-y-2">
-                      {detail.costs.byScene.map((scene) => (
-                        <div key={scene.sceneKey} className="rounded-lg border border-slate-800 p-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span>{scene.sceneKey}</span>
-                            <span>{formatUsd(scene.totalUsd)}</span>
-                          </div>
-                          {scene.attempts.map((attempt) => (
-                            <div
-                              key={attempt.predictionId}
-                              className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-400"
-                            >
-                              <span>
-                                Attempt {attempt.attemptNumber}
-                                {attempt.isRetry ? " · retry" : ""}
-                                {attempt.isMock ? " · mock" : ""} · {attempt.providerStatus} · {attempt.modelName} ·{" "}
-                                {attempt.pricingMethod} @ {formatUsd(attempt.tariffUnitCostUsd)}
-                              </span>
-                              <span className="inline-flex items-center gap-1">
-                                {formatUsd(attempt.costUsd)}
-                                <CostBadge state={attempt.costState} />
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+                {detail.costs ? <OrderCostPanel order={detail.order} costs={detail.costs} /> : null}
                 {detail.sourcePreviewUrl ? (
                   <img
                     src={detail.sourcePreviewUrl}

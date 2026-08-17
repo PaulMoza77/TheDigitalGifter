@@ -23,6 +23,7 @@ import {
   KONTEXT_PRO_MODEL,
   mapDbLedgerRow,
   rangeToIso,
+  recognizedRevenueCents,
   rejectClientCostTampering,
   SEEDANCE_FAST_MODEL,
   snapshotKontextProTariff,
@@ -127,7 +128,7 @@ async function loadPaidOrders(
   return fetchAllRows<PaidPetOrder>(async (from, to) => {
     return service
       .from("pet_orders")
-      .select("id, amount_cents, currency, paid_at, status, pet_name, email")
+      .select("id, amount_cents, charged_amount_cents, discount_percent, promo_code, stripe_checkout_session_id, currency, paid_at, status, pet_name, email")
       .not("paid_at", "is", null)
       .neq("status", "refunded")
       .gte("paid_at", fromIso)
@@ -305,7 +306,7 @@ Deno.serve(async (req) => {
       let query = service
         .from("pet_orders")
         .select(
-          "id, email, pet_name, species, personality, status, amount_cents, currency, sku, stripe_checkout_session_id, paid_at, created_at, qc_status, last_error, model_name, model_version",
+          "id, email, pet_name, species, personality, status, amount_cents, charged_amount_cents, discount_percent, promo_code, currency, sku, stripe_checkout_session_id, paid_at, created_at, qc_status, last_error, model_name, model_version",
           { count: "exact" },
         )
         .order("created_at", { ascending: false })
@@ -343,7 +344,7 @@ Deno.serve(async (req) => {
           const imageRows = orderRows.filter((row) => (row.media_type || "image") === "image");
           const videoRows = orderRows.filter((row) => row.media_type === "video");
           const aiCostUsd = sumTrackedCostUsd(orderRows);
-          const revenueUsd = Number(item.amount_cents || 0) / 100;
+          const revenueUsd = recognizedRevenueCents(item) / 100;
           const hasEstimated = orderRows.some(
             (row) => row.cost_state === "estimated" || row.cost_state === "pending",
           );
@@ -436,6 +437,10 @@ Deno.serve(async (req) => {
       }
       const costs = buildOrderCostDetails({
         amountCents: Number(order.amount_cents || 0),
+        chargedAmountCents: order.charged_amount_cents == null ? null : Number(order.charged_amount_cents),
+        discountPercent: Number(order.discount_percent || 0),
+        promoCode: order.promo_code ? String(order.promo_code) : null,
+        stripeCheckoutSessionId: order.stripe_checkout_session_id ? String(order.stripe_checkout_session_id) : null,
         scenes: scenes ?? [],
         ledger: ledgerRows,
       });
@@ -456,6 +461,10 @@ Deno.serve(async (req) => {
       return jsonResponse(
         buildOrderCostDetails({
           amountCents: Number(order.amount_cents || 0),
+          chargedAmountCents: order.charged_amount_cents == null ? null : Number(order.charged_amount_cents),
+          discountPercent: Number(order.discount_percent || 0),
+          promoCode: order.promo_code ? String(order.promo_code) : null,
+          stripeCheckoutSessionId: order.stripe_checkout_session_id ? String(order.stripe_checkout_session_id) : null,
           scenes: scenes ?? [],
           ledger: ledgerRows,
         }),

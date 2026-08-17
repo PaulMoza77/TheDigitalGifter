@@ -95,7 +95,47 @@ export type PaidPetOrder = {
   status: string;
   pet_name?: string | null;
   email?: string | null;
+  charged_amount_cents?: number | null;
+  discount_percent?: number | null;
+  promo_code?: string | null;
+  stripe_checkout_session_id?: string | null;
 };
+
+export type RevenueOrderInput = {
+  amount_cents?: unknown;
+  charged_amount_cents?: unknown;
+  discount_percent?: unknown;
+  promo_code?: unknown;
+  stripe_checkout_session_id?: unknown;
+};
+
+export function recognizedRevenueCents(order: RevenueOrderInput): number {
+  const list = Math.max(0, Math.round(toUsd(order.amount_cents)));
+  const discount = Math.max(0, Math.min(100, toUsd(order.discount_percent)));
+  const promoSession = String(order.stripe_checkout_session_id || "").startsWith("promo:");
+  const charged =
+    order.charged_amount_cents == null || order.charged_amount_cents === ""
+      ? null
+      : Math.max(0, Math.round(toUsd(order.charged_amount_cents)));
+
+  if (discount >= 100 || promoSession) {
+    if (charged != null && charged < list) return charged;
+    return 0;
+  }
+
+  if (charged != null) {
+    if (discount > 0 && charged >= list) {
+      return Math.max(0, Math.round(list * (1 - discount / 100)));
+    }
+    return charged;
+  }
+
+  if (discount > 0) {
+    return Math.max(0, Math.round(list * (1 - discount / 100)));
+  }
+
+  return list;
+}
 
 export function roundUsd(value: number, digits = 6): number {
   const factor = 10 ** digits;
@@ -611,7 +651,7 @@ export function buildAdminAiCostReport(input: {
     (order) => order.paid_at && order.status !== "refunded" && order.currency.toLowerCase() === "usd",
   );
   const petRevenuePeriodUsd = moneyUsd(
-    paidOrders.reduce((sum, order) => sum + toUsd(order.amount_cents) / 100, 0),
+    paidOrders.reduce((sum, order) => sum + recognizedRevenueCents(order) / 100, 0),
   );
   const costByPaidOrder = new Map<string, number>();
   for (const row of input.ledgerForPaidOrders.filter(isTrackedBillableRow)) {
@@ -639,7 +679,7 @@ export function buildAdminAiCostReport(input: {
   const byOrder = paidOrders
     .map((order) => {
       const costUsd = moneyUsd(costByPaidOrder.get(order.id) || 0);
-      const revenueUsd = moneyUsd(toUsd(order.amount_cents) / 100);
+      const revenueUsd = moneyUsd(recognizedRevenueCents(order) / 100);
       return {
         orderId: order.id,
         petName: order.pet_name || "",
@@ -734,6 +774,9 @@ export type OrderSceneCost = {
 
 export type OrderCostDetails = {
   revenueUsd: number;
+  listPriceUsd: number;
+  promoCode: string | null;
+  discountPercent: number;
   replicateUsd: number;
   imageAiUsd: number;
   videoAiUsd: number;
@@ -747,10 +790,26 @@ export type OrderCostDetails = {
 
 export function buildOrderCostDetails(input: {
   amountCents?: number;
+  chargedAmountCents?: number | null;
+  discountPercent?: number | null;
+  promoCode?: string | null;
+  stripeCheckoutSessionId?: string | null;
   scenes?: Array<{ id?: string; scene_key?: string; sceneKey?: string }>;
   ledger: AiCostLedgerRow[];
 }): OrderCostDetails {
-  const revenueUsd = moneyUsd(toUsd(input.amountCents ?? PET_PRICE_CENTS) / 100);
+  const listCents = Math.max(0, Math.round(toUsd(input.amountCents ?? PET_PRICE_CENTS)));
+  const discountPercent = Math.max(0, Math.min(100, toUsd(input.discountPercent)));
+  const promoCode = input.promoCode ? String(input.promoCode).trim() || null : null;
+  const revenueUsd = moneyUsd(
+    recognizedRevenueCents({
+      amount_cents: listCents,
+      charged_amount_cents: input.chargedAmountCents,
+      discount_percent: discountPercent,
+      promo_code: promoCode,
+      stripe_checkout_session_id: input.stripeCheckoutSessionId,
+    }) / 100,
+  );
+  const listPriceUsd = moneyUsd(listCents / 100);
   const attempts = [...input.ledger]
     .sort((a, b) => a.attempt_number - b.attempt_number || a.started_at.localeCompare(b.started_at))
     .map((row) => ({
@@ -810,6 +869,9 @@ export function buildOrderCostDetails(input: {
   });
   return {
     revenueUsd,
+    listPriceUsd,
+    promoCode,
+    discountPercent,
     replicateUsd,
     imageAiUsd,
     videoAiUsd,
