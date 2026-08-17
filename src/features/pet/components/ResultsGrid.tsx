@@ -63,7 +63,7 @@ function ClipResults({ clips }: { clips: PetVideoClipResult[] }) {
                   ? clip.title + " needs a retry."
                   : clip.status === "generating"
                     ? "Creating this 5-second clip…"
-                    : "Clip available after QC."}
+                    : "Creating this 5-second clip…"}
               </div>
             )}
             <div className="flex items-center justify-between gap-2 p-3">
@@ -137,7 +137,7 @@ function ResultCard({
               if (!download.ready) return;
               if (!download.url || download.url.startsWith("preview://")) {
                 onPlaceholderDownload?.(scene.title, download.label);
-                toast.message("Download ready after QC", {
+                toast.message("Download is preparing", {
                   description: `${scene.title} will download from this page when the file is live.`,
                 });
                 return;

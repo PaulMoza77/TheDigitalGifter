@@ -232,8 +232,10 @@ export function canIssueSignedVideoUrl(input: {
   clipOrderId: string;
 }): boolean {
   if (input.requesterOrderId !== input.clipOrderId) return false;
-  if (input.orderStatus !== "complete") return false;
-  return input.clipStatus === "ready" && (input.qcStatus == null || input.qcStatus === "approved");
+  if (["failed", "refunded", "canceled", "awaiting_payment", "awaiting_upload", "draft"].includes(input.orderStatus)) {
+    return false;
+  }
+  return input.clipStatus === "ready" || input.clipStatus === "succeeded";
 }
 
 export function customerCannotAccessOtherOrderVideos(

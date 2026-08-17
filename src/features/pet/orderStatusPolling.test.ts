@@ -35,14 +35,12 @@ function progressFor(order = createPreviewOrderFixture("processing")): PetGenera
 
 describe("order status polling", () => {
   it("keeps polling while portraits are queued or generating, and stops on terminal statuses", () => {
-    expect(shouldKeepPolling("paid")).toBe(true);
-    expect(shouldKeepPolling("processing")).toBe(true);
-    expect(shouldKeepPolling("generating")).toBe(true);
-    expect(shouldKeepPolling("quality_control")).toBe(true);
+    expect(shouldKeepPolling({ status: "paid", scenes: [{ status: "queued" }] })).toBe(true);
+    expect(shouldKeepPolling({ status: "processing", scenes: [{ status: "generating" }] })).toBe(true);
+    expect(shouldKeepPolling({ status: "complete", scenes: [{ status: "ready" }] })).toBe(false);
     expect(isTerminalOrderStatus("complete")).toBe(true);
-    expect(shouldKeepPolling("complete")).toBe(false);
-    expect(shouldKeepPolling("failed")).toBe(false);
-    expect(shouldKeepPolling("refunded")).toBe(false);
+    expect(shouldKeepPolling({ status: "failed" })).toBe(false);
+    expect(shouldKeepPolling({ status: "refunded" })).toBe(false);
   });
 
   it("treats rate limits, timeouts, and network errors as non-blocking after an order is on screen", () => {

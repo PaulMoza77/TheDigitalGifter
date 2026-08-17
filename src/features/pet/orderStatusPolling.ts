@@ -15,8 +15,17 @@ export function isTerminalOrderStatus(status: string | undefined): boolean {
   return TERMINAL_ORDER_STATUSES.includes(status as PetOrderStatus);
 }
 
-export function shouldKeepPolling(status: string | undefined): boolean {
-  return !isTerminalOrderStatus(status);
+export function shouldKeepPolling(input: {
+  status?: string;
+  scenes?: Array<{ status: string }>;
+  clips?: Array<{ status: string }>;
+}): boolean {
+  if (["failed", "refunded", "canceled"].includes(input.status || "")) return false;
+  const scenes = input.scenes ?? [];
+  const clips = input.clips ?? [];
+  if (scenes.some((scene) => scene.status === "queued" || scene.status === "generating")) return true;
+  if (clips.some((clip) => clip.status === "queued" || clip.status === "generating")) return true;
+  return false;
 }
 
 export function isFatalOrderLookupError(error: unknown): boolean {

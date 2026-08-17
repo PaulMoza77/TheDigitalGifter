@@ -384,7 +384,7 @@ export const PET_FAQS = [
   {
     question: "What if a portrait does not look like my pet?",
     answer:
-      "A person checks every portrait and clip. If a result does not recognizably look like your pet, we remake it before delivery. Contact support from your order email if you need help.",
+      "Open Help on your order page and send a ticket. If a result does not recognizably look like your pet, we remake it.",
   },
   {
     question: "Is my source photo private?",
@@ -399,12 +399,12 @@ export const PET_FAQS = [
   {
     question: "What does “human checked” mean?",
     answer:
-      "After generation, a person reviews the faces and clips. Downloads stay locked until that review is approved.",
+      "Portraits are ready as soon as generation finishes. If something looks off, open Help and we will remake it.",
   },
   {
     question: "What file formats do I receive?",
     answer:
-      "You receive the QC-approved portrait files and two cinematic MP4 clips from the order gallery after review. Extra crops such as wallpapers are not included yet.",
+      "You receive the generated portrait files and two cinematic MP4 clips from the order gallery. Extra crops such as wallpapers are not included yet.",
   },
 ] as const;
 

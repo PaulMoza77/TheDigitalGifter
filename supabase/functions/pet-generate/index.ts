@@ -27,6 +27,7 @@ import {
   selectScenesForPredictionCreate,
   type SceneCreateView,
 } from "../_shared/pet/replicateRateLimit.ts";
+import { maybeReleaseGeneratedGallery } from "../_shared/pet/galleryRelease.ts";
 
 type Body = {
   order_id?: string;
@@ -177,6 +178,7 @@ Deno.serve(async (req) => {
         started += 1;
       }
       await service.rpc("pet_finalize_generation_if_done", { p_order_id: orderId });
+      await maybeReleaseGeneratedGallery(service, orderId);
       return jsonResponse({ ok: true, status: "mock_completed", started });
     }
 
@@ -373,6 +375,7 @@ Deno.serve(async (req) => {
       }
       const finalized = await service.rpc("pet_finalize_generation_if_done", { p_order_id: orderId });
       if (finalized.error) throw finalized.error;
+      await maybeReleaseGeneratedGallery(service, orderId);
       return jsonResponse({
         ok: true,
         status: createResult.billingRequired

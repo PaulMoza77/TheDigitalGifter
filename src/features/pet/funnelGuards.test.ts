@@ -127,10 +127,12 @@ describe("pet funnel production guards", () => {
     expect(retryTargets(scenes, "royal-portrait")).toEqual([]);
   });
 
-  it("requires QC approval before delivery", () => {
-    expect(deliveryAllowed({ orderStatus: "awaiting_qc" })).toBe(false);
-    expect(deliveryAllowed({ orderStatus: "generating", completedAt: null })).toBe(false);
+  it("unlocks generated portraits without a QC gate", () => {
+    expect(deliveryAllowed({ orderStatus: "awaiting_qc" })).toBe(true);
+    expect(deliveryAllowed({ orderStatus: "generating", completedAt: null })).toBe(true);
     expect(deliveryAllowed({ orderStatus: "complete", qcStatus: "approved", completedAt: "now" })).toBe(true);
+    expect(deliveryAllowed({ orderStatus: "awaiting_payment" })).toBe(false);
+    expect(deliveryAllowed({ orderStatus: "failed" })).toBe(false);
   });
 
   it("deduplicates Meta Purchase events by stable event_id", () => {

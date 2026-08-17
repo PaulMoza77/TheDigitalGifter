@@ -432,7 +432,7 @@ describe("pet video clips", () => {
     ).toBe(false);
   });
 
-  it("21-22. customer cannot access another order and signed URLs require QC", () => {
+  it("21-22. customer cannot access another order; generated clips are downloadable without QC", () => {
     expect(customerCannotAccessOtherOrderVideos("order-a", "order-b")).toBe(true);
     expect(
       canIssueSignedVideoUrl({
@@ -450,7 +450,7 @@ describe("pet video clips", () => {
         requesterOrderId: "order-a",
         clipOrderId: "order-a",
       }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       canIssueSignedVideoUrl({
         orderStatus: "complete",

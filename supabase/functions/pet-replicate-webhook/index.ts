@@ -6,6 +6,7 @@ import { readImageSize } from "../_shared/pet/imageSize.ts";
 import { replicateOutputUrl, verifyReplicateWebhook, type ReplicatePrediction } from "../_shared/pet/replicate.ts";
 import { finalizeAiCostPrediction } from "../_shared/pet/costLedger.ts";
 import { videoStoragePath } from "../_shared/pet/videoGuards.ts";
+import { maybeReleaseGeneratedGallery } from "../_shared/pet/galleryRelease.ts";
 
 async function copyRemoteImage(
   service: ReturnType<typeof getServiceClient>,
@@ -241,6 +242,8 @@ Deno.serve(async (req) => {
       p_result_byte_size: resultByteSize,
     });
     if (applied.error) throw applied.error;
+    const orderId = scene?.order_id || new URL(req.url).searchParams.get("order_id");
+    if (orderId) await maybeReleaseGeneratedGallery(service, orderId);
     return jsonResponse({ ok: true, result: applied.data });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

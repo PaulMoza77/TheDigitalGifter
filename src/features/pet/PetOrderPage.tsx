@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PetApiError, type PetFunnelApi } from "./api";
 import { petFunnelApi } from "./supabaseApi";
@@ -109,12 +109,19 @@ export function PetOrderPage({
           });
         }
 
-        if (merged.status === "complete" && !resultsRef.current) {
+        if (merged.status === "complete" || nextProgress.readyCount > 0) {
           const nextResults = await withTimeout(api.getOrderResults({ publicToken: token }));
           if (!cancelled) setResults(nextResults);
         }
 
-        if (!shouldKeepPolling(merged.status) && intervalId !== undefined) {
+        if (
+          !shouldKeepPolling({
+            status: merged.status,
+            scenes: nextProgress.scenes,
+            clips: nextProgress.clips,
+          }) &&
+          intervalId !== undefined
+        ) {
           window.clearInterval(intervalId);
           intervalId = undefined;
         }
@@ -164,8 +171,12 @@ export function PetOrderPage({
     return Math.round(scenes.reduce((sum, scene) => sum + scene.progressPercent, 0) / scenes.length);
   }, [progress, scenes]);
 
-  const showResults = Boolean(results) && order?.status === "complete";
-  const live = Boolean(order) && shouldKeepPolling(order?.status);
+  const showResults = Boolean(results?.scenes.some((scene) => scene.previewUrl || scene.assets.some((asset) => asset.ready)));
+  const live = Boolean(order) && shouldKeepPolling({
+    status: order?.status,
+    scenes,
+    clips: progress?.clips ?? order?.clips ?? [],
+  });
 
   return (
     <PetShell
@@ -213,8 +224,7 @@ export function PetOrderPage({
               </p>
             </div>
             <p className="inline-flex items-center gap-2 text-sm text-[#f6efe4]/60">
-              <ShieldCheck className="h-4 w-4 text-[#d4a84b]" aria-hidden="true" />
-              Human QC
+              Need a fix? Use Help.
             </p>
           </div>
         </section>
@@ -275,13 +285,13 @@ function statusCopy(status: PetOrder["status"] | undefined, phase?: string): str
     case "generating_portraits":
       return "Creating the twelve portraits now.";
     case "portrait_qc":
-      return "A person is checking that every portrait still looks like your pet.";
+      return "Portraits are ready. Download them below.";
     case "selecting_video_scenes":
       return "Portraits passed review. Two scenes will be turned into cinematic clips.";
     case "generating_clips":
       return "Creating two 5-second cinematic clips from the approved portraits.";
     case "video_qc":
-      return "A person is checking both cinematic clips before release.";
+      return "Clips are ready. Download them below.";
     default:
       break;
   }
@@ -291,13 +301,13 @@ function statusCopy(status: PetOrder["status"] | undefined, phase?: string): str
       return "Creating the twelve portraits now.";
     case "awaiting_qc":
     case "quality_control":
-      return "A person is checking that every portrait still looks like your pet.";
+      return "Portraits are ready. Download them below.";
     case "selecting_video_scenes":
       return "Portraits passed review. Two scenes will be turned into cinematic clips.";
     case "generating_videos":
       return "Creating two 5-second cinematic clips from the approved portraits.";
     case "awaiting_video_qc":
-      return "A person is checking both cinematic clips before release.";
+      return "Clips are ready. Download them below.";
     case "partial_failure":
       return "Most of the pack finished. A failed portrait or clip needs a retry.";
     case "complete":
@@ -309,6 +319,6 @@ function statusCopy(status: PetOrder["status"] | undefined, phase?: string): str
     case "paid":
       return "Paid. The twelve scenes are lining up.";
     default:
-      return "Watch each portrait and clip move from queued to ready. Delivery only after QC.";
+      return "Watch each portrait move from queued to ready. If something looks off, open Help.";
   }
 }

@@ -116,7 +116,14 @@ export function deliveryAllowed(input: {
   qcStatus?: string | null;
   completedAt?: string | null;
 }): boolean {
-  return input.orderStatus === "complete" && Boolean(input.completedAt || input.qcStatus === "approved");
+  return ![
+    "draft",
+    "awaiting_upload",
+    "awaiting_payment",
+    "failed",
+    "refunded",
+    "canceled",
+  ].includes(input.orderStatus);
 }
 
 export function metaPurchaseShouldEmit(input: {
@@ -285,7 +292,7 @@ export function canReleaseDelivery(input: {
 
 export function mapOrderStatusForCustomer(status: string): string {
   if (status === "generating") return "processing";
-  if (status === "awaiting_qc") return "quality_control";
+  if (status === "awaiting_qc" || status === "awaiting_video_qc") return "complete";
   return status;
 }
 

@@ -177,13 +177,6 @@ export function toProgress(order: PetOrderRow, scenes: PetSceneRow[], publicToke
     videoTotalCount: PET_VIDEO_CLIP_COUNT,
     scenes: mapped,
     clips: mappedClips,
-    humanQualityControl: [
-      "awaiting_qc",
-      "selecting_video_scenes",
-      "awaiting_video_qc",
-      "complete",
-      "partial_failure",
-      "quality_control",
-    ].includes(customerStatus),
+    humanQualityControl: false,
   };
 }

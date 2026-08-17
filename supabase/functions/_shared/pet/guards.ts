@@ -122,7 +122,14 @@ export function deliveryAllowed(input: {
   qcStatus?: string | null;
   completedAt?: string | null;
 }): boolean {
-  return input.orderStatus === "complete" && Boolean(input.completedAt || input.qcStatus === "approved");
+  return ![
+    "draft",
+    "awaiting_upload",
+    "awaiting_payment",
+    "failed",
+    "refunded",
+    "canceled",
+  ].includes(input.orderStatus);
 }
 
 export function canReleaseDelivery(input: {
@@ -146,7 +153,7 @@ export function metaPurchaseShouldEmit(input: {
 
 export function mapOrderStatusForCustomer(status: string): string {
   if (status === "generating") return "processing";
-  if (status === "awaiting_qc") return "quality_control";
+  if (status === "awaiting_qc" || status === "awaiting_video_qc") return "complete";
   return status;
 }
 
@@ -158,8 +165,7 @@ export function mapSceneStatusForCustomer(input: {
   if (input.sceneStatus === "failed") return "failed";
   if (input.sceneStatus === "queued") return "queued";
   if (input.sceneStatus === "rate_limited" || input.sceneStatus === "generating") return "generating";
-  if (input.sceneStatus === "ready" && input.deliveryUnlocked) return "ready";
-  if (input.sceneStatus === "succeeded" || input.sceneStatus === "ready") return "quality_control";
+  if (input.sceneStatus === "succeeded" || input.sceneStatus === "ready") return "ready";
   return "queued";
 }
 
@@ -170,7 +176,6 @@ export function mapClipStatusForCustomer(input: {
   if (input.clipStatus === "failed") return "failed";
   if (input.clipStatus === "queued") return "queued";
   if (input.clipStatus === "rate_limited" || input.clipStatus === "generating") return "generating";
-  if (input.clipStatus === "ready" && input.deliveryUnlocked) return "ready";
-  if (input.clipStatus === "succeeded" || input.clipStatus === "ready") return "quality_control";
+  if (input.clipStatus === "succeeded" || input.clipStatus === "ready") return "ready";
   return "queued";
 }
