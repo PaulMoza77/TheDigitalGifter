@@ -61,6 +61,7 @@ export function OrderStatusList({
                 sceneId={scene.sceneId}
                 species={species}
                 alt=""
+                animateOnHover={false}
                 className="h-full w-full object-cover"
               />
             </div>

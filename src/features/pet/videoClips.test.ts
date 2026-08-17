@@ -555,3 +555,15 @@ describe("pet video clips", () => {
     expect(report.cards.projectedStandardPackCostUsd).toBe(0.73);
   });
 });
+
+describe("hover gallery clips", () => {
+  it("maps every scene and species to a local mp4 poster pair", async () => {
+    const { PET_SCENES, sceneClipSrc, sceneImageSrc } = await import("./catalog");
+    for (const species of ["dog", "cat", "other"] as const) {
+      for (const scene of PET_SCENES) {
+        expect(sceneImageSrc(scene.id, species)).toBe(`/pet/${species}/scenes/${scene.id}.webp`);
+        expect(sceneClipSrc(scene.id, species)).toBe(`/pet/${species}/clips/${scene.id}.mp4`);
+      }
+    }
+  });
+});

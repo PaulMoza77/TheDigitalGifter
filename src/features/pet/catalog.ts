@@ -56,7 +56,7 @@ export const PET_DEMO_CLIP_IDS = ["formula-racer", "spa-bathtub"] as const;
 export type PetDemoClipId = (typeof PET_DEMO_CLIP_IDS)[number];
 
 export function sceneClipSrc(
-  id: PetDemoClipId,
+  id: PetSceneDefinition["id"],
   species: PetSpecies = "dog",
 ): string {
   return `/pet/${species}/clips/${id}.mp4`;
@@ -68,15 +68,15 @@ export const PET_CLIP_COPY: Record<
 > = {
   dog: {
     heading: "Two cinematic clips",
-    description: "Same pet. Five seconds. A world in motion.",
+    description: "Hover to play. Same pet. Five seconds. A world in motion.",
   },
   cat: {
     heading: "Two cinematic clips",
-    description: "Same cat. Five seconds. A world in motion.",
+    description: "Hover to play. Same cat. Five seconds. A world in motion.",
   },
   other: {
     heading: "Two cinematic clips",
-    description: "Same face. Five seconds. A world in motion.",
+    description: "Hover to play. Same face. Five seconds. A world in motion.",
   },
 };
 
@@ -109,15 +109,15 @@ export const PET_LANDING_COPY: Record<
 > = {
   dog: {
     heading: "Twelve secret lives",
-    description: "Same pet. A different world in every frame.",
+    description: "Hover a portrait to watch it move. Same pet. A different world in every frame.",
   },
   cat: {
     heading: "Twelve secret lives",
-    description: "Same cat. A different world in every frame.",
+    description: "Hover a portrait to watch it move. Same cat. A different world in every frame.",
   },
   other: {
     heading: "Hamsters, turtles, birds, and the rest",
-    description: "If they have a face, they get a gallery.",
+    description: "Hover a portrait to watch it move. If they have a face, they get a gallery.",
   },
 };
 
