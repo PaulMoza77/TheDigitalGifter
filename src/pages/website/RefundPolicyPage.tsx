@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   Clipboard,
   CheckCircle,
@@ -462,15 +463,15 @@ export function RefundPolicyPage() {
             issues fairly and promptly.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <a
-              href="mailto:support@thedigitalgifter.com"
+            <Link
+              to="/support?category=billing"
               className="inline-flex items-center justify-center px-6 py-3 bg-[#ffd976]/20 hover:bg-[#ffd976]/30 border border-[#ffd976]/30 rounded-lg text-[#ffd976] font-medium transition-all"
             >
               <div className="mr-2 p-1 rounded bg-white/5 flex items-center justify-center">
                 <Mail size={16} />
               </div>
-              support@thedigitalgifter.com
-            </a>
+              Contact support
+            </Link>
             <a
               href="mailto:sales@thedigitalgifter.com"
               className="inline-flex items-center justify-center px-6 py-3 bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg text-white font-medium transition-all"

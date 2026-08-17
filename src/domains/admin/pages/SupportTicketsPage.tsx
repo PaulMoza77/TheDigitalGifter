@@ -1,15 +1,13 @@
-// FILE: src/domains/admin/pages/SupportTicketsPage.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, CheckCircle2, Inbox, Loader2, Send } from "lucide-react";
+import { Bot, Inbox, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { SUPPORT_CATEGORIES, SUPPORT_STATUSES } from "@/features/support/types";
 
 type SenderType = "client" | "admin" | "ai" | "system";
-
-type TicketStatus = "open" | "closed" | "needs_agent" | "ai_replied";
 
 type TicketRow = {
   id: string;
@@ -17,9 +15,12 @@ type TicketRow = {
   name: string | null;
   email: string | null;
   subject: string;
-  status: TicketStatus | string;
+  status: string;
   priority: string | null;
   page_url: string | null;
+  category: string | null;
+  public_reference: string | null;
+  pet_order_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -31,6 +32,13 @@ type MessageRow = {
   sender_type: SenderType;
   message: string;
   created_at: string;
+};
+
+type PetOrderSummary = {
+  id: string;
+  status: string | null;
+  species: string | null;
+  pet_name: string | null;
 };
 
 function makeChannelName(prefix: string) {
@@ -50,11 +58,26 @@ function sortTickets(tickets: TicketRow[]) {
   );
 }
 
+function categoryLabel(category: string | null) {
+  return SUPPORT_CATEGORIES.find((item) => item.id === category)?.label || category || "Uncategorized";
+}
+
+function statusLabel(status: string) {
+  return SUPPORT_STATUSES.find((item) => item.id === status)?.label || status;
+}
+
 function getStatusStyle(status: string) {
-  if (status === "closed") return "bg-emerald-500/15 text-emerald-300";
+  if (status === "closed") return "bg-zinc-500/15 text-zinc-300";
+  if (status === "resolved") return "bg-emerald-500/15 text-emerald-300";
+  if (status === "waiting_for_customer") return "bg-amber-500/15 text-amber-300";
+  if (status === "in_progress") return "bg-violet-500/15 text-violet-300";
   if (status === "needs_agent") return "bg-red-500/15 text-red-300";
   if (status === "ai_replied") return "bg-cyan-500/15 text-cyan-300";
   return "bg-blue-500/15 text-blue-300";
+}
+
+function formatTimestamp(value: string) {
+  return new Date(value).toLocaleString();
 }
 
 export default function SupportTicketsPage() {
@@ -64,11 +87,12 @@ export default function SupportTicketsPage() {
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [petOrder, setPetOrder] = useState<PetOrderSummary | null>(null);
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
-  const [closing, setClosing] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedTicketId) || null,
@@ -84,7 +108,9 @@ export default function SupportTicketsPage() {
 
         const { data, error } = await supabase
           .from("support_tickets")
-          .select("*")
+          .select(
+            "id, user_id, name, email, subject, status, priority, page_url, category, public_reference, pet_order_id, created_at, updated_at"
+          )
           .order("updated_at", { ascending: false });
 
         if (error) throw error;
@@ -97,9 +123,8 @@ export default function SupportTicketsPage() {
           if (current && rows.some((ticket) => ticket.id === current)) return current;
           return rows[0]?.id ?? null;
         });
-      } catch (error: any) {
-        console.error("[SupportTicketsPage] loadTickets error:", error);
-        toast.error(error?.message || "Failed to load tickets");
+      } catch (error: unknown) {
+        toast.error(error instanceof Error ? error.message : "Failed to load tickets");
       } finally {
         if (!cancelled) setLoadingTickets(false);
       }
@@ -191,9 +216,8 @@ export default function SupportTicketsPage() {
         if (cancelled) return;
 
         setMessages((data || []) as MessageRow[]);
-      } catch (error: any) {
-        console.error("[SupportTicketsPage] loadMessages error:", error);
-        toast.error(error?.message || "Failed to load messages");
+      } catch (error: unknown) {
+        toast.error(error instanceof Error ? error.message : "Failed to load messages");
       } finally {
         if (!cancelled) setLoadingMessages(false);
       }
@@ -205,6 +229,35 @@ export default function SupportTicketsPage() {
       cancelled = true;
     };
   }, [selectedTicketId]);
+
+  useEffect(() => {
+    if (!selectedTicket?.pet_order_id) {
+      setPetOrder(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadPetOrder() {
+      const { data, error } = await supabase
+        .from("pet_orders")
+        .select("id, status, species, pet_name")
+        .eq("id", selectedTicket!.pet_order_id)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (error || !data) {
+        setPetOrder(null);
+        return;
+      }
+      setPetOrder(data as PetOrderSummary);
+    }
+
+    void loadPetOrder();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTicket?.pet_order_id]);
 
   useEffect(() => {
     if (!selectedTicketId) return;
@@ -246,10 +299,7 @@ export default function SupportTicketsPage() {
     });
   }
 
-  async function touchTicket(
-    ticketId: string,
-    updates: Partial<Pick<TicketRow, "status" | "priority">>
-  ) {
+  async function touchTicket(ticketId: string, updates: Partial<Pick<TicketRow, "status" | "priority">>) {
     const { data, error } = await supabase
       .from("support_tickets")
       .update({
@@ -257,7 +307,9 @@ export default function SupportTicketsPage() {
         updated_at: new Date().toISOString(),
       })
       .eq("id", ticketId)
-      .select("*")
+      .select(
+        "id, user_id, name, email, subject, status, priority, page_url, category, public_reference, pet_order_id, created_at, updated_at"
+      )
       .single();
 
     if (error) throw error;
@@ -272,6 +324,20 @@ export default function SupportTicketsPage() {
           )
         )
       );
+    }
+  }
+
+  async function setStatus(status: string) {
+    if (!selectedTicketId || selectedTicket?.status === status) return;
+
+    try {
+      setUpdatingStatus(true);
+      await touchTicket(selectedTicketId, { status });
+      toast.success(`Status updated to ${statusLabel(status)}`);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to update status");
+    } finally {
+      setUpdatingStatus(false);
     }
   }
 
@@ -304,54 +370,14 @@ export default function SupportTicketsPage() {
       if (data) addMessageInstant(data as MessageRow);
 
       setReply("");
-
       await touchTicket(selectedTicketId, {
-        status: "open",
-        priority: "normal",
+        status: selectedTicket?.status === "open" ? "in_progress" : selectedTicket?.status,
       });
-    } catch (error: any) {
-      console.error("[SupportTicketsPage] sendReply error:", error);
-      toast.error(error?.message || "Failed to send reply");
+      toast.success("Reply saved to ticket history. No customer email was sent.");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to save reply");
     } finally {
       setSending(false);
-    }
-  }
-
-  async function closeTicket() {
-    if (!selectedTicketId || selectedTicket?.status === "closed") return;
-
-    try {
-      setClosing(true);
-
-      const closingMessage =
-        "This support chat has been closed. If you need any further assistance, please open a new support ticket and our team will be happy to help.";
-
-      const { data: messageData, error: messageError } = await supabase
-        .from("support_ticket_messages")
-        .insert({
-          ticket_id: selectedTicketId,
-          sender_id: user?.id ?? null,
-          sender_type: "system",
-          message: closingMessage,
-        })
-        .select("*")
-        .single();
-
-      if (messageError) throw messageError;
-
-      if (messageData) addMessageInstant(messageData as MessageRow);
-
-      await touchTicket(selectedTicketId, {
-        status: "closed",
-        priority: "normal",
-      });
-
-      toast.success("Ticket closed");
-    } catch (error: any) {
-      console.error("[SupportTicketsPage] closeTicket error:", error);
-      toast.error(error?.message || "Failed to close ticket");
-    } finally {
-      setClosing(false);
     }
   }
 
@@ -360,7 +386,7 @@ export default function SupportTicketsPage() {
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-bold">Support Tickets</h1>
         <p className="text-sm text-zinc-400">
-          Real-time support inbox for client messages.
+          Ticket inbox with category, pet-order context, and reply history.
         </p>
       </div>
 
@@ -394,8 +420,8 @@ export default function SupportTicketsPage() {
                   )}
                 >
                   <div className="mb-1 flex items-center justify-between gap-3">
-                    <p className="line-clamp-1 text-sm font-semibold text-white">
-                      {ticket.subject}
+                    <p className="line-clamp-1 font-mono text-xs text-[#ffd976]">
+                      {ticket.public_reference || "No reference"}
                     </p>
 
                     <span
@@ -404,16 +430,18 @@ export default function SupportTicketsPage() {
                         getStatusStyle(ticket.status || "open")
                       )}
                     >
-                      {ticket.status || "open"}
+                      {statusLabel(ticket.status || "open")}
                     </span>
                   </div>
 
-                  <p className="line-clamp-1 text-xs text-zinc-400">
-                    {ticket.email || ticket.name || "Guest"}
+                  <p className="line-clamp-1 text-sm font-semibold text-white">
+                    {ticket.subject}
                   </p>
-
+                  <p className="mt-1 line-clamp-1 text-xs text-zinc-400">
+                    {ticket.email || ticket.name || "Guest"} · {categoryLabel(ticket.category)}
+                  </p>
                   <p className="mt-2 text-[11px] text-zinc-600">
-                    {new Date(ticket.updated_at || ticket.created_at).toLocaleString()}
+                    {formatTimestamp(ticket.updated_at || ticket.created_at)}
                   </p>
                 </button>
               ))
@@ -430,46 +458,53 @@ export default function SupportTicketsPage() {
             <>
               <div className="shrink-0 border-b border-white/10">
                 <div className="flex items-start justify-between gap-4 p-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h2 className="truncate font-semibold">
-                        {selectedTicket.subject}
-                      </h2>
-
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                          getStatusStyle(selectedTicket.status || "open")
-                        )}
-                      >
-                        {selectedTicket.status || "open"}
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-zinc-400">
-                      {selectedTicket.email || selectedTicket.name || "Guest"}
+                  <div className="min-w-0 space-y-1">
+                    <p className="font-mono text-sm text-[#ffd976]">
+                      {selectedTicket.public_reference || "No public reference"}
                     </p>
-
+                    <h2 className="truncate font-semibold">{selectedTicket.subject}</h2>
+                    <p className="text-xs text-zinc-400">
+                      {selectedTicket.email || selectedTicket.name || "Guest"} ·{" "}
+                      {categoryLabel(selectedTicket.category)}
+                    </p>
+                    <p className="text-[11px] text-zinc-500">
+                      Created {formatTimestamp(selectedTicket.created_at)} · Updated{" "}
+                      {formatTimestamp(selectedTicket.updated_at)}
+                    </p>
+                    {petOrder ? (
+                      <p className="text-[11px] text-zinc-400">
+                        Pet order: {petOrder.pet_name || "Unnamed"} ({petOrder.species || "pet"}) ·{" "}
+                        {petOrder.status || "unknown"}
+                      </p>
+                    ) : selectedTicket.pet_order_id ? (
+                      <p className="text-[11px] text-zinc-500">Associated pet order on file</p>
+                    ) : (
+                      <p className="text-[11px] text-zinc-600">No associated pet order</p>
+                    )}
                     {selectedTicket.page_url ? (
                       <p className="mt-1 max-w-[620px] truncate text-[11px] text-zinc-600">
                         {selectedTicket.page_url}
                       </p>
                     ) : null}
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => void closeTicket()}
-                    disabled={closing || selectedTicket.status === "closed"}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {closing ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4" />
-                    )}
-                    {selectedTicket.status === "closed" ? "Closed" : "Close"}
-                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2 px-4 pb-4">
+                  {SUPPORT_STATUSES.map((status) => (
+                    <button
+                      key={status.id}
+                      type="button"
+                      disabled={updatingStatus || selectedTicket.status === status.id}
+                      onClick={() => void setStatus(status.id)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-50",
+                        selectedTicket.status === status.id
+                          ? "border-white/20 bg-white/10 text-white"
+                          : "border-white/10 bg-transparent text-zinc-400 hover:bg-white/5 hover:text-white"
+                      )}
+                    >
+                      {status.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -513,6 +548,12 @@ export default function SupportTicketsPage() {
                             </div>
                           ) : null}
 
+                          {isAdmin ? (
+                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-100">
+                              Admin
+                            </div>
+                          ) : null}
+
                           {isSystem ? (
                             <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-200">
                               System
@@ -524,7 +565,7 @@ export default function SupportTicketsPage() {
                           </p>
 
                           <p className="mt-1 text-[10px] opacity-60">
-                            {new Date(message.created_at).toLocaleTimeString()}
+                            {formatTimestamp(message.created_at)}
                           </p>
                         </div>
                       </div>
@@ -538,14 +579,14 @@ export default function SupportTicketsPage() {
               <div className="shrink-0 border-t border-white/10 p-4">
                 {selectedTicket.status === "closed" ? (
                   <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-zinc-300">
-                    This support chat is closed. The client can open a new support ticket if they need more help.
+                    This ticket is closed. Reopen it to save another reply.
                   </div>
                 ) : (
                   <div className="flex gap-2">
                     <textarea
                       value={reply}
                       onChange={(e) => setReply(e.target.value)}
-                      placeholder="Write a reply..."
+                      placeholder="Write a reply to save in ticket history..."
                       rows={1}
                       className="max-h-28 min-h-[44px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500"
                       onKeyDown={(e) => {

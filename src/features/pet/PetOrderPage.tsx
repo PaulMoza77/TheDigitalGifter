@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supportFormPath } from "@/features/support/guards";
+import { capturePetSupportContext } from "@/features/support/storage";
 import { PetApiError, type PetFunnelApi } from "./api";
 import { petFunnelApi } from "./supabaseApi";
 import { OrderStatusList, PetShell, ResultsGrid } from "./components";
@@ -28,6 +31,7 @@ export function PetOrderPage({
   previewOrder,
   previewResults,
 }: PetOrderPageProps) {
+  const navigate = useNavigate();
   const [order, setOrder] = useState<PetOrder | null>(previewOrder ?? null);
   const [progress, setProgress] = useState<PetGenerationProgress | null>(null);
   const [results, setResults] = useState<PetOrderResults | null>(previewResults ?? null);
@@ -147,6 +151,16 @@ export function PetOrderPage({
               <ShieldCheck className="h-4 w-4 text-[#d4a84b]" aria-hidden="true" />
               Human QC
             </p>
+            <button
+              type="button"
+              className="text-sm font-medium text-[#d4a84b] underline-offset-4 hover:underline"
+              onClick={() => {
+                capturePetSupportContext({ publicToken });
+                void navigate(supportFormPath({ category: "pet_order" }));
+              }}
+            >
+              Contact support
+            </button>
           </div>
         </section>
 

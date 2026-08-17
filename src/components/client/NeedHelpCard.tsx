@@ -1,12 +1,12 @@
 // FILE: src/domains/account/components/NeedHelpCard.tsx
 
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   CheckCircle2,
   LifeBuoy,
   Loader2,
-  Mail,
   MessageSquareText,
   X,
 } from "lucide-react";
@@ -135,19 +135,17 @@ export default function NeedHelpCard() {
         <h3 className="mt-5 text-lg font-semibold text-white">Need Help?</h3>
 
         <p className="mt-2 text-sm leading-6 text-zinc-400">
-          Support, troubleshooting and account assistance can be connected here.
+          Open a support ticket for troubleshooting, billing, or account help.
         </p>
 
         <div className="mt-5 space-y-3">
-          <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm text-zinc-300">
-            <Mail className="h-4 w-4 shrink-0 text-zinc-400" />
-            <span className="min-w-0 truncate">support@yourproject.com</span>
-          </div>
-
-          <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm text-zinc-300">
+          <Link
+            to="/support?category=account"
+            className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm text-zinc-300 transition hover:bg-white/[0.06]"
+          >
             <MessageSquareText className="h-4 w-4 shrink-0 text-zinc-400" />
-            <span className="min-w-0 truncate">Help center coming soon</span>
-          </div>
+            <span className="min-w-0 truncate">Contact support</span>
+          </Link>
 
           {loading ? (
             <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm text-zinc-400">
