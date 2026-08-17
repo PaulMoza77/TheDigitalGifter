@@ -1,4 +1,5 @@
 import { deliveryAllowed, mapClipStatusForCustomer, mapOrderStatusForCustomer, mapSceneStatusForCustomer } from "./guards.ts";
+import { isThrottleMessage } from "./replicateRateLimit.ts";
 import { mapOrderPhase } from "./videoGuards.ts";
 import { PET_CURRENCY, PET_SCENE_COUNT, PET_SKU, PET_VIDEO_CLIP_COUNT } from "./constants.ts";
 import { sceneByKey } from "./scenes.ts";
@@ -115,7 +116,7 @@ export function toCustomerScene(
     title: definition?.title || scene.title,
     status,
     progressPercent: scene.progress_percent ?? 0,
-    errorMessage: scene.last_error,
+    errorMessage: isThrottleMessage(scene.last_error || "") ? null : scene.last_error,
     startedAt: scene.started_at,
     completedAt: scene.completed_at,
   };

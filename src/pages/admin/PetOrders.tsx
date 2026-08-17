@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatUsd, formatUsd3, GROSS_AFTER_AI_DISCLAIMER, type OrderCostDetails } from "@/features/pet/aiCost";
+import { WAITING_FOR_PROVIDER_RATE_LIMIT, adminPortraitStatusLabel } from "@/features/pet/replicateRateLimit";
 import {
   Table,
   TableBody,
@@ -399,8 +400,12 @@ export default function PetOrdersPage() {
                       {scene.previewUrl ? (
                         <img src={scene.previewUrl} alt={scene.title} className="h-20 w-full object-cover" />
                       ) : (
-                        <div className="grid h-20 place-items-center bg-slate-950 text-[10px] text-slate-500">
-                          {scene.status}
+                        <div className="grid h-20 place-items-center bg-slate-950 px-1 text-center text-[10px] text-slate-500">
+                          {adminPortraitStatusLabel({
+                            status: scene.status,
+                            lastError: scene.last_error,
+                            replicatePredictionId: scene.replicate_prediction_id,
+                          })}
                         </div>
                       )}
                       <label className="flex items-center gap-1 px-1 py-1 text-[10px]">
@@ -421,6 +426,15 @@ export default function PetOrdersPage() {
                       <p className="px-1 pb-1 text-[10px] text-slate-500">
                         {scene.attempts} tries · {scene.replicate_prediction_id || "no prediction"}
                       </p>
+                      {adminPortraitStatusLabel({
+                        status: scene.status,
+                        lastError: scene.last_error,
+                        replicatePredictionId: scene.replicate_prediction_id,
+                      }) === WAITING_FOR_PROVIDER_RATE_LIMIT ? (
+                        <p className="px-1 pb-1 text-[10px] text-amber-200">{WAITING_FOR_PROVIDER_RATE_LIMIT}</p>
+                      ) : scene.last_error ? (
+                        <p className="px-1 pb-1 text-[10px] text-red-300">{scene.last_error}</p>
+                      ) : null}
                       {detail.costs?.byScene
                         .filter((item) => item.sceneKey === scene.scene_key)
                         .map((item) => (

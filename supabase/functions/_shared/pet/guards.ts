@@ -157,7 +157,7 @@ export function mapSceneStatusForCustomer(input: {
 }): "queued" | "generating" | "quality_control" | "ready" | "failed" {
   if (input.sceneStatus === "failed") return "failed";
   if (input.sceneStatus === "queued") return "queued";
-  if (input.sceneStatus === "generating") return "generating";
+  if (input.sceneStatus === "rate_limited" || input.sceneStatus === "generating") return "generating";
   if (input.sceneStatus === "ready" && input.deliveryUnlocked) return "ready";
   if (input.sceneStatus === "succeeded" || input.sceneStatus === "ready") return "quality_control";
   return "queued";
@@ -169,7 +169,7 @@ export function mapClipStatusForCustomer(input: {
 }): "queued" | "generating" | "quality_control" | "ready" | "failed" {
   if (input.clipStatus === "failed") return "failed";
   if (input.clipStatus === "queued") return "queued";
-  if (input.clipStatus === "generating") return "generating";
+  if (input.clipStatus === "rate_limited" || input.clipStatus === "generating") return "generating";
   if (input.clipStatus === "ready" && input.deliveryUnlocked) return "ready";
   if (input.clipStatus === "succeeded" || input.clipStatus === "ready") return "quality_control";
   return "queued";

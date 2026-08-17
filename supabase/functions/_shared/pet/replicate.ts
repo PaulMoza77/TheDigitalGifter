@@ -1,5 +1,8 @@
 import { petImageModel, petImageModelVersion, petVideoModel, petVideoDurationSeconds, petVideoResolution, siteOrigin } from "./constants.ts";
 import { hmacSha256Base64, timingSafeEqual } from "./crypto.ts";
+import { parseRetryAfterMs, ReplicateHttpError } from "./replicateRateLimit.ts";
+
+export { ReplicateHttpError } from "./replicateRateLimit.ts";
 
 export type ReplicatePrediction = {
   id?: string;
@@ -86,14 +89,7 @@ export async function createReplicateVideoPrediction(input: {
     "Content-Type": "application/json",
   };
 
-  const res = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json?.detail || json?.error || "Replicate video prediction failed");
-  return json as ReplicatePrediction;
+  return postReplicatePrediction(`https://api.replicate.com/v1/models/${model}/predictions`, headers, body);
 }
 
 export async function createReplicatePrediction(input: {
@@ -119,23 +115,38 @@ export async function createReplicatePrediction(input: {
   };
 
   if (version) {
-    const res = await fetch("https://api.replicate.com/v1/predictions", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ ...body, version }),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json?.detail || json?.error || "Replicate prediction failed");
-    return json as ReplicatePrediction;
+    return postReplicatePrediction("https://api.replicate.com/v1/predictions", headers, { ...body, version });
   }
 
-  const res = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
+  return postReplicatePrediction(`https://api.replicate.com/v1/models/${model}/predictions`, headers, body);
+}
+
+async function postReplicatePrediction(
+  url: string,
+  headers: Record<string, string>,
+  body: Record<string, unknown>,
+): Promise<ReplicatePrediction> {
+  const res = await fetch(url, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json?.detail || json?.error || "Replicate prediction failed");
+  const text = await res.text();
+  let json: Record<string, unknown> = {};
+  try {
+    json = text ? JSON.parse(text) as Record<string, unknown> : {};
+  } catch {
+    json = {};
+  }
+  if (!res.ok) {
+    const retryAfterMs = parseRetryAfterMs({
+      retryAfterHeader: res.headers.get("retry-after"),
+      resetHeader: res.headers.get("ratelimit-reset") || res.headers.get("x-ratelimit-reset"),
+      body: text,
+    });
+    const message = String(json.detail || json.error || text || "Replicate prediction failed").slice(0, 500);
+    throw new ReplicateHttpError(message, res.status, retryAfterMs);
+  }
   return json as ReplicatePrediction;
 }
 
