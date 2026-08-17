@@ -128,6 +128,10 @@ export type StartPetCheckoutResult = {
   checkoutUrl: string | null;
   sessionId: string;
   status?: "open" | "payment_processing" | "comped";
+  eventId?: string;
+  purchaseEventId?: string;
+  amountCents?: number;
+  chargedAmountCents?: number;
 };
 
 /**
@@ -177,5 +181,9 @@ export async function startPetCheckout(
     checkoutUrl: checkout.checkoutUrl,
     sessionId: checkout.sessionId,
     status: checkout.status,
+    eventId: checkout.eventId,
+    purchaseEventId: checkout.purchaseEventId,
+    amountCents: checkout.amountCents,
+    chargedAmountCents: checkout.chargedAmountCents,
   };
 }

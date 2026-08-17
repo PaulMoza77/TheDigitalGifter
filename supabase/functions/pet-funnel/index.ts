@@ -36,7 +36,7 @@ import {
 } from "../_shared/pet/mapOrder.ts";
 import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, resolveServerOwnedOffer, resolveServerOwnedPromo } from "../_shared/pet/videoGuards.ts";
 import { PET_SCENE_DEFINITIONS } from "../_shared/pet/scenes.ts";
-import { petInitiateCheckoutEventId, petPurchaseEventId } from "../_shared/pet/meta.ts";
+import { petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
 import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
 import { invokePetGenerate } from "../_shared/pet/stripeFulfill.ts";
 
@@ -360,9 +360,7 @@ Deno.serve(async (req) => {
           checkoutUrl: null,
           status: "comped",
           promoCode: promo.code,
-          chargedAmountCents: charged,
-          eventId: petInitiateCheckoutEventId(order.id),
-          purchaseEventId: petPurchaseEventId(order.id),
+          ...petMetaCheckoutFields({ ...order, charged_amount_cents: charged }),
         });
       }
 
@@ -400,8 +398,7 @@ Deno.serve(async (req) => {
           sessionId: decision.sessionId,
           checkoutUrl: null,
           status: "payment_processing",
-          eventId: petInitiateCheckoutEventId(order.id),
-          purchaseEventId: petPurchaseEventId(order.id),
+          ...petMetaCheckoutFields(order),
         });
       }
 
@@ -413,13 +410,19 @@ Deno.serve(async (req) => {
           p_session_id: matched.sessionId,
           p_expected_session_id: storedSessionId || null,
         });
+        const meta = petMetaCheckoutFields(order);
+        await sendMetaCapiInitiateCheckout({
+          eventId: meta.eventId,
+          orderId: order.id,
+          email: asString(order.email),
+          amountCents: meta.chargedAmountCents,
+        });
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
           status: "open",
-          eventId: petInitiateCheckoutEventId(order.id),
-          purchaseEventId: petPurchaseEventId(order.id),
           reused: true,
+          ...meta,
         });
       }
 
@@ -472,30 +475,42 @@ Deno.serve(async (req) => {
         const winner = await fetchStripeCheckoutSession(stripeKey, attachedId);
         const matched = matchedOpenCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
         if (!matched.ok) return checkoutConflict();
+        const meta = petMetaCheckoutFields(order);
+        await sendMetaCapiInitiateCheckout({
+          eventId: meta.eventId,
+          orderId: order.id,
+          email: asString(order.email),
+          amountCents: meta.chargedAmountCents,
+        });
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
           status: "open",
-          eventId: petInitiateCheckoutEventId(order.id),
-          purchaseEventId: petPurchaseEventId(order.id),
           reused: true,
+          ...meta,
         });
       }
 
       const matched = matchedOpenCheckoutResponse(session);
       if (!matched.ok) return checkoutConflict();
+      const meta = petMetaCheckoutFields(order);
       await service.rpc("pet_log_event", {
         p_order_id: order.id,
         p_action: "checkout_session_created",
         p_actor_type: "system",
-        p_payload: { session_present: true, initiate_event_id: petInitiateCheckoutEventId(order.id) },
+        p_payload: { session_present: true, initiate_event_id: meta.eventId },
+      });
+      await sendMetaCapiInitiateCheckout({
+        eventId: meta.eventId,
+        orderId: order.id,
+        email: asString(order.email),
+        amountCents: meta.chargedAmountCents,
       });
       return jsonResponse({
         sessionId: matched.sessionId,
         checkoutUrl: matched.checkoutUrl,
         status: "open",
-        eventId: petInitiateCheckoutEventId(order.id),
-        purchaseEventId: petPurchaseEventId(order.id),
+        ...meta,
       });
     }
 
