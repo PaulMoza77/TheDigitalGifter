@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PetApiError, type PetFunnelApi } from "./api";
 import { petFunnelApi } from "./supabaseApi";
@@ -42,11 +44,37 @@ export function PetOrderPage({
   const [error, setError] = useState<string | null>(null);
   const [statusHint, setStatusHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(!previewOrder);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const orderRef = useRef(order);
   const resultsRef = useRef(results);
   orderRef.current = order;
   resultsRef.current = results;
+
+  const refreshResults = useCallback(async () => {
+    if (!publicToken || previewOrder) return;
+    try {
+      const nextResults = await withTimeout(api.getOrderResults({ publicToken }));
+      setResults(nextResults);
+    } catch {
+      /* keep existing results */
+    }
+  }, [api, previewOrder, publicToken]);
+
+  useEffect(() => {
+    const upsellFlag = searchParams.get("upsell");
+    if (!upsellFlag || previewOrder) return;
+    if (upsellFlag === "success") {
+      toast.success("Add-on unlocked. Download your extras below.");
+    } else if (upsellFlag === "retry") {
+      toast.success("Retry purchased. Regenerating your selected portraits.");
+    }
+    void refreshResults();
+    const next = new URLSearchParams(searchParams);
+    next.delete("upsell");
+    next.delete("upsell_id");
+    setSearchParams(next, { replace: true });
+  }, [previewOrder, refreshResults, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (previewOrder) {
@@ -267,7 +295,13 @@ export function PetOrderPage({
         ) : null}
 
         {showResults && results ? (
-          <ResultsGrid results={results} species={order?.species} />
+          <ResultsGrid
+            results={results}
+            species={order?.species}
+            publicToken={publicToken}
+            api={api}
+            onRefresh={() => void refreshResults()}
+          />
         ) : null}
 
         {!order && !loading && !error ? (

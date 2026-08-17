@@ -5,6 +5,8 @@ import type {
   CreatePetOrderResponse,
   CreateStripeCheckoutRequest,
   CreateStripeCheckoutResponse,
+  CreateUpsellCheckoutRequest,
+  CreateUpsellCheckoutResponse,
   GetOrderByPublicTokenRequest,
   GetOrderResultsRequest,
   GetSignedUploadUrlRequest,
@@ -32,6 +34,9 @@ export interface PetFunnelApi {
   createStripeCheckout(
     input: CreateStripeCheckoutRequest
   ): Promise<CreateStripeCheckoutResponse>;
+  createUpsellCheckout(
+    input: CreateUpsellCheckoutRequest
+  ): Promise<CreateUpsellCheckoutResponse>;
   getOrderByPublicToken(input: GetOrderByPublicTokenRequest): Promise<PetOrder>;
   pollGenerationProgress(
     input: PollGenerationProgressRequest
@@ -69,6 +74,7 @@ export function createUnimplementedPetApi(): PetFunnelApi {
     getSignedUploadUrl: reject("getSignedUploadUrl"),
     confirmUpload: reject("confirmUpload"),
     createStripeCheckout: reject("createStripeCheckout"),
+    createUpsellCheckout: reject("createUpsellCheckout"),
     getOrderByPublicToken: reject("getOrderByPublicToken"),
     pollGenerationProgress: reject("pollGenerationProgress"),
     getOrderResults: reject("getOrderResults"),

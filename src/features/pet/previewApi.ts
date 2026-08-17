@@ -5,14 +5,17 @@ import type {
   PetOrder,
   PetOrderResults,
   PetOrderStatus,
+  PetOrderUpsellCatalog,
   PetResultAsset,
   PetSceneId,
   PetSceneProgress,
   PetSceneResult,
   PetSceneStatus,
+  PetUpsellKey,
 } from "./types";
 import { PET_PRICE_CENTS, PET_PRODUCT_SKU, PET_SCENE_COUNT } from "./types";
 import { mapOrderPhase } from "./videoGuards";
+import { formatUpsellPrice, printPackEligibility, sceneUpsellKeys, PET_UPSELL_OFFERS } from "./upsells";
 
 export type PreviewOrderPreset =
   | "processing"
@@ -30,6 +33,12 @@ const store: PreviewStore = {
   order: null,
   preset: "processing",
 };
+
+const previewPurchasedUpsells = new Set<string>();
+
+function previewUpsellKey(upsellKey: PetUpsellKey, sceneKey?: string) {
+  return sceneKey ? `${upsellKey}:${sceneKey}` : upsellKey;
+}
 
 export function setPreviewOrderPreset(preset: PreviewOrderPreset): void {
   store.preset = preset;
@@ -113,6 +122,21 @@ export function createPreviewPetApi(): PetFunnelApi {
         purchaseEventId: `pet_purchase_${order.id}`,
         amountCents: order.amountCents,
         chargedAmountCents: order.chargedAmountCents ?? order.amountCents,
+      };
+    },
+
+    async createUpsellCheckout(input) {
+      ensurePreviewOrder(input.publicToken);
+      const offer = PET_UPSELL_OFFERS[input.upsellKey];
+      previewPurchasedUpsells.add(previewUpsellKey(input.upsellKey, input.sceneKey));
+      return {
+        upsellId: `preview-upsell-${cryptoRandom()}`,
+        sessionId: `preview_cs_upsell_${cryptoRandom()}`,
+        checkoutUrl: `preview://upsell-success?token=${encodeURIComponent(input.publicToken)}`,
+        status: "open",
+        upsellKey: input.upsellKey,
+        amountCents: offer.priceCents,
+        priceDisplay: formatUpsellPrice(offer.priceCents),
       };
     },
 
@@ -400,6 +424,59 @@ function failedScene(scene: PetSceneProgress, message: string): PetSceneProgress
 }
 
 function toResults(order: PetOrder): PetOrderResults {
+  const previewWidth = 1024;
+  const previewHeight = 1365;
+  const print = printPackEligibility(previewWidth, previewHeight);
+  const sceneOfferDefs = sceneUpsellKeys().map((key) => {
+    const offer = PET_UPSELL_OFFERS[key];
+    return {
+      key,
+      name: offer.name,
+      description: offer.description,
+      priceCents: offer.priceCents,
+      currency: offer.currency,
+      scope: offer.scope,
+      cta: offer.cta,
+      purchasedCta: offer.purchasedCta,
+      priceDisplay: formatUpsellPrice(offer.priceCents),
+    };
+  });
+  const upsells: PetOrderUpsellCatalog = {
+    sceneUpsells: order.scenes
+      .filter((scene) => scene.status === "ready")
+      .map((scene) => ({
+        sceneKey: scene.sceneId,
+        title: scene.title,
+        width: previewWidth,
+        height: previewHeight,
+        offers: sceneOfferDefs.map((offer) => ({
+          ...offer,
+          purchased: previewPurchasedUpsells.has(previewUpsellKey(offer.key, scene.sceneId)),
+          available: offer.key === "print_pack" ? print.eligible : true,
+          unavailableReason:
+            offer.key === "print_pack" && !print.eligible ? print.reason : null,
+          printMaxSizeLabel: offer.key === "print_pack" ? print.maxSizeLabel : null,
+        })),
+      })),
+    orderUpsells: [
+      {
+        key: "retry_3_scenes",
+        name: PET_UPSELL_OFFERS.retry_3_scenes.name,
+        description: PET_UPSELL_OFFERS.retry_3_scenes.description,
+        priceCents: PET_UPSELL_OFFERS.retry_3_scenes.priceCents,
+        currency: "usd",
+        scope: "order",
+        cta: PET_UPSELL_OFFERS.retry_3_scenes.cta,
+        purchasedCta: PET_UPSELL_OFFERS.retry_3_scenes.purchasedCta,
+        priceDisplay: formatUpsellPrice(PET_UPSELL_OFFERS.retry_3_scenes.priceCents),
+        purchased: previewPurchasedUpsells.has("retry_3_scenes"),
+        available: !previewPurchasedUpsells.has("retry_3_scenes"),
+        maxScenes: 3,
+      },
+    ],
+    purchased: [],
+  };
+
   return {
     orderId: order.id,
     publicToken: order.publicToken,
@@ -420,6 +497,7 @@ function toResults(order: PetOrder): PetOrderResults {
       height: null,
       ready: false,
     })),
+    upsells,
   };
 }
 

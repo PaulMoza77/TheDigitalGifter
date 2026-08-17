@@ -242,6 +242,70 @@ export type PetOrderResults = {
   status: PetOrderStatus;
   scenes: PetSceneResult[];
   clips: PetVideoClipResult[];
+  upsells?: PetOrderUpsellCatalog | null;
+};
+
+export type PetUpsellKey = "gift_pack" | "holiday_card" | "print_pack" | "retry_3_scenes";
+
+export type PetUpsellOfferView = {
+  key: PetUpsellKey;
+  name: string;
+  description: string;
+  priceCents: number;
+  currency: "usd";
+  scope: "scene" | "order";
+  cta: string;
+  purchasedCta: string;
+  priceDisplay: string;
+  purchased: boolean;
+  available: boolean;
+  unavailableReason?: string | null;
+  printMaxSizeLabel?: string | null;
+  maxScenes?: number;
+};
+
+export type PetSceneUpsellView = {
+  sceneKey: string;
+  title: string;
+  width: number | null;
+  height: number | null;
+  offers: PetUpsellOfferView[];
+};
+
+export type PetPurchasedUpsell = {
+  id: string;
+  upsellKey: PetUpsellKey;
+  sceneKey: string | null;
+  status: string;
+  fulfillmentStatus: string | null;
+  sceneKeys: string[];
+  paidAt: string | null;
+  fulfilledAt: string | null;
+};
+
+export type PetOrderUpsellCatalog = {
+  sceneUpsells: PetSceneUpsellView[];
+  orderUpsells: PetUpsellOfferView[];
+  purchased: PetPurchasedUpsell[];
+};
+
+export type CreateUpsellCheckoutRequest = {
+  publicToken: string;
+  upsellKey: PetUpsellKey;
+  sceneKey?: string;
+  sceneKeys?: string[];
+  successUrl: string;
+  cancelUrl: string;
+};
+
+export type CreateUpsellCheckoutResponse = {
+  upsellId: string;
+  sessionId: string;
+  checkoutUrl: string;
+  status: "open";
+  upsellKey: PetUpsellKey;
+  amountCents: number;
+  priceDisplay: string;
 };
 
 export type PetGenerationProgress = {

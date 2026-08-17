@@ -44,6 +44,13 @@ import { PET_SCENE_DEFINITIONS, sceneByKey } from "../_shared/pet/scenes.ts";
 import { petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
 import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
 import { enqueuePetGenerate, enqueuePetGenerateIfStalled } from "../_shared/pet/stripeFulfill.ts";
+import {
+  formatUpsellPrice,
+  printPackEligibility,
+  sceneUpsellKeys,
+  upsellOfferByKey,
+  type PetUpsellKey,
+} from "../_shared/pet/upsells.ts";
 
 type Body = Record<string, unknown>;
 
@@ -131,6 +138,118 @@ async function loadScenes(service: ReturnType<typeof getServiceClient>, orderId:
     .order("scene_number", { ascending: true });
   if (error) throw error;
   return (data ?? []) as PetSceneRow[];
+}
+
+type PetUpsellRow = {
+  id: string;
+  upsell_key: string;
+  scene_key: string | null;
+  status: string;
+  fulfillment_status: string | null;
+  metadata: Record<string, unknown> | null;
+  paid_at: string | null;
+  fulfilled_at: string | null;
+};
+
+async function loadOrderUpsells(service: ReturnType<typeof getServiceClient>, orderId: string) {
+  const { data, error } = await service
+    .from("pet_order_upsells")
+    .select("id, upsell_key, scene_key, status, fulfillment_status, metadata, paid_at, fulfilled_at")
+    .eq("pet_order_id", orderId)
+    .in("status", ["paid", "fulfilled"])
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as PetUpsellRow[];
+}
+
+function upsellIsPurchased(rows: PetUpsellRow[], key: PetUpsellKey, sceneKey?: string | null) {
+  return rows.some((row) => {
+    if (row.upsell_key !== key) return false;
+    if (key === "retry_3_scenes") return true;
+    return row.scene_key === sceneKey;
+  });
+}
+
+async function buildUpsellCatalog(input: {
+  scenes: PetSceneRow[];
+  purchased: PetUpsellRow[];
+}) {
+  const sceneOffers = sceneUpsellKeys().map((key) => {
+    const offer = upsellOfferByKey(key)!;
+    return {
+      key,
+      name: offer.name,
+      description: offer.description,
+      priceCents: offer.priceCents,
+      currency: offer.currency,
+      scope: offer.scope,
+      cta: offer.cta,
+      purchasedCta: offer.purchasedCta,
+      priceDisplay: formatUpsellPrice(offer.priceCents, offer.currency),
+    };
+  });
+
+  const perScene = input.scenes
+    .filter((scene) => ["succeeded", "ready"].includes(String(scene.status)) && scene.result_path)
+    .map((scene) => {
+      const width = Number(scene.result_width || 0) || null;
+      const height = Number(scene.result_height || 0) || null;
+      const print = printPackEligibility(width, height);
+      const offers = sceneOffers.map((offer) => {
+        const purchased = upsellIsPurchased(input.purchased, offer.key as PetUpsellKey, scene.scene_key);
+        const available =
+          offer.key === "print_pack" ? print.eligible : true;
+        return {
+          ...offer,
+          purchased,
+          available,
+          unavailableReason:
+            offer.key === "print_pack" && !print.eligible ? print.reason : null,
+          printMaxSizeLabel: offer.key === "print_pack" ? print.maxSizeLabel : null,
+        };
+      });
+      return {
+        sceneKey: scene.scene_key,
+        title: sceneByKey(scene.scene_key)?.title || scene.title,
+        width,
+        height,
+        offers,
+      };
+    });
+
+  const retryOffer = upsellOfferByKey("retry_3_scenes")!;
+  const retryPurchased = upsellIsPurchased(input.purchased, "retry_3_scenes");
+  return {
+    sceneUpsells: perScene,
+    orderUpsells: [
+      {
+        key: retryOffer.key,
+        name: retryOffer.name,
+        description: retryOffer.description,
+        priceCents: retryOffer.priceCents,
+        currency: retryOffer.currency,
+        scope: retryOffer.scope,
+        cta: retryOffer.cta,
+        purchasedCta: retryOffer.purchasedCta,
+        priceDisplay: formatUpsellPrice(retryOffer.priceCents, retryOffer.currency),
+        purchased: retryPurchased,
+        available: !retryPurchased,
+        maxScenes: 3,
+      },
+    ],
+    purchased: input.purchased.map((row) => ({
+      id: row.id,
+      upsellKey: row.upsell_key,
+      sceneKey: row.scene_key,
+      status: row.status,
+      fulfillmentStatus: row.fulfillment_status,
+      sceneKeys: Array.isArray(row.metadata?.scene_keys)
+        ? (row.metadata?.scene_keys as string[])
+        : [],
+      paidAt: row.paid_at,
+      fulfilledAt: row.fulfilled_at,
+    })),
+  };
 }
 
 async function signedDownload(
@@ -549,6 +668,155 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "createUpsellCheckout") {
+      const publicToken = asString(body.publicToken);
+      const upsellKey = asString(body.upsellKey) as PetUpsellKey;
+      const sceneKey = asString(body.sceneKey) || null;
+      const sceneKeysInput = Array.isArray(body.sceneKeys)
+        ? body.sceneKeys.map((item) => asString(item)).filter(Boolean)
+        : [];
+      const order = await findOrderByToken(service, publicToken);
+      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+
+      const offer = upsellOfferByKey(upsellKey);
+      if (!offer) return apiError("INVALID_REQUEST", "Unknown add-on.", 400);
+
+      if (!deliveryAllowed({
+        orderStatus: String(order.status),
+        qcStatus: order.qc_status as string | null,
+        completedAt: order.completed_at ? String(order.completed_at) : null,
+      })) {
+        return apiError("INVALID_REQUEST", "Add-ons unlock after your order is paid.", 402);
+      }
+
+      const scenes = await loadScenes(service, order.id);
+      const purchased = await loadOrderUpsells(service, order.id);
+
+      if (offer.scope === "scene") {
+        if (!sceneKey) return apiError("INVALID_REQUEST", "Choose a portrait first.", 400);
+        const scene = scenes.find((row) => row.scene_key === sceneKey);
+        if (!scene || !["succeeded", "ready"].includes(String(scene.status)) || !scene.result_path) {
+          return apiError("INVALID_REQUEST", "That portrait is not ready yet.", 400);
+        }
+        if (upsellIsPurchased(purchased, upsellKey, sceneKey)) {
+          return apiError("INVALID_REQUEST", "You already own this add-on for this portrait.", 409);
+        }
+        if (upsellKey === "print_pack") {
+          const print = printPackEligibility(scene.result_width, scene.result_height);
+          if (!print.eligible) {
+            return apiError("INVALID_REQUEST", print.reason || "This portrait is too small to print.", 400);
+          }
+        }
+      }
+
+      if (upsellKey === "retry_3_scenes") {
+        if (upsellIsPurchased(purchased, "retry_3_scenes")) {
+          return apiError("INVALID_REQUEST", "You already purchased a 3-scene retry for this order.", 409);
+        }
+        if (sceneKeysInput.length < 1 || sceneKeysInput.length > 3) {
+          return apiError("INVALID_REQUEST", "Pick 1 to 3 portraits to retry.", 400);
+        }
+        const readyKeys = new Set(
+          scenes
+            .filter((row) => ["succeeded", "ready"].includes(String(row.status)))
+            .map((row) => row.scene_key),
+        );
+        if (sceneKeysInput.some((key) => !readyKeys.has(key))) {
+          return apiError("INVALID_REQUEST", "One or more selected portraits are not ready.", 400);
+        }
+      }
+
+      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+      if (!stripeKey) return apiError("INVALID_REQUEST", "Stripe is not configured.", 503);
+
+      const metadata: Record<string, unknown> = {};
+      if (upsellKey === "retry_3_scenes") {
+        metadata.scene_keys = sceneKeysInput;
+      }
+
+      const { data: upsellRow, error: upsellError } = await service
+        .from("pet_order_upsells")
+        .insert({
+          pet_order_id: order.id,
+          upsell_key: upsellKey,
+          scene_key: offer.scope === "scene" ? sceneKey : null,
+          amount_cents: offer.priceCents,
+          currency: offer.currency,
+          status: "pending",
+          metadata,
+        })
+        .select("id")
+        .single();
+      if (upsellError) throw upsellError;
+
+      const upsellId = asString((upsellRow as { id?: string }).id);
+      const successUrl = safeReturnUrl(
+        asString(body.successUrl),
+        `${siteOrigin()}/pet/order?token=${encodeURIComponent(publicToken)}&upsell=success&upsell_id=${upsellId}`,
+      );
+      const cancelUrl = safeReturnUrl(
+        asString(body.cancelUrl),
+        `${siteOrigin()}/pet/order?token=${encodeURIComponent(publicToken)}`,
+      );
+
+      const params = new URLSearchParams();
+      params.set("mode", "payment");
+      params.set("success_url", successUrl);
+      params.set("cancel_url", cancelUrl);
+      params.set("customer_email", order.email);
+      params.set("client_reference_id", order.id);
+      params.set("line_items[0][price_data][currency]", offer.currency);
+      params.set("line_items[0][price_data][unit_amount]", String(offer.priceCents));
+      params.set("line_items[0][price_data][product_data][name]", offer.name);
+      params.set(
+        "line_items[0][price_data][product_data][description]",
+        offer.scope === "scene" && sceneKey
+          ? `${offer.description} — ${sceneByKey(sceneKey)?.title || sceneKey}`
+          : offer.description,
+      );
+      params.set("line_items[0][quantity]", "1");
+      params.set("metadata[product_type]", "pet_upsell");
+      params.set("metadata[upsell_key]", upsellKey);
+      params.set("metadata[pet_order_id]", order.id);
+      params.set("metadata[pet_upsell_id]", upsellId);
+      params.set("metadata[scene_key]", sceneKey || "");
+      if (upsellKey === "retry_3_scenes") {
+        params.set("metadata[scene_keys]", JSON.stringify(sceneKeysInput));
+      }
+      params.set("payment_intent_data[metadata][product_type]", "pet_upsell");
+      params.set("payment_intent_data[metadata][pet_upsell_id]", upsellId);
+
+      const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${stripeKey}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Idempotency-Key": `pet-upsell-${upsellId}`,
+        },
+        body: params,
+      });
+      const session = await stripeRes.json();
+      if (!stripeRes.ok) {
+        await service.from("pet_order_upsells").delete().eq("id", upsellId);
+        return apiError("INVALID_REQUEST", session.error?.message || "Stripe checkout failed", 502);
+      }
+
+      await service
+        .from("pet_order_upsells")
+        .update({ stripe_checkout_session_id: asString(session.id) })
+        .eq("id", upsellId);
+
+      return jsonResponse({
+        upsellId,
+        sessionId: asString(session.id),
+        checkoutUrl: asString(session.url),
+        status: "open",
+        upsellKey,
+        amountCents: offer.priceCents,
+        priceDisplay: formatUpsellPrice(offer.priceCents, offer.currency),
+      });
+    }
+
     if (action === "listMyPetGalleries") {
       const { user } = await getAuthUser(req);
       const accountEmail = normalizeAccountEmail(user?.email);
@@ -659,6 +927,8 @@ Deno.serve(async (req) => {
         qcStatus: order.qc_status as string | null,
         completedAt: order.completed_at,
       });
+      const purchasedUpsells = unlocked ? await loadOrderUpsells(service, order.id) : [];
+      const upsellCatalog = unlocked ? await buildUpsellCatalog({ scenes, purchased: purchasedUpsells }) : null;
       const sceneResults = [];
       for (const scene of scenes.length ? scenes : PET_SCENE_DEFINITIONS.map((item) => ({
         scene_key: item.key,
@@ -760,6 +1030,7 @@ Deno.serve(async (req) => {
         status: toCustomerOrder(order, scenes, publicToken, clips).status,
         scenes: sceneResults,
         clips: clipResults,
+        upsells: upsellCatalog,
         formatNote:
           "This purchase includes 12 QC-approved portraits and 2 cinematic 5-second clips. File dimensions are the real generated size. Wallpaper, social, and poster crops are not included and are labelled Coming later.",
         totalCount: PET_SCENE_COUNT,

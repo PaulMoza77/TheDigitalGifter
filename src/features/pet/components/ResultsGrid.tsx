@@ -1,28 +1,54 @@
-import { Download, Share2 } from "lucide-react";
+import { useState } from "react";
+import { Download, Share2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import type { PetFunnelApi } from "../api";
 import type { PetOrderResults, PetSceneResult, PetSpecies, PetVideoClipResult } from "../types";
 import { getSceneById } from "../catalog";
 import { downloadFromUrl, portraitFileName, sharePortrait } from "../shareDownload";
+import { PortraitUpsellSheet } from "./PortraitUpsellSheet";
+import { RetryPackPanel } from "./RetryPackPanel";
 import { SceneImage } from "./SceneCard";
 
 export function ResultsGrid({
   results,
   species = "dog",
+  publicToken,
+  api,
+  onRefresh,
   onPlaceholderDownload,
 }: {
   results: PetOrderResults;
   species?: PetSpecies;
+  publicToken?: string;
+  api?: PetFunnelApi;
+  onRefresh?: () => void;
   onPlaceholderDownload?: (sceneTitle: string, formatLabel: string) => void;
 }) {
+  const [activeScene, setActiveScene] = useState<PetSceneResult | null>(null);
+  const retryOffer = results.upsells?.orderUpsells.find((item) => item.key === "retry_3_scenes") ?? null;
+
   return (
     <section aria-labelledby="pet-results-heading" className="space-y-5">
       <div>
         <h2 id="pet-results-heading" className="text-2xl font-semibold tracking-tight text-[#f6efe4]">
           {results.petName}’s gallery
         </h2>
-        <p className="mt-1 text-sm text-[#f6efe4]/65">12 portraits and 2 cinematic clips. Same pet.</p>
+        <p className="mt-1 text-sm text-[#f6efe4]/65">
+          12 portraits ready. Tap <span className="text-[#d4af37]">Extras</span> on any portrait for gift
+          packs, holiday cards, and print files.
+        </p>
       </div>
+
+      {publicToken && api ? (
+        <RetryPackPanel
+          offer={retryOffer}
+          scenes={results.scenes}
+          publicToken={publicToken}
+          api={api}
+          onPurchased={onRefresh}
+        />
+      ) : null}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {results.scenes.map((scene) => (
@@ -31,17 +57,39 @@ export function ResultsGrid({
             scene={scene}
             petName={results.petName}
             species={species}
+            showExtras={Boolean(publicToken && api && scene.status === "ready")}
+            onOpenExtras={() => setActiveScene(scene)}
             onPlaceholderDownload={onPlaceholderDownload}
           />
         ))}
       </div>
 
       <ClipResults clips={results.clips || []} />
+
+      {publicToken && api ? (
+        <PortraitUpsellSheet
+          open={Boolean(activeScene)}
+          onOpenChange={(open) => {
+            if (!open) setActiveScene(null);
+          }}
+          scene={activeScene}
+          sceneUpsell={
+            activeScene
+              ? results.upsells?.sceneUpsells.find((item) => item.sceneKey === activeScene.sceneId) ?? null
+              : null
+          }
+          petName={results.petName}
+          publicToken={publicToken}
+          api={api}
+          onPurchased={onRefresh}
+        />
+      ) : null}
     </section>
   );
 }
 
 function ClipResults({ clips }: { clips: PetVideoClipResult[] }) {
+  if (!clips.length) return null;
   return (
     <div className="space-y-3">
       <h3 className="text-xl font-semibold tracking-tight text-[#f6efe4]">Cinematic clips</h3>
@@ -63,9 +111,7 @@ function ClipResults({ clips }: { clips: PetVideoClipResult[] }) {
               <div className="grid aspect-video place-items-center bg-[#2a2018] px-4 text-center text-sm text-[#f6efe4]/60">
                 {clip.status === "failed"
                   ? clip.title + " needs a retry."
-                  : clip.status === "generating"
-                    ? "Creating this 5-second clip…"
-                    : "Creating this 5-second clip…"}
+                  : "Creating this 5-second clip…"}
               </div>
             )}
             <div className="flex items-center justify-between gap-2 p-3">
@@ -95,11 +141,15 @@ function ResultCard({
   scene,
   petName,
   species = "dog",
+  showExtras,
+  onOpenExtras,
   onPlaceholderDownload,
 }: {
   scene: PetSceneResult;
   petName: string;
   species?: PetSpecies;
+  showExtras?: boolean;
+  onOpenExtras?: () => void;
   onPlaceholderDownload?: (sceneTitle: string, formatLabel: string) => void;
 }) {
   const definition = getSceneById(scene.sceneId);
@@ -129,6 +179,16 @@ function ResultCard({
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
           <p className="text-sm font-semibold text-white">{scene.title}</p>
         </div>
+        {showExtras ? (
+          <button
+            type="button"
+            onClick={onOpenExtras}
+            className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#d4af37] px-3 py-1.5 text-xs font-semibold text-[#120f0c] shadow-lg transition hover:bg-[#e0bc4a]"
+          >
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            Extras
+          </button>
+        ) : null}
       </div>
       {download ? (
         <div className="grid grid-cols-2 gap-2 p-2">

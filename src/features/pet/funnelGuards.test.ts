@@ -412,8 +412,10 @@ describe("pet funnel production guards", () => {
     expect(input).toEqual({
       prompt: "a prompt",
       input_image: "https://signed.example/pet.jpg",
-      aspect_ratio: "4:5",
+      aspect_ratio: "match_input_image",
       output_format: "jpg",
+      prompt_upsampling: false,
+      safety_tolerance: 2,
     });
     expect("image" in input).toBe(false);
     const started = [

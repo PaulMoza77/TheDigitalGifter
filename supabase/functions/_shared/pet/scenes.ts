@@ -4,84 +4,89 @@ export type SceneDefinition = {
   key: PetSceneKey;
   number: number;
   title: string;
-  prompt: string;
+  edit: string;
 };
 
-const IDENTITY =
-  "Keep the exact same pet identity, face, fur markings, colors, eye color, and unique features from the reference photo. Do not replace the pet with a different animal. No logos, no trademarks, no copyrighted characters, no real newspaper mastheads, no racing team branding, no superhero franchise costumes.";
+/** Kontext edits the reference photo — identity lock must lead every prompt. */
+export const IDENTITY_LOCK =
+  "Edit the reference photo only. Keep the exact same individual animal: identical face shape, eyes, nose, mouth, ears, fur color, fur texture, markings, age, and body proportions. Do not swap breeds. Do not beautify or idealize. Do not generate a different pet.";
 
 export const PET_SCENE_DEFINITIONS: readonly SceneDefinition[] = [
   {
     key: "royal-portrait",
     number: 1,
     title: "Royal portrait",
-    prompt: `${IDENTITY} Formal original court portrait of this exact pet, ornate gold frame, velvet backdrop, museum lighting.`,
+    edit: "Add a royal crown, ornate gold picture frame, and red velvet backdrop with museum lighting.",
   },
   {
     key: "luxury-ceo",
     number: 2,
     title: "Luxury CEO",
-    prompt: `${IDENTITY} Executive portrait of this exact pet in an original glass-office setting, tailored look, city skyline, cinematic lighting.`,
+    edit: "Add a glass executive office, city skyline, and tailored suit on the same pet body.",
   },
   {
     key: "astronaut",
     number: 3,
     title: "Astronaut",
-    prompt: `${IDENTITY} This exact pet wearing an original space suit, visor reflection, starfield, photoreal, no NASA logos.`,
+    edit:
+      "Add a white space suit with the helmet visor open so the pet's full face stays visible and unchanged. Starfield background. No logos.",
   },
   {
     key: "formula-racer",
     number: 4,
     title: "Formula racing driver",
-    prompt: `${IDENTITY} This exact pet as an original racing driver. Original racing suit and helmet. No team names, no manufacturer logos, no series branding.`,
+    edit:
+      "Add a racing suit and helmet with the visor raised so the pet's face remains fully visible and identical. No team names or logos.",
   },
   {
     key: "spa-bathtub",
     number: 5,
     title: "Spa / bathtub",
-    prompt: `${IDENTITY} This exact pet relaxing in a marble bathtub with bubbles and a towel, spa lighting, original interior.`,
+    edit: "Add a marble bathtub with bubbles and a spa towel. Keep the pet's face and fur exactly as in the reference.",
   },
   {
     key: "newspaper",
     number: 6,
     title: "Reading a newspaper",
-    prompt: `${IDENTITY} This exact pet reading a generic unbranded broadsheet with unreadable placeholder text, cafe light, original setting. No real newspaper titles.`,
+    edit:
+      "Add a generic unbranded newspaper with unreadable text and a cafe background. Do not hide or replace the pet's face.",
   },
   {
     key: "cinema-boss",
     number: 7,
     title: "Fictional cinema boss",
-    prompt: `${IDENTITY} This exact pet as an original fictional crime-drama office boss. Leather chair, lamp, original office. No existing film characters.`,
+    edit: "Add a dark leather chair, desk lamp, and moody office. Keep the pet's face unchanged. No film characters.",
   },
   {
     key: "renaissance",
     number: 8,
     title: "Renaissance painting",
-    prompt: `${IDENTITY} Classical original oil painting of this exact pet, museum lighting, ornate frame, renaissance palette.`,
+    edit:
+      "Add an ornate frame and warm classical background lighting. Keep the pet's face photoreal and identical to the reference.",
   },
   {
     key: "beach-vacation",
     number: 9,
     title: "Beach vacation",
-    prompt: `${IDENTITY} This exact pet on a golden-hour beach vacation, sunglasses, ocean, relaxed pose, photoreal.`,
+    edit: "Add a golden-hour beach and ocean background. Sunglasses may rest on the head; eyes stay visible and unchanged.",
   },
   {
     key: "head-chef",
     number: 10,
     title: "Head chef",
-    prompt: `${IDENTITY} This exact pet as head chef in original whites, original kitchen, plated dish, warm restaurant light. No restaurant brands.`,
+    edit: "Add chef whites, a kitchen, and plated food. Keep the pet's face and fur exactly as in the reference.",
   },
   {
     key: "original-superhero",
     number: 11,
     title: "Original superhero",
-    prompt: `${IDENTITY} This exact pet in an original invented superhero costume and cape. No existing comic or movie brands.`,
+    edit: "Add an original invented cape and costume. Keep the pet's face and fur unchanged. No comic brands.",
   },
   {
     key: "christmas-portrait",
     number: 12,
     title: "Christmas portrait",
-    prompt: `${IDENTITY} Warm original holiday portrait of this exact pet, wreath, fireplace glow, festive but unbranded.`,
+    edit: "Add a wreath, fireplace glow, and festive background. Keep the pet's face and fur exactly as in the reference.",
   },
 ] as const;
 
@@ -92,19 +97,19 @@ export function sceneByKey(key: string): SceneDefinition | undefined {
 export function personalityTone(personality: string): string {
   switch (personality) {
     case "funny":
-      return "Slightly humorous, gift-ready expression.";
+      return "Scene mood may feel playful; the pet's expression must stay true to the reference photo.";
     case "royal":
-      return "Regal posture and composed expression.";
+      return "Scene mood may feel regal; posture and expression must stay true to the reference photo.";
     case "cute":
-      return "Soft, adorable expression with gentle light.";
+      return "Scene lighting may feel soft; the pet's expression must stay true to the reference photo.";
     case "badass":
-      return "Confident, cinematic main-character energy.";
+      return "Scene mood may feel cinematic; the pet's expression must stay true to the reference photo.";
     case "luxury":
-      return "Quiet luxury, refined styling.";
+      return "Scene styling may feel refined; the pet's expression must stay true to the reference photo.";
     case "adventure":
-      return "Adventurous, outdoors-ready energy.";
+      return "Scene mood may feel adventurous; the pet's expression must stay true to the reference photo.";
     default:
-      return "Natural expression that still matches the pet.";
+      return "Keep the pet's natural expression from the reference photo.";
   }
 }
 
@@ -115,12 +120,13 @@ export function buildScenePrompt(input: {
   personality: string;
 }): string {
   const scene = sceneByKey(input.sceneKey);
-  const speciesWord = input.species === "other" ? "pet" : input.species;
   const name = input.petName.replace(/[<>]/g, "").slice(0, 40);
   return [
-    scene?.prompt || IDENTITY,
-    `The subject is a ${speciesWord} named ${name}.`,
+    IDENTITY_LOCK,
+    "Change only background, clothing, props, and lighting. Never replace the pet.",
+    scene?.edit || "Minimal scene edit only.",
+    `If any tag or label appears, it may read ${name}. The name must not change the pet's appearance.`,
     personalityTone(input.personality),
-    "Photoreal or high-craft illustration as the scene requires. Square-friendly portrait composition.",
+    "Photoreal. Single pet only. No logos, trademarks, or copyrighted characters.",
   ].join(" ");
 }

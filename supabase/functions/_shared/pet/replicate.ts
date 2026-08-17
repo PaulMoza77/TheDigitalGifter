@@ -49,8 +49,10 @@ export function kontextProInput(prompt: string, inputImage: string) {
   return {
     prompt,
     input_image: inputImage,
-    aspect_ratio: "4:5",
+    aspect_ratio: "match_input_image",
     output_format: "jpg",
+    prompt_upsampling: false,
+    safety_tolerance: 2,
   };
 }
 
