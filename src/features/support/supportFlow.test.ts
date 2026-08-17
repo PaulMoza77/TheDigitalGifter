@@ -113,7 +113,7 @@ describe("support ticket flow", () => {
   });
 
   it("reuses support_tickets instead of creating a second tickets table", () => {
-    const sql = readSrc("supabase/migrations/20260817190000_support_ticket_flow.sql");
+    const sql = readSrc("supabase/migrations/20260817210000_support_ticket_flow.sql");
     expect(sql).toContain("alter table public.support_tickets");
     expect(sql).not.toMatch(/create table public\.\w*tickets/i);
     expect(sql).toContain("add column if not exists category");
@@ -123,7 +123,7 @@ describe("support ticket flow", () => {
   });
 
   it("creates tickets through a guest-safe security definer RPC with rate limit and honeypot", () => {
-    const sql = readSrc("supabase/migrations/20260817190000_support_ticket_flow.sql");
+    const sql = readSrc("supabase/migrations/20260817210000_support_ticket_flow.sql");
     expect(sql).toContain("create or replace function public.create_public_support_ticket");
     expect(sql).toContain("security definer");
     expect(sql).toContain("p_honeypot");
@@ -138,7 +138,7 @@ describe("support ticket flow", () => {
   });
 
   it("does not let guests list tickets and requires a guest token to read one", () => {
-    const sql = readSrc("supabase/migrations/20260817190000_support_ticket_flow.sql");
+    const sql = readSrc("supabase/migrations/20260817210000_support_ticket_flow.sql");
     expect(sql).toContain("ticket.guest_access_hash = token_hash");
     expect(sql).not.toMatch(/from public\.support_tickets[\s\S]{0,80}user_id is null/);
     const form = readSrc("src/features/support/api.ts");
