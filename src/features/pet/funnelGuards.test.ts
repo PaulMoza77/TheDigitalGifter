@@ -17,6 +17,7 @@ import {
   kontextProInput,
   matchedOpenCheckoutResponse,
   metaPurchaseShouldEmit,
+  orderLastErrorAfterImageGeneration,
   rejectClientPriceTampering,
   replicateCallbackShouldApply,
   requirePetTokenEncryptionKey,
@@ -420,6 +421,35 @@ describe("pet funnel production guards", () => {
         { status: "rate_limited" },
       ]),
     ).toBe("generating");
+  });
+
+  it("clears generation_disabled after successful completion and keeps useful errors otherwise", () => {
+    const succeeded = Array.from({ length: 12 }, () => ({ status: "succeeded" }));
+    expect(generationBatchState(succeeded)).toBe("awaiting_qc");
+    expect(
+      orderLastErrorAfterImageGeneration({
+        batchStatus: generationBatchState(succeeded),
+        currentLastError: "generation_disabled",
+      }),
+    ).toBeNull();
+    expect(
+      orderLastErrorAfterImageGeneration({
+        batchStatus: "partial_failure",
+        currentLastError: "generation_disabled",
+      }),
+    ).toBe("generation_disabled");
+    expect(
+      orderLastErrorAfterImageGeneration({
+        batchStatus: "failed",
+        currentLastError: "invalid prompt",
+      }),
+    ).toBe("invalid prompt");
+    expect(
+      orderLastErrorAfterImageGeneration({
+        batchStatus: "held",
+        currentLastError: "generation_disabled",
+      }),
+    ).toBe("generation_disabled");
   });
 
   it("requires PET_TOKEN_ENCRYPTION_KEY and does not fall back to the service-role key", () => {

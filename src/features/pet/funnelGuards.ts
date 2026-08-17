@@ -323,6 +323,14 @@ export function generationBatchState(
   return "awaiting_qc";
 }
 
+export function orderLastErrorAfterImageGeneration(input: {
+  batchStatus: ReturnType<typeof generationBatchState> | "held";
+  currentLastError: string | null;
+}): string | null {
+  if (input.batchStatus === "awaiting_qc") return null;
+  return input.currentLastError;
+}
+
 export function requirePetTokenEncryptionKey(
   getEnv: (name: string) => string | undefined = (name) =>
     typeof process !== "undefined" ? process.env[name] : undefined,
