@@ -66,6 +66,7 @@ export {
   petLandingPath,
   petSourceImage,
   sceneClipSrc,
+  sceneHasMotionClip,
   sceneImageSrc,
 } from "./catalog";
 

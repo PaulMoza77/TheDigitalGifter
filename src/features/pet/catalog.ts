@@ -62,21 +62,25 @@ export function sceneClipSrc(
   return `/pet/${species}/clips/${id}.mp4`;
 }
 
+export function sceneHasMotionClip(id: PetSceneDefinition["id"]): boolean {
+  return (PET_DEMO_CLIP_IDS as readonly string[]).includes(id);
+}
+
 export const PET_CLIP_COPY: Record<
   PetSpecies,
   { heading: string; description: string }
 > = {
   dog: {
     heading: "Two cinematic clips",
-    description: "Hover to play. Same pet. Five seconds. A world in motion.",
+    description: "Same pet. Five seconds. A world in motion.",
   },
   cat: {
     heading: "Two cinematic clips",
-    description: "Hover to play. Same cat. Five seconds. A world in motion.",
+    description: "Same cat. Five seconds. A world in motion.",
   },
   other: {
     heading: "Two cinematic clips",
-    description: "Hover to play. Same face. Five seconds. A world in motion.",
+    description: "Same face. Five seconds. A world in motion.",
   },
 };
 
@@ -109,15 +113,15 @@ export const PET_LANDING_COPY: Record<
 > = {
   dog: {
     heading: "Twelve secret lives",
-    description: "Hover a portrait to watch it move. Same pet. A different world in every frame.",
+    description: "Hover or tap a portrait to watch it move. Same pet. A different world in every frame.",
   },
   cat: {
     heading: "Twelve secret lives",
-    description: "Hover a portrait to watch it move. Same cat. A different world in every frame.",
+    description: "Hover or tap a portrait to watch it move. Same cat. A different world in every frame.",
   },
   other: {
     heading: "Hamsters, turtles, birds, and the rest",
-    description: "Hover a portrait to watch it move. If they have a face, they get a gallery.",
+    description: "Hover or tap a portrait to watch it move. If they have a face, they get a gallery.",
   },
 };
 

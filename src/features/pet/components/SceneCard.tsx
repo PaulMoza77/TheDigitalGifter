@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Bath,
@@ -15,7 +15,7 @@ import {
   Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sceneClipSrc, sceneImageSrc } from "../catalog";
+import { sceneClipSrc, sceneHasMotionClip, sceneImageSrc } from "../catalog";
 import type { PetSceneDefinition, PetSceneId, PetSpecies } from "../types";
 
 const SCENE_ICONS: Record<PetSceneId, LucideIcon> = {
@@ -58,6 +58,7 @@ export function SceneImage({
   const [loaded, setLoaded] = useState(false);
   const poster = sceneImageSrc(sceneId, species);
   const clip = sceneClipSrc(sceneId, species);
+  const motionClip = animateOnHover && sceneHasMotionClip(sceneId);
 
   useEffect(() => {
     setHovered(false);
@@ -70,14 +71,18 @@ export function SceneImage({
   }, [sceneId, species]);
 
   useEffect(() => {
-    if (!hovered || !loaded) return;
+    if (!hovered || !loaded || !motionClip) return;
     const video = videoRef.current;
     if (!video) return;
     void video.play().catch(() => undefined);
-  }, [hovered, loaded, clip]);
+  }, [hovered, loaded, clip, motionClip]);
+
+  function canHover() {
+    return typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  }
 
   function start() {
-    if (!animateOnHover || prefersReducedMotion()) return;
+    if (!motionClip || prefersReducedMotion()) return;
     setLoaded(true);
     setHovered(true);
   }
@@ -90,7 +95,23 @@ export function SceneImage({
     video.currentTime = 0;
   }
 
-  if (!animateOnHover) {
+  function onPointerEnter(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "touch") return;
+    start();
+  }
+
+  function onPointerLeave(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "touch") return;
+    stop();
+  }
+
+  function onClick() {
+    if (canHover()) return;
+    if (hovered) stop();
+    else start();
+  }
+
+  if (!motionClip) {
     return (
       <img
         src={poster}
@@ -106,9 +127,10 @@ export function SceneImage({
 
   return (
     <div
-      className={cn("relative overflow-hidden", className)}
-      onMouseEnter={start}
-      onMouseLeave={stop}
+      className={cn("relative cursor-pointer overflow-hidden", className)}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      onClick={onClick}
       onFocus={start}
       onBlur={stop}
     >
