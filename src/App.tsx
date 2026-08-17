@@ -162,12 +162,7 @@ const FunnelResultPage = lazy(
 // ================= SUPABASE =================
 import { supabase } from "@/lib/supabase";
 import { trackMetaSpaPageView } from "@/lib/metaPixel";
-
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
-  }
-}
+import { trackPageView } from "@/lib/analytics";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -181,16 +176,15 @@ function ScrollToTop() {
 
 function GtagPageViewTracker() {
   const location = useLocation();
+  const skipInitialHtmlPageView = useRef(true);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!window.gtag) return;
+    if (skipInitialHtmlPageView.current) {
+      skipInitialHtmlPageView.current = false;
+      return;
+    }
 
-    window.gtag("config", "G-6FVX69WYFG", {
-      page_path: `${location.pathname}${location.search}`,
-      page_location: window.location.href,
-      page_title: document.title,
-    });
+    trackPageView(`${location.pathname}${location.search}`);
   }, [location.pathname, location.search]);
 
   return null;

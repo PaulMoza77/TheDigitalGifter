@@ -1,4 +1,4 @@
-const GA_ID = "G-6FVX69WYFG";
+export const GA_ID = "G-YF2GRM2TL4";
 
 declare global {
   interface Window {
@@ -31,7 +31,6 @@ export function initAnalytics() {
     page_path: window.location.pathname + window.location.search,
     page_location: window.location.href,
     page_title: document.title,
-    debug_mode: true,
   });
 }
 
@@ -42,7 +41,6 @@ export function trackPageView(path: string) {
     page_path: path,
     page_location: window.location.href,
     page_title: document.title,
-    debug_mode: true,
   });
 }
 
@@ -55,6 +53,5 @@ export function trackEvent(
   window.gtag?.("event", eventName, {
     ...(params || {}),
     send_to: GA_ID,
-    debug_mode: true,
   });
 }
