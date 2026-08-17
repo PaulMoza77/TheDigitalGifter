@@ -118,6 +118,7 @@ function ResultCard({
             sceneId={scene.sceneId}
             species={species}
             alt={`${definition.title} preview`}
+            animateOnHover={false}
             className={`h-full w-full object-cover ${ready ? "" : "opacity-70"}`}
           />
         )}

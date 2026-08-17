@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Bath,
@@ -13,7 +14,8 @@ import {
   Rocket,
   Shield,
 } from "lucide-react";
-import { sceneImageSrc } from "../catalog";
+import { cn } from "@/lib/utils";
+import { sceneClipSrc, sceneImageSrc } from "../catalog";
 import type { PetSceneDefinition, PetSceneId, PetSpecies } from "../types";
 
 const SCENE_ICONS: Record<PetSceneId, LucideIcon> = {
@@ -31,29 +33,109 @@ const SCENE_ICONS: Record<PetSceneId, LucideIcon> = {
   "christmas-portrait": Gift,
 };
 
+function prefersReducedMotion() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 export function SceneImage({
   sceneId,
   alt,
   className,
   species = "dog",
   eager = false,
+  animateOnHover = true,
 }: {
   sceneId: PetSceneId;
   alt: string;
   className?: string;
   species?: PetSpecies;
   eager?: boolean;
+  animateOnHover?: boolean;
 }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [hovered, setHovered] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const poster = sceneImageSrc(sceneId, species);
+  const clip = sceneClipSrc(sceneId, species);
+
+  useEffect(() => {
+    setHovered(false);
+    setLoaded(false);
+    const video = videoRef.current;
+    if (!video) return;
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+  }, [sceneId, species]);
+
+  useEffect(() => {
+    if (!hovered || !loaded) return;
+    const video = videoRef.current;
+    if (!video) return;
+    void video.play().catch(() => undefined);
+  }, [hovered, loaded, clip]);
+
+  function start() {
+    if (!animateOnHover || prefersReducedMotion()) return;
+    setLoaded(true);
+    setHovered(true);
+  }
+
+  function stop() {
+    setHovered(false);
+    const video = videoRef.current;
+    if (!video) return;
+    video.pause();
+    video.currentTime = 0;
+  }
+
+  if (!animateOnHover) {
+    return (
+      <img
+        src={poster}
+        alt={alt}
+        className={className}
+        width={720}
+        height={1080}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+      />
+    );
+  }
+
   return (
-    <img
-      src={sceneImageSrc(sceneId, species)}
-      alt={alt}
-      className={className}
-      width={720}
-      height={1080}
-      loading={eager ? "eager" : "lazy"}
-      decoding="async"
-    />
+    <div
+      className={cn("relative overflow-hidden", className)}
+      onMouseEnter={start}
+      onMouseLeave={stop}
+      onFocus={start}
+      onBlur={stop}
+    >
+      <img
+        src={poster}
+        alt={alt}
+        className="h-full w-full object-cover"
+        width={720}
+        height={1080}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+      />
+      <video
+        ref={videoRef}
+        src={loaded ? clip : undefined}
+        poster={poster}
+        muted
+        loop
+        playsInline
+        preload="none"
+        className={cn(
+          "pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-200",
+          hovered ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+      />
+    </div>
   );
 }
 
@@ -76,9 +158,9 @@ export function SceneCard({
           species={species}
           alt={`${overlayTitle ?? scene.title} example`}
           eager={eager}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          className="h-full w-full object-cover"
         />
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent p-3 pt-12">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent p-3 pt-12">
           {overlayTitle && overlayTitle !== scene.title ? (
             <p className="text-[11px] uppercase tracking-[0.14em] text-white/70">{scene.title}</p>
           ) : null}
