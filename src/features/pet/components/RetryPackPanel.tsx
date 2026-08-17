@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { PetFunnelApi } from "../api";
 import { PetApiError } from "../api";
 import type { PetSceneResult, PetUpsellOfferView } from "../types";
+import { upsellReturnUrls } from "../upsellUi";
 
 export function RetryPackPanel({
   offer,
@@ -12,12 +13,14 @@ export function RetryPackPanel({
   publicToken,
   api,
   onPurchased,
+  embedded = false,
 }: {
   offer: PetUpsellOfferView | null;
   scenes: PetSceneResult[];
   publicToken: string;
   api: PetFunnelApi;
   onPurchased?: () => void;
+  embedded?: boolean;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,15 +51,16 @@ export function RetryPackPanel({
     }
     setLoading(true);
     try {
+      const urls = upsellReturnUrls(publicToken, "retry");
       const checkout = await api.createUpsellCheckout({
         publicToken,
         upsellKey: "retry_3_scenes",
         sceneKeys: selected,
-        successUrl: `${window.location.origin}/pet/order?token=${encodeURIComponent(publicToken)}&upsell=retry`,
-        cancelUrl: `${window.location.origin}/pet/order?token=${encodeURIComponent(publicToken)}`,
+        successUrl: urls.successUrl,
+        cancelUrl: urls.cancelUrl,
       });
       if (checkout.checkoutUrl.startsWith("preview://")) {
-        toast.success("Retry queued (preview)");
+        toast.success("Retry queued");
         onPurchased?.();
         return;
       }
@@ -70,6 +74,69 @@ export function RetryPackPanel({
     } finally {
       setLoading(false);
     }
+  }
+
+  if (embedded) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-white">3-Scene Retry</p>
+            <p className="mt-1 text-xs text-zinc-400">
+              Pick up to 3 portraits to regenerate — same pet photo.
+            </p>
+          </div>
+          <p className="text-lg font-bold text-amber-300">{offer.priceDisplay}</p>
+        </div>
+
+        {offer.purchased ? (
+          <p className="mt-3 flex items-center gap-2 text-xs text-emerald-300">
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+            Retry purchased — refresh to see updated portraits.
+          </p>
+        ) : (
+          <>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {readyScenes.map((scene) => {
+                const active = selected.includes(scene.sceneId);
+                return (
+                  <button
+                    key={scene.sceneId}
+                    type="button"
+                    onClick={() => toggleScene(scene.sceneId)}
+                    className={`overflow-hidden rounded-lg border transition ${
+                      active
+                        ? "border-amber-400 ring-2 ring-amber-400/30"
+                        : "border-white/10 opacity-80 hover:opacity-100"
+                    }`}
+                  >
+                    {scene.previewUrl ? (
+                      <img src={scene.previewUrl} alt="" className="aspect-square w-full object-cover" />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+            <Button
+              type="button"
+              disabled={loading || selected.length < 1}
+              className="mt-3 h-11 w-full rounded-xl bg-amber-400 text-sm font-semibold text-zinc-950 hover:bg-amber-300"
+              onClick={() => void checkout()}
+            >
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
+              )}
+              Retry {selected.length || 3} scenes — {offer.priceDisplay}
+            </Button>
+            <p className="mt-2 text-center text-[11px] text-zinc-500">
+              {selected.length}/3 selected
+            </p>
+          </>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -96,7 +163,7 @@ export function RetryPackPanel({
         </div>
       ) : (
         <>
-          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+          <div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-4">
             {readyScenes.map((scene) => {
               const active = selected.includes(scene.sceneId);
               return (
@@ -111,22 +178,18 @@ export function RetryPackPanel({
                   }`}
                 >
                   {scene.previewUrl ? (
-                    <img
-                      src={scene.previewUrl}
-                      alt=""
-                      className="aspect-square w-full object-cover"
-                    />
+                    <img src={scene.previewUrl} alt="" className="aspect-square w-full object-cover" />
                   ) : null}
-                  <div className="px-2 py-2 text-xs font-medium text-[#f6efe4]">{scene.title}</div>
+                  <div className="truncate px-2 py-1.5 text-[10px] font-medium text-[#f6efe4]">
+                    {scene.title}
+                  </div>
                 </button>
               );
             })}
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-[#f6efe4]/60">
-              {selected.length}/3 selected · ~$0.12 AI cost per scene
-            </p>
+            <p className="text-sm text-[#f6efe4]/60">{selected.length}/3 selected</p>
             <Button
               type="button"
               disabled={loading || selected.length < 1}

@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Download, Share2, Sparkles } from "lucide-react";
+import { Download, LockOpen, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { PetFunnelApi } from "../api";
 import type { PetOrderResults, PetSceneResult, PetSpecies, PetVideoClipResult } from "../types";
 import { getSceneById } from "../catalog";
 import { downloadFromUrl, portraitFileName, sharePortrait } from "../shareDownload";
+import { UPSELL_UNLOCK_LABEL } from "../upsellUi";
 import { PortraitUpsellSheet } from "./PortraitUpsellSheet";
-import { RetryPackPanel } from "./RetryPackPanel";
 import { SceneImage } from "./SceneCard";
 
 export function ResultsGrid({
@@ -26,7 +26,7 @@ export function ResultsGrid({
   onPlaceholderDownload?: (sceneTitle: string, formatLabel: string) => void;
 }) {
   const [activeScene, setActiveScene] = useState<PetSceneResult | null>(null);
-  const retryOffer = results.upsells?.orderUpsells.find((item) => item.key === "retry_3_scenes") ?? null;
+  const readyCount = results.scenes.filter((scene) => scene.status === "ready").length;
 
   return (
     <section aria-labelledby="pet-results-heading" className="space-y-5">
@@ -35,20 +35,11 @@ export function ResultsGrid({
           {results.petName}’s gallery
         </h2>
         <p className="mt-1 text-sm text-[#f6efe4]/65">
-          12 portraits ready. Tap <span className="text-[#d4af37]">Extras</span> on any portrait for gift
-          packs, holiday cards, and print files.
+          {readyCount} portrait{readyCount === 1 ? "" : "s"} ready. Tap{" "}
+          <span className="font-medium text-[#d4af37]">{UPSELL_UNLOCK_LABEL}</span> for gift packs,
+          print files, or a 3-scene retry.
         </p>
       </div>
-
-      {publicToken && api ? (
-        <RetryPackPanel
-          offer={retryOffer}
-          scenes={results.scenes}
-          publicToken={publicToken}
-          api={api}
-          onPurchased={onRefresh}
-        />
-      ) : null}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {results.scenes.map((scene) => (
@@ -57,8 +48,8 @@ export function ResultsGrid({
             scene={scene}
             petName={results.petName}
             species={species}
-            showExtras={Boolean(publicToken && api && scene.status === "ready")}
-            onOpenExtras={() => setActiveScene(scene)}
+            showUnlock={Boolean(publicToken && api && scene.status === "ready")}
+            onOpenUnlock={() => setActiveScene(scene)}
             onPlaceholderDownload={onPlaceholderDownload}
           />
         ))}
@@ -81,6 +72,8 @@ export function ResultsGrid({
           petName={results.petName}
           publicToken={publicToken}
           api={api}
+          upsells={results.upsells}
+          allScenes={results.scenes.filter((scene) => scene.status === "ready")}
           onPurchased={onRefresh}
         />
       ) : null}
@@ -141,15 +134,15 @@ function ResultCard({
   scene,
   petName,
   species = "dog",
-  showExtras,
-  onOpenExtras,
+  showUnlock,
+  onOpenUnlock,
   onPlaceholderDownload,
 }: {
   scene: PetSceneResult;
   petName: string;
   species?: PetSpecies;
-  showExtras?: boolean;
-  onOpenExtras?: () => void;
+  showUnlock?: boolean;
+  onOpenUnlock?: () => void;
   onPlaceholderDownload?: (sceneTitle: string, formatLabel: string) => void;
 }) {
   const definition = getSceneById(scene.sceneId);
@@ -179,14 +172,14 @@ function ResultCard({
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
           <p className="text-sm font-semibold text-white">{scene.title}</p>
         </div>
-        {showExtras ? (
+        {showUnlock ? (
           <button
             type="button"
-            onClick={onOpenExtras}
-            className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#d4af37] px-3 py-1.5 text-xs font-semibold text-[#120f0c] shadow-lg transition hover:bg-[#e0bc4a]"
+            onClick={onOpenUnlock}
+            className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#d4af37] px-3 py-1.5 text-xs font-bold text-[#120f0c] shadow-lg transition hover:bg-[#e0bc4a]"
           >
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            Extras
+            <LockOpen className="h-3.5 w-3.5" aria-hidden="true" />
+            {UPSELL_UNLOCK_LABEL}
           </button>
         ) : null}
       </div>

@@ -1,8 +1,9 @@
 // FILE: src/pages/account/AccountDashboard.tsx
 import React from "react";
 import type { User } from "@supabase/supabase-js";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, Shield, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
 import { useAccountOverview } from "@/hooks/useAccountOverview";
@@ -142,6 +143,7 @@ function normalizeGenerationRows(input: unknown): GenerationRow[] {
 }
 
 export default function AccountDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     loading: overviewLoading,
     isAdmin,
@@ -234,6 +236,21 @@ export default function AccountDashboard() {
   React.useEffect(() => {
     void loadDashboard();
   }, [loadDashboard]);
+
+  React.useEffect(() => {
+    const upsellFlag = searchParams.get("upsell");
+    if (!upsellFlag) return;
+    if (upsellFlag === "success") {
+      toast.success("Add-on unlocked. Tap Unlock more on any portrait to download.");
+    } else if (upsellFlag === "retry") {
+      toast.success("Retry purchased. Regenerating your selected portraits.");
+    }
+    void loadDashboard();
+    const next = new URLSearchParams(searchParams);
+    next.delete("upsell");
+    next.delete("upsell_id");
+    setSearchParams(next, { replace: true });
+  }, [loadDashboard, searchParams, setSearchParams]);
 
   const handleRefresh = React.useCallback(async () => {
     await Promise.all([refresh(), loadDashboard()]);

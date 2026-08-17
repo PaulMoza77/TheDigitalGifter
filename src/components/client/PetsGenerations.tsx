@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
-import { Download, PawPrint, Share2, Sparkles } from "lucide-react";
+import { Download, LockOpen, PawPrint, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ClientEmptyState from "@/components/client/ClientEmptyState";
 import { petFunnelApi } from "@/features/pet/supabaseApi";
 import { PortraitUpsellSheet } from "@/features/pet/components/PortraitUpsellSheet";
-import { RetryPackPanel } from "@/features/pet/components/RetryPackPanel";
 import type {
   PetAccountGallery,
   PetAccountPortrait,
@@ -14,6 +13,7 @@ import type {
   PetSceneUpsellView,
 } from "@/features/pet/types";
 import { downloadFromUrl, sharePortrait } from "@/features/pet/shareDownload";
+import { UPSELL_UNLOCK_LABEL } from "@/features/pet/upsellUi";
 
 function orderPath(orderUrl: string) {
   try {
@@ -79,7 +79,7 @@ export default function PetsGenerations({
     return (
       <ClientEmptyState
         title="No pet portraits yet"
-        description="Sign in with the same email used at checkout. Generated portraits appear here with download, share, and Extras."
+        description="Sign in with the same email used at checkout. Your portraits appear here with download, share, and unlock options."
         ctaLabel="Create pet portraits"
         ctaTo="/pet"
       />
@@ -96,7 +96,8 @@ export default function PetsGenerations({
           </div>
           <h2 className="mt-2 text-lg font-semibold text-white">Your pet portraits</h2>
           <p className="mt-1 text-sm text-zinc-400">
-            Download, share, or tap <span className="text-amber-200">Extras</span> for gift packs and print files.
+            Tap <span className="font-medium text-amber-200">{UPSELL_UNLOCK_LABEL}</span> for gift
+            packs, print files, or a 3-scene retry.
           </p>
         </div>
         <Button
@@ -116,23 +117,15 @@ export default function PetsGenerations({
                 <h3 className="text-base font-semibold text-white">{gallery.petName}’s gallery</h3>
                 <p className="text-xs text-zinc-500">
                   {gallery.portraits.length} portraits
-                  {gallery.clips.some((clip) => clip.ready) ? ` · ${gallery.clips.filter((clip) => clip.ready).length} clips` : ""}
+                  {gallery.clips.some((clip) => clip.ready)
+                    ? ` · ${gallery.clips.filter((clip) => clip.ready).length} clips`
+                    : ""}
                 </p>
               </div>
               <Link to={orderPath(gallery.orderUrl)} className="text-sm text-amber-200 hover:underline">
                 Open order
               </Link>
             </div>
-
-            {gallery.publicToken && gallery.upsells ? (
-              <RetryPackPanel
-                offer={gallery.upsells.orderUpsells.find((item) => item.key === "retry_3_scenes") ?? null}
-                scenes={gallery.portraits.map(toSceneResult)}
-                publicToken={gallery.publicToken}
-                api={petFunnelApi}
-                onPurchased={onRefresh}
-              />
-            ) : null}
 
             {gallery.portraits.length ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -151,24 +144,24 @@ export default function PetsGenerations({
                         <button
                           type="button"
                           onClick={() => setActive({ gallery, portrait })}
-                          className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-amber-300 px-2.5 py-1 text-[11px] font-semibold text-zinc-950 shadow-lg transition hover:bg-amber-200"
+                          className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-[11px] font-bold text-zinc-950 shadow-lg transition hover:bg-amber-300"
                         >
-                          <Sparkles className="h-3 w-3" aria-hidden="true" />
-                          Extras
+                          <LockOpen className="h-3 w-3" aria-hidden="true" />
+                          {UPSELL_UNLOCK_LABEL}
                         </button>
                       ) : null}
                     </div>
                     <figcaption className="space-y-2 p-2">
                       <p className="truncate text-xs font-medium text-white">{portrait.title}</p>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-2 gap-1.5">
                         <Button
                           type="button"
                           size="sm"
-                          className="h-8 flex-1 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200"
+                          className="h-8 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200"
                           onClick={() => void downloadFromUrl(portrait.downloadUrl, portrait.fileName)}
                         >
                           <Download className="h-3.5 w-3.5" />
-                          Download
+                          Save
                         </Button>
                         <Button
                           type="button"
@@ -203,7 +196,12 @@ export default function PetsGenerations({
               <div className="grid gap-3 md:grid-cols-2">
                 {gallery.clips.filter((clip) => clip.ready && clip.previewUrl).map((clip) => (
                   <article key={clip.id} className="overflow-hidden rounded-2xl border border-white/10">
-                    <video src={clip.previewUrl || undefined} controls playsInline className="aspect-video w-full bg-black" />
+                    <video
+                      src={clip.previewUrl || undefined}
+                      controls
+                      playsInline
+                      className="aspect-video w-full bg-black"
+                    />
                     <div className="flex items-center justify-between gap-2 p-3">
                       <p className="text-sm text-white">{clip.title}</p>
                       <Button
@@ -213,7 +211,7 @@ export default function PetsGenerations({
                         onClick={() => clip.downloadUrl && void downloadFromUrl(clip.downloadUrl, clip.fileName)}
                       >
                         <Download className="h-3.5 w-3.5" />
-                        Download
+                        Save
                       </Button>
                     </div>
                   </article>
@@ -235,6 +233,8 @@ export default function PetsGenerations({
           petName={active.gallery.petName}
           publicToken={active.gallery.publicToken}
           api={petFunnelApi}
+          upsells={active.gallery.upsells}
+          allScenes={active.gallery.portraits.map(toSceneResult)}
           onPurchased={onRefresh}
         />
       ) : null}

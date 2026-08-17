@@ -65,7 +65,7 @@ export function PetOrderPage({
     const upsellFlag = searchParams.get("upsell");
     if (!upsellFlag || previewOrder) return;
     if (upsellFlag === "success") {
-      toast.success("Add-on unlocked. Download your extras below.");
+      toast.success("Add-on unlocked. Tap Unlock more on any portrait to download.");
     } else if (upsellFlag === "retry") {
       toast.success("Retry purchased. Regenerating your selected portraits.");
     }
