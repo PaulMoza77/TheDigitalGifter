@@ -1,3 +1,4 @@
+export { ClipGrid } from "./ClipGrid";
 export { FieldError, petFieldClass } from "./FieldError";
 export { GiftFormats } from "./GiftFormats";
 export { HowItWorks } from "./HowItWorks";

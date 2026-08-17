@@ -52,6 +52,34 @@ export function sceneImageSrc(
   return `/pet/${species}/scenes/${id}.webp`;
 }
 
+export const PET_DEMO_CLIP_IDS = ["formula-racer", "spa-bathtub"] as const;
+export type PetDemoClipId = (typeof PET_DEMO_CLIP_IDS)[number];
+
+export function sceneClipSrc(
+  id: PetDemoClipId,
+  species: PetSpecies = "dog",
+): string {
+  return `/pet/${species}/clips/${id}.mp4`;
+}
+
+export const PET_CLIP_COPY: Record<
+  PetSpecies,
+  { heading: string; description: string }
+> = {
+  dog: {
+    heading: "Two cinematic clips",
+    description: "Same pet. Five seconds. A world in motion.",
+  },
+  cat: {
+    heading: "Two cinematic clips",
+    description: "Same cat. Five seconds. A world in motion.",
+  },
+  other: {
+    heading: "Two cinematic clips",
+    description: "Same face. Five seconds. A world in motion.",
+  },
+};
+
 export function isPetSpecies(value: string | null | undefined): value is PetSpecies {
   return value === "dog" || value === "cat" || value === "other";
 }

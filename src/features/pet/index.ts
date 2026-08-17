@@ -47,6 +47,8 @@ export type {
 } from "./types";
 
 export {
+  PET_CLIP_COPY,
+  PET_DEMO_CLIP_IDS,
   PET_DEMO_SOURCE_IMAGE,
   PET_FAQS,
   PET_HOW_IT_WORKS,
@@ -63,6 +65,7 @@ export {
   parsePetSpecies,
   petLandingPath,
   petSourceImage,
+  sceneClipSrc,
   sceneImageSrc,
 } from "./catalog";
 
@@ -105,6 +108,7 @@ export { PetFunnelPreview } from "./PetFunnelPreview";
 export { petFunnelApi, createPetFunnelApi } from "./supabaseApi";
 
 export {
+  ClipGrid,
   FieldError,
   GiftFormats,
   HowItWorks,

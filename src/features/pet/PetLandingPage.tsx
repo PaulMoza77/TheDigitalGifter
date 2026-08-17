@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PET_OTHER_SUBJECTS, PET_SCENES } from "./catalog";
-import { HowItWorks, PetFaq, PetShell, SceneGrid, SceneImage, StickyCta } from "./components";
+import { ClipGrid, HowItWorks, PetFaq, PetShell, SceneGrid, SceneImage, StickyCta } from "./components";
 import { PET_PRODUCT_PROMISE, type PetFunnelNavigation, type PetSpecies } from "./types";
 import { trackMetaViewContent } from "@/lib/metaPixel";
 import { usePublicPetOffer } from "./usePublicPetOffer";
@@ -83,6 +83,7 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
           </div>
         </section>
 
+        <ClipGrid species={species} />
         <SceneGrid species={species} />
         <HowItWorks />
         <PetFaq />
