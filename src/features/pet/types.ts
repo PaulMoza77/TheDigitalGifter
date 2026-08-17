@@ -434,6 +434,8 @@ export type PetAccountPortrait = {
   previewUrl: string;
   downloadUrl: string;
   fileName: string;
+  width: number | null;
+  height: number | null;
 };
 
 export type PetAccountClip = {
@@ -447,6 +449,7 @@ export type PetAccountClip = {
 
 export type PetAccountGallery = {
   orderId: string;
+  publicToken: string | null;
   petName: string;
   species: PetSpecies;
   status: PetOrderStatus;
@@ -454,6 +457,7 @@ export type PetAccountGallery = {
   orderUrl: string;
   portraits: PetAccountPortrait[];
   clips: PetAccountClip[];
+  upsells?: PetOrderUpsellCatalog | null;
 };
 
 export type ListMyPetGalleriesResponse = {

@@ -1,9 +1,18 @@
-import { Download, PawPrint, Share2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Download, PawPrint, Share2, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ClientEmptyState from "@/components/client/ClientEmptyState";
-import type { PetAccountGallery } from "@/features/pet/types";
+import { petFunnelApi } from "@/features/pet/supabaseApi";
+import { PortraitUpsellSheet } from "@/features/pet/components/PortraitUpsellSheet";
+import { RetryPackPanel } from "@/features/pet/components/RetryPackPanel";
+import type {
+  PetAccountGallery,
+  PetAccountPortrait,
+  PetSceneResult,
+  PetSceneUpsellView,
+} from "@/features/pet/types";
 import { downloadFromUrl, sharePortrait } from "@/features/pet/shareDownload";
 
 function orderPath(orderUrl: string) {
@@ -15,13 +24,49 @@ function orderPath(orderUrl: string) {
   }
 }
 
+function toSceneResult(portrait: PetAccountPortrait): PetSceneResult {
+  return {
+    sceneId: portrait.sceneId,
+    title: portrait.title,
+    status: "ready",
+    previewUrl: portrait.previewUrl,
+    assets: [
+      {
+        format: "high_res",
+        label: "Portrait",
+        url: portrait.downloadUrl,
+        mimeType: "image/jpeg",
+        width: portrait.width,
+        height: portrait.height,
+        dpi: null,
+        ready: true,
+      },
+    ],
+  };
+}
+
 export default function PetsGenerations({
   galleries,
   loading,
+  onRefresh,
 }: {
   galleries: PetAccountGallery[];
   loading?: boolean;
+  onRefresh?: () => void | Promise<void>;
 }) {
+  const [active, setActive] = useState<{
+    gallery: PetAccountGallery;
+    portrait: PetAccountPortrait;
+  } | null>(null);
+
+  const activeSceneUpsell = useMemo((): PetSceneUpsellView | null => {
+    if (!active) return null;
+    return (
+      active.gallery.upsells?.sceneUpsells.find((item) => item.sceneKey === active.portrait.sceneId) ??
+      null
+    );
+  }, [active]);
+
   if (loading && galleries.length === 0) {
     return (
       <div className="rounded-[24px] border border-white/10 bg-zinc-950/70 p-5 text-sm text-zinc-400">
@@ -34,7 +79,7 @@ export default function PetsGenerations({
     return (
       <ClientEmptyState
         title="No pet portraits yet"
-        description="Sign in with the same email used at checkout. Generated portraits appear here with download and share."
+        description="Sign in with the same email used at checkout. Generated portraits appear here with download, share, and Extras."
         ctaLabel="Create pet portraits"
         ctaTo="/pet"
       />
@@ -50,7 +95,9 @@ export default function PetsGenerations({
             Pets generations
           </div>
           <h2 className="mt-2 text-lg font-semibold text-white">Your pet portraits</h2>
-          <p className="mt-1 text-sm text-zinc-400">Download or share each portrait. Same email as checkout.</p>
+          <p className="mt-1 text-sm text-zinc-400">
+            Download, share, or tap <span className="text-amber-200">Extras</span> for gift packs and print files.
+          </p>
         </div>
         <Button
           asChild
@@ -77,15 +124,40 @@ export default function PetsGenerations({
               </Link>
             </div>
 
+            {gallery.publicToken && gallery.upsells ? (
+              <RetryPackPanel
+                offer={gallery.upsells.orderUpsells.find((item) => item.key === "retry_3_scenes") ?? null}
+                scenes={gallery.portraits.map(toSceneResult)}
+                publicToken={gallery.publicToken}
+                api={petFunnelApi}
+                onPurchased={onRefresh}
+              />
+            ) : null}
+
             {gallery.portraits.length ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {gallery.portraits.map((portrait) => (
-                  <figure key={`${gallery.orderId}-${portrait.sceneId}`} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-                    <img
-                      src={portrait.previewUrl}
-                      alt={`${portrait.title} portrait of ${gallery.petName}`}
-                      className="aspect-[3/4] w-full object-cover"
-                    />
+                  <figure
+                    key={`${gallery.orderId}-${portrait.sceneId}`}
+                    className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
+                  >
+                    <div className="relative">
+                      <img
+                        src={portrait.previewUrl}
+                        alt={`${portrait.title} portrait of ${gallery.petName}`}
+                        className="aspect-[3/4] w-full object-cover"
+                      />
+                      {gallery.publicToken && gallery.upsells ? (
+                        <button
+                          type="button"
+                          onClick={() => setActive({ gallery, portrait })}
+                          className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-amber-300 px-2.5 py-1 text-[11px] font-semibold text-zinc-950 shadow-lg transition hover:bg-amber-200"
+                        >
+                          <Sparkles className="h-3 w-3" aria-hidden="true" />
+                          Extras
+                        </button>
+                      ) : null}
+                    </div>
                     <figcaption className="space-y-2 p-2">
                       <p className="truncate text-xs font-medium text-white">{portrait.title}</p>
                       <div className="flex gap-2">
@@ -151,6 +223,21 @@ export default function PetsGenerations({
           </article>
         ))}
       </div>
+
+      {active?.gallery.publicToken ? (
+        <PortraitUpsellSheet
+          open={Boolean(active)}
+          onOpenChange={(open) => {
+            if (!open) setActive(null);
+          }}
+          scene={toSceneResult(active.portrait)}
+          sceneUpsell={activeSceneUpsell}
+          petName={active.gallery.petName}
+          publicToken={active.gallery.publicToken}
+          api={petFunnelApi}
+          onPurchased={onRefresh}
+        />
+      ) : null}
     </section>
   );
 }

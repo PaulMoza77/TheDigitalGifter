@@ -422,7 +422,7 @@ export default function AccountDashboard() {
         </div>
       ) : null}
 
-      <PetsGenerations galleries={petGalleries} loading={loading} />
+      <PetsGenerations galleries={petGalleries} loading={loading} onRefresh={() => void loadDashboard()} />
 
       <section className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.5fr)_420px]">
         <RecentGenerations items={recentGenerations} />

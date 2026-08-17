@@ -853,6 +853,8 @@ Deno.serve(async (req) => {
         const publicToken = await decryptPublicToken(asString(order.public_token_ciphertext));
         const scenes = await loadScenes(service, String(order.id));
         const clips = await loadClips(service, String(order.id));
+        const purchasedUpsells = await loadOrderUpsells(service, String(order.id));
+        const upsellCatalog = await buildUpsellCatalog({ scenes, purchased: purchasedUpsells });
         const petName = asString(order.pet_name) || "pet";
         const portraits = (await Promise.all(
           scenes.map(async (scene) => {
@@ -866,6 +868,8 @@ Deno.serve(async (req) => {
               previewUrl: url,
               downloadUrl: url,
               fileName: `${petName}-${scene.scene_key}.jpg`.toLowerCase().replace(/[^a-z0-9.-]+/g, "-"),
+              width: Number(scene.result_width || 0) || null,
+              height: Number(scene.result_height || 0) || null,
             };
           }),
         )).filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -887,6 +891,7 @@ Deno.serve(async (req) => {
 
         galleries.push({
           orderId: order.id,
+          publicToken: publicToken || null,
           petName,
           species: order.species,
           status: String(order.status),
@@ -896,6 +901,7 @@ Deno.serve(async (req) => {
             : `${siteOrigin()}/account/dashboard`,
           portraits,
           clips: clipItems,
+          upsells: upsellCatalog,
         });
       }
 
