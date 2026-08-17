@@ -6,7 +6,7 @@
       "destination": "/api/sitemap.xml"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/|images/|assets/).*)",
       "destination": "/index.html"
     }
   ]

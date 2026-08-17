@@ -1,3 +1,5 @@
+import { petLossPhotos } from "@/assets/pet-loss";
+
 export const occasions = [
   {
     id: "christmas",
@@ -251,7 +253,7 @@ export const occasions = [
     description: "Honor a pet memory with something gentle and meaningful.",
     gradientFrom: "from-[#111827]",
     gradientTo: "to-[#64748b]",
-    image: "/images/pet-loss/hero-dog.jpg",
+    image: petLossPhotos.heroDog,
   },
 ] as const;
 

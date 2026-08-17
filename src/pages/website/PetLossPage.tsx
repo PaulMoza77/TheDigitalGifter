@@ -10,30 +10,32 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+import { petLossPhotos } from "@/assets/pet-loss";
+
 const CREATE_HREF = "/generator?category=pets&occasion=pet-loss";
 const TEMPLATES_HREF = "/templates?category=pets&occasion=pet-loss";
 
 const gallery = [
   {
-    src: "/images/pet-loss/hero-dog.jpg",
+    src: petLossPhotos.heroDog,
     alt: "Golden retriever holding a flower",
     label: "In memory",
     caption: "A keepsake for the ones we still talk about.",
   },
   {
-    src: "/images/pet-loss/cat-window.jpg",
+    src: petLossPhotos.catWindow,
     alt: "Black and white cat looking toward the camera",
     label: "Still here",
     caption: "Their face, their name, a quiet light.",
   },
   {
-    src: "/images/pet-loss/sleeping-cat.jpg",
+    src: petLossPhotos.sleepingCat,
     alt: "Ginger cat sleeping peacefully",
     label: "At rest",
     caption: "A gentle goodbye, made to be kept.",
   },
   {
-    src: "/images/pet-loss/field.jpg",
+    src: petLossPhotos.field,
     alt: "A cat and a dog resting together",
     label: "Together",
     caption: "For the companions who made a house a home.",
@@ -45,21 +47,21 @@ const styles = [
     title: "Remembrance portrait",
     description:
       "A quiet, beautiful portrait of the pet you miss — their face, their name, soft light.",
-    image: "/images/pet-loss/hero-dog.jpg",
+    image: petLossPhotos.heroDog,
     galleryIndex: 0,
   },
   {
     title: "A gentle goodbye",
     description:
       "A sympathy card you can send to someone who lost a companion they loved.",
-    image: "/images/pet-loss/sleeping-cat.jpg",
+    image: petLossPhotos.sleepingCat,
     galleryIndex: 2,
   },
   {
     title: "Forever in our home",
     description:
       "A keepsake with a short message, a date, or the words you still want to say.",
-    image: "/images/pet-loss/field.jpg",
+    image: petLossPhotos.field,
     galleryIndex: 3,
   },
 ] as const;
@@ -69,19 +71,19 @@ const steps = [
     icon: Camera,
     title: "Start with a photo you love",
     description: "A clear face is enough. The one that still feels like them.",
-    image: "/images/pet-loss/portrait.jpg",
+    image: petLossPhotos.portrait,
   },
   {
     icon: Heart,
     title: "Add their name",
     description: "A name, a few words, or nothing extra. Keep it as simple as you need.",
-    image: "/images/pet-loss/cat-window.jpg",
+    image: petLossPhotos.catWindow,
   },
   {
     icon: Sparkles,
     title: "Receive a gentle tribute",
     description: "A personal card or portrait made to honor a memory, not to entertain.",
-    image: "/images/pet-loss/hero-dog.jpg",
+    image: petLossPhotos.heroDog,
   },
 ] as const;
 
@@ -252,14 +254,14 @@ export default function PetLossPage() {
                 title: "For you",
                 description:
                   "Keep a portrait that feels like them. A quiet reminder of a companion who made the house feel like home.",
-                image: "/images/pet-loss/soft-dog.jpg",
+                image: petLossPhotos.softDog,
                 icon: MessageCircleHeart,
               },
               {
                 title: "For someone grieving",
                 description:
                   "Send a sympathy card when words are hard. Soft, personal, and made from a photo of the pet they loved.",
-                image: "/images/pet-loss/cat-window.jpg",
+                image: petLossPhotos.catWindow,
                 icon: Heart,
               },
             ].map((card, index) => {
