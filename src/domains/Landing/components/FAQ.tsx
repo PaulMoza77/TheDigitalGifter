@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   Accordion,
   AccordionContent,
@@ -103,12 +104,12 @@ export const FAQ = () => {
           style={{ animationDelay: "0.3s" }}
         >
           <p className="text-slate-400 mb-4">Still have questions?</p>
-          <a
-            href="mailto:support@thedigitalgifter.com"
+          <Link
+            to="/support"
             className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors"
           >
             Contact Support
-          </a>
+          </Link>
         </div>
       </div>
     </section>

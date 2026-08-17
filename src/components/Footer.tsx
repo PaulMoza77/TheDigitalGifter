@@ -104,14 +104,6 @@ export default function Footer() {
                 Support
               </Link>
 
-              <a
-                href="mailto:support@thedigitalgifter.com"
-                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
-              >
-                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
-                support@thedigitalgifter.com
-              </a>
-
               <div className="flex items-start gap-2 text-sm text-[#c1c8d8]">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-[#ffd976]" />
                 <span>Available 24/7 for your assistance.</span>

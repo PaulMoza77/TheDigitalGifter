@@ -384,7 +384,7 @@ export const PET_FAQS = [
   {
     question: "What if a portrait does not look like my pet?",
     answer:
-      "A person checks every portrait and clip. If a result does not recognizably look like your pet, we remake it before delivery. Contact support from your order email if you need help.",
+      "A person checks every portrait and clip. If a result does not recognizably look like your pet, we remake it before delivery. Open a support ticket from your order page if you need help.",
   },
   {
     question: "Is my source photo private?",

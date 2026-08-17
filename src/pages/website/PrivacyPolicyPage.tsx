@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   BarChart3,
   Target,
@@ -383,15 +384,15 @@ export function PrivacyPolicyPage() {
               </div>
               privacy@thedigitalgifter.com
             </a>
-            <a
-              href="mailto:support@thedigitalgifter.com"
+            <Link
+              to="/support"
               className="inline-flex items-center justify-center px-6 py-3 bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg text-white font-medium transition-all"
             >
               <div className="mr-2 p-1 rounded bg-white/5 flex items-center justify-center">
                 <HelpCircle size={16} />
               </div>
-              support@thedigitalgifter.com
-            </a>
+              Contact support
+            </Link>
           </div>
         </div>
 
