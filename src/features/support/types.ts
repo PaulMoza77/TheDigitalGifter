@@ -48,4 +48,5 @@ export type CreateSupportTicketResult = {
   reference: string;
   expectedResponse: string;
   guestToken: string | null;
+  confirmationStatus: "sent" | "pending" | "failed" | "skipped" | "queued" | null;
 };

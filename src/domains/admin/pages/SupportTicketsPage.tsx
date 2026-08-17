@@ -4,7 +4,11 @@ import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
+import { sendAdminSupportReply } from "@/features/support/api";
+import {
+  adminNotificationLabel,
+  adminReplyToast,
+} from "@/features/support/emailDelivery";
 import { SUPPORT_CATEGORIES, SUPPORT_STATUSES } from "@/features/support/types";
 
 type SenderType = "client" | "admin" | "ai" | "system";
@@ -39,6 +43,14 @@ type PetOrderSummary = {
   status: string | null;
   species: string | null;
   pet_name: string | null;
+};
+
+type DeliveryRow = {
+  id: string;
+  ticket_id: string;
+  message_id: string | null;
+  kind: string;
+  status: string;
 };
 
 function makeChannelName(prefix: string) {
@@ -81,13 +93,18 @@ function formatTimestamp(value: string) {
 }
 
 export default function SupportTicketsPage() {
-  const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const replyKeyRef = useRef(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
 
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [petOrder, setPetOrder] = useState<PetOrderSummary | null>(null);
+  const [deliveries, setDeliveries] = useState<DeliveryRow[]>([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [reply, setReply] = useState("");
@@ -260,6 +277,34 @@ export default function SupportTicketsPage() {
   }, [selectedTicket?.pet_order_id]);
 
   useEffect(() => {
+    if (!selectedTicketId) {
+      setDeliveries([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadDeliveries() {
+      const { data, error } = await supabase
+        .from("support_email_deliveries")
+        .select("id, ticket_id, message_id, kind, status")
+        .eq("ticket_id", selectedTicketId);
+
+      if (cancelled) return;
+      if (error || !data) {
+        setDeliveries([]);
+        return;
+      }
+      setDeliveries(data as DeliveryRow[]);
+    }
+
+    void loadDeliveries();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTicketId, messages.length]);
+
+  useEffect(() => {
     if (!selectedTicketId) return;
 
     const channel = supabase
@@ -353,27 +398,33 @@ export default function SupportTicketsPage() {
 
     try {
       setSending(true);
+      const result = await sendAdminSupportReply({
+        ticketId: selectedTicketId,
+        reply: cleanReply,
+        idempotencyKey: replyKeyRef.current,
+      });
 
-      const { data, error } = await supabase
-        .from("support_ticket_messages")
-        .insert({
+      if (result.message) addMessageInstant(result.message as MessageRow);
+      setDeliveries((prev) => {
+        const next = prev.filter((row) => row.message_id !== result.message.id);
+        next.push({
+          id: result.message.id,
           ticket_id: selectedTicketId,
-          sender_id: user?.id ?? null,
-          sender_type: "admin",
-          message: cleanReply,
-        })
-        .select("*")
-        .single();
-
-      if (error) throw error;
-
-      if (data) addMessageInstant(data as MessageRow);
-
+          message_id: result.message.id,
+          kind: "admin_reply",
+          status: result.notificationStatus,
+        });
+        return next;
+      });
       setReply("");
+      replyKeyRef.current =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       await touchTicket(selectedTicketId, {
         status: selectedTicket?.status === "open" ? "in_progress" : selectedTicket?.status,
       });
-      toast.success("Reply saved to ticket history. No customer email was sent.");
+      toast.success(adminReplyToast(result.notificationStatus));
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to save reply");
     } finally {
@@ -481,6 +532,14 @@ export default function SupportTicketsPage() {
                     ) : (
                       <p className="text-[11px] text-zinc-600">No associated pet order</p>
                     )}
+                    {deliveries.some((row) => row.kind === "ticket_received") ? (
+                      <p className="text-[11px] text-zinc-400">
+                        Confirmation:{" "}
+                        {adminNotificationLabel(
+                          deliveries.find((row) => row.kind === "ticket_received")?.status,
+                        )}
+                      </p>
+                    ) : null}
                     {selectedTicket.page_url ? (
                       <p className="mt-1 max-w-[620px] truncate text-[11px] text-zinc-600">
                         {selectedTicket.page_url}
@@ -567,6 +626,13 @@ export default function SupportTicketsPage() {
                           <p className="mt-1 text-[10px] opacity-60">
                             {formatTimestamp(message.created_at)}
                           </p>
+                          {isAdmin ? (
+                            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/80">
+                              {adminNotificationLabel(
+                                deliveries.find((row) => row.message_id === message.id)?.status,
+                              )}
+                            </p>
+                          ) : null}
                         </div>
                       </div>
                     );
@@ -586,7 +652,7 @@ export default function SupportTicketsPage() {
                     <textarea
                       value={reply}
                       onChange={(e) => setReply(e.target.value)}
-                      placeholder="Write a reply to save in ticket history..."
+                      placeholder="Write a reply. We’ll email the customer if Resend is configured."
                       rows={1}
                       className="max-h-28 min-h-[44px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500"
                       onKeyDown={(e) => {

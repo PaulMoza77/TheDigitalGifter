@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createPublicSupportTicket } from "./api";
+import { confirmationCopy } from "./emailDelivery";
 import {
   isHoneypotFilled,
   parseSupportCategory,
@@ -41,9 +42,11 @@ export function SupportTicketForm() {
   const [errors, setErrors] = useState<SupportFormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ reference: string; expectedResponse: string } | null>(
-    null,
-  );
+  const [result, setResult] = useState<{
+    reference: string;
+    expectedResponse: string;
+    confirmationStatus?: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -88,6 +91,7 @@ export function SupportTicketForm() {
       setResult({
         reference: created.reference,
         expectedResponse: created.expectedResponse,
+        confirmationStatus: created.confirmationStatus,
       });
     } catch (error) {
       setFormError(publicSupportErrorMessage(error));
@@ -115,6 +119,9 @@ export function SupportTicketForm() {
           <Clock size={16} className="text-[#ffd976]" />
           {result.expectedResponse}
         </p>
+        {confirmationCopy(result.confirmationStatus) ? (
+          <p className="mt-3 text-sm text-white/70">{confirmationCopy(result.confirmationStatus)}</p>
+        ) : null}
       </section>
     );
   }

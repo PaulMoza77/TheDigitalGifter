@@ -28,8 +28,9 @@ verify_jwt = true
 [functions.generate-blog-draft]
 verify_jwt = true
 
-[functions.support-ai-chat]
+[functions.support-tickets]
 verify_jwt = false
+
 
 [functions.request-affiliate-withdrawal]
 verify_jwt = true

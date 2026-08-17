@@ -142,7 +142,8 @@ describe("support ticket flow", () => {
     expect(sql).toContain("ticket.guest_access_hash = token_hash");
     expect(sql).not.toMatch(/from public\.support_tickets[\s\S]{0,80}user_id is null/);
     const form = readSrc("src/features/support/api.ts");
-    expect(form).toContain("create_public_support_ticket");
+    expect(form).toContain("createTicket");
+    expect(form).toContain("support-tickets");
     expect(form).not.toMatch(/from\("support_tickets"\)\s*\.select/);
   });
 
@@ -169,14 +170,34 @@ describe("support ticket flow", () => {
     expect(readSrc("src/components/client/NeedHelpCard.tsx")).not.toContain("support@yourproject.com");
   });
 
-  it("does not pretend admin replies were emailed", () => {
+  it("does not pretend admin replies were emailed unless delivery succeeded", () => {
     const admin = readSrc("src/domains/admin/pages/SupportTicketsPage.tsx");
-    expect(admin).toContain("Reply saved to ticket history. No customer email was sent.");
+    expect(admin).toContain("adminNotificationLabel");
+    expect(admin).toContain("adminReplyToast");
+    expect(readSrc("src/features/support/emailDelivery.ts")).toContain("Customer not notified");
     expect(admin).not.toMatch(/toast\.success\(["'`]Email sent/i);
     expect(admin).toContain("public_reference");
     expect(admin).toContain("pet_order_id");
     expect(admin).toContain("SUPPORT_STATUSES");
     expect(admin).toContain("waiting_for_customer");
     expect(readSrc("src/features/support/types.ts")).toContain("Waiting for customer");
+  });
+
+  it("sends support mail from the Edge function with Resend secrets only", () => {
+    const fn = readSrc("supabase/functions/support-tickets/index.ts");
+    const email = readSrc("supabase/functions/_shared/support/email.ts");
+    expect(fn).toContain("createTicket");
+    expect(fn).toContain("adminReply");
+    expect(fn).toContain("assertAdmin");
+    expect(fn).toContain("support_email_deliveries");
+    expect(fn).toContain("ticket_received");
+    expect(email).toContain("RESEND_API_KEY");
+    expect(email).toContain("PET_EMAIL_FROM");
+    expect(email).toContain("TRANSACTIONAL_EMAIL_FROM");
+    expect(email).not.toContain("mailto:");
+    expect(email).toContain("redactSupportEmailSecrets");
+    expect(readSrc("src/features/support/api.ts")).not.toMatch(/SERVICE_ROLE|service_role/);
+    expect(readSrc("src/features/support/SupportTicketForm.tsx")).not.toMatch(/fbq|gtag|console\.(log|info|debug)/);
+    expect(readSrc("src/domains/admin/pages/SupportTicketsPage.tsx")).not.toMatch(/console\.(log|info|debug|error)/);
   });
 });
