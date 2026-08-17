@@ -17,7 +17,14 @@ import {
   recordVideoAiCostAttempt,
 } from "../_shared/pet/costLedger.ts";
 import { canGenerateVideoClips, canRetryVideoClip, defaultVideoPrompt, videoStoragePath } from "../_shared/pet/videoGuards.ts";
-import { createReplicateVideoPrediction } from "../_shared/pet/replicate.ts";
+import { createReplicateVideoPrediction, ReplicateHttpError } from "../_shared/pet/replicate.ts";
+import {
+  DEFAULT_THROTTLE_MAX_RETRIES,
+  classifyCreateError,
+  resolveCreateIntervalMs,
+  runEligibleSceneCreates,
+  type SceneCreateView,
+} from "../_shared/pet/replicateRateLimit.ts";
 
 type Body = {
   order_id?: string;
@@ -48,7 +55,11 @@ Deno.serve(async (req) => {
     const retryClipId = asString(body.clip_id);
     const targets = retryClipId
       ? (clips ?? []).filter((clip) => clip.id === retryClipId)
-      : (clips ?? []).filter((clip) => ["queued", "failed"].includes(String(clip.status)));
+      : (clips ?? []).filter(
+          (clip) =>
+            ["queued", "failed", "rate_limited"].includes(String(clip.status)) ||
+            (String(clip.status) === "generating" && !clip.replicate_prediction_id),
+        );
 
     if (retryClipId) {
       const retryCheck = canRetryVideoClip({
@@ -115,29 +126,17 @@ Deno.serve(async (req) => {
       .update({ status: "generating_videos", last_error: null })
       .eq("id", orderId);
 
-    for (const clip of targets) {
-      const source = (scenes ?? []).find((scene) => scene.id === clip.source_scene_id);
-      if (!source?.result_path) {
-        await service
-          .from("pet_order_video_clips")
-          .update({ status: "failed", provider_error: "Source portrait file is missing" })
-          .eq("id", clip.id);
-        continue;
-      }
-
-      const attemptNumber = Number(clip.attempt_number || 0) + 1;
-      const { data: signed } = await service.storage
-        .from(PET_RESULT_BUCKET)
-        .createSignedUrl(source.result_path, PET_SIGNED_DOWNLOAD_SECONDS);
-      if (!signed?.signedUrl) {
-        await service
-          .from("pet_order_video_clips")
-          .update({ status: "failed", provider_error: "Could not sign source portrait" })
-          .eq("id", clip.id);
-        continue;
-      }
-
-      if (videoGenerationMock()) {
+    if (videoGenerationMock()) {
+      for (const clip of targets) {
+        const source = (scenes ?? []).find((scene) => scene.id === clip.source_scene_id);
+        if (!source?.result_path) {
+          await service
+            .from("pet_order_video_clips")
+            .update({ status: "failed", provider_error: "Source portrait file is missing" })
+            .eq("id", clip.id);
+          continue;
+        }
+        const attemptNumber = Number(clip.attempt_number || 0) + 1;
         await service
           .from("pet_order_video_clips")
           .update({
@@ -167,98 +166,217 @@ Deno.serve(async (req) => {
           costNotes: "mock_generation",
         });
         started += 1;
-        continue;
       }
+      await service.rpc("pet_finalize_video_if_done", { p_order_id: orderId });
+      void videoStoragePath;
+      return jsonResponse({ ok: true, started, status: "mock_completed" });
+    }
 
-      await service
-        .from("pet_order_video_clips")
-        .update({
-          status: "generating",
-          attempt_number: attemptNumber,
-          max_attempts: maxAttempts,
-          started_at: new Date().toISOString(),
-          model_name: model,
-          prompt_snapshot: prompt,
-          requested_duration_seconds: duration,
-          requested_resolution: resolution,
-          provider_error: null,
-        })
-        .eq("id", clip.id);
+    if (retryClipId) {
+      for (const clip of targets) {
+        if (String(clip.status) === "failed" && clip.replicate_prediction_id) {
+          await service
+            .from("pet_order_video_clips")
+            .update({ status: "queued", replicate_prediction_id: null, provider_error: null })
+            .eq("id", clip.id)
+            .eq("status", "failed");
+          clip.replicate_prediction_id = null;
+          clip.status = "queued";
+        }
+      }
+    }
 
-      try {
-        const prediction = await createReplicateVideoPrediction({
-          prompt,
-          imageUrl: signed.signedUrl,
-          orderId,
-          clipId: clip.id,
-          slot: Number(clip.slot),
-        });
-        await service
-          .from("pet_order_video_clips")
-          .update({
-            replicate_prediction_id: prediction.id,
-            model_name: prediction.model || model,
-            model_version: prediction.version || null,
-          })
-          .eq("id", clip.id);
-        if (prediction.id) {
+    const clipViews: SceneCreateView[] = targets.map((clip) => ({
+      id: String(clip.id),
+      sceneKey: `video-slot-${clip.slot}`,
+      status: String(clip.status),
+      attempts: Number(clip.attempt_number || 0),
+      replicatePredictionId: clip.replicate_prediction_id ? String(clip.replicate_prediction_id) : null,
+      lastError: clip.provider_error ? String(clip.provider_error) : null,
+    }));
+
+    const holder = crypto.randomUUID();
+    const lock = await service.rpc("claim_pet_provider_create_lock", {
+      p_order_id: orderId,
+      p_kind: "video",
+      p_holder: holder,
+      p_lease_seconds: 150,
+    });
+    if (lock.error) throw lock.error;
+    const lockData = (typeof lock.data === "string" ? JSON.parse(lock.data) : lock.data) as { claimed?: boolean };
+    if (!lockData?.claimed) {
+      return jsonResponse({ ok: true, status: "already_running", started: 0 });
+    }
+
+    try {
+      const createResult = await runEligibleSceneCreates({
+        scenes: clipViews,
+        intervalMs: resolveCreateIntervalMs(Deno.env.get("PET_REPLICATE_CREATE_INTERVAL_MS")),
+        maxThrottleRetries: DEFAULT_THROTTLE_MAX_RETRIES,
+        wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+        claim: async (clipView) => {
+          const { data } = await service
+            .from("pet_order_video_clips")
+            .update({
+              status: "generating",
+              max_attempts: maxAttempts,
+              started_at: new Date().toISOString(),
+              model_name: model,
+              prompt_snapshot: prompt,
+              requested_duration_seconds: duration,
+              requested_resolution: resolution,
+              provider_error: null,
+            })
+            .eq("id", clipView.id)
+            .in("status", ["queued", "failed", "rate_limited", "generating"])
+            .is("replicate_prediction_id", null)
+            .select("*")
+            .maybeSingle();
+          if (!data) return null;
+          return {
+            id: String(data.id),
+            sceneKey: `video-slot-${data.slot}`,
+            status: String(data.status),
+            attempts: Number(data.attempt_number || 0),
+            replicatePredictionId: data.replicate_prediction_id ? String(data.replicate_prediction_id) : null,
+            lastError: data.provider_error ? String(data.provider_error) : null,
+          };
+        },
+        create: async (clipView) => {
+          const clip = targets.find((item) => String(item.id) === clipView.id);
+          const source = (scenes ?? []).find((scene) => scene.id === clip?.source_scene_id);
+          if (!source?.result_path) {
+            return { ok: false, status: 400, error: "Source portrait file is missing", retryAfterMs: null };
+          }
+          const { data: signed } = await service.storage
+            .from(PET_RESULT_BUCKET)
+            .createSignedUrl(source.result_path, PET_SIGNED_DOWNLOAD_SECONDS);
+          if (!signed?.signedUrl) {
+            return { ok: false, status: 500, error: "Could not sign source portrait", retryAfterMs: null };
+          }
+          try {
+            const prediction = await createReplicateVideoPrediction({
+              prompt,
+              imageUrl: signed.signedUrl,
+              orderId,
+              clipId: clipView.id,
+              slot: Number(clip?.slot || 1),
+            });
+            if (!prediction.id) return { ok: false, status: 500, error: "missing prediction id", retryAfterMs: null };
+            return { ok: true, id: prediction.id };
+          } catch (err) {
+            if (err instanceof ReplicateHttpError) {
+              return { ok: false, status: err.status, error: err.message, retryAfterMs: err.retryAfterMs };
+            }
+            const message = err instanceof Error ? err.message : String(err);
+            return { ok: false, status: 500, error: message.slice(0, 500), retryAfterMs: null };
+          }
+        },
+        onPrediction: async (clipView, predictionId, attemptNumber) => {
+          const clip = targets.find((item) => String(item.id) === clipView.id);
+          const source = (scenes ?? []).find((scene) => scene.id === clip?.source_scene_id);
+          const { data } = await service
+            .from("pet_order_video_clips")
+            .update({
+              replicate_prediction_id: predictionId,
+              attempt_number: attemptNumber,
+              model_name: model,
+            })
+            .eq("id", clipView.id)
+            .is("replicate_prediction_id", null)
+            .neq("status", "succeeded")
+            .neq("status", "ready")
+            .select("id")
+            .maybeSingle();
+          if (!data || !clip || !source) return;
           await recordVideoAiCostAttempt(service, {
-            predictionId: prediction.id,
+            predictionId,
             orderId,
-            clipId: clip.id,
-            sourceSceneId: clip.source_scene_id,
-            sceneKey: source.scene_key,
-            attemptNumber,
-            modelName: prediction.model || model,
-            modelVersion: prediction.version || null,
-            resolution,
-            requestedSeconds: duration,
-          });
-        } else {
-          await recordVideoAiCostAttempt(service, {
-            predictionId: createFailedPredictionId(crypto.randomUUID()),
-            orderId,
-            clipId: clip.id,
+            clipId: clipView.id,
             sourceSceneId: clip.source_scene_id,
             sceneKey: source.scene_key,
             attemptNumber,
             modelName: model,
             resolution,
             requestedSeconds: duration,
-            createFailed: true,
-            costNotes: "create_failed_no_prediction_id",
           });
-        }
-        started += 1;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        await service
-          .from("pet_order_video_clips")
-          .update({
-            status: "failed",
-            provider_error: message.slice(0, 500),
-            completed_at: new Date().toISOString(),
-          })
-          .eq("id", clip.id);
-        await recordVideoAiCostAttempt(service, {
-          predictionId: createFailedPredictionId(crypto.randomUUID()),
-          orderId,
-          clipId: clip.id,
-          sourceSceneId: clip.source_scene_id,
-          sceneKey: source.scene_key,
-          attemptNumber,
-          modelName: model,
-          resolution,
-          requestedSeconds: duration,
-          createFailed: true,
-          costNotes: "create_failed_no_prediction_id",
-        });
-      }
+        },
+        onThrottleExhausted: async (clipView, errorMessage) => {
+          await service
+            .from("pet_order_video_clips")
+            .update({ status: "rate_limited", provider_error: errorMessage.slice(0, 500) })
+            .eq("id", clipView.id)
+            .is("replicate_prediction_id", null)
+            .neq("status", "succeeded")
+            .neq("status", "ready");
+        },
+        onRetryableExhausted: async (clipView, errorMessage) => {
+          await service
+            .from("pet_order_video_clips")
+            .update({ status: "queued", provider_error: errorMessage.slice(0, 500) })
+            .eq("id", clipView.id)
+            .is("replicate_prediction_id", null)
+            .neq("status", "succeeded")
+            .neq("status", "ready");
+        },
+        onBillingRequired: async (clipView, errorMessage) => {
+          await service
+            .from("pet_order_video_clips")
+            .update({ status: "queued", provider_error: errorMessage.slice(0, 500) })
+            .eq("id", clipView.id)
+            .is("replicate_prediction_id", null)
+            .neq("status", "succeeded")
+            .neq("status", "ready");
+          await service.from("pet_orders").update({ last_error: "billing_required" }).eq("id", orderId);
+        },
+        onPermanentFailure: async (clipView, errorMessage, attemptNumber) => {
+          const clip = targets.find((item) => String(item.id) === clipView.id);
+          const source = (scenes ?? []).find((scene) => scene.id === clip?.source_scene_id);
+          await service
+            .from("pet_order_video_clips")
+            .update({
+              status: "failed",
+              attempt_number: attemptNumber,
+              provider_error: errorMessage.slice(0, 500),
+              completed_at: new Date().toISOString(),
+            })
+            .eq("id", clipView.id)
+            .is("replicate_prediction_id", null)
+            .neq("status", "succeeded")
+            .neq("status", "ready");
+          if (clip && source && classifyCreateError(400, errorMessage) === "terminal") {
+            await recordVideoAiCostAttempt(service, {
+              predictionId: createFailedPredictionId(crypto.randomUUID()),
+              orderId,
+              clipId: clipView.id,
+              sourceSceneId: clip.source_scene_id,
+              sceneKey: source.scene_key,
+              attemptNumber,
+              modelName: model,
+              resolution,
+              requestedSeconds: duration,
+              createFailed: true,
+              costNotes: "create_failed_no_prediction_id",
+            });
+          }
+        },
+      });
+      started = createResult.started;
+      await service.rpc("pet_finalize_video_if_done", { p_order_id: orderId });
+      void videoStoragePath;
+      return jsonResponse({
+        ok: true,
+        started,
+        skipped: createResult.skipped,
+        status: createResult.billingRequired ? "billing_required" : "started",
+      });
+    } finally {
+      await service.rpc("release_pet_provider_create_lock", {
+        p_order_id: orderId,
+        p_kind: "video",
+        p_holder: holder,
+      });
     }
-
-    await service.rpc("pet_finalize_video_if_done", { p_order_id: orderId });
-    void videoStoragePath;
-    return jsonResponse({ ok: true, started, status: "started" });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return jsonResponse({ error: message }, 500);

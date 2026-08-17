@@ -11,7 +11,6 @@ export const PET_ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp
 export const PET_SIGNED_UPLOAD_SECONDS = 15 * 60;
 export const PET_SIGNED_DOWNLOAD_SECONDS = 15 * 60;
 export const PET_MAX_SCENE_ATTEMPTS = 3;
-export const PET_GENERATE_CONCURRENCY = 3;
 
 export const DEFAULT_PET_IMAGE_MODEL = "black-forest-labs/flux-kontext-pro";
 export const DEFAULT_PET_VIDEO_MODEL = "bytedance/seedance-1-pro-fast";

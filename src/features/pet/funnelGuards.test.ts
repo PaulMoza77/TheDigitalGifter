@@ -412,6 +412,14 @@ describe("pet funnel production guards", () => {
       scene.sceneKey === "astronaut" ? scene : { ...scene, status: "succeeded" },
     );
     expect(generationBatchState(terminal)).toBe("partial_failure");
+    expect(
+      generationBatchState([
+        { status: "succeeded" },
+        { status: "succeeded" },
+        { status: "rate_limited" },
+        { status: "rate_limited" },
+      ]),
+    ).toBe("generating");
   });
 
   it("requires PET_TOKEN_ENCRYPTION_KEY and does not fall back to the service-role key", () => {
