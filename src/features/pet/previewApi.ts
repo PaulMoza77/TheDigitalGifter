@@ -109,6 +109,10 @@ export function createPreviewPetApi(): PetFunnelApi {
         sessionId: `preview_cs_${cryptoRandom()}`,
         checkoutUrl: `preview://checkout-success?token=${encodeURIComponent(order.publicToken)}`,
         status: "open",
+        eventId: `pet_ic_${order.id}`,
+        purchaseEventId: `pet_purchase_${order.id}`,
+        amountCents: order.amountCents,
+        chargedAmountCents: order.chargedAmountCents ?? order.amountCents,
       };
     },
 

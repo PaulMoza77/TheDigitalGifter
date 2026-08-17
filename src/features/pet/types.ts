@@ -334,6 +334,11 @@ export type CreateStripeCheckoutResponse = {
   reused?: boolean;
   promoCode?: string | null;
   chargedAmountCents?: number;
+  amountCents?: number;
+  eventId?: string;
+  purchaseEventId?: string;
+  currency?: string;
+  sku?: string;
 };
 
 export type GetOrderByPublicTokenRequest = {

@@ -62,10 +62,12 @@ export function PetOrderPage({
         setLoading(false);
 
         if (nextOrder.paidAt && (nextOrder.chargedAmountCents ?? nextOrder.amountCents) > 0) {
-          trackMetaPurchaseOnce(
-            nextOrder.purchaseEventId || `pet_purchase_${nextOrder.id}`,
-            nextOrder.chargedAmountCents ?? nextOrder.amountCents,
-          );
+          trackMetaPurchaseOnce({
+            eventId: nextOrder.purchaseEventId || `pet_purchase_${nextOrder.id}`,
+            amountCents: nextOrder.chargedAmountCents ?? nextOrder.amountCents,
+            orderId: nextOrder.id,
+            paidAt: nextOrder.paidAt,
+          });
         }
 
         if (nextOrder.status === "complete") {

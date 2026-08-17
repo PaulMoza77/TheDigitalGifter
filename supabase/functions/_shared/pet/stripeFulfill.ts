@@ -109,6 +109,7 @@ export async function handlePetStripeEvent(input: {
       if (charged > 0) {
         const capi = await sendMetaCapiPurchase({
           eventId: order.meta_event_id,
+          orderId: order.id,
           email: order.email,
           alreadySentAt: order.meta_purchase_sent_at,
           sourceUrl: `${siteOrigin()}/pet/order`,

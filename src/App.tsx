@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState, lazy } from "react";
+import { Suspense, useEffect, useRef, useState, lazy } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -167,6 +167,7 @@ const PetOrderRoute = lazy(() =>
 
 // ================= SUPABASE =================
 import { supabase } from "@/lib/supabase";
+import { trackMetaSpaPageView } from "@/lib/metaPixel";
 
 declare global {
   interface Window {
@@ -197,6 +198,21 @@ function GtagPageViewTracker() {
       page_title: document.title,
     });
   }, [location.pathname, location.search]);
+
+  return null;
+}
+
+function MetaSpaPageViewTracker() {
+  const location = useLocation();
+  const skipInitialHtmlPageView = useRef(true);
+
+  useEffect(() => {
+    if (skipInitialHtmlPageView.current) {
+      skipInitialHtmlPageView.current = false;
+      return;
+    }
+    trackMetaSpaPageView(location.pathname);
+  }, [location.pathname]);
 
   return null;
 }
@@ -368,6 +384,7 @@ function AppInner() {
   return (
     <BrowserRouter>
       <GtagPageViewTracker />
+      <MetaSpaPageViewTracker />
       <ScrollToTop />
 
       <Suspense

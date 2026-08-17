@@ -6,6 +6,7 @@ import { formatOfferPrice } from "./videoGuards";
 export function usePublicPetOffer() {
   const [priceDisplay, setPriceDisplay] = useState<string>(PET_OFFER.priceDisplay);
   const [amountCents, setAmountCents] = useState<number>(PET_OFFER.priceCents);
+  const [offerVerified, setOfferVerified] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -15,6 +16,7 @@ export function usePublicPetOffer() {
         if (cancelled || !offer || offer.amountCents <= 0) return;
         setAmountCents(offer.amountCents);
         setPriceDisplay(offer.priceDisplay || formatOfferPrice(offer.amountCents));
+        setOfferVerified(true);
       })
       .catch(() => {
         /* Checkout still uses the server-owned snapshot. */
@@ -24,5 +26,5 @@ export function usePublicPetOffer() {
     };
   }, []);
 
-  return { priceDisplay, amountCents };
+  return { priceDisplay, amountCents, offerVerified };
 }

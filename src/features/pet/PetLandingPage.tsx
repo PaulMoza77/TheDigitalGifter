@@ -13,10 +13,14 @@ export type PetLandingPageProps = {
 };
 
 export function PetLandingPage({ navigation, species = "dog" }: PetLandingPageProps) {
-  const { priceDisplay } = usePublicPetOffer();
+  const { priceDisplay, amountCents, offerVerified } = usePublicPetOffer();
   useEffect(() => {
-    trackMetaViewContent();
-  }, [species]);
+    if (!offerVerified || amountCents <= 0) return;
+    trackMetaViewContent({
+      valueCents: amountCents,
+      onceKey: `tdg.meta.viewContent.${species}`,
+    });
+  }, [species, offerVerified, amountCents]);
 
   function start() {
     navigation?.goToCreate(species);
