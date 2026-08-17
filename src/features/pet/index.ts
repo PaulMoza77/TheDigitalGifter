@@ -23,6 +23,8 @@ export type {
   CreateStripeCheckoutResponse,
   GetOrderByPublicTokenRequest,
   GetOrderResultsRequest,
+  ListMyPetGalleriesResponse,
+  PetAccountGallery,
   GetSignedUploadUrlRequest,
   PetFunnelApiErrorCode,
   PetFunnelDraft,
@@ -111,6 +113,7 @@ export { PetOrderPage } from "./PetOrderPage";
 export type { PetOrderPageProps } from "./PetOrderPage";
 export { PetFunnelPreview } from "./PetFunnelPreview";
 export { petFunnelApi, createPetFunnelApi } from "./supabaseApi";
+export { downloadFromUrl, portraitFileName, sharePortrait } from "./shareDownload";
 
 export {
   ClipGrid,

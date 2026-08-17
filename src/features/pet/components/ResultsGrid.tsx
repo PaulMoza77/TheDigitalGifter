@@ -1,8 +1,9 @@
-import { Download } from "lucide-react";
+import { Download, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { PetOrderResults, PetSceneResult, PetSpecies, PetVideoClipResult } from "../types";
 import { getSceneById } from "../catalog";
+import { downloadFromUrl, portraitFileName, sharePortrait } from "../shareDownload";
 import { SceneImage } from "./SceneCard";
 
 export function ResultsGrid({
@@ -28,6 +29,7 @@ export function ResultsGrid({
           <ResultCard
             key={scene.sceneId}
             scene={scene}
+            petName={results.petName}
             species={species}
             onPlaceholderDownload={onPlaceholderDownload}
           />
@@ -75,7 +77,7 @@ function ClipResults({ clips }: { clips: PetVideoClipResult[] }) {
                 className="h-9 rounded-xl border-[#f6efe4]/12 bg-transparent text-sm text-[#f6efe4] hover:bg-[#f6efe4]/8 disabled:opacity-40"
                 onClick={() => {
                   if (!clip.ready || !clip.downloadUrl) return;
-                  window.open(clip.downloadUrl, "_blank", "noopener,noreferrer");
+                  void downloadFromUrl(clip.downloadUrl, `${clip.title.replace(/\s+/g, "-").toLowerCase()}.mp4`);
                 }}
               >
                 <Download className="h-4 w-4" aria-hidden="true" />
@@ -91,10 +93,12 @@ function ClipResults({ clips }: { clips: PetVideoClipResult[] }) {
 
 function ResultCard({
   scene,
+  petName,
   species = "dog",
   onPlaceholderDownload,
 }: {
   scene: PetSceneResult;
+  petName: string;
   species?: PetSpecies;
   onPlaceholderDownload?: (sceneTitle: string, formatLabel: string) => void;
 }) {
@@ -127,12 +131,12 @@ function ResultCard({
         </div>
       </div>
       {download ? (
-        <div className="p-2">
+        <div className="grid grid-cols-2 gap-2 p-2">
           <Button
             type="button"
             variant="outline"
             disabled={!download.ready}
-            className="h-9 w-full rounded-xl border-[#f6efe4]/12 bg-transparent text-sm text-[#f6efe4] hover:bg-[#f6efe4]/8 disabled:opacity-40"
+            className="h-9 rounded-xl border-[#f6efe4]/12 bg-transparent text-sm text-[#f6efe4] hover:bg-[#f6efe4]/8 disabled:opacity-40"
             onClick={() => {
               if (!download.ready) return;
               if (!download.url || download.url.startsWith("preview://")) {
@@ -142,11 +146,31 @@ function ResultCard({
                 });
                 return;
               }
-              window.open(download.url, "_blank", "noopener,noreferrer");
+              void downloadFromUrl(download.url, portraitFileName(petName, scene.title));
             }}
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             {download.ready ? "Download" : "Waiting"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!download.ready || !livePreview}
+            className="h-9 rounded-xl border-[#f6efe4]/12 bg-transparent text-sm text-[#f6efe4] hover:bg-[#f6efe4]/8 disabled:opacity-40"
+            onClick={async () => {
+              if (!livePreview) return;
+              const result = await sharePortrait({
+                url: livePreview,
+                title: scene.title,
+                text: scene.title,
+                fileName: portraitFileName(petName, scene.title),
+                pageUrl: window.location.href,
+              });
+              if (result === "copied") toast.success("Link copied");
+            }}
+          >
+            <Share2 className="h-4 w-4" aria-hidden="true" />
+            Share
           </Button>
         </div>
       ) : null}

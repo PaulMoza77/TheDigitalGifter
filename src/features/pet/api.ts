@@ -8,6 +8,7 @@ import type {
   GetOrderByPublicTokenRequest,
   GetOrderResultsRequest,
   GetSignedUploadUrlRequest,
+  ListMyPetGalleriesResponse,
   PetFunnelApiErrorCode,
   PetGenerationProgress,
   PetOrder,
@@ -36,6 +37,7 @@ export interface PetFunnelApi {
     input: PollGenerationProgressRequest
   ): Promise<PetGenerationProgress>;
   getOrderResults(input: GetOrderResultsRequest): Promise<PetOrderResults>;
+  listMyPetGalleries(): Promise<ListMyPetGalleriesResponse>;
   getPublicOffer?(): Promise<PublicPetOffer>;
 }
 
@@ -70,6 +72,7 @@ export function createUnimplementedPetApi(): PetFunnelApi {
     getOrderByPublicToken: reject("getOrderByPublicToken"),
     pollGenerationProgress: reject("pollGenerationProgress"),
     getOrderResults: reject("getOrderResults"),
+    listMyPetGalleries: reject("listMyPetGalleries"),
     getPublicOffer: async () => ({
       sku: "pet-secret-life-12",
       name: "My Pet’s Secret Life",

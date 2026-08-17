@@ -15,6 +15,10 @@ import AccountInfoCard from "@/components/client/AccountInfoCard";
 import NeedHelpCard from "@/components/client/NeedHelpCard";
 import UsageSummaryCard from "@/components/client/UsageSummaryCard";
 
+import PetsGenerations from "@/components/client/PetsGenerations";
+import { petFunnelApi } from "@/features/pet/supabaseApi";
+import { PetApiError } from "@/features/pet/api";
+import type { PetAccountGallery } from "@/features/pet/types";
 import type { ClientGeneration, ClientStat } from "@/components/client/types";
 
 type DashboardSummaryRow = {
@@ -150,6 +154,7 @@ export default function AccountDashboard() {
   const [loading, setLoading] = React.useState(true);
   const [summary, setSummary] = React.useState<DashboardSummaryRow | null>(null);
   const [recentRows, setRecentRows] = React.useState<GenerationRow[]>([]);
+  const [petGalleries, setPetGalleries] = React.useState<PetAccountGallery[]>([]);
   const [generationsLoadError, setGenerationsLoadError] = React.useState("");
 
   const loadDashboard = React.useCallback(async () => {
@@ -171,10 +176,11 @@ export default function AccountDashboard() {
       if (!authUser) {
         setSummary(null);
         setRecentRows([]);
+        setPetGalleries([]);
         return;
       }
 
-      const [summaryRes, generationsRes] = await Promise.all([
+      const [summaryRes, generationsRes, petGalleriesRes] = await Promise.all([
         supabase
           .from("client_dashboard_summary")
           .select("user_id, total_generations, saved_results_count, recent_activity_count")
@@ -187,6 +193,14 @@ export default function AccountDashboard() {
           .eq("user_id", authUser.id)
           .order("created_at", { ascending: false })
           .limit(10),
+
+        petFunnelApi.listMyPetGalleries().catch((error) => {
+          if (error instanceof PetApiError && (error.code === "AUTH_REQUIRED" || error.status === 401)) {
+            return { galleries: [] as PetAccountGallery[] };
+          }
+          console.error("[AccountDashboard] pet galleries error:", error);
+          return { galleries: [] as PetAccountGallery[] };
+        }),
       ]);
 
       if (summaryRes.error) {
@@ -203,11 +217,14 @@ export default function AccountDashboard() {
       } else {
         setRecentRows(normalizeGenerationRows(generationsRes.data));
       }
+
+      setPetGalleries(Array.isArray(petGalleriesRes.galleries) ? petGalleriesRes.galleries : []);
     } catch (error) {
       console.error("[AccountDashboard] fatal:", error);
 
       setSummary(null);
       setRecentRows([]);
+      setPetGalleries([]);
       setGenerationsLoadError(error instanceof Error ? error.message : "Failed to load dashboard.");
     } finally {
       setLoading(false);
@@ -404,6 +421,8 @@ export default function AccountDashboard() {
           {generationsLoadError}
         </div>
       ) : null}
+
+      <PetsGenerations galleries={petGalleries} loading={loading} />
 
       <section className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.5fr)_420px]">
         <RecentGenerations items={recentGenerations} />

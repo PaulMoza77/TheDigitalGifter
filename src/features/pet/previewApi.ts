@@ -152,6 +152,10 @@ export function createPreviewPetApi(): PetFunnelApi {
       return toResults(order);
     },
 
+    async listMyPetGalleries() {
+      return { galleries: [] };
+    },
+
     async getPublicOffer() {
       return {
         sku: PET_PRODUCT_SKU,

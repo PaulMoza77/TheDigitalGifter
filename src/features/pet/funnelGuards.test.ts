@@ -26,6 +26,7 @@ import {
   stripeCheckoutIdempotencyKey,
   stripeFulfillmentDecision,
   tokenEnumerationRejected,
+  accountOwnsPetOrder,
 } from "./funnelGuards";
 
 describe("pet funnel production guards", () => {
@@ -133,6 +134,27 @@ describe("pet funnel production guards", () => {
     expect(deliveryAllowed({ orderStatus: "complete", qcStatus: "approved", completedAt: "now" })).toBe(true);
     expect(deliveryAllowed({ orderStatus: "awaiting_payment" })).toBe(false);
     expect(deliveryAllowed({ orderStatus: "failed" })).toBe(false);
+  });
+
+  it("shows pet galleries only to the signed-in checkout email", () => {
+    expect(
+      accountOwnsPetOrder({
+        accountEmail: "Owner@Example.com",
+        orderEmailNormalized: "owner@example.com",
+      }),
+    ).toBe(true);
+    expect(
+      accountOwnsPetOrder({
+        accountEmail: "other@example.com",
+        orderEmailNormalized: "owner@example.com",
+      }),
+    ).toBe(false);
+    expect(
+      accountOwnsPetOrder({
+        accountEmail: null,
+        orderEmailNormalized: "owner@example.com",
+      }),
+    ).toBe(false);
   });
 
   it("deduplicates Meta Purchase events by stable event_id", () => {

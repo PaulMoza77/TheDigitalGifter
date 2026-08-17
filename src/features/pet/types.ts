@@ -364,6 +364,38 @@ export type GetOrderResultsRequest = {
   publicToken: string;
 };
 
+export type PetAccountPortrait = {
+  sceneId: PetSceneId;
+  title: string;
+  previewUrl: string;
+  downloadUrl: string;
+  fileName: string;
+};
+
+export type PetAccountClip = {
+  id: string;
+  title: string;
+  previewUrl: string | null;
+  downloadUrl: string | null;
+  fileName: string;
+  ready: boolean;
+};
+
+export type PetAccountGallery = {
+  orderId: string;
+  petName: string;
+  species: PetSpecies;
+  status: PetOrderStatus;
+  createdAt: string;
+  orderUrl: string;
+  portraits: PetAccountPortrait[];
+  clips: PetAccountClip[];
+};
+
+export type ListMyPetGalleriesResponse = {
+  galleries: PetAccountGallery[];
+};
+
 export type PetFunnelApiErrorCode =
   | "PET_API_NOT_CONNECTED"
   | "INVALID_REQUEST"
@@ -371,7 +403,8 @@ export type PetFunnelApiErrorCode =
   | "ORDER_NOT_FOUND"
   | "PAYMENT_REQUIRED"
   | "GENERATION_FAILED"
-  | "CHECKOUT_CONFLICT";
+  | "CHECKOUT_CONFLICT"
+  | "AUTH_REQUIRED";
 
 export type PetPageId = "landing" | "create" | "checkout" | "order";
 

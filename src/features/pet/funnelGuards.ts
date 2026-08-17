@@ -126,6 +126,19 @@ export function deliveryAllowed(input: {
   ].includes(input.orderStatus);
 }
 
+export function normalizeAccountEmail(email: string | null | undefined): string {
+  return String(email || "").trim().toLowerCase();
+}
+
+export function accountOwnsPetOrder(input: {
+  accountEmail: string | null | undefined;
+  orderEmailNormalized: string | null | undefined;
+}): boolean {
+  const account = normalizeAccountEmail(input.accountEmail);
+  const order = normalizeAccountEmail(input.orderEmailNormalized);
+  return Boolean(account.includes("@") && order.includes("@") && account === order);
+}
+
 export function metaPurchaseShouldEmit(input: {
   alreadySentAt: string | null;
   eventId: string;

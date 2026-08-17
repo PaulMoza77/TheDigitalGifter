@@ -328,4 +328,13 @@ describe("pet funnel CRO", () => {
       /PET_GENERATION_ENABLED[\s\S]*\?\? "true"/,
     );
   });
+
+  it("29. signed-in dashboard lists pet galleries with download and share", () => {
+    expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("listMyPetGalleries");
+    expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("accountOwnsPetOrder");
+    expect(readSrc("src/pages/account/AccountDashboard.tsx")).toContain("PetsGenerations");
+    expect(readSrc("src/components/client/PetsGenerations.tsx")).toContain("Pets generations");
+    expect(readSrc("src/components/client/PetsGenerations.tsx")).toContain("sharePortrait");
+    expect(readSrc("src/features/pet/components/ResultsGrid.tsx")).toContain("Share");
+  });
 });

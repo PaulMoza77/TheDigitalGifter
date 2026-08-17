@@ -1,5 +1,5 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
-import { getServiceClient, readJson } from "../_shared/supabase.ts";
+import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
 import { assertRateLimit, clientIp } from "../_shared/rateLimit.ts";
 import {
   PET_CURRENCY,
@@ -17,14 +17,18 @@ import {
 } from "../_shared/pet/constants.ts";
 import {
   asString,
+  decryptPublicToken,
   encryptPublicToken,
   extensionFromContentType,
   generatePublicToken,
   sha256Hex,
 } from "../_shared/pet/crypto.ts";
 import {
+  PAID_STATUSES,
+  accountOwnsPetOrder,
   assertUploadAllowed,
   deliveryAllowed,
+  normalizeAccountEmail,
   rejectClientPriceTampering,
   tokenEnumerationRejected,
 } from "../_shared/pet/guards.ts";
@@ -36,7 +40,7 @@ import {
   type PetSceneRow,
 } from "../_shared/pet/mapOrder.ts";
 import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, resolveServerOwnedOffer, resolveServerOwnedPromo } from "../_shared/pet/videoGuards.ts";
-import { PET_SCENE_DEFINITIONS } from "../_shared/pet/scenes.ts";
+import { PET_SCENE_DEFINITIONS, sceneByKey } from "../_shared/pet/scenes.ts";
 import { petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
 import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
 import { enqueuePetGenerate, enqueuePetGenerateIfStalled } from "../_shared/pet/stripeFulfill.ts";
@@ -153,6 +157,7 @@ Deno.serve(async (req) => {
       "getOrderByPublicToken",
       "getOrderResults",
       "getPublicOffer",
+      "listMyPetGalleries",
     ]);
     const allowed = pollActions.has(action)
       ? await assertRateLimit(service, `pet-funnel:${clientIp(req)}:${action || "unknown"}`, 180, 600)
@@ -542,6 +547,91 @@ Deno.serve(async (req) => {
         status: "open",
         ...meta,
       });
+    }
+
+    if (action === "listMyPetGalleries") {
+      const { user } = await getAuthUser(req);
+      const accountEmail = normalizeAccountEmail(user?.email);
+      if (!user || !accountEmail.includes("@")) {
+        return apiError("AUTH_REQUIRED", "Sign in to see your pet portraits.", 401);
+      }
+
+      const { data: orders, error: orderError } = await service
+        .from("pet_orders")
+        .select("id, pet_name, species, status, created_at, paid_at, completed_at, qc_status, public_token_ciphertext, email_normalized")
+        .eq("email_normalized", accountEmail)
+        .in("status", [...PAID_STATUSES])
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (orderError) throw orderError;
+
+      const galleries = [];
+      for (const order of orders ?? []) {
+        if (
+          !accountOwnsPetOrder({
+            accountEmail,
+            orderEmailNormalized: String(order.email_normalized || ""),
+          })
+        ) {
+          continue;
+        }
+        if (!deliveryAllowed({
+          orderStatus: String(order.status),
+          qcStatus: order.qc_status as string | null,
+          completedAt: order.completed_at ? String(order.completed_at) : null,
+        })) {
+          continue;
+        }
+        const publicToken = await decryptPublicToken(asString(order.public_token_ciphertext));
+        const scenes = await loadScenes(service, String(order.id));
+        const clips = await loadClips(service, String(order.id));
+        const petName = asString(order.pet_name) || "pet";
+        const portraits = (await Promise.all(
+          scenes.map(async (scene) => {
+            if (!["succeeded", "ready"].includes(String(scene.status)) || !scene.result_path) return null;
+            const url = await signedDownload(service, PET_RESULT_BUCKET, scene.result_path);
+            if (!url) return null;
+            const title = sceneByKey(scene.scene_key)?.title || scene.title;
+            return {
+              sceneId: scene.scene_key,
+              title,
+              previewUrl: url,
+              downloadUrl: url,
+              fileName: `${petName}-${scene.scene_key}.jpg`.toLowerCase().replace(/[^a-z0-9.-]+/g, "-"),
+            };
+          }),
+        )).filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+        const clipItems = await Promise.all(
+          clips.map(async (clip) => {
+            const ready = ["succeeded", "ready"].includes(String(clip.status)) && Boolean(clip.result_path);
+            const url = ready ? await signedDownload(service, PET_RESULT_BUCKET, clip.result_path) : null;
+            return {
+              id: clip.id,
+              title: `Cinematic clip ${clip.slot}`,
+              previewUrl: url,
+              downloadUrl: url,
+              fileName: `${petName}-clip-${clip.slot}.mp4`.toLowerCase().replace(/[^a-z0-9.-]+/g, "-"),
+              ready: Boolean(url),
+            };
+          }),
+        );
+
+        galleries.push({
+          orderId: order.id,
+          petName,
+          species: order.species,
+          status: String(order.status),
+          createdAt: order.created_at,
+          orderUrl: publicToken
+            ? `${siteOrigin()}/pet/order?token=${encodeURIComponent(publicToken)}`
+            : `${siteOrigin()}/account/dashboard`,
+          portraits,
+          clips: clipItems,
+        });
+      }
+
+      return jsonResponse({ galleries });
     }
 
     if (action === "getOrderByPublicToken" || action === "pollGenerationProgress" || action === "getOrderResults") {
