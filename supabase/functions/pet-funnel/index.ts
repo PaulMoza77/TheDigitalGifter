@@ -13,6 +13,7 @@ import {
   PET_PERSONALITIES,
   PET_RESULT_BUCKET,
   siteOrigin,
+  publicDeliveryEstimate,
 } from "../_shared/pet/constants.ts";
 import {
   asString,
@@ -38,7 +39,7 @@ import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, res
 import { PET_SCENE_DEFINITIONS } from "../_shared/pet/scenes.ts";
 import { petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
 import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
-import { invokePetGenerate } from "../_shared/pet/stripeFulfill.ts";
+import { enqueuePetGenerate, enqueuePetGenerateIfStalled } from "../_shared/pet/stripeFulfill.ts";
 
 type Body = Record<string, unknown>;
 
@@ -147,7 +148,15 @@ Deno.serve(async (req) => {
     const body = await readJson<Body>(req);
     const action = asString(body.action);
     const service = getServiceClient();
-    const allowed = await assertRateLimit(service, `pet-funnel:${clientIp(req)}:${action || "unknown"}`, 60, 3600);
+    const pollActions = new Set([
+      "pollGenerationProgress",
+      "getOrderByPublicToken",
+      "getOrderResults",
+      "getPublicOffer",
+    ]);
+    const allowed = pollActions.has(action)
+      ? await assertRateLimit(service, `pet-funnel:${clientIp(req)}:${action || "unknown"}`, 180, 600)
+      : await assertRateLimit(service, `pet-funnel:${clientIp(req)}:${action || "unknown"}`, 60, 3600);
     if (!allowed) return apiError("INVALID_REQUEST", "Too many requests. Please wait.", 429);
 
     if (action === "getPublicOffer") {
@@ -156,9 +165,9 @@ Deno.serve(async (req) => {
       const payload = typeof raw.data === "string" ? JSON.parse(raw.data) : raw.data;
       const offer = resolveServerOwnedOffer(payload);
       if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
-      const deliveryEstimate =
-        String(payload?.deliveryEstimate || payload?.delivery_estimate_label || "").trim() ||
-        "Usually ready within 24–48 hours";
+      const deliveryEstimate = publicDeliveryEstimate(
+        String(payload?.deliveryEstimate || payload?.delivery_estimate_label || ""),
+      );
       return jsonResponse({
         sku: offer.sku,
         name: "My Pet’s Secret Life",
@@ -374,7 +383,7 @@ Deno.serve(async (req) => {
         if (fulfilled.error) throw fulfilled.error;
         const result = fulfilled.data as { should_enqueue?: boolean; status?: string };
         if (result?.should_enqueue) {
-          await invokePetGenerate(order.id);
+          enqueuePetGenerate(order.id);
         }
         return jsonResponse({
           sessionId: `promo_${promo.code}_${order.id}`,
@@ -546,6 +555,12 @@ Deno.serve(async (req) => {
         return jsonResponse(toCustomerOrder(order, scenes, publicToken, clips));
       }
       if (action === "pollGenerationProgress") {
+        await enqueuePetGenerateIfStalled({
+          service,
+          orderId: order.id,
+          orderStatus: String(order.status),
+          paidAt: order.paid_at ? String(order.paid_at) : null,
+        });
         return jsonResponse(toProgress(order, scenes, publicToken, clips));
       }
 

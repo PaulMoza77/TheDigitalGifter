@@ -4,6 +4,7 @@ import {
   PET_RESULT_BUCKET,
   PET_SIGNED_DOWNLOAD_SECONDS,
   PET_SOURCE_BUCKET,
+  publicDeliveryEstimate,
 } from "../_shared/pet/constants.ts";
 import { asString, decryptPublicToken, sha256Hex } from "../_shared/pet/crypto.ts";
 import { canReleaseDelivery, canStartGeneration, retryTargets } from "../_shared/pet/guards.ts";
@@ -260,7 +261,7 @@ Deno.serve(async (req) => {
       if (!current) return apiError("Active pet offer is missing", 503);
       const deliveryEstimateLabel =
         asString(body.deliveryEstimateLabel || body.delivery_estimate_label).trim() ||
-        String(current.delivery_estimate_label || "Usually ready within 24–48 hours");
+        publicDeliveryEstimate(current.delivery_estimate_label);
       if (Number(current.amount_cents) === amountCents) {
         if (deliveryEstimateLabel !== String(current.delivery_estimate_label || "")) {
           const { data: updated, error: updateError } = await service

@@ -7,15 +7,25 @@ async function callPetFunnel<T>(action: string, body: Record<string, unknown>): 
   const { url, anon } = getPublicSupabaseConfig();
   const { data: sessionData } = await supabase.auth.getSession();
   const auth = sessionData.session?.access_token || anon;
-  const response = await fetch(`${url.replace(/\/$/, "")}/functions/v1/pet-funnel`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: anon,
-      Authorization: `Bearer ${auth}`,
-    },
-    body: JSON.stringify({ action, ...body }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${url.replace(/\/$/, "")}/functions/v1/pet-funnel`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anon,
+        Authorization: `Bearer ${auth}`,
+      },
+      body: JSON.stringify({ action, ...body }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (caught) {
+    const name = caught instanceof Error ? caught.name : "";
+    if (name === "AbortError" || name === "TimeoutError") {
+      throw new PetApiError("INVALID_REQUEST", "Status check timed out.", 408);
+    }
+    throw caught;
+  }
   const payload = (await response.json().catch(() => ({}))) as {
     error?: string;
     code?: PetFunnelApiErrorCode;

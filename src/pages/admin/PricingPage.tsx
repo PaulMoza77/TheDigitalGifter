@@ -734,7 +734,7 @@ export default function PricingPage() {
 
 function PetOfferSettings() {
   const [amount, setAmount] = useState("59.00");
-  const [deliveryEstimate, setDeliveryEstimate] = useState("Usually ready within 24–48 hours");
+  const [deliveryEstimate, setDeliveryEstimate] = useState("Usually ready in a few minutes after payment");
   const [version, setVersion] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -751,7 +751,7 @@ function PetOfferSettings() {
       if (!offer) throw new Error("Active pet offer is missing");
       setAmount((Number(offer.amount_cents) / 100).toFixed(2));
       setDeliveryEstimate(
-        String(offer.delivery_estimate_label || "Usually ready within 24–48 hours"),
+        String(offer.delivery_estimate_label || "Usually ready in a few minutes after payment"),
       );
       setVersion(Number(offer.version || 1));
     } catch (err) {

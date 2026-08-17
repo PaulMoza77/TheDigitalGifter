@@ -353,7 +353,7 @@ export const PET_HOW_IT_WORKS = [
   {
     step: 4,
     title: "Get 12 portraits and 2 clips",
-    body: "Same pet. Human-checked. Delivery only after QC.",
+    body: "Same pet. Replicate starts right after payment.",
   },
 ] as const;
 
@@ -370,7 +370,7 @@ export const PET_FAQS = [
   {
     question: "How long does it take?",
     answer:
-      "Usually ready within 24–48 hours. Portraits are generated first, then a person reviews them, then two clips are made and reviewed. We email you when the gallery is ready.",
+      "Usually a few minutes after payment. Replicate starts the twelve portraits immediately.",
   },
   {
     question: "What photo works best?",
@@ -413,7 +413,7 @@ export function petFaqsWithDelivery(estimate: string) {
     faq.question === "How long does it take?"
       ? {
           ...faq,
-          answer: `${estimate} Portraits are generated first, then a person reviews them, then two clips are made and reviewed. We email you when the gallery is ready.`,
+          answer: `${estimate} Replicate starts the twelve portraits as soon as payment clears.`,
         }
       : faq,
   );

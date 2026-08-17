@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PetApiError, type PetFunnelApi } from "./api";
@@ -12,6 +12,14 @@ import type {
 } from "./types";
 import { createPreviewResults } from "./previewApi";
 import { trackMetaPurchaseOnce } from "@/lib/metaPixel";
+import {
+  isFatalOrderLookupError,
+  isTransientPollError,
+  mergeOrderWithProgress,
+  ORDER_POLL_INTERVAL_MS,
+  shouldKeepPolling,
+  withTimeout,
+} from "./orderStatusPolling";
 
 export type PetOrderPageProps = {
   navigation?: PetFunnelNavigation;
@@ -32,7 +40,13 @@ export function PetOrderPage({
   const [progress, setProgress] = useState<PetGenerationProgress | null>(null);
   const [results, setResults] = useState<PetOrderResults | null>(previewResults ?? null);
   const [error, setError] = useState<string | null>(null);
+  const [statusHint, setStatusHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(!previewOrder);
+
+  const orderRef = useRef(order);
+  const resultsRef = useRef(results);
+  orderRef.current = order;
+  resultsRef.current = results;
 
   useEffect(() => {
     if (previewOrder) {
@@ -40,6 +54,7 @@ export function PetOrderPage({
       setResults(previewResults ?? createPreviewResults(previewOrder));
       setLoading(false);
       setError(null);
+      setStatusHint(null);
       return;
     }
 
@@ -50,33 +65,73 @@ export function PetOrderPage({
     }
 
     let cancelled = false;
+    let inFlight = false;
+    let loadedOnce = Boolean(orderRef.current);
+    let intervalId: number | undefined;
 
     async function refresh() {
+      if (cancelled || inFlight) return;
+      inFlight = true;
       try {
-        const nextOrder = await api.getOrderByPublicToken({ publicToken: publicToken! });
-        const nextProgress = await api.pollGenerationProgress({ publicToken: publicToken! });
+        const token = publicToken!;
+        const nextOrder = loadedOnce
+          ? orderRef.current
+          : await withTimeout(api.getOrderByPublicToken({ publicToken: token }));
         if (cancelled) return;
-        setOrder(nextOrder);
+        if (!nextOrder) {
+          throw new PetApiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+        }
+        if (!loadedOnce) {
+          loadedOnce = true;
+          orderRef.current = nextOrder;
+          setOrder(nextOrder);
+          setLoading(false);
+        }
+
+        const nextProgress = await withTimeout(api.pollGenerationProgress({ publicToken: token }));
+        if (cancelled) return;
+
+        const merged = mergeOrderWithProgress(nextOrder, nextProgress);
+        loadedOnce = true;
+        orderRef.current = merged;
+        setOrder(merged);
         setProgress(nextProgress);
         setError(null);
+        setStatusHint(null);
         setLoading(false);
 
-        if (nextOrder.paidAt && (nextOrder.chargedAmountCents ?? nextOrder.amountCents) > 0) {
+        if (merged.paidAt && (merged.chargedAmountCents ?? merged.amountCents) > 0) {
           trackMetaPurchaseOnce({
-            eventId: nextOrder.purchaseEventId || `pet_purchase_${nextOrder.id}`,
-            amountCents: nextOrder.chargedAmountCents ?? nextOrder.amountCents,
-            orderId: nextOrder.id,
-            paidAt: nextOrder.paidAt,
+            eventId: merged.purchaseEventId || `pet_purchase_${merged.id}`,
+            amountCents: merged.chargedAmountCents ?? merged.amountCents,
+            orderId: merged.id,
+            paidAt: merged.paidAt,
           });
         }
 
-        if (nextOrder.status === "complete") {
-          const nextResults = await api.getOrderResults({ publicToken: publicToken! });
+        if (merged.status === "complete" && !resultsRef.current) {
+          const nextResults = await withTimeout(api.getOrderResults({ publicToken: token }));
           if (!cancelled) setResults(nextResults);
+        }
+
+        if (!shouldKeepPolling(merged.status) && intervalId !== undefined) {
+          window.clearInterval(intervalId);
+          intervalId = undefined;
         }
       } catch (caught) {
         if (cancelled) return;
         setLoading(false);
+        const hasOrder = loadedOnce || Boolean(orderRef.current);
+        if (hasOrder && isTransientPollError(caught)) {
+          setStatusHint("Still checking the studio. You can leave this page — generation keeps going.");
+          setError(null);
+          return;
+        }
+        if (hasOrder && !isFatalOrderLookupError(caught)) {
+          setStatusHint("Still checking the studio. You can leave this page — generation keeps going.");
+          setError(null);
+          return;
+        }
         if (caught instanceof PetApiError && caught.code === "PET_API_NOT_CONNECTED") {
           setError("Order tracking is typed and ready, but the backend is not connected yet.");
         } else if (caught instanceof PetApiError && caught.code === "ORDER_NOT_FOUND") {
@@ -86,17 +141,19 @@ export function PetOrderPage({
         } else {
           setError("Could not load this order.");
         }
+      } finally {
+        inFlight = false;
       }
     }
 
     void refresh();
-    const interval = window.setInterval(() => {
+    intervalId = window.setInterval(() => {
       void refresh();
-    }, 2500);
+    }, ORDER_POLL_INTERVAL_MS);
 
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      if (intervalId !== undefined) window.clearInterval(intervalId);
     };
   }, [api, previewOrder, previewResults, publicToken]);
 
@@ -108,6 +165,7 @@ export function PetOrderPage({
   }, [progress, scenes]);
 
   const showResults = Boolean(results) && order?.status === "complete";
+  const live = Boolean(order) && shouldKeepPolling(order?.status);
 
   return (
     <PetShell
@@ -125,7 +183,12 @@ export function PetOrderPage({
           <p className="mt-2 max-w-xl text-sm leading-6 text-[#f6efe4]/65">
             {statusCopy(order?.status, progress?.phase || order?.phase)}
           </p>
-          <p className="mt-2 text-sm text-[#f6efe4]/55">Usually ready within 24–48 hours after payment and human review.</p>
+          <p className="mt-2 text-sm text-[#f6efe4]/55">Replicate starts as soon as you pay. Portraits usually appear within a few minutes.</p>
+          {live ? (
+            <p className="mt-2 text-sm text-[#f6efe4]/50">
+              This page stays live and never locks. You can go back anytime — the studio keeps working.
+            </p>
+          ) : null}
           <div className="mt-4 flex flex-wrap items-center gap-4">
             <div className="min-w-[180px] flex-1">
               <div
@@ -134,14 +197,20 @@ export function PetOrderPage({
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={overallPercent}
+                aria-busy={live}
                 aria-label="Overall portrait progress"
               >
                 <div
-                  className="h-full rounded-full bg-[#d4a84b] transition-all"
-                  style={{ width: `${overallPercent}%` }}
+                  className={`h-full rounded-full bg-[#d4a84b] transition-all ${
+                    live && overallPercent === 0 ? "animate-pulse" : ""
+                  }`}
+                  style={{ width: live && overallPercent === 0 ? "12%" : `${overallPercent}%` }}
                 />
               </div>
-              <p className="mt-2 text-sm text-[#f6efe4]/55">{overallPercent}% complete</p>
+              <p className="mt-2 text-sm text-[#f6efe4]/55">
+                {overallPercent}% complete
+                {live ? " · checking status" : ""}
+              </p>
             </div>
             <p className="inline-flex items-center gap-2 text-sm text-[#f6efe4]/60">
               <ShieldCheck className="h-4 w-4 text-[#d4a84b]" aria-hidden="true" />
@@ -150,10 +219,16 @@ export function PetOrderPage({
           </div>
         </section>
 
-        {loading ? (
+        {loading && !order ? (
           <p className="inline-flex items-center gap-2 text-sm text-[#f6efe4]/70">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             Loading the studio…
+          </p>
+        ) : null}
+
+        {statusHint ? (
+          <p className="text-sm text-[#f6efe4]/60" role="status">
+            {statusHint}
           </p>
         ) : null}
 
@@ -171,7 +246,7 @@ export function PetOrderPage({
         ) : null}
 
         {order && scenes.length > 0 ? (
-          <div aria-live="polite">
+          <div aria-live="polite" aria-busy={live}>
             <OrderStatusList
               scenes={scenes}
               petName={order.petName}

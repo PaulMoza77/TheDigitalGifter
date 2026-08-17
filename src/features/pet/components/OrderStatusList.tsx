@@ -82,9 +82,10 @@ export function OrderStatusList({
                 <div
                   className={cn(
                     "h-full rounded-full",
-                    scene.status === "failed" ? "bg-[#e07a5f]" : "bg-[#d4a84b]"
+                    scene.status === "failed" ? "bg-[#e07a5f]" : "bg-[#d4a84b]",
+                    scene.status === "queued" && scene.progressPercent === 0 ? "animate-pulse" : ""
                   )}
-                  style={{ width: `${scene.progressPercent}%` }}
+                  style={{ width: scene.status === "queued" && scene.progressPercent === 0 ? "12%" : `${scene.progressPercent}%` }}
                 />
               </div>
             </div>

@@ -174,8 +174,7 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
         <section className="rounded-[28px] bg-[#d4a84b] px-6 py-9 text-center text-[#1a140e]">
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Ready in one photo.</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#1a140e]/75">
-            Pay once. We make twelve portraits and two cinematic clips of the same pet. A person
-            checks the faces. You download after QC. {deliveryEstimate}
+            Pay once. Twelve portraits start generating immediately with Replicate. {deliveryEstimate}
           </p>
           <Button
             type="button"

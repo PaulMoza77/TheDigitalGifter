@@ -16,7 +16,7 @@ export const PET_VIDEO_RESOLUTION = "720p" as const;
 export const PET_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
 export const PET_DRAFT_STORAGE_KEY = "tdg.petFunnel.draft.v1" as const;
 export const PET_DEFAULT_PERSONALITY = "cute" as const;
-export const PET_DEFAULT_DELIVERY_ESTIMATE = "Usually ready within 24–48 hours" as const;
+export const PET_DEFAULT_DELIVERY_ESTIMATE = "Usually ready in a few minutes after payment" as const;
 
 export const PET_PHOTO_CONTENT_TYPES = [
   "image/jpeg",

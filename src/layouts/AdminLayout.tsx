@@ -20,12 +20,15 @@ import {
   Newspaper,
   PawPrint,
 } from "lucide-react";
+import { formatAlertCount } from "@/hooks/adminNavAlerts";
+import { useAdminNavAlerts, type AdminNavAlerts } from "@/hooks/useAdminNavAlerts";
 
 type NavItem = {
   label: string;
   path: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  alertCount?: number;
 };
 
 type NavSection = {
@@ -49,6 +52,17 @@ function useIsActivePath() {
   );
 }
 
+function AlertBadge({ count }: { count: number }) {
+  const label = formatAlertCount(count);
+  if (!label) return null;
+
+  return (
+    <span className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+      {label}
+    </span>
+  );
+}
+
 function NavButton({
   collapsed,
   active,
@@ -56,6 +70,7 @@ function NavButton({
   icon: Icon,
   label,
   badge,
+  alertCount = 0,
 }: {
   collapsed: boolean;
   active: boolean;
@@ -63,31 +78,43 @@ function NavButton({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   badge?: string;
+  alertCount?: number;
 }) {
+  const alertLabel = formatAlertCount(alertCount);
+  const title = alertLabel ? `${label} (${alertLabel} new)` : collapsed ? label : undefined;
+
   return (
     <button
       type="button"
       onClick={onClick}
-      title={collapsed ? label : undefined}
+      title={title}
+      aria-label={alertLabel ? `${label}, ${alertLabel} new` : label}
       className={cx(
-        "flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-colors",
+        "relative flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-colors",
         active
           ? "border-slate-700 bg-slate-800 text-slate-50"
           : "text-slate-200 hover:bg-slate-800/60",
         collapsed && "justify-center px-2"
       )}
     >
-      <Icon
-        className={cx(
-          "h-4 w-4 shrink-0",
-          active ? "text-slate-100" : "text-slate-300"
-        )}
-      />
+      <span className="relative shrink-0">
+        <Icon
+          className={cx(
+            "h-4 w-4",
+            active ? "text-slate-100" : "text-slate-300"
+          )}
+        />
+        {collapsed && alertLabel ? (
+          <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
+        ) : null}
+      </span>
 
       {!collapsed ? (
         <div className="flex w-full min-w-0 items-center justify-between gap-2">
           <span className="truncate">{label}</span>
-          {badge ? (
+          {alertLabel ? (
+            <AlertBadge count={alertCount} />
+          ) : badge ? (
             <span className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
               {badge}
             </span>
@@ -106,7 +133,8 @@ const SidebarNavigation: React.FC<{
   navigateTo: (path: string) => void;
   onNavigate?: () => void;
   showLogo?: boolean;
-}> = ({ collapsed, isActive, navigateTo, onNavigate, showLogo = true }) => {
+  alerts: AdminNavAlerts;
+}> = ({ collapsed, isActive, navigateTo, onNavigate, showLogo = true, alerts }) => {
   const sections: NavSection[] = useMemo(
     () => [
       {
@@ -153,6 +181,7 @@ const SidebarNavigation: React.FC<{
             label: "Support Tickets",
             path: "/admin/support-tickets",
             icon: Inbox,
+            alertCount: alerts.tickets,
           },
         ],
       },
@@ -194,11 +223,13 @@ const SidebarNavigation: React.FC<{
             label: "Orders",
             path: "/admin/orders",
             icon: ShoppingCart,
+            alertCount: alerts.orders,
           },
           {
             label: "Pet Orders",
             path: "/admin/pet-orders",
             icon: PawPrint,
+            alertCount: alerts.petOrders,
           },
           {
             label: "Customers",
@@ -208,7 +239,7 @@ const SidebarNavigation: React.FC<{
         ],
       },
     ],
-    []
+    [alerts.tickets, alerts.orders, alerts.petOrders]
   );
 
   const handleNavigate = (path: string) => {
@@ -253,6 +284,7 @@ const SidebarNavigation: React.FC<{
                   icon={item.icon}
                   label={item.label}
                   badge={item.badge}
+                  alertCount={item.alertCount}
                 />
               ))}
             </div>
@@ -266,6 +298,7 @@ const SidebarNavigation: React.FC<{
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const isActive = useIsActivePath();
+  const alerts = useAdminNavAlerts();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
@@ -309,6 +342,7 @@ const AdminLayout: React.FC = () => {
                   isActive={isActive}
                   navigateTo={(path) => navigate(path)}
                   onNavigate={() => setMobileMenuOpen(false)}
+                  alerts={alerts}
                 />
               </div>
             </SheetContent>
@@ -363,6 +397,7 @@ const AdminLayout: React.FC = () => {
             isActive={isActive}
             navigateTo={(path) => navigate(path)}
             showLogo={false}
+            alerts={alerts}
           />
         </nav>
       </aside>

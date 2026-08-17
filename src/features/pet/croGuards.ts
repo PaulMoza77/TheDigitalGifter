@@ -138,7 +138,8 @@ export function defaultPersonality() {
 
 export function deliveryEstimateLabel(value?: string | null): string {
   const trimmed = String(value || "").trim();
-  return trimmed || PET_DEFAULT_DELIVERY_ESTIMATE;
+  if (!trimmed || /24\s*[–-]\s*48/.test(trimmed)) return PET_DEFAULT_DELIVERY_ESTIMATE;
+  return trimmed;
 }
 
 export function mixedOtherGalleryLabel(): string {

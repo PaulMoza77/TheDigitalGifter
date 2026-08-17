@@ -8,6 +8,18 @@ export function isPetCheckoutMetadata(metadata: Record<string, unknown>): boolea
   return asString(metadata.sku) === "pet-secret-life-12" || asString(metadata.product_type) === "pet_secret_life";
 }
 
+const STALE_RUNNING_MS = 150_000;
+const HELD_SKIP_ERRORS = /billing_required/;
+
+function waitUntil(promise: Promise<unknown>) {
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (value: Promise<unknown>) => void } }).EdgeRuntime;
+  if (runtime && typeof runtime.waitUntil === "function") {
+    runtime.waitUntil(promise);
+    return;
+  }
+  void promise;
+}
+
 export async function invokePetGenerate(orderId: string) {
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -21,6 +33,38 @@ export async function invokePetGenerate(orderId: string) {
     },
     body: JSON.stringify({ order_id: orderId }),
   });
+}
+
+export function enqueuePetGenerate(orderId: string) {
+  waitUntil(
+    invokePetGenerate(orderId).catch((err) => {
+      console.error("pet-generate enqueue failed", err);
+    }),
+  );
+}
+
+export async function enqueuePetGenerateIfStalled(input: {
+  service: SupabaseClient;
+  orderId: string;
+  orderStatus: string;
+  paidAt: string | null;
+}): Promise<boolean> {
+  if (!input.paidAt) return false;
+  if (!["paid", "generating", "partial_failure"].includes(input.orderStatus)) return false;
+  const { data: job } = await input.service
+    .from("pet_generation_jobs")
+    .select("status, claimed_at, last_error")
+    .eq("order_id", input.orderId)
+    .maybeSingle();
+  if (!job) return false;
+  const status = String(job.status || "");
+  const lastError = String(job.last_error || "");
+  if (status === "held" && HELD_SKIP_ERRORS.test(lastError)) return false;
+  const claimedAt = job.claimed_at ? new Date(String(job.claimed_at)).getTime() : 0;
+  const staleRunning = status === "running" && claimedAt > 0 && Date.now() - claimedAt > STALE_RUNNING_MS;
+  if (!["queued", "held", "failed"].includes(status) && !staleRunning) return false;
+  enqueuePetGenerate(input.orderId);
+  return true;
 }
 
 export async function handlePetStripeEvent(input: {
@@ -126,7 +170,7 @@ export async function handlePetStripeEvent(input: {
   }
 
   if (result?.should_enqueue) {
-    await invokePetGenerate(orderId);
+    enqueuePetGenerate(orderId);
   }
 
   return new Response(JSON.stringify({ ok: true, result }), {

@@ -14,6 +14,7 @@ import {
   sanitizeFunnelAnalyticsPayload,
   validateOtherSubtype,
   validatePetName,
+  deliveryEstimateLabel,
 } from "./croGuards";
 import { PET_CURRENCY, PET_PRICE_CENTS, PET_PRODUCT_SKU } from "./types";
 import { isAdminAuthorized, rejectClientPriceTampering, stripeFulfillmentDecision } from "./funnelGuards";
@@ -285,5 +286,32 @@ describe("pet funnel CRO", () => {
     expect(PET_SEO.dog.title).toContain("Custom Dog Portraits");
     expect(PET_SEO.cat.title).toContain("Custom Cat Portraits");
     expect(PET_SEO.other.title).toContain("Custom Pet Portraits");
+  });
+
+  it("27. order status page cannot freeze the UI or stall generation while queued", () => {
+    const page = readSrc("src/features/pet/PetOrderPage.tsx");
+    expect(page).toContain("ORDER_POLL_INTERVAL_MS");
+    expect(page).toContain("inFlight");
+    expect(page).toContain("isTransientPollError");
+    expect(page).toContain("This page stays live and never locks");
+    expect(page).not.toMatch(/setInterval\([^,]+,\s*2500\)/);
+    expect(page).not.toMatch(/pointer-events-none/);
+    const funnel = readSrc("supabase/functions/pet-funnel/index.ts");
+    expect(funnel).toContain("enqueuePetGenerateIfStalled");
+    expect(funnel).toContain("180, 600");
+    expect(funnel).not.toMatch(/assertRateLimit\([^)]*pollGenerationProgress[^)]*60, 3600\)/);
+    expect(readSrc("src/features/pet/supabaseApi.ts")).toContain("AbortSignal.timeout");
+  });
+
+  it("28. customer copy does not promise a 24-48 hour wait for Replicate portraits", () => {
+    expect(deliveryEstimateLabel("Usually ready within 24–48 hours")).toBe(
+      "Usually ready in a few minutes after payment",
+    );
+    expect(deliveryEstimateLabel("Ready tonight")).toBe("Ready tonight");
+    expect(readSrc("src/features/pet/PetOrderPage.tsx")).not.toMatch(/24\s*[–-]\s*48/);
+    expect(readSrc("src/features/pet/PetLandingPage.tsx")).not.toMatch(/24\s*[–-]\s*48/);
+    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toMatch(
+      /PET_GENERATION_ENABLED[\s\S]*\?\? "true"/,
+    );
   });
 });

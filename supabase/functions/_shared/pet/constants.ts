@@ -54,7 +54,16 @@ export function siteOrigin(): string {
 }
 
 export function generationEnabled(): boolean {
-  return String(Deno.env.get("PET_GENERATION_ENABLED") || "").toLowerCase() === "true";
+  const raw = String(Deno.env.get("PET_GENERATION_ENABLED") ?? "true").trim().toLowerCase();
+  return raw !== "false" && raw !== "0" && raw !== "off";
+}
+
+export function publicDeliveryEstimate(value?: string | null): string {
+  const trimmed = String(value || "").trim();
+  if (!trimmed || /24\s*[–-]\s*48/.test(trimmed)) {
+    return "Usually ready in a few minutes after payment";
+  }
+  return trimmed;
 }
 
 export function generationMock(): boolean {

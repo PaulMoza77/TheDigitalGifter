@@ -80,7 +80,7 @@ export function createUnimplementedPetApi(): PetFunnelApi {
       subscription: false,
       active: true,
       priceDisplay: "$59",
-      deliveryEstimate: "Usually ready within 24–48 hours",
+      deliveryEstimate: "Usually ready in a few minutes after payment",
     }),
   };
 }
