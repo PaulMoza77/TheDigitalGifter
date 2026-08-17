@@ -13,7 +13,9 @@ type PhotoUploaderProps = {
   needsOriginalFile?: boolean;
   exampleImage?: string;
   error?: string;
-  onFileAccepted: (file: File) => void;
+  guidance?: string;
+  successMessage?: string;
+  onFileAccepted: (file: File) => void | Promise<void>;
   onFileRejected: (message: string) => void;
   onClear: () => void;
 };
@@ -25,6 +27,8 @@ export function PhotoUploader({
   needsOriginalFile = false,
   exampleImage = PET_DEMO_SOURCE_IMAGE,
   error,
+  guidance = "Use one clear photo with one pet, both eyes visible and even lighting.",
+  successMessage,
   onFileAccepted,
   onFileRejected,
   onClear,
@@ -43,7 +47,7 @@ export function PhotoUploader({
       onFileRejected(result.message);
       return;
     }
-    onFileAccepted(file);
+    void onFileAccepted(file);
   }
 
   function openPicker() {
@@ -57,7 +61,7 @@ export function PhotoUploader({
           Pet photo
         </label>
         <span id={helpId} className="text-xs text-[#f6efe4]/50">
-          Face forward · JPEG, PNG, WebP
+          JPEG, PNG, WebP · 15 MB max
         </span>
       </div>
 
@@ -94,7 +98,7 @@ export function PhotoUploader({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="h-9 rounded-full bg-[#f6efe4] text-[#1a140e] hover:bg-white"
+                  className="h-11 min-h-[44px] rounded-full bg-[#f6efe4] text-[#1a140e] hover:bg-white"
                   onClick={openPicker}
                 >
                   <Replace className="h-4 w-4" aria-hidden="true" />
@@ -103,7 +107,7 @@ export function PhotoUploader({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-9 rounded-full border-[#f6efe4]/30 bg-transparent text-[#f6efe4] hover:bg-[#f6efe4]/10"
+                  className="h-11 min-h-[44px] rounded-full border-[#f6efe4]/30 bg-transparent text-[#f6efe4] hover:bg-[#f6efe4]/10"
                   onClick={onClear}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -160,6 +164,13 @@ export function PhotoUploader({
         </button>
       )}
 
+      {successMessage && previewUrl && !error ? (
+        <p className="text-sm text-[#d4a84b]" role="status">
+          {successMessage}
+        </p>
+      ) : (
+        <p className="text-sm text-[#f6efe4]/55">{guidance}</p>
+      )}
       <FieldError id={errorId} message={error} />
     </div>
   );

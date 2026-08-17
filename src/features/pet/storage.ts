@@ -3,16 +3,19 @@ import {
   PET_PERSONALITIES,
   PET_PHOTO_CONTENT_TYPES,
   PET_SPECIES,
+  PET_SUBTYPES,
   type PetFunnelDraft,
   type PetPersistedDraft,
   type PetPersonality,
-  type PetPhotoContentType,
   type PetSpecies,
+  type PetSubtype,
 } from "./types";
 
 const EMPTY_DRAFT: PetFunnelDraft = {
   petName: "",
   species: null,
+  subtype: null,
+  subtypeDetail: null,
   personality: null,
   email: "",
   photo: null,
@@ -158,6 +161,7 @@ function coercePersistedDraft(value: unknown): PetFunnelDraft | null {
   const draft = value.draft;
   const species = asEnum(draft.species, PET_SPECIES);
   const personality = asEnum(draft.personality, PET_PERSONALITIES);
+  const subtype = asEnum(draft.subtype, PET_SUBTYPES);
   const photo = coercePhotoMeta(draft.photo);
   const preview =
     typeof draft.photoPreviewDataUrl === "string" &&
@@ -168,6 +172,9 @@ function coercePersistedDraft(value: unknown): PetFunnelDraft | null {
   return {
     petName: typeof draft.petName === "string" ? draft.petName.slice(0, 40) : "",
     species,
+    subtype,
+    subtypeDetail:
+      typeof draft.subtypeDetail === "string" ? draft.subtypeDetail.slice(0, 40) : null,
     personality,
     email: typeof draft.email === "string" ? draft.email.slice(0, 120) : "",
     photo,
@@ -186,7 +193,7 @@ function coercePhotoMeta(value: unknown): PetFunnelDraft["photo"] {
 
   return {
     fileName: value.fileName.slice(0, 180),
-    contentType: contentType as PetPhotoContentType,
+    contentType,
     byteSize: value.byteSize,
     width: typeof value.width === "number" ? value.width : null,
     height: typeof value.height === "number" ? value.height : null,
@@ -211,4 +218,8 @@ export function isPetSpecies(value: string | null): value is PetSpecies {
 
 export function isPetPersonality(value: string | null): value is PetPersonality {
   return value !== null && (PET_PERSONALITIES as readonly string[]).includes(value);
+}
+
+export function isPetSubtype(value: string | null): value is PetSubtype {
+  return value !== null && (PET_SUBTYPES as readonly string[]).includes(value);
 }

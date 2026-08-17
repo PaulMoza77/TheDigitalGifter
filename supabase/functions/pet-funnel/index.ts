@@ -151,8 +151,14 @@ Deno.serve(async (req) => {
     if (!allowed) return apiError("INVALID_REQUEST", "Too many requests. Please wait.", 429);
 
     if (action === "getPublicOffer") {
-      const offer = await loadActiveOffer(service);
+      const raw = await service.rpc("get_public_pet_offer");
+      if (raw.error) throw raw.error;
+      const payload = typeof raw.data === "string" ? JSON.parse(raw.data) : raw.data;
+      const offer = resolveServerOwnedOffer(payload);
       if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
+      const deliveryEstimate =
+        String(payload?.deliveryEstimate || payload?.delivery_estimate_label || "").trim() ||
+        "Usually ready within 24–48 hours";
       return jsonResponse({
         sku: offer.sku,
         name: "My Pet’s Secret Life",
@@ -163,6 +169,8 @@ Deno.serve(async (req) => {
         subscription: false,
         active: true,
         priceDisplay: formatOfferPrice(offer.amountCents),
+        version: Number(payload?.version || 1),
+        deliveryEstimate,
       });
     }
 
@@ -190,6 +198,17 @@ Deno.serve(async (req) => {
       }
       if (!PET_PERSONALITIES.includes(personality as (typeof PET_PERSONALITIES)[number])) {
         return apiError("INVALID_REQUEST", "Choose a personality.");
+      }
+      const subtype = asString(body.subtype);
+      const subtypeDetail = asString(body.subtypeDetail).slice(0, 40);
+      const allowedSubtypes = ["rabbit", "bird", "small_pet", "reptile", "horse", "other"];
+      if (species === "other") {
+        if (!allowedSubtypes.includes(subtype)) {
+          return apiError("INVALID_REQUEST", "Choose what kind of pet you have.");
+        }
+        if (subtype === "other" && !subtypeDetail) {
+          return apiError("INVALID_REQUEST", "Tell us what kind of pet.");
+        }
       }
       const uploadCheck = assertUploadAllowed(asString(photo.contentType), Number(photo.byteSize || 0));
       if (!uploadCheck.ok) return apiError(uploadCheck.code, uploadCheck.message);
@@ -227,6 +246,8 @@ Deno.serve(async (req) => {
         photo_height: Number(photo.height || 0) || null,
         meta_event_id: `pending_${crypto.randomUUID()}`,
         public_token_ciphertext: await encryptPublicToken(publicToken),
+        subtype: species === "other" ? subtype : null,
+        subtype_detail: species === "other" && subtype === "other" ? subtypeDetail : null,
       };
       const { data, error } = await service.from("pet_orders").insert(insert).select("*").single();
       if (error) throw error;

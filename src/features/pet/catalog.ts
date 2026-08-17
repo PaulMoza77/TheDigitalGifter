@@ -3,6 +3,7 @@ import type {
   PetSceneDefinition,
   PetSpecies,
   PetSpeciesOption,
+  PetSubtype,
 } from "./types";
 import {
   PET_CURRENCY,
@@ -39,6 +40,10 @@ export const PET_DEMO_SOURCE_IMAGE = "/pet/dog/source.webp";
 
 export function petLandingPath(species: PetSpecies): string {
   return `/pet/${species}`;
+}
+
+export function petCreatePath(species: PetSpecies): string {
+  return `/pet/create?species=${encodeURIComponent(species)}`;
 }
 
 export function petSourceImage(species: PetSpecies = "dog"): string {
@@ -80,7 +85,7 @@ export const PET_CLIP_COPY: Record<
   },
   other: {
     heading: "Two cinematic clips",
-    description: "Same face. Five seconds. A world in motion.",
+    description: "Five-second motion examples for different kinds of pets.",
   },
 };
 
@@ -109,21 +114,83 @@ export const PET_OTHER_SUBJECTS: Record<PetSceneDefinition["id"], string> = {
 
 export const PET_LANDING_COPY: Record<
   PetSpecies,
-  { heading: string; description: string }
+  { heading: string; description: string; support: string }
 > = {
   dog: {
     heading: "Twelve secret lives",
-    description: "Hover or tap a portrait to watch it move. Same pet. A different world in every frame.",
+    description: "Hover or tap a portrait to watch it move. Same Golden Retriever. A different world in every frame.",
+    support: "Turn your dog into royalty, an astronaut, a CEO and nine more secret lives.",
   },
   cat: {
     heading: "Twelve secret lives",
     description: "Hover or tap a portrait to watch it move. Same cat. A different world in every frame.",
+    support: "Turn your cat into royalty, an astronaut, a CEO and nine more secret lives.",
   },
   other: {
-    heading: "Hamsters, turtles, birds, and the rest",
-    description: "Hover or tap a portrait to watch it move. If they have a face, they get a gallery.",
+    heading: "Made for many kinds of pets",
+    description: "Hover or tap a portrait to watch it move. Every pet deserves a secret life.",
+    support: "Every pet deserves a secret life.",
   },
 };
+
+export const PET_HERO_SUBTITLE =
+  "See your pet as royalty, an astronaut, a CEO and more — the same face in every world.";
+
+export const PET_HERO_PROMISE = "One photo. 12 secret lives. 2 cinematic clips.";
+
+export const PET_SUBTYPE_OPTIONS: readonly { id: PetSubtype; label: string }[] = [
+  { id: "rabbit", label: "Rabbit" },
+  { id: "bird", label: "Bird" },
+  { id: "small_pet", label: "Small pet" },
+  { id: "reptile", label: "Reptile" },
+  { id: "horse", label: "Horse" },
+  { id: "other", label: "Other" },
+] as const;
+
+export const PET_SEO: Record<
+  PetSpecies,
+  { title: string; description: string; path: string; ogImage: string }
+> = {
+  dog: {
+    title: "Custom Dog Portraits & Videos | My Pet’s Secret Life",
+    description:
+      "Turn one photo of your dog into 12 personalized portraits and 2 cinematic 5-second clips. Same face in every world. One-time payment. No subscription.",
+    path: "/pet/dog",
+    ogImage: "https://www.thedigitalgifter.com/pet/dog/scenes/royal-portrait.webp",
+  },
+  cat: {
+    title: "Custom Cat Portraits & Videos | My Pet’s Secret Life",
+    description:
+      "Turn one photo of your cat into 12 personalized portraits and 2 cinematic 5-second clips. Same face in every world. One-time payment. No subscription.",
+    path: "/pet/cat",
+    ogImage: "https://www.thedigitalgifter.com/pet/cat/scenes/royal-portrait.webp",
+  },
+  other: {
+    title: "Custom Pet Portraits & Videos | My Pet’s Secret Life",
+    description:
+      "Custom portraits and cinematic clips for rabbits, birds, small pets, reptiles, horses, and other animals. One photo. Human reviewed. One-time payment.",
+    path: "/pet/other",
+    ogImage: "https://www.thedigitalgifter.com/pet/other/scenes/formula-racer.webp",
+  },
+};
+
+export type PetTestimonial = {
+  customerFirstName: string;
+  petName: string;
+  species: PetSpecies;
+  quote: string;
+  beforeSrc?: string;
+  afterSrc?: string;
+};
+
+/** Hidden until real approved testimonials exist. Do not invent quotes. */
+export const PET_TESTIMONIALS: readonly PetTestimonial[] = [];
+
+export const PET_GUARANTEE = {
+  heading: "The Same Pet Guarantee",
+  body: "Every portrait and clip is checked by a person. If a result does not recognizably look like your pet, we remake it before delivery.",
+  href: "/support",
+} as const;
 
 export const PET_SPECIES_OPTIONS: readonly PetSpeciesOption[] = [
   { id: "dog", label: "Dog", hint: "Dog" },
@@ -270,16 +337,21 @@ export const PET_RESULT_FORMATS = [
 export const PET_HOW_IT_WORKS = [
   {
     step: 1,
-    title: "Upload one photo",
-    body: "A clear face, looking forward.",
+    title: "Name your pet",
+    body: "A first name is enough. No charge yet.",
   },
   {
     step: 2,
-    title: "Pay once",
-    body: "No subscription. No renewal.",
+    title: "Upload one photo",
+    body: "A clear face, looking forward. Add your email.",
   },
   {
     step: 3,
+    title: "Review and pay once",
+    body: "No subscription. No renewal. Stripe checkout.",
+  },
+  {
+    step: 4,
     title: "Get 12 portraits and 2 clips",
     body: "Same pet. Human-checked. Delivery only after QC.",
   },
@@ -297,7 +369,8 @@ export const PET_FAQS = [
   },
   {
     question: "How long does it take?",
-    answer: "Portraits are generated first, then a person reviews them, then two clips are made and reviewed. We email you when the gallery is ready.",
+    answer:
+      "Usually ready within 24–48 hours. Portraits are generated first, then a person reviews them, then two clips are made and reviewed. We email you when the gallery is ready.",
   },
   {
     question: "What photo works best?",
@@ -308,7 +381,43 @@ export const PET_FAQS = [
     question: "Can I gift this?",
     answer: "Yes. Use their pet’s photo, pay once, and send the gallery link.",
   },
+  {
+    question: "What if a portrait does not look like my pet?",
+    answer:
+      "A person checks every portrait and clip. If a result does not recognizably look like your pet, we remake it before delivery. Contact support from your order email if you need help.",
+  },
+  {
+    question: "Is my source photo private?",
+    answer:
+      "Your photo is used only to create this order. It is not used as public marketing. We do not sell it.",
+  },
+  {
+    question: "Can I include multiple pets?",
+    answer:
+      "Not in one order. Use one clear photo with one pet. Group photos are rejected before generation.",
+  },
+  {
+    question: "What does “human checked” mean?",
+    answer:
+      "After generation, a person reviews the faces and clips. Downloads stay locked until that review is approved.",
+  },
+  {
+    question: "What file formats do I receive?",
+    answer:
+      "You receive the QC-approved portrait files and two cinematic MP4 clips from the order gallery after review. Extra crops such as wallpapers are not included yet.",
+  },
 ] as const;
+
+export function petFaqsWithDelivery(estimate: string) {
+  return PET_FAQS.map((faq) =>
+    faq.question === "How long does it take?"
+      ? {
+          ...faq,
+          answer: `${estimate} Portraits are generated first, then a person reviews them, then two clips are made and reviewed. We email you when the gallery is ready.`,
+        }
+      : faq,
+  );
+}
 
 export function getSceneById(id: PetSceneDefinition["id"]): PetSceneDefinition {
   const scene = PET_SCENES.find((item) => item.id === id);

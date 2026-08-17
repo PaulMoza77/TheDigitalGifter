@@ -12,6 +12,12 @@ import { Toaster } from "sonner";
 // ================= WEBSITE CORE =================
 import Index from "@/pages/website/HomePage";
 import AuthCallback from "@/pages/AuthCallback";
+import {
+  PetCheckoutRoute,
+  PetCreateRoute,
+  PetLandingRoute,
+  PetOrderRoute,
+} from "@/features/pet/PetRoutes";
 
 const PrivacyPolicyPage = lazy(() =>
   import("@/pages/website/PrivacyPolicyPage").then((m) => ({
@@ -151,18 +157,6 @@ const FunnelEmailCapture = lazy(
 );
 const FunnelResultPage = lazy(
   () => import("@/components/funnelVersion/ResultPage")
-);
-const PetLandingRoute = lazy(() =>
-  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetLandingRoute }))
-);
-const PetCreateRoute = lazy(() =>
-  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetCreateRoute }))
-);
-const PetCheckoutRoute = lazy(() =>
-  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetCheckoutRoute }))
-);
-const PetOrderRoute = lazy(() =>
-  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetOrderRoute }))
 );
 
 // ================= SUPABASE =================

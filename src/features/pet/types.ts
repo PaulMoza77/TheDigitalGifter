@@ -15,6 +15,8 @@ export const PET_VIDEO_DURATION_SECONDS = 5 as const;
 export const PET_VIDEO_RESOLUTION = "720p" as const;
 export const PET_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
 export const PET_DRAFT_STORAGE_KEY = "tdg.petFunnel.draft.v1" as const;
+export const PET_DEFAULT_PERSONALITY = "cute" as const;
+export const PET_DEFAULT_DELIVERY_ESTIMATE = "Usually ready within 24–48 hours" as const;
 
 export const PET_PHOTO_CONTENT_TYPES = [
   "image/jpeg",
@@ -36,6 +38,9 @@ export const PET_PERSONALITIES = [
   "adventure",
 ] as const;
 export type PetPersonality = (typeof PET_PERSONALITIES)[number];
+
+export const PET_SUBTYPES = ["rabbit", "bird", "small_pet", "reptile", "horse", "other"] as const;
+export type PetSubtype = (typeof PET_SUBTYPES)[number];
 
 export const PET_SCENE_IDS = [
   "royal-portrait",
@@ -133,6 +138,8 @@ export type PetPhotoMeta = {
 export type PetFunnelDraft = {
   petName: string;
   species: PetSpecies | null;
+  subtype: PetSubtype | null;
+  subtypeDetail: string | null;
   personality: PetPersonality | null;
   email: string;
   photo: PetPhotoMeta | null;
@@ -261,6 +268,8 @@ export type CreatePetOrderRequest = {
   personality: PetPersonality;
   photo: PetPhotoMeta;
   sku: typeof PET_PRODUCT_SKU;
+  subtype?: PetSubtype | null;
+  subtypeDetail?: string | null;
 };
 
 export type CreatePetOrderResponse = {
@@ -282,6 +291,8 @@ export type PublicPetOffer = {
   subscription: false;
   active: true;
   priceDisplay: string;
+  version?: number;
+  deliveryEstimate?: string;
 };
 
 export type GetSignedUploadUrlRequest = {

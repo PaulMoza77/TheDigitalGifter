@@ -80,6 +80,7 @@ export function createUnimplementedPetApi(): PetFunnelApi {
       subscription: false,
       active: true,
       priceDisplay: "$59",
+      deliveryEstimate: "Usually ready within 24–48 hours",
     }),
   };
 }
@@ -120,6 +121,8 @@ export type StartPetCheckoutInput = {
   successUrl: string;
   cancelUrl: string;
   promoCode?: string;
+  subtype?: CreatePetOrderRequest["subtype"];
+  subtypeDetail?: CreatePetOrderRequest["subtypeDetail"];
 };
 
 export type StartPetCheckoutResult = {
@@ -146,9 +149,11 @@ export async function startPetCheckout(
     petName: input.petName,
     species: input.species,
     personality: input.personality,
-    photo: input.photo,
-    sku: "pet-secret-life-12",
-  });
+      photo: input.photo,
+      sku: "pet-secret-life-12",
+      subtype: input.subtype ?? null,
+      subtypeDetail: input.subtypeDetail ?? null,
+    });
 
   const signed = await input.api.getSignedUploadUrl({
     orderId: order.orderId,

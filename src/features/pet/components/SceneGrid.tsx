@@ -1,4 +1,5 @@
 import { PET_LANDING_COPY, PET_OTHER_SUBJECTS, PET_SCENES } from "../catalog";
+import { mixedOtherGalleryLabel } from "../croGuards";
 import type { PetSpecies } from "../types";
 import { SceneCard } from "./SceneCard";
 
@@ -12,6 +13,7 @@ export function SceneGrid({
   description?: string;
 }) {
   const copy = PET_LANDING_COPY[species];
+  const mixed = species === "other";
 
   return (
     <section aria-labelledby="pet-scenes-heading" className="space-y-5">
@@ -25,6 +27,11 @@ export function SceneGrid({
         <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
           {description ?? copy.description}
         </p>
+        {mixed ? (
+          <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[#d4a84b]">
+            {mixedOtherGalleryLabel()}
+          </p>
+        ) : null}
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 sm:gap-3">
         {PET_SCENES.map((scene, index) => (
@@ -32,8 +39,8 @@ export function SceneGrid({
             key={scene.id}
             scene={scene}
             species={species}
-            overlayTitle={species === "other" ? PET_OTHER_SUBJECTS[scene.id] : scene.title}
-            eager={index < 4}
+            overlayTitle={mixed ? PET_OTHER_SUBJECTS[scene.id] : scene.title}
+            eager={index < 2}
           />
         ))}
       </div>

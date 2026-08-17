@@ -257,7 +257,20 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (currentError) throw currentError;
       if (!current) return apiError("Active pet offer is missing", 503);
+      const deliveryEstimateLabel =
+        asString(body.deliveryEstimateLabel || body.delivery_estimate_label).trim() ||
+        String(current.delivery_estimate_label || "Usually ready within 24–48 hours");
       if (Number(current.amount_cents) === amountCents) {
+        if (deliveryEstimateLabel !== String(current.delivery_estimate_label || "")) {
+          const { data: updated, error: updateError } = await service
+            .from("pet_offers")
+            .update({ delivery_estimate_label: deliveryEstimateLabel })
+            .eq("id", current.id)
+            .select("*")
+            .single();
+          if (updateError) throw updateError;
+          return jsonResponse({ offer: updated });
+        }
         return jsonResponse({ offer: current, unchanged: true });
       }
       await service.from("pet_offers").update({ active: false }).eq("id", current.id);
@@ -274,6 +287,7 @@ Deno.serve(async (req) => {
           active: true,
           version: Number(current.version || 1) + 1,
           created_by_email: user?.email || null,
+          delivery_estimate_label: deliveryEstimateLabel,
         })
         .select("*")
         .single();
