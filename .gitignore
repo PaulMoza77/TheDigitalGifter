@@ -47,3 +47,6 @@ jobs.json
 jobs_supabase.csv
 credit_transactions_orders.csv
 storage-export/
+
+# Local AI ad generation working files (keep composed masters)
+output/tdg-pet-ad-raw/

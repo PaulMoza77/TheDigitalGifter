@@ -21,6 +21,7 @@ import {
   StickyCta,
   SubtypePicker,
   HeroProof,
+  SecretLifeAdReel,
 } from "./components";
 import { createSecretLivesCta, landingNameStepCreatesOrder, validateOtherSubtype, validatePetName } from "./croGuards";
 import { trackFunnelEvent } from "./funnelAnalytics";
@@ -162,7 +163,10 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
               <SamePetGuarantee />
             </div>
           </div>
-          <HeroProof species={species} />
+          <div className="space-y-4">
+            {species === "dog" ? <SecretLifeAdReel /> : null}
+            <HeroProof species={species} />
+          </div>
         </section>
 
         <ClipGrid species={species} />

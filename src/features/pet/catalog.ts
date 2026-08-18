@@ -38,6 +38,11 @@ export const PET_OFFER = {
 
 export const PET_DEMO_SOURCE_IMAGE = "/pet/dog/source.webp";
 
+export const PET_SECRET_LIFE_AD = {
+  src: "/pet/dog/ads/tdg-pet-secret-life-dog-ad-v1.mp4",
+  poster: "/pet/dog/ads/tdg-pet-secret-life-dog-ad-v1.jpg",
+} as const;
+
 export function petLandingPath(species: PetSpecies): string {
   return `/pet/${species}`;
 }
