@@ -270,10 +270,6 @@ describe("pet funnel CRO", () => {
     expect(canAutoplayHeroVideo({ prefersReducedMotion: false, effectiveType: "4g" })).toBe(true);
     expect(canAutoplayHeroVideo({ prefersReducedMotion: false, effectiveType: "2g" })).toBe(false);
     expect(readSrc("src/features/pet/components/HeroProof.tsx")).toContain("prefersReducedMotion");
-    expect(readSrc("src/features/pet/PetLandingPage.tsx")).toContain("SecretLifeAdReel");
-    expect(readSrc("src/features/pet/catalog.ts")).toContain("/pet/dog/ads/tdg-pet-secret-life-dog-ad-v1.mp4");
-    expect(readSrc("src/features/pet/components/SecretLifeAdReel.tsx")).toContain("aspect-[9/16]");
-    expect(readSrc("src/features/pet/components/SecretLifeAdReel.tsx")).toContain("PET_SECRET_LIFE_AD.poster");
     const clips = readSrc("src/features/pet/components/ClipGrid.tsx");
     expect(clips).toContain("autoPlay");
     expect(clips).toContain("muted");

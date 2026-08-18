@@ -133,7 +133,6 @@ export {
   PriceBadge,
   ResultsGrid,
   SamePetGuarantee,
-  SecretLifeAdReel,
   SceneCard,
   SceneGrid,
   SceneImage,
