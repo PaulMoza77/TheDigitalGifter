@@ -223,7 +223,7 @@ describe("pet funnel CRO", () => {
   it("18. subscription remains None", () => {
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("Subscription: None");
     expect(PET_CURRENCY).toBe("usd");
-    expect(PET_PRICE_CENTS).toBe(5900);
+    expect(PET_PRICE_CENTS).toBe(2700);
   });
 
   it("19. InitiateCheckout fires once at the correct step", () => {
@@ -289,7 +289,7 @@ describe("pet funnel CRO", () => {
 
   it("25. offer API failure prevents checkout with an unknown price", () => {
     expect(checkoutAllowedWithOffer({ amountCents: null, offerVerified: false })).toBe(false);
-    expect(checkoutAllowedWithOffer({ amountCents: 5900, offerVerified: true })).toBe(true);
+    expect(checkoutAllowedWithOffer({ amountCents: PET_PRICE_CENTS, offerVerified: true })).toBe(true);
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("checkoutAllowed");
   });
 

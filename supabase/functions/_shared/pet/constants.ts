@@ -1,6 +1,6 @@
 export const PET_SKU = "pet-secret-life-12" as const;
 export const PET_PRODUCT_NAME = "My Pet’s Secret Life";
-export const PET_PRICE_CENTS = 5900;
+export const PET_PRICE_CENTS = 2700;
 export const PET_CURRENCY = "usd";
 export const PET_SCENE_COUNT = 12;
 export const PET_VIDEO_CLIP_COUNT = 2;

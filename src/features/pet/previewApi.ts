@@ -13,7 +13,7 @@ import type {
   PetSceneStatus,
   PetUpsellKey,
 } from "./types";
-import { PET_PRICE_CENTS, PET_PRODUCT_SKU, PET_SCENE_COUNT } from "./types";
+import { PET_PRICE_CENTS, PET_PRICE_DISPLAY, PET_PRODUCT_SKU, PET_SCENE_COUNT } from "./types";
 import { mapOrderPhase } from "./videoGuards";
 import { formatUpsellPrice, printPackEligibility, sceneUpsellKeys, PET_UPSELL_OFFERS } from "./upsells";
 
@@ -190,7 +190,7 @@ export function createPreviewPetApi(): PetFunnelApi {
         videoCount: 2,
         subscription: false,
         active: true,
-        priceDisplay: "$59",
+        priceDisplay: PET_PRICE_DISPLAY,
       };
     },
   };

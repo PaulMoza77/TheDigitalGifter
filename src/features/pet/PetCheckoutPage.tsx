@@ -12,7 +12,7 @@ import { petFunnelApi } from "./supabaseApi";
 import { FunnelProgress, PetShell, SamePetGuarantee } from "./components";
 import { getPetPhotoFile, getPetPhotoObjectUrl } from "./storage";
 import type { PetFunnelApi } from "./api";
-import type { PetFunnelNavigation } from "./types";
+import { PET_PRICE_DISPLAY, type PetFunnelNavigation } from "./types";
 import { usePetDraft } from "./usePetDraft";
 import { usePublicPetOffer } from "./usePublicPetOffer";
 import { validatePetDraft } from "./validation";
@@ -178,7 +178,7 @@ export function PetCheckoutPage({
       <div className="mx-auto max-w-md space-y-6">
         <PageHead
           title="Review your pet order | My Pet’s Secret Life"
-          description="Review your pet photo, portraits, cinematic clips, and one-time $59 payment. No subscription."
+          description={`Review your pet photo, portraits, cinematic clips, and one-time ${PET_PRICE_DISPLAY} payment. No subscription.`}
           exactTitle
         />
         <FunnelProgress current={3} />

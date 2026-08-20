@@ -384,9 +384,9 @@ describe("pet video clips", () => {
     expect(details.imageAiUsd).toBe(0.48);
     expect(details.videoAiUsd).toBe(0.25);
     expect(details.replicateUsd).toBe(0.73);
-    expect(details.revenueUsd).toBe(59);
-    expect(details.grossAfterAiUsd).toBe(58.27);
-    expect(formatUsd(details.grossAfterAiUsd)).toBe("$58.27");
+    expect(details.revenueUsd).toBe(27);
+    expect(details.grossAfterAiUsd).toBe(26.27);
+    expect(formatUsd(details.grossAfterAiUsd)).toBe("$26.27");
     expect(details.disclaimer).toBe(GROSS_AFTER_AI_DISCLAIMER);
   });
 
@@ -464,7 +464,7 @@ describe("pet video clips", () => {
 
   it("23-25. server-owned price, snapshots, and one-time Stripe", () => {
     expect(rejectClientPriceTampering({ amountCents: 1 }).ok).toBe(false);
-    expect(rejectClientPriceTampering({ amountCents: 5900, sku: PET_PRODUCT_SKU }).ok).toBe(true);
+    expect(rejectClientPriceTampering({ amountCents: PET_PRICE_CENTS, sku: PET_PRODUCT_SKU }).ok).toBe(true);
     const offer = resolveServerOwnedOffer({
       amountCents: 8900,
       currency: "usd",

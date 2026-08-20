@@ -6,8 +6,8 @@
 export const PET_PRODUCT_SKU = "pet-secret-life-12" as const;
 export const PET_PRODUCT_NAME = "My Pet’s Secret Life" as const;
 export const PET_PRODUCT_PROMISE = "One photo. 12 secret lives. 2 cinematic clips. Same pet every time." as const;
-export const PET_PRICE_CENTS = 5900 as const;
-export const PET_PRICE_DISPLAY = "$59" as const;
+export const PET_PRICE_CENTS = 2700 as const;
+export const PET_PRICE_DISPLAY = "$27" as const;
 export const PET_CURRENCY = "usd" as const;
 export const PET_SCENE_COUNT = 12 as const;
 export const PET_VIDEO_CLIP_COUNT = 2 as const;

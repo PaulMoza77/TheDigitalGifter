@@ -105,11 +105,11 @@ describe("Replicate cost accounting", () => {
       amountCents: PET_PRICE_CENTS,
       ledger: store.all(),
     });
-    expect(details.revenueUsd).toBe(59);
-    expect(formatUsd(details.revenueUsd)).toBe("$59.00");
+    expect(details.revenueUsd).toBe(27);
+    expect(formatUsd(details.revenueUsd)).toBe("$27.00");
     expect(details.replicateUsd).toBe(0.48);
-    expect(details.grossAfterAiUsd).toBe(58.52);
-    expect(formatUsd(details.grossAfterAiUsd)).toBe("$58.52");
+    expect(details.grossAfterAiUsd).toBe(26.52);
+    expect(formatUsd(details.grossAfterAiUsd)).toBe("$26.52");
     expect(details.disclaimer).toBe(GROSS_AFTER_AI_DISCLAIMER);
   });
 
@@ -141,10 +141,10 @@ describe("Replicate cost accounting", () => {
     expect(
       recognizedRevenueCents({
         amount_cents: PET_PRICE_CENTS,
-        charged_amount_cents: 2950,
+        charged_amount_cents: 1350,
         discount_percent: 50,
       }),
-    ).toBe(2950);
+    ).toBe(1350);
     expect(
       recognizedRevenueCents({
         amount_cents: PET_PRICE_CENTS,
@@ -161,7 +161,7 @@ describe("Replicate cost accounting", () => {
       ledger: [],
     });
     expect(details.revenueUsd).toBe(0);
-    expect(details.listPriceUsd).toBe(59);
+    expect(details.listPriceUsd).toBe(27);
     expect(details.promoCode).toBe("VTM99");
     expect(details.discountPercent).toBe(100);
     expect(details.grossAfterAiUsd).toBe(0);
@@ -398,8 +398,8 @@ describe("Replicate cost accounting", () => {
     expect(report.scope).toBe(AI_COST_SCOPE_LABEL);
     expect(report.cards.replicateCostPeriodUsd).toBe(0.04);
     expect(report.cards.replicateCostTodayUsd).toBe(0.04);
-    expect(report.cards.petRevenuePeriodUsd).toBe(59);
-    expect(report.cards.grossAfterAiUsd).toBe(58.96);
+    expect(report.cards.petRevenuePeriodUsd).toBe(27);
+    expect(report.cards.grossAfterAiUsd).toBe(26.96);
     expect(report.cards.avgAiCostPerPaidPetOrderUsd).toBe(0.04);
     expect(report.cards.avgCostPerSuccessfulPortraitUsd).toBe(0.04);
     expect(report.cards.projectedStandardPackCostUsd).toBe(0.73);
@@ -409,8 +409,8 @@ describe("Replicate cost accounting", () => {
         petName: "Luna",
         email: "owner@example.com",
         costUsd: 0.04,
-        revenueUsd: 59,
-        grossAfterAiUsd: 58.96,
+        revenueUsd: 27,
+        grossAfterAiUsd: 26.96,
       },
     ]);
     expect(report.breakdown.byDate.map((row) => row.date)).toEqual(["2026-08-16"]);

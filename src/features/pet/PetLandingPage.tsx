@@ -24,7 +24,7 @@ import {
 } from "./components";
 import { createSecretLivesCta, landingNameStepCreatesOrder, validateOtherSubtype, validatePetName } from "./croGuards";
 import { trackFunnelEvent } from "./funnelAnalytics";
-import type { PetFunnelNavigation, PetSpecies } from "./types";
+import { PET_PRICE_DISPLAY, type PetFunnelNavigation, type PetSpecies } from "./types";
 import { usePetDraft } from "./usePetDraft";
 import { usePublicPetOffer } from "./usePublicPetOffer";
 
@@ -189,7 +189,7 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
         visible={stickyVisible}
         onClick={() => submitName(nameCheck.ok ? nameCheck.name : draft.petName)}
         label={createSecretLivesCta(draft.petName)}
-        supporting={`${priceLabel ?? "$59"} · No subscription`}
+        supporting={`${priceLabel ?? PET_PRICE_DISPLAY} · No subscription`}
       />
     </PetShell>
   );

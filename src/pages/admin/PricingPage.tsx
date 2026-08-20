@@ -733,7 +733,7 @@ export default function PricingPage() {
 }
 
 function PetOfferSettings() {
-  const [amount, setAmount] = useState("59.00");
+  const [amount, setAmount] = useState("27.00");
   const [deliveryEstimate, setDeliveryEstimate] = useState("Usually ready in a few minutes after payment");
   const [version, setVersion] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);

@@ -166,7 +166,7 @@ export default function AdminDashboard() {
             Pet Orders
           </a>
           {" — "}
-          My Pet’s Secret Life ($59 one-time). QC and delivery live in a dedicated queue so credit packs stay unchanged.
+          My Pet’s Secret Life ($27 one-time). QC and delivery live in a dedicated queue so credit packs stay unchanged.
         </section>
 
         <AiCostsReplicateSection loading={aiCostLoading} report={aiCostReport} />

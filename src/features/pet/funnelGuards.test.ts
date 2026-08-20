@@ -30,15 +30,15 @@ import {
 } from "./funnelGuards";
 
 describe("pet funnel production guards", () => {
-  it("rejects client price tampering and keeps server amount at $59", () => {
+  it("rejects client price tampering and keeps server amount at $27", () => {
     expect(serverOwnedAmount()).toEqual({
-      amountCents: 5900,
+      amountCents: PET_PRICE_CENTS,
       currency: "usd",
       sku: PET_PRODUCT_SKU,
     });
     expect(rejectClientPriceTampering({ amountCents: 1 }).ok).toBe(false);
     expect(rejectClientPriceTampering({ amountCents: PET_PRICE_CENTS, sku: "other" }).ok).toBe(false);
-    expect(rejectClientPriceTampering({ amountCents: 5900, sku: PET_PRODUCT_SKU }).ok).toBe(true);
+    expect(rejectClientPriceTampering({ amountCents: PET_PRICE_CENTS, sku: PET_PRODUCT_SKU }).ok).toBe(true);
   });
 
   it("rejects invalid upload type and oversized files", () => {

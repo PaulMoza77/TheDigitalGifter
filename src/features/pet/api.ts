@@ -19,6 +19,7 @@ import type {
   PublicPetOffer,
   SignedUploadUrlResponse,
 } from "./types";
+import { PET_PRICE_CENTS, PET_PRICE_DISPLAY } from "./types";
 
 /**
  * Typed client contract for the pet funnel.
@@ -82,13 +83,13 @@ export function createUnimplementedPetApi(): PetFunnelApi {
     getPublicOffer: async () => ({
       sku: "pet-secret-life-12",
       name: "My Pet’s Secret Life",
-      amountCents: 5900,
+      amountCents: PET_PRICE_CENTS,
       currency: "usd",
       imageCount: 12,
       videoCount: 2,
       subscription: false,
       active: true,
-      priceDisplay: "$59",
+      priceDisplay: PET_PRICE_DISPLAY,
       deliveryEstimate: "Usually ready in a few minutes after payment",
     }),
   };
