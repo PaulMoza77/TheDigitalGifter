@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { takeAuthReturnTo } from "@/lib/auth/returnTo";
 
 function getHashParams() {
   const hash = window.location.hash.startsWith("#")
@@ -19,7 +20,7 @@ export default function AuthCallback() {
 
     async function finish() {
       if (!mounted) return;
-      navigate("/", { replace: true });
+      navigate(takeAuthReturnTo("/"), { replace: true });
     }
 
     async function fail(reason: string) {

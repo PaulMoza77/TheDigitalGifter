@@ -1,40 +1,54 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { SignInButton } from "@/components/SignInButton";
+import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
 
-type State = {
-  loading: boolean;
+type Gate = {
+  ready: boolean;
   email: string | null;
   isAdmin: boolean;
 };
 
+function AdminSignInGate({ returnPath }: { returnPath: string }) {
+  useEffect(() => {
+    rememberAuthReturnTo(returnPath);
+  }, [returnPath]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+      <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/70 p-8 text-center">
+        <p className="text-xs uppercase tracking-[0.25em] text-slate-500">TDG Admin</p>
+        <h1 className="mt-3 text-2xl font-semibold text-slate-50">Sign in required</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-400">
+          Pet Funnel Analytics and other admin pages are not public. Sign in with the admin
+          account, then you will stay on this page.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <SignInButton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AdminRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-
-  const [state, setState] = useState<State>({
-    loading: true,
-    email: null,
-    isAdmin: false,
-  });
+  const { user, loading: authLoading } = useAuth();
+  const [gate, setGate] = useState<Gate>({ ready: false, email: null, isAdmin: false });
 
   useEffect(() => {
     let mounted = true;
 
     async function checkAdmin(sessionEmail?: string | null) {
+      const normalizedEmail = (sessionEmail || "").trim().toLowerCase();
+      if (!normalizedEmail) {
+        if (mounted) setGate({ ready: true, email: null, isAdmin: false });
+        return;
+      }
+
       try {
-        const normalizedEmail = (sessionEmail || "").trim().toLowerCase();
-
-        if (!normalizedEmail) {
-          if (mounted) {
-            setState({
-              loading: false,
-              email: null,
-              isAdmin: false,
-            });
-          }
-          return;
-        }
-
         const { data: row, error } = await supabase
           .from("admin_users")
           .select("email")
@@ -45,92 +59,31 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
 
         if (error) {
           console.error("[AdminRoute] admin_users check error:", error);
-          setState({
-            loading: false,
-            email: normalizedEmail,
-            isAdmin: false,
-          });
+          setGate({ ready: true, email: normalizedEmail, isAdmin: false });
           return;
         }
 
-        setState({
-          loading: false,
+        setGate({
+          ready: true,
           email: normalizedEmail,
           isAdmin: Boolean(row?.email),
         });
       } catch (e) {
         console.error("[AdminRoute] checkAdmin fatal:", e);
-
-        if (!mounted) return;
-
-        setState({
-          loading: false,
-          email: null,
-          isAdmin: false,
-        });
+        if (mounted) setGate({ ready: true, email: null, isAdmin: false });
       }
     }
 
-    async function bootstrap() {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-
-        if (!mounted) return;
-
-        if (error) {
-          console.error("[AdminRoute] getSession error:", error);
-          setState({
-            loading: false,
-            email: null,
-            isAdmin: false,
-          });
-          return;
-        }
-
-        const email = data.session?.user?.email?.trim().toLowerCase() ?? null;
-        await checkAdmin(email);
-      } catch (e) {
-        console.error("[AdminRoute] bootstrap fatal:", e);
-
-        if (!mounted) return;
-
-        setState({
-          loading: false,
-          email: null,
-          isAdmin: false,
-        });
-      }
-    }
-
-    void bootstrap();
-
-    const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
-
-      const email = session?.user?.email?.trim().toLowerCase() ?? null;
-
-      setState((prev) => {
-        if (prev.email === email) {
-          return prev;
-        }
-
-        return {
-          loading: true,
-          email,
-          isAdmin: false,
-        };
-      });
-
-      void checkAdmin(email);
-    });
+    if (authLoading) return;
+    setGate((prev) => ({ ...prev, ready: false }));
+    void checkAdmin(user?.email ?? null);
 
     return () => {
       mounted = false;
-      authSub.subscription.unsubscribe();
     };
-  }, []);
+  }, [authLoading, user?.email]);
 
-  if (state.loading) {
+  if (authLoading || !gate.ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950">
         <div className="flex flex-col items-center gap-3">
@@ -141,12 +94,12 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!state.email) {
-    return <Navigate to="/" replace state={{ from: location.pathname }} />;
+  if (!gate.email) {
+    return <AdminSignInGate returnPath={`${location.pathname}${location.search}`} />;
   }
 
-  if (!state.isAdmin) {
-    console.warn("[AdminRoute] Not admin:", { email: state.email });
+  if (!gate.isAdmin) {
+    console.warn("[AdminRoute] Not admin:", { email: gate.email });
     return <Navigate to="/" replace state={{ from: location.pathname }} />;
   }
 
