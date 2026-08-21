@@ -1,5 +1,11 @@
 {
   "ignoreCommand": "node scripts/vercel-ignore.mjs",
+  "crons": [
+    {
+      "path": "/api/pet-analytics-cron",
+      "schedule": "0 */6 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/sitemap.xml",

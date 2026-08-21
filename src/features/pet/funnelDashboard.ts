@@ -45,6 +45,9 @@ export type AttributionBreakdownRow = {
   campaign: string;
   adSet: string;
   ad: string;
+  campaignId?: string | null;
+  adsetId?: string | null;
+  adId?: string | null;
   sourceGroup: "meta" | "other" | "unattributed";
   lpv: number;
   name: number;
@@ -54,9 +57,17 @@ export type AttributionBreakdownRow = {
   purchase: number;
   revenueCents: number;
   cvr: number | null;
-  spend: null;
-  cpa: null;
-  roas: null;
+  spendCents: number | null;
+  cpaCents: number | null;
+  roas: number | null;
+  impressions?: number | null;
+  linkClicks?: number | null;
+  cpcCentsComputed?: number | null;
+  ctrPct?: number | null;
+  /** @deprecated use spendCents */
+  spend: number | null;
+  /** @deprecated use cpaCents */
+  cpa: number | null;
 };
 
 export type SpeciesBreakdownRow = {
@@ -87,8 +98,22 @@ export type PetFunnelAnalyticsReport = {
   from: string;
   to: string;
   firstEventAt: string | null;
+  firstPartyTrackingStartedAt: string | null;
+  rangeMode: "first_party" | "historical" | "mixed";
   steps: FunnelStepRow[];
   previousSteps: FunnelStepRow[];
+  hybridStages: import("./funnelHybrid").HybridStageValue[];
+  hybridKpis: import("./funnelHybrid").HybridKpis;
+  daily: import("./funnelHybrid").DailyPerfRow[];
+  metaAds: import("./funnelHybrid").MetaAdRow[];
+  sync: {
+    metaConfigured: boolean | null;
+    ga4Configured: boolean | null;
+    metaLastSyncedAt: string | null;
+    ga4LastSyncedAt: string | null;
+    metaMissing: string[];
+    ga4Missing: string[];
+  };
   kpis: {
     landing: number;
     names: number;
@@ -111,7 +136,7 @@ export type PetFunnelAnalyticsReport = {
   recent: FunnelRecentEvent[];
   warnings: string[];
   biggestDrop: { from: string; to: string; dropPct: number } | null;
-  spendAvailable: false;
+  spendAvailable: boolean;
 };
 
 export function emptyStepCounts(): FunnelStepCounts {
@@ -224,11 +249,18 @@ export function attributionFallbackLabel(input: {
 export function funnelWarnings(input: {
   steps: FunnelStepRow[];
   firstEventAt: string | null;
+  rangeMode?: "first_party" | "historical" | "mixed";
+  metaConfigured?: boolean | null;
   ads?: Array<{ ad: string; lpv: number; upload: number; purchase: number }>;
 }): string[] {
   const warnings: string[] = [];
   if (!input.firstEventAt) {
-    warnings.push("Tracking may be incomplete");
+    warnings.push("First-party tracking has not recorded events yet — showing historical Meta/GA4/Stripe where available");
+  } else if (input.rangeMode === "historical" || input.rangeMode === "mixed") {
+    warnings.push("Range includes dates before first-party tracking — mid-funnel stages may be unavailable");
+  }
+  if (input.metaConfigured === false) {
+    warnings.push("Meta historical sync not configured");
   }
   const landing = input.steps[0];
   const name = input.steps[1];

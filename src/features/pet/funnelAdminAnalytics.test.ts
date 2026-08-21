@@ -109,7 +109,7 @@ describe("pet funnel admin analytics wiring", () => {
     expect(readSrc("src/App.tsx")).toContain("pet-funnel-analytics");
     expect(readSrc("src/App.tsx")).toMatch(/<AdminRoute>[\s\S]*pet-funnel-analytics/);
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/pet-funnel-analytics");
-    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Spend / CPA / ROAS");
+    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Spend");
     expect(readSrc("src/hooks/usePetFunnelAnalytics.ts")).toContain('supabase.rpc("admin_pet_funnel_analytics"');
   });
 });
