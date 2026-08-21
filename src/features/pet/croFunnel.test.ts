@@ -233,6 +233,8 @@ describe("pet funnel CRO", () => {
     expect(api).toContain("createStripeCheckout");
     expect(checkout).toContain("startPetCheckout");
     expect(checkout).toContain("trackMetaInitiateCheckout");
+    expect(checkout).toContain("trackFunnelBeginCheckout");
+    expect(checkout).toContain("shouldTrackPetBeginCheckout");
     expect(checkout).toContain("serverAmount");
     expect(checkout).toContain("pet_ic_");
   });
@@ -242,6 +244,7 @@ describe("pet funnel CRO", () => {
     expect(pixel).toContain("tdg.meta.purchase.");
     expect(pixel).toContain("trackMetaPurchaseOnce");
     expect(readSrc("src/features/pet/PetOrderPage.tsx")).toContain("trackMetaPurchaseOnce");
+    expect(readSrc("src/features/pet/PetOrderPage.tsx")).toContain("trackFunnelPurchase");
   });
 
   it("21. analytics payloads contain no name, email, photo URL or token", () => {

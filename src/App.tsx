@@ -164,6 +164,7 @@ const FunnelResultPage = lazy(
 import { supabase } from "@/lib/supabase";
 import { trackMetaSpaPageView } from "@/lib/metaPixel";
 import { trackPageView } from "@/lib/analytics";
+import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -202,6 +203,16 @@ function MetaSpaPageViewTracker() {
     }
     trackMetaSpaPageView(location.pathname);
   }, [location.pathname]);
+
+  return null;
+}
+
+function FunnelAttributionCapture() {
+  const location = useLocation();
+
+  useEffect(() => {
+    captureFunnelAttribution(location.search);
+  }, [location.search]);
 
   return null;
 }
@@ -374,6 +385,7 @@ function AppInner() {
     <BrowserRouter>
       <GtagPageViewTracker />
       <MetaSpaPageViewTracker />
+      <FunnelAttributionCapture />
       <ScrollToTop />
 
       <Suspense

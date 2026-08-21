@@ -7,6 +7,15 @@ declare global {
   }
 }
 
+export type AnalyticsParamValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | AnalyticsParamValue[]
+  | { [key: string]: AnalyticsParamValue };
+
 function ensureGtag() {
   if (typeof window === "undefined") return false;
 
@@ -24,34 +33,46 @@ function ensureGtag() {
 }
 
 export function initAnalytics() {
-  if (!ensureGtag()) return;
+  try {
+    if (!ensureGtag()) return;
 
-  window.gtag?.("config", GA_ID, {
-    send_page_view: true,
-    page_path: window.location.pathname + window.location.search,
-    page_location: window.location.href,
-    page_title: document.title,
-  });
+    window.gtag?.("config", GA_ID, {
+      send_page_view: true,
+      page_path: window.location.pathname + window.location.search,
+      page_location: window.location.href,
+      page_title: document.title,
+    });
+  } catch {
+    // Analytics must never break the product.
+  }
 }
 
 export function trackPageView(path: string) {
-  if (!ensureGtag()) return;
+  try {
+    if (!ensureGtag()) return;
 
-  window.gtag?.("config", GA_ID, {
-    page_path: path,
-    page_location: window.location.href,
-    page_title: document.title,
-  });
+    window.gtag?.("config", GA_ID, {
+      page_path: path,
+      page_location: window.location.href,
+      page_title: document.title,
+    });
+  } catch {
+    // Analytics must never break the product.
+  }
 }
 
 export function trackEvent(
   eventName: string,
-  params?: Record<string, string | number | boolean | null | undefined>
+  params?: Record<string, AnalyticsParamValue>,
 ) {
-  if (!ensureGtag()) return;
+  try {
+    if (!eventName || !ensureGtag()) return;
 
-  window.gtag?.("event", eventName, {
-    ...(params || {}),
-    send_to: GA_ID,
-  });
+    window.gtag?.("event", eventName, {
+      ...(params || {}),
+      send_to: GA_ID,
+    });
+  } catch {
+    // GA blocked, missing, or throwing must never break the funnel.
+  }
 }
