@@ -119,3 +119,8 @@ export function captureFunnelAttribution(search?: string): FunnelAttribution {
 export function attributionParamsForGa4(): FunnelAttribution {
   return getFunnelAttribution();
 }
+
+export function attributionParamsForInternal(): Omit<FunnelAttribution, "fbclid"> {
+  const { fbclid: _fbclid, ...rest } = getFunnelAttribution();
+  return rest;
+}

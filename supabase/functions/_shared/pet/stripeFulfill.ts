@@ -3,6 +3,7 @@ import { PET_PRICE_CENTS, siteOrigin } from "./constants.ts";
 import { asString, asInt, isUuid } from "./crypto.ts";
 import { stripeFulfillmentDecision } from "./guards.ts";
 import { sendMetaCapiPurchase } from "./meta.ts";
+import { recordPetFunnelPurchase } from "./funnelEvents.ts";
 
 export function isPetCheckoutMetadata(metadata: Record<string, unknown>): boolean {
   return asString(metadata.sku) === "pet-secret-life-12" || asString(metadata.product_type) === "pet_secret_life";
@@ -145,25 +146,32 @@ export async function handlePetStripeEvent(input: {
   if (result?.status === "fulfilled" || result?.status === "already_paid") {
     const { data: order } = await input.service
       .from("pet_orders")
-      .select("id, email, meta_event_id, meta_purchase_sent_at, amount_cents, charged_amount_cents")
+      .select("id, email, species, meta_event_id, meta_purchase_sent_at, amount_cents, charged_amount_cents")
       .eq("id", orderId)
       .maybeSingle();
-    if (order && !order.meta_purchase_sent_at) {
+    if (order) {
       const charged = Number(order.charged_amount_cents ?? order.amount_cents ?? PET_PRICE_CENTS);
       if (charged > 0) {
-        const capi = await sendMetaCapiPurchase({
-          eventId: order.meta_event_id,
+        await recordPetFunnelPurchase(input.service, {
           orderId: order.id,
-          email: order.email,
-          alreadySentAt: order.meta_purchase_sent_at,
-          sourceUrl: `${siteOrigin()}/pet/order`,
           amountCents: charged,
+          species: asString(order.species),
         });
-        if (capi.sent) {
-          await input.service
-            .from("pet_orders")
-            .update({ meta_purchase_sent_at: new Date().toISOString() })
-            .eq("id", orderId);
+        if (!order.meta_purchase_sent_at) {
+          const capi = await sendMetaCapiPurchase({
+            eventId: order.meta_event_id,
+            orderId: order.id,
+            email: order.email,
+            alreadySentAt: order.meta_purchase_sent_at,
+            sourceUrl: `${siteOrigin()}/pet/order`,
+            amountCents: charged,
+          });
+          if (capi.sent) {
+            await input.service
+              .from("pet_orders")
+              .update({ meta_purchase_sent_at: new Date().toISOString() })
+              .eq("id", orderId);
+          }
         }
       }
     }

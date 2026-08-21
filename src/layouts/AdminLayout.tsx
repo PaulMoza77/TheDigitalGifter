@@ -18,6 +18,7 @@ import {
   Inbox,
   Settings,
   Newspaper,
+  BarChart3,
   PawPrint,
 } from "lucide-react";
 import { formatAlertCount } from "@/hooks/adminNavAlerts";
@@ -230,6 +231,11 @@ const SidebarNavigation: React.FC<{
             path: "/admin/pet-orders",
             icon: PawPrint,
             alertCount: alerts.petOrders,
+          },
+          {
+            label: "Pet Funnel Analytics",
+            path: "/admin/pet-funnel-analytics",
+            icon: BarChart3,
           },
           {
             label: "Customers",
