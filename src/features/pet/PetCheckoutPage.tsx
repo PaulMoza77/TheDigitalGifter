@@ -17,7 +17,11 @@ import { usePetDraft } from "./usePetDraft";
 import { usePublicPetOffer } from "./usePublicPetOffer";
 import { validatePetDraft } from "./validation";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
-import { trackFunnelEvent } from "./funnelAnalytics";
+import {
+  shouldTrackPetBeginCheckout,
+  trackFunnelBeginCheckout,
+  trackFunnelEvent,
+} from "./funnelAnalytics";
 import { petPossessive } from "./croGuards";
 import { formatOfferPrice, resolveServerOwnedPromo } from "./videoGuards";
 
@@ -126,22 +130,33 @@ export function PetCheckoutPage({
         return;
       }
 
-      const goingToStripe =
-        result.status === "open" &&
-        Boolean(result.sessionId) &&
-        result.checkoutUrl.startsWith("https://");
+      const goingToStripe = shouldTrackPetBeginCheckout(result);
       const serverAmount = result.chargedAmountCents ?? result.amountCents;
       if (goingToStripe && serverAmount && serverAmount > 0) {
+        const eventId = result.eventId || `pet_ic_${result.orderId}`;
         trackMetaInitiateCheckout({
-          eventId: result.eventId || `pet_ic_${result.orderId}`,
+          eventId,
           valueCents: serverAmount,
           orderId: result.orderId,
         });
+        trackFunnelBeginCheckout({
+          eventId,
+          valueCents: serverAmount,
+          orderId: result.orderId,
+          species: draft.species,
+        });
       } else if (goingToStripe && offerVerified && amountCents > 0) {
+        const eventId = result.eventId || `pet_ic_${result.orderId}`;
         trackMetaInitiateCheckout({
-          eventId: result.eventId || `pet_ic_${result.orderId}`,
+          eventId,
           valueCents: amountCents,
           orderId: result.orderId,
+        });
+        trackFunnelBeginCheckout({
+          eventId,
+          valueCents: amountCents,
+          orderId: result.orderId,
+          species: draft.species,
         });
       }
 

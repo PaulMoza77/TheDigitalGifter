@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import { createPreviewResults } from "./previewApi";
 import { trackMetaPurchaseOnce } from "@/lib/metaPixel";
+import { trackFunnelPurchase } from "./funnelAnalytics";
 import {
   isFatalOrderLookupError,
   isTransientPollError,
@@ -129,11 +130,20 @@ export function PetOrderPage({
         setLoading(false);
 
         if (merged.paidAt && (merged.chargedAmountCents ?? merged.amountCents) > 0) {
+          const amountCents = merged.chargedAmountCents ?? merged.amountCents;
+          const eventId = merged.purchaseEventId || `pet_purchase_${merged.id}`;
           trackMetaPurchaseOnce({
-            eventId: merged.purchaseEventId || `pet_purchase_${merged.id}`,
-            amountCents: merged.chargedAmountCents ?? merged.amountCents,
+            eventId,
+            amountCents,
             orderId: merged.id,
             paidAt: merged.paidAt,
+          });
+          trackFunnelPurchase({
+            eventId,
+            amountCents,
+            orderId: merged.id,
+            paidAt: merged.paidAt,
+            species: merged.species,
           });
         }
 

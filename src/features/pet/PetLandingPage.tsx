@@ -23,7 +23,7 @@ import {
   HeroProof,
 } from "./components";
 import { createSecretLivesCta, landingNameStepCreatesOrder, validateOtherSubtype, validatePetName } from "./croGuards";
-import { trackFunnelEvent } from "./funnelAnalytics";
+import { trackFunnelEvent, trackFunnelViewItem } from "./funnelAnalytics";
 import { PET_PRICE_DISPLAY, type PetFunnelNavigation, type PetSpecies } from "./types";
 import { usePetDraft } from "./usePetDraft";
 import { usePublicPetOffer } from "./usePublicPetOffer";
@@ -58,6 +58,7 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
       valueCents: amountCents,
       onceKey: `tdg.meta.viewContent.${species}`,
     });
+    trackFunnelViewItem({ species, valueCents: amountCents });
   }, [species, offerVerified, amountCents]);
 
   const priceLabel = loading ? null : priceDisplay;

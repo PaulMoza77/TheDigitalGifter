@@ -23,6 +23,11 @@ const PII_KEYS = [
   "storagePath",
   "fileName",
   "subtypeDetail",
+  "customerName",
+  "userName",
+  "checkoutUrl",
+  "sessionUrl",
+  "stripeUrl",
 ] as const;
 
 export function normalizePetName(value: string): string {
