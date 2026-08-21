@@ -19,7 +19,7 @@ import type {
   PublicPetOffer,
   SignedUploadUrlResponse,
 } from "./types";
-import { PET_PRICE_CENTS, PET_PRICE_DISPLAY } from "./types";
+import { checkoutAnalyticsContext } from "./funnelInternal";
 
 /**
  * Typed client contract for the pet funnel.
@@ -188,6 +188,7 @@ export async function startPetCheckout(
     cancelUrl: input.cancelUrl,
     customerEmail: input.email,
     promoCode: input.promoCode,
+    ...checkoutAnalyticsContext(),
   });
 
   return {

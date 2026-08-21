@@ -42,6 +42,7 @@ import {
 import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, resolveServerOwnedOffer, resolveServerOwnedPromo } from "../_shared/pet/videoGuards.ts";
 import { PET_SCENE_DEFINITIONS, sceneByKey } from "../_shared/pet/scenes.ts";
 import { petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
+import { parseCheckoutAttribution, recordPetFunnelInitiateCheckout } from "../_shared/pet/funnelEvents.ts";
 import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
 import { enqueuePetGenerate, enqueuePetGenerateIfStalled } from "../_shared/pet/stripeFulfill.ts";
 import {
@@ -482,6 +483,11 @@ Deno.serve(async (req) => {
       if (!order.photo_path || !order.photo_confirmed_at) {
         return apiError("INVALID_REQUEST", "Upload and confirm the pet photo first.");
       }
+      const checkoutCtx = {
+        funnelSessionId: asString(body.funnelSessionId || body.funnel_session_id) || null,
+        deviceType: asString(body.deviceType || body.device_type) || null,
+        attribution: parseCheckoutAttribution(body.attribution),
+      };
       const promo = resolveServerOwnedPromo(body.promoCode ?? body.promo_code, body.discountPercent ?? body.discount_percent);
       if (!promo.ok) return apiError("INVALID_REQUEST", promo.message);
       if (promo.code) {
@@ -571,6 +577,12 @@ Deno.serve(async (req) => {
           email: asString(order.email),
           amountCents: meta.chargedAmountCents,
         });
+        await recordPetFunnelInitiateCheckout(service, {
+          orderId: order.id,
+          amountCents: meta.chargedAmountCents,
+          species: asString(order.species),
+          ...checkoutCtx,
+        });
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
@@ -636,6 +648,12 @@ Deno.serve(async (req) => {
           email: asString(order.email),
           amountCents: meta.chargedAmountCents,
         });
+        await recordPetFunnelInitiateCheckout(service, {
+          orderId: order.id,
+          amountCents: meta.chargedAmountCents,
+          species: asString(order.species),
+          ...checkoutCtx,
+        });
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
@@ -659,6 +677,12 @@ Deno.serve(async (req) => {
         orderId: order.id,
         email: asString(order.email),
         amountCents: meta.chargedAmountCents,
+      });
+      await recordPetFunnelInitiateCheckout(service, {
+        orderId: order.id,
+        amountCents: meta.chargedAmountCents,
+        species: asString(order.species),
+        ...checkoutCtx,
       });
       return jsonResponse({
         sessionId: matched.sessionId,

@@ -2,6 +2,8 @@ import { trackEvent, type AnalyticsParamValue } from "@/lib/analytics";
 import { PET_PRODUCT_NAME, PET_PRODUCT_SKU } from "./types";
 import { sanitizeFunnelAnalyticsPayload } from "./croGuards";
 import { attributionParamsForGa4 } from "./funnelAttribution";
+import { trackPetFunnelInternalEvent } from "./funnelInternal";
+import type { PetFunnelInternalEvent } from "./funnelDashboard";
 
 type Fbq = (...args: unknown[]) => void;
 
@@ -28,6 +30,15 @@ export const GA4_FUNNEL_EVENTS = {
   InitiateCheckout: "begin_checkout",
   CheckoutError: "checkout_error",
 } as const;
+
+const INTERNAL_FUNNEL_EVENTS: Partial<Record<keyof typeof FUNNEL_EVENT_KEYS, PetFunnelInternalEvent>> = {
+  PetNameSubmitted: "pet_name_submitted",
+  PhotoUploadStarted: "photo_upload_started",
+  PhotoUploadCompleted: "photo_upload_completed",
+  PetDetailsCompleted: "pet_details_completed",
+  PetOrderReviewViewed: "order_review_viewed",
+  CheckoutError: "checkout_error",
+};
 
 const FUNNEL_STEPS: Record<keyof typeof FUNNEL_EVENT_KEYS, string> = {
   PetNameSubmitted: "name",
@@ -141,7 +152,7 @@ export function shouldTrackPetPurchase(input: {
 
 export function trackFunnelViewItem(input: { species: string; valueCents: number }) {
   if (!Number.isFinite(input.valueCents) || input.valueCents <= 0) return false;
-  return sendGa4(
+  const sent = sendGa4(
     "view_item",
     {
       currency: "USD",
@@ -152,6 +163,13 @@ export function trackFunnelViewItem(input: { species: string; valueCents: number
     },
     { onceKey: `tdg.ga4.view_item.${input.species}` },
   );
+  if (sent) {
+    trackPetFunnelInternalEvent({
+      eventName: "landing_view",
+      species: input.species,
+    });
+  }
+  return sent;
 }
 
 export function trackFunnelBeginCheckout(input: {
@@ -236,5 +254,12 @@ export function trackFunnelEvent(
   }
 
   sendGa4(GA4_FUNNEL_EVENTS[name], ga4Params);
+  const internalName = INTERNAL_FUNNEL_EVENTS[name];
+  if (internalName) {
+    trackPetFunnelInternalEvent({
+      eventName: internalName,
+      species: typeof payload.species === "string" ? payload.species : null,
+    });
+  }
   return true;
 }

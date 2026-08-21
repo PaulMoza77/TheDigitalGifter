@@ -70,6 +70,7 @@ const AdminBlogPage = lazy(() => import("@/pages/admin/AdminBlogPage"));
 const PricingPage = lazy(() => import("@/pages/admin/PricingPage"));
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const PetOrdersPage = lazy(() => import("@/pages/admin/PetOrders"));
+const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 const SupportTicketsPage = lazy(
@@ -556,6 +557,7 @@ function AppInner() {
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="pet-orders" element={<PetOrdersPage />} />
+            <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
 

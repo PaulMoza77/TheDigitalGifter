@@ -400,6 +400,18 @@ export type CreateStripeCheckoutRequest = {
   cancelUrl: string;
   customerEmail: string;
   promoCode?: string;
+  funnelSessionId?: string;
+  deviceType?: "mobile" | "tablet" | "desktop";
+  attribution?: {
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_content?: string | null;
+    utm_term?: string | null;
+    campaign_id?: string | null;
+    adset_id?: string | null;
+    ad_id?: string | null;
+  };
 };
 
 export type CreateStripeCheckoutResponse = {
