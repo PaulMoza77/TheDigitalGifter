@@ -55,5 +55,8 @@ verify_jwt = false
 [functions.pet-replicate-webhook]
 verify_jwt = false
 
+[functions.pet-analytics-sync]
+verify_jwt = false
+
 [functions.delete-my-account]
 verify_jwt = true

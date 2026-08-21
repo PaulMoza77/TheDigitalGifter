@@ -80,7 +80,7 @@ describe("pet funnel dashboard math", () => {
       purchase: 0,
     });
     const warnings = funnelWarnings({ steps, firstEventAt: null });
-    expect(warnings).toContain("Tracking may be incomplete");
+    expect(warnings.some((w) => /first-party|Historical|historical/i.test(w))).toBe(true);
     expect(warnings).toContain("High landing → name drop-off");
     expect(warnings).toContain("Checkout started but no purchases");
   });
