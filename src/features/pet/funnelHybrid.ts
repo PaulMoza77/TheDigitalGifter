@@ -58,6 +58,7 @@ export type HybridKpis = {
   landingToPurchase: number | null;
   metaAttributedPurchases: number | null;
   metaPurchaseValueCents: number | null;
+  freeDiscountOrders: number;
 };
 
 export type MetaAdRow = {
@@ -99,6 +100,30 @@ export function safeRoas(purchaseValueCents: number, spendCents: number): number
 export function safeCpaCents(spendCents: number, purchases: number): number | null {
   if (!Number.isFinite(spendCents) || !Number.isFinite(purchases) || purchases <= 0 || spendCents < 0) return null;
   return Math.round(spendCents / purchases);
+}
+
+export type PetOrderAnalyticsClass = "paid" | "free" | "test";
+
+export function classifyPetOrderForAnalytics(order: {
+  stripeCheckoutSessionId?: string | null;
+  stripePaymentIntentId?: string | null;
+  chargedAmountCents?: number | null;
+  amountCents?: number | null;
+  discountPercent?: number | null;
+  stripePaymentStatus?: string | null;
+}): PetOrderAnalyticsClass {
+  const session = String(order.stripeCheckoutSessionId || "");
+  const intent = String(order.stripePaymentIntentId || "");
+  const status = String(order.stripePaymentStatus || "");
+  const discount = Number(order.discountPercent) || 0;
+  const charged = order.chargedAmountCents;
+  const amount = Number(order.amountCents) || 0;
+  if (session.startsWith("cs_test") || intent.startsWith("pi_test")) return "test";
+  const recognized = charged == null ? amount : Number(charged) || 0;
+  if (discount >= 100 || session.startsWith("promo:") || status === "no_payment_required" || status === "not_required" || recognized <= 0) {
+    return "free";
+  }
+  return "paid";
 }
 
 export function safeCpcCents(spendCents: number, clicks: number): number | null {
@@ -281,6 +306,7 @@ export function buildHybridKpis(input: {
   revenueCents: number;
   metaPurchaseValueCents: number | null;
   metaAttributedPurchases: number | null;
+  freeDiscountOrders?: number;
 }): HybridKpis {
   const byName = Object.fromEntries(input.stages.map((s) => [s.eventName, s])) as Record<
     (typeof PET_FUNNEL_PRIMARY_STEPS)[number],
@@ -318,6 +344,7 @@ export function buildHybridKpis(input: {
         : percent(purchases, byName.landing_view.value),
     metaAttributedPurchases: input.metaAttributedPurchases,
     metaPurchaseValueCents: input.metaPurchaseValueCents,
+    freeDiscountOrders: Math.max(0, Math.round(Number(input.freeDiscountOrders) || 0)),
   };
 }
 

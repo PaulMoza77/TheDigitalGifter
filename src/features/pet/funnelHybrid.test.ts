@@ -8,6 +8,7 @@ import {
   buildDailyPerformance,
   buildHybridKpis,
   buildHybridStages,
+  classifyPetOrderForAnalytics,
   classifyRangeMode,
   mergeMetaAdRows,
   safeCpaCents,
@@ -142,6 +143,75 @@ describe("pet hybrid funnel analytics", () => {
     expect(kpis.revenueCents).toBe(2700);
     expect(kpis.metaAttributedPurchases).toBe(7);
     expect(kpis.roas).toBeCloseTo(0.27);
+    expect(kpis.freeDiscountOrders).toBe(0);
+  });
+
+  it("keeps 100% promo comps and Stripe test orders out of paid purchase KPIs", () => {
+    expect(
+      classifyPetOrderForAnalytics({
+        stripeCheckoutSessionId: "promo:VTM99:order-1",
+        chargedAmountCents: 0,
+        amountCents: 5900,
+        discountPercent: 100,
+        stripePaymentStatus: "no_payment_required",
+      }),
+    ).toBe("free");
+    expect(
+      classifyPetOrderForAnalytics({
+        stripeCheckoutSessionId: "cs_test_123",
+        chargedAmountCents: 2700,
+        amountCents: 2700,
+        discountPercent: 0,
+        stripePaymentStatus: "paid",
+      }),
+    ).toBe("test");
+    expect(
+      classifyPetOrderForAnalytics({
+        stripeCheckoutSessionId: "cs_live_123",
+        stripePaymentIntentId: "pi_live_123",
+        chargedAmountCents: 2700,
+        amountCents: 2700,
+        discountPercent: 0,
+        stripePaymentStatus: "paid",
+      }),
+    ).toBe("paid");
+
+    const stages = buildHybridStages({
+      mode: "first_party",
+      firstPartyCounts: emptyStepCounts(),
+      backendCheckouts: 6,
+      backendPurchases: 0,
+      meta: {
+        landingPageViews: 10,
+        initiateCheckouts: 6,
+        purchases: 6,
+        petNameSubmitted: null,
+        photoUploadCompleted: null,
+        orderReviewViewed: null,
+      },
+      ga4: {
+        landingViews: 0,
+        petNameSubmitted: null,
+        photoUploadCompleted: null,
+        orderReviewViewed: null,
+        beginCheckouts: 0,
+      },
+    });
+    const kpis = buildHybridKpis({
+      stages,
+      spendCents: 4623,
+      impressions: 1000,
+      linkClicks: 40,
+      revenueCents: 0,
+      metaPurchaseValueCents: 0,
+      metaAttributedPurchases: 0,
+      freeDiscountOrders: 6,
+    });
+    expect(kpis.purchases).toBe(0);
+    expect(kpis.revenueCents).toBe(0);
+    expect(kpis.cpaCents).toBeNull();
+    expect(kpis.roas).toBe(0);
+    expect(kpis.freeDiscountOrders).toBe(6);
   });
 
   it("computes Meta spend CPA/ROAS and never emits Infinity for zero spend", () => {
@@ -200,6 +270,11 @@ describe("pet hybrid funnel analytics", () => {
     expect(sql).toContain("backend_current");
     expect(sql).toContain("charged_amount_cents");
     expect(sql).toContain("pet_checkout_sessions");
+    const paidSql = readSrc("supabase/migrations/20260822140000_pet_analytics_paid_vs_comp.sql");
+    expect(paidSql).toContain("pet_order_analytics_class");
+    expect(paidSql).toContain("free_orders");
+    expect(paidSql).toContain("analytics_class = 'paid'");
+    expect(paidSql).toContain("analytics_class = 'test'");
   });
 
   it("keeps Ads/GA4 secrets server-only and admin-protects sync", () => {
@@ -238,7 +313,9 @@ describe("pet hybrid funnel analytics", () => {
 
   it("preserves existing first-party admin RPC wiring", () => {
     expect(readSrc("src/hooks/usePetFunnelAnalytics.ts")).toContain('supabase.rpc("admin_pet_funnel_analytics"');
+    expect(readSrc("src/hooks/usePetFunnelAnalytics.ts")).not.toContain("backendPurchases || firstPartyKpis.purchases");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Landing → Purchase");
+    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Free / 100% Discount Orders");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Historical detail unavailable");
   });
 });

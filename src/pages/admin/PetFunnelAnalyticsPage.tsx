@@ -232,12 +232,17 @@ export default function PetFunnelAnalyticsPage() {
               <StatCard
                 label="Purchases"
                 value={String(kpis.purchases)}
-                helper={comparisonHelper(kpis.purchases, report.previousSteps[5]?.sessions ?? 0) || "Stripe verified"}
+                helper={comparisonHelper(kpis.purchases, report.previousSteps[5]?.sessions ?? 0) || "Paid production"}
               />
               <StatCard
                 label="Revenue"
                 value={formatUsdFromCents(kpis.revenueCents)}
-                helper={comparisonHelper(kpis.revenueCents, report.kpis.previousRevenueCents) || "Stripe verified"}
+                helper={comparisonHelper(kpis.revenueCents, report.kpis.previousRevenueCents) || "Paid production"}
+              />
+              <StatCard
+                label="Free / 100% Discount Orders"
+                value={String(kpis.freeDiscountOrders)}
+                helper="Excluded from CPA / ROAS"
               />
               <StatCard label="Cost per Checkout" value={formatMetricOrDash(kpis.costPerCheckoutCents, formatUsdFromCents)} />
               <StatCard label="CPA" value={formatMetricOrDash(kpis.cpaCents, formatUsdFromCents)} />

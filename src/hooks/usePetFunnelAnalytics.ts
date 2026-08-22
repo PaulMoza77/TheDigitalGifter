@@ -178,6 +178,7 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
       const backendPurchases = asNumber(backend.purchases);
       const backendRevenue = asNumber(backend.revenue_cents);
       const backendCheckouts = asNumber(backend.checkouts);
+      const freeDiscountOrders = asNumber(backend.free_orders);
 
       const hybridStages = buildHybridStages({
         mode: rangeMode,
@@ -210,6 +211,7 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
         revenueCents: backendRevenue,
         metaPurchaseValueCents: asNumber(meta.row_count) > 0 ? asNumber(metaTotals.purchase_value_cents) : null,
         metaAttributedPurchases: asNumber(meta.row_count) > 0 ? asNumber(metaTotals.purchases) : null,
+        freeDiscountOrders,
       });
 
       const metaAdsRaw = ((meta.ads as RpcRow[]) || []) as RpcRow[];
@@ -315,14 +317,15 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
         }>,
       });
 
+      const paidKpiCounts = { ...counts, purchase: backendPurchases };
       const firstPartyKpis = buildKpis(
-        counts,
-        // Prefer Stripe revenue for business truth even in first-party mode.
-        backendRevenue || asNumber(payload.revenue_cents),
-        asNumber(backend.previous_revenue_cents) || asNumber(payload.previous_revenue_cents),
+        paidKpiCounts,
+        // Stripe charged amount is business truth, including $0 when all orders were comps.
+        backendRevenue,
+        Object.prototype.hasOwnProperty.call(backend, "previous_revenue_cents")
+          ? asNumber(backend.previous_revenue_cents)
+          : asNumber(payload.previous_revenue_cents),
       );
-      // Override purchase KPI with Stripe when available.
-      firstPartyKpis.purchases = backendPurchases || firstPartyKpis.purchases;
       firstPartyKpis.checkouts = rangeMode === "first_party" ? firstPartyKpis.checkouts : backendCheckouts || firstPartyKpis.checkouts;
 
       const ads = firstPartyAds;
