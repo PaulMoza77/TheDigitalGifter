@@ -326,7 +326,7 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
           ? asNumber(backend.previous_revenue_cents)
           : asNumber(payload.previous_revenue_cents),
       );
-      firstPartyKpis.checkouts = rangeMode === "first_party" ? firstPartyKpis.checkouts : backendCheckouts || firstPartyKpis.checkouts;
+      firstPartyKpis.checkouts = backendCheckouts;
 
       const ads = firstPartyAds;
       const mapped: PetFunnelAnalyticsReport = {

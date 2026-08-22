@@ -8,6 +8,7 @@ import {
   buildDailyPerformance,
   buildHybridKpis,
   buildHybridStages,
+  classifyPetCheckoutForAnalytics,
   classifyPetOrderForAnalytics,
   classifyRangeMode,
   mergeMetaAdRows,
@@ -53,6 +54,7 @@ describe("pet hybrid funnel analytics", () => {
     expect(stages[2].value).toBeNull();
     expect(stages[3].value).toBeNull();
     expect(stages[4].value).toBe(1);
+    expect(stages[4].source).toBe("backend_truth");
     expect(stages[5].value).toBe(0);
     expect(stages[5].source).toBe("stripe_verified");
     // No conversion across unavailable stages
@@ -102,7 +104,10 @@ describe("pet hybrid funnel analytics", () => {
         beginCheckouts: 0,
       },
     });
-    expect(stages.every((s) => s.source === "first_party" || s.source === "stripe_verified")).toBe(true);
+    expect(stages.slice(0, 4).every((s) => s.source === "first_party")).toBe(true);
+    expect(stages[4].source).toBe("backend_truth");
+    expect(stages[4].value).toBe(2);
+    expect(stages[5].source).toBe("stripe_verified");
     expect(stages[0].value).toBe(10);
     expect(stages[5].value).toBe(1);
   });
@@ -214,6 +219,86 @@ describe("pet hybrid funnel analytics", () => {
     expect(kpis.freeDiscountOrders).toBe(6);
   });
 
+  it("counts only production customer Stripe Checkout initiations", () => {
+    expect(
+      classifyPetCheckoutForAnalytics({
+        stripeSessionId: "cs_live_abc",
+        emailNormalized: "buyer@gmail.com",
+        isAdminEmail: false,
+      }),
+    ).toBe("customer");
+    expect(
+      classifyPetCheckoutForAnalytics({
+        stripeSessionId: "cs_live_abandoned",
+        emailNormalized: "buyer@gmail.com",
+        isAdminEmail: false,
+        stripePaymentStatus: null,
+      }),
+    ).toBe("customer");
+    expect(
+      classifyPetCheckoutForAnalytics({
+        stripeSessionId: "cs_test_abc",
+        emailNormalized: "buyer@gmail.com",
+      }),
+    ).toBe("test");
+    expect(
+      classifyPetCheckoutForAnalytics({
+        stripeSessionId: "cs_live_abc",
+        emailNormalized: "verify@example.com",
+      }),
+    ).toBe("test");
+    expect(
+      classifyPetCheckoutForAnalytics({
+        stripeSessionId: "promo:VTM99:order-1",
+        emailNormalized: "friend@icloud.com",
+        discountPercent: 100,
+        stripePaymentStatus: "no_payment_required",
+      }),
+    ).toBe("promo");
+    expect(
+      classifyPetCheckoutForAnalytics({
+        stripeSessionId: "cs_live_abc",
+        emailNormalized: "owner@gmail.com",
+        isAdminEmail: true,
+      }),
+    ).toBe("internal");
+
+    const stages = buildHybridStages({
+      mode: "historical",
+      firstPartyCounts: emptyStepCounts(),
+      backendCheckouts: 0,
+      backendPurchases: 0,
+      meta: {
+        landingPageViews: 42,
+        initiateCheckouts: 10,
+        purchases: 6,
+        petNameSubmitted: null,
+        photoUploadCompleted: null,
+        orderReviewViewed: null,
+      },
+      ga4: {
+        landingViews: 0,
+        petNameSubmitted: null,
+        photoUploadCompleted: null,
+        orderReviewViewed: null,
+        beginCheckouts: 8,
+      },
+    });
+    const kpis = buildHybridKpis({
+      stages,
+      spendCents: 4623,
+      impressions: 1000,
+      linkClicks: 40,
+      revenueCents: 0,
+      metaPurchaseValueCents: 0,
+      metaAttributedPurchases: 0,
+    });
+    expect(stages[4].value).toBe(0);
+    expect(stages[4].source).toBe("backend_truth");
+    expect(kpis.checkouts).toBe(0);
+    expect(kpis.costPerCheckoutCents).toBeNull();
+  });
+
   it("computes Meta spend CPA/ROAS and never emits Infinity for zero spend", () => {
     expect(safeRoas(5000, 0)).toBeNull();
     expect(safeCpaCents(0, 2)).toBe(0);
@@ -275,6 +360,10 @@ describe("pet hybrid funnel analytics", () => {
     expect(paidSql).toContain("free_orders");
     expect(paidSql).toContain("analytics_class = 'paid'");
     expect(paidSql).toContain("analytics_class = 'test'");
+    const checkoutSql = readSrc("supabase/migrations/20260822150000_pet_analytics_customer_checkouts.sql");
+    expect(checkoutSql).toContain("pet_checkout_analytics_class");
+    expect(checkoutSql).toContain("analytics_class = 'customer'");
+    expect(checkoutSql).toContain("promo_checkouts");
   });
 
   it("keeps Ads/GA4 secrets server-only and admin-protects sync", () => {
@@ -314,8 +403,10 @@ describe("pet hybrid funnel analytics", () => {
   it("preserves existing first-party admin RPC wiring", () => {
     expect(readSrc("src/hooks/usePetFunnelAnalytics.ts")).toContain('supabase.rpc("admin_pet_funnel_analytics"');
     expect(readSrc("src/hooks/usePetFunnelAnalytics.ts")).not.toContain("backendPurchases || firstPartyKpis.purchases");
+    expect(readSrc("src/hooks/usePetFunnelAnalytics.ts")).not.toContain("backendCheckouts || firstPartyKpis.checkouts");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Landing → Purchase");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Free / 100% Discount Orders");
+    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Production customer Stripe Checkout");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Historical detail unavailable");
   });
 });

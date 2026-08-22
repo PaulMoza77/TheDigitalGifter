@@ -103,6 +103,16 @@ export function safeCpaCents(spendCents: number, purchases: number): number | nu
 }
 
 export type PetOrderAnalyticsClass = "paid" | "free" | "test";
+export type PetCheckoutAnalyticsClass = "customer" | "test" | "promo" | "internal";
+
+const RESERVED_TEST_EMAIL_DOMAINS = new Set([
+  "example.com",
+  "example.org",
+  "example.net",
+  "test.com",
+  "invalid",
+  "localhost",
+]);
 
 export function classifyPetOrderForAnalytics(order: {
   stripeCheckoutSessionId?: string | null;
@@ -124,6 +134,28 @@ export function classifyPetOrderForAnalytics(order: {
     return "free";
   }
   return "paid";
+}
+
+export function classifyPetCheckoutForAnalytics(input: {
+  stripeSessionId?: string | null;
+  emailNormalized?: string | null;
+  isAdminEmail?: boolean;
+  discountPercent?: number | null;
+  stripePaymentStatus?: string | null;
+}): PetCheckoutAnalyticsClass {
+  const session = String(input.stripeSessionId || "");
+  const email = String(input.emailNormalized || "").toLowerCase().trim();
+  const domain = email.includes("@") ? email.split("@").pop() || "" : "";
+  const status = String(input.stripePaymentStatus || "");
+  const discount = Number(input.discountPercent) || 0;
+  if (session.startsWith("cs_test")) return "test";
+  if (RESERVED_TEST_EMAIL_DOMAINS.has(domain)) return "test";
+  if (session.startsWith("promo:") || discount >= 100 || status === "no_payment_required" || status === "not_required") {
+    return "promo";
+  }
+  if (input.isAdminEmail) return "internal";
+  if (session.startsWith("cs_live")) return "customer";
+  return "test";
 }
 
 export function safeCpcCents(spendCents: number, clicks: number): number | null {
@@ -208,7 +240,7 @@ export function buildHybridStages(input: {
       stage("pet_name_submitted", firstPartyCounts.pet_name_submitted, "first_party"),
       stage("photo_upload_completed", firstPartyCounts.photo_upload_completed, "first_party"),
       stage("order_review_viewed", firstPartyCounts.order_review_viewed, "first_party"),
-      stage("initiate_checkout", firstPartyCounts.initiate_checkout, "first_party"),
+      stage("initiate_checkout", backendCheckouts, "backend_truth"),
       stage("purchase", backendPurchases, "stripe_verified"),
     ];
   } else {
@@ -235,25 +267,6 @@ export function buildHybridStages(input: {
             ? stage("landing_view", firstPartyCounts.landing_view, "first_party")
             : stage("landing_view", null, "historical_unavailable");
 
-    let checkoutValue: number;
-    let checkoutSource: DataProvenance;
-    if (backendCheckouts > 0) {
-      checkoutValue = backendCheckouts;
-      checkoutSource = "backend_truth";
-    } else if (mode === "mixed" && firstPartyCounts.initiate_checkout > 0) {
-      checkoutValue = firstPartyCounts.initiate_checkout;
-      checkoutSource = "first_party";
-    } else if (meta.initiateCheckouts > 0) {
-      checkoutValue = meta.initiateCheckouts;
-      checkoutSource = "meta";
-    } else if (ga4.beginCheckouts > 0) {
-      checkoutValue = ga4.beginCheckouts;
-      checkoutSource = "ga4";
-    } else {
-      checkoutValue = backendCheckouts;
-      checkoutSource = "backend_truth";
-    }
-
     stages = [
       landing,
       pickMidFunnel("pet_name_submitted", firstPartyCounts.pet_name_submitted, meta.petNameSubmitted, ga4.petNameSubmitted),
@@ -264,7 +277,7 @@ export function buildHybridStages(input: {
         ga4.photoUploadCompleted,
       ),
       pickMidFunnel("order_review_viewed", firstPartyCounts.order_review_viewed, meta.orderReviewViewed, ga4.orderReviewViewed),
-      stage("initiate_checkout", checkoutValue, checkoutSource),
+      stage("initiate_checkout", backendCheckouts, "backend_truth"),
       stage("purchase", backendPurchases, "stripe_verified"),
     ];
   }

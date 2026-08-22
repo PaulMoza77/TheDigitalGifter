@@ -228,7 +228,11 @@ export default function PetFunnelAnalyticsPage() {
               <StatCard label="Names Submitted" value={formatMetricOrDash(kpis.names)} helper={kpis.namesSource.replace(/_/g, " ")} />
               <StatCard label="Photo Uploads" value={formatMetricOrDash(kpis.uploads)} helper={kpis.uploadsSource.replace(/_/g, " ")} />
               <StatCard label="Order Reviews" value={formatMetricOrDash(kpis.reviews)} helper={kpis.reviewsSource.replace(/_/g, " ")} />
-              <StatCard label="Initiate Checkouts" value={formatMetricOrDash(kpis.checkouts)} helper={kpis.checkoutsSource.replace(/_/g, " ")} />
+              <StatCard
+                label="Initiate Checkouts"
+                value={formatMetricOrDash(kpis.checkouts)}
+                helper="Production customer Stripe Checkout"
+              />
               <StatCard
                 label="Purchases"
                 value={String(kpis.purchases)}
