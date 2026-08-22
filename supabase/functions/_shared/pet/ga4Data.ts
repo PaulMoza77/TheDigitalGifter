@@ -163,6 +163,7 @@ export function mapGa4ReportRow(row: {
 }): Ga4DailyMetricRow {
   const dims = row.dimensionValues || [];
   const metrics = row.metricValues || [];
+  const sessions = toInt(metrics[0]?.value);
   const mapped: Ga4DailyMetricRow = {
     metric_date: yyyymmddToIso(dim(dims, 0, "")),
     source: dim(dims, 1),
@@ -170,19 +171,20 @@ export function mapGa4ReportRow(row: {
     campaign: dim(dims, 3),
     device_category: dim(dims, 4),
     country: dim(dims, 5),
-    sessions: toInt(metrics[0]?.value),
+    sessions,
     total_users: toInt(metrics[1]?.value),
     screen_page_views: toInt(metrics[2]?.value),
-    landing_views: toInt(metrics[3]?.value),
-    begin_checkouts: toInt(metrics[7]?.value),
-    purchases: toInt(metrics[8]?.value),
-    purchase_revenue_cents: dollarsToCents(metrics[9]?.value),
+    // GA4 rejects duplicate metric names; sessions is the /pet landing proxy.
+    landing_views: sessions,
+    begin_checkouts: toInt(metrics[6]?.value),
+    purchases: toInt(metrics[7]?.value),
+    purchase_revenue_cents: dollarsToCents(metrics[8]?.value),
   };
   // Custom funnel event metrics are optional; only set when GA4 returns them (may be 0).
   // We still mark them present so post-instrumentation ranges can show GA4 funnel counts.
-  mapped.pet_name_submitted = toInt(metrics[4]?.value);
-  mapped.photo_upload_completed = toInt(metrics[5]?.value);
-  mapped.order_review_viewed = toInt(metrics[6]?.value);
+  mapped.pet_name_submitted = toInt(metrics[3]?.value);
+  mapped.photo_upload_completed = toInt(metrics[4]?.value);
+  mapped.order_review_viewed = toInt(metrics[5]?.value);
   return mapped;
 }
 
@@ -195,109 +197,123 @@ export async function fetchGa4DailyMetrics(input: {
     throw new Error(`GA4 not configured: missing ${status.missing.join(", ")}`);
   }
   const token = await googleAccessToken();
-  const body = {
-    dateRanges: [{ startDate: input.since, endDate: input.until }],
-    dimensions: [
-      { name: "date" },
-      { name: "sessionSource" },
-      { name: "sessionMedium" },
-      { name: "sessionCampaignName" },
-      { name: "deviceCategory" },
-      { name: "country" },
-    ],
-    metrics: [
-      { name: "sessions" },
-      { name: "totalUsers" },
-      { name: "screenPageViews" },
-      { name: "sessions" }, // landing_views proxy when pagePath filter unavailable in same report
-      { name: "eventCount:pet_name_submitted" },
-      { name: "eventCount:photo_upload_completed" },
-      { name: "eventCount:pet_order_review_viewed" },
-      { name: "eventCount:begin_checkout" },
-      { name: "ecommercePurchases" },
-      { name: "purchaseRevenue" },
-    ],
-    dimensionFilter: {
-      filter: {
-        fieldName: "pagePath",
-        stringFilter: { matchType: "BEGINS_WITH", value: "/pet", caseSensitive: false },
+  const url = `https://analyticsdata.googleapis.com/v1beta/properties/${status.propertyId}:runReport`;
+  const dateRanges = [{ startDate: input.since, endDate: input.until }];
+  const dimensions = [
+    { name: "date" },
+    { name: "sessionSource" },
+    { name: "sessionMedium" },
+    { name: "sessionCampaignName" },
+    { name: "deviceCategory" },
+    { name: "country" },
+  ];
+  const petPathFilter = {
+    filter: {
+      fieldName: "pagePath",
+      stringFilter: { matchType: "BEGINS_WITH", value: "/pet", caseSensitive: false },
+    },
+  };
+  const attempts: Array<{ label: string; body: Record<string, unknown> }> = [
+    {
+      label: "custom-events",
+      body: {
+        dateRanges,
+        dimensions,
+        metrics: [
+          { name: "sessions" },
+          { name: "totalUsers" },
+          { name: "screenPageViews" },
+          { name: "eventCount:pet_name_submitted" },
+          { name: "eventCount:photo_upload_completed" },
+          { name: "eventCount:pet_order_review_viewed" },
+          { name: "eventCount:begin_checkout" },
+          { name: "ecommercePurchases" },
+          { name: "purchaseRevenue" },
+        ],
+        dimensionFilter: petPathFilter,
+        limit: 100000,
       },
     },
-    limit: 100000,
-  };
-
-  // Prefer a resilient report: if custom event metrics fail, fall back without them.
-  const url = `https://analyticsdata.googleapis.com/v1beta/properties/${status.propertyId}:runReport`;
-  let res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+    {
+      label: "core-pet-path",
+      body: {
+        dateRanges,
+        dimensions,
+        metrics: [
+          { name: "sessions" },
+          { name: "totalUsers" },
+          { name: "screenPageViews" },
+          { name: "ecommercePurchases" },
+          { name: "purchaseRevenue" },
+        ],
+        dimensionFilter: petPathFilter,
+        limit: 100000,
+      },
     },
-    body: JSON.stringify(body),
-  });
+    {
+      label: "core-unfiltered",
+      body: {
+        dateRanges,
+        dimensions,
+        metrics: [
+          { name: "sessions" },
+          { name: "totalUsers" },
+          { name: "screenPageViews" },
+          { name: "ecommercePurchases" },
+          { name: "purchaseRevenue" },
+        ],
+        limit: 100000,
+      },
+    },
+  ];
 
-  if (!res.ok) {
-    // Fallback without custom eventCount metrics / pagePath filter (broader but still usable).
-    const fallbackBody = {
-      dateRanges: [{ startDate: input.since, endDate: input.until }],
-      dimensions: [
-        { name: "date" },
-        { name: "sessionSource" },
-        { name: "sessionMedium" },
-        { name: "sessionCampaignName" },
-        { name: "deviceCategory" },
-        { name: "country" },
-      ],
-      metrics: [
-        { name: "sessions" },
-        { name: "totalUsers" },
-        { name: "screenPageViews" },
-        { name: "sessions" },
-        { name: "conversions:begin_checkout" },
-        { name: "ecommercePurchases" },
-        { name: "purchaseRevenue" },
-      ],
-      limit: 100000,
-    };
-    res = await fetch(url, {
+  const errors: string[] = [];
+  for (const attempt of attempts) {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(fallbackBody),
+      body: JSON.stringify(attempt.body),
     });
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`GA4 Data API failed (${res.status}): ${text.slice(0, 240)}`);
+      errors.push(`${attempt.label} (${res.status}): ${text.slice(0, 180)}`);
+      continue;
     }
-    const json = (await res.json()) as { rows?: Array<{ dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }> };
-    return (json.rows || []).map((row) => {
-      const dims = row.dimensionValues || [];
-      const metrics = row.metricValues || [];
-      return {
-        metric_date: yyyymmddToIso(dim(dims, 0, "")),
-        source: dim(dims, 1),
-        medium: dim(dims, 2),
-        campaign: dim(dims, 3),
-        device_category: dim(dims, 4),
-        country: dim(dims, 5),
-        sessions: toInt(metrics[0]?.value),
-        total_users: toInt(metrics[1]?.value),
-        screen_page_views: toInt(metrics[2]?.value),
-        landing_views: toInt(metrics[3]?.value),
-        begin_checkouts: toInt(metrics[4]?.value),
-        purchases: toInt(metrics[5]?.value),
-        purchase_revenue_cents: dollarsToCents(metrics[6]?.value),
-      } satisfies Ga4DailyMetricRow;
-    }).filter((r) => r.metric_date);
+    const json = (await res.json()) as {
+      rows?: Array<{ dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }>;
+    };
+    const rows = json.rows || [];
+    if (attempt.label === "custom-events") {
+      return rows.map(mapGa4ReportRow).filter((r) => r.metric_date);
+    }
+    return rows
+      .map((row) => {
+        const dims = row.dimensionValues || [];
+        const metrics = row.metricValues || [];
+        const sessions = toInt(metrics[0]?.value);
+        return {
+          metric_date: yyyymmddToIso(dim(dims, 0, "")),
+          source: dim(dims, 1),
+          medium: dim(dims, 2),
+          campaign: dim(dims, 3),
+          device_category: dim(dims, 4),
+          country: dim(dims, 5),
+          sessions,
+          total_users: toInt(metrics[1]?.value),
+          screen_page_views: toInt(metrics[2]?.value),
+          landing_views: sessions,
+          begin_checkouts: 0,
+          purchases: toInt(metrics[3]?.value),
+          purchase_revenue_cents: dollarsToCents(metrics[4]?.value),
+        } satisfies Ga4DailyMetricRow;
+      })
+      .filter((r) => r.metric_date);
   }
 
-  const json = (await res.json()) as {
-    rows?: Array<{ dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }>;
-  };
-  return (json.rows || []).map(mapGa4ReportRow).filter((r) => r.metric_date);
+  throw new Error(`GA4 Data API failed: ${errors.join(" | ").slice(0, 240)}`);
 }
 
 export { GA4_MEASUREMENT_ID };
