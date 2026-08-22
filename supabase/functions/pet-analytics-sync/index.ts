@@ -6,7 +6,9 @@ import {
   fetchMetaAdsDailyInsights,
   META_CUSTOM_EVENT_RECOVERY,
   metaAdsConfigStatus,
+  resolvePetMetaCampaignAllowlist,
 } from "../_shared/pet/metaAds.ts";
+import { BUILTIN_PET_META_CAMPAIGN_LABELS } from "../_shared/pet/metaCampaignAllowlist.ts";
 import { fetchGa4DailyMetrics, ga4ConfigStatus } from "../_shared/pet/ga4Data.ts";
 
 type Body = {
@@ -112,17 +114,37 @@ async function syncMeta(
   }
 
   try {
+    const { data: allowRows, error: allowError } = await service
+      .from("pet_meta_campaign_allowlist")
+      .select("campaign_id")
+      .eq("enabled", true);
+    if (allowError) throw allowError;
+    const campaignIds = resolvePetMetaCampaignAllowlist((allowRows || []).map((row) => String(row.campaign_id || "")));
+    if (!campaignIds.length) {
+      throw new Error("Pet Meta campaign allowlist is empty; refusing to sync the entire ad account");
+    }
+    const allowlistUpsert = campaignIds.map((campaign_id) => ({
+      campaign_id,
+      label: BUILTIN_PET_META_CAMPAIGN_LABELS[campaign_id] || "",
+      enabled: true,
+    }));
+    const { error: persistAllowError } = await service
+      .from("pet_meta_campaign_allowlist")
+      .upsert(allowlistUpsert, { onConflict: "campaign_id", ignoreDuplicates: true });
+    if (persistAllowError) throw persistAllowError;
+
     let since = from;
     if (mode === "historical") {
-      const discovered = await discoverMetaCampaignEarliestDate();
+      const discovered = await discoverMetaCampaignEarliestDate(campaignIds);
       const configuredStart = defaultPetAdsSyncStartDate();
       // Prefer the earliest truthful start we can determine.
       since = [from, configuredStart, discovered].filter(Boolean).sort()[0] as string;
     }
 
-    const { rows, customEvents } = await fetchMetaAdsDailyInsights({ since, until: to });
+    const { rows, customEvents } = await fetchMetaAdsDailyInsights({ since, until: to, campaignIds });
     const { data, error } = await service.rpc("upsert_pet_meta_daily_metrics", { p_rows: rows });
     if (error) throw error;
+    await service.rpc("purge_unallowlisted_pet_meta_metrics");
     const upserted = Number(data) || rows.length;
     await finishRun(service, runId, "success", upserted);
     return {

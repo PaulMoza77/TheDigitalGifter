@@ -17,6 +17,13 @@ import {
   safeRoas,
   safeCtrPct,
 } from "./funnelHybrid";
+import {
+  BUILTIN_PET_META_CAMPAIGN_IDS,
+  filterPetMetaInsightRows,
+  isExcludedNonPetCampaignName,
+  mergePetMetaCampaignAllowlist,
+  parsePetMetaCampaignIds,
+} from "../../../supabase/functions/_shared/pet/metaCampaignAllowlist";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -299,6 +306,33 @@ describe("pet hybrid funnel analytics", () => {
     expect(kpis.costPerCheckoutCents).toBeNull();
   });
 
+  it("allowlists only explicit pet Meta campaign IDs and drops Minutes Guides spend", () => {
+    expect(BUILTIN_PET_META_CAMPAIGN_IDS).toEqual(["120253346791240170"]);
+    expect(parsePetMetaCampaignIds("120253346791240170, 120299999999999999")).toEqual([
+      "120253346791240170",
+      "120299999999999999",
+    ]);
+    expect(mergePetMetaCampaignAllowlist(["120253346791240170"], ["120253181963650170"])).toEqual([
+      "120253346791240170",
+      "120253181963650170",
+    ]);
+    expect(isExcludedNonPetCampaignName("2nd try")).toBe(true);
+    expect(isExcludedNonPetCampaignName("Smart Deal Budget 1st campaign")).toBe(true);
+    expect(isExcludedNonPetCampaignName("TDG - Dog campaign")).toBe(false);
+    expect(
+      filterPetMetaInsightRows(
+        [
+          { campaign_id: "120253346791240170", campaign_name: "TDG - Dog campaign", spend_cents: 2610 },
+          { campaign_id: "120253181963650170", campaign_name: "2nd try", spend_cents: 2013 },
+        ],
+        ["120253346791240170", "120253181963650170"],
+      ),
+    ).toEqual([{ campaign_id: "120253346791240170", campaign_name: "TDG - Dog campaign", spend_cents: 2610 }]);
+    expect(filterPetMetaInsightRows([{ campaign_id: "120253181963650170", campaign_name: "2nd try" }], [])).toEqual([]);
+    expect(safeCpcCents(2610, 30)).toBe(87);
+    expect(safeCtrPct(30, 1582)).toBeCloseTo((30 / 1582) * 100);
+  });
+
   it("computes Meta spend CPA/ROAS and never emits Infinity for zero spend", () => {
     expect(safeRoas(5000, 0)).toBeNull();
     expect(safeCpaCents(0, 2)).toBe(0);
@@ -364,6 +398,11 @@ describe("pet hybrid funnel analytics", () => {
     expect(checkoutSql).toContain("pet_checkout_analytics_class");
     expect(checkoutSql).toContain("analytics_class = 'customer'");
     expect(checkoutSql).toContain("promo_checkouts");
+    const allowSql = readSrc("supabase/migrations/20260822160000_pet_meta_campaign_allowlist.sql");
+    expect(allowSql).toContain("pet_meta_campaign_allowlist");
+    expect(allowSql).toContain("120253346791240170");
+    expect(allowSql).toContain("purge_unallowlisted_pet_meta_metrics");
+    expect(allowSql).toContain("a.campaign_id = m.campaign_id");
   });
 
   it("keeps Ads/GA4 secrets server-only and admin-protects sync", () => {
@@ -377,6 +416,7 @@ describe("pet hybrid funnel analytics", () => {
     expect(readSrc("api/pet-analytics-cron.ts")).toContain("401");
     const envExample = readSrc(".env.example");
     expect(envExample).toContain("META_AD_ACCOUNT_ID");
+    expect(envExample).toContain("PET_META_CAMPAIGN_IDS");
     expect(envExample).toContain("GA4_PROPERTY_ID");
     const ga4 = readSrc("supabase/functions/_shared/pet/ga4Data.ts");
     expect(ga4).not.toMatch(/name:\s*"sessions"[\s\S]{0,120}name:\s*"sessions"/);
@@ -390,6 +430,10 @@ describe("pet hybrid funnel analytics", () => {
     expect(metaAds).not.toContain("META_CAPI_ACCESS_TOKEN");
     expect(metaAds).toContain("PetNameSubmitted");
     expect(metaAds).toContain("cannot be reliably retrieved");
+    expect(metaAds).toContain('field: "campaign.id"');
+    expect(metaAds).toContain("refusing to sync the entire ad account");
+    expect(metaAds).not.toContain("/pet|secret.?life|dog|cat/i");
+    expect(readSrc("supabase/functions/pet-analytics-sync/index.ts")).toContain("purge_unallowlisted_pet_meta_metrics");
   });
 
   it("wires cron + edge function without client-side cron", () => {

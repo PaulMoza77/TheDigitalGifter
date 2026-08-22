@@ -2,7 +2,17 @@
  * Meta Marketing API (Ads Insights) — server-only.
  * Uses META_ADS_ACCESS_TOKEN (ads_read). Do NOT reuse CAPI tokens blindly.
  * Never log tokens. Never expose to the browser.
+ *
+ * Spend/impressions/clicks/LPV are allowlisted pet campaign IDs only.
+ * Never request or store the rest of the ad account.
  */
+
+import {
+  BUILTIN_PET_META_CAMPAIGN_IDS,
+  filterPetMetaInsightRows,
+  mergePetMetaCampaignAllowlist,
+  parsePetMetaCampaignIds,
+} from "./metaCampaignAllowlist.ts";
 
 export type MetaDailyMetricRow = {
   metric_date: string;
@@ -113,6 +123,14 @@ export function metaAdsConfigStatus(): MetaAdsConfigStatus {
 
 export function defaultPetAdsSyncStartDate(): string {
   return asString(Deno.env.get("PET_ADS_SYNC_START_DATE")) || "2026-08-16";
+}
+
+export function envPetMetaCampaignIds(): string[] {
+  return parsePetMetaCampaignIds(Deno.env.get("PET_META_CAMPAIGN_IDS"));
+}
+
+export function resolvePetMetaCampaignAllowlist(dbIds?: Iterable<string> | null): string[] {
+  return mergePetMetaCampaignAllowlist(BUILTIN_PET_META_CAMPAIGN_IDS, envPetMetaCampaignIds(), dbIds);
 }
 
 type MetaAction = { action_type?: string; value?: string };
@@ -235,13 +253,35 @@ async function fetchInsightsPage(url: string, token: string): Promise<{ data: Re
   return { data: json.data || [], next: json.paging?.next };
 }
 
+function insightsUrl(input: {
+  adAccountId: string;
+  since: string;
+  until: string;
+  fields: string;
+  campaignIds: string[];
+}): string {
+  const timeRange = encodeURIComponent(JSON.stringify({ since: input.since, until: input.until }));
+  const filtering = encodeURIComponent(
+    JSON.stringify([{ field: "campaign.id", operator: "IN", value: input.campaignIds }]),
+  );
+  return (
+    `https://graph.facebook.com/v21.0/${input.adAccountId}/insights` +
+    `?level=ad&time_increment=1&limit=500&time_range=${timeRange}&filtering=${filtering}&fields=${input.fields}`
+  );
+}
+
 export async function fetchMetaAdsDailyInsights(input: {
   since: string;
   until: string;
+  campaignIds?: Iterable<string> | null;
 }): Promise<{ rows: MetaDailyMetricRow[]; customEvents: ReturnType<typeof summarizeCustomEventAvailability> }> {
   const status = metaAdsConfigStatus();
   if (!status.configured || !status.adAccountId) {
     throw new Error(`Meta Ads not configured: missing ${status.missing.join(", ")}`);
+  }
+  const campaignIds = resolvePetMetaCampaignAllowlist(input.campaignIds);
+  if (!campaignIds.length) {
+    throw new Error("Pet Meta campaign allowlist is empty; refusing to sync the entire ad account");
   }
   const token = asString(Deno.env.get("META_ADS_ACCESS_TOKEN"));
   const fields = [
@@ -265,40 +305,50 @@ export async function fetchMetaAdsDailyInsights(input: {
     "outbound_clicks",
   ].join(",");
 
-  const timeRange = encodeURIComponent(JSON.stringify({ since: input.since, until: input.until }));
-  let url =
-    `https://graph.facebook.com/v21.0/${status.adAccountId}/insights` +
-    `?level=ad&time_increment=1&limit=500&time_range=${timeRange}&fields=${fields}`;
+  let url = insightsUrl({
+    adAccountId: status.adAccountId,
+    since: input.since,
+    until: input.until,
+    fields,
+    campaignIds,
+  });
 
-  const rows: MetaDailyMetricRow[] = [];
+  const mappedRows: MetaDailyMetricRow[] = [];
   let guard = 0;
   while (url && guard < 40) {
     guard += 1;
     const page = await fetchInsightsPage(url, token);
     for (const raw of page.data) {
       const mapped = mapMetaInsightRow(raw);
-      if (mapped.metric_date) rows.push(mapped);
+      if (mapped.metric_date) mappedRows.push(mapped);
     }
     url = page.next || "";
   }
 
+  const rows = filterPetMetaInsightRows(mappedRows, campaignIds);
   return { rows, customEvents: summarizeCustomEventAvailability(rows) };
 }
 
-export async function discoverMetaCampaignEarliestDate(): Promise<string | null> {
+export async function discoverMetaCampaignEarliestDate(
+  campaignIds?: Iterable<string> | null,
+): Promise<string | null> {
   const status = metaAdsConfigStatus();
   if (!status.configured || !status.adAccountId) return null;
+  const allowlist = resolvePetMetaCampaignAllowlist(campaignIds);
+  if (!allowlist.length) return null;
   const token = asString(Deno.env.get("META_ADS_ACCESS_TOKEN"));
+  const filtering = encodeURIComponent(JSON.stringify([{ field: "id", operator: "IN", value: allowlist }]));
   const url =
     `https://graph.facebook.com/v21.0/${status.adAccountId}/campaigns` +
-    `?fields=id,name,start_time,created_time&limit=100&effective_status=["ACTIVE","PAUSED","ARCHIVED"]`;
+    `?fields=id,name,start_time,created_time&limit=100&filtering=${filtering}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) return null;
-  const json = (await res.json()) as { data?: Array<{ name?: string; start_time?: string; created_time?: string }> };
-  const petCampaigns = (json.data || []).filter((c) => /pet|secret.?life|dog|cat/i.test(asString(c.name)));
-  const pool = petCampaigns.length ? petCampaigns : json.data || [];
+  const json = (await res.json()) as {
+    data?: Array<{ id?: string; name?: string; start_time?: string; created_time?: string }>;
+  };
   let earliest: string | null = null;
-  for (const campaign of pool) {
+  for (const campaign of json.data || []) {
+    if (!allowlist.includes(asString(campaign.id))) continue;
     const raw = asString(campaign.start_time || campaign.created_time);
     if (!raw) continue;
     const day = raw.slice(0, 10);
