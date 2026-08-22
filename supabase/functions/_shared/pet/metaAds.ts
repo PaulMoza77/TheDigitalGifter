@@ -13,6 +13,17 @@ import {
   mergePetMetaCampaignAllowlist,
   parsePetMetaCampaignIds,
 } from "./metaCampaignAllowlist.ts";
+import {
+  actionValue,
+  addMetaActionAliasTotals,
+  emptyMetaActionAliasTotals,
+  META_CHECKOUT_ACTION_PREFERENCE,
+  META_LPV_ACTION_PREFERENCE,
+  META_PURCHASE_ACTION_PREFERENCE,
+  preferredActionValue,
+  tallyMetaActionAliases,
+  type MetaActionAliasTotals,
+} from "./metaActionValue.ts";
 
 export type MetaDailyMetricRow = {
   metric_date: string;
@@ -135,17 +146,6 @@ export function resolvePetMetaCampaignAllowlist(dbIds?: Iterable<string> | null)
 
 type MetaAction = { action_type?: string; value?: string };
 
-function actionValue(actions: MetaAction[] | undefined, types: string[]): number {
-  if (!actions?.length) return 0;
-  const wanted = new Set(types.map((t) => t.toLowerCase()));
-  let total = 0;
-  for (const action of actions) {
-    const type = asString(action.action_type).toLowerCase();
-    if (wanted.has(type)) total += toInt(action.value);
-  }
-  return total;
-}
-
 function customActionValue(
   actions: MetaAction[] | undefined,
   aliases: string[],
@@ -166,10 +166,12 @@ function customActionValue(
 
 function purchaseValueCents(actionValues: MetaAction[] | undefined): number {
   if (!actionValues?.length) return 0;
-  for (const action of actionValues) {
-    const type = asString(action.action_type).toLowerCase();
-    if (type === "purchase" || type === "omni_purchase" || type.endsWith(".purchase")) {
-      return dollarsToCents(action.value);
+  for (const preferred of META_PURCHASE_ACTION_PREFERENCE) {
+    const want = preferred.toLowerCase();
+    for (const action of actionValues) {
+      if (asString(action.action_type).toLowerCase() === want) {
+        return dollarsToCents(action.value);
+      }
     }
   }
   return 0;
@@ -207,9 +209,9 @@ export function mapMetaInsightRow(row: Record<string, unknown>): MetaDailyMetric
     reach: toInt(row.reach),
     link_clicks: linkClicks,
     outbound_clicks: outbound,
-    landing_page_views: actionValue(actions, ["landing_page_view", "omni_landing_page_view"]),
-    initiate_checkouts: actionValue(actions, ["initiate_checkout", "omni_initiated_checkout"]),
-    purchases: actionValue(actions, ["purchase", "omni_purchase"]),
+    landing_page_views: preferredActionValue(actions, [...META_LPV_ACTION_PREFERENCE]),
+    initiate_checkouts: preferredActionValue(actions, [...META_CHECKOUT_ACTION_PREFERENCE]),
+    purchases: preferredActionValue(actions, [...META_PURCHASE_ACTION_PREFERENCE]),
     purchase_value_cents: purchaseValueCents(actionValues),
     cpc_cents: Number.isFinite(cpcRaw) ? dollarsToCents(cpcRaw) : null,
     ctr_bps: Number.isFinite(ctrRaw) ? Math.round(ctrRaw * 100) : null,
@@ -274,7 +276,11 @@ export async function fetchMetaAdsDailyInsights(input: {
   since: string;
   until: string;
   campaignIds?: Iterable<string> | null;
-}): Promise<{ rows: MetaDailyMetricRow[]; customEvents: ReturnType<typeof summarizeCustomEventAvailability> }> {
+}): Promise<{
+  rows: MetaDailyMetricRow[];
+  customEvents: ReturnType<typeof summarizeCustomEventAvailability>;
+  actionAliasTotals: MetaActionAliasTotals;
+}> {
   const status = metaAdsConfigStatus();
   if (!status.configured || !status.adAccountId) {
     throw new Error(`Meta Ads not configured: missing ${status.missing.join(", ")}`);
@@ -314,10 +320,12 @@ export async function fetchMetaAdsDailyInsights(input: {
   });
 
   const mappedRows: MetaDailyMetricRow[] = [];
+  let actionAliasTotals = emptyMetaActionAliasTotals();
   let guard = 0;
   while (url && guard < 40) {
     guard += 1;
     const page = await fetchInsightsPage(url, token);
+    actionAliasTotals = addMetaActionAliasTotals(actionAliasTotals, tallyMetaActionAliases(page.data));
     for (const raw of page.data) {
       const mapped = mapMetaInsightRow(raw);
       if (mapped.metric_date) mappedRows.push(mapped);
@@ -326,7 +334,7 @@ export async function fetchMetaAdsDailyInsights(input: {
   }
 
   const rows = filterPetMetaInsightRows(mappedRows, campaignIds);
-  return { rows, customEvents: summarizeCustomEventAvailability(rows) };
+  return { rows, customEvents: summarizeCustomEventAvailability(rows), actionAliasTotals };
 }
 
 export async function discoverMetaCampaignEarliestDate(

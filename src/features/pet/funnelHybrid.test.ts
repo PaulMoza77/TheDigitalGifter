@@ -17,6 +17,12 @@ import {
   safeRoas,
   safeCtrPct,
 } from "./funnelHybrid";
+import { mapMetaInsightRowForTests } from "./metaInsightMap";
+import {
+  actionValue,
+  preferredActionValue,
+  tallyMetaActionAliases,
+} from "../../../supabase/functions/_shared/pet/metaActionValue";
 import {
   BUILTIN_PET_META_CAMPAIGN_IDS,
   filterPetMetaInsightRows,
@@ -331,6 +337,48 @@ describe("pet hybrid funnel analytics", () => {
     expect(filterPetMetaInsightRows([{ campaign_id: "120253181963650170", campaign_name: "2nd try" }], [])).toEqual([]);
     expect(safeCpcCents(2610, 30)).toBe(87);
     expect(safeCtrPct(30, 1582)).toBeCloseTo((30 / 1582) * 100);
+  });
+
+  it("does not double-count Meta omni action aliases against Ads Manager columns", () => {
+    const actions = [
+      { action_type: "landing_page_view", value: "20" },
+      { action_type: "omni_landing_page_view", value: "20" },
+      { action_type: "initiate_checkout", value: "3" },
+      { action_type: "omni_initiated_checkout", value: "3" },
+      { action_type: "purchase", value: "1" },
+      { action_type: "omni_purchase", value: "1" },
+    ];
+    expect(actionValue(actions, ["landing_page_view", "omni_landing_page_view"])).toBe(40);
+    expect(preferredActionValue(actions, ["landing_page_view", "omni_landing_page_view"])).toBe(20);
+    expect(preferredActionValue(actions, ["initiate_checkout", "omni_initiated_checkout"])).toBe(3);
+    expect(preferredActionValue(actions, ["purchase", "omni_purchase"])).toBe(1);
+    expect(preferredActionValue([{ action_type: "omni_landing_page_view", value: "20" }], ["landing_page_view", "omni_landing_page_view"])).toBe(20);
+
+    const mapped = mapMetaInsightRowForTests({
+      date_start: "2026-08-22",
+      campaign_id: "120253346791240170",
+      ad_id: "1",
+      spend: "26.44",
+      actions,
+    });
+    expect(mapped.landing_page_views).toBe(20);
+    expect(mapped.initiate_checkouts).toBe(3);
+    expect(mapped.purchases).toBe(1);
+
+    expect(
+      tallyMetaActionAliases([{ actions }]),
+    ).toEqual({
+      landing_page_view: 20,
+      omni_landing_page_view: 20,
+      initiate_checkout: 3,
+      omni_initiated_checkout: 3,
+      purchase: 1,
+      omni_purchase: 1,
+    });
+    expect(readSrc("supabase/functions/_shared/pet/metaAds.ts")).toContain("preferredActionValue");
+    expect(readSrc("supabase/functions/_shared/pet/metaAds.ts")).not.toContain(
+      'actionValue(actions, ["landing_page_view", "omni_landing_page_view"])',
+    );
   });
 
   it("computes Meta spend CPA/ROAS and never emits Infinity for zero spend", () => {

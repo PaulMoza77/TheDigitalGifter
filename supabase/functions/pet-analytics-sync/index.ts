@@ -141,7 +141,7 @@ async function syncMeta(
       since = [from, configuredStart, discovered].filter(Boolean).sort()[0] as string;
     }
 
-    const { rows, customEvents } = await fetchMetaAdsDailyInsights({ since, until: to, campaignIds });
+    const { rows, customEvents, actionAliasTotals } = await fetchMetaAdsDailyInsights({ since, until: to, campaignIds });
     const { data, error } = await service.rpc("upsert_pet_meta_daily_metrics", { p_rows: rows });
     if (error) throw error;
     await service.rpc("purge_unallowlisted_pet_meta_metrics");
@@ -154,6 +154,7 @@ async function syncMeta(
       to,
       rowsUpserted: upserted,
       customEvents,
+      actionAliasTotals,
       customEventRecovery: Object.fromEntries(
         Object.entries(META_CUSTOM_EVENT_RECOVERY).filter(([name]) => {
           if (name === "PetNameSubmitted") return !customEvents.pet_name_submitted;
