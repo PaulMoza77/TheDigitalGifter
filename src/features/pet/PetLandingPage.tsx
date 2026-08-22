@@ -24,6 +24,7 @@ import {
 } from "./components";
 import { createSecretLivesCta, landingNameStepCreatesOrder, validateOtherSubtype, validatePetName } from "./croGuards";
 import { trackFunnelEvent, trackFunnelViewItem } from "./funnelAnalytics";
+import { trackPetFunnelInternalEvent } from "./funnelInternal";
 import { PET_PRICE_DISPLAY, type PetFunnelNavigation, type PetSpecies } from "./types";
 import { usePetDraft } from "./usePetDraft";
 import { usePublicPetOffer } from "./usePublicPetOffer";
@@ -50,6 +51,10 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
   useEffect(() => {
     draft.setSpecies(species);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [species]);
+
+  useEffect(() => {
+    trackPetFunnelInternalEvent({ eventName: "landing_view", species });
   }, [species]);
 
   useEffect(() => {

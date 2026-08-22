@@ -163,12 +163,10 @@ export function trackFunnelViewItem(input: { species: string; valueCents: number
     },
     { onceKey: `tdg.ga4.view_item.${input.species}` },
   );
-  if (sent) {
-    trackPetFunnelInternalEvent({
-      eventName: "landing_view",
-      species: input.species,
-    });
-  }
+  trackPetFunnelInternalEvent({
+    eventName: "landing_view",
+    species: input.species,
+  });
   return sent;
 }
 

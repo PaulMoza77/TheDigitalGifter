@@ -1,3 +1,4 @@
+import { getPublicSupabaseConfig } from "@/lib/env";
 import { sanitizeAttributionValue } from "./funnelAttribution";
 import { attributionParamsForInternal } from "./funnelAttribution";
 import {
@@ -87,12 +88,20 @@ export function buildInternalFunnelPayload(input: InternalFunnelEventInput) {
 export function trackPetFunnelInternalEvent(input: InternalFunnelEventInput): void {
   try {
     const payload = buildInternalFunnelPayload(input);
-    void import("@/lib/supabase")
-      .then(({ supabase }) => supabase.rpc("record_pet_funnel_event", payload))
-      .then(
-        () => undefined,
-        () => undefined,
-      );
+    if (typeof fetch !== "function") return;
+    const { url, anon } = getPublicSupabaseConfig();
+    // Always use the anon key so a stale user JWT cannot 401 analytics.
+    // keepalive survives the immediate landing → create navigation.
+    void fetch(`${url.replace(/\/$/, "")}/rest/v1/rpc/record_pet_funnel_event`, {
+      method: "POST",
+      headers: {
+        apikey: anon,
+        Authorization: `Bearer ${anon}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => undefined);
   } catch {
     // Internal analytics must never break the customer funnel.
   }

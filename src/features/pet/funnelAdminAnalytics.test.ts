@@ -21,6 +21,8 @@ describe("pet funnel admin analytics wiring", () => {
     const landing = readSrc("src/features/pet/PetLandingPage.tsx");
     expect(landing).toContain("trackFunnelViewItem");
     expect(landing).toContain("PetNameSubmitted");
+    expect(landing).toContain('eventName: "landing_view"');
+    expect(landing).toMatch(/trackPetFunnelInternalEvent\(\{ eventName: "landing_view"/);
     const create = readSrc("src/features/pet/PetCreatePage.tsx");
     expect(create).toContain("PhotoUploadCompleted");
     expect(create).toMatch(/setPhotoFromFile[\s\S]*PhotoUploadCompleted/);
