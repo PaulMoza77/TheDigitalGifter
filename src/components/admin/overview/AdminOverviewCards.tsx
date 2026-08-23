@@ -9,10 +9,10 @@ type StatCardProps = {
 
 export function StatCard({ label, value, helper }: StatCardProps) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-slate-50">{value}</p>
-      {helper ? <p className="mt-1 text-xs text-slate-500">{helper}</p> : null}
+    <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/40 p-3 sm:p-4">
+      <p className="break-words text-[11px] leading-snug text-slate-400 sm:text-xs">{label}</p>
+      <p className="mt-1.5 break-words text-lg font-semibold leading-tight text-slate-50 sm:mt-2 sm:text-2xl">{value}</p>
+      {helper ? <p className="mt-1 break-words text-[11px] leading-snug text-slate-500 sm:text-xs">{helper}</p> : null}
     </div>
   );
 }
@@ -41,10 +41,10 @@ type SectionCardProps = {
 
 export function SectionCard({ title, subtitle, children }: SectionCardProps) {
   return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-900/35 p-5">
+    <section className="rounded-3xl border border-slate-800 bg-slate-900/35 p-3 sm:p-5">
       <div className="mb-4">
         <h2 className="text-base font-semibold text-slate-50">{title}</h2>
-        {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1 break-words text-sm leading-snug text-slate-500">{subtitle}</p> : null}
       </div>
 
       {children}

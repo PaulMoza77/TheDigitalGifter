@@ -51,19 +51,21 @@ function DailyBars({ daily }: { daily: Array<{ date: string; spendCents: number 
   const maxSpend = Math.max(1, ...daily.map((d) => d.spendCents ?? 0));
   if (daily.length === 0) return <p className="text-sm text-slate-500">No daily rows in this range.</p>;
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {daily.map((row) => (
-        <div key={row.date} className="grid grid-cols-[88px_1fr_auto] items-center gap-3 text-xs text-slate-300">
-          <span className="font-mono text-slate-400">{row.date.slice(5)}</span>
+        <div key={row.date} className="min-w-0 space-y-1 text-xs text-slate-300">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="shrink-0 font-mono text-slate-400">{row.date.slice(5)}</span>
+            <span className="min-w-0 truncate text-right text-slate-400">
+              {row.spendCents == null ? "—" : formatUsdFromCents(row.spendCents)} · {row.purchases ?? "—"} sales
+            </span>
+          </div>
           <div className="h-2 overflow-hidden rounded-full bg-slate-800">
             <div
               className="h-full rounded-full bg-emerald-500/70"
               style={{ width: `${Math.max(row.spendCents ? 4 : 0, ((row.spendCents ?? 0) / maxSpend) * 100)}%` }}
             />
           </div>
-          <span className="w-28 text-right text-slate-400">
-            {row.spendCents == null ? "—" : formatUsdFromCents(row.spendCents)} · {row.purchases ?? "—"} sales
-          </span>
         </div>
       ))}
     </div>
@@ -145,7 +147,7 @@ export default function PetFunnelAnalyticsPage() {
               type="button"
               onClick={() => setPreset(item.id)}
               className={[
-                "rounded-2xl border px-3 py-2 text-sm font-medium transition",
+                "rounded-2xl border px-2.5 py-1.5 text-xs font-medium transition sm:px-3 sm:py-2 sm:text-sm",
                 preset === item.id
                   ? "border-indigo-400/40 bg-indigo-500/20 text-indigo-100"
                   : "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800",
@@ -220,7 +222,7 @@ export default function PetFunnelAnalyticsPage() {
 
         {report && kpis ? (
           <>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
               <StatCard label="Spend" value={formatMetricOrDash(kpis.spendCents, formatUsdFromCents)} helper={report.spendAvailable ? "Meta" : "Meta sync required"} />
               <StatCard label="LPV" value={formatMetricOrDash(kpis.lpv)} helper={kpis.lpvSource.replace(/_/g, " ")} />
               <StatCard label="CPC" value={formatMetricOrDash(kpis.cpcCents, formatUsdFromCents)} />
@@ -278,20 +280,20 @@ export default function PetFunnelAnalyticsPage() {
                 {hybridStages.map((step, index) => (
                   <div key={step.eventName}>
                     {index > 0 ? <div className="mb-3 text-center text-slate-600">↓</div> : null}
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                      <div className="flex items-end justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-slate-200">{step.label}</p>
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3 sm:p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+                        <div className="min-w-0">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <p className="min-w-0 break-words text-sm font-medium text-slate-200">{step.label}</p>
                             <SourceBadge label={step.sourceLabel} />
                           </div>
-                          <p className="mt-1 text-2xl font-semibold text-white">
+                          <p className="mt-1 text-xl font-semibold text-white sm:text-2xl">
                             {step.value == null ? "—" : step.value}
                           </p>
                         </div>
-                        <div className="text-right text-xs text-slate-400">
+                        <div className="min-w-0 text-xs leading-snug text-slate-400 sm:shrink-0 sm:text-right">
                           {step.value == null ? (
-                            <p>Historical detail unavailable</p>
+                            <p className="break-words">Historical detail unavailable</p>
                           ) : (
                             <>
                               <p>{formatPct(step.fromLandingPct)} of LPV</p>
@@ -449,12 +451,12 @@ export default function PetFunnelAnalyticsPage() {
             </SectionCard>
 
             <SectionCard title="Species">
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                 {speciesRows.map((row) => (
-                  <div key={row.species} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                  <div key={row.species} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 p-3 sm:p-4">
                     <p className="text-sm font-semibold capitalize text-slate-100">{row.species}</p>
-                    <p className="mt-2 text-xl font-semibold">{row.purchase} sales</p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-2 text-lg font-semibold sm:text-xl">{row.purchase} sales</p>
+                    <p className="mt-1 break-words text-xs leading-snug text-slate-500">
                       {row.lpv} LPV · {row.checkout} checkouts · {formatPct(row.cvr)} CVR · {formatUsdFromCents(row.revenueCents)}
                     </p>
                   </div>
@@ -464,11 +466,11 @@ export default function PetFunnelAnalyticsPage() {
 
             {report.devices.length > 0 ? (
               <SectionCard title="Device" subtitle="First-party device when available. Country from GA4 sync is stored server-side only.">
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                   {report.devices.map((row) => (
-                    <div key={row.deviceType} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                    <div key={row.deviceType} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 p-3 sm:p-4">
                       <p className="text-sm font-semibold capitalize text-slate-100">{row.deviceType}</p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 break-words text-xs leading-snug text-slate-500">
                         {row.lpv} LPV · {row.checkout} checkouts · {row.purchase} purchases
                       </p>
                     </div>
