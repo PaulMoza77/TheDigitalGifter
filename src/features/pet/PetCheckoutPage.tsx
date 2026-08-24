@@ -9,7 +9,9 @@ import {
 } from "./catalog";
 import { PetApiError, startPetCheckout } from "./api";
 import { petFunnelApi } from "./supabaseApi";
-import { FunnelProgress, PetShell, SamePetGuarantee, SaleCountdown, SalePriceLabel } from "./components";
+import { FunnelProgress, PetShell, SamePetGuarantee, SalePriceLabel } from "./components";
+import { ApplePayButton } from "./components/ApplePayButton";
+import { EmbeddedStripeCheckout } from "./components/EmbeddedStripeCheckout";
 import { getPetPhotoFile, getPetPhotoObjectUrl } from "./storage";
 import type { PetFunnelApi } from "./api";
 import { type PetFunnelNavigation } from "./types";
@@ -22,8 +24,15 @@ import {
   trackFunnelBeginCheckout,
   trackFunnelEvent,
 } from "./funnelAnalytics";
-import { petPossessive } from "./croGuards";
 import { formatOfferPrice, resolveServerOwnedPromo } from "./videoGuards";
+import {
+  checkoutPreparingHeadline,
+  formatHoldCountdown,
+  readCachedEmbeddedCheckout,
+  readOrResetCheckoutHold,
+  remainingHoldMs,
+  writeCachedEmbeddedCheckout,
+} from "./checkoutHold";
 
 export type PetCheckoutPageProps = {
   navigation?: PetFunnelNavigation;
@@ -35,13 +44,18 @@ export function PetCheckoutPage({
   api = petFunnelApi,
 }: PetCheckoutPageProps) {
   const { draft } = usePetDraft();
-  const { priceDisplay, amountCents, compareAtDisplay, saleExpiresAt, deliveryEstimate, offerVerified, offerError, loading, checkoutAllowed, refresh } =
+  const { priceDisplay, amountCents, compareAtDisplay, deliveryEstimate, offerVerified, offerError, loading, checkoutAllowed, refresh } =
     usePublicPetOffer();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promoInput, setPromoInput] = useState("");
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [publishableKey, setPublishableKey] = useState<string | null>(null);
+  const [holdExpiresAt, setHoldExpiresAt] = useState(() => readOrResetCheckoutHold().expiresAt);
+  const [holdLabel, setHoldLabel] = useState(() => formatHoldCountdown(remainingHoldMs(holdExpiresAt)));
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const bootstrapped = useRef(false);
   const appliedPromo = resolveServerOwnedPromo(promoInput);
   const verifiedDisplay =
     offerVerified && amountCents
@@ -53,6 +67,7 @@ export function PetCheckoutPage({
       : verifiedDisplay;
   const previewUrl = getPetPhotoObjectUrl() ?? draft.photoPreviewDataUrl;
   const photoFile = getPetPhotoFile();
+  const embeddedReady = Boolean(clientSecret && publishableKey);
 
   const speciesLabel = PET_SPECIES_OPTIONS.find((item) => item.id === draft.species)?.label;
   const subtypeLabel =
@@ -88,6 +103,66 @@ export function PetCheckoutPage({
     );
   }, [draft.species]);
 
+  useEffect(() => {
+    const tick = () => {
+      const remaining = remainingHoldMs(holdExpiresAt);
+      if (remaining <= 0) {
+        const next = readOrResetCheckoutHold();
+        setHoldExpiresAt(next.expiresAt);
+        setHoldLabel(formatHoldCountdown(remainingHoldMs(next.expiresAt)));
+        setClientSecret(null);
+        setPublishableKey(null);
+        bootstrapped.current = false;
+        return;
+      }
+      setHoldLabel(formatHoldCountdown(remaining));
+    };
+    tick();
+    const interval = window.setInterval(tick, 1000);
+    return () => window.clearInterval(interval);
+  }, [holdExpiresAt]);
+
+  function trackBeginCheckout(result: {
+    status?: string | null;
+    sessionId?: string | null;
+    checkoutUrl?: string | null;
+    clientSecret?: string | null;
+    eventId?: string;
+    orderId: string;
+    chargedAmountCents?: number;
+    amountCents?: number;
+  }) {
+    const goingToStripe = shouldTrackPetBeginCheckout(result);
+    const serverAmount = result.chargedAmountCents ?? result.amountCents;
+    if (goingToStripe && serverAmount && serverAmount > 0) {
+      const eventId = result.eventId || `pet_ic_${result.orderId}`;
+      trackMetaInitiateCheckout({
+        eventId,
+        valueCents: serverAmount,
+        orderId: result.orderId,
+      });
+      trackFunnelBeginCheckout({
+        eventId,
+        valueCents: serverAmount,
+        orderId: result.orderId,
+        species: draft.species,
+      });
+    } else if (goingToStripe && offerVerified && amountCents && amountCents > 0) {
+      const eventId = result.eventId || `pet_ic_${result.orderId}`;
+      trackMetaInitiateCheckout({
+        eventId,
+        valueCents: amountCents,
+        orderId: result.orderId,
+      });
+      trackFunnelBeginCheckout({
+        eventId,
+        valueCents: amountCents,
+        orderId: result.orderId,
+        species: draft.species,
+      });
+    }
+  }
+
   async function pay() {
     setError(null);
 
@@ -108,6 +183,13 @@ export function PetCheckoutPage({
       return;
     }
 
+    const cached = readCachedEmbeddedCheckout();
+    if (cached?.clientSecret && cached.publishableKey && !appliedPromo.code) {
+      setClientSecret(cached.clientSecret);
+      setPublishableKey(cached.publishableKey);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const result = await startPetCheckout({
@@ -123,49 +205,50 @@ export function PetCheckoutPage({
         promoCode: promoInput.trim() || undefined,
         subtype: formCheck.values.subtype,
         subtypeDetail: formCheck.values.subtypeDetail,
+        uiMode: "embedded",
       });
 
-      if (result.status === "payment_processing" || result.status === "comped" || !result.checkoutUrl) {
+      if (result.status === "payment_processing" || result.status === "comped" || (!result.checkoutUrl && !result.clientSecret)) {
         navigation?.goToOrder(result.publicToken);
         return;
       }
 
-      const goingToStripe = shouldTrackPetBeginCheckout(result);
-      const serverAmount = result.chargedAmountCents ?? result.amountCents;
-      if (goingToStripe && serverAmount && serverAmount > 0) {
-        const eventId = result.eventId || `pet_ic_${result.orderId}`;
-        trackMetaInitiateCheckout({
-          eventId,
-          valueCents: serverAmount,
-          orderId: result.orderId,
-        });
-        trackFunnelBeginCheckout({
-          eventId,
-          valueCents: serverAmount,
-          orderId: result.orderId,
-          species: draft.species,
-        });
-      } else if (goingToStripe && offerVerified && amountCents > 0) {
-        const eventId = result.eventId || `pet_ic_${result.orderId}`;
-        trackMetaInitiateCheckout({
-          eventId,
-          valueCents: amountCents,
-          orderId: result.orderId,
-        });
-        trackFunnelBeginCheckout({
-          eventId,
-          valueCents: amountCents,
-          orderId: result.orderId,
-          species: draft.species,
-        });
-      }
+      trackBeginCheckout({
+        ...result,
+        orderId: result.orderId,
+      });
 
-      if (result.checkoutUrl.startsWith("preview://")) {
+      if (result.checkoutUrl?.startsWith("preview://")) {
         navigation?.goToOrder(result.publicToken);
         return;
       }
 
-      window.location.assign(result.checkoutUrl);
+      if (result.clientSecret && result.publishableKey) {
+        const stripeExpiresAt = result.expiresAt
+          ? (result.expiresAt > 10_000_000_000 ? result.expiresAt : result.expiresAt * 1000)
+          : holdExpiresAt;
+        writeCachedEmbeddedCheckout({
+          orderId: result.orderId,
+          publicToken: result.publicToken,
+          sessionId: result.sessionId,
+          clientSecret: result.clientSecret,
+          publishableKey: result.publishableKey,
+          checkoutUrl: result.checkoutUrl,
+          expiresAt: stripeExpiresAt,
+          eventId: result.eventId,
+          purchaseEventId: result.purchaseEventId,
+          amountCents: result.amountCents,
+          chargedAmountCents: result.chargedAmountCents,
+          status: result.status,
+        });
+        setClientSecret(result.clientSecret);
+        setPublishableKey(result.publishableKey);
+        return;
+      }
+
+      if (result.checkoutUrl) {
+        window.location.assign(result.checkoutUrl);
+      }
     } catch (caught) {
       trackFunnelEvent("CheckoutError", { species: draft.species });
       if (caught instanceof PetApiError && caught.code === "PET_API_NOT_CONNECTED") {
@@ -181,6 +264,15 @@ export function PetCheckoutPage({
       setSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    if (bootstrapped.current) return;
+    if (!checkoutAllowed || !formCheck.ok || !photoFile || appliedPromo.code) return;
+    bootstrapped.current = true;
+    void pay();
+    // Bootstrap once when the review page is ready for payment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkoutAllowed, formCheck.ok, photoFile]);
 
   return (
     <PetShell
@@ -203,11 +295,21 @@ export function PetCheckoutPage({
             tabIndex={-1}
             className="text-3xl font-semibold tracking-tight text-[#f6efe4] outline-none"
           >
-            Ready to create {petPossessive(draft.petName)} secret lives?
+            {checkoutPreparingHeadline(draft.petName)}
           </h1>
           <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-            Review the order, then continue to Stripe. Nothing is generated until payment is confirmed.
+            Pay once on this page. Portraits start after Stripe confirms — no subscription.
           </p>
+          <p className="mt-4 text-center">
+            <span className="block text-[11px] uppercase tracking-[0.16em] text-[#d4a84b]">Reserved for</span>
+            <span className="mt-1 block font-semibold tabular-nums text-4xl text-[#f3d48a]" role="timer">
+              {holdLabel}
+            </span>
+            <span className="mt-1 block text-xs text-[#f6efe4]/55">30-minute hold · resets when it runs out</span>
+          </p>
+          <div className="mt-5">
+            <ApplePayButton disabled={submitting || !checkoutAllowed} onClick={() => void pay()} />
+          </div>
         </div>
 
         <div className="flex items-center gap-4 rounded-2xl border border-[#f6efe4]/10 p-3">
@@ -250,8 +352,6 @@ export function PetCheckoutPage({
           </li>
         </ul>
 
-        <SamePetGuarantee />
-
         <div className="rounded-2xl border border-[#d4a84b]/25 p-5">
           <div className="flex items-center justify-between text-lg font-semibold text-[#f6efe4]">
             <SalePriceLabel
@@ -266,13 +366,6 @@ export function PetCheckoutPage({
             />
             <span>{dueDisplay}</span>
           </div>
-          {appliedPromo.ok && appliedPromo.code ? null : (
-            <SaleCountdown
-              expiresAt={saleExpiresAt}
-              onExpire={() => void refresh()}
-              className="mt-1"
-            />
-          )}
           <p className="mt-1 text-sm text-[#f6efe4]/60">Subscription: None</p>
           {loading ? (
             <p className="mt-2 text-sm text-[#f6efe4]/50">Verifying the current price…</p>
@@ -285,6 +378,26 @@ export function PetCheckoutPage({
               </button>
             </p>
           ) : null}
+
+          {embeddedReady && clientSecret && publishableKey ? (
+            <div className="mt-4">
+              <EmbeddedStripeCheckout clientSecret={clientSecret} publishableKey={publishableKey} />
+            </div>
+          ) : (
+            <Button
+              type="button"
+              disabled={submitting || !checkoutAllowed}
+              onClick={() => void pay()}
+              className="mt-5 h-12 min-h-[44px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
+            >
+              {submitting
+                ? "Starting checkout…"
+                : appliedPromo.ok && appliedPromo.code
+                  ? "Start free order"
+                  : `Pay ${dueDisplay.replace(" USD", "")} — Apple Pay or card`}
+            </Button>
+          )}
+
           <div className="mt-4 flex gap-2">
             <input
               value={promoInput}
@@ -321,18 +434,6 @@ export function PetCheckoutPage({
               {promoMessage}
             </p>
           ) : null}
-          <Button
-            type="button"
-            disabled={submitting || !checkoutAllowed}
-            onClick={() => void pay()}
-            className="mt-5 h-12 min-h-[44px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
-          >
-            {submitting
-              ? "Starting checkout…"
-              : appliedPromo.ok && appliedPromo.code
-                ? "Start free order"
-                : `Continue to secure checkout — ${dueDisplay.replace(" USD", "")}`}
-          </Button>
           <p className="mt-3 inline-flex items-center gap-2 text-xs text-[#f6efe4]/55">
             <Lock className="h-3.5 w-3.5" aria-hidden="true" />
             Secure payment by Stripe · No subscription · No automatic renewal
@@ -343,6 +444,8 @@ export function PetCheckoutPage({
             </p>
           ) : null}
         </div>
+
+        <SamePetGuarantee />
       </div>
     </PetShell>
   );

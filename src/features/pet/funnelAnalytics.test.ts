@@ -174,6 +174,13 @@ describe("pet funnel dual analytics", () => {
     ).toBe(true);
     expect(
       shouldTrackPetBeginCheckout({
+        status: "open",
+        sessionId: "cs_live_embedded",
+        clientSecret: "cs_live_embedded_secret_abc",
+      }),
+    ).toBe(true);
+    expect(
+      shouldTrackPetBeginCheckout({
         status: "comped",
         sessionId: "cs_live",
         checkoutUrl: "https://checkout.stripe.com/c/pay/cs_live",
@@ -204,7 +211,7 @@ describe("pet funnel dual analytics", () => {
     expect(checkout).toContain("shouldTrackPetBeginCheckout");
     expect(checkout).toContain("trackMetaInitiateCheckout");
     expect(checkout).toContain("trackFunnelBeginCheckout");
-    expect(checkout).toMatch(/async function pay\([\s\S]*trackFunnelBeginCheckout/);
+    expect(checkout).toMatch(/async function pay\([\s\S]*trackBeginCheckout/);
     expect(checkout).toMatch(
       /useEffect\(\(\) => \{[\s\S]*trackFunnelEvent\(\s*"PetOrderReviewViewed"/,
     );

@@ -167,6 +167,7 @@ export type StripeCheckoutSessionView = {
   id: string;
   status?: string | null;
   url?: string | null;
+  client_secret?: string | null;
   expires_at?: number | null;
   payment_status?: string | null;
 };
@@ -199,11 +200,16 @@ export function decideCheckoutSessionAction(input: {
   existingSession: StripeCheckoutSessionView | null;
   orderId: string;
   issuedCount: number;
+  uiMode?: "hosted" | "embedded";
 }):
   | { action: "reuse"; sessionId: string; checkoutUrl: string }
   | { action: "create"; idempotencyKey: string; expectedSessionId: string | null }
   | { action: "payment_processing"; sessionId: string } {
-  if (input.existingSession && shouldReuseCheckoutSession(input.existingSession)) {
+  const canReuseHosted =
+    input.uiMode !== "embedded" &&
+    input.existingSession &&
+    shouldReuseCheckoutSession(input.existingSession);
+  if (canReuseHosted && input.existingSession) {
     return {
       action: "reuse",
       sessionId: input.existingSession.id,
@@ -265,6 +271,40 @@ export function matchedOpenCheckoutResponse(session: {
     return { ok: false, reason: "conflict" };
   }
   return { ok: true, sessionId, checkoutUrl };
+}
+
+export function matchedEmbeddedCheckoutResponse(session: {
+  id?: string | null;
+  client_secret?: string | null;
+  status?: string | null;
+  expires_at?: number | null;
+  payment_status?: string | null;
+} | null): { ok: true; sessionId: string; clientSecret: string } | { ok: false; reason: "conflict" } {
+  const sessionId = String(session?.id || "").trim();
+  const clientSecret = String(session?.client_secret || "").trim();
+  if (!sessionId || !clientSecret) return { ok: false, reason: "conflict" };
+  if (
+    sessionIsPaymentProcessing({
+      id: sessionId,
+      status: session?.status,
+      expires_at: session?.expires_at,
+      payment_status: session?.payment_status,
+    })
+  ) {
+    return { ok: false, reason: "conflict" };
+  }
+  if (
+    sessionIsExpired({
+      id: sessionId,
+      status: session?.status,
+      expires_at: session?.expires_at,
+      payment_status: session?.payment_status,
+    })
+  ) {
+    return { ok: false, reason: "conflict" };
+  }
+  if (session?.status && session.status !== "open") return { ok: false, reason: "conflict" };
+  return { ok: true, sessionId, clientSecret };
 }
 
 export function fulfillmentAcceptsIssuedSession(input: {

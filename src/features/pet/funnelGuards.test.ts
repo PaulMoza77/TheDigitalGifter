@@ -16,6 +16,7 @@ import {
   isAdminAuthorized,
   kontextProInput,
   matchedOpenCheckoutResponse,
+  matchedEmbeddedCheckoutResponse,
   metaPurchaseShouldEmit,
   orderLastErrorAfterImageGeneration,
   rejectClientPriceTampering,
@@ -214,6 +215,34 @@ describe("pet funnel production guards", () => {
       action: "create",
       idempotencyKey: `pet-checkout-${orderId}`,
       expectedSessionId: null,
+    });
+    const embeddedInsteadOfHosted = decideCheckoutSessionAction({
+      existingSession: {
+        id: "cs_open",
+        status: "open",
+        url: "https://checkout.stripe.com/c/pay/cs_open",
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+      },
+      orderId,
+      issuedCount: 1,
+      uiMode: "embedded",
+    });
+    expect(embeddedInsteadOfHosted).toEqual({
+      action: "create",
+      idempotencyKey: `pet-checkout-${orderId}-1`,
+      expectedSessionId: "cs_open",
+    });
+    expect(
+      matchedEmbeddedCheckoutResponse({
+        id: "cs_embed",
+        status: "open",
+        client_secret: "cs_embed_secret_abc",
+        expires_at: Math.floor(Date.now() / 1000) + 1800,
+      }),
+    ).toEqual({
+      ok: true,
+      sessionId: "cs_embed",
+      clientSecret: "cs_embed_secret_abc",
     });
   });
 

@@ -222,6 +222,9 @@ describe("pet funnel CRO", () => {
 
   it("18. subscription remains None", () => {
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("Subscription: None");
+    expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("checkoutPreparingHeadline");
+    expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("ApplePayButton");
+    expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("formatHoldCountdown");
     expect(PET_CURRENCY).toBe("usd");
     expect(PET_PRICE_CENTS).toBe(2700);
   });

@@ -48,7 +48,7 @@ import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, res
 import { PET_SCENE_DEFINITIONS, sceneByKey } from "../_shared/pet/scenes.ts";
 import { petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
 import { parseCheckoutAttribution, recordPetFunnelInitiateCheckout } from "../_shared/pet/funnelEvents.ts";
-import { decideCheckoutSessionAction, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
+import { decideCheckoutSessionAction, matchedEmbeddedCheckoutResponse, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
 import { enqueuePetGenerate, enqueuePetGenerateIfStalled } from "../_shared/pet/stripeFulfill.ts";
 import {
   formatUpsellPrice,
@@ -71,6 +71,7 @@ async function fetchStripeCheckoutSession(
   id?: string;
   status?: string;
   url?: string;
+  client_secret?: string;
   expires_at?: number;
   payment_status?: string;
 } | null> {
@@ -79,6 +80,42 @@ async function fetchStripeCheckoutSession(
   });
   if (!existingRes.ok) return null;
   return await existingRes.json();
+}
+
+let cachedPublishableKey: string | null = null;
+
+async function resolvePublishableKey(stripeKey: string, checkoutUrl?: string | null): Promise<string | null> {
+  const fromEnv = String(Deno.env.get("STRIPE_PUBLISHABLE_KEY") || "").trim();
+  if (fromEnv.startsWith("pk_")) return fromEnv;
+  if (cachedPublishableKey) return cachedPublishableKey;
+  const urls: string[] = [];
+  if (checkoutUrl) urls.push(checkoutUrl);
+  if (!urls.length) {
+    const listRes = await fetch("https://api.stripe.com/v1/checkout/sessions?limit=5", {
+      headers: { Authorization: `Bearer ${stripeKey}` },
+    });
+    if (listRes.ok) {
+      const list = (await listRes.json()) as { data?: { url?: string }[] };
+      for (const row of list.data || []) {
+        if (row.url) urls.push(row.url);
+      }
+    }
+  }
+  for (const url of urls) {
+    try {
+      const page = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+      if (!page.ok) continue;
+      const html = await page.text();
+      const match = html.match(/pk_(?:live|test)_[0-9A-Za-z]+/);
+      if (match?.[0]) {
+        cachedPublishableKey = match[0];
+        return cachedPublishableKey;
+      }
+    } catch {
+      /* ignore scrape failures */
+    }
+  }
+  return null;
 }
 
 function checkoutConflict() {
@@ -598,12 +635,16 @@ Deno.serve(async (req) => {
         amountChanged = true;
       }
 
+      const requestedEmbedded = asString(body.uiMode || body.ui_mode) === "embedded";
+      const publishableKey = requestedEmbedded ? await resolvePublishableKey(stripeKey) : null;
+      const embedded = requestedEmbedded && Boolean(publishableKey);
       const decision = decideCheckoutSessionAction({
         existingSession: amountChanged && existingView
           ? { ...existingView, status: "expired" }
           : existingView,
         orderId: order.id,
         issuedCount: issuedCount || 0,
+        uiMode: embedded ? "embedded" : "hosted",
       });
 
       if (decision.action === "payment_processing") {
@@ -654,8 +695,14 @@ Deno.serve(async (req) => {
       const cancelUrl = safeReturnUrl(asString(body.cancelUrl), `${siteOrigin()}/pet/checkout`);
       const params = new URLSearchParams();
       params.set("mode", "payment");
-      params.set("success_url", successUrl);
-      params.set("cancel_url", cancelUrl);
+      if (embedded) {
+        params.set("ui_mode", "embedded");
+        params.set("return_url", successUrl);
+        params.set("expires_at", String(Math.floor(Date.now() / 1000) + 31 * 60));
+      } else {
+        params.set("success_url", successUrl);
+        params.set("cancel_url", cancelUrl);
+      }
       params.set("customer_email", order.email);
       params.set("client_reference_id", order.id);
       params.set("line_items[0][price_data][currency]", String(order.currency || PET_CURRENCY));
@@ -701,6 +748,34 @@ Deno.serve(async (req) => {
 
       if (attachedId && attachedId !== asString(session.id)) {
         const winner = await fetchStripeCheckoutSession(stripeKey, attachedId);
+        if (embedded) {
+          const matchedEmbedded = matchedEmbeddedCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
+          if (!matchedEmbedded.ok) return checkoutConflict();
+          const meta = petMetaCheckoutFields(order);
+          const publishableKey = await resolvePublishableKey(stripeKey, asString(winner?.url) || null);
+          await sendMetaCapiInitiateCheckout({
+            eventId: meta.eventId,
+            orderId: order.id,
+            email: asString(order.email),
+            amountCents: meta.chargedAmountCents,
+          });
+          await recordPetFunnelInitiateCheckout(service, {
+            orderId: order.id,
+            amountCents: meta.chargedAmountCents,
+            species: asString(order.species),
+            ...checkoutCtx,
+          });
+          return jsonResponse({
+            sessionId: matchedEmbedded.sessionId,
+            checkoutUrl: asString(winner?.url) || null,
+            clientSecret: matchedEmbedded.clientSecret,
+            publishableKey,
+            expiresAt: winner?.expires_at ?? null,
+            status: "open",
+            reused: true,
+            ...meta,
+          });
+        }
         const matched = matchedOpenCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
         if (!matched.ok) return checkoutConflict();
         const meta = petMetaCheckoutFields(order);
@@ -721,6 +796,40 @@ Deno.serve(async (req) => {
           checkoutUrl: matched.checkoutUrl,
           status: "open",
           reused: true,
+          ...meta,
+        });
+      }
+
+      if (embedded) {
+        const matchedEmbedded = matchedEmbeddedCheckoutResponse(session);
+        if (!matchedEmbedded.ok) return checkoutConflict();
+        const meta = petMetaCheckoutFields(order);
+        const publishableKey = await resolvePublishableKey(stripeKey, asString(session.url) || null);
+        await service.rpc("pet_log_event", {
+          p_order_id: order.id,
+          p_action: "checkout_session_created",
+          p_actor_type: "system",
+          p_payload: { session_present: true, initiate_event_id: meta.eventId, ui_mode: "embedded" },
+        });
+        await sendMetaCapiInitiateCheckout({
+          eventId: meta.eventId,
+          orderId: order.id,
+          email: asString(order.email),
+          amountCents: meta.chargedAmountCents,
+        });
+        await recordPetFunnelInitiateCheckout(service, {
+          orderId: order.id,
+          amountCents: meta.chargedAmountCents,
+          species: asString(order.species),
+          ...checkoutCtx,
+        });
+        return jsonResponse({
+          sessionId: matchedEmbedded.sessionId,
+          checkoutUrl: asString(session.url) || null,
+          clientSecret: matchedEmbedded.clientSecret,
+          publishableKey,
+          expiresAt: session.expires_at ?? null,
+          status: "open",
           ...meta,
         });
       }
