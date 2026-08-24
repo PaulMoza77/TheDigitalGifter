@@ -1,8 +1,8 @@
 import { PET_PRICE_CENTS } from "./constants.ts";
 
-/** Launch promo charged instead of the $27 list price. */
-export const PET_SALE_PRICE_CENTS = 1200 as const;
-export const PET_SALE_PRICE_DISPLAY = "$12" as const;
+/** Live V1 promo charged instead of the $27 list price. */
+export const PET_SALE_PRICE_CENTS = 1700 as const;
+export const PET_SALE_PRICE_DISPLAY = "$17" as const;
 
 /**
  * Shared real expiry for every visitor.

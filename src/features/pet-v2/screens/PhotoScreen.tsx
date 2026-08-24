@@ -2,6 +2,8 @@ import type { RefObject } from "react";
 import { ImagePlus, Replace, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "../../pet/components/FieldError";
+import { SubtypePicker } from "../../pet/components/SubtypePicker";
+import type { PetSubtype } from "../../pet/types";
 import type { PetV2Species } from "../types";
 
 export function V2PhotoScreen({
@@ -14,6 +16,9 @@ export function V2PhotoScreen({
   onClear,
   onGenerate,
   generating,
+  subtype,
+  subtypeDetail,
+  onSubtype,
 }: {
   species: PetV2Species;
   previewUrl: string | null;
@@ -24,6 +29,9 @@ export function V2PhotoScreen({
   onClear: () => void;
   onGenerate: () => void;
   generating?: boolean;
+  subtype?: PetSubtype | null;
+  subtypeDetail?: string | null;
+  onSubtype?: (subtype: PetSubtype, detail?: string) => void;
 }) {
   const pet = species === "cat" ? "cat" : species === "other" ? "pet" : "dog";
   return (
@@ -74,6 +82,14 @@ export function V2PhotoScreen({
       )}
 
       <FieldError id={`${inputId}-error`} message={error} />
+
+      {species === "other" && onSubtype ? (
+        <SubtypePicker
+          value={subtype ?? null}
+          detail={subtypeDetail ?? null}
+          onChange={onSubtype}
+        />
+      ) : null}
 
       <Button
         type="button"

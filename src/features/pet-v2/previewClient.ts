@@ -52,10 +52,7 @@ export async function requestV2Preview(input: {
     };
   }
 
-  if (response.errorCode === "live_disabled" || response.mode === "mock" || !response.ok) {
-    if (response.errorCode === "rate_limited" || response.errorCode === "heic_unsupported" || response.errorCode === "invalid_photo") {
-      return { ...response, remainingSession: remainingSessionPreviews() };
-    }
+  if (response.errorCode === "live_disabled") {
     incrementSessionPreviewCount();
     const mock = await buildMockRoyalPreview(input.sourcePreviewUrl);
     return {

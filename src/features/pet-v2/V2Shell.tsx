@@ -36,7 +36,7 @@ export function V2Shell({
             </span>
             <span className="text-sm font-semibold tracking-tight">{PET_PRODUCT_NAME}</span>
           </a>
-          <p className="text-[11px] uppercase tracking-[0.14em] text-[#d4a84b]">Preview prototype</p>
+          <p className="text-[11px] uppercase tracking-[0.14em] text-[#d4a84b]">Free preview</p>
         </header>
 
         {onSpecies ? (
@@ -83,7 +83,7 @@ export function V2Shell({
         <main className="flex-1 py-5">{children}</main>
         <footer className="mt-8 border-t border-[#f6efe4]/10 pt-5 text-xs text-[#f6efe4]/45">
           <p>
-            {footer ?? `${v2PackOfferCopy().headline}. Free preview — no card required.`}
+            {footer ?? `${v2PackOfferCopy().headline}. Free preview first — card only if you unlock the collection.`}
           </p>
         </footer>
       </div>

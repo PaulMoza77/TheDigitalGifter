@@ -1,6 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
+import { PetApiError, startPetCheckout } from "../pet/api";
+import { PET_DEFAULT_PERSONALITY } from "../pet/types";
+import { petFunnelApi } from "../pet/supabaseApi";
+import { shouldTrackPetBeginCheckout } from "../pet/funnelAnalytics";
+import { validateOtherSubtype, validatePetName } from "../pet/croGuards";
 import { remainingSessionPreviews, sessionAllowsAnotherPreview } from "./abuse";
 import { petV2LandingPath, trackPetV2Event } from "./analytics";
 import { requestV2Preview } from "./previewClient";
@@ -10,6 +16,7 @@ import { V2OfferScreen } from "./screens/OfferScreen";
 import { V2PhotoScreen } from "./screens/PhotoScreen";
 import { V2PreviewScreen } from "./screens/PreviewScreen";
 import { createV2LocalPreview, validateV2PhotoFile } from "./photo";
+import { getPetV2SessionId } from "./session";
 import {
   getV2PhotoFile,
   getV2PhotoObjectUrl,
@@ -34,7 +41,8 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const [draft, setDraft] = useState<PetV2Draft>(() => ({ ...loadV2Draft(), species }));
   const [photoError, setPhotoError] = useState<string | undefined>();
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
-  const [handoffDone, setHandoffDone] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const previewUrl = getV2PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
 
   useEffect(() => {
@@ -95,6 +103,18 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       go("photo");
       return;
     }
+    if (species === "other") {
+      const subtypeCheck = validateOtherSubtype({
+        species,
+        subtype: draft.subtype,
+        subtypeDetail: draft.subtypeDetail,
+      });
+      if (!subtypeCheck.ok) {
+        setPhotoError(subtypeCheck.message);
+        go("photo");
+        return;
+      }
+    }
     if (!sessionAllowsAnotherPreview()) {
       go("preview", { lastError: "This session already used its free previews." });
       return;
@@ -132,6 +152,79 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     }
   }
 
+  async function pay() {
+    setCheckoutError(null);
+    const named = validatePetName(draft.petName);
+    if (!named.ok) {
+      setCheckoutError(named.message);
+      return;
+    }
+    const email = draft.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setCheckoutError("Enter a valid email address.");
+      return;
+    }
+    const subtypeCheck = validateOtherSubtype({
+      species,
+      subtype: draft.subtype,
+      subtypeDetail: draft.subtypeDetail,
+    });
+    if (!subtypeCheck.ok) {
+      setCheckoutError(subtypeCheck.message);
+      return;
+    }
+    const file = getV2PhotoFile();
+    if (!file || !draft.photo) {
+      setCheckoutError("Re-attach the original photo before paying.");
+      go("photo");
+      return;
+    }
+
+    const offer = v2PackOfferCopy();
+    setCheckoutBusy(true);
+    trackPetV2Event({ eventName: "v2_begin_checkout", species, amountCents: offer.amountCents });
+    try {
+      const result = await startPetCheckout({
+        api: petFunnelApi,
+        email,
+        petName: named.name,
+        species,
+        personality: PET_DEFAULT_PERSONALITY,
+        photo: draft.photo,
+        file,
+        successUrl: `${window.location.origin}/pet/order`,
+        cancelUrl: `${window.location.origin}${petV2LandingPath(species)}`,
+        subtype: subtypeCheck.subtype,
+        subtypeDetail: subtypeCheck.subtypeDetail,
+        funnelVariant: "v2",
+        funnelSessionId: getPetV2SessionId(),
+      });
+
+      if (result.status === "payment_processing" || result.status === "comped" || !result.checkoutUrl) {
+        window.location.assign(`/pet/order?token=${encodeURIComponent(result.publicToken)}`);
+        return;
+      }
+
+      if (shouldTrackPetBeginCheckout(result)) {
+        const serverAmount = result.chargedAmountCents ?? result.amountCents ?? offer.amountCents;
+        trackMetaInitiateCheckout({
+          eventId: result.eventId || `pet_ic_${result.orderId}`,
+          valueCents: serverAmount,
+          orderId: result.orderId,
+        });
+      }
+      window.location.assign(result.checkoutUrl);
+    } catch (caught) {
+      const message =
+        caught instanceof PetApiError
+          ? caught.message
+          : "Checkout could not start. Nothing was charged — try again.";
+      setCheckoutError(message);
+    } finally {
+      setCheckoutBusy(false);
+    }
+  }
+
   const step = draft.step;
 
   return (
@@ -153,7 +246,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     >
       <PageHead
         title="See your pet in another life | My Pet’s Secret Life"
-        description={`${v2PackOfferCopy().headline}. Upload one pet photo and see a free personalized preview. No card required.`}
+        description={`${v2PackOfferCopy().headline}. Upload one pet photo and see a free personalized preview. No card required for the preview.`}
         exactTitle
       />
       <input
@@ -190,6 +283,9 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           error={photoError}
           inputId={inputId}
           inputRef={inputRef}
+          subtype={draft.subtype}
+          subtypeDetail={draft.subtypeDetail}
+          onSubtype={(subtype, detail) => go("photo", { subtype, subtypeDetail: detail || null })}
           onClear={() => {
             setV2PhotoFile(null);
             setPhotoError(undefined);
@@ -226,13 +322,17 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
 
       {step === "offer" ? (
         <V2OfferScreen
+          species={species}
           email={draft.email}
+          petName={draft.petName}
+          subtype={draft.subtype}
+          subtypeDetail={draft.subtypeDetail}
+          busy={checkoutBusy}
+          error={checkoutError}
           onEmail={(email) => go("offer", { email })}
-          submitted={handoffDone}
-          onContinue={() => {
-            trackPetV2Event({ eventName: "v2_begin_checkout", species, amountCents: v2PackOfferCopy().amountCents });
-            setHandoffDone(true);
-          }}
+          onPetName={(petName) => go("offer", { petName })}
+          onSubtype={(subtype, detail) => go("offer", { subtype, subtypeDetail: detail || null })}
+          onContinue={() => void pay()}
         />
       ) : null}
     </V2Shell>

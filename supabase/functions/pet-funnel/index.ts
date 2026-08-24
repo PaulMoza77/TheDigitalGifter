@@ -7,6 +7,7 @@ import {
   PET_SIGNED_DOWNLOAD_SECONDS,
   PET_SIGNED_UPLOAD_SECONDS,
   PET_SKU,
+  PET_V2_PRICE_CENTS,
   PET_SOURCE_BUCKET,
   PET_SPECIES,
   PET_PERSONALITIES,
@@ -86,6 +87,10 @@ function checkoutConflict() {
     "Checkout changed while starting payment. Refresh and try again.",
     409,
   );
+}
+
+function isV2Funnel(value: unknown): boolean {
+  return asString(value) === "v2";
 }
 
 function safeReturnUrl(input: string, fallback: string): string {
@@ -328,13 +333,15 @@ Deno.serve(async (req) => {
       const photo = (body.photo || {}) as Record<string, unknown>;
       const offer = await loadActiveOffer(service);
       if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
+      const funnelVariant = isV2Funnel(body.funnelVariant) ? "v2" : "v1";
+      const amountCents = funnelVariant === "v2" ? PET_V2_PRICE_CENTS : offer.amountCents;
       const priceCheck = rejectAgainstOffer(
         {
           amountCents: body.amountCents,
           currency: body.currency,
           sku: body.sku,
         },
-        offer.amountCents,
+        amountCents,
       );
       if (!priceCheck.ok) return apiError(priceCheck.code, priceCheck.message);
       if (!email || !email.includes("@")) return apiError("INVALID_REQUEST", "A valid email is required.");
@@ -377,8 +384,9 @@ Deno.serve(async (req) => {
         species,
         personality,
         sku: offer.sku,
-        amount_cents: offer.amountCents,
-        charged_amount_cents: offer.amountCents,
+        amount_cents: amountCents,
+        charged_amount_cents: amountCents,
+        funnel_variant: funnelVariant,
         currency: offer.currency,
         offer_id: offerRow?.id ?? null,
         offer_version: offerRow?.version ?? 1,
@@ -403,15 +411,21 @@ Deno.serve(async (req) => {
         p_order_id: data.id,
         p_action: "order_created",
         p_actor_type: "customer",
-        p_payload: { sku: offer.sku, amount_cents: offer.amountCents, offer_version: offerRow?.version ?? 1 },
+        p_payload: {
+          sku: offer.sku,
+          amount_cents: amountCents,
+          offer_version: offerRow?.version ?? 1,
+          funnel_variant: funnelVariant,
+        },
       });
       return jsonResponse({
         orderId: data.id,
         publicToken,
         status: "awaiting_upload",
-        amountCents: offer.amountCents,
+        amountCents,
         currency: offer.currency,
         sku: offer.sku,
+        funnelVariant,
       });
     }
 
@@ -564,6 +578,7 @@ Deno.serve(async (req) => {
       let amountChanged = false;
       if (
         !paymentProcessing &&
+        !isV2Funnel(order.funnel_variant) &&
         liveOffer.ok &&
         checkoutAmountNeedsRefresh(Number(order.amount_cents), liveOffer.amountCents)
       ) {
@@ -647,6 +662,10 @@ Deno.serve(async (req) => {
       params.set("metadata[sku]", PET_SKU);
       params.set("metadata[product_type]", "pet_secret_life");
       params.set("metadata[pet_order_id]", order.id);
+      params.set("metadata[funnel_variant]", isV2Funnel(order.funnel_variant) ? "v2" : "v1");
+      if (checkoutCtx.funnelSessionId) {
+        params.set("metadata[funnel_session_id]", checkoutCtx.funnelSessionId);
+      }
       params.set("metadata[meta_event_id]", petPurchaseEventId(order.id));
       params.set("metadata[email_hash]", await sha256Hex(order.email));
       params.set("payment_intent_data[metadata][sku]", PET_SKU);

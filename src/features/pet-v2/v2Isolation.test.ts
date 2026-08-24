@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { PET_FUNNEL_ALLOWED_EVENTS } from "../pet/funnelEventContract";
+import { PET_SALE_PRICE_CENTS } from "../pet/flashSale";
 import { PET_DRAFT_STORAGE_KEY, PET_PRICE_CENTS, PET_PRICE_DISPLAY } from "../pet/types";
 import { PET_FUNNEL_SESSION_KEY } from "../pet/funnelSession";
 import { PET_V2_DRAFT_STORAGE_KEY, PET_V2_EVENTS, PET_V2_EVENT_PATH, PET_V2_PRODUCTION_PRICE_CENTS, PET_V2_SESSION_KEY, PET_V2_TEST_PRICE_CENTS } from "./types";
@@ -41,6 +42,8 @@ describe("pet funnel V2 isolation", () => {
     expect(PET_PRICE_DISPLAY).toBe("$27");
     expect(PET_V2_PRODUCTION_PRICE_CENTS).toBe(2700);
     expect(PET_V2_TEST_PRICE_CENTS).toBe(1200);
+    expect(PET_SALE_PRICE_CENTS).toBe(1700);
+    expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).not.toContain("petFlashSale");
     expect(readSrc("src/features/pet/PetLandingPage.tsx")).toContain("NameCapture");
     expect(readSrc("api/sitemap.xml.ts")).toContain('"/pet/dog"');
     expect(readSrc("api/sitemap.xml.ts")).not.toContain("/pet-v2");
@@ -66,8 +69,9 @@ describe("pet funnel V2 isolation", () => {
     }
     expect(isPetV2EventName("landing_view")).toBe(false);
     expect(readSrc("src/features/pet-v2/analytics.ts")).not.toContain("trackPetFunnelInternalEvent");
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).not.toContain("startPetCheckout");
-    expect(readSrc("src/features/pet-v2/screens/OfferScreen.tsx")).toContain("No card was charged");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("startPetCheckout");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain('funnelVariant: "v2"');
+    expect(readSrc("src/features/pet-v2/screens/OfferScreen.tsx")).toContain("Opening secure checkout");
   });
 
   it("uses existing mini clips and the other-pets animals already in the product", () => {
@@ -88,13 +92,17 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet/catalog.ts")).toContain('"spa-bathtub": "Hedgehog"');
   });
 
-  it("does not create a live Stripe checkout or change paid generation", () => {
+  it("keeps free preview off Stripe and charges V2 through pet-funnel at $12", () => {
     const previewApi = readSrc("api/pet-v2/preview.ts");
     expect(previewApi).not.toMatch(/stripe/i);
     expect(previewApi).toContain("black-forest-labs/flux-kontext-pro");
     expect(previewApi).not.toContain("pet-generate");
-    expect(readSrc("src/features/pet-v2/screens/OfferScreen.tsx")).not.toContain("checkout.stripe.com");
+    expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain('errorCode === "live_disabled"');
+    expect(readSrc("src/features/pet-v2/previewClient.ts")).not.toContain("response.mode === \"mock\" || !response.ok");
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("createReplicatePrediction");
+    expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("PET_V2_PRICE_CENTS");
+    expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("funnel_variant");
+    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 1200");
   });
 });
 
