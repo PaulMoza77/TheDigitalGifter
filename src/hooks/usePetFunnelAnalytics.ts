@@ -376,7 +376,7 @@ export function usePetFunnelAnalytics(
                 : null;
             if (!health) return null;
             const key = datasetId === "v2" ? "v2_failed_write_count" : "v1_failed_write_count";
-            return asNullableNumber(health[key] ?? health.failed_write_count);
+            return asNullableNumber(health[key] ?? health.v2_failed_write_count ?? health.v1_failed_write_count ?? health.failed_write_count);
           })(),
           latestFirstPartyAt: (() => {
             const health =
@@ -385,7 +385,11 @@ export function usePetFunnelAnalytics(
                 : null;
             if (!health) return firstEventAt;
             const key = datasetId === "v2" ? "latest_v2_event_at" : "latest_v1_event_at";
-            const value = health[key] ?? health.latest_first_party_event_at;
+            const value =
+              health[key] ??
+              health.latest_v2_event_at ??
+              health.latest_v1_event_at ??
+              health.latest_first_party_event_at;
             return value ? String(value) : firstEventAt;
           })(),
         },
@@ -428,6 +432,9 @@ export function usePetFunnelAnalytics(
         datasetId,
         datasetConfigured: configured,
         campaignLabel: datasetSwitchLabel(datasetId, liveName),
+        measurementReliableFrom: payload.measurement_reliable_from
+          ? String(payload.measurement_reliable_from)
+          : null,
       };
       setReport(mapped);
     } catch (err) {

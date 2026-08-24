@@ -128,11 +128,12 @@ describe("pet campaign-scoped funnel analytics", () => {
     ];
     expect(filterMetaRowsByCampaignId(rows, CAMPAIGN_A)).toEqual([rows[0]]);
     expect(filterMetaRowsByCampaignId(rows, CAMPAIGN_B)).toEqual([rows[1]]);
-    const isolatedSql = readSrc("supabase/migrations/20260824230000_pet_dataset_isolated_analytics.sql");
-    expect(isolatedSql).toContain("p_campaign_id");
+    const isolatedSql = readSrc("supabase/migrations/20260824240000_pet_event_name_and_v2_ingest.sql");
+    expect(isolatedSql).toContain("'landing_view'");
+    expect(isolatedSql).toContain("'v2_landing_view'");
+    expect(isolatedSql).toContain("'v2_upload_completed'");
+    expect(isolatedSql).toContain("p_is_test");
     expect(isolatedSql).toMatch(/m\.campaign_id = p_campaign_id/);
-    expect(isolatedSql).toContain("funnel_variant");
-    expect(isolatedSql).toContain("pet_v2_funnel_events");
   });
 
   it("first-party 6-card funnel is dataset/table scoped, not campaign_id scoped", () => {

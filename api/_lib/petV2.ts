@@ -97,6 +97,8 @@ export async function writePetV2FunnelEvent(raw: unknown): Promise<{ ok: true; d
   if (!supabaseUrl || !serviceKey) {
     throw new Error("missing_supabase_config");
   }
+  const environment = resolveWriteEnvironment();
+  const isTest = environment !== "production";
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/record_pet_v2_funnel_event`, {
     method: "POST",
     headers: {
@@ -123,6 +125,8 @@ export async function writePetV2FunnelEvent(raw: unknown): Promise<{ ok: true; d
       p_has_meta_click: validated.hasFbclid,
       p_referrer_host: validated.referrerHost,
       p_client_event_id: validated.eventId,
+      p_is_test: isTest,
+      p_environment: environment,
     }),
   });
   if (!response.ok) {

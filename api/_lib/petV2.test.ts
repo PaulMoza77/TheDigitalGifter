@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseV2EventBody } from "../../api/_lib/petV2";
+import { parseV2EventBody } from "./petV2";
 
 const session = "11111111-1111-4111-8111-111111111111";
 
@@ -28,5 +28,11 @@ describe("V2 funnel ingest", () => {
       pathname: "/pet/dog",
     });
     expect(row.pathname).toBeNull();
+  });
+
+  it("re-exports originAllowed so the V2 serverless handler can load", async () => {
+    const mod = await import("./petV2");
+    expect(typeof mod.originAllowed).toBe("function");
+    expect(typeof mod.persistV2WriteFailure).toBe("function");
   });
 });
