@@ -48,7 +48,7 @@ describe("pet funnel admin analytics wiring", () => {
     const funnel = readSrc("supabase/functions/pet-funnel/index.ts");
     expect(funnel).toContain("recordPetFunnelInitiateCheckout");
     expect(funnel).toContain("matchedOpenCheckoutResponse");
-    expect(funnel).toContain('params.set("ui_mode", "embedded")');
+    expect(funnel).toContain('params.set("ui_mode", "custom")');
     expect(funnel).toContain("matchedEmbeddedCheckoutResponse");
     expect(readSrc("supabase/functions/_shared/pet/funnelEvents.ts")).toContain(
       "order:${input.orderId}:initiate_checkout",

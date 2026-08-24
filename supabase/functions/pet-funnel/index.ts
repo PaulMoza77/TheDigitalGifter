@@ -635,16 +635,16 @@ Deno.serve(async (req) => {
         amountChanged = true;
       }
 
-      const requestedEmbedded = asString(body.uiMode || body.ui_mode) === "embedded";
-      const publishableKey = requestedEmbedded ? await resolvePublishableKey(stripeKey) : null;
-      const embedded = requestedEmbedded && Boolean(publishableKey);
+      const requestedOnPage = ["custom", "embedded"].includes(asString(body.uiMode || body.ui_mode));
+      const publishableKey = requestedOnPage ? await resolvePublishableKey(stripeKey) : null;
+      const onPage = requestedOnPage && Boolean(publishableKey);
       const decision = decideCheckoutSessionAction({
         existingSession: amountChanged && existingView
           ? { ...existingView, status: "expired" }
           : existingView,
         orderId: order.id,
         issuedCount: issuedCount || 0,
-        uiMode: embedded ? "embedded" : "hosted",
+        uiMode: onPage ? "custom" : "hosted",
       });
 
       if (decision.action === "payment_processing") {
@@ -695,8 +695,8 @@ Deno.serve(async (req) => {
       const cancelUrl = safeReturnUrl(asString(body.cancelUrl), `${siteOrigin()}/pet/checkout`);
       const params = new URLSearchParams();
       params.set("mode", "payment");
-      if (embedded) {
-        params.set("ui_mode", "embedded");
+      if (onPage) {
+        params.set("ui_mode", "custom");
         params.set("return_url", successUrl);
         params.set("expires_at", String(Math.floor(Date.now() / 1000) + 31 * 60));
       } else {
@@ -748,7 +748,7 @@ Deno.serve(async (req) => {
 
       if (attachedId && attachedId !== asString(session.id)) {
         const winner = await fetchStripeCheckoutSession(stripeKey, attachedId);
-        if (embedded) {
+        if (onPage) {
           const matchedEmbedded = matchedEmbeddedCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
           if (!matchedEmbedded.ok) return checkoutConflict();
           const meta = petMetaCheckoutFields(order);
@@ -800,7 +800,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      if (embedded) {
+      if (onPage) {
         const matchedEmbedded = matchedEmbeddedCheckoutResponse(session);
         if (!matchedEmbedded.ok) return checkoutConflict();
         const meta = petMetaCheckoutFields(order);
@@ -809,7 +809,7 @@ Deno.serve(async (req) => {
           p_order_id: order.id,
           p_action: "checkout_session_created",
           p_actor_type: "system",
-          p_payload: { session_present: true, initiate_event_id: meta.eventId, ui_mode: "embedded" },
+          p_payload: { session_present: true, initiate_event_id: meta.eventId, ui_mode: "custom" },
         });
         await sendMetaCapiInitiateCheckout({
           eventId: meta.eventId,

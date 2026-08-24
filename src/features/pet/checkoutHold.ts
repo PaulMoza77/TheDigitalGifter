@@ -1,6 +1,6 @@
 export const CHECKOUT_HOLD_MS = 30 * 60 * 1000;
 export const CHECKOUT_HOLD_STORAGE_KEY = "tdg.pet.checkoutHold.v1";
-export const CHECKOUT_SESSION_CACHE_KEY = "tdg.pet.checkoutSession.v1";
+export const CHECKOUT_SESSION_CACHE_KEY = "tdg.pet.checkoutSession.v2";
 
 export type CheckoutHold = {
   expiresAt: number;

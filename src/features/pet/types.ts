@@ -405,7 +405,7 @@ export type CreateStripeCheckoutRequest = {
   cancelUrl: string;
   customerEmail: string;
   promoCode?: string;
-  uiMode?: "hosted" | "embedded";
+  uiMode?: "hosted" | "embedded" | "custom";
   funnelSessionId?: string;
   deviceType?: "mobile" | "tablet" | "desktop";
   attribution?: {

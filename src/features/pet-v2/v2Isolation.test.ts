@@ -81,7 +81,8 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("startPetCheckout");
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain('funnelVariant: "v2"');
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).not.toContain('uiMode: "embedded"');
-    expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain('uiMode: "embedded"');
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).not.toContain('uiMode: "custom"');
+    expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain('uiMode: "custom"');
     const handler = readSrc("api/pet-v2-funnel-event.ts");
     const lib = readSrc("api/_lib/petV2.ts");
     expect(lib).not.toContain("src/features/pet-v2/types");
