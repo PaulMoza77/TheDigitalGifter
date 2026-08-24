@@ -1,6 +1,6 @@
 import type { Plugin } from "vite";
 import previewHandler from "./api/pet-v2/preview";
-import funnelHandler from "./api/pet-v2/funnel-event";
+import funnelHandler from "./api/pet-v2-funnel-event";
 
 function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) => void }): Promise<string> {
   return new Promise((resolve, reject) => {

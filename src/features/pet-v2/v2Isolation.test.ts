@@ -86,6 +86,7 @@ describe("pet funnel V2 isolation", () => {
     const lib = readSrc("api/_lib/petV2.ts");
     expect(lib).not.toContain("src/features/pet-v2/types");
     expect(lib).toContain("missing_supabase_config");
+    expect(handler).not.toContain("./_lib/");
     expect(handler).toContain("res.status(500)");
     expect(handler).not.toContain("status(202).json({ ok: true, duplicate: false })");
     expect(readSrc("vercel.json")).toContain("/api/pet-v2-funnel-event");
