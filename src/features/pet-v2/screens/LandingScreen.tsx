@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { BadgeCheck, Lock, ShieldCheck, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { V2ExampleStrip } from "../V2ExampleStrip";
-import { V2ClosingCta, V2PackOffer, V2SaleBanner, V2StickyCta, v2PackOfferCopy } from "../V2PackOffer";
+import { V2ExampleStrip, V2HeroProof } from "../V2ExampleStrip";
+import { V2ClosingCta, V2SaleLine, V2StickyCta, v2PackOfferCopy } from "../V2PackOffer";
 import type { PetV2Species } from "../types";
 
 export function V2LandingScreen({
@@ -18,22 +18,21 @@ export function V2LandingScreen({
   const pet = species === "cat" ? "your cat" : species === "other" ? "your pet" : "your dog";
   return (
     <div className="space-y-8">
+      <V2HeroProof species={species} />
+
       <section>
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#d4a84b]">Try it free</p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[#f6efe4] sm:text-[2.7rem] sm:leading-[1.1]">
+        <h1 className="mt-1.5 text-[1.7rem] font-semibold tracking-tight text-[#f6efe4] sm:text-4xl sm:leading-[1.1]">
           See your pet in another life.
         </h1>
-        <p className="mt-3 max-w-md text-base leading-7 text-[#f6efe4]/72">
-          Upload one photo. We’ll create a free personalized preview of {pet} — no card required.
+        <p className="mt-2 max-w-md text-sm leading-6 text-[#f6efe4]/72 sm:text-base sm:leading-7">
+          One photo in. A free preview of {pet} — then 12 secret lives and 2 mini clips.
         </p>
-        <p className="mt-3 max-w-md text-base font-semibold leading-7 text-[#f3d48a]">
-          Then {offer.headline.toLowerCase()}.
-        </p>
-        <V2SaleBanner onExpire={() => setOffer(v2PackOfferCopy())} />
+        <V2SaleLine onExpire={() => setOffer(v2PackOfferCopy())} />
         <Button
           type="button"
           onClick={onUploadClick}
-          className="mt-6 h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63] sm:w-auto sm:px-8"
+          className="mt-4 h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63] sm:w-auto sm:px-8"
         >
           Upload your pet photo
         </Button>
@@ -42,7 +41,7 @@ export function V2LandingScreen({
             Choose a JPEG, PNG, or WebP
           </label>
         </p>
-        <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#f6efe4]/68">
+        <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#f6efe4]/68">
           {[
             { icon: BadgeCheck, label: "12 secret lives" },
             { icon: BadgeCheck, label: "2 mini clips" },
@@ -57,8 +56,8 @@ export function V2LandingScreen({
             </li>
           ))}
         </ul>
-        <V2PackOffer className="mt-5" onExpire={() => setOffer(v2PackOfferCopy())} />
       </section>
+
       <V2ExampleStrip species={species} />
       <V2ClosingCta onClick={onUploadClick} onExpire={() => setOffer(v2PackOfferCopy())} />
       <V2StickyCta

@@ -47,7 +47,10 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).not.toContain("petFlashSale");
     expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2StickyCta");
     expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2ClosingCta");
-    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2SaleBanner");
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2SaleLine");
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2HeroProof");
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).not.toContain("V2SaleBanner");
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).not.toContain("<V2PackOffer");
     expect(readSrc("src/features/pet/PetLandingPage.tsx")).toContain("NameCapture");
     expect(readSrc("api/sitemap.xml.ts")).toContain('"/pet/dog"');
     expect(readSrc("api/sitemap.xml.ts")).not.toContain("/pet-v2");
@@ -84,11 +87,13 @@ describe("pet funnel V2 isolation", () => {
     expect(strip).toContain("PET_SCENES");
     expect(strip).toContain("All 12 secret lives");
     expect(strip).toContain("2 mini clips included");
+    expect(strip).toContain("V2HeroProof");
     expect(strip).toContain("sceneHasMotionClip");
     expect(strip).toContain("AutoSceneClip");
     expect(strip).toContain("SceneImage");
     expect(strip).toContain("PET_OTHER_SUBJECTS");
-    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2PackOffer");
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2HeroProof");
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2ExampleStrip");
     expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).toContain("12 secret lives and 2 mini clips");
     expect(readSrc("src/features/pet/components/SceneCard.tsx")).toContain("autoPlay");
     expect(readSrc("src/features/pet/components/SceneCard.tsx")).toContain("playsInline");

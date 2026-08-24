@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { PET_SALE_EXPIRES_AT_ISO, PET_SALE_EXPIRES_AT_MS } from "../pet/flashSale";
-import { SaleBanner, SaleCountdown, useSaleCountdown } from "../pet/components/SaleOffer";
+import { SaleCountdown, useSaleCountdown } from "../pet/components/SaleOffer";
 import {
   PET_V2_PRODUCTION_PRICE_CENTS,
   PET_V2_PRODUCTION_PRICE_DISPLAY,
@@ -72,16 +72,15 @@ export function V2PackOffer({
   );
 }
 
-export function V2SaleBanner({ onExpire }: { onExpire?: () => void }) {
+/** One-line urgency — no extra bordered box. Sticky CTA already repeats the timer. */
+export function V2SaleLine({ onExpire }: { onExpire?: () => void }) {
   const offer = v2PackOfferCopy();
-  if (!offer.saleActive) return null;
+  const countdown = useSaleCountdown(offer.expiresAt, onExpire);
+  if (!offer.saleActive || !countdown) return null;
   return (
-    <SaleBanner
-      priceDisplay={offer.priceDisplay}
-      compareAtDisplay={offer.compareAtDisplay}
-      saleExpiresAt={offer.expiresAt}
-      onExpire={onExpire}
-    />
+    <p className="mt-3 text-sm font-medium tabular-nums text-[#f3d48a]" role="timer">
+      <s className="font-medium text-[#f6efe4]/45">{offer.compareAtDisplay}</s> {offer.priceDisplay} today · {countdown} left
+    </p>
   );
 }
 
