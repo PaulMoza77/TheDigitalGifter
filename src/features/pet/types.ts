@@ -405,6 +405,7 @@ export type CreateStripeCheckoutRequest = {
   cancelUrl: string;
   customerEmail: string;
   promoCode?: string;
+  uiMode?: "hosted" | "embedded";
   funnelSessionId?: string;
   deviceType?: "mobile" | "tablet" | "desktop";
   attribution?: {
@@ -422,6 +423,9 @@ export type CreateStripeCheckoutRequest = {
 export type CreateStripeCheckoutResponse = {
   sessionId: string;
   checkoutUrl: string | null;
+  clientSecret?: string | null;
+  publishableKey?: string | null;
+  expiresAt?: number | null;
   status?: "open" | "payment_processing" | "comped";
   reused?: boolean;
   promoCode?: string | null;

@@ -135,12 +135,16 @@ export type StartPetCheckoutInput = {
   subtypeDetail?: CreatePetOrderRequest["subtypeDetail"];
   funnelVariant?: "v1" | "v2";
   funnelSessionId?: string;
+  uiMode?: "hosted" | "embedded";
 };
 
 export type StartPetCheckoutResult = {
   orderId: string;
   publicToken: string;
   checkoutUrl: string | null;
+  clientSecret?: string | null;
+  publishableKey?: string | null;
+  expiresAt?: number | null;
   sessionId: string;
   status?: "open" | "payment_processing" | "comped";
   eventId?: string;
@@ -192,6 +196,7 @@ export async function startPetCheckout(
     cancelUrl: input.cancelUrl,
     customerEmail: input.email,
     promoCode: input.promoCode,
+    uiMode: input.uiMode,
     ...analytics,
     funnelSessionId: input.funnelSessionId || analytics.funnelSessionId,
   });
@@ -200,6 +205,9 @@ export async function startPetCheckout(
     orderId: order.orderId,
     publicToken: order.publicToken,
     checkoutUrl: checkout.checkoutUrl,
+    clientSecret: checkout.clientSecret,
+    publishableKey: checkout.publishableKey,
+    expiresAt: checkout.expiresAt,
     sessionId: checkout.sessionId,
     status: checkout.status,
     eventId: checkout.eventId,

@@ -134,12 +134,15 @@ export function shouldTrackPetBeginCheckout(input: {
   status?: string | null;
   sessionId?: string | null;
   checkoutUrl?: string | null;
+  clientSecret?: string | null;
 }): boolean {
+  const hasHosted =
+    typeof input.checkoutUrl === "string" && input.checkoutUrl.startsWith("https://");
+  const hasEmbedded = typeof input.clientSecret === "string" && input.clientSecret.length > 8;
   return (
     input.status === "open" &&
     Boolean(input.sessionId) &&
-    typeof input.checkoutUrl === "string" &&
-    input.checkoutUrl.startsWith("https://")
+    (hasHosted || hasEmbedded)
   );
 }
 
