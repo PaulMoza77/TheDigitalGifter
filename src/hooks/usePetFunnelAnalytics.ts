@@ -24,6 +24,19 @@ import {
   safeCpaCents,
   safeRoas,
 } from "@/features/pet/funnelHybrid";
+import {
+  buildCampaignCostMetrics,
+  buildFunnelFromCounts,
+  countsFromNamedRows,
+  firstPartyConversionPct,
+  isCampaignViewMode,
+  isFunnelVariant,
+  scopedCountsFromSummary,
+  unattributedShare,
+  type CampaignAnalyticsConfig,
+  type CampaignViewMode,
+  type FunnelVariant,
+} from "@/features/pet/funnelCampaignAnalytics";
 
 type RpcRow = Record<string, unknown>;
 
@@ -98,7 +111,17 @@ export type SyncActionResult = {
   results?: Array<Record<string, unknown>>;
 };
 
-export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: string; to: string }) {
+export type CampaignAnalyticsSelection = {
+  mode: CampaignViewMode;
+  campaignId?: string | null;
+  adsetId?: string | null;
+};
+
+export function usePetFunnelAnalytics(
+  preset: DatePreset,
+  custom?: { from: string; to: string },
+  selection?: CampaignAnalyticsSelection,
+) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [report, setReport] = React.useState<PetFunnelAnalyticsReport | null>(null);
@@ -146,12 +169,18 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
     setLoading(true);
     setError("");
     const range = rangeForPreset(preset, new Date(), custom);
+    const viewMode: CampaignViewMode = selection?.mode && isCampaignViewMode(selection.mode) ? selection.mode : "all";
+    const selectedCampaignId = selection?.campaignId ? String(selection.campaignId) : null;
+    const selectedAdsetId = selection?.adsetId ? String(selection.adsetId) : null;
     try {
       const { data, error: rpcError } = await supabase.rpc("admin_pet_funnel_analytics", {
         p_from: range.from.toISOString(),
         p_to: range.to.toISOString(),
         p_prev_from: range.previousFrom.toISOString(),
         p_prev_to: range.previousTo.toISOString(),
+        p_campaign_id: viewMode === "campaign" ? selectedCampaignId : null,
+        p_view_mode: viewMode,
+        p_adset_id: viewMode === "campaign" ? selectedAdsetId : null,
       });
       if (rpcError) throw new Error(rpcError.message);
       const payload = (data || {}) as RpcRow;
@@ -330,6 +359,116 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
       firstPartyKpis.checkouts = backendCheckouts;
 
       const ads = firstPartyAds;
+      const catalog: CampaignAnalyticsConfig[] = ((payload.catalog as RpcRow[]) || [])
+        .map((row) => ({
+          campaignId: String(row.campaign_id || ""),
+          displayName: String(row.display_name || row.campaign_id || "Campaign"),
+          funnelVariant: isFunnelVariant(row.funnel_variant) ? row.funnel_variant : null,
+          utmCampaignAliases: Array.isArray(row.utm_campaign_aliases)
+            ? (row.utm_campaign_aliases as unknown[]).map((value) => String(value || "")).filter(Boolean)
+            : [],
+          measurementReliableFrom: row.measurement_reliable_from ? String(row.measurement_reliable_from) : null,
+        }))
+        .filter((row) => row.campaignId);
+      const campaignSummaries = ((payload.campaign_summaries as RpcRow[]) || []).map((row) => scopedCountsFromSummary(row));
+      const selectedConfig =
+        viewMode === "campaign" && selectedCampaignId
+          ? catalog.find((row) => row.campaignId === selectedCampaignId) || null
+          : null;
+      const funnelVariant: FunnelVariant | null = selectedConfig?.funnelVariant ?? null;
+      const v2Counts = countsFromNamedRows((payload.v2_steps as RpcRow[]) || []);
+      const v2Stages = buildFunnelFromCounts("v2_preview", v2Counts);
+      const variantStages =
+        funnelVariant === "v2_preview"
+          ? v2Stages
+          : funnelVariant === "v1"
+            ? buildFunnelFromCounts("v1", {
+                landing_view: counts.landing_view,
+                pet_name_submitted: counts.pet_name_submitted,
+                photo_upload_completed: counts.photo_upload_completed,
+                order_review_viewed: counts.order_review_viewed,
+                initiate_checkout: counts.initiate_checkout,
+                purchase: counts.purchase,
+              })
+            : [];
+      const v2Latency = (payload.v2_latency || {}) as RpcRow;
+      const v2Kpis =
+        funnelVariant === "v2_preview" || viewMode === "unattributed"
+          ? {
+              uploadRate: firstPartyConversionPct(v2Counts.v2_upload_completed || 0, v2Counts.v2_landing_view || 0),
+              previewGenerationSuccessRate: firstPartyConversionPct(
+                v2Counts.v2_preview_generation_completed || 0,
+                v2Counts.v2_preview_generation_started || 0,
+              ),
+              previewGenerationFailureRate: firstPartyConversionPct(
+                v2Counts.v2_preview_generation_failed || 0,
+                v2Counts.v2_preview_generation_started || 0,
+              ),
+              landingToPreviewViewed: firstPartyConversionPct(v2Counts.v2_preview_viewed || 0, v2Counts.v2_landing_view || 0),
+              previewViewedToUnlock: firstPartyConversionPct(v2Counts.v2_unlock_clicked || 0, v2Counts.v2_preview_viewed || 0),
+              unlockToCheckout: firstPartyConversionPct(v2Counts.v2_begin_checkout || 0, v2Counts.v2_unlock_clicked || 0),
+              checkoutToPurchase: firstPartyConversionPct(v2Counts.v2_purchase || 0, v2Counts.v2_begin_checkout || 0),
+              medianPreviewGenerationMs: asNullableNumber(v2Latency.median_ms),
+              p90PreviewGenerationMs: asNullableNumber(v2Latency.p90_ms),
+            }
+          : null;
+      const unattributedPayload = (payload.unattributed || {}) as RpcRow;
+      const unattributedV1 = asNumber(unattributedPayload.v1_landings);
+      const unattributedV2 = asNumber(unattributedPayload.v2_landings);
+      const totalFpLandings =
+        asNumber(unattributedPayload.v1_landings_total) + asNumber(unattributedPayload.v2_landings_total);
+      const selectedSummary = selectedCampaignId
+        ? campaignSummaries.find((row) => row.campaignId === selectedCampaignId)
+        : null;
+      const fpLandingForCosts =
+        funnelVariant === "v2_preview"
+          ? v2Counts.v2_landing_view || 0
+          : funnelVariant === "v1"
+            ? counts.landing_view
+            : selectedSummary?.fpLanding || 0;
+      const firstActionCount =
+        funnelVariant === "v2_preview"
+          ? v2Counts.v2_upload_completed || 0
+          : funnelVariant === "v1"
+            ? counts.pet_name_submitted
+            : 0;
+      const checkoutForCosts = funnelVariant === "v2_preview" ? v2Counts.v2_begin_checkout || 0 : backendCheckouts;
+      const purchaseForCosts = funnelVariant === "v2_preview" ? v2Counts.v2_purchase || 0 : backendPurchases;
+      const costMetrics =
+        viewMode === "campaign"
+          ? buildCampaignCostMetrics({
+              spendCents: metaSpendCents,
+              fpLanding: fpLandingForCosts,
+              firstAction: firstActionCount,
+              checkout: checkoutForCosts,
+              purchase: purchaseForCosts,
+              revenueCents: funnelVariant === "v2_preview" ? Number(selectedSummary?.revenueCents || 0) : backendRevenue,
+              metaLpv: asNumber(metaTotals.landing_page_views),
+            })
+          : null;
+      const fpAdsetById = new Map(((payload.fp_adsets as RpcRow[]) || []).map((row) => [String(row.adset_id || ""), row]));
+      const v2FpAdsetById = new Map(((payload.v2_fp_adsets as RpcRow[]) || []).map((row) => [String(row.adset_id || ""), row]));
+      const metaAdsets = (((meta.adsets as RpcRow[]) || []) as RpcRow[]).map((row) => {
+        const id = String(row.adset_id || "");
+        const v1fp = fpAdsetById.get(id);
+        const v2fp = v2FpAdsetById.get(id);
+        return {
+          campaignId: String(row.campaign_id || ""),
+          campaignName: String(row.campaign_name || row.campaign_id || "Campaign"),
+          adsetId: id,
+          adsetName: String(row.adset_name || id || "Ad set"),
+          spendCents: asNumber(row.spend_cents),
+          lpv: asNumber(row.landing_page_views),
+          linkClicks: asNumber(row.link_clicks),
+          impressions: asNumber(row.impressions),
+          fpLanding: funnelVariant === "v2_preview" ? asNumber(v2fp?.v2_landing) : asNumber(v1fp?.v1_landing),
+          firstAction: funnelVariant === "v2_preview" ? asNumber(v2fp?.v2_upload) : asNumber(v1fp?.v1_name),
+          preview: funnelVariant === "v2_preview" ? asNumber(v2fp?.v2_preview) : undefined,
+          checkout: funnelVariant === "v2_preview" ? asNumber(v2fp?.v2_checkout) : asNumber(v1fp?.v1_checkout),
+          purchase: funnelVariant === "v2_preview" ? asNumber(v2fp?.v2_purchase) : asNumber(v1fp?.v1_purchase),
+        };
+      });
+
       const mapped: PetFunnelAnalyticsReport = {
         from: range.from.toISOString(),
         to: range.to.toISOString(),
@@ -386,6 +525,28 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
         }),
         biggestDrop: rangeMode === "first_party" ? biggestFunnelDrop(steps) : biggestHybridDrop(hybridStages),
         spendAvailable: metaSpendCents != null && metaSpendCents >= 0 && asNumber(meta.row_count) > 0,
+        viewMode,
+        selectedCampaignId,
+        selectedAdsetId,
+        catalog,
+        campaignSummaries,
+        funnelVariant,
+        variantStages,
+        v2Stages,
+        v2Kpis,
+        unattributed: {
+          v1Landings: unattributedV1,
+          v2Landings: unattributedV2,
+          totalFpLandings,
+          pct: unattributedShare(unattributedV1 + unattributedV2, totalFpLandings),
+        },
+        measurementReliableFrom: payload.measurement_reliable_from
+          ? String(payload.measurement_reliable_from)
+          : selectedConfig?.measurementReliableFrom || null,
+        dateFilterNote: payload.date_filter_note ? String(payload.date_filter_note) : null,
+        timezone: payload.timezone ? String(payload.timezone) : "UTC",
+        metaAdsets,
+        costMetrics,
       };
       setReport(mapped);
     } catch (err) {
@@ -394,7 +555,7 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
     } finally {
       setLoading(false);
     }
-  }, [preset, custom?.from, custom?.to]);
+  }, [preset, custom?.from, custom?.to, selection?.mode, selection?.campaignId, selection?.adsetId]);
 
   // Attach latest sync status onto the report without re-fetching RPC.
   React.useEffect(() => {
@@ -445,6 +606,25 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
     [loadSyncStatus, refresh],
   );
 
+  const saveCampaignMapping = React.useCallback(
+    async (input: {
+      campaignId: string;
+      funnelVariant: FunnelVariant | null;
+      displayName?: string | null;
+      utmCampaignAliases?: string[];
+    }) => {
+      const { error: rpcError } = await supabase.rpc("admin_upsert_pet_campaign_analytics_config", {
+        p_campaign_id: input.campaignId,
+        p_funnel_variant: input.funnelVariant,
+        p_display_name: input.displayName ?? null,
+        p_utm_campaign_aliases: input.utmCampaignAliases ?? [],
+      });
+      if (rpcError) throw new Error(rpcError.message);
+      await refresh();
+    },
+    [refresh],
+  );
+
   React.useEffect(() => {
     void loadSyncStatus();
   }, [loadSyncStatus]);
@@ -453,5 +633,5 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
     void refresh();
   }, [refresh]);
 
-  return { loading, error, report, refresh, syncing, syncMessage, runSync, syncStatus };
+  return { loading, error, report, refresh, syncing, syncMessage, runSync, syncStatus, saveCampaignMapping };
 }
