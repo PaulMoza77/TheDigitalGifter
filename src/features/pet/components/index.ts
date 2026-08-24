@@ -18,7 +18,7 @@ export { PortraitUpsellSheet } from "./PortraitUpsellSheet";
 export { RetryPackPanel } from "./RetryPackPanel";
 export { ResultsGrid } from "./ResultsGrid";
 export { SamePetGuarantee } from "./SamePetGuarantee";
-export { SceneCard, SceneImage, sceneIcon } from "./SceneCard";
+export { AutoSceneClip, SceneCard, SceneImage, sceneIcon } from "./SceneCard";
 export { SceneGrid } from "./SceneGrid";
 export { SocialProof } from "./SocialProof";
 export { SpeciesChip } from "./SpeciesChip";

@@ -5,7 +5,7 @@ import {
   sceneHasMotionClip,
 } from "../pet/catalog";
 import { mixedOtherGalleryLabel } from "../pet/croGuards";
-import { SceneImage } from "../pet/components/SceneCard";
+import { AutoSceneClip, SceneImage } from "../pet/components/SceneCard";
 import type { PetSceneId } from "../pet/types";
 import type { PetV2Species } from "./types";
 
@@ -44,13 +44,23 @@ export function V2ExampleStrip({ species }: { species: PetV2Species }) {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {OTHER_EXAMPLES.map((id, index) => (
             <figure key={id} className="relative overflow-hidden rounded-2xl">
-              <SceneImage
-                sceneId={id}
-                species="other"
-                alt={`${PET_OTHER_SUBJECTS[id]} — ${id.replace(/-/g, " ")} example`}
-                eager={index < 2}
-                className="aspect-[3/4] h-full w-full object-cover"
-              />
+              {sceneHasMotionClip(id) ? (
+                <AutoSceneClip
+                  sceneId={id}
+                  species="other"
+                  alt={`${PET_OTHER_SUBJECTS[id]} — ${id.replace(/-/g, " ")} example`}
+                  eager={index < 2}
+                  className="aspect-[3/4] h-full w-full object-cover"
+                />
+              ) : (
+                <SceneImage
+                  sceneId={id}
+                  species="other"
+                  alt={`${PET_OTHER_SUBJECTS[id]} — ${id.replace(/-/g, " ")} example`}
+                  eager={index < 2}
+                  className="aspect-[3/4] h-full w-full object-cover"
+                />
+              )}
               {sceneHasMotionClip(id) ? <ClipBadge /> : null}
               <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2.5 pb-2.5 pt-8 text-sm font-semibold text-white">
                 {PET_OTHER_SUBJECTS[id]}
@@ -97,7 +107,7 @@ export function V2ExampleStrip({ species }: { species: PetV2Species }) {
         </figure>
         {DOG_CAT_CLIPS.map((id) => (
           <figure key={id} className="relative overflow-hidden rounded-2xl">
-            <SceneImage
+            <AutoSceneClip
               sceneId={id}
               species={species}
               alt={`${id.replace(/-/g, " ")} clip of the same demo ${petLabel}`}
