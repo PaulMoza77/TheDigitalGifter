@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import type { LucideIcon } from "lucide-react";
+import { useCanAutoplayHeroVideo } from "../useMotionPreference";
 import {
   Bath,
   Briefcase,
@@ -158,6 +159,69 @@ export function SceneImage({
         aria-hidden="true"
       />
     </div>
+  );
+}
+
+/** Muted looping clip that starts on its own — no hover or tap. */
+export function AutoSceneClip({
+  sceneId,
+  alt,
+  className,
+  species = "dog",
+  eager = false,
+}: {
+  sceneId: PetSceneId;
+  alt: string;
+  className?: string;
+  species?: PetSpecies;
+  eager?: boolean;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { prefersReducedMotion, canAutoplay } = useCanAutoplayHeroVideo();
+  const poster = sceneImageSrc(sceneId, species);
+  const clip = sceneClipSrc(sceneId, species);
+  const allowAutoplay = sceneHasMotionClip(sceneId) && canAutoplay && !prefersReducedMotion;
+
+  useEffect(() => {
+    if (!allowAutoplay) return;
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = true;
+    video.defaultMuted = true;
+    void video.play().catch(() => undefined);
+  }, [allowAutoplay, clip, sceneId, species]);
+
+  if (!allowAutoplay) {
+    return (
+      <img
+        src={poster}
+        alt={alt}
+        className={className}
+        width={720}
+        height={1080}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+      />
+    );
+  }
+
+  return (
+    <video
+      ref={videoRef}
+      src={clip}
+      poster={poster}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload={eager ? "auto" : "metadata"}
+      className={className}
+      aria-label={alt}
+      onCanPlay={(event) => {
+        event.currentTarget.muted = true;
+        void event.currentTarget.play().catch(() => undefined);
+      }}
+    />
   );
 }
 

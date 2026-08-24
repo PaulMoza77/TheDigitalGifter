@@ -74,10 +74,13 @@ describe("pet funnel V2 isolation", () => {
     const strip = readSrc("src/features/pet-v2/V2ExampleStrip.tsx");
     expect(strip).toContain("PET_DEMO_CLIP_IDS");
     expect(strip).toContain("sceneHasMotionClip");
+    expect(strip).toContain("AutoSceneClip");
     expect(strip).toContain("SceneImage");
     expect(strip).toContain('species="other"');
     expect(strip).toContain("PET_OTHER_SUBJECTS");
     expect(strip).not.toMatch(/species === "other" \? "dog"/);
+    expect(readSrc("src/features/pet/components/SceneCard.tsx")).toContain("autoPlay");
+    expect(readSrc("src/features/pet/components/SceneCard.tsx")).toContain("playsInline");
     expect(readSrc("src/features/pet/catalog.ts")).toContain('newspaper: "Guinea pig"');
     expect(readSrc("src/features/pet/catalog.ts")).toContain('"spa-bathtub": "Hedgehog"');
   });
