@@ -20,6 +20,7 @@ import type {
   SignedUploadUrlResponse,
 } from "./types";
 import { checkoutAnalyticsContext } from "./funnelInternal";
+import { publicFlashSaleFields } from "./flashSale";
 
 /**
  * Typed client contract for the pet funnel.
@@ -83,14 +84,13 @@ export function createUnimplementedPetApi(): PetFunnelApi {
     getPublicOffer: async () => ({
       sku: "pet-secret-life-12",
       name: "My Pet’s Secret Life",
-      amountCents: PET_PRICE_CENTS,
       currency: "usd",
       imageCount: 12,
       videoCount: 2,
       subscription: false,
       active: true,
-      priceDisplay: PET_PRICE_DISPLAY,
       deliveryEstimate: "Usually ready in a few minutes after payment",
+      ...publicFlashSaleFields(),
     }),
   };
 }

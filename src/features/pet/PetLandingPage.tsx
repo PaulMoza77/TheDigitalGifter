@@ -21,6 +21,7 @@ import {
   StickyCta,
   SubtypePicker,
   HeroProof,
+  SaleBanner,
 } from "./components";
 import { createSecretLivesCta, landingNameStepCreatesOrder, validateOtherSubtype, validatePetName } from "./croGuards";
 import { trackFunnelEvent, trackFunnelViewItem } from "./funnelAnalytics";
@@ -35,7 +36,7 @@ export type PetLandingPageProps = {
 };
 
 export function PetLandingPage({ navigation, species = "dog" }: PetLandingPageProps) {
-  const { priceDisplay, amountCents, deliveryEstimate, loading, offerError, offerVerified, refresh } =
+  const { priceDisplay, amountCents, compareAtDisplay, saleExpiresAt, deliveryEstimate, loading, offerError, offerVerified, refresh } =
     usePublicPetOffer();
   const { draft } = usePetDraft();
   const [subtypeError, setSubtypeError] = useState<string | undefined>();
@@ -121,6 +122,12 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
             </h1>
             <p className="mt-4 max-w-md text-lg leading-7 text-[#f6efe4]/72">{PET_HERO_SUBTITLE}</p>
             <p className="mt-2 max-w-md text-sm leading-6 text-[#f6efe4]/60">{copy.support}</p>
+            <SaleBanner
+              priceDisplay={priceDisplay}
+              compareAtDisplay={compareAtDisplay}
+              saleExpiresAt={saleExpiresAt}
+              onExpire={() => void refresh()}
+            />
             {species === "other" ? (
               <div className="mt-6">
                 <SubtypePicker

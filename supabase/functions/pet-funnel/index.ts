@@ -3,7 +3,6 @@ import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts"
 import { assertRateLimit, clientIp } from "../_shared/rateLimit.ts";
 import {
   PET_CURRENCY,
-  PET_PRICE_CENTS,
   PET_SCENE_COUNT,
   PET_SIGNED_DOWNLOAD_SECONDS,
   PET_SIGNED_UPLOAD_SECONDS,
@@ -15,6 +14,11 @@ import {
   siteOrigin,
   publicDeliveryEstimate,
 } from "../_shared/pet/constants.ts";
+import {
+  applyPetFlashSaleAmount,
+  checkoutAmountNeedsRefresh,
+  petFlashSale,
+} from "../_shared/pet/flashSale.ts";
 import {
   asString,
   decryptPublicToken,
@@ -127,8 +131,10 @@ async function loadClips(service: ReturnType<typeof getServiceClient>, orderId: 
 async function loadActiveOffer(service: ReturnType<typeof getServiceClient>) {
   const { data, error } = await service.rpc("get_public_pet_offer");
   if (error) throw error;
-  const offer = typeof data === "string" ? JSON.parse(data) : data;
-  return resolveServerOwnedOffer(offer);
+  const payload = typeof data === "string" ? JSON.parse(data) : data;
+  const offer = resolveServerOwnedOffer(payload);
+  if (!offer.ok) return offer;
+  return { ...offer, amountCents: applyPetFlashSaleAmount(offer.amountCents) };
 }
 
 async function loadScenes(service: ReturnType<typeof getServiceClient>, orderId: string) {
@@ -290,21 +296,27 @@ Deno.serve(async (req) => {
       const payload = typeof raw.data === "string" ? JSON.parse(raw.data) : raw.data;
       const offer = resolveServerOwnedOffer(payload);
       if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
+      const sale = petFlashSale();
+      const amountCents = applyPetFlashSaleAmount(offer.amountCents);
       const deliveryEstimate = publicDeliveryEstimate(
         String(payload?.deliveryEstimate || payload?.delivery_estimate_label || ""),
       );
       return jsonResponse({
         sku: offer.sku,
         name: "My Pet’s Secret Life",
-        amountCents: offer.amountCents,
+        amountCents,
         currency: offer.currency,
         imageCount: 12,
         videoCount: 2,
         subscription: false,
         active: true,
-        priceDisplay: formatOfferPrice(offer.amountCents),
+        priceDisplay: formatOfferPrice(amountCents),
         version: Number(payload?.version || 1),
         deliveryEstimate,
+        compareAtCents: sale.active ? sale.compareAtCents : undefined,
+        compareAtDisplay: sale.active ? sale.compareAtDisplay : undefined,
+        saleExpiresAt: sale.expiresAt,
+        saleActive: sale.active,
       });
     }
 
@@ -540,10 +552,37 @@ Deno.serve(async (req) => {
         return checkoutConflict();
       }
 
+      const liveOffer = await loadActiveOffer(service);
+      const existingView = existingSession
+        ? { ...existingSession, id: existingSession.id || storedSessionId }
+        : null;
+      const paymentProcessing = existingView
+        ? existingView.status === "complete" ||
+          existingView.payment_status === "paid" ||
+          existingView.payment_status === "no_payment_required"
+        : false;
+      let amountChanged = false;
+      if (
+        !paymentProcessing &&
+        liveOffer.ok &&
+        checkoutAmountNeedsRefresh(Number(order.amount_cents), liveOffer.amountCents)
+      ) {
+        await service
+          .from("pet_orders")
+          .update({
+            amount_cents: liveOffer.amountCents,
+            charged_amount_cents: liveOffer.amountCents,
+          })
+          .eq("id", order.id);
+        order.amount_cents = liveOffer.amountCents;
+        order.charged_amount_cents = liveOffer.amountCents;
+        amountChanged = true;
+      }
+
       const decision = decideCheckoutSessionAction({
-        existingSession: existingSession
-          ? { ...existingSession, id: existingSession.id || storedSessionId }
-          : null,
+        existingSession: amountChanged && existingView
+          ? { ...existingView, status: "expired" }
+          : existingView,
         orderId: order.id,
         issuedCount: issuedCount || 0,
       });

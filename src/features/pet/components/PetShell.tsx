@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { ArrowLeft, PawPrint } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PET_OFFER } from "../catalog";
 import { PET_PRODUCT_NAME } from "../types";
 import type { PetFunnelNavigation, PetSpecies } from "../types";
+import { usePublicPetOffer } from "../usePublicPetOffer";
+import { SalePriceLabel } from "./SaleOffer";
 import { SpeciesSwitch } from "./SpeciesSwitch";
 
 export function PetShell({
@@ -25,6 +26,7 @@ export function PetShell({
   onBack?: () => void;
   footerNote?: string;
 }) {
+  const { priceDisplay, compareAtDisplay } = usePublicPetOffer();
   return (
     <div className="pet-funnel min-h-screen bg-[#140e0a] text-[#f6efe4]">
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-10 pt-4 sm:px-6 lg:px-8">
@@ -39,7 +41,15 @@ export function PetShell({
             </span>
             <span className="text-sm font-semibold tracking-tight">{PET_PRODUCT_NAME}</span>
           </button>
-          <p className="text-xs text-[#f6efe4]/55">{PET_OFFER.priceDisplay} once</p>
+          <div className="text-right">
+            <p className="text-xs text-[#f6efe4]/55">
+              <SalePriceLabel
+                priceDisplay={priceDisplay}
+                compareAtDisplay={compareAtDisplay}
+                suffix="once"
+              />
+            </p>
+          </div>
         </header>
 
         {showSpeciesSwitch ? (
@@ -66,8 +76,16 @@ export function PetShell({
 
         <footer className="mt-8 border-t border-[#f6efe4]/10 pt-5 text-xs text-[#f6efe4]/45">
           <p>
-            {footerNote ??
-              `${PET_OFFER.priceDisplay} one-time · No subscription · Same pet in every portrait`}
+            {footerNote ?? (
+              <>
+                <SalePriceLabel
+                  priceDisplay={priceDisplay}
+                  compareAtDisplay={compareAtDisplay}
+                  suffix="one-time"
+                />
+                {" · No subscription · Same pet in every portrait"}
+              </>
+            )}
           </p>
         </footer>
       </div>

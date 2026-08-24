@@ -13,7 +13,8 @@ import type {
   PetSceneStatus,
   PetUpsellKey,
 } from "./types";
-import { PET_PRICE_CENTS, PET_PRICE_DISPLAY, PET_PRODUCT_SKU, PET_SCENE_COUNT } from "./types";
+import { PET_PRICE_CENTS, PET_PRODUCT_SKU, PET_SCENE_COUNT } from "./types";
+import { publicFlashSaleFields } from "./flashSale";
 import { mapOrderPhase } from "./videoGuards";
 import { formatUpsellPrice, printPackEligibility, sceneUpsellKeys, PET_UPSELL_OFFERS } from "./upsells";
 
@@ -184,13 +185,12 @@ export function createPreviewPetApi(): PetFunnelApi {
       return {
         sku: PET_PRODUCT_SKU,
         name: "My Pet’s Secret Life",
-        amountCents: PET_PRICE_CENTS,
-        currency: "usd",
+        currency: "usd" as const,
         imageCount: 12,
         videoCount: 2,
-        subscription: false,
-        active: true,
-        priceDisplay: PET_PRICE_DISPLAY,
+        subscription: false as const,
+        active: true as const,
+        ...publicFlashSaleFields(),
       };
     },
   };

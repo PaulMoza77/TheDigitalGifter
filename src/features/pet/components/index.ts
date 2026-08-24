@@ -13,6 +13,7 @@ export { PetShell } from "./PetShell";
 export { PetTypePicker } from "./PetTypePicker";
 export { PhotoUploader } from "./PhotoUploader";
 export { PriceBadge } from "./PriceBadge";
+export { SaleBanner, SaleCountdown, SalePriceLabel } from "./SaleOffer";
 export { PortraitUpsellSheet } from "./PortraitUpsellSheet";
 export { RetryPackPanel } from "./RetryPackPanel";
 export { ResultsGrid } from "./ResultsGrid";
