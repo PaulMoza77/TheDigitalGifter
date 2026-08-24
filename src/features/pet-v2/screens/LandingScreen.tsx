@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { BadgeCheck, Lock, ShieldCheck, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { V2ExampleStrip } from "../V2ExampleStrip";
-import { V2PackOffer, v2PackOfferCopy } from "../V2PackOffer";
+import { V2ClosingCta, V2PackOffer, V2SaleBanner, V2StickyCta, v2PackOfferCopy } from "../V2PackOffer";
 import type { PetV2Species } from "../types";
 
 export function V2LandingScreen({
@@ -13,20 +14,22 @@ export function V2LandingScreen({
   onUploadClick: () => void;
   fileInputId: string;
 }) {
-  const offer = v2PackOfferCopy();
+  const [offer, setOffer] = useState(() => v2PackOfferCopy());
+  const pet = species === "cat" ? "your cat" : species === "other" ? "your pet" : "your dog";
   return (
-    <div className="space-y-8 pb-28">
+    <div className="space-y-8">
       <section>
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#d4a84b]">Try it free</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[#f6efe4] sm:text-[2.7rem] sm:leading-[1.1]">
           See your pet in another life.
         </h1>
         <p className="mt-3 max-w-md text-base leading-7 text-[#f6efe4]/72">
-          Upload one photo. We’ll create a free personalized preview of {species === "cat" ? "your cat" : species === "other" ? "your pet" : "your dog"} — no card required.
+          Upload one photo. We’ll create a free personalized preview of {pet} — no card required.
         </p>
         <p className="mt-3 max-w-md text-base font-semibold leading-7 text-[#f3d48a]">
           Then {offer.headline.toLowerCase()}.
         </p>
+        <V2SaleBanner onExpire={() => setOffer(v2PackOfferCopy())} />
         <Button
           type="button"
           onClick={onUploadClick}
@@ -54,9 +57,15 @@ export function V2LandingScreen({
             </li>
           ))}
         </ul>
-        <V2PackOffer className="mt-5" />
+        <V2PackOffer className="mt-5" onExpire={() => setOffer(v2PackOfferCopy())} />
       </section>
       <V2ExampleStrip species={species} />
+      <V2ClosingCta onClick={onUploadClick} onExpire={() => setOffer(v2PackOfferCopy())} />
+      <V2StickyCta
+        onClick={onUploadClick}
+        label="Upload your pet photo"
+        onExpire={() => setOffer(v2PackOfferCopy())}
+      />
     </div>
   );
 }

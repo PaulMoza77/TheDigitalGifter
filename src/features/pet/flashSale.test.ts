@@ -60,5 +60,7 @@ describe("pet $17 flash sale", () => {
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("checkoutAmountNeedsRefresh");
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("PET_SALE_PRICE_CENTS = 1700");
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain(PET_SALE_EXPIRES_AT_ISO);
+    expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("applyV2SaleAmount");
+    expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).not.toContain("petFlashSale");
   });
 });

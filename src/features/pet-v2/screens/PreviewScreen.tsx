@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { V2PackOffer, v2PackOfferCopy } from "../V2PackOffer";
 
@@ -16,7 +17,7 @@ export function V2PreviewScreen({
   onRegenerate: () => void;
   onUnlock: () => void;
 }) {
-  const offer = v2PackOfferCopy();
+  const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const headline = petName?.trim()
     ? `Love it? Unlock ${petName.trim()}’s 12 secret lives.`
     : "Love it? Unlock all 12 secret lives.";
@@ -35,7 +36,7 @@ export function V2PreviewScreen({
           Prototype preview: live AI generation is off in this environment, so this is your photo in a royal frame.
         </p>
       ) : null}
-      <V2PackOffer />
+      <V2PackOffer onExpire={() => setOffer(v2PackOfferCopy())} />
       <ul className="space-y-1.5 text-sm text-[#f6efe4]/68">
         <li>12 secret lives of the same pet</li>
         <li>2 mini cinematic clips</li>

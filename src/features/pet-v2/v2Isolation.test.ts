@@ -3,7 +3,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { PET_FUNNEL_ALLOWED_EVENTS } from "../pet/funnelEventContract";
-import { PET_SALE_PRICE_CENTS } from "../pet/flashSale";
+import { PET_SALE_EXPIRES_AT_MS, PET_SALE_PRICE_CENTS } from "../pet/flashSale";
+import { v2PackOfferCopy } from "./V2PackOffer";
 import { PET_DRAFT_STORAGE_KEY, PET_PRICE_CENTS, PET_PRICE_DISPLAY } from "../pet/types";
 import { PET_FUNNEL_SESSION_KEY } from "../pet/funnelSession";
 import { PET_V2_DRAFT_STORAGE_KEY, PET_V2_EVENTS, PET_V2_EVENT_PATH, PET_V2_PRODUCTION_PRICE_CENTS, PET_V2_SESSION_KEY, PET_V2_TEST_PRICE_CENTS } from "./types";
@@ -44,6 +45,9 @@ describe("pet funnel V2 isolation", () => {
     expect(PET_V2_TEST_PRICE_CENTS).toBe(1200);
     expect(PET_SALE_PRICE_CENTS).toBe(1700);
     expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).not.toContain("petFlashSale");
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2StickyCta");
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2ClosingCta");
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2SaleBanner");
     expect(readSrc("src/features/pet/PetLandingPage.tsx")).toContain("NameCapture");
     expect(readSrc("api/sitemap.xml.ts")).toContain('"/pet/dog"');
     expect(readSrc("api/sitemap.xml.ts")).not.toContain("/pet-v2");
@@ -100,9 +104,25 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain('errorCode === "live_disabled"');
     expect(readSrc("src/features/pet-v2/previewClient.ts")).not.toContain("response.mode === \"mock\" || !response.ok");
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("createReplicatePrediction");
-    expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("PET_V2_PRICE_CENTS");
+    expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("applyV2SaleAmount");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("funnel_variant");
     expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 1200");
+    expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("applyV2SaleAmount");
+  });
+
+  it("shows $12 until the shared expiry, then returns V2 to $27", () => {
+    const during = v2PackOfferCopy(PET_SALE_EXPIRES_AT_MS - 1000);
+    expect(during.saleActive).toBe(true);
+    expect(during.amountCents).toBe(PET_V2_TEST_PRICE_CENTS);
+    expect(during.priceDisplay).toBe("$12");
+    expect(during.compareAtDisplay).toBe("$27");
+    expect(during.expiresAt).toBeTruthy();
+
+    const after = v2PackOfferCopy(PET_SALE_EXPIRES_AT_MS);
+    expect(after.saleActive).toBe(false);
+    expect(after.amountCents).toBe(PET_V2_PRODUCTION_PRICE_CENTS);
+    expect(after.priceDisplay).toBe("$27");
+    expect(after.expiresAt).toBeNull();
   });
 });
 
