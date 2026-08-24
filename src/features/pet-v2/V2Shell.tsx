@@ -33,7 +33,7 @@ export function V2Shell({
           padForSticky ? "pb-28" : "pb-10",
         )}
       >
-        <header className="flex items-center justify-between gap-3 py-2">
+        <header className="flex items-center py-2">
           <a
             href={petV2LandingPath(species)}
             className="flex items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a84b]"
@@ -43,7 +43,6 @@ export function V2Shell({
             </span>
             <span className="text-sm font-semibold tracking-tight">{PET_PRODUCT_NAME}</span>
           </a>
-          <p className="text-[11px] uppercase tracking-[0.14em] text-[#d4a84b]">Free preview</p>
         </header>
 
         {onSpecies ? (

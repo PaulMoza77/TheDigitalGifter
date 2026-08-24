@@ -96,7 +96,7 @@ export function V2StickyCta({
   const offer = v2PackOfferCopy();
   const countdown = useSaleCountdown(offer.expiresAt, onExpire);
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#f6efe4]/10 bg-[#140e0a]/95 px-4 pr-[5.5rem] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:px-6">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#f6efe4]/10 bg-[#140e0a]/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:px-6">
       <div className="mx-auto w-full max-w-3xl">
         <Button
           type="button"
