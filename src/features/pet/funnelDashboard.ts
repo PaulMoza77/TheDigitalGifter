@@ -138,40 +138,9 @@ export type PetFunnelAnalyticsReport = {
   warnings: string[];
   biggestDrop: { from: string; to: string; dropPct: number } | null;
   spendAvailable: boolean;
-  viewMode?: import("./funnelCampaignAnalytics").CampaignViewMode;
-  selectedCampaignId?: string | null;
-  selectedAdsetId?: string | null;
-  catalog?: import("./funnelCampaignAnalytics").CampaignAnalyticsConfig[];
-  campaignSummaries?: import("./funnelCampaignAnalytics").CampaignScopedCounts[];
-  funnelVariant?: import("./funnelCampaignAnalytics").FunnelVariant | null;
-  variantStages?: import("./funnelCampaignAnalytics").FunnelStageValue[];
-  v2Stages?: import("./funnelCampaignAnalytics").FunnelStageValue[];
-  v2Kpis?: import("./funnelCampaignAnalytics").V2Kpis | null;
-  unattributed?: {
-    v1Landings: number;
-    v2Landings: number;
-    totalFpLandings: number;
-    pct: number | null;
-  };
-  measurementReliableFrom?: string | null;
-  dateFilterNote?: string | null;
-  timezone?: string;
-  metaAdsets?: Array<{
-    campaignId: string;
-    campaignName: string;
-    adsetId: string;
-    adsetName: string;
-    spendCents: number;
-    lpv: number;
-    linkClicks: number;
-    impressions: number;
-    fpLanding: number;
-    firstAction: number;
-    preview?: number;
-    checkout: number;
-    purchase: number;
-  }>;
-  costMetrics?: import("./funnelCampaignAnalytics").CampaignCostMetrics | null;
+  datasetId?: "v1" | "v2";
+  datasetConfigured?: boolean;
+  campaignLabel?: string;
 };
 
 export function emptyStepCounts(): FunnelStepCounts {

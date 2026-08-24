@@ -10,15 +10,8 @@ import {
   type DatePreset,
 } from "@/features/pet/funnelDashboard";
 import { formatMetricOrDash } from "@/features/pet/funnelHybrid";
-import { trackingCoverageSignal } from "@/features/pet/funnelEventContract";
-import {
-  buildCompareRows,
-  buildSelectorOptions,
-  funnelVariantNotice,
-  measurementReliability,
-  type CampaignViewMode,
-  type FunnelVariant,
-} from "@/features/pet/funnelCampaignAnalytics";
+import { PET_FUNNEL_MEASUREMENT_RELIABLE_FROM, trackingCoverageSignal } from "@/features/pet/funnelEventContract";
+import { FUNNEL_DATASETS, type FunnelDatasetId } from "@/features/pet/funnelDatasetConfig";
 import { usePetFunnelAnalytics } from "@/hooks/usePetFunnelAnalytics";
 
 const PRESETS: Array<{ id: DatePreset; label: string }> = [
@@ -62,32 +55,26 @@ function SourceBadge({ label }: { label: string }) {
   );
 }
 
-function formatRoas(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "—";
-  return `${value.toFixed(2)}x`;
-}
-
 function TrackingHealth({
-  firstPartyLandings,
-  metaLpv,
+  kpis,
   latestFirstPartyAt,
   failedWrites,
 }: {
-  firstPartyLandings: number;
-  metaLpv: number | null;
+  kpis: { firstPartyLandings: number; metaLpv: number | null; lpv: number | null };
   latestFirstPartyAt: string | null | undefined;
   failedWrites: number | null;
 }) {
-  const coverage = trackingCoverageSignal(firstPartyLandings, metaLpv);
+  const metaLpv = kpis.metaLpv ?? kpis.lpv;
+  const coverage = trackingCoverageSignal(kpis.firstPartyLandings, metaLpv);
   return (
-    <SectionCard title="Tracking health" subtitle="Measurement coverage signal — not a conversion rate.">
+    <SectionCard title="Tracking health" subtitle="Coverage signal only — not an attribution conversion rate.">
       {coverage.unhealthy ? (
         <p className="mb-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
-          ⚠ Campaign first-party tracking may be unhealthy
+          First-party funnel tracking may be unhealthy.
         </p>
       ) : null}
       <p className="text-sm text-slate-300">
-        Measurement coverage signal: {firstPartyLandings} FP sessions
+        Tracking coverage signal: {kpis.firstPartyLandings} FP landings
         {metaLpv != null ? ` / ${metaLpv} Meta LPV` : ""}
         {coverage.ratio == null ? "" : ` (${(coverage.ratio * 100).toFixed(0)}%)`}
       </p>
@@ -97,6 +84,11 @@ function TrackingHealth({
       </p>
     </SectionCard>
   );
+}
+
+function formatRoas(value: number | null): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return `${value.toFixed(2)}x`;
 }
 
 function DailyBars({ daily }: { daily: Array<{ date: string; spendCents: number | null; purchases: number | null }> }) {
@@ -124,72 +116,15 @@ function DailyBars({ daily }: { daily: Array<{ date: string; spendCents: number 
   );
 }
 
-function FunnelViz({
-  stages,
-  subtitle,
-}: {
-  stages: Array<{ eventName: string; label: string; sessions: number; fromPreviousPct: number | null; fromLandingPct: number | null }>;
-  subtitle?: string;
-}) {
-  const maxSessions = Math.max(1, ...stages.map((step) => step.sessions), 1);
-  return (
-    <SectionCard title="First-party funnel" subtitle={subtitle || "Unique funnel_session_id counts. First-party denominators only — Meta LPV is never used here."}>
-      <div className="space-y-4">
-        {stages.map((step, index) => (
-          <div key={step.eventName}>
-            {index > 0 ? (
-              <div className="mb-3 text-center text-sm text-slate-400">
-                ↓ {step.fromPreviousPct == null ? "" : `${stages[index - 1]?.label} → ${step.label}: ${formatPct(step.fromPreviousPct, 0)}`}
-              </div>
-            ) : null}
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3 sm:p-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
-                <div className="min-w-0">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <p className="min-w-0 break-words text-sm font-medium text-slate-200">{step.label}</p>
-                    <SourceBadge label="First-party" />
-                  </div>
-                  <p className="mt-1 text-xl font-semibold text-white sm:text-2xl">{step.sessions}</p>
-                </div>
-                <div className="min-w-0 text-xs leading-snug text-slate-400 sm:shrink-0 sm:text-right">
-                  <p>{formatPct(step.fromLandingPct)} of first-party landing</p>
-                  <p>{index === 0 ? "100% start" : `${formatPct(step.fromPreviousPct)} from previous`}</p>
-                </div>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-indigo-400"
-                  style={{ width: `${Math.max(4, (step.sessions / maxSessions) * 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </SectionCard>
-  );
-}
-
 export default function PetFunnelAnalyticsPage() {
   const [preset, setPreset] = useState<DatePreset>("7d");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [viewMode, setViewMode] = useState<CampaignViewMode>("all");
-  const [campaignId, setCampaignId] = useState<string | null>(null);
-  const [adsetId, setAdsetId] = useState<string | null>(null);
-  const [mappingVariant, setMappingVariant] = useState<FunnelVariant | "">("");
-  const [mappingBusy, setMappingBusy] = useState(false);
+  const [datasetId, setDatasetId] = useState<FunnelDatasetId>("v1");
   const custom = preset === "custom" && customFrom && customTo ? { from: customFrom, to: customTo } : undefined;
-  const { loading, error, report, refresh, syncing, syncMessage, runSync, saveCampaignMapping } = usePetFunnelAnalytics(
-    preset,
-    custom,
-    { mode: viewMode, campaignId, adsetId },
-  );
-
-  const selectorOptions = useMemo(
-    () => buildSelectorOptions(report?.catalog || []),
-    [report?.catalog],
-  );
+  const { loading, error, report, refresh, syncing, syncMessage, runSync } = usePetFunnelAnalytics(preset, custom, datasetId);
+  const dataset = FUNNEL_DATASETS[datasetId];
+  const labels = dataset.kpiLabels;
 
   const speciesRows = useMemo(() => {
     const bySpecies = new Map(report?.species.map((row) => [row.species, row]) ?? []);
@@ -207,46 +142,9 @@ export default function PetFunnelAnalyticsPage() {
     });
   }, [report]);
 
+  const hybridStages = report?.hybridStages ?? [];
+  const maxSessions = Math.max(1, ...hybridStages.map((step) => step.value ?? 0), 1);
   const kpis = report?.hybridKpis;
-  const selectedCampaign = (report?.catalog || []).find((row) => row.campaignId === campaignId) || null;
-  const reliability = measurementReliability({
-    rangeFromIso: report?.from || "",
-    rangeToIso: report?.to || "",
-    measurementReliableFrom: selectedCampaign?.measurementReliableFrom || report?.measurementReliableFrom || null,
-  });
-  const compareRows = useMemo(
-    () => (viewMode === "compare" ? buildCompareRows(report?.campaignSummaries || []) : []),
-    [viewMode, report?.campaignSummaries],
-  );
-
-  function selectView(next: CampaignViewMode, nextCampaignId: string | null) {
-    setViewMode(next);
-    setCampaignId(nextCampaignId);
-    setAdsetId(null);
-    setMappingVariant("");
-  }
-
-  async function saveMapping() {
-    if (!campaignId || !mappingVariant) return;
-    setMappingBusy(true);
-    try {
-      await saveCampaignMapping({
-        campaignId,
-        funnelVariant: mappingVariant,
-        displayName: selectedCampaign?.displayName,
-        utmCampaignAliases: selectedCampaign?.utmCampaignAliases,
-      });
-    } finally {
-      setMappingBusy(false);
-    }
-  }
-
-  const fpLanding =
-    report?.funnelVariant === "v2_preview"
-      ? report.v2Kpis
-        ? report.variantStages?.[0]?.sessions || 0
-        : 0
-      : kpis?.firstPartyLandings || 0;
 
   return (
     <div className="min-h-screen overflow-y-auto bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
@@ -256,7 +154,8 @@ export default function PetFunnelAnalyticsPage() {
             <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Admin Panel</p>
             <h1 className="mt-1 text-2xl font-semibold text-slate-50 sm:text-3xl">Pet Funnel Analytics</h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-              Campaign-scoped Meta spend and first-party funnel. Sources are never summed as separate people.
+              Hybrid daily overview: first-party funnel, Stripe-verified purchases, Meta Ads spend, and GA4 traffic where configured.
+              Sources are never summed as separate people.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -288,25 +187,49 @@ export default function PetFunnelAnalyticsPage() {
           </div>
         </header>
 
-        <div>
-          <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Date range</p>
-          <div className="flex flex-wrap gap-2">
-            {PRESETS.map((item) => (
+        <div className="flex flex-wrap gap-2">
+          {PRESETS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setPreset(item.id)}
+              className={[
+                "rounded-2xl border px-2.5 py-1.5 text-xs font-medium transition sm:px-3 sm:py-2 sm:text-sm",
+                preset === item.id
+                  ? "border-indigo-400/40 bg-indigo-500/20 text-indigo-100"
+                  : "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800",
+              ].join(" ")}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="inline-flex max-w-full flex-wrap rounded-xl border border-slate-700 bg-slate-900 p-0.5">
+          {(["v1", "v2"] as const).map((id) => {
+            const item = FUNNEL_DATASETS[id];
+            const selected = datasetId === id;
+            const title =
+              report?.datasetId === id && report.campaignLabel
+                ? report.campaignLabel
+                : `${item.shortLabel} - ${item.displayName}`;
+            return (
               <button
-                key={item.id}
+                key={id}
                 type="button"
-                onClick={() => setPreset(item.id)}
+                onClick={() => setDatasetId(id)}
+                title={title}
                 className={[
-                  "rounded-2xl border px-2.5 py-1.5 text-xs font-medium transition sm:px-3 sm:py-2 sm:text-sm",
-                  preset === item.id
-                    ? "border-indigo-400/40 bg-indigo-500/20 text-indigo-100"
-                    : "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800",
+                  "max-w-[16rem] truncate rounded-lg px-2.5 py-1 text-[11px] font-medium transition sm:max-w-xs sm:px-3 sm:text-xs",
+                  selected
+                    ? "bg-indigo-500/20 text-indigo-100"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-slate-100",
                 ].join(" ")}
               >
-                {item.label}
+                {item.shortLabel} · {item.displayName}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
         {preset === "custom" ? (
@@ -326,40 +249,8 @@ export default function PetFunnelAnalyticsPage() {
           </div>
         ) : null}
 
-        <div>
-          <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Campaign</p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {selectorOptions.map((option) => {
-              const active =
-                option.mode === viewMode &&
-                (option.mode !== "campaign" || option.campaignId === campaignId);
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => selectView(option.mode, option.campaignId)}
-                  className={[
-                    "shrink-0 rounded-2xl border px-3 py-2 text-sm font-medium transition",
-                    active
-                      ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-100"
-                      : "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800",
-                  ].join(" ")}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {report?.dateFilterNote ? (
-          <p className="text-xs text-slate-500">{report.dateFilterNote}</p>
-        ) : null}
-
-        {reliability.crosses && reliability.label ? (
-          <p className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-            {reliability.label} Historical detail unavailable for first-party stages before that timestamp.
-          </p>
+        {datasetId === "v2" && report && report.datasetConfigured === false ? (
+          <p className="text-sm text-amber-200/80">Campaign 2 not configured yet</p>
         ) : null}
 
         {report?.firstPartyTrackingStartedAt ? (
@@ -372,11 +263,15 @@ export default function PetFunnelAnalyticsPage() {
               hour: "2-digit",
               minute: "2-digit",
             })}
-            . Conversion rates are certified only after each campaign’s measurement-reliable timestamp.
+            Conversion rates are certified only after production measurement release
+            {PET_FUNNEL_MEASUREMENT_RELIABLE_FROM
+              ? ` (${new Date(PET_FUNNEL_MEASUREMENT_RELIABLE_FROM).toLocaleString("en-US")})`
+              : " (timestamp unset until production deploy)"}
+            .
           </p>
         ) : (
           <p className="text-sm text-amber-200/80">
-            First-party tracking starts when the first pet_funnel_events row is recorded. Historical Meta/Stripe data is shown where available.
+            First-party tracking starts when the first pet_funnel_events row is recorded. Historical Meta/GA4/Stripe data is shown where available. Funnel conversion is not certified until the same-origin tracker is live in production.
           </p>
         )}
 
@@ -402,138 +297,9 @@ export default function PetFunnelAnalyticsPage() {
           <p className="text-sm text-slate-400">Loading funnel analytics…</p>
         ) : null}
 
-        {report && kpis && viewMode === "all" ? (
+        {report && kpis ? (
           <>
-            <SectionCard title="Overall business" subtitle="Totals across allowlisted campaigns. Funnel variants are not merged.">
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
-                <StatCard label="Spend" value={formatMetricOrDash(kpis.spendCents, formatUsdFromCents)} helper="Meta" />
-                <StatCard label="Checkouts" value={String(kpis.checkouts ?? 0)} helper="Stripe customer checkouts" />
-                <StatCard label="Purchases" value={String(kpis.purchases)} helper="Paid production" />
-                <StatCard label="Revenue" value={formatUsdFromCents(kpis.revenueCents)} />
-                <StatCard label="CPA" value={formatMetricOrDash(kpis.cpaCents, formatUsdFromCents)} />
-                <StatCard label="ROAS" value={formatRoas(kpis.roas)} helper="Stripe revenue / Meta spend" />
-              </div>
-            </SectionCard>
-            <SectionCard title="Campaign summary" subtitle="Each row is isolated by campaign_id. V1 and V2 stages are not combined.">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      {["Campaign", "Variant", "Spend", "Meta LPV", "FP Landing", "Checkout", "Purchase", "CPA"].map((label) => (
-                        <th key={label} className="whitespace-nowrap px-3 py-2 font-medium">
-                          {label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(report.campaignSummaries || []).length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="px-3 py-6 text-slate-500">
-                          No allowlisted campaigns yet. Add a Meta campaign ID to the allowlist / PET_META_CAMPAIGN_IDS, then sync.
-                        </td>
-                      </tr>
-                    ) : (
-                      (report.campaignSummaries || []).map((row) => (
-                        <tr key={row.campaignId} className="border-t border-slate-800">
-                          <td className="px-3 py-2 text-slate-100">{row.displayName}</td>
-                          <td className="px-3 py-2 text-slate-300">{row.funnelVariant || "not configured"}</td>
-                          <td className="px-3 py-2">{formatMetricOrDash(row.spendCents, formatUsdFromCents)}</td>
-                          <td className="px-3 py-2">{row.metaLpv}</td>
-                          <td className="px-3 py-2">{row.funnelVariant ? row.fpLanding : "—"}</td>
-                          <td className="px-3 py-2">{row.funnelVariant ? row.checkout : "—"}</td>
-                          <td className="px-3 py-2">{row.funnelVariant ? row.purchase : "—"}</td>
-                          <td className="px-3 py-2">
-                            {row.funnelVariant ? formatMetricOrDash(row.spendCents == null ? null : row.purchase > 0 && row.spendCents != null ? Math.round(row.spendCents / row.purchase) : null, formatUsdFromCents) : "—"}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </SectionCard>
-            {report.unattributed ? (
-              <p className="text-sm text-slate-400">
-                Unattributed first-party landings: {report.unattributed.v1Landings + report.unattributed.v2Landings}
-                {report.unattributed.pct == null ? "" : ` (${formatPct(report.unattributed.pct)} of FP landings)`}.
-                These are not assigned to a paid campaign.
-              </p>
-            ) : null}
-          </>
-        ) : null}
-
-        {report && viewMode === "compare" ? (
-          <SectionCard title="Compare campaigns" subtitle="Common business milestones only. Variant-specific stages keep their own labels.">
-            {(report.campaignSummaries || []).length < 1 ? (
-              <p className="text-sm text-slate-500">Need at least one allowlisted campaign to compare.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-3 py-2 font-medium">KPI</th>
-                      {(report.campaignSummaries || []).map((campaign) => (
-                        <th key={campaign.campaignId} className="whitespace-nowrap px-3 py-2 font-medium">
-                          {campaign.displayName}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {compareRows.map((row) => (
-                      <tr key={row.key} className="border-t border-slate-800">
-                        <td className="px-3 py-2 text-slate-200">
-                          {row.label}
-                          {row.incompatible ? <span className="ml-2 text-[10px] uppercase text-slate-500">variant-specific</span> : null}
-                        </td>
-                        {row.values.map((cell) => (
-                          <td key={`${row.key}-${cell.campaignId}`} className="px-3 py-2 text-right text-slate-100">
-                            {cell.display}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </SectionCard>
-        ) : null}
-
-        {report && kpis && (viewMode === "campaign" || viewMode === "unattributed") ? (
-          <>
-            {viewMode === "campaign" && selectedCampaign && !selectedCampaign.funnelVariant ? (
-              <SectionCard title="Funnel variant not configured" subtitle="Meta metrics are shown. First-party stages are hidden until you map this campaign_id.">
-                <p className="mb-3 text-sm text-amber-100">
-                  {funnelVariantNotice(null)}. Do not infer V1 vs V2 from the campaign name.
-                </p>
-                <div className="flex flex-wrap items-end gap-3">
-                  <label className="text-sm text-slate-300">
-                    Funnel variant
-                    <select
-                      value={mappingVariant}
-                      onChange={(event) => setMappingVariant(event.target.value as FunnelVariant | "")}
-                      className="mt-1 block rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-                    >
-                      <option value="">Select…</option>
-                      <option value="v1">v1</option>
-                      <option value="v2_preview">v2_preview</option>
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    disabled={!mappingVariant || mappingBusy}
-                    onClick={() => void saveMapping()}
-                    className="rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-100 disabled:opacity-50"
-                  >
-                    {mappingBusy ? "Saving…" : "Save mapping"}
-                  </button>
-                </div>
-              </SectionCard>
-            ) : null}
-
-            <SectionCard title="Acquisition — Meta" subtitle="Ads Insights only. Meta LPV is not the first-party funnel denominator.">
+            <SectionCard title="Meta acquisition" subtitle="Ads Insights only. Meta LPV is not the first-party funnel denominator.">
               <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
                 <StatCard label="Spend" value={formatMetricOrDash(kpis.spendCents, formatUsdFromCents)} helper={report.spendAvailable ? "Meta" : "Meta sync required"} />
                 <StatCard label="Meta LPV" value={formatMetricOrDash(kpis.metaLpv ?? kpis.lpv)} helper="Meta Ads landing page views" />
@@ -542,127 +308,62 @@ export default function PetFunnelAnalyticsPage() {
               </div>
             </SectionCard>
 
-            {viewMode === "unattributed" ? (
-              <SectionCard title="Unattributed traffic" subtitle="Sessions with no campaign_id and no unique utm_campaign alias. Not assigned to a paid campaign.">
-                <p className="text-sm text-slate-300">
-                  {report.unattributed?.v1Landings || 0} V1 landings · {report.unattributed?.v2Landings || 0} V2 landings
-                  {report.unattributed?.pct == null ? "" : ` · ${formatPct(report.unattributed.pct)} of all first-party landings`}
-                </p>
-              </SectionCard>
-            ) : null}
-
-            {report.funnelVariant === "v1" ? (
-              <>
-                <SectionCard
-                  title="V1 first-party funnel"
-                  subtitle="Unique funnel_session_id counts. Photo Selected = client-validated file, not storage upload."
-                >
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6">
-                    <StatCard label="Landing sessions" value={formatMetricOrDash(kpis.firstPartyLandings)} helper="First-party landing_view" />
-                    <StatCard
-                      label="Names Submitted"
-                      value={formatMetricOrDash(kpis.names)}
-                      helper={[kpis.namesSource.replace(/_/g, " "), ofPreviousLabel(kpis.names, kpis.firstPartyLandings, "first-party landing")].filter(Boolean).join(" · ")}
-                    />
-                    <StatCard
-                      label="Photos Selected"
-                      value={formatMetricOrDash(kpis.uploads)}
-                      helper={[kpis.uploadsSource.replace(/_/g, " "), ofPreviousLabel(kpis.uploads, kpis.names, "names")].filter(Boolean).join(" · ")}
-                    />
-                    <StatCard
-                      label="Order Reviews"
-                      value={formatMetricOrDash(kpis.reviews)}
-                      helper={[kpis.reviewsSource.replace(/_/g, " "), ofPreviousLabel(kpis.reviews, kpis.uploads, "photos")].filter(Boolean).join(" · ")}
-                    />
-                    <StatCard
-                      label="Checkout"
-                      value={formatMetricOrDash(kpis.checkouts)}
-                      helper={["Production customer Stripe Checkout", ofPreviousLabel(kpis.checkouts, kpis.reviews, "reviews")].filter(Boolean).join(" · ")}
-                    />
-                    <StatCard
-                      label="Purchases"
-                      value={String(kpis.purchases)}
-                      helper={[comparisonHelper(kpis.purchases, report.previousSteps[5]?.sessions ?? 0) || "Paid production", ofPreviousLabel(kpis.purchases, kpis.checkouts, "checkouts")].filter(Boolean).join(" · ")}
-                    />
-                  </div>
-                </SectionCard>
-                {(report.variantStages || []).length > 0 ? <FunnelViz stages={report.variantStages || []} /> : null}
-              </>
-            ) : null}
-
-            {(report.funnelVariant === "v2_preview" || viewMode === "unattributed") && report.v2Kpis ? (
-              <>
-                <SectionCard title="V2 first-party KPIs" subtitle="Denominators are first-party V2 stages only.">
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-                    <StatCard label="Upload rate" value={formatPct(report.v2Kpis.uploadRate)} helper="v2_upload_completed / v2_landing_view" />
-                    <StatCard label="Preview gen success" value={formatPct(report.v2Kpis.previewGenerationSuccessRate)} helper="completed / started" />
-                    <StatCard label="Preview gen failure" value={formatPct(report.v2Kpis.previewGenerationFailureRate)} helper="failed / started" />
-                    <StatCard label="Landing → Preview Viewed" value={formatPct(report.v2Kpis.landingToPreviewViewed)} />
-                    <StatCard label="Preview Viewed → Unlock" value={formatPct(report.v2Kpis.previewViewedToUnlock)} />
-                    <StatCard label="Unlock → Checkout" value={formatPct(report.v2Kpis.unlockToCheckout)} />
-                    <StatCard label="Checkout → Purchase" value={formatPct(report.v2Kpis.checkoutToPurchase)} />
-                    <StatCard
-                      label="Median preview generation"
-                      value={report.v2Kpis.medianPreviewGenerationMs == null ? "—" : `${Math.round(report.v2Kpis.medianPreviewGenerationMs)} ms`}
-                      helper={report.v2Kpis.p90PreviewGenerationMs == null ? "Not enough latency samples" : `P90 ${Math.round(report.v2Kpis.p90PreviewGenerationMs)} ms`}
-                    />
-                  </div>
-                </SectionCard>
-                {(report.funnelVariant === "v2_preview" ? report.variantStages : report.v2Stages || []).length > 0 ? (
-                  <FunnelViz
-                    stages={(report.funnelVariant === "v2_preview" ? report.variantStages : report.v2Stages) || []}
-                    subtitle="V2 preview funnel. Stages are not comparable 1:1 with V1."
-                  />
-                ) : null}
-              </>
-            ) : null}
-
-            {viewMode === "unattributed" ? (
-              <FunnelViz
-                stages={report.steps.map((step) => ({
-                  eventName: step.eventName,
-                  label: step.label,
-                  sessions: step.sessions,
-                  fromPreviousPct: step.fromPreviousPct,
-                  fromLandingPct: step.fromLandingPct,
-                }))}
-                subtitle="Unattributed V1 progression"
-              />
-            ) : null}
-
-            {report.costMetrics && viewMode === "campaign" && report.funnelVariant ? (
-              <SectionCard title="Business results" subtitle="Meta campaign spend / first-party unique sessions attributed to the same campaign_id.">
-                {report.costMetrics.attributionCoverageWarning ? (
-                  <p className="mb-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
-                    Attribution coverage is thin. Cost / FP metrics may be unstable.
-                  </p>
-                ) : null}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
-                  <StatCard label="Cost / FP Landing" value={formatMetricOrDash(report.costMetrics.costPerFpLandingCents, formatUsdFromCents)} />
-                  <StatCard label="Cost / First Action" value={formatMetricOrDash(report.costMetrics.costPerFirstActionCents, formatUsdFromCents)} />
-                  <StatCard label="Cost / Checkout" value={formatMetricOrDash(report.costMetrics.costPerCheckoutCents, formatUsdFromCents)} />
-                  <StatCard label="CPA" value={formatMetricOrDash(report.costMetrics.cpaCents, formatUsdFromCents)} />
-                  <StatCard label="ROAS" value={formatRoas(report.costMetrics.roas)} />
-                  <StatCard label="Landing → Purchase" value={formatPct(kpis.landingToPurchase)} helper="First-party landing denominator" />
-                  <StatCard label="Revenue" value={formatUsdFromCents(kpis.revenueCents)} />
-                  <StatCard label="Free / 100% Discount Orders" value={String(kpis.freeDiscountOrders)} helper="Excluded from CPA / ROAS" />
-                </div>
-              </SectionCard>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
-                <StatCard label="Revenue" value={formatUsdFromCents(kpis.revenueCents)} />
-                <StatCard label="Free / 100% Discount Orders" value={String(kpis.freeDiscountOrders)} helper="Excluded from CPA / ROAS" />
-                <StatCard label="CPA" value={formatMetricOrDash(kpis.cpaCents, formatUsdFromCents)} />
-                <StatCard label="ROAS" value={formatRoas(kpis.roas)} helper="Stripe revenue / Meta spend" />
+            <SectionCard
+              title="First-party funnel"
+              subtitle="Unique funnel_session_id counts from the same first-party event stream. Photo Selected = client-validated file, not storage upload."
+            >
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6">
+                <StatCard label={labels.landing} value={formatMetricOrDash(kpis.firstPartyLandings)} helper={labels.landingHelper} />
+                <StatCard
+                  label={labels.step2}
+                  value={formatMetricOrDash(kpis.names)}
+                  helper={[kpis.namesSource.replace(/_/g, " "), ofPreviousLabel(kpis.names, kpis.firstPartyLandings, labels.step2Of)].filter(Boolean).join(" · ")}
+                />
+                <StatCard
+                  label={labels.step3}
+                  value={formatMetricOrDash(kpis.uploads)}
+                  helper={[kpis.uploadsSource.replace(/_/g, " "), ofPreviousLabel(kpis.uploads, kpis.names, labels.step3Of)].filter(Boolean).join(" · ")}
+                />
+                <StatCard
+                  label={labels.step4}
+                  value={formatMetricOrDash(kpis.reviews)}
+                  helper={[kpis.reviewsSource.replace(/_/g, " "), ofPreviousLabel(kpis.reviews, kpis.uploads, labels.step4Of)].filter(Boolean).join(" · ")}
+                />
+                <StatCard
+                  label={labels.checkout}
+                  value={formatMetricOrDash(kpis.checkouts)}
+                  helper={["Production customer Stripe Checkout", ofPreviousLabel(kpis.checkouts, kpis.reviews, labels.checkoutOf)].filter(Boolean).join(" · ")}
+                />
+                <StatCard
+                  label="Purchases"
+                  value={String(kpis.purchases)}
+                  helper={[comparisonHelper(kpis.purchases, report.previousSteps[5]?.sessions ?? 0) || "Paid production", ofPreviousLabel(kpis.purchases, kpis.checkouts, "checkouts")].filter(Boolean).join(" · ")}
+                />
               </div>
-            )}
+            </SectionCard>
 
             <TrackingHealth
-              firstPartyLandings={fpLanding || kpis.firstPartyLandings}
-              metaLpv={kpis.metaLpv ?? kpis.lpv}
-              latestFirstPartyAt={report.trackingHealth?.latestFirstPartyAt ?? report.recent[0]?.createdAt ?? report.firstPartyTrackingStartedAt}
+              kpis={kpis}
+              latestFirstPartyAt={report.recent[0]?.createdAt ?? report.firstPartyTrackingStartedAt}
               failedWrites={report.trackingHealth?.failedWrites ?? null}
             />
+
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
+              <StatCard
+                label="Revenue"
+                value={formatUsdFromCents(kpis.revenueCents)}
+                helper={comparisonHelper(kpis.revenueCents, report.kpis.previousRevenueCents) || "Paid production"}
+              />
+              <StatCard
+                label="Free / 100% Discount Orders"
+                value={String(kpis.freeDiscountOrders)}
+                helper="Excluded from CPA / ROAS"
+              />
+              <StatCard label="Cost per Checkout" value={formatMetricOrDash(kpis.costPerCheckoutCents, formatUsdFromCents)} />
+              <StatCard label="CPA" value={formatMetricOrDash(kpis.cpaCents, formatUsdFromCents)} />
+              <StatCard label="ROAS" value={formatRoas(kpis.roas)} helper="Stripe revenue / Meta spend" />
+              <StatCard label="Landing → Purchase" value={formatPct(kpis.landingToPurchase)} />
+            </div>
 
             {report.warnings.length > 0 ? (
               <div className="flex flex-wrap gap-2">
@@ -674,67 +375,111 @@ export default function PetFunnelAnalyticsPage() {
               </div>
             ) : null}
 
-            {viewMode === "campaign" ? (
-              <SectionCard
-                title="Ad set / ad drilldown"
-                subtitle={adsetId ? `Filtered to ad set ${adsetId} inside this campaign.` : "Campaign → ad set → ad. First-party counts stay inside the selected campaign_id."}
-              >
-                {adsetId ? (
-                  <button
-                    type="button"
-                    onClick={() => setAdsetId(null)}
-                    className="mb-3 rounded-xl border border-slate-700 px-3 py-1 text-xs text-slate-200"
-                  >
-                    Clear ad set filter
-                  </button>
-                ) : null}
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="text-xs uppercase tracking-wide text-slate-500">
-                      <tr>
-                        {["Ad set", "Spend", "Meta LPV", "FP Landing", report.funnelVariant === "v2_preview" ? "Upload" : "Name", report.funnelVariant === "v2_preview" ? "Preview" : "Review", "Checkout", "Purchase"].map((label) => (
-                          <th key={label} className="whitespace-nowrap px-3 py-2 font-medium">
-                            {label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(report.metaAdsets || []).length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="px-3 py-6 text-slate-500">
-                            No ad set rows in this campaign/range.
-                          </td>
-                        </tr>
+            <SectionCard
+              title="Funnel"
+              subtitle={
+                report.biggestDrop
+                  ? `Biggest drop: ${report.biggestDrop.from} → ${report.biggestDrop.to} (-${report.biggestDrop.dropPct.toFixed(0)}%)`
+                  : report.rangeMode === "first_party"
+                    ? "Unique first-party funnel sessions"
+                    : "Hybrid funnel — unavailable stages show — (not zero)"
+              }
+            >
+              <div className="space-y-4">
+                {hybridStages.map((step, index) => (
+                  <div key={step.eventName}>
+                    {index > 0 ? <div className="mb-3 text-center text-slate-600">↓</div> : null}
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3 sm:p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+                        <div className="min-w-0">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <p className="min-w-0 break-words text-sm font-medium text-slate-200">
+                              {dataset.stageLabels[step.eventName] || step.label}
+                            </p>
+                            <SourceBadge label={step.sourceLabel} />
+                          </div>
+                          <p className="mt-1 text-xl font-semibold text-white sm:text-2xl">
+                            {step.value == null ? "—" : step.value}
+                          </p>
+                        </div>
+                        <div className="min-w-0 text-xs leading-snug text-slate-400 sm:shrink-0 sm:text-right">
+                          {step.value == null ? (
+                            <p className="break-words">Historical detail unavailable</p>
+                          ) : (
+                            <>
+                              <p>{formatPct(step.fromLandingPct)} of first-party landing</p>
+                              <p>{index === 0 ? "100% start" : `${formatPct(step.fromPreviousPct)} from previous`}</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {step.value != null ? (
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
+                          <div
+                            className="h-full rounded-full bg-indigo-400"
+                            style={{ width: `${Math.max(4, (step.value / maxSessions) * 100)}%` }}
+                          />
+                        </div>
                       ) : (
-                        (report.metaAdsets || []).map((row) => (
-                          <tr key={row.adsetId} className="border-t border-slate-800">
-                            <td className="px-3 py-2">
-                              <button
-                                type="button"
-                                onClick={() => setAdsetId(row.adsetId)}
-                                className="text-left text-indigo-200 hover:underline"
-                              >
-                                {row.adsetName}
-                              </button>
-                            </td>
-                            <td className="px-3 py-2">{formatUsdFromCents(row.spendCents)}</td>
-                            <td className="px-3 py-2">{row.lpv}</td>
-                            <td className="px-3 py-2">{row.fpLanding}</td>
-                            <td className="px-3 py-2">{row.firstAction}</td>
-                            <td className="px-3 py-2">{row.preview ?? "—"}</td>
-                            <td className="px-3 py-2">{row.checkout}</td>
-                            <td className="px-3 py-2">{row.purchase}</td>
-                          </tr>
-                        ))
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-900" />
                       )}
-                    </tbody>
-                  </table>
-                </div>
-              </SectionCard>
-            ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
 
-            <SectionCard title="Creative comparison" subtitle="Meta ad-level metrics. First-party columns appear when ad_id attribution exists inside this campaign.">
+            <SectionCard
+              title="Campaign / ad set / ad"
+              subtitle={
+                report.spendAvailable
+                  ? "Meta Ads Insights spend with attributed conversions. ROAS = attributed purchase value / spend."
+                  : "Configure Meta Ads Insights credentials (ad account + ads_read token) and run Sync historical data to populate spend."
+              }
+            >
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      {["Campaign", "Ad Set", "Ad", "Spend", "Impressions", "LPV", "CPC", "CTR", "Checkout", "Purchase", "Revenue", "CPA", "ROAS"].map((label) => (
+                        <th key={label} className="whitespace-nowrap px-3 py-2 font-medium">
+                          {label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.campaigns.length === 0 ? (
+                      <tr>
+                        <td colSpan={13} className="px-3 py-6 text-slate-500">
+                          No campaign rows in this range.
+                        </td>
+                      </tr>
+                    ) : (
+                      report.campaigns.map((row) => (
+                        <tr key={`${row.campaign}-${row.campaignId || row.sourceGroup}`} className="border-t border-slate-800">
+                          <td className="px-3 py-2 text-slate-100">{row.campaign}</td>
+                          <td className="px-3 py-2 text-slate-300">{row.adSet}</td>
+                          <td className="px-3 py-2 text-slate-300">{row.ad}</td>
+                          <td className="px-3 py-2">{formatMetricOrDash(row.spendCents, formatUsdFromCents)}</td>
+                          <td className="px-3 py-2">{formatMetricOrDash(row.impressions ?? null)}</td>
+                          <td className="px-3 py-2">{row.lpv}</td>
+                          <td className="px-3 py-2">{formatMetricOrDash(row.cpcCentsComputed ?? null, formatUsdFromCents)}</td>
+                          <td className="px-3 py-2">{formatPct(row.ctrPct ?? null)}</td>
+                          <td className="px-3 py-2">{row.checkout}</td>
+                          <td className="px-3 py-2">{row.purchase}</td>
+                          <td className="px-3 py-2">{formatUsdFromCents(row.revenueCents)}</td>
+                          <td className="px-3 py-2">{formatMetricOrDash(row.cpaCents, formatUsdFromCents)}</td>
+                          <td className="px-3 py-2">{formatRoas(row.roas)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Creative comparison" subtitle="Meta ad-level metrics for comparing Dog creatives. First-party uploads appear when ad_id attribution exists.">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-slate-500">
@@ -778,7 +523,7 @@ export default function PetFunnelAnalyticsPage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Daily performance" subtitle="Same UTC interval as Meta, first-party, and Stripe.">
+            <SectionCard title="Daily performance" subtitle="Date · Spend · LPV · Checkout · Purchases · Revenue · ROAS">
               <div className="overflow-x-auto">
                 <table className="mb-4 min-w-full text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-slate-500">
@@ -831,7 +576,7 @@ export default function PetFunnelAnalyticsPage() {
             </SectionCard>
 
             {report.devices.length > 0 ? (
-              <SectionCard title="Device" subtitle="First-party device when available.">
+              <SectionCard title="Device" subtitle="First-party device when available. Country from GA4 sync is stored server-side only.">
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                   {report.devices.map((row) => (
                     <div key={row.deviceType} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 p-3 sm:p-4">
@@ -845,7 +590,7 @@ export default function PetFunnelAnalyticsPage() {
               </SectionCard>
             ) : null}
 
-            <SectionCard title="Recent activity" subtitle="First-party events in range for this view">
+            <SectionCard title="Recent activity" subtitle="First-party events in range">
               <div className="space-y-2">
                 {report.recent.length === 0 ? (
                   <p className="text-sm text-slate-500">No first-party funnel events in this range.</p>
@@ -855,7 +600,9 @@ export default function PetFunnelAnalyticsPage() {
                       {new Date(item.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                       {" — "}
                       {item.species || "pet"} {EVENT_COPY[item.eventName] || item.eventName}
-                      {item.eventName.includes("purchase") && item.amountCents ? ` ${formatUsdFromCents(item.amountCents)}` : ""}
+                      {item.eventName === "purchase" && item.amountCents
+                        ? ` ${formatUsdFromCents(item.amountCents)}`
+                        : ""}
                       {item.sessionShort ? ` · ${item.sessionShort}` : ""}
                     </p>
                   ))

@@ -116,8 +116,9 @@ describe("pet funnel admin analytics wiring", () => {
       'ofPreviousLabel(kpis.names, kpis.lpv, "LPV")',
     );
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain(
-      'ofPreviousLabel(kpis.names, kpis.firstPartyLandings, "first-party landing")',
+      "ofPreviousLabel(kpis.names, kpis.firstPartyLandings, labels.step2Of)",
     );
+    expect(readSrc("src/features/pet/funnelDatasetConfig.ts")).toContain('step2Of: "first-party landing"');
     const ingestSql = readSrc("supabase/migrations/20260824120000_pet_funnel_same_origin_ingest.sql");
     expect(ingestSql).toContain("coalesce(is_test, false) = false");
     expect(ingestSql).toContain("count(distinct funnel_session_id)");
