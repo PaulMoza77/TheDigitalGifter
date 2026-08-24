@@ -37,7 +37,7 @@ describe("pet funnel dashboard math", () => {
     expect(steps[1].fromPreviousPct).toBeCloseTo(44);
     expect(steps[2].fromPreviousPct).toBeCloseTo(63.636, 2);
     expect(steps[5].fromLandingPct).toBeCloseTo(4);
-    expect(biggestFunnelDrop(steps)?.from).toBe("Landing Page Views");
+    expect(biggestFunnelDrop(steps)?.from).toBe("First-party Landing Sessions");
     expect(biggestFunnelDrop(steps)?.to).toBe("Pet Name Submitted");
   });
 

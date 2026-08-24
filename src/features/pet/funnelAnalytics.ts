@@ -151,8 +151,12 @@ export function shouldTrackPetPurchase(input: {
 }
 
 export function trackFunnelViewItem(input: { species: string; valueCents: number }) {
+  trackPetFunnelInternalEvent({
+    eventName: "landing_view",
+    species: input.species,
+  });
   if (!Number.isFinite(input.valueCents) || input.valueCents <= 0) return false;
-  const sent = sendGa4(
+  return sendGa4(
     "view_item",
     {
       currency: "USD",
@@ -163,11 +167,6 @@ export function trackFunnelViewItem(input: { species: string; valueCents: number
     },
     { onceKey: `tdg.ga4.view_item.${input.species}` },
   );
-  trackPetFunnelInternalEvent({
-    eventName: "landing_view",
-    species: input.species,
-  });
-  return sent;
 }
 
 export function trackFunnelBeginCheckout(input: {
@@ -220,6 +219,14 @@ export function trackFunnelEvent(
   payload: Record<string, unknown> = {},
   options?: { onceKey?: string; eventID?: string },
 ) {
+  const internalName = INTERNAL_FUNNEL_EVENTS[name];
+  if (internalName) {
+    trackPetFunnelInternalEvent({
+      eventName: internalName,
+      species: typeof payload.species === "string" ? payload.species : null,
+    });
+  }
+
   const onceKey = options?.onceKey || FUNNEL_EVENT_KEYS[name];
   if (onceKey && !once(onceKey)) return false;
   const safe = sanitizeFunnelAnalyticsPayload({
@@ -252,12 +259,5 @@ export function trackFunnelEvent(
   }
 
   sendGa4(GA4_FUNNEL_EVENTS[name], ga4Params);
-  const internalName = INTERNAL_FUNNEL_EVENTS[name];
-  if (internalName) {
-    trackPetFunnelInternalEvent({
-      eventName: internalName,
-      species: typeof payload.species === "string" ? payload.species : null,
-    });
-  }
   return true;
 }

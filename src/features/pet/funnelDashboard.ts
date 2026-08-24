@@ -22,9 +22,9 @@ export const PET_FUNNEL_PRIMARY_STEPS = [
 ] as const;
 
 export const PET_FUNNEL_STEP_LABELS: Record<(typeof PET_FUNNEL_PRIMARY_STEPS)[number], string> = {
-  landing_view: "Landing Page Views",
+  landing_view: "First-party Landing Sessions",
   pet_name_submitted: "Pet Name Submitted",
-  photo_upload_completed: "Photo Upload Completed",
+  photo_upload_completed: "Photo Selected",
   order_review_viewed: "Order Review Viewed",
   initiate_checkout: "Initiate Checkout",
   purchase: "Purchase",
@@ -104,6 +104,7 @@ export type PetFunnelAnalyticsReport = {
   previousSteps: FunnelStepRow[];
   hybridStages: import("./funnelHybrid").HybridStageValue[];
   hybridKpis: import("./funnelHybrid").HybridKpis;
+  trackingHealth?: { failedWrites: number | null; latestFirstPartyAt: string | null };
   daily: import("./funnelHybrid").DailyPerfRow[];
   metaAds: import("./funnelHybrid").MetaAdRow[];
   sync: {
@@ -197,6 +198,33 @@ export function buildFunnelSteps(counts: FunnelStepCounts): FunnelStepRow[] {
         previous == null || previous <= 0 ? null : percent(Math.max(previous - sessions, 0), previous),
     };
   });
+}
+
+export const FUNNEL_CONVERSION_LABELS = [
+  { label: "Landing → Name Submitted", fromIndex: 0, toIndex: 1 },
+  { label: "Name → Photo Selected", fromIndex: 1, toIndex: 2 },
+  { label: "Photo → Order Review", fromIndex: 2, toIndex: 3 },
+  { label: "Order Review → Checkout", fromIndex: 3, toIndex: 4 },
+  { label: "Checkout → Purchase", fromIndex: 4, toIndex: 5 },
+] as const;
+
+export function stepConversionRates(
+  stages: Array<{ fromPreviousPct: number | null }>,
+): Array<{ label: string; pct: number | null }> {
+  return FUNNEL_CONVERSION_LABELS.map((item) => ({
+    label: item.label,
+    pct: stages[item.toIndex]?.fromPreviousPct ?? null,
+  }));
+}
+
+export function ofPreviousLabel(
+  to: number | null | undefined,
+  from: number | null | undefined,
+  ofLabel: string,
+): string | null {
+  if (to == null || from == null) return null;
+  const rate = percent(to, from);
+  return rate == null ? null : `${formatPct(rate)} of ${ofLabel}`;
 }
 
 export function biggestFunnelDrop(steps: FunnelStepRow[]): { from: string; to: string; dropPct: number } | null {

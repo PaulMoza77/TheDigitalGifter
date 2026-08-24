@@ -1,9 +1,15 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { petFunnelEventDevPlugin } from "./vite.petFunnelEventPlugin";
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  process.env.SUPABASE_URL ||= env.SUPABASE_URL || env.VITE_SUPABASE_URL || "";
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||= env.SUPABASE_SERVICE_ROLE_KEY || "";
+  process.env.VITE_SUPABASE_URL ||= env.VITE_SUPABASE_URL || "";
+  return {
+    plugins: [react(), petFunnelEventDevPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -24,4 +30,5 @@ export default defineConfig({
       },
     },
   },
+  };
 });

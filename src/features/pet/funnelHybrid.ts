@@ -56,6 +56,8 @@ export type HybridKpis = {
   cpaCents: number | null;
   roas: number | null;
   landingToPurchase: number | null;
+  metaLpv: number | null;
+  firstPartyLandings: number;
   metaAttributedPurchases: number | null;
   metaPurchaseValueCents: number | null;
   freeDiscountOrders: number;
@@ -234,53 +236,18 @@ export function buildHybridStages(input: {
 
   let stages: Array<Omit<HybridStageValue, "fromPreviousPct" | "fromLandingPct">>;
 
-  if (mode === "first_party") {
-    stages = [
-      stage("landing_view", firstPartyCounts.landing_view, "first_party"),
-      stage("pet_name_submitted", firstPartyCounts.pet_name_submitted, "first_party"),
-      stage("photo_upload_completed", firstPartyCounts.photo_upload_completed, "first_party"),
-      stage("order_review_viewed", firstPartyCounts.order_review_viewed, "first_party"),
-      stage("initiate_checkout", backendCheckouts, "backend_truth"),
-      stage("purchase", backendPurchases, "stripe_verified"),
-    ];
-  } else {
-    const pickMidFunnel = (
-      eventName: "pet_name_submitted" | "photo_upload_completed" | "order_review_viewed",
-      firstPartyValue: number,
-      metaValue: number | null,
-      ga4Value: number | null,
-    ) => {
-      if (mode === "mixed" && firstPartyValue > 0) {
-        return stage(eventName, firstPartyValue, "first_party");
-      }
-      if (metaValue != null) return stage(eventName, metaValue, "meta");
-      if (ga4Value != null) return stage(eventName, ga4Value, "ga4");
-      return stage(eventName, null, "historical_unavailable");
-    };
-
-    const landing =
-      meta.landingPageViews > 0
-        ? stage("landing_view", meta.landingPageViews, "meta")
-        : ga4.landingViews > 0
-          ? stage("landing_view", ga4.landingViews, "ga4")
-          : firstPartyCounts.landing_view > 0
-            ? stage("landing_view", firstPartyCounts.landing_view, "first_party")
-            : stage("landing_view", null, "historical_unavailable");
-
-    stages = [
-      landing,
-      pickMidFunnel("pet_name_submitted", firstPartyCounts.pet_name_submitted, meta.petNameSubmitted, ga4.petNameSubmitted),
-      pickMidFunnel(
-        "photo_upload_completed",
-        firstPartyCounts.photo_upload_completed,
-        meta.photoUploadCompleted,
-        ga4.photoUploadCompleted,
-      ),
-      pickMidFunnel("order_review_viewed", firstPartyCounts.order_review_viewed, meta.orderReviewViewed, ga4.orderReviewViewed),
-      stage("initiate_checkout", backendCheckouts, "backend_truth"),
-      stage("purchase", backendPurchases, "stripe_verified"),
-    ];
-  }
+  void mode;
+  void meta;
+  void ga4;
+  // First-party mid-funnel conversion never uses Meta LPV or GA4 as the landing denominator.
+  stages = [
+    stage("landing_view", firstPartyCounts.landing_view, "first_party"),
+    stage("pet_name_submitted", firstPartyCounts.pet_name_submitted, "first_party"),
+    stage("photo_upload_completed", firstPartyCounts.photo_upload_completed, "first_party"),
+    stage("order_review_viewed", firstPartyCounts.order_review_viewed, "first_party"),
+    stage("initiate_checkout", backendCheckouts, "backend_truth"),
+    stage("purchase", backendPurchases, "stripe_verified"),
+  ];
 
   const landingValue = stages[0]?.value;
   return stages.map((s, index) => {
@@ -317,6 +284,7 @@ export function buildHybridKpis(input: {
   impressions: number;
   linkClicks: number;
   revenueCents: number;
+  metaLpv?: number | null;
   metaPurchaseValueCents: number | null;
   metaAttributedPurchases: number | null;
   freeDiscountOrders?: number;
@@ -328,12 +296,14 @@ export function buildHybridKpis(input: {
   const purchases = byName.purchase.value ?? 0;
   const spend = input.spendCents;
   const checkouts = byName.initiate_checkout.value;
+  const firstPartyLandings = byName.landing_view.value ?? 0;
+  const metaLpv = input.metaLpv ?? null;
   // Business ROAS uses Stripe revenue / Meta spend. Ad-table ROAS uses Meta purchase value.
   const businessRoas = spend == null ? null : safeRoas(input.revenueCents, spend);
   return {
     spendCents: spend,
-    lpv: byName.landing_view.value,
-    lpvSource: byName.landing_view.source,
+    lpv: metaLpv,
+    lpvSource: "meta",
     cpcCents: spend == null ? null : safeCpcCents(spend, input.linkClicks),
     ctrPct: safeCtrPct(input.linkClicks, input.impressions),
     names: byName.pet_name_submitted.value,
@@ -351,10 +321,9 @@ export function buildHybridKpis(input: {
     costPerCheckoutCents: spend == null || checkouts == null || checkouts <= 0 ? null : Math.round(spend / checkouts),
     cpaCents: spend == null ? null : safeCpaCents(spend, purchases),
     roas: businessRoas,
-    landingToPurchase:
-      byName.landing_view.value == null || byName.landing_view.value <= 0
-        ? null
-        : percent(purchases, byName.landing_view.value),
+    landingToPurchase: percent(purchases, firstPartyLandings),
+    metaLpv,
+    firstPartyLandings,
     metaAttributedPurchases: input.metaAttributedPurchases,
     metaPurchaseValueCents: input.metaPurchaseValueCents,
     freeDiscountOrders: Math.max(0, Math.round(Number(input.freeDiscountOrders) || 0)),

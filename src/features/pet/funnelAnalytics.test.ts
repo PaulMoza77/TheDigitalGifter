@@ -274,8 +274,8 @@ describe("pet funnel dual analytics", () => {
       campaign_id: "111",
       adset_id: "222",
       ad_id: "333",
-      fbclid: "click.1",
     });
+    expect(first).not.toHaveProperty("fbclid");
 
     const second = captureFunnelAttribution(
       "?utm_source=google&utm_campaign=other&campaign_id=999&ad_id=888",
