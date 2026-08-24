@@ -364,3 +364,46 @@ export async function discoverMetaCampaignEarliestDate(
   }
   return earliest;
 }
+
+export type MetaCampaignListRow = { id: string; name: string; effectiveStatus: string };
+
+const V2_CAMPAIGN_NAME_RE = /pet\s*tdg\s*funnel\s*v2\s*testing/i;
+
+export function matchV2TestingCampaign(
+  campaigns: MetaCampaignListRow[],
+): MetaCampaignListRow | null {
+  const exact = campaigns.filter((row) => V2_CAMPAIGN_NAME_RE.test(row.name));
+  return exact.length === 1 ? exact[0] : null;
+}
+
+export async function listAdAccountCampaigns(): Promise<MetaCampaignListRow[]> {
+  const status = metaAdsConfigStatus();
+  if (!status.configured || !status.adAccountId) return [];
+  const token = asString(Deno.env.get("META_ADS_ACCESS_TOKEN"));
+  const rows: MetaCampaignListRow[] = [];
+  let url =
+    `https://graph.facebook.com/v21.0/${status.adAccountId}/campaigns` +
+    `?fields=id,name,effective_status&limit=200`;
+  let guard = 0;
+  while (url && guard < 10) {
+    guard += 1;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) break;
+    const json = (await res.json()) as {
+      data?: Array<{ id?: string; name?: string; effective_status?: string }>;
+      paging?: { next?: string };
+    };
+    for (const row of json.data || []) {
+      const id = asString(row.id);
+      const name = asString(row.name);
+      if (!id || !name) continue;
+      rows.push({ id, name, effectiveStatus: asString(row.effective_status) });
+    }
+    url = json.paging?.next || "";
+  }
+  return rows;
+}
+
+export async function discoverPetV2TestingCampaign(): Promise<MetaCampaignListRow | null> {
+  return matchV2TestingCampaign(await listAdAccountCampaigns());
+}

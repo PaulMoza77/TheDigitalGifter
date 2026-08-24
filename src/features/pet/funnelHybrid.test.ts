@@ -328,7 +328,7 @@ describe("pet hybrid funnel analytics", () => {
   });
 
   it("allowlists only explicit pet Meta campaign IDs and drops Minutes Guides spend", () => {
-    expect(BUILTIN_PET_META_CAMPAIGN_IDS).toEqual(["120253346791240170"]);
+    expect(BUILTIN_PET_META_CAMPAIGN_IDS).toEqual(["120253346791240170", "120253465585030170"]);
     expect(parsePetMetaCampaignIds("120253346791240170, 120299999999999999")).toEqual([
       "120253346791240170",
       "120299999999999999",

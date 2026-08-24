@@ -181,6 +181,19 @@ export function filterUnattributedEvents(
   return events.filter((event) => !event.isTest && sessions.has(event.funnelSessionId));
 }
 
+/** Dataset isolation by event family / table. Does not assign unattributed rows a campaign_id. */
+export function eventBelongsToVariant(eventName: string, variant: FunnelVariant): boolean {
+  const isV2 = eventName.startsWith("v2_");
+  return variant === "v2_preview" ? isV2 : !isV2;
+}
+
+export function filterEventsForDataset(
+  events: FirstPartyEventRow[],
+  variant: FunnelVariant,
+): FirstPartyEventRow[] {
+  return events.filter((event) => !event.isTest && eventBelongsToVariant(event.eventName, variant));
+}
+
 export type FunnelStageValue = {
   eventName: string;
   label: string;

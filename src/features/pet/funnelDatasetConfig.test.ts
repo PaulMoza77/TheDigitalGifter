@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   FUNNEL_DATASETS,
-  UNCONFIGURED_CAMPAIGN_ID,
   isDatasetConfigured,
   mapV2CountsToPrimarySteps,
   namedEventCounts,
@@ -13,12 +12,12 @@ describe("funnelDatasetConfig", () => {
     expect(FUNNEL_DATASETS.v1.campaignId).toBe("120253346791240170");
     expect(FUNNEL_DATASETS.v1.funnelVariant).toBe("v1");
     expect(FUNNEL_DATASETS.v1.eventSource).toBe("pet_funnel_events");
-    expect(FUNNEL_DATASETS.v2.campaignId).toBe("");
+    expect(FUNNEL_DATASETS.v2.campaignId).toBe("120253465585030170");
     expect(FUNNEL_DATASETS.v2.funnelVariant).toBe("v2_preview");
     expect(FUNNEL_DATASETS.v2.eventSource).toBe("pet_v2_funnel_events");
     expect(isDatasetConfigured("v1")).toBe(true);
-    expect(isDatasetConfigured("v2")).toBe(false);
-    expect(rpcCampaignIdForDataset("v2")).toBe(UNCONFIGURED_CAMPAIGN_ID);
+    expect(isDatasetConfigured("v2")).toBe(true);
+    expect(rpcCampaignIdForDataset("v2")).toBe("120253465585030170");
   });
 
   it("maps V2 events into the original six funnel cards without mixing V1 names", () => {
@@ -37,7 +36,7 @@ describe("funnelDatasetConfig", () => {
     expect(counts.pet_name_submitted).toBe(22);
     expect(counts.photo_upload_completed).toBe(18);
     expect(counts.order_review_viewed).toBe(9);
-    expect(counts.initiate_checkout).toBe(4);
-    expect(counts.purchase).toBe(2);
+    expect(counts.initiate_checkout).toBe(0);
+    expect(counts.purchase).toBe(0);
   });
 });

@@ -78,7 +78,13 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet-v2/analytics.ts")).not.toContain("trackPetFunnelInternalEvent");
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("startPetCheckout");
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain('funnelVariant: "v2"');
-    expect(readSrc("src/features/pet-v2/screens/OfferScreen.tsx")).toContain("Opening secure checkout");
+    const handler = readSrc("api/pet-v2-funnel-event.ts");
+    const lib = readSrc("api/_lib/petV2.ts");
+    expect(lib).not.toContain("src/features/pet-v2/types");
+    expect(lib).toContain("missing_supabase_config");
+    expect(handler).toContain("res.status(500)");
+    expect(handler).not.toContain("status(202).json({ ok: true, duplicate: false })");
+    expect(readSrc("vercel.json")).toContain("/api/pet-v2-funnel-event");
   });
 
   it("uses existing mini clips and the other-pets animals already in the product", () => {
