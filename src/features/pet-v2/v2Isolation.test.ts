@@ -40,7 +40,7 @@ describe("pet funnel V2 isolation", () => {
     expect(PET_PRICE_CENTS).toBe(2700);
     expect(PET_PRICE_DISPLAY).toBe("$27");
     expect(PET_V2_PRODUCTION_PRICE_CENTS).toBe(2700);
-    expect(PET_V2_TEST_PRICE_CENTS).toBe(1900);
+    expect(PET_V2_TEST_PRICE_CENTS).toBe(1200);
     expect(readSrc("src/features/pet/PetLandingPage.tsx")).toContain("NameCapture");
     expect(readSrc("api/sitemap.xml.ts")).toContain('"/pet/dog"');
     expect(readSrc("api/sitemap.xml.ts")).not.toContain("/pet-v2");
@@ -73,12 +73,15 @@ describe("pet funnel V2 isolation", () => {
   it("uses existing mini clips and the other-pets animals already in the product", () => {
     const strip = readSrc("src/features/pet-v2/V2ExampleStrip.tsx");
     expect(strip).toContain("PET_DEMO_CLIP_IDS");
+    expect(strip).toContain("PET_SCENES");
+    expect(strip).toContain("All 12 secret lives");
+    expect(strip).toContain("2 mini clips included");
     expect(strip).toContain("sceneHasMotionClip");
     expect(strip).toContain("AutoSceneClip");
     expect(strip).toContain("SceneImage");
-    expect(strip).toContain('species="other"');
     expect(strip).toContain("PET_OTHER_SUBJECTS");
-    expect(strip).not.toMatch(/species === "other" \? "dog"/);
+    expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2PackOffer");
+    expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).toContain("12 secret lives and 2 mini clips");
     expect(readSrc("src/features/pet/components/SceneCard.tsx")).toContain("autoPlay");
     expect(readSrc("src/features/pet/components/SceneCard.tsx")).toContain("playsInline");
     expect(readSrc("src/features/pet/catalog.ts")).toContain('newspaper: "Guinea pig"');
@@ -110,23 +113,23 @@ describe("V2 free-preview economics", () => {
     const one = economicsAtConversion(1000, 1);
     expect(one.purchases).toBe(10);
     expect(one.generationCostUsd).toBe(40);
-    expect(one.testRevenueUsd).toBe(190);
+    expect(one.testRevenueUsd).toBe(120);
     expect(one.productionRevenueUsd).toBe(270);
-    expect(one.grossAfterAiTestUsd).toBe(150);
+    expect(one.grossAfterAiTestUsd).toBe(80);
     expect(one.grossAfterAiProductionUsd).toBe(230);
 
     const two = economicsAtConversion(1000, 2);
     expect(two.purchases).toBe(20);
-    expect(two.grossAfterAiTestUsd).toBe(340);
+    expect(two.grossAfterAiTestUsd).toBe(200);
     expect(two.grossAfterAiProductionUsd).toBe(500);
 
     const five = economicsAtConversion(1000, 5);
     expect(five.purchases).toBe(50);
-    expect(five.grossAfterAiTestUsd).toBe(910);
+    expect(five.grossAfterAiTestUsd).toBe(560);
 
     const ten = economicsAtConversion(1000, 10);
     expect(ten.purchases).toBe(100);
-    expect(ten.grossAfterAiTestUsd).toBe(1860);
+    expect(ten.grossAfterAiTestUsd).toBe(1160);
   });
 });
 
