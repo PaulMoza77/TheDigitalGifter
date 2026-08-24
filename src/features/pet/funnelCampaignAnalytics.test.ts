@@ -11,7 +11,6 @@ import {
   attributedSessionIds,
   buildCampaignCostMetrics,
   buildCompareRows,
-  buildSelectorOptions,
   buildV2Kpis,
   buildVariantFunnel,
   compareUsesSharedFirstActionRow,
@@ -304,22 +303,17 @@ describe("pet campaign-scoped funnel analytics", () => {
     expect(firstActionForVariant(null)).toBeNull();
   });
 
-  it("builds a dynamic selector from catalog campaigns rather than hardcoded Campaign 1/2 labels", () => {
-    const options = buildSelectorOptions(configs);
-    expect(options[0]).toMatchObject({ mode: "all", label: "All" });
-    expect(options.some((o) => o.label === "Campaign 1")).toBe(false);
-    expect(options.map((o) => o.label)).toContain("TDG DOG - V1");
-    expect(options.map((o) => o.label)).toContain("TDG DOG - V2 FREE PREVIEW");
-    expect(options.some((o) => o.mode === "compare")).toBe(true);
-    expect(options.some((o) => o.mode === "unattributed")).toBe(true);
-    const third: CampaignAnalyticsConfig = {
-      campaignId: "120300000000000000",
-      displayName: "TDG CAT - V3",
-      funnelVariant: "v1",
-      utmCampaignAliases: [],
-      measurementReliableFrom: null,
-    };
-    expect(buildSelectorOptions([...configs, third]).some((o) => o.campaignId === third.campaignId)).toBe(true);
+  it("keeps the original analytics page and only adds a compact V1/V2 switch", () => {
+    const page = readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx");
+    expect(page).not.toContain("Overall business");
+    expect(page).not.toContain("Campaign summary");
+    expect(page).not.toContain("Unattributed");
+    expect(page).not.toContain("Compare campaigns");
+    expect(page).toContain("FUNNEL_DATASETS");
+    expect(page).toContain("Campaign 2 not configured yet");
+    expect(page).toContain("Meta acquisition");
+    expect(page).toContain("First-party funnel");
+    expect(page).toContain("inline-flex max-w-full flex-wrap rounded-xl border border-slate-700");
   });
 
   it("computes campaign-matched cost metrics and coverage warnings", () => {
