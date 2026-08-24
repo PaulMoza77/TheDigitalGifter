@@ -157,6 +157,21 @@ export async function handlePetStripeEvent(input: {
           amountCents: charged,
           species: asString(order.species),
         });
+        if (asString(input.metadata.funnel_variant) === "v2") {
+          const sessionId = asString(input.metadata.funnel_session_id);
+          const species = asString(order.species);
+          const pathSpecies = species === "cat" || species === "other" ? species : "dog";
+          if (isUuid(sessionId)) {
+            await input.service.rpc("record_pet_v2_funnel_event", {
+              p_event_name: "v2_purchase",
+              p_funnel_session_id: sessionId,
+              p_idempotency_key: `v2_purchase:${order.id}`,
+              p_species: species,
+              p_pathname: `/pet/${pathSpecies}-v2`,
+              p_amount_cents: charged,
+            });
+          }
+        }
         if (!order.meta_purchase_sent_at) {
           const capi = await sendMetaCapiPurchase({
             eventId: order.meta_event_id,

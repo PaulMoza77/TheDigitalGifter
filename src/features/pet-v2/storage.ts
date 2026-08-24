@@ -1,4 +1,5 @@
 import { PET_V2_DRAFT_STORAGE_KEY, PET_V2_STEPS, type PetV2Draft, type PetV2Species, type PetV2Step } from "./types";
+import { PET_SUBTYPES, type PetSubtype } from "../pet/types";
 
 const EMPTY: PetV2Draft = {
   species: "dog",
@@ -11,6 +12,8 @@ const EMPTY: PetV2Draft = {
   lastError: null,
   email: "",
   petName: "",
+  subtype: null,
+  subtypeDetail: null,
   updatedAt: "",
 };
 
@@ -106,6 +109,11 @@ function coerce(value: unknown): PetV2Draft | null {
     lastError: typeof row.lastError === "string" ? row.lastError : null,
     email: typeof row.email === "string" ? row.email.slice(0, 120) : "",
     petName: typeof row.petName === "string" ? row.petName.slice(0, 40) : "",
+    subtype:
+      typeof row.subtype === "string" && (PET_SUBTYPES as readonly string[]).includes(row.subtype)
+        ? (row.subtype as PetSubtype)
+        : null,
+    subtypeDetail: typeof row.subtypeDetail === "string" ? row.subtypeDetail.slice(0, 40) : null,
     updatedAt: typeof row.updatedAt === "string" ? row.updatedAt : "",
   };
 }

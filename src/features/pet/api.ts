@@ -133,6 +133,8 @@ export type StartPetCheckoutInput = {
   promoCode?: string;
   subtype?: CreatePetOrderRequest["subtype"];
   subtypeDetail?: CreatePetOrderRequest["subtypeDetail"];
+  funnelVariant?: "v1" | "v2";
+  funnelSessionId?: string;
 };
 
 export type StartPetCheckoutResult = {
@@ -154,6 +156,7 @@ export type StartPetCheckoutResult = {
 export async function startPetCheckout(
   input: StartPetCheckoutInput
 ): Promise<StartPetCheckoutResult> {
+  const analytics = checkoutAnalyticsContext();
   const order = await input.api.createOrder({
     email: input.email,
     petName: input.petName,
@@ -163,6 +166,7 @@ export async function startPetCheckout(
       sku: "pet-secret-life-12",
       subtype: input.subtype ?? null,
       subtypeDetail: input.subtypeDetail ?? null,
+      funnelVariant: input.funnelVariant,
     });
 
   const signed = await input.api.getSignedUploadUrl({
@@ -188,7 +192,8 @@ export async function startPetCheckout(
     cancelUrl: input.cancelUrl,
     customerEmail: input.email,
     promoCode: input.promoCode,
-    ...checkoutAnalyticsContext(),
+    ...analytics,
+    funnelSessionId: input.funnelSessionId || analytics.funnelSessionId,
   });
 
   return {

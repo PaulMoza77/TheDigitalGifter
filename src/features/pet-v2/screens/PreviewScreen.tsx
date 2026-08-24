@@ -32,7 +32,7 @@ export function V2PreviewScreen({
       </figure>
       {mode === "mock" ? (
         <p className="rounded-2xl border border-[#d4a84b]/30 bg-[#d4a84b]/10 px-4 py-3 text-sm text-[#f3d48a]">
-          Prototype preview: live AI generation is off, so this is your photo in a royal frame — not the paid Kontext Pro model.
+          Prototype preview: live AI generation is off in this environment, so this is your photo in a royal frame.
         </p>
       ) : null}
       <V2PackOffer />

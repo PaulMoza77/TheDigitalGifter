@@ -1,7 +1,10 @@
 /**
- * Isolated My Pet’s Secret Life V2 preview funnel.
- * Must never share storage, session IDs, event names, or checkout with V1.
+ * Isolated My Pet’s Secret Life V2 funnel.
+ * Keeps its own storage, session IDs, and event names. Paid 12+2 generation
+ * reuses the V1 order pipeline at the V2 $12 price.
  */
+
+import type { PetSubtype } from "../pet/types";
 
 /** Public URLs match V1 with a `-v2` suffix: `/pet/dog-v2`. */
 export const PET_V2_ROUTE_PREFIX = "/pet" as const;
@@ -11,7 +14,7 @@ export const PET_V2_SESSION_KEY = "tdg.petFunnelV2.session.v1" as const;
 export const PET_V2_EVENT_PATH = "/api/pet-v2/funnel-event" as const;
 export const PET_V2_PREVIEW_PATH = "/api/pet-v2/preview" as const;
 
-/** Offer copy for this funnel. Live V1 checkout uses the same $12 flash sale while it is active. */
+/** V2 charges $12 from $27. Live V1 /pet/dog checkout is a separate $17 sale. */
 export const PET_V2_TEST_PRICE_CENTS = 1200 as const;
 export const PET_V2_TEST_PRICE_DISPLAY = "$12" as const;
 export const PET_V2_PRODUCTION_PRICE_CENTS = 2700 as const;
@@ -69,6 +72,8 @@ export type PetV2Draft = {
   lastError: string | null;
   email: string;
   petName: string;
+  subtype: PetSubtype | null;
+  subtypeDetail: string | null;
   updatedAt: string;
 };
 

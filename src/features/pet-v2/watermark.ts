@@ -61,7 +61,7 @@ export async function buildMockRoyalPreview(source: string): Promise<string> {
   ctx.fillStyle = "#f3e6c0";
   ctx.font = "600 18px Georgia, serif";
   ctx.textAlign = "center";
-  ctx.fillText("Royal portrait · prototype preview", width / 2, 34);
+  ctx.fillText("Royal portrait · preview unavailable", width / 2, 34);
 
   return watermarkPreviewDataUrl(canvas.toDataURL("image/jpeg", 0.8));
 }
