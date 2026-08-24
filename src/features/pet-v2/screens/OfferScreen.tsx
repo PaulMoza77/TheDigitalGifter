@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,8 @@ export function V2OfferScreen({
   onSubtype: (subtype: PetSubtype, detail?: string) => void;
   onContinue: () => void;
 }) {
-  const offer = v2PackOfferCopy();
+  const [offer, setOffer] = useState(() => v2PackOfferCopy());
+  const refreshOffer = () => setOffer(v2PackOfferCopy());
   return (
     <div className="space-y-6">
       <div>
@@ -42,7 +44,7 @@ export function V2OfferScreen({
           {offer.headline}. One-time. No subscription.
         </p>
       </div>
-      <V2PackOffer />
+      <V2PackOffer onExpire={refreshOffer} />
       <ul className="space-y-2 text-sm text-[#f6efe4]/72">
         <li>12 secret lives of the same pet</li>
         <li>2 mini cinematic clips</li>

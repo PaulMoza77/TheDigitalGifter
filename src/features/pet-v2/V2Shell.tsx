@@ -15,6 +15,7 @@ export function V2Shell({
   onBack,
   onSpecies,
   footer,
+  padForSticky,
 }: {
   children: ReactNode;
   species: PetV2Species;
@@ -22,10 +23,16 @@ export function V2Shell({
   onBack?: () => void;
   onSpecies?: (species: PetV2Species) => void;
   footer?: string;
+  padForSticky?: boolean;
 }) {
   return (
     <div className="pet-funnel min-h-screen bg-[#140e0a] text-[#f6efe4]">
-      <div className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 pb-10 pt-4 sm:px-6">
+      <div
+        className={cn(
+          "relative mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 pt-4 sm:px-6",
+          padForSticky ? "pb-28" : "pb-10",
+        )}
+      >
         <header className="flex items-center justify-between gap-3 py-2">
           <a
             href={petV2LandingPath(species)}
@@ -83,7 +90,7 @@ export function V2Shell({
         <main className="flex-1 py-5">{children}</main>
         <footer className="mt-8 border-t border-[#f6efe4]/10 pt-5 text-xs text-[#f6efe4]/45">
           <p>
-            {footer ?? `${v2PackOfferCopy().headline}. Free preview first — card only if you unlock the collection.`}
+            {footer ?? `${v2PackOfferCopy().headline}. Free preview first — card only if you unlock.`}
           </p>
         </footer>
       </div>

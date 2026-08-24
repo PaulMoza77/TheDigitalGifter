@@ -7,7 +7,6 @@ import {
   PET_SIGNED_DOWNLOAD_SECONDS,
   PET_SIGNED_UPLOAD_SECONDS,
   PET_SKU,
-  PET_V2_PRICE_CENTS,
   PET_SOURCE_BUCKET,
   PET_SPECIES,
   PET_PERSONALITIES,
@@ -17,6 +16,7 @@ import {
 } from "../_shared/pet/constants.ts";
 import {
   applyPetFlashSaleAmount,
+  applyV2SaleAmount,
   checkoutAmountNeedsRefresh,
   petFlashSale,
 } from "../_shared/pet/flashSale.ts";
@@ -334,7 +334,7 @@ Deno.serve(async (req) => {
       const offer = await loadActiveOffer(service);
       if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
       const funnelVariant = isV2Funnel(body.funnelVariant) ? "v2" : "v1";
-      const amountCents = funnelVariant === "v2" ? PET_V2_PRICE_CENTS : offer.amountCents;
+      const amountCents = funnelVariant === "v2" ? applyV2SaleAmount() : offer.amountCents;
       const priceCheck = rejectAgainstOffer(
         {
           amountCents: body.amountCents,
@@ -575,22 +575,26 @@ Deno.serve(async (req) => {
           existingView.payment_status === "paid" ||
           existingView.payment_status === "no_payment_required"
         : false;
+      const liveAmount = isV2Funnel(order.funnel_variant)
+        ? applyV2SaleAmount()
+        : liveOffer.ok
+          ? liveOffer.amountCents
+          : null;
       let amountChanged = false;
       if (
         !paymentProcessing &&
-        !isV2Funnel(order.funnel_variant) &&
-        liveOffer.ok &&
-        checkoutAmountNeedsRefresh(Number(order.amount_cents), liveOffer.amountCents)
+        liveAmount != null &&
+        checkoutAmountNeedsRefresh(Number(order.amount_cents), liveAmount)
       ) {
         await service
           .from("pet_orders")
           .update({
-            amount_cents: liveOffer.amountCents,
-            charged_amount_cents: liveOffer.amountCents,
+            amount_cents: liveAmount,
+            charged_amount_cents: liveAmount,
           })
           .eq("id", order.id);
-        order.amount_cents = liveOffer.amountCents;
-        order.charged_amount_cents = liveOffer.amountCents;
+        order.amount_cents = liveAmount;
+        order.charged_amount_cents = liveAmount;
         amountChanged = true;
       }
 

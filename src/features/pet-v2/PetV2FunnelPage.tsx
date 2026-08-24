@@ -231,6 +231,12 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     <V2Shell
       species={species}
       showBack={step !== "landing"}
+      footer={
+        step === "landing"
+          ? "Free preview first — card only if you unlock the collection."
+          : undefined
+      }
+      padForSticky={step === "landing"}
       onBack={() => {
         if (step === "offer") go("preview");
         else if (step === "preview" || step === "generating") go("photo");
