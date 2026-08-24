@@ -70,6 +70,18 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet-v2/screens/OfferScreen.tsx")).toContain("No card was charged");
   });
 
+  it("uses existing mini clips and the other-pets animals already in the product", () => {
+    const strip = readSrc("src/features/pet-v2/V2ExampleStrip.tsx");
+    expect(strip).toContain("PET_DEMO_CLIP_IDS");
+    expect(strip).toContain("sceneHasMotionClip");
+    expect(strip).toContain("SceneImage");
+    expect(strip).toContain('species="other"');
+    expect(strip).toContain("PET_OTHER_SUBJECTS");
+    expect(strip).not.toMatch(/species === "other" \? "dog"/);
+    expect(readSrc("src/features/pet/catalog.ts")).toContain('newspaper: "Guinea pig"');
+    expect(readSrc("src/features/pet/catalog.ts")).toContain('"spa-bathtub": "Hedgehog"');
+  });
+
   it("does not create a live Stripe checkout or change paid generation", () => {
     const previewApi = readSrc("api/pet-v2/preview.ts");
     expect(previewApi).not.toMatch(/stripe/i);
