@@ -66,6 +66,7 @@ type FailureLog = {
   eventName: string;
   category: string;
   environment: string;
+  funnelDataset?: "v1" | "v2";
 };
 
 export async function logFunnelWriteFailure(input: FailureLog): Promise<void> {
@@ -73,6 +74,7 @@ export async function logFunnelWriteFailure(input: FailureLog): Promise<void> {
   console.error(
     JSON.stringify({
       source: "pet-funnel-event",
+      funnel_dataset: input.funnelDataset || "v1",
       event_name: input.eventName,
       error_category: input.category,
       environment: input.environment,
@@ -95,6 +97,7 @@ export async function logFunnelWriteFailure(input: FailureLog): Promise<void> {
         event_name: input.eventName.slice(0, 64),
         error_category: input.category.slice(0, 80),
         environment: input.environment.slice(0, 32),
+        funnel_dataset: input.funnelDataset || "v1",
       }),
     });
   } catch {

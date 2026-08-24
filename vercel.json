@@ -11,6 +11,10 @@
       "destination": "/api/pet-funnel-event"
     },
     {
+      "source": "/api/pet-v2/funnel-event",
+      "destination": "/api/pet-v2-funnel-event"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap.xml"
     },

@@ -56,19 +56,19 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
   },
   v2: {
     id: "v2",
-    campaignId: "",
+    campaignId: "120253465585030170",
     funnelVariant: "v2_preview",
     shortLabel: "V2",
-    displayName: "TDG - Dog V2",
+    displayName: "Pet TDG Funnel V2 testing",
     eventSource: "pet_v2_funnel_events",
     kpiLabels: {
-      landing: "Landing sessions",
+      landing: "Landing Sessions",
       step2: "Photo Uploads",
       step3: "Preview Viewed",
       step4: "Unlock Clicks",
       checkout: "Initiate Checkouts",
       purchase: "Purchases",
-      landingHelper: "First-party v2_landing_view",
+      landingHelper: "First-party landing",
       step2Of: "first-party landing",
       step3Of: "uploads",
       step4Of: "previews",
@@ -133,7 +133,7 @@ export function mapV2CountsToPrimarySteps(v2: Record<string, number>): FunnelSte
   counts.pet_name_submitted = v2.v2_upload_completed || 0;
   counts.photo_upload_completed = v2.v2_preview_viewed || 0;
   counts.order_review_viewed = v2.v2_unlock_clicked || 0;
-  counts.initiate_checkout = v2.v2_begin_checkout || 0;
-  counts.purchase = v2.v2_purchase || 0;
+  counts.initiate_checkout = 0;
+  counts.purchase = 0;
   return counts;
 }

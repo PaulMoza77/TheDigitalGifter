@@ -197,11 +197,9 @@ export function usePetFunnelAnalytics(
       const metaTotals = (meta.totals || {}) as RpcRow;
       const ga4Totals = (ga4.totals || {}) as RpcRow;
 
-      const backendPurchases =
-        datasetId === "v2" && asNumber(backend.purchases) === 0 ? counts.purchase : asNumber(backend.purchases);
+      const backendPurchases = asNumber(backend.purchases);
       const backendRevenue = asNumber(backend.revenue_cents);
-      const backendCheckouts =
-        datasetId === "v2" && asNumber(backend.checkouts) === 0 ? counts.initiate_checkout : asNumber(backend.checkouts);
+      const backendCheckouts = asNumber(backend.checkouts);
       const freeDiscountOrders = asNumber(backend.free_orders);
       const liveName = ((payload.catalog as RpcRow[]) || [])
         .map((row) => ({
@@ -371,14 +369,25 @@ export function usePetFunnelAnalytics(
         hybridStages,
         hybridKpis,
         trackingHealth: {
-          failedWrites:
-            payload.tracking_health && typeof payload.tracking_health === "object"
-              ? asNullableNumber((payload.tracking_health as RpcRow).failed_write_count)
-              : null,
-          latestFirstPartyAt:
-            payload.tracking_health && typeof payload.tracking_health === "object" && (payload.tracking_health as RpcRow).latest_first_party_event_at
-              ? String((payload.tracking_health as RpcRow).latest_first_party_event_at)
-              : firstEventAt,
+          failedWrites: (() => {
+            const health =
+              payload.tracking_health && typeof payload.tracking_health === "object"
+                ? (payload.tracking_health as RpcRow)
+                : null;
+            if (!health) return null;
+            const key = datasetId === "v2" ? "v2_failed_write_count" : "v1_failed_write_count";
+            return asNullableNumber(health[key] ?? health.failed_write_count);
+          })(),
+          latestFirstPartyAt: (() => {
+            const health =
+              payload.tracking_health && typeof payload.tracking_health === "object"
+                ? (payload.tracking_health as RpcRow)
+                : null;
+            if (!health) return firstEventAt;
+            const key = datasetId === "v2" ? "latest_v2_event_at" : "latest_v1_event_at";
+            const value = health[key] ?? health.latest_first_party_event_at;
+            return value ? String(value) : firstEventAt;
+          })(),
         },
         daily,
         metaAds,

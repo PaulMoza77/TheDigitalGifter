@@ -15,6 +15,7 @@ import {
   buildVariantFunnel,
   compareUsesSharedFirstActionRow,
   filterEventsForCampaign,
+  filterEventsForDataset,
   filterMetaRowsByCampaignId,
   filterUnattributedEvents,
   firstActionForVariant,
@@ -127,23 +128,28 @@ describe("pet campaign-scoped funnel analytics", () => {
     ];
     expect(filterMetaRowsByCampaignId(rows, CAMPAIGN_A)).toEqual([rows[0]]);
     expect(filterMetaRowsByCampaignId(rows, CAMPAIGN_B)).toEqual([rows[1]]);
-    const sql = readSrc("supabase/migrations/20260824200000_pet_campaign_analytics.sql");
-    expect(sql).toContain("p_campaign_id");
-    expect(sql).toMatch(/m\.campaign_id = p_campaign_id/);
-    expect(sql).toContain("pet_analytics_resolve_campaign_id");
-    expect(sql).toContain("funnel_variant");
-    expect(sql).toContain("pet_v2_funnel_events");
-    expect(sql).not.toMatch(/pet_analytics_resolve_campaign_id[\s\S]{0,800}pathname/);
+    const isolatedSql = readSrc("supabase/migrations/20260824230000_pet_dataset_isolated_analytics.sql");
+    expect(isolatedSql).toContain("p_campaign_id");
+    expect(isolatedSql).toMatch(/m\.campaign_id = p_campaign_id/);
+    expect(isolatedSql).toContain("funnel_variant");
+    expect(isolatedSql).toContain("pet_v2_funnel_events");
   });
 
-  it("first-party filter uses the same campaign ID as Meta", () => {
+  it("first-party 6-card funnel is dataset/table scoped, not campaign_id scoped", () => {
     expect(resolveCampaignIdFromAttribution({ campaignId: CAMPAIGN_A }, configs)).toBe(CAMPAIGN_A);
     expect(resolveCampaignIdFromAttribution({ campaignId: CAMPAIGN_B }, configs)).toBe(CAMPAIGN_B);
     const aSessions = attributedSessionIds(mixedEvents, configs, CAMPAIGN_A);
     const bSessions = attributedSessionIds(mixedEvents, configs, CAMPAIGN_B);
     expect([...aSessions].some((id) => bSessions.has(id))).toBe(false);
-    const sql = readSrc("supabase/migrations/20260824200000_pet_campaign_analytics.sql");
-    expect(sql).toContain("resolved_campaign_id = campaign_filter");
+    const v1 = filterEventsForDataset(mixedEvents, "v1");
+    const v2 = filterEventsForDataset(mixedEvents, "v2_preview");
+    expect(uniqueSessionsForEvent(v1, "landing_view")).toBe(3);
+    expect(uniqueSessionsForEvent(v1, "v2_landing_view")).toBe(0);
+    expect(uniqueSessionsForEvent(v2, "v2_landing_view")).toBe(2);
+    expect(uniqueSessionsForEvent(v2, "landing_view")).toBe(0);
+    const sql = readSrc("supabase/migrations/20260824230000_pet_dataset_isolated_analytics.sql");
+    expect(sql).toContain("= 'v2_preview'");
+    expect(sql).not.toMatch(/current_v1 as \([\s\S]{0,600}resolved_campaign_id = campaign_filter/);
   });
 
   it("does not assign unattributed sessions to a paid campaign", () => {

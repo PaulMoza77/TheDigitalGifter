@@ -3,6 +3,7 @@ import { assertAdmin, getAuthUser, getServiceClient, isServiceRoleRequest, readJ
 import {
   defaultPetAdsSyncStartDate,
   discoverMetaCampaignEarliestDate,
+  discoverPetV2TestingCampaign,
   fetchMetaAdsDailyInsights,
   META_CUSTOM_EVENT_RECOVERY,
   metaAdsConfigStatus,
@@ -119,7 +120,21 @@ async function syncMeta(
       .select("campaign_id")
       .eq("enabled", true);
     if (allowError) throw allowError;
-    const campaignIds = resolvePetMetaCampaignAllowlist((allowRows || []).map((row) => String(row.campaign_id || "")));
+    const discoveredV2 = await discoverPetV2TestingCampaign();
+    if (discoveredV2) {
+      const { error: v2AllowError } = await service.from("pet_meta_campaign_allowlist").upsert(
+        {
+          campaign_id: discoveredV2.id,
+          label: discoveredV2.name,
+          enabled: true,
+          funnel_variant: "v2_preview",
+          utm_campaign_aliases: ["tdg_pet_dog_v2"],
+        },
+        { onConflict: "campaign_id" },
+      );
+      if (v2AllowError) throw v2AllowError;
+    }
+    const campaignIds = resolvePetMetaCampaignAllowlist((allowRows || []).map((row) => String(row.campaign_id || "")).concat(discoveredV2 ? [discoveredV2.id] : []));
     if (!campaignIds.length) {
       throw new Error("Pet Meta campaign allowlist is empty; refusing to sync the entire ad account");
     }

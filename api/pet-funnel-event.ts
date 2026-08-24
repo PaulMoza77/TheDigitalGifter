@@ -331,6 +331,7 @@ type FailureLog = {
   eventName: string;
   category: string;
   environment: string;
+  funnelDataset?: "v1" | "v2";
 };
 
 export async function logFunnelWriteFailure(input: FailureLog): Promise<void> {
@@ -360,6 +361,7 @@ export async function logFunnelWriteFailure(input: FailureLog): Promise<void> {
         event_name: input.eventName.slice(0, 64),
         error_category: input.category.slice(0, 80),
         environment: input.environment.slice(0, 32),
+        funnel_dataset: input.funnelDataset || "v1",
       }),
     });
   } catch {
@@ -438,7 +440,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = String(req.headers.origin || "");
   const host = String(req.headers.host || "");
   if (origin && !originAllowed(origin, host)) {
-    void logFunnelWriteFailure({ eventName: "unknown", category: "origin_denied", environment });
+    void logFunnelWriteFailure({ eventName: "unknown", category: "origin_denied", environment, funnelDataset: "v1" });
     return res.status(403).json({ error: "Forbidden" });
   }
 
@@ -457,11 +459,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         eventName,
         category: error.reason,
         environment,
+        funnelDataset: "v1",
       });
       return res.status(error.status).json({ error: error.reason });
     }
     const category = error instanceof Error && error.message.startsWith("rpc_") ? "rpc_error" : "write_failed";
-    void logFunnelWriteFailure({ eventName, category, environment });
+    void logFunnelWriteFailure({ eventName, category, environment, funnelDataset: "v1" });
     return res.status(500).json({ error: "write_failed" });
   }
 }
