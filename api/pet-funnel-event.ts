@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { FunnelIngestError } from "../../src/features/pet/funnelEventContract";
+import { FunnelIngestError } from "./_lib/funnelIngestContract";
 import {
   ingestFromUnknown,
   logFunnelWriteFailure,
@@ -8,7 +8,7 @@ import {
   resolveIsTest,
   resolveWriteEnvironment,
   writeValidatedFunnelEvent,
-} from "../_lib/writePetFunnelEvent";
+} from "./_lib/writePetFunnelEvent";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") {

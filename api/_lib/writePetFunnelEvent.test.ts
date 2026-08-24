@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FunnelIngestError } from "../../src/features/pet/funnelEventContract";
+import { FunnelIngestError } from "./funnelIngestContract";
 import {
   ingestFromUnknown,
   originAllowed,

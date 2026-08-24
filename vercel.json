@@ -2,6 +2,10 @@
   "ignoreCommand": "node scripts/vercel-ignore.mjs",
   "rewrites": [
     {
+      "source": "/api/pet/funnel-event",
+      "destination": "/api/pet-funnel-event"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap.xml"
     },

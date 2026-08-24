@@ -3,7 +3,7 @@ import {
   PET_FUNNEL_MAX_BODY_BYTES,
   validateFunnelIngestPayload,
   type ValidatedFunnelIngest,
-} from "../../src/features/pet/funnelEventContract";
+} from "./funnelIngestContract";
 
 export type WriteEnvironment = "production" | "preview" | "development";
 
