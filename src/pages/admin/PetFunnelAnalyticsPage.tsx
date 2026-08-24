@@ -5,10 +5,12 @@ import {
   formatPct,
   formatSignedPct,
   formatUsdFromCents,
+  ofPreviousLabel,
   percentChange,
   type DatePreset,
 } from "@/features/pet/funnelDashboard";
 import { formatMetricOrDash } from "@/features/pet/funnelHybrid";
+import { PET_FUNNEL_MEASUREMENT_RELIABLE_FROM, trackingCoverageSignal } from "@/features/pet/funnelEventContract";
 import { usePetFunnelAnalytics } from "@/hooks/usePetFunnelAnalytics";
 
 const PRESETS: Array<{ id: DatePreset; label: string }> = [
@@ -23,7 +25,7 @@ const PRESETS: Array<{ id: DatePreset; label: string }> = [
 const EVENT_COPY: Record<string, string> = {
   landing_view: "dog landing",
   pet_name_submitted: "name submitted",
-  photo_upload_completed: "photo uploaded",
+  photo_upload_completed: "photo selected (client-validated file)",
   order_review_viewed: "review viewed",
   initiate_checkout: "checkout started",
   purchase: "purchase",
@@ -39,6 +41,37 @@ function SourceBadge({ label }: { label: string }) {
     <span className="rounded-md border border-slate-700/80 bg-slate-900/80 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
       {label}
     </span>
+  );
+}
+
+function TrackingHealth({
+  kpis,
+  latestFirstPartyAt,
+  failedWrites,
+}: {
+  kpis: { firstPartyLandings: number; metaLpv: number | null; lpv: number | null };
+  latestFirstPartyAt: string | null | undefined;
+  failedWrites: number | null;
+}) {
+  const metaLpv = kpis.metaLpv ?? kpis.lpv;
+  const coverage = trackingCoverageSignal(kpis.firstPartyLandings, metaLpv);
+  return (
+    <SectionCard title="Tracking health" subtitle="Coverage signal only — not an attribution conversion rate.">
+      {coverage.unhealthy ? (
+        <p className="mb-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+          First-party funnel tracking may be unhealthy.
+        </p>
+      ) : null}
+      <p className="text-sm text-slate-300">
+        Tracking coverage signal: {kpis.firstPartyLandings} FP landings
+        {metaLpv != null ? ` / ${metaLpv} Meta LPV` : ""}
+        {coverage.ratio == null ? "" : ` (${(coverage.ratio * 100).toFixed(0)}%)`}
+      </p>
+      <p className="mt-1 text-xs text-slate-500">
+        Latest first-party event: {latestFirstPartyAt ? new Date(latestFirstPartyAt).toLocaleString("en-US") : "none in view"}
+        {failedWrites == null ? "" : ` · Failed server writes: ${failedWrites}`}
+      </p>
+    </SectionCard>
   );
 }
 
@@ -185,16 +218,15 @@ export default function PetFunnelAnalyticsPage() {
               hour: "2-digit",
               minute: "2-digit",
             })}
+            Conversion rates are certified only after production measurement release
+            {PET_FUNNEL_MEASUREMENT_RELIABLE_FROM
+              ? ` (${new Date(PET_FUNNEL_MEASUREMENT_RELIABLE_FROM).toLocaleString("en-US")})`
+              : " (timestamp unset until production deploy)"}
             .
-            {report.rangeMode === "first_party"
-              ? " This range uses first-party unique-session funnel + Stripe purchase truth."
-              : report.rangeMode === "mixed"
-                ? " This range crosses the tracking boundary — historical and first-party sources are both shown."
-                : " This range is before first-party tracking — Meta/GA4/Stripe historical data is shown where available."}
           </p>
         ) : (
           <p className="text-sm text-amber-200/80">
-            First-party tracking starts when the first pet_funnel_events row is recorded. Historical Meta/GA4/Stripe data is shown where available.
+            First-party tracking starts when the first pet_funnel_events row is recorded. Historical Meta/GA4/Stripe data is shown where available. Funnel conversion is not certified until the same-origin tracker is live in production.
           </p>
         )}
 
@@ -222,24 +254,56 @@ export default function PetFunnelAnalyticsPage() {
 
         {report && kpis ? (
           <>
+            <SectionCard title="Meta acquisition" subtitle="Ads Insights only. Meta LPV is not the first-party funnel denominator.">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+                <StatCard label="Spend" value={formatMetricOrDash(kpis.spendCents, formatUsdFromCents)} helper={report.spendAvailable ? "Meta" : "Meta sync required"} />
+                <StatCard label="Meta LPV" value={formatMetricOrDash(kpis.metaLpv ?? kpis.lpv)} helper="Meta Ads landing page views" />
+                <StatCard label="CPC" value={formatMetricOrDash(kpis.cpcCents, formatUsdFromCents)} />
+                <StatCard label="CTR" value={formatPct(kpis.ctrPct)} />
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title="First-party funnel"
+              subtitle="Unique funnel_session_id counts from the same first-party event stream. Photo Selected = client-validated file, not storage upload."
+            >
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6">
+                <StatCard label="Landing sessions" value={formatMetricOrDash(kpis.firstPartyLandings)} helper="First-party landing_view" />
+                <StatCard
+                  label="Names Submitted"
+                  value={formatMetricOrDash(kpis.names)}
+                  helper={[kpis.namesSource.replace(/_/g, " "), ofPreviousLabel(kpis.names, kpis.firstPartyLandings, "first-party landing")].filter(Boolean).join(" · ")}
+                />
+                <StatCard
+                  label="Photos Selected"
+                  value={formatMetricOrDash(kpis.uploads)}
+                  helper={[kpis.uploadsSource.replace(/_/g, " "), ofPreviousLabel(kpis.uploads, kpis.names, "names")].filter(Boolean).join(" · ")}
+                />
+                <StatCard
+                  label="Order Reviews"
+                  value={formatMetricOrDash(kpis.reviews)}
+                  helper={[kpis.reviewsSource.replace(/_/g, " "), ofPreviousLabel(kpis.reviews, kpis.uploads, "photos")].filter(Boolean).join(" · ")}
+                />
+                <StatCard
+                  label="Initiate Checkouts"
+                  value={formatMetricOrDash(kpis.checkouts)}
+                  helper={["Production customer Stripe Checkout", ofPreviousLabel(kpis.checkouts, kpis.reviews, "reviews")].filter(Boolean).join(" · ")}
+                />
+                <StatCard
+                  label="Purchases"
+                  value={String(kpis.purchases)}
+                  helper={[comparisonHelper(kpis.purchases, report.previousSteps[5]?.sessions ?? 0) || "Paid production", ofPreviousLabel(kpis.purchases, kpis.checkouts, "checkouts")].filter(Boolean).join(" · ")}
+                />
+              </div>
+            </SectionCard>
+
+            <TrackingHealth
+              kpis={kpis}
+              latestFirstPartyAt={report.recent[0]?.createdAt ?? report.firstPartyTrackingStartedAt}
+              failedWrites={report.trackingHealth?.failedWrites ?? null}
+            />
+
             <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
-              <StatCard label="Spend" value={formatMetricOrDash(kpis.spendCents, formatUsdFromCents)} helper={report.spendAvailable ? "Meta" : "Meta sync required"} />
-              <StatCard label="LPV" value={formatMetricOrDash(kpis.lpv)} helper={kpis.lpvSource.replace(/_/g, " ")} />
-              <StatCard label="CPC" value={formatMetricOrDash(kpis.cpcCents, formatUsdFromCents)} />
-              <StatCard label="CTR" value={formatPct(kpis.ctrPct)} />
-              <StatCard label="Names Submitted" value={formatMetricOrDash(kpis.names)} helper={kpis.namesSource.replace(/_/g, " ")} />
-              <StatCard label="Photo Uploads" value={formatMetricOrDash(kpis.uploads)} helper={kpis.uploadsSource.replace(/_/g, " ")} />
-              <StatCard label="Order Reviews" value={formatMetricOrDash(kpis.reviews)} helper={kpis.reviewsSource.replace(/_/g, " ")} />
-              <StatCard
-                label="Initiate Checkouts"
-                value={formatMetricOrDash(kpis.checkouts)}
-                helper="Production customer Stripe Checkout"
-              />
-              <StatCard
-                label="Purchases"
-                value={String(kpis.purchases)}
-                helper={comparisonHelper(kpis.purchases, report.previousSteps[5]?.sessions ?? 0) || "Paid production"}
-              />
               <StatCard
                 label="Revenue"
                 value={formatUsdFromCents(kpis.revenueCents)}
@@ -296,7 +360,7 @@ export default function PetFunnelAnalyticsPage() {
                             <p className="break-words">Historical detail unavailable</p>
                           ) : (
                             <>
-                              <p>{formatPct(step.fromLandingPct)} of LPV</p>
+                              <p>{formatPct(step.fromLandingPct)} of first-party landing</p>
                               <p>{index === 0 ? "100% start" : `${formatPct(step.fromPreviousPct)} from previous`}</p>
                             </>
                           )}

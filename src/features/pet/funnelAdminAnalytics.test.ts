@@ -112,6 +112,16 @@ describe("pet funnel admin analytics wiring", () => {
     expect(readSrc("src/App.tsx")).toMatch(/<AdminRoute>[\s\S]*pet-funnel-analytics/);
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/pet-funnel-analytics");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Spend");
+    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).not.toContain(
+      'ofPreviousLabel(kpis.names, kpis.lpv, "LPV")',
+    );
+    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain(
+      'ofPreviousLabel(kpis.names, kpis.firstPartyLandings, "first-party landing")',
+    );
+    const ingestSql = readSrc("supabase/migrations/20260824120000_pet_funnel_same_origin_ingest.sql");
+    expect(ingestSql).toContain("coalesce(is_test, false) = false");
+    expect(ingestSql).toContain("count(distinct funnel_session_id)");
+    expect(readSrc("src/features/pet/funnelDashboard.ts")).toContain("Landing → Name Submitted");
     expect(readSrc("src/hooks/usePetFunnelAnalytics.ts")).toContain('supabase.rpc("admin_pet_funnel_analytics"');
   });
 });

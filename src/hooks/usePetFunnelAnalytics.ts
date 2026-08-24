@@ -209,6 +209,7 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
         impressions: asNumber(metaTotals.impressions),
         linkClicks: asNumber(metaTotals.link_clicks),
         revenueCents: backendRevenue,
+        metaLpv: asNumber(metaTotals.landing_page_views),
         metaPurchaseValueCents: asNumber(meta.row_count) > 0 ? asNumber(metaTotals.purchase_value_cents) : null,
         metaAttributedPurchases: asNumber(meta.row_count) > 0 ? asNumber(metaTotals.purchases) : null,
         freeDiscountOrders,
@@ -339,6 +340,16 @@ export function usePetFunnelAnalytics(preset: DatePreset, custom?: { from: strin
         previousSteps,
         hybridStages,
         hybridKpis,
+        trackingHealth: {
+          failedWrites:
+            payload.tracking_health && typeof payload.tracking_health === "object"
+              ? asNullableNumber((payload.tracking_health as RpcRow).failed_write_count)
+              : null,
+          latestFirstPartyAt:
+            payload.tracking_health && typeof payload.tracking_health === "object" && (payload.tracking_health as RpcRow).latest_first_party_event_at
+              ? String((payload.tracking_health as RpcRow).latest_first_party_event_at)
+              : firstEventAt,
+        },
         daily,
         metaAds,
         sync: {

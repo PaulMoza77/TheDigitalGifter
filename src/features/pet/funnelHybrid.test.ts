@@ -60,12 +60,12 @@ describe("pet hybrid funnel analytics", () => {
         beginCheckouts: 0,
       },
     });
-    expect(stages[0].value).toBe(34);
-    expect(stages[0].source).toBe("meta");
-    expect(stages[1].value).toBeNull();
-    expect(stages[1].source).toBe("historical_unavailable");
-    expect(stages[2].value).toBeNull();
-    expect(stages[3].value).toBeNull();
+    expect(stages[0].value).toBe(0);
+    expect(stages[0].source).toBe("first_party");
+    expect(stages[1].value).toBe(0);
+    expect(stages[1].source).toBe("first_party");
+    expect(stages[2].value).toBe(0);
+    expect(stages[3].value).toBe(0);
     expect(stages[4].value).toBe(1);
     expect(stages[4].source).toBe("backend_truth");
     expect(stages[5].value).toBe(0);
@@ -123,6 +123,21 @@ describe("pet hybrid funnel analytics", () => {
     expect(stages[5].source).toBe("stripe_verified");
     expect(stages[0].value).toBe(10);
     expect(stages[5].value).toBe(1);
+
+    const kpis = buildHybridKpis({
+      stages,
+      spendCents: 5000,
+      impressions: 1000,
+      linkClicks: 40,
+      revenueCents: 2700,
+      metaLpv: 999,
+      metaPurchaseValueCents: 0,
+      metaAttributedPurchases: 0,
+    });
+    expect(kpis.metaLpv).toBe(999);
+    expect(kpis.firstPartyLandings).toBe(10);
+    expect(kpis.names).toBe(6);
+    expect(kpis.landingToPurchase).toBeCloseTo(10);
   });
 
   it("prefers Stripe purchase truth over Meta attributed purchases for business totals", () => {
@@ -485,7 +500,7 @@ describe("pet hybrid funnel analytics", () => {
   });
 
   it("wires cron + edge function without client-side cron", () => {
-    expect(readSrc("vercel.json")).toContain("/api/pet-analytics-cron");
+    expect(readSrc("api/pet-analytics-cron.ts")).toContain("pet-analytics-sync");
     expect(readSrc("supabase/config.toml")).toContain("pet-analytics-sync");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Sync historical data");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Meta last synced");

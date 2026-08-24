@@ -98,18 +98,23 @@ export function getFunnelAttribution(): FunnelAttribution {
 
 export function captureFunnelAttribution(search?: string): FunnelAttribution {
   try {
-    const existing = getFunnelAttribution();
-    if (Object.keys(existing).length > 0) return existing;
+    const hrefSearch = search ?? (typeof window !== "undefined" ? window.location.search : "");
+    persistFirstTouchFromLocation(hrefSearch || "");
 
-    const hrefSearch =
-      search ?? (typeof window !== "undefined" ? window.location.search : "");
+    const existing = getFunnelAttribution();
+    if (Object.keys(existing).length > 0) {
+      const { fbclid: _ignored, ...withoutClickId } = existing;
+      return withoutClickId;
+    }
+
     const incoming = parseFunnelAttributionSearch(hrefSearch || "");
-    if (Object.keys(incoming).length === 0) return {};
+    const { fbclid: _fbclid, ...rest } = incoming;
+    if (Object.keys(rest).length === 0) return {};
 
     const { session, local } = storages();
-    writeStore(session, incoming);
-    writeStore(local, incoming);
-    return incoming;
+    writeStore(session, rest);
+    writeStore(local, rest);
+    return rest;
   } catch {
     return {};
   }
@@ -123,4 +128,83 @@ export function attributionParamsForGa4(): FunnelAttribution {
 export function attributionParamsForInternal(): Omit<FunnelAttribution, "fbclid"> {
   const { fbclid: _fbclid, ...rest } = getFunnelAttribution();
   return rest;
+}
+
+export const FUNNEL_FIRST_TOUCH_KEY = "tdg.funnel.context.v1";
+
+export type FunnelFirstTouchContext = {
+  landingPathname: string | null;
+  referrerHost: string | null;
+  hasFbclid: boolean;
+};
+
+function referrerHostFromDocument(): string | null {
+  if (typeof document === "undefined") return null;
+  try {
+    const referrer = String(document.referrer || "").trim();
+    if (!referrer) return null;
+    const host = new URL(referrer).hostname.replace(/^www\./, "").slice(0, 120);
+    if (!host) return null;
+    if (typeof window !== "undefined" && host === window.location.hostname.replace(/^www\./, "")) return null;
+    return sanitizeAttributionValue(host);
+  } catch {
+    return null;
+  }
+}
+
+function readFirstTouch(): FunnelFirstTouchContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(FUNNEL_FIRST_TOUCH_KEY) || window.localStorage.getItem(FUNNEL_FIRST_TOUCH_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const row = parsed as Record<string, unknown>;
+    return {
+      landingPathname: sanitizeAttributionValue(row.landingPathname)?.startsWith("/pet")
+        ? String(row.landingPathname).slice(0, 64)
+        : null,
+      referrerHost: sanitizeAttributionValue(row.referrerHost),
+      hasFbclid: row.hasFbclid === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeFirstTouch(value: FunnelFirstTouchContext) {
+  if (typeof window === "undefined") return;
+  const json = JSON.stringify(value);
+  try {
+    window.sessionStorage.setItem(FUNNEL_FIRST_TOUCH_KEY, json);
+  } catch {
+    /* private mode */
+  }
+  try {
+    window.localStorage.setItem(FUNNEL_FIRST_TOUCH_KEY, json);
+  } catch {
+    /* private mode */
+  }
+}
+
+export function getFunnelFirstTouchContext(): FunnelFirstTouchContext {
+  return (
+    readFirstTouch() || {
+      landingPathname: null,
+      referrerHost: null,
+      hasFbclid: false,
+    }
+  );
+}
+
+function persistFirstTouchFromLocation(search: string) {
+  if (readFirstTouch()) return;
+  const incoming = parseFunnelAttributionSearch(search || "");
+  const pathname =
+    typeof window !== "undefined" ? String(window.location.pathname || "").split("?")[0].slice(0, 64) : null;
+  writeFirstTouch({
+    landingPathname: pathname && (pathname === "/pet" || pathname.startsWith("/pet/")) ? pathname : null,
+    referrerHost: referrerHostFromDocument(),
+    hasFbclid: Boolean(incoming.fbclid),
+  });
 }
