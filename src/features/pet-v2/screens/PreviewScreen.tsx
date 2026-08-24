@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { PET_V2_TEST_PRICE_DISPLAY } from "../types";
+import { V2PackOffer, v2PackOfferCopy } from "../V2PackOffer";
 
 export function V2PreviewScreen({
   previewUrl,
@@ -16,9 +16,10 @@ export function V2PreviewScreen({
   onRegenerate: () => void;
   onUnlock: () => void;
 }) {
+  const offer = v2PackOfferCopy();
   const headline = petName?.trim()
-    ? `Love it? Unlock ${petName.trim()}’s full Secret Lives collection.`
-    : "Love it? Unlock the full collection.";
+    ? `Love it? Unlock ${petName.trim()}’s 12 secret lives.`
+    : "Love it? Unlock all 12 secret lives.";
 
   return (
     <div className="space-y-6 pb-8">
@@ -34,23 +35,18 @@ export function V2PreviewScreen({
           Prototype preview: live AI generation is off, so this is your photo in a royal frame — not the paid Kontext Pro model.
         </p>
       ) : null}
-      <div className="rounded-2xl border border-[#f6efe4]/12 px-4 py-4">
-        <p className="text-sm text-[#f6efe4]/70">
-          Prototype offer copy: <span className="font-semibold text-[#f6efe4]">{PET_V2_TEST_PRICE_DISPLAY}</span> one-time.
-          Production Secret Lives is still $27 and is not changed by this test.
-        </p>
-        <ul className="mt-3 space-y-1.5 text-sm text-[#f6efe4]/68">
-          <li>6 HD personalized portraits (positioning for this test)</li>
-          <li>Paid product behind this prototype is still 12 portraits + 2 clips</li>
-          <li>One-time purchase · no subscription</li>
-        </ul>
-      </div>
+      <V2PackOffer />
+      <ul className="space-y-1.5 text-sm text-[#f6efe4]/68">
+        <li>12 secret lives of the same pet</li>
+        <li>2 mini cinematic clips</li>
+        <li>One-time {offer.priceDisplay} · no subscription</li>
+      </ul>
       <Button
         type="button"
         onClick={onUnlock}
         className="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
       >
-        Unlock the full collection
+        Get 12 lives + 2 clips for {offer.priceDisplay}
       </Button>
       {canRegenerate ? (
         <button

@@ -17,6 +17,7 @@ import {
   saveV2Draft,
   setV2PhotoFile,
 } from "./storage";
+import { v2PackOfferCopy } from "./V2PackOffer";
 import type { PetV2Draft, PetV2Species, PetV2Step } from "./types";
 import { V2Shell } from "./V2Shell";
 
@@ -152,7 +153,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     >
       <PageHead
         title="See your pet in another life | My Pet’s Secret Life"
-        description="Upload one pet photo and see a free personalized preview. No card required. Prototype funnel — not the live $27 checkout."
+        description={`${v2PackOfferCopy().headline}. Upload one pet photo and see a free personalized preview. No card required.`}
         exactTitle
       />
       <input
@@ -229,7 +230,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           onEmail={(email) => go("offer", { email })}
           submitted={handoffDone}
           onContinue={() => {
-            trackPetV2Event({ eventName: "v2_begin_checkout", species, amountCents: 1900 });
+            trackPetV2Event({ eventName: "v2_begin_checkout", species, amountCents: v2PackOfferCopy().amountCents });
             setHandoffDone(true);
           }}
         />

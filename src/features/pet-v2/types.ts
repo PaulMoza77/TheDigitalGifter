@@ -11,9 +11,9 @@ export const PET_V2_SESSION_KEY = "tdg.petFunnelV2.session.v1" as const;
 export const PET_V2_EVENT_PATH = "/api/pet-v2/funnel-event" as const;
 export const PET_V2_PREVIEW_PATH = "/api/pet-v2/preview" as const;
 
-/** Prototype offer copy only. Production V1 remains $27 / 2700 cents. */
-export const PET_V2_TEST_PRICE_CENTS = 1900 as const;
-export const PET_V2_TEST_PRICE_DISPLAY = "$19" as const;
+/** Offer copy for this funnel. Live V1 checkout uses the same $12 flash sale while it is active. */
+export const PET_V2_TEST_PRICE_CENTS = 1200 as const;
+export const PET_V2_TEST_PRICE_DISPLAY = "$12" as const;
 export const PET_V2_PRODUCTION_PRICE_CENTS = 2700 as const;
 export const PET_V2_PRODUCTION_PRICE_DISPLAY = "$27" as const;
 

@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { PET_PRODUCT_NAME } from "../pet/types";
 import { PET_SPECIES_OPTIONS } from "../pet/catalog";
 import { cn } from "@/lib/utils";
-import type { PetV2Species } from "./types";
+import { v2PackOfferCopy } from "./V2PackOffer";
 import { petV2LandingPath } from "./analytics";
+import type { PetV2Species } from "./types";
 
 export function V2Shell({
   children,
@@ -82,8 +83,7 @@ export function V2Shell({
         <main className="flex-1 py-5">{children}</main>
         <footer className="mt-8 border-t border-[#f6efe4]/10 pt-5 text-xs text-[#f6efe4]/45">
           <p>
-            {footer ??
-              "Prototype funnel — no card required to try a preview. Production Secret Lives remains $27."}
+            {footer ?? `${v2PackOfferCopy().headline}. Free preview — no card required.`}
           </p>
         </footer>
       </div>
