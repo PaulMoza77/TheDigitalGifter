@@ -67,7 +67,7 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
     trackFunnelViewItem({ species, valueCents: amountCents });
   }, [species, offerVerified, amountCents]);
 
-  const priceLabel = loading ? null : priceDisplay;
+  const priceLabel = priceDisplay;
 
   function submitName(name: string) {
     if (landingNameStepCreatesOrder()) return;
