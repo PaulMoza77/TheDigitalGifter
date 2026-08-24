@@ -357,6 +357,10 @@ export type PublicPetOffer = {
   priceDisplay: string;
   version?: number;
   deliveryEstimate?: string;
+  compareAtCents?: number;
+  compareAtDisplay?: string;
+  saleExpiresAt?: string | null;
+  saleActive?: boolean;
 };
 
 export type GetSignedUploadUrlRequest = {

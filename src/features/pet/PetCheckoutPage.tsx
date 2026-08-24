@@ -9,7 +9,7 @@ import {
 } from "./catalog";
 import { PetApiError, startPetCheckout } from "./api";
 import { petFunnelApi } from "./supabaseApi";
-import { FunnelProgress, PetShell, SamePetGuarantee } from "./components";
+import { FunnelProgress, PetShell, SamePetGuarantee, SaleCountdown, SalePriceLabel } from "./components";
 import { getPetPhotoFile, getPetPhotoObjectUrl } from "./storage";
 import type { PetFunnelApi } from "./api";
 import { PET_PRICE_DISPLAY, type PetFunnelNavigation } from "./types";
@@ -35,7 +35,7 @@ export function PetCheckoutPage({
   api = petFunnelApi,
 }: PetCheckoutPageProps) {
   const { draft } = usePetDraft();
-  const { priceDisplay, amountCents, deliveryEstimate, offerVerified, offerError, loading, checkoutAllowed, refresh } =
+  const { priceDisplay, amountCents, compareAtDisplay, saleExpiresAt, deliveryEstimate, offerVerified, offerError, loading, checkoutAllowed, refresh } =
     usePublicPetOffer();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -254,9 +254,25 @@ export function PetCheckoutPage({
 
         <div className="rounded-2xl border border-[#d4a84b]/25 p-5">
           <div className="flex items-center justify-between text-lg font-semibold text-[#f6efe4]">
-            <span>{verifiedDisplay} USD today</span>
+            <SalePriceLabel
+              priceDisplay={`${dueDisplay} USD today`}
+              compareAtDisplay={
+                appliedPromo.ok && appliedPromo.code
+                  ? null
+                  : compareAtDisplay && compareAtDisplay !== dueDisplay
+                    ? compareAtDisplay
+                    : null
+              }
+            />
             <span>{dueDisplay}</span>
           </div>
+          {appliedPromo.ok && appliedPromo.code ? null : (
+            <SaleCountdown
+              expiresAt={saleExpiresAt}
+              onExpire={() => void refresh()}
+              className="mt-1"
+            />
+          )}
           <p className="mt-1 text-sm text-[#f6efe4]/60">Subscription: None</p>
           {loading ? (
             <p className="mt-2 text-sm text-[#f6efe4]/50">Verifying the current price…</p>
