@@ -8,11 +8,11 @@ describe("V2 funnel ingest", () => {
     const row = parseV2EventBody({
       event_name: "v2_landing_view",
       funnel_session_id: session,
-      pathname: "/pet-v2/dog",
+      pathname: "/pet/dog-v2",
       species: "dog",
     });
     expect(row.eventName).toBe("v2_landing_view");
-    expect(row.pathname).toBe("/pet-v2/dog");
+    expect(row.pathname).toBe("/pet/dog-v2");
     expect(() =>
       parseV2EventBody({
         event_name: "landing_view",

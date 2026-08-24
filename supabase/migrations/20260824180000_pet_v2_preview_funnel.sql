@@ -45,7 +45,9 @@ create table if not exists public.pet_v2_funnel_events (
     species is null or species in ('dog', 'cat', 'other')
   ),
   constraint pet_v2_funnel_events_path_chk check (
-    pathname is null or pathname = '/pet-v2' or pathname like '/pet-v2/%'
+    pathname is null
+    or pathname in ('/pet/dog-v2', '/pet/cat-v2', '/pet/other-v2', '/pet-v2')
+    or pathname like '/pet-v2/%'
   )
 );
 
@@ -148,7 +150,9 @@ begin
   end if;
 
   clean_path := left(split_part(coalesce(p_pathname, ''), '?', 1), 64);
-  if clean_path is not null and clean_path <> '/pet-v2' and left(clean_path, 8) <> '/pet-v2/' then
+  if clean_path is not null
+     and clean_path not in ('/pet/dog-v2', '/pet/cat-v2', '/pet/other-v2', '/pet-v2')
+     and left(clean_path, 8) <> '/pet-v2/' then
     clean_path := null;
   end if;
 

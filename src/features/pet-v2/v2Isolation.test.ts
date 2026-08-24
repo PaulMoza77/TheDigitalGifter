@@ -33,9 +33,9 @@ describe("pet funnel V2 isolation", () => {
     expect(app).toContain('path="/pet/cat"');
     expect(app).toContain('path="/pet/other"');
     expect(app).toContain("PetLandingRoute");
-    expect(app).toContain('path="/pet-v2/dog"');
-    expect(app).toContain('path="/pet-v2/cat"');
-    expect(app).toContain('path="/pet-v2/other"');
+    expect(app).toContain('path="/pet/dog-v2"');
+    expect(app).toContain('path="/pet/cat-v2"');
+    expect(app).toContain('path="/pet/other-v2"');
     expect(app).toContain("PetV2Route");
     expect(PET_PRICE_CENTS).toBe(2700);
     expect(PET_PRICE_DISPLAY).toBe("$27");
@@ -52,9 +52,10 @@ describe("pet funnel V2 isolation", () => {
     expect(PET_V2_DRAFT_STORAGE_KEY).not.toBe(PET_DRAFT_STORAGE_KEY);
     expect(PET_V2_EVENT_PATH).not.toBe(PET_FUNNEL_EVENT_PATH);
     expect(PET_V2_EVENT_PATH).toBe("/api/pet-v2/funnel-event");
-    expect(petV2LandingPath("dog")).toBe("/pet-v2/dog");
+    expect(petV2LandingPath("dog")).toBe("/pet/dog-v2");
+    expect(petV2LandingPath("cat")).toBe("/pet/cat-v2");
     expect(sanitizeV2Pathname("/pet/dog")).toBeNull();
-    expect(sanitizeV2Pathname("/pet-v2/dog")).toBe("/pet-v2/dog");
+    expect(sanitizeV2Pathname("/pet/dog-v2")).toBe("/pet/dog-v2");
   });
 
   it("cannot write V2 events into the V1 allow-list", () => {

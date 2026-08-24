@@ -36,7 +36,14 @@ export function parseV2EventBody(raw: unknown): {
   const sessionId = String(row.funnel_session_id || "");
   if (!UUID_RE.test(sessionId)) throw new Error("invalid_session");
   const pathnameRaw = String(row.pathname || "").split("?")[0].slice(0, 64);
-  const pathname = pathnameRaw === "/pet-v2" || pathnameRaw.startsWith("/pet-v2/") ? pathnameRaw : null;
+  const pathname =
+    pathnameRaw === "/pet/dog-v2" ||
+    pathnameRaw === "/pet/cat-v2" ||
+    pathnameRaw === "/pet/other-v2" ||
+    pathnameRaw === "/pet-v2" ||
+    pathnameRaw.startsWith("/pet-v2/")
+      ? pathnameRaw
+      : null;
   const species = row.species === "dog" || row.species === "cat" || row.species === "other" ? row.species : null;
   const deviceRaw = row.device_type;
   const deviceType =

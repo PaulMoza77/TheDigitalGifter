@@ -1,7 +1,7 @@
 # Pet Funnel V2 — Free Personalized Preview Feasibility
 
 **Status:** Preview-only prototype. Not production. Do not merge as a replacement for `/pet/dog`.  
-**Routes:** `/pet-v2/dog` · `/pet-v2/cat` · `/pet-v2/other`  
+**Routes:** `/pet/dog-v2` · `/pet/cat-v2` · `/pet/other-v2`  
 **Production V1:** untouched (`/pet/dog`, `/pet/cat`, `/pet/other`, `$27`, Stripe, 12+2 generation)
 
 ---
@@ -152,7 +152,7 @@ Do **not** do these until Paul explicitly greenlights a paid test:
 4. Point V2 checkout at that isolated price; reuse upload + `pet-generate` only **after** payment.  
 5. Fire `v2_purchase` only from Stripe webhook on that isolated SKU. Prototype never fires it.  
 6. Add Meta standard events only after first-party V2 cohorts are trusted.  
-7. Decide ads: new campaign to `/pet-v2/dog`, not the current `/pet/dog` ads.
+7. Decide ads: new campaign to `/pet/dog-v2`, not the current `/pet/dog` ads.
 
 ---
 
@@ -160,7 +160,7 @@ Do **not** do these until Paul explicitly greenlights a paid test:
 
 | Event | When it fires |
 | --- | --- |
-| `v2_landing_view` | `/pet-v2/{species}` mount |
+| `v2_landing_view` | `/pet/{species}-v2` mount |
 | `v2_upload_started` | File picker returns a file |
 | `v2_upload_completed` | File passes validation |
 | `v2_upload_failed` | Validation/HEIC failure |
@@ -174,7 +174,7 @@ Do **not** do these until Paul explicitly greenlights a paid test:
 | `v2_begin_checkout` | Prototype Stripe handoff button (no charge) |
 | `v2_purchase` | **Not fired** in this prototype |
 
-All events carry funnel session id, UTMs, fbclid-present flag, campaign/adset/ad ids, device type, pathname (`/pet-v2/...` only), timestamps. They go to `/api/pet-v2/funnel-event`, **never** `/api/pet/funnel-event`.
+All events carry funnel session id, UTMs, fbclid-present flag, campaign/adset/ad ids, device type, pathname (`/pet/dog-v2` only), timestamps. They go to `/api/pet-v2/funnel-event`, **never** `/api/pet/funnel-event`.
 
 ---
 
@@ -183,7 +183,7 @@ All events carry funnel session id, UTMs, fbclid-present flag, campaign/adset/ad
 ```
 Ad
  ↓
-Landing   /pet-v2/dog  (upload is the first action)
+Landing   /pet/dog-v2  (upload is the first action)
  ↓
 Upload    one photo, no name / email / personality
  ↓

@@ -9,7 +9,6 @@ import { getPetV2SessionId } from "./session";
 import {
   PET_V2_EVENT_PATH,
   PET_V2_EVENTS,
-  PET_V2_ROUTE_PREFIX,
   type PetV2EventName,
 } from "./types";
 
@@ -26,14 +25,32 @@ export function isPetV2EventName(value: string): value is PetV2EventName {
 }
 
 export function petV2LandingPath(species: string): string {
-  return `${PET_V2_ROUTE_PREFIX}/${species === "cat" || species === "other" ? species : "dog"}`;
+  const selected = species === "cat" || species === "other" ? species : "dog";
+  return `/pet/${selected}-v2`;
+}
+
+export function parsePetV2Species(pathname: string): "dog" | "cat" | "other" {
+  const segment = pathname.split("/").filter(Boolean)[1] || "";
+  if (segment === "cat-v2" || segment === "cat") return "cat";
+  if (segment === "other-v2" || segment === "other") return "other";
+  return "dog";
+}
+
+export function isPetV2Pathname(value: string): boolean {
+  return (
+    value === "/pet/dog-v2" ||
+    value === "/pet/cat-v2" ||
+    value === "/pet/other-v2" ||
+    value === "/pet-v2" ||
+    value.startsWith("/pet-v2/")
+  );
 }
 
 export function sanitizeV2Pathname(value?: string | null): string | null {
   const raw = String(value || (typeof window !== "undefined" ? window.location.pathname : ""))
     .split("?")[0]
     .slice(0, 64);
-  if (raw === PET_V2_ROUTE_PREFIX || raw.startsWith(`${PET_V2_ROUTE_PREFIX}/`)) return raw;
+  if (isPetV2Pathname(raw)) return raw;
   return null;
 }
 

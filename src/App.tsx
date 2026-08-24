@@ -540,10 +540,13 @@ function AppInner() {
             <Route path="/pet/create" element={<PetCreateRoute />} />
             <Route path="/pet/checkout" element={<PetCheckoutRoute />} />
             <Route path="/pet/order" element={<PetOrderRoute />} />
-            <Route path="/pet-v2" element={<Navigate to="/pet-v2/dog" replace />} />
-            <Route path="/pet-v2/dog" element={<PetV2Route />} />
-            <Route path="/pet-v2/cat" element={<PetV2Route />} />
-            <Route path="/pet-v2/other" element={<PetV2Route />} />
+            <Route path="/pet/dog-v2" element={<PetV2Route />} />
+            <Route path="/pet/cat-v2" element={<PetV2Route />} />
+            <Route path="/pet/other-v2" element={<PetV2Route />} />
+            <Route path="/pet-v2" element={<Navigate to="/pet/dog-v2" replace />} />
+            <Route path="/pet-v2/dog" element={<Navigate to="/pet/dog-v2" replace />} />
+            <Route path="/pet-v2/cat" element={<Navigate to="/pet/cat-v2" replace />} />
+            <Route path="/pet-v2/other" element={<Navigate to="/pet/other-v2" replace />} />
           </Route>
 
           <Route

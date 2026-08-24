@@ -3,7 +3,9 @@
  * Must never share storage, session IDs, event names, or checkout with V1.
  */
 
-export const PET_V2_ROUTE_PREFIX = "/pet-v2" as const;
+/** Public URLs match V1 with a `-v2` suffix: `/pet/dog-v2`. */
+export const PET_V2_ROUTE_PREFIX = "/pet" as const;
+export const PET_V2_PATHS = ["/pet/dog-v2", "/pet/cat-v2", "/pet/other-v2"] as const;
 export const PET_V2_DRAFT_STORAGE_KEY = "tdg.petFunnelV2.draft.v1" as const;
 export const PET_V2_SESSION_KEY = "tdg.petFunnelV2.session.v1" as const;
 export const PET_V2_EVENT_PATH = "/api/pet-v2/funnel-event" as const;
