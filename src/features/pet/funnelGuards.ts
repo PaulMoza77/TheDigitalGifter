@@ -196,17 +196,21 @@ export function shouldReuseCheckoutSession(session: StripeCheckoutSessionView | 
   return true;
 }
 
+export function isOnPageCheckoutUi(uiMode?: string | null): boolean {
+  return uiMode === "embedded" || uiMode === "custom";
+}
+
 export function decideCheckoutSessionAction(input: {
   existingSession: StripeCheckoutSessionView | null;
   orderId: string;
   issuedCount: number;
-  uiMode?: "hosted" | "embedded";
+  uiMode?: "hosted" | "embedded" | "custom";
 }):
   | { action: "reuse"; sessionId: string; checkoutUrl: string }
   | { action: "create"; idempotencyKey: string; expectedSessionId: string | null }
   | { action: "payment_processing"; sessionId: string } {
   const canReuseHosted =
-    input.uiMode !== "embedded" &&
+    !isOnPageCheckoutUi(input.uiMode) &&
     input.existingSession &&
     shouldReuseCheckoutSession(input.existingSession);
   if (canReuseHosted && input.existingSession) {

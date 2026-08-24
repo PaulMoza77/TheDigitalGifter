@@ -599,14 +599,25 @@ body {
 }
 
 .tdg-apple-pay {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  height: 56px;
+  height: 55px;
+  min-height: 55px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 12px;
+  background: #000;
+  color: #fff;
   cursor: pointer;
-  -webkit-appearance: -apple-pay-button;
-  appearance: -apple-pay-button;
-  -apple-pay-button-type: buy;
-  -apple-pay-button-style: black;
+}
+.tdg-apple-pay-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #fff;
 }

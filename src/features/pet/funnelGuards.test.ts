@@ -232,6 +232,18 @@ describe("pet funnel production guards", () => {
       idempotencyKey: `pet-checkout-${orderId}-1`,
       expectedSessionId: "cs_open",
     });
+    const customInsteadOfHosted = decideCheckoutSessionAction({
+      existingSession: {
+        id: "cs_open",
+        status: "open",
+        url: "https://checkout.stripe.com/c/pay/cs_open",
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+      },
+      orderId,
+      issuedCount: 1,
+      uiMode: "custom",
+    });
+    expect(customInsteadOfHosted).toEqual(embeddedInsteadOfHosted);
     expect(
       matchedEmbeddedCheckoutResponse({
         id: "cs_embed",

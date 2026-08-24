@@ -135,7 +135,7 @@ export type StartPetCheckoutInput = {
   subtypeDetail?: CreatePetOrderRequest["subtypeDetail"];
   funnelVariant?: "v1" | "v2";
   funnelSessionId?: string;
-  uiMode?: "hosted" | "embedded";
+  uiMode?: "hosted" | "embedded" | "custom";
 };
 
 export type StartPetCheckoutResult = {

@@ -185,7 +185,7 @@ describe("pet funnel CRO", () => {
 
   it("13. checkout review shows the verified server-owned amount", () => {
     const checkout = readSrc("src/features/pet/PetCheckoutPage.tsx");
-    expect(checkout).toContain("USD today");
+    expect(checkout).toContain("Today’s total");
     expect(checkout).toContain("offerVerified");
     expect(checkout).toContain("Subscription: None");
   });
@@ -223,8 +223,13 @@ describe("pet funnel CRO", () => {
   it("18. subscription remains None", () => {
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("Subscription: None");
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("checkoutPreparingHeadline");
+    expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("Checkout window");
+    expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("max-w-xl");
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("ApplePayButton");
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("formatHoldCountdown");
+    expect(readSrc("src/features/pet/components/CustomStripeCheckout.tsx")).toContain("ExpressCheckoutElement");
+    expect(readSrc("src/features/pet/components/CustomStripeCheckout.tsx")).toContain("ApplePayButton");
+    expect(readSrc("src/features/pet/components/CustomStripeCheckout.tsx")).toContain('link: "never"');
     expect(PET_CURRENCY).toBe("usd");
     expect(PET_PRICE_CENTS).toBe(2700);
   });
