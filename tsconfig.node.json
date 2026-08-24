@@ -18,5 +18,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts", "vite.petFunnelEventPlugin.ts"]
+  "include": ["vite.config.ts", "vite.petFunnelEventPlugin.ts", "vite.petV2Plugin.ts"]
 }

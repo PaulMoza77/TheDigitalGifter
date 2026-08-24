@@ -18,6 +18,7 @@ import {
   PetLandingRoute,
   PetOrderRoute,
 } from "@/features/pet/PetRoutes";
+import { PetV2Route } from "@/features/pet-v2/PetV2Routes";
 
 const PrivacyPolicyPage = lazy(() =>
   import("@/pages/website/PrivacyPolicyPage").then((m) => ({
@@ -539,6 +540,10 @@ function AppInner() {
             <Route path="/pet/create" element={<PetCreateRoute />} />
             <Route path="/pet/checkout" element={<PetCheckoutRoute />} />
             <Route path="/pet/order" element={<PetOrderRoute />} />
+            <Route path="/pet-v2" element={<Navigate to="/pet-v2/dog" replace />} />
+            <Route path="/pet-v2/dog" element={<PetV2Route />} />
+            <Route path="/pet-v2/cat" element={<PetV2Route />} />
+            <Route path="/pet-v2/other" element={<PetV2Route />} />
           </Route>
 
           <Route
