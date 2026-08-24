@@ -51,6 +51,8 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2HeroProof");
     expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).not.toContain("V2SaleBanner");
     expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).not.toContain("<V2PackOffer");
+    expect(readSrc("src/features/pet-v2/V2Shell.tsx")).not.toContain(">Free preview<");
+    expect(readSrc("src/components/SupportTicketWidget.tsx")).toContain("isSupportWidgetHidden");
     expect(readSrc("src/features/pet/PetLandingPage.tsx")).toContain("NameCapture");
     expect(readSrc("api/sitemap.xml.ts")).toContain('"/pet/dog"');
     expect(readSrc("api/sitemap.xml.ts")).not.toContain("/pet-v2");

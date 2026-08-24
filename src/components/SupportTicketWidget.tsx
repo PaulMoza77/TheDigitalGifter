@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { isSupportWidgetHidden } from "@/components/supportWidgetVisibility";
 
 type SenderType = "client" | "admin" | "ai" | "system";
 
@@ -93,12 +94,7 @@ export default function SupportTicketWidget() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
-  const hidden =
-    location.pathname.includes("/admin") ||
-    location.pathname.includes("/funnel") ||
-    location.pathname.includes("/checkout") ||
-    location.pathname.includes("/payment") ||
-    location.pathname.includes("/credits");
+  const hidden = isSupportWidgetHidden(location.pathname);
 
   const storageKey = useMemo(
     () => (user?.id ? `support_ticket_${user.id}` : getGuestStorageKey()),

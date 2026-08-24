@@ -14,7 +14,7 @@ export function StickyCta({
   if (!visible) return null;
 
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 border-t border-[#f6efe4]/10 bg-[#140e0a]/95 px-4 pr-[4.75rem] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
+    <div className="sticky bottom-0 z-20 -mx-4 border-t border-[#f6efe4]/10 bg-[#140e0a]/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
       <Button
         type="button"
         onClick={onClick}
