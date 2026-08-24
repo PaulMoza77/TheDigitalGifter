@@ -264,8 +264,8 @@ export default function PetFunnelAnalyticsPage() {
               minute: "2-digit",
             })}
             Conversion rates are certified only after production measurement release
-            {PET_FUNNEL_MEASUREMENT_RELIABLE_FROM
-              ? ` (${new Date(PET_FUNNEL_MEASUREMENT_RELIABLE_FROM).toLocaleString("en-US")})`
+            {report.measurementReliableFrom || PET_FUNNEL_MEASUREMENT_RELIABLE_FROM
+              ? ` (${new Date(String(report.measurementReliableFrom || PET_FUNNEL_MEASUREMENT_RELIABLE_FROM)).toLocaleString("en-US")})`
               : " (timestamp unset until production deploy)"}
             .
           </p>
@@ -344,7 +344,11 @@ export default function PetFunnelAnalyticsPage() {
 
             <TrackingHealth
               kpis={kpis}
-              latestFirstPartyAt={report.recent[0]?.createdAt ?? report.firstPartyTrackingStartedAt}
+              latestFirstPartyAt={
+                report.trackingHealth?.latestFirstPartyAt ??
+                report.recent[0]?.createdAt ??
+                report.firstPartyTrackingStartedAt
+              }
               failedWrites={report.trackingHealth?.failedWrites ?? null}
             />
 

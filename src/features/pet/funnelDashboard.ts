@@ -141,6 +141,7 @@ export type PetFunnelAnalyticsReport = {
   datasetId?: "v1" | "v2";
   datasetConfigured?: boolean;
   campaignLabel?: string;
+  measurementReliableFrom?: string | null;
 };
 
 export function emptyStepCounts(): FunnelStepCounts {
