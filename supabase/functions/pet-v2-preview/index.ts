@@ -11,8 +11,8 @@ const MAX_DATA_URL_CHARS = 2_500_000;
 const SESSION_LIMIT = 2;
 const IP_DAY_LIMIT = 5;
 const POLL_INTERVAL_MS = 2000;
-/** ~56s poll + create/download overhead stays within Supabase Edge 60s wall clock. */
-const POLL_MAX_ITERATIONS = 28;
+/** ~90s poll; fits Supabase free 150s wall-clock with margin for create/DB/download. */
+const POLL_MAX_ITERATIONS = 45;
 
 type AttemptRow = {
   id?: string;
