@@ -19,21 +19,24 @@ export function V2PreviewScreen({
 }) {
   const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const headline = petName?.trim()
-    ? `Love it? Unlock ${petName.trim()}’s 12 secret lives.`
-    : "Love it? Unlock all 12 secret lives.";
+    ? `${petName.trim()} as an F1 driver`
+    : "Your pet as an F1 driver";
 
   return (
     <div className="space-y-6 pb-8">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#d4a84b]">Your pet, transformed</p>
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#d4a84b]">Free cinematic preview</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#f6efe4]">{headline}</h1>
+        <p className="mt-2 text-sm leading-6 text-[#f6efe4]/68">
+          Your pet’s secret life starts here. Unlock the full collection to see even more incredible transformations.
+        </p>
       </div>
       <figure className="overflow-hidden rounded-3xl border border-[#d4a84b]/30 bg-[#1a1410]">
-        <img src={previewUrl} alt="Personalized preview of your pet" className="w-full object-cover" />
+        <img src={previewUrl} alt="Your pet as a Formula 1 driver" className="w-full object-cover" />
       </figure>
       {mode === "mock" ? (
         <p className="rounded-2xl border border-[#d4a84b]/30 bg-[#d4a84b]/10 px-4 py-3 text-sm text-[#f3d48a]">
-          Prototype preview: live AI generation is off in this environment, so this is your photo in a royal frame.
+          Prototype preview: live AI generation is off in this environment, so this is your photo with F1-styled framing.
         </p>
       ) : null}
       <V2PackOffer onExpire={() => setOffer(v2PackOfferCopy())} />

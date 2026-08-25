@@ -126,9 +126,9 @@ export function V2ClosingCta({
   const countdown = useSaleCountdown(offer.expiresAt, onExpire);
   return (
     <section className="rounded-[28px] bg-[#d4a84b] px-6 py-9 text-center text-[#1a140e]">
-      <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">See your pet in another life.</h2>
+      <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">See your pet as a Formula 1 driver.</h2>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#1a140e]/75">
-        Upload one photo for a free preview. Unlock 12 secret lives and 2 mini clips
+        Upload one photo for a free cinematic F1 preview. Unlock 12 secret lives and 2 mini clips
         {offer.saleActive ? ` for ${offer.priceDisplay} today.` : ` for ${offer.priceDisplay}.`}
       </p>
       {offer.saleActive && countdown ? (
