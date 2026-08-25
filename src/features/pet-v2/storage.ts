@@ -5,6 +5,8 @@ const EMPTY: PetV2Draft = {
   species: "dog",
   step: "landing",
   photo: null,
+  uploadId: null,
+  previewAttemptId: null,
   photoPreviewDataUrl: null,
   generatedPreviewDataUrl: null,
   generationMode: null,
@@ -94,6 +96,11 @@ function coerce(value: unknown): PetV2Draft | null {
                   : "image/jpeg",
             byteSize: Number((row.photo as { byteSize?: number }).byteSize) || 0,
           }
+        : null,
+    uploadId: typeof row.uploadId === "string" && row.uploadId.trim() ? row.uploadId.slice(0, 64) : null,
+    previewAttemptId:
+      typeof row.previewAttemptId === "string" && row.previewAttemptId.trim()
+        ? row.previewAttemptId.slice(0, 180)
         : null,
     photoPreviewDataUrl:
       typeof row.photoPreviewDataUrl === "string" && row.photoPreviewDataUrl.startsWith("data:image/")

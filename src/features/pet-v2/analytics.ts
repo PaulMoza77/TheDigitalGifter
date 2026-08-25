@@ -58,12 +58,23 @@ export function v2IdempotencyKey(input: {
   sessionId: string;
   eventName: PetV2EventName;
   species?: string | null;
+  attemptId?: string | null;
 }): string {
   if (SESSION_ONCE.has(input.eventName) && input.eventName === "v2_landing_view") {
     return `${input.sessionId}:${input.eventName}:${input.species || ""}`;
   }
   if (SESSION_ONCE.has(input.eventName)) {
     return `${input.sessionId}:${input.eventName}`;
+  }
+  const attempt = String(input.attemptId || "").trim().slice(0, 120);
+  if (
+    attempt &&
+    (input.eventName === "v2_preview_generation_started" ||
+      input.eventName === "v2_preview_generation_completed" ||
+      input.eventName === "v2_preview_generation_failed" ||
+      input.eventName === "v2_preview_regenerated")
+  ) {
+    return `${input.sessionId}:${input.eventName}:${attempt}`.slice(0, 180);
   }
   return [input.sessionId, input.eventName, input.species || "", Date.now()].join(":");
 }
@@ -74,6 +85,7 @@ export type TrackV2Input = {
   amountCents?: number | null;
   pathname?: string | null;
   failureCategory?: string | null;
+  attemptId?: string | null;
 };
 
 export function trackPetV2Event(input: TrackV2Input): void {
@@ -94,7 +106,12 @@ export function trackPetV2Event(input: TrackV2Input): void {
       event_name: input.eventName,
       funnel_session_id: sessionId,
       event_id: newFunnelUuid(),
-      idempotency_key: v2IdempotencyKey({ sessionId, eventName: input.eventName, species }),
+      idempotency_key: v2IdempotencyKey({
+        sessionId,
+        eventName: input.eventName,
+        species,
+        attemptId: input.attemptId,
+      }),
       species,
       device_type: inferDeviceType(),
       pathname: sanitizeV2Pathname(input.pathname),
