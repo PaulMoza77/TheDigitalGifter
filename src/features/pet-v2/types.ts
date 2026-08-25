@@ -22,7 +22,7 @@ export const PET_V2_TEST_PRICE_DISPLAY = "$12" as const;
 export const PET_V2_PRODUCTION_PRICE_CENTS = 2700 as const;
 export const PET_V2_PRODUCTION_PRICE_DISPLAY = "$27" as const;
 
-export const PET_V2_PREVIEW_SCENE = "royal-portrait" as const;
+export const PET_V2_PREVIEW_SCENE = "formula-racer" as const;
 export const PET_V2_MAX_FREE_PREVIEWS_PER_SESSION = 2 as const; // 1 + 1 regen
 export const PET_V2_MAX_FREE_PREVIEWS_PER_IP_PER_DAY = 5 as const;
 export const PET_V2_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
@@ -67,6 +67,10 @@ export type PetV2Draft = {
   species: PetV2Species;
   step: PetV2Step;
   photo: PetV2PhotoMeta | null;
+  /** Stable per uploaded file; used in preview idempotency keys. */
+  uploadId: string | null;
+  /** Current logical preview attempt; reused across retries/remounts. */
+  previewAttemptId: string | null;
   photoPreviewDataUrl: string | null;
   generatedPreviewDataUrl: string | null;
   generationMode: "live" | "mock" | null;
@@ -109,4 +113,6 @@ export type PetV2PreviewResponse = {
   remainingSession?: number;
   remainingIp?: number;
   estimatedSeconds?: number;
+  preview_attempt_id?: string;
+  reused?: boolean;
 };

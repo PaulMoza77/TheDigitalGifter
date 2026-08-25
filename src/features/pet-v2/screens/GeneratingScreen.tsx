@@ -4,12 +4,14 @@ export function V2GeneratingScreen({
   thumbnailUrl,
   status,
   error,
+  busy,
   onRetry,
   onBack,
 }: {
   thumbnailUrl: string | null;
   status: string;
   error?: string | null;
+  busy?: boolean;
   onRetry: () => void;
   onBack: () => void;
 }) {
@@ -23,9 +25,9 @@ export function V2GeneratingScreen({
         />
       ) : null}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-[#f6efe4]">Creating one royal portrait</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-[#f6efe4]">Creating your pet’s F1 driver preview</h1>
         <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-          Not the full 12-portrait collection — just one free preview of your pet.
+          We’re turning your pet into a cinematic Formula 1 driver. This is one free preview — not the full collection yet.
         </p>
       </div>
       {error ? (
@@ -37,11 +39,18 @@ export function V2GeneratingScreen({
             <Button
               type="button"
               className="h-11 flex-1 rounded-full bg-[#d4a84b] text-[#1a140e]"
+              disabled={busy}
               onClick={onRetry}
             >
               Try again
             </Button>
-            <Button type="button" variant="ghost" className="h-11 text-[#f6efe4]" onClick={onBack}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-11 text-[#f6efe4]"
+              disabled={busy}
+              onClick={onBack}
+            >
               Change photo
             </Button>
           </div>

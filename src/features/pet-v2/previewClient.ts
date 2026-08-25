@@ -2,6 +2,7 @@ import { getPublicSupabaseConfig } from "@/lib/env";
 import { incrementSessionPreviewCount, remainingSessionPreviews, sessionAllowsAnotherPreview } from "./abuse";
 import {
   PET_V2_PREVIEW_EDGE_PATH,
+  PET_V2_PREVIEW_SCENE,
   type PetV2FailureCategory,
   type PetV2PreviewResponse,
   type PetV2Species,
@@ -15,6 +16,7 @@ export async function requestV2Preview(input: {
   species: PetV2Species;
   sourcePreviewUrl: string;
   regenerate?: boolean;
+  idempotencyKey: string;
 }): Promise<PetV2PreviewResponse> {
   if (!sessionAllowsAnotherPreview()) {
     return {
@@ -44,8 +46,10 @@ export async function requestV2Preview(input: {
         species: input.species,
         session_id: getPetV2SessionId(),
         regenerate: Boolean(input.regenerate),
-        scene: "royal-portrait",
+        scene: PET_V2_PREVIEW_SCENE,
         imageDataUrl,
+        idempotency_key: input.idempotencyKey,
+        preview_attempt_id: input.idempotencyKey,
       }),
     });
     const text = await res.text();
@@ -74,7 +78,10 @@ export async function requestV2Preview(input: {
   }
 
   if (response.ok && response.imageDataUrl) {
-    incrementSessionPreviewCount();
+    // Reused provider results must not burn another client-side free-preview slot.
+    if (!response.reused) {
+      incrementSessionPreviewCount();
+    }
     const marked = await watermarkPreviewDataUrl(response.imageDataUrl);
     return {
       ...response,

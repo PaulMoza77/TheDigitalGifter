@@ -121,9 +121,15 @@ describe("pet funnel V2 isolation", () => {
     expect(previewApi).not.toContain("pet-generate");
     expect(previewApi).not.toContain("../_lib/petV2");
     expect(edgePreview).toContain("black-forest-labs/flux-kontext-pro");
-    expect(edgePreview).toContain("recordSuccessfulPreview");
+    expect(edgePreview).toContain("claim_pet_v2_preview_attempt");
+    expect(edgePreview).toContain("Idempotency-Key");
+    expect(edgePreview).toContain("idempotency_key");
     expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain("PET_V2_PREVIEW_EDGE_PATH");
+    expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain("idempotency_key");
     expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain('errorCode === "live_disabled"');
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("generateLockRef");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("generating={isGenerating}");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("buildV2PreviewAttemptId");
     expect(readSrc("src/features/pet-v2/previewClient.ts")).not.toContain("response.mode === \"mock\" || !response.ok");
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("createReplicatePrediction");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("applyV2SaleAmount");

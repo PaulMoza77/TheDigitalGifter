@@ -9,6 +9,7 @@ import { shouldTrackPetBeginCheckout } from "../pet/funnelAnalytics";
 import { validateOtherSubtype, validatePetName } from "../pet/croGuards";
 import { remainingSessionPreviews, sessionAllowsAnotherPreview } from "./abuse";
 import { petV2LandingPath, trackPetV2Event } from "./analytics";
+import { buildV2PreviewAttemptId, cryptoRandomId } from "./previewAttempt";
 import { requestV2Preview } from "./previewClient";
 import { V2GeneratingScreen } from "./screens/GeneratingScreen";
 import { V2LandingScreen } from "./screens/LandingScreen";
@@ -30,7 +31,7 @@ import { V2Shell } from "./V2Shell";
 
 const STATUS_MESSAGES = [
   "Reading your photo",
-  "Starting one royal portrait",
+  "Starting your F1 driver preview",
   "Still working — usually under 30 seconds",
 ];
 
@@ -38,9 +39,11 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const navigate = useNavigate();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const generateLockRef = useRef(false);
   const [draft, setDraft] = useState<PetV2Draft>(() => ({ ...loadV2Draft(), species }));
   const [photoError, setPhotoError] = useState<string | undefined>();
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const previewUrl = getV2PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
@@ -90,12 +93,15 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     trackPetV2Event({ eventName: "v2_upload_completed", species });
     go("photo", {
       photo: { fileName: file.name, contentType: check.contentType, byteSize: file.size },
+      uploadId: cryptoRandomId(),
+      previewAttemptId: null,
       photoPreviewDataUrl: local,
       lastError: null,
     });
   }
 
   async function generate(regenerate = false) {
+    if (generateLockRef.current || isGenerating) return;
     const file = getV2PhotoFile();
     const source = getV2PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
     if (!file || !source) {
@@ -119,10 +125,31 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       go("preview", { lastError: "This session already used its free previews." });
       return;
     }
-    go("generating", { lastError: null });
+
+    generateLockRef.current = true;
+    setIsGenerating(true);
+
+    const sessionId = getPetV2SessionId();
+    const uploadId = draft.uploadId || cryptoRandomId();
+    let attemptId = draft.previewAttemptId;
+    if (regenerate || !attemptId) {
+      attemptId = buildV2PreviewAttemptId({
+        sessionId,
+        uploadId,
+        regenerate,
+        regenNonce: regenerate ? cryptoRandomId() : undefined,
+      });
+    }
+
+    go("generating", {
+      lastError: null,
+      uploadId,
+      previewAttemptId: attemptId,
+    });
     trackPetV2Event({
       eventName: regenerate ? "v2_preview_regenerated" : "v2_preview_generation_started",
       species,
+      attemptId,
     });
     let tick = 0;
     const timer = window.setInterval(() => {
@@ -130,35 +157,54 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       setGenStatus(STATUS_MESSAGES[Math.min(tick, STATUS_MESSAGES.length - 1)]);
     }, 4000);
     try {
-      const result = await requestV2Preview({ file, species, sourcePreviewUrl: source, regenerate });
+      const result = await requestV2Preview({
+        file,
+        species,
+        sourcePreviewUrl: source,
+        regenerate,
+        idempotencyKey: attemptId,
+      });
       if (!result.ok || !result.imageDataUrl) {
         trackPetV2Event({
           eventName: "v2_preview_generation_failed",
           species,
+          attemptId,
           failureCategory: result.failureCategory || result.errorCode || "server_error",
         });
         go("generating", {
           lastError: "We couldn't create the preview. Try again.",
+          previewAttemptId: attemptId,
         });
         return;
       }
-      trackPetV2Event({ eventName: "v2_preview_generation_completed", species });
+      trackPetV2Event({
+        eventName: "v2_preview_generation_completed",
+        species,
+        attemptId,
+      });
       trackPetV2Event({ eventName: "v2_preview_viewed", species });
       go("preview", {
         generatedPreviewDataUrl: result.imageDataUrl,
         generationMode: result.mode,
-        previewCount: draft.previewCount + 1,
+        previewCount: result.reused ? draft.previewCount : draft.previewCount + 1,
+        previewAttemptId: attemptId,
         lastError: null,
       });
     } catch {
       trackPetV2Event({
         eventName: "v2_preview_generation_failed",
         species,
+        attemptId,
         failureCategory: "server_error",
       });
-      go("generating", { lastError: "We couldn't create the preview. Try again." });
+      go("generating", {
+        lastError: "We couldn't create the preview. Try again.",
+        previewAttemptId: attemptId,
+      });
     } finally {
       window.clearInterval(timer);
+      generateLockRef.current = false;
+      setIsGenerating(false);
     }
   }
 
@@ -248,6 +294,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       }
       padForSticky={step === "landing"}
       onBack={() => {
+        if (isGenerating) return;
         if (step === "offer") go("preview");
         else if (step === "preview" || step === "generating") go("photo");
         else go("landing");
@@ -261,8 +308,8 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       }
     >
       <PageHead
-        title="See your pet in another life | My Pet’s Secret Life"
-        description={`${v2PackOfferCopy().headline}. Upload one pet photo and see a free personalized preview. No card required for the preview.`}
+        title="See your pet as a Formula 1 driver | My Pet’s Secret Life"
+        description={`${v2PackOfferCopy().headline}. Upload one pet photo for a free cinematic F1 driver preview. No card required for the preview.`}
         exactTitle
       />
       <input
@@ -299,13 +346,20 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           error={photoError}
           inputId={inputId}
           inputRef={inputRef}
+          generating={isGenerating}
           subtype={draft.subtype}
           subtypeDetail={draft.subtypeDetail}
           onSubtype={(subtype, detail) => go("photo", { subtype, subtypeDetail: detail || null })}
           onClear={() => {
             setV2PhotoFile(null);
             setPhotoError(undefined);
-            go("photo", { photo: null, photoPreviewDataUrl: null, generatedPreviewDataUrl: null });
+            go("photo", {
+              photo: null,
+              uploadId: null,
+              previewAttemptId: null,
+              photoPreviewDataUrl: null,
+              generatedPreviewDataUrl: null,
+            });
           }}
           onGenerate={() => void generate(false)}
         />
@@ -316,8 +370,11 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           thumbnailUrl={previewUrl}
           status={genStatus}
           error={draft.lastError}
-          onRetry={() => void generate(draft.previewCount > 0)}
-          onBack={() => go("photo")}
+          busy={isGenerating}
+          onRetry={() => void generate(false)}
+          onBack={() => {
+            if (!isGenerating) go("photo");
+          }}
         />
       ) : null}
 
@@ -326,7 +383,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           previewUrl={draft.generatedPreviewDataUrl}
           petName={draft.petName}
           mode={draft.generationMode}
-          canRegenerate={remainingSessionPreviews() > 0}
+          canRegenerate={remainingSessionPreviews() > 0 && !isGenerating}
           onRegenerate={() => void generate(true)}
           onUnlock={() => {
             trackPetV2Event({ eventName: "v2_unlock_clicked", species });

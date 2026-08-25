@@ -8,10 +8,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  */
 
 const IDENTITY_LOCK =
-  "Edit the reference photo only. Keep the exact same individual animal: identical face shape, eyes, nose, mouth, ears, fur color, fur texture, markings, age, and body proportions. Do not swap breeds. Do not beautify or idealize. Do not generate a different pet.";
+  "Edit the reference photo only. Preserve the exact same pet identity: identical face shape, eyes, nose, muzzle, mouth, ears, fur color, fur texture, markings, age appearance, breed characteristics, body proportions, and general expression. Do not swap breeds. Do not replace the pet with a different animal. Do not beautify or idealize beyond recognition. If drama conflicts with likeness, prioritize recognizable pet identity.";
 
-const ROYAL_EDIT =
-  "Add a royal crown, ornate gold picture frame, and red velvet backdrop with museum lighting.";
+const F1_DRIVER_EDIT =
+  "Create a photoreal cinematic transformation of the uploaded pet as a Formula 1 driver. Transform only the scene, styling, and context — never the pet’s face or body identity. Place the pet in or leaning out of a realistic Formula 1 race car cockpit with a high-end racing atmosphere (pit lane, paddock, or racetrack). Add a tailored racing suit and motorsport styling that feels natural and believable for the pet, keeping the face clearly visible and fully recognizable (helmet visor open or no helmet covering the face). The final image should feel cinematic, premium, dramatic, and emotionally impressive — like a luxury motorsport editorial or movie still. Use realistic lighting, sharp subject focus, tasteful depth of field, and a powerful racetrack or pit-lane environment. Avoid cartoonish looks, goofy costume overlays, meme aesthetics, distorted anatomy, cluttered backgrounds, and overdone absurdity.";
 
 const MODEL = "black-forest-labs/flux-kontext-pro";
 const MAX_DATA_URL_CHARS = 2_500_000;
@@ -106,7 +106,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const outputUrl = await runKontextPreview(token, imageDataUrl, species);
+    const clientKey = String(body.idempotency_key || body.preview_attempt_id || "").trim().slice(0, 180);
+    const outputUrl = await runKontextPreview(token, imageDataUrl, species, clientKey);
     const image = await downloadAsDataUrl(outputUrl);
     await recordSuccessfulPreview({ sessionId, ip, imageDataUrl, species });
     return res.status(200).json({
@@ -115,6 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       imageDataUrl: image,
       remainingSession: Math.max(0, (limited.remainingSession ?? SESSION_LIMIT) - 1),
       estimatedSeconds: 20,
+      preview_attempt_id: clientKey || undefined,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Preview generation failed.";
@@ -128,13 +130,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function runKontextPreview(token: string, imageDataUrl: string, species: string): Promise<string> {
+async function runKontextPreview(
+  token: string,
+  imageDataUrl: string,
+  species: string,
+  idempotencyKey = "",
+): Promise<string> {
   const prompt = [
     IDENTITY_LOCK,
     "Change only background, clothing, props, and lighting. Never replace the pet.",
-    ROYAL_EDIT,
+    F1_DRIVER_EDIT,
     `Subject is a ${species === "other" ? "pet" : species}.`,
-    "Photoreal. Single pet only. No logos, trademarks, or copyrighted characters.",
+    "Photoreal. Single pet only. No logos, trademarks, or copyrighted characters. No text overlays. No extra animals.",
   ].join(" ");
 
   const created = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
@@ -142,6 +149,7 @@ async function runKontextPreview(token: string, imageDataUrl: string, species: s
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey.slice(0, 64) } : {}),
     },
     body: JSON.stringify({
       input: {
@@ -287,7 +295,7 @@ async function recordSuccessfulPreview(input: {
       ip_hash: hashIp(input.ip),
       image_hash: hashBytes(Buffer.from(input.imageDataUrl)).slice(0, 48),
       species: input.species,
-      scene_key: "royal-portrait",
+      scene_key: "formula-racer",
       live_generation: true,
     }),
   }).catch(() => undefined);
