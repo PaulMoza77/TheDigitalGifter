@@ -9,7 +9,7 @@ import {
 } from "./types";
 import { prepareV2UploadBlob } from "./photo";
 import { getPetV2SessionId } from "./session";
-import { buildMockRoyalPreview, watermarkPreviewDataUrl } from "./watermark";
+import { buildMockF1Preview, watermarkPreviewDataUrl } from "./watermark";
 
 export async function requestV2Preview(input: {
   file: File;
@@ -92,7 +92,7 @@ export async function requestV2Preview(input: {
 
   if (response.errorCode === "live_disabled") {
     incrementSessionPreviewCount();
-    const mock = await buildMockRoyalPreview(input.sourcePreviewUrl);
+    const mock = await buildMockF1Preview(input.sourcePreviewUrl);
     return {
       ok: true,
       mode: "mock",

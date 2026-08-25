@@ -23,10 +23,10 @@ export function V2LandingScreen({
       <section>
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#d4a84b]">Try it free</p>
         <h1 className="mt-1.5 text-[1.7rem] font-semibold tracking-tight text-[#f6efe4] sm:text-4xl sm:leading-[1.1]">
-          See your pet in another life.
+          See your pet as a Formula 1 driver.
         </h1>
         <p className="mt-2 max-w-md text-sm leading-6 text-[#f6efe4]/72 sm:text-base sm:leading-7">
-          One photo in. A free preview of {pet} — then 12 secret lives and 2 mini clips.
+          Upload one photo and get a free cinematic preview of {pet} as a Formula 1 driver — no card required.
         </p>
         <V2SaleLine onExpire={() => setOffer(v2PackOfferCopy())} />
         <Button

@@ -33,8 +33,8 @@ export async function watermarkPreviewDataUrl(
   return canvas.toDataURL("image/jpeg", 0.72);
 }
 
-/** Honest mock: visitor's own photo in a framed royal treatment, not a different pet. */
-export async function buildMockRoyalPreview(source: string): Promise<string> {
+/** Honest mock: visitor's own photo with F1-styled framing when live generation is off. */
+export async function buildMockF1Preview(source: string): Promise<string> {
   const image = await loadImage(source);
   const width = 768;
   const height = Math.round((image.height / image.width) * width) || 960;
@@ -45,23 +45,24 @@ export async function buildMockRoyalPreview(source: string): Promise<string> {
   if (!ctx) return source;
 
   const inset = 28;
-  ctx.fillStyle = "#1a140e";
+  ctx.fillStyle = "#0b0f12";
   ctx.fillRect(0, 0, width, height);
   const g = ctx.createLinearGradient(0, 0, width, height);
-  g.addColorStop(0, "#3b2a12");
+  g.addColorStop(0, "#1a0b10");
+  g.addColorStop(0.55, "#7a121c");
   g.addColorStop(1, "#c9a227");
   ctx.fillStyle = g;
   ctx.fillRect(10, 10, width - 20, height - 20);
-  ctx.fillStyle = "#140e0a";
+  ctx.fillStyle = "#0b0f12";
   ctx.fillRect(inset, inset, width - inset * 2, height - inset * 2);
   ctx.drawImage(image, inset + 6, inset + 6, width - inset * 2 - 12, height - inset * 2 - 12);
 
-  ctx.fillStyle = "rgba(20, 14, 10, 0.55)";
+  ctx.fillStyle = "rgba(11, 15, 18, 0.62)";
   ctx.fillRect(0, 0, width, 54);
   ctx.fillStyle = "#f3e6c0";
   ctx.font = "600 18px Georgia, serif";
   ctx.textAlign = "center";
-  ctx.fillText("Royal portrait · preview unavailable", width / 2, 34);
+  ctx.fillText("F1 driver · preview unavailable", width / 2, 34);
 
   return watermarkPreviewDataUrl(canvas.toDataURL("image/jpeg", 0.8));
 }

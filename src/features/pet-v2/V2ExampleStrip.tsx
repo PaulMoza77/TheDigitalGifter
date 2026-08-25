@@ -87,9 +87,9 @@ export function V2HeroProof({ species }: { species: PetV2Species }) {
         </HeroTile>
         <HeroTile>
           <SceneImage
-            sceneId="royal-portrait"
+            sceneId="formula-racer"
             species={species}
-            alt={`Royal portrait of the same demo ${petLabel}`}
+            alt={`Formula 1 driver preview of the same demo ${petLabel}`}
             eager
             className="aspect-[3/4] h-full w-full object-cover"
           />
