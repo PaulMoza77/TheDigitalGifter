@@ -212,6 +212,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const body = req.body && typeof req.body === "object" ? req.body : {};
     eventName = String((body as { event_name?: unknown }).event_name || "unknown");
+    const failureCategory = String((body as { failure_category?: unknown }).failure_category || "")
+      .replace(/[^a-z0-9_]/gi, "")
+      .slice(0, 40);
+    if (eventName === "v2_preview_generation_failed" && failureCategory) {
+      void persistV2WriteFailure({ eventName, category: failureCategory });
+    }
     const result = await writePetV2FunnelEvent(req.body);
     return res.status(202).json(result);
   } catch (error) {

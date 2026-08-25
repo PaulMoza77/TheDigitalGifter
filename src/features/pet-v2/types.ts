@@ -12,7 +12,9 @@ export const PET_V2_PATHS = ["/pet/dog-v2", "/pet/cat-v2", "/pet/other-v2"] as c
 export const PET_V2_DRAFT_STORAGE_KEY = "tdg.petFunnelV2.draft.v1" as const;
 export const PET_V2_SESSION_KEY = "tdg.petFunnelV2.session.v1" as const;
 export const PET_V2_EVENT_PATH = "/api/pet-v2/funnel-event" as const;
+/** Legacy Vercel path — kept for rewrites/tests. Live traffic uses the edge function. */
 export const PET_V2_PREVIEW_PATH = "/api/pet-v2/preview" as const;
+export const PET_V2_PREVIEW_EDGE_PATH = "/functions/v1/pet-v2-preview" as const;
 
 /** V2 charges $12 from $27. Live V1 /pet/dog checkout is a separate $17 sale. */
 export const PET_V2_TEST_PRICE_CENTS = 1200 as const;
@@ -77,6 +79,15 @@ export type PetV2Draft = {
   updatedAt: string;
 };
 
+export type PetV2FailureCategory =
+  | "endpoint_unreachable"
+  | "provider_auth"
+  | "provider_error"
+  | "timeout"
+  | "rate_limit"
+  | "invalid_image"
+  | "server_error";
+
 export type PetV2PreviewResponse = {
   ok: boolean;
   mode: "live" | "mock";
@@ -88,7 +99,13 @@ export type PetV2PreviewResponse = {
     | "heic_unsupported"
     | "generation_failed"
     | "live_disabled"
-    | "payload_too_large";
+    | "payload_too_large"
+    | "provider_auth"
+    | "timeout"
+    | "provider_error"
+    | "invalid_image"
+    | "server_error";
+  failureCategory?: PetV2FailureCategory;
   remainingSession?: number;
   remainingIp?: number;
   estimatedSeconds?: number;

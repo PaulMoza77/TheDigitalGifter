@@ -1,11 +1,4 @@
-import { createHash } from "node:crypto";
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-
-/**
- * Legacy Vercel preview endpoint.
- * Production V2 clients call the Supabase edge function `pet-v2-preview`.
- * This handler stays self-contained so Vercel no longer crashes on import.
- */
+import { corsHeaders, jsonResponse, optionsResponse } from "../_shared/cors.ts";
 
 const IDENTITY_LOCK =
   "Edit the reference photo only. Keep the exact same individual animal: identical face shape, eyes, nose, mouth, ears, fur color, fur texture, markings, age, and body proportions. Do not swap breeds. Do not beautify or idealize. Do not generate a different pet.";
@@ -18,70 +11,61 @@ const MAX_DATA_URL_CHARS = 2_500_000;
 const SESSION_LIMIT = 2;
 const IP_DAY_LIMIT = 5;
 
-function originAllowed(origin: string | undefined, host: string | undefined): boolean {
-  if (!origin) return true;
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse();
+  if (req.method !== "POST") {
+    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
+  }
+
+  let body: Record<string, unknown> = {};
   try {
-    const url = new URL(origin);
-    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return true;
-    if (url.hostname.endsWith(".vercel.app")) return true;
-    if (url.hostname === "www.thedigitalgifter.com" || url.hostname === "thedigitalgifter.com") {
-      return true;
-    }
-    if (host && url.host === host) return true;
-    return false;
+    body = (await req.json()) as Record<string, unknown>;
   } catch {
-    return false;
-  }
-}
-
-function hashBytes(bytes: Buffer | string): string {
-  return createHash("sha256").update(bytes).digest("hex");
-}
-
-function hashIp(ip: string): string {
-  return createHash("sha256").update(`pet-v2:${ip}`).digest("hex").slice(0, 32);
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    return res.status(204).end();
-  }
-  if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Method not allowed" });
-
-  const origin = String(req.headers.origin || "");
-  const host = String(req.headers.host || "");
-  if (origin && !originAllowed(origin, host)) {
-    return res.status(403).json({ ok: false, errorCode: "invalid_photo", error: "Forbidden" });
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "mock",
+        errorCode: "invalid_photo",
+        error: "That photo could not be used. Try a smaller JPEG, PNG, or WebP.",
+      },
+      400,
+    );
   }
 
-  const body = req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : {};
   const imageDataUrl = String(body.imageDataUrl || "");
   const sessionId = String(body.session_id || "").slice(0, 64);
   const species = body.species === "cat" || body.species === "other" ? body.species : "dog";
+
   if (!imageDataUrl.startsWith("data:image/") || imageDataUrl.length > MAX_DATA_URL_CHARS) {
-    return res.status(400).json({
-      ok: false,
-      mode: "mock",
-      errorCode: "invalid_photo",
-      error: "That photo could not be used. Try a smaller JPEG, PNG, or WebP.",
-    });
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "mock",
+        errorCode: "invalid_photo",
+        error: "That photo could not be used. Try a smaller JPEG, PNG, or WebP.",
+      },
+      400,
+    );
   }
   if (/image\/heic|image\/heif/i.test(imageDataUrl)) {
-    return res.status(400).json({
-      ok: false,
-      mode: "mock",
-      errorCode: "heic_unsupported",
-      error:
-        "iPhone HEIC photos aren’t supported yet. Set Camera Formats to Most Compatible, or export as JPEG.",
-    });
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "mock",
+        errorCode: "heic_unsupported",
+        error:
+          "iPhone HEIC photos aren’t supported yet. Set Camera Formats to Most Compatible, or export as JPEG.",
+      },
+      400,
+    );
   }
 
-  const liveKill = String(process.env.PET_V2_PREVIEW_LIVE || "").toLowerCase() === "false";
-  const token = String(process.env.REPLICATE_API_TOKEN || "").trim();
+  const token = String(Deno.env.get("REPLICATE_API_TOKEN") || "").trim();
+  const liveKill = String(Deno.env.get("PET_V2_PREVIEW_LIVE") || "").toLowerCase() === "false";
+  // Paid V2 traffic needs a real preview when Replicate is configured.
+  // Explicit PET_V2_PREVIEW_LIVE=false remains a kill switch.
   if (liveKill || !token) {
-    return res.status(200).json({
+    return jsonResponse({
       ok: false,
       mode: "mock",
       errorCode: "live_disabled",
@@ -90,26 +74,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const ip = String(req.headers["x-forwarded-for"] || req.headers["x-real-ip"] || "unknown")
+  const ip = String(req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown")
     .split(",")[0]
     .trim();
   const limited = await assertPreviewLimits(sessionId, ip, imageDataUrl);
   if (!limited.ok) {
-    return res.status(429).json({
-      ok: false,
-      mode: "mock",
-      errorCode: "rate_limited",
-      error: limited.message,
-      remainingSession: limited.remainingSession,
-      remainingIp: limited.remainingIp,
-    });
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "mock",
+        errorCode: "rate_limited",
+        error: limited.message,
+        remainingSession: limited.remainingSession,
+        remainingIp: limited.remainingIp,
+      },
+      429,
+    );
   }
 
   try {
     const outputUrl = await runKontextPreview(token, imageDataUrl, species);
     const image = await downloadAsDataUrl(outputUrl);
     await recordSuccessfulPreview({ sessionId, ip, imageDataUrl, species });
-    return res.status(200).json({
+    return jsonResponse({
       ok: true,
       mode: "live",
       imageDataUrl: image,
@@ -118,14 +105,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Preview generation failed.";
-    return res.status(200).json({
+    const errorCode = classifyGenerationError(message);
+    return jsonResponse({
       ok: false,
       mode: "live",
-      errorCode: "generation_failed",
-      failureCategory: /401|403|unauthorized/i.test(message) ? "provider_auth" : "provider_error",
+      errorCode,
       error: "We couldn't create the preview. Try again.",
+      failureCategory: errorCode,
     });
   }
+});
+
+function classifyGenerationError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("401") || lower.includes("403") || lower.includes("unauthorized")) {
+    return "provider_auth";
+  }
+  if (lower.includes("too long") || lower.includes("timeout")) return "timeout";
+  if (lower.includes("rate") || lower.includes("429")) return "rate_limit";
+  if (lower.includes("invalid") && lower.includes("image")) return "invalid_image";
+  return "provider_error";
 }
 
 async function runKontextPreview(token: string, imageDataUrl: string, species: string): Promise<string> {
@@ -154,9 +153,16 @@ async function runKontextPreview(token: string, imageDataUrl: string, species: s
       },
     }),
   });
-  const createdJson = (await created.json()) as { id?: string; error?: string; output?: unknown };
+  const createdJson = (await created.json()) as {
+    id?: string;
+    status?: string;
+    error?: string;
+    output?: unknown;
+  };
   if (!created.ok || !createdJson.id) {
-    throw new Error(`${created.status}: ${String(createdJson.error || "Could not start the preview.")}`);
+    throw new Error(
+      `${created.status}: ${String(createdJson.error || "Could not start the preview.")}`,
+    );
   }
 
   for (let i = 0; i < 24; i += 1) {
@@ -187,10 +193,15 @@ function replicateOutputUrl(output: unknown): string | null {
 }
 
 async function downloadAsDataUrl(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Could not download the preview.");
-  const buffer = Buffer.from(await response.arrayBuffer());
-  return `data:image/jpeg;base64,${buffer.toString("base64")}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Could not download the preview.");
+  const buffer = new Uint8Array(await res.arrayBuffer());
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < buffer.length; i += chunk) {
+    binary += String.fromCharCode(...buffer.subarray(i, i + chunk));
+  }
+  return `data:image/jpeg;base64,${btoa(binary)}`;
 }
 
 async function assertPreviewLimits(
@@ -203,20 +214,31 @@ async function assertPreviewLimits(
   remainingSession?: number;
   remainingIp?: number;
 }> {
-  const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(
-    /\/$/,
-    "",
-  );
-  const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
   if (!supabaseUrl || !serviceKey) {
     return { ok: true, remainingSession: SESSION_LIMIT, remainingIp: IP_DAY_LIMIT };
   }
+
   const since = new Date(Date.now() - 86400000).toISOString();
-  const ipHash = hashIp(ip);
-  const imageHash = hashBytes(Buffer.from(imageDataUrl)).slice(0, 48);
-  const sessionCount = await countAttempts(supabaseUrl, serviceKey, "session_id", sessionId, since);
-  const ipCount = await countAttempts(supabaseUrl, serviceKey, "ip_hash", ipHash, since);
-  const hashCount = await countAttempts(supabaseUrl, serviceKey, "image_hash", imageHash, since);
+  const ipHash = await hashIp(ip);
+  const imageHash = (await hashBytes(imageDataUrl)).slice(0, 48);
+  const sessionCount = await countAttempts(supabaseUrl, serviceKey, {
+    column: "session_id",
+    value: sessionId.slice(0, 64),
+    since,
+  });
+  const ipCount = await countAttempts(supabaseUrl, serviceKey, {
+    column: "ip_hash",
+    value: ipHash,
+    since,
+  });
+  const hashCount = await countAttempts(supabaseUrl, serviceKey, {
+    column: "image_hash",
+    value: imageHash,
+    since,
+  });
+
   if (sessionCount >= SESSION_LIMIT) {
     return { ok: false, message: "This session already used its free previews.", remainingSession: 0 };
   }
@@ -236,29 +258,27 @@ async function assertPreviewLimits(
 async function countAttempts(
   supabaseUrl: string,
   serviceKey: string,
-  column: string,
-  value: string,
-  since: string,
+  input: { column: string; value: string; since: string },
 ): Promise<number> {
-  if (!value) return 0;
+  if (!input.value) return 0;
   const url =
-    `${supabaseUrl}/rest/v1/pet_v2_preview_attempts?select=id` +
-    `&${column}=eq.${encodeURIComponent(value)}` +
-    `&live_generation=eq.true&created_at=gte.${encodeURIComponent(since)}`;
-  const response = await fetch(url, {
+    `${supabaseUrl}/rest/v1/pet_v2_preview_attempts` +
+    `?select=id&${input.column}=eq.${encodeURIComponent(input.value)}` +
+    `&live_generation=eq.true&created_at=gte.${encodeURIComponent(input.since)}`;
+  const res = await fetch(url, {
     headers: {
       apikey: serviceKey,
       Authorization: `Bearer ${serviceKey}`,
       Prefer: "count=exact",
     },
   }).catch(() => null);
-  if (!response || !response.ok) return 0;
-  const range = response.headers.get("content-range");
-  if (range?.includes("/")) {
+  if (!res || !res.ok) return 0;
+  const range = res.headers.get("content-range");
+  if (range && range.includes("/")) {
     const total = Number(range.split("/")[1]);
     if (Number.isFinite(total)) return total;
   }
-  const rows = (await response.json().catch(() => [])) as unknown[];
+  const rows = (await res.json().catch(() => [])) as unknown[];
   return Array.isArray(rows) ? rows.length : 0;
 }
 
@@ -268,12 +288,20 @@ async function recordSuccessfulPreview(input: {
   imageDataUrl: string;
   species: string;
 }): Promise<void> {
-  const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(
-    /\/$/,
-    "",
-  );
-  const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
   if (!supabaseUrl || !serviceKey) return;
+
+  const ipHash = await hashIp(input.ip);
+  const imageHash = (await hashBytes(input.imageDataUrl)).slice(0, 48);
+
+  // Consume quota only after Replicate accepted and returned an image.
+  await Promise.all([
+    touchLimit(supabaseUrl, serviceKey, `pet-v2:session:${input.sessionId || "anon"}`, SESSION_LIMIT),
+    touchLimit(supabaseUrl, serviceKey, `pet-v2:ip:${ipHash}`, IP_DAY_LIMIT),
+    touchLimit(supabaseUrl, serviceKey, `pet-v2:img:${imageHash.slice(0, 32)}`, SESSION_LIMIT),
+  ]);
+
   await fetch(`${supabaseUrl}/rest/v1/pet_v2_preview_attempts`, {
     method: "POST",
     headers: {
@@ -284,8 +312,8 @@ async function recordSuccessfulPreview(input: {
     },
     body: JSON.stringify({
       session_id: input.sessionId.slice(0, 64),
-      ip_hash: hashIp(input.ip),
-      image_hash: hashBytes(Buffer.from(input.imageDataUrl)).slice(0, 48),
+      ip_hash: ipHash,
+      image_hash: imageHash,
       species: input.species,
       scene_key: "royal-portrait",
       live_generation: true,
@@ -293,8 +321,35 @@ async function recordSuccessfulPreview(input: {
   }).catch(() => undefined);
 }
 
+async function touchLimit(
+  supabaseUrl: string,
+  serviceKey: string,
+  key: string,
+  limit: number,
+): Promise<void> {
+  await fetch(`${supabaseUrl}/rest/v1/rpc/touch_edge_rate_limit`, {
+    method: "POST",
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p_key: key, p_limit: limit, p_window_seconds: 60 * 60 * 24 }),
+  }).catch(() => undefined);
+}
+
+async function hashBytes(value: string): Promise<string> {
+  const data = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function hashIp(ip: string): Promise<string> {
+  return (await hashBytes(`pet-v2:${ip}`)).slice(0, 32);
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export const config = { maxDuration: 60 };
+void corsHeaders;

@@ -43,6 +43,9 @@ verify_jwt = false
 [functions.pet-funnel]
 verify_jwt = false
 
+[functions.pet-v2-preview]
+verify_jwt = false
+
 [functions.pet-admin]
 verify_jwt = false
 

@@ -132,8 +132,14 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     try {
       const result = await requestV2Preview({ file, species, sourcePreviewUrl: source, regenerate });
       if (!result.ok || !result.imageDataUrl) {
-        trackPetV2Event({ eventName: "v2_preview_generation_failed", species });
-        go("generating", { lastError: result.error || "Preview generation failed. Nothing was charged." });
+        trackPetV2Event({
+          eventName: "v2_preview_generation_failed",
+          species,
+          failureCategory: result.failureCategory || result.errorCode || "server_error",
+        });
+        go("generating", {
+          lastError: "We couldn't create the preview. Try again.",
+        });
         return;
       }
       trackPetV2Event({ eventName: "v2_preview_generation_completed", species });
@@ -145,8 +151,12 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         lastError: null,
       });
     } catch {
-      trackPetV2Event({ eventName: "v2_preview_generation_failed", species });
-      go("generating", { lastError: "Preview generation failed. Nothing was charged." });
+      trackPetV2Event({
+        eventName: "v2_preview_generation_failed",
+        species,
+        failureCategory: "server_error",
+      });
+      go("generating", { lastError: "We couldn't create the preview. Try again." });
     } finally {
       window.clearInterval(timer);
     }
