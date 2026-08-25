@@ -8,6 +8,7 @@ import {
   formatPct,
   funnelWarnings,
   isMetaSource,
+  ofPreviousLabel,
   percent,
   percentChange,
   rangeForPreset,
@@ -39,6 +40,22 @@ describe("pet funnel dashboard math", () => {
     expect(steps[5].fromLandingPct).toBeCloseTo(4);
     expect(biggestFunnelDrop(steps)?.from).toBe("First-party Landing Sessions");
     expect(biggestFunnelDrop(steps)?.to).toBe("Pet Name Submitted");
+  });
+
+  it("caps sequential conversion at 100% when later stages exceed prior cohort", () => {
+    const steps = buildFunnelSteps({
+      landing_view: 19,
+      pet_name_submitted: 7,
+      photo_upload_completed: 3,
+      order_review_viewed: 4,
+      initiate_checkout: 0,
+      purchase: 0,
+    });
+    expect(steps[2].sessions).toBe(3);
+    expect(steps[3].sessions).toBe(4);
+    expect(steps[3].fromPreviousPct).toBe(100);
+    expect(ofPreviousLabel(4, 3, "photos")).toBe("100.0% of photos");
+    expect(percent(4, 3)).toBeCloseTo(133.333, 2);
   });
 
   it("does not emit NaN or Infinity for zero denominators", () => {

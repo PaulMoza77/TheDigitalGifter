@@ -71,6 +71,10 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
 
   function submitName(name: string) {
     if (landingNameStepCreatesOrder()) return;
+    const nameResult = validatePetName(name);
+    if (!nameResult.ok) {
+      return;
+    }
     const subtypeCheck = validateOtherSubtype({
       species,
       subtype: draft.subtype,
@@ -80,7 +84,7 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
       setSubtypeError(subtypeCheck.message);
       return;
     }
-    draft.setPetName(name);
+    draft.setPetName(nameResult.name);
     draft.setSpecies(species);
     if (species === "other" && subtypeCheck.subtype) {
       draft.setSubtype(subtypeCheck.subtype, subtypeCheck.subtypeDetail);
@@ -191,7 +195,11 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
           </p>
           <Button
             type="button"
-            onClick={() => submitName(draft.petName)}
+            onClick={() => {
+              const result = validatePetName(draft.petName);
+              if (!result.ok) return;
+              submitName(result.name);
+            }}
             className="mt-5 h-12 min-h-[44px] rounded-full bg-[#1a140e] px-7 text-base font-semibold text-[#f6efe4] hover:bg-[#2a2018]"
           >
             {createSecretLivesCta(draft.petName)}
@@ -200,7 +208,10 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
       </div>
       <StickyCta
         visible={stickyVisible}
-        onClick={() => submitName(nameCheck.ok ? nameCheck.name : draft.petName)}
+        onClick={() => {
+          if (!nameCheck.ok) return;
+          submitName(nameCheck.name);
+        }}
         label={createSecretLivesCta(draft.petName)}
         supporting={`${priceLabel ?? PET_PRICE_DISPLAY} · No subscription`}
       />

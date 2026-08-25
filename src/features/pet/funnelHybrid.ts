@@ -12,6 +12,7 @@ import {
   type FunnelStepCounts,
   type FunnelStepRow,
 } from "./funnelDashboard";
+import { sequentialConversionPct } from "./funnelEventContract";
 
 export type DataProvenance =
   | "first_party"
@@ -253,7 +254,9 @@ export function buildHybridStages(input: {
   return stages.map((s, index) => {
     const previous = index === 0 ? null : stages[index - 1]?.value;
     const fromPreviousPct =
-      previous == null || s.value == null || previous == null ? null : percent(s.value, previous);
+      previous == null || s.value == null || previous == null
+        ? null
+        : sequentialConversionPct(s.value, previous);
     const fromLandingPct =
       landingValue == null || s.value == null ? null : percent(s.value, landingValue);
     return { ...s, fromPreviousPct, fromLandingPct };

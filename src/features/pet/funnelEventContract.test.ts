@@ -5,6 +5,7 @@ import {
   classifyFunnelTraffic,
   firstPartyConversionPct,
   logicalIdempotencyKey,
+  sequentialConversionPct,
   trackingCoverageSignal,
   validateFunnelIngestPayload,
 } from "./funnelEventContract";
@@ -66,6 +67,12 @@ describe("pet funnel ingest contract", () => {
     expect(firstPartyConversionPct(6, 20, 25)).toBe(30);
     expect(firstPartyConversionPct(2, 20, 25)).toBe(10);
     expect(firstPartyConversionPct(6, 0, 25)).toBeNull();
+  });
+
+  it("accepts photo_step_viewed and caps sequential conversion at 100%", () => {
+    const row = validateFunnelIngestPayload(payload({ event_name: "photo_step_viewed" }), 80);
+    expect(row.eventName).toBe("photo_step_viewed");
+    expect(sequentialConversionPct(4, 3)).toBe(100);
   });
 
   it("flags tracking coverage as unhealthy when Meta LPV exists without first-party landings", () => {

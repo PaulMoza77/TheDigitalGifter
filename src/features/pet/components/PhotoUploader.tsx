@@ -2,8 +2,9 @@ import { useId, useRef, useState } from "react";
 import { ImagePlus, Replace, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PET_DEMO_SOURCE_IMAGE } from "../catalog";
 import { formatFileSize, validatePetPhotoFile } from "../validation";
+import { normalizePetPhotoFile } from "../photoNormalize";
+import { PET_PHOTO_MAX_BYTES } from "../types";
 import { FieldError } from "./FieldError";
 
 type PhotoUploaderProps = {
@@ -11,7 +12,7 @@ type PhotoUploaderProps = {
   fileName?: string | null;
   byteSize?: number | null;
   needsOriginalFile?: boolean;
-  exampleImage?: string;
+  uploadLabel?: string;
   error?: string;
   guidance?: string;
   successMessage?: string;
@@ -25,7 +26,7 @@ export function PhotoUploader({
   fileName,
   byteSize,
   needsOriginalFile = false,
-  exampleImage = PET_DEMO_SOURCE_IMAGE,
+  uploadLabel = "Upload a photo",
   error,
   guidance = "Use one clear photo with one pet, both eyes visible and even lighting.",
   successMessage,
@@ -38,19 +39,43 @@ export function PhotoUploader({
   const helpId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  function handleFiles(files: FileList | null) {
+  async function handleFiles(files: FileList | null) {
     const file = files?.[0];
-    if (!file) return;
-    const result = validatePetPhotoFile(file);
-    if (!result.ok) {
-      onFileRejected(result.message);
+    if (!file || busy) return;
+
+    if (file.size <= 0) {
+      onFileRejected("That file looks empty. Try another photo.");
       return;
     }
-    void onFileAccepted(file);
+    if (file.size > PET_PHOTO_MAX_BYTES) {
+      onFileRejected("Photos must be 15 MB or smaller. Try a slightly smaller file.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const normalized = await normalizePetPhotoFile(file);
+      if (!normalized.ok) {
+        onFileRejected(normalized.message);
+        return;
+      }
+      const result = validatePetPhotoFile(normalized.file);
+      if (!result.ok) {
+        onFileRejected(result.message);
+        return;
+      }
+      await onFileAccepted(normalized.file);
+    } catch {
+      onFileRejected("We couldn’t read that photo. Try a JPEG or PNG instead.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   function openPicker() {
+    if (busy) return;
     inputRef.current?.click();
   }
 
@@ -69,12 +94,12 @@ export function PhotoUploader({
         ref={inputRef}
         id={inputId}
         type="file"
-        accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+        accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp,.heic,.heif,image/heic,image/heif"
         className="sr-only"
         aria-invalid={Boolean(error)}
         aria-describedby={`${helpId}${error ? ` ${errorId}` : ""}`}
         onChange={(event) => {
-          handleFiles(event.target.files);
+          void handleFiles(event.target.files);
           event.target.value = "";
         }}
       />
@@ -100,6 +125,7 @@ export function PhotoUploader({
                   variant="secondary"
                   className="h-11 min-h-[44px] rounded-full bg-[#f6efe4] text-[#1a140e] hover:bg-white"
                   onClick={openPicker}
+                  disabled={busy}
                 >
                   <Replace className="h-4 w-4" aria-hidden="true" />
                   Replace
@@ -109,6 +135,7 @@ export function PhotoUploader({
                   variant="outline"
                   className="h-11 min-h-[44px] rounded-full border-[#f6efe4]/30 bg-transparent text-[#f6efe4] hover:bg-[#f6efe4]/10"
                   onClick={onClear}
+                  disabled={busy}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                   Remove
@@ -126,6 +153,7 @@ export function PhotoUploader({
         <button
           type="button"
           onClick={openPicker}
+          disabled={busy}
           onDragEnter={(event) => {
             event.preventDefault();
             setDragging(true);
@@ -138,29 +166,22 @@ export function PhotoUploader({
           onDrop={(event) => {
             event.preventDefault();
             setDragging(false);
-            handleFiles(event.dataTransfer.files);
+            void handleFiles(event.dataTransfer.files);
           }}
           className={cn(
-            "relative flex min-h-[220px] w-full overflow-hidden rounded-2xl border border-dashed text-center transition-colors",
+            "relative flex min-h-[260px] w-full flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-12 text-center transition-colors sm:min-h-[280px]",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a84b]",
-            dragging ? "border-[#d4a84b]" : "border-[#f6efe4]/20 hover:border-[#d4a84b]/70"
+            "disabled:opacity-70",
+            dragging ? "border-[#d4a84b] bg-[#d4a84b]/10" : "border-[#f6efe4]/25 bg-[#1a1410] hover:border-[#d4a84b]/70",
           )}
         >
-          <img
-            src={exampleImage}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-35"
-            width={640}
-            height={960}
-          />
-          <span className="absolute inset-0 bg-[#140e0a]/55" />
-          <span className="relative z-10 flex w-full flex-col items-center justify-center px-6 py-10">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#d4a84b] text-[#1a140e]">
-              {dragging ? <Upload className="h-5 w-5" /> : <ImagePlus className="h-5 w-5" />}
-            </span>
-            <span className="mt-3 text-base font-semibold text-[#f6efe4]">Drop a photo</span>
-            <span className="mt-1 text-sm text-[#f6efe4]/70">One clear face, like this.</span>
+          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d4a84b] text-[#1a140e]">
+            {dragging || busy ? <Upload className="h-6 w-6" /> : <ImagePlus className="h-6 w-6" />}
           </span>
+          <span className="mt-4 text-lg font-semibold text-[#f6efe4]">
+            {busy ? "Preparing photo…" : uploadLabel}
+          </span>
+          <span className="mt-1 text-sm text-[#f6efe4]/65">Tap to choose · or drop a file</span>
         </button>
       )}
 
@@ -168,9 +189,9 @@ export function PhotoUploader({
         <p className="text-sm text-[#d4a84b]" role="status">
           {successMessage}
         </p>
-      ) : (
+      ) : guidance ? (
         <p className="text-sm text-[#f6efe4]/55">{guidance}</p>
-      )}
+      ) : null}
       <FieldError id={errorId} message={error} />
     </div>
   );
