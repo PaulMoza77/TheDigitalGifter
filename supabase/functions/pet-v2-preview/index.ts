@@ -10,8 +10,9 @@ const MODEL = "black-forest-labs/flux-kontext-pro";
 const MAX_DATA_URL_CHARS = 2_500_000;
 const SESSION_LIMIT = 2;
 const IP_DAY_LIMIT = 5;
-const POLL_INTERVAL_MS = 1500;
-const POLL_MAX_ITERATIONS = 24;
+const POLL_INTERVAL_MS = 2000;
+/** ~56s poll + create/download overhead stays within Supabase Edge 60s wall clock. */
+const POLL_MAX_ITERATIONS = 28;
 
 type AttemptRow = {
   id?: string;
@@ -164,19 +165,18 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Only create when this attempt has no active/succeeded provider prediction.
+  // Recover if resume returned null but a stale provider row would block create.
   if (
     claim?.prediction_id &&
     (claim.status === "pending" || claim.status === "processing" || claim.status === "succeeded")
   ) {
-    return jsonResponse({
-      ok: false,
-      mode: "live",
-      errorCode: "generation_failed",
-      failureCategory: "server_error",
-      error: "We couldn't create the preview. Try again.",
-      preview_attempt_id: idempotencyKey,
+    await markAttempt(idempotencyKey, {
+      status: "pending",
+      liveGeneration: false,
+      lastErrorCategory: "server_error",
+      clearPrediction: true,
     });
+    claim = { ...claim, status: "pending", prediction_id: null };
   }
 
   try {
@@ -278,11 +278,17 @@ async function resumeExistingAttempt(
         return { ok: true, imageDataUrl: image };
       }
     } catch {
-      /* fall through to allow recovery only if output vanished */
+      /* output URL may have expired — allow a replacement generation */
     }
+    await markAttempt(idempotencyKey, {
+      status: "pending",
+      liveGeneration: false,
+      lastErrorCategory: "provider_error",
+      clearPrediction: true,
+    });
     return {
       ok: false,
-      blockCreate: true,
+      allowNewPrediction: true,
       errorCode: "generation_failed",
       failureCategory: "provider_error",
     };

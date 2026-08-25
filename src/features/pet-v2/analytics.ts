@@ -59,6 +59,8 @@ export function v2IdempotencyKey(input: {
   eventName: PetV2EventName;
   species?: string | null;
   attemptId?: string | null;
+  /** Per-fire UUID — required for unlock/checkout so rapid clicks never dedupe away. */
+  eventId?: string | null;
 }): string {
   if (SESSION_ONCE.has(input.eventName) && input.eventName === "v2_landing_view") {
     return `${input.sessionId}:${input.eventName}:${input.species || ""}`;
@@ -72,9 +74,14 @@ export function v2IdempotencyKey(input: {
     (input.eventName === "v2_preview_generation_started" ||
       input.eventName === "v2_preview_generation_completed" ||
       input.eventName === "v2_preview_generation_failed" ||
-      input.eventName === "v2_preview_regenerated")
+      input.eventName === "v2_preview_regenerated" ||
+      input.eventName === "v2_begin_checkout")
   ) {
     return `${input.sessionId}:${input.eventName}:${attempt}`.slice(0, 180);
+  }
+  const eventId = String(input.eventId || "").trim();
+  if (eventId) {
+    return `${input.sessionId}:${input.eventName}:${input.species || ""}:${eventId}`.slice(0, 180);
   }
   return [input.sessionId, input.eventName, input.species || "", Date.now()].join(":");
 }
@@ -102,15 +109,17 @@ export function trackPetV2Event(input: TrackV2Input): void {
       typeof input.failureCategory === "string"
         ? input.failureCategory.replace(/[^a-z0-9_]/gi, "").slice(0, 40)
         : null;
+    const eventId = newFunnelUuid();
     const payload = {
       event_name: input.eventName,
       funnel_session_id: sessionId,
-      event_id: newFunnelUuid(),
+      event_id: eventId,
       idempotency_key: v2IdempotencyKey({
         sessionId,
         eventName: input.eventName,
         species,
         attemptId: input.attemptId,
+        eventId,
       }),
       species,
       device_type: inferDeviceType(),
@@ -130,6 +139,7 @@ export function trackPetV2Event(input: TrackV2Input): void {
       has_meta_click: context.hasFbclid,
       referrer_host: context.referrerHost,
       funnel_variant: "v2_preview",
+      funnel_version: "v2",
       failure_category: failureCategory,
     };
     post(payload);

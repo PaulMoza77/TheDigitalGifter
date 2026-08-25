@@ -133,7 +133,7 @@ export function mapV2CountsToPrimarySteps(v2: Record<string, number>): FunnelSte
   counts.pet_name_submitted = v2.v2_upload_completed || 0;
   counts.photo_upload_completed = v2.v2_preview_viewed || 0;
   counts.order_review_viewed = v2.v2_unlock_clicked || 0;
-  counts.initiate_checkout = 0;
-  counts.purchase = 0;
+  counts.initiate_checkout = v2.v2_begin_checkout || 0;
+  counts.purchase = v2.v2_purchase || 0;
   return counts;
 }

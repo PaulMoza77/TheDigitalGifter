@@ -167,8 +167,8 @@ async function runKontextPreview(
     throw new Error(`${created.status}: ${String(createdJson.error || "Could not start the preview.")}`);
   }
 
-  for (let i = 0; i < 24; i += 1) {
-    await sleep(1500);
+  for (let i = 0; i < 28; i += 1) {
+    await sleep(2000);
     const poll = await fetch(`https://api.replicate.com/v1/predictions/${createdJson.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });

@@ -129,7 +129,8 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain('errorCode === "live_disabled"');
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("generateLockRef");
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("generating={isGenerating}");
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("buildV2PreviewAttemptId");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("resolveGenerateAttempt");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("shouldRestoreLocalPreview");
     expect(readSrc("src/features/pet-v2/previewClient.ts")).not.toContain("response.mode === \"mock\" || !response.ok");
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("createReplicatePrediction");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("applyV2SaleAmount");

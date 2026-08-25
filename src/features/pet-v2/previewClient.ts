@@ -9,6 +9,7 @@ import {
 } from "./types";
 import { prepareV2UploadBlob } from "./photo";
 import { getPetV2SessionId } from "./session";
+import { previewErrorMessage } from "./previewErrors";
 import { buildMockF1Preview, watermarkPreviewDataUrl } from "./watermark";
 
 export async function requestV2Preview(input: {
@@ -104,7 +105,7 @@ export async function requestV2Preview(input: {
 
   return {
     ...response,
-    error: response.error || "We couldn't create the preview. Try again.",
+    error: previewErrorMessage(response),
     remainingSession: remainingSessionPreviews(),
   };
 }

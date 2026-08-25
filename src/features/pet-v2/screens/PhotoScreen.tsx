@@ -15,6 +15,7 @@ export function V2PhotoScreen({
   inputRef,
   onClear,
   onGenerate,
+  onViewPreview,
   generating,
   subtype,
   subtypeDetail,
@@ -28,6 +29,7 @@ export function V2PhotoScreen({
   inputRef: RefObject<HTMLInputElement | null>;
   onClear: () => void;
   onGenerate: () => void;
+  onViewPreview?: () => void;
   generating?: boolean;
   subtype?: PetSubtype | null;
   subtypeDetail?: string | null;
@@ -99,6 +101,16 @@ export function V2PhotoScreen({
       >
         Create my free preview
       </Button>
+      {onViewPreview ? (
+        <button
+          type="button"
+          disabled={generating}
+          onClick={onViewPreview}
+          className="block w-full text-center text-sm text-[#f6efe4]/60 underline-offset-4 hover:underline"
+        >
+          View my preview
+        </button>
+      ) : null}
     </div>
   );
 }

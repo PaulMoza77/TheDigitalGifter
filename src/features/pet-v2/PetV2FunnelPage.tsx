@@ -9,7 +9,15 @@ import { shouldTrackPetBeginCheckout } from "../pet/funnelAnalytics";
 import { validateOtherSubtype, validatePetName } from "../pet/croGuards";
 import { remainingSessionPreviews, sessionAllowsAnotherPreview } from "./abuse";
 import { petV2LandingPath, trackPetV2Event } from "./analytics";
-import { buildV2PreviewAttemptId, cryptoRandomId } from "./previewAttempt";
+import { trackV2BeginCheckout } from "./checkoutAnalytics";
+import { cryptoRandomId } from "./previewAttempt";
+import { previewErrorMessage } from "./previewErrors";
+import {
+  backStepFrom,
+  clearPreviewOnPhotoChange,
+  resolveGenerateAttempt,
+  shouldRestoreLocalPreview,
+} from "./previewFlow";
 import { requestV2Preview } from "./previewClient";
 import { V2GeneratingScreen } from "./screens/GeneratingScreen";
 import { V2LandingScreen } from "./screens/LandingScreen";
@@ -26,7 +34,7 @@ import {
   setV2PhotoFile,
 } from "./storage";
 import { v2PackOfferCopy } from "./V2PackOffer";
-import type { PetV2Draft, PetV2Species, PetV2Step } from "./types";
+import type { PetV2Draft, PetV2FailureCategory, PetV2Species, PetV2Step } from "./types";
 import { V2Shell } from "./V2Shell";
 
 const STATUS_MESSAGES = [
@@ -40,6 +48,8 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const generateLockRef = useRef(false);
+  const unlockTrackLockRef = useRef(false);
+  const lastFailureCategoryRef = useRef<PetV2FailureCategory | null>(null);
   const [draft, setDraft] = useState<PetV2Draft>(() => ({ ...loadV2Draft(), species }));
   const [photoError, setPhotoError] = useState<string | undefined>();
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
@@ -91,13 +101,11 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     const local = await createV2LocalPreview(file);
     setPhotoError(undefined);
     trackPetV2Event({ eventName: "v2_upload_completed", species });
-    go("photo", {
+    go("photo", clearPreviewOnPhotoChange({
       photo: { fileName: file.name, contentType: check.contentType, byteSize: file.size },
       uploadId: cryptoRandomId(),
-      previewAttemptId: null,
       photoPreviewDataUrl: local,
-      lastError: null,
-    });
+    }));
   }
 
   async function generate(regenerate = false) {
@@ -121,8 +129,18 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         return;
       }
     }
+
+    if (shouldRestoreLocalPreview(draft, regenerate)) {
+      trackPetV2Event({ eventName: "v2_preview_viewed", species });
+      go("preview", { lastError: null });
+      return;
+    }
+
     if (!sessionAllowsAnotherPreview()) {
-      go("preview", { lastError: "This session already used its free previews." });
+      go("preview", {
+        lastError: "This session already used its free previews.",
+        generatedPreviewDataUrl: draft.generatedPreviewDataUrl,
+      });
       return;
     }
 
@@ -131,15 +149,15 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
 
     const sessionId = getPetV2SessionId();
     const uploadId = draft.uploadId || cryptoRandomId();
-    let attemptId = draft.previewAttemptId;
-    if (regenerate || !attemptId) {
-      attemptId = buildV2PreviewAttemptId({
-        sessionId,
-        uploadId,
-        regenerate,
-        regenNonce: regenerate ? cryptoRandomId() : undefined,
-      });
-    }
+    const retryAfterFailure = Boolean(draft.lastError);
+    const { attemptId } = resolveGenerateAttempt({
+      sessionId,
+      uploadId,
+      previewAttemptId: draft.previewAttemptId,
+      regenerate,
+      retryAfterFailure,
+      lastFailureCategory: lastFailureCategoryRef.current,
+    });
 
     go("generating", {
       lastError: null,
@@ -165,18 +183,21 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         idempotencyKey: attemptId,
       });
       if (!result.ok || !result.imageDataUrl) {
+        const failureCategory = result.failureCategory || result.errorCode || "server_error";
+        lastFailureCategoryRef.current = failureCategory as PetV2FailureCategory;
         trackPetV2Event({
           eventName: "v2_preview_generation_failed",
           species,
           attemptId,
-          failureCategory: result.failureCategory || result.errorCode || "server_error",
+          failureCategory,
         });
         go("generating", {
-          lastError: "We couldn't create the preview. Try again.",
+          lastError: previewErrorMessage(result),
           previewAttemptId: attemptId,
         });
         return;
       }
+      lastFailureCategoryRef.current = null;
       trackPetV2Event({
         eventName: "v2_preview_generation_completed",
         species,
@@ -191,6 +212,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         lastError: null,
       });
     } catch {
+      lastFailureCategoryRef.current = "server_error";
       trackPetV2Event({
         eventName: "v2_preview_generation_failed",
         species,
@@ -198,7 +220,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         failureCategory: "server_error",
       });
       go("generating", {
-        lastError: "We couldn't create the preview. Try again.",
+        lastError: previewErrorMessage({ failureCategory: "server_error" }),
         previewAttemptId: attemptId,
       });
     } finally {
@@ -238,7 +260,6 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
 
     const offer = v2PackOfferCopy();
     setCheckoutBusy(true);
-    trackPetV2Event({ eventName: "v2_begin_checkout", species, amountCents: offer.amountCents });
     try {
       const result = await startPetCheckout({
         api: petFunnelApi,
@@ -261,7 +282,13 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         return;
       }
 
-      if (shouldTrackPetBeginCheckout(result)) {
+      const tracked = trackV2BeginCheckout({
+        species,
+        result: { ...result, orderId: result.orderId },
+        fallbackAmountCents: offer.amountCents,
+      });
+
+      if (tracked && shouldTrackPetBeginCheckout(result)) {
         const serverAmount = result.chargedAmountCents ?? result.amountCents ?? offer.amountCents;
         trackMetaInitiateCheckout({
           eventId: result.eventId || `pet_ic_${result.orderId}`,
@@ -269,6 +296,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           orderId: result.orderId,
         });
       }
+
       window.location.assign(result.checkoutUrl);
     } catch (caught) {
       const message =
@@ -295,9 +323,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       padForSticky={step === "landing"}
       onBack={() => {
         if (isGenerating) return;
-        if (step === "offer") go("preview");
-        else if (step === "preview" || step === "generating") go("photo");
-        else go("landing");
+        go(backStepFrom(step, draft));
       }}
       onSpecies={
         step === "landing"
@@ -353,14 +379,21 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           onClear={() => {
             setV2PhotoFile(null);
             setPhotoError(undefined);
-            go("photo", {
+            lastFailureCategoryRef.current = null;
+            go("photo", clearPreviewOnPhotoChange({
               photo: null,
               uploadId: null,
-              previewAttemptId: null,
               photoPreviewDataUrl: null,
-              generatedPreviewDataUrl: null,
-            });
+            }));
           }}
+          onViewPreview={
+            draft.generatedPreviewDataUrl
+              ? () => {
+                  trackPetV2Event({ eventName: "v2_preview_viewed", species });
+                  go("preview", { lastError: null });
+                }
+              : undefined
+          }
           onGenerate={() => void generate(false)}
         />
       ) : null}
@@ -386,9 +419,14 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           canRegenerate={remainingSessionPreviews() > 0 && !isGenerating}
           onRegenerate={() => void generate(true)}
           onUnlock={() => {
+            if (unlockTrackLockRef.current) return;
+            unlockTrackLockRef.current = true;
             trackPetV2Event({ eventName: "v2_unlock_clicked", species });
             trackPetV2Event({ eventName: "v2_offer_viewed", species });
             go("offer");
+            window.setTimeout(() => {
+              unlockTrackLockRef.current = false;
+            }, 800);
           }}
         />
       ) : null}
