@@ -6,6 +6,7 @@ import {
   PET_SALE_EXPIRES_AT_ISO,
   PET_SALE_EXPIRES_AT_MS,
   PET_SALE_PRICE_CENTS,
+  PET_V2_SALE_EXPIRES_AT_ISO,
   applyPetFlashSaleAmount,
   checkoutAmountNeedsRefresh,
   formatSaleCountdown,
@@ -53,6 +54,7 @@ describe("pet $17 flash sale", () => {
     expect(PET_PRICE_CENTS).toBe(2700);
     expect(PET_SALE_PRICE_CENTS).toBe(1700);
     expect(PET_SALE_EXPIRES_AT_ISO).toBe("2026-08-25T17:30:00.000Z");
+    expect(PET_V2_SALE_EXPIRES_AT_ISO).toBe("2026-08-26T18:35:00.000Z");
     expect(readSrc("src/features/pet/types.ts")).toContain("PET_PRICE_CENTS = 2700");
     expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_PRICE_CENTS = 2700");
     expect(readSrc("src/features/pet/PetLandingPage.tsx")).toContain("SaleBanner");
@@ -60,7 +62,10 @@ describe("pet $17 flash sale", () => {
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("checkoutAmountNeedsRefresh");
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("PET_SALE_PRICE_CENTS = 1700");
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain(PET_SALE_EXPIRES_AT_ISO);
+    expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain(PET_V2_SALE_EXPIRES_AT_ISO);
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("applyV2SaleAmount");
+    expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("PET_V2_SALE_EXPIRES_AT_MS");
     expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).not.toContain("petFlashSale");
+    expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).toContain("PET_V2_SALE_EXPIRES_AT");
   });
 });

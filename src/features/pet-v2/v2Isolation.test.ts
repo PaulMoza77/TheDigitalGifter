@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { PET_FUNNEL_ALLOWED_EVENTS } from "../pet/funnelEventContract";
-import { PET_SALE_EXPIRES_AT_MS, PET_SALE_PRICE_CENTS } from "../pet/flashSale";
+import { PET_SALE_PRICE_CENTS, PET_V2_SALE_EXPIRES_AT_ISO, PET_V2_SALE_EXPIRES_AT_MS } from "../pet/flashSale";
 import { v2PackOfferCopy } from "./V2PackOffer";
 import { PET_DRAFT_STORAGE_KEY, PET_PRICE_CENTS, PET_PRICE_DISPLAY } from "../pet/types";
 import { PET_FUNNEL_SESSION_KEY } from "../pet/funnelSession";
@@ -138,15 +138,15 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("applyV2SaleAmount");
   });
 
-  it("shows $12 until the shared expiry, then returns V2 to $27", () => {
-    const during = v2PackOfferCopy(PET_SALE_EXPIRES_AT_MS - 1000);
+  it("shows $12 until the V2 expiry, then returns V2 to $27", () => {
+    const during = v2PackOfferCopy(PET_V2_SALE_EXPIRES_AT_MS - 1000);
     expect(during.saleActive).toBe(true);
     expect(during.amountCents).toBe(PET_V2_TEST_PRICE_CENTS);
     expect(during.priceDisplay).toBe("$12");
     expect(during.compareAtDisplay).toBe("$27");
-    expect(during.expiresAt).toBeTruthy();
+    expect(during.expiresAt).toBe(PET_V2_SALE_EXPIRES_AT_ISO);
 
-    const after = v2PackOfferCopy(PET_SALE_EXPIRES_AT_MS);
+    const after = v2PackOfferCopy(PET_V2_SALE_EXPIRES_AT_MS);
     expect(after.saleActive).toBe(false);
     expect(after.amountCents).toBe(PET_V2_PRODUCTION_PRICE_CENTS);
     expect(after.priceDisplay).toBe("$27");
