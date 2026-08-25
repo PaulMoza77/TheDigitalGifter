@@ -1,4 +1,5 @@
 import type { PreviewFunnelDefinition } from "../pet-funnel-shared/config";
+import { v3FlashSale } from "./v3FlashSale";
 import {
   PET_V3_COMPARE_PRICE_DISPLAY,
   PET_V3_PREVIEW_SCENE,
@@ -61,17 +62,18 @@ export const PET_V3_FUNNEL_CONFIG: PreviewFunnelDefinition = {
   },
 };
 
-export function v3PackOfferCopy() {
+export function v3PackOfferCopy(nowMs = Date.now()) {
+  const sale = v3FlashSale(nowMs);
   return {
-    saleActive: true,
+    saleActive: sale.saleActive,
     headline: PET_V3_FUNNEL_CONFIG.copy.packHeadline(
-      PET_V3_PRICE_DISPLAY,
-      PET_V3_COMPARE_PRICE_DISPLAY,
-      true,
+      sale.priceDisplay,
+      sale.compareAtDisplay,
+      sale.saleActive,
     ),
-    priceDisplay: PET_V3_PRICE_DISPLAY,
-    compareAtDisplay: PET_V3_COMPARE_PRICE_DISPLAY,
-    amountCents: PET_V3_PRICE_CENTS,
-    expiresAt: null as string | null,
+    priceDisplay: sale.priceDisplay,
+    compareAtDisplay: sale.compareAtDisplay,
+    amountCents: sale.amountCents,
+    expiresAt: sale.expiresAt,
   };
 }

@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { BadgeCheck, Lock, ShieldCheck, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PET_V3_FUNNEL_CONFIG, v3PackOfferCopy } from "../config";
-import { V3ClosingCta, V3StickyCta } from "../V3PackOffer";
+import { V3ClosingCta, V3SaleLine, V3StickyCta } from "../V3PackOffer";
 import { V3ExampleStrip, V3HeroProof } from "../V3ExampleStrip";
 
 export function V3LandingScreen({
@@ -12,7 +13,8 @@ export function V3LandingScreen({
   fileInputId: string;
 }) {
   const copy = PET_V3_FUNNEL_CONFIG.copy;
-  const offer = v3PackOfferCopy();
+  const [offer, setOffer] = useState(() => v3PackOfferCopy());
+  const refreshOffer = () => setOffer(v3PackOfferCopy());
   return (
     <div className="space-y-8">
       <V3HeroProof />
@@ -25,6 +27,7 @@ export function V3LandingScreen({
         <p className="mt-2 max-w-md text-sm leading-6 text-[#f6efe4]/72 sm:text-base sm:leading-7">
           {copy.landingSubhead}
         </p>
+        <V3SaleLine onExpire={refreshOffer} />
         <Button
           type="button"
           onClick={onUploadClick}
@@ -41,7 +44,7 @@ export function V3LandingScreen({
           {[
             { icon: BadgeCheck, label: "12 secret lives" },
             { icon: BadgeCheck, label: "2 mini clips" },
-            { icon: BadgeCheck, label: `${offer.priceDisplay} one-time` },
+            { icon: BadgeCheck, label: `${offer.compareAtDisplay} → ${offer.priceDisplay} today` },
             { icon: Timer, label: "Usually under 30 seconds" },
             { icon: Lock, label: "No subscription" },
             { icon: ShieldCheck, label: "Photo stays private" },
@@ -56,7 +59,7 @@ export function V3LandingScreen({
 
       <V3ExampleStrip />
       <V3ClosingCta onClick={onUploadClick} />
-      <V3StickyCta onClick={onUploadClick} label={copy.landingCta} />
+      <V3StickyCta onClick={onUploadClick} label={copy.landingCta} onExpire={refreshOffer} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PET_V3_FUNNEL_CONFIG, v3PackOfferCopy } from "../config";
 import { V3PackOffer } from "../V3PackOffer";
@@ -18,7 +19,7 @@ export function V3PreviewScreen({
   onUnlock: () => void;
 }) {
   const copy = PET_V3_FUNNEL_CONFIG.copy;
-  const offer = v3PackOfferCopy();
+  const [offer, setOffer] = useState(() => v3PackOfferCopy());
   const headline = copy.previewHeadline(petName);
 
   return (
@@ -36,11 +37,13 @@ export function V3PreviewScreen({
           {copy.mockPreviewNote}
         </p>
       ) : null}
-      <V3PackOffer />
+      <V3PackOffer onExpire={() => setOffer(v3PackOfferCopy())} />
       <ul className="space-y-1.5 text-sm text-[#f6efe4]/68">
         <li>12 secret lives of the same cat</li>
         <li>2 mini cinematic clips</li>
-        <li>One-time {offer.priceDisplay} · no subscription</li>
+        <li>
+          One-time <s className="text-[#f6efe4]/45">{offer.compareAtDisplay}</s> {offer.priceDisplay}
+        </li>
       </ul>
       <Button
         type="button"

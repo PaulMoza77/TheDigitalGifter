@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,7 @@ export function V3OfferScreen({
   onContinue: () => void;
 }) {
   const copy = PET_V3_FUNNEL_CONFIG.copy;
-  const offer = v3PackOfferCopy();
+  const [offer, setOffer] = useState(() => v3PackOfferCopy());
   return (
     <div className="space-y-6">
       <div>
@@ -33,7 +34,7 @@ export function V3OfferScreen({
           {copy.offerSubhead(offer.headline)}
         </p>
       </div>
-      <V3PackOffer />
+      <V3PackOffer onExpire={() => setOffer(v3PackOfferCopy())} />
       <ul className="space-y-2 text-sm text-[#f6efe4]/72">
         <li>12 secret lives of the same cat</li>
         <li>2 mini cinematic clips</li>
