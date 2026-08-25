@@ -122,10 +122,12 @@ describe("pet funnel CRO", () => {
     expect(routes).toContain("parsePetSpecies(params.get(\"species\"))");
   });
 
-  it("7. species is not redundantly requested on the create page", () => {
+  it("7. create page stays photo-first without re-asking species", () => {
     const create = readSrc("src/features/pet/PetCreatePage.tsx");
-    expect(create).toContain("SpeciesChip");
+    expect(create).toContain("Great — now upload a photo of");
+    expect(create).toContain("PhotoUploader");
     expect(create).not.toContain("PetTypePicker");
+    expect(create).toContain('eventName: "photo_step_viewed"');
   });
 
   it("8. other requires a subtype", () => {
@@ -145,6 +147,9 @@ describe("pet funnel CRO", () => {
     const photo = new File([new Uint8Array([1, 2, 3])], "charlie.jpg", { type: "image/jpeg" });
     expect(validatePetPhotoFile(photo).ok).toBe(true);
     expect(validatePetPhotoFile(new File([], "empty.jpg", { type: "image/jpeg" })).ok).toBe(false);
+    expect(validatePetPhotoFile(new File([new Uint8Array([1])], "milo.heic", { type: "image/heic" })).ok).toBe(
+      false,
+    );
     expect(
       validatePetDraft({
         petName: "Charlie",
@@ -170,7 +175,7 @@ describe("pet funnel CRO", () => {
     expect(readSrc("src/features/pet/components/NameCapture.tsx")).toContain("No charge yet");
   });
 
-  it("12. back/edit preserves the draft", () => {
+  it("12. back/edit preserves the draft and checkout requires name + photo", () => {
     savePetDraft({
       ...createEmptyPetDraft(),
       petName: "Charlie",
@@ -180,7 +185,10 @@ describe("pet funnel CRO", () => {
     });
     expect(loadPetDraft().email).toBe("you@email.com");
     expect(loadPetDraft().photoPreviewDataUrl).toContain("data:image/jpeg");
-    expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("goToCreate");
+    const checkout = readSrc("src/features/pet/PetCheckoutPage.tsx");
+    expect(checkout).toContain("goToCreate");
+    expect(checkout).toContain("validatePetName");
+    expect(checkout).toMatch(/if \(!nameOk \|\| !photoOk\)/);
   });
 
   it("13. checkout review shows the verified server-owned amount", () => {

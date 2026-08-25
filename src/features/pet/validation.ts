@@ -143,11 +143,26 @@ export function validatePetPhotoFile(file: File): PhotoValidationResult {
     };
   }
 
+  const loweredMime = String(file.type || "").toLowerCase();
+  const loweredName = String(file.name || "").toLowerCase();
+  const looksHeic =
+    loweredMime.includes("heic") ||
+    loweredMime.includes("heif") ||
+    loweredName.endsWith(".heic") ||
+    loweredName.endsWith(".heif");
+  if (looksHeic) {
+    return {
+      ok: false,
+      message:
+        "This iPhone photo (HEIC) couldn’t be read here. In Photos, choose Share → Save as JPEG, or pick a JPEG/PNG.",
+    };
+  }
+
   const contentType = normalizePhotoContentType(file.type, file.name);
   if (!contentType) {
     return {
       ok: false,
-      message: "Use a JPEG, PNG, or WebP photo.",
+      message: "Use a JPEG, PNG, or WebP photo. iPhone HEIC files need to be saved as JPEG first.",
     };
   }
 

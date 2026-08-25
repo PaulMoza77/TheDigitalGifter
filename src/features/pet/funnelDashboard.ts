@@ -1,6 +1,9 @@
+import { sequentialConversionPct } from "./funnelEventContract";
+
 export const PET_FUNNEL_INTERNAL_EVENTS = [
   "landing_view",
   "pet_name_submitted",
+  "photo_step_viewed",
   "photo_upload_completed",
   "order_review_viewed",
   "initiate_checkout",
@@ -191,7 +194,7 @@ export function buildFunnelSteps(counts: FunnelStepCounts): FunnelStepRow[] {
   return PET_FUNNEL_PRIMARY_STEPS.map((eventName, index) => {
     const sessions = counts[eventName];
     const previous = index === 0 ? null : counts[PET_FUNNEL_PRIMARY_STEPS[index - 1]];
-    const fromPreviousPct = previous == null ? null : percent(sessions, previous);
+    const fromPreviousPct = previous == null ? null : sequentialConversionPct(sessions, previous);
     return {
       eventName,
       label: PET_FUNNEL_STEP_LABELS[eventName],
@@ -199,7 +202,9 @@ export function buildFunnelSteps(counts: FunnelStepCounts): FunnelStepRow[] {
       fromPreviousPct,
       fromLandingPct: percent(sessions, landing),
       dropFromPreviousPct:
-        previous == null || previous <= 0 ? null : percent(Math.max(previous - sessions, 0), previous),
+        previous == null || previous <= 0
+          ? null
+          : percent(Math.max(previous - Math.min(sessions, previous), 0), previous),
     };
   });
 }
@@ -227,7 +232,7 @@ export function ofPreviousLabel(
   ofLabel: string,
 ): string | null {
   if (to == null || from == null) return null;
-  const rate = percent(to, from);
+  const rate = sequentialConversionPct(to, from);
   return rate == null ? null : `${formatPct(rate)} of ${ofLabel}`;
 }
 

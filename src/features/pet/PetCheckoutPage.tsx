@@ -18,6 +18,7 @@ import { type PetFunnelNavigation } from "./types";
 import { usePetDraft } from "./usePetDraft";
 import { usePublicPetOffer } from "./usePublicPetOffer";
 import { validatePetDraft } from "./validation";
+import { validatePetName } from "./croGuards";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import {
   shouldTrackPetBeginCheckout,
@@ -95,13 +96,19 @@ export function PetCheckoutPage({
   );
 
   useEffect(() => {
+    const nameOk = validatePetName(draft.petName).ok;
+    const photoOk = Boolean(draft.photo);
+    if (!nameOk || !photoOk) {
+      navigation?.goToCreate(draft.species ?? undefined);
+      return;
+    }
     headingRef.current?.focus();
     trackFunnelEvent(
       "PetOrderReviewViewed",
       { species: draft.species },
       { onceKey: "tdg.funnel.PetOrderReviewViewed" },
     );
-  }, [draft.species]);
+  }, [draft.species, draft.petName, draft.photo, navigation]);
 
   useEffect(() => {
     const tick = () => {

@@ -3,7 +3,7 @@
  * Canonical identifier is Meta campaign_id. Funnel variant is never inferred from name, path, species, or date.
  */
 
-import { firstPartyConversionPct, trackingCoverageSignal } from "./funnelEventContract";
+import { firstPartyConversionPct, sequentialConversionPct, trackingCoverageSignal } from "./funnelEventContract";
 import { percent, ratio } from "./funnelDashboard";
 import { safeCpaCents, safeCpcCents, safeCtrPct, safeRoas } from "./funnelHybrid";
 
@@ -237,7 +237,7 @@ export function buildFunnelFromCounts(
       eventName: stage.eventName,
       label: stage.label,
       sessions,
-      fromPreviousPct: previous == null ? null : firstPartyConversionPct(sessions, previous),
+      fromPreviousPct: previous == null ? null : sequentialConversionPct(sessions, previous),
       fromLandingPct: firstPartyConversionPct(sessions, landing),
     };
   });

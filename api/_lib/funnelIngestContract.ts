@@ -3,6 +3,7 @@ export const PET_FUNNEL_EVENT_PATH = "/api/pet/funnel-event";
 export const PET_FUNNEL_ALLOWED_EVENTS = [
   "landing_view",
   "pet_name_submitted",
+  "photo_step_viewed",
   "photo_upload_started",
   "photo_upload_completed",
   "pet_details_completed",
@@ -23,6 +24,7 @@ export const PET_FUNNEL_MAX_BODY_BYTES = 4096;
 const SESSION_ONCE_EVENTS = new Set<PetFunnelAllowedEvent>([
   "landing_view",
   "pet_name_submitted",
+  "photo_step_viewed",
   "photo_upload_started",
   "photo_upload_completed",
   "pet_details_completed",
@@ -252,6 +254,16 @@ export function firstPartyConversionPct(
     return null;
   }
   return (numerator / firstPartyDenominator) * 100;
+}
+
+/** Cap sequential step rates at 100% when later stages include out-of-cohort sessions. */
+export function sequentialConversionPct(
+  numerator: number | null | undefined,
+  previousStepDenominator: number | null | undefined,
+): number | null {
+  const raw = firstPartyConversionPct(numerator, previousStepDenominator);
+  if (raw == null) return null;
+  return Math.min(100, raw);
 }
 
 export function trackingCoverageSignal(firstPartyLandings: number, metaLpv: number | null): {

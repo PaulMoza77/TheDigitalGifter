@@ -10,6 +10,7 @@ import {
   setPetPhotoFile,
 } from "./storage";
 import { validatePetPhotoFile } from "./validation";
+import { normalizePetPhotoFile } from "./photoNormalize";
 
 export function usePetDraft() {
   const [draft, setDraft] = useState<PetFunnelDraft>(() => loadPetDraft());
@@ -34,17 +35,22 @@ export function usePetDraft() {
 
   const setPhotoFromFile = useCallback(
     async (file: File) => {
-      const validation = validatePetPhotoFile(file);
+      const normalized = await normalizePetPhotoFile(file);
+      if (!normalized.ok) {
+        return { ok: false as const, message: normalized.message };
+      }
+
+      const validation = validatePetPhotoFile(normalized.file);
       if (!validation.ok) {
         return { ok: false as const, message: validation.message };
       }
 
-      setPetPhotoFile(file);
-      const preview = await createSafePhotoPreview(file);
+      setPetPhotoFile(normalized.file);
+      const preview = await createSafePhotoPreview(normalized.file);
       const meta: PetPhotoMeta = {
-        fileName: file.name,
+        fileName: normalized.file.name,
         contentType: validation.contentType,
-        byteSize: file.size,
+        byteSize: normalized.file.size,
         width: null,
         height: null,
       };
