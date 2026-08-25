@@ -73,6 +73,7 @@ export type TrackV2Input = {
   species?: string | null;
   amountCents?: number | null;
   pathname?: string | null;
+  failureCategory?: string | null;
 };
 
 export function trackPetV2Event(input: TrackV2Input): void {
@@ -84,6 +85,10 @@ export function trackPetV2Event(input: TrackV2Input): void {
     const species =
       input.species === "dog" || input.species === "cat" || input.species === "other"
         ? input.species
+        : null;
+    const failureCategory =
+      typeof input.failureCategory === "string"
+        ? input.failureCategory.replace(/[^a-z0-9_]/gi, "").slice(0, 40)
         : null;
     const payload = {
       event_name: input.eventName,
@@ -108,9 +113,10 @@ export function trackPetV2Event(input: TrackV2Input): void {
       has_meta_click: context.hasFbclid,
       referrer_host: context.referrerHost,
       funnel_variant: "v2_preview",
+      failure_category: failureCategory,
     };
     post(payload);
-    sendGa4Custom(input.eventName, species);
+    sendGa4Custom(input.eventName, species, failureCategory);
   } catch {
     /* tracking must never break the funnel */
   }
@@ -137,13 +143,14 @@ function post(payload: Record<string, string | number | boolean | null>): void {
   }).catch(() => undefined);
 }
 
-function sendGa4Custom(eventName: PetV2EventName, species: string | null) {
+function sendGa4Custom(eventName: PetV2EventName, species: string | null, failureCategory: string | null) {
   try {
     const gtag = (window as Window & { gtag?: (...args: unknown[]) => void }).gtag;
     if (typeof gtag !== "function") return;
     gtag("event", eventName, {
       funnel_variant: "v2_preview",
       species: species || undefined,
+      failure_category: failureCategory || undefined,
     });
   } catch {
     /* ignore */

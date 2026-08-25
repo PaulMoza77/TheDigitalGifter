@@ -115,9 +115,14 @@ describe("pet funnel V2 isolation", () => {
 
   it("keeps free preview off Stripe and charges V2 through pet-funnel at $12", () => {
     const previewApi = readSrc("api/pet-v2/preview.ts");
+    const edgePreview = readSrc("supabase/functions/pet-v2-preview/index.ts");
     expect(previewApi).not.toMatch(/stripe/i);
     expect(previewApi).toContain("black-forest-labs/flux-kontext-pro");
     expect(previewApi).not.toContain("pet-generate");
+    expect(previewApi).not.toContain("../_lib/petV2");
+    expect(edgePreview).toContain("black-forest-labs/flux-kontext-pro");
+    expect(edgePreview).toContain("recordSuccessfulPreview");
+    expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain("PET_V2_PREVIEW_EDGE_PATH");
     expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain('errorCode === "live_disabled"');
     expect(readSrc("src/features/pet-v2/previewClient.ts")).not.toContain("response.mode === \"mock\" || !response.ok");
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("createReplicatePrediction");

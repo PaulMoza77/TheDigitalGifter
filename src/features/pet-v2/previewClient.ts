@@ -1,5 +1,11 @@
+import { getPublicSupabaseConfig } from "@/lib/env";
 import { incrementSessionPreviewCount, remainingSessionPreviews, sessionAllowsAnotherPreview } from "./abuse";
-import { PET_V2_PREVIEW_PATH, type PetV2PreviewResponse, type PetV2Species } from "./types";
+import {
+  PET_V2_PREVIEW_EDGE_PATH,
+  type PetV2FailureCategory,
+  type PetV2PreviewResponse,
+  type PetV2Species,
+} from "./types";
 import { prepareV2UploadBlob } from "./photo";
 import { getPetV2SessionId } from "./session";
 import { buildMockRoyalPreview, watermarkPreviewDataUrl } from "./watermark";
@@ -16,6 +22,7 @@ export async function requestV2Preview(input: {
       mode: "mock",
       error: "This browser session already used its free previews.",
       errorCode: "rate_limited",
+      failureCategory: "rate_limit",
       remainingSession: 0,
     };
   }
@@ -25,9 +32,14 @@ export async function requestV2Preview(input: {
 
   let response: PetV2PreviewResponse;
   try {
-    const res = await fetch(PET_V2_PREVIEW_PATH, {
+    const { url, anon } = getPublicSupabaseConfig();
+    const res = await fetch(`${url.replace(/\/$/, "")}${PET_V2_PREVIEW_EDGE_PATH}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anon,
+        Authorization: `Bearer ${anon}`,
+      },
       body: JSON.stringify({
         species: input.species,
         session_id: getPetV2SessionId(),
@@ -35,11 +47,30 @@ export async function requestV2Preview(input: {
         scene: "royal-portrait",
         imageDataUrl,
       }),
-      credentials: "same-origin",
     });
-    response = (await res.json()) as PetV2PreviewResponse;
+    const text = await res.text();
+    try {
+      response = JSON.parse(text) as PetV2PreviewResponse;
+    } catch {
+      response = {
+        ok: false,
+        mode: "mock",
+        errorCode: "generation_failed",
+        failureCategory: "server_error",
+        error: "We couldn't create the preview. Try again.",
+      };
+    }
+    if (!response.failureCategory) {
+      response.failureCategory = categoryFromHttp(res.status, response);
+    }
   } catch {
-    response = { ok: false, mode: "mock", errorCode: "generation_failed", error: "Could not reach the preview service." };
+    response = {
+      ok: false,
+      mode: "mock",
+      errorCode: "generation_failed",
+      failureCategory: "endpoint_unreachable",
+      error: "We couldn't create the preview. Try again.",
+    };
   }
 
   if (response.ok && response.imageDataUrl) {
@@ -64,7 +95,23 @@ export async function requestV2Preview(input: {
     };
   }
 
-  return { ...response, remainingSession: remainingSessionPreviews() };
+  return {
+    ...response,
+    error: response.error || "We couldn't create the preview. Try again.",
+    remainingSession: remainingSessionPreviews(),
+  };
+}
+
+function categoryFromHttp(status: number, response: PetV2PreviewResponse): PetV2FailureCategory | undefined {
+  if (response.failureCategory) return response.failureCategory;
+  if (status === 429 || response.errorCode === "rate_limited") return "rate_limit";
+  if (response.errorCode === "invalid_photo" || response.errorCode === "heic_unsupported") {
+    return "invalid_image";
+  }
+  if (status === 401 || status === 403) return "provider_auth";
+  if (status >= 500) return "server_error";
+  if (response.errorCode === "generation_failed") return "provider_error";
+  return undefined;
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {
