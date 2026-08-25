@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { PET_SALE_EXPIRES_AT_ISO, PET_SALE_EXPIRES_AT_MS } from "../pet/flashSale";
+import { PET_V2_SALE_EXPIRES_AT_ISO, PET_V2_SALE_EXPIRES_AT_MS } from "../pet/flashSale";
 import { SaleCountdown, useSaleCountdown } from "../pet/components/SaleOffer";
 import {
   PET_V2_PRODUCTION_PRICE_CENTS,
@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export function v2PackOfferCopy(nowMs = Date.now()) {
-  const saleActive = nowMs < PET_SALE_EXPIRES_AT_MS;
+  const saleActive = nowMs < PET_V2_SALE_EXPIRES_AT_MS;
   if (!saleActive) {
     return {
       saleActive: false,
@@ -27,7 +27,7 @@ export function v2PackOfferCopy(nowMs = Date.now()) {
     priceDisplay: PET_V2_TEST_PRICE_DISPLAY,
     compareAtDisplay: PET_V2_PRODUCTION_PRICE_DISPLAY,
     amountCents: PET_V2_TEST_PRICE_CENTS,
-    expiresAt: PET_SALE_EXPIRES_AT_ISO,
+    expiresAt: PET_V2_SALE_EXPIRES_AT_ISO,
   };
 }
 

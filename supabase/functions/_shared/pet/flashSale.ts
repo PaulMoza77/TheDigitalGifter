@@ -5,12 +5,19 @@ export const PET_SALE_PRICE_CENTS = 1700 as const;
 export const PET_SALE_PRICE_DISPLAY = "$17" as const;
 
 /**
- * Shared real expiry for every visitor.
- * Tuesday Aug 25, 2026 10:30 AM Pacific — 24 hours from this change.
- * After this instant, checkout and the public offer return $27 again.
+ * V1 dog-funnel $17 overlay expiry (ended).
+ * Kept so unpaid V1 checkouts refresh back to $27.
  */
 export const PET_SALE_EXPIRES_AT_ISO = "2026-08-25T17:30:00.000Z" as const;
 export const PET_SALE_EXPIRES_AT_MS = Date.parse(PET_SALE_EXPIRES_AT_ISO);
+
+/**
+ * V2 pack offer: $12 from $27 for every visitor until this instant.
+ * Wednesday Aug 26, 2026 11:35 AM Pacific — 24 hours from this change.
+ * After this, V2 UI + checkout return to $27.
+ */
+export const PET_V2_SALE_EXPIRES_AT_ISO = "2026-08-26T18:35:00.000Z" as const;
+export const PET_V2_SALE_EXPIRES_AT_MS = Date.parse(PET_V2_SALE_EXPIRES_AT_ISO);
 
 export type PetFlashSale = {
   active: boolean;
@@ -51,9 +58,9 @@ export function applyPetFlashSaleAmount(listAmountCents: number, nowMs = Date.no
   return sale.active ? sale.amountCents : listAmountCents;
 }
 
-/** V2 charges $12 while the shared promo window is open, then $27. Never uses the V1 $17 overlay. */
+/** V2 charges $12 until PET_V2_SALE_EXPIRES_AT, then $27. Never uses the V1 $17 overlay. */
 export function applyV2SaleAmount(nowMs = Date.now()): number {
-  return nowMs < PET_SALE_EXPIRES_AT_MS ? PET_V2_PRICE_CENTS : PET_PRICE_CENTS;
+  return nowMs < PET_V2_SALE_EXPIRES_AT_MS ? PET_V2_PRICE_CENTS : PET_PRICE_CENTS;
 }
 
 export function checkoutAmountNeedsRefresh(orderAmountCents: number, liveAmountCents: number): boolean {
