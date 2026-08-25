@@ -6,6 +6,7 @@
 import { firstPartyConversionPct, sequentialConversionPct, trackingCoverageSignal } from "./funnelEventContract";
 import { percent, ratio } from "./funnelDashboard";
 import { safeCpaCents, safeCpcCents, safeCtrPct, safeRoas } from "./funnelHybrid";
+import { buildLandingCohortSequential } from "./funnelCohort";
 
 export const FUNNEL_VARIANTS = ["v1", "v2_preview"] as const;
 export type FunnelVariant = (typeof FUNNEL_VARIANTS)[number];
@@ -246,7 +247,29 @@ export function buildFunnelFromCounts(
 export function buildVariantFunnel(
   variant: FunnelVariant,
   events: FirstPartyEventRow[],
+  options?: {
+    rangeFromIso?: string;
+    rangeToIso?: string;
+    measurementReliableFrom?: string | null;
+    campaignId?: string | null;
+  },
 ): FunnelStageValue[] {
+  if (variant === "v1" && options?.rangeFromIso && options?.rangeToIso) {
+    const cohort = buildLandingCohortSequential(events, {
+      rangeFromIso: options.rangeFromIso,
+      rangeToIso: options.rangeToIso,
+      measurementReliableFrom: options.measurementReliableFrom,
+      campaignId: options.campaignId,
+    });
+    return buildFunnelFromCounts(variant, {
+      landing_view: cohort.cohortCounts.landing_view,
+      pet_name_submitted: cohort.cohortCounts.pet_name_submitted,
+      photo_upload_completed: cohort.cohortCounts.photo_upload_completed,
+      order_review_viewed: cohort.cohortCounts.order_review_viewed,
+      initiate_checkout: cohort.cohortCounts.initiate_checkout,
+      purchase: cohort.cohortCounts.purchase,
+    });
+  }
   const stages = variant === "v1" ? V1_FUNNEL_STAGES : V2_FUNNEL_STAGES;
   const counts: Record<string, number> = {};
   for (const stage of stages) {

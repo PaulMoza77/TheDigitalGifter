@@ -42,7 +42,8 @@ describe("pet funnel dashboard math", () => {
     expect(biggestFunnelDrop(steps)?.to).toBe("Pet Name Submitted");
   });
 
-  it("caps sequential conversion at 100% when later stages exceed prior cohort", () => {
+  it("keeps a defensive 100% safety cap only when fed independent (non-cohort) totals", () => {
+    // Safety guard for mismatched independent counts — production V1 rates use landing-cohort chaining instead.
     const steps = buildFunnelSteps({
       landing_view: 19,
       pet_name_submitted: 7,

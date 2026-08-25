@@ -145,6 +145,14 @@ export type PetFunnelAnalyticsReport = {
   datasetConfigured?: boolean;
   campaignLabel?: string;
   measurementReliableFrom?: string | null;
+  /** Independent distinct-session totals (not landing-cohort chained). */
+  rawSteps?: FunnelStepRow[];
+  /** Name → photo_step_viewed → started → completed diagnostic path. */
+  photoPathSteps?: Array<{
+    eventName: string;
+    sessions: number;
+    fromPreviousPct: number | null;
+  }>;
 };
 
 export function emptyStepCounts(): FunnelStepCounts {

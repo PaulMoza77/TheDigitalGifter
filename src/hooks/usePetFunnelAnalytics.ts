@@ -34,6 +34,8 @@ import {
   rpcCampaignIdForDataset,
   type FunnelDatasetId,
 } from "@/features/pet/funnelDatasetConfig";
+import { sequentialConversionPct } from "@/features/pet/funnelEventContract";
+import { V1_PHOTO_PATH_STAGES } from "@/features/pet/funnelCohort";
 
 type RpcRow = Record<string, unknown>;
 
@@ -174,13 +176,45 @@ export function usePetFunnelAnalytics(
       });
       if (rpcError) throw new Error(rpcError.message);
       const payload = (data || {}) as RpcRow;
-      const v1Counts = countsFromRows((payload.steps as RpcRow[]) || []);
+
+      let cohortPayload: RpcRow | null = null;
+      if (datasetId === "v1" && configured) {
+        const { data: cohortData, error: cohortError } = await supabase.rpc("admin_pet_v1_landing_cohort_funnel", {
+          p_from: range.from.toISOString(),
+          p_to: range.to.toISOString(),
+          p_campaign_id: campaignId,
+          p_view_mode: "campaign",
+          p_measurement_reliable_from: payload.measurement_reliable_from || null,
+        });
+        if (!cohortError && cohortData) {
+          cohortPayload = cohortData as RpcRow;
+        }
+      }
+
+      const v1RawCounts = countsFromRows((payload.steps as RpcRow[]) || []);
+      const v1CohortCounts = cohortPayload
+        ? countsFromRows((cohortPayload.cohort_steps as RpcRow[]) || [])
+        : null;
       const v1PreviousCounts = countsFromRows((payload.previous_steps as RpcRow[]) || []);
       const v2Counts = mapV2CountsToPrimarySteps(namedEventCounts((payload.v2_steps as RpcRow[]) || []));
-      const counts = datasetId === "v2" ? v2Counts : v1Counts;
+      const counts = datasetId === "v2" ? v2Counts : v1CohortCounts || v1RawCounts;
       const previousCounts = datasetId === "v2" ? emptyStepCounts() : v1PreviousCounts;
       const steps = buildFunnelSteps(counts);
       const previousSteps = buildFunnelSteps(previousCounts);
+      const rawSteps = datasetId === "v1" ? buildFunnelSteps(v1RawCounts) : previousSteps;
+
+      const photoPathRows = ((cohortPayload?.photo_path_steps as RpcRow[]) || []);
+      const photoPathByName = namedEventCounts(photoPathRows);
+      const photoPathSteps = V1_PHOTO_PATH_STAGES.map((eventName, index) => {
+        const sessions = photoPathByName[eventName] || 0;
+        const previous =
+          index === 0 ? null : photoPathByName[V1_PHOTO_PATH_STAGES[index - 1]] || 0;
+        return {
+          eventName,
+          sessions,
+          fromPreviousPct: previous == null ? null : sequentialConversionPct(sessions, previous),
+        };
+      });
       const firstEventAt = payload.first_event_at
         ? String(payload.first_event_at)
         : payload.first_party_tracking_started_at
@@ -435,6 +469,8 @@ export function usePetFunnelAnalytics(
         measurementReliableFrom: payload.measurement_reliable_from
           ? String(payload.measurement_reliable_from)
           : null,
+        rawSteps: datasetId === "v1" ? rawSteps : undefined,
+        photoPathSteps: datasetId === "v1" && photoPathSteps.some((s) => s.sessions > 0) ? photoPathSteps : undefined,
       };
       setReport(mapped);
     } catch (err) {

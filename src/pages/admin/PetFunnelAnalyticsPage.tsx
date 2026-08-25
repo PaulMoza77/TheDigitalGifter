@@ -310,7 +310,7 @@ export default function PetFunnelAnalyticsPage() {
 
             <SectionCard
               title="First-party funnel"
-              subtitle="Unique funnel_session_id counts from the same first-party event stream. Photo Selected = client-validated file, not storage upload."
+              subtitle="Landing-cohort sequential counts: each stage only includes sessions that reached the prior stage. Raw independent totals remain available for diagnostics."
             >
               <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6">
                 <StatCard label={labels.landing} value={formatMetricOrDash(kpis.firstPartyLandings)} helper={labels.landingHelper} />
@@ -322,7 +322,15 @@ export default function PetFunnelAnalyticsPage() {
                 <StatCard
                   label={labels.step3}
                   value={formatMetricOrDash(kpis.uploads)}
-                  helper={[kpis.uploadsSource.replace(/_/g, " "), ofPreviousLabel(kpis.uploads, kpis.names, labels.step3Of)].filter(Boolean).join(" · ")}
+                  helper={[
+                    kpis.uploadsSource.replace(/_/g, " "),
+                    ofPreviousLabel(kpis.uploads, kpis.names, labels.step3Of),
+                    report.photoPathSteps
+                      ? `Path ${report.photoPathSteps.map((s) => s.sessions).join("→")}`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 />
                 <StatCard
                   label={labels.step4}
