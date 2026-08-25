@@ -1,16 +1,16 @@
 import { emptyStepCounts, type FunnelStepCounts } from "./funnelDashboard";
 
-export const FUNNEL_DATASET_IDS = ["v1", "v2"] as const;
+export const FUNNEL_DATASET_IDS = ["v1", "v2", "v3"] as const;
 export type FunnelDatasetId = (typeof FUNNEL_DATASET_IDS)[number];
 
 export type FunnelDatasetConfig = {
   id: FunnelDatasetId;
-  /** Meta campaign_id. Empty string means Campaign 2 is not configured yet. */
+  /** Meta campaign_id. Empty string means Campaign is not configured yet. */
   campaignId: string;
-  funnelVariant: "v1" | "v2_preview";
+  funnelVariant: "v1" | "v2_preview" | "v3_cat_preview";
   shortLabel: string;
   displayName: string;
-  eventSource: "pet_funnel_events" | "pet_v2_funnel_events";
+  eventSource: "pet_funnel_events" | "pet_v2_funnel_events" | "pet_v3_funnel_events";
   kpiLabels: {
     landing: string;
     step2: string;
@@ -83,13 +83,42 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
       purchase: "Purchase",
     },
   },
+  v3: {
+    id: "v3",
+    campaignId: "",
+    funnelVariant: "v3_cat_preview",
+    shortLabel: "V3",
+    displayName: "Pet TDG Cat Funnel testing",
+    eventSource: "pet_v3_funnel_events",
+    kpiLabels: {
+      landing: "Landing Sessions",
+      step2: "Photo Uploads",
+      step3: "Preview Viewed",
+      step4: "Unlock Clicks",
+      checkout: "Initiate Checkouts",
+      purchase: "Purchases",
+      landingHelper: "First-party landing",
+      step2Of: "first-party landing",
+      step3Of: "uploads",
+      step4Of: "previews",
+      checkoutOf: "unlocks",
+    },
+    stageLabels: {
+      landing_view: "Landing Sessions",
+      pet_name_submitted: "Photo Uploads",
+      photo_upload_completed: "Preview Viewed",
+      order_review_viewed: "Unlock Clicks",
+      initiate_checkout: "Initiate Checkout",
+      purchase: "Purchase",
+    },
+  },
 };
 
 /** RPC campaign filter when a dataset has no Meta campaign_id yet. Matches no real campaign. */
 export const UNCONFIGURED_CAMPAIGN_ID = "__not_configured__";
 
 export function isFunnelDatasetId(value: unknown): value is FunnelDatasetId {
-  return value === "v1" || value === "v2";
+  return value === "v1" || value === "v2" || value === "v3";
 }
 
 export function funnelDataset(id: FunnelDatasetId): FunnelDatasetConfig {
@@ -123,6 +152,18 @@ export function namedEventCounts(
     if (!name) continue;
     counts[name] = Number(row.unique_sessions ?? row.sessions ?? row.event_count ?? 0) || 0;
   }
+  return counts;
+}
+
+/** Map isolated V3 event counts into the original 6-card funnel shape. */
+export function mapV3CountsToPrimarySteps(v3: Record<string, number>): FunnelStepCounts {
+  const counts = emptyStepCounts();
+  counts.landing_view = v3.v3_landing_view || 0;
+  counts.pet_name_submitted = v3.v3_upload_completed || 0;
+  counts.photo_upload_completed = v3.v3_preview_viewed || 0;
+  counts.order_review_viewed = v3.v3_unlock_clicked || 0;
+  counts.initiate_checkout = v3.v3_begin_checkout || 0;
+  counts.purchase = v3.v3_purchase || 0;
   return counts;
 }
 

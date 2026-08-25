@@ -40,6 +40,12 @@ const EVENT_COPY: Record<string, string> = {
   v2_unlock_clicked: "unlock clicked",
   v2_begin_checkout: "begin checkout",
   v2_purchase: "v2 purchase",
+  v3_landing_view: "v3 landing",
+  v3_upload_completed: "upload completed",
+  v3_preview_viewed: "preview viewed",
+  v3_unlock_clicked: "unlock clicked",
+  v3_begin_checkout: "begin checkout",
+  v3_purchase: "v3 purchase",
 };
 
 function comparisonHelper(current: number, previous: number): string | undefined {
@@ -206,7 +212,7 @@ export default function PetFunnelAnalyticsPage() {
         </div>
 
         <div className="inline-flex max-w-full flex-wrap rounded-xl border border-slate-700 bg-slate-900 p-0.5">
-          {(["v1", "v2"] as const).map((id) => {
+          {(["v1", "v2", "v3"] as const).map((id) => {
             const item = FUNNEL_DATASETS[id];
             const selected = datasetId === id;
             const title =
@@ -251,6 +257,10 @@ export default function PetFunnelAnalyticsPage() {
 
         {datasetId === "v2" && report && report.datasetConfigured === false ? (
           <p className="text-sm text-amber-200/80">Campaign 2 not configured yet</p>
+        ) : null}
+
+        {datasetId === "v3" && report && report.datasetConfigured === false ? (
+          <p className="text-sm text-amber-200/80">Meta campaign not configured</p>
         ) : null}
 
         {report?.firstPartyTrackingStartedAt ? (

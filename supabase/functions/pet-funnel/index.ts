@@ -17,6 +17,7 @@ import {
 import {
   applyPetFlashSaleAmount,
   applyV2SaleAmount,
+  applyV3SaleAmount,
   checkoutAmountNeedsRefresh,
   petFlashSale,
 } from "../_shared/pet/flashSale.ts";
@@ -128,6 +129,17 @@ function checkoutConflict() {
 
 function isV2Funnel(value: unknown): boolean {
   return asString(value) === "v2";
+}
+
+function isV3Funnel(value: unknown): boolean {
+  return asString(value) === "v3";
+}
+
+function resolveFunnelVariant(value: unknown): "v1" | "v2" | "v3" {
+  const raw = asString(value);
+  if (raw === "v3") return "v3";
+  if (raw === "v2") return "v2";
+  return "v1";
 }
 
 function safeReturnUrl(input: string, fallback: string): string {
@@ -370,8 +382,13 @@ Deno.serve(async (req) => {
       const photo = (body.photo || {}) as Record<string, unknown>;
       const offer = await loadActiveOffer(service);
       if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
-      const funnelVariant = isV2Funnel(body.funnelVariant) ? "v2" : "v1";
-      const amountCents = funnelVariant === "v2" ? applyV2SaleAmount() : offer.amountCents;
+      const funnelVariant = resolveFunnelVariant(body.funnelVariant);
+      const amountCents =
+        funnelVariant === "v3"
+          ? applyV3SaleAmount()
+          : funnelVariant === "v2"
+            ? applyV2SaleAmount()
+            : offer.amountCents;
       const priceCheck = rejectAgainstOffer(
         {
           amountCents: body.amountCents,
@@ -612,11 +629,13 @@ Deno.serve(async (req) => {
           existingView.payment_status === "paid" ||
           existingView.payment_status === "no_payment_required"
         : false;
-      const liveAmount = isV2Funnel(order.funnel_variant)
-        ? applyV2SaleAmount()
-        : liveOffer.ok
-          ? liveOffer.amountCents
-          : null;
+      const liveAmount = isV3Funnel(order.funnel_variant)
+        ? applyV3SaleAmount()
+        : isV2Funnel(order.funnel_variant)
+          ? applyV2SaleAmount()
+          : liveOffer.ok
+            ? liveOffer.amountCents
+            : null;
       let amountChanged = false;
       if (
         !paymentProcessing &&
@@ -713,7 +732,11 @@ Deno.serve(async (req) => {
       params.set("metadata[sku]", PET_SKU);
       params.set("metadata[product_type]", "pet_secret_life");
       params.set("metadata[pet_order_id]", order.id);
-      params.set("metadata[funnel_variant]", isV2Funnel(order.funnel_variant) ? "v2" : "v1");
+      params.set("metadata[funnel_variant]", isV3Funnel(order.funnel_variant) ? "v3" : isV2Funnel(order.funnel_variant) ? "v2" : "v1");
+      if (isV3Funnel(order.funnel_variant)) {
+        params.set("metadata[funnel_version]", "v3");
+        params.set("metadata[species]", asString(order.species) || "cat");
+      }
       if (checkoutCtx.funnelSessionId) {
         params.set("metadata[funnel_session_id]", checkoutCtx.funnelSessionId);
       }

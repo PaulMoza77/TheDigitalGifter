@@ -334,7 +334,7 @@ export type CreatePetOrderRequest = {
   sku: typeof PET_PRODUCT_SKU;
   subtype?: PetSubtype | null;
   subtypeDetail?: string | null;
-  funnelVariant?: "v1" | "v2";
+  funnelVariant?: "v1" | "v2" | "v3";
 };
 
 export type CreatePetOrderResponse = {

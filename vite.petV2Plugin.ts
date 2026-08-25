@@ -1,6 +1,7 @@
 import type { Plugin } from "vite";
 import previewHandler from "./api/pet-v2/preview";
 import funnelHandler from "./api/pet-v2-funnel-event";
+import funnelV3Handler from "./api/pet-v3-funnel-event";
 
 function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) => void }): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -49,7 +50,13 @@ export function petV2DevPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url?.split("?")[0] || "";
-        if (url !== "/api/pet-v2/funnel-event" && url !== "/api/pet-v2/preview") return next();
+        if (
+          url !== "/api/pet-v2/funnel-event" &&
+          url !== "/api/pet-v2/preview" &&
+          url !== "/api/pet-v3/funnel-event"
+        ) {
+          return next();
+        }
         const raw = req.method === "POST" ? await readRawBody(req as never) : "";
         let body: unknown = {};
         if (raw) {
@@ -66,6 +73,10 @@ export function petV2DevPlugin(): Plugin {
         const { req: vReq, res: vRes } = vercelLike(fakeReq, res);
         if (url === "/api/pet-v2/funnel-event") {
           await funnelHandler(vReq, vRes);
+          return;
+        }
+        if (url === "/api/pet-v3/funnel-event") {
+          await funnelV3Handler(vReq, vRes);
           return;
         }
         await previewHandler(vReq, vRes);

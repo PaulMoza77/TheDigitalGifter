@@ -172,6 +172,19 @@ export async function handlePetStripeEvent(input: {
             });
           }
         }
+        if (asString(input.metadata.funnel_variant) === "v3") {
+          const sessionId = asString(input.metadata.funnel_session_id);
+          if (isUuid(sessionId)) {
+            await input.service.rpc("record_pet_v3_funnel_event", {
+              p_event_name: "v3_purchase",
+              p_funnel_session_id: sessionId,
+              p_idempotency_key: `v3_purchase:${order.id}`,
+              p_species: "cat",
+              p_pathname: "/pet/cat-v3",
+              p_amount_cents: charged,
+            });
+          }
+        }
         if (!order.meta_purchase_sent_at) {
           const capi = await sendMetaCapiPurchase({
             eventId: order.meta_event_id,
