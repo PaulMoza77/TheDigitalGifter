@@ -1,10 +1,10 @@
 import { corsHeaders, jsonResponse, optionsResponse } from "../_shared/cors.ts";
 
-const IDENTITY_LOCK =
-  "Edit the reference photo only. Preserve the exact same pet identity: identical face shape, eyes, nose, muzzle, mouth, ears, fur color, fur texture, markings, age appearance, breed characteristics, body proportions, and general expression. Do not swap breeds or replace the pet with a different animal. Do not beautify beyond recognition. If cinematic drama conflicts with likeness, prioritize recognizable pet identity.";
-
-const F1_DRIVER_EDIT =
-  "Create a photoreal, vibrant, cinematic transformation of the uploaded pet as a premium Formula 1 driver. Change only the scene, styling, props, and lighting — never the pet’s face or body identity. Place the pet in or leaning out of a realistic Formula 1 race car cockpit with a visually exciting, high-end racing atmosphere (bright pit lane, paddock, or sunlit racetrack). The pet should wear a tailored racing suit with vivid motorsport-inspired color accents such as red, electric blue, bright yellow, and white; keep carbon black only as support, not the dominant look. Avoid muddy brown/black dominance and dark dull color grading. Prefer helmet with open visor or helmet pushed back so the face stays fully visible, expressive, and recognizable. Use brighter, more flattering lighting, stronger contrast, vivid highlights, clean subject separation, and tasteful depth of field. The final image should feel bold, polished, luxurious, energetic, and emotionally impressive — like a premium Formula 1 advertising hero image or cinematic motorsport editorial, not a dark muddy portrait. Avoid cartoonish looks, goofy costume vibes, clutter, and distorted anatomy.";
+import {
+  buildPreviewPrompt,
+  resolvePreviewContext,
+  type PreviewFunnelContext,
+} from "../_shared/pet/previewFunnelContext.ts";
 
 const MODEL = "black-forest-labs/flux-kontext-pro";
 const MAX_DATA_URL_CHARS = 2_500_000;
@@ -46,7 +46,19 @@ Deno.serve(async (req) => {
 
   const imageDataUrl = String(body.imageDataUrl || "");
   const sessionId = String(body.session_id || "").slice(0, 64);
-  const species = body.species === "cat" || body.species === "other" ? body.species : "dog";
+  const resolved = resolvePreviewContext(body);
+  if (!resolved.ok) {
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "mock",
+        errorCode: resolved.errorCode,
+        error: resolved.error,
+      },
+      400,
+    );
+  }
+  const { ctx, species } = resolved;
   const regenerate = Boolean(body.regenerate);
   const clientKey = String(body.idempotency_key || body.preview_attempt_id || "").trim().slice(0, 180);
 
@@ -75,7 +87,10 @@ Deno.serve(async (req) => {
   }
 
   const token = String(Deno.env.get("REPLICATE_API_TOKEN") || "").trim();
-  const liveKill = String(Deno.env.get("PET_V2_PREVIEW_LIVE") || "").toLowerCase() === "false";
+  const liveKill =
+    String(Deno.env.get(ctx.liveKillEnv) || "").toLowerCase() === "false" ||
+    (ctx.version === "v2" &&
+      String(Deno.env.get("PET_V2_PREVIEW_LIVE") || "").toLowerCase() === "false");
   if (liveKill || !token) {
     return jsonResponse({
       ok: false,
@@ -94,7 +109,7 @@ Deno.serve(async (req) => {
     clientKey ||
     `preview:${sessionId || "anon"}:${imageHash}${regenerate ? `:regen:${crypto.randomUUID()}` : ""}`;
 
-  const limited = await assertPreviewLimits(sessionId, ip, imageHash, idempotencyKey);
+  const limited = await assertPreviewLimits(ctx, sessionId, ip, imageHash, idempotencyKey);
   if (!limited.ok) {
     return jsonResponse(
       {
@@ -109,7 +124,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  let claim = await claimAttempt({
+  let claim = await claimAttempt(ctx, {
     idempotencyKey,
     sessionId,
     ip,
@@ -118,7 +133,7 @@ Deno.serve(async (req) => {
   });
 
   if (claim) {
-    const resumed = await resumeExistingAttempt(token, claim, idempotencyKey);
+    const resumed = await resumeExistingAttempt(token, claim, idempotencyKey, ctx);
     if (resumed) {
       if (resumed.ok && resumed.imageDataUrl) {
         return jsonResponse({
@@ -170,7 +185,7 @@ Deno.serve(async (req) => {
     claim?.prediction_id &&
     (claim.status === "pending" || claim.status === "processing" || claim.status === "succeeded")
   ) {
-    await markAttempt(idempotencyKey, {
+    await markAttempt(ctx, idempotencyKey, {
       status: "pending",
       liveGeneration: false,
       lastErrorCategory: "server_error",
@@ -180,15 +195,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const outputUrl = await runKontextPreview(token, imageDataUrl, species, idempotencyKey);
+    const outputUrl = await runKontextPreview(ctx, token, imageDataUrl, species, idempotencyKey);
     const image = await downloadAsDataUrl(outputUrl.url);
-    const marked = await markAttempt(idempotencyKey, {
+    const marked = await markAttempt(ctx, idempotencyKey, {
       status: "succeeded",
       predictionId: outputUrl.predictionId,
       liveGeneration: true,
     });
     if (!marked) {
-      await insertLegacySuccessfulAttempt({
+      await insertLegacySuccessfulAttempt(ctx, {
         sessionId,
         ip,
         imageHash,
@@ -197,7 +212,7 @@ Deno.serve(async (req) => {
         predictionId: outputUrl.predictionId,
       });
     }
-    await recordSuccessfulQuota({ sessionId, ip, imageHash });
+    await recordSuccessfulQuota(ctx, { sessionId, ip, imageHash });
     return jsonResponse({
       ok: true,
       mode: "live",
@@ -219,7 +234,7 @@ Deno.serve(async (req) => {
         ? String((error as { predictionId?: string }).predictionId || "")
         : "";
     if (!keepProcessing) {
-      await markAttempt(idempotencyKey, {
+      await markAttempt(ctx, idempotencyKey, {
         status: "failed",
         predictionId: predictionId || undefined,
         liveGeneration: false,
@@ -252,6 +267,7 @@ async function resumeExistingAttempt(
   token: string,
   claim: AttemptRow,
   idempotencyKey: string,
+  ctx: PreviewFunnelContext,
 ): Promise<{
   ok: boolean;
   imageDataUrl?: string;
@@ -269,7 +285,7 @@ async function resumeExistingAttempt(
       if (url) {
         const image = await downloadAsDataUrl(url);
         if (!claim.live_generation) {
-          await markAttempt(idempotencyKey, {
+          await markAttempt(ctx, idempotencyKey, {
             status: "succeeded",
             predictionId,
             liveGeneration: true,
@@ -280,7 +296,7 @@ async function resumeExistingAttempt(
     } catch {
       /* output URL may have expired — allow a replacement generation */
     }
-    await markAttempt(idempotencyKey, {
+    await markAttempt(ctx, idempotencyKey, {
       status: "pending",
       liveGeneration: false,
       lastErrorCategory: "provider_error",
@@ -299,15 +315,15 @@ async function resumeExistingAttempt(
       const polled = await pollPrediction(token, predictionId);
       if (polled.url) {
         const image = await downloadAsDataUrl(polled.url);
-        await markAttempt(idempotencyKey, {
+        await markAttempt(ctx, idempotencyKey, {
           status: "succeeded",
           predictionId,
           liveGeneration: true,
         });
-        await recordSuccessfulQuotaFromClaim(claim);
+        await recordSuccessfulQuotaFromClaim(ctx, claim);
         return { ok: true, imageDataUrl: image };
       }
-      await markAttempt(idempotencyKey, {
+      await markAttempt(ctx, idempotencyKey, {
         status: "failed",
         predictionId,
         liveGeneration: false,
@@ -339,12 +355,12 @@ async function resumeExistingAttempt(
         const url = replicateOutputUrl(existing.output);
         if (url) {
           const image = await downloadAsDataUrl(url);
-          await markAttempt(idempotencyKey, {
+          await markAttempt(ctx, idempotencyKey, {
             status: "succeeded",
             predictionId,
             liveGeneration: true,
           });
-          await recordSuccessfulQuotaFromClaim(claim);
+          await recordSuccessfulQuotaFromClaim(ctx, claim);
           return { ok: true, imageDataUrl: image };
         }
       }
@@ -352,16 +368,16 @@ async function resumeExistingAttempt(
         const polled = await pollPrediction(token, predictionId);
         if (polled.url) {
           const image = await downloadAsDataUrl(polled.url);
-          await markAttempt(idempotencyKey, {
+          await markAttempt(ctx, idempotencyKey, {
             status: "succeeded",
             predictionId,
             liveGeneration: true,
           });
-          await recordSuccessfulQuotaFromClaim(claim);
+          await recordSuccessfulQuotaFromClaim(ctx, claim);
           return { ok: true, imageDataUrl: image };
         }
         if (polled.errorCode === "timeout") {
-          await markAttempt(idempotencyKey, {
+          await markAttempt(ctx, idempotencyKey, {
             status: "processing",
             predictionId,
             liveGeneration: false,
@@ -375,7 +391,7 @@ async function resumeExistingAttempt(
         }
       }
       // Terminal provider failure for this prediction — allow one replacement create.
-      await markAttempt(idempotencyKey, {
+      await markAttempt(ctx, idempotencyKey, {
         status: "pending",
         liveGeneration: false,
         lastErrorCategory: String(claim.last_error_category || "provider_error"),
@@ -401,18 +417,13 @@ async function resumeExistingAttempt(
 }
 
 async function runKontextPreview(
+  ctx: PreviewFunnelContext,
   token: string,
   imageDataUrl: string,
   species: string,
   idempotencyKey: string,
 ): Promise<{ url: string; predictionId: string }> {
-  const prompt = [
-    IDENTITY_LOCK,
-    "Change only background, clothing, props, and lighting. Never replace the pet.",
-    F1_DRIVER_EDIT,
-    `Subject is a ${species === "other" ? "pet" : species}.`,
-    "Photoreal. Single pet only. No logos, trademarks, or copyrighted characters. No text overlays. No extra animals.",
-  ].join(" ");
+  const prompt = buildPreviewPrompt(ctx, species);
 
   const created = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
     method: "POST",
@@ -444,7 +455,7 @@ async function runKontextPreview(
     );
   }
 
-  await markAttempt(idempotencyKey, {
+  await markAttempt(ctx, idempotencyKey, {
     status: "processing",
     predictionId: createdJson.id,
     liveGeneration: false,
@@ -457,13 +468,13 @@ async function runKontextPreview(
     }
     // Keep processing on wait-timeout so retry resumes the same prediction.
     if (polled.errorCode === "timeout") {
-      await markAttempt(idempotencyKey, {
+      await markAttempt(ctx, idempotencyKey, {
         status: "processing",
         predictionId: createdJson.id,
         liveGeneration: false,
       });
     } else {
-      await markAttempt(idempotencyKey, {
+      await markAttempt(ctx, idempotencyKey, {
         status: "failed",
         predictionId: createdJson.id,
         liveGeneration: false,
@@ -548,6 +559,7 @@ async function downloadAsDataUrl(url: string): Promise<string> {
 }
 
 async function assertPreviewLimits(
+  ctx: PreviewFunnelContext,
   sessionId: string,
   ip: string,
   imageHash: string,
@@ -565,7 +577,7 @@ async function assertPreviewLimits(
   }
 
   // Replays of an in-flight / succeeded attempt must not be blocked by quota.
-  const existing = await getAttemptByKey(supabaseUrl, serviceKey, idempotencyKey);
+  const existing = await getAttemptByKey(ctx, supabaseUrl, serviceKey, idempotencyKey);
   if (
     existing &&
     (existing.status === "pending" ||
@@ -577,18 +589,18 @@ async function assertPreviewLimits(
   }
 
   const since = new Date(Date.now() - 86400000).toISOString();
-  const ipHash = await hashIp(ip);
-  const sessionCount = await countAttempts(supabaseUrl, serviceKey, {
+  const ipHash = await hashIp(ctx, ip);
+  const sessionCount = await countAttempts(ctx, supabaseUrl, serviceKey, {
     column: "session_id",
     value: sessionId.slice(0, 64),
     since,
   });
-  const ipCount = await countAttempts(supabaseUrl, serviceKey, {
+  const ipCount = await countAttempts(ctx, supabaseUrl, serviceKey, {
     column: "ip_hash",
     value: ipHash,
     since,
   });
-  const hashCount = await countAttempts(supabaseUrl, serviceKey, {
+  const hashCount = await countAttempts(ctx, supabaseUrl, serviceKey, {
     column: "image_hash",
     value: imageHash,
     since,
@@ -611,6 +623,7 @@ async function assertPreviewLimits(
 }
 
 async function countAttempts(
+  ctx: PreviewFunnelContext,
   supabaseUrl: string,
   serviceKey: string,
   input: { column: string; value: string; since: string },
@@ -618,7 +631,7 @@ async function countAttempts(
   if (!input.value) return 0;
   // Only successful live generations consume quota.
   const url =
-    `${supabaseUrl}/rest/v1/pet_v2_preview_attempts` +
+    `${supabaseUrl}/rest/v1/${ctx.attemptsTable}` +
     `?select=id&${input.column}=eq.${encodeURIComponent(input.value)}` +
     `&live_generation=eq.true&status=eq.succeeded&created_at=gte.${encodeURIComponent(input.since)}`;
   const res = await fetch(url, {
@@ -631,7 +644,7 @@ async function countAttempts(
   if (!res || !res.ok) {
     // Backward compatible if status column not migrated yet.
     const fallback =
-      `${supabaseUrl}/rest/v1/pet_v2_preview_attempts` +
+      `${supabaseUrl}/rest/v1/${ctx.attemptsTable}` +
       `?select=id&${input.column}=eq.${encodeURIComponent(input.value)}` +
       `&live_generation=eq.true&created_at=gte.${encodeURIComponent(input.since)}`;
     const res2 = await fetch(fallback, {
@@ -657,7 +670,9 @@ async function parseCount(res: Response): Promise<number> {
   return Array.isArray(rows) ? rows.length : 0;
 }
 
-async function claimAttempt(input: {
+async function claimAttempt(
+  ctx: PreviewFunnelContext,
+  input: {
   idempotencyKey: string;
   sessionId: string;
   ip: string;
@@ -668,8 +683,8 @@ async function claimAttempt(input: {
   const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
   if (!supabaseUrl || !serviceKey) return null;
 
-  const ipHash = await hashIp(input.ip);
-  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_pet_v2_preview_attempt`, {
+  const ipHash = await hashIp(ctx, input.ip);
+  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${ctx.claimRpc}`, {
     method: "POST",
     headers: {
       apikey: serviceKey,
@@ -682,7 +697,7 @@ async function claimAttempt(input: {
       p_ip_hash: ipHash,
       p_image_hash: input.imageHash,
       p_species: input.species,
-      p_scene_key: "formula-racer",
+      p_scene_key: ctx.sceneKey,
     }),
   }).catch(() => null);
 
@@ -692,9 +707,9 @@ async function claimAttempt(input: {
   }
 
   // Fallback without RPC: best-effort insert + select.
-  const existing = await getAttemptByKey(supabaseUrl, serviceKey, input.idempotencyKey);
+  const existing = await getAttemptByKey(ctx, supabaseUrl, serviceKey, input.idempotencyKey);
   if (existing) return existing;
-  await fetch(`${supabaseUrl}/rest/v1/pet_v2_preview_attempts`, {
+  await fetch(`${supabaseUrl}/rest/v1/${ctx.attemptsTable}`, {
     method: "POST",
     headers: {
       apikey: serviceKey,
@@ -708,23 +723,24 @@ async function claimAttempt(input: {
       ip_hash: ipHash,
       image_hash: input.imageHash,
       species: input.species,
-      scene_key: "formula-racer",
+      scene_key: ctx.sceneKey,
       live_generation: false,
       status: "pending",
       provider: "replicate",
       started_at: new Date().toISOString(),
     }),
   }).catch(() => undefined);
-  return await getAttemptByKey(supabaseUrl, serviceKey, input.idempotencyKey);
+  return await getAttemptByKey(ctx, supabaseUrl, serviceKey, input.idempotencyKey);
 }
 
 async function getAttemptByKey(
+  ctx: PreviewFunnelContext,
   supabaseUrl: string,
   serviceKey: string,
   idempotencyKey: string,
 ): Promise<AttemptRow | null> {
   const url =
-    `${supabaseUrl}/rest/v1/pet_v2_preview_attempts` +
+    `${supabaseUrl}/rest/v1/${ctx.attemptsTable}` +
     `?select=id,idempotency_key,prediction_id,status,live_generation,last_error_category,session_id,ip_hash,image_hash` +
     `&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`;
   const res = await fetch(url, {
@@ -739,6 +755,7 @@ async function getAttemptByKey(
 }
 
 async function markAttempt(
+  ctx: PreviewFunnelContext,
   idempotencyKey: string,
   patch: {
     status: string;
@@ -752,7 +769,7 @@ async function markAttempt(
   const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
   if (!supabaseUrl || !serviceKey) return false;
 
-  const rpc = await fetch(`${supabaseUrl}/rest/v1/rpc/update_pet_v2_preview_attempt`, {
+  const rpc = await fetch(`${supabaseUrl}/rest/v1/rpc/${ctx.updateRpc}`, {
     method: "POST",
     headers: {
       apikey: serviceKey,
@@ -785,7 +802,7 @@ async function markAttempt(
     body.completed_at = null;
   }
   const patched = await fetch(
-    `${supabaseUrl}/rest/v1/pet_v2_preview_attempts?idempotency_key=eq.${encodeURIComponent(idempotencyKey)}`,
+    `${supabaseUrl}/rest/v1/${ctx.attemptsTable}?idempotency_key=eq.${encodeURIComponent(idempotencyKey)}`,
     {
       method: "PATCH",
       headers: {
@@ -800,7 +817,9 @@ async function markAttempt(
   return Boolean(patched && patched.ok);
 }
 
-async function insertLegacySuccessfulAttempt(input: {
+async function insertLegacySuccessfulAttempt(
+  ctx: PreviewFunnelContext,
+  input: {
   sessionId: string;
   ip: string;
   imageHash: string;
@@ -811,13 +830,13 @@ async function insertLegacySuccessfulAttempt(input: {
   const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
   const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
   if (!supabaseUrl || !serviceKey) return;
-  const ipHash = await hashIp(input.ip);
+  const ipHash = await hashIp(ctx, input.ip);
   const payload: Record<string, unknown> = {
     session_id: input.sessionId.slice(0, 64),
     ip_hash: ipHash,
     image_hash: input.imageHash,
     species: input.species,
-    scene_key: "formula-racer",
+    scene_key: ctx.sceneKey,
     live_generation: true,
   };
   // Prefer enriched row when migration is present; fall back to legacy columns only.
@@ -830,7 +849,7 @@ async function insertLegacySuccessfulAttempt(input: {
     started_at: new Date().toISOString(),
     completed_at: new Date().toISOString(),
   };
-  const first = await fetch(`${supabaseUrl}/rest/v1/pet_v2_preview_attempts`, {
+  const first = await fetch(`${supabaseUrl}/rest/v1/${ctx.attemptsTable}`, {
     method: "POST",
     headers: {
       apikey: serviceKey,
@@ -841,7 +860,7 @@ async function insertLegacySuccessfulAttempt(input: {
     body: JSON.stringify(enriched),
   }).catch(() => null);
   if (first && first.ok) return;
-  await fetch(`${supabaseUrl}/rest/v1/pet_v2_preview_attempts`, {
+  await fetch(`${supabaseUrl}/rest/v1/${ctx.attemptsTable}`, {
     method: "POST",
     headers: {
       apikey: serviceKey,
@@ -853,7 +872,9 @@ async function insertLegacySuccessfulAttempt(input: {
   }).catch(() => undefined);
 }
 
-async function recordSuccessfulQuota(input: {
+async function recordSuccessfulQuota(
+  ctx: PreviewFunnelContext,
+  input: {
   sessionId: string;
   ip: string;
   imageHash: string;
@@ -861,15 +882,15 @@ async function recordSuccessfulQuota(input: {
   const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
   const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
   if (!supabaseUrl || !serviceKey) return;
-  const ipHash = await hashIp(input.ip);
+  const ipHash = await hashIp(ctx, input.ip);
   await Promise.all([
-    touchLimit(supabaseUrl, serviceKey, `pet-v2:session:${input.sessionId || "anon"}`, SESSION_LIMIT),
-    touchLimit(supabaseUrl, serviceKey, `pet-v2:ip:${ipHash}`, IP_DAY_LIMIT),
-    touchLimit(supabaseUrl, serviceKey, `pet-v2:img:${input.imageHash.slice(0, 32)}`, SESSION_LIMIT),
+    touchLimit(supabaseUrl, serviceKey, `${ctx.rateLimitPrefix}:session:${input.sessionId || "anon"}`, SESSION_LIMIT),
+    touchLimit(supabaseUrl, serviceKey, `${ctx.rateLimitPrefix}:ip:${ipHash}`, IP_DAY_LIMIT),
+    touchLimit(supabaseUrl, serviceKey, `${ctx.rateLimitPrefix}:img:${input.imageHash.slice(0, 32)}`, SESSION_LIMIT),
   ]);
 }
 
-async function recordSuccessfulQuotaFromClaim(claim: AttemptRow): Promise<void> {
+async function recordSuccessfulQuotaFromClaim(ctx: PreviewFunnelContext, claim: AttemptRow): Promise<void> {
   const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
   const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
   if (!supabaseUrl || !serviceKey) return;
@@ -877,10 +898,10 @@ async function recordSuccessfulQuotaFromClaim(claim: AttemptRow): Promise<void> 
   const ipHash = String((claim as { ip_hash?: string }).ip_hash || "");
   const imageHash = String((claim as { image_hash?: string }).image_hash || "");
   await Promise.all([
-    touchLimit(supabaseUrl, serviceKey, `pet-v2:session:${sessionId || "anon"}`, SESSION_LIMIT),
-    ipHash ? touchLimit(supabaseUrl, serviceKey, `pet-v2:ip:${ipHash}`, IP_DAY_LIMIT) : Promise.resolve(),
+    touchLimit(supabaseUrl, serviceKey, `${ctx.rateLimitPrefix}:session:${sessionId || "anon"}`, SESSION_LIMIT),
+    ipHash ? touchLimit(supabaseUrl, serviceKey, `${ctx.rateLimitPrefix}:ip:${ipHash}`, IP_DAY_LIMIT) : Promise.resolve(),
     imageHash
-      ? touchLimit(supabaseUrl, serviceKey, `pet-v2:img:${imageHash.slice(0, 32)}`, SESSION_LIMIT)
+      ? touchLimit(supabaseUrl, serviceKey, `${ctx.rateLimitPrefix}:img:${imageHash.slice(0, 32)}`, SESSION_LIMIT)
       : Promise.resolve(),
   ]);
 }
@@ -908,8 +929,8 @@ async function hashBytes(value: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function hashIp(ip: string): Promise<string> {
-  return (await hashBytes(`pet-v2:${ip}`)).slice(0, 32);
+async function hashIp(ctx: PreviewFunnelContext, ip: string): Promise<string> {
+  return (await hashBytes(`${ctx.rateLimitPrefix}:${ip}`)).slice(0, 32);
 }
 
 function sleep(ms: number): Promise<void> {

@@ -3,6 +3,8 @@ export const PET_PRODUCT_NAME = "My Pet’s Secret Life";
 export const PET_PRICE_CENTS = 2700;
 /** V2 /pet/dog-v2 checkout amount. Never apply the V1 flash sale to this. */
 export const PET_V2_PRICE_CENTS = 1200;
+/** V3 /pet/cat-v3 checkout amount — fixed launch price. */
+export const PET_V3_PRICE_CENTS = 1200;
 export const PET_CURRENCY = "usd";
 export const PET_SCENE_COUNT = 12;
 export const PET_VIDEO_CLIP_COUNT = 2;

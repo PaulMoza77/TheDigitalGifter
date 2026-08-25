@@ -133,7 +133,7 @@ export type StartPetCheckoutInput = {
   promoCode?: string;
   subtype?: CreatePetOrderRequest["subtype"];
   subtypeDetail?: CreatePetOrderRequest["subtypeDetail"];
-  funnelVariant?: "v1" | "v2";
+  funnelVariant?: "v1" | "v2" | "v3";
   funnelSessionId?: string;
   uiMode?: "hosted" | "embedded" | "custom";
 };

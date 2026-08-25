@@ -30,6 +30,7 @@ import {
   datasetSwitchLabel,
   isDatasetConfigured,
   mapV2CountsToPrimarySteps,
+  mapV3CountsToPrimarySteps,
   namedEventCounts,
   rpcCampaignIdForDataset,
   type FunnelDatasetId,
@@ -191,14 +192,31 @@ export function usePetFunnelAnalytics(
         }
       }
 
+      let v3StepRows: RpcRow[] = [];
+      if (datasetId === "v3") {
+        const { data: v3Data, error: v3Error } = await supabase.rpc("admin_pet_v3_funnel_step_counts", {
+          p_from: range.from.toISOString(),
+          p_to: range.to.toISOString(),
+        });
+        if (!v3Error && Array.isArray(v3Data)) {
+          v3StepRows = v3Data as RpcRow[];
+        } else if (!v3Error && v3Data && typeof v3Data === "object") {
+          v3StepRows = (v3Data as RpcRow).steps as RpcRow[] || [];
+        }
+      }
+
       const v1RawCounts = countsFromRows((payload.steps as RpcRow[]) || []);
       const v1CohortCounts = cohortPayload
         ? countsFromRows((cohortPayload.cohort_steps as RpcRow[]) || [])
         : null;
       const v1PreviousCounts = countsFromRows((payload.previous_steps as RpcRow[]) || []);
       const v2Counts = mapV2CountsToPrimarySteps(namedEventCounts((payload.v2_steps as RpcRow[]) || []));
-      const counts = datasetId === "v2" ? v2Counts : v1CohortCounts || v1RawCounts;
-      const previousCounts = datasetId === "v2" ? emptyStepCounts() : v1PreviousCounts;
+      const v3Counts = mapV3CountsToPrimarySteps(
+        namedEventCounts(v3StepRows.length ? v3StepRows : ((payload.v3_steps as RpcRow[]) || [])),
+      );
+      const counts =
+        datasetId === "v3" ? v3Counts : datasetId === "v2" ? v2Counts : v1CohortCounts || v1RawCounts;
+      const previousCounts = datasetId === "v2" || datasetId === "v3" ? emptyStepCounts() : v1PreviousCounts;
       const steps = buildFunnelSteps(counts);
       const previousSteps = buildFunnelSteps(previousCounts);
       const rawSteps = datasetId === "v1" ? buildFunnelSteps(v1RawCounts) : previousSteps;

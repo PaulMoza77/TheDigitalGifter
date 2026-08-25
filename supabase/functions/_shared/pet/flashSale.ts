@@ -1,4 +1,4 @@
-import { PET_PRICE_CENTS, PET_V2_PRICE_CENTS } from "./constants.ts";
+import { PET_PRICE_CENTS, PET_V2_PRICE_CENTS, PET_V3_PRICE_CENTS } from "./constants.ts";
 
 /** Live V1 promo charged instead of the $27 list price. */
 export const PET_SALE_PRICE_CENTS = 1700 as const;
@@ -61,6 +61,11 @@ export function applyPetFlashSaleAmount(listAmountCents: number, nowMs = Date.no
 /** V2 charges $12 until PET_V2_SALE_EXPIRES_AT, then $27. Never uses the V1 $17 overlay. */
 export function applyV2SaleAmount(nowMs = Date.now()): number {
   return nowMs < PET_V2_SALE_EXPIRES_AT_MS ? PET_V2_PRICE_CENTS : PET_PRICE_CENTS;
+}
+
+/** V3 cat funnel is fixed at $12 for the launch test. */
+export function applyV3SaleAmount(): number {
+  return PET_V3_PRICE_CENTS;
 }
 
 export function checkoutAmountNeedsRefresh(orderAmountCents: number, liveAmountCents: number): boolean {

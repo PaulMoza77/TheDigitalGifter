@@ -3,6 +3,7 @@ import {
   FUNNEL_DATASETS,
   isDatasetConfigured,
   mapV2CountsToPrimarySteps,
+  mapV3CountsToPrimarySteps,
   namedEventCounts,
   rpcCampaignIdForDataset,
 } from "./funnelDatasetConfig";
@@ -42,5 +43,30 @@ describe("funnelDatasetConfig", () => {
     expect(FUNNEL_DATASETS.v2.kpiLabels.step3).toBe("Preview Viewed");
     expect(FUNNEL_DATASETS.v2.kpiLabels.step4).toBe("Unlock Clicks");
     expect(FUNNEL_DATASETS.v2.kpiLabels.landingHelper).not.toContain("pet_name_submitted");
+  });
+
+  it("keeps V3 cat dataset isolated with no Meta campaign until configured", () => {
+    expect(FUNNEL_DATASETS.v3.campaignId).toBe("");
+    expect(FUNNEL_DATASETS.v3.funnelVariant).toBe("v3_cat_preview");
+    expect(FUNNEL_DATASETS.v3.eventSource).toBe("pet_v3_funnel_events");
+    expect(isDatasetConfigured("v3")).toBe(false);
+    expect(rpcCampaignIdForDataset("v3")).toBe("__not_configured__");
+
+    const counts = mapV3CountsToPrimarySteps(
+      namedEventCounts([
+        { event_name: "v3_landing_view", unique_sessions: 10 },
+        { event_name: "v3_upload_completed", unique_sessions: 6 },
+        { event_name: "v3_preview_viewed", unique_sessions: 5 },
+        { event_name: "v3_unlock_clicked", unique_sessions: 2 },
+        { event_name: "v3_begin_checkout", unique_sessions: 1 },
+        { event_name: "v3_purchase", unique_sessions: 1 },
+      ]),
+    );
+    expect(counts.landing_view).toBe(10);
+    expect(counts.pet_name_submitted).toBe(6);
+    expect(counts.photo_upload_completed).toBe(5);
+    expect(counts.order_review_viewed).toBe(2);
+    expect(counts.initiate_checkout).toBe(1);
+    expect(counts.purchase).toBe(1);
   });
 });
