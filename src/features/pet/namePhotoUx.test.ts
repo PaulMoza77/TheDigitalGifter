@@ -79,6 +79,7 @@ describe("V1 name → photo UX and diagnostics", () => {
     );
     expect(row.eventName).toBe("photo_step_viewed");
     expect(readSrc("src/features/pet/PetCreatePage.tsx")).toContain('eventName: "photo_step_viewed"');
+    expect(readSrc("api/pet-funnel-event.ts")).toContain("photo_step_viewed");
     expect(readSrc("src/features/pet-v2/analytics.ts")).not.toContain("photo_step_viewed");
     expect(readSrc("src/features/pet-v2/types.ts")).not.toContain("photo_step_viewed");
   });
