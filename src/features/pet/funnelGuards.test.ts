@@ -248,14 +248,22 @@ describe("pet funnel production guards", () => {
       matchedEmbeddedCheckoutResponse({
         id: "cs_embed",
         status: "open",
-        client_secret: "cs_embed_secret_abc",
+        client_secret: "cs_test_embed_secret_abc",
         expires_at: Math.floor(Date.now() / 1000) + 1800,
       }),
     ).toEqual({
       ok: true,
       sessionId: "cs_embed",
-      clientSecret: "cs_embed_secret_abc",
+      clientSecret: "cs_test_embed_secret_abc",
     });
+    expect(
+      matchedEmbeddedCheckoutResponse({
+        id: "cs_live_a1qULKNoijnByHIUXCArn1GU33vxy5aBTV",
+        status: "open",
+        client_secret: "cs_live_a1qULKNoijnByHIUXCArn1GU33vxy5aBTV",
+        expires_at: Math.floor(Date.now() / 1000) + 1800,
+      }),
+    ).toEqual({ ok: false, reason: "conflict" });
   });
 
   it("replaces an expired stored session with expected-value CAS", () => {

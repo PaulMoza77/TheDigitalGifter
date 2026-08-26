@@ -277,6 +277,23 @@ export function matchedOpenCheckoutResponse(session: {
   return { ok: true, sessionId, checkoutUrl };
 }
 
+export function isValidEmbeddedClientSecret(
+  clientSecret: string | null | undefined,
+  sessionId?: string | null,
+): boolean {
+  const secret = String(clientSecret || "").trim();
+  if (!secret) return false;
+  if (!/^cs_(live|test)_/.test(secret)) return false;
+  if (!secret.includes("_secret_")) return false;
+  const sid = String(sessionId || "").trim();
+  if (sid && secret === sid) return false;
+  return true;
+}
+
+export function sanitizeStripeCheckoutCustomerError(_message?: string | null): string {
+  return "We couldn't load secure payment. Please try again.";
+}
+
 export function matchedEmbeddedCheckoutResponse(session: {
   id?: string | null;
   client_secret?: string | null;
@@ -286,7 +303,9 @@ export function matchedEmbeddedCheckoutResponse(session: {
 } | null): { ok: true; sessionId: string; clientSecret: string } | { ok: false; reason: "conflict" } {
   const sessionId = String(session?.id || "").trim();
   const clientSecret = String(session?.client_secret || "").trim();
-  if (!sessionId || !clientSecret) return { ok: false, reason: "conflict" };
+  if (!sessionId || !isValidEmbeddedClientSecret(clientSecret, sessionId)) {
+    return { ok: false, reason: "conflict" };
+  }
   if (
     sessionIsPaymentProcessing({
       id: sessionId,

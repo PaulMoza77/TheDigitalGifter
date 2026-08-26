@@ -3,16 +3,22 @@ import { PetApiError, startPetCheckout, type PetFunnelApi } from "../pet/api";
 import { petFunnelApi } from "../pet/supabaseApi";
 import { PET_DEFAULT_PERSONALITY } from "../pet/types";
 import { validatePetName } from "../pet/croGuards";
+import { checkoutAnalyticsContext } from "../pet/funnelInternal";
+import { isValidEmbeddedClientSecret } from "../pet/funnelGuards";
 import type { PetV3PhotoMeta } from "./types";
 import { PET_V3_ROUTE, PET_V3_SPECIES } from "./types";
 import { getPetV3SessionId } from "./session";
 import {
+  clearCachedV3EmbeddedCheckout,
+  isValidCachedV3EmbeddedCheckout,
   readCachedV3EmbeddedCheckout,
   readOrResetV3CheckoutHold,
   v3BootstrapContact,
   writeCachedV3EmbeddedCheckout,
 } from "./v3CheckoutHold";
 import { v3PackOfferCopy } from "./config";
+
+const CHECKOUT_INIT_ERROR = "We couldn't load secure payment. Please try again.";
 
 export type V3EmbeddedCheckoutState = {
   clientSecret: string | null;
@@ -26,7 +32,73 @@ export type V3EmbeddedCheckoutState = {
   initError: string | null;
   checkoutReady: boolean;
   retry: () => void;
+  invalidateStripeSession: () => void;
 };
+
+function applyCheckoutResult(input: {
+  result: {
+    orderId: string;
+    publicToken: string;
+    sessionId: string;
+    clientSecret?: string | null;
+    publishableKey?: string | null;
+    checkoutUrl?: string | null;
+    expiresAt?: number | null;
+    eventId?: string;
+    purchaseEventId?: string;
+    amountCents?: number;
+    chargedAmountCents?: number;
+    status?: "open" | "payment_processing" | "comped";
+  };
+  holdExpiresAt: number;
+  setters: {
+    setClientSecret: (value: string | null) => void;
+    setPublishableKey: (value: string | null) => void;
+    setOrderId: (value: string | null) => void;
+    setPublicToken: (value: string | null) => void;
+    setSessionId: (value: string | null) => void;
+    setEventId: (value: string | null) => void;
+    setInitError: (value: string | null) => void;
+  };
+}): boolean {
+  const { result, holdExpiresAt, setters } = input;
+  if (
+    !isValidEmbeddedClientSecret(result.clientSecret, result.sessionId) ||
+    !String(result.publishableKey || "").startsWith("pk_")
+  ) {
+    return false;
+  }
+
+  const stripeExpiresAt = result.expiresAt
+    ? result.expiresAt > 10_000_000_000
+      ? result.expiresAt
+      : result.expiresAt * 1000
+    : holdExpiresAt;
+
+  writeCachedV3EmbeddedCheckout({
+    orderId: result.orderId,
+    publicToken: result.publicToken,
+    sessionId: result.sessionId,
+    clientSecret: result.clientSecret,
+    publishableKey: result.publishableKey,
+    checkoutUrl: result.checkoutUrl,
+    expiresAt: stripeExpiresAt,
+    eventId: result.eventId,
+    purchaseEventId: result.purchaseEventId,
+    amountCents: result.amountCents,
+    chargedAmountCents: result.chargedAmountCents,
+    status: result.status,
+  });
+
+  setters.setClientSecret(result.clientSecret!);
+  setters.setPublishableKey(result.publishableKey!);
+  setters.setOrderId(result.orderId);
+  setters.setPublicToken(result.publicToken);
+  setters.setSessionId(result.sessionId);
+  setters.setEventId(result.eventId ?? null);
+  setters.setInitError(null);
+  return true;
+}
 
 export function useV3EmbeddedCheckout(input: {
   active: boolean;
@@ -37,6 +109,7 @@ export function useV3EmbeddedCheckout(input: {
   const api = input.api ?? petFunnelApi;
   const bootstrapped = useRef(false);
   const bootstrapInFlight = useRef(false);
+  const orderRef = useRef<{ orderId: string; publicToken: string } | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -47,19 +120,75 @@ export function useV3EmbeddedCheckout(input: {
   const [initError, setInitError] = useState<string | null>(null);
   const offer = v3PackOfferCopy();
 
+  const setters = {
+    setClientSecret,
+    setPublishableKey,
+    setOrderId,
+    setPublicToken,
+    setSessionId,
+    setEventId,
+    setInitError,
+  };
+
+  const recoverExistingOrderCheckout = useCallback(async () => {
+    const existing = orderRef.current;
+    if (!existing) return false;
+    const hold = readOrResetV3CheckoutHold();
+    const analytics = checkoutAnalyticsContext();
+    const checkout = await api.createStripeCheckout({
+      orderId: existing.orderId,
+      publicToken: existing.publicToken,
+      successUrl: `${window.location.origin}/pet/order`,
+      cancelUrl: `${window.location.origin}${PET_V3_ROUTE}`,
+      customerEmail: v3BootstrapContact(getPetV3SessionId()).email,
+      uiMode: "custom",
+      ...analytics,
+      funnelSessionId: getPetV3SessionId(),
+    });
+
+    if (checkout.status === "payment_processing" || checkout.status === "comped") {
+      window.location.assign(`/pet/order?token=${encodeURIComponent(existing.publicToken)}`);
+      return true;
+    }
+
+    return applyCheckoutResult({
+      result: {
+        orderId: existing.orderId,
+        publicToken: existing.publicToken,
+        sessionId: checkout.sessionId,
+        clientSecret: checkout.clientSecret,
+        publishableKey: checkout.publishableKey,
+        checkoutUrl: checkout.checkoutUrl,
+        expiresAt: checkout.expiresAt,
+        eventId: checkout.eventId,
+        purchaseEventId: checkout.purchaseEventId,
+        amountCents: checkout.amountCents,
+        chargedAmountCents: checkout.chargedAmountCents,
+        status: checkout.status,
+      },
+      holdExpiresAt: hold.expiresAt,
+      setters,
+    });
+  }, [api]);
+
   const bootstrap = useCallback(async () => {
     if (!input.active || !input.photo || !input.file) return;
     if (bootstrapInFlight.current) return;
 
     const cached = readCachedV3EmbeddedCheckout();
-    if (cached?.clientSecret && cached.publishableKey) {
-      setClientSecret(cached.clientSecret);
-      setPublishableKey(cached.publishableKey);
+    if (cached && isValidCachedV3EmbeddedCheckout(cached)) {
+      orderRef.current = { orderId: cached.orderId, publicToken: cached.publicToken };
+      setClientSecret(cached.clientSecret ?? null);
+      setPublishableKey(cached.publishableKey ?? null);
       setOrderId(cached.orderId);
       setPublicToken(cached.publicToken);
       setSessionId(cached.sessionId);
       setEventId(cached.eventId ?? null);
+      setInitError(null);
       return;
+    }
+    if (cached) {
+      clearCachedV3EmbeddedCheckout();
     }
 
     bootstrapInFlight.current = true;
@@ -85,52 +214,24 @@ export function useV3EmbeddedCheckout(input: {
         uiMode: "custom",
       });
 
+      orderRef.current = { orderId: result.orderId, publicToken: result.publicToken };
+
       if (result.status === "payment_processing" || result.status === "comped") {
         window.location.assign(`/pet/order?token=${encodeURIComponent(result.publicToken)}`);
         return;
       }
 
-      if (result.clientSecret && result.publishableKey) {
-        const stripeExpiresAt = result.expiresAt
-          ? result.expiresAt > 10_000_000_000
-            ? result.expiresAt
-            : result.expiresAt * 1000
-          : hold.expiresAt;
-        writeCachedV3EmbeddedCheckout({
-          orderId: result.orderId,
-          publicToken: result.publicToken,
-          sessionId: result.sessionId,
-          clientSecret: result.clientSecret,
-          publishableKey: result.publishableKey,
-          checkoutUrl: result.checkoutUrl,
-          expiresAt: stripeExpiresAt,
-          eventId: result.eventId,
-          purchaseEventId: result.purchaseEventId,
-          amountCents: result.amountCents,
-          chargedAmountCents: result.chargedAmountCents,
-          status: result.status,
-        });
-        setClientSecret(result.clientSecret);
-        setPublishableKey(result.publishableKey);
-        setOrderId(result.orderId);
-        setPublicToken(result.publicToken);
-        setSessionId(result.sessionId);
-        setEventId(result.eventId ?? null);
-        return;
-      }
+      const applied = applyCheckoutResult({ result, holdExpiresAt: hold.expiresAt, setters });
+      if (applied) return;
 
       if (result.checkoutUrl?.startsWith("https://")) {
-        setInitError("Embedded checkout is unavailable. Refresh and try again.");
+        setInitError(CHECKOUT_INIT_ERROR);
         return;
       }
 
-      setInitError("Secure payment could not load. Try again — nothing was charged.");
+      setInitError(CHECKOUT_INIT_ERROR);
     } catch (caught) {
-      const message =
-        caught instanceof PetApiError
-          ? caught.message
-          : "Secure payment could not load. Try again — nothing was charged.";
-      setInitError(message);
+      setInitError(CHECKOUT_INIT_ERROR);
       console.error("[v3-checkout-init]", caught instanceof Error ? caught.name : "error");
     } finally {
       bootstrapInFlight.current = false;
@@ -145,12 +246,43 @@ export function useV3EmbeddedCheckout(input: {
     void bootstrap();
   }, [input.active, input.file, input.photo, bootstrap]);
 
+  function invalidateStripeSession() {
+    clearCachedV3EmbeddedCheckout();
+    setClientSecret(null);
+    setPublishableKey(null);
+    setSessionId(null);
+    setInitError(CHECKOUT_INIT_ERROR);
+  }
+
   function retry() {
+    clearCachedV3EmbeddedCheckout();
     bootstrapped.current = false;
     bootstrapInFlight.current = false;
     setClientSecret(null);
     setPublishableKey(null);
-    void bootstrap();
+    setSessionId(null);
+    setInitError(null);
+
+    bootstrapInFlight.current = true;
+    setLoading(true);
+
+    void (async () => {
+      try {
+        if (orderRef.current) {
+          const recovered = await recoverExistingOrderCheckout();
+          if (recovered) return;
+          setInitError(CHECKOUT_INIT_ERROR);
+          return;
+        }
+        bootstrapped.current = true;
+        await bootstrap();
+      } catch {
+        setInitError(CHECKOUT_INIT_ERROR);
+      } finally {
+        bootstrapInFlight.current = false;
+        setLoading(false);
+      }
+    })();
   }
 
   return {
@@ -163,8 +295,9 @@ export function useV3EmbeddedCheckout(input: {
     amountCents: offer.amountCents,
     loading,
     initError,
-    checkoutReady: Boolean(clientSecret && publishableKey),
+    checkoutReady: isValidEmbeddedClientSecret(clientSecret, sessionId) && Boolean(publishableKey),
     retry,
+    invalidateStripeSession,
   };
 }
 

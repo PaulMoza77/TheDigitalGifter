@@ -136,7 +136,7 @@ export function V3OfferScreen({
             Loading secure payment…
           </p>
         ) : null}
-        {checkout.initError && !checkout.checkoutReady ? (
+        {checkout.initError ? (
           <div className="space-y-3 py-4">
             <p className="text-sm text-[#9a3412]" role="alert">
               {checkout.initError}
@@ -146,6 +146,7 @@ export function V3OfferScreen({
               variant="outline"
               className="h-11 w-full rounded-full border-[#f6efe4]/20 bg-transparent text-[#f6efe4]"
               onClick={checkout.retry}
+              disabled={checkout.loading}
             >
               Retry secure payment
             </Button>
@@ -166,6 +167,7 @@ export function V3OfferScreen({
             loadingLabel="Loading secure payment…"
             onReady={markCheckoutViewed}
             onPaymentInteraction={markBeginCheckout}
+            onInitError={checkout.invalidateStripeSession}
             onBeforeConfirm={async () => {
               if (!checkout.orderId || !checkout.publicToken) {
                 return { ok: false, error: "Payment session expired. Retry secure payment.", focusId: undefined };

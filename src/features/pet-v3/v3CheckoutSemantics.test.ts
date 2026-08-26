@@ -72,7 +72,7 @@ describe("Cat V3 embedded checkout event semantics", () => {
     const result = {
       status: "open" as const,
       sessionId: "cs_live_embedded",
-      clientSecret: "cs_live_embedded_secret",
+      clientSecret: "cs_live_embedded_secret_abc",
       orderId: "order-live-1",
       chargedAmountCents: 1200,
     };

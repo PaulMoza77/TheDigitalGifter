@@ -13,8 +13,11 @@ import {
   v3BootstrapContact,
   writeCachedV3EmbeddedCheckout,
   V3_CHECKOUT_SESSION_CACHE_KEY,
+  isValidCachedV3EmbeddedCheckout,
+  isValidEmbeddedClientSecret,
 } from "./v3CheckoutHold";
 import { v3PayButtonLabel } from "./v3CheckoutHold";
+import { sanitizeStripeCheckoutCustomerError } from "../pet/funnelGuards";
 
 vi.mock("./analytics", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./analytics")>();
@@ -86,13 +89,58 @@ describe("V3 embedded checkout", () => {
       orderId: "order-1",
       publicToken: "token-1",
       sessionId: "cs_test_1",
-      clientSecret: "cs_test_secret",
+      clientSecret: "cs_test_1_secret_abc",
       publishableKey: "pk_test",
       expiresAt: now + 60_000,
     });
     const cached = readCachedV3EmbeddedCheckout(now + 1_000);
     expect(cached?.sessionId).toBe("cs_test_1");
-    expect(cached?.clientSecret).toBe("cs_test_secret");
+    expect(cached?.clientSecret).toBe("cs_test_1_secret_abc");
+  });
+
+  it("rejects stale pre-hotfix cache that stored bare session id as clientSecret", () => {
+    const now = 1_000_000;
+    const bareSessionId = "cs_live_a1qULKNoijnByHIUXCArn1GU33vxy5aBTV";
+    writeCachedV3EmbeddedCheckout({
+      orderId: "order-stale",
+      publicToken: "token-stale",
+      sessionId: bareSessionId,
+      clientSecret: bareSessionId,
+      publishableKey: "pk_live",
+      expiresAt: now + 60_000,
+    });
+    expect(isValidCachedV3EmbeddedCheckout({
+      sessionId: bareSessionId,
+      clientSecret: bareSessionId,
+      publishableKey: "pk_live",
+    })).toBe(false);
+    expect(readCachedV3EmbeddedCheckout(now + 1_000)).toBeNull();
+  });
+
+  it("never surfaces raw Stripe session ids to customers", () => {
+    const raw = "No such checkout.session: cs_live_a1qULKNoijnByHIUXCArn1GU33vxy5aBTV";
+    expect(sanitizeStripeCheckoutCustomerError(raw)).toBe(
+      "We couldn't load secure payment. Please try again.",
+    );
+    expect(sanitizeStripeCheckoutCustomerError(raw)).not.toContain("cs_live_");
+  });
+
+  it("retry recovers the same order instead of starting a second checkout sequence", () => {
+    const hook = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
+    expect(hook).toContain("recoverExistingOrderCheckout");
+    expect(hook).toContain("createStripeCheckout");
+    expect(hook).toContain("if (orderRef.current) {");
+    expect(hook).toContain("clearCachedV3EmbeddedCheckout");
+  });
+
+  it("validates embedded client secrets require _secret_ suffix", () => {
+    expect(isValidEmbeddedClientSecret("cs_live_a1_secret_b2", "cs_live_a1")).toBe(true);
+    expect(isValidEmbeddedClientSecret("cs_live_a1", "cs_live_a1")).toBe(false);
+  });
+
+  it("does not mark checkout ready for invalid cached secrets", () => {
+    const hook = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
+    expect(hook).toContain("isValidEmbeddedClientSecret(clientSecret, sessionId)");
   });
 
   it("resets hold without touching name/email draft fields", () => {
@@ -122,6 +170,9 @@ describe("V3 embedded checkout", () => {
     expect(trackPetV3Event).not.toHaveBeenCalledWith(
       expect.objectContaining({ eventName: "v3_begin_checkout" }),
     );
+    const offer = readSrc("src/features/pet-v3/screens/OfferScreen.tsx");
+    expect(offer).toContain("onReady={markCheckoutViewed}");
+    expect(offer).toContain("onInitError={checkout.invalidateStripeSession}");
   });
 
   it("fires begin_checkout only after meaningful payment interaction signal", () => {

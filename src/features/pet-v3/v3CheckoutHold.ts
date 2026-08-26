@@ -64,10 +64,36 @@ export function readCachedV3EmbeddedCheckout(nowMs = Date.now()): V3CachedEmbedd
     if (!parsed.sessionId || !Number.isFinite(parsed.expiresAt) || parsed.expiresAt <= nowMs) {
       return null;
     }
+    if (!isValidCachedV3EmbeddedCheckout(parsed)) {
+      storage()?.removeItem(V3_CHECKOUT_SESSION_CACHE_KEY);
+      return null;
+    }
     return parsed;
   } catch {
     return null;
   }
+}
+
+/** Reject bare cs_* session ids and other invalid values stored as clientSecret. */
+export function isValidCachedV3EmbeddedCheckout(
+  cached: Pick<V3CachedEmbeddedCheckout, "clientSecret" | "sessionId" | "publishableKey">,
+): boolean {
+  const publishableKey = String(cached.publishableKey || "").trim();
+  if (!publishableKey.startsWith("pk_")) return false;
+  return isValidEmbeddedClientSecret(cached.clientSecret, cached.sessionId);
+}
+
+export function isValidEmbeddedClientSecret(
+  clientSecret: string | null | undefined,
+  sessionId?: string | null,
+): boolean {
+  const secret = String(clientSecret || "").trim();
+  if (!secret) return false;
+  if (!/^cs_(live|test)_/.test(secret)) return false;
+  if (!secret.includes("_secret_")) return false;
+  const sid = String(sessionId || "").trim();
+  if (sid && secret === sid) return false;
+  return true;
 }
 
 export function writeCachedV3EmbeddedCheckout(value: V3CachedEmbeddedCheckout) {

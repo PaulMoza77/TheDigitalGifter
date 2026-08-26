@@ -1,4 +1,5 @@
 import { trackEvent, type AnalyticsParamValue } from "@/lib/analytics";
+import { isValidEmbeddedClientSecret } from "./funnelGuards";
 import { PET_PRODUCT_NAME, PET_PRODUCT_SKU } from "./types";
 import { sanitizeFunnelAnalyticsPayload } from "./croGuards";
 import { attributionParamsForGa4 } from "./funnelAttribution";
@@ -138,7 +139,7 @@ export function shouldTrackPetBeginCheckout(input: {
 }): boolean {
   const hasHosted =
     typeof input.checkoutUrl === "string" && input.checkoutUrl.startsWith("https://");
-  const hasEmbedded = typeof input.clientSecret === "string" && input.clientSecret.length > 8;
+  const hasEmbedded = isValidEmbeddedClientSecret(input.clientSecret, input.sessionId);
   return (
     input.status === "open" &&
     Boolean(input.sessionId) &&

@@ -763,6 +763,34 @@ Deno.serve(async (req) => {
         uiMode: onPage ? "custom" : "hosted",
       });
 
+      if (onPage && existingView?.id) {
+        const embeddedReuse = matchedEmbeddedCheckoutResponse({
+          ...existingView,
+          id: existingView.id || storedSessionId,
+        });
+        if (embeddedReuse.ok) {
+          await service.rpc("attach_pet_checkout_session", {
+            p_order_id: order.id,
+            p_session_id: embeddedReuse.sessionId,
+            p_expected_session_id: storedSessionId || null,
+          });
+          const meta = petMetaCheckoutFields(order);
+          const publishableKey = await resolvePublishableKey(stripeKey, asString(existingView.url) || null);
+          if (!publishableKey) return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503);
+          await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+          return jsonResponse({
+            sessionId: embeddedReuse.sessionId,
+            checkoutUrl: asString(existingView.url) || null,
+            clientSecret: embeddedReuse.clientSecret,
+            publishableKey,
+            expiresAt: existingView.expires_at ?? null,
+            status: "open",
+            reused: true,
+            ...meta,
+          });
+        }
+      }
+
       if (decision.action === "payment_processing") {
         await service.rpc("attach_pet_checkout_session", {
           p_order_id: order.id,

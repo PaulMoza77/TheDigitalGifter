@@ -6,6 +6,7 @@ import {
   useCheckoutElements,
 } from "@stripe/react-stripe-js/checkout";
 import { loadStripe, type StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
+import { sanitizeStripeCheckoutCustomerError } from "../funnelGuards";
 import { ApplePayButton } from "./ApplePayButton";
 
 const EXPRESS_OPTIONS = {
@@ -33,6 +34,7 @@ function CheckoutBody({
   onBeforeConfirm,
   onReady,
   onPaymentInteraction,
+  onInitError,
   confirmDisabled,
   payButtonClassName,
 }: {
@@ -44,6 +46,7 @@ function CheckoutBody({
   onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
+  onInitError?: () => void;
   confirmDisabled?: boolean;
   payButtonClassName?: string;
 }) {
@@ -53,6 +56,7 @@ function CheckoutBody({
   const [applePayFromStripe, setApplePayFromStripe] = useState(false);
   const readyFired = useRef(false);
   const interactionFired = useRef(false);
+  const initErrorFired = useRef(false);
 
   useEffect(() => {
     if (checkoutState.type === "success" && !readyFired.current) {
@@ -60,6 +64,12 @@ function CheckoutBody({
       onReady?.();
     }
   }, [checkoutState.type, onReady]);
+
+  useEffect(() => {
+    if (checkoutState.type !== "error" || initErrorFired.current) return;
+    initErrorFired.current = true;
+    onInitError?.();
+  }, [checkoutState.type, onInitError]);
 
   function markInteraction() {
     if (interactionFired.current) return;
@@ -89,10 +99,10 @@ function CheckoutBody({
         ...(expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {}),
       });
       if (result.type === "error") {
-        setError(result.error.message);
+        setError(sanitizeStripeCheckoutCustomerError(result.error.message));
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Payment failed. No extra charge was created.");
+      setError(sanitizeStripeCheckoutCustomerError(caught instanceof Error ? caught.message : undefined));
     } finally {
       setBusy(false);
     }
@@ -109,9 +119,11 @@ function CheckoutBody({
 
   if (checkoutState.type === "error") {
     return (
-      <p className="text-sm text-[#9a3412]" role="alert">
-        {checkoutState.error.message}
-      </p>
+      <div className="space-y-3 py-2">
+        <p className="text-sm text-[#9a3412]" role="alert">
+          {sanitizeStripeCheckoutCustomerError(checkoutState.error.message)}
+        </p>
+      </div>
     );
   }
 
@@ -179,6 +191,7 @@ export function CustomStripeCheckout({
   onBeforeConfirm,
   onReady,
   onPaymentInteraction,
+  onInitError,
   confirmDisabled,
   appearanceTheme = "stripe",
   appearanceVariables,
@@ -195,6 +208,7 @@ export function CustomStripeCheckout({
   onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
+  onInitError?: () => void;
   confirmDisabled?: boolean;
   appearanceTheme?: "stripe" | "night";
   appearanceVariables?: Record<string, string>;
@@ -228,6 +242,7 @@ export function CustomStripeCheckout({
         onBeforeConfirm={onBeforeConfirm}
         onReady={onReady}
         onPaymentInteraction={onPaymentInteraction}
+        onInitError={onInitError}
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}
       />
