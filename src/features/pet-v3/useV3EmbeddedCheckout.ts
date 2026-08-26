@@ -183,6 +183,7 @@ export function useV3EmbeddedCheckout(input: {
         amountCents: checkout.amountCents,
         chargedAmountCents: checkout.chargedAmountCents,
         status: checkout.status,
+        checkoutDiag: checkout.checkoutDiag,
       },
       holdExpiresAt: hold.expiresAt,
       setters,

@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { getStripePromise, resetStripeLoaderCacheForTests, STRIPE_JS_RELEASE_TRAIN } from "./stripeLoader";
+import {
+  getStripePromise,
+  resetStripeLoaderCacheForTests,
+  STRIPE_JS_RELEASE_TRAIN,
+} from "./stripeLoader";
 
 describe("stripeLoader", () => {
   it("caches Stripe instances by publishable key when dahlia is already loaded", async () => {

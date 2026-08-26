@@ -7,7 +7,7 @@ import {
 } from "@stripe/react-stripe-js/checkout";
 import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import { sanitizeStripeCheckoutCustomerError } from "../funnelGuards";
-import { getStripePromise, stripeInstanceKeyFingerprint } from "../stripeLoader";
+import { getStripePromise, reloadStripeForCheckout, stripeInstanceKeyFingerprint } from "../stripeLoader";
 import { ApplePayButton } from "./ApplePayButton";
 
 const EXPRESS_OPTIONS = {
@@ -225,15 +225,32 @@ export function CustomStripeCheckout({
   appearanceVariables?: Record<string, string>;
   payButtonClassName?: string;
 }) {
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const retriedRef = useRef(false);
   const stripePromise = useMemo(() => {
     const fp = stripeInstanceKeyFingerprint(publishableKey);
-    console.info("[stripe-loader]", { stripeInstanceKeyFp: fp, source: "runtime_publishable_key" });
-    return getStripePromise(publishableKey);
-  }, [publishableKey]);
+    console.info("[stripe-loader]", {
+      stripeInstanceKeyFp: fp,
+      source: "runtime_publishable_key",
+      reloadNonce,
+    });
+    return reloadNonce > 0
+      ? reloadStripeForCheckout(publishableKey)
+      : getStripePromise(publishableKey);
+  }, [publishableKey, reloadNonce]);
+
+  function handleInitError(detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) {
+    if (!retriedRef.current) {
+      retriedRef.current = true;
+      setReloadNonce((value) => value + 1);
+      return;
+    }
+    onInitError?.(detail);
+  }
 
   return (
     <CheckoutElementsProvider
-      key={`${publishableKey}:${clientSecret.includes("_secret_") ? "secret" : "invalid"}`}
+      key={`${publishableKey}:${reloadNonce}:${clientSecret.includes("_secret_") ? "secret" : "invalid"}`}
       stripe={stripePromise}
       options={{
         clientSecret,
@@ -258,7 +275,7 @@ export function CustomStripeCheckout({
         onBeforeConfirm={onBeforeConfirm}
         onReady={onReady}
         onPaymentInteraction={onPaymentInteraction}
-        onInitError={onInitError}
+        onInitError={handleInitError}
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}
       />
