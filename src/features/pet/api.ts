@@ -161,6 +161,7 @@ export type StartPetCheckoutResult = {
   purchaseEventId?: string;
   amountCents?: number;
   chargedAmountCents?: number;
+  checkoutDiag?: CreateStripeCheckoutResponse["checkoutDiag"];
 };
 
 /**
@@ -224,5 +225,6 @@ export async function startPetCheckout(
     purchaseEventId: checkout.purchaseEventId,
     amountCents: checkout.amountCents,
     chargedAmountCents: checkout.chargedAmountCents,
+    checkoutDiag: checkout.checkoutDiag,
   };
 }

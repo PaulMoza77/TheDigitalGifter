@@ -5,6 +5,7 @@ import { PET_DEFAULT_PERSONALITY } from "../pet/types";
 import { validatePetName } from "../pet/croGuards";
 import { checkoutAnalyticsContext } from "../pet/funnelInternal";
 import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "../pet/funnelGuards";
+import { stripeKeyAccountFingerprint } from "../pet/stripeKeys";
 import type { PetV3PhotoMeta } from "./types";
 import { PET_V3_ROUTE, PET_V3_SPECIES } from "./types";
 import { getPetV3SessionId } from "./session";
@@ -49,6 +50,13 @@ function applyCheckoutResult(input: {
     amountCents?: number;
     chargedAmountCents?: number;
     status?: "open" | "payment_processing" | "comped";
+    checkoutDiag?: {
+      keysPaired?: boolean;
+      clientSecretValid?: boolean;
+      publishableAccountFp?: string | null;
+      secretAccountFp?: string | null;
+      initFailureCode?: string | null;
+    };
   };
   holdExpiresAt: number;
   setters: {
@@ -65,8 +73,17 @@ function applyCheckoutResult(input: {
   if (
     !isValidEmbeddedClientSecret(result.clientSecret, result.sessionId) ||
     !String(result.publishableKey || "").startsWith("pk_") ||
-    !publishableKeyMatchesClientSecret(result.publishableKey, result.clientSecret)
+    !publishableKeyMatchesClientSecret(result.publishableKey, result.clientSecret) ||
+    result.checkoutDiag?.keysPaired === false ||
+    result.checkoutDiag?.clientSecretValid === false
   ) {
+    console.info("[v3-checkout-diag]", {
+      clientSecretValid: result.checkoutDiag?.clientSecretValid ?? isValidEmbeddedClientSecret(result.clientSecret, result.sessionId),
+      keysPaired: result.checkoutDiag?.keysPaired ?? null,
+      publishableAccountFp: result.checkoutDiag?.publishableAccountFp ?? stripeKeyAccountFingerprint(result.publishableKey || ""),
+      secretAccountFp: result.checkoutDiag?.secretAccountFp ?? null,
+      initFailureCode: result.checkoutDiag?.initFailureCode ?? "checkout_contract_invalid",
+    });
     return false;
   }
 

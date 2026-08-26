@@ -53,7 +53,14 @@ import {
   recordV3MetaInitiateCheckoutOnce,
   shouldDeferInitiateCheckoutToInteraction,
 } from "../_shared/pet/v3InitiateCheckout.ts";
-import { decideCheckoutSessionAction, matchedEmbeddedCheckoutResponse, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
+import { decideCheckoutSessionAction, isValidEmbeddedClientSecret, matchedEmbeddedCheckoutResponse, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
+import {
+  publishableKeyFingerprint,
+  publishableKeyMatchesSecretMode,
+  stripeKeyAccountFingerprint,
+  stripeSecretKeyMode,
+  stripeKeysShareAccount,
+} from "../_shared/pet/stripeKeys.ts";
 import { enqueuePetGenerate, enqueuePetGenerateIfStalled } from "../_shared/pet/stripeFulfill.ts";
 import {
   formatUpsellPrice,
@@ -76,8 +83,21 @@ function stripeAuthHeaders(stripeKey: string, extra: Record<string, string> = {}
   };
 }
 
-function apiError(code: string, message: string, status = 400) {
-  return jsonResponse({ error: message, code }, status);
+function apiError(code: string, message: string, status = 400, extra: Record<string, unknown> = {}) {
+  return jsonResponse({ error: message, code, ...extra }, status);
+}
+
+function isServiceRoleRequest(req: Request): boolean {
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const parts = token.split(".");
+  if (parts.length < 2) return false;
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload?.role === "service_role";
+  } catch {
+    return false;
+  }
 }
 
 async function fetchStripeCheckoutSession(
@@ -90,6 +110,8 @@ async function fetchStripeCheckoutSession(
   client_secret?: string;
   expires_at?: number;
   payment_status?: string;
+  livemode?: boolean;
+  ui_mode?: string;
 } | null> {
   const existingRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
     headers: stripeAuthHeaders(stripeKey),
@@ -98,68 +120,104 @@ async function fetchStripeCheckoutSession(
   return await existingRes.json();
 }
 
-let cachedPublishableKey: string | null = null;
-
-function stripeSecretKeyMode(stripeKey: string): "live" | "test" | null {
-  if (stripeKey.startsWith("sk_live_")) return "live";
-  if (stripeKey.startsWith("sk_test_")) return "test";
-  return null;
-}
-
-function publishableKeyMatchesSecretMode(publishableKey: string, stripeKey: string): boolean {
-  const mode = stripeSecretKeyMode(stripeKey);
-  if (mode === "live") return publishableKey.startsWith("pk_live");
-  if (mode === "test") return publishableKey.startsWith("pk_test");
-  return publishableKey.startsWith("pk_");
-}
-
-async function resolvePublishableKey(
-  stripeKey: string,
-  checkoutUrl?: string | null,
-  sessionId?: string | null,
-): Promise<string | null> {
+async function resolvePublishableKey(stripeKey: string): Promise<string | null> {
   const fromEnv = String(Deno.env.get("STRIPE_PUBLISHABLE_KEY") || "").trim();
-  if (fromEnv.startsWith("pk_") && publishableKeyMatchesSecretMode(fromEnv, stripeKey)) {
-    return fromEnv;
+  if (!fromEnv.startsWith("pk_")) return null;
+  if (!publishableKeyMatchesSecretMode(fromEnv, stripeKey)) return null;
+  if (!stripeKeysShareAccount(fromEnv, stripeKey)) return null;
+  return fromEnv;
+}
+
+type CheckoutDiag = {
+  sessionExists: boolean;
+  livemode: boolean | null;
+  customUi: boolean;
+  clientSecretValid: boolean;
+  publishableMode: "live" | "test" | null;
+  secretMode: "live" | "test" | null;
+  publishableAccountFp: string | null;
+  secretAccountFp: string | null;
+  keysPaired: boolean;
+  initFailureCode: string | null;
+};
+
+function buildCheckoutDiag(input: {
+  stripeKey: string;
+  publishableKey: string | null;
+  session: {
+    id?: string;
+    livemode?: boolean;
+    ui_mode?: string;
+    status?: string;
+    client_secret?: string | null;
+  } | null;
+  sessionExists: boolean;
+  initFailureCode?: string | null;
+}): CheckoutDiag {
+  const publishableKey = String(input.publishableKey || "").trim();
+  const sessionId = String(input.session?.id || "").trim();
+  const clientSecret = String(input.session?.client_secret || "").trim();
+  return {
+    sessionExists: input.sessionExists,
+    livemode: input.session?.livemode ?? null,
+    customUi: input.session?.ui_mode === "custom",
+    clientSecretValid: isValidEmbeddedClientSecret(clientSecret, sessionId),
+    publishableMode: publishableKey.startsWith("pk_live_")
+      ? "live"
+      : publishableKey.startsWith("pk_test_")
+        ? "test"
+        : null,
+    secretMode: stripeSecretKeyMode(input.stripeKey),
+    publishableAccountFp: publishableKeyFingerprint(publishableKey),
+    secretAccountFp: stripeKeyAccountFingerprint(input.stripeKey),
+    keysPaired: publishableKey ? stripeKeysShareAccount(publishableKey, input.stripeKey) : false,
+    initFailureCode: input.initFailureCode ?? null,
+  };
+}
+
+async function embeddedCheckoutPayload(input: {
+  stripeKey: string;
+  session: {
+    id?: string;
+    url?: string;
+    client_secret?: string | null;
+    expires_at?: number | null;
+    livemode?: boolean;
+    ui_mode?: string;
+    status?: string;
+  };
+  sessionExists?: boolean;
+}) {
+  const matchedEmbedded = matchedEmbeddedCheckoutResponse(input.session);
+  if (!matchedEmbedded.ok) return { ok: false as const, reason: "conflict" as const };
+  const publishableKey = await resolvePublishableKey(input.stripeKey);
+  if (!publishableKey) {
+    return {
+      ok: false as const,
+      reason: "publishable_key_unavailable" as const,
+      diag: buildCheckoutDiag({
+        stripeKey: input.stripeKey,
+        publishableKey: null,
+        session: input.session,
+        sessionExists: input.sessionExists ?? true,
+        initFailureCode: "publishable_key_unpaired_or_missing",
+      }),
+    };
   }
-  if (cachedPublishableKey && publishableKeyMatchesSecretMode(cachedPublishableKey, stripeKey)) {
-    return cachedPublishableKey;
-  }
-  const urls: string[] = [];
-  if (checkoutUrl) urls.push(checkoutUrl);
-  const sid = String(sessionId || "").trim();
-  if (sid.startsWith("cs_")) {
-    urls.push(`https://checkout.stripe.com/c/pay/${encodeURIComponent(sid)}`);
-  }
-  if (!urls.length) {
-    const listRes = await fetch("https://api.stripe.com/v1/checkout/sessions?limit=5", {
-      headers: stripeAuthHeaders(stripeKey),
-    });
-    if (listRes.ok) {
-      const list = (await listRes.json()) as { data?: { url?: string }[] };
-      for (const row of list.data || []) {
-        if (row.url) urls.push(row.url);
-      }
-    }
-  }
-  for (const url of urls) {
-    try {
-      const page = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
-      if (!page.ok) continue;
-      const html = await page.text();
-      const match = html.match(/pk_(?:live|test)_[0-9A-Za-z]+/g);
-      if (match?.length) {
-        for (const candidate of match) {
-          if (!publishableKeyMatchesSecretMode(candidate, stripeKey)) continue;
-          cachedPublishableKey = candidate;
-          return cachedPublishableKey;
-        }
-      }
-    } catch {
-      /* ignore scrape failures */
-    }
-  }
-  return null;
+  return {
+    ok: true as const,
+    sessionId: matchedEmbedded.sessionId,
+    clientSecret: matchedEmbedded.clientSecret,
+    publishableKey,
+    checkoutUrl: asString(input.session.url) || null,
+    expiresAt: input.session.expires_at ?? null,
+    diag: buildCheckoutDiag({
+      stripeKey: input.stripeKey,
+      publishableKey,
+      session: input.session,
+      sessionExists: input.sessionExists ?? true,
+    }),
+  };
 }
 
 function checkoutConflict() {
@@ -678,6 +736,54 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "debugStripeCheckout") {
+      if (!isServiceRoleRequest(req)) {
+        return apiError("INVALID_REQUEST", "Unauthorized.", 401);
+      }
+      const orderId = asString(body.orderId);
+      if (!orderId) return apiError("INVALID_REQUEST", "orderId is required.", 400);
+      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+      const publishableKey = String(Deno.env.get("STRIPE_PUBLISHABLE_KEY") || "").trim();
+      const { data: order, error: orderError } = await service
+        .from("pet_orders")
+        .select("id,stripe_checkout_session_id,funnel_variant")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (orderError) throw orderError;
+      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      const sessionId = asString(order.stripe_checkout_session_id);
+      const session = sessionId && stripeKey ? await fetchStripeCheckoutSession(stripeKey, sessionId) : null;
+      let stripeAccountId: string | null = null;
+      if (stripeKey) {
+        const acctRes = await fetch("https://api.stripe.com/v1/account", { headers: stripeAuthHeaders(stripeKey) });
+        if (acctRes.ok) {
+          const acct = await acctRes.json();
+          stripeAccountId = asString(acct.id) || null;
+        }
+      }
+      return jsonResponse({
+        orderId,
+        funnelVariant: order.funnel_variant,
+        stripeAccountId,
+        checkoutDiag: buildCheckoutDiag({
+          stripeKey,
+          publishableKey: publishableKey || null,
+          session,
+          sessionExists: Boolean(session),
+          initFailureCode: publishableKey && stripeKey && !stripeKeysShareAccount(publishableKey, stripeKey)
+            ? "publishable_secret_account_mismatch"
+            : null,
+        }),
+        embedded: session
+          ? await embeddedCheckoutPayload({
+            stripeKey,
+            session,
+            sessionExists: true,
+          })
+          : null,
+      });
+    }
+
     if (action === "createStripeCheckout") {
       const publicToken = asString(body.publicToken);
       const order = await requireOrder(service, asString(body.orderId), publicToken);
@@ -802,21 +908,30 @@ Deno.serve(async (req) => {
             p_expected_session_id: storedSessionId || null,
           });
           const meta = petMetaCheckoutFields(order);
-          const publishableKey = await resolvePublishableKey(
+          const embedded = await embeddedCheckoutPayload({
             stripeKey,
-            asString(existingView.url) || null,
-            embeddedReuse.sessionId,
-          );
-          if (!publishableKey) return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503);
+            session: { ...existingView, id: existingView.id || storedSessionId },
+            sessionExists: true,
+          });
+          if (!embedded.ok) {
+            await service.rpc("pet_log_event", {
+              p_order_id: order.id,
+              p_action: "checkout_embedded_unavailable",
+              p_actor_type: "system",
+              p_payload: embedded.diag,
+            });
+            return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503, embedded.diag);
+          }
           await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
           return jsonResponse({
-            sessionId: embeddedReuse.sessionId,
-            checkoutUrl: asString(existingView.url) || null,
-            clientSecret: embeddedReuse.clientSecret,
-            publishableKey,
-            expiresAt: existingView.expires_at ?? null,
+            sessionId: embedded.sessionId,
+            checkoutUrl: embedded.checkoutUrl,
+            clientSecret: embedded.clientSecret,
+            publishableKey: embedded.publishableKey,
+            expiresAt: embedded.expiresAt,
             status: "open",
             reused: true,
+            checkoutDiag: embedded.diag,
             ...meta,
           });
         }
@@ -916,8 +1031,25 @@ Deno.serve(async (req) => {
       });
       const session = await stripeRes.json();
       if (!stripeRes.ok) {
-        return apiError("INVALID_REQUEST", session.error?.message || "Stripe checkout failed", 502);
+        const stripeType = asString(session.error?.type) || null;
+        const stripeCode = asString(session.error?.code) || null;
+        return apiError(
+          "INVALID_REQUEST",
+          session.error?.message || "Stripe checkout failed",
+          stripeRes.status === 402 ? 402 : 502,
+          {
+            checkoutDiag: buildCheckoutDiag({
+              stripeKey,
+              publishableKey: null,
+              session: null,
+              sessionExists: false,
+              initFailureCode: stripeCode || stripeType || "stripe_session_create_failed",
+            }),
+          },
+        );
       }
+
+      const verifiedSession = await fetchStripeCheckoutSession(stripeKey, asString(session.id));
 
       const attached = await service.rpc("attach_pet_checkout_session", {
         p_order_id: order.id,
@@ -932,24 +1064,35 @@ Deno.serve(async (req) => {
       if (attachedId && attachedId !== asString(session.id)) {
         const winner = await fetchStripeCheckoutSession(stripeKey, attachedId);
         if (onPage) {
-          const matchedEmbedded = matchedEmbeddedCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
-          if (!matchedEmbedded.ok) return checkoutConflict();
+          const winnerSession = winner ? { ...winner, id: winner.id || attachedId } : null;
           const meta = petMetaCheckoutFields(order);
-          const publishableKey = await resolvePublishableKey(
+          const embedded = await embeddedCheckoutPayload({
             stripeKey,
-            asString(winner?.url) || null,
-            matchedEmbedded.sessionId,
-          );
-          if (!publishableKey) return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503);
+            session: winnerSession || { id: attachedId },
+            sessionExists: Boolean(winner),
+          });
+          if (!embedded.ok) {
+            if (embedded.reason === "conflict") return checkoutConflict();
+            await service.rpc("pet_log_event", {
+              p_order_id: order.id,
+              p_action: "checkout_embedded_unavailable",
+              p_actor_type: "system",
+              p_payload: embedded.diag,
+            });
+            return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503, {
+              checkoutDiag: embedded.diag,
+            });
+          }
           await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
           return jsonResponse({
-            sessionId: matchedEmbedded.sessionId,
-            checkoutUrl: asString(winner?.url) || null,
-            clientSecret: matchedEmbedded.clientSecret,
-            publishableKey,
-            expiresAt: winner?.expires_at ?? null,
+            sessionId: embedded.sessionId,
+            checkoutUrl: embedded.checkoutUrl,
+            clientSecret: embedded.clientSecret,
+            publishableKey: embedded.publishableKey,
+            expiresAt: embedded.expiresAt,
             status: "open",
             reused: true,
+            checkoutDiag: embedded.diag,
             ...meta,
           });
         }
@@ -967,29 +1110,40 @@ Deno.serve(async (req) => {
       }
 
       if (onPage) {
-        const matchedEmbedded = matchedEmbeddedCheckoutResponse(session);
-        if (!matchedEmbedded.ok) return checkoutConflict();
+        const sessionView = verifiedSession || session;
         const meta = petMetaCheckoutFields(order);
-        const publishableKey = await resolvePublishableKey(
+        const embedded = await embeddedCheckoutPayload({
           stripeKey,
-          asString(session.url) || null,
-          matchedEmbedded.sessionId,
-        );
-        if (!publishableKey) return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503);
+          session: sessionView,
+          sessionExists: Boolean(verifiedSession),
+        });
+        if (!embedded.ok) {
+          if (embedded.reason === "conflict") return checkoutConflict();
+          await service.rpc("pet_log_event", {
+            p_order_id: order.id,
+            p_action: "checkout_embedded_unavailable",
+            p_actor_type: "system",
+            p_payload: embedded.diag,
+          });
+          return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503, {
+            checkoutDiag: embedded.diag,
+          });
+        }
         await service.rpc("pet_log_event", {
           p_order_id: order.id,
           p_action: "checkout_session_created",
           p_actor_type: "system",
-          p_payload: { session_present: true, initiate_event_id: meta.eventId, ui_mode: "custom" },
+          p_payload: { ...embedded.diag, initiate_event_id: meta.eventId, ui_mode: "custom" },
         });
         await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
         return jsonResponse({
-          sessionId: matchedEmbedded.sessionId,
-          checkoutUrl: asString(session.url) || null,
-          clientSecret: matchedEmbedded.clientSecret,
-          publishableKey,
-          expiresAt: session.expires_at ?? null,
+          sessionId: embedded.sessionId,
+          checkoutUrl: embedded.checkoutUrl,
+          clientSecret: embedded.clientSecret,
+          publishableKey: embedded.publishableKey,
+          expiresAt: embedded.expiresAt,
           status: "open",
+          checkoutDiag: embedded.diag,
           ...meta,
         });
       }

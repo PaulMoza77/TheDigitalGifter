@@ -284,8 +284,8 @@ export function publishableKeyMatchesClientSecret(
   const pk = String(publishableKey || "").trim();
   const secret = String(clientSecret || "").trim();
   if (!pk.startsWith("pk_") || !secret.startsWith("cs_")) return false;
-  if (secret.startsWith("cs_live_")) return pk.startsWith("pk_live");
-  if (secret.startsWith("cs_test_")) return pk.startsWith("pk_test");
+  if (secret.startsWith("cs_live_")) return pk.startsWith("pk_live_");
+  if (secret.startsWith("cs_test_")) return pk.startsWith("pk_test_");
   return true;
 }
 

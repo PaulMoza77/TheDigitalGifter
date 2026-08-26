@@ -5,8 +5,9 @@ import {
   PaymentElement,
   useCheckoutElements,
 } from "@stripe/react-stripe-js/checkout";
-import { loadStripe, type StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
+import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import { sanitizeStripeCheckoutCustomerError } from "../funnelGuards";
+import { getStripePromise, stripeInstanceKeyFingerprint } from "../stripeLoader";
 import { ApplePayButton } from "./ApplePayButton";
 
 const EXPRESS_OPTIONS = {
@@ -46,7 +47,7 @@ function CheckoutBody({
   onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
-  onInitError?: () => void;
+  onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
   confirmDisabled?: boolean;
   payButtonClassName?: string;
 }) {
@@ -68,8 +69,18 @@ function CheckoutBody({
   useEffect(() => {
     if (checkoutState.type !== "error" || initErrorFired.current) return;
     initErrorFired.current = true;
-    onInitError?.();
-  }, [checkoutState.type, onInitError]);
+    const message = checkoutState.error.message || "";
+    const initFailureCode = /no such checkout\.session/i.test(message)
+      ? "stripe_checkout_session_not_found"
+      : /publishable key/i.test(message)
+        ? "stripe_publishable_key_invalid"
+        : "checkout_provider_init_failed";
+    console.info("[stripe-checkout-init]", {
+      initFailureCode,
+      checkoutProviderState: checkoutState.type,
+    });
+    onInitError?.({ initFailureCode });
+  }, [checkoutState.type, checkoutState, onInitError]);
 
   function markInteraction() {
     if (interactionFired.current) return;
@@ -208,16 +219,21 @@ export function CustomStripeCheckout({
   onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
-  onInitError?: () => void;
+  onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
   confirmDisabled?: boolean;
   appearanceTheme?: "stripe" | "night";
   appearanceVariables?: Record<string, string>;
   payButtonClassName?: string;
 }) {
-  const stripePromise = useMemo(() => loadStripe(publishableKey), [publishableKey]);
+  const stripePromise = useMemo(() => {
+    const fp = stripeInstanceKeyFingerprint(publishableKey);
+    console.info("[stripe-loader]", { stripeInstanceKeyFp: fp, source: "runtime_publishable_key" });
+    return getStripePromise(publishableKey);
+  }, [publishableKey]);
 
   return (
     <CheckoutElementsProvider
+      key={`${publishableKey}:${clientSecret.includes("_secret_") ? "secret" : "invalid"}`}
       stripe={stripePromise}
       options={{
         clientSecret,

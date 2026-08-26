@@ -459,8 +459,18 @@ export type CreateStripeCheckoutResponse = {
   amountCents?: number;
   eventId?: string;
   purchaseEventId?: string;
-  currency?: string;
-  sku?: string;
+  checkoutDiag?: {
+    sessionExists?: boolean;
+    livemode?: boolean | null;
+    customUi?: boolean;
+    clientSecretValid?: boolean;
+    publishableMode?: "live" | "test" | null;
+    secretMode?: "live" | "test" | null;
+    publishableAccountFp?: string | null;
+    secretAccountFp?: string | null;
+    keysPaired?: boolean;
+    initFailureCode?: string | null;
+  };
 };
 
 export type GetOrderByPublicTokenRequest = {

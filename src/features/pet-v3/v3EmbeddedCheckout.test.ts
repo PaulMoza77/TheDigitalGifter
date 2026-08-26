@@ -89,7 +89,7 @@ describe("V3 embedded checkout", () => {
       publicToken: "token-1",
       sessionId: "cs_test_1",
       clientSecret: "cs_test_1_secret_abc",
-      publishableKey: "pk_test",
+      publishableKey: "pk_test_51test000000000000",
       expiresAt: now + 60_000,
     });
     const cached = readCachedV3EmbeddedCheckout(now + 1_000);
