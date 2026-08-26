@@ -65,6 +65,17 @@ import {
 
 type Body = Record<string, unknown>;
 
+/** Custom Checkout (`ui_mode: custom`) requires Stripe API 2025-03-31.basil or newer. */
+const STRIPE_API_VERSION = "2025-03-31.basil";
+
+function stripeAuthHeaders(stripeKey: string, extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    Authorization: `Bearer ${stripeKey}`,
+    "Stripe-Version": STRIPE_API_VERSION,
+    ...extra,
+  };
+}
+
 function apiError(code: string, message: string, status = 400) {
   return jsonResponse({ error: message, code }, status);
 }
@@ -81,7 +92,7 @@ async function fetchStripeCheckoutSession(
   payment_status?: string;
 } | null> {
   const existingRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
-    headers: { Authorization: `Bearer ${stripeKey}` },
+    headers: stripeAuthHeaders(stripeKey),
   });
   if (!existingRes.ok) return null;
   return await existingRes.json();
@@ -97,7 +108,7 @@ async function resolvePublishableKey(stripeKey: string, checkoutUrl?: string | n
   if (checkoutUrl) urls.push(checkoutUrl);
   if (!urls.length) {
     const listRes = await fetch("https://api.stripe.com/v1/checkout/sessions?limit=5", {
-      headers: { Authorization: `Bearer ${stripeKey}` },
+      headers: stripeAuthHeaders(stripeKey),
     });
     if (listRes.ok) {
       const list = (await listRes.json()) as { data?: { url?: string }[] };
@@ -838,11 +849,10 @@ Deno.serve(async (req) => {
 
       const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${stripeKey}`,
+        headers: stripeAuthHeaders(stripeKey, {
           "Content-Type": "application/x-www-form-urlencoded",
           "Idempotency-Key": decision.idempotencyKey,
-        },
+        }),
         body: params,
       });
       const session = await stripeRes.json();
@@ -1053,11 +1063,10 @@ Deno.serve(async (req) => {
 
       const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${stripeKey}`,
+        headers: stripeAuthHeaders(stripeKey, {
           "Content-Type": "application/x-www-form-urlencoded",
           "Idempotency-Key": `pet-upsell-${upsellId}`,
-        },
+        }),
         body: params,
       });
       const session = await stripeRes.json();
