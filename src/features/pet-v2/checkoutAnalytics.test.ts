@@ -31,9 +31,9 @@ describe("V2 initiate checkout analytics", () => {
           sessionId: "cs_test",
           checkoutUrl: "/pet/checkout",
           orderId: "order-1",
-          amountCents: 1200,
+          amountCents: 800,
         },
-        fallbackAmountCents: 1200,
+        fallbackAmountCents: 800,
       }),
     ).toBe(false);
     expect(trackPetV2Event).not.toHaveBeenCalled();
@@ -45,7 +45,7 @@ describe("V2 initiate checkout analytics", () => {
       sessionId: "cs_live_abc",
       checkoutUrl: "https://checkout.stripe.com/c/pay/cs_live_abc",
       orderId: "order-live-1",
-      chargedAmountCents: 1200,
+      chargedAmountCents: 800,
       eventId: "eeeeeeee-1111-4222-8333-444444444401",
     };
     expect(shouldTrackPetBeginCheckout(result)).toBe(true);
@@ -53,7 +53,7 @@ describe("V2 initiate checkout analytics", () => {
       trackV2BeginCheckout({
         species: "dog",
         result,
-        fallbackAmountCents: 1200,
+        fallbackAmountCents: 800,
       }),
     ).toBe(true);
     expect(trackPetV2Event).toHaveBeenCalledTimes(1);
@@ -61,7 +61,7 @@ describe("V2 initiate checkout analytics", () => {
       expect.objectContaining({
         eventName: "v2_begin_checkout",
         species: "dog",
-        amountCents: 1200,
+        amountCents: 800,
         attemptId: "order-live-1",
       }),
     );
@@ -104,7 +104,7 @@ describe("V2 initiate checkout analytics", () => {
         utmCampaign: null,
         species: "dog",
         deviceType: "desktop",
-        amountCents: 1200,
+        amountCents: 800,
         orderId: null,
         isTest: false,
         pathname: "/pet/dog-v2",
