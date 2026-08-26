@@ -139,6 +139,7 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("shouldRestoreLocalPreview");
     expect(edgePreview).toContain("begin_pet_v2_preview_create");
     expect(edgePreview).toContain("claim_unavailable");
+    expect(edgePreview).toContain("provider_state_persist_failed");
     expect(edgePreview).toContain("retryAfterSeconds");
     expect(edgePreview).not.toContain("Fallback without RPC");
     expect(readSrc("src/features/pet-v2/previewClient.ts")).not.toContain("response.mode === \"mock\" || !response.ok");

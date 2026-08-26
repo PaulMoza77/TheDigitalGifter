@@ -111,7 +111,8 @@ export type PetV2PreviewResponse = {
     | "server_error"
     | "claim_unavailable"
     | "claim_orphan"
-    | "migration_required";
+    | "migration_required"
+    | "provider_state_persist_failed";
   failureCategory?: PetV2FailureCategory;
   remainingSession?: number;
   remainingIp?: number;

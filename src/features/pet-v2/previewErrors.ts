@@ -58,13 +58,13 @@ export function previewErrorUiState(response: PreviewErrorInput): {
           : null,
     };
   }
-  if (response.errorCode === "claim_orphan") {
+  if (response.errorCode === "claim_orphan" || response.errorCode === "provider_state_persist_failed") {
     return {
       kind: "unknown",
-      title: "Previous attempt stuck",
+      title: "Previous attempt could not be verified",
       message:
         response.error ||
-        "A previous attempt got stuck before the preview provider started. Replace the photo for a fresh attempt.",
+        "A previous attempt’s provider state could not be verified. Replace the photo for a fresh attempt — we won’t start another prediction for this one automatically.",
       retryAfterSeconds: null,
     };
   }

@@ -4,16 +4,18 @@ Authoritative enforcement: `begin_pet_v2_preview_create` + `supabase/functions/p
 
 | Scope | Limit | Window | Counts toward limit |
 | --- | --- | --- | --- |
-| Session | **2** | Rolling **24h** | `succeeded`+`live_generation` **or** `processing` reservation |
+| Session | **2** | Rolling **24h** | `succeeded`+`live_generation` **or** **active** `processing` within orphan lease |
 | IP (hashed) | **5** | Rolling **24h** | same |
 | Image hash | **2** | Rolling **24h** | same |
 
-**Retry-after:** `ceil((oldest_counted.created_at + 24h) - now)` — not a hardcoded 1h/6h.
+**Expired orphans** (`processing` past `p_orphan_seconds`, no verified provider state) do **not** reserve capacity. The same key still returns `orphan_timeout` (fail-closed). A **new** attempt is not blocked for 24h by that expired reservation.
 
-**Fail closed:** if the RPC is missing/unavailable, the edge returns `503 claim_unavailable` and **never** calls Replicate.
+**Retry-after:** earliest of (succeeded → `created_at+24h`, active processing → `started_at+orphan_lease`).
 
-**Orphans:** `processing` without `prediction_id` older than ~90s → `orphan_timeout` (no second create for that key).
+**Fail closed:** begin RPC missing/unavailable → `503 claim_unavailable`, zero Replicate creates.
 
-**Deploy order:** apply migration first, then deploy the edge function.
+**Persist gap:** if Replicate create succeeds but saving `prediction_id` fails → cancel prediction, `provider_state_persist_failed`, no polling, no auto second create.
 
-Client `sessionStorage` previewCount is a UX hint only.
+**Deploy order:** migration first, then edge.
+
+**DB concurrency tests:** require `PET_V2_CONCURRENCY_DATABASE_URL` **and** `PET_V2_CONCURRENCY_ALLOW_MUTATIONS=I_CONFIRM_NON_PRODUCTION` on authorized non-prod only (uses `pg.Pool` + distinct backend PIDs).

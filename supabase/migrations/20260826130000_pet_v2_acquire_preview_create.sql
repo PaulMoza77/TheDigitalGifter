@@ -123,49 +123,72 @@ begin
     );
   end if;
 
-  -- Quota uses succeeded live gens + active processing reservations (capacity hold).
+  -- Quota: succeeded live (24h) + active processing within orphan lease only.
+  -- Expired orphans do not reserve capacity for 24h.
   select count(*)::int into session_used
   from public.pet_v2_preview_attempts a
   where a.session_id = sess
     and a.session_id <> ''
-    and a.created_at >= since
     and (
-      (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-      or a.status = 'processing'
+      (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+      or (
+        a.status = 'processing'
+        and a.started_at is not null
+        and a.started_at > now() - make_interval(secs => orphan_secs)
+      )
     );
 
   select count(*)::int into ip_used
   from public.pet_v2_preview_attempts a
   where a.ip_hash = iph
     and a.ip_hash <> ''
-    and a.created_at >= since
     and (
-      (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-      or a.status = 'processing'
+      (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+      or (
+        a.status = 'processing'
+        and a.started_at is not null
+        and a.started_at > now() - make_interval(secs => orphan_secs)
+      )
     );
 
   select count(*)::int into image_used
   from public.pet_v2_preview_attempts a
   where a.image_hash = img
     and a.image_hash <> ''
-    and a.created_at >= since
     and (
-      (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-      or a.status = 'processing'
+      (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+      or (
+        a.status = 'processing'
+        and a.started_at is not null
+        and a.started_at > now() - make_interval(secs => orphan_secs)
+      )
     );
 
   if session_used >= greatest(1, coalesce(p_session_limit, 2)) then
-    select min(a.created_at) into oldest
+    select min(
+      case
+        when coalesce(a.live_generation, false) = true and a.status = 'succeeded'
+          then a.created_at + interval '24 hours'
+        when a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+          then a.started_at + make_interval(secs => orphan_secs)
+        else null
+      end
+    ) into oldest
     from public.pet_v2_preview_attempts a
     where a.session_id = sess
-      and a.created_at >= since
       and (
-        (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-        or a.status = 'processing'
+        (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+        or (
+          a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+        )
       );
     retry_after := greatest(
       1,
-      ceil(extract(epoch from (coalesce(oldest, now()) + interval '24 hours' - now())))::int
+      ceil(extract(epoch from (coalesce(oldest, now() + interval '1 second') - now())))::int
     );
     return jsonb_build_object(
       'action', 'quota_denied',
@@ -178,17 +201,30 @@ begin
   end if;
 
   if ip_used >= greatest(1, coalesce(p_ip_limit, 5)) then
-    select min(a.created_at) into oldest
+    select min(
+      case
+        when coalesce(a.live_generation, false) = true and a.status = 'succeeded'
+          then a.created_at + interval '24 hours'
+        when a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+          then a.started_at + make_interval(secs => orphan_secs)
+        else null
+      end
+    ) into oldest
     from public.pet_v2_preview_attempts a
     where a.ip_hash = iph
-      and a.created_at >= since
       and (
-        (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-        or a.status = 'processing'
+        (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+        or (
+          a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+        )
       );
     retry_after := greatest(
       1,
-      ceil(extract(epoch from (coalesce(oldest, now()) + interval '24 hours' - now())))::int
+      ceil(extract(epoch from (coalesce(oldest, now() + interval '1 second') - now())))::int
     );
     return jsonb_build_object(
       'action', 'quota_denied',
@@ -201,17 +237,30 @@ begin
   end if;
 
   if image_used >= greatest(1, coalesce(p_image_limit, 2)) then
-    select min(a.created_at) into oldest
+    select min(
+      case
+        when coalesce(a.live_generation, false) = true and a.status = 'succeeded'
+          then a.created_at + interval '24 hours'
+        when a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+          then a.started_at + make_interval(secs => orphan_secs)
+        else null
+      end
+    ) into oldest
     from public.pet_v2_preview_attempts a
     where a.image_hash = img
-      and a.created_at >= since
       and (
-        (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-        or a.status = 'processing'
+        (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+        or (
+          a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+        )
       );
     retry_after := greatest(
       1,
-      ceil(extract(epoch from (coalesce(oldest, now()) + interval '24 hours' - now())))::int
+      ceil(extract(epoch from (coalesce(oldest, now() + interval '1 second') - now())))::int
     );
     return jsonb_build_object(
       'action', 'quota_denied',
@@ -406,49 +455,72 @@ begin
     );
   end if;
 
-  -- Quota uses succeeded live gens + active processing reservations (capacity hold).
+  -- Quota: succeeded live (24h) + active processing within orphan lease only.
+  -- Expired orphans do not reserve capacity for 24h.
   select count(*)::int into session_used
   from public.pet_v3_preview_attempts a
   where a.session_id = sess
     and a.session_id <> ''
-    and a.created_at >= since
     and (
-      (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-      or a.status = 'processing'
+      (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+      or (
+        a.status = 'processing'
+        and a.started_at is not null
+        and a.started_at > now() - make_interval(secs => orphan_secs)
+      )
     );
 
   select count(*)::int into ip_used
   from public.pet_v3_preview_attempts a
   where a.ip_hash = iph
     and a.ip_hash <> ''
-    and a.created_at >= since
     and (
-      (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-      or a.status = 'processing'
+      (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+      or (
+        a.status = 'processing'
+        and a.started_at is not null
+        and a.started_at > now() - make_interval(secs => orphan_secs)
+      )
     );
 
   select count(*)::int into image_used
   from public.pet_v3_preview_attempts a
   where a.image_hash = img
     and a.image_hash <> ''
-    and a.created_at >= since
     and (
-      (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-      or a.status = 'processing'
+      (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+      or (
+        a.status = 'processing'
+        and a.started_at is not null
+        and a.started_at > now() - make_interval(secs => orphan_secs)
+      )
     );
 
   if session_used >= greatest(1, coalesce(p_session_limit, 2)) then
-    select min(a.created_at) into oldest
+    select min(
+      case
+        when coalesce(a.live_generation, false) = true and a.status = 'succeeded'
+          then a.created_at + interval '24 hours'
+        when a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+          then a.started_at + make_interval(secs => orphan_secs)
+        else null
+      end
+    ) into oldest
     from public.pet_v3_preview_attempts a
     where a.session_id = sess
-      and a.created_at >= since
       and (
-        (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-        or a.status = 'processing'
+        (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+        or (
+          a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+        )
       );
     retry_after := greatest(
       1,
-      ceil(extract(epoch from (coalesce(oldest, now()) + interval '24 hours' - now())))::int
+      ceil(extract(epoch from (coalesce(oldest, now() + interval '1 second') - now())))::int
     );
     return jsonb_build_object(
       'action', 'quota_denied',
@@ -461,17 +533,30 @@ begin
   end if;
 
   if ip_used >= greatest(1, coalesce(p_ip_limit, 5)) then
-    select min(a.created_at) into oldest
+    select min(
+      case
+        when coalesce(a.live_generation, false) = true and a.status = 'succeeded'
+          then a.created_at + interval '24 hours'
+        when a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+          then a.started_at + make_interval(secs => orphan_secs)
+        else null
+      end
+    ) into oldest
     from public.pet_v3_preview_attempts a
     where a.ip_hash = iph
-      and a.created_at >= since
       and (
-        (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-        or a.status = 'processing'
+        (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+        or (
+          a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+        )
       );
     retry_after := greatest(
       1,
-      ceil(extract(epoch from (coalesce(oldest, now()) + interval '24 hours' - now())))::int
+      ceil(extract(epoch from (coalesce(oldest, now() + interval '1 second') - now())))::int
     );
     return jsonb_build_object(
       'action', 'quota_denied',
@@ -484,17 +569,30 @@ begin
   end if;
 
   if image_used >= greatest(1, coalesce(p_image_limit, 2)) then
-    select min(a.created_at) into oldest
+    select min(
+      case
+        when coalesce(a.live_generation, false) = true and a.status = 'succeeded'
+          then a.created_at + interval '24 hours'
+        when a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+          then a.started_at + make_interval(secs => orphan_secs)
+        else null
+      end
+    ) into oldest
     from public.pet_v3_preview_attempts a
     where a.image_hash = img
-      and a.created_at >= since
       and (
-        (coalesce(a.live_generation, false) = true and a.status = 'succeeded')
-        or a.status = 'processing'
+        (coalesce(a.live_generation, false) = true and a.status = 'succeeded' and a.created_at >= since)
+        or (
+          a.status = 'processing'
+          and a.started_at is not null
+          and a.started_at > now() - make_interval(secs => orphan_secs)
+        )
       );
     retry_after := greatest(
       1,
-      ceil(extract(epoch from (coalesce(oldest, now()) + interval '24 hours' - now())))::int
+      ceil(extract(epoch from (coalesce(oldest, now() + interval '1 second') - now())))::int
     );
     return jsonb_build_object(
       'action', 'quota_denied',

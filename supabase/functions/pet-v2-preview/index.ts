@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       errorCode: "claim_orphan",
       failureCategory: "server_error",
       error:
-        "A previous attempt got stuck before the preview provider started. Replace the photo or unlock the collection — we won’t start a second paid preview for this attempt.",
+        "A previous attempt for this photo got stuck, and we couldn’t verify whether the preview provider had already started. Replace the photo for a fresh attempt — we won’t start another prediction for this one automatically.",
       preview_attempt_id: idempotencyKey,
     });
   }
@@ -312,18 +312,25 @@ Deno.serve(async (req) => {
         status: "failed",
         predictionId: predictionId || undefined,
         liveGeneration: false,
-        lastErrorCategory: errorCode,
+        lastErrorCategory: errorCode === "provider_state_persist_failed" ? "server_error" : errorCode,
       });
     }
     return jsonResponse({
       ok: false,
       mode: "live",
-      errorCode,
+      errorCode: errorCode === "provider_state_persist_failed" ? "provider_state_persist_failed" : errorCode,
       error:
-        errorCode === "timeout"
-          ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
-          : "We couldn't create the preview. Try again.",
-      failureCategory: errorCode,
+        errorCode === "provider_state_persist_failed"
+          ? "We started a preview but couldn’t save its provider state. Replace the photo for a fresh attempt — we won’t start another prediction for this one automatically."
+          : errorCode === "timeout"
+            ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
+            : "We couldn't create the preview. Try again.",
+      failureCategory:
+        errorCode === "provider_state_persist_failed" || errorCode === "timeout"
+          ? errorCode === "timeout"
+            ? "timeout"
+            : "server_error"
+          : errorCode,
       preview_attempt_id: idempotencyKey,
     });
   }
@@ -532,11 +539,23 @@ async function runKontextPreview(
     );
   }
 
-  await markAttempt(ctx, idempotencyKey, {
+  const persisted = await markAttempt(ctx, idempotencyKey, {
     status: "processing",
     predictionId: createdJson.id,
     liveGeneration: false,
   });
+  if (!persisted) {
+    await cancelReplicatePrediction(token, createdJson.id);
+    const err = new Error("provider_state_persist_failed") as Error & {
+      predictionId?: string;
+      errorCode?: string;
+      keepProcessing?: boolean;
+    };
+    err.predictionId = createdJson.id;
+    err.errorCode = "provider_state_persist_failed";
+    err.keepProcessing = false;
+    throw err;
+  }
 
   try {
     const polled = await pollPrediction(token, createdJson.id);
@@ -573,6 +592,13 @@ async function runKontextPreview(
     }
     throw error;
   }
+}
+
+async function cancelReplicatePrediction(token: string, predictionId: string): Promise<void> {
+  await fetch(`https://api.replicate.com/v1/predictions/${predictionId}/cancel`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  }).catch(() => undefined);
 }
 
 async function pollPrediction(
