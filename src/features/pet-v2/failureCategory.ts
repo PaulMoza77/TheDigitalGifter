@@ -1,5 +1,5 @@
 /**
- * Normalized V2 generation failure categories for analytics.
+ * Normalized V2 generation/upload failure categories for analytics.
  * Never include raw exceptions, secrets, PII, or photo payloads.
  */
 
@@ -16,12 +16,17 @@ export const PET_V2_NORMALIZED_FAILURE_CATEGORIES = [
 
 export type PetV2NormalizedFailureCategory = (typeof PET_V2_NORMALIZED_FAILURE_CATEGORIES)[number];
 
-/** Categories that mean analytics persistence itself failed (not product generation). */
+/** Events that may persist failure_category on pet_v2_funnel_events. */
+export const PET_V2_FAILURE_CATEGORY_EVENTS = [
+  "v2_preview_generation_failed",
+  "v2_upload_failed",
+] as const;
+
+/**
+ * Actual analytics persistence / RPC failures — only these count as "Failed analytics writes".
+ * Semantic generation-failure tokens (e.g. rate_limit) are never in this set.
+ */
 export const PET_V2_PERSISTENCE_FAILURE_CATEGORIES = [
-  "origin_denied",
-  "invalid_event",
-  "invalid_session",
-  "malformed_json",
   "rpc_error",
   "missing_supabase_config",
   "write_failed",
@@ -29,8 +34,73 @@ export const PET_V2_PERSISTENCE_FAILURE_CATEGORIES = [
 
 export type PetV2PersistenceFailureCategory = (typeof PET_V2_PERSISTENCE_FAILURE_CATEGORIES)[number];
 
+/**
+ * Request rejected before a successful write (auth/validation).
+ * Logged for ops visibility but NOT summed into failed-write health.
+ */
+export const PET_V2_REJECTED_REQUEST_CATEGORIES = [
+  "origin_denied",
+  "invalid_event",
+  "invalid_session",
+  "malformed_json",
+] as const;
+
+export type PetV2RejectedRequestCategory = (typeof PET_V2_REJECTED_REQUEST_CATEGORIES)[number];
+
 export function isPetV2PersistenceFailureCategory(value: string): boolean {
   return (PET_V2_PERSISTENCE_FAILURE_CATEGORIES as readonly string[]).includes(value);
+}
+
+export function isPetV2RejectedRequestCategory(value: string): boolean {
+  return (PET_V2_REJECTED_REQUEST_CATEGORIES as readonly string[]).includes(value);
+}
+
+export function eventAllowsFailureCategory(eventName: string): boolean {
+  return (PET_V2_FAILURE_CATEGORY_EVENTS as readonly string[]).includes(eventName);
+}
+
+export type AnalyticsIngestFailureKind = "persistence" | "rejected" | "ignored";
+
+/** Classify a pet_funnel_event_failures.error_category for health UI. */
+export function classifyAnalyticsIngestFailure(category: string): AnalyticsIngestFailureKind {
+  const token = String(category || "").trim();
+  if (isPetV2PersistenceFailureCategory(token)) return "persistence";
+  if (isPetV2RejectedRequestCategory(token)) return "rejected";
+  // Historical semantic rows (rate_limit, etc.) stay in the table but are ignored by health KPIs.
+  return "ignored";
+}
+
+/**
+ * After a successful RPC write, never treat the event as a failed write —
+ * even when the event describes a failed generation/upload.
+ */
+export function shouldIncrementFailedWriteHealth(input: {
+  writeSucceeded: boolean;
+  errorCategory?: string | null;
+}): boolean {
+  if (input.writeSucceeded) return false;
+  return classifyAnalyticsIngestFailure(String(input.errorCategory || "")) === "persistence";
+}
+
+export function shouldIncrementRejectedRequestHealth(input: {
+  writeSucceeded: boolean;
+  errorCategory?: string | null;
+}): boolean {
+  if (input.writeSucceeded) return false;
+  return classifyAnalyticsIngestFailure(String(input.errorCategory || "")) === "rejected";
+}
+
+/** Production health timestamps ignore is_test / QA rows. */
+export function latestProductionEventAt(
+  rows: Array<{ created_at: string; is_test?: boolean | null }>,
+): string | null {
+  let latest: string | null = null;
+  for (const row of rows) {
+    if (row.is_test === true) continue;
+    if (!row.created_at) continue;
+    if (!latest || row.created_at > latest) latest = row.created_at;
+  }
+  return latest;
 }
 
 /**
@@ -70,6 +140,18 @@ export function normalizeV2FailureCategory(raw: unknown): PetV2NormalizedFailure
     return token as PetV2NormalizedFailureCategory;
   }
   return "unknown";
+}
+
+/**
+ * Persist only allowlisted categories for eligible events.
+ * Never stores raw exception bodies.
+ */
+export function resolvePersistedFailureCategory(input: {
+  eventName: string;
+  rawCategory: unknown;
+}): PetV2NormalizedFailureCategory | null {
+  if (!eventAllowsFailureCategory(input.eventName)) return null;
+  return normalizeV2FailureCategory(input.rawCategory) ?? "unknown";
 }
 
 /**

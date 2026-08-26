@@ -107,7 +107,11 @@ export type PetFunnelAnalyticsReport = {
   previousSteps: FunnelStepRow[];
   hybridStages: import("./funnelHybrid").HybridStageValue[];
   hybridKpis: import("./funnelHybrid").HybridKpis;
-  trackingHealth?: { failedWrites: number | null; latestFirstPartyAt: string | null };
+  trackingHealth?: {
+    failedWrites: number | null;
+    rejectedRequests?: number | null;
+    latestFirstPartyAt: string | null;
+  };
   /** Stripe checkout class breakdown + first-party begin_checkout (diagnostic). */
   checkoutDiagnostics?: {
     customer: number;

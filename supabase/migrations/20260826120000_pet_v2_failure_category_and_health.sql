@@ -91,7 +91,9 @@ begin
   end if;
 
   clean_failure := lower(nullif(btrim(coalesce(p_failure_category, '')), ''));
-  if clean_failure is not null then
+  if p_event_name not in ('v2_preview_generation_failed', 'v2_upload_failed') then
+    clean_failure := null;
+  elsif clean_failure is not null then
     clean_failure := left(regexp_replace(clean_failure, '[^a-z0-9_]', '', 'g'), 40);
     if clean_failure is null or clean_failure = '' or not (clean_failure = any (allowed_failure)) then
       clean_failure := 'unknown';
@@ -158,11 +160,42 @@ grant execute on function public.record_pet_v2_funnel_event(
   text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text, text
 ) to service_role;
 
--- Patch tracking_health counts inside admin_pet_funnel_analytics without rewriting the full RPC.
--- Recreate the function body is large; instead add a helper used by a thin wrapper update via
--- replacing only the tracking_health CTE through a dedicated count function.
+-- Patch tracking_health:
+-- - Failed writes = persistence/RPC only (rpc_error, missing_supabase_config, write_failed).
+-- - Rejected requests (origin_denied, invalid_*, malformed_json) counted separately.
+-- - Semantic generation-failure rows in pet_funnel_event_failures are excluded (not deleted).
+-- Full admin_pet_funnel_analytics body matches main @ 20260824240000 aside from tracking_health,
+-- V2 is_test filters on latest_v2_at / v2_sessions / unattributed landings, and rejected counts.
 
 create or replace function public.pet_funnel_persistence_failure_count(
+  p_from timestamptz,
+  p_to timestamptz,
+  p_dataset text
+)
+returns integer
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select count(*)::int
+  from public.pet_funnel_event_failures f
+  where f.created_at >= p_from
+    and f.created_at < p_to
+    and coalesce(f.funnel_dataset, 'v1') = coalesce(nullif(btrim(p_dataset), ''), 'v1')
+    and coalesce(f.error_category, '') in (
+      'rpc_error',
+      'missing_supabase_config',
+      'write_failed'
+    );
+$$;
+
+revoke all on function public.pet_funnel_persistence_failure_count(timestamptz, timestamptz, text)
+  from public, anon;
+grant execute on function public.pet_funnel_persistence_failure_count(timestamptz, timestamptz, text)
+  to authenticated, service_role;
+
+create or replace function public.pet_funnel_rejected_request_count(
   p_from timestamptz,
   p_to timestamptz,
   p_dataset text
@@ -182,16 +215,13 @@ as $$
       'origin_denied',
       'invalid_event',
       'invalid_session',
-      'malformed_json',
-      'rpc_error',
-      'missing_supabase_config',
-      'write_failed'
+      'malformed_json'
     );
 $$;
 
-revoke all on function public.pet_funnel_persistence_failure_count(timestamptz, timestamptz, text)
+revoke all on function public.pet_funnel_rejected_request_count(timestamptz, timestamptz, text)
   from public, anon;
-grant execute on function public.pet_funnel_persistence_failure_count(timestamptz, timestamptz, text)
+grant execute on function public.pet_funnel_rejected_request_count(timestamptz, timestamptz, text)
   to authenticated, service_role;
 
 -- Use persistence-only failure counts in admin analytics health.
@@ -304,6 +334,7 @@ begin
     from public.pet_v2_funnel_events
     where created_at >= p_from
       and created_at < p_to
+      and coalesce(is_test, false) = false
   ),
   v2_touch as (
     select
@@ -314,6 +345,7 @@ begin
       (array_agg(e.ad_id order by e.created_at) filter (where nullif(e.ad_id, '') is not null))[1] as touch_ad_id
     from public.pet_v2_funnel_events e
     where e.funnel_session_id in (select funnel_session_id from v2_sessions_in_range)
+      and coalesce(e.is_test, false) = false
     group by e.funnel_session_id
   ),
   v2_resolved as (
@@ -384,11 +416,15 @@ begin
       (select count(distinct funnel_session_id)::int from current_v1 where event_name = 'landing_view') as v1_landings,
       (select count(distinct funnel_session_id)::int from current_v2 where event_name = 'v2_landing_view') as v2_landings,
       (select max(created_at) from public.pet_funnel_events where coalesce(is_test, false) = false) as latest_v1_at,
-      (select max(created_at) from public.pet_v2_funnel_events) as latest_v2_at,
+      (select max(created_at) from public.pet_v2_funnel_events where coalesce(is_test, false) = false) as latest_v2_at,
       (select public.pet_funnel_persistence_failure_count(p_from, p_to, 'v1')) as v1_failed_write_count,
       (select public.pet_funnel_persistence_failure_count(p_from, p_to, 'v2')) as v2_failed_write_count,
       (select public.pet_funnel_persistence_failure_count(p_from, p_to, 'v1')
-            + public.pet_funnel_persistence_failure_count(p_from, p_to, 'v2')) as failed_write_count
+            + public.pet_funnel_persistence_failure_count(p_from, p_to, 'v2')) as failed_write_count,
+      (select public.pet_funnel_rejected_request_count(p_from, p_to, 'v1')) as v1_rejected_request_count,
+      (select public.pet_funnel_rejected_request_count(p_from, p_to, 'v2')) as v2_rejected_request_count,
+      (select public.pet_funnel_rejected_request_count(p_from, p_to, 'v1')
+            + public.pet_funnel_rejected_request_count(p_from, p_to, 'v2')) as rejected_request_count
   ),
   unattributed as (
     select
@@ -408,6 +444,7 @@ begin
          join v2_resolved r on r.funnel_session_id = e.funnel_session_id
         where e.event_name = 'v2_landing_view'
           and e.created_at >= p_from and e.created_at < p_to
+          and coalesce(e.is_test, false) = false
           and r.resolved_campaign_id is null) as v2_landings,
       (select count(distinct e.funnel_session_id)::int
          from public.pet_funnel_events e
@@ -417,7 +454,8 @@ begin
       (select count(distinct e.funnel_session_id)::int
          from public.pet_v2_funnel_events e
         where e.event_name = 'v2_landing_view'
-          and e.created_at >= p_from and e.created_at < p_to) as v2_landings_total
+          and e.created_at >= p_from and e.created_at < p_to
+          and coalesce(e.is_test, false) = false) as v2_landings_total
   ),
   step_counts as (
     select event_name, count(distinct funnel_session_id)::int as unique_sessions, count(*)::int as event_count
@@ -1182,7 +1220,16 @@ begin
         end
       ),
       'v1_failed_write_count', (select v1_failed_write_count from tracking_health),
-      'v2_failed_write_count', (select v2_failed_write_count from tracking_health)
+      'v2_failed_write_count', (select v2_failed_write_count from tracking_health),
+      'rejected_request_count', (
+        case
+          when view_mode = 'campaign' and coalesce((select c.funnel_variant from catalog c where c.campaign_id = campaign_filter), 'v1') = 'v2_preview'
+            then (select v2_rejected_request_count from tracking_health)
+          else (select v1_rejected_request_count from tracking_health)
+        end
+      ),
+      'v1_rejected_request_count', (select v1_rejected_request_count from tracking_health),
+      'v2_rejected_request_count', (select v2_rejected_request_count from tracking_health)
     ),
     'ga4', jsonb_build_object(
       'row_count', (select row_count from ga4_totals),

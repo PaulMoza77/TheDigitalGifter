@@ -93,7 +93,11 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     const check = validateV2PhotoFile(file);
     if (!check.ok) {
       setPhotoError(check.message);
-      trackPetV2Event({ eventName: "v2_upload_failed", species });
+      trackPetV2Event({
+        eventName: "v2_upload_failed",
+        species,
+        failureCategory: check.code === "heic_unsupported" ? "heic_unsupported" : "validation",
+      });
       go("photo");
       return;
     }

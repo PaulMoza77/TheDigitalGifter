@@ -66,10 +66,12 @@ function TrackingHealth({
   kpis,
   latestFirstPartyAt,
   failedWrites,
+  rejectedRequests,
 }: {
   kpis: { firstPartyLandings: number; metaLpv: number | null; lpv: number | null };
   latestFirstPartyAt: string | null | undefined;
   failedWrites: number | null;
+  rejectedRequests?: number | null;
 }) {
   const metaLpv = kpis.metaLpv ?? kpis.lpv;
   const coverage = trackingCoverageSignal(kpis.firstPartyLandings, metaLpv);
@@ -89,7 +91,10 @@ function TrackingHealth({
         Latest first-party event: {latestFirstPartyAt ? new Date(latestFirstPartyAt).toLocaleString("en-US") : "none in view"}
         {failedWrites == null
           ? ""
-          : ` · Failed analytics writes: ${failedWrites} (persistence/RPC only — generation failure events are not counted)`}
+          : ` · Failed analytics writes: ${failedWrites} (RPC/config/write only)`}
+        {rejectedRequests == null
+          ? ""
+          : ` · Rejected analytics requests: ${rejectedRequests} (origin/validation — not failed writes)`}
       </p>
     </SectionCard>
   );
@@ -394,6 +399,7 @@ export default function PetFunnelAnalyticsPage() {
                 report.firstPartyTrackingStartedAt
               }
               failedWrites={report.trackingHealth?.failedWrites ?? null}
+              rejectedRequests={report.trackingHealth?.rejectedRequests ?? null}
             />
 
             <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">

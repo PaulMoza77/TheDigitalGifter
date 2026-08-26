@@ -133,7 +133,9 @@ function parseV2EventBody(raw: unknown): {
   const deviceType =
     deviceRaw === "mobile" || deviceRaw === "tablet" || deviceRaw === "desktop" ? deviceRaw : null;
   const failureCategory =
-    eventName === "v2_preview_generation_failed" ? normalizeFailureCategory(row.failure_category) : null;
+    eventName === "v2_preview_generation_failed" || eventName === "v2_upload_failed"
+      ? normalizeFailureCategory(row.failure_category)
+      : null;
   return {
     eventName: eventName as PetV2EventName,
     funnelSessionId: sessionId,

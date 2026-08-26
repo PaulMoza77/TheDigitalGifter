@@ -446,6 +446,20 @@ export function usePetFunnelAnalytics(
             const key = datasetId === "v2" ? "v2_failed_write_count" : "v1_failed_write_count";
             return asNullableNumber(health[key] ?? health.v2_failed_write_count ?? health.v1_failed_write_count ?? health.failed_write_count);
           })(),
+          rejectedRequests: (() => {
+            const health =
+              payload.tracking_health && typeof payload.tracking_health === "object"
+                ? (payload.tracking_health as RpcRow)
+                : null;
+            if (!health) return null;
+            const key = datasetId === "v2" ? "v2_rejected_request_count" : "v1_rejected_request_count";
+            return asNullableNumber(
+              health[key] ??
+                health.v2_rejected_request_count ??
+                health.v1_rejected_request_count ??
+                health.rejected_request_count,
+            );
+          })(),
           latestFirstPartyAt: (() => {
             const health =
               payload.tracking_health && typeof payload.tracking_health === "object"

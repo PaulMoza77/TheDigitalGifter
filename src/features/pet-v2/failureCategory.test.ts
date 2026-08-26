@@ -4,6 +4,7 @@ import { emptyStepCounts } from "../pet/funnelDashboard";
 import { FUNNEL_DATASETS, mapV2CountsToPrimarySteps, namedEventCounts } from "../pet/funnelDatasetConfig";
 import {
   isPetV2PersistenceFailureCategory,
+  isPetV2RejectedRequestCategory,
   normalizeV2FailureCategory,
   resolveInitiateCheckoutDisplay,
 } from "./failureCategory";
@@ -87,8 +88,14 @@ describe("V2 analytics clarity", () => {
   it("treats only persistence categories as failed analytics writes", () => {
     expect(isPetV2PersistenceFailureCategory("rpc_error")).toBe(true);
     expect(isPetV2PersistenceFailureCategory("write_failed")).toBe(true);
+    expect(isPetV2PersistenceFailureCategory("missing_supabase_config")).toBe(true);
+    expect(isPetV2PersistenceFailureCategory("origin_denied")).toBe(false);
+    expect(isPetV2PersistenceFailureCategory("malformed_json")).toBe(false);
     expect(isPetV2PersistenceFailureCategory("rate_limit")).toBe(false);
     expect(isPetV2PersistenceFailureCategory("provider")).toBe(false);
+    expect(isPetV2RejectedRequestCategory("origin_denied")).toBe(true);
+    expect(isPetV2RejectedRequestCategory("invalid_event")).toBe(true);
+    expect(isPetV2RejectedRequestCategory("rpc_error")).toBe(false);
   });
 
   it("does not change V1 dataset labels", () => {
