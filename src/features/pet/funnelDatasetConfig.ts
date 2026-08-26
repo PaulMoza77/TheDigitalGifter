@@ -94,20 +94,20 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
       landing: "Landing Sessions",
       step2: "Photo Uploads",
       step3: "Preview Viewed",
-      step4: "Unlock Clicks",
+      step4: "Offer Viewed",
       checkout: "Initiate Checkouts",
       purchase: "Purchases",
       landingHelper: "First-party landing",
       step2Of: "first-party landing",
       step3Of: "uploads",
       step4Of: "previews",
-      checkoutOf: "unlocks",
+      checkoutOf: "checkout viewed",
     },
     stageLabels: {
       landing_view: "Landing Sessions",
       pet_name_submitted: "Photo Uploads",
       photo_upload_completed: "Preview Viewed",
-      order_review_viewed: "Unlock Clicks",
+      order_review_viewed: "Offer Viewed",
       initiate_checkout: "Initiate Checkout",
       purchase: "Purchase",
     },
@@ -161,10 +161,67 @@ export function mapV3CountsToPrimarySteps(v3: Record<string, number>): FunnelSte
   counts.landing_view = v3.v3_landing_view || 0;
   counts.pet_name_submitted = v3.v3_upload_completed || 0;
   counts.photo_upload_completed = v3.v3_preview_viewed || 0;
-  counts.order_review_viewed = v3.v3_unlock_clicked || 0;
+  counts.order_review_viewed = v3.v3_offer_viewed || 0;
   counts.initiate_checkout = v3.v3_begin_checkout || 0;
   counts.purchase = v3.v3_purchase || 0;
   return counts;
+}
+
+export const V3_FUNNEL_EXTENDED_STEPS = [
+  "landing_view",
+  "pet_name_submitted",
+  "photo_upload_completed",
+  "order_review_viewed",
+  "checkout_viewed",
+  "initiate_checkout",
+  "purchase",
+] as const;
+
+export type V3FunnelExtendedStep = (typeof V3_FUNNEL_EXTENDED_STEPS)[number];
+
+export type V3FunnelExtendedCounts = Record<V3FunnelExtendedStep, number>;
+
+export const V3_FUNNEL_EXTENDED_LABELS: Record<V3FunnelExtendedStep, string> = {
+  landing_view: "Landing Sessions",
+  pet_name_submitted: "Photo Uploads",
+  photo_upload_completed: "Preview Viewed",
+  order_review_viewed: "Offer Viewed",
+  checkout_viewed: "Checkout Viewed",
+  initiate_checkout: "Initiate Checkout",
+  purchase: "Purchase",
+};
+
+/** V3 dashboard includes checkout_viewed as its own stage between offer and begin checkout. */
+export function mapV3CountsToExtendedSteps(v3: Record<string, number>): V3FunnelExtendedCounts {
+  return {
+    landing_view: v3.v3_landing_view || 0,
+    pet_name_submitted: v3.v3_upload_completed || 0,
+    photo_upload_completed: v3.v3_preview_viewed || 0,
+    order_review_viewed: v3.v3_offer_viewed || 0,
+    checkout_viewed: v3.v3_checkout_viewed || 0,
+    initiate_checkout: v3.v3_begin_checkout || 0,
+    purchase: v3.v3_purchase || 0,
+  };
+}
+
+export function buildV3ExtendedFunnelSteps(counts: V3FunnelExtendedCounts) {
+  const landing = counts.landing_view;
+  return V3_FUNNEL_EXTENDED_STEPS.map((eventName, index) => {
+    const sessions = counts[eventName];
+    const previous = index === 0 ? null : counts[V3_FUNNEL_EXTENDED_STEPS[index - 1]];
+    return {
+      eventName,
+      label: V3_FUNNEL_EXTENDED_LABELS[eventName],
+      sessions,
+      fromPreviousPct:
+        previous == null || previous <= 0 ? (index === 0 ? 100 : null) : Math.round((sessions / previous) * 1000) / 10,
+      fromLandingPct: landing <= 0 ? null : Math.round((sessions / landing) * 1000) / 10,
+      dropFromPreviousPct:
+        previous == null || previous <= 0
+          ? null
+          : Math.max(0, Math.round(((previous - sessions) / previous) * 1000) / 10),
+    };
+  });
 }
 
 /** Map isolated V2 event counts into the original 6-card funnel shape. */

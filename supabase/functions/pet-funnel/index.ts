@@ -49,6 +49,10 @@ import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, res
 import { PET_SCENE_DEFINITIONS, sceneByKey } from "../_shared/pet/scenes.ts";
 import { petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
 import { parseCheckoutAttribution, recordPetFunnelInitiateCheckout } from "../_shared/pet/funnelEvents.ts";
+import {
+  recordV3MetaInitiateCheckoutOnce,
+  shouldDeferInitiateCheckoutToInteraction,
+} from "../_shared/pet/v3InitiateCheckout.ts";
 import { decideCheckoutSessionAction, matchedEmbeddedCheckoutResponse, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
 import { enqueuePetGenerate, enqueuePetGenerateIfStalled } from "../_shared/pet/stripeFulfill.ts";
 import {
@@ -133,6 +137,31 @@ function isV2Funnel(value: unknown): boolean {
 
 function isV3Funnel(value: unknown): boolean {
   return asString(value) === "v3";
+}
+
+async function maybeRecordInitiateCheckoutOnSessionCreate(
+  service: ReturnType<typeof getServiceClient>,
+  order: PetOrderRow,
+  meta: ReturnType<typeof petMetaCheckoutFields>,
+  checkoutCtx: {
+    funnelSessionId: string | null;
+    deviceType: string | null;
+    attribution: ReturnType<typeof parseCheckoutAttribution>;
+  },
+) {
+  if (shouldDeferInitiateCheckoutToInteraction(order.funnel_variant)) return;
+  await sendMetaCapiInitiateCheckout({
+    eventId: meta.eventId,
+    orderId: order.id,
+    email: asString(order.email),
+    amountCents: meta.chargedAmountCents,
+  });
+  await recordPetFunnelInitiateCheckout(service, {
+    orderId: order.id,
+    amountCents: meta.chargedAmountCents,
+    species: asString(order.species),
+    ...checkoutCtx,
+  });
 }
 
 function resolveFunnelVariant(value: unknown): "v1" | "v2" | "v3" {
@@ -553,6 +582,63 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "updateOrderContact") {
+      const order = await requireOrder(service, asString(body.orderId), asString(body.publicToken));
+      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      if (!["awaiting_upload", "awaiting_payment"].includes(String(order.status))) {
+        return apiError("INVALID_REQUEST", "This order can no longer be updated.");
+      }
+      if (order.paid_at) {
+        return apiError("INVALID_REQUEST", "This order is already paid.");
+      }
+      const email = asString(body.email).toLowerCase();
+      const petName = asString(body.petName).slice(0, 40);
+      if (!email || !email.includes("@") || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return apiError("INVALID_REQUEST", "A valid email is required.");
+      }
+      if (petName.length < 2) return apiError("INVALID_REQUEST", "Pet name is required.");
+      await service
+        .from("pet_orders")
+        .update({
+          email,
+          email_normalized: email,
+          pet_name: petName,
+        })
+        .eq("id", order.id);
+      return jsonResponse({
+        orderId: order.id,
+        email,
+        petName,
+        updated: true,
+      });
+    }
+
+    if (action === "recordV3InitiateCheckout") {
+      const order = await requireOrder(service, asString(body.orderId), asString(body.publicToken));
+      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      if (!isV3Funnel(order.funnel_variant)) {
+        return apiError("INVALID_REQUEST", "This order is not a V3 checkout.");
+      }
+      if (order.paid_at) {
+        return jsonResponse({ eventId: petMetaCheckoutFields(order).eventId, alreadySent: true, sent: false });
+      }
+      const meta = petMetaCheckoutFields(order);
+      const requestedEventId = asString(body.eventId);
+      if (requestedEventId && requestedEventId !== meta.eventId) {
+        return apiError("INVALID_REQUEST", "Initiate checkout event id mismatch.");
+      }
+      const result = await recordV3MetaInitiateCheckoutOnce(service, {
+        orderId: order.id,
+        email: asString(order.email),
+        amountCents: meta.chargedAmountCents,
+      });
+      return jsonResponse({
+        eventId: result.eventId,
+        sent: result.sent,
+        alreadySent: result.alreadySent,
+      });
+    }
+
     if (action === "createStripeCheckout") {
       const publicToken = asString(body.publicToken);
       const order = await requireOrder(service, asString(body.orderId), publicToken);
@@ -689,18 +775,7 @@ Deno.serve(async (req) => {
           p_expected_session_id: storedSessionId || null,
         });
         const meta = petMetaCheckoutFields(order);
-        await sendMetaCapiInitiateCheckout({
-          eventId: meta.eventId,
-          orderId: order.id,
-          email: asString(order.email),
-          amountCents: meta.chargedAmountCents,
-        });
-        await recordPetFunnelInitiateCheckout(service, {
-          orderId: order.id,
-          amountCents: meta.chargedAmountCents,
-          species: asString(order.species),
-          ...checkoutCtx,
-        });
+        await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
@@ -736,6 +811,22 @@ Deno.serve(async (req) => {
       if (isV3Funnel(order.funnel_variant)) {
         params.set("metadata[funnel_version]", "v3");
         params.set("metadata[species]", asString(order.species) || "cat");
+        const attr = checkoutCtx.attribution;
+        const creativeFromContent = asString(attr.utm_content)?.replace(/-FINAL$/i, "").slice(0, 120) || null;
+        for (const [key, value] of [
+          ["utm_source", attr.utm_source],
+          ["utm_medium", attr.utm_medium],
+          ["utm_campaign", attr.utm_campaign],
+          ["utm_content", attr.utm_content],
+          ["utm_term", attr.utm_term],
+          ["campaign_id", attr.campaign_id],
+          ["adset_id", attr.adset_id],
+          ["ad_id", attr.ad_id],
+          ["creative_id", creativeFromContent],
+        ] as const) {
+          const next = asString(value);
+          if (next) params.set(`metadata[${key}]`, next.slice(0, 500));
+        }
       }
       if (checkoutCtx.funnelSessionId) {
         params.set("metadata[funnel_session_id]", checkoutCtx.funnelSessionId);
@@ -776,18 +867,7 @@ Deno.serve(async (req) => {
           if (!matchedEmbedded.ok) return checkoutConflict();
           const meta = petMetaCheckoutFields(order);
           const publishableKey = await resolvePublishableKey(stripeKey, asString(winner?.url) || null);
-          await sendMetaCapiInitiateCheckout({
-            eventId: meta.eventId,
-            orderId: order.id,
-            email: asString(order.email),
-            amountCents: meta.chargedAmountCents,
-          });
-          await recordPetFunnelInitiateCheckout(service, {
-            orderId: order.id,
-            amountCents: meta.chargedAmountCents,
-            species: asString(order.species),
-            ...checkoutCtx,
-          });
+          await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
           return jsonResponse({
             sessionId: matchedEmbedded.sessionId,
             checkoutUrl: asString(winner?.url) || null,
@@ -802,18 +882,7 @@ Deno.serve(async (req) => {
         const matched = matchedOpenCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
         if (!matched.ok) return checkoutConflict();
         const meta = petMetaCheckoutFields(order);
-        await sendMetaCapiInitiateCheckout({
-          eventId: meta.eventId,
-          orderId: order.id,
-          email: asString(order.email),
-          amountCents: meta.chargedAmountCents,
-        });
-        await recordPetFunnelInitiateCheckout(service, {
-          orderId: order.id,
-          amountCents: meta.chargedAmountCents,
-          species: asString(order.species),
-          ...checkoutCtx,
-        });
+        await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
@@ -834,18 +903,7 @@ Deno.serve(async (req) => {
           p_actor_type: "system",
           p_payload: { session_present: true, initiate_event_id: meta.eventId, ui_mode: "custom" },
         });
-        await sendMetaCapiInitiateCheckout({
-          eventId: meta.eventId,
-          orderId: order.id,
-          email: asString(order.email),
-          amountCents: meta.chargedAmountCents,
-        });
-        await recordPetFunnelInitiateCheckout(service, {
-          orderId: order.id,
-          amountCents: meta.chargedAmountCents,
-          species: asString(order.species),
-          ...checkoutCtx,
-        });
+        await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
         return jsonResponse({
           sessionId: matchedEmbedded.sessionId,
           checkoutUrl: asString(session.url) || null,
@@ -866,18 +924,7 @@ Deno.serve(async (req) => {
         p_actor_type: "system",
         p_payload: { session_present: true, initiate_event_id: meta.eventId },
       });
-      await sendMetaCapiInitiateCheckout({
-        eventId: meta.eventId,
-        orderId: order.id,
-        email: asString(order.email),
-        amountCents: meta.chargedAmountCents,
-      });
-      await recordPetFunnelInitiateCheckout(service, {
-        orderId: order.id,
-        amountCents: meta.chargedAmountCents,
-        species: asString(order.species),
-        ...checkoutCtx,
-      });
+      await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
       return jsonResponse({
         sessionId: matched.sessionId,
         checkoutUrl: matched.checkoutUrl,

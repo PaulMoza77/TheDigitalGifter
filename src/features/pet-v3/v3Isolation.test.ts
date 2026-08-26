@@ -21,7 +21,7 @@ import {
   shouldRestoreLocalPreview,
 } from "../pet-v2/previewFlow";
 import { v3IdempotencyKey, isPetV3EventName, sanitizeV3Pathname } from "./analytics";
-import { trackV3BeginCheckout } from "./checkoutAnalytics";
+import { trackV3BeginCheckout, trackV3CheckoutViewed } from "./checkoutAnalytics";
 import { PET_V3_DRAFT_STORAGE_KEY, PET_V3_EVENTS, PET_V3_EVENT_PATH, PET_V3_PRICE_CENTS, PET_V3_SESSION_KEY, PET_V3_SPECIES } from "./types";
 import { PET_V3_FUNNEL_CONFIG } from "./config";
 
@@ -153,24 +153,17 @@ describe("pet funnel V3 cat isolation", () => {
     expect(freshRetry.attemptId).not.toBe(attemptA);
   });
 
-  it("records one unlock and one initiate checkout for V3", () => {
-    const eventId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-    const unlockKey = v3IdempotencyKey({
-      sessionId,
-      eventName: "v3_unlock_clicked",
-      eventId,
-    });
-    expect(unlockKey).toContain("v3_unlock_clicked");
-    expect(unlockKey).toContain(eventId);
-
+  it("maps offer viewed and checkout stages for embedded V3 funnel", () => {
     const mapped = mapV3CountsToPrimarySteps(
       namedEventCounts([
-        { event_name: "v3_unlock_clicked", unique_sessions: 1 },
+        { event_name: "v3_offer_viewed", unique_sessions: 1 },
+        { event_name: "v3_checkout_viewed", unique_sessions: 1 },
         { event_name: "v3_begin_checkout", unique_sessions: 1 },
       ]),
     );
     expect(mapped.order_review_viewed).toBe(1);
     expect(mapped.initiate_checkout).toBe(1);
+    expect(readSrc("src/features/pet-v3/PetV3FunnelPage.tsx")).not.toContain("v3_unlock_clicked");
   });
 });
 
@@ -179,7 +172,7 @@ describe("V3 checkout analytics", () => {
     vi.mocked(trackPetV3Event).mockClear();
   });
 
-  it("does not emit v3_begin_checkout before Stripe session creation succeeds", () => {
+  it("does not emit v3_begin_checkout without embedded or hosted checkout readiness", () => {
     expect(
       trackV3BeginCheckout({
         result: {
@@ -195,11 +188,11 @@ describe("V3 checkout analytics", () => {
     expect(trackPetV3Event).not.toHaveBeenCalled();
   });
 
-  it("emits exactly one v3_begin_checkout after live Stripe session opens", () => {
+  it("emits v3_begin_checkout only after embedded payment interaction", () => {
     const result = {
-      status: "open",
-      sessionId: "cs_live_abc",
-      checkoutUrl: "https://checkout.stripe.com/c/pay/cs_live_abc",
+      status: "open" as const,
+      sessionId: "cs_live_embedded",
+      clientSecret: "cs_live_embedded_secret_abc",
       orderId: "order-live-1",
       chargedAmountCents: 1200,
       eventId: "eeeeeeee-1111-4222-8333-444444444401",
@@ -245,7 +238,7 @@ describe("V3 dataset and pricing", () => {
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("applyV3SaleAmount");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain('metadata[funnel_version]", "v3"');
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain('metadata[species]"');
-    expect(readSrc("src/features/pet-v3/PetV3FunnelPage.tsx")).toContain('funnelVariant: "v3"');
+    expect(readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts")).toContain('funnelVariant: "v3"');
     expect(readSrc("supabase/functions/_shared/pet/stripeFulfill.ts")).toContain("record_pet_v3_funnel_event");
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("species: order.species");
   });

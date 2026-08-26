@@ -1,6 +1,10 @@
 import type {
   ConfirmUploadRequest,
   ConfirmUploadResponse,
+  UpdateOrderContactRequest,
+  UpdateOrderContactResponse,
+  RecordV3InitiateCheckoutRequest,
+  RecordV3InitiateCheckoutResponse,
   CreatePetOrderRequest,
   CreatePetOrderResponse,
   CreateStripeCheckoutRequest,
@@ -33,6 +37,10 @@ export interface PetFunnelApi {
     input: GetSignedUploadUrlRequest
   ): Promise<SignedUploadUrlResponse>;
   confirmUpload(input: ConfirmUploadRequest): Promise<ConfirmUploadResponse>;
+  updateOrderContact(input: UpdateOrderContactRequest): Promise<UpdateOrderContactResponse>;
+  recordV3InitiateCheckout(
+    input: RecordV3InitiateCheckoutRequest,
+  ): Promise<RecordV3InitiateCheckoutResponse>;
   createStripeCheckout(
     input: CreateStripeCheckoutRequest
   ): Promise<CreateStripeCheckoutResponse>;
@@ -75,6 +83,8 @@ export function createUnimplementedPetApi(): PetFunnelApi {
     createOrder: reject("createOrder"),
     getSignedUploadUrl: reject("getSignedUploadUrl"),
     confirmUpload: reject("confirmUpload"),
+    updateOrderContact: reject("updateOrderContact"),
+    recordV3InitiateCheckout: reject("recordV3InitiateCheckout"),
     createStripeCheckout: reject("createStripeCheckout"),
     createUpsellCheckout: reject("createUpsellCheckout"),
     getOrderByPublicToken: reject("getOrderByPublicToken"),

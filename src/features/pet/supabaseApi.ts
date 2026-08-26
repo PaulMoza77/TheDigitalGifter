@@ -46,6 +46,10 @@ export function createPetFunnelApi(): PetFunnelApi {
     getSignedUploadUrl: (input) =>
       callPetFunnel("getSignedUploadUrl", input as unknown as Record<string, unknown>),
     confirmUpload: (input) => callPetFunnel("confirmUpload", input as unknown as Record<string, unknown>),
+    updateOrderContact: (input) =>
+      callPetFunnel("updateOrderContact", input as unknown as Record<string, unknown>),
+    recordV3InitiateCheckout: (input) =>
+      callPetFunnel("recordV3InitiateCheckout", input as unknown as Record<string, unknown>),
     createStripeCheckout: (input) =>
       callPetFunnel("createStripeCheckout", input as unknown as Record<string, unknown>),
     createUpsellCheckout: (input) =>

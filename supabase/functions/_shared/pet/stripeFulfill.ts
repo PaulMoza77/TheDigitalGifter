@@ -175,6 +175,8 @@ export async function handlePetStripeEvent(input: {
         if (asString(input.metadata.funnel_variant) === "v3") {
           const sessionId = asString(input.metadata.funnel_session_id);
           if (isUuid(sessionId)) {
+            const creativeRaw = asString(input.metadata.creative_id) || asString(input.metadata.utm_content);
+            const creativeId = creativeRaw ? creativeRaw.replace(/-FINAL$/i, "").slice(0, 120) : null;
             await input.service.rpc("record_pet_v3_funnel_event", {
               p_event_name: "v3_purchase",
               p_funnel_session_id: sessionId,
@@ -182,6 +184,16 @@ export async function handlePetStripeEvent(input: {
               p_species: "cat",
               p_pathname: "/pet/cat-v3",
               p_amount_cents: charged,
+              p_funnel_version: asString(input.metadata.funnel_version) || "v3",
+              p_utm_source: asString(input.metadata.utm_source) || null,
+              p_utm_medium: asString(input.metadata.utm_medium) || null,
+              p_utm_campaign: asString(input.metadata.utm_campaign) || null,
+              p_utm_content: asString(input.metadata.utm_content) || null,
+              p_utm_term: asString(input.metadata.utm_term) || null,
+              p_campaign_id: asString(input.metadata.campaign_id) || null,
+              p_adset_id: asString(input.metadata.adset_id) || null,
+              p_ad_id: asString(input.metadata.ad_id) || null,
+              p_creative_id: creativeId,
             });
           }
         }

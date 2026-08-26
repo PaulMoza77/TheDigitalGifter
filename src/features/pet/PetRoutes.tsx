@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { parsePetSpecies, petCreatePath, petLandingPath } from "./catalog";
 import { PetCheckoutPage } from "./PetCheckoutPage";
@@ -32,9 +32,27 @@ function usePetNavigation(species: PetSpecies = "dog"): PetFunnelNavigation {
 }
 
 export function PetLandingRoute() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const navigate = useNavigate();
   const species = parsePetSpecies(pathname.split("/")[2]);
   const navigation = usePetNavigation(species);
+
+  useEffect(() => {
+    if (species !== "cat") return;
+    const params = new URLSearchParams(search);
+    if (params.get("fv")?.toLowerCase() !== "v3") return;
+    params.delete("fv");
+    const qs = params.toString();
+    void navigate(`/pet/cat-v3${qs ? `?${qs}` : ""}`, { replace: true });
+  }, [species, search, navigate]);
+
+  if (species === "cat") {
+    const params = new URLSearchParams(search);
+    if (params.get("fv")?.toLowerCase() === "v3") {
+      return null;
+    }
+  }
+
   return <PetLandingPage navigation={navigation} species={species} />;
 }
 

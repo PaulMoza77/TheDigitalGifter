@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   CheckoutElementsProvider,
   ExpressCheckoutElement,
@@ -27,17 +27,60 @@ const EXPRESS_OPTIONS = {
 function CheckoutBody({
   dueDisplay,
   returnUrl,
+  payButtonLabel,
+  busyLabel = "Paying…",
+  loadingLabel = "Loading Apple Pay and card…",
+  onBeforeConfirm,
+  onReady,
+  onPaymentInteraction,
+  confirmDisabled,
+  payButtonClassName,
 }: {
   dueDisplay: string;
   returnUrl: string;
+  payButtonLabel?: (payLabel: string) => string;
+  busyLabel?: string;
+  loadingLabel?: string;
+  onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
+  onReady?: () => void;
+  onPaymentInteraction?: () => void;
+  confirmDisabled?: boolean;
+  payButtonClassName?: string;
 }) {
   const checkoutState = useCheckoutElements();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [applePayFromStripe, setApplePayFromStripe] = useState(false);
+  const readyFired = useRef(false);
+  const interactionFired = useRef(false);
+
+  useEffect(() => {
+    if (checkoutState.type === "success" && !readyFired.current) {
+      readyFired.current = true;
+      onReady?.();
+    }
+  }, [checkoutState.type, onReady]);
+
+  function markInteraction() {
+    if (interactionFired.current) return;
+    interactionFired.current = true;
+    onPaymentInteraction?.();
+  }
 
   async function confirm(expressCheckoutConfirmEvent?: StripeExpressCheckoutElementConfirmEvent) {
     if (checkoutState.type !== "success") return;
+    markInteraction();
+    if (onBeforeConfirm) {
+      const gate = await onBeforeConfirm();
+      if (!gate.ok) {
+        setError(gate.error || "Complete the form before paying.");
+        if (gate.focusId) {
+          document.getElementById(gate.focusId)?.focus();
+          document.getElementById(gate.focusId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        return;
+      }
+    }
     setBusy(true);
     setError(null);
     try {
@@ -57,9 +100,9 @@ function CheckoutBody({
 
   if (checkoutState.type === "loading") {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" role="status" aria-live="polite">
         <ApplePayButton disabled />
-        <p className="text-center text-sm text-[#1a140e]/55">Loading Apple Pay and card…</p>
+        <p className="text-center text-sm text-[#1a140e]/55">{loadingLabel}</p>
       </div>
     );
   }
@@ -73,15 +116,20 @@ function CheckoutBody({
   }
 
   const payLabel = dueDisplay.replace(" USD", "");
+  const buttonText = payButtonLabel ? payButtonLabel(payLabel) : `Pay ${payLabel} — Get portraits`;
 
   return (
     <div className="space-y-4">
       <ExpressCheckoutElement
         options={EXPRESS_OPTIONS}
-        onReady={(event) => setApplePayFromStripe(Boolean(event.availablePaymentMethods?.applePay))}
+        onReady={(event) => {
+          setApplePayFromStripe(Boolean(event.availablePaymentMethods?.applePay));
+          markInteraction();
+        }}
         onConfirm={(event) => void confirm(event)}
+        onClick={markInteraction}
       />
-      {applePayFromStripe ? null : <ApplePayButton disabled={busy} />}
+      {applePayFromStripe ? null : <ApplePayButton disabled={busy || confirmDisabled} />}
 
       <div className="flex items-center gap-3">
         <span className="h-px flex-1 bg-[#1a140e]/12" />
@@ -89,20 +137,25 @@ function CheckoutBody({
         <span className="h-px flex-1 bg-[#1a140e]/12" />
       </div>
 
-      <PaymentElement
-        options={{
-          layout: "tabs",
-          wallets: { applePay: "never", googlePay: "never", link: "never" },
-        }}
-      />
+      <div onFocusCapture={markInteraction} onChangeCapture={markInteraction}>
+        <PaymentElement
+          options={{
+            layout: "tabs",
+            wallets: { applePay: "never", googlePay: "never", link: "never" },
+          }}
+        />
+      </div>
 
       <button
         type="button"
-        disabled={busy}
+        disabled={busy || confirmDisabled}
         onClick={() => void confirm()}
-        className="h-14 min-h-[56px] w-full rounded-xl bg-[#1a140e] text-[16px] font-semibold text-white disabled:opacity-60"
+        className={
+          payButtonClassName ??
+          "h-14 min-h-[56px] w-full rounded-xl bg-[#1a140e] text-[16px] font-semibold text-white disabled:opacity-60"
+        }
       >
-        {busy ? "Paying…" : `Pay ${payLabel} — Get portraits`}
+        {busy ? busyLabel : buttonText}
       </button>
 
       {error ? (
@@ -120,12 +173,32 @@ export function CustomStripeCheckout({
   email,
   dueDisplay,
   returnUrl,
+  payButtonLabel,
+  busyLabel,
+  loadingLabel,
+  onBeforeConfirm,
+  onReady,
+  onPaymentInteraction,
+  confirmDisabled,
+  appearanceTheme = "stripe",
+  appearanceVariables,
+  payButtonClassName,
 }: {
   clientSecret: string;
   publishableKey: string;
   email?: string;
   dueDisplay: string;
   returnUrl: string;
+  payButtonLabel?: (payLabel: string) => string;
+  busyLabel?: string;
+  loadingLabel?: string;
+  onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
+  onReady?: () => void;
+  onPaymentInteraction?: () => void;
+  confirmDisabled?: boolean;
+  appearanceTheme?: "stripe" | "night";
+  appearanceVariables?: Record<string, string>;
+  payButtonClassName?: string;
 }) {
   const stripePromise = useMemo(() => loadStripe(publishableKey), [publishableKey]);
 
@@ -137,8 +210,8 @@ export function CustomStripeCheckout({
         defaultValues: email ? { email } : undefined,
         elementsOptions: {
           appearance: {
-            theme: "stripe",
-            variables: {
+            theme: appearanceTheme,
+            variables: appearanceVariables ?? {
               colorPrimary: "#1a140e",
               borderRadius: "12px",
             },
@@ -146,7 +219,18 @@ export function CustomStripeCheckout({
         },
       }}
     >
-      <CheckoutBody dueDisplay={dueDisplay} returnUrl={returnUrl} />
+      <CheckoutBody
+        dueDisplay={dueDisplay}
+        returnUrl={returnUrl}
+        payButtonLabel={payButtonLabel}
+        busyLabel={busyLabel}
+        loadingLabel={loadingLabel}
+        onBeforeConfirm={onBeforeConfirm}
+        onReady={onReady}
+        onPaymentInteraction={onPaymentInteraction}
+        confirmDisabled={confirmDisabled}
+        payButtonClassName={payButtonClassName}
+      />
     </CheckoutElementsProvider>
   );
 }
