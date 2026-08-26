@@ -119,9 +119,13 @@ describe("V3 embedded checkout", () => {
   it("never surfaces raw Stripe session ids to customers", () => {
     const raw = "No such checkout.session: cs_live_a1qULKNoijnByHIUXCArn1GU33vxy5aBTV";
     expect(sanitizeStripeCheckoutCustomerError(raw)).toBe(
-      "We couldn't load secure payment. Please try again.",
+      "This payment session expired. Tap Retry secure payment.",
     );
     expect(sanitizeStripeCheckoutCustomerError(raw)).not.toContain("cs_live_");
+    expect(sanitizeStripeCheckoutCustomerError("Your card number is incomplete.")).toBe(
+      "Enter your full card details before paying.",
+    );
+    expect(sanitizeStripeCheckoutCustomerError("The payment was canceled.")).toBe("");
   });
 
   it("retry recovers the same order instead of starting a second checkout sequence", () => {

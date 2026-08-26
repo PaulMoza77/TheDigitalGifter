@@ -702,11 +702,40 @@ Deno.serve(async (req) => {
           pet_name: petName,
         })
         .eq("id", order.id);
+
+      const sessionId = asString(order.stripe_checkout_session_id);
+      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+      let stripeSessionSynced = false;
+      if (sessionId && stripeKey) {
+        const params = new URLSearchParams();
+        params.set("customer_email", email);
+        params.set("metadata[email_hash]", await sha256Hex(email));
+        const stripeRes = await fetch(
+          `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+          {
+            method: "POST",
+            headers: stripeAuthHeaders(stripeKey, {
+              "Content-Type": "application/x-www-form-urlencoded",
+            }),
+            body: params,
+          },
+        );
+        stripeSessionSynced = stripeRes.ok;
+        if (!stripeRes.ok) {
+          const stripeErr = await stripeRes.json().catch(() => ({}));
+          console.error(
+            "[updateOrderContact] stripe session sync failed",
+            asString((stripeErr as { error?: { message?: string } })?.error?.message) || "unknown",
+          );
+        }
+      }
+
       return jsonResponse({
         orderId: order.id,
         email,
         petName,
         updated: true,
+        stripeSessionSynced,
       });
     }
 

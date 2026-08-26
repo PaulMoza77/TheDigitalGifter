@@ -29,6 +29,7 @@ const EXPRESS_OPTIONS = {
 function CheckoutBody({
   dueDisplay,
   returnUrl,
+  email,
   payButtonLabel,
   busyLabel = "Paying…",
   loadingLabel = "Loading Apple Pay and card…",
@@ -41,6 +42,7 @@ function CheckoutBody({
 }: {
   dueDisplay: string;
   returnUrl: string;
+  email?: string;
   payButtonLabel?: (payLabel: string) => string;
   busyLabel?: string;
   loadingLabel?: string;
@@ -54,6 +56,7 @@ function CheckoutBody({
   const checkoutState = useCheckoutElements();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentComplete, setPaymentComplete] = useState(false);
   const [applePayFromStripe, setApplePayFromStripe] = useState(false);
   const readyFired = useRef(false);
   const interactionFired = useRef(false);
@@ -88,32 +91,67 @@ function CheckoutBody({
     onPaymentInteraction?.();
   }
 
+  async function syncCheckoutEmail(checkout: { updateEmail?: (value: string) => Promise<unknown> }) {
+    const nextEmail = String(email || "").trim();
+    if (!nextEmail || typeof checkout.updateEmail !== "function") return;
+    try {
+      await checkout.updateEmail(nextEmail);
+    } catch (caught) {
+      console.info("[stripe-checkout-email-sync]", {
+        ok: false,
+        reason: caught instanceof Error ? caught.name : "error",
+      });
+    }
+  }
+
   async function confirm(expressCheckoutConfirmEvent?: StripeExpressCheckoutElementConfirmEvent) {
     if (checkoutState.type !== "success") return;
     markInteraction();
     if (onBeforeConfirm) {
-      const gate = await onBeforeConfirm();
-      if (!gate.ok) {
-        setError(gate.error || "Complete the form before paying.");
-        if (gate.focusId) {
-          document.getElementById(gate.focusId)?.focus();
-          document.getElementById(gate.focusId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      try {
+        const gate = await onBeforeConfirm();
+        if (!gate.ok) {
+          setError(gate.error || "Complete the form before paying.");
+          if (gate.focusId) {
+            document.getElementById(gate.focusId)?.focus();
+            document.getElementById(gate.focusId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+          return;
         }
+      } catch (caught) {
+        const message =
+          caught instanceof Error && caught.message.trim()
+            ? caught.message.trim()
+            : "Could not save your details. Try again.";
+        setError(message);
         return;
       }
+    }
+    if (!expressCheckoutConfirmEvent && !paymentComplete) {
+      setError("Enter your full card details before paying.");
+      return;
     }
     setBusy(true);
     setError(null);
     try {
+      await syncCheckoutEmail(checkoutState.checkout);
       const result = await checkoutState.checkout.confirm({
         returnUrl,
         ...(expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {}),
       });
       if (result.type === "error") {
-        setError(sanitizeStripeCheckoutCustomerError(result.error.message));
+        const message = sanitizeStripeCheckoutCustomerError(result.error.message);
+        console.info("[stripe-checkout-confirm]", {
+          failureCode: result.error.code || "confirm_failed",
+        });
+        if (message) setError(message);
       }
     } catch (caught) {
-      setError(sanitizeStripeCheckoutCustomerError(caught instanceof Error ? caught.message : undefined));
+      const message = sanitizeStripeCheckoutCustomerError(caught instanceof Error ? caught.message : undefined);
+      console.info("[stripe-checkout-confirm]", {
+        failureCode: caught instanceof Error ? caught.name : "confirm_exception",
+      });
+      if (message) setError(message);
     } finally {
       setBusy(false);
     }
@@ -151,6 +189,7 @@ function CheckoutBody({
         }}
         onConfirm={(event) => void confirm(event)}
         onClick={markInteraction}
+        onCancel={() => setError(null)}
       />
       {applePayFromStripe ? null : <ApplePayButton disabled={busy || confirmDisabled} />}
 
@@ -165,6 +204,10 @@ function CheckoutBody({
           options={{
             layout: "tabs",
             wallets: { applePay: "never", googlePay: "never", link: "never" },
+          }}
+          onChange={(event) => {
+            setPaymentComplete(event.complete);
+            if (event.complete) setError(null);
           }}
         />
       </div>
@@ -269,6 +312,7 @@ export function CustomStripeCheckout({
       <CheckoutBody
         dueDisplay={dueDisplay}
         returnUrl={returnUrl}
+        email={email}
         payButtonLabel={payButtonLabel}
         busyLabel={busyLabel}
         loadingLabel={loadingLabel}

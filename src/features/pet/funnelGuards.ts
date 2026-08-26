@@ -302,8 +302,23 @@ export function isValidEmbeddedClientSecret(
   return true;
 }
 
-export function sanitizeStripeCheckoutCustomerError(_message?: string | null): string {
-  return "We couldn't load secure payment. Please try again.";
+export function sanitizeStripeCheckoutCustomerError(message?: string | null): string {
+  const raw = String(message || "").trim();
+  if (!raw) return "Enter your full card details before paying.";
+  if (/cancel(ed)?|aborted|dismiss/i.test(raw)) return "";
+  if (/incomplete|empty|invalid.*card|card number|expir|cvc|security code|payment details/i.test(raw)) {
+    return "Enter your full card details before paying.";
+  }
+  if (/declined|insufficient|do not honor|not permitted|lost card|stolen card/i.test(raw)) {
+    return "Your card was declined. Try another card or contact your bank.";
+  }
+  if (/no such checkout\.session|checkout\.session.*expired|session.*expired/i.test(raw)) {
+    return "This payment session expired. Tap Retry secure payment.";
+  }
+  if (/publishable key|api key/i.test(raw)) {
+    return "We couldn't load secure payment. Please try again.";
+  }
+  return "We couldn't complete payment. Please try again.";
 }
 
 export function matchedEmbeddedCheckoutResponse(session: {
