@@ -67,11 +67,13 @@ function TrackingHealth({
   latestFirstPartyAt,
   failedWrites,
   rejectedRequests,
+  unavailableReason,
 }: {
   kpis: { firstPartyLandings: number; metaLpv: number | null; lpv: number | null };
   latestFirstPartyAt: string | null | undefined;
   failedWrites: number | null;
   rejectedRequests?: number | null;
+  unavailableReason?: string | null;
 }) {
   const metaLpv = kpis.metaLpv ?? kpis.lpv;
   const coverage = trackingCoverageSignal(kpis.firstPartyLandings, metaLpv);
@@ -87,15 +89,20 @@ function TrackingHealth({
         {metaLpv != null ? ` / ${metaLpv} Meta LPV` : ""}
         {coverage.ratio == null ? "" : ` (${(coverage.ratio * 100).toFixed(0)}%)`}
       </p>
-      <p className="mt-1 text-xs text-slate-500">
-        Latest first-party event: {latestFirstPartyAt ? new Date(latestFirstPartyAt).toLocaleString("en-US") : "none in view"}
-        {failedWrites == null
-          ? ""
-          : ` · Failed analytics writes: ${failedWrites} (RPC/config/write only)`}
-        {rejectedRequests == null
-          ? ""
-          : ` · Rejected analytics requests: ${rejectedRequests} (origin/validation — not failed writes)`}
-      </p>
+      {unavailableReason ? (
+        <p className="mt-1 text-xs text-slate-500">{unavailableReason}</p>
+      ) : (
+        <p className="mt-1 text-xs text-slate-500">
+          Latest first-party event:{" "}
+          {latestFirstPartyAt ? new Date(latestFirstPartyAt).toLocaleString("en-US") : "none in view"}
+          {failedWrites == null
+            ? ""
+            : ` · Failed analytics writes: ${failedWrites} (RPC/config/write only)`}
+          {rejectedRequests == null
+            ? ""
+            : ` · Rejected analytics requests: ${rejectedRequests} (origin/validation — not failed writes)`}
+        </p>
+      )}
     </SectionCard>
   );
 }
@@ -394,12 +401,15 @@ export default function PetFunnelAnalyticsPage() {
             <TrackingHealth
               kpis={kpis}
               latestFirstPartyAt={
-                report.trackingHealth?.latestFirstPartyAt ??
-                report.recent[0]?.createdAt ??
-                report.firstPartyTrackingStartedAt
+                report.trackingHealth?.unavailableReason
+                  ? null
+                  : report.trackingHealth?.latestFirstPartyAt ??
+                    report.recent[0]?.createdAt ??
+                    report.firstPartyTrackingStartedAt
               }
               failedWrites={report.trackingHealth?.failedWrites ?? null}
               rejectedRequests={report.trackingHealth?.rejectedRequests ?? null}
+              unavailableReason={report.trackingHealth?.unavailableReason ?? null}
             />
 
             <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">

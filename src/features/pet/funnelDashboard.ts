@@ -111,6 +111,8 @@ export type PetFunnelAnalyticsReport = {
     failedWrites: number | null;
     rejectedRequests?: number | null;
     latestFirstPartyAt: string | null;
+    /** When set, health KPIs are intentionally unavailable for this dataset. */
+    unavailableReason?: string | null;
   };
   /** Stripe checkout class breakdown + first-party begin_checkout (diagnostic). */
   checkoutDiagnostics?: {

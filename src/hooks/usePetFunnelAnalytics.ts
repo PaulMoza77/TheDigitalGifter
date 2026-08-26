@@ -37,6 +37,7 @@ import {
 } from "@/features/pet/funnelDatasetConfig";
 import { sequentialConversionPct } from "@/features/pet/funnelEventContract";
 import { V1_PHOTO_PATH_STAGES } from "@/features/pet/funnelCohort";
+import { resolveDatasetTrackingHealth } from "@/features/pet/trackingHealthResolve";
 
 type RpcRow = Record<string, unknown>;
 
@@ -436,45 +437,14 @@ export function usePetFunnelAnalytics(
         hybridStages,
         hybridKpis,
         checkoutDiagnostics,
-        trackingHealth: {
-          failedWrites: (() => {
-            const health =
-              payload.tracking_health && typeof payload.tracking_health === "object"
-                ? (payload.tracking_health as RpcRow)
-                : null;
-            if (!health) return null;
-            const key = datasetId === "v2" ? "v2_failed_write_count" : "v1_failed_write_count";
-            return asNullableNumber(health[key] ?? health.v2_failed_write_count ?? health.v1_failed_write_count ?? health.failed_write_count);
-          })(),
-          rejectedRequests: (() => {
-            const health =
-              payload.tracking_health && typeof payload.tracking_health === "object"
-                ? (payload.tracking_health as RpcRow)
-                : null;
-            if (!health) return null;
-            const key = datasetId === "v2" ? "v2_rejected_request_count" : "v1_rejected_request_count";
-            return asNullableNumber(
-              health[key] ??
-                health.v2_rejected_request_count ??
-                health.v1_rejected_request_count ??
-                health.rejected_request_count,
-            );
-          })(),
-          latestFirstPartyAt: (() => {
-            const health =
-              payload.tracking_health && typeof payload.tracking_health === "object"
-                ? (payload.tracking_health as RpcRow)
-                : null;
-            if (!health) return firstEventAt;
-            const key = datasetId === "v2" ? "latest_v2_event_at" : "latest_v1_event_at";
-            const value =
-              health[key] ??
-              health.latest_v2_event_at ??
-              health.latest_v1_event_at ??
-              health.latest_first_party_event_at;
-            return value ? String(value) : firstEventAt;
-          })(),
-        },
+        trackingHealth: resolveDatasetTrackingHealth({
+          datasetId,
+          health:
+            payload.tracking_health && typeof payload.tracking_health === "object"
+              ? (payload.tracking_health as RpcRow)
+              : null,
+          firstEventAtFallback: firstEventAt,
+        }),
         daily,
         metaAds,
         sync: {
