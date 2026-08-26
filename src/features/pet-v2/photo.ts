@@ -24,7 +24,7 @@ export function validateV2PhotoFile(file: File): V2PhotoValidation {
   if (!contentType) {
     return {
       ok: false,
-      message: "Use a JPEG, PNG, or WebP photo. HEIC from iPhone is not supported yet.",
+      message: "Use a JPEG, PNG, or WebP photo. iPhone HEIC is converted automatically when possible.",
       code: "invalid_photo",
     };
   }

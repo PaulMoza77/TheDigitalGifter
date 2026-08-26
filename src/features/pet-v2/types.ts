@@ -115,4 +115,7 @@ export type PetV2PreviewResponse = {
   estimatedSeconds?: number;
   preview_attempt_id?: string;
   reused?: boolean;
+  /** Seconds until a sensible retry for rate limits (advisory). */
+  retryAfterSeconds?: number;
+  rateLimitKind?: "session" | "ip" | "image" | "unknown";
 };

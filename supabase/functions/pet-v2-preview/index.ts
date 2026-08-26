@@ -79,8 +79,9 @@ Deno.serve(async (req) => {
         ok: false,
         mode: "mock",
         errorCode: "heic_unsupported",
+        failureCategory: "invalid_image",
         error:
-          "iPhone HEIC photos aren’t supported yet. Set Camera Formats to Most Compatible, or export as JPEG.",
+          "That iPhone HEIC photo couldn’t be used. Choose JPEG/PNG, or enable Most Compatible in Camera Formats.",
       },
       400,
     );
@@ -111,12 +112,17 @@ Deno.serve(async (req) => {
 
   const limited = await assertPreviewLimits(ctx, sessionId, ip, imageHash, idempotencyKey);
   if (!limited.ok) {
+    const kind = limited.kind || "unknown";
+    const retryAfterSeconds = limited.retryAfterSeconds ?? 3600;
     return jsonResponse(
       {
         ok: false,
         mode: "mock",
         errorCode: "rate_limited",
+        failureCategory: "rate_limit",
         error: limited.message,
+        rateLimitKind: kind,
+        retryAfterSeconds,
         remainingSession: limited.remainingSession,
         remainingIp: limited.remainingIp,
       },
@@ -154,7 +160,10 @@ Deno.serve(async (req) => {
           ok: false,
           mode: "live",
           errorCode: resumed.errorCode || "generation_failed",
-          error: "We couldn't create the preview. Try again.",
+          error:
+            resumed.errorCode === "timeout"
+              ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
+              : "We couldn't create the preview. Try again.",
           failureCategory: resumed.failureCategory || resumed.errorCode || "provider_error",
           preview_attempt_id: idempotencyKey,
         });
@@ -164,7 +173,10 @@ Deno.serve(async (req) => {
           ok: false,
           mode: "live",
           errorCode: resumed.errorCode || "generation_failed",
-          error: "We couldn't create the preview. Try again.",
+          error:
+            resumed.errorCode === "timeout"
+              ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
+              : "We couldn't create the preview. Try again.",
           failureCategory: resumed.failureCategory || resumed.errorCode || "provider_error",
           preview_attempt_id: idempotencyKey,
         });
@@ -180,18 +192,73 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Recover if resume returned null but a stale provider row would block create.
-  if (
-    claim?.prediction_id &&
-    (claim.status === "pending" || claim.status === "processing" || claim.status === "succeeded")
-  ) {
-    await markAttempt(ctx, idempotencyKey, {
-      status: "pending",
-      liveGeneration: false,
-      lastErrorCategory: "server_error",
-      clearPrediction: true,
+  // Atomic create gate: at most one live Replicate create per idempotency key.
+  const acquire = await acquirePreviewCreate(ctx, idempotencyKey);
+  if (acquire?.action === "resume" && acquire.prediction_id) {
+    const resumed = await resumeExistingAttempt(
+      token,
+      {
+        ...(claim || {}),
+        prediction_id: acquire.prediction_id,
+        status: acquire.status || "processing",
+        live_generation: acquire.live_generation,
+      },
+      idempotencyKey,
+      ctx,
+    );
+    if (resumed?.ok && resumed.imageDataUrl) {
+      return jsonResponse({
+        ok: true,
+        mode: "live",
+        imageDataUrl: resumed.imageDataUrl,
+        remainingSession: Math.max(
+          0,
+          (limited.remainingSession ?? SESSION_LIMIT) - (claim?.live_generation ? 0 : 1),
+        ),
+        estimatedSeconds: 20,
+        reused: true,
+        preview_attempt_id: idempotencyKey,
+      });
+    }
+    if (resumed && !resumed.ok && !resumed.allowNewPrediction) {
+      return jsonResponse({
+        ok: false,
+        mode: "live",
+        errorCode: resumed.errorCode || "generation_failed",
+        error:
+          resumed.errorCode === "timeout"
+            ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
+            : "We couldn't create the preview. Try again.",
+        failureCategory: resumed.failureCategory || resumed.errorCode || "provider_error",
+        preview_attempt_id: idempotencyKey,
+      });
+    }
+  }
+
+  if (acquire?.action === "wait") {
+    const waited = await waitForSiblingPrediction(ctx, token, idempotencyKey, claim);
+    if (waited) return waited;
+    return jsonResponse({
+      ok: false,
+      mode: "live",
+      errorCode: "timeout",
+      failureCategory: "timeout",
+      error:
+        "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off.",
+      preview_attempt_id: idempotencyKey,
     });
-    claim = { ...claim, status: "pending", prediction_id: null };
+  }
+
+  if (acquire && acquire.action !== "create") {
+    // missing / unexpected with RPC available — do not open a second create path without a lock.
+    return jsonResponse({
+      ok: false,
+      mode: "live",
+      errorCode: "generation_failed",
+      failureCategory: "server_error",
+      error: "We couldn't create the preview. Try again.",
+      preview_attempt_id: idempotencyKey,
+    });
   }
 
   try {
@@ -245,7 +312,10 @@ Deno.serve(async (req) => {
       ok: false,
       mode: "live",
       errorCode,
-      error: "We couldn't create the preview. Try again.",
+      error:
+        errorCode === "timeout"
+          ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
+          : "We couldn't create the preview. Try again.",
       failureCategory: errorCode,
       preview_attempt_id: idempotencyKey,
     });
@@ -567,6 +637,8 @@ async function assertPreviewLimits(
 ): Promise<{
   ok: boolean;
   message?: string;
+  kind?: "session" | "ip" | "image" | "unknown";
+  retryAfterSeconds?: number;
   remainingSession?: number;
   remainingIp?: number;
 }> {
@@ -607,13 +679,33 @@ async function assertPreviewLimits(
   });
 
   if (sessionCount >= SESSION_LIMIT) {
-    return { ok: false, message: "This session already used its free previews.", remainingSession: 0 };
+    return {
+      ok: false,
+      kind: "session",
+      retryAfterSeconds: 3600,
+      message:
+        "This browser session already used its free previews (2 per 24 hours). Unlock the collection, or try again in about 1 hour.",
+      remainingSession: 0,
+    };
   }
   if (ipCount >= IP_DAY_LIMIT) {
-    return { ok: false, message: "Too many free previews from this network today.", remainingIp: 0 };
+    return {
+      ok: false,
+      kind: "ip",
+      retryAfterSeconds: 6 * 3600,
+      message:
+        "This network reached today’s free-preview limit (5 per 24 hours). Try again in about 6 hours, or unlock the collection.",
+      remainingIp: 0,
+    };
   }
   if (hashCount >= SESSION_LIMIT) {
-    return { ok: false, message: "That photo already received a free preview today." };
+    return {
+      ok: false,
+      kind: "image",
+      retryAfterSeconds: 3600,
+      message:
+        "That photo already received a free preview today. Try a different photo, or unlock the collection.",
+    };
   }
   return {
     ok: true,
@@ -668,6 +760,123 @@ async function parseCount(res: Response): Promise<number> {
   }
   const rows = (await res.json().catch(() => [])) as unknown[];
   return Array.isArray(rows) ? rows.length : 0;
+}
+
+async function acquirePreviewCreate(
+  ctx: PreviewFunnelContext,
+  idempotencyKey: string,
+): Promise<{
+  action: "create" | "resume" | "wait" | "missing";
+  prediction_id?: string;
+  status?: string;
+  live_generation?: boolean;
+} | null> {
+  const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) return null;
+
+  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/acquire_pet_v2_preview_create`, {
+    method: "POST",
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p_idempotency_key: idempotencyKey }),
+  }).catch(() => null);
+
+  if (!res || !res.ok) {
+    // Fallback without RPC: best-effort single-flight using status flip.
+    const existing = await getAttemptByKey(ctx, supabaseUrl, serviceKey, idempotencyKey);
+    if (!existing) return { action: "missing" };
+    if (existing.prediction_id) {
+      return {
+        action: "resume",
+        prediction_id: String(existing.prediction_id),
+        status: String(existing.status || ""),
+        live_generation: Boolean(existing.live_generation),
+      };
+    }
+    if (existing.status === "processing") return { action: "wait", status: "processing" };
+    if (existing.status === "pending" || existing.status === "failed") {
+      await markAttempt(ctx, idempotencyKey, {
+        status: "processing",
+        liveGeneration: false,
+      });
+      return { action: "create", status: "processing" };
+    }
+    return { action: "wait", status: String(existing.status || "processing") };
+  }
+
+  const json = (await res.json().catch(() => null)) as {
+    action?: string;
+    prediction_id?: string;
+    status?: string;
+    live_generation?: boolean;
+  } | null;
+  if (!json?.action) return { action: "missing" };
+  return {
+    action: json.action as "create" | "resume" | "wait" | "missing",
+    prediction_id: json.prediction_id,
+    status: json.status,
+    live_generation: json.live_generation,
+  };
+}
+
+async function waitForSiblingPrediction(
+  ctx: PreviewFunnelContext,
+  token: string,
+  idempotencyKey: string,
+  claim: AttemptRow | null,
+): Promise<Response | null> {
+  const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) return null;
+
+  for (let i = 0; i < 20; i += 1) {
+    await sleep(1500);
+    const row = await getAttemptByKey(ctx, supabaseUrl, serviceKey, idempotencyKey);
+    if (!row) continue;
+    if (row.prediction_id) {
+      const resumed = await resumeExistingAttempt(
+        token,
+        { ...(claim || {}), ...row },
+        idempotencyKey,
+        ctx,
+      );
+      if (resumed?.ok && resumed.imageDataUrl) {
+        return jsonResponse({
+          ok: true,
+          mode: "live",
+          imageDataUrl: resumed.imageDataUrl,
+          remainingSession: SESSION_LIMIT,
+          estimatedSeconds: 20,
+          reused: true,
+          preview_attempt_id: idempotencyKey,
+        });
+      }
+      if (resumed && !resumed.ok && !resumed.allowNewPrediction) {
+        return jsonResponse({
+          ok: false,
+          mode: "live",
+          errorCode: resumed.errorCode || "timeout",
+          failureCategory: resumed.failureCategory || resumed.errorCode || "timeout",
+          error:
+            resumed.errorCode === "timeout"
+              ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
+              : "We couldn't create the preview. Try again.",
+          preview_attempt_id: idempotencyKey,
+        });
+      }
+    }
+    if (row.status === "failed" && !row.prediction_id) {
+      return null;
+    }
+    if (row.status === "succeeded" && row.prediction_id) {
+      continue;
+    }
+  }
+  return null;
 }
 
 async function claimAttempt(

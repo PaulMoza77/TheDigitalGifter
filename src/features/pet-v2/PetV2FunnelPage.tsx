@@ -11,7 +11,7 @@ import { remainingSessionPreviews, sessionAllowsAnotherPreview } from "./abuse";
 import { petV2LandingPath, trackPetV2Event } from "./analytics";
 import { trackV2BeginCheckout } from "./checkoutAnalytics";
 import { cryptoRandomId } from "./previewAttempt";
-import { previewErrorMessage } from "./previewErrors";
+import { previewErrorMessage, previewErrorUiState } from "./previewErrors";
 import {
   backStepFrom,
   clearPreviewOnPhotoChange,
@@ -24,7 +24,15 @@ import { V2LandingScreen } from "./screens/LandingScreen";
 import { V2OfferScreen } from "./screens/OfferScreen";
 import { V2PhotoScreen } from "./screens/PhotoScreen";
 import { V2PreviewScreen } from "./screens/PreviewScreen";
+import {
+  convertHeicToJpegFile,
+  HEIC_CONVERTING_MESSAGE,
+  HEIC_USER_MESSAGE,
+  heicPickerAccept,
+  isHeicPhoto,
+} from "./heic";
 import { createV2LocalPreview, validateV2PhotoFile } from "./photo";
+import { rateLimitUserMessage } from "./previewQuota";
 import { getPetV2SessionId } from "./session";
 import {
   getV2PhotoFile,
@@ -54,6 +62,10 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const [photoError, setPhotoError] = useState<string | undefined>();
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isConvertingHeic, setIsConvertingHeic] = useState(false);
+  const [genErrorKind, setGenErrorKind] = useState<
+    ReturnType<typeof previewErrorUiState>["kind"] | null
+  >(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const previewUrl = getV2PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
@@ -87,13 +99,38 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   }
 
   async function handleFiles(files: FileList | null) {
-    const file = files?.[0];
-    if (!file) return;
+    const picked = files?.[0];
+    if (!picked) return;
     trackPetV2Event({ eventName: "v2_upload_started", species });
+
+    let file = picked;
+    if (isHeicPhoto(picked)) {
+      setIsConvertingHeic(true);
+      setPhotoError(HEIC_CONVERTING_MESSAGE);
+      try {
+        file = await convertHeicToJpegFile(picked);
+      } catch {
+        setPhotoError(HEIC_USER_MESSAGE);
+        trackPetV2Event({
+          eventName: "v2_upload_failed",
+          species,
+          failureCategory: "invalid_image",
+        });
+        go("photo");
+        return;
+      } finally {
+        setIsConvertingHeic(false);
+      }
+    }
+
     const check = validateV2PhotoFile(file);
     if (!check.ok) {
       setPhotoError(check.message);
-      trackPetV2Event({ eventName: "v2_upload_failed", species });
+      trackPetV2Event({
+        eventName: "v2_upload_failed",
+        species,
+        failureCategory: "invalid_image",
+      });
       go("photo");
       return;
     }
@@ -138,7 +175,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
 
     if (!sessionAllowsAnotherPreview()) {
       go("preview", {
-        lastError: "This session already used its free previews.",
+        lastError: rateLimitUserMessage({ kind: "session", retryAfterSeconds: 3600 }),
         generatedPreviewDataUrl: draft.generatedPreviewDataUrl,
       });
       return;
@@ -164,6 +201,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       uploadId,
       previewAttemptId: attemptId,
     });
+    setGenErrorKind(null);
     trackPetV2Event({
       eventName: regenerate ? "v2_preview_regenerated" : "v2_preview_generation_started",
       species,
@@ -183,8 +221,12 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         idempotencyKey: attemptId,
       });
       if (!result.ok || !result.imageDataUrl) {
-        const failureCategory = result.failureCategory || result.errorCode || "server_error";
-        lastFailureCategoryRef.current = failureCategory as PetV2FailureCategory;
+        const failureCategory = (result.failureCategory ||
+          (result.errorCode === "rate_limited" ? "rate_limit" : null) ||
+          "server_error") as PetV2FailureCategory;
+        lastFailureCategoryRef.current = failureCategory;
+        const ui = previewErrorUiState(result);
+        setGenErrorKind(ui.kind);
         trackPetV2Event({
           eventName: "v2_preview_generation_failed",
           species,
@@ -192,12 +234,13 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           failureCategory,
         });
         go("generating", {
-          lastError: previewErrorMessage(result),
+          lastError: ui.message,
           previewAttemptId: attemptId,
         });
         return;
       }
       lastFailureCategoryRef.current = null;
+      setGenErrorKind(null);
       trackPetV2Event({
         eventName: "v2_preview_generation_completed",
         species,
@@ -342,7 +385,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         ref={inputRef}
         id={inputId}
         type="file"
-        accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp,image/heic,image/heif"
+        accept={heicPickerAccept()}
         className="sr-only"
         onChange={(event) => {
           void handleFiles(event.target.files);
@@ -372,7 +415,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           error={photoError}
           inputId={inputId}
           inputRef={inputRef}
-          generating={isGenerating}
+          generating={isGenerating || isConvertingHeic}
           subtype={draft.subtype}
           subtypeDetail={draft.subtypeDetail}
           onSubtype={(subtype, detail) => go("photo", { subtype, subtypeDetail: detail || null })}
@@ -403,7 +446,23 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           thumbnailUrl={previewUrl}
           status={genStatus}
           error={draft.lastError}
+          errorTitle={
+            genErrorKind === "rate_limited"
+              ? "Free preview limit reached"
+              : genErrorKind === "timeout_resume"
+                ? "Still rendering"
+                : genErrorKind === "unsupported_photo"
+                  ? "Unsupported photo"
+                  : genErrorKind === "network"
+                    ? "Connection problem"
+                    : genErrorKind === "provider_unavailable"
+                      ? "Preview temporarily unavailable"
+                      : draft.lastError
+                        ? "Preview didn’t finish"
+                        : null
+          }
           busy={isGenerating}
+          allowRetry={genErrorKind !== "rate_limited" && genErrorKind !== "unsupported_photo"}
           onRetry={() => void generate(false)}
           onBack={() => {
             if (!isGenerating) go("photo");

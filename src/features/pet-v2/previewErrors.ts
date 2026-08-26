@@ -1,9 +1,12 @@
 import type { PetV2FailureCategory, PetV2PreviewResponse } from "./types";
 
+export type PreviewErrorInput = Pick<
+  PetV2PreviewResponse,
+  "error" | "errorCode" | "failureCategory" | "retryAfterSeconds" | "rateLimitKind"
+>;
+
 /** Safe, actionable copy — never expose provider tokens or raw stack traces. */
-export function previewErrorMessage(
-  response: Pick<PetV2PreviewResponse, "error" | "errorCode" | "failureCategory">,
-): string {
+export function previewErrorMessage(response: PreviewErrorInput): string {
   const category = response.failureCategory || categoryFromCode(response.errorCode);
   switch (category) {
     case "timeout":
@@ -11,7 +14,7 @@ export function previewErrorMessage(
     case "rate_limit":
       return (
         response.error ||
-        "This session already used its free previews. Unlock the collection or try again tomorrow."
+        "This session already used its free previews. Unlock the collection or try again later."
       );
     case "invalid_image":
       return response.error || "That photo could not be used. Try a smaller JPEG, PNG, or WebP.";
@@ -25,6 +28,51 @@ export function previewErrorMessage(
     default:
       return "We couldn’t finish the preview this time. Try again, or replace the photo if it keeps failing.";
   }
+}
+
+export function previewErrorUiState(response: PreviewErrorInput): {
+  kind:
+    | "unsupported_photo"
+    | "rate_limited"
+    | "provider_unavailable"
+    | "timeout_resume"
+    | "network"
+    | "unknown";
+  title: string;
+  message: string;
+  retryAfterSeconds: number | null;
+} {
+  const category = response.failureCategory || categoryFromCode(response.errorCode);
+  const message = previewErrorMessage(response);
+  if (category === "invalid_image" || response.errorCode === "heic_unsupported") {
+    return { kind: "unsupported_photo", title: "Unsupported photo", message, retryAfterSeconds: null };
+  }
+  if (category === "rate_limit") {
+    return {
+      kind: "rate_limited",
+      title: "Free preview limit reached",
+      message,
+      retryAfterSeconds:
+        typeof response.retryAfterSeconds === "number" && response.retryAfterSeconds > 0
+          ? Math.round(response.retryAfterSeconds)
+          : 3600,
+    };
+  }
+  if (category === "timeout") {
+    return { kind: "timeout_resume", title: "Still rendering", message, retryAfterSeconds: null };
+  }
+  if (category === "provider_auth" || category === "provider_error") {
+    return {
+      kind: "provider_unavailable",
+      title: "Preview temporarily unavailable",
+      message,
+      retryAfterSeconds: null,
+    };
+  }
+  if (category === "endpoint_unreachable") {
+    return { kind: "network", title: "Connection problem", message, retryAfterSeconds: null };
+  }
+  return { kind: "unknown", title: "Preview didn’t finish", message, retryAfterSeconds: null };
 }
 
 function categoryFromCode(
