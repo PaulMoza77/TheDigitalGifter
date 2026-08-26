@@ -167,7 +167,6 @@ export function V3OfferScreen({
             loadingLabel="Loading secure payment…"
             onReady={markCheckoutViewed}
             onPaymentInteraction={markBeginCheckout}
-            onInitError={checkout.invalidateStripeSession}
             onBeforeConfirm={async () => {
               if (!checkout.orderId || !checkout.publicToken) {
                 return { ok: false, error: "Payment session expired. Retry secure payment.", focusId: undefined };

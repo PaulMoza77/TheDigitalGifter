@@ -989,6 +989,28 @@ Deno.serve(async (req) => {
           p_expected_session_id: storedSessionId || null,
         });
         const meta = petMetaCheckoutFields(order);
+        if (onPage) {
+          const embedded = await embeddedCheckoutPayload({
+            stripeKey,
+            session: existingView || { id: matched.sessionId },
+            sessionExists: Boolean(existingView),
+          });
+          if (embedded.ok) {
+            await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+            return jsonResponse({
+              sessionId: embedded.sessionId,
+              checkoutUrl: embedded.checkoutUrl,
+              clientSecret: embedded.clientSecret,
+              publishableKey: embedded.publishableKey,
+              expiresAt: embedded.expiresAt,
+              status: "open",
+              reused: true,
+              checkoutDiag: embedded.diag,
+              ...meta,
+            });
+          }
+          if (embedded.reason === "conflict") return checkoutConflict();
+        }
         await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
         return jsonResponse({
           sessionId: matched.sessionId,

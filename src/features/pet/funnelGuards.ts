@@ -321,6 +321,17 @@ export function sanitizeStripeCheckoutCustomerError(message?: string | null): st
   return "We couldn't complete payment. Please try again.";
 }
 
+export function stripeCheckoutInitCustomerError(message?: string | null): string {
+  const raw = String(message || "").trim();
+  if (/no such checkout\.session|checkout\.session.*expired|session.*expired/i.test(raw)) {
+    return "This payment session expired. Tap Retry secure payment.";
+  }
+  if (/publishable key|api key|basil|initcheckout/i.test(raw)) {
+    return "We couldn't load secure payment. Please try again.";
+  }
+  return "We couldn't load secure payment. Please try again.";
+}
+
 export function matchedEmbeddedCheckoutResponse(session: {
   id?: string | null;
   client_secret?: string | null;

@@ -6,7 +6,7 @@ import {
   useCheckoutElements,
 } from "@stripe/react-stripe-js/checkout";
 import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
-import { sanitizeStripeCheckoutCustomerError } from "../funnelGuards";
+import { sanitizeStripeCheckoutCustomerError, stripeCheckoutInitCustomerError } from "../funnelGuards";
 import { getStripePromise, reloadStripeForCheckout, stripeInstanceKeyFingerprint } from "../stripeLoader";
 import { ApplePayButton } from "./ApplePayButton";
 
@@ -26,6 +26,16 @@ const EXPRESS_OPTIONS = {
   },
 };
 
+function normalizeClientSecret(clientSecret: string): string {
+  const value = String(clientSecret || "").trim();
+  if (!value.includes("%")) return value;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function CheckoutBody({
   dueDisplay,
   returnUrl,
@@ -37,6 +47,7 @@ function CheckoutBody({
   onReady,
   onPaymentInteraction,
   onInitError,
+  onReloadCheckout,
   confirmDisabled,
   payButtonClassName,
 }: {
@@ -50,6 +61,7 @@ function CheckoutBody({
   onReady?: () => void;
   onPaymentInteraction?: () => void;
   onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
+  onReloadCheckout?: () => void;
   confirmDisabled?: boolean;
   payButtonClassName?: string;
 }) {
@@ -60,18 +72,19 @@ function CheckoutBody({
   const [applePayFromStripe, setApplePayFromStripe] = useState(false);
   const readyFired = useRef(false);
   const interactionFired = useRef(false);
-  const initErrorFired = useRef(false);
+  const initErrorHandled = useRef(false);
 
   useEffect(() => {
     if (checkoutState.type === "success" && !readyFired.current) {
       readyFired.current = true;
+      initErrorHandled.current = false;
       onReady?.();
     }
   }, [checkoutState.type, onReady]);
 
   useEffect(() => {
-    if (checkoutState.type !== "error" || initErrorFired.current) return;
-    initErrorFired.current = true;
+    if (checkoutState.type !== "error" || initErrorHandled.current) return;
+    initErrorHandled.current = true;
     const message = checkoutState.error.message || "";
     const initFailureCode = /no such checkout\.session/i.test(message)
       ? "stripe_checkout_session_not_found"
@@ -170,8 +183,18 @@ function CheckoutBody({
     return (
       <div className="space-y-3 py-2">
         <p className="text-sm text-[#9a3412]" role="alert">
-          {sanitizeStripeCheckoutCustomerError(checkoutState.error.message)}
+          {stripeCheckoutInitCustomerError(checkoutState.error.message)}
         </p>
+        <button
+          type="button"
+          onClick={() => {
+            initErrorHandled.current = false;
+            onReloadCheckout?.();
+          }}
+          className="h-11 w-full rounded-full border border-[#f6efe4]/20 bg-transparent text-sm text-[#f6efe4]"
+        >
+          Retry secure payment
+        </button>
       </div>
     );
   }
@@ -269,7 +292,8 @@ export function CustomStripeCheckout({
   payButtonClassName?: string;
 }) {
   const [reloadNonce, setReloadNonce] = useState(0);
-  const retriedRef = useRef(false);
+  const hasAutoRetried = useRef(false);
+  const normalizedClientSecret = useMemo(() => normalizeClientSecret(clientSecret), [clientSecret]);
   const stripePromise = useMemo(() => {
     const fp = stripeInstanceKeyFingerprint(publishableKey);
     console.info("[stripe-loader]", {
@@ -282,21 +306,31 @@ export function CustomStripeCheckout({
       : getStripePromise(publishableKey);
   }, [publishableKey, reloadNonce]);
 
+  function reloadCheckout() {
+    hasAutoRetried.current = false;
+    setReloadNonce((value) => value + 1);
+  }
+
   function handleInitError(detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) {
-    if (!retriedRef.current) {
-      retriedRef.current = true;
+    if (!hasAutoRetried.current) {
+      hasAutoRetried.current = true;
       setReloadNonce((value) => value + 1);
       return;
     }
     onInitError?.(detail);
   }
 
+  function handleReady() {
+    hasAutoRetried.current = false;
+    onReady?.();
+  }
+
   return (
     <CheckoutElementsProvider
-      key={`${publishableKey}:${reloadNonce}:${clientSecret.includes("_secret_") ? "secret" : "invalid"}`}
+      key={`${publishableKey}:${reloadNonce}:${normalizedClientSecret.includes("_secret_") ? "secret" : "invalid"}`}
       stripe={stripePromise}
       options={{
-        clientSecret,
+        clientSecret: normalizedClientSecret,
         defaultValues: email ? { email } : undefined,
         elementsOptions: {
           appearance: {
@@ -317,9 +351,10 @@ export function CustomStripeCheckout({
         busyLabel={busyLabel}
         loadingLabel={loadingLabel}
         onBeforeConfirm={onBeforeConfirm}
-        onReady={onReady}
+        onReady={handleReady}
         onPaymentInteraction={onPaymentInteraction}
         onInitError={handleInitError}
+        onReloadCheckout={reloadCheckout}
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}
       />
