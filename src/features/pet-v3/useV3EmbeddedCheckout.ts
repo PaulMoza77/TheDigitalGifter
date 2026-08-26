@@ -4,7 +4,7 @@ import { petFunnelApi } from "../pet/supabaseApi";
 import { PET_DEFAULT_PERSONALITY } from "../pet/types";
 import { validatePetName } from "../pet/croGuards";
 import { checkoutAnalyticsContext } from "../pet/funnelInternal";
-import { isValidEmbeddedClientSecret } from "../pet/funnelGuards";
+import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "../pet/funnelGuards";
 import type { PetV3PhotoMeta } from "./types";
 import { PET_V3_ROUTE, PET_V3_SPECIES } from "./types";
 import { getPetV3SessionId } from "./session";
@@ -64,7 +64,8 @@ function applyCheckoutResult(input: {
   const { result, holdExpiresAt, setters } = input;
   if (
     !isValidEmbeddedClientSecret(result.clientSecret, result.sessionId) ||
-    !String(result.publishableKey || "").startsWith("pk_")
+    !String(result.publishableKey || "").startsWith("pk_") ||
+    !publishableKeyMatchesClientSecret(result.publishableKey, result.clientSecret)
   ) {
     return false;
   }
@@ -295,7 +296,9 @@ export function useV3EmbeddedCheckout(input: {
     amountCents: offer.amountCents,
     loading,
     initError,
-    checkoutReady: isValidEmbeddedClientSecret(clientSecret, sessionId) && Boolean(publishableKey),
+    checkoutReady:
+      isValidEmbeddedClientSecret(clientSecret, sessionId) &&
+      publishableKeyMatchesClientSecret(publishableKey, clientSecret),
     retry,
     invalidateStripeSession,
   };

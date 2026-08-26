@@ -14,10 +14,9 @@ import {
   writeCachedV3EmbeddedCheckout,
   V3_CHECKOUT_SESSION_CACHE_KEY,
   isValidCachedV3EmbeddedCheckout,
-  isValidEmbeddedClientSecret,
 } from "./v3CheckoutHold";
 import { v3PayButtonLabel } from "./v3CheckoutHold";
-import { sanitizeStripeCheckoutCustomerError } from "../pet/funnelGuards";
+import { sanitizeStripeCheckoutCustomerError, isValidEmbeddedClientSecret } from "../pet/funnelGuards";
 
 vi.mock("./analytics", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./analytics")>();

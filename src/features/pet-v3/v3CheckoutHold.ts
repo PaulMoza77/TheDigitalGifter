@@ -1,5 +1,10 @@
 /** V3-isolated embedded checkout session cache (separate from V1 keys). */
 
+import {
+  isValidEmbeddedClientSecret,
+  publishableKeyMatchesClientSecret,
+} from "../pet/funnelGuards";
+
 export const V3_CHECKOUT_HOLD_STORAGE_KEY = "tdg.petFunnelV3.checkoutHold.v1";
 export const V3_CHECKOUT_SESSION_CACHE_KEY = "tdg.petFunnelV3.checkoutSession.v1";
 export const V3_CHECKOUT_HOLD_MS = 30 * 60 * 1000;
@@ -80,20 +85,8 @@ export function isValidCachedV3EmbeddedCheckout(
 ): boolean {
   const publishableKey = String(cached.publishableKey || "").trim();
   if (!publishableKey.startsWith("pk_")) return false;
-  return isValidEmbeddedClientSecret(cached.clientSecret, cached.sessionId);
-}
-
-export function isValidEmbeddedClientSecret(
-  clientSecret: string | null | undefined,
-  sessionId?: string | null,
-): boolean {
-  const secret = String(clientSecret || "").trim();
-  if (!secret) return false;
-  if (!/^cs_(live|test)_/.test(secret)) return false;
-  if (!secret.includes("_secret_")) return false;
-  const sid = String(sessionId || "").trim();
-  if (sid && secret === sid) return false;
-  return true;
+  if (!isValidEmbeddedClientSecret(cached.clientSecret, cached.sessionId)) return false;
+  return publishableKeyMatchesClientSecret(publishableKey, cached.clientSecret);
 }
 
 export function writeCachedV3EmbeddedCheckout(value: V3CachedEmbeddedCheckout) {

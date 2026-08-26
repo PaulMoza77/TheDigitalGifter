@@ -45,6 +45,15 @@ export function sanitizeV3Pathname(value?: string | null): string | null {
   return isPetV3Pathname(raw) ? raw : null;
 }
 
+function clientTestFlag(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URLSearchParams(window.location.search).get("tdg_funnel_test") === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function v3IdempotencyKey(input: {
   sessionId: string;
   eventName: PetV3EventName;
@@ -142,6 +151,7 @@ export function trackPetV3Event(input: TrackV3Input): void {
       fbc: readMetaFbc(),
       fbp: readMetaFbp(),
       failure_category: failureCategory,
+      is_test_request: clientTestFlag(),
     };
     post(payload);
     sendGa4Custom(input.eventName, failureCategory);

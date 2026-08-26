@@ -277,6 +277,18 @@ export function matchedOpenCheckoutResponse(session: {
   return { ok: true, sessionId, checkoutUrl };
 }
 
+export function publishableKeyMatchesClientSecret(
+  publishableKey: string | null | undefined,
+  clientSecret: string | null | undefined,
+): boolean {
+  const pk = String(publishableKey || "").trim();
+  const secret = String(clientSecret || "").trim();
+  if (!pk.startsWith("pk_") || !secret.startsWith("cs_")) return false;
+  if (secret.startsWith("cs_live_")) return pk.startsWith("pk_live");
+  if (secret.startsWith("cs_test_")) return pk.startsWith("pk_test");
+  return true;
+}
+
 export function isValidEmbeddedClientSecret(
   clientSecret: string | null | undefined,
   sessionId?: string | null,

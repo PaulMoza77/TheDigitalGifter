@@ -1,6 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { promisify } from "node:util";
+import dns from "node:dns";
 
 /** Self-contained V3 ingest. Do not import ./_lib here — Vercel production was crashing at module load. */
+
+const reverseLookup = promisify(dns.reverse);
 
 const PET_V3_EVENT_NAMES = [
   "v3_landing_view",
@@ -45,6 +49,78 @@ function resolveWriteEnvironment(): "production" | "preview" | "development" {
   if (vercel === "production") return "production";
   if (vercel === "preview") return "preview";
   return "development";
+}
+
+function clientIpFromHeaders(
+  headers: Record<string, string | string[] | undefined>,
+): string {
+  const pick = (value: string | string[] | undefined): string => {
+    const raw = Array.isArray(value) ? value[0] : value;
+    return String(raw || "").trim();
+  };
+  const forwarded = pick(headers["x-forwarded-for"]);
+  if (forwarded) return forwarded.split(",")[0]?.trim() || "";
+  return pick(headers["cf-connecting-ip"]) || pick(headers["x-real-ip"]) || "";
+}
+
+function parseMarkerList(raw: string | undefined, fallback: string): string[] {
+  const source = String(raw ?? fallback).trim();
+  if (!source) return [];
+  return source
+    .split(/[,\s]+/)
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function parseIpList(raw: string | undefined): string[] {
+  return String(raw || "")
+    .split(/[,\s]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function hostnameMatchesTestMarkers(hostname: string, markers: string[]): boolean {
+  const normalized = hostname.trim().toLowerCase();
+  if (!normalized || markers.length === 0) return false;
+  return markers.some((marker) => normalized.includes(marker));
+}
+
+async function resolveClientIpHostname(clientIp: string): Promise<string | null> {
+  if (!clientIp || clientIp === "unknown") return null;
+  if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(clientIp)) return null;
+  try {
+    const names = await reverseLookup(clientIp);
+    const first = names.find((name) => typeof name === "string" && name.trim().length > 0);
+    return first ? first.trim().slice(0, 200) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveFunnelIsTest(input: {
+  environment: "production" | "preview" | "development";
+  clientTestFlag?: boolean;
+  clientIp?: string;
+}): Promise<{ isTest: boolean; clientIp: string | null; clientIpHostname: string | null }> {
+  if (input.environment !== "production") {
+    return { isTest: true, clientIp: input.clientIp || null, clientIpHostname: null };
+  }
+  if (input.clientTestFlag) {
+    return { isTest: true, clientIp: input.clientIp || null, clientIpHostname: null };
+  }
+  const clientIp = String(input.clientIp || "").trim() || null;
+  let clientIpHostname: string | null = null;
+  if (clientIp) {
+    clientIpHostname = await resolveClientIpHostname(clientIp);
+  }
+  if (clientIp && parseIpList(process.env.PET_FUNNEL_TEST_IPS).includes(clientIp)) {
+    return { isTest: true, clientIp, clientIpHostname };
+  }
+  const markers = parseMarkerList(process.env.PET_FUNNEL_TEST_IP_HOSTMARKERS, "rentalcarsoradea");
+  if (hostnameMatchesTestMarkers(String(clientIpHostname || ""), markers)) {
+    return { isTest: true, clientIp, clientIpHostname };
+  }
+  return { isTest: false, clientIp, clientIpHostname };
 }
 
 function asText(value: unknown, max = 200): string | null {
@@ -152,7 +228,10 @@ async function persistV3WriteFailure(input: { eventName: string; category: strin
   }
 }
 
-async function writePetV3FunnelEvent(raw: unknown): Promise<{ ok: true; duplicate: boolean }> {
+async function writePetV3FunnelEvent(
+  raw: unknown,
+  traffic: { clientIp: string | null; clientIpHostname: string | null; isTest: boolean },
+): Promise<{ ok: true; duplicate: boolean }> {
   const validated = parseV3EventBody(raw);
   const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
@@ -160,7 +239,7 @@ async function writePetV3FunnelEvent(raw: unknown): Promise<{ ok: true; duplicat
     throw new Error("missing_supabase_config");
   }
   const environment = resolveWriteEnvironment();
-  const isTest = environment !== "production";
+  const isTest = traffic.isTest;
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/record_pet_v3_funnel_event`, {
     method: "POST",
     headers: {
@@ -193,6 +272,8 @@ async function writePetV3FunnelEvent(raw: unknown): Promise<{ ok: true; duplicat
       p_creative_id: validated.creativeId,
       p_fbc: validated.fbc,
       p_fbp: validated.fbp,
+      p_client_ip: traffic.clientIp,
+      p_client_ip_hostname: traffic.clientIpHostname,
     }),
   });
   if (!response.ok) {
@@ -220,13 +301,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const body = req.body && typeof req.body === "object" ? req.body : {};
     eventName = String((body as { event_name?: unknown }).event_name || "unknown");
+    const clientTest = Boolean((body as { is_test_request?: boolean } | null)?.is_test_request);
     const failureCategory = String((body as { failure_category?: unknown }).failure_category || "")
       .replace(/[^a-z0-9_]/gi, "")
       .slice(0, 40);
     if (eventName === "v3_preview_generation_failed" && failureCategory) {
       void persistV3WriteFailure({ eventName, category: failureCategory });
     }
-    const result = await writePetV3FunnelEvent(req.body);
+    const environment = resolveWriteEnvironment();
+    const traffic = await resolveFunnelIsTest({
+      environment,
+      clientTestFlag: clientTest,
+      clientIp: clientIpFromHeaders(req.headers),
+    });
+    const result = await writePetV3FunnelEvent(req.body, traffic);
     return res.status(202).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "write_failed";

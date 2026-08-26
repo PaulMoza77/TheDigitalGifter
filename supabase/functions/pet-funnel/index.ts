@@ -100,14 +100,31 @@ async function fetchStripeCheckoutSession(
 
 let cachedPublishableKey: string | null = null;
 
+function stripeSecretKeyMode(stripeKey: string): "live" | "test" | null {
+  if (stripeKey.startsWith("sk_live_")) return "live";
+  if (stripeKey.startsWith("sk_test_")) return "test";
+  return null;
+}
+
+function publishableKeyMatchesSecretMode(publishableKey: string, stripeKey: string): boolean {
+  const mode = stripeSecretKeyMode(stripeKey);
+  if (mode === "live") return publishableKey.startsWith("pk_live");
+  if (mode === "test") return publishableKey.startsWith("pk_test");
+  return publishableKey.startsWith("pk_");
+}
+
 async function resolvePublishableKey(
   stripeKey: string,
   checkoutUrl?: string | null,
   sessionId?: string | null,
 ): Promise<string | null> {
   const fromEnv = String(Deno.env.get("STRIPE_PUBLISHABLE_KEY") || "").trim();
-  if (fromEnv.startsWith("pk_")) return fromEnv;
-  if (cachedPublishableKey) return cachedPublishableKey;
+  if (fromEnv.startsWith("pk_") && publishableKeyMatchesSecretMode(fromEnv, stripeKey)) {
+    return fromEnv;
+  }
+  if (cachedPublishableKey && publishableKeyMatchesSecretMode(cachedPublishableKey, stripeKey)) {
+    return cachedPublishableKey;
+  }
   const urls: string[] = [];
   if (checkoutUrl) urls.push(checkoutUrl);
   const sid = String(sessionId || "").trim();
@@ -130,10 +147,13 @@ async function resolvePublishableKey(
       const page = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
       if (!page.ok) continue;
       const html = await page.text();
-      const match = html.match(/pk_(?:live|test)_[0-9A-Za-z]+/);
-      if (match?.[0]) {
-        cachedPublishableKey = match[0];
-        return cachedPublishableKey;
+      const match = html.match(/pk_(?:live|test)_[0-9A-Za-z]+/g);
+      if (match?.length) {
+        for (const candidate of match) {
+          if (!publishableKeyMatchesSecretMode(candidate, stripeKey)) continue;
+          cachedPublishableKey = candidate;
+          return cachedPublishableKey;
+        }
       }
     } catch {
       /* ignore scrape failures */
