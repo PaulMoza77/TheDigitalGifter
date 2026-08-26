@@ -96,6 +96,25 @@ async function finishRun(
     .eq("id", id);
 }
 
+async function ensureV3CampaignAllowlisted(service: ReturnType<typeof getServiceClient>) {
+  const status = metaAdsConfigStatus();
+  if (!status.configured) return null;
+  const discovered = await discoverPetV3TestingCampaign();
+  if (!discovered) return null;
+  const { error } = await service.from("pet_meta_campaign_allowlist").upsert(
+    {
+      campaign_id: discovered.id,
+      label: discovered.name,
+      enabled: true,
+      funnel_variant: "v3_cat_preview",
+      utm_campaign_aliases: ["cat-v3", "cat-v3-launch", "cat-v3-live-smoke"],
+    },
+    { onConflict: "campaign_id" },
+  );
+  if (error) throw error;
+  return discovered;
+}
+
 async function syncMeta(
   service: ReturnType<typeof getServiceClient>,
   mode: string,
@@ -122,7 +141,7 @@ async function syncMeta(
       .eq("enabled", true);
     if (allowError) throw allowError;
     const discoveredV2 = await discoverPetV2TestingCampaign();
-    const discoveredV3 = await discoverPetV3TestingCampaign();
+    const discoveredV3 = await ensureV3CampaignAllowlisted(service);
     if (discoveredV2) {
       const { error: v2AllowError } = await service.from("pet_meta_campaign_allowlist").upsert(
         {
@@ -135,19 +154,6 @@ async function syncMeta(
         { onConflict: "campaign_id" },
       );
       if (v2AllowError) throw v2AllowError;
-    }
-    if (discoveredV3) {
-      const { error: v3AllowError } = await service.from("pet_meta_campaign_allowlist").upsert(
-        {
-          campaign_id: discoveredV3.id,
-          label: discoveredV3.name,
-          enabled: true,
-          funnel_variant: "v3_cat_preview",
-          utm_campaign_aliases: ["cat-v3", "cat-v3-launch"],
-        },
-        { onConflict: "campaign_id" },
-      );
-      if (v3AllowError) throw v3AllowError;
     }
     const campaignIds = resolvePetMetaCampaignAllowlist(
       (allowRows || []).map((row) => String(row.campaign_id || "")).concat(
@@ -266,6 +272,13 @@ Deno.serve(async (req) => {
     if (action === "status") {
       const meta = metaAdsConfigStatus();
       const ga4 = ga4ConfigStatus();
+      let discoveredV3: { id: string; name: string } | null = null;
+      try {
+        const linked = await ensureV3CampaignAllowlisted(service);
+        if (linked) discoveredV3 = { id: linked.id, name: linked.name };
+      } catch {
+        // Best-effort discovery for the admin dashboard.
+      }
       const { data: runs } = await service
         .from("pet_analytics_sync_runs")
         .select("source, status, finished_at, mode, rows_upserted, error_message")
@@ -279,6 +292,7 @@ Deno.serve(async (req) => {
           missing: meta.missing,
           lastSyncedAt: lastMeta?.finished_at ?? null,
           customEventRecovery: META_CUSTOM_EVENT_RECOVERY,
+          discoveredV3Campaign: discoveredV3,
         },
         ga4: {
           configured: ga4.configured,

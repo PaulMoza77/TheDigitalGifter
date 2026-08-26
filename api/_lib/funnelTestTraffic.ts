@@ -33,6 +33,31 @@ function parseIpList(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function parseLowerList(raw: string | undefined, fallback: string): string[] {
+  const source = String(raw ?? fallback).trim();
+  if (!source) return [];
+  return source
+    .split(/[,\s]+/)
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+const DEFAULT_TEST_UTM_CAMPAIGNS = ["cat-v3-live-smoke", "checkout-proof"] as const;
+
+export function utmCampaignIsTestMarker(utmCampaign: string | null | undefined): boolean {
+  const normalized = String(utmCampaign || "").trim().toLowerCase();
+  if (!normalized) return false;
+  const markers = parseLowerList(process.env.PET_FUNNEL_TEST_UTM_CAMPAIGNS, DEFAULT_TEST_UTM_CAMPAIGNS.join(","));
+  return markers.includes(normalized);
+}
+
+export function utmSourceIsTestMarker(utmSource: string | null | undefined): boolean {
+  const normalized = String(utmSource || "").trim().toLowerCase();
+  if (!normalized) return false;
+  const markers = parseLowerList(process.env.PET_FUNNEL_TEST_UTM_SOURCES, "internal");
+  return markers.includes(normalized);
+}
+
 export function hostnameMatchesTestMarkers(hostname: string, markers: string[]): boolean {
   const normalized = hostname.trim().toLowerCase();
   if (!normalized || markers.length === 0) return false;
@@ -56,9 +81,13 @@ export function resolveFunnelIsTestSync(input: {
   clientTestFlag?: boolean;
   clientIp?: string;
   clientIpHostname?: string | null;
+  utmSource?: string | null;
+  utmCampaign?: string | null;
 }): boolean {
   if (input.environment !== "production") return true;
   if (input.clientTestFlag) return true;
+  if (utmSourceIsTestMarker(input.utmSource)) return true;
+  if (utmCampaignIsTestMarker(input.utmCampaign)) return true;
   const ip = String(input.clientIp || "").trim();
   if (ip && parseIpList(process.env.PET_FUNNEL_TEST_IPS).includes(ip)) return true;
   const markers = parseMarkerList(process.env.PET_FUNNEL_TEST_IP_HOSTMARKERS, "rentalcarsoradea");
@@ -70,6 +99,8 @@ export async function resolveFunnelIsTest(input: {
   environment: WriteEnvironment;
   clientTestFlag?: boolean;
   clientIp?: string;
+  utmSource?: string | null;
+  utmCampaign?: string | null;
 }): Promise<{ isTest: boolean; clientIp: string | null; clientIpHostname: string | null }> {
   const clientIp = String(input.clientIp || "").trim() || null;
   let clientIpHostname: string | null = null;
@@ -81,6 +112,8 @@ export async function resolveFunnelIsTest(input: {
     clientTestFlag: input.clientTestFlag,
     clientIp: clientIp || undefined,
     clientIpHostname,
+    utmSource: input.utmSource,
+    utmCampaign: input.utmCampaign,
   });
   return { isTest, clientIp, clientIpHostname };
 }

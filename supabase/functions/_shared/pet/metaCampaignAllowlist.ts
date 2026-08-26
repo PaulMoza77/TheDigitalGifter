@@ -3,11 +3,16 @@
  * Never fall back to the whole ad account. Browser-safe; no secrets.
  */
 
-export const BUILTIN_PET_META_CAMPAIGN_IDS = ["120253346791240170", "120253465585030170"] as const;
+export const BUILTIN_PET_META_CAMPAIGN_IDS = [
+  "120253346791240170",
+  "120253465585030170",
+  "120253518796930170",
+] as const;
 
 export const BUILTIN_PET_META_CAMPAIGN_LABELS: Record<string, string> = {
   "120253346791240170": "TDG - Dog campaign",
   "120253465585030170": "Pet TDG Funnel V2 testing",
+  "120253518796930170": "Cat V3",
 };
 
 const EXCLUDED_CAMPAIGN_NAME =

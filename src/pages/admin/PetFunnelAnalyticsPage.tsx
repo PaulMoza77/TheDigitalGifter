@@ -287,12 +287,12 @@ export default function PetFunnelAnalyticsPage() {
           <p className="text-sm text-amber-200/80">Campaign 2 not configured yet</p>
         ) : null}
 
-        {datasetId === "v3" && report && report.datasetConfigured === false ? (
+        {datasetId === "v3" && report && report.metaCampaignConfigured === false ? (
           <p className="text-sm text-amber-200/80">
-            Meta campaign not configured — set{" "}
+            Meta campaign not synced yet — first-party V3 data below. When the Cat campaign exists in Ads Manager,
+            run Sync and it will auto-link, or set{" "}
             <code className="rounded bg-slate-800 px-1">FUNNEL_DATASETS.v3.campaignId</code> in{" "}
-            <code className="rounded bg-slate-800 px-1">src/features/pet/funnelDatasetConfig.ts</code> when the Cat V3
-            campaign exists in Ads Manager.
+            <code className="rounded bg-slate-800 px-1">src/features/pet/funnelDatasetConfig.ts</code>.
           </p>
         ) : null}
 

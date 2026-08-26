@@ -37,4 +37,28 @@ describe("funnelTestTraffic", () => {
   it("matches hostname suffix markers case-insensitively", () => {
     expect(hostnameMatchesTestMarkers("79-114-12-34.RentalCarsOradea.ro", ["rentalcarsoradea"])).toBe(true);
   });
+
+  it("marks internal smoke-test UTMs as test in production", () => {
+    expect(
+      resolveFunnelIsTestSync({
+        environment: "production",
+        utmSource: "internal",
+        utmCampaign: "cat-v3-live-smoke",
+      }),
+    ).toBe(true);
+    expect(
+      resolveFunnelIsTestSync({
+        environment: "production",
+        utmSource: "facebook",
+        utmCampaign: "cat-v3-live-smoke",
+      }),
+    ).toBe(true);
+    expect(
+      resolveFunnelIsTestSync({
+        environment: "production",
+        utmSource: "facebook",
+        utmCampaign: "cat-v3-launch",
+      }),
+    ).toBe(false);
+  });
 });

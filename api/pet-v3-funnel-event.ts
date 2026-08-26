@@ -97,15 +97,43 @@ async function resolveClientIpHostname(clientIp: string): Promise<string | null>
   }
 }
 
+function parseLowerList(raw: string | undefined, fallback: string): string[] {
+  const source = String(raw ?? fallback).trim();
+  if (!source) return [];
+  return source
+    .split(/[,\s]+/)
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function utmCampaignIsTestMarker(utmCampaign: string | null | undefined): boolean {
+  const normalized = String(utmCampaign || "").trim().toLowerCase();
+  if (!normalized) return false;
+  const markers = parseLowerList(process.env.PET_FUNNEL_TEST_UTM_CAMPAIGNS, "cat-v3-live-smoke,checkout-proof");
+  return markers.includes(normalized);
+}
+
+function utmSourceIsTestMarker(utmSource: string | null | undefined): boolean {
+  const normalized = String(utmSource || "").trim().toLowerCase();
+  if (!normalized) return false;
+  const markers = parseLowerList(process.env.PET_FUNNEL_TEST_UTM_SOURCES, "internal");
+  return markers.includes(normalized);
+}
+
 async function resolveFunnelIsTest(input: {
   environment: "production" | "preview" | "development";
   clientTestFlag?: boolean;
   clientIp?: string;
+  utmSource?: string | null;
+  utmCampaign?: string | null;
 }): Promise<{ isTest: boolean; clientIp: string | null; clientIpHostname: string | null }> {
   if (input.environment !== "production") {
     return { isTest: true, clientIp: input.clientIp || null, clientIpHostname: null };
   }
   if (input.clientTestFlag) {
+    return { isTest: true, clientIp: input.clientIp || null, clientIpHostname: null };
+  }
+  if (utmSourceIsTestMarker(input.utmSource) || utmCampaignIsTestMarker(input.utmCampaign)) {
     return { isTest: true, clientIp: input.clientIp || null, clientIpHostname: null };
   }
   const clientIp = String(input.clientIp || "").trim() || null;
@@ -302,6 +330,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = req.body && typeof req.body === "object" ? req.body : {};
     eventName = String((body as { event_name?: unknown }).event_name || "unknown");
     const clientTest = Boolean((body as { is_test_request?: boolean } | null)?.is_test_request);
+    const utmSource = asText((body as { utm_source?: unknown }).utm_source, 120);
+    const utmCampaign = asText((body as { utm_campaign?: unknown }).utm_campaign, 120);
     const failureCategory = String((body as { failure_category?: unknown }).failure_category || "")
       .replace(/[^a-z0-9_]/gi, "")
       .slice(0, 40);
@@ -313,6 +343,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       environment,
       clientTestFlag: clientTest,
       clientIp: clientIpFromHeaders(req.headers),
+      utmSource,
+      utmCampaign,
     });
     const result = await writePetV3FunnelEvent(req.body, traffic);
     return res.status(202).json(result);

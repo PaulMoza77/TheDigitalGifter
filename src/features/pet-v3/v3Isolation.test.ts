@@ -217,11 +217,11 @@ describe("V3 checkout analytics", () => {
 
 describe("V3 dataset and pricing", () => {
   it("maps V3 purchases to the V3 dataset and leaves V2 counts untouched", () => {
-    expect(FUNNEL_DATASETS.v3.displayName).toBe("Pet TDG Cat Funnel testing");
+    expect(FUNNEL_DATASETS.v3.displayName).toBe("Cat V3");
     expect(FUNNEL_DATASETS.v3.funnelVariant).toBe("v3_cat_preview");
     expect(FUNNEL_DATASETS.v3.eventSource).toBe("pet_v3_funnel_events");
-    expect(isDatasetConfigured("v3")).toBe(false);
-    expect(rpcCampaignIdForDataset("v3")).toBe("__not_configured__");
+    expect(isDatasetConfigured("v3")).toBe(true);
+    expect(rpcCampaignIdForDataset("v3")).toBe("120253518796930170");
 
     const v3 = mapV3CountsToPrimarySteps(
       namedEventCounts([{ event_name: "v3_purchase", unique_sessions: 3 }]),

@@ -29,6 +29,7 @@ import {
   datasetCampaignId,
   datasetSwitchLabel,
   isDatasetConfigured,
+  isMetaCampaignConfigured,
   mapV2CountsToPrimarySteps,
   mapV3CountsToExtendedSteps,
   mapV3CountsToPrimarySteps,
@@ -56,6 +57,36 @@ function asNullableNumber(value: unknown): number | null {
   if (value == null) return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+function parseRpcJsonArray(value: unknown): RpcRow[] {
+  if (Array.isArray(value)) return value as RpcRow[];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (Array.isArray(parsed)) return parsed as RpcRow[];
+    } catch {
+      // Fall through.
+    }
+  }
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const steps = (value as RpcRow).steps;
+    if (Array.isArray(steps)) return steps as RpcRow[];
+  }
+  return [];
+}
+
+function parseRpcJsonObject(value: unknown): RpcRow | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value as RpcRow;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as RpcRow;
+    } catch {
+      // Fall through.
+    }
+  }
+  return null;
 }
 
 function mapBreakdown(row: RpcRow, kind: "campaign" | "ad", metaSpendByKey?: Map<string, { spendCents: number; purchaseValueCents: number; purchases: number }>): AttributionBreakdownRow {
@@ -177,30 +208,42 @@ export function usePetFunnelAnalytics(
       const { data: allowRow } = await supabase
         .from("pet_meta_campaign_allowlist")
         .select("campaign_id, label")
-        .eq("funnel_variant", "v3_cat_preview")
         .eq("enabled", true)
+        .or("funnel_variant.eq.v3_cat_preview,label.ilike.cat v3")
         .limit(1)
         .maybeSingle();
       v3AllowlistCampaignId = allowRow?.campaign_id ? String(allowRow.campaign_id) : null;
       v3AllowlistLabel = allowRow?.label ? String(allowRow.label) : null;
+
+      if (!v3AllowlistCampaignId) {
+        const { data: metricRow } = await supabase
+          .from("pet_meta_daily_metrics")
+          .select("campaign_id, campaign_name")
+          .ilike("campaign_name", "cat v3")
+          .order("metric_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (metricRow?.campaign_id) {
+          v3AllowlistCampaignId = String(metricRow.campaign_id);
+          v3AllowlistLabel = metricRow.campaign_name ? String(metricRow.campaign_name) : "Cat V3";
+        }
+      }
     }
     const configured = isDatasetConfigured(datasetId, v3AllowlistCampaignId);
+    const metaCampaignConfigured = isMetaCampaignConfigured(datasetId, v3AllowlistCampaignId);
     const campaignId = rpcCampaignIdForDataset(datasetId, v3AllowlistCampaignId);
     try {
-      let payload: RpcRow = {};
-      if (datasetId !== "v3") {
-        const { data, error: rpcError } = await supabase.rpc("admin_pet_funnel_analytics", {
-          p_from: range.from.toISOString(),
-          p_to: range.to.toISOString(),
-          p_prev_from: range.previousFrom.toISOString(),
-          p_prev_to: range.previousTo.toISOString(),
-          p_campaign_id: campaignId,
-          p_view_mode: "campaign",
-          p_adset_id: null,
-        });
-        if (rpcError) throw new Error(rpcError.message);
-        payload = (data || {}) as RpcRow;
-      }
+      const { data, error: rpcError } = await supabase.rpc("admin_pet_funnel_analytics", {
+        p_from: range.from.toISOString(),
+        p_to: range.to.toISOString(),
+        p_prev_from: range.previousFrom.toISOString(),
+        p_prev_to: range.previousTo.toISOString(),
+        p_campaign_id: campaignId,
+        p_view_mode: "campaign",
+        p_adset_id: null,
+      });
+      if (rpcError) throw new Error(rpcError.message);
+      const payload = (data || {}) as RpcRow;
 
       let cohortPayload: RpcRow | null = null;
       if (datasetId === "v1" && configured) {
@@ -239,16 +282,12 @@ export function usePetFunnelAnalytics(
             p_campaign_id: resolvedV3CampaignId,
           }),
         ]);
-        if (!v3StepsRes.error && Array.isArray(v3StepsRes.data)) {
-          v3StepRows = v3StepsRes.data as RpcRow[];
-        } else if (!v3StepsRes.error && v3StepsRes.data && typeof v3StepsRes.data === "object") {
-          v3StepRows = (v3StepsRes.data as RpcRow).steps as RpcRow[] || [];
-        }
-        if (!v3ContextRes.error && v3ContextRes.data && typeof v3ContextRes.data === "object") {
-          v3Context = v3ContextRes.data as RpcRow;
-        }
-        if (!v3MetaRes.error && v3MetaRes.data && typeof v3MetaRes.data === "object") {
-          v3Meta = v3MetaRes.data as RpcRow;
+        if (v3StepsRes.error) throw new Error(v3StepsRes.error.message);
+        if (v3ContextRes.error) throw new Error(v3ContextRes.error.message);
+        v3StepRows = parseRpcJsonArray(v3StepsRes.data);
+        v3Context = parseRpcJsonObject(v3ContextRes.data);
+        if (!v3MetaRes.error) {
+          v3Meta = parseRpcJsonObject(v3MetaRes.data);
         }
       }
 
@@ -301,8 +340,10 @@ export function usePetFunnelAnalytics(
 
       const backend = (payload.backend || {}) as RpcRow;
       const v3Backend = (v3Context?.backend || {}) as RpcRow;
-      const meta = (datasetId === "v3" ? v3Meta || {} : payload.meta || {}) as RpcRow;
-      const ga4 = (datasetId === "v3" ? {} : payload.ga4 || {}) as RpcRow;
+      const meta = (
+        datasetId === "v3" && !metaCampaignConfigured ? v3Meta || {} : payload.meta || {}
+      ) as RpcRow;
+      const ga4 = (payload.ga4 || {}) as RpcRow;
       const metaTotals = (meta.totals || {}) as RpcRow;
       const ga4Totals = (ga4.totals || {}) as RpcRow;
 
@@ -455,7 +496,7 @@ export function usePetFunnelAnalytics(
 
       const daily = buildDailyPerformance({
         metaDaily:
-          datasetId === "v3"
+          datasetId === "v3" && !metaCampaignConfigured
             ? (((v3Meta?.daily as RpcRow[]) || []) as Array<{
                 metric_date?: string;
                 spend_cents?: number;
@@ -653,6 +694,7 @@ export function usePetFunnelAnalytics(
         spendAvailable: metaSpendCents != null && metaSpendCents >= 0 && asNumber(meta.row_count) > 0,
         datasetId,
         datasetConfigured: configured,
+        metaCampaignConfigured,
         campaignLabel: datasetSwitchLabel(datasetId, liveName),
         measurementReliableFrom:
           datasetId === "v3"

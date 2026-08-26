@@ -85,10 +85,10 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
   },
   v3: {
     id: "v3",
-    campaignId: "",
+    campaignId: "120253518796930170",
     funnelVariant: "v3_cat_preview",
     shortLabel: "V3",
-    displayName: "Pet TDG Cat Funnel testing",
+    displayName: "Cat V3",
     eventSource: "pet_v3_funnel_events",
     kpiLabels: {
       landing: "Landing Sessions",
@@ -141,7 +141,13 @@ export function datasetCampaignId(id: FunnelDatasetId, allowlistCampaignId?: str
   return FUNNEL_DATASETS[id].campaignId.trim();
 }
 
+/** V3 first-party funnel is live even before a Meta campaign_id is wired. */
 export function isDatasetConfigured(id: FunnelDatasetId, allowlistCampaignId?: string | null): boolean {
+  if (id === "v3") return true;
+  return datasetCampaignId(id, allowlistCampaignId).length > 0;
+}
+
+export function isMetaCampaignConfigured(id: FunnelDatasetId, allowlistCampaignId?: string | null): boolean {
   return datasetCampaignId(id, allowlistCampaignId).length > 0;
 }
 

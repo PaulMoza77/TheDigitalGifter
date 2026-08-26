@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   FUNNEL_DATASETS,
   isDatasetConfigured,
+  isMetaCampaignConfigured,
   mapV2CountsToPrimarySteps,
   mapV3CountsToPrimarySteps,
   namedEventCounts,
@@ -46,13 +47,14 @@ describe("funnelDatasetConfig", () => {
   });
 
   it("keeps V3 cat dataset isolated and resolves campaign ID from allowlist/env", () => {
-    expect(FUNNEL_DATASETS.v3.campaignId).toBe("");
+    expect(FUNNEL_DATASETS.v3.campaignId).toBe("120253518796930170");
     expect(FUNNEL_DATASETS.v3.funnelVariant).toBe("v3_cat_preview");
     expect(FUNNEL_DATASETS.v3.eventSource).toBe("pet_v3_funnel_events");
-    expect(isDatasetConfigured("v3")).toBe(false);
-    expect(isDatasetConfigured("v3", "120299999999999999")).toBe(true);
-    expect(rpcCampaignIdForDataset("v3")).toBe("__not_configured__");
-    expect(rpcCampaignIdForDataset("v3", "120299999999999999")).toBe("120299999999999999");
+    expect(isDatasetConfigured("v3")).toBe(true);
+    expect(isMetaCampaignConfigured("v3")).toBe(true);
+    expect(isMetaCampaignConfigured("v3", "120299999999999999")).toBe(true);
+    expect(rpcCampaignIdForDataset("v3")).toBe("120253518796930170");
+    expect(rpcCampaignIdForDataset("v3", "120299999999999999")).toBe("120253518796930170");
 
     const counts = mapV3CountsToPrimarySteps(
       namedEventCounts([

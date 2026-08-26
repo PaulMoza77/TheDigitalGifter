@@ -368,7 +368,13 @@ export async function discoverMetaCampaignEarliestDate(
 export type MetaCampaignListRow = { id: string; name: string; effectiveStatus: string };
 
 const V2_CAMPAIGN_NAME_RE = /pet\s*tdg\s*funnel\s*v2\s*testing/i;
-const V3_CAMPAIGN_NAME_RE = /pet\s*tdg\s*cat\s*funnel\s*testing/i;
+const V3_CAMPAIGN_NAME_RES = [
+  /^cat\s*v3$/i,
+  /pet\s*tdg\s*cat\s*funnel\s*testing/i,
+  /pet\s*tdg\s*cat\s*funnel/i,
+  /cat\s*v3/i,
+  /v3\s*cat\s*funnel/i,
+] as const;
 
 export function matchV2TestingCampaign(
   campaigns: MetaCampaignListRow[],
@@ -380,8 +386,11 @@ export function matchV2TestingCampaign(
 export function matchV3TestingCampaign(
   campaigns: MetaCampaignListRow[],
 ): MetaCampaignListRow | null {
-  const exact = campaigns.filter((row) => V3_CAMPAIGN_NAME_RE.test(row.name));
-  return exact.length === 1 ? exact[0] : null;
+  for (const pattern of V3_CAMPAIGN_NAME_RES) {
+    const matches = campaigns.filter((row) => pattern.test(row.name));
+    if (matches.length === 1) return matches[0];
+  }
+  return null;
 }
 
 export async function listAdAccountCampaigns(): Promise<MetaCampaignListRow[]> {
@@ -421,7 +430,7 @@ export async function discoverPetV3TestingCampaign(): Promise<MetaCampaignListRo
   if (/^\d{5,}$/.test(configured)) {
     const campaigns = await listAdAccountCampaigns();
     const match = campaigns.find((row) => row.id === configured);
-    return match || { id: configured, name: "Pet TDG Cat Funnel testing", effectiveStatus: "ACTIVE" };
+    return match || { id: configured, name: "Cat V3", effectiveStatus: "ACTIVE" };
   }
   return matchV3TestingCampaign(await listAdAccountCampaigns());
 }

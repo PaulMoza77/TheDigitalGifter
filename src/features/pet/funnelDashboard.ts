@@ -143,6 +143,7 @@ export type PetFunnelAnalyticsReport = {
   spendAvailable: boolean;
   datasetId?: "v1" | "v2" | "v3";
   datasetConfigured?: boolean;
+  metaCampaignConfigured?: boolean;
   campaignLabel?: string;
   measurementReliableFrom?: string | null;
   /** Independent distinct-session totals (not landing-cohort chained). */
