@@ -12,9 +12,8 @@ export const PET_SALE_EXPIRES_AT_ISO = "2026-08-25T17:30:00.000Z" as const;
 export const PET_SALE_EXPIRES_AT_MS = Date.parse(PET_SALE_EXPIRES_AT_ISO);
 
 /**
- * V2 pack offer: $12 from $27 for every visitor until this instant.
- * Wednesday Aug 26, 2026 11:35 AM Pacific — 24 hours from this change.
- * After this, V2 UI + checkout return to $27.
+ * @deprecated V2 now uses a rolling 24h $8 offer in pet-v2/v2FlashSale.ts.
+ * Kept so older imports/tests still resolve.
  */
 export const PET_V2_SALE_EXPIRES_AT_ISO = "2026-08-26T18:35:00.000Z" as const;
 export const PET_V2_SALE_EXPIRES_AT_MS = Date.parse(PET_V2_SALE_EXPIRES_AT_ISO);

@@ -3,11 +3,12 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { PET_FUNNEL_ALLOWED_EVENTS } from "../pet/funnelEventContract";
-import { PET_SALE_PRICE_CENTS, PET_V2_SALE_EXPIRES_AT_ISO, PET_V2_SALE_EXPIRES_AT_MS } from "../pet/flashSale";
+import { PET_SALE_PRICE_CENTS } from "../pet/flashSale";
 import { v2PackOfferCopy } from "./V2PackOffer";
+import { PET_V2_SALE_CYCLE_MS, PET_V2_SALE_EPOCH_MS, v2FlashSale } from "./v2FlashSale";
 import { PET_DRAFT_STORAGE_KEY, PET_PRICE_CENTS, PET_PRICE_DISPLAY } from "../pet/types";
 import { PET_FUNNEL_SESSION_KEY } from "../pet/funnelSession";
-import { PET_V2_DRAFT_STORAGE_KEY, PET_V2_EVENTS, PET_V2_EVENT_PATH, PET_V2_PRODUCTION_PRICE_CENTS, PET_V2_SESSION_KEY, PET_V2_TEST_PRICE_CENTS } from "./types";
+import { PET_V2_DRAFT_STORAGE_KEY, PET_V2_EVENTS, PET_V2_EVENT_PATH, PET_V2_PRICE_CENTS, PET_V2_PRODUCTION_PRICE_CENTS, PET_V2_SESSION_KEY, PET_V2_TEST_PRICE_CENTS } from "./types";
 import { personalityChangesOutputEnoughToKeep, personalityRecommendation } from "./personality";
 import { isHeicPhoto } from "./heic";
 import { validateV2PhotoFile } from "./photo";
@@ -42,7 +43,8 @@ describe("pet funnel V2 isolation", () => {
     expect(PET_PRICE_CENTS).toBe(2700);
     expect(PET_PRICE_DISPLAY).toBe("$27");
     expect(PET_V2_PRODUCTION_PRICE_CENTS).toBe(2700);
-    expect(PET_V2_TEST_PRICE_CENTS).toBe(1200);
+    expect(PET_V2_TEST_PRICE_CENTS).toBe(800);
+    expect(PET_V2_PRICE_CENTS).toBe(800);
     expect(PET_SALE_PRICE_CENTS).toBe(1700);
     expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).not.toContain("petFlashSale");
     expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2StickyCta");
@@ -113,7 +115,7 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet/catalog.ts")).toContain('"spa-bathtub": "Hedgehog"');
   });
 
-  it("keeps free preview off Stripe and charges V2 through pet-funnel at $12", () => {
+  it("keeps free preview off Stripe and charges V2 through pet-funnel at $8", () => {
     const previewApi = readSrc("api/pet-v2/preview.ts");
     const edgePreview = readSrc("supabase/functions/pet-v2-preview/index.ts");
     expect(previewApi).not.toMatch(/stripe/i);
@@ -138,23 +140,23 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("createReplicatePrediction");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("applyV2SaleAmount");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("funnel_variant");
-    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 1200");
+    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 800");
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("applyV2SaleAmount");
   });
 
-  it("shows $12 until the V2 expiry, then returns V2 to $27", () => {
-    const during = v2PackOfferCopy(PET_V2_SALE_EXPIRES_AT_MS - 1000);
+  it("always shows $8 from $27 with a rolling 24h timer", () => {
+    const during = v2PackOfferCopy(PET_V2_SALE_EPOCH_MS + 1000);
     expect(during.saleActive).toBe(true);
-    expect(during.amountCents).toBe(PET_V2_TEST_PRICE_CENTS);
-    expect(during.priceDisplay).toBe("$12");
+    expect(during.amountCents).toBe(PET_V2_PRICE_CENTS);
+    expect(during.priceDisplay).toBe("$8");
     expect(during.compareAtDisplay).toBe("$27");
-    expect(during.expiresAt).toBe(PET_V2_SALE_EXPIRES_AT_ISO);
+    expect(Date.parse(during.expiresAt!)).toBeGreaterThan(PET_V2_SALE_EPOCH_MS);
 
-    const after = v2PackOfferCopy(PET_V2_SALE_EXPIRES_AT_MS);
-    expect(after.saleActive).toBe(false);
-    expect(after.amountCents).toBe(PET_V2_PRODUCTION_PRICE_CENTS);
-    expect(after.priceDisplay).toBe("$27");
-    expect(after.expiresAt).toBeNull();
+    const nextCycle = v2FlashSale(PET_V2_SALE_EPOCH_MS + PET_V2_SALE_CYCLE_MS + 5000);
+    expect(nextCycle.saleActive).toBe(true);
+    expect(nextCycle.amountCents).toBe(800);
+    expect(nextCycle.priceDisplay).toBe("$8");
+    expect(nextCycle.compareAtDisplay).toBe("$27");
   });
 });
 
@@ -173,23 +175,23 @@ describe("V2 free-preview economics", () => {
     const one = economicsAtConversion(1000, 1);
     expect(one.purchases).toBe(10);
     expect(one.generationCostUsd).toBe(40);
-    expect(one.testRevenueUsd).toBe(120);
+    expect(one.testRevenueUsd).toBe(80);
     expect(one.productionRevenueUsd).toBe(270);
-    expect(one.grossAfterAiTestUsd).toBe(80);
+    expect(one.grossAfterAiTestUsd).toBe(40);
     expect(one.grossAfterAiProductionUsd).toBe(230);
 
     const two = economicsAtConversion(1000, 2);
     expect(two.purchases).toBe(20);
-    expect(two.grossAfterAiTestUsd).toBe(200);
+    expect(two.grossAfterAiTestUsd).toBe(120);
     expect(two.grossAfterAiProductionUsd).toBe(500);
 
     const five = economicsAtConversion(1000, 5);
     expect(five.purchases).toBe(50);
-    expect(five.grossAfterAiTestUsd).toBe(560);
+    expect(five.grossAfterAiTestUsd).toBe(360);
 
     const ten = economicsAtConversion(1000, 10);
     expect(ten.purchases).toBe(100);
-    expect(ten.grossAfterAiTestUsd).toBe(1160);
+    expect(ten.grossAfterAiTestUsd).toBe(760);
   });
 });
 

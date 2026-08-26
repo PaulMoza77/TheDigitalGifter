@@ -12,9 +12,8 @@ export const PET_SALE_EXPIRES_AT_ISO = "2026-08-25T17:30:00.000Z" as const;
 export const PET_SALE_EXPIRES_AT_MS = Date.parse(PET_SALE_EXPIRES_AT_ISO);
 
 /**
- * V2 pack offer: $12 from $27 for every visitor until this instant.
- * Wednesday Aug 26, 2026 11:35 AM Pacific — 24 hours from this change.
- * After this, V2 UI + checkout return to $27.
+ * @deprecated V2 now always charges PET_V2_PRICE_CENTS ($8) with a rolling UI timer.
+ * Kept so older imports still resolve.
  */
 export const PET_V2_SALE_EXPIRES_AT_ISO = "2026-08-26T18:35:00.000Z" as const;
 export const PET_V2_SALE_EXPIRES_AT_MS = Date.parse(PET_V2_SALE_EXPIRES_AT_ISO);
@@ -58,9 +57,9 @@ export function applyPetFlashSaleAmount(listAmountCents: number, nowMs = Date.no
   return sale.active ? sale.amountCents : listAmountCents;
 }
 
-/** V2 charges $12 until PET_V2_SALE_EXPIRES_AT, then $27. Never uses the V1 $17 overlay. */
-export function applyV2SaleAmount(nowMs = Date.now()): number {
-  return nowMs < PET_V2_SALE_EXPIRES_AT_MS ? PET_V2_PRICE_CENTS : PET_PRICE_CENTS;
+/** V2 always charges $8. Never uses the V1 $17 overlay or the $27 list price. */
+export function applyV2SaleAmount(_nowMs = Date.now()): number {
+  return PET_V2_PRICE_CENTS;
 }
 
 /** V3 cat funnel is fixed at $12 for the launch test. */
