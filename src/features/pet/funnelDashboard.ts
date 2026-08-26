@@ -141,7 +141,7 @@ export type PetFunnelAnalyticsReport = {
   warnings: string[];
   biggestDrop: { from: string; to: string; dropPct: number } | null;
   spendAvailable: boolean;
-  datasetId?: "v1" | "v2";
+  datasetId?: "v1" | "v2" | "v3";
   datasetConfigured?: boolean;
   campaignLabel?: string;
   measurementReliableFrom?: string | null;
@@ -152,6 +152,23 @@ export type PetFunnelAnalyticsReport = {
     eventName: string;
     sessions: number;
     fromPreviousPct: number | null;
+  }>;
+  /** Cat V3 seven-step funnel including checkout_viewed. */
+  v3ExtendedSteps?: Array<{
+    eventName: string;
+    label: string;
+    sessions: number;
+    fromPreviousPct: number | null;
+    fromLandingPct: number | null;
+    dropFromPreviousPct: number | null;
+  }>;
+  v3Creatives?: Array<{
+    creativeId: string;
+    lpv: number;
+    checkoutViewed: number;
+    checkout: number;
+    purchase: number;
+    revenueCents: number;
   }>;
 };
 

@@ -30,11 +30,18 @@ import {
   datasetSwitchLabel,
   isDatasetConfigured,
   mapV2CountsToPrimarySteps,
+  mapV3CountsToExtendedSteps,
   mapV3CountsToPrimarySteps,
+  buildV3ExtendedFunnelSteps,
   namedEventCounts,
   rpcCampaignIdForDataset,
   type FunnelDatasetId,
 } from "@/features/pet/funnelDatasetConfig";
+import {
+  v3RpcFilterArgs,
+  type V3AnalyticsFilters,
+  EMPTY_V3_ANALYTICS_FILTERS,
+} from "@/features/pet-v3/v3AnalyticsFilters";
 import { sequentialConversionPct } from "@/features/pet/funnelEventContract";
 import { V1_PHOTO_PATH_STAGES } from "@/features/pet/funnelCohort";
 
@@ -115,6 +122,7 @@ export function usePetFunnelAnalytics(
   preset: DatePreset,
   custom?: { from: string; to: string },
   datasetId: FunnelDatasetId = "v1",
+  v3Filters: V3AnalyticsFilters = EMPTY_V3_ANALYTICS_FILTERS,
 ) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -193,15 +201,28 @@ export function usePetFunnelAnalytics(
       }
 
       let v3StepRows: RpcRow[] = [];
+      let v3Context: RpcRow | null = null;
       if (datasetId === "v3") {
-        const { data: v3Data, error: v3Error } = await supabase.rpc("admin_pet_v3_funnel_step_counts", {
-          p_from: range.from.toISOString(),
-          p_to: range.to.toISOString(),
-        });
-        if (!v3Error && Array.isArray(v3Data)) {
-          v3StepRows = v3Data as RpcRow[];
-        } else if (!v3Error && v3Data && typeof v3Data === "object") {
-          v3StepRows = (v3Data as RpcRow).steps as RpcRow[] || [];
+        const filterArgs = v3RpcFilterArgs(v3Filters);
+        const [v3StepsRes, v3ContextRes] = await Promise.all([
+          supabase.rpc("admin_pet_v3_funnel_step_counts", {
+            p_from: range.from.toISOString(),
+            p_to: range.to.toISOString(),
+            ...filterArgs,
+          }),
+          supabase.rpc("admin_pet_v3_dashboard_context", {
+            p_from: range.from.toISOString(),
+            p_to: range.to.toISOString(),
+            ...filterArgs,
+          }),
+        ]);
+        if (!v3StepsRes.error && Array.isArray(v3StepsRes.data)) {
+          v3StepRows = v3StepsRes.data as RpcRow[];
+        } else if (!v3StepsRes.error && v3StepsRes.data && typeof v3StepsRes.data === "object") {
+          v3StepRows = (v3StepsRes.data as RpcRow).steps as RpcRow[] || [];
+        }
+        if (!v3ContextRes.error && v3ContextRes.data && typeof v3ContextRes.data === "object") {
+          v3Context = v3ContextRes.data as RpcRow;
         }
       }
 
@@ -211,9 +232,12 @@ export function usePetFunnelAnalytics(
         : null;
       const v1PreviousCounts = countsFromRows((payload.previous_steps as RpcRow[]) || []);
       const v2Counts = mapV2CountsToPrimarySteps(namedEventCounts((payload.v2_steps as RpcRow[]) || []));
-      const v3Counts = mapV3CountsToPrimarySteps(
-        namedEventCounts(v3StepRows.length ? v3StepRows : ((payload.v3_steps as RpcRow[]) || [])),
+      const v3RawCounts = namedEventCounts(
+        v3StepRows.length ? v3StepRows : ((payload.v3_steps as RpcRow[]) || []),
       );
+      const v3Counts = mapV3CountsToPrimarySteps(v3RawCounts);
+      const v3ExtendedCounts = mapV3CountsToExtendedSteps(v3RawCounts);
+      const v3ExtendedSteps = datasetId === "v3" ? buildV3ExtendedFunnelSteps(v3ExtendedCounts) : undefined;
       const counts =
         datasetId === "v3" ? v3Counts : datasetId === "v2" ? v2Counts : v1CohortCounts || v1RawCounts;
       const previousCounts = datasetId === "v2" || datasetId === "v3" ? emptyStepCounts() : v1PreviousCounts;
@@ -244,15 +268,20 @@ export function usePetFunnelAnalytics(
       const rangeMode = classifyRangeMode(range.from.toISOString(), range.to.toISOString(), firstPartyTrackingStartedAt);
 
       const backend = (payload.backend || {}) as RpcRow;
+      const v3Backend = (v3Context?.backend || {}) as RpcRow;
       const meta = (payload.meta || {}) as RpcRow;
       const ga4 = (payload.ga4 || {}) as RpcRow;
       const metaTotals = (meta.totals || {}) as RpcRow;
       const ga4Totals = (ga4.totals || {}) as RpcRow;
 
-      const backendPurchases = asNumber(backend.purchases);
-      const backendRevenue = asNumber(backend.revenue_cents);
-      const backendCheckouts = asNumber(backend.checkouts);
-      const freeDiscountOrders = asNumber(backend.free_orders);
+      const backendPurchases =
+        datasetId === "v3" ? asNumber(v3Backend.purchases) : asNumber(backend.purchases);
+      const backendRevenue =
+        datasetId === "v3" ? asNumber(v3Backend.revenue_cents) : asNumber(backend.revenue_cents);
+      const backendCheckouts =
+        datasetId === "v3" ? asNumber(v3Backend.checkouts) : asNumber(backend.checkouts);
+      const freeDiscountOrders =
+        datasetId === "v3" ? asNumber(v3Backend.free_orders) : asNumber(backend.free_orders);
       const liveName = ((payload.catalog as RpcRow[]) || [])
         .map((row) => ({
           campaignId: String(row.campaign_id || ""),
@@ -379,23 +408,39 @@ export function usePetFunnelAnalytics(
           : ((payload.campaigns as RpcRow[]) || []).map((row) => mapBreakdown(row, "campaign", spendByCampaign));
 
       const daily = buildDailyPerformance({
-        metaDaily: ((meta.daily as RpcRow[]) || []) as Array<{
-          metric_date?: string;
-          spend_cents?: number;
-          landing_page_views?: number;
-          initiate_checkouts?: number;
-          purchases?: number;
-          purchase_value_cents?: number;
-        }>,
-        backendDaily: ((backend.daily as RpcRow[]) || []) as Array<{
-          metric_date?: string;
-          purchases?: number;
-          revenue_cents?: number;
-        }>,
-        checkoutDaily: ((backend.checkout_daily as RpcRow[]) || []) as Array<{
-          metric_date?: string;
-          checkouts?: number;
-        }>,
+        metaDaily:
+          datasetId === "v3"
+            ? []
+            : (((meta.daily as RpcRow[]) || []) as Array<{
+                metric_date?: string;
+                spend_cents?: number;
+                landing_page_views?: number;
+                initiate_checkouts?: number;
+                purchases?: number;
+                purchase_value_cents?: number;
+              }>),
+        backendDaily:
+          datasetId === "v3"
+            ? (((v3Context?.daily as RpcRow[]) || []) as Array<{
+                metric_date?: string;
+                purchases?: number;
+                revenue_cents?: number;
+              }>)
+            : (((backend.daily as RpcRow[]) || []) as Array<{
+                metric_date?: string;
+                purchases?: number;
+                revenue_cents?: number;
+              }>),
+        checkoutDaily:
+          datasetId === "v3"
+            ? (((v3Context?.checkout_daily as RpcRow[]) || []) as Array<{
+                metric_date?: string;
+                checkouts?: number;
+              }>)
+            : (((backend.checkout_daily as RpcRow[]) || []) as Array<{
+                metric_date?: string;
+                checkouts?: number;
+              }>),
       });
 
       const paidKpiCounts = { ...counts, purchase: backendPurchases };
@@ -410,6 +455,42 @@ export function usePetFunnelAnalytics(
       firstPartyKpis.checkouts = backendCheckouts;
 
       const ads = firstPartyAds;
+      const v3CampaignRows: AttributionBreakdownRow[] = datasetId === "v3"
+        ? (((v3Context?.campaigns as RpcRow[]) || []).map((row) => ({
+            campaign: String(row.campaign || "Unattributed"),
+            adSet: "—",
+            ad: "—",
+            campaignId: row.campaign_id ? String(row.campaign_id) : null,
+            adsetId: null,
+            adId: null,
+            sourceGroup: row.campaign_id && row.campaign_id !== "unattributed" ? ("meta" as const) : ("unattributed" as const),
+            lpv: asNumber(row.lpv),
+            name: asNumber(row.upload_count),
+            upload: asNumber(row.upload_count),
+            review: asNumber(row.review_count),
+            checkout: asNumber(row.checkout_count),
+            purchase: asNumber(row.purchase_count),
+            revenueCents: asNumber(row.revenue_cents),
+            cvr: percent(asNumber(row.purchase_count), asNumber(row.lpv)),
+            spendCents: null,
+            cpaCents: null,
+            roas: null,
+            spend: null,
+            cpa: null,
+          })))
+        : campaigns;
+
+      const v3Creatives = datasetId === "v3"
+        ? (((v3Context?.creatives as RpcRow[]) || []).map((row) => ({
+            creativeId: String(row.creative_id || "unattributed"),
+            lpv: asNumber(row.lpv),
+            checkoutViewed: asNumber(row.checkout_viewed_count),
+            checkout: asNumber(row.checkout_count),
+            purchase: asNumber(row.purchase_count),
+            revenueCents: asNumber(row.revenue_cents),
+          })))
+        : undefined;
+
       const mapped: PetFunnelAnalyticsReport = {
         from: range.from.toISOString(),
         to: range.to.toISOString(),
@@ -422,6 +503,9 @@ export function usePetFunnelAnalytics(
         hybridKpis,
         trackingHealth: {
           failedWrites: (() => {
+            if (datasetId === "v3") {
+              return asNullableNumber(v3Context?.failed_writes);
+            }
             const health =
               payload.tracking_health && typeof payload.tracking_health === "object"
                 ? (payload.tracking_health as RpcRow)
@@ -431,6 +515,10 @@ export function usePetFunnelAnalytics(
             return asNullableNumber(health[key] ?? health.v2_failed_write_count ?? health.v1_failed_write_count ?? health.failed_write_count);
           })(),
           latestFirstPartyAt: (() => {
+            if (datasetId === "v3") {
+              const at = v3Context?.latest_event_at;
+              return at ? String(at) : firstEventAt;
+            }
             const health =
               payload.tracking_health && typeof payload.tracking_health === "object"
                 ? (payload.tracking_health as RpcRow)
@@ -456,22 +544,51 @@ export function usePetFunnelAnalytics(
           ga4Missing: [],
         },
         kpis: firstPartyKpis,
-        campaigns,
-        ads,
-        species: ((payload.species as RpcRow[]) || []).map(mapSpecies).filter((row): row is SpeciesBreakdownRow => Boolean(row)),
-        devices: ((payload.devices as RpcRow[]) || []).map((row) => ({
-          deviceType: String(row.device_type || "unknown"),
-          lpv: asNumber(row.lpv),
-          checkout: asNumber(row.checkout_count),
-          purchase: asNumber(row.purchase_count),
-        })),
-        recent: ((payload.recent as RpcRow[]) || []).map((row) => ({
-          createdAt: String(row.created_at || ""),
-          eventName: String(row.event_name || ""),
-          species: row.species ? String(row.species) : null,
-          sessionShort: String(row.session_short || ""),
-          amountCents: row.amount_cents == null ? null : asNumber(row.amount_cents),
-        })),
+        campaigns: v3CampaignRows,
+        ads: datasetId === "v3" ? [] : ads,
+        species:
+          datasetId === "v3"
+            ? [
+                {
+                  species: "cat" as const,
+                  lpv: counts.landing_view,
+                  checkout: counts.initiate_checkout,
+                  purchase: backendPurchases,
+                  cvr: percent(backendPurchases, counts.landing_view),
+                  revenueCents: backendRevenue,
+                },
+              ]
+            : ((payload.species as RpcRow[]) || []).map(mapSpecies).filter((row): row is SpeciesBreakdownRow => Boolean(row)),
+        devices:
+          datasetId === "v3"
+            ? (((v3Context?.devices as RpcRow[]) || []).map((row) => ({
+                deviceType: String(row.device_type || "unknown"),
+                lpv: asNumber(row.lpv),
+                checkout: asNumber(row.checkout_count),
+                purchase: asNumber(row.purchase_count),
+              })))
+            : ((payload.devices as RpcRow[]) || []).map((row) => ({
+                deviceType: String(row.device_type || "unknown"),
+                lpv: asNumber(row.lpv),
+                checkout: asNumber(row.checkout_count),
+                purchase: asNumber(row.purchase_count),
+              })),
+        recent:
+          datasetId === "v3"
+            ? (((v3Context?.recent as RpcRow[]) || []).map((row) => ({
+                createdAt: String(row.created_at || ""),
+                eventName: String(row.event_name || ""),
+                species: row.species ? String(row.species) : "cat",
+                sessionShort: String(row.session_short || ""),
+                amountCents: row.amount_cents == null ? null : asNumber(row.amount_cents),
+              })))
+            : ((payload.recent as RpcRow[]) || []).map((row) => ({
+                createdAt: String(row.created_at || ""),
+                eventName: String(row.event_name || ""),
+                species: row.species ? String(row.species) : null,
+                sessionShort: String(row.session_short || ""),
+                amountCents: row.amount_cents == null ? null : asNumber(row.amount_cents),
+              })),
         warnings: funnelWarnings({
           steps,
           firstEventAt,
@@ -489,6 +606,8 @@ export function usePetFunnelAnalytics(
           : null,
         rawSteps: datasetId === "v1" ? rawSteps : undefined,
         photoPathSteps: datasetId === "v1" && photoPathSteps.some((s) => s.sessions > 0) ? photoPathSteps : undefined,
+        v3ExtendedSteps,
+        v3Creatives,
       };
       setReport(mapped);
     } catch (err) {
@@ -497,7 +616,7 @@ export function usePetFunnelAnalytics(
     } finally {
       setLoading(false);
     }
-  }, [preset, custom?.from, custom?.to, datasetId]);
+  }, [preset, custom?.from, custom?.to, datasetId, v3Filters]);
 
   // Attach latest sync status onto the report without re-fetching RPC.
   React.useEffect(() => {

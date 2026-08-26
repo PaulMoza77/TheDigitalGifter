@@ -1,15 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { PageHead } from "@/components/PageHead";
-import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
-import { PetApiError, startPetCheckout } from "../pet/api";
-import { PET_DEFAULT_PERSONALITY } from "../pet/types";
-import { petFunnelApi } from "../pet/supabaseApi";
-import { shouldTrackPetBeginCheckout } from "../pet/funnelAnalytics";
-import { validatePetName } from "../pet/croGuards";
 import { remainingSessionPreviews, sessionAllowsAnotherPreview } from "./abuse";
 import { trackPetV3Event } from "./analytics";
-import { trackV3BeginCheckout } from "./checkoutAnalytics";
-import { PET_V3_FUNNEL_CONFIG, v3PackOfferCopy } from "./config";
+import { PET_V3_FUNNEL_CONFIG } from "./config";
+import { useV3EmbeddedCheckout } from "./useV3EmbeddedCheckout";
 import { cryptoRandomId } from "../pet-v2/previewAttempt";
 import { previewErrorMessage } from "../pet-v2/previewErrors";
 import {
@@ -43,15 +37,18 @@ export function PetV3FunnelPage() {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const generateLockRef = useRef(false);
-  const unlockTrackLockRef = useRef(false);
   const lastFailureCategoryRef = useRef<PetV3FailureCategory | null>(null);
   const [draft, setDraft] = useState<PetV3Draft>(() => loadV3Draft());
   const [photoError, setPhotoError] = useState<string | undefined>();
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const previewUrl = getV3PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
+  const photoFile = getV3PhotoFile();
+  const embeddedCheckout = useV3EmbeddedCheckout({
+    active: draft.step === "offer",
+    photo: draft.photo,
+    file: photoFile,
+  });
 
   useEffect(() => {
     const next = loadV3Draft();
@@ -208,73 +205,6 @@ export function PetV3FunnelPage() {
     }
   }
 
-  async function pay() {
-    setCheckoutError(null);
-    const named = validatePetName(draft.petName);
-    if (!named.ok) {
-      setCheckoutError(named.message);
-      return;
-    }
-    const email = draft.email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setCheckoutError("Enter a valid email address.");
-      return;
-    }
-    const file = getV3PhotoFile();
-    if (!file || !draft.photo) {
-      setCheckoutError("Re-attach the original cat photo before paying.");
-      go("photo");
-      return;
-    }
-
-    const offer = v3PackOfferCopy();
-    setCheckoutBusy(true);
-    try {
-      const result = await startPetCheckout({
-        api: petFunnelApi,
-        email,
-        petName: named.name,
-        species: PET_V3_SPECIES,
-        personality: PET_DEFAULT_PERSONALITY,
-        photo: draft.photo,
-        file,
-        successUrl: `${window.location.origin}/pet/order`,
-        cancelUrl: `${window.location.origin}${PET_V3_ROUTE}`,
-        funnelVariant: "v3",
-        funnelSessionId: getPetV3SessionId(),
-      });
-
-      if (result.status === "payment_processing" || result.status === "comped" || !result.checkoutUrl) {
-        window.location.assign(`/pet/order?token=${encodeURIComponent(result.publicToken)}`);
-        return;
-      }
-
-      const tracked = trackV3BeginCheckout({
-        result: { ...result, orderId: result.orderId },
-        fallbackAmountCents: offer.amountCents,
-      });
-
-      if (tracked && shouldTrackPetBeginCheckout(result)) {
-        const serverAmount = result.chargedAmountCents ?? result.amountCents ?? offer.amountCents;
-        trackMetaInitiateCheckout({
-          eventId: result.eventId || `pet_ic_${result.orderId}`,
-          valueCents: serverAmount,
-          orderId: result.orderId,
-        });
-      }
-
-      window.location.assign(result.checkoutUrl);
-    } catch (caught) {
-      const message =
-        caught instanceof PetApiError
-          ? caught.message
-          : "Checkout could not start. Nothing was charged — try again.";
-      setCheckoutError(message);
-    } finally {
-      setCheckoutBusy(false);
-    }
-  }
-
   const step = draft.step;
   const copy = PET_V3_FUNNEL_CONFIG.copy;
 
@@ -365,14 +295,8 @@ export function PetV3FunnelPage() {
           canRegenerate={remainingSessionPreviews() > 0 && !isGenerating}
           onRegenerate={() => void generate(true)}
           onUnlock={() => {
-            if (unlockTrackLockRef.current) return;
-            unlockTrackLockRef.current = true;
-            trackPetV3Event({ eventName: "v3_unlock_clicked" });
             trackPetV3Event({ eventName: "v3_offer_viewed" });
             go("offer");
-            window.setTimeout(() => {
-              unlockTrackLockRef.current = false;
-            }, 800);
           }}
         />
       ) : null}
@@ -381,11 +305,9 @@ export function PetV3FunnelPage() {
         <V3OfferScreen
           email={draft.email}
           petName={draft.petName}
-          busy={checkoutBusy}
-          error={checkoutError}
+          checkout={embeddedCheckout}
           onEmail={(email) => go("offer", { email })}
           onPetName={(petName) => go("offer", { petName })}
-          onContinue={() => void pay()}
         />
       ) : null}
     </V3Shell>

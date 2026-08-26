@@ -1,8 +1,13 @@
 import {
+  buildPetAttributionContract,
+  deriveCreativeId,
+} from "../pet-funnel-shared/attributionContract";
+import {
   attributionParamsForInternal,
   captureFunnelAttribution,
   getFunnelFirstTouchContext,
 } from "../pet/funnelAttribution";
+import { readMetaFbc, readMetaFbp } from "../pet/metaCookies";
 import { inferDeviceType } from "../pet/funnelSession";
 import { newFunnelUuid } from "../pet/funnelEventContract";
 import { getPetV3SessionId } from "./session";
@@ -22,6 +27,7 @@ const SESSION_ONCE = new Set<PetV3EventName>([
   "v3_upload_completed",
   "v3_preview_viewed",
   "v3_offer_viewed",
+  "v3_checkout_viewed",
 ]);
 
 export function isPetV3EventName(value: string): value is PetV3EventName {
@@ -88,6 +94,21 @@ export function trackPetV3Event(input: TrackV3Input): void {
         ? input.failureCategory.replace(/[^a-z0-9_]/gi, "").slice(0, 40)
         : null;
     const eventId = newFunnelUuid();
+    const contract = buildPetAttributionContract({
+      petType: PET_V3_SPECIES,
+      funnelVersion: PET_V3_FUNNEL_VERSION,
+      funnelSessionId: sessionId,
+      clientEventId: eventId,
+      utmSource: attribution.utm_source ?? null,
+      utmMedium: attribution.utm_medium ?? null,
+      utmCampaign: attribution.utm_campaign ?? null,
+      utmContent: attribution.utm_content ?? null,
+      utmTerm: attribution.utm_term ?? null,
+      campaignId: attribution.campaign_id ?? null,
+      adsetId: attribution.adset_id ?? null,
+      adId: attribution.ad_id ?? null,
+      creativeId: deriveCreativeId({ utmContent: attribution.utm_content ?? null }),
+    });
     const payload = {
       event_name: input.eventName,
       funnel_session_id: sessionId,
@@ -105,18 +126,21 @@ export function trackPetV3Event(input: TrackV3Input): void {
         typeof input.amountCents === "number" && Number.isFinite(input.amountCents)
           ? Math.round(input.amountCents)
           : null,
-      utm_source: attribution.utm_source ?? null,
-      utm_medium: attribution.utm_medium ?? null,
-      utm_campaign: attribution.utm_campaign ?? null,
-      utm_content: attribution.utm_content ?? null,
-      utm_term: attribution.utm_term ?? null,
-      campaign_id: attribution.campaign_id ?? null,
-      adset_id: attribution.adset_id ?? null,
-      ad_id: attribution.ad_id ?? null,
+      utm_source: contract.source,
+      utm_medium: contract.medium,
+      utm_campaign: contract.campaign,
+      utm_content: contract.content,
+      utm_term: contract.term,
+      campaign_id: contract.campaign_id,
+      adset_id: contract.adset_id,
+      ad_id: contract.ad_id,
+      creative_id: contract.creative_id,
       has_meta_click: context.hasFbclid,
       referrer_host: context.referrerHost,
       funnel_variant: PET_V3_FUNNEL_VARIANT,
-      funnel_version: PET_V3_FUNNEL_VERSION,
+      funnel_version: contract.funnel_version,
+      fbc: readMetaFbc(),
+      fbp: readMetaFbp(),
       failure_category: failureCategory,
     };
     post(payload);

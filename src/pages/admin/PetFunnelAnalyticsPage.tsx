@@ -12,6 +12,7 @@ import {
 import { formatMetricOrDash } from "@/features/pet/funnelHybrid";
 import { PET_FUNNEL_MEASUREMENT_RELIABLE_FROM, trackingCoverageSignal } from "@/features/pet/funnelEventContract";
 import { FUNNEL_DATASETS, type FunnelDatasetId } from "@/features/pet/funnelDatasetConfig";
+import { EMPTY_V3_ANALYTICS_FILTERS, type V3AnalyticsFilters } from "@/features/pet-v3/v3AnalyticsFilters";
 import { usePetFunnelAnalytics } from "@/hooks/usePetFunnelAnalytics";
 
 const PRESETS: Array<{ id: DatePreset; label: string }> = [
@@ -44,6 +45,8 @@ const EVENT_COPY: Record<string, string> = {
   v3_upload_completed: "upload completed",
   v3_preview_viewed: "preview viewed",
   v3_unlock_clicked: "unlock clicked",
+  v3_checkout_viewed: "checkout viewed",
+  v3_offer_viewed: "offer viewed",
   v3_begin_checkout: "begin checkout",
   v3_purchase: "v3 purchase",
 };
@@ -127,8 +130,14 @@ export default function PetFunnelAnalyticsPage() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [datasetId, setDatasetId] = useState<FunnelDatasetId>("v1");
+  const [v3Filters, setV3Filters] = useState<V3AnalyticsFilters>(EMPTY_V3_ANALYTICS_FILTERS);
   const custom = preset === "custom" && customFrom && customTo ? { from: customFrom, to: customTo } : undefined;
-  const { loading, error, report, refresh, syncing, syncMessage, runSync } = usePetFunnelAnalytics(preset, custom, datasetId);
+  const { loading, error, report, refresh, syncing, syncMessage, runSync } = usePetFunnelAnalytics(
+    preset,
+    custom,
+    datasetId,
+    datasetId === "v3" ? v3Filters : EMPTY_V3_ANALYTICS_FILTERS,
+  );
   const dataset = FUNNEL_DATASETS[datasetId];
   const labels = dataset.kpiLabels;
 
@@ -149,7 +158,26 @@ export default function PetFunnelAnalyticsPage() {
   }, [report]);
 
   const hybridStages = report?.hybridStages ?? [];
-  const maxSessions = Math.max(1, ...hybridStages.map((step) => step.value ?? 0), 1);
+  const v3ExtendedSteps = report?.v3ExtendedSteps ?? [];
+  const funnelSteps =
+    datasetId === "v3" && v3ExtendedSteps.length > 0
+      ? v3ExtendedSteps.map((step) => ({
+          eventName: step.eventName,
+          label: step.label,
+          value: step.sessions,
+          sourceLabel: "first-party",
+          fromPreviousPct: step.fromPreviousPct,
+          fromLandingPct: step.fromLandingPct,
+        }))
+      : hybridStages.map((step) => ({
+          eventName: step.eventName,
+          label: dataset.stageLabels[step.eventName] || step.label,
+          value: step.value,
+          sourceLabel: step.sourceLabel,
+          fromPreviousPct: step.fromPreviousPct,
+          fromLandingPct: step.fromLandingPct,
+        }));
+  const maxSessions = Math.max(1, ...funnelSteps.map((step) => step.value ?? 0), 1);
   const kpis = report?.hybridKpis;
 
   return (
@@ -260,7 +288,50 @@ export default function PetFunnelAnalyticsPage() {
         ) : null}
 
         {datasetId === "v3" && report && report.datasetConfigured === false ? (
-          <p className="text-sm text-amber-200/80">Meta campaign not configured</p>
+          <p className="text-sm text-amber-200/80">
+            Meta campaign not configured — set{" "}
+            <code className="rounded bg-slate-800 px-1">FUNNEL_DATASETS.v3.campaignId</code> in{" "}
+            <code className="rounded bg-slate-800 px-1">src/features/pet/funnelDatasetConfig.ts</code> when the Cat V3
+            campaign exists in Ads Manager.
+          </p>
+        ) : null}
+
+        {datasetId === "v3" ? (
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">V3 attribution filters</p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {(
+                [
+                  ["campaignId", "Campaign ID"],
+                  ["adsetId", "Ad set ID"],
+                  ["adId", "Ad ID"],
+                  ["creativeId", "Creative ID"],
+                  ["utmSource", "UTM source"],
+                  ["utmMedium", "UTM medium"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="block text-xs text-slate-400">
+                  {label}
+                  <input
+                    type="text"
+                    value={v3Filters[key] || ""}
+                    onChange={(event) =>
+                      setV3Filters((current) => ({
+                        ...current,
+                        [key]: event.target.value,
+                      }))
+                    }
+                    placeholder="All"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                  />
+                </label>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              Filters combine (AND). Empty = all. Counts use distinct funnel_session_id. Purchases and revenue always
+              use webhook-confirmed V3 orders joined to v3_purchase attribution by order_id.
+            </p>
+          </div>
         ) : null}
 
         {report?.firstPartyTrackingStartedAt ? (
@@ -347,6 +418,13 @@ export default function PetFunnelAnalyticsPage() {
                   value={formatMetricOrDash(kpis.reviews)}
                   helper={[kpis.reviewsSource.replace(/_/g, " "), ofPreviousLabel(kpis.reviews, kpis.uploads, labels.step4Of)].filter(Boolean).join(" · ")}
                 />
+                {datasetId === "v3" ? (
+                  <StatCard
+                    label="Checkout Viewed"
+                    value={formatMetricOrDash(report.v3ExtendedSteps?.find((s) => s.eventName === "checkout_viewed")?.sessions ?? null)}
+                    helper={["Embedded Stripe form visible", ofPreviousLabel(report.v3ExtendedSteps?.find((s) => s.eventName === "checkout_viewed")?.sessions ?? null, kpis.reviews, "offer views")].filter(Boolean).join(" · ")}
+                  />
+                ) : null}
                 <StatCard
                   label={labels.checkout}
                   value={formatMetricOrDash(kpis.checkouts)}
@@ -408,7 +486,7 @@ export default function PetFunnelAnalyticsPage() {
               }
             >
               <div className="space-y-4">
-                {hybridStages.map((step, index) => (
+                {funnelSteps.map((step, index) => (
                   <div key={step.eventName}>
                     {index > 0 ? <div className="mb-3 text-center text-slate-600">↓</div> : null}
                     <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3 sm:p-4">
@@ -416,7 +494,7 @@ export default function PetFunnelAnalyticsPage() {
                         <div className="min-w-0">
                           <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <p className="min-w-0 break-words text-sm font-medium text-slate-200">
-                              {dataset.stageLabels[step.eventName] || step.label}
+                              {step.label}
                             </p>
                             <SourceBadge label={step.sourceLabel} />
                           </div>
@@ -501,7 +579,49 @@ export default function PetFunnelAnalyticsPage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Creative comparison" subtitle="Meta ad-level metrics for comparing Dog creatives. First-party uploads appear when ad_id attribution exists.">
+            <SectionCard
+              title={datasetId === "v3" ? "Creative comparison" : "Creative comparison"}
+              subtitle={
+                datasetId === "v3"
+                  ? "First-party Cat V3 sessions by creative_id / utm_content. Unique funnel_session_id counts."
+                  : "Meta ad-level metrics for comparing Dog creatives. First-party uploads appear when ad_id attribution exists."
+              }
+            >
+              {datasetId === "v3" ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="text-xs uppercase tracking-wide text-slate-500">
+                      <tr>
+                        {["Creative", "Landing", "Checkout viewed", "Begin checkout", "Purchase", "Revenue"].map((label) => (
+                          <th key={label} className="whitespace-nowrap px-3 py-2 font-medium">
+                            {label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.v3Creatives || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-3 py-6 text-slate-500">
+                            No V3 creative rows in this range.
+                          </td>
+                        </tr>
+                      ) : (
+                        (report.v3Creatives || []).map((row) => (
+                          <tr key={row.creativeId} className="border-t border-slate-800">
+                            <td className="px-3 py-2 font-mono text-xs text-slate-100">{row.creativeId}</td>
+                            <td className="px-3 py-2">{row.lpv}</td>
+                            <td className="px-3 py-2">{row.checkoutViewed}</td>
+                            <td className="px-3 py-2">{row.checkout}</td>
+                            <td className="px-3 py-2">{row.purchase}</td>
+                            <td className="px-3 py-2">{formatUsdFromCents(row.revenueCents)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-slate-500">
@@ -543,6 +663,7 @@ export default function PetFunnelAnalyticsPage() {
                   </tbody>
                 </table>
               </div>
+              )}
             </SectionCard>
 
             <SectionCard title="Daily performance" subtitle="Date · Spend · LPV · Checkout · Purchases · Revenue · ROAS">

@@ -398,6 +398,32 @@ export type ConfirmUploadResponse = {
   photoStored: true;
 };
 
+export type UpdateOrderContactRequest = {
+  orderId: string;
+  publicToken: string;
+  email: string;
+  petName: string;
+};
+
+export type UpdateOrderContactResponse = {
+  orderId: string;
+  email: string;
+  petName: string;
+  updated: true;
+};
+
+export type RecordV3InitiateCheckoutRequest = {
+  orderId: string;
+  publicToken: string;
+  eventId: string;
+};
+
+export type RecordV3InitiateCheckoutResponse = {
+  eventId: string;
+  sent: boolean;
+  alreadySent: boolean;
+};
+
 export type CreateStripeCheckoutRequest = {
   orderId: string;
   publicToken: string;

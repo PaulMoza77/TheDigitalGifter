@@ -12,8 +12,16 @@ export type V3CheckoutResult = {
   amountCents?: number;
 };
 
-/** First-party V3 initiate checkout — only after Stripe session is created/opened. */
-export function trackV3BeginCheckout(input: {
+/** Embedded payment form became visible and usable — once per session. */
+export function trackV3CheckoutViewed(): void {
+  trackPetV3Event({ eventName: "v3_checkout_viewed" });
+}
+
+/**
+ * First-party V3 initiate checkout — only after meaningful payment interaction
+ * (PaymentElement focus/change or Pay button), not when the form renders.
+ */
+export function trackV3BeginCheckoutOnInteraction(input: {
   result: V3CheckoutResult;
   fallbackAmountCents?: number | null;
 }): boolean {
@@ -31,4 +39,12 @@ export function trackV3BeginCheckout(input: {
     attemptId: input.result.orderId,
   });
   return true;
+}
+
+/** @deprecated Use trackV3BeginCheckoutOnInteraction after payment interaction. Kept for tests. */
+export function trackV3BeginCheckout(input: {
+  result: V3CheckoutResult;
+  fallbackAmountCents?: number | null;
+}): boolean {
+  return trackV3BeginCheckoutOnInteraction(input);
 }
