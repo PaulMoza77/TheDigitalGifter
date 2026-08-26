@@ -25,8 +25,10 @@ describe("V3 dashboard analytics contract", () => {
   it("loads isolated V3 RPCs when the V3 dataset is selected", () => {
     const hook = readSrc("src/hooks/usePetFunnelAnalytics.ts");
     expect(hook).toContain('datasetId === "v3"');
+    expect(hook).toContain('datasetId !== "v3"');
     expect(hook).toContain('admin_pet_v3_funnel_step_counts');
     expect(hook).toContain('admin_pet_v3_dashboard_context');
+    expect(hook).toContain('admin_pet_v3_meta_context');
     expect(hook).toContain("v3ExtendedSteps");
     expect(hook).toContain('datasetId === "v3" ? asNumber(v3Backend.purchases)');
   });
@@ -89,7 +91,7 @@ describe("V3 dashboard analytics contract", () => {
     expect(hook).toContain('datasetId === "v3"');
     expect(hook).toContain("v3Context?.daily");
     expect(hook).toContain("v3Context?.checkout_daily");
-    expect(hook).toContain('datasetId === "v3"\n            ? []');
+    expect(hook).toContain("v3Meta?.daily");
     const migration = readSrc("supabase/migrations/20260826220000_pet_v3_daily_chart.sql");
     expect(migration).toContain("'daily'");
     expect(migration).toContain("'checkout_daily'");

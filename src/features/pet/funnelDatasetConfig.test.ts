@@ -45,12 +45,14 @@ describe("funnelDatasetConfig", () => {
     expect(FUNNEL_DATASETS.v2.kpiLabels.landingHelper).not.toContain("pet_name_submitted");
   });
 
-  it("keeps V3 cat dataset isolated with no Meta campaign until configured", () => {
+  it("keeps V3 cat dataset isolated and resolves campaign ID from allowlist/env", () => {
     expect(FUNNEL_DATASETS.v3.campaignId).toBe("");
     expect(FUNNEL_DATASETS.v3.funnelVariant).toBe("v3_cat_preview");
     expect(FUNNEL_DATASETS.v3.eventSource).toBe("pet_v3_funnel_events");
     expect(isDatasetConfigured("v3")).toBe(false);
+    expect(isDatasetConfigured("v3", "120299999999999999")).toBe(true);
     expect(rpcCampaignIdForDataset("v3")).toBe("__not_configured__");
+    expect(rpcCampaignIdForDataset("v3", "120299999999999999")).toBe("120299999999999999");
 
     const counts = mapV3CountsToPrimarySteps(
       namedEventCounts([

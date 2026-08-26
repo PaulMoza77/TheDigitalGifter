@@ -4,6 +4,7 @@ import {
   defaultPetAdsSyncStartDate,
   discoverMetaCampaignEarliestDate,
   discoverPetV2TestingCampaign,
+  discoverPetV3TestingCampaign,
   fetchMetaAdsDailyInsights,
   META_CUSTOM_EVENT_RECOVERY,
   metaAdsConfigStatus,
@@ -121,6 +122,7 @@ async function syncMeta(
       .eq("enabled", true);
     if (allowError) throw allowError;
     const discoveredV2 = await discoverPetV2TestingCampaign();
+    const discoveredV3 = await discoverPetV3TestingCampaign();
     if (discoveredV2) {
       const { error: v2AllowError } = await service.from("pet_meta_campaign_allowlist").upsert(
         {
@@ -134,13 +136,37 @@ async function syncMeta(
       );
       if (v2AllowError) throw v2AllowError;
     }
-    const campaignIds = resolvePetMetaCampaignAllowlist((allowRows || []).map((row) => String(row.campaign_id || "")).concat(discoveredV2 ? [discoveredV2.id] : []));
+    if (discoveredV3) {
+      const { error: v3AllowError } = await service.from("pet_meta_campaign_allowlist").upsert(
+        {
+          campaign_id: discoveredV3.id,
+          label: discoveredV3.name,
+          enabled: true,
+          funnel_variant: "v3_cat_preview",
+          utm_campaign_aliases: ["cat-v3", "cat-v3-launch"],
+        },
+        { onConflict: "campaign_id" },
+      );
+      if (v3AllowError) throw v3AllowError;
+    }
+    const campaignIds = resolvePetMetaCampaignAllowlist(
+      (allowRows || []).map((row) => String(row.campaign_id || "")).concat(
+        discoveredV2 ? [discoveredV2.id] : [],
+        discoveredV3 ? [discoveredV3.id] : [],
+      ),
+    );
     if (!campaignIds.length) {
       throw new Error("Pet Meta campaign allowlist is empty; refusing to sync the entire ad account");
     }
     const allowlistUpsert = campaignIds.map((campaign_id) => ({
       campaign_id,
-      label: BUILTIN_PET_META_CAMPAIGN_LABELS[campaign_id] || "",
+      label:
+        BUILTIN_PET_META_CAMPAIGN_LABELS[campaign_id] ||
+        (discoveredV3?.id === campaign_id
+          ? discoveredV3.name
+          : discoveredV2?.id === campaign_id
+            ? discoveredV2.name
+            : ""),
       enabled: true,
     }));
     const { error: persistAllowError } = await service

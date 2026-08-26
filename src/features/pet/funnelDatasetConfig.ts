@@ -125,16 +125,28 @@ export function funnelDataset(id: FunnelDatasetId): FunnelDatasetConfig {
   return FUNNEL_DATASETS[id];
 }
 
-export function datasetCampaignId(id: FunnelDatasetId): string {
+/** Optional build-time override once Cat V3 campaign ID is known in Ads Manager. */
+export function v3MetaCampaignIdFromEnv(): string {
+  try {
+    return String(import.meta.env.VITE_PET_V3_META_CAMPAIGN_ID || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+export function datasetCampaignId(id: FunnelDatasetId, allowlistCampaignId?: string | null): string {
+  if (id === "v3") {
+    return v3MetaCampaignIdFromEnv() || FUNNEL_DATASETS.v3.campaignId.trim() || String(allowlistCampaignId || "").trim();
+  }
   return FUNNEL_DATASETS[id].campaignId.trim();
 }
 
-export function isDatasetConfigured(id: FunnelDatasetId): boolean {
-  return datasetCampaignId(id).length > 0;
+export function isDatasetConfigured(id: FunnelDatasetId, allowlistCampaignId?: string | null): boolean {
+  return datasetCampaignId(id, allowlistCampaignId).length > 0;
 }
 
-export function rpcCampaignIdForDataset(id: FunnelDatasetId): string {
-  return datasetCampaignId(id) || UNCONFIGURED_CAMPAIGN_ID;
+export function rpcCampaignIdForDataset(id: FunnelDatasetId, allowlistCampaignId?: string | null): string {
+  return datasetCampaignId(id, allowlistCampaignId) || UNCONFIGURED_CAMPAIGN_ID;
 }
 
 export function datasetSwitchLabel(id: FunnelDatasetId, liveName?: string | null): string {

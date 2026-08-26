@@ -368,11 +368,19 @@ export async function discoverMetaCampaignEarliestDate(
 export type MetaCampaignListRow = { id: string; name: string; effectiveStatus: string };
 
 const V2_CAMPAIGN_NAME_RE = /pet\s*tdg\s*funnel\s*v2\s*testing/i;
+const V3_CAMPAIGN_NAME_RE = /pet\s*tdg\s*cat\s*funnel\s*testing/i;
 
 export function matchV2TestingCampaign(
   campaigns: MetaCampaignListRow[],
 ): MetaCampaignListRow | null {
   const exact = campaigns.filter((row) => V2_CAMPAIGN_NAME_RE.test(row.name));
+  return exact.length === 1 ? exact[0] : null;
+}
+
+export function matchV3TestingCampaign(
+  campaigns: MetaCampaignListRow[],
+): MetaCampaignListRow | null {
+  const exact = campaigns.filter((row) => V3_CAMPAIGN_NAME_RE.test(row.name));
   return exact.length === 1 ? exact[0] : null;
 }
 
@@ -406,4 +414,14 @@ export async function listAdAccountCampaigns(): Promise<MetaCampaignListRow[]> {
 
 export async function discoverPetV2TestingCampaign(): Promise<MetaCampaignListRow | null> {
   return matchV2TestingCampaign(await listAdAccountCampaigns());
+}
+
+export async function discoverPetV3TestingCampaign(): Promise<MetaCampaignListRow | null> {
+  const configured = asString(Deno.env.get("PET_V3_META_CAMPAIGN_ID"));
+  if (/^\d{5,}$/.test(configured)) {
+    const campaigns = await listAdAccountCampaigns();
+    const match = campaigns.find((row) => row.id === configured);
+    return match || { id: configured, name: "Pet TDG Cat Funnel testing", effectiveStatus: "ACTIVE" };
+  }
+  return matchV3TestingCampaign(await listAdAccountCampaigns());
 }
