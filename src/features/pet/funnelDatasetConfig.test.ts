@@ -39,7 +39,7 @@ describe("funnelDatasetConfig", () => {
     expect(counts.order_review_viewed).toBe(9);
     expect(counts.initiate_checkout).toBe(4);
     expect(counts.purchase).toBe(2);
-    expect(FUNNEL_DATASETS.v2.kpiLabels.step2).toBe("Photo Uploads");
+    expect(FUNNEL_DATASETS.v2.kpiLabels.step2).toBe("Photos Selected");
     expect(FUNNEL_DATASETS.v2.kpiLabels.step3).toBe("Preview Viewed");
     expect(FUNNEL_DATASETS.v2.kpiLabels.step4).toBe("Unlock Clicks");
     expect(FUNNEL_DATASETS.v2.kpiLabels.landingHelper).not.toContain("pet_name_submitted");

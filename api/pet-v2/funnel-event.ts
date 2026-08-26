@@ -53,6 +53,51 @@ function asText(value: unknown, max = 200): string | null {
   return trimmed;
 }
 
+/** Keep in sync with src/features/pet-v2/failureCategory.ts (self-contained ingest). */
+function normalizeFailureCategory(raw: unknown): string | null {
+  const token = String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "")
+    .slice(0, 40);
+  if (!token) return null;
+  if (token === "rate_limit" || token === "ratelimited" || token === "rate_limited") return "rate_limit";
+  if (token === "heic_unsupported" || token === "heic" || token === "heif") return "heic_unsupported";
+  if (
+    token === "invalid_image" ||
+    token === "invalid_photo" ||
+    token === "validation" ||
+    token === "payload_too_large"
+  ) {
+    return "validation";
+  }
+  if (token === "timeout") return "timeout";
+  if (
+    token === "provider" ||
+    token === "provider_error" ||
+    token === "provider_auth" ||
+    token === "generation_failed"
+  ) {
+    return "provider";
+  }
+  if (token === "endpoint_unreachable" || token === "network") return "network";
+  if (token === "pre_provider" || token === "live_disabled") return "pre_provider";
+  if (
+    token === "rate_limit" ||
+    token === "validation" ||
+    token === "heic_unsupported" ||
+    token === "provider" ||
+    token === "timeout" ||
+    token === "pre_provider" ||
+    token === "network" ||
+    token === "unknown" ||
+    token === "server_error"
+  ) {
+    return token === "server_error" ? "unknown" : token;
+  }
+  return "unknown";
+}
+
 function parseV2EventBody(raw: unknown): {
   eventName: PetV2EventName;
   funnelSessionId: string;
@@ -72,6 +117,7 @@ function parseV2EventBody(raw: unknown): {
   adId: string | null;
   hasFbclid: boolean;
   referrerHost: string | null;
+  failureCategory: string | null;
 } {
   if (!raw || typeof raw !== "object") throw new Error("malformed_json");
   const row = raw as Record<string, unknown>;
@@ -86,6 +132,10 @@ function parseV2EventBody(raw: unknown): {
   const deviceRaw = row.device_type;
   const deviceType =
     deviceRaw === "mobile" || deviceRaw === "tablet" || deviceRaw === "desktop" ? deviceRaw : null;
+  const failureCategory =
+    eventName === "v2_preview_generation_failed" || eventName === "v2_upload_failed"
+      ? normalizeFailureCategory(row.failure_category)
+      : null;
   return {
     eventName: eventName as PetV2EventName,
     funnelSessionId: sessionId,
@@ -105,6 +155,7 @@ function parseV2EventBody(raw: unknown): {
     adId: asText(row.ad_id),
     hasFbclid: row.has_meta_click === true || row.has_fbclid === true,
     referrerHost: asText(row.referrer_host, 120),
+    failureCategory,
   };
 }
 
@@ -185,6 +236,7 @@ async function writePetV2FunnelEvent(raw: unknown): Promise<{ ok: true; duplicat
       p_client_event_id: validated.eventId,
       p_is_test: isTest,
       p_environment: environment,
+      p_failure_category: validated.failureCategory,
     }),
   });
   if (!response.ok) {
@@ -210,32 +262,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   let eventName = "unknown";
   try {
-    const body = req.body && typeof req.body === "object" ? req.body : {};
-    eventName = String((body as { event_name?: unknown }).event_name || "unknown");
-    const failureCategory = String((body as { failure_category?: unknown }).failure_category || "")
-      .replace(/[^a-z0-9_]/gi, "")
-      .slice(0, 40);
-    if (eventName === "v2_preview_generation_failed" && failureCategory) {
-      void persistV2WriteFailure({ eventName, category: failureCategory });
-    }
+    // Successfully ingested generation-failure events are product telemetry, not write failures.
     const result = await writePetV2FunnelEvent(req.body);
     return res.status(202).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "write_failed";
-    if (
-      message === "invalid_event" ||
-      message === "invalid_session" ||
-      message === "malformed_json" ||
-      message === "invalid_event" ||
-      message === "invalid_session" ||
-      message === "malformed_json"
-    ) {
+    if (req.body && typeof req.body === "object") {
+      eventName = String((req.body as { event_name?: unknown }).event_name || "unknown");
+    }
+    if (message === "invalid_event" || message === "invalid_session" || message === "malformed_json") {
       void persistV2WriteFailure({ eventName, category: message });
       return res.status(400).json({ error: message });
     }
     const category = message.startsWith("rpc_")
       ? "rpc_error"
-      : message === "missing_supabase_config" || message === "missing_supabase_config"
+      : message === "missing_supabase_config"
         ? "missing_supabase_config"
         : "write_failed";
     void persistV2WriteFailure({ eventName, category });

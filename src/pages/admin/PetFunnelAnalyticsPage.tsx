@@ -32,9 +32,10 @@ const EVENT_COPY: Record<string, string> = {
   purchase: "purchase",
   v2_landing_view: "v2 landing",
   v2_upload_started: "upload started",
-  v2_upload_completed: "upload completed",
+  v2_upload_completed: "photo selected (client-validated file)",
   v2_preview_generation_started: "preview generation started",
   v2_preview_generation_completed: "preview generation completed",
+  v2_preview_generation_failed: "preview generation failed",
   v2_preview_viewed: "preview viewed",
   v2_offer_viewed: "offer viewed",
   v2_unlock_clicked: "unlock clicked",
@@ -65,10 +66,14 @@ function TrackingHealth({
   kpis,
   latestFirstPartyAt,
   failedWrites,
+  rejectedRequests,
+  unavailableReason,
 }: {
   kpis: { firstPartyLandings: number; metaLpv: number | null; lpv: number | null };
   latestFirstPartyAt: string | null | undefined;
   failedWrites: number | null;
+  rejectedRequests?: number | null;
+  unavailableReason?: string | null;
 }) {
   const metaLpv = kpis.metaLpv ?? kpis.lpv;
   const coverage = trackingCoverageSignal(kpis.firstPartyLandings, metaLpv);
@@ -84,10 +89,20 @@ function TrackingHealth({
         {metaLpv != null ? ` / ${metaLpv} Meta LPV` : ""}
         {coverage.ratio == null ? "" : ` (${(coverage.ratio * 100).toFixed(0)}%)`}
       </p>
-      <p className="mt-1 text-xs text-slate-500">
-        Latest first-party event: {latestFirstPartyAt ? new Date(latestFirstPartyAt).toLocaleString("en-US") : "none in view"}
-        {failedWrites == null ? "" : ` · Failed server writes: ${failedWrites}`}
-      </p>
+      {unavailableReason ? (
+        <p className="mt-1 text-xs text-slate-500">{unavailableReason}</p>
+      ) : (
+        <p className="mt-1 text-xs text-slate-500">
+          Latest first-party event:{" "}
+          {latestFirstPartyAt ? new Date(latestFirstPartyAt).toLocaleString("en-US") : "none in view"}
+          {failedWrites == null
+            ? ""
+            : ` · Failed analytics writes: ${failedWrites} (RPC/config/write only)`}
+          {rejectedRequests == null
+            ? ""
+            : ` · Rejected analytics requests: ${rejectedRequests} (origin/validation — not failed writes)`}
+        </p>
+      )}
     </SectionCard>
   );
 }
@@ -327,7 +342,13 @@ export default function PetFunnelAnalyticsPage() {
                 <StatCard
                   label={labels.step2}
                   value={formatMetricOrDash(kpis.names)}
-                  helper={[kpis.namesSource.replace(/_/g, " "), ofPreviousLabel(kpis.names, kpis.firstPartyLandings, labels.step2Of)].filter(Boolean).join(" · ")}
+                  helper={[
+                    labels.step2Helper,
+                    kpis.namesSource.replace(/_/g, " "),
+                    ofPreviousLabel(kpis.names, kpis.firstPartyLandings, labels.step2Of),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 />
                 <StatCard
                   label={labels.step3}
@@ -350,7 +371,12 @@ export default function PetFunnelAnalyticsPage() {
                 <StatCard
                   label={labels.checkout}
                   value={formatMetricOrDash(kpis.checkouts)}
-                  helper={["Production customer Stripe Checkout", ofPreviousLabel(kpis.checkouts, kpis.reviews, labels.checkoutOf)].filter(Boolean).join(" · ")}
+                  helper={[
+                    "Production customer Stripe Checkout only",
+                    ofPreviousLabel(kpis.checkouts, kpis.reviews, labels.checkoutOf),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 />
                 <StatCard
                   label="Purchases"
@@ -358,16 +384,32 @@ export default function PetFunnelAnalyticsPage() {
                   helper={[comparisonHelper(kpis.purchases, report.previousSteps[5]?.sessions ?? 0) || "Paid production", ofPreviousLabel(kpis.purchases, kpis.checkouts, "checkouts")].filter(Boolean).join(" · ")}
                 />
               </div>
+              {report.checkoutDiagnostics ? (
+                <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                  Checkout diagnostics — Customer opens: {report.checkoutDiagnostics.customer}
+                  {" · "}Internal: {report.checkoutDiagnostics.internal}
+                  {" · "}Test: {report.checkoutDiagnostics.test}
+                  {report.checkoutDiagnostics.promo
+                    ? ` · Promo: ${report.checkoutDiagnostics.promo}`
+                    : ""}
+                  {" · "}First-party begin checkout: {report.checkoutDiagnostics.firstPartyBeginCheckout}.
+                  Internal/admin Stripe testing is excluded from the business Initiate Checkouts KPI.
+                </p>
+              ) : null}
             </SectionCard>
 
             <TrackingHealth
               kpis={kpis}
               latestFirstPartyAt={
-                report.trackingHealth?.latestFirstPartyAt ??
-                report.recent[0]?.createdAt ??
-                report.firstPartyTrackingStartedAt
+                report.trackingHealth?.unavailableReason
+                  ? null
+                  : report.trackingHealth?.latestFirstPartyAt ??
+                    report.recent[0]?.createdAt ??
+                    report.firstPartyTrackingStartedAt
               }
               failedWrites={report.trackingHealth?.failedWrites ?? null}
+              rejectedRequests={report.trackingHealth?.rejectedRequests ?? null}
+              unavailableReason={report.trackingHealth?.unavailableReason ?? null}
             />
 
             <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">

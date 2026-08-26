@@ -5,6 +5,7 @@ import {
 } from "../pet/funnelAttribution";
 import { inferDeviceType } from "../pet/funnelSession";
 import { newFunnelUuid } from "../pet/funnelEventContract";
+import { normalizeV2FailureCategory } from "./failureCategory";
 import { getPetV2SessionId } from "./session";
 import {
   PET_V2_EVENT_PATH,
@@ -107,7 +108,7 @@ export function trackPetV2Event(input: TrackV2Input): void {
         : null;
     const failureCategory =
       typeof input.failureCategory === "string"
-        ? input.failureCategory.replace(/[^a-z0-9_]/gi, "").slice(0, 40)
+        ? normalizeV2FailureCategory(input.failureCategory)
         : null;
     const eventId = newFunnelUuid();
     const payload = {
