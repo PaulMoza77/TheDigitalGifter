@@ -108,7 +108,10 @@ export type PetV2PreviewResponse = {
     | "timeout"
     | "provider_error"
     | "invalid_image"
-    | "server_error";
+    | "server_error"
+    | "claim_unavailable"
+    | "claim_orphan"
+    | "migration_required";
   failureCategory?: PetV2FailureCategory;
   remainingSession?: number;
   remainingIp?: number;

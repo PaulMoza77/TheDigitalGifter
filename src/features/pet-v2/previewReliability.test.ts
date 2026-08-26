@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   decideAcquirePreviewCreate,
+  retryAfterSecondsFromOldest,
   simulateConcurrentAcquire,
 } from "./acquirePreviewCreate";
 import { previewErrorUiState } from "./previewErrors";
@@ -11,7 +12,7 @@ import {
   resolveGenerateAttempt,
   shouldRestoreLocalPreview,
 } from "./previewFlow";
-import { convertHeicToJpegFile, isHeicPhoto } from "./heic";
+import { convertHeicToJpegFile, HEIC_MAX_BYTES_BEFORE_CONVERT, isHeicPhoto } from "./heic";
 import { validateV2PhotoFile } from "./photo";
 import { PET_V2_MAX_FREE_PREVIEWS_PER_IP_PER_DAY, PET_V2_MAX_FREE_PREVIEWS_PER_SESSION } from "./types";
 
@@ -24,8 +25,15 @@ describe("V2 preview quota docs", () => {
     expect(V2_PREVIEW_QUOTA_DOCS.sessionMax).toBe(PET_V2_MAX_FREE_PREVIEWS_PER_SESSION);
     expect(V2_PREVIEW_QUOTA_DOCS.ipDayMax).toBe(PET_V2_MAX_FREE_PREVIEWS_PER_IP_PER_DAY);
     expect(V2_PREVIEW_QUOTA_DOCS.consumesOn).toContain("live_generation=true");
-    expect(V2_PREVIEW_QUOTA_DOCS.consumesOn).toContain("succeeded");
-    expect(rateLimitRetryAfterSeconds({ kind: "session" })).toBeGreaterThan(0);
+    expect(V2_PREVIEW_QUOTA_DOCS.reservesOn).toContain("processing");
+    expect(V2_PREVIEW_QUOTA_DOCS.deployOrder).toMatch(/migration/);
+  });
+
+  it("computes retryAfterSeconds from oldest rolling-window row", () => {
+    const now = Date.parse("2026-08-26T12:00:00.000Z");
+    const oldest = "2026-08-26T00:00:00.000Z";
+    expect(retryAfterSecondsFromOldest(oldest, now)).toBe(12 * 3600);
+    expect(rateLimitRetryAfterSeconds({ kind: "session", oldestCreatedAt: oldest })).toBeGreaterThan(0);
     expect(rateLimitUserMessage({ kind: "ip", retryAfterSeconds: 6 * 3600 })).toMatch(/5 per 24/);
   });
 });
@@ -48,7 +56,18 @@ describe("exactly-once acquire decision", () => {
     ).toBe("resume");
   });
 
-  it("treats missing rows as missing", () => {
+  it("returns orphan_timeout for abandoned processing without prediction", () => {
+    const started = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    expect(
+      decideAcquirePreviewCreate({
+        status: "processing",
+        prediction_id: null,
+        started_at: started,
+      }).action,
+    ).toBe("orphan_timeout");
+  });
+
+  it("treats missing rows as missing (fail closed upstream)", () => {
     expect(decideAcquirePreviewCreate(null).action).toBe("missing");
   });
 });
@@ -94,11 +113,11 @@ describe("rate-limit UX", () => {
       errorCode: "rate_limited",
       failureCategory: "rate_limit",
       rateLimitKind: "session",
-      retryAfterSeconds: 3600,
-      error: rateLimitUserMessage({ kind: "session", retryAfterSeconds: 3600 }),
+      retryAfterSeconds: 7200,
+      error: rateLimitUserMessage({ kind: "session", retryAfterSeconds: 7200 }),
     });
     expect(ui.kind).toBe("rate_limited");
-    expect(ui.retryAfterSeconds).toBe(3600);
+    expect(ui.retryAfterSeconds).toBe(7200);
     expect(ui.message).toMatch(/2 per 24/);
   });
 });
@@ -106,6 +125,14 @@ describe("rate-limit UX", () => {
 describe("HEIC conversion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("rejects oversized HEIC before loading heic2any", async () => {
+    const heic2any = (await import("heic2any")).default as unknown as ReturnType<typeof vi.fn>;
+    const huge = new File([new Uint8Array([1])], "big.HEIC", { type: "image/heic" });
+    Object.defineProperty(huge, "size", { value: HEIC_MAX_BYTES_BEFORE_CONVERT + 1 });
+    await expect(convertHeicToJpegFile(huge)).rejects.toThrow(/heic_too_large/);
+    expect(heic2any).not.toHaveBeenCalled();
   });
 
   it("converts HEIC to JPEG successfully (mocked)", async () => {
@@ -159,7 +186,6 @@ describe("Back/restore and replace-photo regressions", () => {
 
 describe("provider kill-switch contract", () => {
   it("PET_V2_PREVIEW_LIVE=false is the documented live kill switch", () => {
-    // Client falls back to mock when edge returns live_disabled; edge reads PET_V2_PREVIEW_LIVE.
     expect("PET_V2_PREVIEW_LIVE").toMatch(/PET_V2_PREVIEW_LIVE/);
     const liveKill = String("false").toLowerCase() === "false";
     expect(liveKill).toBe(true);

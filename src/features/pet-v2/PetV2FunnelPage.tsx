@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import { PetApiError, startPetCheckout } from "../pet/api";
-import { PET_DEFAULT_PERSONALITY } from "../pet/types";
+import { PET_DEFAULT_PERSONALITY, PET_PHOTO_MAX_BYTES } from "../pet/types";
 import { petFunnelApi } from "../pet/supabaseApi";
 import { shouldTrackPetBeginCheckout } from "../pet/funnelAnalytics";
 import { validateOtherSubtype, validatePetName } from "../pet/croGuards";
@@ -105,6 +105,16 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
 
     let file = picked;
     if (isHeicPhoto(picked)) {
+      if (picked.size > PET_PHOTO_MAX_BYTES) {
+        setPhotoError("Photos must be 15 MB or smaller. Try a slightly smaller file.");
+        trackPetV2Event({
+          eventName: "v2_upload_failed",
+          species,
+          failureCategory: "invalid_image",
+        });
+        go("photo");
+        return;
+      }
       setIsConvertingHeic(true);
       setPhotoError(HEIC_CONVERTING_MESSAGE);
       try {

@@ -1,17 +1,19 @@
-# V2 free-preview quotas
+# V2 free-preview quotas & claim safety
 
-Authoritative enforcement: `supabase/functions/pet-v2-preview` + `pet_v2_preview_attempts`.
+Authoritative enforcement: `begin_pet_v2_preview_create` + `supabase/functions/pet-v2-preview`.
 
-| Scope | Limit | Window | Resets |
+| Scope | Limit | Window | Counts toward limit |
 | --- | --- | --- | --- |
-| Session (`funnel_session_id`) | **2** successful live gens | Rolling **24h** | When the oldest counted success ages past 24h |
-| IP (hashed) | **5** successful live gens | Rolling **24h** | Same |
-| Image hash | **2** successful live gens | Rolling **24h** | Same |
+| Session | **2** | Rolling **24h** | `succeeded`+`live_generation` **or** `processing` reservation |
+| IP (hashed) | **5** | Rolling **24h** | same |
+| Image hash | **2** | Rolling **24h** | same |
 
-**What consumes quota:** only rows with `live_generation=true` **and** `status=succeeded`.
+**Retry-after:** `ceil((oldest_counted.created_at + 24h) - now)` — not a hardcoded 1h/6h.
 
-**Does not consume quota:** validation failures, HEIC rejection, rate-limit rejects, `live_disabled`, provider errors before a succeeded live mark, or any pre-provider failure.
+**Fail closed:** if the RPC is missing/unavailable, the edge returns `503 claim_unavailable` and **never** calls Replicate.
 
-**Resume / retry:** the same `idempotency_key` bypasses quota checks and must not create a second Replicate prediction when one already exists (`acquire_pet_v2_preview_create` + resume).
+**Orphans:** `processing` without `prediction_id` older than ~90s → `orphan_timeout` (no second create for that key).
+
+**Deploy order:** apply migration first, then deploy the edge function.
 
 Client `sessionStorage` previewCount is a UX hint only.

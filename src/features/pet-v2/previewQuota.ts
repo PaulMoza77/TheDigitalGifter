@@ -1,16 +1,22 @@
+import { retryAfterSecondsFromOldest } from "./acquirePreviewCreate";
+
 /**
- * V2 free-preview quotas (server truth in pet-v2-preview).
+ * V2 free-preview quotas (server truth in begin_pet_v2_preview_create).
  *
- * Session: max 2 successful live generations per funnel_session_id in a rolling 24h window.
- * IP: max 5 successful live generations per hashed IP in a rolling 24h window.
- * Image hash: max 2 successful live generations per image hash in a rolling 24h window.
+ * Session: max 2 successful live gens + active processing reservations / session / rolling 24h.
+ * IP: max 5 / day.
+ * Image hash: max 2 / day.
  *
- * Only rows with live_generation=true AND status=succeeded consume quota.
- * Failed validation, rate-limit rejects, live_disabled, and other pre-provider failures
- * do not insert a succeeded live row — they do not consume quota.
- * Resume/replay of the same idempotency key bypasses quota checks.
+ * Consumed permanently: live_generation=true AND status=succeeded.
+ * Reserved while status=processing (released when marked failed without success).
+ * Failed validation / pre-provider / rate-limit rejects do not consume succeeded quota.
+ * Same idempotency key resumes without a second create.
  *
- * Client sessionStorage previewCount is a UX hint only; server limits are authoritative.
+ * retryAfterSeconds is derived from the oldest counted row in the rolling window
+ * (oldest.created_at + 24h - now), not a hardcoded 1h/6h hint.
+ *
+ * Client sessionStorage previewCount is a UX hint only.
+ * Deploy order: migration first, then pet-v2-preview edge.
  */
 export const V2_PREVIEW_QUOTA_DOCS = {
   sessionMax: 2,
@@ -18,16 +24,19 @@ export const V2_PREVIEW_QUOTA_DOCS = {
   imageHashMax: 2,
   windowHours: 24,
   consumesOn: "live_generation=true AND status=succeeded",
-  resets: "Rolling 24 hours from each successful live generation timestamp",
+  reservesOn: "status=processing",
+  resets: "Rolling 24 hours from the oldest counted succeeded/processing row",
+  deployOrder: "migration begin_pet_v2_preview_create first, then pet-v2-preview edge",
 } as const;
 
 export function rateLimitRetryAfterSeconds(input: {
   kind: "session" | "ip" | "image" | "unknown";
+  oldestCreatedAt?: string | null;
 }): number {
-  // Rolling window — advise waiting until the oldest success ages out.
-  if (input.kind === "session") return 60 * 60; // 1h soft hint; full reset within 24h
-  if (input.kind === "image") return 60 * 60;
-  return 60 * 60 * 6; // IP: longer backoff suggestion
+  if (input.oldestCreatedAt) {
+    return retryAfterSecondsFromOldest(input.oldestCreatedAt);
+  }
+  return 1;
 }
 
 export function rateLimitUserMessage(input: {

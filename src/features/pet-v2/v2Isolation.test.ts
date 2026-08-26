@@ -121,7 +121,8 @@ describe("pet funnel V2 isolation", () => {
     expect(previewApi).not.toContain("pet-generate");
     expect(previewApi).not.toContain("../_lib/petV2");
     expect(edgePreview).toContain("black-forest-labs/flux-kontext-pro");
-    expect(edgePreview).toContain("ctx.claimRpc");
+    expect(edgePreview).toContain("begin_pet_v2_preview_create");
+    expect(edgePreview).toContain("ctx.attemptsTable");
     expect(readSrc("supabase/functions/_shared/pet/previewFunnelContext.ts")).toContain(
       "claim_pet_v2_preview_attempt",
     );
@@ -136,8 +137,10 @@ describe("pet funnel V2 isolation", () => {
     );
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("resolveGenerateAttempt");
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("shouldRestoreLocalPreview");
-    expect(edgePreview).toContain("acquire_pet_v2_preview_create");
+    expect(edgePreview).toContain("begin_pet_v2_preview_create");
+    expect(edgePreview).toContain("claim_unavailable");
     expect(edgePreview).toContain("retryAfterSeconds");
+    expect(edgePreview).not.toContain("Fallback without RPC");
     expect(readSrc("src/features/pet-v2/previewClient.ts")).not.toContain("response.mode === \"mock\" || !response.ok");
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("createReplicatePrediction");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("applyV2SaleAmount");

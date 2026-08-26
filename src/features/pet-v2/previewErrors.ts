@@ -55,7 +55,28 @@ export function previewErrorUiState(response: PreviewErrorInput): {
       retryAfterSeconds:
         typeof response.retryAfterSeconds === "number" && response.retryAfterSeconds > 0
           ? Math.round(response.retryAfterSeconds)
-          : 3600,
+          : null,
+    };
+  }
+  if (response.errorCode === "claim_orphan") {
+    return {
+      kind: "unknown",
+      title: "Previous attempt stuck",
+      message:
+        response.error ||
+        "A previous attempt got stuck before the preview provider started. Replace the photo for a fresh attempt.",
+      retryAfterSeconds: null,
+    };
+  }
+  if (response.errorCode === "claim_unavailable" || response.errorCode === "migration_required") {
+    return {
+      kind: "provider_unavailable",
+      title: "Preview temporarily unavailable",
+      message:
+        response.error ||
+        "Preview claiming is temporarily unavailable. Please try again in a moment.",
+      retryAfterSeconds:
+        typeof response.retryAfterSeconds === "number" ? response.retryAfterSeconds : 15,
     };
   }
   if (category === "timeout") {
@@ -86,5 +107,8 @@ function categoryFromCode(
   if (code === "timeout") return "timeout";
   if (code === "provider_auth") return "provider_auth";
   if (code === "generation_failed" || code === "provider_error") return "provider_error";
+  if (code === "claim_unavailable" || code === "claim_orphan" || code === "migration_required") {
+    return "server_error";
+  }
   return undefined;
 }

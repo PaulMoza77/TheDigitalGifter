@@ -12,6 +12,9 @@ export const HEIC_USER_MESSAGE =
 
 export const HEIC_CONVERTING_MESSAGE = "Converting iPhone photo…";
 
+/** Max bytes accepted before loading heic2any (same as general photo cap). */
+export const HEIC_MAX_BYTES_BEFORE_CONVERT = 15 * 1024 * 1024;
+
 export function isHeicPhoto(file: Pick<File, "name" | "type">): boolean {
   const mime = String(file.type || "").toLowerCase();
   if (HEIC_MIME.has(mime)) return true;
@@ -30,9 +33,12 @@ export function heicPickerAccept(): string {
 /**
  * Convert HEIC/HEIF to a JPEG File (orientation preserved by decoder).
  * Dynamically loads heic2any so the main bundle stays lighter.
- * Does not upload or log the photo.
+ * Rejects oversized files before decode. Does not upload or log the photo.
  */
 export async function convertHeicToJpegFile(file: File): Promise<File> {
+  if (file.size > HEIC_MAX_BYTES_BEFORE_CONVERT) {
+    throw new Error("heic_too_large");
+  }
   const heic2any = (await import("heic2any")).default;
   const result = await heic2any({
     blob: file,
