@@ -241,6 +241,9 @@ export function buildHybridStages(input: {
   void meta;
   void ga4;
   // First-party mid-funnel conversion never uses Meta LPV or GA4 as the landing denominator.
+  // Initiate Checkout + Purchase are always Stripe backend truth (customer / paid).
+  // firstPartyCounts.initiate_checkout may hold v2_begin_checkout for diagnostics only —
+  // it must not replace backendCheckouts on the primary KPI card.
   stages = [
     stage("landing_view", firstPartyCounts.landing_view, "first_party"),
     stage("pet_name_submitted", firstPartyCounts.pet_name_submitted, "first_party"),

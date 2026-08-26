@@ -253,6 +253,21 @@ export function usePetFunnelAnalytics(
       const backendRevenue = asNumber(backend.revenue_cents);
       const backendCheckouts = asNumber(backend.checkouts);
       const freeDiscountOrders = asNumber(backend.free_orders);
+      const checkoutDiagnostics = {
+        customer: backendCheckouts,
+        internal: asNumber(backend.internal_checkouts),
+        test: asNumber(backend.test_checkouts),
+        promo: asNumber(backend.promo_checkouts),
+        firstPartyBeginCheckout:
+          datasetId === "v2"
+            ? counts.initiate_checkout
+            : datasetId === "v3"
+              ? counts.initiate_checkout
+              : asNumber(
+                  ((payload.steps as RpcRow[]) || []).find((row) => String(row.event_name) === "initiate_checkout")
+                    ?.unique_sessions,
+                ),
+      };
       const liveName = ((payload.catalog as RpcRow[]) || [])
         .map((row) => ({
           campaignId: String(row.campaign_id || ""),
@@ -420,6 +435,7 @@ export function usePetFunnelAnalytics(
         previousSteps,
         hybridStages,
         hybridKpis,
+        checkoutDiagnostics,
         trackingHealth: {
           failedWrites: (() => {
             const health =

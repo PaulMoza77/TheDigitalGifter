@@ -19,6 +19,8 @@ export type FunnelDatasetConfig = {
     checkout: string;
     purchase: string;
     landingHelper: string;
+    /** Optional longer helper under the step2 card (V2 Photos Selected). */
+    step2Helper?: string;
     step2Of: string;
     step3Of: string;
     step4Of: string;
@@ -63,20 +65,22 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
     eventSource: "pet_v2_funnel_events",
     kpiLabels: {
       landing: "Landing Sessions",
-      step2: "Photo Uploads",
+      step2: "Photos Selected",
       step3: "Preview Viewed",
       step4: "Unlock Clicks",
       checkout: "Initiate Checkouts",
       purchase: "Purchases",
       landingHelper: "First-party landing",
+      step2Helper:
+        "Client-validated photo selections. This does not mean the photo was uploaded to cloud storage.",
       step2Of: "first-party landing",
-      step3Of: "uploads",
+      step3Of: "photos selected",
       step4Of: "previews",
       checkoutOf: "unlocks",
     },
     stageLabels: {
       landing_view: "Landing Sessions",
-      pet_name_submitted: "Photo Uploads",
+      pet_name_submitted: "Photos Selected",
       photo_upload_completed: "Preview Viewed",
       order_review_viewed: "Unlock Clicks",
       initiate_checkout: "Initiate Checkout",
@@ -167,7 +171,12 @@ export function mapV3CountsToPrimarySteps(v3: Record<string, number>): FunnelSte
   return counts;
 }
 
-/** Map isolated V2 event counts into the original 6-card funnel shape. */
+/** Map isolated V2 event counts into the original 6-card funnel shape.
+ *
+ * initiate_checkout / purchase here are first-party diagnostic totals only.
+ * The admin Initiate Checkouts / Purchases KPI cards intentionally use Stripe
+ * backend truth via buildHybridStages (customer-class checkouts / paid orders).
+ */
 export function mapV2CountsToPrimarySteps(v2: Record<string, number>): FunnelStepCounts {
   const counts = emptyStepCounts();
   counts.landing_view = v2.v2_landing_view || 0;

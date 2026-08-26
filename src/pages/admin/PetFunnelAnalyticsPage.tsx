@@ -32,9 +32,10 @@ const EVENT_COPY: Record<string, string> = {
   purchase: "purchase",
   v2_landing_view: "v2 landing",
   v2_upload_started: "upload started",
-  v2_upload_completed: "upload completed",
+  v2_upload_completed: "photo selected (client-validated file)",
   v2_preview_generation_started: "preview generation started",
   v2_preview_generation_completed: "preview generation completed",
+  v2_preview_generation_failed: "preview generation failed",
   v2_preview_viewed: "preview viewed",
   v2_offer_viewed: "offer viewed",
   v2_unlock_clicked: "unlock clicked",
@@ -86,7 +87,9 @@ function TrackingHealth({
       </p>
       <p className="mt-1 text-xs text-slate-500">
         Latest first-party event: {latestFirstPartyAt ? new Date(latestFirstPartyAt).toLocaleString("en-US") : "none in view"}
-        {failedWrites == null ? "" : ` · Failed server writes: ${failedWrites}`}
+        {failedWrites == null
+          ? ""
+          : ` · Failed analytics writes: ${failedWrites} (persistence/RPC only — generation failure events are not counted)`}
       </p>
     </SectionCard>
   );
@@ -327,7 +330,13 @@ export default function PetFunnelAnalyticsPage() {
                 <StatCard
                   label={labels.step2}
                   value={formatMetricOrDash(kpis.names)}
-                  helper={[kpis.namesSource.replace(/_/g, " "), ofPreviousLabel(kpis.names, kpis.firstPartyLandings, labels.step2Of)].filter(Boolean).join(" · ")}
+                  helper={[
+                    labels.step2Helper,
+                    kpis.namesSource.replace(/_/g, " "),
+                    ofPreviousLabel(kpis.names, kpis.firstPartyLandings, labels.step2Of),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 />
                 <StatCard
                   label={labels.step3}
@@ -350,7 +359,12 @@ export default function PetFunnelAnalyticsPage() {
                 <StatCard
                   label={labels.checkout}
                   value={formatMetricOrDash(kpis.checkouts)}
-                  helper={["Production customer Stripe Checkout", ofPreviousLabel(kpis.checkouts, kpis.reviews, labels.checkoutOf)].filter(Boolean).join(" · ")}
+                  helper={[
+                    "Production customer Stripe Checkout only",
+                    ofPreviousLabel(kpis.checkouts, kpis.reviews, labels.checkoutOf),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 />
                 <StatCard
                   label="Purchases"
@@ -358,6 +372,18 @@ export default function PetFunnelAnalyticsPage() {
                   helper={[comparisonHelper(kpis.purchases, report.previousSteps[5]?.sessions ?? 0) || "Paid production", ofPreviousLabel(kpis.purchases, kpis.checkouts, "checkouts")].filter(Boolean).join(" · ")}
                 />
               </div>
+              {report.checkoutDiagnostics ? (
+                <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                  Checkout diagnostics — Customer opens: {report.checkoutDiagnostics.customer}
+                  {" · "}Internal: {report.checkoutDiagnostics.internal}
+                  {" · "}Test: {report.checkoutDiagnostics.test}
+                  {report.checkoutDiagnostics.promo
+                    ? ` · Promo: ${report.checkoutDiagnostics.promo}`
+                    : ""}
+                  {" · "}First-party begin checkout: {report.checkoutDiagnostics.firstPartyBeginCheckout}.
+                  Internal/admin Stripe testing is excluded from the business Initiate Checkouts KPI.
+                </p>
+              ) : null}
             </SectionCard>
 
             <TrackingHealth
