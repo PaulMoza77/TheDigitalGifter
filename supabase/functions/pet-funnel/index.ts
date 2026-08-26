@@ -100,12 +100,20 @@ async function fetchStripeCheckoutSession(
 
 let cachedPublishableKey: string | null = null;
 
-async function resolvePublishableKey(stripeKey: string, checkoutUrl?: string | null): Promise<string | null> {
+async function resolvePublishableKey(
+  stripeKey: string,
+  checkoutUrl?: string | null,
+  sessionId?: string | null,
+): Promise<string | null> {
   const fromEnv = String(Deno.env.get("STRIPE_PUBLISHABLE_KEY") || "").trim();
   if (fromEnv.startsWith("pk_")) return fromEnv;
   if (cachedPublishableKey) return cachedPublishableKey;
   const urls: string[] = [];
   if (checkoutUrl) urls.push(checkoutUrl);
+  const sid = String(sessionId || "").trim();
+  if (sid.startsWith("cs_")) {
+    urls.push(`https://checkout.stripe.com/c/pay/${encodeURIComponent(sid)}`);
+  }
   if (!urls.length) {
     const listRes = await fetch("https://api.stripe.com/v1/checkout/sessions?limit=5", {
       headers: stripeAuthHeaders(stripeKey),
@@ -752,8 +760,7 @@ Deno.serve(async (req) => {
       }
 
       const requestedOnPage = ["custom", "embedded"].includes(asString(body.uiMode || body.ui_mode));
-      const publishableKey = requestedOnPage ? await resolvePublishableKey(stripeKey) : null;
-      const onPage = requestedOnPage && Boolean(publishableKey);
+      const onPage = requestedOnPage;
       const decision = decideCheckoutSessionAction({
         existingSession: amountChanged && existingView
           ? { ...existingView, status: "expired" }
@@ -775,7 +782,11 @@ Deno.serve(async (req) => {
             p_expected_session_id: storedSessionId || null,
           });
           const meta = petMetaCheckoutFields(order);
-          const publishableKey = await resolvePublishableKey(stripeKey, asString(existingView.url) || null);
+          const publishableKey = await resolvePublishableKey(
+            stripeKey,
+            asString(existingView.url) || null,
+            embeddedReuse.sessionId,
+          );
           if (!publishableKey) return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503);
           await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
           return jsonResponse({
@@ -904,7 +915,12 @@ Deno.serve(async (req) => {
           const matchedEmbedded = matchedEmbeddedCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
           if (!matchedEmbedded.ok) return checkoutConflict();
           const meta = petMetaCheckoutFields(order);
-          const publishableKey = await resolvePublishableKey(stripeKey, asString(winner?.url) || null);
+          const publishableKey = await resolvePublishableKey(
+            stripeKey,
+            asString(winner?.url) || null,
+            matchedEmbedded.sessionId,
+          );
+          if (!publishableKey) return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503);
           await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
           return jsonResponse({
             sessionId: matchedEmbedded.sessionId,
@@ -934,7 +950,12 @@ Deno.serve(async (req) => {
         const matchedEmbedded = matchedEmbeddedCheckoutResponse(session);
         if (!matchedEmbedded.ok) return checkoutConflict();
         const meta = petMetaCheckoutFields(order);
-        const publishableKey = await resolvePublishableKey(stripeKey, asString(session.url) || null);
+        const publishableKey = await resolvePublishableKey(
+          stripeKey,
+          asString(session.url) || null,
+          matchedEmbedded.sessionId,
+        );
+        if (!publishableKey) return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503);
         await service.rpc("pet_log_event", {
           p_order_id: order.id,
           p_action: "checkout_session_created",
