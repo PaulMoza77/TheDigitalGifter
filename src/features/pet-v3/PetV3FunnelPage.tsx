@@ -20,7 +20,6 @@ import { V3PhotoScreen } from "./screens/PhotoScreen";
 import { V3PreviewScreen } from "./screens/PreviewScreen";
 import { createV2LocalPreview, validateV2PhotoFile } from "../pet-v2/photo";
 import { getPetV3SessionId } from "./session";
-import { preloadDahliaStripe } from "../pet/stripeLoader";
 import {
   getV3PhotoFile,
   getV3PhotoObjectUrl,
@@ -63,7 +62,6 @@ export function PetV3FunnelPage() {
   });
 
   useEffect(() => {
-    preloadDahliaStripe();
     const next = loadV3Draft();
     setDraft(next);
     saveV3Draft(next);

@@ -62,24 +62,27 @@ describe("V3 embedded checkout", () => {
 
   it("does not include the old hosted-checkout Unlock CTA on the offer screen", () => {
     const offer = readSrc("src/features/pet-v3/screens/OfferScreen.tsx");
-    expect(offer).toContain("CustomStripeCheckout");
+    expect(offer).toContain("V3ElementsCheckout");
+    expect(offer).not.toContain("CustomStripeCheckout");
     expect(offer).not.toContain("Opening secure checkout");
     expect(offer).not.toContain("onContinue");
     expect(offer).not.toContain("copy.unlockCta");
   });
 
-  it("bootstraps embedded checkout with uiMode custom without redirect", () => {
+  it("bootstraps Elements checkout with uiMode elements without redirect", () => {
     const page = readSrc("src/features/pet-v3/PetV3FunnelPage.tsx");
     const hook = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
     expect(page).toContain("useV3EmbeddedCheckout");
     expect(page).not.toContain("window.location.assign(result.checkoutUrl)");
-    expect(hook).toContain('uiMode: "custom"');
+    expect(page).not.toContain("preloadDahliaStripe");
+    expect(hook).toContain('uiMode: V3_ELEMENTS_UI_MODE');
+    expect(hook).toContain('"elements"');
     expect(hook).toContain("bootstrapped.current = true");
   });
 
-  it("uses V3-isolated checkout session cache keys", () => {
+  it("uses V3-isolated Elements checkout session cache keys", () => {
     expect(V3_CHECKOUT_SESSION_CACHE_KEY).toContain("petFunnelV3");
-    expect(V3_CHECKOUT_SESSION_CACHE_KEY).not.toContain("checkoutSession.v2");
+    expect(V3_CHECKOUT_SESSION_CACHE_KEY).toContain("checkoutSession.v2");
   });
 
   it("reuses cached session instead of creating duplicates on re-read", () => {
@@ -177,7 +180,7 @@ describe("V3 embedded checkout", () => {
     expect(offer).toContain("onReady={markCheckoutViewed}");
     expect(offer).toContain("onInitError={() => {");
     expect(offer).toContain("checkout.invalidateStripeSession()");
-    expect(offer).toContain("onRecoverCheckout={checkout.retry}");
+    expect(offer).toContain("Continue to secure Stripe checkout");
   });
 
   it("fires begin_checkout only after meaningful payment interaction signal", () => {

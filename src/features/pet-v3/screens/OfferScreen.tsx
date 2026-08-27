@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CustomStripeCheckout } from "../../pet/components/CustomStripeCheckout";
+import { V3ElementsCheckout } from "../components/V3ElementsCheckout";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import { shouldTrackPetBeginCheckout } from "../../pet/funnelAnalytics";
 import { PET_V3_FUNNEL_CONFIG, v3PackOfferCopy } from "../config";
@@ -84,9 +84,69 @@ export function V3OfferScreen({
     }
   }
 
+  async function onHostedFallbackClick() {
+    if (!checkout.orderId || !checkout.publicToken) return;
+    const updated = await validateAndUpdateV3OrderContact({
+      api: petFunnelApi,
+      orderId: checkout.orderId,
+      publicToken: checkout.publicToken,
+      petName,
+      email,
+    });
+    if (!updated.ok) {
+      if (updated.focusId) {
+        document.getElementById(updated.focusId)?.focus();
+      }
+      return;
+    }
+    await checkout.startHostedFallback({
+      onSessionReady: (session) => {
+        if (beginCheckoutRef.current) return;
+        if (!checkout.orderId) return;
+        beginCheckoutRef.current = true;
+        const result = {
+          status: "open" as const,
+          sessionId: session.sessionId,
+          checkoutUrl: session.checkoutUrl,
+          orderId: checkout.orderId,
+          chargedAmountCents: checkout.amountCents,
+          eventId: checkout.eventId ?? undefined,
+        };
+        const tracked = trackV3BeginCheckoutOnInteraction({
+          result,
+          fallbackAmountCents: checkout.amountCents,
+        });
+        if (tracked && shouldTrackPetBeginCheckout(result)) {
+          const eventId = result.eventId || `pet_ic_${result.orderId}`;
+          trackMetaInitiateCheckout({
+            eventId,
+            valueCents: checkout.amountCents,
+            orderId: checkout.orderId,
+          });
+          if (checkout.publicToken) {
+            fireV3InitiateCheckoutOnce({
+              orderId: checkout.orderId,
+              publicToken: checkout.publicToken,
+              eventId,
+              amountCents: checkout.amountCents,
+            });
+          }
+        }
+      },
+    });
+  }
+
   const showExpired = checkout.sessionExpired;
-  const showRetry = Boolean(checkout.initError) && !showExpired;
-  const showCheckout = checkout.checkoutReady && checkout.clientSecret && checkout.publishableKey && !showExpired;
+  const showHostedFallback = checkout.showHostedFallback && !showExpired;
+  const showRetry = Boolean(checkout.initError) && !showExpired && !showHostedFallback;
+  const showCheckout =
+    checkout.checkoutReady &&
+    checkout.clientSecret &&
+    checkout.publishableKey &&
+    checkout.sessionId &&
+    checkout.publicToken &&
+    !showExpired &&
+    !showHostedFallback;
 
   return (
     <div className="space-y-6 overflow-x-hidden">
@@ -135,7 +195,7 @@ export function V3OfferScreen({
         className="min-h-[180px] overflow-hidden rounded-2xl border border-[#f6efe4]/10 bg-[#1a1410]/60 p-4"
         aria-label="Secure payment"
       >
-        {checkout.loading && !checkout.checkoutReady && !showExpired ? (
+        {checkout.loading && !checkout.checkoutReady && !showExpired && !showHostedFallback ? (
           <p className="py-8 text-center text-sm text-[#f6efe4]/55" role="status">
             Loading secure payment…
           </p>
@@ -152,6 +212,23 @@ export function V3OfferScreen({
               onClick={checkout.restartExpiredCheckout}
             >
               Upload your cat photo again
+            </Button>
+          </div>
+        ) : null}
+        {showHostedFallback ? (
+          <div className="space-y-3 py-4">
+            <p className="text-sm text-[#f6efe4]/70">
+              Secure card fields could not load in this browser. Continue on Stripe’s hosted checkout.
+            </p>
+            <Button
+              type="button"
+              className="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] disabled:opacity-40"
+              onClick={() => void onHostedFallbackClick()}
+              disabled={checkout.hostedFallbackBusy}
+            >
+              {checkout.hostedFallbackBusy
+                ? "Opening secure Stripe checkout…"
+                : "Continue to secure Stripe checkout — $12"}
             </Button>
           </div>
         ) : null}
@@ -172,12 +249,13 @@ export function V3OfferScreen({
           </div>
         ) : null}
         {showCheckout ? (
-          <CustomStripeCheckout
+          <V3ElementsCheckout
             clientSecret={checkout.clientSecret!}
             publishableKey={checkout.publishableKey!}
+            publicToken={checkout.publicToken!}
+            sessionId={checkout.sessionId!}
             email={email.trim() || undefined}
             dueDisplay={offer.priceDisplay}
-            appearanceTheme="night"
             appearanceVariables={V3_APPEARANCE}
             payButtonClassName="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] disabled:opacity-40"
             payButtonLabel={v3PayButtonLabel(petName)}
@@ -185,7 +263,6 @@ export function V3OfferScreen({
             loadingLabel="Loading secure payment…"
             onReady={markCheckoutViewed}
             onPaymentInteraction={markBeginCheckout}
-            onRecoverCheckout={checkout.retry}
             onInitError={() => {
               checkout.invalidateStripeSession();
             }}
@@ -206,7 +283,7 @@ export function V3OfferScreen({
             }}
           />
         ) : null}
-        {!checkout.loading && !showExpired && !showRetry && !showCheckout ? (
+        {!checkout.loading && !showExpired && !showRetry && !showCheckout && !showHostedFallback ? (
           <p className="py-8 text-center text-sm text-[#f6efe4]/55" role="status">
             Preparing secure payment…
           </p>

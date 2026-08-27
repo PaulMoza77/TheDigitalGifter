@@ -53,7 +53,14 @@ import {
   recordV3MetaInitiateCheckoutOnce,
   shouldDeferInitiateCheckoutToInteraction,
 } from "../_shared/pet/v3InitiateCheckout.ts";
-import { decideCheckoutSessionAction, isValidEmbeddedClientSecret, matchedEmbeddedCheckoutResponse, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
+import {
+  decideCheckoutSessionAction,
+  isValidEmbeddedClientSecret,
+  matchedEmbeddedCheckoutResponse,
+  matchedOpenCheckoutResponse,
+  normalizeCheckoutUiMode,
+  sessionMatchesRequestedUiMode,
+} from "../_shared/pet/checkout.ts";
 import {
   publishableKeyFingerprint,
   publishableKeyMatchesSecretMode,
@@ -72,15 +79,38 @@ import {
 
 type Body = Record<string, unknown>;
 
-/** Custom Checkout (`ui_mode: custom`) requires Stripe API 2025-03-31.basil or newer. */
-const STRIPE_API_VERSION = "2025-03-31.basil";
+/** Custom Checkout (`ui_mode: custom`) — Basil API used by V1. */
+const STRIPE_API_VERSION_CUSTOM = "2025-03-31.basil";
+/** Elements Checkout (`ui_mode: elements`) — official Stripe Dahlia quickstart version. */
+const STRIPE_API_VERSION_ELEMENTS = "2026-07-29.dahlia";
+/** Default for hosted / retrieve / V1 custom paths (backward compatible). */
+const STRIPE_API_VERSION = STRIPE_API_VERSION_CUSTOM;
 
-function stripeAuthHeaders(stripeKey: string, extra: Record<string, string> = {}): Record<string, string> {
+function stripeAuthHeaders(
+  stripeKey: string,
+  extra: Record<string, string> = {},
+  apiVersion: string = STRIPE_API_VERSION,
+): Record<string, string> {
   return {
     Authorization: `Bearer ${stripeKey}`,
-    "Stripe-Version": STRIPE_API_VERSION,
+    "Stripe-Version": apiVersion,
     ...extra,
   };
+}
+
+async function expireStripeCheckoutSession(stripeKey: string, sessionId: string): Promise<void> {
+  const id = String(sessionId || "").trim();
+  if (!id) return;
+  try {
+    await fetch(`https://api.stripe.com/v1/checkout/sessions/${id}/expire`, {
+      method: "POST",
+      headers: stripeAuthHeaders(stripeKey, {
+        "Content-Type": "application/x-www-form-urlencoded",
+      }),
+    });
+  } catch {
+    /* best-effort abandon of superseded unpaid sessions */
+  }
 }
 
 function apiError(code: string, message: string, status = 400, extra: Record<string, unknown> = {}) {
@@ -132,6 +162,7 @@ type CheckoutDiag = {
   sessionExists: boolean;
   livemode: boolean | null;
   customUi: boolean;
+  elementsUi: boolean;
   clientSecretValid: boolean;
   publishableMode: "live" | "test" | null;
   secretMode: "live" | "test" | null;
@@ -161,6 +192,7 @@ function buildCheckoutDiag(input: {
     sessionExists: input.sessionExists,
     livemode: input.session?.livemode ?? null,
     customUi: input.session?.ui_mode === "custom",
+    elementsUi: input.session?.ui_mode === "elements",
     clientSecretValid: isValidEmbeddedClientSecret(clientSecret, sessionId),
     publishableMode: publishableKey.startsWith("pk_live_")
       ? "live"
@@ -922,18 +954,29 @@ Deno.serve(async (req) => {
         amountChanged = true;
       }
 
-      const requestedOnPage = ["custom", "embedded"].includes(asString(body.uiMode || body.ui_mode));
-      const onPage = requestedOnPage;
+      const requestedUiMode = normalizeCheckoutUiMode(asString(body.uiMode || body.ui_mode));
+      const onPage = requestedUiMode === "custom" || requestedUiMode === "elements";
+      const existingMatchesUi =
+        Boolean(existingView?.id) &&
+        sessionMatchesRequestedUiMode(existingView?.ui_mode, requestedUiMode);
+      // Force recreate when amount changed OR when existing Session ui_mode mismatches the request
+      // (e.g. migrating V3 Custom secrets → Elements, or Elements → hosted fallback).
+      const forceCreate =
+        amountChanged ||
+        (Boolean(existingView?.id) && !paymentProcessing && !existingMatchesUi);
+      if (forceCreate && existingView?.id && !paymentProcessing && !existingMatchesUi) {
+        await expireStripeCheckoutSession(stripeKey, existingView.id);
+      }
       const decision = decideCheckoutSessionAction({
-        existingSession: amountChanged && existingView
+        existingSession: forceCreate && existingView
           ? { ...existingView, status: "expired" }
           : existingView,
         orderId: order.id,
         issuedCount: issuedCount || 0,
-        uiMode: onPage ? "custom" : "hosted",
+        uiMode: requestedUiMode === "elements" ? "elements" : onPage ? "custom" : "hosted",
       });
 
-      if (onPage && existingView?.id) {
+      if (onPage && existingView?.id && existingMatchesUi && !forceCreate) {
         const embeddedReuse = matchedEmbeddedCheckoutResponse({
           ...existingView,
           id: existingView.id || storedSessionId,
@@ -962,7 +1005,7 @@ Deno.serve(async (req) => {
           await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
           return jsonResponse({
             sessionId: embedded.sessionId,
-            checkoutUrl: embedded.checkoutUrl,
+            checkoutUrl: null,
             clientSecret: embedded.clientSecret,
             publishableKey: embedded.publishableKey,
             expiresAt: embedded.expiresAt,
@@ -1030,11 +1073,15 @@ Deno.serve(async (req) => {
       }
 
       const successUrl = `${siteOrigin()}/pet/order?token=${encodeURIComponent(publicToken)}&session_id={CHECKOUT_SESSION_ID}`;
-      // Canonical Session return_url / success_url — client confirm() must pass the same tokenized URL.
+      // Canonical Session return_url / success_url — Elements/Custom use return_url; hosted uses success_url.
       const cancelUrl = safeReturnUrl(asString(body.cancelUrl), `${siteOrigin()}/pet/checkout`);
       const params = new URLSearchParams();
       params.set("mode", "payment");
-      if (onPage) {
+      if (requestedUiMode === "elements") {
+        params.set("ui_mode", "elements");
+        params.set("return_url", successUrl);
+        params.set("expires_at", String(Math.floor(Date.now() / 1000) + 31 * 60));
+      } else if (requestedUiMode === "custom") {
         params.set("ui_mode", "custom");
         params.set("return_url", successUrl);
         params.set("expires_at", String(Math.floor(Date.now() / 1000) + 31 * 60));
@@ -1081,12 +1128,18 @@ Deno.serve(async (req) => {
       params.set("payment_intent_data[metadata][sku]", PET_SKU);
       params.set("payment_intent_data[metadata][pet_order_id]", order.id);
 
+      const createApiVersion =
+        requestedUiMode === "elements" ? STRIPE_API_VERSION_ELEMENTS : STRIPE_API_VERSION_CUSTOM;
       const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
         method: "POST",
-        headers: stripeAuthHeaders(stripeKey, {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Idempotency-Key": decision.idempotencyKey,
-        }),
+        headers: stripeAuthHeaders(
+          stripeKey,
+          {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Idempotency-Key": decision.idempotencyKey,
+          },
+          createApiVersion,
+        ),
         body: params,
       });
       const session = await stripeRes.json();
@@ -1193,12 +1246,16 @@ Deno.serve(async (req) => {
           p_order_id: order.id,
           p_action: "checkout_session_created",
           p_actor_type: "system",
-          p_payload: { ...embedded.diag, initiate_event_id: meta.eventId, ui_mode: "custom" },
+          p_payload: {
+            ...embedded.diag,
+            initiate_event_id: meta.eventId,
+            ui_mode: requestedUiMode,
+          },
         });
         await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
         return jsonResponse({
           sessionId: embedded.sessionId,
-          checkoutUrl: embedded.checkoutUrl,
+          checkoutUrl: null,
           clientSecret: embedded.clientSecret,
           publishableKey: embedded.publishableKey,
           expiresAt: embedded.expiresAt,

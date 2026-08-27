@@ -170,6 +170,7 @@ export type StripeCheckoutSessionView = {
   client_secret?: string | null;
   expires_at?: number | null;
   payment_status?: string | null;
+  ui_mode?: string | null;
 };
 
 export function sessionIsExpired(session: StripeCheckoutSessionView | null): boolean {
@@ -196,15 +197,38 @@ export function shouldReuseCheckoutSession(session: StripeCheckoutSessionView | 
   return true;
 }
 
+export type PetCheckoutUiMode = "hosted" | "embedded" | "custom" | "elements";
+
+/** Normalize client uiMode. `embedded` remains a V1 alias for Custom Checkout. */
+export function normalizeCheckoutUiMode(uiMode?: string | null): "hosted" | "custom" | "elements" {
+  const raw = String(uiMode || "").trim().toLowerCase();
+  if (raw === "elements") return "elements";
+  if (raw === "custom" || raw === "embedded") return "custom";
+  return "hosted";
+}
+
 export function isOnPageCheckoutUi(uiMode?: string | null): boolean {
-  return uiMode === "embedded" || uiMode === "custom";
+  const mode = normalizeCheckoutUiMode(uiMode);
+  return mode === "custom" || mode === "elements";
+}
+
+/** Reuse an open on-page Session only when its Stripe ui_mode matches the request. */
+export function sessionMatchesRequestedUiMode(
+  sessionUiMode: string | null | undefined,
+  requested: "custom" | "elements" | "hosted",
+): boolean {
+  const existing = String(sessionUiMode || "").trim().toLowerCase();
+  if (requested === "hosted") return !existing || existing === "hosted_page" || existing === "hosted";
+  if (requested === "elements") return existing === "elements";
+  if (requested === "custom") return existing === "custom";
+  return false;
 }
 
 export function decideCheckoutSessionAction(input: {
   existingSession: StripeCheckoutSessionView | null;
   orderId: string;
   issuedCount: number;
-  uiMode?: "hosted" | "embedded" | "custom";
+  uiMode?: PetCheckoutUiMode;
 }):
   | { action: "reuse"; sessionId: string; checkoutUrl: string }
   | { action: "create"; idempotencyKey: string; expectedSessionId: string | null }
