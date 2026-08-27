@@ -117,7 +117,7 @@ describe("Cat V3 + return URL payment hardening", () => {
     const hook = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
     expect(hook).toContain("readCachedV3EmbeddedCheckout()");
     expect(hook).toContain("hydrateFromCache");
-    expect(hook).toContain("valid checkout — restore without photo File");
+    expect(hook).toContain("valid Elements checkout — restore without photo File");
     expect(hook).not.toMatch(/localStorage.*photo|photo.*localStorage/i);
   });
 
@@ -147,7 +147,7 @@ describe("Cat V3 + return URL payment hardening", () => {
     const hook = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
     expect(hook).toContain("readRecoverableV3CheckoutOrder");
     expect(hook).toContain("recoverExistingOrderCheckout");
-    expect(hook).toContain("cached secret invalid — recover same unpaid order");
+    expect(hook).toContain("recover same unpaid order with one Elements Session");
   });
 
   it("refresh never consumes another preview and never stores raw photo in localStorage", () => {
@@ -161,20 +161,22 @@ describe("Cat V3 + return URL payment hardening", () => {
     expect(readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts")).not.toContain("remainingSessionPreviews");
   });
 
-  it("one Retry secure payment recovers the same order and disables while processing", () => {
+  it("one Retry / hosted fallback recovers the same order and disables while processing", () => {
     const offer = readSrc("src/features/pet-v3/screens/OfferScreen.tsx");
     const hook = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
-    const shared = readSrc("src/features/pet/components/CustomStripeCheckout.tsx");
+    const elements = readSrc("src/features/pet-v3/components/V3ElementsCheckout.tsx");
 
     expect(offer).toContain("onClick={checkout.retry}");
     expect(offer).toContain("disabled={checkout.loading}");
-    expect(offer).toContain("onRecoverCheckout={checkout.retry}");
+    expect(offer).toContain("Continue to secure Stripe checkout");
     expect(offer).toContain("onInitError={() => {");
     expect(offer).toContain("checkout.invalidateStripeSession()");
     expect(hook).toContain("if (bootstrapInFlight.current || loading) return");
     expect(hook).toContain("if (orderRef.current)");
-    expect(shared).toContain("onRecoverCheckout");
-    expect(shared).toContain("When parent owns recovery, do not offer a Stripe-only retry");
+    expect(hook).toContain("startHostedFallback");
+    expect(elements).toContain('from "@stripe/stripe-js"');
+    expect(elements).toContain("loadStripe");
+    expect(elements).not.toContain('from "../../pet/stripeLoader"');
   });
 
   it("never shows an empty payment container when checkout is unrecoverable", () => {

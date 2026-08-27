@@ -432,7 +432,7 @@ export type CreateStripeCheckoutRequest = {
   cancelUrl: string;
   customerEmail: string;
   promoCode?: string;
-  uiMode?: "hosted" | "embedded" | "custom";
+  uiMode?: "hosted" | "embedded" | "custom" | "elements";
   funnelSessionId?: string;
   deviceType?: "mobile" | "tablet" | "desktop";
   attribution?: {
@@ -464,6 +464,7 @@ export type CreateStripeCheckoutResponse = {
     sessionExists?: boolean;
     livemode?: boolean | null;
     customUi?: boolean;
+    elementsUi?: boolean;
     clientSecretValid?: boolean;
     publishableMode?: "live" | "test" | null;
     secretMode?: "live" | "test" | null;

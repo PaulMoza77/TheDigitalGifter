@@ -25,6 +25,7 @@ export const V3_CHECKOUT_EXPIRED_MESSAGE =
   "Your secure checkout session expired. Please upload your cat photo again.";
 const CHECKOUT_INIT_ERROR = "We couldn't load secure payment. Please try again.";
 const CONTACT_UPDATE_ERROR = "Could not save your details. Try again.";
+const V3_ELEMENTS_UI_MODE = "elements" as const;
 
 export type V3EmbeddedCheckoutState = {
   clientSecret: string | null;
@@ -38,9 +39,15 @@ export type V3EmbeddedCheckoutState = {
   initError: string | null;
   sessionExpired: boolean;
   checkoutReady: boolean;
+  /** After Elements fails (and one safe retry), show hosted Stripe fallback CTA. */
+  showHostedFallback: boolean;
+  hostedFallbackBusy: boolean;
   retry: () => void;
   restartExpiredCheckout: () => void;
   invalidateStripeSession: () => void;
+  startHostedFallback: (opts?: {
+    onSessionReady?: (session: { sessionId: string; checkoutUrl: string }) => void;
+  }) => Promise<void>;
 };
 
 function applyCheckoutResult(input: {
@@ -75,6 +82,7 @@ function applyCheckoutResult(input: {
     setEventId: (value: string | null) => void;
     setInitError: (value: string | null) => void;
     setSessionExpired: (value: boolean) => void;
+    setShowHostedFallback: (value: boolean) => void;
   };
 }): boolean {
   const { result, holdExpiresAt, setters } = input;
@@ -107,13 +115,15 @@ function applyCheckoutResult(input: {
     sessionId: result.sessionId,
     clientSecret: result.clientSecret,
     publishableKey: result.publishableKey,
-    checkoutUrl: result.checkoutUrl,
+    checkoutUrl: null,
     expiresAt: stripeExpiresAt,
     eventId: result.eventId,
     purchaseEventId: result.purchaseEventId,
     amountCents: result.amountCents,
     chargedAmountCents: result.chargedAmountCents,
     status: result.status,
+    checkoutMode: "elements",
+    cacheVersion: 2,
   });
 
   setters.setClientSecret(result.clientSecret!);
@@ -124,6 +134,7 @@ function applyCheckoutResult(input: {
   setters.setEventId(result.eventId ?? null);
   setters.setInitError(null);
   setters.setSessionExpired(false);
+  setters.setShowHostedFallback(false);
   return true;
 }
 
@@ -141,6 +152,7 @@ function hydrateFromCache(
   setters.setEventId(cached.eventId ?? null);
   setters.setInitError(null);
   setters.setSessionExpired(false);
+  setters.setShowHostedFallback(false);
 }
 
 export function useV3EmbeddedCheckout(input: {
@@ -153,6 +165,8 @@ export function useV3EmbeddedCheckout(input: {
   const api = input.api ?? petFunnelApi;
   const bootstrapped = useRef(false);
   const bootstrapInFlight = useRef(false);
+  const elementsRetryUsed = useRef(false);
+  const hostedFallbackUsed = useRef(false);
   const orderRef = useRef<{ orderId: string; publicToken: string } | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
@@ -163,6 +177,8 @@ export function useV3EmbeddedCheckout(input: {
   const [loading, setLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [showHostedFallback, setShowHostedFallback] = useState(false);
+  const [hostedFallbackBusy, setHostedFallbackBusy] = useState(false);
   const offer = v3PackOfferCopy();
 
   const setters = {
@@ -174,6 +190,7 @@ export function useV3EmbeddedCheckout(input: {
     setEventId,
     setInitError,
     setSessionExpired,
+    setShowHostedFallback,
   };
 
   const recoverExistingOrderCheckout = useCallback(async () => {
@@ -187,7 +204,7 @@ export function useV3EmbeddedCheckout(input: {
       successUrl: buildPetOrderReturnUrl(existing.publicToken),
       cancelUrl: `${window.location.origin}${PET_V3_ROUTE}`,
       customerEmail: v3BootstrapContact(getPetV3SessionId()).email,
-      uiMode: "custom",
+      uiMode: V3_ELEMENTS_UI_MODE,
       ...analytics,
       funnelSessionId: getPetV3SessionId(),
     });
@@ -207,7 +224,7 @@ export function useV3EmbeddedCheckout(input: {
         sessionId: checkout.sessionId,
         clientSecret: checkout.clientSecret,
         publishableKey: checkout.publishableKey,
-        checkoutUrl: checkout.checkoutUrl,
+        checkoutUrl: null,
         expiresAt: checkout.expiresAt,
         eventId: checkout.eventId,
         purchaseEventId: checkout.purchaseEventId,
@@ -231,6 +248,7 @@ export function useV3EmbeddedCheckout(input: {
     setSessionId(null);
     setEventId(null);
     setSessionExpired(true);
+    setShowHostedFallback(false);
     setInitError(V3_CHECKOUT_EXPIRED_MESSAGE);
   }, []);
 
@@ -240,19 +258,20 @@ export function useV3EmbeddedCheckout(input: {
 
     const cached = readCachedV3EmbeddedCheckout();
     if (cached && isValidCachedV3EmbeddedCheckout(cached)) {
-      // A: valid checkout — restore without photo File / new order / upload / preview.
+      // A: valid Elements checkout — restore without photo File / new order / upload / preview.
       hydrateFromCache(cached, orderRef, setters);
       return;
     }
 
     const recoverable = readRecoverableV3CheckoutOrder();
     if (recoverable) {
-      // B: cached secret invalid — recover same unpaid order with one new Custom Checkout session.
+      // B: cached secret invalid / Custom legacy — recover same unpaid order with one Elements Session.
       orderRef.current = { orderId: recoverable.orderId, publicToken: recoverable.publicToken };
       bootstrapInFlight.current = true;
       setLoading(true);
       setInitError(null);
       setSessionExpired(false);
+      setShowHostedFallback(false);
       try {
         const recovered = await recoverExistingOrderCheckout();
         if (recovered) return;
@@ -267,7 +286,6 @@ export function useV3EmbeddedCheckout(input: {
     }
 
     if (!input.photo || !input.file) {
-      // C: nothing recoverable — never show an empty checkout area.
       markExpired();
       return;
     }
@@ -276,6 +294,7 @@ export function useV3EmbeddedCheckout(input: {
     setLoading(true);
     setInitError(null);
     setSessionExpired(false);
+    setShowHostedFallback(false);
     const hold = readOrResetV3CheckoutHold();
     const funnelSessionId = getPetV3SessionId();
     const contact = v3BootstrapContact(funnelSessionId);
@@ -293,10 +312,9 @@ export function useV3EmbeddedCheckout(input: {
         cancelUrl: `${window.location.origin}${PET_V3_ROUTE}`,
         funnelVariant: "v3",
         funnelSessionId,
-        uiMode: "custom",
+        uiMode: V3_ELEMENTS_UI_MODE,
       });
 
-      // Server Session return_url is the single source of truth (token + {CHECKOUT_SESSION_ID}).
       orderRef.current = { orderId: result.orderId, publicToken: result.publicToken };
 
       if (result.status === "payment_processing" || result.status === "comped") {
@@ -307,14 +325,11 @@ export function useV3EmbeddedCheckout(input: {
       const applied = applyCheckoutResult({ result, holdExpiresAt: hold.expiresAt, setters });
       if (applied) return;
 
-      if (result.checkoutUrl?.startsWith("https://")) {
-        setInitError(CHECKOUT_INIT_ERROR);
-        return;
-      }
-
       setInitError(CHECKOUT_INIT_ERROR);
+      setShowHostedFallback(true);
     } catch (caught) {
       setInitError(CHECKOUT_INIT_ERROR);
+      setShowHostedFallback(true);
       console.error("[v3-checkout-init]", caught instanceof Error ? caught.name : "error");
     } finally {
       bootstrapInFlight.current = false;
@@ -330,12 +345,40 @@ export function useV3EmbeddedCheckout(input: {
   }, [input.active, bootstrap]);
 
   function invalidateStripeSession() {
+    // One safe Elements retry, then hosted fallback CTA (no endless Retry loops).
+    if (!elementsRetryUsed.current && orderRef.current) {
+      elementsRetryUsed.current = true;
+      clearCachedV3EmbeddedCheckout();
+      setClientSecret(null);
+      setPublishableKey(null);
+      setSessionId(null);
+      setInitError(null);
+      setSessionExpired(false);
+      setShowHostedFallback(false);
+      void (async () => {
+        setLoading(true);
+        try {
+          const recovered = await recoverExistingOrderCheckout();
+          if (!recovered) {
+            setInitError(CHECKOUT_INIT_ERROR);
+            setShowHostedFallback(true);
+          }
+        } catch {
+          setInitError(CHECKOUT_INIT_ERROR);
+          setShowHostedFallback(true);
+        } finally {
+          setLoading(false);
+        }
+      })();
+      return;
+    }
     clearCachedV3EmbeddedCheckout();
     setClientSecret(null);
     setPublishableKey(null);
     setSessionId(null);
     setInitError(CHECKOUT_INIT_ERROR);
     setSessionExpired(false);
+    setShowHostedFallback(true);
   }
 
   function restartExpiredCheckout() {
@@ -343,6 +386,8 @@ export function useV3EmbeddedCheckout(input: {
     orderRef.current = null;
     bootstrapped.current = false;
     bootstrapInFlight.current = false;
+    elementsRetryUsed.current = false;
+    hostedFallbackUsed.current = false;
     setClientSecret(null);
     setPublishableKey(null);
     setOrderId(null);
@@ -351,11 +396,17 @@ export function useV3EmbeddedCheckout(input: {
     setEventId(null);
     setInitError(null);
     setSessionExpired(false);
+    setShowHostedFallback(false);
     input.onRestartExpired?.();
   }
 
   function retry() {
     if (bootstrapInFlight.current || loading) return;
+    // Prefer hosted fallback over endless Elements retry once Elements already failed.
+    if (showHostedFallback || elementsRetryUsed.current) {
+      setShowHostedFallback(true);
+      return;
+    }
     clearCachedV3EmbeddedCheckout();
     bootstrapped.current = false;
     bootstrapInFlight.current = false;
@@ -374,6 +425,7 @@ export function useV3EmbeddedCheckout(input: {
           const recovered = await recoverExistingOrderCheckout();
           if (recovered) return;
           setInitError(CHECKOUT_INIT_ERROR);
+          setShowHostedFallback(true);
           return;
         }
         const recoverable = readRecoverableV3CheckoutOrder();
@@ -382,17 +434,56 @@ export function useV3EmbeddedCheckout(input: {
           const recovered = await recoverExistingOrderCheckout();
           if (recovered) return;
           setInitError(CHECKOUT_INIT_ERROR);
+          setShowHostedFallback(true);
           return;
         }
         bootstrapped.current = true;
         await bootstrap();
       } catch {
         setInitError(CHECKOUT_INIT_ERROR);
+        setShowHostedFallback(true);
       } finally {
         bootstrapInFlight.current = false;
         setLoading(false);
       }
     })();
+  }
+
+  async function startHostedFallback(opts?: {
+    onSessionReady?: (session: { sessionId: string; checkoutUrl: string }) => void;
+  }) {
+    if (hostedFallbackBusy || hostedFallbackUsed.current) return;
+    const existing = orderRef.current;
+    if (!existing) {
+      setInitError(CHECKOUT_INIT_ERROR);
+      return;
+    }
+    setHostedFallbackBusy(true);
+    try {
+      const analytics = checkoutAnalyticsContext();
+      const checkout = await api.createStripeCheckout({
+        orderId: existing.orderId,
+        publicToken: existing.publicToken,
+        successUrl: buildPetOrderReturnUrl(existing.publicToken),
+        cancelUrl: `${window.location.origin}${PET_V3_ROUTE}`,
+        customerEmail: v3BootstrapContact(getPetV3SessionId()).email,
+        uiMode: "hosted",
+        ...analytics,
+        funnelSessionId: getPetV3SessionId(),
+      });
+      const url = String(checkout.checkoutUrl || "").trim();
+      if (!url.startsWith("https://checkout.stripe.com/") || !checkout.sessionId) {
+        setInitError(CHECKOUT_INIT_ERROR);
+        return;
+      }
+      opts?.onSessionReady?.({ sessionId: checkout.sessionId, checkoutUrl: url });
+      hostedFallbackUsed.current = true;
+      window.location.assign(url);
+    } catch {
+      setInitError(CHECKOUT_INIT_ERROR);
+    } finally {
+      setHostedFallbackBusy(false);
+    }
   }
 
   return {
@@ -409,9 +500,12 @@ export function useV3EmbeddedCheckout(input: {
     checkoutReady:
       isValidEmbeddedClientSecret(clientSecret, sessionId) &&
       publishableKeyMatchesClientSecret(publishableKey, clientSecret),
+    showHostedFallback,
+    hostedFallbackBusy,
     retry,
     restartExpiredCheckout,
     invalidateStripeSession,
+    startHostedFallback,
   };
 }
 
@@ -441,7 +535,6 @@ export async function validateAndUpdateV3OrderContact(input: {
       return { ok: false, error: CONTACT_UPDATE_ERROR, focusId: "v3-email" };
     }
     if (updated.stripeSessionSynced === false) {
-      // Internal order email is the fulfillment source of truth; Stripe sync failure is non-blocking.
       console.info("[v3-contact-update]", {
         ok: true,
         stripeSessionSynced: false,
