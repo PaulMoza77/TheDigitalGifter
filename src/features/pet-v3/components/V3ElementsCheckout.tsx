@@ -19,8 +19,8 @@ const EXPRESS_OPTIONS = {
   buttonHeight: 55,
   buttonTheme: { applePay: "black" as const, googlePay: "black" as const },
   buttonType: { applePay: "buy" as const, googlePay: "buy" as const },
-  layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
-  paymentMethodOrder: ["apple_pay", "google_pay"],
+  layout: { maxColumns: 1, maxRows: 4 },
+  paymentMethodOrder: ["applePay", "googlePay"],
   paymentMethods: {
     applePay: "always" as const,
     googlePay: "always" as const,
