@@ -1,7 +1,7 @@
 /**
  * Isolated My Pet’s Secret Life V2 funnel.
  * Keeps its own storage, session IDs, and event names. Paid 12+2 generation
- * reuses the V1 order pipeline at the V2 $8 price.
+ * reuses the V1 order pipeline at the V2 $2.99 price.
  */
 
 import type { PetSubtype } from "../pet/types";
@@ -16,9 +16,9 @@ export const PET_V2_EVENT_PATH = "/api/pet-v2/funnel-event" as const;
 export const PET_V2_PREVIEW_PATH = "/api/pet-v2/preview" as const;
 export const PET_V2_PREVIEW_EDGE_PATH = "/functions/v1/pet-v2-preview" as const;
 
-/** V2 charges $8 from $27. Live V1 /pet/dog checkout is a separate $17 sale. */
-export const PET_V2_PRICE_CENTS = 800 as const;
-export const PET_V2_PRICE_DISPLAY = "$8" as const;
+/** V2 charges $2.99 from $27. Live V1 /pet/dog checkout is a separate $17 sale. */
+export const PET_V2_PRICE_CENTS = 299 as const;
+export const PET_V2_PRICE_DISPLAY = "$2.99" as const;
 export const PET_V2_COMPARE_PRICE_CENTS = 2700 as const;
 export const PET_V2_COMPARE_PRICE_DISPLAY = "$27" as const;
 /** @deprecated Use PET_V2_PRICE_* — kept for older imports/tests. */

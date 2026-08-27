@@ -238,7 +238,7 @@ export function V3OfferScreen({
             >
               {checkout.hostedFallbackBusy
                 ? "Opening secure Stripe checkout…"
-                : "Continue to secure Stripe checkout — $12"}
+                : `Continue to secure Stripe checkout — ${offer.priceDisplay}`}
             </Button>
           </div>
         ) : null}

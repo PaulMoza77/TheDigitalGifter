@@ -162,8 +162,8 @@ export function v3BootstrapContact(funnelSessionId: string): { email: string; pe
 }
 
 export function v3PayButtonLabel(petName: string) {
-  return (_payLabel: string) => {
+  return (payLabel: string) => {
     const name = petName.trim();
-    return name.length >= 2 ? `Pay $12 & unlock ${name}'s collection` : "Pay $12 & unlock your cat's collection";
+    return name.length >= 2 ? `Pay ${payLabel} & unlock ${name}'s collection` : `Pay ${payLabel} & unlock your cat's collection`;
   };
 }

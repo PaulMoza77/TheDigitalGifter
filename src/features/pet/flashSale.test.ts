@@ -63,7 +63,7 @@ describe("pet $17 flash sale", () => {
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("PET_SALE_PRICE_CENTS = 1700");
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain(PET_SALE_EXPIRES_AT_ISO);
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("applyV2SaleAmount");
-    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 800");
+    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 299");
     expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).not.toContain("petFlashSale");
     expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).toContain("v2FlashSale");
   });

@@ -164,8 +164,8 @@ describe("V3 embedded checkout", () => {
   });
 
   it("formats pay button with cat name when valid", () => {
-    expect(v3PayButtonLabel("Luna")("$12")).toBe("Pay $12 & unlock Luna's collection");
-    expect(v3PayButtonLabel("")("$12")).toContain("your cat");
+    expect(v3PayButtonLabel("Luna")("$2.99")).toBe("Pay $2.99 & unlock Luna's collection");
+    expect(v3PayButtonLabel("")("$2.99")).toContain("your cat");
   });
 
   it("fires checkout_viewed without auto-firing begin_checkout on page load", () => {

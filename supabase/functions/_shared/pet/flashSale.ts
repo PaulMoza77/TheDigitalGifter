@@ -12,7 +12,7 @@ export const PET_SALE_EXPIRES_AT_ISO = "2026-08-25T17:30:00.000Z" as const;
 export const PET_SALE_EXPIRES_AT_MS = Date.parse(PET_SALE_EXPIRES_AT_ISO);
 
 /**
- * @deprecated V2 now always charges PET_V2_PRICE_CENTS ($8) with a rolling UI timer.
+ * @deprecated V2 now always charges PET_V2_PRICE_CENTS ($2.99) with a rolling UI timer.
  * Kept so older imports still resolve.
  */
 export const PET_V2_SALE_EXPIRES_AT_ISO = "2026-08-26T18:35:00.000Z" as const;
@@ -57,12 +57,12 @@ export function applyPetFlashSaleAmount(listAmountCents: number, nowMs = Date.no
   return sale.active ? sale.amountCents : listAmountCents;
 }
 
-/** V2 always charges $8. Never uses the V1 $17 overlay or the $27 list price. */
+/** V2 always charges $2.99. Never uses the V1 $17 overlay or the $27 list price. */
 export function applyV2SaleAmount(_nowMs = Date.now()): number {
   return PET_V2_PRICE_CENTS;
 }
 
-/** V3 cat funnel is fixed at $12 for the launch test. */
+/** V3 cat funnel is fixed at $2.99 from $27. */
 export function applyV3SaleAmount(): number {
   return PET_V3_PRICE_CENTS;
 }

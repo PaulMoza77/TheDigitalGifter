@@ -12,7 +12,7 @@ export const PET_SALE_EXPIRES_AT_ISO = "2026-08-25T17:30:00.000Z" as const;
 export const PET_SALE_EXPIRES_AT_MS = Date.parse(PET_SALE_EXPIRES_AT_ISO);
 
 /**
- * @deprecated V2 now uses a rolling 24h $8 offer in pet-v2/v2FlashSale.ts.
+ * @deprecated V2 now uses a rolling 24h $2.99 offer in pet-v2/v2FlashSale.ts.
  * Kept so older imports/tests still resolve.
  */
 export const PET_V2_SALE_EXPIRES_AT_ISO = "2026-08-26T18:35:00.000Z" as const;
