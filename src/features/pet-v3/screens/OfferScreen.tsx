@@ -49,6 +49,16 @@ export function V3OfferScreen({
 
   function markCheckoutViewed() {
     if (checkoutViewedRef.current) return;
+    try {
+      const key = `tdg.petFunnelV3.checkoutViewed:${checkout.orderId || "unknown"}`;
+      if (sessionStorage.getItem(key) === "1") {
+        checkoutViewedRef.current = true;
+        return;
+      }
+      sessionStorage.setItem(key, "1");
+    } catch {
+      /* ignore */
+    }
     checkoutViewedRef.current = true;
     trackV3CheckoutViewed();
   }

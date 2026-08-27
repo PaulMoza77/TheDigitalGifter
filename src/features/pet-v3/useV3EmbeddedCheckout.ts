@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PetApiError, startPetCheckout, type PetFunnelApi } from "../pet/api";
+import { PetApiError, uploadPhotoToSignedUrl, type PetFunnelApi } from "../pet/api";
 import { petFunnelApi } from "../pet/supabaseApi";
 import { PET_DEFAULT_PERSONALITY } from "../pet/types";
 import { validatePetName } from "../pet/croGuards";
@@ -298,24 +298,63 @@ export function useV3EmbeddedCheckout(input: {
     const hold = readOrResetV3CheckoutHold();
     const funnelSessionId = getPetV3SessionId();
     const contact = v3BootstrapContact(funnelSessionId);
+    const analytics = checkoutAnalyticsContext();
 
     try {
-      const result = await startPetCheckout({
-        api,
+      // Create order first so hosted fallback can reuse it even if Elements session create fails.
+      const order = await api.createOrder({
         email: contact.email,
         petName: contact.petName,
         species: PET_V3_SPECIES,
         personality: PET_DEFAULT_PERSONALITY,
         photo: input.photo,
-        file: input.file,
-        successUrl: `${window.location.origin}/pet/order`,
-        cancelUrl: `${window.location.origin}${PET_V3_ROUTE}`,
+        sku: "pet-secret-life-12",
         funnelVariant: "v3",
-        funnelSessionId,
-        uiMode: V3_ELEMENTS_UI_MODE,
+      });
+      orderRef.current = { orderId: order.orderId, publicToken: order.publicToken };
+      setOrderId(order.orderId);
+      setPublicToken(order.publicToken);
+
+      const signed = await api.getSignedUploadUrl({
+        orderId: order.orderId,
+        publicToken: order.publicToken,
+        contentType: input.photo.contentType,
+        fileName: input.photo.fileName,
+        byteSize: input.photo.byteSize,
+      });
+      await uploadPhotoToSignedUrl(signed, input.file);
+      await api.confirmUpload({
+        orderId: order.orderId,
+        publicToken: order.publicToken,
+        objectPath: signed.objectPath,
       });
 
-      orderRef.current = { orderId: result.orderId, publicToken: result.publicToken };
+      const checkout = await api.createStripeCheckout({
+        orderId: order.orderId,
+        publicToken: order.publicToken,
+        successUrl: `${window.location.origin}/pet/order`,
+        cancelUrl: `${window.location.origin}${PET_V3_ROUTE}`,
+        customerEmail: contact.email,
+        uiMode: V3_ELEMENTS_UI_MODE,
+        ...analytics,
+        funnelSessionId,
+      });
+
+      const result = {
+        orderId: order.orderId,
+        publicToken: order.publicToken,
+        sessionId: checkout.sessionId,
+        clientSecret: checkout.clientSecret,
+        publishableKey: checkout.publishableKey,
+        checkoutUrl: null as string | null,
+        expiresAt: checkout.expiresAt,
+        eventId: checkout.eventId,
+        purchaseEventId: checkout.purchaseEventId,
+        amountCents: checkout.amountCents,
+        chargedAmountCents: checkout.chargedAmountCents,
+        status: checkout.status,
+        checkoutDiag: checkout.checkoutDiag,
+      };
 
       if (result.status === "payment_processing" || result.status === "comped") {
         window.location.assign(`/pet/order?token=${encodeURIComponent(result.publicToken)}`);
@@ -329,7 +368,7 @@ export function useV3EmbeddedCheckout(input: {
       setShowHostedFallback(true);
     } catch (caught) {
       setInitError(CHECKOUT_INIT_ERROR);
-      setShowHostedFallback(true);
+      setShowHostedFallback(Boolean(orderRef.current));
       console.error("[v3-checkout-init]", caught instanceof Error ? caught.name : "error");
     } finally {
       bootstrapInFlight.current = false;
@@ -453,11 +492,20 @@ export function useV3EmbeddedCheckout(input: {
     onSessionReady?: (session: { sessionId: string; checkoutUrl: string }) => void;
   }) {
     if (hostedFallbackBusy || hostedFallbackUsed.current) return;
-    const existing = orderRef.current;
+    const existing =
+      orderRef.current ||
+      (orderId && publicToken ? { orderId, publicToken } : null) ||
+      (() => {
+        const recoverable = readRecoverableV3CheckoutOrder();
+        return recoverable
+          ? { orderId: recoverable.orderId, publicToken: recoverable.publicToken }
+          : null;
+      })();
     if (!existing) {
       setInitError(CHECKOUT_INIT_ERROR);
       return;
     }
+    orderRef.current = existing;
     setHostedFallbackBusy(true);
     try {
       const analytics = checkoutAnalyticsContext();
