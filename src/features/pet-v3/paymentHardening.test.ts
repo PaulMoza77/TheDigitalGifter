@@ -61,21 +61,35 @@ describe("Cat V3 + return URL payment hardening", () => {
     expect(isTokenlessPetOrderReturnUrl(`${window.location.origin}/pet/order`)).toBe(true);
   });
 
-  it("V1 and V3 confirm() use tokenized return URLs; never bare /pet/order", () => {
+  it("server Session return_url is SoT; V1/V3 confirm() never passes client returnUrl", () => {
     const v1 = readSrc("src/features/pet/PetCheckoutPage.tsx");
     const v3 = readSrc("src/features/pet-v3/screens/OfferScreen.tsx");
     const shared = readSrc("src/features/pet/components/CustomStripeCheckout.tsx");
     const edge = readSrc("supabase/functions/pet-funnel/index.ts");
 
-    expect(v1).toContain("buildPetOrderReturnUrl(orderPublicToken)");
-    expect(v1).not.toMatch(/returnUrl=\{`\$\{window\.location\.origin\}\/pet\/order`\}/);
-    expect(v3).toContain("buildPetOrderReturnUrl(checkout.publicToken)");
-    expect(v3).not.toMatch(/returnUrl=\{`\$\{window\.location\.origin\}\/pet\/order`\}/);
-    expect(shared).toContain("assertTokenizedPetOrderReturnUrl");
-    expect(shared).toContain("returnUrl: canonicalReturnUrl");
     expect(edge).toContain(
       '/pet/order?token=${encodeURIComponent(publicToken)}&session_id={CHECKOUT_SESSION_ID}',
     );
+    expect(edge).toContain('params.set("return_url", successUrl)');
+    expect(shared).toContain("Server Session return_url is the only source of truth");
+    expect(shared).toContain("expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {}");
+    expect(shared).not.toContain("returnUrl:");
+    expect(shared).not.toMatch(/confirm\(\s*\{[^}]*returnUrl/);
+    expect(shared).not.toContain("Basil Custom Checkout requires returnUrl");
+    expect(v1).not.toContain("returnUrl=");
+    expect(v1).not.toContain("buildPetOrderReturnUrl");
+    expect(v3).not.toContain("returnUrl=");
+    expect(v3).not.toContain("buildPetOrderReturnUrl");
+    expect(isTokenlessPetOrderReturnUrl("https://www.thedigitalgifter.com/pet/order")).toBe(true);
+  });
+
+  it("tokenless client URL cannot override the server Session return_url", () => {
+    const shared = readSrc("src/features/pet/components/CustomStripeCheckout.tsx");
+    expect(shared).not.toContain("/pet/order");
+    expect(shared).not.toMatch(/\breturnUrl\s*:/);
+    expect(shared).not.toMatch(/returnUrl\s*=/);
+    expect(shared).not.toMatch(/confirm\(\s*\{[\s\S]*?returnUrl/);
+    expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("return_url");
   });
 
   it("V2 hosted checkout behavior remains redirect-based and unchanged", () => {
@@ -205,7 +219,19 @@ describe("Cat V3 + return URL payment hardening", () => {
     expect(routes).toContain('params.get("session_id")');
     expect(page).toContain("checkoutSessionId");
     expect(funnel).toContain("checkoutSessionId || body.sessionId");
-    expect(funnel).toContain("orderSessionId !== checkoutSessionId");
+    expect(funnel).toContain("!orderSessionId || orderSessionId !== checkoutSessionId");
+    expect(funnel).toContain("Strict relation");
+  });
+
+  it("V1 cache reuse requires publicToken; legacy partial cache is invalidated", () => {
+    const v1 = readSrc("src/features/pet/PetCheckoutPage.tsx");
+    const hold = readSrc("src/features/pet/checkoutHold.ts");
+    expect(hold).toContain("isValidCachedEmbeddedCheckout");
+    expect(hold).toContain("clearCachedEmbeddedCheckout");
+    expect(v1).toContain("isValidCachedEmbeddedCheckout(cached)");
+    expect(v1).toContain("clearCachedEmbeddedCheckout()");
+    expect(v1).toContain("Legacy/partial cache");
+    expect(v1).not.toContain("cached.publicToken || null");
   });
 
   it("browser success alone cannot mark paid; webhook remains payment source of truth", () => {

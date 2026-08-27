@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { CustomStripeCheckout } from "../../pet/components/CustomStripeCheckout";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import { shouldTrackPetBeginCheckout } from "../../pet/funnelAnalytics";
-import { buildPetOrderReturnUrl } from "../../pet/orderReturnUrl";
 import { PET_V3_FUNNEL_CONFIG, v3PackOfferCopy } from "../config";
 import { V3PackOffer } from "../V3PackOffer";
 import { trackV3BeginCheckoutOnInteraction, trackV3CheckoutViewed } from "../checkoutAnalytics";
@@ -88,7 +87,6 @@ export function V3OfferScreen({
   const showExpired = checkout.sessionExpired;
   const showRetry = Boolean(checkout.initError) && !showExpired;
   const showCheckout = checkout.checkoutReady && checkout.clientSecret && checkout.publishableKey && !showExpired;
-  const returnUrl = checkout.publicToken ? buildPetOrderReturnUrl(checkout.publicToken) : "";
 
   return (
     <div className="space-y-6 overflow-x-hidden">
@@ -173,13 +171,12 @@ export function V3OfferScreen({
             </Button>
           </div>
         ) : null}
-        {showCheckout && returnUrl ? (
+        {showCheckout ? (
           <CustomStripeCheckout
             clientSecret={checkout.clientSecret!}
             publishableKey={checkout.publishableKey!}
             email={email.trim() || undefined}
             dueDisplay={offer.priceDisplay}
-            returnUrl={returnUrl}
             appearanceTheme="night"
             appearanceVariables={V3_APPEARANCE}
             payButtonClassName="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] disabled:opacity-40"

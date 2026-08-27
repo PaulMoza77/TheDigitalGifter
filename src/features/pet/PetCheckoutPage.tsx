@@ -28,13 +28,14 @@ import {
 import { formatOfferPrice, resolveServerOwnedPromo } from "./videoGuards";
 import {
   checkoutPreparingHeadline,
+  clearCachedEmbeddedCheckout,
   formatHoldCountdown,
+  isValidCachedEmbeddedCheckout,
   readCachedEmbeddedCheckout,
   readOrResetCheckoutHold,
   remainingHoldMs,
   writeCachedEmbeddedCheckout,
 } from "./checkoutHold";
-import { buildPetOrderReturnUrl } from "./orderReturnUrl";
 
 export type PetCheckoutPageProps = {
   navigation?: PetFunnelNavigation;
@@ -54,7 +55,6 @@ export function PetCheckoutPage({
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
-  const [orderPublicToken, setOrderPublicToken] = useState<string | null>(null);
   const [holdExpiresAt, setHoldExpiresAt] = useState(() => readOrResetCheckoutHold().expiresAt);
   const [holdLabel, setHoldLabel] = useState(() => formatHoldCountdown(remainingHoldMs(holdExpiresAt)));
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -121,7 +121,6 @@ export function PetCheckoutPage({
         setHoldLabel(formatHoldCountdown(remainingHoldMs(next.expiresAt)));
         setClientSecret(null);
         setPublishableKey(null);
-        setOrderPublicToken(null);
         bootstrapped.current = false;
         return;
       }
@@ -194,11 +193,14 @@ export function PetCheckoutPage({
     }
 
     const cached = readCachedEmbeddedCheckout();
-    if (cached?.clientSecret && cached.publishableKey && !appliedPromo.code) {
-      setClientSecret(cached.clientSecret);
-      setPublishableKey(cached.publishableKey);
-      setOrderPublicToken(cached.publicToken || null);
-      return;
+    if (cached && !appliedPromo.code) {
+      if (isValidCachedEmbeddedCheckout(cached)) {
+        setClientSecret(cached.clientSecret!);
+        setPublishableKey(cached.publishableKey!);
+        return;
+      }
+      // Legacy/partial cache (e.g. missing publicToken) would hide checkout forever — invalidate and bootstrap.
+      clearCachedEmbeddedCheckout();
     }
 
     setSubmitting(true);
@@ -254,7 +256,6 @@ export function PetCheckoutPage({
         });
         setClientSecret(result.clientSecret);
         setPublishableKey(result.publishableKey);
-        setOrderPublicToken(result.publicToken);
         return;
       }
 
@@ -359,13 +360,12 @@ export function PetCheckoutPage({
               </p>
             ) : null}
 
-            {checkoutReady && clientSecret && publishableKey && orderPublicToken ? (
+            {checkoutReady && clientSecret && publishableKey ? (
               <CustomStripeCheckout
                 clientSecret={clientSecret}
                 publishableKey={publishableKey}
                 email={draft.email}
                 dueDisplay={dueDisplay}
-                returnUrl={buildPetOrderReturnUrl(orderPublicToken)}
               />
             ) : (
               <div className="space-y-4">

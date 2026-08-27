@@ -7,7 +7,6 @@ import {
 } from "@stripe/react-stripe-js/checkout";
 import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import { sanitizeStripeCheckoutCustomerError, stripeCheckoutInitCustomerError } from "../funnelGuards";
-import { assertTokenizedPetOrderReturnUrl } from "../orderReturnUrl";
 import { getStripePromise, reloadStripeForCheckout, stripeInstanceKeyFingerprint } from "../stripeLoader";
 import { ApplePayButton } from "./ApplePayButton";
 
@@ -39,7 +38,6 @@ function normalizeClientSecret(clientSecret: string): string {
 
 function CheckoutBody({
   dueDisplay,
-  returnUrl,
   email,
   payButtonLabel,
   busyLabel = "Paying…",
@@ -54,7 +52,6 @@ function CheckoutBody({
   payButtonClassName,
 }: {
   dueDisplay: string;
-  returnUrl: string;
   email?: string;
   payButtonLabel?: (payLabel: string) => string;
   busyLabel?: string;
@@ -77,7 +74,6 @@ function CheckoutBody({
   const readyFired = useRef(false);
   const interactionFired = useRef(false);
   const initErrorHandled = useRef(false);
-  const canonicalReturnUrl = useMemo(() => assertTokenizedPetOrderReturnUrl(returnUrl), [returnUrl]);
 
   useEffect(() => {
     if (checkoutState.type === "success" && !readyFired.current) {
@@ -153,11 +149,10 @@ function CheckoutBody({
     setError(null);
     try {
       await syncCheckoutEmail(checkoutState.checkout);
-      // Basil Custom Checkout requires returnUrl on confirm(); pass the exact tokenized Session URL.
-      const result = await checkoutState.checkout.confirm({
-        returnUrl: canonicalReturnUrl,
-        ...(expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {}),
-      });
+      // Server Session return_url is the only source of truth — do not pass client returnUrl.
+      const result = await checkoutState.checkout.confirm(
+        expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {},
+      );
       if (result.type === "error") {
         const message = sanitizeStripeCheckoutCustomerError(result.error.message);
         console.info("[stripe-checkout-confirm]", {
@@ -277,7 +272,6 @@ export function CustomStripeCheckout({
   publishableKey,
   email,
   dueDisplay,
-  returnUrl,
   payButtonLabel,
   busyLabel,
   loadingLabel,
@@ -295,7 +289,6 @@ export function CustomStripeCheckout({
   publishableKey: string;
   email?: string;
   dueDisplay: string;
-  returnUrl: string;
   payButtonLabel?: (payLabel: string) => string;
   busyLabel?: string;
   loadingLabel?: string;
@@ -363,7 +356,6 @@ export function CustomStripeCheckout({
     >
       <CheckoutBody
         dueDisplay={dueDisplay}
-        returnUrl={returnUrl}
         email={email}
         payButtonLabel={payButtonLabel}
         busyLabel={busyLabel}

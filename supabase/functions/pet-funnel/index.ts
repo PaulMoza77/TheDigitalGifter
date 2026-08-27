@@ -1472,8 +1472,8 @@ Deno.serve(async (req) => {
       const checkoutSessionId = asString(body.checkoutSessionId || body.sessionId);
       if (checkoutSessionId) {
         const orderSessionId = asString(order.stripe_checkout_session_id);
-        // Token must resolve this order; optional session_id must match when the order already has one.
-        if (orderSessionId && orderSessionId !== checkoutSessionId) {
+        // Strict relation: supplied session_id must equal the order's stored Stripe session.
+        if (!orderSessionId || orderSessionId !== checkoutSessionId) {
           return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
         }
       }
