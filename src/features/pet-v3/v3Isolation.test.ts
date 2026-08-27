@@ -233,8 +233,8 @@ describe("V3 dataset and pricing", () => {
     expect(v2.purchase).toBe(5);
   });
 
-  it("charges exactly $12 through pet-funnel for V3 without changing V2", () => {
-    expect(PET_V3_PRICE_CENTS).toBe(1200);
+  it("charges exactly $2.99 through pet-funnel for V3 without changing V2", () => {
+    expect(PET_V3_PRICE_CENTS).toBe(299);
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("applyV3SaleAmount");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain('metadata[funnel_version]", "v3"');
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain('metadata[species]"');

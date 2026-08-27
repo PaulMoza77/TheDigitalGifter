@@ -125,7 +125,7 @@ try {
   // Wait for checkout bootstrap + Stripe mount
   const deadline = Date.now() + 120_000;
   while (Date.now() < deadline) {
-    const payBtn = await page.getByRole("button", { name: /pay \$12/i }).count();
+    const payBtn = await page.getByRole("button", { name: /pay \$2\.99/i }).count();
     const loading = await page.getByText(/loading secure payment|preparing secure payment/i).count();
     const frames = page.frames().filter((f) => /elements|checkout|payment|basil|dahlia/i.test(f.url())).length;
     const cached = await page.evaluate(() => {
@@ -180,7 +180,7 @@ try {
   });
   const onOffer = (await page.getByText(/email for the gallery/i).count()) > 0;
   const expired = (await page.getByText(/secure checkout session expired/i).count()) > 0;
-  const payAfter = await page.getByRole("button", { name: /pay \$12/i }).count();
+  const payAfter = await page.getByRole("button", { name: /pay \$2\.99/i }).count();
   const framesAfter = page.frames().filter((f) => /elements|checkout|payment|basil|dahlia/i.test(f.url())).length;
   report.sessionExpiredShown = expired;
   report.refreshRestored = onOffer && !expired && (payAfter > 0 || framesAfter > 0 || Boolean(cachedAfter?.clientSecret));
