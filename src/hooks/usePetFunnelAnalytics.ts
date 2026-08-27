@@ -365,38 +365,27 @@ export function usePetFunnelAnalytics(
               }))
               .find((row) => row.campaignId === datasetCampaignId(datasetId, v3AllowlistCampaignId))?.name;
 
-      const hybridStages =
-        datasetId === "v3" && v3ExtendedSteps && v3ExtendedSteps.length > 0
-          ? v3ExtendedSteps.map((step) => ({
-              eventName: step.eventName,
-              label: step.label,
-              value: step.sessions,
-              source: "first_party" as const,
-              sourceLabel: "first-party",
-              fromPreviousPct: step.fromPreviousPct,
-              fromLandingPct: step.fromLandingPct,
-            }))
-          : buildHybridStages({
-              mode: rangeMode,
-              firstPartyCounts: counts,
-              backendCheckouts,
-              backendPurchases,
-              meta: {
-                landingPageViews: asNumber(metaTotals.landing_page_views),
-                initiateCheckouts: asNumber(metaTotals.initiate_checkouts),
-                purchases: asNumber(metaTotals.purchases),
-                petNameSubmitted: asNullableNumber(metaTotals.pet_name_submitted),
-                photoUploadCompleted: asNullableNumber(metaTotals.photo_upload_completed),
-                orderReviewViewed: asNullableNumber(metaTotals.order_review_viewed),
-              },
-              ga4: {
-                landingViews: asNumber(ga4Totals.landing_views),
-                petNameSubmitted: asNullableNumber(ga4Totals.pet_name_submitted),
-                photoUploadCompleted: asNullableNumber(ga4Totals.photo_upload_completed),
-                orderReviewViewed: asNullableNumber(ga4Totals.order_review_viewed),
-                beginCheckouts: asNumber(ga4Totals.begin_checkouts),
-              },
-            });
+      const hybridStages = buildHybridStages({
+        mode: rangeMode,
+        firstPartyCounts: counts,
+        backendCheckouts,
+        backendPurchases,
+        meta: {
+          landingPageViews: asNumber(metaTotals.landing_page_views),
+          initiateCheckouts: asNumber(metaTotals.initiate_checkouts),
+          purchases: asNumber(metaTotals.purchases),
+          petNameSubmitted: asNullableNumber(metaTotals.pet_name_submitted),
+          photoUploadCompleted: asNullableNumber(metaTotals.photo_upload_completed),
+          orderReviewViewed: asNullableNumber(metaTotals.order_review_viewed),
+        },
+        ga4: {
+          landingViews: asNumber(ga4Totals.landing_views),
+          petNameSubmitted: asNullableNumber(ga4Totals.pet_name_submitted),
+          photoUploadCompleted: asNullableNumber(ga4Totals.photo_upload_completed),
+          orderReviewViewed: asNullableNumber(ga4Totals.order_review_viewed),
+          beginCheckouts: asNumber(ga4Totals.begin_checkouts),
+        },
+      });
 
       const metaSpendCents = asNumber(meta.row_count) > 0 ? asNumber(metaTotals.spend_cents) : null;
       const hybridKpis = buildHybridKpis({
@@ -638,7 +627,12 @@ export function usePetFunnelAnalytics(
           ga4Missing: [],
         },
         kpis: firstPartyKpis,
-        campaigns: v3CampaignRows,
+        campaigns:
+          datasetId === "v3"
+            ? metaCampaignsRaw.length > 0
+              ? campaigns
+              : v3CampaignRows
+            : campaigns,
         ads: datasetId === "v3" ? [] : ads,
         species:
           datasetId === "v3"

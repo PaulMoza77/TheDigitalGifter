@@ -110,10 +110,24 @@ describe("V3 dashboard analytics contract", () => {
     expect(migration).not.toContain("funnel_variant, 'v1') = 'v2'");
   });
 
-  it("renders checkout viewed in the V3 dashboard UI", () => {
+  it("fixes creatives aggregation without correlating on ungrouped creative_id", () => {
+    const migration = readSrc("supabase/migrations/20260827180000_pet_v3_fix_creatives_group_by.sql");
+    expect(migration).toContain("admin_pet_v3_dashboard_context");
+    expect(migration).toContain("event_rollups");
+    expect(migration).toContain("purchase_rollups");
+    expect(migration).toContain("left join purchase_rollups pr using (creative_id)");
+    expect(migration).not.toContain(
+      "where c.creative_id = coalesce(nullif(btrim(e.creative_id), ''), nullif(btrim(e.utm_content), ''), 'unattributed')",
+    );
+  });
+
+  it("renders the shared six-stage funnel layout for V3 (same shell as V2)", () => {
     const page = readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx");
     expect(page).toContain('v3_checkout_viewed: "checkout viewed"');
-    expect(page).toContain('label="Checkout Viewed"');
-    expect(page).toContain("report.v3ExtendedSteps");
+    expect(page).not.toContain("V3 attribution filters");
+    expect(page).not.toContain('label="Checkout Viewed"');
+    expect(page).not.toContain("report.v3ExtendedSteps");
+    expect(page).not.toContain("report.v3Creatives");
+    expect(page).toContain("report.metaAds");
   });
 });

@@ -101,7 +101,7 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
       step2Of: "first-party landing",
       step3Of: "uploads",
       step4Of: "previews",
-      checkoutOf: "checkout viewed",
+      checkoutOf: "offers",
     },
     stageLabels: {
       landing_view: "Landing Sessions",
