@@ -38,7 +38,6 @@ function normalizeClientSecret(clientSecret: string): string {
 
 function CheckoutBody({
   dueDisplay,
-  returnUrl,
   email,
   payButtonLabel,
   busyLabel = "Paying…",
@@ -47,12 +46,12 @@ function CheckoutBody({
   onReady,
   onPaymentInteraction,
   onInitError,
+  onRecoverCheckout,
   onReloadCheckout,
   confirmDisabled,
   payButtonClassName,
 }: {
   dueDisplay: string;
-  returnUrl: string;
   email?: string;
   payButtonLabel?: (payLabel: string) => string;
   busyLabel?: string;
@@ -61,6 +60,8 @@ function CheckoutBody({
   onReady?: () => void;
   onPaymentInteraction?: () => void;
   onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
+  /** Order-aware recovery. When set, hides the Stripe-only secret reload retry. */
+  onRecoverCheckout?: () => void;
   onReloadCheckout?: () => void;
   confirmDisabled?: boolean;
   payButtonClassName?: string;
@@ -148,10 +149,10 @@ function CheckoutBody({
     setError(null);
     try {
       await syncCheckoutEmail(checkoutState.checkout);
-      const result = await checkoutState.checkout.confirm({
-        returnUrl,
-        ...(expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {}),
-      });
+      // Server Session return_url is the only source of truth — do not pass client returnUrl.
+      const result = await checkoutState.checkout.confirm(
+        expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {},
+      );
       if (result.type === "error") {
         const message = sanitizeStripeCheckoutCustomerError(result.error.message);
         console.info("[stripe-checkout-confirm]", {
@@ -180,6 +181,16 @@ function CheckoutBody({
   }
 
   if (checkoutState.type === "error") {
+    // When parent owns recovery, do not offer a Stripe-only retry that reloads the same invalid secret.
+    if (onRecoverCheckout) {
+      return (
+        <div className="space-y-3 py-2">
+          <p className="text-sm text-[#9a3412]" role="alert">
+            {stripeCheckoutInitCustomerError(checkoutState.error.message)}
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="space-y-3 py-2">
         <p className="text-sm text-[#9a3412]" role="alert">
@@ -207,8 +218,8 @@ function CheckoutBody({
       <ExpressCheckoutElement
         options={EXPRESS_OPTIONS}
         onReady={(event) => {
+          // Wallet availability is not Begin Checkout — only mount readiness / checkout_viewed.
           setApplePayFromStripe(Boolean(event.availablePaymentMethods?.applePay));
-          markInteraction();
         }}
         onConfirm={(event) => void confirm(event)}
         onClick={markInteraction}
@@ -261,7 +272,6 @@ export function CustomStripeCheckout({
   publishableKey,
   email,
   dueDisplay,
-  returnUrl,
   payButtonLabel,
   busyLabel,
   loadingLabel,
@@ -269,6 +279,7 @@ export function CustomStripeCheckout({
   onReady,
   onPaymentInteraction,
   onInitError,
+  onRecoverCheckout,
   confirmDisabled,
   appearanceTheme = "stripe",
   appearanceVariables,
@@ -278,7 +289,6 @@ export function CustomStripeCheckout({
   publishableKey: string;
   email?: string;
   dueDisplay: string;
-  returnUrl: string;
   payButtonLabel?: (payLabel: string) => string;
   busyLabel?: string;
   loadingLabel?: string;
@@ -286,6 +296,7 @@ export function CustomStripeCheckout({
   onReady?: () => void;
   onPaymentInteraction?: () => void;
   onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
+  onRecoverCheckout?: () => void;
   confirmDisabled?: boolean;
   appearanceTheme?: "stripe" | "night";
   appearanceVariables?: Record<string, string>;
@@ -345,7 +356,6 @@ export function CustomStripeCheckout({
     >
       <CheckoutBody
         dueDisplay={dueDisplay}
-        returnUrl={returnUrl}
         email={email}
         payButtonLabel={payButtonLabel}
         busyLabel={busyLabel}
@@ -354,6 +364,7 @@ export function CustomStripeCheckout({
         onReady={handleReady}
         onPaymentInteraction={onPaymentInteraction}
         onInitError={handleInitError}
+        onRecoverCheckout={onRecoverCheckout}
         onReloadCheckout={reloadCheckout}
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}

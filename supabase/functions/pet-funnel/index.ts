@@ -47,7 +47,7 @@ import {
 } from "../_shared/pet/mapOrder.ts";
 import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, resolveServerOwnedOffer, resolveServerOwnedPromo } from "../_shared/pet/videoGuards.ts";
 import { PET_SCENE_DEFINITIONS, sceneByKey } from "../_shared/pet/scenes.ts";
-import { petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
+import { isCheckoutPlaceholderEmail, petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
 import { parseCheckoutAttribution, recordPetFunnelInitiateCheckout } from "../_shared/pet/funnelEvents.ts";
 import {
   recordV3MetaInitiateCheckoutOnce,
@@ -250,7 +250,7 @@ async function maybeRecordInitiateCheckoutOnSessionCreate(
   await sendMetaCapiInitiateCheckout({
     eventId: meta.eventId,
     orderId: order.id,
-    email: asString(order.email),
+    email: isCheckoutPlaceholderEmail(asString(order.email)) ? null : asString(order.email),
     amountCents: meta.chargedAmountCents,
   });
   await recordPetFunnelInitiateCheckout(service, {
@@ -693,8 +693,11 @@ Deno.serve(async (req) => {
       if (!email || !email.includes("@") || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return apiError("INVALID_REQUEST", "A valid email is required.");
       }
+      if (isCheckoutPlaceholderEmail(email)) {
+        return apiError("INVALID_REQUEST", "A valid email is required.");
+      }
       if (petName.length < 2) return apiError("INVALID_REQUEST", "Pet name is required.");
-      await service
+      const { error: contactUpdateError } = await service
         .from("pet_orders")
         .update({
           email,
@@ -702,6 +705,10 @@ Deno.serve(async (req) => {
           pet_name: petName,
         })
         .eq("id", order.id);
+      if (contactUpdateError) {
+        console.error("[updateOrderContact] internal order update failed");
+        return apiError("INVALID_REQUEST", "Could not save your details. Try again.", 500);
+      }
 
       const sessionId = asString(order.stripe_checkout_session_id);
       const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
@@ -722,9 +729,10 @@ Deno.serve(async (req) => {
         );
         stripeSessionSynced = stripeRes.ok;
         if (!stripeRes.ok) {
+          // Delivery/fulfillment uses pet_orders.email (internal), not Stripe customer_email.
           const stripeErr = await stripeRes.json().catch(() => ({}));
           console.error(
-            "[updateOrderContact] stripe session sync failed",
+            "[updateOrderContact] stripe session sync failed; internal delivery email preserved",
             asString((stripeErr as { error?: { message?: string } })?.error?.message) || "unknown",
           );
         }
@@ -1022,6 +1030,7 @@ Deno.serve(async (req) => {
       }
 
       const successUrl = `${siteOrigin()}/pet/order?token=${encodeURIComponent(publicToken)}&session_id={CHECKOUT_SESSION_ID}`;
+      // Canonical Session return_url / success_url — client confirm() must pass the same tokenized URL.
       const cancelUrl = safeReturnUrl(asString(body.cancelUrl), `${siteOrigin()}/pet/checkout`);
       const params = new URLSearchParams();
       params.set("mode", "payment");
@@ -1460,6 +1469,14 @@ Deno.serve(async (req) => {
       const publicToken = asString(body.publicToken);
       const order = await findOrderByToken(service, publicToken);
       if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      const checkoutSessionId = asString(body.checkoutSessionId || body.sessionId);
+      if (checkoutSessionId) {
+        const orderSessionId = asString(order.stripe_checkout_session_id);
+        // Strict relation: supplied session_id must equal the order's stored Stripe session.
+        if (!orderSessionId || orderSessionId !== checkoutSessionId) {
+          return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+        }
+      }
       const scenes = await loadScenes(service, order.id);
       const clips = await loadClips(service, order.id);
 

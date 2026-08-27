@@ -70,10 +70,38 @@ export function readCachedV3EmbeddedCheckout(nowMs = Date.now()): V3CachedEmbedd
       return null;
     }
     if (!isValidCachedV3EmbeddedCheckout(parsed)) {
-      storage()?.removeItem(V3_CHECKOUT_SESSION_CACHE_KEY);
       return null;
     }
     return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Order identity for refresh recovery when the cached client secret is stale/invalid.
+ * Does not require a valid client secret. Never stores raw photo bytes.
+ */
+export function readRecoverableV3CheckoutOrder(nowMs = Date.now()): {
+  orderId: string;
+  publicToken: string;
+  sessionId?: string;
+  expiresAt: number;
+} | null {
+  const raw = storage()?.getItem(V3_CHECKOUT_SESSION_CACHE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as V3CachedEmbeddedCheckout;
+    const orderId = String(parsed.orderId || "").trim();
+    const publicToken = String(parsed.publicToken || "").trim();
+    if (!orderId || !publicToken) return null;
+    if (!Number.isFinite(parsed.expiresAt) || parsed.expiresAt <= nowMs) return null;
+    return {
+      orderId,
+      publicToken,
+      sessionId: String(parsed.sessionId || "").trim() || undefined,
+      expiresAt: parsed.expiresAt,
+    };
   } catch {
     return null;
   }

@@ -28,6 +28,8 @@ export type PetOrderPageProps = {
   navigation?: PetFunnelNavigation;
   api?: PetFunnelApi;
   publicToken?: string;
+  /** Stripe Checkout Session id from return URL; validated server-side against the order. */
+  checkoutSessionId?: string;
   previewOrder?: PetOrder;
   previewResults?: PetOrderResults;
 };
@@ -36,6 +38,7 @@ export function PetOrderPage({
   navigation,
   api = petFunnelApi,
   publicToken,
+  checkoutSessionId,
   previewOrder,
   previewResults,
 }: PetOrderPageProps) {
@@ -105,7 +108,12 @@ export function PetOrderPage({
         const token = publicToken!;
         const nextOrder = loadedOnce
           ? orderRef.current
-          : await withTimeout(api.getOrderByPublicToken({ publicToken: token }));
+          : await withTimeout(
+              api.getOrderByPublicToken({
+                publicToken: token,
+                ...(checkoutSessionId ? { checkoutSessionId } : {}),
+              }),
+            );
         if (cancelled) return;
         if (!nextOrder) {
           throw new PetApiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
@@ -200,7 +208,7 @@ export function PetOrderPage({
       cancelled = true;
       if (intervalId !== undefined) window.clearInterval(intervalId);
     };
-  }, [api, previewOrder, previewResults, publicToken]);
+  }, [api, previewOrder, previewResults, publicToken, checkoutSessionId]);
 
   const scenes = progress?.scenes ?? order?.scenes ?? [];
   const overallPercent = useMemo(() => {

@@ -75,6 +75,24 @@ export function readCachedEmbeddedCheckout(nowMs = Date.now()): CachedEmbeddedCh
   }
 }
 
+/** Reuse only when secret, publishable key, and order publicToken are all present. */
+export function isValidCachedEmbeddedCheckout(
+  cached: Pick<CachedEmbeddedCheckout, "clientSecret" | "publishableKey" | "publicToken"> | null | undefined,
+): boolean {
+  if (!cached) return false;
+  const clientSecret = String(cached.clientSecret || "").trim();
+  const publishableKey = String(cached.publishableKey || "").trim();
+  const publicToken = String(cached.publicToken || "").trim();
+  if (!clientSecret.includes("_secret_")) return false;
+  if (!publishableKey.startsWith("pk_")) return false;
+  if (!publicToken) return false;
+  return true;
+}
+
+export function clearCachedEmbeddedCheckout() {
+  storage()?.removeItem(CHECKOUT_SESSION_CACHE_KEY);
+}
+
 export function writeCachedEmbeddedCheckout(value: CachedEmbeddedCheckout) {
   storage()?.setItem(CHECKOUT_SESSION_CACHE_KEY, JSON.stringify(value));
 }

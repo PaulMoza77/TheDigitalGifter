@@ -410,6 +410,7 @@ export type UpdateOrderContactResponse = {
   email: string;
   petName: string;
   updated: true;
+  stripeSessionSynced?: boolean;
 };
 
 export type RecordV3InitiateCheckoutRequest = {
@@ -475,6 +476,8 @@ export type CreateStripeCheckoutResponse = {
 
 export type GetOrderByPublicTokenRequest = {
   publicToken: string;
+  /** Optional Stripe Checkout Session id from the return URL; must match the order when present. */
+  checkoutSessionId?: string;
 };
 
 export type PollGenerationProgressRequest = {

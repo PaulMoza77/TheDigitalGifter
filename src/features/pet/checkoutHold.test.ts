@@ -2,8 +2,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   CHECKOUT_HOLD_MS,
   checkoutPreparingHeadline,
+  clearCachedEmbeddedCheckout,
   formatHoldCountdown,
+  isValidCachedEmbeddedCheckout,
   readOrResetCheckoutHold,
+  writeCachedEmbeddedCheckout,
 } from "./checkoutHold";
 
 function installMemoryStorage() {
@@ -53,5 +56,32 @@ describe("checkout hold", () => {
 
   it("names the pet in the preparing headline", () => {
     expect(checkoutPreparingHeadline("Milo")).toBe("Your “Milo” secret lives are preparing now.");
+  });
+
+  it("rejects legacy cached checkout missing publicToken", () => {
+    expect(
+      isValidCachedEmbeddedCheckout({
+        clientSecret: "cs_test_abc_secret_xyz",
+        publishableKey: "pk_test_51abc",
+        publicToken: "",
+      }),
+    ).toBe(false);
+    expect(
+      isValidCachedEmbeddedCheckout({
+        clientSecret: "cs_test_abc_secret_xyz",
+        publishableKey: "pk_test_51abc",
+        publicToken: "tok_live_ok",
+      }),
+    ).toBe(true);
+    writeCachedEmbeddedCheckout({
+      orderId: "o1",
+      publicToken: "",
+      sessionId: "cs_test_1",
+      clientSecret: "cs_test_1_secret_a",
+      publishableKey: "pk_test_51",
+      expiresAt: Date.now() + 60_000,
+    });
+    clearCachedEmbeddedCheckout();
+    expect(isValidCachedEmbeddedCheckout(null)).toBe(false);
   });
 });

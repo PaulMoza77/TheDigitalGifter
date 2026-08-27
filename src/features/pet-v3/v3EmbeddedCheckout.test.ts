@@ -175,7 +175,9 @@ describe("V3 embedded checkout", () => {
     );
     const offer = readSrc("src/features/pet-v3/screens/OfferScreen.tsx");
     expect(offer).toContain("onReady={markCheckoutViewed}");
-    expect(offer).not.toContain("onInitError={checkout.invalidateStripeSession}");
+    expect(offer).toContain("onInitError={() => {");
+    expect(offer).toContain("checkout.invalidateStripeSession()");
+    expect(offer).toContain("onRecoverCheckout={checkout.retry}");
   });
 
   it("fires begin_checkout only after meaningful payment interaction signal", () => {
