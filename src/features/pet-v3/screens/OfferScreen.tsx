@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CustomStripeCheckout } from "../../pet/components/CustomStripeCheckout";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import { shouldTrackPetBeginCheckout } from "../../pet/funnelAnalytics";
+import { buildPetOrderReturnUrl } from "../../pet/orderReturnUrl";
 import { PET_V3_FUNNEL_CONFIG, v3PackOfferCopy } from "../config";
 import { V3PackOffer } from "../V3PackOffer";
 import { trackV3BeginCheckoutOnInteraction, trackV3CheckoutViewed } from "../checkoutAnalytics";
@@ -84,6 +85,11 @@ export function V3OfferScreen({
     }
   }
 
+  const showExpired = checkout.sessionExpired;
+  const showRetry = Boolean(checkout.initError) && !showExpired;
+  const showCheckout = checkout.checkoutReady && checkout.clientSecret && checkout.publishableKey && !showExpired;
+  const returnUrl = checkout.publicToken ? buildPetOrderReturnUrl(checkout.publicToken) : "";
+
   return (
     <div className="space-y-6 overflow-x-hidden">
       <div>
@@ -131,12 +137,27 @@ export function V3OfferScreen({
         className="min-h-[180px] overflow-hidden rounded-2xl border border-[#f6efe4]/10 bg-[#1a1410]/60 p-4"
         aria-label="Secure payment"
       >
-        {checkout.loading && !checkout.checkoutReady ? (
+        {checkout.loading && !checkout.checkoutReady && !showExpired ? (
           <p className="py-8 text-center text-sm text-[#f6efe4]/55" role="status">
             Loading secure payment…
           </p>
         ) : null}
-        {checkout.initError ? (
+        {showExpired ? (
+          <div className="space-y-3 py-4">
+            <p className="text-sm text-[#9a3412]" role="alert">
+              {checkout.initError}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full rounded-full border-[#f6efe4]/20 bg-transparent text-[#f6efe4]"
+              onClick={checkout.restartExpiredCheckout}
+            >
+              Upload your cat photo again
+            </Button>
+          </div>
+        ) : null}
+        {showRetry ? (
           <div className="space-y-3 py-4">
             <p className="text-sm text-[#9a3412]" role="alert">
               {checkout.initError}
@@ -152,13 +173,13 @@ export function V3OfferScreen({
             </Button>
           </div>
         ) : null}
-        {checkout.checkoutReady && checkout.clientSecret && checkout.publishableKey ? (
+        {showCheckout && returnUrl ? (
           <CustomStripeCheckout
-            clientSecret={checkout.clientSecret}
-            publishableKey={checkout.publishableKey}
+            clientSecret={checkout.clientSecret!}
+            publishableKey={checkout.publishableKey!}
             email={email.trim() || undefined}
             dueDisplay={offer.priceDisplay}
-            returnUrl={`${window.location.origin}/pet/order`}
+            returnUrl={returnUrl}
             appearanceTheme="night"
             appearanceVariables={V3_APPEARANCE}
             payButtonClassName="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] disabled:opacity-40"
@@ -167,6 +188,10 @@ export function V3OfferScreen({
             loadingLabel="Loading secure payment…"
             onReady={markCheckoutViewed}
             onPaymentInteraction={markBeginCheckout}
+            onRecoverCheckout={checkout.retry}
+            onInitError={() => {
+              checkout.invalidateStripeSession();
+            }}
             onBeforeConfirm={async () => {
               if (!checkout.orderId || !checkout.publicToken) {
                 return { ok: false, error: "Payment session expired. Retry secure payment.", focusId: undefined };
@@ -183,6 +208,11 @@ export function V3OfferScreen({
               return { ok: true };
             }}
           />
+        ) : null}
+        {!checkout.loading && !showExpired && !showRetry && !showCheckout ? (
+          <p className="py-8 text-center text-sm text-[#f6efe4]/55" role="status">
+            Preparing secure payment…
+          </p>
         ) : null}
       </div>
 

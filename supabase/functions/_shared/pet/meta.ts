@@ -14,6 +14,21 @@ export async function hashIdentifier(value: string): Promise<string | null> {
   return sha256Hex(normalized);
 }
 
+/** V3 bootstrap placeholder — never send to Meta CAPI or GA4 as a real customer email. */
+export function isCheckoutPlaceholderEmail(email: string | null | undefined): boolean {
+  const normalized = String(email || "").trim().toLowerCase();
+  if (!normalized) return false;
+  return /^pending\+[a-z0-9_-]*@checkout\.thedigitalgifter\.com$/i.test(normalized);
+}
+
+/** Hash only validated real customer emails; omit placeholders and empty values. */
+export async function hashCustomerEmailForMeta(email: string | null | undefined): Promise<string | null> {
+  const normalized = String(email || "").trim().toLowerCase();
+  if (!normalized || isCheckoutPlaceholderEmail(normalized)) return null;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return null;
+  return hashIdentifier(normalized);
+}
+
 export function petPurchaseEventId(orderId: string): string {
   return `pet_purchase_${orderId}`;
 }
@@ -132,7 +147,7 @@ export async function sendMetaCapiPurchase(input: {
     return { sent: false, reason: "not_paid" };
   }
 
-  const hashedEmail = input.email ? await hashIdentifier(input.email) : null;
+  const hashedEmail = await hashCustomerEmailForMeta(input.email);
   const data = customData({ amountCents: input.amountCents, orderId: input.orderId });
   if (metaCustomDataHasForbiddenFields(data)) {
     return { sent: false, reason: "unsafe_custom_data" };
@@ -162,7 +177,7 @@ export async function sendMetaCapiInitiateCheckout(input: {
   if (!input.eventId || !input.orderId || input.amountCents <= 0) {
     return { sent: false, reason: "invalid" };
   }
-  const hashedEmail = input.email ? await hashIdentifier(input.email) : null;
+  const hashedEmail = await hashCustomerEmailForMeta(input.email);
   const data = customData({ amountCents: input.amountCents, orderId: input.orderId });
   if (metaCustomDataHasForbiddenFields(data)) {
     return { sent: false, reason: "unsafe_custom_data" };

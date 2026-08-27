@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { petInitiateCheckoutEventId, sendMetaCapiInitiateCheckout } from "./meta.ts";
+import {
+  isCheckoutPlaceholderEmail,
+  petInitiateCheckoutEventId,
+  sendMetaCapiInitiateCheckout,
+} from "./meta.ts";
 
 const V3_META_IC_ACTION = "v3_meta_initiate_checkout";
 
@@ -32,10 +36,12 @@ export async function recordV3MetaInitiateCheckoutOnce(
     return { sent: false, alreadySent: true, eventId };
   }
 
+  const emailForMeta =
+    input.email && !isCheckoutPlaceholderEmail(input.email) ? input.email : null;
   const capi = await sendMetaCapiInitiateCheckout({
     eventId,
     orderId: input.orderId,
-    email: input.email ?? null,
+    email: emailForMeta,
     amountCents: input.amountCents,
   });
 

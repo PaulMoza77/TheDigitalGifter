@@ -34,6 +34,7 @@ import {
   remainingHoldMs,
   writeCachedEmbeddedCheckout,
 } from "./checkoutHold";
+import { buildPetOrderReturnUrl } from "./orderReturnUrl";
 
 export type PetCheckoutPageProps = {
   navigation?: PetFunnelNavigation;
@@ -53,6 +54,7 @@ export function PetCheckoutPage({
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
+  const [orderPublicToken, setOrderPublicToken] = useState<string | null>(null);
   const [holdExpiresAt, setHoldExpiresAt] = useState(() => readOrResetCheckoutHold().expiresAt);
   const [holdLabel, setHoldLabel] = useState(() => formatHoldCountdown(remainingHoldMs(holdExpiresAt)));
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -119,6 +121,7 @@ export function PetCheckoutPage({
         setHoldLabel(formatHoldCountdown(remainingHoldMs(next.expiresAt)));
         setClientSecret(null);
         setPublishableKey(null);
+        setOrderPublicToken(null);
         bootstrapped.current = false;
         return;
       }
@@ -194,6 +197,7 @@ export function PetCheckoutPage({
     if (cached?.clientSecret && cached.publishableKey && !appliedPromo.code) {
       setClientSecret(cached.clientSecret);
       setPublishableKey(cached.publishableKey);
+      setOrderPublicToken(cached.publicToken || null);
       return;
     }
 
@@ -250,6 +254,7 @@ export function PetCheckoutPage({
         });
         setClientSecret(result.clientSecret);
         setPublishableKey(result.publishableKey);
+        setOrderPublicToken(result.publicToken);
         return;
       }
 
@@ -354,13 +359,13 @@ export function PetCheckoutPage({
               </p>
             ) : null}
 
-            {checkoutReady && clientSecret && publishableKey ? (
+            {checkoutReady && clientSecret && publishableKey && orderPublicToken ? (
               <CustomStripeCheckout
                 clientSecret={clientSecret}
                 publishableKey={publishableKey}
                 email={draft.email}
                 dueDisplay={dueDisplay}
-                returnUrl={`${window.location.origin}/pet/order`}
+                returnUrl={buildPetOrderReturnUrl(orderPublicToken)}
               />
             ) : (
               <div className="space-y-4">

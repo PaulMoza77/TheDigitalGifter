@@ -49,6 +49,17 @@ export function PetV3FunnelPage() {
     active: draft.step === "offer",
     photo: draft.photo,
     file: photoFile,
+    onRestartExpired: () => {
+      // Preserve UTMs via existing attribution storage; clear in-memory photo and return to upload.
+      setV3PhotoFile(null);
+      setPhotoError(undefined);
+      lastFailureCategoryRef.current = null;
+      go("photo", clearPreviewOnPhotoChange({
+        photo: null,
+        uploadId: null,
+        photoPreviewDataUrl: null,
+      }));
+    },
   });
 
   useEffect(() => {
