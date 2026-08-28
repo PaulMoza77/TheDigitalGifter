@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { RefreshCcw, Database } from "lucide-react";
 import { SectionCard, StatCard } from "@/components/admin/overview/AdminOverviewCards";
+import { supabase } from "@/lib/supabase";
 import {
   formatPct,
   formatSignedPct,
@@ -12,6 +13,13 @@ import {
 import { formatMetricOrDash } from "@/features/pet/funnelHybrid";
 import { PET_FUNNEL_MEASUREMENT_RELIABLE_FROM, trackingCoverageSignal } from "@/features/pet/funnelEventContract";
 import { FUNNEL_DATASETS, type FunnelDatasetId } from "@/features/pet/funnelDatasetConfig";
+import {
+  V3_ANALYTICS_VIEW_MODES,
+  v3AnalyticsViewModeLabel,
+  type V3AnalyticsViewMode,
+} from "@/features/pet-v3/v3Measurement";
+import { EMPTY_V3_ANALYTICS_FILTERS } from "@/features/pet-v3/v3AnalyticsFilters";
+import { v3TrafficClassLabel, type V3TrafficClass } from "@/features/pet-v3/v3TrafficClassification";
 import { usePetFunnelAnalytics } from "@/hooks/usePetFunnelAnalytics";
 
 const PRESETS: Array<{ id: DatePreset; label: string }> = [
@@ -129,11 +137,17 @@ export default function PetFunnelAnalyticsPage() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [datasetId, setDatasetId] = useState<FunnelDatasetId>("v1");
+  const [v3ViewMode, setV3ViewMode] = useState<V3AnalyticsViewMode>("production");
+  const [internalTestSessionId, setInternalTestSessionId] = useState("");
+  const [internalTestMessage, setInternalTestMessage] = useState("");
   const custom = preset === "custom" && customFrom && customTo ? { from: customFrom, to: customTo } : undefined;
+  const v3Filters =
+    datasetId === "v3" ? { ...EMPTY_V3_ANALYTICS_FILTERS, viewMode: v3ViewMode } : EMPTY_V3_ANALYTICS_FILTERS;
   const { loading, error, report, refresh, syncing, syncMessage, runSync } = usePetFunnelAnalytics(
     preset,
     custom,
     datasetId,
+    v3Filters,
   );
   const dataset = FUNNEL_DATASETS[datasetId];
   const labels = dataset.kpiLabels;
@@ -280,6 +294,168 @@ export default function PetFunnelAnalyticsPage() {
             <code className="rounded bg-slate-800 px-1">FUNNEL_DATASETS.v3.campaignId</code> in{" "}
             <code className="rounded bg-slate-800 px-1">src/features/pet/funnelDatasetConfig.ts</code>.
           </p>
+        ) : null}
+
+        {datasetId === "v3" ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs uppercase tracking-wide text-slate-500">Traffic view</span>
+            {V3_ANALYTICS_VIEW_MODES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setV3ViewMode(mode)}
+                className={`rounded-xl border px-3 py-1.5 text-xs ${
+                  v3ViewMode === mode
+                    ? "border-emerald-400/50 bg-emerald-500/10 text-emerald-100"
+                    : "border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                {v3AnalyticsViewModeLabel(mode)}
+              </button>
+            ))}
+            {report?.v3Trusted?.includeInternalTests ? (
+              <span className="rounded-md border border-amber-400/40 bg-amber-500/10 px-2 py-1 text-xs text-amber-100">
+                Internal test traffic included
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        {datasetId === "v3" && report?.v3Trusted ? (
+          <SectionCard
+            title="V3 certified measurement"
+            subtitle="Production KPIs exclude server-authorized internal tests, pre-certification events, and unverified $2.99 observations."
+          >
+            <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+              <p>
+                Measurement certified from:{" "}
+                {report.v3Trusted.measurementReliableFrom
+                  ? new Date(report.v3Trusted.measurementReliableFrom).toLocaleString("en-US")
+                  : "unset until admin certification after deploy audit"}
+              </p>
+              <p>
+                ${(report.v3Trusted.priceCohortCents / 100).toFixed(2)} certified cohort:{" "}
+                {report.v3Trusted.priceCohortCertifiedAt
+                  ? new Date(report.v3Trusted.priceCohortCertifiedAt).toLocaleString("en-US")
+                  : "not certified — earlier $2.99 traffic is historical/unverified"}
+              </p>
+              {report.v3Trusted.priceDeployReferenceAt ? (
+                <p className="text-xs text-slate-500 sm:col-span-2">
+                  Deploy reference (not a KPI cohort): SHA {report.v3Trusted.priceDeployReferenceAt ? "01fde32" : "—"}{" "}
+                  at {new Date(report.v3Trusted.priceDeployReferenceAt).toLocaleString("en-US")}
+                </p>
+              ) : null}
+            </div>
+            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Authorized internal test (admin only)</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Register a V3 funnel session UUID server-side. Client query params and localStorage cannot exclude production KPIs.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <input
+                  type="text"
+                  value={internalTestSessionId}
+                  onChange={(e) => setInternalTestSessionId(e.target.value)}
+                  placeholder="funnel session UUID"
+                  className="min-w-[280px] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100"
+                />
+                <button
+                  type="button"
+                  className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-100"
+                  onClick={() => {
+                    void (async () => {
+                      setInternalTestMessage("");
+                      const { error: rpcError } = await supabase.rpc("admin_pet_v3_register_internal_test_session", {
+                        p_funnel_session_id: internalTestSessionId.trim(),
+                        p_reason: "admin dashboard authorized test",
+                        p_expires_hours: 24,
+                      });
+                      setInternalTestMessage(rpcError ? rpcError.message : "Session registered for internal test (24h).");
+                      await refresh();
+                    })();
+                  }}
+                >
+                  Register internal test
+                </button>
+              </div>
+              {internalTestMessage ? <p className="mt-2 text-xs text-slate-400">{internalTestMessage}</p> : null}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {report.v3Trusted.trafficBreakdown.map((row) => (
+                <span
+                  key={row.traffic_class}
+                  className="rounded-lg border border-slate-700 bg-slate-900/80 px-2 py-1 text-xs text-slate-300"
+                >
+                  {v3TrafficClassLabel(row.traffic_class as V3TrafficClass)}: {row.landing_sessions}
+                </span>
+              ))}
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {datasetId === "v3" && report?.v3Trusted ? (
+          <SectionCard
+            title="Reconciliation"
+            subtitle="Meta LPV and first-party counts measure different things; gaps are expected."
+          >
+            <div className="space-y-1 text-sm text-slate-300">
+              <p>Meta LPV → {formatMetricOrDash(kpis?.metaLpv ?? kpis?.lpv)}</p>
+              <p>First-party paid-Meta landings → {formatMetricOrDash(report.v3Trusted.paidMetaLandings)}</p>
+              <p>Production landing cohort → {formatMetricOrDash(report.v3Trusted.productionSequential.landing)}</p>
+              <p>Uploads → {formatMetricOrDash(report.v3Trusted.productionSequential.uploads)}</p>
+              <p>Previews → {formatMetricOrDash(report.v3Trusted.productionSequential.previews)}</p>
+              <p>Offer views → {formatMetricOrDash(report.v3Trusted.productionSequential.offers)}</p>
+              <p>
+                Stripe checkout sessions (server) →{" "}
+                {formatMetricOrDash(report.v3Trusted.productionSequential.checkout_sessions)}
+              </p>
+              <p>
+                Checkout button clicks (diagnostic) →{" "}
+                {formatMetricOrDash(report.v3Trusted.productionSequential.checkout_clicks)}
+              </p>
+              <p>Stripe-paid purchases → {formatMetricOrDash(report.v3Trusted.purchases)}</p>
+            </div>
+            <p className="mt-3 text-xs text-slate-500">
+              Raw totals (all traffic classes, incl. tests): {report.v3Trusted.rawTotals.landing} landings ·{" "}
+              {report.v3Trusted.rawTotals.checkout_sessions} Stripe sessions ·{" "}
+              {report.v3Trusted.rawTotals.checkout_clicks} button clicks
+            </p>
+          </SectionCard>
+        ) : null}
+
+        {datasetId === "v3" && report?.v3SessionDrilldown && report.v3SessionDrilldown.length > 0 ? (
+          <SectionCard title="Session drill-down" subtitle="Anonymous session prefixes only — no PII.">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-xs text-slate-300">
+                <thead className="text-slate-500">
+                  <tr>
+                    <th className="px-2 py-1">Session</th>
+                    <th className="px-2 py-1">Class</th>
+                    <th className="px-2 py-1">Test</th>
+                    <th className="px-2 py-1">Stripe session</th>
+                    <th className="px-2 py-1">Btn click</th>
+                    <th className="px-2 py-1">Paid</th>
+                    <th className="px-2 py-1">Events</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.v3SessionDrilldown.map((row) => (
+                    <tr key={row.session_short} className="border-t border-slate-800">
+                      <td className="px-2 py-1 font-mono">{row.session_short}</td>
+                      <td className="px-2 py-1">{row.traffic_class || "—"}</td>
+                      <td className="px-2 py-1">{row.is_test ? "yes" : "no"}</td>
+                      <td className="px-2 py-1">{row.stripe_checkout_created ? "yes" : "—"}</td>
+                      <td className="px-2 py-1">{row.checkout_button_click ? "yes" : "—"}</td>
+                      <td className="px-2 py-1">{row.paid_purchase ? "yes" : "—"}</td>
+                      <td className="px-2 py-1">
+                        {row.events.map((ev) => ev.event_name.replace(/^v3_/, "")).join(" → ")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </SectionCard>
         ) : null}
 
         {report?.firstPartyTrackingStartedAt ? (

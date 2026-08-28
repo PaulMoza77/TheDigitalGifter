@@ -19,6 +19,10 @@
       "destination": "/api/pet-v3-funnel-event"
     },
     {
+      "source": "/api/pet-v3/internal-test-status",
+      "destination": "/api/pet-v3-internal-test-status"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap.xml"
     },

@@ -51,3 +51,15 @@ export function getPetV3SessionId(): string {
     return randomUuid();
   }
 }
+
+/** End current V3 session and start a fresh anonymous session id. */
+export function resetPetV3SessionId(): string {
+  if (typeof window === "undefined") return randomUuid();
+  try {
+    window.sessionStorage.removeItem(PET_V3_SESSION_KEY);
+    window.localStorage.removeItem(PET_V3_SESSION_KEY);
+  } catch {
+    /* ignore */
+  }
+  return getPetV3SessionId();
+}
