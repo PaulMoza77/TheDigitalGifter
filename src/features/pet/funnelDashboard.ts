@@ -171,6 +171,36 @@ export type PetFunnelAnalyticsReport = {
     purchase: number;
     revenueCents: number;
   }>;
+  v3Trusted?: {
+    measurementReliableFrom: string | null;
+    priceCohortFrom: string | null;
+    priceCohortCents: number;
+    viewMode: string;
+    includeInternalTests: boolean;
+    trafficBreakdown: Array<{ traffic_class: string; landing_sessions: number }>;
+    productionSequential: {
+      landing: number;
+      uploads: number;
+      previews: number;
+      offers: number;
+      checkout_sessions: number;
+      checkout_clicks: number;
+    };
+    paidMetaLandings: number;
+    rawTotals: { landing: number; checkout_clicks: number; checkout_sessions: number };
+    purchases: number;
+    revenueCents: number;
+  };
+  v3SessionDrilldown?: Array<{
+    session_short: string;
+    landing_at: string;
+    traffic_class: string | null;
+    is_test: boolean;
+    stripe_checkout_created: boolean;
+    checkout_button_click: boolean;
+    paid_purchase: boolean;
+    events: Array<{ event_name: string; created_at: string }>;
+  }>;
 };
 
 export function emptyStepCounts(): FunnelStepCounts {

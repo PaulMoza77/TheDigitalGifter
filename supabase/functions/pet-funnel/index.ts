@@ -53,6 +53,7 @@ import {
   recordV3MetaInitiateCheckoutOnce,
   shouldDeferInitiateCheckoutToInteraction,
 } from "../_shared/pet/v3InitiateCheckout.ts";
+import { recordV3CheckoutSessionCreated } from "../_shared/pet/v3FunnelEvents.ts";
 import {
   decideCheckoutSessionAction,
   isValidEmbeddedClientSecret,
@@ -291,6 +292,56 @@ async function maybeRecordInitiateCheckoutOnSessionCreate(
     species: asString(order.species),
     ...checkoutCtx,
   });
+}
+
+async function maybeRecordV3CheckoutSessionCreated(
+  service: ReturnType<typeof getServiceClient>,
+  order: PetOrderRow,
+  stripeSessionId: string,
+  meta: ReturnType<typeof petMetaCheckoutFields>,
+  checkoutCtx: {
+    funnelSessionId: string | null;
+    deviceType: string | null;
+    attribution: ReturnType<typeof parseCheckoutAttribution>;
+  },
+) {
+  if (!isV3Funnel(order.funnel_variant)) return;
+  const attr = checkoutCtx.attribution;
+  await recordV3CheckoutSessionCreated(service, {
+    orderId: order.id,
+    stripeSessionId,
+    amountCents: meta.chargedAmountCents,
+    attribution: {
+      funnelSessionId: checkoutCtx.funnelSessionId,
+      funnelVersion: "v3",
+      utmSource: attr.utm_source,
+      utmMedium: attr.utm_medium,
+      utmCampaign: attr.utm_campaign,
+      utmContent: attr.utm_content,
+      utmTerm: attr.utm_term,
+      campaignId: attr.campaign_id,
+      adsetId: attr.adset_id,
+      adId: attr.ad_id,
+      creativeId: attr.creative_id,
+      deviceType: checkoutCtx.deviceType,
+      isTest: false,
+    },
+  });
+}
+
+async function finalizeOpenCheckoutSession(
+  service: ReturnType<typeof getServiceClient>,
+  order: PetOrderRow,
+  meta: ReturnType<typeof petMetaCheckoutFields>,
+  checkoutCtx: {
+    funnelSessionId: string | null;
+    deviceType: string | null;
+    attribution: ReturnType<typeof parseCheckoutAttribution>;
+  },
+  stripeSessionId: string,
+) {
+  await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+  await maybeRecordV3CheckoutSessionCreated(service, order, stripeSessionId, meta, checkoutCtx);
 }
 
 function resolveFunnelVariant(value: unknown): "v1" | "v2" | "v3" {
@@ -1002,7 +1053,7 @@ Deno.serve(async (req) => {
             });
             return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503, embedded.diag);
           }
-          await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+          await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, embedded.sessionId);
           return jsonResponse({
             sessionId: embedded.sessionId,
             checkoutUrl: null,
@@ -1047,7 +1098,7 @@ Deno.serve(async (req) => {
             sessionExists: Boolean(existingView),
           });
           if (embedded.ok) {
-            await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+            await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, embedded.sessionId);
             return jsonResponse({
               sessionId: embedded.sessionId,
               checkoutUrl: embedded.checkoutUrl,
@@ -1062,7 +1113,7 @@ Deno.serve(async (req) => {
           }
           if (embedded.reason === "conflict") return checkoutConflict();
         }
-        await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+        await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, matched.sessionId);
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
@@ -1196,7 +1247,7 @@ Deno.serve(async (req) => {
               checkoutDiag: embedded.diag,
             });
           }
-          await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+          await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, embedded.sessionId);
           return jsonResponse({
             sessionId: embedded.sessionId,
             checkoutUrl: embedded.checkoutUrl,
@@ -1212,7 +1263,7 @@ Deno.serve(async (req) => {
         const matched = matchedOpenCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
         if (!matched.ok) return checkoutConflict();
         const meta = petMetaCheckoutFields(order);
-        await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+        await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, matched.sessionId);
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
@@ -1252,7 +1303,7 @@ Deno.serve(async (req) => {
             ui_mode: requestedUiMode,
           },
         });
-        await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+        await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, embedded.sessionId);
         return jsonResponse({
           sessionId: embedded.sessionId,
           checkoutUrl: null,
@@ -1274,7 +1325,7 @@ Deno.serve(async (req) => {
         p_actor_type: "system",
         p_payload: { session_present: true, initiate_event_id: meta.eventId },
       });
-      await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+      await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, matched.sessionId);
       return jsonResponse({
         sessionId: matched.sessionId,
         checkoutUrl: matched.checkoutUrl,

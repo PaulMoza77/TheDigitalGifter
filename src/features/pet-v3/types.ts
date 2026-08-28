@@ -49,6 +49,7 @@ export const PET_V3_EVENTS = [
   "v3_offer_viewed",
   "v3_unlock_clicked",
   "v3_checkout_viewed",
+  "v3_checkout_session_created",
   "v3_begin_checkout",
   "v3_purchase",
 ] as const;

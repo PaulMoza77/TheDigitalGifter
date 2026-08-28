@@ -19,6 +19,7 @@ const PET_V3_EVENT_NAMES = [
   "v3_offer_viewed",
   "v3_unlock_clicked",
   "v3_checkout_viewed",
+  "v3_checkout_session_created",
   "v3_begin_checkout",
   "v3_purchase",
 ] as const;
@@ -180,6 +181,7 @@ function parseV3EventBody(raw: unknown): {
   creativeId: string | null;
   fbc: string | null;
   fbp: string | null;
+  displayedPriceCents: number | null;
 } {
   if (!raw || typeof raw !== "object") throw new Error("malformed_json");
   const row = raw as Record<string, unknown>;
@@ -217,6 +219,10 @@ function parseV3EventBody(raw: unknown): {
     creativeId: asText(row.creative_id, 120),
     fbc: asText(row.fbc, 200),
     fbp: asText(row.fbp, 200),
+    displayedPriceCents:
+      typeof row.displayed_price_cents === "number" && Number.isFinite(row.displayed_price_cents)
+        ? Math.round(row.displayed_price_cents)
+        : null,
   };
 }
 
@@ -302,6 +308,7 @@ async function writePetV3FunnelEvent(
       p_fbp: validated.fbp,
       p_client_ip: traffic.clientIp,
       p_client_ip_hostname: traffic.clientIpHostname,
+      p_displayed_price_cents: validated.displayedPriceCents,
     }),
   });
   if (!response.ok) {

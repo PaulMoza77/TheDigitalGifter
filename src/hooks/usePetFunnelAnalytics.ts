@@ -40,9 +40,12 @@ import {
 } from "@/features/pet/funnelDatasetConfig";
 import {
   v3RpcFilterArgs,
+  v3LegacyRpcFilterArgs,
+  v3TrustedRpcFilterArgs,
   type V3AnalyticsFilters,
   EMPTY_V3_ANALYTICS_FILTERS,
 } from "@/features/pet-v3/v3AnalyticsFilters";
+import { v3IncludeInternalTests } from "@/features/pet-v3/v3Measurement";
 import { sequentialConversionPct } from "@/features/pet/funnelEventContract";
 import { V1_PHOTO_PATH_STAGES } from "@/features/pet/funnelCohort";
 
@@ -262,24 +265,39 @@ export function usePetFunnelAnalytics(
       let v3StepRows: RpcRow[] = [];
       let v3Context: RpcRow | null = null;
       let v3Meta: RpcRow | null = null;
+      let v3Trusted: RpcRow | null = null;
+      let v3Drilldown: RpcRow[] = [];
       if (datasetId === "v3") {
-        const filterArgs = v3RpcFilterArgs(v3Filters);
+        const legacyFilterArgs = v3LegacyRpcFilterArgs(v3Filters);
+        const trustedFilterArgs = v3TrustedRpcFilterArgs(v3Filters);
         const resolvedV3CampaignId = campaignId === "__not_configured__" ? null : campaignId;
-        const [v3StepsRes, v3ContextRes, v3MetaRes] = await Promise.all([
+        const [v3StepsRes, v3ContextRes, v3MetaRes, v3TrustedRes, v3DrillRes] = await Promise.all([
           supabase.rpc("admin_pet_v3_funnel_step_counts", {
             p_from: range.from.toISOString(),
             p_to: range.to.toISOString(),
-            ...filterArgs,
+            ...legacyFilterArgs,
           }),
           supabase.rpc("admin_pet_v3_dashboard_context", {
             p_from: range.from.toISOString(),
             p_to: range.to.toISOString(),
-            ...filterArgs,
+            ...legacyFilterArgs,
           }),
           supabase.rpc("admin_pet_v3_meta_context", {
             p_from: range.from.toISOString(),
             p_to: range.to.toISOString(),
             p_campaign_id: resolvedV3CampaignId,
+          }),
+          supabase.rpc("admin_pet_v3_trusted_summary", {
+            p_from: range.from.toISOString(),
+            p_to: range.to.toISOString(),
+            ...trustedFilterArgs,
+          }),
+          supabase.rpc("admin_pet_v3_session_drilldown", {
+            p_from: range.from.toISOString(),
+            p_to: range.to.toISOString(),
+            p_include_internal_tests: trustedFilterArgs.p_include_internal_tests,
+            p_traffic_class: trustedFilterArgs.p_traffic_class,
+            p_limit: 40,
           }),
         ]);
         if (v3StepsRes.error) throw new Error(v3StepsRes.error.message);
@@ -288,6 +306,12 @@ export function usePetFunnelAnalytics(
         v3Context = parseRpcJsonObject(v3ContextRes.data);
         if (!v3MetaRes.error) {
           v3Meta = parseRpcJsonObject(v3MetaRes.data);
+        }
+        if (!v3TrustedRes.error) {
+          v3Trusted = parseRpcJsonObject(v3TrustedRes.data);
+        }
+        if (!v3DrillRes.error) {
+          v3Drilldown = parseRpcJsonArray(v3DrillRes.data);
         }
       }
 
@@ -298,7 +322,19 @@ export function usePetFunnelAnalytics(
       const v1PreviousCounts = countsFromRows((payload.previous_steps as RpcRow[]) || []);
       const v2Counts = mapV2CountsToPrimarySteps(namedEventCounts((payload.v2_steps as RpcRow[]) || []));
       const v3RawCounts = namedEventCounts(v3StepRows);
-      const v3Counts = mapV3CountsToPrimarySteps(v3RawCounts);
+      let v3Counts = mapV3CountsToPrimarySteps(v3RawCounts);
+      const v3TrustedSeq = (v3Trusted?.production_sequential || null) as RpcRow | null;
+      const v3ViewMode = v3Filters.viewMode || "production";
+      if (datasetId === "v3" && v3TrustedSeq && v3ViewMode !== "raw") {
+        v3Counts = {
+          landing_view: asNumber(v3TrustedSeq.landing),
+          pet_name_submitted: asNumber(v3TrustedSeq.uploads),
+          photo_upload_completed: asNumber(v3TrustedSeq.previews),
+          order_review_viewed: asNumber(v3TrustedSeq.offers),
+          initiate_checkout: asNumber(v3TrustedSeq.checkout_sessions),
+          purchase: asNumber(v3Trusted?.purchases),
+        };
+      }
       const v3ExtendedCounts = mapV3CountsToExtendedSteps(v3RawCounts);
       const v3ExtendedSteps = datasetId === "v3" ? buildV3ExtendedFunnelSteps(v3ExtendedCounts) : undefined;
       const counts =
@@ -352,7 +388,11 @@ export function usePetFunnelAnalytics(
       const backendRevenue =
         datasetId === "v3" ? asNumber(v3Backend.revenue_cents) : asNumber(backend.revenue_cents);
       const backendCheckouts =
-        datasetId === "v3" ? asNumber(v3Backend.checkouts) : asNumber(backend.checkouts);
+        datasetId === "v3"
+          ? v3TrustedSeq && v3ViewMode !== "raw"
+            ? asNumber(v3TrustedSeq.checkout_sessions)
+            : asNumber(v3Backend.checkouts)
+          : asNumber(backend.checkouts);
       const freeDiscountOrders =
         datasetId === "v3" ? asNumber(v3Backend.free_orders) : asNumber(backend.free_orders);
       const liveName =
@@ -692,10 +732,62 @@ export function usePetFunnelAnalytics(
         campaignLabel: datasetSwitchLabel(datasetId, liveName),
         measurementReliableFrom:
           datasetId === "v3"
-            ? null
+            ? v3Trusted?.measurement_reliable_from
+              ? String(v3Trusted.measurement_reliable_from)
+              : null
             : payload.measurement_reliable_from
               ? String(payload.measurement_reliable_from)
               : null,
+        v3Trusted:
+          datasetId === "v3" && v3Trusted
+            ? {
+                measurementReliableFrom: v3Trusted.measurement_reliable_from
+                  ? String(v3Trusted.measurement_reliable_from)
+                  : null,
+                priceCohortFrom: v3Trusted.price_cohort_from ? String(v3Trusted.price_cohort_from) : null,
+                priceCohortCents: asNumber(v3Trusted.price_cohort_cents) || 299,
+                viewMode: v3ViewMode,
+                includeInternalTests: v3IncludeInternalTests(v3ViewMode),
+                trafficBreakdown: ((v3Trusted.traffic_breakdown as RpcRow[]) || []).map((row) => ({
+                  traffic_class: String(row.traffic_class || "unattributed"),
+                  landing_sessions: asNumber(row.landing_sessions),
+                })),
+                productionSequential: {
+                  landing: asNumber(v3TrustedSeq?.landing),
+                  uploads: asNumber(v3TrustedSeq?.uploads),
+                  previews: asNumber(v3TrustedSeq?.previews),
+                  offers: asNumber(v3TrustedSeq?.offers),
+                  checkout_sessions: asNumber(v3TrustedSeq?.checkout_sessions),
+                  checkout_clicks: asNumber(v3TrustedSeq?.checkout_clicks),
+                },
+                paidMetaLandings: asNumber(v3Trusted.paid_meta_landings),
+                rawTotals: {
+                  landing: asNumber((v3Trusted.raw_totals as RpcRow)?.landing),
+                  checkout_clicks: asNumber((v3Trusted.raw_totals as RpcRow)?.checkout_clicks),
+                  checkout_sessions: asNumber((v3Trusted.raw_totals as RpcRow)?.checkout_sessions),
+                },
+                purchases: asNumber(v3Trusted.purchases),
+                revenueCents: asNumber(v3Trusted.revenue_cents),
+              }
+            : undefined,
+        v3SessionDrilldown:
+          datasetId === "v3"
+            ? v3Drilldown.map((row) => ({
+                session_short: String(row.session_short || ""),
+                landing_at: String(row.landing_at || ""),
+                traffic_class: row.traffic_class ? String(row.traffic_class) : null,
+                is_test: Boolean(row.is_test),
+                stripe_checkout_created: Boolean(row.stripe_checkout_created),
+                checkout_button_click: Boolean(row.checkout_button_click),
+                paid_purchase: Boolean(row.paid_purchase),
+                events: Array.isArray(row.events)
+                  ? (row.events as RpcRow[]).map((ev) => ({
+                      event_name: String(ev.event_name || ""),
+                      created_at: String(ev.created_at || ""),
+                    }))
+                  : [],
+              }))
+            : undefined,
         rawSteps: datasetId === "v1" ? rawSteps : undefined,
         photoPathSteps: datasetId === "v1" && photoPathSteps.some((s) => s.sessions > 0) ? photoPathSteps : undefined,
         v3ExtendedSteps,
