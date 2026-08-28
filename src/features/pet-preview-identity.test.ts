@@ -221,4 +221,14 @@ describe("pet preview identity + funnel integrity", () => {
     expect(edge).toContain('req.method === "GET"');
     expect(edge).toContain("identityBuild: PET_PREVIEW_IDENTITY_BUILD");
   });
+
+  it("retries Replicate creates and can fall back to OpenAI image edit on rate limits", () => {
+    const edge = readSrc("supabase/functions/pet-v2-preview/index.ts");
+    expect(edge).toContain("createReplicatePrediction");
+    expect(edge).toContain("provider_create_retry");
+    expect(edge).toContain("openai_fallback_start");
+    expect(edge).toContain("runOpenAiIdentityEdit");
+    expect(edge).toContain("images/edits");
+    expect(edge).toContain('url.startsWith("data:image/")');
+  });
 });

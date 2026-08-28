@@ -13,14 +13,29 @@ import {
 import { validatePetSpecies } from "../_shared/pet/speciesValidate.ts";
 
 const DEFAULT_MODEL = "black-forest-labs/flux-kontext-pro";
+const DEFAULT_OPENAI_IMAGE_MODEL = "gpt-image-1";
 const SESSION_LIMIT = 2;
 const IP_DAY_LIMIT = 5;
 const POLL_INTERVAL_MS = 2000;
 /** ~90s poll; fits Supabase free 150s wall-clock with margin for create/DB/download. */
 const POLL_MAX_ITERATIONS = 45;
+/** Replicate create retries when the account is briefly throttled. */
+const REPLICATE_CREATE_ATTEMPTS = 3;
+const REPLICATE_CREATE_BACKOFF_MS = [2000, 8000, 16000];
 
 function previewModel(): string {
   return (Deno.env.get("PET_PREVIEW_IMAGE_MODEL") || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
+}
+
+function openAiImageModel(): string {
+  return (
+    (Deno.env.get("PET_PREVIEW_OPENAI_IMAGE_MODEL") || DEFAULT_OPENAI_IMAGE_MODEL).trim() ||
+    DEFAULT_OPENAI_IMAGE_MODEL
+  );
+}
+
+function openAiFallbackEnabled(): boolean {
+  return String(Deno.env.get("PET_PREVIEW_OPENAI_FALLBACK") || "true").toLowerCase() !== "false";
 }
 
 type AttemptRow = {
@@ -504,7 +519,6 @@ async function runKontextPreview(
   idempotencyKey: string,
 ): Promise<{ url: string; predictionId: string }> {
   const prompt = buildPreviewPrompt(ctx, species);
-  const model = previewModel();
 
   // Hard guarantee: never create a text-only prediction. input_image is mandatory.
   if (!imageDataUrl.startsWith("data:image/")) {
@@ -515,6 +529,48 @@ async function runKontextPreview(
     throw err;
   }
 
+  try {
+    return await runReplicateKontext(ctx, token, imageDataUrl, species, idempotencyKey, prompt);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error || "");
+    const rateLimited = classifyGenerationError(message) === "rate_limit";
+    const openaiKey = String(Deno.env.get("OPENAI_API_KEY") || "").trim();
+    if (!rateLimited || !openAiFallbackEnabled() || !openaiKey) {
+      throw error;
+    }
+
+    previewDiag({
+      stage: "openai_fallback_start",
+      funnel: ctx.version,
+      scene: ctx.sceneKey,
+      speciesDeclared: species,
+      replicateError: message.slice(0, 120),
+    });
+
+    const fallback = await runOpenAiIdentityEdit(imageDataUrl, prompt);
+    await markAttempt(ctx, idempotencyKey, {
+      status: "processing",
+      predictionId: fallback.predictionId,
+      liveGeneration: false,
+    });
+    previewDiag({
+      stage: "openai_fallback_ok",
+      funnel: ctx.version,
+      predictionPrefix: fallback.predictionId.slice(0, 18),
+    });
+    return fallback;
+  }
+}
+
+async function runReplicateKontext(
+  ctx: PreviewFunnelContext,
+  token: string,
+  imageDataUrl: string,
+  species: string,
+  idempotencyKey: string,
+  prompt: string,
+): Promise<{ url: string; predictionId: string }> {
+  const model = previewModel();
   const input = {
     prompt,
     input_image: imageDataUrl,
@@ -536,34 +592,7 @@ async function runKontextPreview(
     idempotencyPrefix: idempotencyKey.slice(0, 24),
   });
 
-  const created = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": idempotencyKey.slice(0, 64),
-    },
-    body: JSON.stringify({ input }),
-  });
-  const createdJson = (await created.json()) as {
-    id?: string;
-    status?: string;
-    error?: string;
-    output?: unknown;
-    input?: Record<string, unknown>;
-  };
-  if (!created.ok || !createdJson.id) {
-    previewDiag({
-      stage: "provider_create_failed",
-      funnel: ctx.version,
-      model,
-      httpStatus: created.status,
-      errorClass: classifyGenerationError(String(createdJson.error || "")),
-    });
-    throw new Error(
-      `${created.status}: ${String(createdJson.error || "Could not start the preview.")}`,
-    );
-  }
+  const createdJson = await createReplicatePrediction(token, model, input, idempotencyKey, ctx);
 
   // Confirm the provider accepted an image-conditioned request (no silent text-only).
   const acceptedImage =
@@ -595,9 +624,9 @@ async function runKontextPreview(
   });
 
   try {
-    const polled = await pollPrediction(token, createdJson.id);
+    const polled = await pollPrediction(token, createdJson.id!);
     if (polled.url) {
-      return { url: polled.url, predictionId: createdJson.id };
+      return { url: polled.url, predictionId: createdJson.id! };
     }
     // Keep processing on wait-timeout so retry resumes the same prediction.
     if (polled.errorCode === "timeout") {
@@ -629,6 +658,129 @@ async function runKontextPreview(
     }
     throw error;
   }
+}
+
+async function createReplicatePrediction(
+  token: string,
+  model: string,
+  input: Record<string, unknown>,
+  idempotencyKey: string,
+  ctx: PreviewFunnelContext,
+): Promise<{
+  id?: string;
+  status?: string;
+  error?: string;
+  output?: unknown;
+  input?: Record<string, unknown>;
+}> {
+  let lastMessage = "Could not start the preview.";
+  for (let attempt = 0; attempt < REPLICATE_CREATE_ATTEMPTS; attempt += 1) {
+    const created = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `${idempotencyKey.slice(0, 48)}:${attempt}`.slice(0, 64),
+      },
+      body: JSON.stringify({ input }),
+    });
+    const createdJson = (await created.json()) as {
+      id?: string;
+      status?: string;
+      error?: string;
+      detail?: string;
+      output?: unknown;
+      input?: Record<string, unknown>;
+    };
+    if (created.ok && createdJson.id) {
+      return createdJson;
+    }
+
+    const detail = String(createdJson.error || createdJson.detail || "Could not start the preview.");
+    lastMessage = `${created.status}: ${detail}`;
+    const throttled =
+      created.status === 429 || classifyGenerationError(lastMessage) === "rate_limit";
+    previewDiag({
+      stage: "provider_create_failed",
+      funnel: ctx.version,
+      model,
+      httpStatus: created.status,
+      attempt: attempt + 1,
+      errorClass: classifyGenerationError(lastMessage),
+    });
+    if (!throttled || attempt >= REPLICATE_CREATE_ATTEMPTS - 1) {
+      throw new Error(lastMessage);
+    }
+    const retryAfterSec = Number(created.headers.get("retry-after") || "");
+    const waitMs =
+      Number.isFinite(retryAfterSec) && retryAfterSec > 0
+        ? Math.min(30_000, Math.round(retryAfterSec * 1000))
+        : REPLICATE_CREATE_BACKOFF_MS[attempt] || 16_000;
+    previewDiag({
+      stage: "provider_create_retry",
+      funnel: ctx.version,
+      attempt: attempt + 1,
+      waitMs,
+    });
+    await sleep(waitMs);
+  }
+  throw new Error(lastMessage);
+}
+
+/**
+ * Identity-preserving edit via OpenAI Images when Replicate create is rate-limited.
+ * Still requires the uploaded reference image — never text-only.
+ */
+async function runOpenAiIdentityEdit(
+  imageDataUrl: string,
+  prompt: string,
+): Promise<{ url: string; predictionId: string }> {
+  const key = String(Deno.env.get("OPENAI_API_KEY") || "").trim();
+  if (!key) {
+    throw new Error("OpenAI fallback unavailable.");
+  }
+  const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/.exec(imageDataUrl);
+  if (!match) {
+    const err = new Error("Reference image missing for preview generation.") as Error & {
+      errorCode?: string;
+    };
+    err.errorCode = "invalid_image";
+    throw err;
+  }
+  const mime = match[1];
+  const b64 = match[2];
+  const binary = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const ext = mime.includes("png") ? "png" : "jpg";
+  const form = new FormData();
+  form.append("model", openAiImageModel());
+  form.append("prompt", `${prompt}\n\nEdit the provided photo only. Keep this exact pet.`);
+  form.append("image", new Blob([binary], { type: mime }), `pet-reference.${ext}`);
+  form.append("quality", "high");
+
+  const res = await fetch("https://api.openai.com/v1/images/edits", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}` },
+    body: form,
+  });
+  const json = (await res.json()) as {
+    created?: number;
+    data?: Array<{ b64_json?: string; url?: string }>;
+    error?: { message?: string };
+  };
+  if (!res.ok) {
+    throw new Error(
+      `${res.status}: ${String(json.error?.message || "OpenAI could not start the preview.")}`,
+    );
+  }
+  const predictionId = `openai-fallback:${json.created || Date.now()}`;
+  const row = json.data?.[0];
+  if (row?.b64_json) {
+    return { url: `data:image/png;base64,${row.b64_json}`, predictionId };
+  }
+  if (row?.url) {
+    return { url: row.url, predictionId };
+  }
+  throw new Error("OpenAI returned no preview image.");
 }
 
 async function pollPrediction(
@@ -680,6 +832,8 @@ function replicateOutputUrl(output: unknown): string | null {
 }
 
 async function downloadAsDataUrl(url: string): Promise<string> {
+  // OpenAI fallback may already return a data URL — do not re-fetch it.
+  if (url.startsWith("data:image/")) return url;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Could not download the preview.");
   const buffer = new Uint8Array(await res.arrayBuffer());
