@@ -39,6 +39,8 @@ describe("pet preview identity + funnel integrity", () => {
     expect(V3_CONFIG.copy.previewSubhead).toContain("Your cat’s secret life starts here");
     expect(PET_V2_DRAFT_STORAGE_KEY).not.toBe(PET_V3_DRAFT_STORAGE_KEY);
     expect(PET_V2_SESSION_KEY).not.toBe(PET_V3_SESSION_KEY);
+    expect(readSrc("src/features/pet-v2/screens/PhotoScreen.tsx")).toContain("speciesConfirmLabel");
+    expect(readSrc("src/features/pet-v3/screens/PhotoScreen.tsx")).toContain('speciesConfirmLabel("cat")');
   });
 
   it("Cat V3 copy never uses Dog V2 F1 wording", () => {

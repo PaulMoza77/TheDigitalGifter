@@ -13,6 +13,7 @@ import {
   shouldRestoreLocalPreview,
 } from "../pet-v2/previewFlow";
 import { requestV3Preview } from "./previewClient";
+import { canGenerateWithSpeciesConfirm } from "../pet-funnel-shared/speciesConfirm";
 import { V3GeneratingScreen } from "./screens/GeneratingScreen";
 import { V3LandingScreen } from "./screens/LandingScreen";
 import { V3OfferScreen } from "./screens/OfferScreen";
@@ -40,6 +41,7 @@ export function PetV3FunnelPage() {
   const lastFailureCategoryRef = useRef<PetV3FailureCategory | null>(null);
   const [draft, setDraft] = useState<PetV3Draft>(() => loadV3Draft());
   const [photoError, setPhotoError] = useState<string | undefined>();
+  const [speciesConfirmed, setSpeciesConfirmed] = useState(false);
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
   const [isGenerating, setIsGenerating] = useState(false);
   const previewUrl = getV3PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
@@ -103,6 +105,7 @@ export function PetV3FunnelPage() {
     setV3PhotoFile(file);
     const local = await createV2LocalPreview(file);
     setPhotoError(undefined);
+    setSpeciesConfirmed(false);
     trackPetV3Event({ eventName: "v3_upload_completed" });
     go("photo", clearPreviewOnPhotoChange({
       photo: { fileName: file.name, contentType: check.contentType, byteSize: file.size },
@@ -117,6 +120,17 @@ export function PetV3FunnelPage() {
     const source = getV3PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
     if (!file || !source) {
       setPhotoError("Re-attach the original cat photo to create a preview.");
+      go("photo");
+      return;
+    }
+
+    const confirm = canGenerateWithSpeciesConfirm({
+      hasPhoto: true,
+      confirmed: speciesConfirmed,
+      kind: "cat",
+    });
+    if (!confirm.ok) {
+      setPhotoError(confirm.message);
       go("photo");
       return;
     }
@@ -266,6 +280,7 @@ export function PetV3FunnelPage() {
           onClear={() => {
             setV3PhotoFile(null);
             setPhotoError(undefined);
+            setSpeciesConfirmed(false);
             lastFailureCategoryRef.current = null;
             go("photo", clearPreviewOnPhotoChange({
               photo: null,
@@ -273,6 +288,8 @@ export function PetV3FunnelPage() {
               photoPreviewDataUrl: null,
             }));
           }}
+          speciesConfirmed={speciesConfirmed}
+          onSpeciesConfirmed={setSpeciesConfirmed}
           onViewPreview={
             draft.generatedPreviewDataUrl
               ? () => {

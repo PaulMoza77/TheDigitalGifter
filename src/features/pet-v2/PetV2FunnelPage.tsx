@@ -13,6 +13,9 @@ import { trackV2BeginCheckout } from "./checkoutAnalytics";
 import { cryptoRandomId } from "./previewAttempt";
 import { previewErrorMessage } from "./previewErrors";
 import {
+  canGenerateWithSpeciesConfirm,
+} from "../pet-funnel-shared/speciesConfirm";
+import {
   backStepFrom,
   clearPreviewOnPhotoChange,
   resolveGenerateAttempt,
@@ -52,6 +55,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const lastFailureCategoryRef = useRef<PetV2FailureCategory | null>(null);
   const [draft, setDraft] = useState<PetV2Draft>(() => ({ ...loadV2Draft(), species }));
   const [photoError, setPhotoError] = useState<string | undefined>();
+  const [speciesConfirmed, setSpeciesConfirmed] = useState(false);
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
@@ -100,6 +104,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     setV2PhotoFile(file);
     const local = await createV2LocalPreview(file);
     setPhotoError(undefined);
+    setSpeciesConfirmed(false);
     trackPetV2Event({ eventName: "v2_upload_completed", species });
     go("photo", clearPreviewOnPhotoChange({
       photo: { fileName: file.name, contentType: check.contentType, byteSize: file.size },
@@ -125,6 +130,17 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       });
       if (!subtypeCheck.ok) {
         setPhotoError(subtypeCheck.message);
+        go("photo");
+        return;
+      }
+    } else {
+      const confirm = canGenerateWithSpeciesConfirm({
+        hasPhoto: true,
+        confirmed: speciesConfirmed,
+        kind: species === "cat" ? "cat" : "dog",
+      });
+      if (!confirm.ok) {
+        setPhotoError(confirm.message);
         go("photo");
         return;
       }
@@ -385,6 +401,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           onClear={() => {
             setV2PhotoFile(null);
             setPhotoError(undefined);
+            setSpeciesConfirmed(false);
             lastFailureCategoryRef.current = null;
             go("photo", clearPreviewOnPhotoChange({
               photo: null,
@@ -392,6 +409,8 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
               photoPreviewDataUrl: null,
             }));
           }}
+          speciesConfirmed={speciesConfirmed}
+          onSpeciesConfirmed={setSpeciesConfirmed}
           onViewPreview={
             draft.generatedPreviewDataUrl
               ? () => {

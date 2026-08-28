@@ -3,6 +3,7 @@ import { ImagePlus, Replace, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "../../pet/components/FieldError";
 import { PET_V3_FUNNEL_CONFIG } from "../config";
+import { speciesConfirmLabel } from "../../pet-funnel-shared/speciesConfirm";
 
 export function V3PhotoScreen({
   previewUrl,
@@ -14,6 +15,8 @@ export function V3PhotoScreen({
   onGenerate,
   onViewPreview,
   generating,
+  speciesConfirmed,
+  onSpeciesConfirmed,
 }: {
   previewUrl: string | null;
   fileName?: string | null;
@@ -24,8 +27,13 @@ export function V3PhotoScreen({
   onGenerate: () => void;
   onViewPreview?: () => void;
   generating?: boolean;
+  speciesConfirmed?: boolean;
+  onSpeciesConfirmed?: (confirmed: boolean) => void;
 }) {
   const copy = PET_V3_FUNNEL_CONFIG.copy;
+  const confirmed = Boolean(speciesConfirmed);
+  const canGenerate = Boolean(previewUrl) && !generating && confirmed;
+
   return (
     <div className="space-y-6 pb-28">
       <div>
@@ -77,9 +85,22 @@ export function V3PhotoScreen({
 
       <FieldError id={`${inputId}-error`} message={error} />
 
+      {previewUrl && onSpeciesConfirmed ? (
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#f6efe4]/12 bg-[#1a1410] px-4 py-3 text-sm leading-5 text-[#f6efe4]/85">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 accent-[#d4a84b]"
+            checked={confirmed}
+            disabled={generating}
+            onChange={(event) => onSpeciesConfirmed(event.target.checked)}
+          />
+          <span>{speciesConfirmLabel("cat")}</span>
+        </label>
+      ) : null}
+
       <Button
         type="button"
-        disabled={!previewUrl || generating}
+        disabled={!canGenerate}
         onClick={onGenerate}
         className="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63] disabled:opacity-40"
       >
