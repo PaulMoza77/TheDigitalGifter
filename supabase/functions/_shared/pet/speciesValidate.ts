@@ -32,6 +32,9 @@ export type SpeciesValidation =
 
 const HIGH_CONFIDENCE = 0.72;
 const DEFAULT_REPLICATE_VISION_MODEL = "lucataco/moondream2";
+/** Pin Moondream version — /v1/models/.../predictions returns 404 for some hosts. */
+const DEFAULT_MOONDREAM_VERSION =
+  "72ccb656353c348c1385df54b237eeb7bfa874bf11486cf0b9473e691b662d31";
 
 export function speciesRejectMessage(expected: "dog" | "cat"): string {
   return expected === "cat"
@@ -212,50 +215,32 @@ async function classifyWithReplicate(
   token: string,
   imageDataUrl: string,
 ): Promise<{ detected: SpeciesLabel; confidence: number }> {
-  const model =
-    String(Deno.env.get("PET_SPECIES_VISION_MODEL") || DEFAULT_REPLICATE_VISION_MODEL).trim() ||
-    DEFAULT_REPLICATE_VISION_MODEL;
+  const version =
+    String(Deno.env.get("PET_SPECIES_VISION_VERSION") || DEFAULT_MOONDREAM_VERSION).trim() ||
+    DEFAULT_MOONDREAM_VERSION;
+  const prompt =
+    'Is the primary animal a dog or a cat? Reply with JSON only: {"species":"dog"|"cat"|"other"|"unclear","confidence":0-1}. No breed names.';
 
-  // Try Moondream JSON classification first; fall back to BLIP caption keywords.
-  try {
-    return await runReplicateVisionModel(token, model, {
-      image: imageDataUrl,
-      prompt:
-        'Classify the primary animal. Reply with JSON only: {"species":"dog"|"cat"|"other"|"unclear","confidence":0-1}. No breed names.',
-    });
-  } catch (moondreamError) {
-    const captionModel =
-      String(Deno.env.get("PET_SPECIES_CAPTION_MODEL") || "salesforce/blip").trim() ||
-      "salesforce/blip";
+  // Prefer versioned predictions API (stable). Retry once on throttle.
+  let lastError = "";
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      const caption = await runReplicateCaption(token, captionModel, imageDataUrl);
-      return speciesFromCaption(caption);
-    } catch (captionError) {
-      throw new Error(
-        `vision failed: ${String(moondreamError instanceof Error ? moondreamError.message : moondreamError).slice(0, 80)} | ${String(captionError instanceof Error ? captionError.message : captionError).slice(0, 80)}`,
-      );
+      const prediction = await createAndWaitReplicatePrediction(token, {
+        version,
+        input: { image: imageDataUrl, prompt },
+      });
+      return parseSpeciesPayload(outputToText(prediction.output));
+    } catch (error) {
+      lastError = String(error instanceof Error ? error.message : error);
+      if (!/429|throttl|rate/i.test(lastError) || attempt === 2) break;
+      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
     }
   }
-}
 
-async function runReplicateVisionModel(
-  token: string,
-  model: string,
-  input: Record<string, unknown>,
-): Promise<{ detected: SpeciesLabel; confidence: number }> {
-  const prediction = await createAndWaitReplicate(token, model, input);
-  const text = outputToText(prediction.output);
-  return parseSpeciesPayload(text);
-}
-
-async function runReplicateCaption(
-  token: string,
-  model: string,
-  imageDataUrl: string,
-): Promise<string> {
-  const prediction = await createAndWaitReplicate(token, model, { image: imageDataUrl });
-  return outputToText(prediction.output);
-}
+  // Caption fallback only for non-throttle Moondream failures (avoid burning create quota).
+  if (/429|throttl|rate/i.test(lastError)) {
+    throw new Error(`vision failed: ${lastError.slice(0, 160)}`);
+  }
 
 function speciesFromCaption(caption: string): { detected: SpeciesLabel; confidence: number } {
   const text = String(caption || "").toLowerCase();
@@ -269,7 +254,23 @@ function speciesFromCaption(caption: string): { detected: SpeciesLabel; confiden
   return { detected: "unclear", confidence: 0.7 };
 }
 
-async function createAndWaitReplicate(
+async function createAndWaitReplicatePrediction(
+  token: string,
+  body: Record<string, unknown>,
+): Promise<{ id?: string; status?: string; error?: string; output?: unknown; detail?: string }> {
+  const created = await fetch("https://api.replicate.com/v1/predictions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Prefer: "wait=60",
+    },
+    body: JSON.stringify(body),
+  });
+  return waitReplicatePrediction(token, created);
+}
+
+async function createAndWaitReplicateModel(
   token: string,
   model: string,
   input: Record<string, unknown>,
@@ -283,7 +284,13 @@ async function createAndWaitReplicate(
     },
     body: JSON.stringify({ input }),
   });
+  return waitReplicatePrediction(token, created);
+}
 
+async function waitReplicatePrediction(
+  token: string,
+  created: Response,
+): Promise<{ id?: string; status?: string; error?: string; output?: unknown; detail?: string }> {
   let prediction = (await created.json()) as {
     id?: string;
     status?: string;
