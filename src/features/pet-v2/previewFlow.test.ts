@@ -98,6 +98,8 @@ describe("V2 preview navigation + attempt flow", () => {
     expect(previewErrorMessage({ failureCategory: "rate_limit", error: "Too many free previews" })).toBe(
       "Too many free previews",
     );
+    expect(previewErrorMessage({ failureCategory: "rate_limit" })).toMatch(/Try again in a moment/i);
+    expect(previewErrorMessage({ errorCode: "rate_limited" })).toMatch(/free previews/i);
   });
 });
 

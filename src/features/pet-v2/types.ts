@@ -106,6 +106,7 @@ export type PetV2PreviewResponse = {
   error?: string;
   errorCode?:
     | "rate_limited"
+    | "rate_limit"
     | "invalid_photo"
     | "heic_unsupported"
     | "generation_failed"
@@ -125,6 +126,12 @@ export type PetV2PreviewResponse = {
   estimatedSeconds?: number;
   preview_attempt_id?: string;
   reused?: boolean;
+  retryable?: boolean;
+  provider?: "replicate" | "openai";
+  providerStatus?: string;
+  providerDetail?: string;
+  latencyMs?: number;
+  identityBuild?: string;
   speciesDetected?: string;
   speciesConfidence?: number;
 };

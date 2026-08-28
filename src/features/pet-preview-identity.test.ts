@@ -232,11 +232,16 @@ describe("pet preview identity + funnel integrity", () => {
     const edge = readSrc("supabase/functions/pet-v2-preview/index.ts");
     expect(edge).toContain("createReplicatePrediction");
     expect(edge).toContain("provider_create_retry");
+    expect(edge).toContain("resolveReplicateRetryWaitMs");
+    expect(edge).toContain("retry-after");
     expect(edge).toContain("openai_fallback_start");
     expect(edge).toContain("runOpenAiIdentityEdit");
     expect(edge).toContain("images/edits");
     expect(edge).toContain('url.startsWith("data:image/")');
     expect(edge).toContain("PET_PREVIEW_PREFERRED_PROVIDER");
+    // Stable Idempotency-Key across create retries — no per-attempt suffix that double-charges.
+    expect(edge).toMatch(/Idempotency-Key":\s*replicateIdempotency/);
+    expect(edge).not.toMatch(/Idempotency-Key":\s*`\$\{idempotencyKey\.slice\(0,\s*48\)\}:\$\{attempt\}`/);
     expect(IDENTITY_LOCK).toMatch(/Chow Chow/i);
     expect(IDENTITY_NEGATIVES).toMatch(/shepherd/i);
   });

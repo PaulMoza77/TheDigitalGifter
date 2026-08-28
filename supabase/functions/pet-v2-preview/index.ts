@@ -21,7 +21,9 @@ const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_ITERATIONS = 45;
 /** Replicate create retries when the account is briefly throttled. */
 const REPLICATE_CREATE_ATTEMPTS = 3;
-const REPLICATE_CREATE_BACKOFF_MS = [2000, 8000, 16000];
+/** Base backoff before jitter (attempt index 0 waits before 2nd try). */
+const REPLICATE_CREATE_BACKOFF_MS = [1000, 3000, 8000];
+const REPLICATE_CREATE_MAX_WAIT_MS = 30_000;
 
 function previewModel(): string {
   return (Deno.env.get("PET_PREVIEW_IMAGE_MODEL") || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
@@ -35,7 +37,8 @@ function openAiImageModel(): string {
 }
 
 function openAiFallbackEnabled(): boolean {
-  return String(Deno.env.get("PET_PREVIEW_OPENAI_FALLBACK") || "true").toLowerCase() !== "false";
+  // Opt-in only. Production free previews run on Replicate; do not treat OpenAI as redundancy.
+  return String(Deno.env.get("PET_PREVIEW_OPENAI_FALLBACK") || "").toLowerCase() === "true";
 }
 
 type AttemptRow = {
@@ -287,6 +290,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const generatedAt = Date.now();
     const outputUrl = await runKontextPreview(ctx, token, imageDataUrl, species, idempotencyKey);
     const image = await downloadAsDataUrl(outputUrl.url);
     const marked = await markAttempt(ctx, idempotencyKey, {
@@ -305,6 +309,14 @@ Deno.serve(async (req) => {
       });
     }
     await recordSuccessfulQuota(ctx, { sessionId, ip, imageHash });
+    const latencyMs = Date.now() - generatedAt;
+    previewDiag({
+      stage: "preview_succeeded",
+      funnel: ctx.version,
+      latencyMs,
+      providerStatus: "succeeded",
+      predictionPrefix: String(outputUrl.predictionId).slice(0, 12),
+    });
     return jsonResponse({
       ok: true,
       mode: "live",
@@ -313,6 +325,9 @@ Deno.serve(async (req) => {
       remainingSession: Math.max(0, (limited.remainingSession ?? SESSION_LIMIT) - 1),
       estimatedSeconds: 20,
       preview_attempt_id: idempotencyKey,
+      provider: String(outputUrl.predictionId).startsWith("openai-") ? "openai" : "replicate",
+      providerStatus: "succeeded",
+      latencyMs,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Preview generation failed.";
@@ -334,12 +349,39 @@ Deno.serve(async (req) => {
         lastErrorCategory: errorCode,
       });
     }
+    const retryable =
+      keepProcessing ||
+      errorCode === "rate_limit" ||
+      errorCode === "timeout" ||
+      errorCode === "provider_error" ||
+      errorCode === "server_error";
+    const providerStatus =
+      errorCode === "rate_limit"
+        ? "rate_limited"
+        : keepProcessing || errorCode === "timeout"
+          ? "timeout"
+          : "failed";
+    const userError =
+      errorCode === "timeout"
+        ? "Your preview is still rendering. Tap Try again — we’ll pick up where it left off."
+        : errorCode === "rate_limit"
+          ? "The preview service is busy. Tap Try again in a moment — this usually clears quickly."
+          : "We couldn't create the preview. Try again.";
+    previewDiag({
+      stage: "preview_failed",
+      funnel: ctx.version,
+      errorCode,
+      providerStatus,
+      retryable,
+    });
     return jsonResponse({
       ok: false,
       mode: "live",
       errorCode,
-      error: "We couldn't create the preview. Try again.",
+      error: userError,
       failureCategory: errorCode,
+      retryable,
+      providerStatus,
       // Short provider hint for ops/smoke only — never includes tokens or image bytes.
       providerDetail: message.slice(0, 180),
       preview_attempt_id: idempotencyKey,
@@ -706,13 +748,16 @@ async function createReplicatePrediction(
   input?: Record<string, unknown>;
 }> {
   let lastMessage = "Could not start the preview.";
+  // One stable Idempotency-Key for the whole retry loop so a successful create
+  // cannot be charged twice if a later retry races after a false failure.
+  const replicateIdempotency = idempotencyKey.slice(0, 64);
   for (let attempt = 0; attempt < REPLICATE_CREATE_ATTEMPTS; attempt += 1) {
     const created = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
-        "Idempotency-Key": `${idempotencyKey.slice(0, 48)}:${attempt}`.slice(0, 64),
+        "Idempotency-Key": replicateIdempotency,
       },
       body: JSON.stringify({ input }),
     });
@@ -725,6 +770,15 @@ async function createReplicatePrediction(
       input?: Record<string, unknown>;
     };
     if (created.ok && createdJson.id) {
+      previewDiag({
+        stage: "provider_create_ok_status",
+        funnel: ctx.version,
+        model,
+        httpStatus: created.status,
+        attempt: attempt + 1,
+        providerStatus: String(createdJson.status || "unknown").slice(0, 32),
+        predictionPrefix: String(createdJson.id).slice(0, 12),
+      });
       return createdJson;
     }
 
@@ -739,24 +793,35 @@ async function createReplicatePrediction(
       httpStatus: created.status,
       attempt: attempt + 1,
       errorClass: classifyGenerationError(lastMessage),
+      providerStatus: throttled ? "rate_limited" : "create_failed",
+      retryAfterHeader: created.headers.get("retry-after") || null,
     });
     if (!throttled || attempt >= REPLICATE_CREATE_ATTEMPTS - 1) {
       throw new Error(lastMessage);
     }
-    const retryAfterSec = Number(created.headers.get("retry-after") || "");
-    const waitMs =
-      Number.isFinite(retryAfterSec) && retryAfterSec > 0
-        ? Math.min(30_000, Math.round(retryAfterSec * 1000))
-        : REPLICATE_CREATE_BACKOFF_MS[attempt] || 16_000;
+    const waitMs = resolveReplicateRetryWaitMs(created.headers.get("retry-after"), attempt);
     previewDiag({
       stage: "provider_create_retry",
       funnel: ctx.version,
       attempt: attempt + 1,
       waitMs,
+      providerStatus: "rate_limited",
     });
     await sleep(waitMs);
   }
   throw new Error(lastMessage);
+}
+
+/** Honor Retry-After when present; otherwise exponential backoff + jitter. */
+function resolveReplicateRetryWaitMs(retryAfterHeader: string | null, attempt: number): number {
+  const retryAfterSec = Number(retryAfterHeader || "");
+  if (Number.isFinite(retryAfterSec) && retryAfterSec > 0) {
+    return Math.min(REPLICATE_CREATE_MAX_WAIT_MS, Math.round(retryAfterSec * 1000));
+  }
+  const base = REPLICATE_CREATE_BACKOFF_MS[attempt] || REPLICATE_CREATE_BACKOFF_MS.at(-1) || 8000;
+  // Full-jitter: uniform in [base/2, base]
+  const jittered = Math.round(base * (0.5 + Math.random() * 0.5));
+  return Math.min(REPLICATE_CREATE_MAX_WAIT_MS, Math.max(250, jittered));
 }
 
 /**

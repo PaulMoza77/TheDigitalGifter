@@ -13,6 +13,12 @@ export function previewErrorMessage(
   if (response.errorCode === "invalid_funnel") {
     return response.error || "This preview doesn’t match the current experience. Refresh and try again.";
   }
+  if (response.errorCode === "rate_limited") {
+    return (
+      response.error ||
+      "This session already used its free previews. Unlock the collection or try again tomorrow."
+    );
+  }
   const category = response.failureCategory || categoryFromCode(response.errorCode);
   switch (category) {
     case "timeout":
@@ -20,7 +26,7 @@ export function previewErrorMessage(
     case "rate_limit":
       return (
         response.error ||
-        "This session already used its free previews. Unlock the collection or try again tomorrow."
+        "The preview service is busy. Tap Try again in a moment — this usually clears quickly."
       );
     case "wrong_species":
       return (
