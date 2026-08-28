@@ -153,7 +153,7 @@ describe("pet preview identity + funnel integrity", () => {
       expect(prompt).toMatch(/no human driver/i);
       expect(prompt).toMatch(/logos/i);
       expect(prompt).toMatch(/CRITICAL IDENTITY LOCK|identity source/i);
-      expect(prompt).toMatch(/no closed helmet|HARD BAN|HARD RULE/i);
+      expect(prompt).toMatch(/no closed helmet|HARD BAN|BARE HEAD ONLY|no helmet of any kind/i);
       expect(prompt).toMatch(/dense mane|fluff|Chow Chow/i);
       expect(prompt).toMatch(/short sleek coat|shepherd/i);
       expect(prompt).toMatch(/MANDATORY SCENE|race car cockpit/i);
