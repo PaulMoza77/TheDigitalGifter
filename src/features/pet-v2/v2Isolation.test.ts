@@ -123,7 +123,8 @@ describe("pet funnel V2 isolation", () => {
     expect(previewApi).not.toContain("pet-generate");
     expect(previewApi).not.toContain("../_lib/petV2");
     expect(edgePreview).toContain("black-forest-labs/flux-kontext-pro");
-    expect(edgePreview).toContain("ctx.claimRpc");
+    expect(edgePreview).toContain("begin_pet_v2_preview_create");
+    expect(edgePreview).toContain("ctx.attemptsTable");
     expect(readSrc("supabase/functions/_shared/pet/previewFunnelContext.ts")).toContain(
       "claim_pet_v2_preview_attempt",
     );
@@ -133,9 +134,16 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain("idempotency_key");
     expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain('errorCode === "live_disabled"');
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("generateLockRef");
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("generating={isGenerating}");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain(
+      "generating={isGenerating || isConvertingHeic}",
+    );
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("resolveGenerateAttempt");
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("shouldRestoreLocalPreview");
+    expect(edgePreview).toContain("begin_pet_v2_preview_create");
+    expect(edgePreview).toContain("claim_unavailable");
+    expect(edgePreview).toContain("provider_state_persist_failed");
+    expect(edgePreview).toContain("retryAfterSeconds");
+    expect(edgePreview).not.toContain("Fallback without RPC");
     expect(readSrc("src/features/pet-v2/previewClient.ts")).not.toContain("response.mode === \"mock\" || !response.ok");
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("createReplicatePrediction");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("applyV2SaleAmount");
@@ -196,7 +204,7 @@ describe("V2 free-preview economics", () => {
 });
 
 describe("V2 HEIC and personality", () => {
-  it("fails HEIC visibly instead of silently", () => {
+  it("fails raw HEIC at validation (conversion happens before validate in the funnel)", () => {
     expect(isHeicPhoto({ name: "IMG_001.HEIC", type: "image/heic" })).toBe(true);
     expect(isHeicPhoto({ name: "dog.jpg", type: "image/jpeg" })).toBe(false);
     const heic = new File([new Uint8Array([1, 2, 3])], "IMG_001.HEIC", { type: "image/heic" });

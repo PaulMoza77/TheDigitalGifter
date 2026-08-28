@@ -23,9 +23,11 @@ export async function requestV2Preview(input: {
     return {
       ok: false,
       mode: "mock",
-      error: "This browser session already used its free previews.",
+      error: "This browser session already used its free previews (2 per 24 hours). Unlock the collection, or try again in about 1 hour.",
       errorCode: "rate_limited",
       failureCategory: "rate_limit",
+      rateLimitKind: "session",
+      retryAfterSeconds: 3600,
       remainingSession: 0,
     };
   }

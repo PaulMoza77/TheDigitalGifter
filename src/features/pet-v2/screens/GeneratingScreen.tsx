@@ -4,14 +4,19 @@ export function V2GeneratingScreen({
   thumbnailUrl,
   status,
   error,
+  errorTitle,
   busy,
+  allowRetry = true,
   onRetry,
   onBack,
 }: {
   thumbnailUrl: string | null;
   status: string;
   error?: string | null;
+  errorTitle?: string | null;
   busy?: boolean;
+  /** When false (e.g. rate limited), hide auto-retry hammering. */
+  allowRetry?: boolean;
   onRetry: () => void;
   onBack: () => void;
 }) {
@@ -25,9 +30,13 @@ export function V2GeneratingScreen({
         />
       ) : null}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-[#f6efe4]">Creating your pet’s F1 driver preview</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-[#f6efe4]">
+          {error ? errorTitle || "Preview didn’t finish" : "Creating your pet’s F1 driver preview"}
+        </h1>
         <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-          We’re turning your pet into a cinematic Formula 1 driver. This is one free preview — not the full collection yet.
+          {error
+            ? "You can change the photo or unlock the collection when you’re ready."
+            : "We’re turning your pet into a cinematic Formula 1 driver. This is one free preview — not the full collection yet."}
         </p>
       </div>
       {error ? (
@@ -36,18 +45,24 @@ export function V2GeneratingScreen({
             {error}
           </p>
           <div className="flex gap-2">
+            {allowRetry ? (
+              <Button
+                type="button"
+                className="h-11 flex-1 rounded-full bg-[#d4a84b] text-[#1a140e]"
+                disabled={busy}
+                onClick={onRetry}
+              >
+                Try again
+              </Button>
+            ) : null}
             <Button
               type="button"
-              className="h-11 flex-1 rounded-full bg-[#d4a84b] text-[#1a140e]"
-              disabled={busy}
-              onClick={onRetry}
-            >
-              Try again
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-11 text-[#f6efe4]"
+              variant={allowRetry ? "ghost" : undefined}
+              className={
+                allowRetry
+                  ? "h-11 text-[#f6efe4]"
+                  : "h-11 flex-1 rounded-full bg-[#d4a84b] text-[#1a140e]"
+              }
               disabled={busy}
               onClick={onBack}
             >

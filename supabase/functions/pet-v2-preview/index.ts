@@ -79,8 +79,9 @@ Deno.serve(async (req) => {
         ok: false,
         mode: "mock",
         errorCode: "heic_unsupported",
+        failureCategory: "invalid_image",
         error:
-          "iPhone HEIC photos aren’t supported yet. Set Camera Formats to Most Compatible, or export as JPEG.",
+          "That iPhone HEIC photo couldn’t be used. Choose JPEG/PNG, or enable Most Compatible in Camera Formats.",
       },
       400,
     );
@@ -109,89 +110,162 @@ Deno.serve(async (req) => {
     clientKey ||
     `preview:${sessionId || "anon"}:${imageHash}${regenerate ? `:regen:${crypto.randomUUID()}` : ""}`;
 
-  const limited = await assertPreviewLimits(ctx, sessionId, ip, imageHash, idempotencyKey);
-  if (!limited.ok) {
-    return jsonResponse(
-      {
-        ok: false,
-        mode: "mock",
-        errorCode: "rate_limited",
-        error: limited.message,
-        remainingSession: limited.remainingSession,
-        remainingIp: limited.remainingIp,
-      },
-      429,
-    );
-  }
-
-  let claim = await claimAttempt(ctx, {
+  // Atomic admit + create gate (migration-required). Never fall back to unlocked Replicate creates.
+  const begun = await beginPreviewCreate(ctx, {
     idempotencyKey,
     sessionId,
     ip,
     imageHash,
     species,
   });
+  if (!begun) {
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "live",
+        errorCode: "claim_unavailable",
+        failureCategory: "server_error",
+        error:
+          "Preview claiming is temporarily unavailable. Please try again in a moment — no duplicate charge was started.",
+        preview_attempt_id: idempotencyKey,
+        retryAfterSeconds: 15,
+      },
+      503,
+    );
+  }
 
-  if (claim) {
+  if (begun.action === "quota_denied") {
+    const kind = (begun.rate_limit_kind || "unknown") as "session" | "ip" | "image" | "unknown";
+    const retryAfterSeconds =
+      typeof begun.retry_after_seconds === "number" && begun.retry_after_seconds > 0
+        ? begun.retry_after_seconds
+        : 1;
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "mock",
+        errorCode: "rate_limited",
+        failureCategory: "rate_limit",
+        error: rateLimitMessage(kind, retryAfterSeconds),
+        rateLimitKind: kind,
+        retryAfterSeconds,
+        remainingSession: begun.remaining_session ?? 0,
+        remainingIp: begun.remaining_ip ?? 0,
+        preview_attempt_id: idempotencyKey,
+      },
+      429,
+    );
+  }
+
+  if (begun.action === "orphan_timeout") {
+    return jsonResponse({
+      ok: false,
+      mode: "live",
+      errorCode: "claim_orphan",
+      failureCategory: "server_error",
+      error:
+        "A previous attempt for this photo got stuck, and we couldn’t verify whether the preview provider had already started. Replace the photo for a fresh attempt — we won’t start another prediction for this one automatically.",
+      preview_attempt_id: idempotencyKey,
+    });
+  }
+
+  if (begun.action === "claim_unavailable" || begun.action === "invalid" || begun.action === "missing") {
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "live",
+        errorCode: "claim_unavailable",
+        failureCategory: "server_error",
+        error:
+          "Preview claiming is temporarily unavailable. Please try again in a moment — no duplicate charge was started.",
+        preview_attempt_id: idempotencyKey,
+        retryAfterSeconds: 15,
+      },
+      503,
+    );
+  }
+
+  let claim: AttemptRow | null = {
+    idempotency_key: idempotencyKey,
+    prediction_id: begun.prediction_id || null,
+    status: begun.status || null,
+    live_generation: begun.live_generation ?? false,
+  };
+
+  if (begun.action === "resume" && begun.prediction_id) {
     const resumed = await resumeExistingAttempt(token, claim, idempotencyKey, ctx);
-    if (resumed) {
-      if (resumed.ok && resumed.imageDataUrl) {
-        return jsonResponse({
-          ok: true,
-          mode: "live",
-          imageDataUrl: resumed.imageDataUrl,
-          remainingSession: Math.max(
-            0,
-            (limited.remainingSession ?? SESSION_LIMIT) - (claim.live_generation ? 0 : 1),
-          ),
-          estimatedSeconds: 20,
-          reused: true,
-          preview_attempt_id: idempotencyKey,
-        });
-      }
-      if (!resumed.ok && resumed.blockCreate) {
-        return jsonResponse({
-          ok: false,
-          mode: "live",
-          errorCode: resumed.errorCode || "generation_failed",
-          error: "We couldn't create the preview. Try again.",
-          failureCategory: resumed.failureCategory || resumed.errorCode || "provider_error",
-          preview_attempt_id: idempotencyKey,
-        });
-      }
-      if (!resumed.ok && !resumed.allowNewPrediction) {
-        return jsonResponse({
-          ok: false,
-          mode: "live",
-          errorCode: resumed.errorCode || "generation_failed",
-          error: "We couldn't create the preview. Try again.",
-          failureCategory: resumed.failureCategory || resumed.errorCode || "provider_error",
-          preview_attempt_id: idempotencyKey,
-        });
-      }
-      // allowNewPrediction: refresh claim so stale prediction_id cannot block create.
-      if (resumed.allowNewPrediction) {
-        claim = {
-          ...claim,
-          status: "pending",
-          prediction_id: null,
-        };
-      }
+    if (resumed?.ok && resumed.imageDataUrl) {
+      return jsonResponse({
+        ok: true,
+        mode: "live",
+        imageDataUrl: resumed.imageDataUrl,
+        remainingSession: begun.remaining_session ?? SESSION_LIMIT,
+        estimatedSeconds: 20,
+        reused: true,
+        preview_attempt_id: idempotencyKey,
+      });
+    }
+    if (resumed && !resumed.ok && !resumed.allowNewPrediction) {
+      return jsonResponse({
+        ok: false,
+        mode: "live",
+        errorCode: resumed.errorCode || "generation_failed",
+        error:
+          resumed.errorCode === "timeout"
+            ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
+            : "We couldn't create the preview. Try again.",
+        failureCategory: resumed.failureCategory || resumed.errorCode || "provider_error",
+        preview_attempt_id: idempotencyKey,
+      });
+    }
+    // allowNewPrediction after terminal provider failure clears prediction in resume —
+    // require a fresh begin on retry rather than creating unlocked here.
+    if (resumed?.allowNewPrediction) {
+      await markAttempt(ctx, idempotencyKey, {
+        status: "failed",
+        liveGeneration: false,
+        lastErrorCategory: "provider_error",
+        clearPrediction: true,
+      });
+      return jsonResponse({
+        ok: false,
+        mode: "live",
+        errorCode: "generation_failed",
+        failureCategory: "provider_error",
+        error: "We couldn't finish that preview. Tap Try again to start a safe retry.",
+        preview_attempt_id: idempotencyKey,
+      });
     }
   }
 
-  // Recover if resume returned null but a stale provider row would block create.
-  if (
-    claim?.prediction_id &&
-    (claim.status === "pending" || claim.status === "processing" || claim.status === "succeeded")
-  ) {
-    await markAttempt(ctx, idempotencyKey, {
-      status: "pending",
-      liveGeneration: false,
-      lastErrorCategory: "server_error",
-      clearPrediction: true,
+  if (begun.action === "wait") {
+    const waited = await waitForSiblingPrediction(ctx, token, idempotencyKey, claim);
+    if (waited) return waited;
+    return jsonResponse({
+      ok: false,
+      mode: "live",
+      errorCode: "timeout",
+      failureCategory: "timeout",
+      error:
+        "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off.",
+      preview_attempt_id: idempotencyKey,
     });
-    claim = { ...claim, status: "pending", prediction_id: null };
+  }
+
+  if (begun.action !== "create") {
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "live",
+        errorCode: "claim_unavailable",
+        failureCategory: "server_error",
+        error:
+          "Preview claiming is temporarily unavailable. Please try again in a moment — no duplicate charge was started.",
+        preview_attempt_id: idempotencyKey,
+        retryAfterSeconds: 15,
+      },
+      503,
+    );
   }
 
   try {
@@ -217,7 +291,7 @@ Deno.serve(async (req) => {
       ok: true,
       mode: "live",
       imageDataUrl: image,
-      remainingSession: Math.max(0, (limited.remainingSession ?? SESSION_LIMIT) - 1),
+      remainingSession: Math.max(0, (begun.remaining_session ?? SESSION_LIMIT - 1)),
       estimatedSeconds: 20,
       preview_attempt_id: idempotencyKey,
     });
@@ -238,15 +312,25 @@ Deno.serve(async (req) => {
         status: "failed",
         predictionId: predictionId || undefined,
         liveGeneration: false,
-        lastErrorCategory: errorCode,
+        lastErrorCategory: errorCode === "provider_state_persist_failed" ? "server_error" : errorCode,
       });
     }
     return jsonResponse({
       ok: false,
       mode: "live",
-      errorCode,
-      error: "We couldn't create the preview. Try again.",
-      failureCategory: errorCode,
+      errorCode: errorCode === "provider_state_persist_failed" ? "provider_state_persist_failed" : errorCode,
+      error:
+        errorCode === "provider_state_persist_failed"
+          ? "We started a preview but couldn’t save its provider state. Replace the photo for a fresh attempt — we won’t start another prediction for this one automatically."
+          : errorCode === "timeout"
+            ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
+            : "We couldn't create the preview. Try again.",
+      failureCategory:
+        errorCode === "provider_state_persist_failed" || errorCode === "timeout"
+          ? errorCode === "timeout"
+            ? "timeout"
+            : "server_error"
+          : errorCode,
       preview_attempt_id: idempotencyKey,
     });
   }
@@ -455,11 +539,23 @@ async function runKontextPreview(
     );
   }
 
-  await markAttempt(ctx, idempotencyKey, {
+  const persisted = await markAttempt(ctx, idempotencyKey, {
     status: "processing",
     predictionId: createdJson.id,
     liveGeneration: false,
   });
+  if (!persisted) {
+    await cancelReplicatePrediction(token, createdJson.id);
+    const err = new Error("provider_state_persist_failed") as Error & {
+      predictionId?: string;
+      errorCode?: string;
+      keepProcessing?: boolean;
+    };
+    err.predictionId = createdJson.id;
+    err.errorCode = "provider_state_persist_failed";
+    err.keepProcessing = false;
+    throw err;
+  }
 
   try {
     const polled = await pollPrediction(token, createdJson.id);
@@ -496,6 +592,13 @@ async function runKontextPreview(
     }
     throw error;
   }
+}
+
+async function cancelReplicatePrediction(token: string, predictionId: string): Promise<void> {
+  await fetch(`https://api.replicate.com/v1/predictions/${predictionId}/cancel`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  }).catch(() => undefined);
 }
 
 async function pollPrediction(
@@ -558,133 +661,36 @@ async function downloadAsDataUrl(url: string): Promise<string> {
   return `data:image/jpeg;base64,${btoa(binary)}`;
 }
 
-async function assertPreviewLimits(
-  ctx: PreviewFunnelContext,
-  sessionId: string,
-  ip: string,
-  imageHash: string,
-  idempotencyKey: string,
-): Promise<{
-  ok: boolean;
-  message?: string;
-  remainingSession?: number;
-  remainingIp?: number;
-}> {
-  const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
-  const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
-  if (!supabaseUrl || !serviceKey) {
-    return { ok: true, remainingSession: SESSION_LIMIT, remainingIp: IP_DAY_LIMIT };
-  }
-
-  // Replays of an in-flight / succeeded attempt must not be blocked by quota.
-  const existing = await getAttemptByKey(ctx, supabaseUrl, serviceKey, idempotencyKey);
-  if (
-    existing &&
-    (existing.status === "pending" ||
-      existing.status === "processing" ||
-      existing.status === "succeeded" ||
-      (existing.status === "failed" && existing.prediction_id))
-  ) {
-    return { ok: true, remainingSession: SESSION_LIMIT, remainingIp: IP_DAY_LIMIT };
-  }
-
-  const since = new Date(Date.now() - 86400000).toISOString();
-  const ipHash = await hashIp(ctx, ip);
-  const sessionCount = await countAttempts(ctx, supabaseUrl, serviceKey, {
-    column: "session_id",
-    value: sessionId.slice(0, 64),
-    since,
-  });
-  const ipCount = await countAttempts(ctx, supabaseUrl, serviceKey, {
-    column: "ip_hash",
-    value: ipHash,
-    since,
-  });
-  const hashCount = await countAttempts(ctx, supabaseUrl, serviceKey, {
-    column: "image_hash",
-    value: imageHash,
-    since,
-  });
-
-  if (sessionCount >= SESSION_LIMIT) {
-    return { ok: false, message: "This session already used its free previews.", remainingSession: 0 };
-  }
-  if (ipCount >= IP_DAY_LIMIT) {
-    return { ok: false, message: "Too many free previews from this network today.", remainingIp: 0 };
-  }
-  if (hashCount >= SESSION_LIMIT) {
-    return { ok: false, message: "That photo already received a free preview today." };
-  }
-  return {
-    ok: true,
-    remainingSession: SESSION_LIMIT - sessionCount,
-    remainingIp: IP_DAY_LIMIT - ipCount,
-  };
-}
-
-async function countAttempts(
-  ctx: PreviewFunnelContext,
-  supabaseUrl: string,
-  serviceKey: string,
-  input: { column: string; value: string; since: string },
-): Promise<number> {
-  if (!input.value) return 0;
-  // Only successful live generations consume quota.
-  const url =
-    `${supabaseUrl}/rest/v1/${ctx.attemptsTable}` +
-    `?select=id&${input.column}=eq.${encodeURIComponent(input.value)}` +
-    `&live_generation=eq.true&status=eq.succeeded&created_at=gte.${encodeURIComponent(input.since)}`;
-  const res = await fetch(url, {
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      Prefer: "count=exact",
-    },
-  }).catch(() => null);
-  if (!res || !res.ok) {
-    // Backward compatible if status column not migrated yet.
-    const fallback =
-      `${supabaseUrl}/rest/v1/${ctx.attemptsTable}` +
-      `?select=id&${input.column}=eq.${encodeURIComponent(input.value)}` +
-      `&live_generation=eq.true&created_at=gte.${encodeURIComponent(input.since)}`;
-    const res2 = await fetch(fallback, {
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-        Prefer: "count=exact",
-      },
-    }).catch(() => null);
-    if (!res2 || !res2.ok) return 0;
-    return parseCount(res2);
-  }
-  return parseCount(res);
-}
-
-async function parseCount(res: Response): Promise<number> {
-  const range = res.headers.get("content-range");
-  if (range && range.includes("/")) {
-    const total = Number(range.split("/")[1]);
-    if (Number.isFinite(total)) return total;
-  }
-  const rows = (await res.json().catch(() => [])) as unknown[];
-  return Array.isArray(rows) ? rows.length : 0;
-}
-
-async function claimAttempt(
+async function beginPreviewCreate(
   ctx: PreviewFunnelContext,
   input: {
-  idempotencyKey: string;
-  sessionId: string;
-  ip: string;
-  imageHash: string;
-  species: string;
-}): Promise<AttemptRow | null> {
+    idempotencyKey: string;
+    sessionId: string;
+    ip: string;
+    imageHash: string;
+    species: string;
+  },
+): Promise<{
+  action: string;
+  prediction_id?: string;
+  status?: string;
+  live_generation?: boolean;
+  rate_limit_kind?: string;
+  retry_after_seconds?: number;
+  remaining_session?: number;
+  remaining_ip?: number;
+  error_code?: string;
+  failure_category?: string;
+} | null> {
   const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
   const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  // Fail closed: never create provider predictions without the atomic RPC.
   if (!supabaseUrl || !serviceKey) return null;
 
   const ipHash = await hashIp(ctx, input.ip);
-  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${ctx.claimRpc}`, {
+  const beginRpc =
+    ctx.version === "v3" ? "begin_pet_v3_preview_create" : "begin_pet_v2_preview_create";
+  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${beginRpc}`, {
     method: "POST",
     headers: {
       apikey: serviceKey,
@@ -698,39 +704,100 @@ async function claimAttempt(
       p_image_hash: input.imageHash,
       p_species: input.species,
       p_scene_key: ctx.sceneKey,
+      p_session_limit: SESSION_LIMIT,
+      p_ip_limit: IP_DAY_LIMIT,
+      p_image_limit: SESSION_LIMIT,
+      p_orphan_seconds: 90,
     }),
   }).catch(() => null);
 
-  if (res && res.ok) {
-    const row = (await res.json().catch(() => null)) as AttemptRow | null;
-    return row;
-  }
+  if (!res || !res.ok) return null;
+  const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!json || typeof json.action !== "string") return null;
+  return {
+    action: String(json.action),
+    prediction_id: json.prediction_id ? String(json.prediction_id) : undefined,
+    status: json.status ? String(json.status) : undefined,
+    live_generation: Boolean(json.live_generation),
+    rate_limit_kind: json.rate_limit_kind ? String(json.rate_limit_kind) : undefined,
+    retry_after_seconds:
+      typeof json.retry_after_seconds === "number" ? json.retry_after_seconds : undefined,
+    remaining_session:
+      typeof json.remaining_session === "number" ? json.remaining_session : undefined,
+    remaining_ip: typeof json.remaining_ip === "number" ? json.remaining_ip : undefined,
+    error_code: json.error_code ? String(json.error_code) : undefined,
+    failure_category: json.failure_category ? String(json.failure_category) : undefined,
+  };
+}
 
-  // Fallback without RPC: best-effort insert + select.
-  const existing = await getAttemptByKey(ctx, supabaseUrl, serviceKey, input.idempotencyKey);
-  if (existing) return existing;
-  await fetch(`${supabaseUrl}/rest/v1/${ctx.attemptsTable}`, {
-    method: "POST",
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify({
-      idempotency_key: input.idempotencyKey,
-      session_id: input.sessionId.slice(0, 64),
-      ip_hash: ipHash,
-      image_hash: input.imageHash,
-      species: input.species,
-      scene_key: ctx.sceneKey,
-      live_generation: false,
-      status: "pending",
-      provider: "replicate",
-      started_at: new Date().toISOString(),
-    }),
-  }).catch(() => undefined);
-  return await getAttemptByKey(ctx, supabaseUrl, serviceKey, input.idempotencyKey);
+function rateLimitMessage(kind: "session" | "ip" | "image" | "unknown", retryAfterSeconds: number): string {
+  const hours = Math.max(1, Math.ceil(retryAfterSeconds / 3600));
+  if (kind === "session") {
+    return `This browser session already used its free previews (2 per 24 hours). Unlock the collection, or try again in about ${hours} hour${hours === 1 ? "" : "s"}.`;
+  }
+  if (kind === "ip") {
+    return `This network reached today’s free-preview limit (5 per 24 hours). Try again in about ${hours} hour${hours === 1 ? "" : "s"}, or unlock the collection.`;
+  }
+  if (kind === "image") {
+    return `That photo already received a free preview today. Try a different photo, or unlock the collection.`;
+  }
+  return `Free preview limit reached. Try again in about ${hours} hour${hours === 1 ? "" : "s"}, or unlock the collection.`;
+}
+
+async function waitForSiblingPrediction(
+  ctx: PreviewFunnelContext,
+  token: string,
+  idempotencyKey: string,
+  claim: AttemptRow | null,
+): Promise<Response | null> {
+  const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) return null;
+
+  for (let i = 0; i < 20; i += 1) {
+    await sleep(1500);
+    const row = await getAttemptByKey(ctx, supabaseUrl, serviceKey, idempotencyKey);
+    if (!row) continue;
+    if (row.prediction_id) {
+      const resumed = await resumeExistingAttempt(
+        token,
+        { ...(claim || {}), ...row },
+        idempotencyKey,
+        ctx,
+      );
+      if (resumed?.ok && resumed.imageDataUrl) {
+        return jsonResponse({
+          ok: true,
+          mode: "live",
+          imageDataUrl: resumed.imageDataUrl,
+          remainingSession: SESSION_LIMIT,
+          estimatedSeconds: 20,
+          reused: true,
+          preview_attempt_id: idempotencyKey,
+        });
+      }
+      if (resumed && !resumed.ok && !resumed.allowNewPrediction) {
+        return jsonResponse({
+          ok: false,
+          mode: "live",
+          errorCode: resumed.errorCode || "timeout",
+          failureCategory: resumed.failureCategory || resumed.errorCode || "timeout",
+          error:
+            resumed.errorCode === "timeout"
+              ? "Your preview is still rendering. Wait a moment, then try again — we’ll pick up where it left off."
+              : "We couldn't create the preview. Try again.",
+          preview_attempt_id: idempotencyKey,
+        });
+      }
+    }
+    if (row.status === "failed" && !row.prediction_id) {
+      return null;
+    }
+    if (row.status === "succeeded" && row.prediction_id) {
+      continue;
+    }
+  }
+  return null;
 }
 
 async function getAttemptByKey(

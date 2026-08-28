@@ -106,7 +106,8 @@ describe("pet funnel V3 cat isolation", () => {
     expect(shared).toContain("claim_pet_v3_preview_attempt");
     expect(preview).toContain("resolvePreviewContext");
     expect(preview).toContain("ctx.attemptsTable");
-    expect(preview).toContain("ctx.claimRpc");
+    expect(preview).toContain("begin_pet_v3_preview_create");
+    expect(preview).toContain("begin_pet_v2_preview_create");
     expect(readSrc("supabase/migrations/20260825193000_pet_v3_cat_funnel.sql")).toContain(
       "pet_v3_preview_attempts",
     );

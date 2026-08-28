@@ -113,11 +113,18 @@ export type PetV2PreviewResponse = {
     | "timeout"
     | "provider_error"
     | "invalid_image"
-    | "server_error";
+    | "server_error"
+    | "claim_unavailable"
+    | "claim_orphan"
+    | "migration_required"
+    | "provider_state_persist_failed";
   failureCategory?: PetV2FailureCategory;
   remainingSession?: number;
   remainingIp?: number;
   estimatedSeconds?: number;
   preview_attempt_id?: string;
   reused?: boolean;
+  /** Seconds until a sensible retry for rate limits (advisory). */
+  retryAfterSeconds?: number;
+  rateLimitKind?: "session" | "ip" | "image" | "unknown";
 };
