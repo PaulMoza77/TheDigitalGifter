@@ -9,6 +9,7 @@ import { V3PackOffer } from "../V3PackOffer";
 
 export function V3PreviewScreen({
   previewUrl,
+  sourceUrl,
   petName,
   mode,
   canRegenerate,
@@ -16,6 +17,7 @@ export function V3PreviewScreen({
   onUnlock,
 }: {
   previewUrl: string;
+  sourceUrl?: string | null;
   petName?: string;
   mode: "live" | "mock" | null;
   canRegenerate: boolean;
@@ -35,9 +37,22 @@ export function V3PreviewScreen({
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#f6efe4]">{headline}</h1>
         <p className="mt-2 text-sm leading-6 text-[#f6efe4]/68">{copy.previewSubhead}</p>
       </div>
-      <figure className="overflow-hidden rounded-3xl border border-[#d4a84b]/30 bg-[#1a1410]">
-        <img src={previewUrl} alt={copy.previewImageAlt} className="w-full object-cover" />
-      </figure>
+      {sourceUrl ? (
+        <div className="grid grid-cols-2 gap-3">
+          <figure className="overflow-hidden rounded-2xl border border-[#d4a84b]/20 bg-[#1a1410]">
+            <img src={sourceUrl} alt="Your uploaded cat" className="aspect-square w-full object-cover" />
+            <figcaption className="px-3 py-2 text-center text-xs text-[#f6efe4]/55">Your photo</figcaption>
+          </figure>
+          <figure className="overflow-hidden rounded-2xl border border-[#d4a84b]/30 bg-[#1a1410]">
+            <img src={previewUrl} alt={copy.previewImageAlt} className="aspect-square w-full object-cover" />
+            <figcaption className="px-3 py-2 text-center text-xs text-[#f6efe4]/55">Royal preview</figcaption>
+          </figure>
+        </div>
+      ) : (
+        <figure className="overflow-hidden rounded-3xl border border-[#d4a84b]/30 bg-[#1a1410]">
+          <img src={previewUrl} alt={copy.previewImageAlt} className="w-full object-cover" />
+        </figure>
+      )}
       {mode === "mock" ? (
         <p className="rounded-2xl border border-[#d4a84b]/30 bg-[#d4a84b]/10 px-4 py-3 text-sm text-[#f3d48a]">
           {copy.mockPreviewNote}

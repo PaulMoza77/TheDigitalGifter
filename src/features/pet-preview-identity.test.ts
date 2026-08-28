@@ -195,6 +195,8 @@ describe("pet preview identity + funnel integrity", () => {
     expect(readSrc("src/features/pet-v3/screens/PreviewScreen.tsx")).toContain('identityConfirmLabel("cat")');
     expect(readSrc("src/features/pet-v2/screens/PreviewScreen.tsx")).toContain("canUnlockWithIdentityConfirm");
     expect(readSrc("src/features/pet-v3/screens/PreviewScreen.tsx")).toContain("canUnlockWithIdentityConfirm");
+    expect(readSrc("src/features/pet-v2/screens/PreviewScreen.tsx")).toContain("sourceUrl");
+    expect(readSrc("src/features/pet-v3/screens/PreviewScreen.tsx")).toContain("sourceUrl");
   });
 
   it("keeps production analytics event names unchanged", () => {

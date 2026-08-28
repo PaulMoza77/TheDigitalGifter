@@ -452,6 +452,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       {step === "preview" && draft.generatedPreviewDataUrl ? (
         <V2PreviewScreen
           previewUrl={draft.generatedPreviewDataUrl}
+          sourceUrl={previewUrl}
           petName={draft.petName}
           species={species}
           mode={draft.generationMode}

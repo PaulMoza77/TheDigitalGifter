@@ -10,6 +10,7 @@ import type { PetV2Species } from "../types";
 
 export function V2PreviewScreen({
   previewUrl,
+  sourceUrl,
   petName,
   species = "dog",
   mode,
@@ -18,6 +19,7 @@ export function V2PreviewScreen({
   onUnlock,
 }: {
   previewUrl: string;
+  sourceUrl?: string | null;
   petName?: string;
   species?: PetV2Species;
   mode: "live" | "mock" | null;
@@ -45,9 +47,26 @@ export function V2PreviewScreen({
           transformations.
         </p>
       </div>
-      <figure className="overflow-hidden rounded-3xl border border-[#d4a84b]/30 bg-[#1a1410]">
-        <img src={previewUrl} alt={`Your ${petLabel} as a Formula 1 driver`} className="w-full object-cover" />
-      </figure>
+      {sourceUrl ? (
+        <div className="grid grid-cols-2 gap-3">
+          <figure className="overflow-hidden rounded-2xl border border-[#d4a84b]/20 bg-[#1a1410]">
+            <img src={sourceUrl} alt={`Your uploaded ${petLabel}`} className="aspect-square w-full object-cover" />
+            <figcaption className="px-3 py-2 text-center text-xs text-[#f6efe4]/55">Your photo</figcaption>
+          </figure>
+          <figure className="overflow-hidden rounded-2xl border border-[#d4a84b]/30 bg-[#1a1410]">
+            <img
+              src={previewUrl}
+              alt={`Your ${petLabel} as a Formula 1 driver`}
+              className="aspect-square w-full object-cover"
+            />
+            <figcaption className="px-3 py-2 text-center text-xs text-[#f6efe4]/55">F1 preview</figcaption>
+          </figure>
+        </div>
+      ) : (
+        <figure className="overflow-hidden rounded-3xl border border-[#d4a84b]/30 bg-[#1a1410]">
+          <img src={previewUrl} alt={`Your ${petLabel} as a Formula 1 driver`} className="w-full object-cover" />
+        </figure>
+      )}
       {mode === "mock" ? (
         <p className="rounded-2xl border border-[#d4a84b]/30 bg-[#d4a84b]/10 px-4 py-3 text-sm text-[#f3d48a]">
           Prototype preview: live AI generation is off in this environment, so this is your photo with F1-styled framing.

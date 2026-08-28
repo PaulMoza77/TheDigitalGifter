@@ -318,6 +318,7 @@ export function PetV3FunnelPage() {
       {step === "preview" && draft.generatedPreviewDataUrl ? (
         <V3PreviewScreen
           previewUrl={draft.generatedPreviewDataUrl}
+          sourceUrl={previewUrl}
           petName={draft.petName}
           mode={draft.generationMode}
           canRegenerate={remainingSessionPreviews() > 0 && !isGenerating}
