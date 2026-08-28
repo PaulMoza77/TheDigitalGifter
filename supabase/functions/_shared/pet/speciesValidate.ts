@@ -18,6 +18,7 @@ export type SpeciesValidation =
       detected: SpeciesLabel;
       confidence: number;
       provider: SpeciesProvider;
+      visionWarning?: string;
     }
   | {
       ok: false;
@@ -76,11 +77,13 @@ export async function validatePetSpecies(input: {
   }
 
   const openaiKey = String(Deno.env.get("OPENAI_API_KEY") || "").trim();
+  let lastVisionError = "";
   if (openaiKey) {
     try {
       const result = await classifyWithOpenAi(openaiKey, input.imageDataUrl);
       return decideSpeciesOutcome(input.expected, result.detected, result.confidence, "openai");
-    } catch {
+    } catch (error) {
+      lastVisionError = String(error instanceof Error ? error.message : error).slice(0, 160);
       /* fall through to Replicate */
     }
   }
@@ -90,20 +93,28 @@ export async function validatePetSpecies(input: {
     try {
       const result = await classifyWithReplicate(replicateToken, input.imageDataUrl);
       return decideSpeciesOutcome(input.expected, result.detected, result.confidence, "replicate");
-    } catch {
-      /* fall through to block */
+    } catch (error) {
+      lastVisionError = String(error instanceof Error ? error.message : error).slice(0, 160);
+      /* fall through */
     }
   }
 
-  // Do not fail-open into the opposite funnel when classifiers are unavailable.
+  // Soft fail-open for availability, but stamp diagnostics so ops can see vision is down.
+  // Client species-confirm + funnel_version still apply; wrong_species is enforced when vision works.
+  console.log(
+    JSON.stringify({
+      stage: "species_vision_unavailable",
+      expected: input.expected,
+      lastVisionError,
+    }),
+  );
   return {
-    ok: false,
-    action: "ask_clearer",
+    ok: true,
+    action: "proceed",
     detected: "unclear",
     confidence: 0,
     provider: "skipped",
-    errorCode: "unclear_species",
-    error: unclearSpeciesMessage(),
+    visionWarning: lastVisionError || "species vision unavailable",
   };
 }
 
@@ -205,20 +216,72 @@ async function classifyWithReplicate(
     String(Deno.env.get("PET_SPECIES_VISION_MODEL") || DEFAULT_REPLICATE_VISION_MODEL).trim() ||
     DEFAULT_REPLICATE_VISION_MODEL;
 
+  // Try Moondream JSON classification first; fall back to BLIP caption keywords.
+  try {
+    return await runReplicateVisionModel(token, model, {
+      image: imageDataUrl,
+      prompt:
+        'Classify the primary animal. Reply with JSON only: {"species":"dog"|"cat"|"other"|"unclear","confidence":0-1}. No breed names.',
+    });
+  } catch (moondreamError) {
+    const captionModel =
+      String(Deno.env.get("PET_SPECIES_CAPTION_MODEL") || "salesforce/blip").trim() ||
+      "salesforce/blip";
+    try {
+      const caption = await runReplicateCaption(token, captionModel, imageDataUrl);
+      return speciesFromCaption(caption);
+    } catch (captionError) {
+      throw new Error(
+        `vision failed: ${String(moondreamError instanceof Error ? moondreamError.message : moondreamError).slice(0, 80)} | ${String(captionError instanceof Error ? captionError.message : captionError).slice(0, 80)}`,
+      );
+    }
+  }
+}
+
+async function runReplicateVisionModel(
+  token: string,
+  model: string,
+  input: Record<string, unknown>,
+): Promise<{ detected: SpeciesLabel; confidence: number }> {
+  const prediction = await createAndWaitReplicate(token, model, input);
+  const text = outputToText(prediction.output);
+  return parseSpeciesPayload(text);
+}
+
+async function runReplicateCaption(
+  token: string,
+  model: string,
+  imageDataUrl: string,
+): Promise<string> {
+  const prediction = await createAndWaitReplicate(token, model, { image: imageDataUrl });
+  return outputToText(prediction.output);
+}
+
+function speciesFromCaption(caption: string): { detected: SpeciesLabel; confidence: number } {
+  const text = String(caption || "").toLowerCase();
+  const hasDog = /\b(dog|puppy|canine|retriever|shepherd|terrier|chow|poodle|labrador|husky)\b/.test(
+    text,
+  );
+  const hasCat = /\b(cat|kitten|feline|tabby|calico|siamese|persian)\b/.test(text);
+  if (hasDog && !hasCat) return { detected: "dog", confidence: 0.86 };
+  if (hasCat && !hasDog) return { detected: "cat", confidence: 0.86 };
+  if (hasDog && hasCat) return { detected: "unclear", confidence: 0.8 };
+  return { detected: "unclear", confidence: 0.7 };
+}
+
+async function createAndWaitReplicate(
+  token: string,
+  model: string,
+  input: Record<string, unknown>,
+): Promise<{ id?: string; status?: string; error?: string; output?: unknown; detail?: string }> {
   const created = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
-      Prefer: "wait",
+      Prefer: "wait=60",
     },
-    body: JSON.stringify({
-      input: {
-        image: imageDataUrl,
-        prompt:
-          'Classify the primary animal. Reply with JSON only: {"species":"dog"|"cat"|"other"|"unclear","confidence":0-1}. No breed names.',
-      },
-    }),
+    body: JSON.stringify({ input }),
   });
 
   let prediction = (await created.json()) as {
@@ -229,11 +292,16 @@ async function classifyWithReplicate(
     detail?: string;
   };
   if (!created.ok && !prediction.id) {
-    throw new Error(String(prediction.detail || prediction.error || "replicate vision failed"));
+    throw new Error(
+      `${created.status}:${String(prediction.detail || prediction.error || "replicate vision failed")}`,
+    );
   }
 
-  // Prefer: wait may still return a processing prediction — poll briefly.
-  for (let i = 0; i < 20 && prediction.status && !["succeeded", "failed", "canceled"].includes(prediction.status); i += 1) {
+  for (
+    let i = 0;
+    i < 30 && prediction.status && !["succeeded", "failed", "canceled"].includes(prediction.status);
+    i += 1
+  ) {
     await new Promise((r) => setTimeout(r, 1000));
     if (!prediction.id) break;
     const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
@@ -245,9 +313,10 @@ async function classifyWithReplicate(
   if (prediction.status === "failed" || prediction.status === "canceled") {
     throw new Error(String(prediction.error || "replicate vision failed"));
   }
-
-  const text = outputToText(prediction.output);
-  return parseSpeciesPayload(text);
+  if (prediction.status && prediction.status !== "succeeded") {
+    throw new Error(`replicate vision ${prediction.status}`);
+  }
+  return prediction;
 }
 
 function outputToText(output: unknown): string {
