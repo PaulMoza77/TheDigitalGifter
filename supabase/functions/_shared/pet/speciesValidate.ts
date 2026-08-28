@@ -221,9 +221,9 @@ async function classifyWithReplicate(
   const prompt =
     'Is the primary animal a dog or a cat? Reply with JSON only: {"species":"dog"|"cat"|"other"|"unclear","confidence":0-1}. No breed names.';
 
-  // Prefer versioned predictions API (stable). Retry once on throttle.
+  // Prefer versioned predictions API (stable). Retry on throttle without BLIP (saves create quota).
   let lastError = "";
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
     try {
       const prediction = await createAndWaitReplicatePrediction(token, {
         version,
@@ -232,26 +232,11 @@ async function classifyWithReplicate(
       return parseSpeciesPayload(outputToText(prediction.output));
     } catch (error) {
       lastError = String(error instanceof Error ? error.message : error);
-      if (!/429|throttl|rate/i.test(lastError) || attempt === 2) break;
-      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+      if (!/429|throttl|rate/i.test(lastError) || attempt === 3) break;
+      await new Promise((r) => setTimeout(r, 3000 * (attempt + 1)));
     }
   }
-
-  // Caption fallback only for non-throttle Moondream failures (avoid burning create quota).
-  if (/429|throttl|rate/i.test(lastError)) {
-    throw new Error(`vision failed: ${lastError.slice(0, 160)}`);
-  }
-
-function speciesFromCaption(caption: string): { detected: SpeciesLabel; confidence: number } {
-  const text = String(caption || "").toLowerCase();
-  const hasDog = /\b(dog|puppy|canine|retriever|shepherd|terrier|chow|poodle|labrador|husky)\b/.test(
-    text,
-  );
-  const hasCat = /\b(cat|kitten|feline|tabby|calico|siamese|persian)\b/.test(text);
-  if (hasDog && !hasCat) return { detected: "dog", confidence: 0.86 };
-  if (hasCat && !hasDog) return { detected: "cat", confidence: 0.86 };
-  if (hasDog && hasCat) return { detected: "unclear", confidence: 0.8 };
-  return { detected: "unclear", confidence: 0.7 };
+  throw new Error(`vision failed: ${lastError.slice(0, 180)}`);
 }
 
 async function createAndWaitReplicatePrediction(
@@ -266,23 +251,6 @@ async function createAndWaitReplicatePrediction(
       Prefer: "wait=60",
     },
     body: JSON.stringify(body),
-  });
-  return waitReplicatePrediction(token, created);
-}
-
-async function createAndWaitReplicateModel(
-  token: string,
-  model: string,
-  input: Record<string, unknown>,
-): Promise<{ id?: string; status?: string; error?: string; output?: unknown; detail?: string }> {
-  const created = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait=60",
-    },
-    body: JSON.stringify({ input }),
   });
   return waitReplicatePrediction(token, created);
 }
