@@ -47,7 +47,7 @@ export function unclearSpeciesMessage(): string {
  * - High-confidence mismatch → reject before generation.
  * - High-confidence unclear/other → ask for a clearer image.
  * - Ambiguous / low-confidence → proceed (do not auto-reject).
- * - Missing vision provider → proceed with provider=skipped.
+ * - Missing vision provider → block with unclear_species (do not fail-open into the wrong funnel).
  */
 export async function validatePetSpecies(input: {
   imageDataUrl: string;
@@ -91,16 +91,19 @@ export async function validatePetSpecies(input: {
       const result = await classifyWithReplicate(replicateToken, input.imageDataUrl);
       return decideSpeciesOutcome(input.expected, result.detected, result.confidence, "replicate");
     } catch {
-      /* fall through to skip */
+      /* fall through to block */
     }
   }
 
+  // Do not fail-open into the opposite funnel when classifiers are unavailable.
   return {
-    ok: true,
-    action: "proceed",
+    ok: false,
+    action: "ask_clearer",
     detected: "unclear",
     confidence: 0,
     provider: "skipped",
+    errorCode: "unclear_species",
+    error: unclearSpeciesMessage(),
   };
 }
 

@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Species gate before any paid Replicate call. Skips cleanly when vision is unavailable.
+  // Species gate before any paid Replicate call. Blocks when vision cannot verify species.
   const expectedSpecies = species === "cat" || species === "dog" || species === "other" ? species : "dog";
   const speciesCheck = await validatePetSpecies({
     imageDataUrl,
@@ -155,6 +155,8 @@ Deno.serve(async (req) => {
         failureCategory: speciesCheck.errorCode === "wrong_species" ? "wrong_species" : "invalid_image",
         speciesDetected: speciesCheck.detected,
         speciesConfidence: speciesCheck.confidence,
+        speciesProvider: speciesCheck.provider,
+        retryable: speciesCheck.errorCode === "unclear_species",
       },
       400,
     );
