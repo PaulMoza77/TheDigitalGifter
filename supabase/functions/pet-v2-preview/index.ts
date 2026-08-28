@@ -17,8 +17,9 @@ const DEFAULT_OPENAI_IMAGE_MODEL = "gpt-image-1";
 const SESSION_LIMIT = 2;
 const IP_DAY_LIMIT = 5;
 const POLL_INTERVAL_MS = 2000;
-/** ~90s poll; fits Supabase free 150s wall-clock with margin for create/DB/download. */
-const POLL_MAX_ITERATIONS = 45;
+/** Keep under edge idle timeout with margin for species vision + download. */
+const POLL_MAX_ITERATIONS = 35;
+const REPLICATE_FETCH_TIMEOUT_MS = 25_000;
 /** Replicate create retries when the account is briefly throttled. */
 const REPLICATE_CREATE_ATTEMPTS = 3;
 /** Base backoff before jitter (attempt index 0 waits before 2nd try). */
@@ -783,15 +784,32 @@ async function createReplicatePrediction(
   // cannot be charged twice if a later retry races after a false failure.
   const replicateIdempotency = idempotencyKey.slice(0, 64);
   for (let attempt = 0; attempt < REPLICATE_CREATE_ATTEMPTS; attempt += 1) {
-    const created = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": replicateIdempotency,
-      },
-      body: JSON.stringify({ input }),
-    });
+    const controller = new AbortController();
+    const kill = setTimeout(() => controller.abort(), REPLICATE_FETCH_TIMEOUT_MS);
+    let created: Response;
+    try {
+      created = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": replicateIdempotency,
+        },
+        body: JSON.stringify({ input }),
+      });
+    } catch (error) {
+      clearTimeout(kill);
+      if (error instanceof DOMException && error.name === "AbortError") {
+        lastMessage = "provider_timeout: Could not start the preview.";
+        if (attempt >= REPLICATE_CREATE_ATTEMPTS - 1) throw new Error(lastMessage);
+        await sleep(REPLICATE_CREATE_BACKOFF_MS[attempt] || 3000);
+        continue;
+      }
+      throw error;
+    } finally {
+      clearTimeout(kill);
+    }
     const createdJson = (await created.json()) as {
       id?: string;
       status?: string;
@@ -938,10 +956,17 @@ async function getPrediction(
   token: string,
   predictionId: string,
 ): Promise<{ status?: string; error?: string; output?: unknown }> {
-  const poll = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return (await poll.json()) as { status?: string; error?: string; output?: unknown };
+  const controller = new AbortController();
+  const kill = setTimeout(() => controller.abort(), REPLICATE_FETCH_TIMEOUT_MS);
+  try {
+    const poll = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    });
+    return (await poll.json()) as { status?: string; error?: string; output?: unknown };
+  } finally {
+    clearTimeout(kill);
+  }
 }
 
 async function fetchPredictionOutput(token: string, predictionId: string): Promise<string | null> {
