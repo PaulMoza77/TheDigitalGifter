@@ -325,6 +325,8 @@ Deno.serve(async (req) => {
       errorCode,
       error: "We couldn't create the preview. Try again.",
       failureCategory: errorCode,
+      // Short provider hint for ops/smoke only — never includes tokens or image bytes.
+      providerDetail: message.slice(0, 180),
       preview_attempt_id: idempotencyKey,
     });
   }
