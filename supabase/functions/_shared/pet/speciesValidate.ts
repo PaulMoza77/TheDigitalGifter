@@ -248,7 +248,6 @@ async function createAndWaitReplicatePrediction(
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
-      Prefer: "wait=60",
     },
     body: JSON.stringify(body),
   });
@@ -274,7 +273,7 @@ async function waitReplicatePrediction(
 
   for (
     let i = 0;
-    i < 30 && prediction.status && !["succeeded", "failed", "canceled"].includes(prediction.status);
+    i < 15 && prediction.status && !["succeeded", "failed", "canceled"].includes(prediction.status);
     i += 1
   ) {
     await new Promise((r) => setTimeout(r, 1000));
