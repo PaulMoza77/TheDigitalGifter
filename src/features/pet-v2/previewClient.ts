@@ -44,6 +44,7 @@ export async function requestV2Preview(input: {
         Authorization: `Bearer ${anon}`,
       },
       body: JSON.stringify({
+        funnel_version: "v2",
         species: input.species,
         session_id: getPetV2SessionId(),
         regenerate: Boolean(input.regenerate),

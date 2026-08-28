@@ -176,7 +176,7 @@ async function classifyWithOpenAi(
           role: "user",
           content: [
             { type: "text", text: "What species is the primary pet?" },
-            { type: "image_url", image_url: { url: imageDataUrl, detail: "low" } },
+            { type: "image_url", image_url: { url: imageDataUrl, detail: "high" } },
           ],
         },
       ],

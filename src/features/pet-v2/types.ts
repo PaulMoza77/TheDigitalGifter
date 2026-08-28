@@ -31,7 +31,8 @@ export const PET_V2_PREVIEW_SCENE = "formula-racer" as const;
 export const PET_V2_MAX_FREE_PREVIEWS_PER_SESSION = 2 as const; // 1 + 1 regen
 export const PET_V2_MAX_FREE_PREVIEWS_PER_IP_PER_DAY = 5 as const;
 export const PET_V2_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
-export const PET_V2_UPLOAD_MAX_EDGE = 1280;
+/** Keep enough edge detail for fluffy manes / coat texture before Kontext. */
+export const PET_V2_UPLOAD_MAX_EDGE = 1536;
 
 export const PET_V2_STEPS = [
   "landing",

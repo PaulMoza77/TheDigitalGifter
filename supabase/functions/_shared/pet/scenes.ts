@@ -36,7 +36,7 @@ export const PET_SCENE_DEFINITIONS: readonly SceneDefinition[] = [
     number: 4,
     title: "Formula racing driver",
     edit:
-      "Add a racing-inspired suit and helmet with the visor raised so the pet's face remains fully visible and identical. Pet alone in the cockpit — no human driver behind the pet. No team names, brand marks, or commercial logos.",
+      "Add a racing-inspired suit only — no closed or full-face helmet; leave the head bare so ears, face, and any mane/ruff stay fully visible and identical to the reference. Preserve fluffy or dense coats exactly (never shorten into a sleek coat). Pet alone in the cockpit — no human driver behind the pet. No team names, brand marks, or commercial logos.",
   },
   {
     key: "spa-bathtub",

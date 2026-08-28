@@ -152,8 +152,8 @@ describe("pet preview identity + funnel integrity", () => {
       expect(prompt).toMatch(/no human driver/i);
       expect(prompt).toMatch(/logos/i);
       expect(prompt).toContain("authoritative identity reference");
-      expect(prompt).toMatch(/do not hide the ears/i);
-      expect(prompt).toMatch(/dense mane|fluff/i);
+      expect(prompt).toMatch(/no closed helmet|HARD RULE/i);
+      expect(prompt).toMatch(/dense mane|fluff|Chow Chow/i);
       expect(prompt).toMatch(/short sleek coat/i);
     }
     const v3 = resolvePreviewContext({ funnel_version: "v3", species: "cat", scene: "royal-portrait" });
@@ -180,9 +180,13 @@ describe("pet preview identity + funnel integrity", () => {
   });
 
   it("preserves higher-quality normalized source images for identity", () => {
-    expect(PET_V2_UPLOAD_MAX_EDGE).toBeGreaterThanOrEqual(1280);
+    expect(PET_V2_UPLOAD_MAX_EDGE).toBeGreaterThanOrEqual(1536);
     expect(readSrc("src/features/pet-v2/photo.ts")).toContain("0.92");
     expect(readSrc("src/features/pet-v2/photo.ts")).toContain("imageSmoothingQuality");
+  });
+
+  it("sends explicit V2 funnel_version from the Dog/Cat V2 client", () => {
+    expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain('funnel_version: "v2"');
   });
 
   it("keeps production analytics event names unchanged", () => {
