@@ -87,7 +87,7 @@ function offlineGateReport() {
     },
     {
       id: "identity-lock-present",
-      pass: context.includes("authoritative identity reference"),
+      pass: context.includes("CRITICAL IDENTITY LOCK") || context.includes("authoritative identity reference"),
     },
     {
       id: "f1-bans-humans-logos",

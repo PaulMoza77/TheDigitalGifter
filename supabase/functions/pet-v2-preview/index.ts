@@ -530,6 +530,27 @@ async function runKontextPreview(
   }
 
   try {
+    const preferred = String(Deno.env.get("PET_PREVIEW_PREFERRED_PROVIDER") || "")
+      .trim()
+      .toLowerCase();
+    if (preferred === "openai" && openAiFallbackEnabled()) {
+      const openaiKey = String(Deno.env.get("OPENAI_API_KEY") || "").trim();
+      if (openaiKey) {
+        previewDiag({
+          stage: "openai_preferred_start",
+          funnel: ctx.version,
+          scene: ctx.sceneKey,
+          speciesDeclared: species,
+        });
+        const preferredResult = await runOpenAiIdentityEdit(imageDataUrl, prompt);
+        await markAttempt(ctx, idempotencyKey, {
+          status: "processing",
+          predictionId: preferredResult.predictionId,
+          liveGeneration: false,
+        });
+        return preferredResult;
+      }
+    }
     return await runReplicateKontext(ctx, token, imageDataUrl, species, idempotencyKey, prompt);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error || "");

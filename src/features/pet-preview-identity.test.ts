@@ -152,8 +152,8 @@ describe("pet preview identity + funnel integrity", () => {
       expect(prompt).toContain(F1_DRIVER_EDIT.slice(0, 40));
       expect(prompt).toMatch(/no human driver/i);
       expect(prompt).toMatch(/logos/i);
-      expect(prompt).toContain("authoritative identity reference");
-      expect(prompt).toMatch(/no closed helmet|HARD RULE/i);
+      expect(prompt).toMatch(/CRITICAL IDENTITY LOCK|identity source/i);
+      expect(prompt).toMatch(/no closed helmet|HARD BAN|HARD RULE/i);
       expect(prompt).toMatch(/dense mane|fluff|Chow Chow/i);
       expect(prompt).toMatch(/short sleek coat/i);
     }
@@ -230,5 +230,8 @@ describe("pet preview identity + funnel integrity", () => {
     expect(edge).toContain("runOpenAiIdentityEdit");
     expect(edge).toContain("images/edits");
     expect(edge).toContain('url.startsWith("data:image/")');
+    expect(edge).toContain("PET_PREVIEW_PREFERRED_PROVIDER");
+    expect(IDENTITY_LOCK).toMatch(/Chow Chow/i);
+    expect(IDENTITY_NEGATIVES).toMatch(/shepherd/i);
   });
 });
