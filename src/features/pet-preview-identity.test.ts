@@ -180,13 +180,20 @@ describe("pet preview identity + funnel integrity", () => {
   });
 
   it("preserves higher-quality normalized source images for identity", () => {
-    expect(PET_V2_UPLOAD_MAX_EDGE).toBeGreaterThanOrEqual(1536);
-    expect(readSrc("src/features/pet-v2/photo.ts")).toContain("0.92");
+    expect(PET_V2_UPLOAD_MAX_EDGE).toBeGreaterThanOrEqual(2048);
+    expect(readSrc("src/features/pet-v2/photo.ts")).toContain("0.95");
     expect(readSrc("src/features/pet-v2/photo.ts")).toContain("imageSmoothingQuality");
   });
 
   it("sends explicit V2 funnel_version from the Dog/Cat V2 client", () => {
     expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain('funnel_version: "v2"');
+  });
+
+  it("requires likeness confirmation before unlock on Dog V2 and Cat V3 previews", () => {
+    expect(readSrc("src/features/pet-v2/screens/PreviewScreen.tsx")).toContain("identityConfirmLabel");
+    expect(readSrc("src/features/pet-v3/screens/PreviewScreen.tsx")).toContain('identityConfirmLabel("cat")');
+    expect(readSrc("src/features/pet-v2/screens/PreviewScreen.tsx")).toContain("canUnlockWithIdentityConfirm");
+    expect(readSrc("src/features/pet-v3/screens/PreviewScreen.tsx")).toContain("canUnlockWithIdentityConfirm");
   });
 
   it("keeps production analytics event names unchanged", () => {

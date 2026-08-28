@@ -24,7 +24,7 @@ export const PET_V3_PREVIEW_SCENE = "royal-portrait" as const;
 export const PET_V3_MAX_FREE_PREVIEWS_PER_SESSION = 2 as const;
 export const PET_V3_MAX_FREE_PREVIEWS_PER_IP_PER_DAY = 5 as const;
 export const PET_V3_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
-export const PET_V3_UPLOAD_MAX_EDGE = 1536;
+export const PET_V3_UPLOAD_MAX_EDGE = 2048;
 
 export const PET_V3_STEPS = [
   "landing",

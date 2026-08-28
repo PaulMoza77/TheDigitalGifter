@@ -68,7 +68,7 @@ export async function prepareV2UploadBlob(file: File): Promise<Blob> {
   ctx.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
   const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob((next) => resolve(next), "image/jpeg", 0.92);
+    canvas.toBlob((next) => resolve(next), "image/jpeg", 0.95);
   });
   return blob ?? file;
 }
