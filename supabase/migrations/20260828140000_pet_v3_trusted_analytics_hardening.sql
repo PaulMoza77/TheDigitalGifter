@@ -317,6 +317,9 @@ begin
 end;
 $$;
 
+-- Parameter rename requires DROP; CREATE OR REPLACE cannot change input names.
+drop function if exists public.admin_pet_v3_certify_measurement(timestamptz, timestamptz);
+
 create or replace function public.admin_pet_v3_certify_measurement(
   p_measurement_reliable_from timestamptz,
   p_price_cohort_certified_at timestamptz default null
@@ -340,6 +343,9 @@ begin
   return (select to_jsonb(s) from public.pet_v3_measurement_settings s where s.id = 1);
 end;
 $$;
+
+revoke all on function public.admin_pet_v3_certify_measurement(timestamptz, timestamptz) from public, anon;
+grant execute on function public.admin_pet_v3_certify_measurement(timestamptz, timestamptz) to authenticated, service_role;
 
 -- Price cohort filter uses certified timestamp only (not git/deploy reference)
 create or replace function public.pet_v3_analytics_event_passes(
