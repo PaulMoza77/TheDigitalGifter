@@ -1,5 +1,8 @@
 /** Shared preview-funnel routing for V2 dog and V3 cat on pet-v2-preview. */
 
+/** Bump when identity prompts/gates change — live smoke verifies this after deploy. */
+export const PET_PREVIEW_IDENTITY_BUILD = "pet-preview-identity-2026-08-28c";
+
 export type PreviewFunnelVersion = "v2" | "v3";
 
 export type PreviewFunnelContext = {

@@ -20,11 +20,17 @@ npx --yes supabase functions deploy pet-v2-preview \
   --project-ref "$PROJECT_REF" \
   --no-verify-jwt
 
-echo "Deployed. Optional secrets to confirm on the project:"
-echo "  REPLICATE_API_TOKEN (required for live preview)"
-echo "  OPENAI_API_KEY (optional; Replicate vision is used as fallback)"
-echo "  PET_SPECIES_VALIDATION=false to disable species gate"
-echo "  PET_PREVIEW_IMAGE_MODEL to override Kontext Pro"
+echo "Verifying identityBuild marker on live edge…"
+EDGE_URL="https://${PROJECT_REF}.supabase.co/functions/v1/pet-v2-preview"
+# Anon key optional for GET if verify_jwt=false
+VERIFY="$(curl -sS -m 30 "$EDGE_URL" || true)"
+echo "$VERIFY"
+if ! echo "$VERIFY" | grep -q 'pet-preview-identity-'; then
+  echo "WARN: identityBuild not visible yet (CDN/propagation). Re-check GET $EDGE_URL"
+else
+  echo "identityBuild confirmed on live edge."
+fi
+
 echo
-echo "Smoke: POST /functions/v1/pet-v2-preview with a dog photo on /pet/dog-v2"
-echo "       and a cat photo on /pet/cat-v3. Chow Chow must remain a Chow Chow."
+echo "Optional: PET_PREVIEW_SMOKE=1 node scripts/pet-preview-live-smoke.mjs"
+echo "Chow Chow must remain a Chow Chow with no closed helmet."

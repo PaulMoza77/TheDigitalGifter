@@ -7,6 +7,7 @@ import {
   F1_DRIVER_EDIT,
   IDENTITY_LOCK,
   IDENTITY_NEGATIVES,
+  PET_PREVIEW_IDENTITY_BUILD,
   resolvePreviewContext,
   ROYAL_CAT_EDIT,
 } from "../../supabase/functions/_shared/pet/previewFunnelContext.ts";
@@ -209,5 +210,13 @@ describe("pet preview identity + funnel integrity", () => {
     expect(readSrc("src/features/pet-v2/speciesRouteIsolation.ts")).toContain(
       "clearPreviewOnPhotoChange",
     );
+  });
+
+  it("exposes an identityBuild marker for post-deploy smoke verification", () => {
+    expect(PET_PREVIEW_IDENTITY_BUILD).toMatch(/^pet-preview-identity-/);
+    const edge = readSrc("supabase/functions/pet-v2-preview/index.ts");
+    expect(edge).toContain("PET_PREVIEW_IDENTITY_BUILD");
+    expect(edge).toContain('req.method === "GET"');
+    expect(edge).toContain("identityBuild: PET_PREVIEW_IDENTITY_BUILD");
   });
 });

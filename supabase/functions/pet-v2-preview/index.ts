@@ -2,6 +2,7 @@ import { corsHeaders, jsonResponse, optionsResponse } from "../_shared/cors.ts";
 
 import {
   buildPreviewPrompt,
+  PET_PREVIEW_IDENTITY_BUILD,
   resolvePreviewContext,
   type PreviewFunnelContext,
 } from "../_shared/pet/previewFunnelContext.ts";
@@ -33,6 +34,13 @@ type AttemptRow = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
+  if (req.method === "GET") {
+    return jsonResponse({
+      ok: true,
+      service: "pet-v2-preview",
+      identityBuild: PET_PREVIEW_IDENTITY_BUILD,
+    });
+  }
   if (req.method !== "POST") {
     return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
   }
@@ -207,6 +215,7 @@ Deno.serve(async (req) => {
         return jsonResponse({
           ok: true,
           mode: "live",
+          identityBuild: PET_PREVIEW_IDENTITY_BUILD,
           imageDataUrl: resumed.imageDataUrl,
           remainingSession: Math.max(
             0,
@@ -284,6 +293,7 @@ Deno.serve(async (req) => {
     return jsonResponse({
       ok: true,
       mode: "live",
+      identityBuild: PET_PREVIEW_IDENTITY_BUILD,
       imageDataUrl: image,
       remainingSession: Math.max(0, (limited.remainingSession ?? SESSION_LIMIT) - 1),
       estimatedSeconds: 20,
