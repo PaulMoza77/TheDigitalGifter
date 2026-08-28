@@ -243,15 +243,27 @@ async function createAndWaitReplicatePrediction(
   token: string,
   body: Record<string, unknown>,
 ): Promise<{ id?: string; status?: string; error?: string; output?: unknown; detail?: string }> {
-  const created = await fetch("https://api.replicate.com/v1/predictions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  return waitReplicatePrediction(token, created);
+  const controller = new AbortController();
+  const kill = setTimeout(() => controller.abort(), 12_000);
+  try {
+    const created = await fetch("https://api.replicate.com/v1/predictions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    return await waitReplicatePrediction(token, created);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("vision timed out");
+    }
+    throw error;
+  } finally {
+    clearTimeout(kill);
+  }
 }
 
 async function waitReplicatePrediction(
@@ -273,15 +285,22 @@ async function waitReplicatePrediction(
 
   for (
     let i = 0;
-    i < 15 && prediction.status && !["succeeded", "failed", "canceled"].includes(prediction.status);
+    i < 8 && prediction.status && !["succeeded", "failed", "canceled"].includes(prediction.status);
     i += 1
   ) {
     await new Promise((r) => setTimeout(r, 1000));
     if (!prediction.id) break;
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    prediction = (await poll.json()) as typeof prediction;
+    const pollController = new AbortController();
+    const pollKill = setTimeout(() => pollController.abort(), 8_000);
+    try {
+      const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: pollController.signal,
+      });
+      prediction = (await poll.json()) as typeof prediction;
+    } finally {
+      clearTimeout(pollKill);
+    }
   }
 
   if (prediction.status === "failed" || prediction.status === "canceled") {
