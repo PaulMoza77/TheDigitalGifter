@@ -102,6 +102,9 @@ describe("pet preview identity + funnel integrity", () => {
     expect(preview).not.toMatch(/text-to-image|txt2img|fallbackToText/i);
     expect(preview).toContain("validatePetSpecies");
     expect(preview).toContain("decodePreviewDataUrl");
+    const species = readSrc("supabase/functions/_shared/pet/speciesValidate.ts");
+    expect(species).toContain("classifyWithReplicate");
+    expect(species).toContain("lucataco/moondream2");
   });
 
   it("keeps preview attempts tied to the current upload/session", () => {
@@ -145,8 +148,11 @@ describe("pet preview identity + funnel integrity", () => {
       expect(prompt).toContain(IDENTITY_NEGATIVES.slice(0, 20));
       expect(prompt).toContain(F1_DRIVER_EDIT.slice(0, 40));
       expect(prompt).toMatch(/no human driver/i);
-      expect(prompt).toMatch(/no.*logos/i);
+      expect(prompt).toMatch(/logos/i);
       expect(prompt).toContain("authoritative identity reference");
+      expect(prompt).toMatch(/do not hide the ears/i);
+      expect(prompt).toMatch(/dense mane|fluff/i);
+      expect(prompt).toMatch(/short sleek coat/i);
     }
     const v3 = resolvePreviewContext({ funnel_version: "v3", species: "cat", scene: "royal-portrait" });
     expect(v3.ok).toBe(true);

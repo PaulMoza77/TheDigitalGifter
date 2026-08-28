@@ -10,6 +10,7 @@
     "lint": "tsc -p . --noEmit --pretty false && vite build",
     "test": "vitest run",
     "test:pet-preview-identity": "vitest run src/features/pet-preview-identity.test.ts && node scripts/pet-preview-identity-qa.mjs",
+    "deploy:pet-preview": "bash scripts/deploy-pet-preview.sh",
     "secret-scan": "node scripts/secret-scan.mjs"
   },
   "dependencies": {
