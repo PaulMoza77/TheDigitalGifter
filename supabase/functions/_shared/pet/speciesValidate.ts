@@ -221,9 +221,9 @@ async function classifyWithReplicate(
   const prompt =
     'Is the primary animal a dog or a cat? Reply with JSON only: {"species":"dog"|"cat"|"other"|"unclear","confidence":0-1}. No breed names.';
 
-  // Prefer versioned predictions API (stable). Retry on throttle without BLIP (saves create quota).
+  // Prefer versioned predictions API (stable). Keep retries short — edge wall-clock is tight.
   let lastError = "";
-  for (let attempt = 0; attempt < 4; attempt += 1) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const prediction = await createAndWaitReplicatePrediction(token, {
         version,
@@ -232,8 +232,8 @@ async function classifyWithReplicate(
       return parseSpeciesPayload(outputToText(prediction.output));
     } catch (error) {
       lastError = String(error instanceof Error ? error.message : error);
-      if (!/429|throttl|rate/i.test(lastError) || attempt === 3) break;
-      await new Promise((r) => setTimeout(r, 3000 * (attempt + 1)));
+      if (!/429|throttl|rate/i.test(lastError) || attempt === 1) break;
+      await new Promise((r) => setTimeout(r, 5000));
     }
   }
   throw new Error(`vision failed: ${lastError.slice(0, 180)}`);
