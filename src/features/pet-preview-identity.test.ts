@@ -155,7 +155,13 @@ describe("pet preview identity + funnel integrity", () => {
       expect(prompt).toMatch(/CRITICAL IDENTITY LOCK|identity source/i);
       expect(prompt).toMatch(/no closed helmet|HARD BAN|HARD RULE/i);
       expect(prompt).toMatch(/dense mane|fluff|Chow Chow/i);
-      expect(prompt).toMatch(/short sleek coat/i);
+      expect(prompt).toMatch(/short sleek coat|shepherd/i);
+      expect(prompt).toMatch(/MANDATORY SCENE|race car cockpit/i);
+      // Scene framing should lead so identity lock cannot collapse to a studio portrait.
+      expect(prompt.indexOf("SCENE REQUIREMENT")).toBeGreaterThanOrEqual(0);
+      expect(prompt.indexOf("SCENE REQUIREMENT")).toBeLessThan(
+        prompt.indexOf("CRITICAL IDENTITY LOCK"),
+      );
     }
     const v3 = resolvePreviewContext({ funnel_version: "v3", species: "cat", scene: "royal-portrait" });
     expect(v3.ok).toBe(true);
