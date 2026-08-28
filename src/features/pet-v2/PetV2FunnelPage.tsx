@@ -13,6 +13,9 @@ import { trackV2BeginCheckout } from "./checkoutAnalytics";
 import { cryptoRandomId } from "./previewAttempt";
 import { previewErrorMessage } from "./previewErrors";
 import {
+  canGenerateWithSpeciesConfirm,
+} from "../pet-funnel-shared/speciesConfirm";
+import {
   backStepFrom,
   clearPreviewOnPhotoChange,
   resolveGenerateAttempt,
@@ -33,6 +36,7 @@ import {
   saveV2Draft,
   setV2PhotoFile,
 } from "./storage";
+import { draftAfterSpeciesRouteChange } from "./speciesRouteIsolation";
 import { v2PackOfferCopy } from "./V2PackOffer";
 import type { PetV2Draft, PetV2FailureCategory, PetV2Species, PetV2Step } from "./types";
 import { V2Shell } from "./V2Shell";
@@ -50,8 +54,14 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const generateLockRef = useRef(false);
   const unlockTrackLockRef = useRef(false);
   const lastFailureCategoryRef = useRef<PetV2FailureCategory | null>(null);
-  const [draft, setDraft] = useState<PetV2Draft>(() => ({ ...loadV2Draft(), species }));
+  const [draft, setDraft] = useState<PetV2Draft>(() => {
+    const loaded = loadV2Draft();
+    const isolated = draftAfterSpeciesRouteChange(loaded, species);
+    if (isolated.clearInMemoryPhoto) setV2PhotoFile(null);
+    return isolated.draft;
+  });
   const [photoError, setPhotoError] = useState<string | undefined>();
+  const [speciesConfirmed, setSpeciesConfirmed] = useState(false);
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
@@ -59,9 +69,16 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const previewUrl = getV2PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
 
   useEffect(() => {
-    const next = { ...loadV2Draft(), species };
-    setDraft(next);
-    saveV2Draft(next);
+    const loaded = loadV2Draft();
+    const isolated = draftAfterSpeciesRouteChange(loaded, species);
+    if (isolated.clearInMemoryPhoto) {
+      setV2PhotoFile(null);
+      setSpeciesConfirmed(false);
+      setPhotoError(undefined);
+      lastFailureCategoryRef.current = null;
+    }
+    setDraft(isolated.draft);
+    saveV2Draft(isolated.draft);
     trackPetV2Event({ eventName: "v2_landing_view", species });
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) {
@@ -100,6 +117,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     setV2PhotoFile(file);
     const local = await createV2LocalPreview(file);
     setPhotoError(undefined);
+    setSpeciesConfirmed(false);
     trackPetV2Event({ eventName: "v2_upload_completed", species });
     go("photo", clearPreviewOnPhotoChange({
       photo: { fileName: file.name, contentType: check.contentType, byteSize: file.size },
@@ -125,6 +143,17 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       });
       if (!subtypeCheck.ok) {
         setPhotoError(subtypeCheck.message);
+        go("photo");
+        return;
+      }
+    } else {
+      const confirm = canGenerateWithSpeciesConfirm({
+        hasPhoto: true,
+        confirmed: speciesConfirmed,
+        kind: species === "cat" ? "cat" : "dog",
+      });
+      if (!confirm.ok) {
+        setPhotoError(confirm.message);
         go("photo");
         return;
       }
@@ -334,8 +363,14 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       }
     >
       <PageHead
-        title="See your pet as a Formula 1 driver | My Pet’s Secret Life"
-        description={`${v2PackOfferCopy().headline}. Upload one pet photo for a free cinematic F1 driver preview. No card required for the preview.`}
+        title={
+          species === "cat"
+            ? "See your cat as a Formula 1 driver | My Pet’s Secret Life"
+            : species === "other"
+              ? "See your pet as a Formula 1 driver | My Pet’s Secret Life"
+              : "See your dog as a Formula 1 driver | My Pet’s Secret Life"
+        }
+        description={`${v2PackOfferCopy().headline}. Upload one ${species === "cat" ? "cat" : species === "other" ? "pet" : "dog"} photo for a free cinematic F1 driver preview. No card required for the preview.`}
         exactTitle
       />
       <input
@@ -379,6 +414,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           onClear={() => {
             setV2PhotoFile(null);
             setPhotoError(undefined);
+            setSpeciesConfirmed(false);
             lastFailureCategoryRef.current = null;
             go("photo", clearPreviewOnPhotoChange({
               photo: null,
@@ -386,6 +422,8 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
               photoPreviewDataUrl: null,
             }));
           }}
+          speciesConfirmed={speciesConfirmed}
+          onSpeciesConfirmed={setSpeciesConfirmed}
           onViewPreview={
             draft.generatedPreviewDataUrl
               ? () => {
@@ -414,7 +452,9 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       {step === "preview" && draft.generatedPreviewDataUrl ? (
         <V2PreviewScreen
           previewUrl={draft.generatedPreviewDataUrl}
+          sourceUrl={previewUrl}
           petName={draft.petName}
+          species={species}
           mode={draft.generationMode}
           canRegenerate={remainingSessionPreviews() > 0 && !isGenerating}
           onRegenerate={() => void generate(true)}

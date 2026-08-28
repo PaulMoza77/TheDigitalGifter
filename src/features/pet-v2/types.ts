@@ -31,7 +31,8 @@ export const PET_V2_PREVIEW_SCENE = "formula-racer" as const;
 export const PET_V2_MAX_FREE_PREVIEWS_PER_SESSION = 2 as const; // 1 + 1 regen
 export const PET_V2_MAX_FREE_PREVIEWS_PER_IP_PER_DAY = 5 as const;
 export const PET_V2_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
-export const PET_V2_UPLOAD_MAX_EDGE = 768;
+/** Keep enough edge detail for fluffy manes / coat texture before Kontext. */
+export const PET_V2_UPLOAD_MAX_EDGE = 2048;
 
 export const PET_V2_STEPS = [
   "landing",
@@ -95,6 +96,7 @@ export type PetV2FailureCategory =
   | "timeout"
   | "rate_limit"
   | "invalid_image"
+  | "wrong_species"
   | "server_error";
 
 export type PetV2PreviewResponse = {
@@ -104,6 +106,7 @@ export type PetV2PreviewResponse = {
   error?: string;
   errorCode?:
     | "rate_limited"
+    | "rate_limit"
     | "invalid_photo"
     | "heic_unsupported"
     | "generation_failed"
@@ -113,6 +116,9 @@ export type PetV2PreviewResponse = {
     | "timeout"
     | "provider_error"
     | "invalid_image"
+    | "wrong_species"
+    | "unclear_species"
+    | "invalid_funnel"
     | "server_error";
   failureCategory?: PetV2FailureCategory;
   remainingSession?: number;
@@ -120,4 +126,12 @@ export type PetV2PreviewResponse = {
   estimatedSeconds?: number;
   preview_attempt_id?: string;
   reused?: boolean;
+  retryable?: boolean;
+  provider?: "replicate" | "openai";
+  providerStatus?: string;
+  providerDetail?: string;
+  latencyMs?: number;
+  identityBuild?: string;
+  speciesDetected?: string;
+  speciesConfidence?: number;
 };

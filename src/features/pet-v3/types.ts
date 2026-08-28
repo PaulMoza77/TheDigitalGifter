@@ -24,7 +24,7 @@ export const PET_V3_PREVIEW_SCENE = "royal-portrait" as const;
 export const PET_V3_MAX_FREE_PREVIEWS_PER_SESSION = 2 as const;
 export const PET_V3_MAX_FREE_PREVIEWS_PER_IP_PER_DAY = 5 as const;
 export const PET_V3_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
-export const PET_V3_UPLOAD_MAX_EDGE = 768;
+export const PET_V3_UPLOAD_MAX_EDGE = 2048;
 
 export const PET_V3_STEPS = [
   "landing",
@@ -87,6 +87,7 @@ export type PetV3FailureCategory =
   | "timeout"
   | "rate_limit"
   | "invalid_image"
+  | "wrong_species"
   | "server_error";
 
 export type PetV3PreviewResponse = {
@@ -105,6 +106,9 @@ export type PetV3PreviewResponse = {
     | "timeout"
     | "provider_error"
     | "invalid_image"
+    | "wrong_species"
+    | "unclear_species"
+    | "invalid_funnel"
     | "server_error";
   failureCategory?: PetV3FailureCategory;
   remainingSession?: number;
@@ -112,4 +116,6 @@ export type PetV3PreviewResponse = {
   estimatedSeconds?: number;
   preview_attempt_id?: string;
   reused?: boolean;
+  speciesDetected?: string;
+  speciesConfidence?: number;
 };

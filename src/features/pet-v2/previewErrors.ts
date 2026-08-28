@@ -4,6 +4,21 @@ import type { PetV2FailureCategory, PetV2PreviewResponse } from "./types";
 export function previewErrorMessage(
   response: Pick<PetV2PreviewResponse, "error" | "errorCode" | "failureCategory">,
 ): string {
+  if (response.errorCode === "wrong_species" && response.error) {
+    return response.error;
+  }
+  if (response.errorCode === "unclear_species" && response.error) {
+    return response.error;
+  }
+  if (response.errorCode === "invalid_funnel") {
+    return response.error || "This preview doesn’t match the current experience. Refresh and try again.";
+  }
+  if (response.errorCode === "rate_limited") {
+    return (
+      response.error ||
+      "This session already used its free previews. Unlock the collection or try again tomorrow."
+    );
+  }
   const category = response.failureCategory || categoryFromCode(response.errorCode);
   switch (category) {
     case "timeout":
@@ -11,7 +26,12 @@ export function previewErrorMessage(
     case "rate_limit":
       return (
         response.error ||
-        "This session already used its free previews. Unlock the collection or try again tomorrow."
+        "The preview service is busy. Tap Try again in a moment — this usually clears quickly."
+      );
+    case "wrong_species":
+      return (
+        response.error ||
+        "That photo doesn’t match this experience. Please upload a clear photo of the right pet."
       );
     case "invalid_image":
       return response.error || "That photo could not be used. Try a smaller JPEG, PNG, or WebP.";
@@ -32,7 +52,14 @@ function categoryFromCode(
 ): PetV2FailureCategory | undefined {
   if (!code) return undefined;
   if (code === "rate_limited") return "rate_limit";
-  if (code === "invalid_photo" || code === "heic_unsupported" || code === "invalid_image") {
+  if (code === "wrong_species") return "wrong_species";
+  if (
+    code === "invalid_photo" ||
+    code === "heic_unsupported" ||
+    code === "invalid_image" ||
+    code === "unclear_species" ||
+    code === "invalid_funnel"
+  ) {
     return "invalid_image";
   }
   if (code === "timeout") return "timeout";

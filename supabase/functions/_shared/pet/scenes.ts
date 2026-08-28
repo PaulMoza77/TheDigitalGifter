@@ -9,34 +9,34 @@ export type SceneDefinition = {
 
 /** Kontext edits the reference photo — identity lock must lead every prompt. */
 export const IDENTITY_LOCK =
-  "Edit the reference photo only. Keep the exact same individual animal: identical face shape, eyes, nose, mouth, ears, fur color, fur texture, markings, age, and body proportions. Do not swap breeds. Do not beautify or idealize. Do not generate a different pet.";
+  "Use the uploaded pet photo as the authoritative identity reference. Create the same individual pet in the requested scene. Preserve its exact species, breed appearance, coat color and markings, facial structure, muzzle, ears, eye placement, fur length and texture, body proportions, and distinctive traits. Change only the environment, clothing/accessories, and pose needed for the scene. The final image must be immediately recognizable to the owner as the same pet. Do not swap breeds. Do not replace the animal with a generic dog or cat. Do not beautify beyond recognition.";
 
 export const PET_SCENE_DEFINITIONS: readonly SceneDefinition[] = [
   {
     key: "royal-portrait",
     number: 1,
     title: "Royal portrait",
-    edit: "Add a royal crown, ornate gold picture frame, and red velvet backdrop with museum lighting.",
+    edit: "Add a royal crown, ornate gold picture frame, and red velvet backdrop with museum lighting. No humans, logos, or second animals.",
   },
   {
     key: "luxury-ceo",
     number: 2,
     title: "Luxury CEO",
-    edit: "Add a glass executive office, city skyline, and tailored suit on the same pet body.",
+    edit: "Add a glass executive office, city skyline, and tailored suit on the same pet body. No humans or logos.",
   },
   {
     key: "astronaut",
     number: 3,
     title: "Astronaut",
     edit:
-      "Add a white space suit with the helmet visor open so the pet's full face stays visible and unchanged. Starfield background. No logos.",
+      "Add a white space suit with the helmet visor open so the pet's full face stays visible and unchanged. Starfield background. No logos. No humans.",
   },
   {
     key: "formula-racer",
     number: 4,
     title: "Formula racing driver",
     edit:
-      "Add a racing suit and helmet with the visor raised so the pet's face remains fully visible and identical. No team names or logos.",
+      "Add a racing-inspired suit only — no closed or full-face helmet; leave the head bare so ears, face, and any mane/ruff stay fully visible and identical to the reference. Preserve fluffy or dense coats exactly (never shorten into a sleek coat). Pet alone in the cockpit — no human driver behind the pet. No team names, brand marks, or commercial logos.",
   },
   {
     key: "spa-bathtub",
