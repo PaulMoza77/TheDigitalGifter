@@ -12,14 +12,21 @@ export type PreviewFunnelContext = {
   liveKillEnv: string;
 };
 
+/**
+ * Authoritative identity instruction. The uploaded photo is the source of truth —
+ * never invent a different animal from text alone.
+ */
 export const IDENTITY_LOCK =
-  "Edit the reference photo only. Preserve the exact same pet identity: identical face shape, eyes, nose, muzzle, mouth, ears, fur color, fur texture, markings, age appearance, breed characteristics, body proportions, and general expression. Do not swap breeds or replace the pet with a different animal. Do not beautify beyond recognition. If cinematic drama conflicts with likeness, prioritize recognizable pet identity.";
+  "Use the uploaded pet photo as the authoritative identity reference. Create the same individual pet in the requested scene. Preserve its exact species, breed appearance, coat color and markings, facial structure, muzzle length and width, ear shape and size, eye placement and color, fur length and texture, body proportions, and distinctive traits. Change only the environment, clothing/accessories, and pose needed for the scene. The final image must be immediately recognizable to the owner as the same pet. Do not swap breeds. Do not replace the animal with a generic dog or cat. Do not beautify beyond recognition. If cinematic drama conflicts with likeness, prioritize recognizable pet identity.";
+
+export const IDENTITY_NEGATIVES =
+  "Do not change breed. No German Shepherd features unless present in the reference. No different coat color or markings. No pointed oversized ears unless present in the reference. No elongated muzzle unless present in the reference. No human face, human head, human hands, or second animal. No unrelated human obstructing the pet. No malformed paws. No text, logos, brand marks, watermarks, or trademarks inside the artwork.";
 
 export const F1_DRIVER_EDIT =
-  "Create a photoreal, vibrant, cinematic transformation of the uploaded pet as a premium Formula 1 driver. Change only the scene, styling, props, and lighting — never the pet's face or body identity. Place the pet in or leaning out of a realistic Formula 1 race car cockpit with a visually exciting, high-end racing atmosphere (bright pit lane, paddock, or sunlit racetrack). The pet should wear a tailored racing suit with vivid motorsport-inspired color accents such as red, electric blue, bright yellow, and white; keep carbon black only as support, not the dominant look. Avoid muddy brown/black dominance and dark dull color grading. Prefer helmet with open visor or helmet pushed back so the face stays fully visible, expressive, and recognizable. Use brighter, more flattering lighting, stronger contrast, vivid highlights, clean subject separation, and tasteful depth of field. The final image should feel bold, polished, luxurious, energetic, and emotionally impressive — like a premium Formula 1 advertising hero image or cinematic motorsport editorial, not a dark muddy portrait. Avoid cartoonish looks, goofy costume vibes, clutter, and distorted anatomy.";
+  "Create a photoreal, vibrant, cinematic transformation of the uploaded pet as a Formula 1 style racing driver. Change only the scene, styling, props, and lighting — never the pet's face, fur, breed, or body identity. Place the SAME pet alone in a realistic open-wheel race car cockpit on a bright sunlit racetrack or pit lane. The pet's real head, face, mane/fur, and front paws must stay clearly visible and unmistakable. Outfit may be racing-inspired with vivid color accents (red, electric blue, bright yellow, white) but must not copy real commercial logos, team names, or brand marks. Prefer helmet with open visor or helmet pushed back so the face stays fully visible. Composition must look intentionally photographed with the pet as the sole focal point — not a dog head pasted onto a human body. Absolutely no human driver, passenger, or helmeted person behind or beside the pet. Avoid muddy brown/black dominance, dark dull grading, cartoonish looks, goofy costume vibes, clutter, and distorted anatomy.";
 
 export const ROYAL_CAT_EDIT =
-  "Create a photoreal, vibrant, cinematic transformation of the uploaded cat as a royal ruler. Change only the scene, styling, props, and lighting — never the cat's face or body identity. Place the cat wearing an ornate golden crown in a regal throne-room or museum-quality royal portrait setting with rich velvet, gold accents, and flattering portrait lighting. Preserve natural feline anatomy, fur color, markings, and eye color. The cat must remain unmistakably the same individual — no dog features, no extra limbs, no malformed paws. Bright, polished, luxurious royal portrait aesthetic. Avoid cartoonish looks, clutter, text overlays, watermarks, and extra animals.";
+  "Create a photoreal, vibrant, cinematic transformation of the uploaded cat as a royal ruler. Change only the scene, styling, props, and lighting — never the cat's face, fur, markings, or body identity. Place the same cat wearing an ornate golden crown in a regal throne-room or museum-quality royal portrait setting with rich velvet, gold accents, and flattering portrait lighting. Preserve natural feline anatomy, fur color, markings, and eye color. The cat must remain unmistakably the same individual — no dog features, no extra limbs, no malformed paws, no second animal, no human face or hands. Bright, polished, luxurious royal portrait aesthetic. Avoid cartoonish looks, clutter, text overlays, watermarks, logos, and brand marks.";
 
 export function resolvePreviewContext(body: Record<string, unknown>): {
   ok: true;
@@ -30,9 +37,22 @@ export function resolvePreviewContext(body: Record<string, unknown>): {
   errorCode: string;
   error: string;
 } {
-  const funnelVersion = body.funnel_version === "v3" ? "v3" : "v2";
+  const scene = String(body.scene || "").trim();
   const species =
     body.species === "cat" || body.species === "other" ? String(body.species) : "dog";
+
+  // Explicit funnel_version wins. If omitted, royal-portrait implies V3 so a missing
+  // funnel_version cannot silently fall into the V2 Formula-1 path (production bug class).
+  let funnelVersion: PreviewFunnelVersion;
+  if (body.funnel_version === "v3") {
+    funnelVersion = "v3";
+  } else if (body.funnel_version === "v2") {
+    funnelVersion = "v2";
+  } else if (scene === "royal-portrait") {
+    funnelVersion = "v3";
+  } else {
+    funnelVersion = "v2";
+  }
 
   if (funnelVersion === "v3") {
     if (species !== "cat") {
@@ -40,6 +60,13 @@ export function resolvePreviewContext(body: Record<string, unknown>): {
         ok: false,
         errorCode: "invalid_photo",
         error: "The V3 preview funnel only accepts cat photos.",
+      };
+    }
+    if (scene === "formula-racer") {
+      return {
+        ok: false,
+        errorCode: "invalid_funnel",
+        error: "Cat V3 cannot use the Formula racing preview scene.",
       };
     }
     return {
@@ -54,6 +81,14 @@ export function resolvePreviewContext(body: Record<string, unknown>): {
         rateLimitPrefix: "pet-v3",
         liveKillEnv: "PET_V3_PREVIEW_LIVE",
       },
+    };
+  }
+
+  if (scene === "royal-portrait") {
+    return {
+      ok: false,
+      errorCode: "invalid_funnel",
+      error: "Royal portrait preview requires the Cat V3 funnel.",
     };
   }
 
@@ -77,11 +112,12 @@ export function buildPreviewPrompt(ctx: PreviewFunnelContext, species: string): 
   const subject = ctx.version === "v3" ? "cat" : species === "other" ? "pet" : species;
   return [
     IDENTITY_LOCK,
+    IDENTITY_NEGATIVES,
     "Change only background, clothing, props, and lighting. Never replace the pet.",
     sceneEdit,
-    `Subject is a ${subject}.`,
+    `Subject is a ${subject}. Match the uploaded ${subject}'s exact appearance from the reference photo.`,
     ctx.version === "v3"
-      ? "Photoreal domestic cat only. Preserve feline facial structure, whiskers, and ear shape. No dogs. No text overlays. No watermarks. No extra animals."
-      : "Photoreal. Single pet only. No logos, trademarks, or copyrighted characters. No text overlays. No extra animals.",
+      ? "Photoreal domestic cat only. Preserve feline facial structure, whiskers, and ear shape from the reference. No dogs. No text overlays. No watermarks. No logos. No extra animals. No humans."
+      : "Photoreal. Single pet only. No logos, trademarks, team names, or copyrighted characters. No text overlays. No watermarks. No extra animals. No humans in frame.",
   ].join(" ");
 }

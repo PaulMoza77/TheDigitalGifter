@@ -49,10 +49,16 @@ export type ResolveGenerateAttemptResult = {
  * - first generate / regen → stable per session+upload or regen nonce
  * - timeout retry → same id (resume Replicate prediction)
  * - terminal/stale failure → fresh retry suffix so DB poison cannot block the next call
+ * - upload identity change → never reuse a previous upload's attempt id
  */
 export function resolveGenerateAttempt(input: ResolveGenerateAttemptInput): ResolveGenerateAttemptResult {
   const resumeProviderAttempt =
     input.retryAfterFailure && input.lastFailureCategory === "timeout";
+
+  const attemptMatchesUpload =
+    !input.previewAttemptId ||
+    input.previewAttemptId.includes(`:${input.uploadId}`) ||
+    input.previewAttemptId.includes(`:${input.uploadId}:`);
 
   if (input.regenerate) {
     return {
@@ -66,13 +72,14 @@ export function resolveGenerateAttempt(input: ResolveGenerateAttemptInput): Reso
     };
   }
 
-  if (resumeProviderAttempt && input.previewAttemptId) {
+  if (resumeProviderAttempt && input.previewAttemptId && attemptMatchesUpload) {
     return { attemptId: input.previewAttemptId, resumeProviderAttempt: true };
   }
 
   if (
     input.retryAfterFailure &&
     input.previewAttemptId &&
+    attemptMatchesUpload &&
     input.lastFailureCategory &&
     input.lastFailureCategory !== "timeout"
   ) {
@@ -82,7 +89,7 @@ export function resolveGenerateAttempt(input: ResolveGenerateAttemptInput): Reso
     };
   }
 
-  if (input.previewAttemptId && !input.retryAfterFailure) {
+  if (input.previewAttemptId && !input.retryAfterFailure && attemptMatchesUpload) {
     return { attemptId: input.previewAttemptId, resumeProviderAttempt: false };
   }
 

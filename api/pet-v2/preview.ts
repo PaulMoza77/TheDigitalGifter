@@ -8,10 +8,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  */
 
 const IDENTITY_LOCK =
-  "Edit the reference photo only. Preserve the exact same pet identity: identical face shape, eyes, nose, muzzle, mouth, ears, fur color, fur texture, markings, age appearance, breed characteristics, body proportions, and general expression. Do not swap breeds or replace the pet with a different animal. Do not beautify beyond recognition. If cinematic drama conflicts with likeness, prioritize recognizable pet identity.";
+  "Use the uploaded pet photo as the authoritative identity reference. Create the same individual pet in the requested scene. Preserve its exact species, breed appearance, coat color and markings, facial structure, muzzle length and width, ear shape and size, eye placement and color, fur length and texture, body proportions, and distinctive traits. Change only the environment, clothing/accessories, and pose needed for the scene. The final image must be immediately recognizable to the owner as the same pet. Do not swap breeds. Do not replace the animal with a generic dog or cat.";
 
 const F1_DRIVER_EDIT =
-  "Create a photoreal, vibrant, cinematic transformation of the uploaded pet as a premium Formula 1 driver. Change only the scene, styling, props, and lighting — never the pet’s face or body identity. Place the pet in or leaning out of a realistic Formula 1 race car cockpit with a visually exciting, high-end racing atmosphere (bright pit lane, paddock, or sunlit racetrack). The pet should wear a tailored racing suit with vivid motorsport-inspired color accents such as red, electric blue, bright yellow, and white; keep carbon black only as support, not the dominant look. Avoid muddy brown/black dominance and dark dull color grading. Prefer helmet with open visor or helmet pushed back so the face stays fully visible, expressive, and recognizable. Use brighter, more flattering lighting, stronger contrast, vivid highlights, clean subject separation, and tasteful depth of field. The final image should feel bold, polished, luxurious, energetic, and emotionally impressive — like a premium Formula 1 advertising hero image or cinematic motorsport editorial, not a dark muddy portrait. Avoid cartoonish looks, goofy costume vibes, clutter, and distorted anatomy.";
+  "Create a photoreal, vibrant, cinematic transformation of the uploaded pet as a Formula 1 style racing driver. Change only the scene, styling, props, and lighting — never the pet’s face, fur, breed, or body identity. Place the SAME pet alone in a realistic open-wheel race car cockpit on a bright sunlit racetrack. The pet's real head, face, and front paws must stay clearly visible. Outfit may be racing-inspired but must not copy real commercial logos or team names. Absolutely no human driver behind the pet. No logos, watermarks, or second animals.";
 
 const MODEL = "black-forest-labs/flux-kontext-pro";
 const MAX_DATA_URL_CHARS = 2_500_000;
@@ -140,9 +140,13 @@ async function runKontextPreview(
     IDENTITY_LOCK,
     "Change only background, clothing, props, and lighting. Never replace the pet.",
     F1_DRIVER_EDIT,
-    `Subject is a ${species === "other" ? "pet" : species}.`,
-    "Photoreal. Single pet only. No logos, trademarks, or copyrighted characters. No text overlays. No extra animals.",
+    `Subject is a ${species === "other" ? "pet" : species}. Match the uploaded pet's exact appearance from the reference photo.`,
+    "Photoreal. Single pet only. No logos, trademarks, team names, or copyrighted characters. No text overlays. No watermarks. No extra animals. No humans in frame.",
   ].join(" ");
+
+  if (!imageDataUrl.startsWith("data:image/")) {
+    throw new Error("Reference image missing for preview generation.");
+  }
 
   const created = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
     method: "POST",

@@ -9,10 +9,11 @@ const scenesSrc = readFileSync(
 
 describe("pet scene prompts", () => {
   it("locks identity and uses edit-style instructions for Kontext", () => {
-    expect(scenesSrc).toContain("Edit the reference photo only");
+    expect(scenesSrc).toContain("authoritative identity reference");
     expect(scenesSrc).toContain("Do not swap breeds");
     expect(scenesSrc).toContain("visor open");
     expect(scenesSrc).toContain("Change only background, clothing, props, and lighting");
+    expect(scenesSrc).toContain("no human driver");
     expect(scenesSrc).not.toContain("Formal original court portrait of this exact pet");
   });
 

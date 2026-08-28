@@ -43,10 +43,15 @@ export function normalizeV2ContentType(mimeType: string, fileName: string): PetP
   return null;
 }
 
-/** Resize on-device so the preview API stays small and cheaper. */
+/** Resize on-device so the preview API stays small and cheaper, while keeping identity detail. */
 export async function prepareV2UploadBlob(file: File): Promise<Blob> {
   if (typeof createImageBitmap !== "function") return file;
-  const bitmap = await createImageBitmap(file);
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error("That photo could not be decoded. Try exporting as JPEG and upload again.");
+  }
   const scale = Math.min(1, PET_V2_UPLOAD_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
   const width = Math.max(1, Math.round(bitmap.width * scale));
   const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -58,10 +63,12 @@ export async function prepareV2UploadBlob(file: File): Promise<Blob> {
     bitmap.close();
     return file;
   }
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
   const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob((next) => resolve(next), "image/jpeg", 0.82);
+    canvas.toBlob((next) => resolve(next), "image/jpeg", 0.92);
   });
   return blob ?? file;
 }

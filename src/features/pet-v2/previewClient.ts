@@ -113,7 +113,13 @@ export async function requestV2Preview(input: {
 function categoryFromHttp(status: number, response: PetV2PreviewResponse): PetV2FailureCategory | undefined {
   if (response.failureCategory) return response.failureCategory;
   if (status === 429 || response.errorCode === "rate_limited") return "rate_limit";
-  if (response.errorCode === "invalid_photo" || response.errorCode === "heic_unsupported") {
+  if (response.errorCode === "wrong_species") return "wrong_species";
+  if (
+    response.errorCode === "invalid_photo" ||
+    response.errorCode === "heic_unsupported" ||
+    response.errorCode === "unclear_species" ||
+    response.errorCode === "invalid_funnel"
+  ) {
     return "invalid_image";
   }
   if (status === 401 || status === 403) return "provider_auth";

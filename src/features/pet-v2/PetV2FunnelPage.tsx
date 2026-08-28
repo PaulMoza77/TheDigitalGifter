@@ -334,8 +334,14 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       }
     >
       <PageHead
-        title="See your pet as a Formula 1 driver | My Pet’s Secret Life"
-        description={`${v2PackOfferCopy().headline}. Upload one pet photo for a free cinematic F1 driver preview. No card required for the preview.`}
+        title={
+          species === "cat"
+            ? "See your cat as a Formula 1 driver | My Pet’s Secret Life"
+            : species === "other"
+              ? "See your pet as a Formula 1 driver | My Pet’s Secret Life"
+              : "See your dog as a Formula 1 driver | My Pet’s Secret Life"
+        }
+        description={`${v2PackOfferCopy().headline}. Upload one ${species === "cat" ? "cat" : species === "other" ? "pet" : "dog"} photo for a free cinematic F1 driver preview. No card required for the preview.`}
         exactTitle
       />
       <input
@@ -415,6 +421,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         <V2PreviewScreen
           previewUrl={draft.generatedPreviewDataUrl}
           petName={draft.petName}
+          species={species}
           mode={draft.generationMode}
           canRegenerate={remainingSessionPreviews() > 0 && !isGenerating}
           onRegenerate={() => void generate(true)}

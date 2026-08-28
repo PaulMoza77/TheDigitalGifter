@@ -5,14 +5,22 @@ import {
   resolvePreviewContext,
   type PreviewFunnelContext,
 } from "../_shared/pet/previewFunnelContext.ts";
+import {
+  decodePreviewDataUrl,
+  previewDiag,
+} from "../_shared/pet/previewImage.ts";
+import { validatePetSpecies } from "../_shared/pet/speciesValidate.ts";
 
-const MODEL = "black-forest-labs/flux-kontext-pro";
-const MAX_DATA_URL_CHARS = 2_500_000;
+const DEFAULT_MODEL = "black-forest-labs/flux-kontext-pro";
 const SESSION_LIMIT = 2;
 const IP_DAY_LIMIT = 5;
 const POLL_INTERVAL_MS = 2000;
 /** ~90s poll; fits Supabase free 150s wall-clock with margin for create/DB/download. */
 const POLL_MAX_ITERATIONS = 45;
+
+function previewModel(): string {
+  return (Deno.env.get("PET_PREVIEW_IMAGE_MODEL") || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
+}
 
 type AttemptRow = {
   id?: string;
@@ -48,6 +56,13 @@ Deno.serve(async (req) => {
   const sessionId = String(body.session_id || "").slice(0, 64);
   const resolved = resolvePreviewContext(body);
   if (!resolved.ok) {
+    previewDiag({
+      stage: "funnel_reject",
+      errorCode: resolved.errorCode,
+      declaredSpecies: String(body.species || ""),
+      funnelVersion: String(body.funnel_version || ""),
+      scene: String(body.scene || ""),
+    });
     return jsonResponse(
       {
         ok: false,
@@ -62,25 +77,58 @@ Deno.serve(async (req) => {
   const regenerate = Boolean(body.regenerate);
   const clientKey = String(body.idempotency_key || body.preview_attempt_id || "").trim().slice(0, 180);
 
-  if (!imageDataUrl.startsWith("data:image/") || imageDataUrl.length > MAX_DATA_URL_CHARS) {
+  const decoded = decodePreviewDataUrl(imageDataUrl);
+  if (!decoded.ok) {
+    previewDiag({
+      stage: "image_decode_failed",
+      funnel: ctx.version,
+      scene: ctx.sceneKey,
+      speciesDeclared: species,
+      errorCode: decoded.errorCode,
+      dataUrlChars: imageDataUrl.length,
+    });
     return jsonResponse(
       {
         ok: false,
         mode: "mock",
-        errorCode: "invalid_photo",
-        error: "That photo could not be used. Try a smaller JPEG, PNG, or WebP.",
+        errorCode: decoded.errorCode,
+        error: decoded.error,
+        failureCategory: "invalid_image",
       },
       400,
     );
   }
-  if (/image\/heic|image\/heif/i.test(imageDataUrl)) {
+
+  // Species gate before any paid Replicate call. Skips cleanly when vision is unavailable.
+  const expectedSpecies = species === "cat" || species === "dog" || species === "other" ? species : "dog";
+  const speciesCheck = await validatePetSpecies({
+    imageDataUrl,
+    expected: expectedSpecies,
+  });
+  previewDiag({
+    stage: "species_check",
+    funnel: ctx.version,
+    scene: ctx.sceneKey,
+    speciesDeclared: species,
+    speciesDetected: speciesCheck.detected,
+    speciesConfidence: Number(speciesCheck.confidence.toFixed(3)),
+    speciesAction: speciesCheck.action,
+    speciesProvider: speciesCheck.provider,
+    imageBytes: decoded.image.byteLength,
+    imageMagic: decoded.image.magic,
+    imageMime: decoded.image.mime,
+  });
+  if (!speciesCheck.ok) {
+    // errorCode is wrong_species | unclear_species — never start Replicate.
     return jsonResponse(
       {
         ok: false,
         mode: "mock",
-        errorCode: "heic_unsupported",
-        error:
-          "iPhone HEIC photos aren’t supported yet. Set Camera Formats to Most Compatible, or export as JPEG.",
+        errorCode: speciesCheck.errorCode,
+        error: speciesCheck.error,
+        failureCategory: speciesCheck.errorCode === "wrong_species" ? "wrong_species" : "invalid_image",
+        speciesDetected: speciesCheck.detected,
+        speciesConfidence: speciesCheck.confidence,
       },
       400,
     );
@@ -108,6 +156,26 @@ Deno.serve(async (req) => {
   const idempotencyKey =
     clientKey ||
     `preview:${sessionId || "anon"}:${imageHash}${regenerate ? `:regen:${crypto.randomUUID()}` : ""}`;
+
+  // Idempotency must stay tied to this upload/session — refuse keys from another session.
+  if (clientKey && sessionId && clientKey.startsWith("preview:") && !clientKey.startsWith(`preview:${sessionId}:`)) {
+    previewDiag({
+      stage: "idempotency_session_mismatch",
+      funnel: ctx.version,
+      sessionPrefix: sessionId.slice(0, 8),
+      keyPrefix: clientKey.slice(0, 24),
+    });
+    return jsonResponse(
+      {
+        ok: false,
+        mode: "mock",
+        errorCode: "invalid_photo",
+        error: "That preview request did not match this session. Re-attach the photo and try again.",
+        failureCategory: "invalid_image",
+      },
+      400,
+    );
+  }
 
   const limited = await assertPreviewLimits(ctx, sessionId, ip, imageHash, idempotencyKey);
   if (!limited.ok) {
@@ -424,35 +492,88 @@ async function runKontextPreview(
   idempotencyKey: string,
 ): Promise<{ url: string; predictionId: string }> {
   const prompt = buildPreviewPrompt(ctx, species);
+  const model = previewModel();
 
-  const created = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
+  // Hard guarantee: never create a text-only prediction. input_image is mandatory.
+  if (!imageDataUrl.startsWith("data:image/")) {
+    const err = new Error("Reference image missing for preview generation.") as Error & {
+      errorCode?: string;
+    };
+    err.errorCode = "invalid_image";
+    throw err;
+  }
+
+  const input = {
+    prompt,
+    input_image: imageDataUrl,
+    aspect_ratio: "match_input_image",
+    output_format: "jpg",
+    prompt_upsampling: false,
+    safety_tolerance: 2,
+  };
+
+  previewDiag({
+    stage: "provider_create",
+    funnel: ctx.version,
+    scene: ctx.sceneKey,
+    speciesDeclared: species,
+    model,
+    hasInputImage: Boolean(input.input_image),
+    inputImageChars: imageDataUrl.length,
+    promptChars: prompt.length,
+    idempotencyPrefix: idempotencyKey.slice(0, 24),
+  });
+
+  const created = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       "Idempotency-Key": idempotencyKey.slice(0, 64),
     },
-    body: JSON.stringify({
-      input: {
-        prompt,
-        input_image: imageDataUrl,
-        aspect_ratio: "match_input_image",
-        output_format: "jpg",
-        prompt_upsampling: false,
-        safety_tolerance: 2,
-      },
-    }),
+    body: JSON.stringify({ input }),
   });
   const createdJson = (await created.json()) as {
     id?: string;
     status?: string;
     error?: string;
     output?: unknown;
+    input?: Record<string, unknown>;
   };
   if (!created.ok || !createdJson.id) {
+    previewDiag({
+      stage: "provider_create_failed",
+      funnel: ctx.version,
+      model,
+      httpStatus: created.status,
+      errorClass: classifyGenerationError(String(createdJson.error || "")),
+    });
     throw new Error(
       `${created.status}: ${String(createdJson.error || "Could not start the preview.")}`,
     );
+  }
+
+  // Confirm the provider accepted an image-conditioned request (no silent text-only).
+  const acceptedImage =
+    typeof createdJson.input?.input_image === "string" &&
+    createdJson.input.input_image.length > 0;
+  previewDiag({
+    stage: "provider_create_ok",
+    funnel: ctx.version,
+    model,
+    predictionPrefix: String(createdJson.id).slice(0, 12),
+    providerAcceptedInputImage: acceptedImage || createdJson.input === undefined,
+  });
+  // Replicate may omit echoed input in create response; still refuse if it explicitly
+  // acknowledges a create without input_image when input is present in the response.
+  if (createdJson.input && !acceptedImage) {
+    const err = new Error("Provider did not accept the reference image.") as Error & {
+      errorCode?: string;
+      predictionId?: string;
+    };
+    err.errorCode = "provider_error";
+    err.predictionId = createdJson.id;
+    throw err;
   }
 
   await markAttempt(ctx, idempotencyKey, {
