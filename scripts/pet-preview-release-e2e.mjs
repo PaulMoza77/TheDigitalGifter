@@ -57,14 +57,13 @@ function sessionId() {
 }
 
 async function genCase(name, { file, funnel, species, scene, expectOk, expectError }) {
+  // Keep JPEG bytes intact — mutating EOI/last bytes breaks Moondream species vision.
   const bytes = load(file);
-  // Unique encode via trailing comment in data URL hash by mutating last byte slightly
-  const unique = Buffer.from(bytes);
-  unique[unique.length - 1] = (unique[unique.length - 1] + 1) % 256;
-  const imageDataUrl = `data:image/jpeg;base64,${unique.toString("base64")}`;
-  const hash12 = createHash("sha256").update(unique).digest("hex").slice(0, 12);
+  const imageDataUrl = `data:image/jpeg;base64,${bytes.toString("base64")}`;
+  const hash12 = createHash("sha256").update(bytes).digest("hex").slice(0, 12);
   const sid = sessionId();
-  const attempt = `e2e:${name}:${hash12}:${Date.now()}`;
+  // Uniqueness comes from attempt/session ids, not from corrupting the image.
+  const attempt = `e2e:${name}:${hash12}:${randomUUID()}`;
   const { res, json, wallMs } = await post({
     funnel_version: funnel,
     species,
