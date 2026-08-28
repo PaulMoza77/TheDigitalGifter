@@ -36,6 +36,7 @@ import {
   saveV2Draft,
   setV2PhotoFile,
 } from "./storage";
+import { draftAfterSpeciesRouteChange } from "./speciesRouteIsolation";
 import { v2PackOfferCopy } from "./V2PackOffer";
 import type { PetV2Draft, PetV2FailureCategory, PetV2Species, PetV2Step } from "./types";
 import { V2Shell } from "./V2Shell";
@@ -53,7 +54,12 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const generateLockRef = useRef(false);
   const unlockTrackLockRef = useRef(false);
   const lastFailureCategoryRef = useRef<PetV2FailureCategory | null>(null);
-  const [draft, setDraft] = useState<PetV2Draft>(() => ({ ...loadV2Draft(), species }));
+  const [draft, setDraft] = useState<PetV2Draft>(() => {
+    const loaded = loadV2Draft();
+    const isolated = draftAfterSpeciesRouteChange(loaded, species);
+    if (isolated.clearInMemoryPhoto) setV2PhotoFile(null);
+    return isolated.draft;
+  });
   const [photoError, setPhotoError] = useState<string | undefined>();
   const [speciesConfirmed, setSpeciesConfirmed] = useState(false);
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
@@ -63,9 +69,16 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const previewUrl = getV2PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
 
   useEffect(() => {
-    const next = { ...loadV2Draft(), species };
-    setDraft(next);
-    saveV2Draft(next);
+    const loaded = loadV2Draft();
+    const isolated = draftAfterSpeciesRouteChange(loaded, species);
+    if (isolated.clearInMemoryPhoto) {
+      setV2PhotoFile(null);
+      setSpeciesConfirmed(false);
+      setPhotoError(undefined);
+      lastFailureCategoryRef.current = null;
+    }
+    setDraft(isolated.draft);
+    saveV2Draft(isolated.draft);
     trackPetV2Event({ eventName: "v2_landing_view", species });
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) {

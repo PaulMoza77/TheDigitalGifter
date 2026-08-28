@@ -190,4 +190,13 @@ describe("pet preview identity + funnel integrity", () => {
     expect(readSrc("src/features/pet-v3/types.ts")).toContain('"v3_purchase"');
     expect(readSrc("src/features/pet-v3/v3CanonicalPurchase.ts")).toContain("v3_purchase");
   });
+
+  it("isolates Dog/Cat/Other V2 tab drafts so photos do not cross species", () => {
+    const page = readSrc("src/features/pet-v2/PetV2FunnelPage.tsx");
+    expect(page).toContain("draftAfterSpeciesRouteChange");
+    expect(page).toContain("setV2PhotoFile(null)");
+    expect(readSrc("src/features/pet-v2/speciesRouteIsolation.ts")).toContain(
+      "clearPreviewOnPhotoChange",
+    );
+  });
 });
