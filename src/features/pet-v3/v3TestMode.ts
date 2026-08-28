@@ -1,62 +1,58 @@
-const V3_TEST_MODE_KEY = "tdg.petFunnelV3.analyticsTestMode.v1";
-const QUERY_FLAG = "tdg_funnel_test";
-const TOKEN_QUERY = "tdg_analytics_test_token";
+import { getPetV3SessionId, resetPetV3SessionId } from "./session";
 
-function readStorage(storage: Storage | undefined): boolean {
-  if (!storage) return false;
+const STATUS_PATH = "/api/pet-v3/internal-test-status";
+
+export type V3InternalTestStatus = {
+  authorized: boolean;
+  expiresAt: string | null;
+};
+
+/** Server-authoritative internal test flag for this browser session (never localStorage). */
+export async function fetchV3InternalTestStatus(sessionId?: string): Promise<V3InternalTestStatus> {
+  const id = sessionId || getPetV3SessionId();
+  if (typeof fetch !== "function") return { authorized: false, expiresAt: null };
   try {
-    return storage.getItem(V3_TEST_MODE_KEY) === "1";
+    const response = await fetch(STATUS_PATH, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ funnel_session_id: id }),
+      credentials: "same-origin",
+    });
+    if (!response.ok) return { authorized: false, expiresAt: null };
+    const payload = (await response.json()) as V3InternalTestStatus;
+    return {
+      authorized: Boolean(payload.authorized),
+      expiresAt: payload.expiresAt ? String(payload.expiresAt) : null,
+    };
   } catch {
-    return false;
+    return { authorized: false, expiresAt: null };
   }
 }
 
-function writeStorage(storage: Storage | undefined, enabled: boolean) {
-  if (!storage) return;
-  try {
-    if (enabled) storage.setItem(V3_TEST_MODE_KEY, "1");
-    else storage.removeItem(V3_TEST_MODE_KEY);
-  } catch {
-    /* private mode */
-  }
+/**
+ * Disable client-side test UI by rotating to a fresh anonymous session.
+ * Removing server registration requires admin RPC (dashboard).
+ */
+export function exitV3InternalTestBrowserSession(): string {
+  return resetPetV3SessionId();
 }
 
-function queryEnablesTestMode(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get(QUERY_FLAG) === "1") return true;
-    const token = String(params.get(TOKEN_QUERY) || "").trim();
-    const expected = String(import.meta.env.VITE_PET_V3_ANALYTICS_TEST_TOKEN || "").trim();
-    return Boolean(token && expected && token === expected);
-  } catch {
-    return false;
-  }
-}
-
-/** Persist analytics test mode for this browser (survives navigation/reload). */
-export function syncV3AnalyticsTestModeFromQuery(): boolean {
-  if (typeof window === "undefined") return false;
-  const enabled = queryEnablesTestMode();
-  if (enabled) {
-    writeStorage(window.sessionStorage, true);
-    writeStorage(window.localStorage, true);
-  }
-  return enabled;
-}
-
+/** @deprecated Client flags are not authoritative. Use fetchV3InternalTestStatus(). */
 export function isV3AnalyticsTestModeActive(): boolean {
-  if (typeof window === "undefined") return false;
-  syncV3AnalyticsTestModeFromQuery();
-  return readStorage(window.sessionStorage) || readStorage(window.localStorage);
+  return false;
 }
 
-export function setV3AnalyticsTestMode(enabled: boolean): void {
-  if (typeof window === "undefined") return;
-  writeStorage(window.sessionStorage, enabled);
-  writeStorage(window.localStorage, enabled);
+/** @deprecated Client cannot self-authorize test mode. */
+export function syncV3AnalyticsTestModeFromQuery(): boolean {
+  return false;
 }
 
+/** @deprecated */
+export function setV3AnalyticsTestMode(_enabled: boolean): void {
+  /* no-op — server registration required */
+}
+
+/** @deprecated */
 export function clearV3AnalyticsTestMode(): void {
-  setV3AnalyticsTestMode(false);
+  exitV3InternalTestBrowserSession();
 }

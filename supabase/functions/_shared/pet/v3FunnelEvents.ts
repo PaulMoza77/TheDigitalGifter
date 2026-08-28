@@ -17,7 +17,7 @@ export type V3CheckoutAttribution = {
   isTest?: boolean;
 };
 
-/** Server-confirmed Stripe Checkout Session for a V3 order (idempotent per order). */
+/** Server-confirmed Stripe Checkout Session (ui_mode=elements) for a V3 order. */
 export async function recordV3CheckoutSessionCreated(
   service: SupabaseClient,
   input: {

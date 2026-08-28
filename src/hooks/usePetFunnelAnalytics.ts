@@ -745,6 +745,12 @@ export function usePetFunnelAnalytics(
                   ? String(v3Trusted.measurement_reliable_from)
                   : null,
                 priceCohortFrom: v3Trusted.price_cohort_from ? String(v3Trusted.price_cohort_from) : null,
+                priceCohortCertifiedAt: v3Trusted.price_cohort_certified_at
+                  ? String(v3Trusted.price_cohort_certified_at)
+                  : null,
+                priceDeployReferenceAt: v3Trusted.price_deploy_reference_at
+                  ? String(v3Trusted.price_deploy_reference_at)
+                  : null,
                 priceCohortCents: asNumber(v3Trusted.price_cohort_cents) || 299,
                 viewMode: v3ViewMode,
                 includeInternalTests: v3IncludeInternalTests(v3ViewMode),

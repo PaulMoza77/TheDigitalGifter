@@ -121,20 +121,12 @@ function utmSourceIsTestMarker(utmSource: string | null | undefined): boolean {
   return markers.includes(normalized);
 }
 
-async function resolveFunnelIsTest(input: {
+async function resolveAuthoritativeV3IsTest(input: {
   environment: "production" | "preview" | "development";
-  clientTestFlag?: boolean;
+  funnelSessionId: string;
   clientIp?: string;
-  utmSource?: string | null;
-  utmCampaign?: string | null;
 }): Promise<{ isTest: boolean; clientIp: string | null; clientIpHostname: string | null }> {
   if (input.environment !== "production") {
-    return { isTest: true, clientIp: input.clientIp || null, clientIpHostname: null };
-  }
-  if (input.clientTestFlag) {
-    return { isTest: true, clientIp: input.clientIp || null, clientIpHostname: null };
-  }
-  if (utmSourceIsTestMarker(input.utmSource) || utmCampaignIsTestMarker(input.utmCampaign)) {
     return { isTest: true, clientIp: input.clientIp || null, clientIpHostname: null };
   }
   const clientIp = String(input.clientIp || "").trim() || null;
@@ -142,13 +134,33 @@ async function resolveFunnelIsTest(input: {
   if (clientIp) {
     clientIpHostname = await resolveClientIpHostname(clientIp);
   }
-  if (clientIp && parseIpList(process.env.PET_FUNNEL_TEST_IPS).includes(clientIp)) {
-    return { isTest: true, clientIp, clientIpHostname };
+
+  const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
+  const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  if (!supabaseUrl || !serviceKey || !UUID_RE.test(input.funnelSessionId)) {
+    return { isTest: false, clientIp, clientIpHostname };
   }
-  const markers = parseMarkerList(process.env.PET_FUNNEL_TEST_IP_HOSTMARKERS, "rentalcarsoradea");
-  if (hostnameMatchesTestMarkers(String(clientIpHostname || ""), markers)) {
-    return { isTest: true, clientIp, clientIpHostname };
+
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/pet_v3_internal_test_session_status`, {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ p_funnel_session_id: input.funnelSessionId }),
+    });
+    if (response.ok) {
+      const payload = (await response.json()) as { authorized?: boolean };
+      if (payload.authorized) {
+        return { isTest: true, clientIp, clientIpHostname };
+      }
+    }
+  } catch {
+    /* fall through — never trust client hints */
   }
+
   return { isTest: false, clientIp, clientIpHostname };
 }
 
@@ -336,9 +348,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const body = req.body && typeof req.body === "object" ? req.body : {};
     eventName = String((body as { event_name?: unknown }).event_name || "unknown");
-    const clientTest = Boolean((body as { is_test_request?: boolean } | null)?.is_test_request);
-    const utmSource = asText((body as { utm_source?: unknown }).utm_source, 120);
-    const utmCampaign = asText((body as { utm_campaign?: unknown }).utm_campaign, 120);
     const failureCategory = String((body as { failure_category?: unknown }).failure_category || "")
       .replace(/[^a-z0-9_]/gi, "")
       .slice(0, 40);
@@ -346,12 +355,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       void persistV3WriteFailure({ eventName, category: failureCategory });
     }
     const environment = resolveWriteEnvironment();
-    const traffic = await resolveFunnelIsTest({
+    const validatedEarly = parseV3EventBody(req.body);
+    const traffic = await resolveAuthoritativeV3IsTest({
       environment,
-      clientTestFlag: clientTest,
+      funnelSessionId: validatedEarly.funnelSessionId,
       clientIp: clientIpFromHeaders(req.headers),
-      utmSource,
-      utmCampaign,
     });
     const result = await writePetV3FunnelEvent(req.body, traffic);
     return res.status(202).json(result);

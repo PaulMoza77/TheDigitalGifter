@@ -1,15 +1,25 @@
 /**
  * V3 certified measurement and price cohort boundaries.
- * `measurementReliableFrom` is set in production after this analytics release deploys.
- * `priceCohortFrom` is proven from prod-publish commit a1e03c7 (2026-08-27T21:11:06Z).
+ * Neither timestamp is client-defined — both are set via admin RPC after deploy verification.
  */
 export const PET_V3_PRICE_COHORT_CENTS = 299 as const;
 
 /** Set via DB `pet_v3_measurement_settings` after production deploy certifies tracking. */
 export const PET_V3_MEASUREMENT_RELIABLE_FROM: string | null = null;
 
-/** $2.99 became active in production at this UTC timestamp (git: a1e03c7 [prod-publish]). */
-export const PET_V3_PRICE_COHORT_FROM = "2026-08-27T21:11:06.000Z";
+/** Not certified until `admin_pet_v3_certify_measurement` sets `price_cohort_certified_at`. */
+export const PET_V3_PRICE_COHORT_CERTIFIED_AT: string | null = null;
+
+/**
+ * Documented production deploy reference for $2.99 pricing code (NOT a certified cohort timestamp).
+ * Vercel Production deploy SHA `01fde32` at 2026-08-27T21:28:28Z merged PR #55.
+ * Production KPI cohort still requires explicit admin certification after analytics audit.
+ */
+export const PET_V3_PRICE_DEPLOY_REFERENCE = {
+  sha: "01fde3223ace0c17a183db0b93ee11296795653f",
+  deployedAt: "2026-08-27T21:28:28.000Z",
+  note: "Historical/unverified until price_cohort_certified_at is set in pet_v3_measurement_settings",
+} as const;
 
 export type V3AnalyticsViewMode =
   | "production"
@@ -45,7 +55,6 @@ export function v3AnalyticsViewModeLabel(mode: V3AnalyticsViewMode): string {
   }
 }
 
-/** Maps dashboard view mode to RPC traffic_class filter (null = all classes). */
 export function v3TrafficClassForViewMode(mode: V3AnalyticsViewMode): string | null {
   switch (mode) {
     case "paid_meta":
@@ -65,4 +74,8 @@ export function v3IncludeInternalTests(mode: V3AnalyticsViewMode): boolean {
 
 export function v3UseProductionKpiFilters(mode: V3AnalyticsViewMode): boolean {
   return mode === "production" || mode === "paid_meta" || mode === "external_other" || mode === "unattributed";
+}
+
+export function v3PriceCohortIsCertified(certifiedAt: string | null | undefined): boolean {
+  return Boolean(certifiedAt);
 }

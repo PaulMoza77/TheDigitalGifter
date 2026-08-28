@@ -14,14 +14,22 @@ create table if not exists public.pet_v3_measurement_settings (
   measurement_reliable_from timestamptz,
   price_cohort_cents integer not null default 299,
   price_cohort_from timestamptz,
+  price_cohort_certified_at timestamptz,
+  price_deploy_reference_sha text,
+  price_deploy_reference_at timestamptz,
   updated_at timestamptz not null default now()
 );
 
-insert into public.pet_v3_measurement_settings (id, measurement_reliable_from, price_cohort_cents, price_cohort_from)
-values (1, null, 299, timestamptz '2026-08-27 21:11:06+00')
-on conflict (id) do update set
-  price_cohort_cents = coalesce(public.pet_v3_measurement_settings.price_cohort_cents, excluded.price_cohort_cents),
-  price_cohort_from = coalesce(public.pet_v3_measurement_settings.price_cohort_from, excluded.price_cohort_from);
+insert into public.pet_v3_measurement_settings (
+  id, measurement_reliable_from, price_cohort_cents, price_cohort_from,
+  price_cohort_certified_at, price_deploy_reference_sha, price_deploy_reference_at
+)
+values (
+  1, null, 299, null, null,
+  '01fde3223ace0c17a183db0b93ee11296795653f',
+  timestamptz '2026-08-27 21:28:28+00'
+)
+on conflict (id) do nothing;
 
 alter table public.pet_v3_measurement_settings enable row level security;
 drop policy if exists pet_v3_measurement_settings_admin_read on public.pet_v3_measurement_settings;
@@ -422,7 +430,7 @@ begin
     traffic_filter := null;
   end if;
 
-  select s.measurement_reliable_from, s.price_cohort_from, s.price_cohort_cents
+  select s.measurement_reliable_from, s.price_cohort_certified_at, s.price_cohort_cents
     into measurement_from, price_cohort_from, price_cohort_cents
   from public.pet_v3_measurement_settings s where s.id = 1;
 
@@ -532,6 +540,9 @@ begin
   select jsonb_build_object(
     'measurement_reliable_from', measurement_from,
     'price_cohort_from', price_cohort_from,
+    'price_cohort_certified_at', (select price_cohort_certified_at from public.pet_v3_measurement_settings where id = 1),
+    'price_deploy_reference_at', (select price_deploy_reference_at from public.pet_v3_measurement_settings where id = 1),
+    'price_deploy_reference_sha', (select price_deploy_reference_sha from public.pet_v3_measurement_settings where id = 1),
     'price_cohort_cents', price_cohort_cents,
     'traffic_breakdown', coalesce((select jsonb_agg(to_jsonb(t)) from traffic_breakdown t), '[]'::jsonb),
     'production_sequential', (select to_jsonb(sequential) from sequential),
@@ -579,7 +590,7 @@ begin
     raise exception 'not authorized' using errcode = '42501';
   end if;
 
-  select s.measurement_reliable_from, s.price_cohort_from, s.price_cohort_cents
+  select s.measurement_reliable_from, s.price_cohort_certified_at, s.price_cohort_cents
     into measurement_from, price_cohort_from, price_cohort_cents
   from public.pet_v3_measurement_settings s where s.id = 1;
 

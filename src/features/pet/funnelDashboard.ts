@@ -174,6 +174,8 @@ export type PetFunnelAnalyticsReport = {
   v3Trusted?: {
     measurementReliableFrom: string | null;
     priceCohortFrom: string | null;
+    priceCohortCertifiedAt: string | null;
+    priceDeployReferenceAt: string | null;
     priceCohortCents: number;
     viewMode: string;
     includeInternalTests: boolean;

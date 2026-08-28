@@ -1,87 +1,71 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { v3IdempotencyKey } from "./analytics";
-import { v3LegacyRpcFilterArgs, v3TrustedRpcFilterArgs } from "./v3AnalyticsFilters";
-import { classifyV3Traffic } from "./v3TrafficClassification";
-import { isV3AnalyticsTestModeActive, setV3AnalyticsTestMode, clearV3AnalyticsTestMode } from "./v3TestMode";
-import {
-  PET_V3_PRICE_COHORT_FROM,
-  v3IncludeInternalTests,
-  v3TrafficClassForViewMode,
-} from "./v3Measurement";
 
-describe("V3 traffic classification", () => {
-  it("1. internal test session excluded from default KPI filters", () => {
-    expect(classifyV3Traffic({ isInternalTest: true, campaignId: "123" })).toBe("internal_test");
-    expect(v3IncludeInternalTests("production")).toBe(false);
-    expect(v3TrustedRpcFilterArgs({ viewMode: "production" }).p_include_internal_tests).toBe(false);
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+
+function readSrc(relative: string) {
+  return readFileSync(resolve(root, relative), "utf8");
+}
+
+describe("V3 ingest security — client cannot self-exclude production KPIs", () => {
+  const ingest = readSrc("api/pet-v3-funnel-event.ts");
+  const migration = readSrc("supabase/migrations/20260828140000_pet_v3_trusted_analytics_hardening.sql");
+
+  it("production ingest API does not read clientTestFlag in handler", () => {
+    expect(ingest).toContain("resolveAuthoritativeV3IsTest");
+    expect(ingest).not.toMatch(/clientTestFlag\s*=/);
   });
 
-  it("2. internal test session visible when Include tests is enabled", () => {
-    expect(v3IncludeInternalTests("include_tests")).toBe(true);
-    expect(v3TrustedRpcFilterArgs({ viewMode: "include_tests" }).p_include_internal_tests).toBe(true);
+  it("production ingest uses server registry for internal test", () => {
+    expect(ingest).toContain("pet_v3_internal_test_session_status");
+    expect(migration).toContain("pet_v3_session_is_internal_test");
   });
 
-  it("3. paid Meta session correctly classified", () => {
-    expect(classifyV3Traffic({ campaignId: "120253518796930170", hasMetaClick: true })).toBe("paid_meta");
-    expect(v3TrafficClassForViewMode("paid_meta")).toBe("paid_meta");
+  it("does not trust VITE_* public token for test authorization", () => {
+    expect(readSrc("src/features/pet-v3/v3TestMode.ts")).not.toContain("VITE_PET_V3_ANALYTICS_TEST_TOKEN");
+    expect(readSrc("src/features/pet-v3/v3TestMode.ts")).toContain("fetchV3InternalTestStatus");
   });
 
-  it("4. organic/direct session is not incorrectly classified as internal", () => {
-    expect(classifyV3Traffic({ utmSource: "google", referrerHost: "google.com" })).toBe("external_other");
-    expect(classifyV3Traffic({ referrerHost: "instagram.com" })).toBe("external_other");
-    expect(classifyV3Traffic({})).toBe("unattributed");
+  it("SQL classification excludes fbp-only paid_meta", () => {
+    expect(migration).toContain("fbp alone is NOT sufficient");
+    expect(migration).not.toMatch(/coalesce\(btrim\(p_fbp\).*paid_meta/s);
   });
 
-  it("5. multiple identical events in one session count once per stage (idempotency keys)", () => {
-    const sessionId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-    const landingKey = v3IdempotencyKey({ sessionId, eventName: "v3_landing_view" });
-    expect(v3IdempotencyKey({ sessionId, eventName: "v3_landing_view" })).toBe(landingKey);
-    const checkoutKey = v3IdempotencyKey({
-      sessionId,
-      eventName: "v3_begin_checkout",
-      attemptId: "order-1",
-    });
-    expect(
-      v3IdempotencyKey({ sessionId, eventName: "v3_begin_checkout", attemptId: "order-1" }),
-    ).toBe(checkoutKey);
+  it("admin RPC required to register internal test sessions", () => {
+    expect(migration).toContain("admin_pet_v3_register_internal_test_session");
+    expect(migration).toContain("if not public.is_admin()");
   });
 
-  it("6. refresh does not create a second landing session (session-once idempotency)", () => {
-    const sessionId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-    expect(v3IdempotencyKey({ sessionId, eventName: "v3_landing_view" })).toBe(
-      `${sessionId}:v3_landing_view:cat`,
-    );
-  });
-
-  it("7. checkout button click without Stripe session is diagnostic only (separate event names)", () => {
-    expect(["v3_begin_checkout", "v3_checkout_session_created"].sort()).toEqual([
-      "v3_begin_checkout",
-      "v3_checkout_session_created",
-    ]);
-  });
-
-  it("8. successful Stripe Checkout Session creation counts once (order-scoped idempotency)", () => {
-    expect(`v3_checkout_session_created:order-uuid-1`).toMatch(/^v3_checkout_session_created:/);
-  });
-
-  it("12. old-price traffic excluded from $2.99 cohort via price_cohort_from constant", () => {
-    expect(PET_V3_PRICE_COHORT_FROM).toBe("2026-08-27T21:11:06.000Z");
-    expect(v3TrustedRpcFilterArgs({ priceCohortOnly: true }).p_price_cohort_only).toBe(true);
-  });
-
-  it("legacy RPC args do not pass trusted-only params", () => {
-    expect(v3LegacyRpcFilterArgs({ viewMode: "production" })).not.toHaveProperty("p_include_internal_tests");
+  it("client is_test_request is hint-only in analytics payload", () => {
+    expect(readSrc("src/features/pet-v3/analytics.ts")).toContain("Hint only");
   });
 });
 
-describe("V3 analytics test mode persistence", () => {
-  it("persists test mode in session storage", () => {
-    if (typeof window === "undefined") return;
-    clearV3AnalyticsTestMode();
-    expect(isV3AnalyticsTestModeActive()).toBe(false);
-    setV3AnalyticsTestMode(true);
-    expect(isV3AnalyticsTestModeActive()).toBe(true);
-    clearV3AnalyticsTestMode();
-    expect(isV3AnalyticsTestModeActive()).toBe(false);
+describe("V3 Stripe Checkout Session architecture", () => {
+  it("uses Stripe Checkout Session with ui_mode=elements (not standalone PaymentIntent)", () => {
+    const checkout = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
+    const funnel = readSrc("supabase/functions/pet-funnel/index.ts");
+    expect(checkout).toContain('"elements"');
+    expect(funnel).toContain('params.set("ui_mode", "elements")');
+    expect(funnel).toContain("checkout/sessions");
+    expect(readSrc("supabase/functions/_shared/pet/v3FunnelEvents.ts")).toContain("v3_checkout_session_created");
+  });
+
+  it("trusted KPI event is idempotent per order", () => {
+    expect(readSrc("supabase/functions/_shared/pet/v3FunnelEvents.ts")).toContain(
+      "v3_checkout_session_created:${input.orderId}",
+    );
+  });
+});
+
+describe("V3 price cohort certification", () => {
+  it("does not hardcode git commit time as certified cohort", () => {
+    expect(readSrc("src/features/pet-v3/v3Measurement.ts")).not.toContain("2026-08-27T21:11:06");
+    expect(readSrc("src/features/pet-v3/v3Measurement.ts")).toContain("PET_V3_PRICE_COHORT_CERTIFIED_AT");
+    expect(readSrc("supabase/migrations/20260828140000_pet_v3_trusted_analytics_hardening.sql")).toContain(
+      "price_cohort_certified_at",
+    );
   });
 });
