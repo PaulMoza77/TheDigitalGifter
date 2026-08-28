@@ -536,19 +536,30 @@ async function runKontextPreview(
     if (preferred === "openai" && openAiFallbackEnabled()) {
       const openaiKey = String(Deno.env.get("OPENAI_API_KEY") || "").trim();
       if (openaiKey) {
-        previewDiag({
-          stage: "openai_preferred_start",
-          funnel: ctx.version,
-          scene: ctx.sceneKey,
-          speciesDeclared: species,
-        });
-        const preferredResult = await runOpenAiIdentityEdit(imageDataUrl, prompt);
-        await markAttempt(ctx, idempotencyKey, {
-          status: "processing",
-          predictionId: preferredResult.predictionId,
-          liveGeneration: false,
-        });
-        return preferredResult;
+        try {
+          previewDiag({
+            stage: "openai_preferred_start",
+            funnel: ctx.version,
+            scene: ctx.sceneKey,
+            speciesDeclared: species,
+          });
+          const preferredResult = await runOpenAiIdentityEdit(imageDataUrl, prompt);
+          await markAttempt(ctx, idempotencyKey, {
+            status: "processing",
+            predictionId: preferredResult.predictionId,
+            liveGeneration: false,
+          });
+          return preferredResult;
+        } catch (preferredError) {
+          previewDiag({
+            stage: "openai_preferred_failed",
+            funnel: ctx.version,
+            error: String(
+              preferredError instanceof Error ? preferredError.message : preferredError,
+            ).slice(0, 120),
+          });
+          // Fall through to Replicate — OpenAI billing/throttle must not hard-block previews.
+        }
       }
     }
     return await runReplicateKontext(ctx, token, imageDataUrl, species, idempotencyKey, prompt);
