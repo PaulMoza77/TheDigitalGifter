@@ -7,6 +7,10 @@
   },
   "rewrites": [
     {
+      "source": "/.well-known/apple-developer-merchantid-domain-association",
+      "destination": "/api/apple-developer-merchantid-domain-association"
+    },
+    {
       "source": "/api/pet/funnel-event",
       "destination": "/api/pet-funnel-event"
     },
@@ -27,7 +31,7 @@
       "destination": "/api/sitemap.xml"
     },
     {
-      "source": "/((?!api/|images/|assets/).*)",
+      "source": "/((?!api/|images/|assets/|\\.well-known/).*)",
       "destination": "/index.html"
     }
   ]

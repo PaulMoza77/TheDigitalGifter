@@ -219,6 +219,20 @@ export async function handlePetStripeEvent(input: {
 
   if (result?.should_enqueue) {
     enqueuePetGenerate(orderId);
+    if (asString(input.metadata.funnel_variant) === "v2") {
+      const sessionId = asString(input.metadata.funnel_session_id);
+      const species = asString(input.metadata.species) || "dog";
+      const pathSpecies = species === "cat" || species === "other" ? species : "dog";
+      if (isUuid(sessionId)) {
+        await input.service.rpc("record_pet_v2_funnel_event", {
+          p_event_name: "v2_paid_generation_started",
+          p_funnel_session_id: sessionId,
+          p_idempotency_key: `v2_paid_generation_started:${orderId}`,
+          p_species: species,
+          p_pathname: `/pet/${pathSpecies}-v2`,
+        });
+      }
+    }
   }
 
   return new Response(JSON.stringify({ ok: true, result }), {

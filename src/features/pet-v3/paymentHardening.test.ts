@@ -92,12 +92,11 @@ describe("Cat V3 + return URL payment hardening", () => {
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("return_url");
   });
 
-  it("V2 hosted checkout behavior remains redirect-based and unchanged", () => {
+  it("V2 checkout is isolated on Elements (not V1 Custom)", () => {
     const v2 = readSrc("src/features/pet-v2/PetV2FunnelPage.tsx");
-    expect(v2).toContain("window.location.assign(result.checkoutUrl)");
-    expect(v2).not.toContain('uiMode: "custom"');
+    expect(v2).toContain("useV2EmbeddedCheckout");
     expect(v2).not.toContain("CustomStripeCheckout");
-    expect(v2).not.toContain("buildPetOrderReturnUrl");
+    expect(v2).toContain("buildV2PersonalizedTeaser");
   });
 
   it("V3 refresh with valid checkout restores without new order/upload/preview", () => {

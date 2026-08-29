@@ -107,9 +107,18 @@ export function buildV2PreviewRetryAttemptId(baseAttemptId: string, retryNonce?:
   return `${baseAttemptId}:retry:${nonce}`.slice(0, 180);
 }
 
-/** Back from preview/offer should land on preview when output already exists. */
-export function backStepFrom(current: PetV2Draft["step"], draft: Pick<PetV2Draft, "generatedPreviewDataUrl">): PetV2Draft["step"] {
+/**
+ * Back navigation:
+ * - V2 teaser rebuild: teaser/offer → photo (never clear free AI preview).
+ * - V3 (and legacy live preview): offer → preview when a live preview exists.
+ */
+export function backStepFrom(
+  current: PetV2Draft["step"],
+  draft: Pick<PetV2Draft, "generatedPreviewDataUrl" | "generationMode">,
+): PetV2Draft["step"] {
+  if (current === "teaser") return "photo";
   if (current === "offer") {
+    if (draft.generationMode === "teaser") return "photo";
     return draft.generatedPreviewDataUrl ? "preview" : "photo";
   }
   if (current === "preview" || current === "generating") return "photo";

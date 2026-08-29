@@ -64,22 +64,22 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
     kpiLabels: {
       landing: "Landing Sessions",
       step2: "Photo Uploads",
-      step3: "Preview Viewed",
-      step4: "Unlock Clicks",
-      checkout: "Initiate Checkouts",
+      step3: "Teaser Viewed",
+      step4: "Offer Viewed",
+      checkout: "Checkout Opened",
       purchase: "Purchases",
       landingHelper: "First-party landing",
       step2Of: "first-party landing",
       step3Of: "uploads",
-      step4Of: "previews",
-      checkoutOf: "unlocks",
+      step4Of: "teasers",
+      checkoutOf: "offers",
     },
     stageLabels: {
       landing_view: "Landing Sessions",
       pet_name_submitted: "Photo Uploads",
-      photo_upload_completed: "Preview Viewed",
-      order_review_viewed: "Unlock Clicks",
-      initiate_checkout: "Initiate Checkout",
+      photo_upload_completed: "Teaser Viewed",
+      order_review_viewed: "Offer Viewed",
+      initiate_checkout: "Checkout Opened",
       purchase: "Purchase",
     },
   },
@@ -242,14 +242,15 @@ export function buildV3ExtendedFunnelSteps(counts: V3FunnelExtendedCounts) {
   });
 }
 
-/** Map isolated V2 event counts into the original 6-card funnel shape. */
+/** Map isolated V2 event counts into the original 6-card funnel shape (teaser rebuild). */
 export function mapV2CountsToPrimarySteps(v2: Record<string, number>): FunnelStepCounts {
   const counts = emptyStepCounts();
   counts.landing_view = v2.v2_landing_view || 0;
   counts.pet_name_submitted = v2.v2_upload_completed || 0;
-  counts.photo_upload_completed = v2.v2_preview_viewed || 0;
-  counts.order_review_viewed = v2.v2_unlock_clicked || 0;
-  counts.initiate_checkout = v2.v2_begin_checkout || 0;
+  // Prefer teaser_viewed; fall back to legacy preview_viewed for historical windows.
+  counts.photo_upload_completed = v2.v2_teaser_viewed || v2.v2_preview_viewed || 0;
+  counts.order_review_viewed = v2.v2_offer_viewed || v2.v2_unlock_clicked || 0;
+  counts.initiate_checkout = v2.v2_begin_checkout || v2.v2_checkout_session_created || 0;
   counts.purchase = v2.v2_purchase || 0;
   return counts;
 }

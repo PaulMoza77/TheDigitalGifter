@@ -26,7 +26,7 @@ export function V2LandingScreen({
           See your pet as a Formula 1 driver.
         </h1>
         <p className="mt-2 max-w-md text-sm leading-6 text-[#f6efe4]/72 sm:text-base sm:leading-7">
-          Upload one photo and get a free cinematic preview of {pet} as a Formula 1 driver — no card required.
+          Upload one photo and get a free blurred teaser of {pet}’s secret life — no card required.
         </p>
         <V2SaleLine onExpire={() => setOffer(v2PackOfferCopy())} />
         <Button
@@ -46,7 +46,7 @@ export function V2LandingScreen({
             { icon: BadgeCheck, label: "12 secret lives" },
             { icon: BadgeCheck, label: "2 mini clips" },
             { icon: BadgeCheck, label: `${offer.priceDisplay} one-time` },
-            { icon: Timer, label: "Usually under 30 seconds" },
+            { icon: Timer, label: "Teaser in seconds" },
             { icon: Lock, label: "No subscription" },
             { icon: ShieldCheck, label: "Photo stays private" },
           ].map((item) => (

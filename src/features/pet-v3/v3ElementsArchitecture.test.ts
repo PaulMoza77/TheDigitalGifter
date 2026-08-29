@@ -179,7 +179,7 @@ describe("Cat V3 Minutes Guides Elements architecture", () => {
     expect(elements).toContain("setApplePayFromStripe");
   });
 
-  it("keeps V1 Custom Checkout and V2 hosted unchanged", () => {
+  it("keeps V1 Custom Checkout unchanged; V2 uses its own Elements path", () => {
     const v1 = readSrc("src/features/pet/PetCheckoutPage.tsx");
     const v2 = readSrc("src/features/pet-v2/PetV2FunnelPage.tsx");
     const shared = readSrc("src/features/pet/components/CustomStripeCheckout.tsx");
@@ -187,8 +187,9 @@ describe("Cat V3 Minutes Guides Elements architecture", () => {
     expect(v1).toContain('uiMode: "custom"');
     expect(v1).toContain("CustomStripeCheckout");
     expect(shared).toContain('from "../stripeLoader"');
-    expect(v2).toContain("window.location.assign(result.checkoutUrl)");
-    expect(v2).not.toContain('uiMode: "elements"');
+    expect(v2).toContain("useV2EmbeddedCheckout");
+    expect(v2).toContain("buildV2PersonalizedTeaser");
+    expect(v2).not.toContain("requestV2Preview");
     expect(loader).toContain("STRIPE_JS_RELEASE_TRAIN");
   });
 });
