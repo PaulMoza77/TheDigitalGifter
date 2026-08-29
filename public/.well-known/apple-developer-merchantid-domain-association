@@ -1,5 +1,0 @@
-# Place the exact Apple Pay domain association file downloaded from the Stripe Dashboard here.
-# Filename must remain: apple-developer-merchantid-domain-association (no extension).
-# Or set Vercel env STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION to the file contents.
-# This placeholder must NOT be HTML — the API route returns 503 until configured.
-PLACEHOLDER_CONFIGURE_VIA_STRIPE_DASHBOARD_OR_ENV

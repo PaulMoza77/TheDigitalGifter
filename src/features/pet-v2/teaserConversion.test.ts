@@ -102,6 +102,10 @@ describe("V2 teaser conversion rebuild", () => {
     expect(api).toContain("application/octet-stream");
     expect(api).toContain("Must never return SPA HTML");
     expect(api).toContain("PLACEHOLDER_CONFIGURE");
+    // Do not ship a public placeholder — Vercel would serve it statically and bypass the API.
+    expect(() =>
+      readSrc("public/.well-known/apple-developer-merchantid-domain-association"),
+    ).toThrow();
   });
 
   it("cancel URL restores with checkout=canceled", () => {

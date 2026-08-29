@@ -1,7 +1,8 @@
 /**
  * Serves Apple Pay domain association for Express Checkout Element.
  * Prefer STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION env (exact Stripe Dashboard file contents).
- * Falls back to public/.well-known file when present.
+ * Optional fallback: non-placeholder file at public/.well-known/… (avoid committing placeholders —
+ * Vercel serves public/ statically and would bypass this route).
  * Must never return SPA HTML.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
