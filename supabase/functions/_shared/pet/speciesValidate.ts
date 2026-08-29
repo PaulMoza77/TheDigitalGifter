@@ -2,6 +2,9 @@
  * Vision-based pet species check before preview generation.
  * Records only outcome + confidence — never biometrics or customer PII.
  *
+ * Conversion rule: never block free-preview generation on species vision.
+ * Client species-confirm remains the UX guard; vision is diagnostic only.
+ *
  * Provider order:
  * 1) OpenAI (if key present and billed)
  * 2) Replicate vision (same REPLICATE_API_TOKEN as preview generation)
@@ -11,24 +14,14 @@
 export type SpeciesLabel = "dog" | "cat" | "other" | "unclear";
 export type SpeciesProvider = "openai" | "replicate" | "skipped";
 
-export type SpeciesValidation =
-  | {
-      ok: true;
-      action: "proceed";
-      detected: SpeciesLabel;
-      confidence: number;
-      provider: SpeciesProvider;
-      visionWarning?: string;
-    }
-  | {
-      ok: false;
-      action: "reject_wrong_species" | "ask_clearer";
-      detected: SpeciesLabel;
-      confidence: number;
-      provider: SpeciesProvider;
-      errorCode: "wrong_species" | "unclear_species";
-      error: string;
-    };
+export type SpeciesValidation = {
+  ok: true;
+  action: "proceed";
+  detected: SpeciesLabel;
+  confidence: number;
+  provider: SpeciesProvider;
+  visionWarning?: string;
+};
 
 const HIGH_CONFIDENCE = 0.72;
 const DEFAULT_REPLICATE_VISION_MODEL = "lucataco/moondream2";
@@ -47,11 +40,10 @@ export function unclearSpeciesMessage(): string {
 }
 
 /**
- * Validate that the uploaded image matches the funnel’s expected species.
- * - High-confidence mismatch → reject before generation.
- * - High-confidence unclear/other → ask for a clearer image.
- * - Ambiguous / low-confidence → proceed (do not auto-reject).
- * - Missing vision provider → block with unclear_species (do not fail-open into the wrong funnel).
+ * Classify the uploaded image for diagnostics — always proceed.
+ * - High-confidence mismatch / unclear → still proceed (stamp visionWarning).
+ * - Ambiguous / low-confidence → proceed.
+ * - Missing vision provider → proceed (fail open).
  */
 export async function validatePetSpecies(input: {
   imageDataUrl: string;
@@ -102,8 +94,7 @@ export async function validatePetSpecies(input: {
     }
   }
 
-  // Soft fail-open for availability, but stamp diagnostics so ops can see vision is down.
-  // Client species-confirm + funnel_version still apply; wrong_species is enforced when vision works.
+  // Fail-open for availability — stamp diagnostics so ops can see vision is down.
   console.log(
     JSON.stringify({
       stage: "species_vision_unavailable",
@@ -129,32 +120,15 @@ export function decideSpeciesOutcome(
 ): SpeciesValidation {
   const conf = Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0;
 
+  let visionWarning: string | undefined;
   if (
     conf >= HIGH_CONFIDENCE &&
     (detected === "dog" || detected === "cat") &&
     detected !== expected
   ) {
-    return {
-      ok: false,
-      action: "reject_wrong_species",
-      detected,
-      confidence: conf,
-      provider,
-      errorCode: "wrong_species",
-      error: speciesRejectMessage(expected),
-    };
-  }
-
-  if (conf >= HIGH_CONFIDENCE && (detected === "unclear" || detected === "other")) {
-    return {
-      ok: false,
-      action: "ask_clearer",
-      detected,
-      confidence: conf,
-      provider,
-      errorCode: "unclear_species",
-      error: unclearSpeciesMessage(),
-    };
+    visionWarning = `soft_mismatch:${detected}_vs_${expected}`;
+  } else if (conf >= HIGH_CONFIDENCE && (detected === "unclear" || detected === "other")) {
+    visionWarning = `soft_unclear:${detected}`;
   }
 
   return {
@@ -163,6 +137,7 @@ export function decideSpeciesOutcome(
     detected,
     confidence: conf,
     provider,
+    ...(visionWarning ? { visionWarning } : {}),
   };
 }
 

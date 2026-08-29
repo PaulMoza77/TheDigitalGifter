@@ -6,7 +6,9 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - main
       - cursor/pet-preview-identity-c279
+      - cursor/species-fail-open-upload-8187
     paths:
       - "supabase/functions/pet-v2-preview/**"
       - "supabase/functions/_shared/pet/**"
