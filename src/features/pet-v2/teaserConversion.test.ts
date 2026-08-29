@@ -128,6 +128,9 @@ describe("V2 teaser conversion rebuild", () => {
     expect(funnel).toContain("PET_FULFILLMENT_ENABLED");
     expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain("ensureV2CheckoutAllowed");
     expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain("v2_provider_unavailable");
+    expect(readSrc("src/features/pet-v2/providerStatus.ts")).toContain("/api/pet-provider-status");
+    expect(readSrc("api/pet-provider-status.ts")).toContain("REPLICATE_API_TOKEN");
+    expect(readSrc("api/pet-provider-status.ts")).toContain("insufficient_credit");
   });
 
   it("maps new teaser analytics into admin KPI cards", () => {
