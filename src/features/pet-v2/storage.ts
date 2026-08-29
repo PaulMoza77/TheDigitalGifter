@@ -16,6 +16,8 @@ const EMPTY: PetV2Draft = {
   petName: "",
   subtype: null,
   subtypeDetail: null,
+  orderId: null,
+  publicToken: null,
   updatedAt: "",
 };
 
@@ -121,6 +123,9 @@ function coerce(value: unknown): PetV2Draft | null {
         ? (row.subtype as PetSubtype)
         : null,
     subtypeDetail: typeof row.subtypeDetail === "string" ? row.subtypeDetail.slice(0, 40) : null,
+    orderId: typeof row.orderId === "string" && row.orderId.trim() ? row.orderId.slice(0, 64) : null,
+    publicToken:
+      typeof row.publicToken === "string" && row.publicToken.trim() ? row.publicToken.slice(0, 120) : null,
     updatedAt: typeof row.updatedAt === "string" ? row.updatedAt : "",
   };
 }
