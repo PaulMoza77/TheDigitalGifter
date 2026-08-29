@@ -1,6 +1,7 @@
 /**
  * Provider fulfillment availability for Dog V2.
- * Prevents charging when Replicate (or forced kill-switch) cannot fulfill paid generation.
+ * Prefer same-origin Vercel probe (always deployable with the frontend).
+ * Fall back to Supabase edge `pet-provider-status` when present.
  */
 import { getPublicSupabaseConfig } from "@/lib/env";
 import { PET_V2_PROVIDER_STATUS_PATH, V2_PROVIDER_UNAVAILABLE_COPY } from "./types";
@@ -16,8 +17,46 @@ export type V2ProviderStatus = {
 const CACHE_MS = 60_000;
 let cached: V2ProviderStatus | null = null;
 
+/** Same-origin Vercel route — primary probe after conversion rebuild. */
+export const V2_PROVIDER_STATUS_VERCEL_PATH = "/api/pet-provider-status" as const;
+
 export function clearV2ProviderStatusCache() {
   cached = null;
+}
+
+function parseStatus(body: Record<string, unknown>, checkedAt: number): V2ProviderStatus {
+  const available = body.available === true;
+  const reason = typeof body.reason === "string" ? body.reason : null;
+  return {
+    available,
+    reason,
+    failureCategory: available ? null : "provider_unavailable",
+    message: available
+      ? "ok"
+      : typeof body.message === "string" && body.message.trim()
+        ? body.message
+        : V2_PROVIDER_UNAVAILABLE_COPY,
+    checkedAt,
+  };
+}
+
+async function fetchJson(
+  url: string,
+  headers?: Record<string, string>,
+): Promise<{
+  ok: boolean;
+  status: number;
+  body: Record<string, unknown>;
+}> {
+  const res = await fetch(url, { method: "GET", headers });
+  const text = await res.text();
+  let body: Record<string, unknown> = {};
+  try {
+    body = JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    body = {};
+  }
+  return { ok: res.ok, status: res.status, body };
 }
 
 export async function fetchV2ProviderStatus(force = false): Promise<V2ProviderStatus> {
@@ -25,32 +64,31 @@ export async function fetchV2ProviderStatus(force = false): Promise<V2ProviderSt
   if (!force && cached && now - cached.checkedAt < CACHE_MS) return cached;
 
   try {
-    const { url, anon } = getPublicSupabaseConfig();
-    const res = await fetch(`${url.replace(/\/$/, "")}${PET_V2_PROVIDER_STATUS_PATH}`, {
-      method: "GET",
-      headers: {
-        apikey: anon,
-        Authorization: `Bearer ${anon}`,
-      },
-    });
-    const text = await res.text();
-    let body: Record<string, unknown> = {};
-    try {
-      body = JSON.parse(text) as Record<string, unknown>;
-    } catch {
-      body = {};
+    // 1) Same-origin Vercel probe (canonical for production frontend deploys).
+    const vercel = await fetchJson(V2_PROVIDER_STATUS_VERCEL_PATH);
+    if (vercel.status !== 404 && "available" in vercel.body) {
+      const status = parseStatus(vercel.body, now);
+      cached = status;
+      return status;
     }
-    const available = body.available === true;
-    const reason = typeof body.reason === "string" ? body.reason : null;
+
+    // 2) Fallback: Supabase Edge (when deployed).
+    const { url, anon } = getPublicSupabaseConfig();
+    const edge = await fetchJson(`${url.replace(/\/$/, "")}${PET_V2_PROVIDER_STATUS_PATH}`, {
+      apikey: anon,
+      Authorization: `Bearer ${anon}`,
+    });
+    if ("available" in edge.body) {
+      const status = parseStatus(edge.body, now);
+      cached = status;
+      return status;
+    }
+
     const status: V2ProviderStatus = {
-      available,
-      reason,
-      failureCategory: available ? null : "provider_unavailable",
-      message: available
-        ? "ok"
-        : typeof body.message === "string" && body.message.trim()
-          ? body.message
-          : V2_PROVIDER_UNAVAILABLE_COPY,
+      available: false,
+      reason: "endpoint_unreachable",
+      failureCategory: "endpoint_unreachable",
+      message: V2_PROVIDER_UNAVAILABLE_COPY,
       checkedAt: now,
     };
     cached = status;
