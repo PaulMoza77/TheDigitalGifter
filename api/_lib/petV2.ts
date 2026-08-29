@@ -1,32 +1,14 @@
 import { createHash } from "node:crypto";
 import { originAllowed, logFunnelWriteFailure, resolveWriteEnvironment } from "./writePetFunnelEvent";
+import { isV2EventName, PET_V2_EVENT_NAMES, type PetV2IngestEventName } from "./petV2Events";
 
-const PET_V2_EVENT_NAMES = [
-  "v2_landing_view",
-  "v2_upload_started",
-  "v2_upload_completed",
-  "v2_upload_failed",
-  "v2_preview_generation_started",
-  "v2_preview_generation_completed",
-  "v2_preview_generation_failed",
-  "v2_preview_viewed",
-  "v2_preview_regenerated",
-  "v2_offer_viewed",
-  "v2_unlock_clicked",
-  "v2_begin_checkout",
-  "v2_purchase",
-] as const;
-
-export type PetV2EventName = (typeof PET_V2_EVENT_NAMES)[number];
+export type PetV2EventName = PetV2IngestEventName;
+export { isV2EventName, PET_V2_EVENT_NAMES };
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const V2_PATHS = new Set(["/pet/dog-v2", "/pet/cat-v2", "/pet/other-v2", "/pet-v2"]);
-
-export function isV2EventName(value: string): value is PetV2EventName {
-  return (PET_V2_EVENT_NAMES as readonly string[]).includes(value);
-}
 
 export function parseV2EventBody(raw: unknown): {
   eventName: PetV2EventName;

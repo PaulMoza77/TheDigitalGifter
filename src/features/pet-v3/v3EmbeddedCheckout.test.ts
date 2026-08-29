@@ -208,11 +208,11 @@ describe("V3 embedded checkout", () => {
     );
   });
 
-  it("does not modify V2 hosted checkout", () => {
+  it("does not couple V3 checkout into V2 page", () => {
     const v2 = readSrc("src/features/pet-v2/PetV2FunnelPage.tsx");
-    expect(v2).toContain("window.location.assign(result.checkoutUrl)");
-    expect(v2).not.toContain('uiMode: "custom"');
+    expect(v2).toContain("useV2EmbeddedCheckout");
     expect(v2).not.toContain("useV3EmbeddedCheckout");
+    expect(v2).not.toContain('uiMode: "custom"');
   });
 
   it("updates order contact server-side before payment confirmation", () => {

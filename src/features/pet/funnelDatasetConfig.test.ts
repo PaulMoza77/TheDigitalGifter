@@ -27,8 +27,8 @@ describe("funnelDatasetConfig", () => {
       namedEventCounts([
         { event_name: "v2_landing_view", unique_sessions: 40 },
         { event_name: "v2_upload_completed", unique_sessions: 22 },
-        { event_name: "v2_preview_viewed", unique_sessions: 18 },
-        { event_name: "v2_unlock_clicked", unique_sessions: 9 },
+        { event_name: "v2_teaser_viewed", unique_sessions: 18 },
+        { event_name: "v2_offer_viewed", unique_sessions: 9 },
         { event_name: "v2_begin_checkout", unique_sessions: 4 },
         { event_name: "v2_purchase", unique_sessions: 2 },
         { event_name: "pet_name_submitted", unique_sessions: 99 },
@@ -41,9 +41,21 @@ describe("funnelDatasetConfig", () => {
     expect(counts.initiate_checkout).toBe(4);
     expect(counts.purchase).toBe(2);
     expect(FUNNEL_DATASETS.v2.kpiLabels.step2).toBe("Photo Uploads");
-    expect(FUNNEL_DATASETS.v2.kpiLabels.step3).toBe("Preview Viewed");
-    expect(FUNNEL_DATASETS.v2.kpiLabels.step4).toBe("Unlock Clicks");
+    expect(FUNNEL_DATASETS.v2.kpiLabels.step3).toBe("Teaser Viewed");
+    expect(FUNNEL_DATASETS.v2.kpiLabels.step4).toBe("Offer Viewed");
     expect(FUNNEL_DATASETS.v2.kpiLabels.landingHelper).not.toContain("pet_name_submitted");
+
+    // Legacy preview/unlock still map for historical windows
+    const legacy = mapV2CountsToPrimarySteps({
+      v2_landing_view: 5,
+      v2_upload_completed: 4,
+      v2_preview_viewed: 3,
+      v2_unlock_clicked: 2,
+      v2_begin_checkout: 1,
+      v2_purchase: 0,
+    });
+    expect(legacy.photo_upload_completed).toBe(3);
+    expect(legacy.order_review_viewed).toBe(2);
   });
 
   it("keeps V3 cat dataset isolated and resolves campaign ID from allowlist/env", () => {

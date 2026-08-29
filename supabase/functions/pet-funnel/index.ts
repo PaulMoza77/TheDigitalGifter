@@ -907,6 +907,31 @@ Deno.serve(async (req) => {
     if (action === "createStripeCheckout") {
       const publicToken = asString(body.publicToken);
       const order = await requireOrder(service, asString(body.orderId), publicToken);
+
+      // Do not accept new V2 payments when fulfillment capacity is known unavailable.
+      if (isV2Funnel(order.funnel_variant)) {
+        const kill = String(Deno.env.get("PET_FULFILLMENT_ENABLED") || "true").trim().toLowerCase();
+        if (kill === "0" || kill === "false" || kill === "off" || kill === "disabled") {
+          return apiError(
+            "PROVIDER_UNAVAILABLE",
+            "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+            503,
+          );
+        }
+        const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        const { count: billingHolds } = await service
+          .from("pet_orders")
+          .select("id", { count: "exact", head: true })
+          .eq("last_error", "billing_required")
+          .gte("updated_at", since);
+        if ((billingHolds || 0) >= 2) {
+          return apiError(
+            "PROVIDER_UNAVAILABLE",
+            "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+            503,
+          );
+        }
+      }
       if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
       if (String(order.status) !== "awaiting_payment") {
         return apiError("INVALID_REQUEST", "This order is not ready for payment.");

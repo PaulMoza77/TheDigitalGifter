@@ -121,7 +121,7 @@ export function V2PhotoScreen({
         onClick={onGenerate}
         className="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63] disabled:opacity-40"
       >
-        Create my free preview
+        See my secret-life teaser
       </Button>
       {onViewPreview ? (
         <button
@@ -130,7 +130,7 @@ export function V2PhotoScreen({
           onClick={onViewPreview}
           className="block w-full text-center text-sm text-[#f6efe4]/60 underline-offset-4 hover:underline"
         >
-          View my preview
+          View my teaser
         </button>
       ) : null}
     </div>

@@ -113,7 +113,10 @@ function coerce(value: unknown): PetV2Draft | null {
       row.generatedPreviewDataUrl.startsWith("data:image/")
         ? row.generatedPreviewDataUrl
         : null,
-    generationMode: row.generationMode === "live" || row.generationMode === "mock" ? row.generationMode : null,
+    generationMode:
+      row.generationMode === "teaser" || row.generationMode === "live" || row.generationMode === "mock"
+        ? row.generationMode
+        : null,
     previewCount: Math.max(0, Number(row.previewCount) || 0),
     lastError: typeof row.lastError === "string" ? row.lastError : null,
     email: typeof row.email === "string" ? row.email.slice(0, 120) : "",

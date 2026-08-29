@@ -2,32 +2,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
-import { PetApiError, startPetCheckout } from "../pet/api";
-import { PET_DEFAULT_PERSONALITY } from "../pet/types";
-import { petFunnelApi } from "../pet/supabaseApi";
-import { shouldTrackPetBeginCheckout } from "../pet/funnelAnalytics";
-import { validateOtherSubtype, validatePetName } from "../pet/croGuards";
-import { remainingSessionPreviews, sessionAllowsAnotherPreview } from "./abuse";
+import { validateOtherSubtype } from "../pet/croGuards";
+import { canGenerateWithSpeciesConfirm } from "../pet-funnel-shared/speciesConfirm";
+import { remainingSessionPreviews } from "./abuse";
 import { petV2LandingPath, trackPetV2Event } from "./analytics";
 import { trackV2BeginCheckout } from "./checkoutAnalytics";
 import { cryptoRandomId } from "./previewAttempt";
-import { previewErrorMessage } from "./previewErrors";
-import {
-  canGenerateWithSpeciesConfirm,
-} from "../pet-funnel-shared/speciesConfirm";
-import {
-  backStepFrom,
-  clearPreviewOnPhotoChange,
-  resolveGenerateAttempt,
-  shouldRestoreLocalPreview,
-} from "./previewFlow";
-import { requestV2Preview } from "./previewClient";
-import { V2GeneratingScreen } from "./screens/GeneratingScreen";
-import { V2LandingScreen } from "./screens/LandingScreen";
-import { V2OfferScreen } from "./screens/OfferScreen";
-import { V2PhotoScreen } from "./screens/PhotoScreen";
-import { V2PreviewScreen } from "./screens/PreviewScreen";
+import { backStepFrom, clearPreviewOnPhotoChange } from "./previewFlow";
 import { createV2LocalPreview, validateV2PhotoFile } from "./photo";
+import { fetchV2ProviderStatus } from "./providerStatus";
 import { getPetV2SessionId } from "./session";
 import {
   getV2PhotoFile,
@@ -37,36 +20,56 @@ import {
   setV2PhotoFile,
 } from "./storage";
 import { draftAfterSpeciesRouteChange } from "./speciesRouteIsolation";
-import { v2PackOfferCopy } from "./V2PackOffer";
-import type { PetV2Draft, PetV2FailureCategory, PetV2Species, PetV2Step } from "./types";
+import { buildV2PersonalizedTeaser } from "./teaser";
+import { useV2EmbeddedCheckout } from "./useV2EmbeddedCheckout";
+import { V2LandingScreen } from "./screens/LandingScreen";
+import { V2PhotoScreen } from "./screens/PhotoScreen";
+import { TeaserOfferScreen } from "./screens/TeaserOfferScreen";
+import {
+  PET_V2_PRICE_CENTS,
+  V2_PROVIDER_UNAVAILABLE_COPY,
+  type PetV2Draft,
+  type PetV2Species,
+  type PetV2Step,
+} from "./types";
 import { V2Shell } from "./V2Shell";
 
-const STATUS_MESSAGES = [
-  "Reading your photo",
-  "Starting your F1 driver preview",
-  "Still working — usually under 30 seconds",
-];
+function normalizeLegacyStep(step: PetV2Step): PetV2Step {
+  if (step === "generating" || step === "preview") {
+    return "photo";
+  }
+  return step;
+}
 
 export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const navigate = useNavigate();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const generateLockRef = useRef(false);
-  const unlockTrackLockRef = useRef(false);
-  const lastFailureCategoryRef = useRef<PetV2FailureCategory | null>(null);
+  const teaserLockRef = useRef(false);
+  const cancelTrackedRef = useRef(false);
   const [draft, setDraft] = useState<PetV2Draft>(() => {
     const loaded = loadV2Draft();
     const isolated = draftAfterSpeciesRouteChange(loaded, species);
     if (isolated.clearInMemoryPhoto) setV2PhotoFile(null);
-    return isolated.draft;
+    return { ...isolated.draft, step: normalizeLegacyStep(isolated.draft.step) };
   });
   const [photoError, setPhotoError] = useState<string | undefined>();
   const [speciesConfirmed, setSpeciesConfirmed] = useState(false);
-  const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [teaserBusy, setTeaserBusy] = useState(false);
+  const [providerBlocked, setProviderBlocked] = useState<string | null>(null);
   const previewUrl = getV2PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
+
+  const checkoutActive = draft.step === "teaser" || draft.step === "offer";
+  const checkout = useV2EmbeddedCheckout({
+    active: checkoutActive && Boolean(draft.photo) && Boolean(getV2PhotoFile() || draft.orderId),
+    photo: draft.photo,
+    file: getV2PhotoFile(),
+    species,
+    onRestartExpired: () => {
+      setPhotoError("Your secure checkout session expired. Please upload your pet photo again.");
+      go("photo", { orderId: null, publicToken: null });
+    },
+  });
 
   useEffect(() => {
     const loaded = loadV2Draft();
@@ -75,10 +78,11 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       setV2PhotoFile(null);
       setSpeciesConfirmed(false);
       setPhotoError(undefined);
-      lastFailureCategoryRef.current = null;
+      setProviderBlocked(null);
     }
-    setDraft(isolated.draft);
-    saveV2Draft(isolated.draft);
+    const next = { ...isolated.draft, step: normalizeLegacyStep(isolated.draft.step) };
+    setDraft(next);
+    saveV2Draft(next);
     trackPetV2Event({ eventName: "v2_landing_view", species });
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) {
@@ -93,11 +97,33 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     saveV2Draft(draft);
   }, [draft]);
 
+  // Cancel recovery: restore teaser/offer when returning from Stripe with ?checkout=canceled
   useEffect(() => {
-    if (draft.step === "preview" && !draft.generatedPreviewDataUrl) {
-      setDraft((current) => ({ ...current, step: "photo" }));
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "canceled") return;
+    if (!cancelTrackedRef.current) {
+      cancelTrackedRef.current = true;
+      trackPetV2Event({ eventName: "v2_checkout_canceled", species });
     }
-  }, [draft.step, draft.generatedPreviewDataUrl]);
+    if (draft.generatedPreviewDataUrl && draft.generationMode === "teaser") {
+      go("teaser", { lastError: null });
+    }
+    // Clean query without losing history state
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkout");
+    window.history.replaceState({}, "", url.pathname + url.search);
+  }, [species, draft.generatedPreviewDataUrl, draft.generationMode]);
+
+  // Persist order identity from checkout bootstrap onto the draft
+  useEffect(() => {
+    if (!checkout.orderId || !checkout.publicToken) return;
+    if (draft.orderId === checkout.orderId && draft.publicToken === checkout.publicToken) return;
+    setDraft((current) => ({
+      ...current,
+      orderId: checkout.orderId,
+      publicToken: checkout.publicToken,
+    }));
+  }, [checkout.orderId, checkout.publicToken, draft.orderId, draft.publicToken]);
 
   function go(step: PetV2Step, patch: Partial<PetV2Draft> = {}) {
     setDraft((current) => ({ ...current, ...patch, species, step }));
@@ -110,7 +136,11 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     const check = validateV2PhotoFile(file);
     if (!check.ok) {
       setPhotoError(check.message);
-      trackPetV2Event({ eventName: "v2_upload_failed", species });
+      trackPetV2Event({
+        eventName: "v2_upload_failed",
+        species,
+        failureCategory: "invalid_image",
+      });
       go("photo");
       return;
     }
@@ -118,20 +148,25 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     const local = await createV2LocalPreview(file);
     setPhotoError(undefined);
     setSpeciesConfirmed(false);
+    setProviderBlocked(null);
     trackPetV2Event({ eventName: "v2_upload_completed", species });
-    go("photo", clearPreviewOnPhotoChange({
-      photo: { fileName: file.name, contentType: check.contentType, byteSize: file.size },
-      uploadId: cryptoRandomId(),
-      photoPreviewDataUrl: local,
-    }));
+    go(
+      "photo",
+      clearPreviewOnPhotoChange({
+        photo: { fileName: file.name, contentType: check.contentType, byteSize: file.size },
+        uploadId: cryptoRandomId(),
+        photoPreviewDataUrl: local,
+        orderId: null,
+        publicToken: null,
+      }),
+    );
   }
 
-  async function generate(regenerate = false) {
-    if (generateLockRef.current || isGenerating) return;
+  async function createTeaser() {
+    if (teaserLockRef.current || teaserBusy) return;
     const file = getV2PhotoFile();
-    const source = getV2PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
-    if (!file || !source) {
-      setPhotoError("Re-attach the original photo to create a preview.");
+    if (!file) {
+      setPhotoError("Re-attach the original photo to continue.");
       go("photo");
       return;
     }
@@ -159,186 +194,72 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       }
     }
 
-    if (shouldRestoreLocalPreview(draft, regenerate)) {
-      trackPetV2Event({ eventName: "v2_preview_viewed", species });
-      go("preview", { lastError: null });
+    trackPetV2Event({ eventName: "v2_species_confirmed", species });
+
+    // Restore existing teaser without recomputing
+    if (draft.generatedPreviewDataUrl && draft.generationMode === "teaser") {
+      trackPetV2Event({ eventName: "v2_teaser_viewed", species });
+      trackPetV2Event({ eventName: "v2_offer_viewed", species });
+      go("teaser", { lastError: null });
       return;
     }
 
-    if (!sessionAllowsAnotherPreview()) {
-      go("preview", {
-        lastError: "This session already used its free previews.",
-        generatedPreviewDataUrl: draft.generatedPreviewDataUrl,
-      });
-      return;
-    }
-
-    generateLockRef.current = true;
-    setIsGenerating(true);
-
-    const sessionId = getPetV2SessionId();
-    const uploadId = draft.uploadId || cryptoRandomId();
-    const retryAfterFailure = Boolean(draft.lastError);
-    const { attemptId } = resolveGenerateAttempt({
-      sessionId,
-      uploadId,
-      previewAttemptId: draft.previewAttemptId,
-      regenerate,
-      retryAfterFailure,
-      lastFailureCategory: lastFailureCategoryRef.current,
-    });
-
-    go("generating", {
-      lastError: null,
-      uploadId,
-      previewAttemptId: attemptId,
-    });
+    teaserLockRef.current = true;
+    setTeaserBusy(true);
+    const attemptId = draft.previewAttemptId || cryptoRandomId();
     trackPetV2Event({
-      eventName: regenerate ? "v2_preview_regenerated" : "v2_preview_generation_started",
+      eventName: "v2_teaser_generation_started",
       species,
       attemptId,
     });
-    let tick = 0;
-    const timer = window.setInterval(() => {
-      tick += 1;
-      setGenStatus(STATUS_MESSAGES[Math.min(tick, STATUS_MESSAGES.length - 1)]);
-    }, 4000);
+    go("teaser", { lastError: null, previewAttemptId: attemptId });
+
     try {
-      const result = await requestV2Preview({
-        file,
-        species,
-        sourcePreviewUrl: source,
-        regenerate,
-        idempotencyKey: attemptId,
-      });
-      if (!result.ok || !result.imageDataUrl) {
-        const failureCategory = result.failureCategory || result.errorCode || "server_error";
-        lastFailureCategoryRef.current = failureCategory as PetV2FailureCategory;
+      const status = await fetchV2ProviderStatus();
+      if (!status.available) {
+        setProviderBlocked(status.message || V2_PROVIDER_UNAVAILABLE_COPY);
         trackPetV2Event({
-          eventName: "v2_preview_generation_failed",
+          eventName: "v2_provider_unavailable",
+          species,
+          failureCategory: "provider_unavailable",
+        });
+      } else {
+        setProviderBlocked(null);
+      }
+
+      const result = await buildV2PersonalizedTeaser(file);
+      if (!result.ok) {
+        trackPetV2Event({
+          eventName: "v2_teaser_generation_failed",
           species,
           attemptId,
-          failureCategory,
+          failureCategory: result.failureCategory,
         });
-        go("generating", {
-          lastError: previewErrorMessage(result),
-          previewAttemptId: attemptId,
-        });
+        go("photo", { lastError: result.error, previewAttemptId: attemptId });
+        setPhotoError(result.error);
         return;
       }
-      lastFailureCategoryRef.current = null;
       trackPetV2Event({
-        eventName: "v2_preview_generation_completed",
+        eventName: "v2_teaser_generation_completed",
         species,
         attemptId,
       });
-      trackPetV2Event({ eventName: "v2_preview_viewed", species });
-      go("preview", {
-        generatedPreviewDataUrl: result.imageDataUrl,
-        generationMode: result.mode,
-        previewCount: result.reused ? draft.previewCount : draft.previewCount + 1,
+      trackPetV2Event({ eventName: "v2_teaser_viewed", species });
+      trackPetV2Event({ eventName: "v2_offer_viewed", species });
+      go("teaser", {
+        generatedPreviewDataUrl: result.teaserDataUrl,
+        generationMode: "teaser",
+        previewCount: draft.previewCount + 1,
         previewAttemptId: attemptId,
         lastError: null,
       });
-    } catch {
-      lastFailureCategoryRef.current = "server_error";
-      trackPetV2Event({
-        eventName: "v2_preview_generation_failed",
-        species,
-        attemptId,
-        failureCategory: "server_error",
-      });
-      go("generating", {
-        lastError: previewErrorMessage({ failureCategory: "server_error" }),
-        previewAttemptId: attemptId,
-      });
     } finally {
-      window.clearInterval(timer);
-      generateLockRef.current = false;
-      setIsGenerating(false);
+      teaserLockRef.current = false;
+      setTeaserBusy(false);
     }
   }
 
-  async function pay() {
-    setCheckoutError(null);
-    const named = validatePetName(draft.petName);
-    if (!named.ok) {
-      setCheckoutError(named.message);
-      return;
-    }
-    const email = draft.email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setCheckoutError("Enter a valid email address.");
-      return;
-    }
-    const subtypeCheck = validateOtherSubtype({
-      species,
-      subtype: draft.subtype,
-      subtypeDetail: draft.subtypeDetail,
-    });
-    if (!subtypeCheck.ok) {
-      setCheckoutError(subtypeCheck.message);
-      return;
-    }
-    const file = getV2PhotoFile();
-    if (!file || !draft.photo) {
-      setCheckoutError("Re-attach the original photo before paying.");
-      go("photo");
-      return;
-    }
-
-    const offer = v2PackOfferCopy();
-    setCheckoutBusy(true);
-    try {
-      const result = await startPetCheckout({
-        api: petFunnelApi,
-        email,
-        petName: named.name,
-        species,
-        personality: PET_DEFAULT_PERSONALITY,
-        photo: draft.photo,
-        file,
-        successUrl: `${window.location.origin}/pet/order`,
-        cancelUrl: `${window.location.origin}${petV2LandingPath(species)}`,
-        subtype: subtypeCheck.subtype,
-        subtypeDetail: subtypeCheck.subtypeDetail,
-        funnelVariant: "v2",
-        funnelSessionId: getPetV2SessionId(),
-      });
-
-      if (result.status === "payment_processing" || result.status === "comped" || !result.checkoutUrl) {
-        window.location.assign(`/pet/order?token=${encodeURIComponent(result.publicToken)}`);
-        return;
-      }
-
-      const tracked = trackV2BeginCheckout({
-        species,
-        result: { ...result, orderId: result.orderId },
-        fallbackAmountCents: offer.amountCents,
-      });
-
-      if (tracked && shouldTrackPetBeginCheckout(result)) {
-        const serverAmount = result.chargedAmountCents ?? result.amountCents ?? offer.amountCents;
-        trackMetaInitiateCheckout({
-          eventId: result.eventId || `pet_ic_${result.orderId}`,
-          valueCents: serverAmount,
-          orderId: result.orderId,
-        });
-      }
-
-      window.location.assign(result.checkoutUrl);
-    } catch (caught) {
-      const message =
-        caught instanceof PetApiError
-          ? caught.message
-          : "Checkout could not start. Nothing was charged — try again.";
-      setCheckoutError(message);
-    } finally {
-      setCheckoutBusy(false);
-    }
-  }
-
-  const step = draft.step;
+  const step = draft.step === "offer" ? "teaser" : draft.step;
 
   return (
     <V2Shell
@@ -346,12 +267,12 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       showBack={step !== "landing"}
       footer={
         step === "landing"
-          ? "Free preview first — card only if you unlock the collection."
+          ? "Free personalized teaser — unlock the full collection for $2.99."
           : undefined
       }
       padForSticky={step === "landing"}
       onBack={() => {
-        if (isGenerating) return;
+        if (teaserBusy) return;
         go(backStepFrom(step, draft));
       }}
       onSpecies={
@@ -365,23 +286,23 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       <PageHead
         title={
           species === "cat"
-            ? "See your cat as a Formula 1 driver | My Pet’s Secret Life"
+            ? "Reveal your cat’s secret life | My Pet’s Secret Life"
             : species === "other"
-              ? "See your pet as a Formula 1 driver | My Pet’s Secret Life"
-              : "See your dog as a Formula 1 driver | My Pet’s Secret Life"
+              ? "Reveal your pet’s secret life | My Pet’s Secret Life"
+              : "Reveal your dog’s secret life | My Pet’s Secret Life"
         }
-        description={`${v2PackOfferCopy().headline}. Upload one ${species === "cat" ? "cat" : species === "other" ? "pet" : "dog"} photo for a free cinematic F1 driver preview. No card required for the preview.`}
-        exactTitle
+        description="Upload one photo for a free blurred teaser, then unlock 12 secret lives and 2 mini clips for $2.99."
       />
+
       <input
-        ref={inputRef}
         id={inputId}
+        ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp,image/heic,image/heif"
         className="sr-only"
         onChange={(event) => {
           void handleFiles(event.target.files);
-          event.target.value = "";
+          event.currentTarget.value = "";
         }}
       />
 
@@ -389,13 +310,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         <V2LandingScreen
           species={species}
           fileInputId={inputId}
-          onUploadClick={() => {
-            if (previewUrl) {
-              go("photo");
-              return;
-            }
-            inputRef.current?.click();
-          }}
+          onUploadClick={() => inputRef.current?.click()}
         />
       ) : null}
 
@@ -404,10 +319,10 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           species={species}
           previewUrl={previewUrl}
           fileName={draft.photo?.fileName}
-          error={photoError}
+          error={photoError || draft.lastError || undefined}
           inputId={inputId}
           inputRef={inputRef}
-          generating={isGenerating}
+          generating={teaserBusy}
           subtype={draft.subtype}
           subtypeDetail={draft.subtypeDetail}
           onSubtype={(subtype, detail) => go("photo", { subtype, subtypeDetail: detail || null })}
@@ -415,77 +330,93 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
             setV2PhotoFile(null);
             setPhotoError(undefined);
             setSpeciesConfirmed(false);
-            lastFailureCategoryRef.current = null;
-            go("photo", clearPreviewOnPhotoChange({
-              photo: null,
-              uploadId: null,
-              photoPreviewDataUrl: null,
-            }));
+            setProviderBlocked(null);
+            go(
+              "photo",
+              clearPreviewOnPhotoChange({
+                photo: null,
+                uploadId: null,
+                photoPreviewDataUrl: null,
+                orderId: null,
+                publicToken: null,
+              }),
+            );
           }}
           speciesConfirmed={speciesConfirmed}
           onSpeciesConfirmed={setSpeciesConfirmed}
           onViewPreview={
-            draft.generatedPreviewDataUrl
+            draft.generatedPreviewDataUrl && draft.generationMode === "teaser"
               ? () => {
-                  trackPetV2Event({ eventName: "v2_preview_viewed", species });
-                  go("preview", { lastError: null });
+                  trackPetV2Event({ eventName: "v2_teaser_viewed", species });
+                  trackPetV2Event({ eventName: "v2_offer_viewed", species });
+                  go("teaser", { lastError: null });
                 }
               : undefined
           }
-          onGenerate={() => void generate(false)}
+          onGenerate={() => void createTeaser()}
         />
       ) : null}
 
-      {step === "generating" ? (
-        <V2GeneratingScreen
-          thumbnailUrl={previewUrl}
-          status={genStatus}
-          error={draft.lastError}
-          busy={isGenerating}
-          onRetry={() => void generate(false)}
-          onBack={() => {
-            if (!isGenerating) go("photo");
-          }}
-        />
-      ) : null}
-
-      {step === "preview" && draft.generatedPreviewDataUrl ? (
-        <V2PreviewScreen
-          previewUrl={draft.generatedPreviewDataUrl}
-          sourceUrl={previewUrl}
-          petName={draft.petName}
+      {step === "teaser" && draft.generatedPreviewDataUrl ? (
+        <TeaserOfferScreen
+          teaserUrl={draft.generatedPreviewDataUrl}
           species={species}
-          mode={draft.generationMode}
-          canRegenerate={remainingSessionPreviews() > 0 && !isGenerating}
-          onRegenerate={() => void generate(true)}
-          onUnlock={() => {
-            if (unlockTrackLockRef.current) return;
-            unlockTrackLockRef.current = true;
-            trackPetV2Event({ eventName: "v2_unlock_clicked", species });
-            trackPetV2Event({ eventName: "v2_offer_viewed", species });
-            go("offer");
-            window.setTimeout(() => {
-              unlockTrackLockRef.current = false;
-            }, 800);
-          }}
-        />
-      ) : null}
-
-      {step === "offer" ? (
-        <V2OfferScreen
-          species={species}
+          checkout={checkout}
           email={draft.email}
           petName={draft.petName}
-          subtype={draft.subtype}
-          subtypeDetail={draft.subtypeDetail}
-          busy={checkoutBusy}
-          error={checkoutError}
-          onEmail={(email) => go("offer", { email })}
-          onPetName={(petName) => go("offer", { petName })}
-          onSubtype={(subtype, detail) => go("offer", { subtype, subtypeDetail: detail || null })}
-          onContinue={() => void pay()}
+          onEmail={(email) => go("teaser", { email })}
+          onPetName={(petName) => go("teaser", { petName })}
+          providerBlocked={providerBlocked}
+          onPaymentInteraction={() => {
+            trackV2BeginCheckout({
+              species,
+              result: {
+                orderId: checkout.orderId || "pending",
+                sessionId: checkout.sessionId,
+                checkoutUrl: null,
+                clientSecret: checkout.clientSecret,
+                status: "open",
+                amountCents: checkout.amountCents || PET_V2_PRICE_CENTS,
+                chargedAmountCents: checkout.amountCents || PET_V2_PRICE_CENTS,
+              },
+              fallbackAmountCents: PET_V2_PRICE_CENTS,
+            });
+            if (checkout.orderId && checkout.amountCents > 0) {
+              trackMetaInitiateCheckout({
+                eventId: checkout.eventId || `pet_ic_${checkout.orderId}`,
+                valueCents: checkout.amountCents,
+                orderId: checkout.orderId,
+              });
+            }
+          }}
+          onCheckoutReady={() => {
+            /* Elements ready — begin_checkout fires on interaction */
+          }}
+          onCheckoutInitError={() => {
+            trackPetV2Event({
+              eventName: "v2_checkout_failed",
+              species,
+              failureCategory: "checkout_error",
+            });
+          }}
+          onExpressCancel={() => {
+            trackPetV2Event({ eventName: "v2_checkout_canceled", species });
+          }}
         />
       ) : null}
+
+      {step === "teaser" && !draft.generatedPreviewDataUrl && teaserBusy ? (
+        <div className="mx-auto max-w-md space-y-4 py-10 text-center">
+          <div className="mx-auto h-24 w-24 animate-pulse rounded-2xl bg-[#f6efe4]/10" aria-hidden="true" />
+          <p className="text-lg font-semibold text-[#f6efe4]">Preparing your secret-life teaser…</p>
+          <p className="text-sm text-[#f6efe4]/65">Usually ready in a few seconds. No charge yet.</p>
+        </div>
+      ) : null}
+
+      {/* Keep session preview quota helper referenced for abuse module tree-shaking safety */}
+      <span className="hidden" aria-hidden="true">
+        {remainingSessionPreviews()}
+      </span>
     </V2Shell>
   );
 }

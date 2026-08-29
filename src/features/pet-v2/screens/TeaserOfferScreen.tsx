@@ -41,7 +41,6 @@ function speciesPayButtonLabel(species: PetV2Species) {
 
 export function TeaserOfferScreen({
   teaserUrl,
-  sourceThumbUrl,
   species,
   checkout,
   email,
@@ -55,7 +54,6 @@ export function TeaserOfferScreen({
   onExpressCancel,
 }: {
   teaserUrl: string;
-  sourceThumbUrl?: string | null;
   species: PetV2Species;
   checkout: V2EmbeddedCheckoutState;
   email?: string;
@@ -119,17 +117,6 @@ export function TeaserOfferScreen({
           alt="Blurred preview of your pet’s secret life"
           className="aspect-[4/5] w-full object-cover"
         />
-        {sourceThumbUrl ? (
-          <figcaption className="flex items-center gap-2 border-t border-[#f6efe4]/8 px-4 py-2">
-            <img
-              src={sourceThumbUrl}
-              alt=""
-              aria-hidden="true"
-              className="h-8 w-8 rounded-lg object-cover opacity-40 blur-[2px]"
-            />
-            <span className="text-xs text-[#f6efe4]/45">Personalized from your upload</span>
-          </figcaption>
-        ) : null}
       </figure>
 
       <V2PackOffer compact onExpire={() => setOffer(v2PackOfferCopy())} />
