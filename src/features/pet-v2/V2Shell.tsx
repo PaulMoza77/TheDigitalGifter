@@ -89,7 +89,7 @@ export function V2Shell({
         <main className="flex-1 py-5">{children}</main>
         <footer className="mt-8 border-t border-[#f6efe4]/10 pt-5 text-xs text-[#f6efe4]/45">
           <p>
-            {footer ?? `${v2PackOfferCopy().headline}. Free preview first — card only if you unlock.`}
+            {footer ?? `${v2PackOfferCopy().headline}. Free personalized teaser — pay only to unlock.`}
           </p>
         </footer>
       </div>

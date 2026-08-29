@@ -260,6 +260,12 @@ export function TeaserOfferScreen({
           />
         ) : null}
 
+        {providerBlocked ? (
+          <p className="py-8 text-center text-sm text-[#f6efe4]/70" role="status">
+            Secure payment is paused until generation capacity is restored. You haven’t been charged.
+          </p>
+        ) : null}
+
         {!checkout.loading &&
         !showExpired &&
         !showRetry &&
