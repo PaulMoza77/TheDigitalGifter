@@ -132,9 +132,9 @@ async function runFunnel(browser, {
         throw new Error(`${label} landing missing copy: ${needle}`);
       }
     }
-    if (!landingText.includes(expectPrice) && !landingText.includes("2.99")) {
+    if (!landingText.includes(expectPrice) && !landingText.includes("0.99") && !landingText.includes("2.99")) {
       // price may appear after offer; record for isolation
-      row.landingHas299 = landingText.includes("2.99") || landingText.includes("$2.99");
+      row.landingHas299 = landingText.includes("0.99") || landingText.includes("$0.99") || landingText.includes("2.99") || landingText.includes("$2.99");
     } else {
       row.landingHas299 = true;
     }
@@ -223,10 +223,14 @@ async function runFunnel(browser, {
     // Offer / checkout load — Stripe fields or hosted checkout CTA
     await page.waitForTimeout(2500);
     const offerText = await page.locator("body").innerText();
+    const priceNeedle = String(expectPrice || "").replace(/^\$/, "");
     row.offerHas299 =
-      offerText.includes("$2.99") || offerText.includes("2.99");
+      offerText.includes(expectPrice) ||
+      (priceNeedle ? offerText.includes(priceNeedle) : false);
     if (!row.offerHas299) {
-      throw new Error(`${label} offer/checkout missing $2.99 (got snippet: ${offerText.slice(0, 400)})`);
+      throw new Error(
+        `${label} offer/checkout missing ${expectPrice} (got snippet: ${offerText.slice(0, 400)})`,
+      );
     }
     for (const needle of expectCopy.offer) {
       if (!offerText.includes(needle)) {
@@ -298,12 +302,12 @@ try {
     path: "/pet/dog-v2",
     photo: DOG_PHOTO,
     label: "dog-v2",
-    expectPrice: "$2.99",
+    expectPrice: "$0.99",
     analyticsPrefix: "v2_",
     expectCopy: {
       landing: ["Formula 1"],
       preview: ["F1"],
-      offer: ["$2.99"],
+      offer: ["$0.99"],
     },
   });
 

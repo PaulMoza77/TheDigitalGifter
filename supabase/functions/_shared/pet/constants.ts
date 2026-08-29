@@ -2,7 +2,7 @@ export const PET_SKU = "pet-secret-life-12" as const;
 export const PET_PRODUCT_NAME = "My Pet’s Secret Life";
 export const PET_PRICE_CENTS = 2700;
 /** V2 /pet/dog-v2 checkout amount. Never apply the V1 flash sale to this. */
-export const PET_V2_PRICE_CENTS = 299;
+export const PET_V2_PRICE_CENTS = 99;
 /** V3 /pet/cat-v3 checkout amount — $2.99 from $27. */
 export const PET_V3_PRICE_CENTS = 299;
 export const PET_CURRENCY = "usd";
