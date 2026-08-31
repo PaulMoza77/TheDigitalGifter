@@ -77,6 +77,8 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
       "/pet/dog",
       "/pet/cat",
       "/pet/other",
+      "/christmas",
+      "/christmas-ai-photos",
       "/blog",
       "/privacy",
       "/terms",
