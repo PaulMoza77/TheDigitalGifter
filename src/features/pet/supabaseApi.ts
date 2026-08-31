@@ -3,6 +3,17 @@ import { supabase } from "@/lib/supabase";
 import { PetApiError, type PetFunnelApi } from "./api";
 import type { PetFunnelApiErrorCode } from "./types";
 
+/** Stripe session create can exceed 15s on cold edge + multi-hop Stripe calls. */
+const SLOW_PET_FUNNEL_ACTIONS = new Set([
+  "createStripeCheckout",
+  "createUpsellCheckout",
+  "createOrder",
+]);
+
+function timeoutMsForAction(action: string): number {
+  return SLOW_PET_FUNNEL_ACTIONS.has(action) ? 30_000 : 15_000;
+}
+
 async function callPetFunnel<T>(action: string, body: Record<string, unknown>): Promise<T> {
   const { url, anon } = getPublicSupabaseConfig();
   const { data: sessionData } = await supabase.auth.getSession();
@@ -17,7 +28,7 @@ async function callPetFunnel<T>(action: string, body: Record<string, unknown>): 
         Authorization: `Bearer ${auth}`,
       },
       body: JSON.stringify({ action, ...body }),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(timeoutMsForAction(action)),
     });
   } catch (caught) {
     const name = caught instanceof Error ? caught.name : "";

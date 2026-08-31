@@ -43,7 +43,7 @@ export function normalizeV2ContentType(mimeType: string, fileName: string): PetP
   return null;
 }
 
-/** Resize on-device so the preview API stays small and cheaper, while keeping identity detail. */
+/** Resize on-device so uploads stay small and cheaper, while keeping identity detail. */
 export async function prepareV2UploadBlob(file: File): Promise<Blob> {
   if (typeof createImageBitmap !== "function") return file;
   let bitmap: ImageBitmap;
@@ -68,9 +68,54 @@ export async function prepareV2UploadBlob(file: File): Promise<Blob> {
   ctx.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
   const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob((next) => resolve(next), "image/jpeg", 0.95);
+    // 0.88 keeps coat detail for paid generation while cutting multi‑MB phone uploads dramatically.
+    canvas.toBlob((next) => resolve(next), "image/jpeg", 0.88);
   });
   return blob ?? file;
+}
+
+/**
+ * Checkout bootstrap upload: shrink the source photo before the signed PUT.
+ * Phone cameras often send 5–12 MB originals; without this step, Elements can sit on
+ * "Loading secure payment…" for 15–20s waiting on storage alone.
+ */
+export async function prepareV2CheckoutUpload(file: File): Promise<{
+  file: File;
+  photo: {
+    fileName: string;
+    contentType: PetPhotoContentType;
+    byteSize: number;
+  };
+}> {
+  const blob = await prepareV2UploadBlob(file);
+  const useJpeg = blob.type === "image/jpeg" || blob !== file;
+  if (!useJpeg) {
+    const contentType = normalizeV2ContentType(file.type, file.name) || "image/jpeg";
+    return {
+      file,
+      photo: {
+        fileName: file.name.slice(0, 180) || "pet.jpg",
+        contentType,
+        byteSize: file.size,
+      },
+    };
+  }
+  const baseName = String(file.name || "pet")
+    .replace(/\.[^.]+$/, "")
+    .slice(0, 160);
+  const fileName = `${baseName || "pet"}.jpg`;
+  const next =
+    blob instanceof File
+      ? blob
+      : new File([blob], fileName, { type: "image/jpeg", lastModified: Date.now() });
+  return {
+    file: next,
+    photo: {
+      fileName,
+      contentType: "image/jpeg",
+      byteSize: next.size,
+    },
+  };
 }
 
 export async function createV2LocalPreview(file: File): Promise<string | null> {

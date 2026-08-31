@@ -1238,7 +1238,10 @@ Deno.serve(async (req) => {
         );
       }
 
-      const verifiedSession = await fetchStripeCheckoutSession(stripeKey, asString(session.id));
+      const verifiedSession =
+        asString(session.client_secret) && asString(session.id)
+          ? session
+          : await fetchStripeCheckoutSession(stripeKey, asString(session.id));
 
       const attached = await service.rpc("attach_pet_checkout_session", {
         p_order_id: order.id,

@@ -109,7 +109,7 @@ export const unimplementedPetApi: PetFunnelApi = createUnimplementedPetApi();
 
 export async function uploadPhotoToSignedUrl(
   signed: SignedUploadUrlResponse,
-  file: File
+  file: Blob
 ): Promise<void> {
   if (signed.skipNetworkUpload) {
     return;
