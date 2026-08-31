@@ -21,6 +21,7 @@ import {
   isUuid,
   sha256Hex,
 } from "../_shared/christmas/crypto.ts";
+import { enqueueChristmasGenerate } from "../_shared/christmas/stripeFulfill.ts";
 
 type Body = Record<string, unknown>;
 
@@ -477,7 +478,9 @@ Deno.serve(async (req) => {
           stripeKey,
           {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Idempotency-Key": `christmas-checkout-${order.id}`,
+            // Rotate idempotency on retries so Stripe returns a fresh Elements client_secret
+            // instead of an expired/stale session (matches pet-funnel bootstrap behavior).
+            "Idempotency-Key": `christmas-checkout-${order.id}-${crypto.randomUUID()}`,
           },
           apiVersion,
         ),
@@ -633,7 +636,7 @@ Deno.serve(async (req) => {
           stripeKey,
           {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Idempotency-Key": `christmas-upsell-${child.id}`,
+            "Idempotency-Key": `christmas-upsell-${child.id}-${crypto.randomUUID()}`,
           },
           apiVersion,
         ),
@@ -669,6 +672,83 @@ Deno.serve(async (req) => {
         expiresAt: session.expires_at ?? null,
         amountCents: pack.amountCents,
         status: "open",
+      });
+    }
+
+    if (action === "confirmStripePayment") {
+      const publicToken = asString(body.publicToken);
+      const sessionId = asString(body.sessionId || body.session_id);
+      if (!publicToken || !sessionId) {
+        return apiError("INVALID_REQUEST", "publicToken and sessionId are required.");
+      }
+      const order = await findOrderByToken(service, publicToken);
+      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+
+      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+      if (!stripeKey) return apiError("INVALID_REQUEST", "Stripe is not configured.", 503);
+
+      const sessionRes = await fetch(
+        `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+        { headers: stripeAuthHeaders(stripeKey) },
+      );
+      const session = await sessionRes.json();
+      if (!sessionRes.ok) {
+        return apiError(
+          "INVALID_REQUEST",
+          asString(session?.error?.message) || "Could not verify payment.",
+          502,
+        );
+      }
+
+      const sessionMetadata = (session?.metadata || {}) as Record<string, unknown>;
+      const sessionOrderId = asString(sessionMetadata.christmas_order_id) || asString(session?.client_reference_id);
+      if (sessionOrderId && sessionOrderId !== asString(order.id)) {
+        return apiError("INVALID_REQUEST", "This payment session does not match the order.", 400);
+      }
+
+      const paymentStatus = asString(session?.payment_status);
+      if (paymentStatus !== "paid") {
+        return jsonResponse({ ok: true, status: "not_paid", paymentStatus, orderId: order.id, publicToken });
+      }
+
+      const amountTotal = session?.amount_total == null ? null : asInt(session.amount_total);
+      const { data, error } = await service.rpc("fulfill_christmas_order_payment", {
+        p_event_id: `confirm:${sessionId}`,
+        p_session_id: sessionId,
+        p_event_type: "checkout.session.completed",
+        p_payment_status: paymentStatus,
+        p_payment_intent_id: asString(session?.payment_intent),
+        p_amount_cents: amountTotal,
+        p_currency: asString(session?.currency) || "usd",
+        p_order_id: asString(order.id),
+      });
+      if (error) throw error;
+
+      const result = data as { status?: string; should_enqueue?: boolean; already_paid?: boolean } | null;
+      if (result?.should_enqueue) enqueueChristmasGenerate(asString(order.id));
+
+      const funnelSessionId = asString(sessionMetadata.funnel_session_id) || asString(order.funnel_session_id);
+      if (isUuid(funnelSessionId)) {
+        try {
+          await service.rpc("record_christmas_v2_funnel_event", {
+            p_event_name: "christmas_v2_purchase",
+            p_funnel_session_id: funnelSessionId,
+            p_idempotency_key: `christmas_v2_purchase:${order.id}`,
+            p_amount_cents: amountTotal,
+            p_product: asString(order.sku),
+            p_pathname: "/christmas-ai-photos",
+          });
+        } catch (evtErr) {
+          console.error("christmas_v2_purchase event failed", evtErr);
+        }
+      }
+
+      return jsonResponse({
+        ok: true,
+        status: result?.status || "fulfilled",
+        alreadyPaid: Boolean(result?.already_paid),
+        orderId: asString(order.id),
+        publicToken,
       });
     }
 

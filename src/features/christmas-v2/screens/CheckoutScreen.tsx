@@ -10,7 +10,8 @@ import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CHRISTMAS_PACKS } from "../config";
+import { christmasFunnelApi } from "../api";
+import { CHRISTMAS_PACKS, CHRISTMAS_V2_ORDER_ROUTE } from "../config";
 
 const EXPRESS_OPTIONS = {
   buttonHeight: 52,
@@ -30,12 +31,16 @@ const EXPRESS_OPTIONS = {
 
 function CheckoutBody({
   email,
+  publicToken,
+  sessionId,
   onReady,
   onPaymentInteraction,
   onSubmit,
   onExpressCancel,
 }: {
   email?: string;
+  publicToken: string | null;
+  sessionId: string | null;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
   onSubmit?: () => void;
@@ -53,16 +58,36 @@ function CheckoutBody({
     }
   }, [checkoutState.type, onReady]);
 
+  async function finalizeAndNavigate(confirmedSessionId?: string | null) {
+    const resolvedSessionId = confirmedSessionId || sessionId;
+    // Best-effort fulfillment nudge — verifies payment with Stripe and runs the same
+    // RPC the webhook uses, so results unlock immediately even if stripe-webhook (Edge)
+    // hasn't been redeployed yet. Never block navigation on this call.
+    if (publicToken && resolvedSessionId) {
+      try {
+        await christmasFunnelApi.confirmStripePayment({ publicToken, sessionId: resolvedSessionId });
+      } catch (err) {
+        console.error("confirmStripePayment failed", err);
+      }
+    }
+    const params = new URLSearchParams();
+    if (publicToken) params.set("token", publicToken);
+    if (resolvedSessionId) params.set("session_id", resolvedSessionId);
+    window.location.assign(`${CHRISTMAS_V2_ORDER_ROUTE}?${params.toString()}`);
+  }
+
   async function confirm() {
     if (checkoutState.type !== "success") return;
     setBusy(true);
     setError(null);
     onSubmit?.();
     try {
-      const result = await checkoutState.checkout.confirm({ email: email || undefined });
+      const result = await checkoutState.checkout.confirm({ email: email || undefined, redirect: "if_required" });
       if (result.type === "error") {
         setError(result.error.message || "Payment failed. Please try again.");
+        return;
       }
+      await finalizeAndNavigate(result.type === "success" ? result.session?.id : undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Payment failed. Please try again.");
     } finally {
@@ -86,8 +111,15 @@ function CheckoutBody({
           onSubmit?.();
           setBusy(true);
           try {
-            const result = await checkoutState.checkout.confirm({ expressCheckoutConfirmEvent: event });
-            if (result.type === "error") setError(result.error.message || "Payment failed.");
+            const result = await checkoutState.checkout.confirm({
+              expressCheckoutConfirmEvent: event,
+              redirect: "if_required",
+            });
+            if (result.type === "error") {
+              setError(result.error.message || "Payment failed.");
+              return;
+            }
+            await finalizeAndNavigate(result.type === "success" ? result.session?.id : undefined);
           } catch (err) {
             setError(err instanceof Error ? err.message : "Payment failed.");
           } finally {
@@ -116,6 +148,8 @@ function CheckoutBody({
 export function ChristmasCheckoutScreen({
   clientSecret,
   publishableKey,
+  publicToken,
+  sessionId,
   email,
   onEmail,
   customerName,
@@ -131,6 +165,8 @@ export function ChristmasCheckoutScreen({
 }: {
   clientSecret: string | null;
   publishableKey: string | null;
+  publicToken?: string | null;
+  sessionId?: string | null;
   email: string;
   onEmail: (value: string) => void;
   customerName: string;
@@ -222,6 +258,8 @@ export function ChristmasCheckoutScreen({
           >
             <CheckoutBody
               email={email}
+              publicToken={publicToken ?? null}
+              sessionId={sessionId ?? null}
               onReady={onReady}
               onPaymentInteraction={onPaymentInteraction}
               onSubmit={onSubmit}

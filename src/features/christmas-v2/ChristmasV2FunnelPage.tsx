@@ -187,6 +187,8 @@ export function ChristmasV2FunnelPage() {
           <ChristmasCheckoutScreen
             clientSecret={checkout.clientSecret}
             publishableKey={checkout.publishableKey}
+            publicToken={checkout.publicToken}
+            sessionId={checkout.sessionId}
             email={draft.email}
             onEmail={(email) => setDraft((c) => ({ ...c, email }))}
             customerName={draft.customerName}
