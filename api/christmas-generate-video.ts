@@ -1,15 +1,27 @@
-import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
-import { getServiceClient, isServiceRoleRequest, readJson } from "../_shared/supabase.ts";
+/**
+ * Node/Vercel port of supabase/functions/christmas-generate-video/index.ts.
+ * Keep in sync with the Deno source — see api/christmas-funnel.ts for context.
+ */
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   CHRISTMAS_RESULT_BUCKET,
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
   christmasVideoModel,
   generationMock,
   videoGenerationEnabled,
-} from "../_shared/christmas/constants.ts";
-import { asString, isUuid } from "../_shared/christmas/crypto.ts";
+} from "./_lib/christmas/constants";
+import { asString, isUuid } from "./_lib/christmas/crypto";
+import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabaseClient";
 
 type Body = { order_id?: string };
+
+type ReplicatePrediction = {
+  id?: string;
+  status?: string;
+  error?: string;
+  detail?: string;
+  output?: unknown;
+};
 
 const CHRISTMAS_VIDEO_PROMPT =
   "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.";
@@ -32,7 +44,7 @@ async function generateSeedanceVideo(imageUrl: string): Promise<{
   outputUrl: string;
   model: string;
 }> {
-  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
+  const token = asString(process.env.REPLICATE_API_TOKEN);
   if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
   const model = christmasVideoModel();
   const input = {
@@ -52,7 +64,7 @@ async function generateSeedanceVideo(imageUrl: string): Promise<{
     },
     body: JSON.stringify({ input }),
   });
-  let prediction = await createRes.json();
+  let prediction = (await createRes.json()) as ReplicatePrediction;
   if (!createRes.ok) {
     throw new Error(asString(prediction?.detail || prediction?.error) || "Replicate video prediction failed");
   }
@@ -67,7 +79,7 @@ async function generateSeedanceVideo(imageUrl: string): Promise<{
     const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    prediction = await poll.json();
+    prediction = (await poll.json()) as ReplicatePrediction;
     guard += 1;
   }
 
@@ -79,15 +91,33 @@ async function generateSeedanceVideo(imageUrl: string): Promise<{
   return { predictionId: asString(prediction.id), outputUrl, model };
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return optionsResponse();
-  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
-  if (!isServiceRoleRequest(req)) return jsonResponse({ error: "Forbidden" }, 403);
+function parseBody(req: VercelRequest): Body {
+  const raw = req.body;
+  if (!raw) return {};
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as Body;
+    } catch {
+      return {};
+    }
+  }
+  if (typeof raw === "object") return raw as Body;
+  return {};
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "authorization, content-type");
+    return res.status(200).send("ok");
+  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (!isServiceRoleRequest(req.headers.authorization)) return res.status(403).json({ error: "Forbidden" });
 
   try {
-    const body = await readJson<Body>(req);
+    const body = parseBody(req);
     const orderId = asString(body.order_id);
-    if (!orderId) return jsonResponse({ error: "order_id required" }, 400);
+    if (!orderId) return res.status(400).json({ error: "order_id required" });
     const service = getServiceClient();
 
     const { data: order, error } = await service
@@ -96,11 +126,11 @@ Deno.serve(async (req) => {
       .eq("id", orderId)
       .maybeSingle();
     if (error) throw error;
-    if (!order) return jsonResponse({ error: "order not found" }, 404);
-    if (!order.paid_at) return jsonResponse({ error: "Payment required", code: "PAYMENT_REQUIRED" }, 402);
+    if (!order) return res.status(404).json({ error: "order not found" });
+    if (!order.paid_at) return res.status(402).json({ error: "Payment required", code: "PAYMENT_REQUIRED" });
 
     if (!videoGenerationEnabled() && !generationMock()) {
-      return jsonResponse({ ok: true, status: "held", started: 0 });
+      return res.status(200).json({ ok: true, status: "held", started: 0 });
     }
 
     const [{ data: scenes }, { data: videos }] = await Promise.all([
@@ -130,10 +160,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    const targets = (videos ?? []).filter((video) =>
-      ["queued", "failed"].includes(asString(video.status)),
-    );
-    if (!targets.length) return jsonResponse({ ok: true, status: "nothing_to_do", started: 0 });
+    const targets = (videos ?? []).filter((video) => ["queued", "failed"].includes(asString(video.status)));
+    if (!targets.length) return res.status(200).json({ ok: true, status: "nothing_to_do", started: 0 });
 
     let started = 0;
 
@@ -192,7 +220,7 @@ Deno.serve(async (req) => {
           const prediction = await generateSeedanceVideo(signed.signedUrl);
           const videoRes = await fetch(prediction.outputUrl);
           if (!videoRes.ok) throw new Error(`Failed to download video (${videoRes.status})`);
-          const bytes = new Uint8Array(await videoRes.arrayBuffer());
+          const bytes = Buffer.from(await videoRes.arrayBuffer());
           const { error: upErr } = await service.storage
             .from(CHRISTMAS_RESULT_BUCKET)
             .upload(resultPath, bytes, { contentType: "video/mp4", upsert: true });
@@ -242,13 +270,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    return jsonResponse({
+    return res.status(200).json({
       ok: true,
       started,
       status: generationMock() ? "mock_completed" : "completed",
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return jsonResponse({ error: message }, 500);
+    return res.status(500).json({ error: message });
   }
-});
+}
+
+export const config = { maxDuration: 300 };

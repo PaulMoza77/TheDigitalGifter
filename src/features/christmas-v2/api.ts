@@ -58,33 +58,96 @@ type CheckoutResult = {
 
 const SLOW = new Set(["createStripeCheckout", "createUpsellCheckout", "createOrder"]);
 
+type FunnelErrorPayload = { error?: string; code?: string };
+
+/** Sentinel returned when a same-origin route looks unavailable (platform 404/502 with no
+ * JSON error body) so the caller knows to retry against the Supabase Edge function. */
+const ROUTE_UNAVAILABLE = Symbol("christmas-funnel-route-unavailable");
+
+function fetchChristmasFunnel(
+  endpoint: string,
+  headers: Record<string, string>,
+  action: string,
+  body: Record<string, unknown>,
+): Promise<Response> {
+  return fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify({ action, ...body }),
+    signal: AbortSignal.timeout(SLOW.has(action) ? 30_000 : 15_000),
+  });
+}
+
+async function readVercelFunnelResponse<T>(response: Response): Promise<T | typeof ROUTE_UNAVAILABLE> {
+  const payload = (await response.json().catch(() => null)) as FunnelErrorPayload | null;
+  const hasAppErrorShape = Boolean(payload && typeof payload === "object" && typeof payload.code === "string");
+  if (response.ok) {
+    if (!payload) return ROUTE_UNAVAILABLE;
+    return payload as T;
+  }
+  // Only known application errors (our apiError() shape) should short-circuit the fallback.
+  // A bare 404/502 with no matching body means the Vercel route itself is missing/broken.
+  if ((response.status === 404 || response.status === 502) && !hasAppErrorShape) {
+    return ROUTE_UNAVAILABLE;
+  }
+  throw new ChristmasApiError(
+    payload?.code || "INVALID_REQUEST",
+    payload?.error || "Christmas funnel request failed",
+    response.status,
+  );
+}
+
 async function callChristmasFunnel<T>(action: string, body: Record<string, unknown>): Promise<T> {
-  const { url, anon } = getPublicSupabaseConfig();
   const { data: sessionData } = await supabase.auth.getSession();
-  const auth = sessionData.session?.access_token || anon;
+  const accessToken = sessionData.session?.access_token;
+
+  // Prefer the same-origin Vercel port so checkout/generation keeps working even when the
+  // Supabase Edge deploy is blocked (missing SUPABASE_ACCESS_TOKEN). Fall back to the Edge
+  // function on 404/502 (route missing/misconfigured) or a network-level failure.
+  try {
+    const response = await fetchChristmasFunnel(
+      "/api/christmas-funnel",
+      accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      action,
+      body,
+    );
+    const result = await readVercelFunnelResponse<T>(response);
+    if (result !== ROUTE_UNAVAILABLE) return result;
+  } catch (caught) {
+    if (caught instanceof ChristmasApiError) throw caught;
+    const name = caught instanceof Error ? caught.name : "";
+    if (name === "AbortError" || name === "TimeoutError") {
+      throw new ChristmasApiError("TIMEOUT", "Request timed out. Please try again.", 408);
+    }
+    // Network-level failure talking to the same-origin route — fall through to Edge below.
+  }
+
+  const { url, anon } = getPublicSupabaseConfig();
+  const auth = accessToken || anon;
   let response: Response;
   try {
-    response = await fetch(`${url.replace(/\/$/, "")}/functions/v1/christmas-funnel`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: anon,
-        Authorization: `Bearer ${auth}`,
-      },
-      body: JSON.stringify({ action, ...body }),
-      signal: AbortSignal.timeout(SLOW.has(action) ? 30_000 : 15_000),
-    });
+    response = await fetchChristmasFunnel(
+      `${url.replace(/\/$/, "")}/functions/v1/christmas-funnel`,
+      { apikey: anon, Authorization: `Bearer ${auth}` },
+      action,
+      body,
+    );
   } catch (caught) {
     const name = caught instanceof Error ? caught.name : "";
     if (name === "AbortError" || name === "TimeoutError") {
       throw new ChristmasApiError("TIMEOUT", "Request timed out. Please try again.", 408);
     }
-    throw caught;
+    const message = caught instanceof Error ? caught.message : typeof caught === "string" ? caught : "";
+    // Surface root-cause network failures clearly (missing Edge deploy, CORS, offline).
+    throw new ChristmasApiError(
+      "NETWORK",
+      message.includes("Failed to fetch") || message.includes("NetworkError")
+        ? "Checkout could not reach the Christmas backend. Please try again in a moment."
+        : message || "Network request failed",
+      503,
+    );
   }
-  const payload = (await response.json().catch(() => ({}))) as {
-    error?: string;
-    code?: string;
-  };
+  const payload = (await response.json().catch(() => ({}))) as FunnelErrorPayload;
   if (!response.ok) {
     throw new ChristmasApiError(
       payload.code || "INVALID_REQUEST",
@@ -151,6 +214,15 @@ export const christmasFunnelApi = {
     cancelUrl?: string;
     funnelSessionId?: string;
   }) => callChristmasFunnel<CheckoutResult>("createUpsellCheckout", input as unknown as Record<string, unknown>),
+
+  /** Best-effort client-side fulfillment nudge: verifies the Stripe session and runs the same
+   * RPC the webhook uses, so paid orders unlock immediately even if stripe-webhook (Edge) is
+   * unavailable or lags. Idempotent — safe to call even if the webhook already fulfilled it. */
+  confirmStripePayment: (input: { publicToken: string; sessionId: string }) =>
+    callChristmasFunnel<{ ok: boolean; status: string; alreadyPaid: boolean; orderId: string; publicToken: string }>(
+      "confirmStripePayment",
+      input,
+    ),
 
   getOrderByPublicToken: (input: { publicToken: string }) =>
     callChristmasFunnel<ChristmasOrderResults>("getOrderByPublicToken", input),

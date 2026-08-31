@@ -1,5 +1,18 @@
-import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
-import { getServiceClient, getAuthUser, readJson } from "../_shared/supabase.ts";
+/**
+ * Node/Vercel port of supabase/functions/christmas-funnel/index.ts.
+ *
+ * Production checkout/generation must work even when the Supabase Edge deploy
+ * is blocked (missing SUPABASE_ACCESS_TOKEN). This file re-implements every
+ * christmas-funnel action against @supabase/supabase-js + process.env so it
+ * can run as a normal Vercel serverless function. Keep the two copies in sync
+ * whenever the funnel's request/response contract changes — the Deno source
+ * stays live so the Edge function can be redeployed once the token is
+ * available again.
+ */
+import { randomUUID } from "node:crypto";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { waitUntil } from "@vercel/functions";
 import {
   CHRISTMAS_PACKS,
   CHRISTMAS_PRODUCT_TYPE,
@@ -11,7 +24,7 @@ import {
   sceneByKey,
   siteOrigin,
   type ChristmasPackKey,
-} from "../_shared/christmas/constants.ts";
+} from "./_lib/christmas/constants";
 import {
   asInt,
   asString,
@@ -20,10 +33,26 @@ import {
   generatePublicToken,
   isUuid,
   sha256Hex,
-} from "../_shared/christmas/crypto.ts";
-import { enqueueChristmasGenerate } from "../_shared/christmas/stripeFulfill.ts";
+} from "./_lib/christmas/crypto";
+import { getAuthUser, getServiceClient } from "./_lib/christmas/supabaseClient";
+import { invokeChristmasGenerate, resolveSiteOriginFromRequest } from "./_lib/christmas/stripeFulfill";
 
 type Body = Record<string, unknown>;
+
+/** Minimal shape we read off Stripe's checkout.session responses. */
+type StripeCheckoutSessionResponse = {
+  id?: string;
+  client_secret?: string;
+  url?: string;
+  expires_at?: number | null;
+  metadata?: Record<string, unknown>;
+  client_reference_id?: string;
+  payment_status?: string;
+  amount_total?: number | null;
+  payment_intent?: string;
+  currency?: string;
+  error?: { message?: string };
+};
 
 const STRIPE_API_VERSION_CUSTOM = "2025-03-31.basil";
 /** Elements Checkout (`ui_mode: elements`) — match pet V2 Dahlia quickstart. */
@@ -33,8 +62,23 @@ const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
 const PAID_STATUSES = ["paid", "generating", "awaiting_qc", "complete", "partial_failure"] as const;
 
-function apiError(code: string, message: string, status = 400, extra: Record<string, unknown> = {}) {
-  return jsonResponse({ error: message, code, ...extra }, status);
+function setCorsHeaders(res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform",
+  );
+  res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+}
+
+function apiError(
+  res: VercelResponse,
+  code: string,
+  message: string,
+  status = 400,
+  extra: Record<string, unknown> = {},
+) {
+  return res.status(status).json({ error: message, code, ...extra });
 }
 
 function stripeAuthHeaders(
@@ -73,17 +117,13 @@ function resolveSceneKeys(packKey: ChristmasPackKey, requested: unknown): string
 function decryptStoredToken(ciphertext: string | null | undefined): string | null {
   if (!ciphertext) return null;
   try {
-    return atob(ciphertext);
+    return Buffer.from(ciphertext, "base64").toString("utf8");
   } catch {
     return null;
   }
 }
 
-async function requireOrder(
-  service: ReturnType<typeof getServiceClient>,
-  orderId: string,
-  publicToken: string,
-) {
+async function requireOrder(service: SupabaseClient, orderId: string, publicToken: string) {
   if (!isUuid(orderId) || !publicToken) return null;
   const hash = await sha256Hex(publicToken);
   const { data, error } = await service
@@ -96,7 +136,7 @@ async function requireOrder(
   return data;
 }
 
-async function findOrderByToken(service: ReturnType<typeof getServiceClient>, publicToken: string) {
+async function findOrderByToken(service: SupabaseClient, publicToken: string) {
   if (!publicToken) return null;
   const hash = await sha256Hex(publicToken);
   const { data, error } = await service
@@ -108,11 +148,7 @@ async function findOrderByToken(service: ReturnType<typeof getServiceClient>, pu
   return data;
 }
 
-async function insertScenes(
-  service: ReturnType<typeof getServiceClient>,
-  orderId: string,
-  sceneKeys: string[],
-) {
+async function insertScenes(service: SupabaseClient, orderId: string, sceneKeys: string[]) {
   if (!sceneKeys.length) return;
   const rows = sceneKeys.map((key, index) => {
     const def = sceneByKey(key);
@@ -128,11 +164,7 @@ async function insertScenes(
   if (error) throw error;
 }
 
-async function insertVideos(
-  service: ReturnType<typeof getServiceClient>,
-  orderId: string,
-  sourceSceneKeys: string[],
-) {
+async function insertVideos(service: SupabaseClient, orderId: string, sourceSceneKeys: string[]) {
   if (!sourceSceneKeys.length) return;
   const rows = sourceSceneKeys.map((key) => ({
     order_id: orderId,
@@ -143,21 +175,15 @@ async function insertVideos(
   if (error) throw error;
 }
 
-async function signedDownload(
-  service: ReturnType<typeof getServiceClient>,
-  bucket: string,
-  path: string | null | undefined,
-) {
+async function signedDownload(service: SupabaseClient, bucket: string, path: string | null | undefined) {
   if (!path) return null;
-  const { data, error } = await service.storage
-    .from(bucket)
-    .createSignedUrl(path, CHRISTMAS_SIGNED_DOWNLOAD_SECONDS);
+  const { data, error } = await service.storage.from(bucket).createSignedUrl(path, CHRISTMAS_SIGNED_DOWNLOAD_SECONDS);
   if (error || !data?.signedUrl) return null;
   return data.signedUrl;
 }
 
 async function buildOrderResults(
-  service: ReturnType<typeof getServiceClient>,
+  service: SupabaseClient,
   order: Record<string, unknown>,
   publicToken: string,
 ) {
@@ -173,11 +199,11 @@ async function buildOrderResults(
 
   const sceneRows = scenes ?? [];
   const videoRows = videos ?? [];
-  const unlocked = ["paid", "generating", "awaiting_qc", "complete", "partial_failure"].includes(
-    asString(order.status),
-  ) && Boolean(order.paid_at);
+  const unlocked =
+    ["paid", "generating", "awaiting_qc", "complete", "partial_failure"].includes(asString(order.status)) &&
+    Boolean(order.paid_at);
 
-  const sceneOut = [];
+  const sceneOut: Array<{ sceneKey: string; title: string; status: string; imageUrl: string | null }> = [];
   let progressSum = 0;
   for (const scene of sceneRows) {
     const status = asString(scene.status);
@@ -200,7 +226,7 @@ async function buildOrderResults(
     });
   }
 
-  const videoOut = [];
+  const videoOut: Array<{ id: string; sourceSceneKey: string; status: string; videoUrl: string | null }> = [];
   for (const video of videoRows) {
     const status = asString(video.status);
     const videoUrl =
@@ -258,12 +284,27 @@ function attributionFromBody(raw: unknown): Record<string, string> {
   return out;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return optionsResponse();
-  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+function parseBody(req: VercelRequest): Body {
+  const raw = req.body;
+  if (!raw) return {};
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as Body;
+    } catch {
+      return {};
+    }
+  }
+  if (typeof raw === "object") return raw as Body;
+  return {};
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCorsHeaders(res);
+  if (req.method === "OPTIONS") return res.status(200).send("ok");
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const body = await readJson<Body>(req);
+    const body = parseBody(req);
     const action = asString(body.action);
     const service = getServiceClient();
 
@@ -277,9 +318,9 @@ Deno.serve(async (req) => {
       const byteSize = asInt(photo.byteSize);
       const funnelSessionId = isUuid(body.funnelSessionId) ? asString(body.funnelSessionId) : null;
 
-      if (!email || !email.includes("@")) return apiError("INVALID_REQUEST", "A valid email is required.");
+      if (!email || !email.includes("@")) return apiError(res, "INVALID_REQUEST", "A valid email is required.");
       if (!ALLOWED_PHOTO_TYPES.has(contentType) || byteSize <= 0 || byteSize > MAX_PHOTO_BYTES) {
-        return apiError("INVALID_REQUEST", "Photo must be JPEG, PNG, or WebP under 15MB.");
+        return apiError(res, "INVALID_REQUEST", "Photo must be JPEG, PNG, or WebP under 15MB.");
       }
 
       const sceneKeys = resolveSceneKeys(packKey, body.sceneKeys);
@@ -303,7 +344,7 @@ Deno.serve(async (req) => {
         photo_file_name: asString(photo.fileName).slice(0, 180) || "photo.jpg",
         photo_content_type: contentType,
         photo_byte_size: byteSize,
-        meta_event_id: `pending_${crypto.randomUUID()}`,
+        meta_event_id: `pending_${randomUUID()}`,
         funnel_session_id: funnelSessionId,
         scene_keys: sceneKeys,
         video_source_scene_keys: [],
@@ -316,7 +357,7 @@ Deno.serve(async (req) => {
       await service.from("christmas_orders").update({ meta_event_id: metaEventId }).eq("id", data.id);
       await insertScenes(service, data.id, sceneKeys);
 
-      return jsonResponse({
+      return res.status(200).json({
         orderId: data.id,
         publicToken,
         status: "awaiting_upload",
@@ -333,17 +374,15 @@ Deno.serve(async (req) => {
       const contentType = asString(body.contentType);
       const byteSize = asInt(body.byteSize);
       if (!ALLOWED_PHOTO_TYPES.has(contentType) || byteSize <= 0 || byteSize > MAX_PHOTO_BYTES) {
-        return apiError("INVALID_REQUEST", "Photo must be JPEG, PNG, or WebP under 15MB.");
+        return apiError(res, "INVALID_REQUEST", "Photo must be JPEG, PNG, or WebP under 15MB.");
       }
       const order = await requireOrder(service, orderId, publicToken);
-      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      if (!order) return apiError(res, "ORDER_NOT_FOUND", "We could not find that order.", 404);
       if (!["awaiting_upload", "awaiting_payment"].includes(asString(order.status))) {
-        return apiError("INVALID_REQUEST", "This order is no longer accepting a new photo.");
+        return apiError(res, "INVALID_REQUEST", "This order is no longer accepting a new photo.");
       }
-      const objectPath = `${order.id}/source/${crypto.randomUUID()}.${extensionFromContentType(contentType)}`;
-      const { data, error } = await service.storage
-        .from(CHRISTMAS_SOURCE_BUCKET)
-        .createSignedUploadUrl(objectPath);
+      const objectPath = `${order.id}/source/${randomUUID()}.${extensionFromContentType(contentType)}`;
+      const { data, error } = await service.storage.from(CHRISTMAS_SOURCE_BUCKET).createSignedUploadUrl(objectPath);
       if (error || !data?.signedUrl) throw error || new Error("Could not create upload URL");
       await service
         .from("christmas_orders")
@@ -355,7 +394,7 @@ Deno.serve(async (req) => {
           photo_byte_size: byteSize,
         })
         .eq("id", order.id);
-      return jsonResponse({
+      return res.status(200).json({
         uploadUrl: data.signedUrl,
         method: "PUT",
         headers: { "content-type": contentType },
@@ -366,16 +405,16 @@ Deno.serve(async (req) => {
 
     if (action === "confirmUpload") {
       const order = await requireOrder(service, asString(body.orderId), asString(body.publicToken));
-      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      if (!order) return apiError(res, "ORDER_NOT_FOUND", "We could not find that order.", 404);
       const objectPath = asString(body.objectPath);
       if (!objectPath || objectPath !== order.photo_path) {
-        return apiError("INVALID_REQUEST", "Upload path is not valid for this order.");
+        return apiError(res, "INVALID_REQUEST", "Upload path is not valid for this order.");
       }
       const { data: exists, error } = await service.storage
         .from(CHRISTMAS_SOURCE_BUCKET)
         .createSignedUrl(objectPath, 30);
       if (error || !exists?.signedUrl) {
-        return apiError("UPLOAD_FAILED", "Photo was not found in storage.", 400);
+        return apiError(res, "UPLOAD_FAILED", "Photo was not found in storage.", 400);
       }
       await service
         .from("christmas_orders")
@@ -384,7 +423,7 @@ Deno.serve(async (req) => {
           photo_confirmed_at: new Date().toISOString(),
         })
         .eq("id", order.id);
-      return jsonResponse({
+      return res.status(200).json({
         ok: true,
         orderId: order.id,
         publicToken: asString(body.publicToken),
@@ -394,38 +433,38 @@ Deno.serve(async (req) => {
 
     if (action === "updateOrderContact") {
       const order = await requireOrder(service, asString(body.orderId), asString(body.publicToken));
-      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      if (!order) return apiError(res, "ORDER_NOT_FOUND", "We could not find that order.", 404);
       if (!["awaiting_upload", "awaiting_payment"].includes(asString(order.status))) {
-        return apiError("INVALID_REQUEST", "This order can no longer be updated.");
+        return apiError(res, "INVALID_REQUEST", "This order can no longer be updated.");
       }
-      if (order.paid_at) return apiError("INVALID_REQUEST", "This order is already paid.");
+      if (order.paid_at) return apiError(res, "INVALID_REQUEST", "This order is already paid.");
       const email = asString(body.email).toLowerCase();
       const customerName = asString(body.customerName).slice(0, 80) || null;
       if (!email || !email.includes("@") || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return apiError("INVALID_REQUEST", "A valid email is required.");
+        return apiError(res, "INVALID_REQUEST", "A valid email is required.");
       }
       const { error } = await service
         .from("christmas_orders")
         .update({ email, email_normalized: email, customer_name: customerName })
         .eq("id", order.id);
       if (error) throw error;
-      return jsonResponse({ ok: true });
+      return res.status(200).json({ ok: true });
     }
 
     if (action === "createStripeCheckout") {
       const publicToken = asString(body.publicToken);
       const order = await requireOrder(service, asString(body.orderId), publicToken);
-      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      if (!order) return apiError(res, "ORDER_NOT_FOUND", "We could not find that order.", 404);
       if (asString(order.status) !== "awaiting_payment") {
-        return apiError("INVALID_REQUEST", "This order is not ready for payment.");
+        return apiError(res, "INVALID_REQUEST", "This order is not ready for payment.");
       }
       if (!order.photo_path || !order.photo_confirmed_at) {
-        return apiError("INVALID_REQUEST", "Upload and confirm the photo first.");
+        return apiError(res, "INVALID_REQUEST", "Upload and confirm the photo first.");
       }
 
-      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-      const publishableKey = asString(Deno.env.get("STRIPE_PUBLISHABLE_KEY"));
-      if (!stripeKey) return apiError("INVALID_REQUEST", "Stripe is not configured.", 503);
+      const stripeKey = String(process.env.STRIPE_SECRET_KEY || "");
+      const publishableKey = asString(process.env.STRIPE_PUBLISHABLE_KEY);
+      if (!stripeKey) return apiError(res, "INVALID_REQUEST", "Stripe is not configured.", 503);
 
       const uiMode = normalizeUiMode(asString(body.uiMode || body.ui_mode));
       const funnelSessionId = isUuid(body.funnelSessionId || body.funnel_session_id)
@@ -480,19 +519,15 @@ Deno.serve(async (req) => {
             "Content-Type": "application/x-www-form-urlencoded",
             // Rotate idempotency on retries so Stripe returns a fresh Elements client_secret
             // instead of an expired/stale session (matches pet-funnel bootstrap behavior).
-            "Idempotency-Key": `christmas-checkout-${order.id}-${crypto.randomUUID()}`,
+            "Idempotency-Key": `christmas-checkout-${order.id}-${randomUUID()}`,
           },
           apiVersion,
         ),
         body: params,
       });
-      const session = await stripeRes.json();
+      const session = (await stripeRes.json()) as StripeCheckoutSessionResponse;
       if (!stripeRes.ok) {
-        return apiError(
-          "INVALID_REQUEST",
-          asString(session?.error?.message) || "Stripe checkout failed",
-          502,
-        );
+        return apiError(res, "INVALID_REQUEST", asString(session?.error?.message) || "Stripe checkout failed", 502);
       }
 
       const sessionId = asString(session.id);
@@ -509,7 +544,7 @@ Deno.serve(async (req) => {
         stripe_session_id: sessionId,
       });
 
-      return jsonResponse({
+      return res.status(200).json({
         orderId: order.id,
         publicToken,
         sessionId,
@@ -526,14 +561,14 @@ Deno.serve(async (req) => {
       const parentToken = asString(body.publicToken);
       const parentOrderId = asString(body.parentOrderId);
       const parent = await requireOrder(service, parentOrderId, parentToken);
-      if (!parent) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      if (!parent) return apiError(res, "ORDER_NOT_FOUND", "We could not find that order.", 404);
       if (!parent.paid_at) {
-        return apiError("INVALID_REQUEST", "Upsells unlock after your starter pack is paid.", 402);
+        return apiError(res, "INVALID_REQUEST", "Upsells unlock after your starter pack is paid.", 402);
       }
 
       const packKeyRaw = asString(body.packKey);
       if (packKeyRaw !== "magic" && packKeyRaw !== "ultimate") {
-        return apiError("INVALID_REQUEST", "Choose the Magic or Ultimate pack.");
+        return apiError(res, "INVALID_REQUEST", "Choose the Magic or Ultimate pack.");
       }
       const packKey = packKeyRaw as "magic" | "ultimate";
       const pack = CHRISTMAS_PACKS[packKey];
@@ -574,7 +609,7 @@ Deno.serve(async (req) => {
         photo_file_name: parent.photo_file_name,
         photo_byte_size: parent.photo_byte_size,
         photo_confirmed_at: parent.photo_confirmed_at || new Date().toISOString(),
-        meta_event_id: `pending_${crypto.randomUUID()}`,
+        meta_event_id: `pending_${randomUUID()}`,
         funnel_session_id: funnelSessionId,
         scene_keys: sceneKeys,
         video_source_scene_keys: videoSourceSceneKeys,
@@ -588,9 +623,9 @@ Deno.serve(async (req) => {
       await insertScenes(service, child.id, sceneKeys);
       await insertVideos(service, child.id, videoSourceSceneKeys);
 
-      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-      const publishableKey = asString(Deno.env.get("STRIPE_PUBLISHABLE_KEY"));
-      if (!stripeKey) return apiError("INVALID_REQUEST", "Stripe is not configured.", 503);
+      const stripeKey = String(process.env.STRIPE_SECRET_KEY || "");
+      const publishableKey = asString(process.env.STRIPE_PUBLISHABLE_KEY);
+      if (!stripeKey) return apiError(res, "INVALID_REQUEST", "Stripe is not configured.", 503);
 
       let successUrl =
         asString(body.successUrl) ||
@@ -636,33 +671,26 @@ Deno.serve(async (req) => {
           stripeKey,
           {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Idempotency-Key": `christmas-upsell-${child.id}-${crypto.randomUUID()}`,
+            "Idempotency-Key": `christmas-upsell-${child.id}-${randomUUID()}`,
           },
           apiVersion,
         ),
         body: params,
       });
-      const session = await stripeRes.json();
+      const session = (await stripeRes.json()) as StripeCheckoutSessionResponse;
       if (!stripeRes.ok) {
         await service.from("christmas_orders").delete().eq("id", child.id);
-        return apiError(
-          "INVALID_REQUEST",
-          asString(session?.error?.message) || "Stripe checkout failed",
-          502,
-        );
+        return apiError(res, "INVALID_REQUEST", asString(session?.error?.message) || "Stripe checkout failed", 502);
       }
 
       const sessionId = asString(session.id);
-      await service
-        .from("christmas_orders")
-        .update({ stripe_checkout_session_id: sessionId })
-        .eq("id", child.id);
+      await service.from("christmas_orders").update({ stripe_checkout_session_id: sessionId }).eq("id", child.id);
       await service.from("christmas_checkout_sessions").insert({
         order_id: child.id,
         stripe_session_id: sessionId,
       });
 
-      return jsonResponse({
+      return res.status(200).json({
         orderId: child.id,
         publicToken: childToken,
         sessionId,
@@ -679,36 +707,32 @@ Deno.serve(async (req) => {
       const publicToken = asString(body.publicToken);
       const sessionId = asString(body.sessionId || body.session_id);
       if (!publicToken || !sessionId) {
-        return apiError("INVALID_REQUEST", "publicToken and sessionId are required.");
+        return apiError(res, "INVALID_REQUEST", "publicToken and sessionId are required.");
       }
       const order = await findOrderByToken(service, publicToken);
-      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      if (!order) return apiError(res, "ORDER_NOT_FOUND", "We could not find that order.", 404);
 
-      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-      if (!stripeKey) return apiError("INVALID_REQUEST", "Stripe is not configured.", 503);
+      const stripeKey = String(process.env.STRIPE_SECRET_KEY || "");
+      if (!stripeKey) return apiError(res, "INVALID_REQUEST", "Stripe is not configured.", 503);
 
       const sessionRes = await fetch(
         `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
         { headers: stripeAuthHeaders(stripeKey) },
       );
-      const session = await sessionRes.json();
+      const session = (await sessionRes.json()) as StripeCheckoutSessionResponse;
       if (!sessionRes.ok) {
-        return apiError(
-          "INVALID_REQUEST",
-          asString(session?.error?.message) || "Could not verify payment.",
-          502,
-        );
+        return apiError(res, "INVALID_REQUEST", asString(session?.error?.message) || "Could not verify payment.", 502);
       }
 
       const sessionMetadata = (session?.metadata || {}) as Record<string, unknown>;
       const sessionOrderId = asString(sessionMetadata.christmas_order_id) || asString(session?.client_reference_id);
       if (sessionOrderId && sessionOrderId !== asString(order.id)) {
-        return apiError("INVALID_REQUEST", "This payment session does not match the order.", 400);
+        return apiError(res, "INVALID_REQUEST", "This payment session does not match the order.", 400);
       }
 
       const paymentStatus = asString(session?.payment_status);
       if (paymentStatus !== "paid") {
-        return jsonResponse({ ok: true, status: "not_paid", paymentStatus, orderId: order.id, publicToken });
+        return res.status(200).json({ ok: true, status: "not_paid", paymentStatus, orderId: order.id, publicToken });
       }
 
       const amountTotal = session?.amount_total == null ? null : asInt(session.amount_total);
@@ -725,7 +749,11 @@ Deno.serve(async (req) => {
       if (error) throw error;
 
       const result = data as { status?: string; should_enqueue?: boolean; already_paid?: boolean } | null;
-      if (result?.should_enqueue) enqueueChristmasGenerate(asString(order.id));
+
+      if (result?.should_enqueue) {
+        const originForInvoke = resolveSiteOriginFromRequest(req.headers as Record<string, string | string[]>);
+        waitUntil(invokeChristmasGenerate(asString(order.id), originForInvoke));
+      }
 
       const funnelSessionId = asString(sessionMetadata.funnel_session_id) || asString(order.funnel_session_id);
       if (isUuid(funnelSessionId)) {
@@ -743,7 +771,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      return jsonResponse({
+      return res.status(200).json({
         ok: true,
         status: result?.status || "fulfilled",
         alreadyPaid: Boolean(result?.already_paid),
@@ -755,15 +783,15 @@ Deno.serve(async (req) => {
     if (action === "getOrderByPublicToken" || action === "pollGenerationProgress") {
       const publicToken = asString(body.publicToken);
       const order = await findOrderByToken(service, publicToken);
-      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
-      return jsonResponse(await buildOrderResults(service, order as Record<string, unknown>, publicToken));
+      if (!order) return apiError(res, "ORDER_NOT_FOUND", "We could not find that order.", 404);
+      return res.status(200).json(await buildOrderResults(service, order as Record<string, unknown>, publicToken));
     }
 
     if (action === "listMyChristmasGalleries") {
-      const { user } = await getAuthUser(req);
+      const { user } = await getAuthUser(req.headers.authorization);
       const accountEmail = asString(user?.email).toLowerCase();
       if (!user || !accountEmail.includes("@")) {
-        return apiError("AUTH_REQUIRED", "Sign in to see your Christmas galleries.", 401);
+        return apiError(res, "AUTH_REQUIRED", "Sign in to see your Christmas galleries.", 401);
       }
 
       const { data: orders, error } = await service
@@ -794,12 +822,14 @@ Deno.serve(async (req) => {
           videos: results.videos,
         });
       }
-      return jsonResponse(galleries);
+      return res.status(200).json(galleries);
     }
 
-    return apiError("INVALID_REQUEST", `Unknown action: ${action || "(missing)"}`);
+    return apiError(res, "INVALID_REQUEST", `Unknown action: ${action || "(missing)"}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return jsonResponse({ error: message }, 500);
+    return res.status(500).json({ error: message });
   }
-});
+}
+
+export const config = { maxDuration: 300 };
