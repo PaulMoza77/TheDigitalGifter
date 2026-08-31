@@ -129,8 +129,13 @@ describe("V2 teaser conversion rebuild", () => {
     expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain("ensureV2CheckoutAllowed");
     expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain("v2_provider_unavailable");
     expect(readSrc("src/features/pet-v2/providerStatus.ts")).toContain("/api/pet-provider-status");
+    expect(readSrc("src/features/pet-v2/providerStatus.ts")).toContain("missing_token");
+    expect(readSrc("src/features/pet-v2/providerStatus.ts")).toContain("probe_token_absent");
     expect(readSrc("api/pet-provider-status.ts")).toContain("REPLICATE_API_TOKEN");
     expect(readSrc("api/pet-provider-status.ts")).toContain("insufficient_credit");
+    // Missing Vercel token must not fail-closed — fulfillment uses Edge secrets.
+    expect(readSrc("api/pet-provider-status.ts")).toContain("probe_token_absent");
+    expect(readSrc("api/pet-provider-status.ts")).toContain('available: true, reason: "probe_token_absent"');
   });
 
   it("maps new teaser analytics into admin KPI cards", () => {

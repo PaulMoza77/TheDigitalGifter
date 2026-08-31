@@ -1,10 +1,11 @@
 /**
  * Fulfillment capacity probe for Dog V2 payment gate.
- * Returns available=false when Replicate cannot accept work (402 / kill-switch / recent billing holds).
- * Does not expose secrets or raw provider payloads to the client.
+ * Fail-closed only on kill-switch, recent billing holds, or Replicate evidence
+ * (402 / auth / rate-limit / provider errors). Missing REPLICATE_API_TOKEN here
+ * means the probe cannot check Replicate — not that paid Edge fulfillment is down.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders, jsonResponse, optionsResponse } from "../_shared/cors.ts";
+import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
@@ -18,16 +19,6 @@ Deno.serve(async (req) => {
       return jsonResponse({
         available: false,
         reason: "kill_switch",
-        message:
-          "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
-      });
-    }
-
-    const token = String(Deno.env.get("REPLICATE_API_TOKEN") || "").trim();
-    if (!token) {
-      return jsonResponse({
-        available: false,
-        reason: "missing_token",
         message:
           "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
       });
@@ -52,6 +43,15 @@ Deno.serve(async (req) => {
             "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
         });
       }
+    }
+
+    const token = String(Deno.env.get("REPLICATE_API_TOKEN") || "").trim();
+    if (!token) {
+      return jsonResponse({
+        available: true,
+        reason: "probe_token_absent",
+        message: "ok",
+      });
     }
 
     // Lightweight account probe — 402 / auth failures mean do not accept payment.

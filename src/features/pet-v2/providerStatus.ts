@@ -66,7 +66,13 @@ export async function fetchV2ProviderStatus(force = false): Promise<V2ProviderSt
   try {
     // 1) Same-origin Vercel probe (canonical for production frontend deploys).
     const vercel = await fetchJson(V2_PROVIDER_STATUS_VERCEL_PATH);
-    if (vercel.status !== 404 && "available" in vercel.body) {
+    const vercelReason = typeof vercel.body.reason === "string" ? vercel.body.reason : null;
+    // Older deploys returned available:false for missing_token. Prefer Edge when the
+    // Vercel probe is only misconfigured (token lives on Supabase for fulfillment).
+    const vercelIsConfigMiss =
+      vercel.body.available === false &&
+      (vercelReason === "missing_token" || vercelReason === "probe_token_absent");
+    if (vercel.status !== 404 && "available" in vercel.body && !vercelIsConfigMiss) {
       const status = parseStatus(vercel.body, now);
       cached = status;
       return status;
@@ -80,6 +86,18 @@ export async function fetchV2ProviderStatus(force = false): Promise<V2ProviderSt
     });
     if ("available" in edge.body) {
       const status = parseStatus(edge.body, now);
+      cached = status;
+      return status;
+    }
+
+    // Edge missing / unreachable: if Vercel only lacked the probe token, allow checkout.
+    if (vercelIsConfigMiss || (vercel.status !== 404 && vercel.body.available === true)) {
+      const status = parseStatus(
+        vercelIsConfigMiss
+          ? { available: true, reason: "probe_token_absent", message: "ok" }
+          : vercel.body,
+        now,
+      );
       cached = status;
       return status;
     }
