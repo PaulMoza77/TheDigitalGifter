@@ -23,6 +23,10 @@
       "destination": "/api/pet-v3-funnel-event"
     },
     {
+      "source": "/api/christmas-v2/funnel-event",
+      "destination": "/api/christmas-v2-funnel-event"
+    },
+    {
       "source": "/api/pet-v3/internal-test-status",
       "destination": "/api/pet-v3-internal-test-status"
     },
