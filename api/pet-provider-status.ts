@@ -1,8 +1,12 @@
 /**
  * Dog V2 fulfillment capacity probe (Vercel).
  * Same semantics as supabase/functions/pet-provider-status — used because Edge deploy
- * requires SUPABASE_ACCESS_TOKEN which may be unavailable. Fail-closed when Replicate
- * cannot fulfill paid generation.
+ * requires SUPABASE_ACCESS_TOKEN which may be unavailable.
+ *
+ * Fail-closed only when we have positive evidence that Replicate cannot fulfill
+ * (kill switch, recent billing holds, 402 / auth / rate-limit / provider errors).
+ * Missing REPLICATE_API_TOKEN on Vercel is a probe misconfiguration: paid generation
+ * runs on Supabase Edge (where the token normally lives), so do not block checkout.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
@@ -37,12 +41,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const token = String(process.env.REPLICATE_API_TOKEN || "").trim();
-    if (!token) {
-      json(res, { available: false, reason: "missing_token", message: UNAVAILABLE });
-      return;
-    }
-
     const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(
       /\/$/,
       "",
@@ -60,6 +58,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         json(res, { available: false, reason: "recent_billing_holds", message: UNAVAILABLE });
         return;
       }
+    }
+
+    const token = String(process.env.REPLICATE_API_TOKEN || "").trim();
+    if (!token) {
+      // Probe cannot call Replicate from Vercel, but fulfillment still uses Edge secrets.
+      json(res, { available: true, reason: "probe_token_absent", message: "ok" });
+      return;
     }
 
     const accountRes = await fetch("https://api.replicate.com/v1/account", {
