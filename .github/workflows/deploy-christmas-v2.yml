@@ -1,0 +1,52 @@
+name: deploy-christmas-v2
+
+# Deploys Christmas V2 backend to production Supabase (kjlsocejpmnzhhduyumy).
+# Uses Production environment secrets — same pattern as deploy-pet-preview.yml.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/christmas-v2-funnel-eaf8
+      - cursor/christmas-v2-prod-e2e-eaf8
+    paths:
+      - "supabase/functions/christmas-funnel/**"
+      - "supabase/functions/christmas-generate/**"
+      - "supabase/functions/christmas-generate-video/**"
+      - "supabase/functions/_shared/christmas/**"
+      - "supabase/functions/stripe-webhook/**"
+      - "supabase/migrations/20260831190000_christmas_v2_funnel.sql"
+      - ".github/workflows/deploy-christmas-v2.yml"
+      - "scripts/deploy-christmas-v2.sh"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: Production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require Supabase access token
+        id: token
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN secret is not configured (repo or Production environment)."
+            exit 2
+          fi
+          echo "token_present=true" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Deploy Christmas V2 backend
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: bash scripts/deploy-christmas-v2.sh
