@@ -3,6 +3,15 @@
   "functions": {
     "api/pet-v2/preview.ts": {
       "maxDuration": 60
+    },
+    "api/christmas-funnel.ts": {
+      "maxDuration": 300
+    },
+    "api/christmas-generate.ts": {
+      "maxDuration": 300
+    },
+    "api/christmas-generate-video.ts": {
+      "maxDuration": 300
     }
   },
   "rewrites": [
