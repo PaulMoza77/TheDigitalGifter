@@ -317,7 +317,9 @@ begin
 
   return jsonb_build_object(
     'status', case when already then 'already_paid' else 'fulfilled' end,
-    'should_enqueue', true,
+    -- Only enqueue generation on the first successful fulfill. Retries must not
+    -- fan out duplicate Replicate work; claim_christmas_generation_job remains the safety net.
+    'should_enqueue', not already,
     'already_paid', already,
     'christmas_order_id', p_order_id,
     'meta_event_id', order_row.meta_event_id
@@ -393,6 +395,74 @@ begin
   return jsonb_build_object('done', true, 'succeeded', succeeded, 'failed', failed, 'total', total);
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- RLS: anonymous cannot enumerate. Admin read via is_admin(). Writes via service role.
+-- ---------------------------------------------------------------------------
+
+alter table public.christmas_orders enable row level security;
+alter table public.christmas_order_scenes enable row level security;
+alter table public.christmas_order_videos enable row level security;
+alter table public.christmas_generation_jobs enable row level security;
+alter table public.christmas_email_deliveries enable row level security;
+alter table public.christmas_checkout_sessions enable row level security;
+alter table public.christmas_v2_funnel_events enable row level security;
+
+drop policy if exists christmas_orders_admin_read on public.christmas_orders;
+create policy christmas_orders_admin_read
+  on public.christmas_orders for select
+  using (public.is_admin());
+
+drop policy if exists christmas_order_scenes_admin_read on public.christmas_order_scenes;
+create policy christmas_order_scenes_admin_read
+  on public.christmas_order_scenes for select
+  using (public.is_admin());
+
+drop policy if exists christmas_order_videos_admin_read on public.christmas_order_videos;
+create policy christmas_order_videos_admin_read
+  on public.christmas_order_videos for select
+  using (public.is_admin());
+
+drop policy if exists christmas_generation_jobs_admin_read on public.christmas_generation_jobs;
+create policy christmas_generation_jobs_admin_read
+  on public.christmas_generation_jobs for select
+  using (public.is_admin());
+
+drop policy if exists christmas_email_deliveries_admin_read on public.christmas_email_deliveries;
+create policy christmas_email_deliveries_admin_read
+  on public.christmas_email_deliveries for select
+  using (public.is_admin());
+
+drop policy if exists christmas_checkout_sessions_admin_read on public.christmas_checkout_sessions;
+create policy christmas_checkout_sessions_admin_read
+  on public.christmas_checkout_sessions for select
+  using (public.is_admin());
+
+drop policy if exists christmas_v2_funnel_events_admin_read on public.christmas_v2_funnel_events;
+create policy christmas_v2_funnel_events_admin_read
+  on public.christmas_v2_funnel_events for select
+  using (public.is_admin());
+
+revoke all on table public.christmas_orders from anon, public;
+revoke all on table public.christmas_order_scenes from anon, public;
+revoke all on table public.christmas_order_videos from anon, public;
+revoke all on table public.christmas_generation_jobs from anon, public;
+revoke all on table public.christmas_email_deliveries from anon, public;
+revoke all on table public.christmas_checkout_sessions from anon, authenticated, public;
+revoke all on table public.christmas_v2_funnel_events from anon, public;
+
+grant select on table public.christmas_orders to authenticated;
+grant select on table public.christmas_order_scenes to authenticated;
+grant select on table public.christmas_order_videos to authenticated;
+grant select on table public.christmas_email_deliveries to authenticated;
+
+grant all on table public.christmas_orders to service_role;
+grant all on table public.christmas_order_scenes to service_role;
+grant all on table public.christmas_order_videos to service_role;
+grant all on table public.christmas_generation_jobs to service_role;
+grant all on table public.christmas_email_deliveries to service_role;
+grant all on table public.christmas_checkout_sessions to service_role;
+grant all on table public.christmas_v2_funnel_events to service_role;
 
 grant execute on function public.record_christmas_v2_funnel_event to anon, authenticated, service_role;
 grant execute on function public.fulfill_christmas_order_payment to service_role;
