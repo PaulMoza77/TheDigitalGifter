@@ -160,12 +160,38 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, status: "already_running", claim: claimData });
     }
 
-    if (!order.photo_path) return jsonResponse({ error: "Source photo missing" }, 400);
+    if (!order.photo_path) {
+      await service
+        .from("christmas_generation_jobs")
+        .update({
+          status: "failed",
+          last_error: "source_photo_missing",
+          finished_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("order_id", orderId);
+      await service
+        .from("christmas_orders")
+        .update({ status: "failed", last_error: "source_photo_missing", updated_at: new Date().toISOString() })
+        .eq("id", orderId);
+      return jsonResponse({ error: "Source photo missing" }, 400);
+    }
 
     const { data: signed } = await service.storage
       .from(CHRISTMAS_SOURCE_BUCKET)
       .createSignedUrl(order.photo_path, CHRISTMAS_SIGNED_DOWNLOAD_SECONDS);
-    if (!signed?.signedUrl) return jsonResponse({ error: "Could not sign source photo" }, 500);
+    if (!signed?.signedUrl) {
+      await service
+        .from("christmas_generation_jobs")
+        .update({
+          status: "failed",
+          last_error: "source_photo_sign_failed",
+          finished_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("order_id", orderId);
+      return jsonResponse({ error: "Could not sign source photo" }, 500);
+    }
 
     const { data: scenes, error: sceneError } = await service
       .from("christmas_order_scenes")

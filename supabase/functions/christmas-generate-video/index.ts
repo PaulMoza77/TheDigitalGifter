@@ -111,6 +111,25 @@ Deno.serve(async (req) => {
       service.from("christmas_order_videos").select("*").eq("order_id", orderId),
     ]);
 
+    // Upsell child packs may reference starter scene keys that live on the parent order.
+    let sceneRows = scenes ?? [];
+    const parentOrderId = asString(order.parent_order_id);
+    if (parentOrderId) {
+      const { data: parentScenes } = await service
+        .from("christmas_order_scenes")
+        .select("id, scene_key, status, result_path, result_bucket")
+        .eq("order_id", parentOrderId);
+      if (parentScenes?.length) {
+        const byKey = new Map(sceneRows.map((s) => [asString(s.scene_key), s]));
+        for (const ps of parentScenes) {
+          const key = asString(ps.scene_key);
+          const existing = byKey.get(key);
+          if (!existing || !existing.result_path) byKey.set(key, ps);
+        }
+        sceneRows = [...byKey.values()];
+      }
+    }
+
     const targets = (videos ?? []).filter((video) =>
       ["queued", "failed"].includes(asString(video.status)),
     );
@@ -119,7 +138,7 @@ Deno.serve(async (req) => {
     let started = 0;
 
     for (const video of targets) {
-      const source = (scenes ?? []).find(
+      const source = sceneRows.find(
         (scene) =>
           asString(scene.scene_key) === asString(video.source_scene_key) &&
           ["succeeded", "ready"].includes(asString(scene.status)) &&
