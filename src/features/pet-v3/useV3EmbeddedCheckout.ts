@@ -7,6 +7,7 @@ import { checkoutAnalyticsContext } from "../pet/funnelInternal";
 import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "../pet/funnelGuards";
 import { buildPetOrderReturnUrl } from "../pet/orderReturnUrl";
 import { stripeKeyAccountFingerprint } from "../pet/stripeKeys";
+import { prepareV2CheckoutUpload } from "../pet-v2/photo";
 import type { PetV3PhotoMeta } from "./types";
 import { PET_V3_ROUTE, PET_V3_SPECIES } from "./types";
 import { getPetV3SessionId } from "./session";
@@ -302,12 +303,18 @@ export function useV3EmbeddedCheckout(input: {
 
     try {
       // Create order first so hosted fallback can reuse it even if Elements session create fails.
+      // Resize on-device in parallel with order create prep — cuts multi-MB phone upload latency.
+      const upload = await prepareV2CheckoutUpload(input.file);
       const order = await api.createOrder({
         email: contact.email,
         petName: contact.petName,
         species: PET_V3_SPECIES,
         personality: PET_DEFAULT_PERSONALITY,
-        photo: input.photo,
+        photo: {
+          fileName: upload.photo.fileName,
+          contentType: upload.photo.contentType,
+          byteSize: upload.photo.byteSize,
+        },
         sku: "pet-secret-life-12",
         funnelVariant: "v3",
       });
@@ -318,11 +325,11 @@ export function useV3EmbeddedCheckout(input: {
       const signed = await api.getSignedUploadUrl({
         orderId: order.orderId,
         publicToken: order.publicToken,
-        contentType: input.photo.contentType,
-        fileName: input.photo.fileName,
-        byteSize: input.photo.byteSize,
+        contentType: upload.photo.contentType,
+        fileName: upload.photo.fileName,
+        byteSize: upload.photo.byteSize,
       });
-      await uploadPhotoToSignedUrl(signed, input.file);
+      await uploadPhotoToSignedUrl(signed, upload.file);
       await api.confirmUpload({
         orderId: order.orderId,
         publicToken: order.publicToken,

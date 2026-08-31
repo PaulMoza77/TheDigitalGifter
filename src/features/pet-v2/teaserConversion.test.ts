@@ -138,6 +138,24 @@ describe("V2 teaser conversion rebuild", () => {
     expect(readSrc("api/pet-provider-status.ts")).toContain('available: true, reason: "probe_token_absent"');
   });
 
+  it("resizes checkout uploads and warms Stripe/provider before Elements", () => {
+    const hook = readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts");
+    expect(hook).toContain("prepareV2CheckoutUpload");
+    expect(hook).toContain("Promise.all");
+    expect(hook).toContain("loadingPhase");
+    expect(readSrc("src/features/pet-v2/photo.ts")).toContain("prepareV2CheckoutUpload");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("warmV2CheckoutDependencies");
+    expect(readSrc("src/features/pet-v2/checkoutWarmup.ts")).toContain("js.stripe.com");
+    expect(readSrc("src/features/pet/supabaseApi.ts")).toContain("30_000");
+    expect(readSrc("index.html")).toContain("https://js.stripe.com");
+  });
+
+  it("skips redundant Stripe session re-fetch when create already returns client_secret", () => {
+    const funnel = readSrc("supabase/functions/pet-funnel/index.ts");
+    expect(funnel).toContain("asString(session.client_secret)");
+    expect(funnel).toContain("asString(session.id)");
+  });
+
   it("maps new teaser analytics into admin KPI cards", () => {
     const mapped = mapV2CountsToPrimarySteps({
       v2_landing_view: 79,

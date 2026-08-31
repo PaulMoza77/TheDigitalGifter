@@ -8,6 +8,7 @@ import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "
 import { buildPetOrderReturnUrl } from "../pet/orderReturnUrl";
 import { stripeKeyAccountFingerprint } from "../pet/stripeKeys";
 import { trackPetV2Event } from "./analytics";
+import { prepareV2CheckoutUpload } from "./photo";
 import { v2PackOfferCopy } from "./V2PackOffer";
 import { fetchV2ProviderStatus } from "./providerStatus";
 import {
@@ -27,6 +28,13 @@ import {
   type PetV2Species,
 } from "./types";
 
+export type V2CheckoutLoadingPhase =
+  | "preparing_photo"
+  | "creating_order"
+  | "uploading"
+  | "creating_session"
+  | null;
+
 export const V2_CHECKOUT_EXPIRED_MESSAGE =
   "Your secure checkout session expired. Please upload your pet photo again.";
 const CHECKOUT_INIT_ERROR = V2_CHECKOUT_FAILED_COPY;
@@ -42,6 +50,8 @@ export type V2EmbeddedCheckoutState = {
   eventId: string | null;
   amountCents: number;
   loading: boolean;
+  /** Fine-grained bootstrap stage for the offer loading copy. */
+  loadingPhase: V2CheckoutLoadingPhase;
   initError: string | null;
   sessionExpired: boolean;
   checkoutReady: boolean;
@@ -55,6 +65,21 @@ export type V2EmbeddedCheckoutState = {
     onSessionReady?: (session: { sessionId: string; checkoutUrl: string }) => void;
   }) => Promise<void>;
 };
+
+export function v2CheckoutLoadingCopy(phase: V2CheckoutLoadingPhase): string {
+  switch (phase) {
+    case "preparing_photo":
+      return "Preparing your photo…";
+    case "creating_order":
+      return "Starting secure checkout…";
+    case "uploading":
+      return "Uploading your photo…";
+    case "creating_session":
+      return "Loading secure payment…";
+    default:
+      return "Loading secure payment…";
+  }
+}
 
 function v2CancelUrl(species: PetV2Species, origin = typeof window !== "undefined" ? window.location.origin : ""): string {
   return `${origin}/pet/${species}-v2?checkout=canceled`;
@@ -227,6 +252,7 @@ export function useV2EmbeddedCheckout(input: {
   const [eventId, setEventId] = useState<string | null>(null);
   const [amountCents, setAmountCents] = useState(PET_V2_PRICE_CENTS);
   const [loading, setLoading] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState<V2CheckoutLoadingPhase>(null);
   const [initError, setInitError] = useState<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [showHostedFallback, setShowHostedFallback] = useState(false);
@@ -330,6 +356,7 @@ export function useV2EmbeddedCheckout(input: {
       orderRef.current = { orderId: recoverable.orderId, publicToken: recoverable.publicToken };
       bootstrapInFlight.current = true;
       setLoading(true);
+      setLoadingPhase("creating_session");
       setInitError(null);
       setSessionExpired(false);
       setShowHostedFallback(false);
@@ -348,6 +375,7 @@ export function useV2EmbeddedCheckout(input: {
       } finally {
         bootstrapInFlight.current = false;
         setLoading(false);
+        setLoadingPhase(null);
       }
       return;
     }
@@ -359,6 +387,7 @@ export function useV2EmbeddedCheckout(input: {
 
     bootstrapInFlight.current = true;
     setLoading(true);
+    setLoadingPhase("preparing_photo");
     setInitError(null);
     setSessionExpired(false);
     setShowHostedFallback(false);
@@ -368,18 +397,27 @@ export function useV2EmbeddedCheckout(input: {
     const analytics = checkoutAnalyticsContext();
 
     try {
-      const provider = await ensureV2CheckoutAllowed(input.species);
+      // Resize + provider probe in parallel — biggest win on phone camera uploads.
+      const [provider, upload] = await Promise.all([
+        ensureV2CheckoutAllowed(input.species),
+        prepareV2CheckoutUpload(input.file),
+      ]);
       if (!provider.allowed) {
         setInitError(provider.message);
         return;
       }
 
+      setLoadingPhase("creating_order");
       const order = await api.createOrder({
         email: contact.email,
         petName: contact.petName,
         species: input.species,
         personality: PET_DEFAULT_PERSONALITY,
-        photo: input.photo,
+        photo: {
+          fileName: upload.photo.fileName,
+          contentType: upload.photo.contentType,
+          byteSize: upload.photo.byteSize,
+        },
         sku: "pet-secret-life-12",
         funnelVariant: "v2",
       });
@@ -387,14 +425,15 @@ export function useV2EmbeddedCheckout(input: {
       setOrderId(order.orderId);
       setPublicToken(order.publicToken);
 
+      setLoadingPhase("uploading");
       const signed = await api.getSignedUploadUrl({
         orderId: order.orderId,
         publicToken: order.publicToken,
-        contentType: input.photo.contentType,
-        fileName: input.photo.fileName,
-        byteSize: input.photo.byteSize,
+        contentType: upload.photo.contentType,
+        fileName: upload.photo.fileName,
+        byteSize: upload.photo.byteSize,
       });
-      await uploadPhotoToSignedUrl(signed, input.file);
+      await uploadPhotoToSignedUrl(signed, upload.file);
       await api.confirmUpload({
         orderId: order.orderId,
         publicToken: order.publicToken,
@@ -407,6 +446,7 @@ export function useV2EmbeddedCheckout(input: {
         attemptId: order.orderId,
       });
 
+      setLoadingPhase("creating_session");
       const checkout = await api.createStripeCheckout({
         orderId: order.orderId,
         publicToken: order.publicToken,
@@ -469,6 +509,7 @@ export function useV2EmbeddedCheckout(input: {
     } finally {
       bootstrapInFlight.current = false;
       setLoading(false);
+      setLoadingPhase(null);
     }
   }, [api, input.active, input.file, input.photo, input.species, markExpired, recoverExistingOrderCheckout]);
 
@@ -491,6 +532,7 @@ export function useV2EmbeddedCheckout(input: {
       setShowHostedFallback(false);
       void (async () => {
         setLoading(true);
+        setLoadingPhase("creating_session");
         try {
           const recovered = await recoverExistingOrderCheckout();
           if (!recovered) {
@@ -514,6 +556,7 @@ export function useV2EmbeddedCheckout(input: {
           setShowHostedFallback(true);
         } finally {
           setLoading(false);
+          setLoadingPhase(null);
         }
       })();
       return;
@@ -563,6 +606,7 @@ export function useV2EmbeddedCheckout(input: {
 
     bootstrapInFlight.current = true;
     setLoading(true);
+    setLoadingPhase("creating_session");
 
     void (async () => {
       try {
@@ -608,6 +652,7 @@ export function useV2EmbeddedCheckout(input: {
       } finally {
         bootstrapInFlight.current = false;
         setLoading(false);
+        setLoadingPhase(null);
       }
     })();
   }
@@ -688,6 +733,7 @@ export function useV2EmbeddedCheckout(input: {
     eventId,
     amountCents,
     loading,
+    loadingPhase,
     initError,
     sessionExpired,
     checkoutReady:

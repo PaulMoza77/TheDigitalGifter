@@ -9,8 +9,9 @@ import { petV2LandingPath, trackPetV2Event } from "./analytics";
 import { trackV2BeginCheckout } from "./checkoutAnalytics";
 import { cryptoRandomId } from "./previewAttempt";
 import { backStepFrom, clearPreviewOnPhotoChange } from "./previewFlow";
-import { createV2LocalPreview, validateV2PhotoFile } from "./photo";
 import { fetchV2ProviderStatus } from "./providerStatus";
+import { createV2LocalPreview, validateV2PhotoFile } from "./photo";
+import { warmV2CheckoutDependencies } from "./checkoutWarmup";
 import { getPetV2SessionId } from "./session";
 import {
   getV2PhotoFile,
@@ -70,6 +71,10 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       go("photo", { orderId: null, publicToken: null });
     },
   });
+
+  useEffect(() => {
+    warmV2CheckoutDependencies();
+  }, []);
 
   useEffect(() => {
     const loaded = loadV2Draft();
@@ -149,6 +154,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     setPhotoError(undefined);
     setSpeciesConfirmed(false);
     setProviderBlocked(null);
+    warmV2CheckoutDependencies();
     trackPetV2Event({ eventName: "v2_upload_completed", species });
     go(
       "photo",

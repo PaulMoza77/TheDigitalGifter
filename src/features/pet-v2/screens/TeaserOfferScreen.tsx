@@ -11,6 +11,7 @@ import { trackPetV2Event } from "../analytics";
 import {
   type V2EmbeddedCheckoutState,
   validateAndUpdateV2OrderContact,
+  v2CheckoutLoadingCopy,
 } from "../useV2EmbeddedCheckout";
 import { v2PayButtonLabel } from "../v2CheckoutHold";
 import { getPetV2SessionId } from "../session";
@@ -168,7 +169,7 @@ export function TeaserOfferScreen({
       >
         {checkout.loading && !checkout.checkoutReady && !showExpired && !showHostedFallback && !providerBlocked ? (
           <p className="py-8 text-center text-sm text-[#f6efe4]/55" role="status">
-            Loading secure payment…
+            {v2CheckoutLoadingCopy(checkout.loadingPhase)}
           </p>
         ) : null}
 
