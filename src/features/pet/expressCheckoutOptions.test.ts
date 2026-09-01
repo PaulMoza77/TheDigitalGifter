@@ -32,5 +32,6 @@ describe("expressCheckoutOptions", () => {
     expect(readSrc("scripts/verify-apple-pay-domain.mjs")).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION");
     expect(readSrc(".env.example")).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION");
     expect(readSrc(".github/workflows/deploy-vercel-production.yml")).toContain("verify-apple-pay-domain");
+    expect(readSrc("public/.well-known/apple-developer-merchantid-domain-association").length).toBeGreaterThan(1000);
   });
 });

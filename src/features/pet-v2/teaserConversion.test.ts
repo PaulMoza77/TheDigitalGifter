@@ -105,10 +105,11 @@ describe("V2 teaser conversion rebuild", () => {
     expect(api).toContain("application/octet-stream");
     expect(api).toContain("Must never return SPA HTML");
     expect(api).toContain("PLACEHOLDER_CONFIGURE");
-    // Do not ship a public placeholder — Vercel would serve it statically and bypass the API.
-    expect(() =>
-      readSrc("public/.well-known/apple-developer-merchantid-domain-association"),
-    ).toThrow();
+    // Stripe's universal association file — served statically from public/ (Vercel + VPS).
+    const association = readSrc("public/.well-known/apple-developer-merchantid-domain-association");
+    expect(association).not.toContain("PLACEHOLDER_CONFIGURE");
+    expect(association.length).toBeGreaterThan(1000);
+    expect(association).toMatch(/^7B22/);
   });
 
   it("cancel URL restores with checkout=canceled", () => {
