@@ -58,22 +58,37 @@ TDG_HTTPS_PHASE=pre node scripts/verify-tdg-https.mjs
 node scripts/verify-tdg-ops.mjs
 ```
 
-## HTTPS
+## HTTPS / manual cutover
 
-**Pre-DNS (now):** cert volume, ACME email, `Caddyfile.https.ready`, ensure script,
-mode regression tests. Public certs are not required yet.
+Origin and flow checks accept **either** plain HTTP 200 (current) **or**
+HTTP 3xx → HTTPS 200. They never follow a `:80 --resolve` redirect onto
+public `:443` (that would hit stale DNS).
 
-**After you point DNS at the VPS:**
+**Pre-DNS:** cert volume, ACME email, `Caddyfile.https.ready`, ensure script.
+
+```bash
+bash scripts/run-tdg-backup-now.sh          # fresh R2 snapshot of current config
+bash scripts/prepare-tdg-cutover.sh         # DNS readiness + pre checks
+TDG_HTTPS_PHASE=pre node scripts/verify-tdg-https.mjs
+```
+
+You change DNS (no Cloudflare token in this repo):
+
+1. Keep MX.
+2. Apex **and** www **A** → `MOZAS_SSH_HOST` (prefer grey-cloud; no AAAA, or AAAA = VPS only).
+3. Keep the Vercel deployment as rollback.
+
+**After you confirm both names are on the VPS:**
 
 ```bash
 TDG_HTTPS_APPLY=yes bash scripts/apply-tdg-https.sh
-# orange-cloud: TDG_HTTPS_ALLOW_PROXIED=yes
+# orange-cloud: add TDG_HTTPS_ALLOW_PROXIED=yes
 TDG_HTTPS_PHASE=post node scripts/verify-tdg-https.mjs
 ```
 
-Post checks both domains: HTTPS `/healthz`, TDG HTML, HTTP→HTTPS redirect, certificate
-subject/dates, TheMozas still on bare-IP HTTP. Do **not** declare cutover complete
-until `HTTPS_VERIFY_OK phase=post`.
+Post checks **both** domains, twice: direct VPS (`--resolve`) and public (no
+`--resolve`). Also A/AAAA, certificate, TDG pages, TheMozas on bare-IP HTTP.
+Do **not** declare cutover complete until `HTTPS_VERIFY_OK phase=post`.
 
 ## Rollback
 
@@ -86,7 +101,8 @@ Restores image + `current.*` / `verified.*` release metadata coherently.
 ## Backup + Restic password off-VPS
 
 ```bash
-bash scripts/run-tdg-backup-drill.sh
+bash scripts/run-tdg-backup-now.sh
+bash scripts/run-tdg-backup-drill.sh          # optional isolated restore
 RESTIC_PASSWORD_EXPORT_PATH="$HOME/tdg-restic-password.txt" \
   bash scripts/export-restic-password-offsite.sh
 # then password manager + shred
@@ -99,7 +115,7 @@ Instructions on VPS: `/opt/mozas/secrets/RESTIC_PASSWORD_RECOVERY.txt`.
 1. Keep MX.
 2. Apex + www A → `MOZAS_SSH_HOST` (prefer grey-cloud for first ACME).
 3. Keep Vercel as rollback.
-4. Run HTTPS apply + post verify above.
+4. Confirm to the agent, then HTTPS apply + post verify above.
 
 ## Still optional / blockers
 

@@ -4,6 +4,7 @@
  * Never prints secrets, tokens, or response bodies that may contain them.
  */
 import { execFileSync } from "node:child_process";
+import { fetchTdgNamedHost } from "../deploy/lib/tdg-origin-curl.mjs";
 
 const verifyHost = process.env.TDG_VERIFY_HOST || "tdg-verify.mozas-prod-01";
 const ip = process.env.MOZAS_SSH_HOST || process.env.MOZAS_ORIGIN_IP || "";
@@ -191,46 +192,18 @@ record(
   `http=${edgeProvider.status}`,
 );
 
-const apexCode = execFileSync(
-  "curl",
-  [
-    "-sS",
-    "-o",
-    "/tmp/tdg-apex-host",
-    "-w",
-    "%{http_code}",
-    "--max-time",
-    "15",
-    "--resolve",
-    `thedigitalgifter.com:80:${ip}`,
-    "http://thedigitalgifter.com/healthz",
-  ],
-  { encoding: "utf8" },
+const apex = fetchTdgNamedHost({ host: "thedigitalgifter.com", path: "/healthz", ip });
+record(
+  "caddy_apex_host_healthz",
+  apex.accepted && apex.final.body.trim() === "ok",
+  `http=${apex.http.status} https=${apex.https.status} redirect=${apex.redirected} scheme=${apex.scheme}`,
 );
-const apexBody = execFileSync("cat", ["/tmp/tdg-apex-host"], { encoding: "utf8" }).trim();
-record("caddy_apex_host_healthz", apexCode === "200" && apexBody === "ok", `http=${apexCode}`);
 
-const wwwCode = execFileSync(
-  "curl",
-  [
-    "-sS",
-    "-o",
-    "/tmp/tdg-www-host",
-    "-w",
-    "%{http_code}",
-    "--max-time",
-    "15",
-    "--resolve",
-    `www.thedigitalgifter.com:80:${ip}`,
-    "http://www.thedigitalgifter.com/",
-  ],
-  { encoding: "utf8" },
-);
-const wwwBody = execFileSync("cat", ["/tmp/tdg-www-host"], { encoding: "utf8" });
+const www = fetchTdgNamedHost({ host: "www.thedigitalgifter.com", path: "/", ip });
 record(
   "caddy_www_host_home",
-  wwwCode === "200" && /^\s*<(!doctype html|html)/i.test(wwwBody),
-  `http=${wwwCode}`,
+  www.accepted && /^\s*<(!doctype html|html)/i.test(www.final.body),
+  `http=${www.http.status} https=${www.https.status} redirect=${www.redirected} scheme=${www.scheme}`,
 );
 
 const serviceRole = originCurl("/api/pet-v3/internal-test-status", [
@@ -272,7 +245,11 @@ try {
   vercel = String(err?.stdout || "000");
   vercelHtml = "";
 }
-record("rollback_vercel_live", vercel === "200" && /^\s*<!doctype html/i.test(vercelHtml), `http=${vercel}`);
+record(
+  "public_www_https_html",
+  vercel === "200" && /^\s*<!doctype html/i.test(vercelHtml),
+  `http=${vercel} (Vercel rollback before cutover; VPS TDG after)`,
+);
 
 const failed = results.filter((row) => !row.ok);
 if (failed.length) {

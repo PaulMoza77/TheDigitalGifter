@@ -26,3 +26,9 @@ thedigitalgifter.com
 
 Authoritative answers can be found from:
 
+# 2026-09-01T21:42Z cutover-prep snapshot (IPs not printed)
+# apex A == MOZAS_SSH_HOST (founder already moved apex)
+# www still CNAME 421dfe395badf9b1.vercel-dns-017.com
+# apex AAAA absent; www AAAA absent
+# HTTPS not applied — wait for www A as well
+

@@ -4,6 +4,7 @@
  * Never prints response bodies that might contain secrets.
  */
 import { execFileSync } from "node:child_process";
+import { fetchTdgNamedHost } from "../deploy/lib/tdg-origin-curl.mjs";
 
 const host = process.env.TDG_VERIFY_HOST || "tdg-verify.mozas-prod-01";
 const ip = process.env.MOZAS_SSH_HOST || process.env.MOZAS_ORIGIN_IP || "";
@@ -70,34 +71,18 @@ record(
   `http=${ingest.status}`,
 );
 
-function curlHost(hostname, path) {
-  const args = [
-    "-sS",
-    "-D",
-    "-",
-    "-o",
-    "/tmp/tdg-verify-body",
-    "--resolve",
-    `${hostname}:80:${ip}`,
-    `http://${hostname}${path}`,
-  ];
-  const out = execFileSync("curl", args, { encoding: "utf8", maxBuffer: 2_000_000 });
-  const statusMatch = out.match(/HTTP\/\S+\s+(\d+)/);
-  const status = statusMatch ? Number(statusMatch[1]) : 0;
-  const typeMatch = out.match(/content-type:\s*([^\r\n]+)/i);
-  const contentType = typeMatch ? typeMatch[1].trim() : "";
-  const body = execFileSync("cat", ["/tmp/tdg-verify-body"], { encoding: "utf8" });
-  return { status, contentType, body };
-}
+const apex = fetchTdgNamedHost({ host: "thedigitalgifter.com", path: "/healthz", ip });
+record(
+  "apex_host_healthz",
+  apex.accepted && apex.final.body.trim() === "ok",
+  `http=${apex.http.status} https=${apex.https.status} redirect=${apex.redirected} scheme=${apex.scheme}`,
+);
 
-const apex = curlHost("thedigitalgifter.com", "/healthz");
-record("apex_host_healthz", apex.status === 200 && apex.body.trim() === "ok", `http=${apex.status}`);
-
-const www = curlHost("www.thedigitalgifter.com", "/");
+const www = fetchTdgNamedHost({ host: "www.thedigitalgifter.com", path: "/", ip });
 record(
   "www_host_home",
-  www.status === 200 && /text\/html/i.test(www.contentType),
-  `http=${www.status}`,
+  www.accepted && /text\/html/i.test(www.final.contentType),
+  `http=${www.http.status} https=${www.https.status} redirect=${www.redirected} scheme=${www.scheme}`,
 );
 
 const serviceRole = curl("/api/pet-v3/internal-test-status", [

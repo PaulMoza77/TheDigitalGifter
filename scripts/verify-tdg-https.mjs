@@ -3,21 +3,24 @@
  * HTTPS readiness / post-cutover verification for TDG on Mozas.
  *
  * Modes:
- *   TDG_HTTPS_PHASE=pre   (default) — cert storage, Caddyfile.https.ready, mode logic,
- *                           public DNS still expected on Vercel; does NOT require live certs.
- *   TDG_HTTPS_PHASE=post  — public HTTPS for both domains, valid cert, redirects, TDG body,
- *                           TheMozas still on bare IP HTTP.
+ *   TDG_HTTPS_PHASE=pre   (default) — cert storage, Caddyfile.https.ready, mode logic.
+ *                           Public certs are not required.
+ *   TDG_HTTPS_PHASE=post  — both domains, direct VPS (--resolve) AND public (no --resolve):
+ *                           A/AAAA, HTTP→HTTPS redirect, valid cert, TDG pages, TheMozas.
  *
- * Never prints secrets.
+ * Never prints secrets or raw origin IPs.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { detectTdgCaddyMode, assertCaddyContentMatchesMode } from "../deploy/lib/caddy-mode.mjs";
+import { dnsPointsAtVps, parseDnsRecords } from "../deploy/lib/tdg-https-fetch.mjs";
+import { certLooksValid, fetchTdgNamedHost, readDirectCert, readPublicCert } from "../deploy/lib/tdg-origin-curl.mjs";
 
 const phase = String(process.env.TDG_HTTPS_PHASE || "pre").toLowerCase();
 const ip = process.env.MOZAS_SSH_HOST || process.env.MOZAS_ORIGIN_IP || "";
 const results = [];
+const HOSTS = ["thedigitalgifter.com", "www.thedigitalgifter.com"];
 
 function record(name, ok, detail) {
   results.push({ name, ok, detail });
@@ -30,6 +33,13 @@ function sh(cmd, args, opts = {}) {
   } catch (err) {
     return err.stdout?.toString?.() || "";
   }
+}
+
+function digRecords(name) {
+  const a = sh("dig", ["+short", name, "A"]).trim().split(/\s+/).filter(Boolean);
+  const aaaa = sh("dig", ["+short", name, "AAAA"]).trim().split(/\s+/).filter(Boolean);
+  const cname = sh("dig", ["+short", name, "CNAME"]).trim().split(/\s+/).filter(Boolean);
+  return parseDnsRecords({ a, aaaa, cname });
 }
 
 const httpsReady = readFileSync(resolve("deploy/caddy/Caddyfile.https.ready"), "utf8");
@@ -72,22 +82,45 @@ record(
   "http file rejected as https candidate",
 );
 
-const apexDns = sh("dig", ["+short", "thedigitalgifter.com", "A"])
-  .trim()
-  .split(/\s+/)
-  .filter(Boolean);
-const wwwCname = sh("dig", ["+short", "www.thedigitalgifter.com", "CNAME"]).trim();
-const dnsPointsVps = Boolean(ip && apexDns.includes(ip));
+const apexDns = digRecords("thedigitalgifter.com");
+const wwwDns = digRecords("www.thedigitalgifter.com");
+const apexOnVps = dnsPointsAtVps({ ...apexDns, vpsIp: ip });
+const wwwOnVps = dnsPointsAtVps({ ...wwwDns, vpsIp: ip });
 record(
-  "dns_apex_state",
-  phase === "pre" ? !dnsPointsVps || dnsPointsVps : dnsPointsVps,
+  "dns_apex_a",
+  phase === "pre" ? true : apexOnVps.aOk,
   phase === "pre"
-    ? dnsPointsVps
+    ? apexOnVps.aOk
       ? "already_on_vps"
-      : `still_off_vps count=${apexDns.length}`
-    : dnsPointsVps
+      : `still_off_vps count=${apexDns.a.length}`
+    : apexOnVps.aOk
       ? "on_vps"
-      : `not_on_vps apex=${apexDns[0] || "none"}`,
+      : "not_on_vps",
+);
+record(
+  "dns_www_a",
+  phase === "pre" ? true : wwwOnVps.aOk,
+  phase === "pre"
+    ? wwwOnVps.aOk
+      ? "already_on_vps"
+      : wwwDns.cname.some((c) => /vercel/i.test(c))
+        ? "still_vercel_cname"
+        : `off_vps count=${wwwDns.a.length}`
+    : wwwOnVps.aOk
+      ? "on_vps"
+      : wwwDns.cname.some((c) => /vercel/i.test(c))
+        ? "still_vercel_cname"
+        : "not_on_vps",
+);
+record(
+  "dns_apex_aaaa",
+  phase === "pre" ? true : apexOnVps.aaaaOk,
+  apexOnVps.aaaaAbsent ? "absent" : apexOnVps.aaaaOk ? "on_vps" : "points_elsewhere",
+);
+record(
+  "dns_www_aaaa",
+  phase === "pre" ? true : wwwOnVps.aaaaOk,
+  wwwOnVps.aaaaAbsent ? "absent" : wwwOnVps.aaaaOk ? "on_vps" : "points_elsewhere",
 );
 
 if (phase === "pre") {
@@ -114,75 +147,43 @@ if (phase === "pre") {
   }
 }
 
+function checkNamedHost({ host, ip: pin, label, requireHttps }) {
+  const health = fetchTdgNamedHost({ host, path: "/healthz", ip: pin, requireHttps });
+  record(
+    `${label}_https_healthz_${host}`,
+    health.accepted && health.final.body.trim() === "ok",
+    `http=${health.http.status} https=${health.https.status} redirect=${health.redirected} scheme=${health.scheme}`,
+  );
+  const home = fetchTdgNamedHost({ host, path: "/", ip: pin, requireHttps });
+  const homeBody = String(home.final.body || "").toLowerCase();
+  record(
+    `${label}_tdg_home_${host}`,
+    home.accepted && homeBody.includes("digital") && !homeBody.includes("themozas."),
+    `http=${home.http.status} https=${home.https.status} redirect=${home.redirected}`,
+  );
+  record(
+    `${label}_http_to_https_${host}`,
+    requireHttps
+      ? health.redirected && health.http.status >= 301 && health.http.status < 400
+      : health.redirected || health.http.status === 200,
+    `status=${health.http.status} location_https=${health.redirected}`,
+  );
+}
+
 if (phase === "post") {
   if (!ip) {
     record("post_origin_ip", false, "MOZAS_SSH_HOST missing");
   } else {
-    for (const host of ["thedigitalgifter.com", "www.thedigitalgifter.com"]) {
-      const headers = sh("curl", [
-        "-sS",
-        "-D",
-        "-",
-        "-o",
-        `/tmp/tdg-https-${host}.body`,
-        "--max-time",
-        "30",
-        "--resolve",
-        `${host}:443:${ip}`,
-        `https://${host}/healthz`,
-      ]);
-      const status = Number((headers.match(/HTTP\/\S+\s+(\d+)/) || [])[1] || 0);
-      const body = sh("cat", [`/tmp/tdg-https-${host}.body`]).trim();
-      record(`post_https_healthz_${host}`, status === 200 && body === "ok", `http=${status}`);
+    for (const host of HOSTS) {
+      checkNamedHost({ host, ip, label: "direct", requireHttps: true });
+      const cert = readDirectCert(host, ip);
+      record(`direct_cert_${host}`, certLooksValid(cert, host), cert.split("\n").filter(Boolean).slice(0, 2).join(" | ") || "no cert");
+    }
 
-      const home = sh("curl", [
-        "-sS",
-        "-D",
-        "-",
-        "-o",
-        `/tmp/tdg-https-${host}-home.body`,
-        "--max-time",
-        "30",
-        "--resolve",
-        `${host}:443:${ip}`,
-        `https://${host}/`,
-      ]);
-      const homeStatus = Number((home.match(/HTTP\/\S+\s+(\d+)/) || [])[1] || 0);
-      const homeBody = sh("cat", [`/tmp/tdg-https-${host}-home.body`]).toLowerCase();
-      record(
-        `post_https_tdg_home_${host}`,
-        homeStatus === 200 && homeBody.includes("digital") && !homeBody.includes("themozas."),
-        `http=${homeStatus}`,
-      );
-
-      const redir = sh("curl", [
-        "-sS",
-        "-o",
-        "/dev/null",
-        "-w",
-        "%{http_code} %{redirect_url}",
-        "--max-time",
-        "20",
-        "--resolve",
-        `${host}:80:${ip}`,
-        `http://${host}/`,
-      ]).trim();
-      const [code, url] = redir.split(/\s+/, 2);
-      record(
-        `post_http_to_https_${host}`,
-        /^30\d$/.test(code || "") && String(url || "").startsWith(`https://${host}`),
-        redir,
-      );
-
-      const cert = sh("bash", [
-        "-lc",
-        `echo | openssl s_client -servername ${host} -connect ${ip}:443 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null`,
-      ]);
-      record(
-        `post_cert_${host}`,
-        /subject=/i.test(cert) && /notAfter=/i.test(cert) && new RegExp(host.replace(/\./g, "\\."), "i").test(cert),
-        cert.split("\n").slice(0, 2).join(" | ") || "no cert",
-      );
+    for (const host of HOSTS) {
+      checkNamedHost({ host, ip: "", label: "public", requireHttps: true });
+      const cert = readPublicCert(host);
+      record(`public_cert_${host}`, certLooksValid(cert, host), cert.split("\n").filter(Boolean).slice(0, 2).join(" | ") || "no cert");
     }
 
     const themozas = sh("curl", ["-sS", "-o", "/tmp/tm-ip", "-w", "%{http_code}", "--max-time", "15", `http://${ip}/`]);
@@ -201,9 +202,9 @@ if (failed.length) {
   process.exit(1);
 }
 console.log(`HTTPS_VERIFY_OK phase=${phase} ${results.length}/${results.length}`);
-if (phase === "pre" && !dnsPointsVps) {
-  console.log("NEXT: after you point DNS at MOZAS_SSH_HOST, run:");
+if (phase === "pre") {
+  console.log("CUTOVER_DNS apex=" + (apexOnVps.aOk ? "vps" : "not_vps") + " www=" + (wwwOnVps.aOk ? "vps" : "not_vps"));
+  console.log("NEXT: after BOTH names point at MOZAS_SSH_HOST (A, no stray AAAA), confirm and run:");
   console.log("  TDG_HTTPS_APPLY=yes bash scripts/apply-tdg-https.sh");
   console.log("  TDG_HTTPS_PHASE=post node scripts/verify-tdg-https.mjs");
 }
-void wwwCname;

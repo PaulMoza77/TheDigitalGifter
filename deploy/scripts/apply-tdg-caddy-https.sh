@@ -103,20 +103,39 @@ verify_local_https() {
   return 0
 }
 
+verify_local_redirect() {
+  local host="$1"
+  local headers location code
+  headers="$(curl -sS -D - -o /dev/null --max-time 15 \
+    --resolve "${host}:80:${ORIGIN_IP}" "http://${host}/" || true)"
+  code="$(printf '%s\n' "${headers}" | awk 'BEGIN{s=0} /^HTTP\//{s=$2} END{print s}')"
+  location="$(printf '%s\n' "${headers}" | awk 'BEGIN{IGNORECASE=1} /^Location:/{sub(/\r$/,""); $1=""; sub(/^ /,""); print; exit}')"
+  echo "local_http_redirect_${host}=${code} ${location}"
+  if [[ ! "${code}" =~ ^30[0-9]$ ]]; then
+    return 1
+  fi
+  case "${location}" in
+    "https://${host}"|"https://${host}/"|"https://${host}/"*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 if [[ "${TDG_HTTPS_SKIP_PUBLIC_VERIFY:-}" != "yes" ]]; then
-  # Give ACME a short window on first issue.
-  sleep 3
-  ok=1
-  verify_local_https thedigitalgifter.com || ok=0
-  verify_local_https www.thedigitalgifter.com || ok=0
-  # HTTP→HTTPS redirect check (local resolve)
-  for host in thedigitalgifter.com www.thedigitalgifter.com; do
-    redir="$(curl -sS -o /dev/null -w "%{http_code} %{redirect_url}" --max-time 15 \
-      --resolve "${host}:80:${ORIGIN_IP}" "http://${host}/" || true)"
-    echo "local_http_redirect_${host}=${redir}"
+  # ACME can take a minute on first issue after DNS cutover.
+  ok=0
+  for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+    ok=1
+    verify_local_https thedigitalgifter.com || ok=0
+    verify_local_https www.thedigitalgifter.com || ok=0
+    verify_local_redirect thedigitalgifter.com || ok=0
+    verify_local_redirect www.thedigitalgifter.com || ok=0
+    if [[ "${ok}" -eq 1 ]]; then
+      break
+    fi
+    sleep 5
   done
   if [[ "${ok}" -ne 1 ]]; then
-    echo "WARNING: local HTTPS probe incomplete (ACME may still be issuing). mode=https persisted." >&2
+    echo "WARNING: local HTTPS / redirect probe incomplete (ACME may still be issuing). mode=https persisted." >&2
     echo "tdg_https_local_verify=partial"
   else
     echo "tdg_https_local_verify=ok"
