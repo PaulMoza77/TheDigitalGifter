@@ -1,12 +1,13 @@
 /**
  * Serves Apple Pay domain association for Express Checkout Element.
  * Prefer STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION env (exact Stripe Dashboard file contents).
- * Fallback: public/.well-known/… (Stripe universal file — served statically on Vercel/VPS).
+ * Fallback: public/.well-known/… (static) then bundled Stripe universal file.
  * Must never return SPA HTML.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION_FALLBACK } from "./_lib/stripeApplePayDomainAssociation";
 
 export default function handler(_req: VercelRequest, res: VercelResponse) {
   const fromEnv = String(process.env.STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION || "").trim();
@@ -22,6 +23,9 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
         break;
       }
     }
+  }
+  if (!body) {
+    body = STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION_FALLBACK;
   }
 
   if (
