@@ -100,10 +100,33 @@ async function readVercelFunnelResponse<T>(response: Response): Promise<T | type
 async function callChristmasFunnel<T>(action: string, body: Record<string, unknown>): Promise<T> {
   const { data: sessionData } = await supabase.auth.getSession();
   const accessToken = sessionData.session?.access_token;
+  const { url, anon } = getPublicSupabaseConfig();
+  const auth = accessToken || anon;
+  const edgeUrl = `${url.replace(/\/$/, "")}/functions/v1/christmas-funnel`;
+  const edgeHeaders = { apikey: anon, Authorization: `Bearer ${auth}` };
 
-  // Prefer the same-origin Vercel port so checkout/generation keeps working even when the
-  // Supabase Edge deploy is blocked (missing SUPABASE_ACCESS_TOKEN). Fall back to the Edge
-  // function on 404/502 (route missing/misconfigured) or a network-level failure.
+  // Prefer Supabase Edge — production does not depend on Vercel deploy.
+  try {
+    const response = await fetchChristmasFunnel(edgeUrl, edgeHeaders, action, body);
+    const payload = (await response.json().catch(() => ({}))) as FunnelErrorPayload;
+    if (response.ok) return payload as T;
+    if (response.status !== 404 && response.status !== 502) {
+      throw new ChristmasApiError(
+        payload.code || "INVALID_REQUEST",
+        payload.error || "Christmas funnel request failed",
+        response.status,
+      );
+    }
+  } catch (caught) {
+    if (caught instanceof ChristmasApiError) throw caught;
+    const name = caught instanceof Error ? caught.name : "";
+    if (name === "AbortError" || name === "TimeoutError") {
+      throw new ChristmasApiError("TIMEOUT", "Request timed out. Please try again.", 408);
+    }
+    // Network-level failure — fall through to same-origin Vercel route below.
+  }
+
+  // Fallback: same-origin Vercel port (local dev / when Vercel is available).
   try {
     const response = await fetchChristmasFunnel(
       "/api/christmas-funnel",
@@ -119,43 +142,13 @@ async function callChristmasFunnel<T>(action: string, body: Record<string, unkno
     if (name === "AbortError" || name === "TimeoutError") {
       throw new ChristmasApiError("TIMEOUT", "Request timed out. Please try again.", 408);
     }
-    // Network-level failure talking to the same-origin route — fall through to Edge below.
   }
 
-  const { url, anon } = getPublicSupabaseConfig();
-  const auth = accessToken || anon;
-  let response: Response;
-  try {
-    response = await fetchChristmasFunnel(
-      `${url.replace(/\/$/, "")}/functions/v1/christmas-funnel`,
-      { apikey: anon, Authorization: `Bearer ${auth}` },
-      action,
-      body,
-    );
-  } catch (caught) {
-    const name = caught instanceof Error ? caught.name : "";
-    if (name === "AbortError" || name === "TimeoutError") {
-      throw new ChristmasApiError("TIMEOUT", "Request timed out. Please try again.", 408);
-    }
-    const message = caught instanceof Error ? caught.message : typeof caught === "string" ? caught : "";
-    // Surface root-cause network failures clearly (missing Edge deploy, CORS, offline).
-    throw new ChristmasApiError(
-      "NETWORK",
-      message.includes("Failed to fetch") || message.includes("NetworkError")
-        ? "Checkout could not reach the Christmas backend. Please try again in a moment."
-        : message || "Network request failed",
-      503,
-    );
-  }
-  const payload = (await response.json().catch(() => ({}))) as FunnelErrorPayload;
-  if (!response.ok) {
-    throw new ChristmasApiError(
-      payload.code || "INVALID_REQUEST",
-      payload.error || "Christmas funnel request failed",
-      response.status,
-    );
-  }
-  return payload as T;
+  throw new ChristmasApiError(
+    "NETWORK",
+    "Checkout could not reach the Christmas backend. Please try again in a moment.",
+    503,
+  );
 }
 
 export const christmasFunnelApi = {

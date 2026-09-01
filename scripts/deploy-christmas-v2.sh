@@ -80,6 +80,7 @@ deploy_fn() {
 deploy_fn christmas-funnel
 deploy_fn christmas-generate
 deploy_fn christmas-generate-video
+deploy_fn christmas-v2-funnel-event
 deploy_fn stripe-webhook
 
 echo "Edge deploy complete for $PROJECT_REF."

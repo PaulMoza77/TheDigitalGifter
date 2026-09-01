@@ -7,12 +7,14 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - main
       - cursor/christmas-v2-funnel-eaf8
       - cursor/christmas-v2-prod-e2e-eaf8
     paths:
       - "supabase/functions/christmas-funnel/**"
       - "supabase/functions/christmas-generate/**"
       - "supabase/functions/christmas-generate-video/**"
+      - "supabase/functions/christmas-v2-funnel-event/**"
       - "supabase/functions/_shared/christmas/**"
       - "supabase/functions/stripe-webhook/**"
       - "supabase/migrations/20260831190000_christmas_v2_funnel.sql"

@@ -1,6 +1,5 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-
-/** Self-contained Christmas V2 ingest. Do not import ./_lib here — match pet-v2 pattern. */
+import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
+import { getServiceClient, readJson } from "../_shared/supabase.ts";
 
 const CHRISTMAS_V2_EVENT_NAMES = [
   "christmas_v2_view",
@@ -33,7 +32,7 @@ const UUID_RE =
 
 const CHRISTMAS_PATHS = new Set(["/christmas-ai-photos", "/christmas-ai-photos/order"]);
 
-function originAllowed(origin: string | undefined, host: string | undefined): boolean {
+function originAllowed(origin: string | null): boolean {
   if (!origin) return true;
   try {
     const url = new URL(origin);
@@ -42,7 +41,6 @@ function originAllowed(origin: string | undefined, host: string | undefined): bo
     if (url.hostname === "www.thedigitalgifter.com" || url.hostname === "thedigitalgifter.com") {
       return true;
     }
-    if (host && url.host === host) return true;
     return false;
   } catch {
     return false;
@@ -56,27 +54,7 @@ function asText(value: unknown, max = 200): string | null {
   return trimmed;
 }
 
-function parseChristmasEventBody(raw: unknown): {
-  eventName: ChristmasV2EventName;
-  funnelSessionId: string;
-  eventId: string | null;
-  idempotencyKey: string;
-  pathname: string | null;
-  deviceType: "mobile" | "tablet" | "desktop" | null;
-  amountCents: number | null;
-  product: string | null;
-  utmSource: string | null;
-  utmMedium: string | null;
-  utmCampaign: string | null;
-  utmContent: string | null;
-  utmTerm: string | null;
-  campaignId: string | null;
-  adsetId: string | null;
-  adId: string | null;
-  hasFbclid: boolean;
-  referrerHost: string | null;
-  failureCategory: string | null;
-} {
+function parseChristmasEventBody(raw: unknown) {
   if (!raw || typeof raw !== "object") throw new Error("malformed_json");
   const row = raw as Record<string, unknown>;
   const eventName = String(row.event_name || "");
@@ -118,81 +96,58 @@ function parseChristmasEventBody(raw: unknown): {
 
 async function writeChristmasV2FunnelEvent(raw: unknown): Promise<{ ok: true; duplicate: boolean }> {
   const validated = parseChristmasEventBody(raw);
-  const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(
-    /\/$/,
-    "",
-  );
-  const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error("missing_supabase_config");
-  }
-  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/record_christmas_v2_funnel_event`, {
-    method: "POST",
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      p_event_name: validated.eventName,
-      p_funnel_session_id: validated.funnelSessionId,
-      p_idempotency_key: validated.idempotencyKey,
-      p_event_id: validated.eventId,
-      p_device_type: validated.deviceType,
-      p_pathname: validated.pathname,
-      p_amount_cents: validated.amountCents,
-      p_product: validated.product,
-      p_utm_source: validated.utmSource,
-      p_utm_medium: validated.utmMedium,
-      p_utm_campaign: validated.utmCampaign,
-      p_utm_content: validated.utmContent,
-      p_utm_term: validated.utmTerm,
-      p_campaign_id: validated.campaignId,
-      p_adset_id: validated.adsetId,
-      p_ad_id: validated.adId,
-      p_has_meta_click: validated.hasFbclid,
-      p_referrer_host: validated.referrerHost,
-      p_failure_category: validated.failureCategory,
-    }),
+  const service = getServiceClient();
+  const { data, error } = await service.rpc("record_christmas_v2_funnel_event", {
+    p_event_name: validated.eventName,
+    p_funnel_session_id: validated.funnelSessionId,
+    p_idempotency_key: validated.idempotencyKey,
+    p_event_id: validated.eventId,
+    p_device_type: validated.deviceType,
+    p_pathname: validated.pathname,
+    p_amount_cents: validated.amountCents,
+    p_product: validated.product,
+    p_utm_source: validated.utmSource,
+    p_utm_medium: validated.utmMedium,
+    p_utm_campaign: validated.utmCampaign,
+    p_utm_content: validated.utmContent,
+    p_utm_term: validated.utmTerm,
+    p_campaign_id: validated.campaignId,
+    p_adset_id: validated.adsetId,
+    p_ad_id: validated.adId,
+    p_has_meta_click: validated.hasFbclid,
+    p_referrer_host: validated.referrerHost,
+    p_failure_category: validated.failureCategory,
   });
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`rpc_${response.status}:${text.slice(0, 120)}`);
-  }
-  const payload = (await response.json().catch(() => null)) as {
-    ok?: boolean;
-    duplicate?: boolean;
-  } | null;
+  if (error) throw new Error(`rpc:${error.message}`);
+  const payload = data as { ok?: boolean; duplicate?: boolean } | null;
   return { ok: true, duplicate: Boolean(payload?.duplicate) };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    return res.status(204).end();
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse();
+  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+
+  const origin = req.headers.get("Origin");
+  if (origin && !originAllowed(origin)) {
+    return jsonResponse({ error: "Forbidden" }, 403);
   }
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-  const origin = String(req.headers.origin || "");
-  const host = String(req.headers.host || "");
-  if (origin && !originAllowed(origin, host)) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
+
   try {
-    const result = await writeChristmasV2FunnelEvent(req.body);
-    return res.status(202).json(result);
+    const body = await readJson(req);
+    const result = await writeChristmasV2FunnelEvent(body);
+    return jsonResponse(result, 202);
   } catch (error) {
     const message = error instanceof Error ? error.message : "write_failed";
     if (message === "invalid_event" || message === "invalid_session" || message === "malformed_json") {
-      return res.status(400).json({ error: message });
+      return jsonResponse({ error: message }, 400);
     }
     console.error(
       JSON.stringify({
-        source: "christmas-v2-funnel-event",
+        source: "christmas-v2-funnel-event-edge",
         error: message.slice(0, 200),
         timestamp: new Date().toISOString(),
       }),
     );
-    return res.status(500).json({ error: "write_failed" });
+    return jsonResponse({ error: "write_failed" }, 500);
   }
-}
+});
