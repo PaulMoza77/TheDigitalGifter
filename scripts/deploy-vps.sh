@@ -48,16 +48,18 @@ mozas_ssh "set -euo pipefail
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-rollback-thedigitalgifter.sh /opt/mozas/bin/mozas-rollback-thedigitalgifter
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/apply-tdg-caddy.sh /opt/mozas/bin/mozas-apply-tdg-caddy
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/apply-tdg-caddy-https.sh /opt/mozas/bin/mozas-apply-tdg-caddy-https
+  install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-ensure-tdg-caddy.sh /opt/mozas/bin/mozas-ensure-tdg-caddy
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/merge-tdg-app-env.sh /opt/mozas/bin/mozas-merge-tdg-app-env
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/merge-mozas-backup-env.sh /opt/mozas/bin/mozas-merge-backup-env
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/ensure-offsite-restic.sh /opt/mozas/bin/mozas-ensure-offsite-restic
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-restore-offsite-test.sh /opt/mozas/bin/mozas-restore-offsite-test
+  bash /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/install-restic-recovery-doc.sh /opt/mozas/secrets/RESTIC_PASSWORD_RECOVERY.txt
   test -f /opt/mozas/projects/thedigitalgifter/secrets/app.env
   test ! -e /opt/mozas/projects/thedigitalgifter/repo/secrets
 "
 
-echo "Applying TDG Caddy routes (TheMozas default :80 preserved)"
-mozas_ssh "/opt/mozas/bin/mozas-apply-tdg-caddy"
+echo "Ensuring TDG Caddy routes (preserves HTTPS mode; TheMozas default :80 kept)"
+mozas_ssh "MOZAS_ORIGIN_IP=${MOZAS_SSH_HOST} /opt/mozas/bin/mozas-ensure-tdg-caddy"
 
 echo "Building and starting TDG release ${SHORT}"
 if ! mozas_ssh "TDG_RELEASE=${SHORT} /opt/mozas/bin/mozas-deploy-thedigitalgifter"; then

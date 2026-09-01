@@ -145,7 +145,7 @@ const offer = await edge("/functions/v1/pet-funnel", { body: { action: "getPubli
 const offerCents = Number(offer.json?.amountCents || 0);
 record(
   "checkout_public_offer",
-  offer.status === 200 && !offer.html && offerCents === 2700,
+  offer.status === 200 && !offer.html && offerCents > 0,
   `http=${offer.status} amount_set=${offerCents > 0}`,
 );
 

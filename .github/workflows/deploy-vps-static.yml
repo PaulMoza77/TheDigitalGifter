@@ -48,4 +48,21 @@ jobs:
           bash scripts/deploy-vps.sh
 
       - name: Verify TDG origin
-        run: node scripts/verify-tdg-vps-origin.mjs
+        env:
+          MOZAS_SSH_HOST: ${{ secrets.MOZAS_SSH_HOST }}
+          MOZAS_SSH_PRIVATE_KEY: ${{ secrets.MOZAS_SSH_PRIVATE_KEY }}
+          MOZAS_SSH_USER: ${{ secrets.MOZAS_SSH_USER }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "${MOZAS_SSH_HOST:-}" ]; then
+            echo "::error::MOZAS_SSH_HOST missing in Verify TDG origin step"
+            exit 2
+          fi
+          node scripts/verify-tdg-vps-origin.mjs
+          if [ -n "${VITE_SUPABASE_URL:-}" ] && [ -n "${VITE_SUPABASE_ANON_KEY:-}" ]; then
+            node scripts/verify-tdg-flows.mjs
+          else
+            echo "::warning::VITE_SUPABASE_* missing — skipped flow verification"
+          fi
+          TDG_HTTPS_PHASE=pre node scripts/verify-tdg-https.mjs

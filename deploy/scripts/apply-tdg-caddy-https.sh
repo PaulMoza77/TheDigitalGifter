@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Apply HTTPS Caddy routes for thedigitalgifter.com AFTER public DNS points here.
 # Keeps TheMozas upstream. Does not change DNS.
-# Require TDG_HTTPS_APPLY=yes. Optional: TDG_HTTPS_ALLOW_PROXIED=yes if Cloudflare orange-cloud.
+# Require TDG_HTTPS_APPLY=yes.
+# Optional: TDG_HTTPS_ALLOW_PROXIED=yes, TDG_HTTPS_SKIP_PUBLIC_VERIFY=yes (deploy re-apply).
 set -euo pipefail
 
 if [[ "${TDG_HTTPS_APPLY:-}" != "yes" ]]; then
@@ -10,6 +11,7 @@ if [[ "${TDG_HTTPS_APPLY:-}" != "yes" ]]; then
 fi
 
 PROXY_DIR="${MOZAS_PROXY_DIR:-/opt/mozas/proxy}"
+MODE_FILE="${PROXY_DIR}/tdg-caddy.mode"
 SRC_HTTPS="${1:-}"
 if [[ -z "${SRC_HTTPS}" ]]; then
   if [[ -f /opt/mozas/projects/thedigitalgifter/repo/deploy/caddy/Caddyfile.https.ready ]]; then
@@ -33,12 +35,17 @@ if ! grep -q 'tdg-verify.mozas-prod-01' "${SRC_HTTPS}"; then
   echo "refusing HTTPS Caddyfile without TDG verify host" >&2
   exit 1
 fi
+if ! grep -qE '^[[:space:]]*thedigitalgifter\.com,[[:space:]]*www\.thedigitalgifter\.com[[:space:]]*\{' "${SRC_HTTPS}" \
+  && ! grep -qE '^[[:space:]]*www\.thedigitalgifter\.com,[[:space:]]*thedigitalgifter\.com[[:space:]]*\{' "${SRC_HTTPS}"; then
+  echo "refusing HTTPS Caddyfile without named TDG site block" >&2
+  exit 1
+fi
 
 ORIGIN_IP="${MOZAS_ORIGIN_IP:-}"
 if [[ -z "${ORIGIN_IP}" ]]; then
   ORIGIN_IP="$(curl -4 -fsS --max-time 5 https://ifconfig.me || true)"
 fi
-if [[ "${TDG_HTTPS_ALLOW_PROXIED:-}" != "yes" && -n "${ORIGIN_IP}" ]]; then
+if [[ "${TDG_HTTPS_ALLOW_PROXIED:-}" != "yes" && "${TDG_HTTPS_SKIP_PUBLIC_VERIFY:-}" != "yes" && -n "${ORIGIN_IP}" ]]; then
   resolved="$(getent ahostsv4 thedigitalgifter.com | awk '{print $1; exit}' || true)"
   if [[ -z "${resolved}" || "${resolved}" != "${ORIGIN_IP}" ]]; then
     echo "BLOCKED: thedigitalgifter.com does not resolve to this VPS (${ORIGIN_IP:-unknown})." >&2
@@ -58,10 +65,62 @@ fi
 docker restart mozas-caddy >/dev/null
 for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
   if curl -fsS http://127.0.0.1/healthz >/dev/null 2>&1; then
-    echo "tdg_https_caddy_applied=yes"
-    exit 0
+    break
   fi
   sleep 1
 done
-echo "Caddy restarted but :80 healthz did not recover" >&2
-exit 1
+if ! curl -fsS http://127.0.0.1/healthz >/dev/null 2>&1; then
+  echo "Caddy restarted but :80 healthz did not recover — restoring previous file" >&2
+  cp -a "${PROXY_DIR}/Caddyfile.bak-tdg-https" "${PROXY_DIR}/Caddyfile"
+  docker restart mozas-caddy >/dev/null || true
+  exit 1
+fi
+
+printf 'https\n' >"${MODE_FILE}"
+chmod 0644 "${MODE_FILE}" || true
+echo "tdg_https_caddy_applied=yes"
+echo "tdg_caddy_mode=https"
+
+# Local TLS probe via --resolve (works even before public DNS if certs already issued,
+# and exercises Caddy after cutover). Not a substitute for public verification.
+ORIGIN_IP="${ORIGIN_IP:-127.0.0.1}"
+verify_local_https() {
+  local host="$1"
+  local code
+  code="$(curl -sS -o /tmp/tdg-https-body -w "%{http_code}" --max-time 25 \
+    --resolve "${host}:443:${ORIGIN_IP}" "https://${host}/healthz" || true)"
+  if [[ "${code}" != "200" ]]; then
+    echo "local_https_${host}=http_${code:-000}"
+    return 1
+  fi
+  local body
+  body="$(tr -d '[:space:]' </tmp/tdg-https-body || true)"
+  if [[ "${body}" != "ok" ]]; then
+    echo "local_https_${host}=bad_body"
+    return 1
+  fi
+  echo "local_https_${host}=ok"
+  return 0
+}
+
+if [[ "${TDG_HTTPS_SKIP_PUBLIC_VERIFY:-}" != "yes" ]]; then
+  # Give ACME a short window on first issue.
+  sleep 3
+  ok=1
+  verify_local_https thedigitalgifter.com || ok=0
+  verify_local_https www.thedigitalgifter.com || ok=0
+  # HTTP→HTTPS redirect check (local resolve)
+  for host in thedigitalgifter.com www.thedigitalgifter.com; do
+    redir="$(curl -sS -o /dev/null -w "%{http_code} %{redirect_url}" --max-time 15 \
+      --resolve "${host}:80:${ORIGIN_IP}" "http://${host}/" || true)"
+    echo "local_http_redirect_${host}=${redir}"
+  done
+  if [[ "${ok}" -ne 1 ]]; then
+    echo "WARNING: local HTTPS probe incomplete (ACME may still be issuing). mode=https persisted." >&2
+    echo "tdg_https_local_verify=partial"
+  else
+    echo "tdg_https_local_verify=ok"
+  fi
+else
+  echo "tdg_https_local_verify=skipped"
+fi

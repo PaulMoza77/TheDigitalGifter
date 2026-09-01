@@ -19,9 +19,6 @@ Required secrets (names only): `MOZAS_SSH_HOST`, `MOZAS_SSH_PRIVATE_KEY`, `MOZAS
 `MOZAS_SSH_USER=user` is invalid on this host; scripts always connect as `mozas`.
 Do not use `VPS_*`.
 
-`scripts/mozas-ssh.sh` refuses any other host and checks the fingerprint before
-commands run.
-
 ## Persist secrets (VPS, permanent)
 
 ```bash
@@ -32,114 +29,80 @@ export MOZAS_BACKUP_S3_ACCESS_KEY MOZAS_BACKUP_S3_SECRET_KEY
 bash scripts/persist-tdg-vps-config.sh
 ```
 
-Writes:
-
-- `/opt/mozas/projects/thedigitalgifter/secrets/app.env` — Vite keys (kept) + service role
-- `/opt/mozas/secrets/backup.env` — R2/S3 keys for offsite restic (endpoint is normalized)
-
-Never commit or print those values. Store `RESTIC_PASSWORD` off the VPS in the
-founder password manager (it already exists in `backup.env`; copy it yourself).
-
-## Deploy
-
-From a clean checkout of the commit you want live:
+## Deploy (preserves HTTPS)
 
 ```bash
 export MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY MOZAS_SSH_USER
 bash scripts/deploy-vps.sh
 ```
 
-The script:
+Deploy calls `mozas-ensure-tdg-caddy`, which:
 
-1. Verifies identity and TheMozas `http://127.0.0.1/healthz`.
-2. Rsyncs the repo to `/opt/mozas/projects/thedigitalgifter/repo` (never the `secrets/` directory).
-3. Applies Caddy hosts `tdg-verify.mozas-prod-01`, `thedigitalgifter.com`, and
-   `www.thedigitalgifter.com` while keeping default `:80` on TheMozas.
-4. Builds `mozas/thedigitalgifter:<shortsha>` from VPS `app.env` Vite keys.
-5. Waits for container health. Failure is not reported as success; previous image is restored when present.
-6. Re-checks TheMozas and the TDG verify host.
+- if `/opt/mozas/proxy/tdg-caddy.mode` (or the live Caddyfile) is **https**, re-applies
+  `Caddyfile.https.ready` (does **not** downgrade to HTTP);
+- otherwise applies `Caddyfile.http`.
 
-CI: `.github/workflows/deploy-vps-static.yml` fails if `MOZAS_SSH_*` are missing.
-It does not skip.
+Failed deploys roll back to `mozas/thedigitalgifter:previous` and restore
+`releases/verified.*` metadata. Verified pins advance only after health wait succeeds.
 
-Public DNS is **not** changed by deploy.
+CI (`.github/workflows/deploy-vps-static.yml`) requires Production secrets and passes
+`MOZAS_SSH_HOST` into the Verify step. It does not skip.
 
-## Verify origin (before DNS)
+## Verify
 
 ```bash
-curl --resolve tdg-verify.mozas-prod-01:80:"$MOZAS_SSH_HOST" http://tdg-verify.mozas-prod-01/healthz
-curl --resolve thedigitalgifter.com:80:"$MOZAS_SSH_HOST" http://thedigitalgifter.com/healthz
 node scripts/verify-tdg-vps-origin.mjs
 node scripts/verify-tdg-flows.mjs
+node scripts/verify-tdg-functional.mjs   # NEG vs FUN separated
+TDG_HTTPS_PHASE=pre node scripts/verify-tdg-https.mjs
+node scripts/verify-tdg-ops.mjs
 ```
+
+## HTTPS
+
+**Pre-DNS (now):** cert volume, ACME email, `Caddyfile.https.ready`, ensure script,
+mode regression tests. Public certs are not required yet.
+
+**After you point DNS at the VPS:**
+
+```bash
+TDG_HTTPS_APPLY=yes bash scripts/apply-tdg-https.sh
+# orange-cloud: TDG_HTTPS_ALLOW_PROXIED=yes
+TDG_HTTPS_PHASE=post node scripts/verify-tdg-https.mjs
+```
+
+Post checks both domains: HTTPS `/healthz`, TDG HTML, HTTP→HTTPS redirect, certificate
+subject/dates, TheMozas still on bare-IP HTTP. Do **not** declare cutover complete
+until `HTTPS_VERIFY_OK phase=post`.
 
 ## Rollback
 
-Verified pins after a healthy deploy:
-
-- `/opt/mozas/projects/thedigitalgifter/releases/verified.tag`
-- `/opt/mozas/projects/thedigitalgifter/releases/verified.sha`
-
-**Application image (VPS, no DNS change):**
-
 ```bash
 bash scripts/rollback-tdg-vps.sh
-# or on the VPS:
-/opt/mozas/bin/mozas-rollback-thedigitalgifter
 ```
 
-Destination: Docker image `mozas/thedigitalgifter:previous`.
+Restores image + `current.*` / `verified.*` release metadata coherently.
 
-**Public traffic (after cutover only):** restore the A/CNAME values saved in
-`docs/audits/tdg-dns-before-cutover.txt`. Keep the Vercel production deployment
-in place for that rollback.
-
-## Backup
-
-Local encrypted restic already includes `/opt/mozas/projects` (hence `app.env`).
-Offsite `restic copy` runs when these are set in `/opt/mozas/secrets/backup.env`:
-
-- `MOZAS_BACKUP_S3_ENDPOINT`
-- `MOZAS_BACKUP_S3_BUCKET`
-- `MOZAS_BACKUP_S3_ACCESS_KEY`
-- `MOZAS_BACKUP_S3_SECRET_KEY`
+## Backup + Restic password off-VPS
 
 ```bash
 bash scripts/run-tdg-backup-drill.sh
+RESTIC_PASSWORD_EXPORT_PATH="$HOME/tdg-restic-password.txt" \
+  bash scripts/export-restic-password-offsite.sh
+# then password manager + shred
 ```
 
-That initializes the R2 restic repo if needed, runs `mozas-backup.service`,
-requires `offsite=true` in `/opt/mozas/log/backup-last.json`, then restores
-latest **local** and **offsite** snapshots into isolated directories (production
-is not replaced).
+Instructions on VPS: `/opt/mozas/secrets/RESTIC_PASSWORD_RECOVERY.txt`.
 
-VPS backup is **not** a Supabase backup. Auth, Postgres, Storage, and Edge
-state remain in the Supabase project and need Supabase-native backups / PITR.
+## Manual DNS (no Cloudflare token)
 
-## Manual DNS cutover (no Cloudflare token)
+1. Keep MX.
+2. Apex + www A → `MOZAS_SSH_HOST` (prefer grey-cloud for first ACME).
+3. Keep Vercel as rollback.
+4. Run HTTPS apply + post verify above.
 
-Do this in the Cloudflare dashboard. Scripts will not change DNS.
+## Still optional / blockers
 
-1. Keep **MX** (and any mail/TXT you did not plan to move).
-2. Point apex `thedigitalgifter.com` A to the Mozas VPS address (`MOZAS_SSH_HOST`).
-3. Point `www` A to the same address (or CNAME to the apex).
-4. Prefer DNS-only (grey cloud) for the first ACME issue. Orange-cloud can be
-   enabled later once HTTPS is green.
-5. Keep the Vercel production deployment as rollback.
-
-When public DNS already answers with the VPS:
-
-```bash
-export MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY
-TDG_HTTPS_APPLY=yes bash scripts/apply-tdg-https.sh
-```
-
-If Cloudflare is orange-cloud (proxied), add `TDG_HTTPS_ALLOW_PROXIED=yes`.
-That installs `deploy/caddy/Caddyfile.https.ready` (TheMozas + TDG HTTPS, verify
-host still on HTTP). Do **not** run this while public DNS still points at Vercel.
-
-## Still optional
-
-- GitHub Production `MOZAS_SSH_*` so CI deploy is not fail-closed
-- Stripe **test** keys for isolated checkout (do not replace live keys)
-- Off-VPS copy of `RESTIC_PASSWORD`
+- GitHub Production must contain `MOZAS_SSH_HOST`, `MOZAS_SSH_PRIVATE_KEY`,
+  `MOZAS_SSH_USER` (and ideally `VITE_SUPABASE_*`) for CI deploy+verify.
+- Stripe **test** keys for paid checkout/generation e2e (do not replace live keys).

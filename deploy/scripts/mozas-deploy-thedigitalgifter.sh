@@ -40,7 +40,17 @@ elif [[ -d "${TDG_REPO}/.git" ]]; then
 fi
 RELEASE="${TDG_RELEASE:-${COMMIT}-$(date -u +%Y%m%dT%H%M%SZ)}"
 
-if docker image inspect mozas/thedigitalgifter:latest >/dev/null 2>&1; then
+# Preserve the last *verified* healthy image as :previous before replacing latest.
+if [[ -f "${TDG_RELEASES}/verified.tag" ]]; then
+  PREV_TAG="$(tr -d '[:space:]' <"${TDG_RELEASES}/verified.tag")"
+  if [[ -n "${PREV_TAG}" ]] && docker image inspect "mozas/thedigitalgifter:${PREV_TAG}" >/dev/null 2>&1; then
+    docker tag "mozas/thedigitalgifter:${PREV_TAG}" mozas/thedigitalgifter:previous
+    log "tagged verified TDG ${PREV_TAG} as previous"
+  elif docker image inspect mozas/thedigitalgifter:latest >/dev/null 2>&1; then
+    docker tag mozas/thedigitalgifter:latest mozas/thedigitalgifter:previous
+    log "tagged current TDG latest as previous"
+  fi
+elif docker image inspect mozas/thedigitalgifter:latest >/dev/null 2>&1; then
   docker tag mozas/thedigitalgifter:latest mozas/thedigitalgifter:previous
   log "tagged current TDG latest as previous"
 fi
@@ -84,13 +94,15 @@ if ! docker compose \
   --env-file "${TDG_SECRETS}" \
   --profile with-app \
   up -d --remove-orphans --wait; then
-  log "new TDG release failed health wait — attempting rollback"
+  log "new TDG release failed health wait — attempting rollback to previous verified image"
+  # Do not advance verified.*; rollback restores the prior verified pin.
   if [[ -x /opt/mozas/bin/mozas-rollback-thedigitalgifter ]]; then
     /opt/mozas/bin/mozas-rollback-thedigitalgifter || true
   fi
-  die "TDG deploy failed"
+  die "TDG deploy failed — previous verified release retained when rollback succeeded"
 fi
 
+# Only mark verified after health wait succeeds.
 printf '%s\n' "${RELEASE}" >"${TDG_RELEASES}/verified.tag"
 printf '%s\n' "${COMMIT}" >"${TDG_RELEASES}/verified.sha"
 log "TDG deploy ok release=${RELEASE} commit=${COMMIT}"
