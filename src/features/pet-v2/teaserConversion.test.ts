@@ -86,10 +86,13 @@ describe("V2 teaser conversion rebuild", () => {
 
   it("uses Elements Express Checkout with Apple Pay first and non-Apple fallbacks", () => {
     const ui = readSrc("src/features/pet-v2/components/V2ElementsCheckout.tsx");
+    const options = readSrc("src/features/pet/expressCheckoutOptions.ts");
     expect(ui).toContain("ExpressCheckoutElement");
-    expect(ui).toContain('paymentMethodOrder: ["applePay", "googlePay"]');
+    expect(ui).toContain("PET_EXPRESS_CHECKOUT_OPTIONS");
+    expect(options).toContain('applePay: "auto"');
+    expect(options).toContain('paymentMethodOrder: ["applePay", "googlePay"]');
     expect(ui).toContain("PaymentElement");
-    expect(ui).toContain('link: "auto"');
+    expect(options).toContain('link: "auto"');
     expect(ui).toContain("Or pay with card");
   });
 
@@ -102,10 +105,11 @@ describe("V2 teaser conversion rebuild", () => {
     expect(api).toContain("application/octet-stream");
     expect(api).toContain("Must never return SPA HTML");
     expect(api).toContain("PLACEHOLDER_CONFIGURE");
-    // Do not ship a public placeholder — Vercel would serve it statically and bypass the API.
-    expect(() =>
-      readSrc("public/.well-known/apple-developer-merchantid-domain-association"),
-    ).toThrow();
+    // Stripe's universal association file — served statically from public/ (Vercel + VPS).
+    const association = readSrc("public/.well-known/apple-developer-merchantid-domain-association");
+    expect(association).not.toContain("PLACEHOLDER_CONFIGURE");
+    expect(association.length).toBeGreaterThan(1000);
+    expect(association).toMatch(/^7B22/);
   });
 
   it("cancel URL restores with checkout=canceled", () => {

@@ -17,23 +17,8 @@ import {
   isExpressCheckoutConfirmEvent,
 } from "../../pet/expressCheckoutConfirm";
 import { ApplePayButton } from "../../pet/components/ApplePayButton";
+import { PET_EXPRESS_CHECKOUT_OPTIONS } from "../../pet/expressCheckoutOptions";
 import { v2PayButtonLabel } from "../v2CheckoutHold";
-
-const EXPRESS_OPTIONS = {
-  buttonHeight: 55,
-  buttonTheme: { applePay: "black" as const, googlePay: "black" as const },
-  buttonType: { applePay: "buy" as const, googlePay: "buy" as const },
-  layout: { maxColumns: 1, maxRows: 4 },
-  paymentMethodOrder: ["applePay", "googlePay"],
-  paymentMethods: {
-    applePay: "always" as const,
-    googlePay: "always" as const,
-    link: "auto" as const,
-    paypal: "never" as const,
-    amazonPay: "never" as const,
-    klarna: "never" as const,
-  },
-};
 
 const ELEMENTS_INIT_TIMEOUT_MS = 18_000;
 
@@ -82,7 +67,6 @@ function CheckoutBody({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
-  const [applePayFromStripe, setApplePayFromStripe] = useState(false);
   const readyFired = useRef(false);
   const interactionFired = useRef(false);
   const initErrorHandled = useRef(false);
@@ -242,10 +226,7 @@ function CheckoutBody({
   return (
     <div className="space-y-4">
       <ExpressCheckoutElement
-        options={EXPRESS_OPTIONS}
-        onReady={(event) => {
-          setApplePayFromStripe(Boolean(event.availablePaymentMethods?.applePay));
-        }}
+        options={PET_EXPRESS_CHECKOUT_OPTIONS}
         onConfirm={(event) => void confirm(event)}
         onClick={markInteraction}
         onCancel={() => {
@@ -253,7 +234,6 @@ function CheckoutBody({
           onExpressCancel?.();
         }}
       />
-      {applePayFromStripe ? null : <ApplePayButton disabled={busy || confirmDisabled} />}
 
       <div className="flex items-center gap-3">
         <span className="h-px flex-1 bg-[#f6efe4]/12" />

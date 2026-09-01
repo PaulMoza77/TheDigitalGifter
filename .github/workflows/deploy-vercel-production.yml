@@ -75,3 +75,6 @@ jobs:
             exit 2
           fi
           echo "Live bundle no longer index-Bgdz7sTb.js — deploy looks current."
+
+      - name: Verify Apple Pay domain association
+        run: node scripts/verify-apple-pay-domain.mjs

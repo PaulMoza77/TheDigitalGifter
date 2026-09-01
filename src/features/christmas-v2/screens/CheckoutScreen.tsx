@@ -20,8 +20,8 @@ const EXPRESS_OPTIONS = {
   layout: { maxColumns: 1, maxRows: 4 },
   paymentMethodOrder: ["applePay", "googlePay"],
   paymentMethods: {
-    applePay: "always" as const,
-    googlePay: "always" as const,
+    applePay: "auto" as const,
+    googlePay: "auto" as const,
     link: "auto" as const,
     paypal: "never" as const,
     amazonPay: "never" as const,
