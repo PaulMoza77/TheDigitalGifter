@@ -15,9 +15,10 @@ import { sanitizeStripeCheckoutCustomerError, stripeCheckoutInitCustomerError } 
 import {
   CARD_PAY_INCOMPLETE_MESSAGE,
   isExpressCheckoutConfirmEvent,
+  logExpressCheckoutReady,
   resolveExpressCheckoutClick,
 } from "../../pet/expressCheckoutConfirm";
-import { ApplePayButton } from "../../pet/components/ApplePayButton";
+import { ExpressWalletSkeleton } from "../../pet/components/ExpressWalletSkeleton";
 import { PET_EXPRESS_CHECKOUT_OPTIONS } from "../../pet/expressCheckoutOptions";
 import { v2PayButtonLabel } from "../v2CheckoutHold";
 
@@ -211,7 +212,7 @@ function CheckoutBody({
   if (checkoutState.type === "loading") {
     return (
       <div className="space-y-4" role="status" aria-live="polite">
-        <ApplePayButton disabled />
+        <ExpressWalletSkeleton />
         <p className="text-center text-sm text-[#f6efe4]/55">{loadingLabel}</p>
       </div>
     );
@@ -235,6 +236,7 @@ function CheckoutBody({
     <div className="space-y-4">
       <ExpressCheckoutElement
         options={PET_EXPRESS_CHECKOUT_OPTIONS}
+        onReady={logExpressCheckoutReady}
         onConfirm={(event) => void confirm(event)}
         onClick={(event) => resolveExpressCheckoutClick(event, markInteraction)}
         onCancel={() => {

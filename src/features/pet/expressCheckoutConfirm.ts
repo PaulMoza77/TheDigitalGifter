@@ -1,6 +1,7 @@
 import type {
   StripeExpressCheckoutElementClickEvent,
   StripeExpressCheckoutElementConfirmEvent,
+  StripeExpressCheckoutElementReadyEvent,
 } from "@stripe/stripe-js";
 
 /**
@@ -23,6 +24,16 @@ export function resolveExpressCheckoutClick(
 ): void {
   onInteraction?.();
   event.resolve();
+}
+
+/** Safe readiness log — never prints secrets. Helps diagnose Link-only vs Apple Pay. */
+export function logExpressCheckoutReady(event: StripeExpressCheckoutElementReadyEvent): void {
+  const methods = event?.availablePaymentMethods;
+  console.info("[express-checkout-ready]", {
+    applePay: Boolean(methods?.applePay),
+    googlePay: Boolean(methods?.googlePay),
+    link: Boolean(methods?.link),
+  });
 }
 
 export const CARD_PAY_INCOMPLETE_MESSAGE =

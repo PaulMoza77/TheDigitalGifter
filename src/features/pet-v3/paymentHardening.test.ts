@@ -194,9 +194,11 @@ describe("Cat V3 + return URL payment hardening", () => {
     const shared = readSrc("src/features/pet/components/CustomStripeCheckout.tsx");
     const options = readSrc("src/features/pet/expressCheckoutOptions.ts");
     const offer = readSrc("src/features/pet-v3/screens/OfferScreen.tsx");
-    expect(options).toContain('applePay: "auto"');
+    expect(options).toContain('applePay: "always"');
     expect(shared).toContain("PET_EXPRESS_CHECKOUT_OPTIONS");
     expect(shared).toContain("resolveExpressCheckoutClick(event, markInteraction)");
+    expect(shared).toContain("logExpressCheckoutReady");
+    expect(shared).toContain("ExpressWalletSkeleton");
     expect(shared).not.toContain("applePayFromStripe");
     expect(offer).toContain("onReady={markCheckoutViewed}");
     expect(offer).toContain("onPaymentInteraction={markBeginCheckout}");
