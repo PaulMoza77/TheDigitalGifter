@@ -1,7 +1,6 @@
 import { useId, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldCheck, Sparkles, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { CHRISTMAS_PACKS, CHRISTMAS_STARTER_SCENES } from "../config";
 
 export function ChristmasLandingScreen({
@@ -17,6 +16,8 @@ export function ChristmasLandingScreen({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const pack = CHRISTMAS_PACKS.starter;
+
+  const openFilePicker = () => inputRef.current?.click();
 
   return (
     <div className="space-y-7">
@@ -58,6 +59,16 @@ export function ChristmasLandingScreen({
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.18 }}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload your photo"
+        onClick={openFilePicker}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openFilePicker();
+          }
+        }}
         onDragEnter={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -72,16 +83,13 @@ export function ChristmasLandingScreen({
           setDragging(false);
           onFile(e.dataTransfer.files);
         }}
-        className={`relative overflow-hidden rounded-[1.6rem] border-2 border-dashed p-1 transition-colors ${
+        className={`relative cursor-pointer overflow-hidden rounded-[1.6rem] border-2 border-dashed p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227] focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b0610] ${
           dragging
             ? "border-[#C9A227] bg-[#F7F0E4]/10"
             : "border-[#F7F0E4]/25 bg-[#F7F0E4]/06"
         }`}
       >
-        <label
-          htmlFor={inputId}
-          className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 rounded-[1.35rem] bg-gradient-to-b from-[#F7F0E4]/08 to-transparent px-6 py-10 text-center sm:min-h-[280px]"
-        >
+        <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-[1.35rem] bg-gradient-to-b from-[#F7F0E4]/08 to-transparent px-6 py-10 text-center sm:min-h-[280px]">
           {previewUrl ? (
             <img
               src={previewUrl}
@@ -99,7 +107,7 @@ export function ChristmasLandingScreen({
               </span>
             </>
           )}
-        </label>
+        </div>
         <input
           id={inputId}
           ref={inputRef}
@@ -111,14 +119,6 @@ export function ChristmasLandingScreen({
       </motion.div>
 
       {photoError ? <p className="text-sm text-[#ffb4a8]">{photoError}</p> : null}
-
-      <Button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="h-12 min-h-[48px] w-full rounded-full bg-[#1B4332] text-base font-semibold text-[#F7F0E4] hover:bg-[#245C41] sm:w-auto sm:px-8"
-      >
-        Upload Your Photo
-      </Button>
 
       <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#F7F0E4]/65">
         {[

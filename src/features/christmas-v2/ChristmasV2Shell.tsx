@@ -1,8 +1,12 @@
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ChristmasSnowfall } from "./ChristmasSnowfall";
 import { CHRISTMAS_V2_ROUTE } from "./config";
+
+const TDG_LOGO_SRC = "/TheDigitalGifter.png";
 
 export function ChristmasV2Shell({
   children,
@@ -17,16 +21,28 @@ export function ChristmasV2Shell({
   padForSticky?: boolean;
   footer?: string;
 }) {
+  useEffect(() => {
+    const existing = document.querySelector('link[data-cv2-preload="logo"]');
+    if (existing) return;
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = TDG_LOGO_SRC;
+    link.setAttribute("data-cv2-preload", "logo");
+    document.head.appendChild(link);
+  }, []);
+
   return (
     <div className="christmas-v2 relative min-h-screen overflow-x-hidden text-[#F7F0E4]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(201,162,39,0.18),_transparent_55%),linear-gradient(160deg,#3b0610_0%,#5c0a14_42%,#2a0810_100%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(circle_at_12%_18%,rgba(255,220,140,0.55)_0_1.5px,transparent_2px),radial-gradient(circle_at_78%_12%,rgba(255,230,170,0.4)_0_1px,transparent_2px),radial-gradient(circle_at_88%_40%,rgba(255,210,120,0.45)_0_1.5px,transparent_2px),radial-gradient(circle_at_22%_72%,rgba(255,225,150,0.35)_0_1px,transparent_2px)] [background-size:100%_100%]" />
-      <div className="pointer-events-none absolute -left-10 top-24 h-40 w-40 rounded-full bg-[#1B4332]/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-8 bottom-32 h-48 w-48 rounded-full bg-[#C9A227]/15 blur-3xl" />
+      <ChristmasSnowfall />
+      <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_top,_rgba(201,162,39,0.18),_transparent_55%),linear-gradient(160deg,#3b0610_0%,#5c0a14_42%,#2a0810_100%)]" />
+      <div className="pointer-events-none absolute inset-0 z-[2] opacity-[0.35] [background-image:radial-gradient(circle_at_12%_18%,rgba(255,220,140,0.55)_0_1.5px,transparent_2px),radial-gradient(circle_at_78%_12%,rgba(255,230,170,0.4)_0_1px,transparent_2px),radial-gradient(circle_at_88%_40%,rgba(255,210,120,0.45)_0_1.5px,transparent_2px),radial-gradient(circle_at_22%_72%,rgba(255,225,150,0.35)_0_1px,transparent_2px)] [background-size:100%_100%]" />
+      <div className="pointer-events-none absolute -left-10 top-24 z-[2] h-40 w-40 rounded-full bg-[#1B4332]/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-8 bottom-32 z-[2] h-48 w-48 rounded-full bg-[#C9A227]/15 blur-3xl" />
 
       <div
         className={cn(
-          "relative mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 pt-4 sm:px-6",
+          "relative z-[3] mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 pt-4 sm:px-6",
           padForSticky ? "pb-28" : "pb-10",
         )}
       >
@@ -35,13 +51,17 @@ export function ChristmasV2Shell({
             href={CHRISTMAS_V2_ROUTE}
             className="flex items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227]"
           >
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#C9A227] text-[#3b0610] shadow-[0_0_24px_rgba(201,162,39,0.35)]">
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
-                <path d="M12 2l1.2 3.6H17l-3 2.2 1.2 3.6L12 9.2 8.8 11.4 10 7.8 7 5.6h3.8L12 2zm0 10l.9 2.7H16l-2.2 1.6.9 2.7L12 17.4l-2.7 1.6.9-2.7L8 14.7h3.1L12 12z" />
-              </svg>
-            </span>
+            <img
+              src={TDG_LOGO_SRC}
+              alt="The Digital Gifter"
+              width={36}
+              height={36}
+              decoding="async"
+              fetchPriority="high"
+              className="h-9 w-9 rounded-full object-cover shadow-[0_0_20px_rgba(201,162,39,0.35)] ring-1 ring-[#C9A227]/40"
+            />
             <span className="font-[family-name:var(--cv2-display)] text-lg font-semibold tracking-tight text-[#F7F0E4]">
-              Digital Gifter
+              The Digital Gifter
             </span>
           </a>
         </header>
@@ -64,7 +84,7 @@ export function ChristmasV2Shell({
         <footer className="mt-8 border-t border-[#F7F0E4]/10 pt-5 text-xs text-[#F7F0E4]/45">
           <p>
             {footer ??
-              "Premium AI Christmas portraits by Digital Gifter. One-time purchase — no subscription."}
+              "Premium AI Christmas portraits by The Digital Gifter. One-time purchase — no subscription."}
           </p>
           <p className="mt-2">
             <a className="underline-offset-2 hover:underline" href="/christmas">
