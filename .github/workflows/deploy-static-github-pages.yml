@@ -1,0 +1,52 @@
+name: deploy-static-github-pages
+
+# Free static hosting — works when Vercel Hobby blocks production (commercial / spend pause).
+# One-time: GitHub repo → Settings → Pages → Source: Deploy from branch → gh-pages / root
+# DNS: point www CNAME to paulmoza77.github.io (or keep Vercel until VPS cutover)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "supabase/**"
+      - "docs/**"
+      - "**/*.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install and build static bundle
+        run: |
+          npm ci
+          node scripts/prepare-static-deploy.mjs
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_message: "Deploy static site from ${{ github.sha }}"
