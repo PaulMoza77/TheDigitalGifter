@@ -8,7 +8,7 @@ export const CHRISTMAS_V2_ORDER_ROUTE = "/christmas-ai-photos/order" as const;
 export const CHRISTMAS_V2_DRAFT_KEY = "tdg.christmasV2.draft.v1" as const;
 export const CHRISTMAS_V2_SESSION_KEY = "tdg.christmasV2.session.v1" as const;
 export const CHRISTMAS_V2_CHECKOUT_HOLD_KEY = "tdg.christmasV2.checkoutSession.v1" as const;
-export const CHRISTMAS_V2_EVENT_PATH = "/api/christmas-v2/funnel-event" as const;
+export const CHRISTMAS_V2_EVENT_PATH = "/api/christmas-v2-funnel-event" as const;
 
 export const CHRISTMAS_STARTER_SKU = "christmas-starter-3" as const;
 export const CHRISTMAS_MAGIC_SKU = "christmas-magic-8" as const;
