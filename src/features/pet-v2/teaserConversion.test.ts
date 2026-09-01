@@ -104,7 +104,7 @@ describe("V2 teaser conversion rebuild", () => {
     expect(api).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION");
     expect(api).toContain("application/octet-stream");
     expect(api).toContain("Must never return SPA HTML");
-    expect(api).toContain("PLACEHOLDER_CONFIGURE");
+    expect(api).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION_FALLBACK");
     // Stripe's universal association file — served statically from public/ (Vercel + VPS).
     const association = readSrc("public/.well-known/apple-developer-merchantid-domain-association");
     expect(association).not.toContain("PLACEHOLDER_CONFIGURE");
