@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /account
+Disallow: /funnel/payment
+Disallow: /funnel/result
+
+Sitemap: https://thedigitalgifter.com/sitemap.xml
