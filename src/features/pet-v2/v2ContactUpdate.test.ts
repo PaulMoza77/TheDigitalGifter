@@ -93,4 +93,23 @@ describe("validateAndUpdateV2OrderContact", () => {
       focusId: "v2-email",
     });
   });
+
+  it("fail-opens pet-name-only when contact API rejects placeholder (pre-Edge deploy)", async () => {
+    const updateOrderContact = vi.fn().mockRejectedValue(
+      new PetApiError("INVALID_REQUEST", "A valid email is required.", 400),
+    );
+    const result = await validateAndUpdateV2OrderContact({
+      api: mockApi(updateOrderContact),
+      orderId: "ord_1",
+      publicToken: "tok_1",
+      petName: "akira",
+      species: "dog",
+      funnelSessionId: "sess123456789",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.petName).toBe("akira");
+    }
+    expect(updateOrderContact).toHaveBeenCalledOnce();
+  });
 });

@@ -61,6 +61,11 @@ export async function validateAndUpdateV2OrderContact(input: {
       petName,
     });
     if (!updated?.updated) {
+      // Fail open for pet-name-only: never block Apple Pay / Express on optional name save.
+      if (hasPetName && !hasEmail) {
+        console.info("[v2-contact-update]", { ok: false, failOpen: true, petNameOnly: true });
+        return { ok: true, petName, email };
+      }
       return {
         ok: false,
         error: V2_CONTACT_UPDATE_ERROR,
@@ -82,6 +87,16 @@ export async function validateAndUpdateV2OrderContact(input: {
       stripeSessionSynced: updated.stripeSessionSynced,
     };
   } catch (caught) {
+    // Pet-name-only must not block wallets if Edge is temporarily rejecting placeholders.
+    if (hasPetName && !hasEmail) {
+      console.info("[v2-contact-update]", {
+        ok: false,
+        failOpen: true,
+        petNameOnly: true,
+        reason: caught instanceof Error ? caught.name : "error",
+      });
+      return { ok: true, petName, email };
+    }
     if (caught instanceof PetApiError) {
       const apiMessage = caught.message.trim();
       if (/valid email/i.test(apiMessage)) {
@@ -90,13 +105,13 @@ export async function validateAndUpdateV2OrderContact(input: {
       return {
         ok: false,
         error: V2_CONTACT_UPDATE_ERROR,
-        focusId: hasEmail ? "v2-email" : "v2-pet-name",
+        focusId: "v2-email",
       };
     }
     return {
       ok: false,
       error: V2_CONTACT_UPDATE_ERROR,
-      focusId: hasEmail ? "v2-email" : "v2-pet-name",
+      focusId: "v2-email",
     };
   }
 }
