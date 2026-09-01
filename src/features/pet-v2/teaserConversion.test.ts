@@ -86,10 +86,13 @@ describe("V2 teaser conversion rebuild", () => {
 
   it("uses Elements Express Checkout with Apple Pay first and non-Apple fallbacks", () => {
     const ui = readSrc("src/features/pet-v2/components/V2ElementsCheckout.tsx");
+    const options = readSrc("src/features/pet/expressCheckoutOptions.ts");
     expect(ui).toContain("ExpressCheckoutElement");
-    expect(ui).toContain('paymentMethodOrder: ["applePay", "googlePay"]');
+    expect(ui).toContain("PET_EXPRESS_CHECKOUT_OPTIONS");
+    expect(options).toContain('applePay: "auto"');
+    expect(options).toContain('paymentMethodOrder: ["applePay", "googlePay"]');
     expect(ui).toContain("PaymentElement");
-    expect(ui).toContain('link: "auto"');
+    expect(options).toContain('link: "auto"');
     expect(ui).toContain("Or pay with card");
   });
 

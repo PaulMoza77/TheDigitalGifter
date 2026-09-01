@@ -171,12 +171,12 @@ describe("Cat V3 Minutes Guides Elements architecture", () => {
     expect(offer).toContain("validateAndUpdateV3OrderContact");
   });
 
-  it("does not fire checkout_viewed on loading/error; Express onReady is not begin_checkout", () => {
+  it("does not fire checkout_viewed on loading/error", () => {
     const elements = readSrc("src/features/pet-v3/components/V3ElementsCheckout.tsx");
     expect(elements).toContain('checkoutState.type === "success"');
     expect(elements).toContain("onReady?.()");
-    expect(elements).toContain("Wallet availability is not Begin Checkout");
-    expect(elements).toContain("setApplePayFromStripe");
+    expect(elements).toContain("PET_EXPRESS_CHECKOUT_OPTIONS");
+    expect(elements).not.toContain("applePayFromStripe");
   });
 
   it("keeps V1 Custom Checkout unchanged; V2 uses its own Elements path", () => {

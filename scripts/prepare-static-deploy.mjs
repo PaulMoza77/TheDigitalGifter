@@ -28,6 +28,17 @@ if (!existsSync(index)) {
 writeFileSync(join(dist, "404.html"), readFileSync(index));
 console.log("Wrote dist/404.html for SPA routing.");
 
+const applePayAssociation = String(process.env.STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION || "").trim();
+if (applePayAssociation && !applePayAssociation.includes("PLACEHOLDER_CONFIGURE")) {
+  const wellKnownDir = join(dist, ".well-known");
+  mkdirSync(wellKnownDir, { recursive: true });
+  writeFileSync(
+    join(wellKnownDir, "apple-developer-merchantid-domain-association"),
+    applePayAssociation,
+  );
+  console.log("Wrote dist/.well-known/apple-developer-merchantid-domain-association for Apple Pay.");
+}
+
 const cnameSrc = join(root, "public", "CNAME");
 if (existsSync(cnameSrc)) {
   cpSync(cnameSrc, join(dist, "CNAME"));
