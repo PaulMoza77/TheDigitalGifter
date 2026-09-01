@@ -27,12 +27,21 @@ fi
 cp -a "${PROXY_DIR}/Caddyfile" "${PROXY_DIR}/Caddyfile.bak-tdg"
 cp "${SRC_HTTP}" "${PROXY_DIR}/Caddyfile"
 
-# Reload in place. Do not recreate the published 80/443 mapping.
-if docker exec mozas-caddy caddy validate --config /etc/caddy/Caddyfile >/dev/null; then
-  docker exec mozas-caddy caddy reload --config /etc/caddy/Caddyfile
-else
+# Admin API is disabled (admin off). Validate, then restart the existing container
+# so the bind-mounted Caddyfile is picked up without changing published ports.
+if ! docker exec mozas-caddy caddy validate --config /etc/caddy/Caddyfile >/dev/null; then
   echo "Caddyfile failed validation — restoring previous file" >&2
   cp -a "${PROXY_DIR}/Caddyfile.bak-tdg" "${PROXY_DIR}/Caddyfile"
   exit 1
 fi
-echo "tdg_caddy_applied=yes"
+docker restart mozas-caddy >/dev/null
+# Wait until TheMozas health is reachable again through :80
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if curl -fsS http://127.0.0.1/healthz >/dev/null 2>&1; then
+    echo "tdg_caddy_applied=yes"
+    exit 0
+  fi
+  sleep 1
+done
+echo "Caddy restarted but :80 healthz did not recover" >&2
+exit 1
