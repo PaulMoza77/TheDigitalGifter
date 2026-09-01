@@ -28,10 +28,14 @@ describe("expressCheckoutOptions", () => {
     expect(v3).not.toMatch(/ApplePayButton disabled=\{busy \|\| confirmDisabled\}/);
   });
 
-  it("documents live Apple Pay domain verification in deploy + env example", () => {
-    expect(readSrc("scripts/verify-apple-pay-domain.mjs")).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION");
+  it("documents live Apple Pay domain verification on both public hosts (VPS, not Vercel)", () => {
+    const verify = readSrc("scripts/verify-apple-pay-domain.mjs");
+    expect(verify).toContain("thedigitalgifter.com");
+    expect(verify).toContain("www.thedigitalgifter.com");
+    expect(verify).toContain("redirect: \"manual\"");
+    expect(verify).not.toContain("set Vercel Production env");
     expect(readSrc(".env.example")).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION");
-    expect(readSrc(".github/workflows/deploy-vercel-production.yml")).toContain("verify-apple-pay-domain");
+    expect(readSrc(".github/workflows/deploy-vps-static.yml")).toContain("verify-apple-pay-domain");
     expect(readSrc("public/.well-known/apple-developer-merchantid-domain-association").length).toBeGreaterThan(1000);
   });
 });

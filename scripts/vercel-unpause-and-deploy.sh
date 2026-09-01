@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Unpause Vercel projects (Spend Management) and deploy production.
+# ROLLBACK ONLY. TDG production origin is Mozas VPS.
+# Do not use this for routine deploys. Existing Vercel deployments stay until
+# the founder confirms a live payment.
 # Requires: VERCEL_TOKEN with access to team tdg6
-# Optional: VERCEL_ORG_ID / VERCEL_TEAM_ID, VERCEL_PROJECT_ID (auto-discovered when unset)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

@@ -1,80 +1,18 @@
 name: deploy-vercel-production
 
-# Production frontend deploy to Vercel (www.thedigitalgifter.com).
-# Unpauses Spend Management–paused projects when VERCEL_TOKEN is configured.
+# DISABLED: TDG production origin is the Mozas VPS (thedigitalgifter.com / www).
+# Keep this file so existing Vercel deployments remain as rollback until the
+# founder confirms a live payment. Do not auto-publish to Vercel.
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "supabase/**"
-      - "scripts/deploy-christmas-v2.sh"
-      - "scripts/deploy-pet-preview.sh"
-      - ".github/workflows/deploy-christmas-v2.yml"
-      - ".github/workflows/deploy-pet-preview.yml"
-      - "docs/**"
-      - "**/*.md"
 
 jobs:
-  deploy:
+  disabled:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    environment: Production
-    # Only run when explicitly publishing or manually dispatched.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      contains(github.event.head_commit.message, '[prod-publish]')
+    timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Require Vercel token
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || secrets.VERCEL_ACCESS_TOKEN }}
+      - name: Vercel production deploy is disabled
         run: |
-          if [ -z "$VERCEL_TOKEN" ]; then
-            echo "::error::VERCEL_TOKEN is missing in the Production environment."
-            echo "Create a token at https://vercel.com/account/settings/tokens (team tdg6),"
-            echo "add it as VERCEL_TOKEN, then re-run deploy-vercel-production."
-            echo "Refusing silent skip — www.thedigitalgifter.com must deploy to Vercel."
-            exit 2
-          fi
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Unpause and deploy production
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || secrets.VERCEL_ACCESS_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: |
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
-            echo "::error::VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in Production secrets."
-            exit 2
-          fi
-          bash scripts/vercel-unpause-and-deploy.sh
-
-      - name: Verify live bundle updated
-        run: |
-          html="$(curl -fsSL https://www.thedigitalgifter.com/)"
-          if echo "$html" | grep -q 'index-Bgdz7sTb.js'; then
-            echo "::error::Production still serves pre-fix bundle index-Bgdz7sTb.js after deploy."
-            echo "Check Vercel dashboard for account pause or failed promotion."
-            exit 2
-          fi
-          echo "Live bundle no longer index-Bgdz7sTb.js — deploy looks current."
-
-      - name: Verify Apple Pay domain association
-        run: node scripts/verify-apple-pay-domain.mjs
+          echo "TDG production is Mozas VPS. This workflow does not deploy."
+          echo "Existing Vercel deployments are rollback-only until live payment is confirmed."

@@ -46,7 +46,12 @@ Failed deploys roll back to `mozas/thedigitalgifter:previous` and restore
 `releases/verified.*` metadata. Verified pins advance only after health wait succeeds.
 
 CI (`.github/workflows/deploy-vps-static.yml`) requires Production secrets and passes
-`MOZAS_SSH_HOST` into the Verify step. It does not skip.
+`MOZAS_SSH_HOST` into the Verify step. After deploy it runs `TDG_HTTPS_PHASE=post`
+(public HTTPS, no `--resolve`) and Apple Pay file checks.
+
+`deploy-vercel-production.yml` is **disabled**. `scripts/vercel-ignore.mjs` skips
+Vercel builds for this repo (`the-digital-gifter`, `the-digital-gifter-d5vu`).
+Keep existing Vercel deployments as rollback until a live payment is confirmed.
 
 ## Verify
 

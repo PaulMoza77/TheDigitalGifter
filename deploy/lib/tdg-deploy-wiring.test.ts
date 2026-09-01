@@ -65,6 +65,7 @@ describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
     expect(verifyStep).toMatch(/MOZAS_SSH_PRIVATE_KEY: \$\{\{ secrets\.MOZAS_SSH_PRIVATE_KEY \}\}/);
     expect(verifyStep).toMatch(/MOZAS_SSH_USER: \$\{\{ secrets\.MOZAS_SSH_USER \}\}/);
     expect(verifyStep).toMatch(/verify-tdg-vps-origin\.mjs/);
-    expect(verifyStep).toMatch(/TDG_HTTPS_PHASE=pre/);
+    expect(verifyStep).toMatch(/TDG_HTTPS_PHASE=post/);
+    expect(verifyStep).toMatch(/verify-apple-pay-domain\.mjs/);
   });
 });

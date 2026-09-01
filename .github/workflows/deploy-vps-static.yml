@@ -65,4 +65,6 @@ jobs:
           else
             echo "::warning::VITE_SUPABASE_* missing — skipped flow verification"
           fi
-          TDG_HTTPS_PHASE=pre node scripts/verify-tdg-https.mjs
+          # Public HTTPS (no --resolve) plus direct VPS pins.
+          TDG_HTTPS_PHASE=post node scripts/verify-tdg-https.mjs
+          node scripts/verify-apple-pay-domain.mjs
