@@ -1,4 +1,4 @@
-name: deploy-vps-static
+name: deploy-vps-mozas
 
 on:
   workflow_dispatch:
@@ -13,46 +13,39 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     environment: Production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Require VPS credentials
-        id: creds
+      - name: Require Mozas SSH identity
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          MOZAS_SSH_HOST: ${{ secrets.MOZAS_SSH_HOST }}
+          MOZAS_SSH_PRIVATE_KEY: ${{ secrets.MOZAS_SSH_PRIVATE_KEY }}
+          MOZAS_SSH_USER: ${{ secrets.MOZAS_SSH_USER }}
         run: |
-          if [ -z "$VPS_HOST" ] || [ -z "$VPS_SSH_PRIVATE_KEY" ]; then
-            echo "::warning::VPS_HOST / VPS_SSH_PRIVATE_KEY not set — skipping VPS deploy."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "skip=false" >> "$GITHUB_OUTPUT"
-
-      - name: Setup Node
-        if: steps.creds.outputs.skip != 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Deploy to VPS
-        if: steps.creds.outputs.skip != 'true'
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          VPS_DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH }}
-          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: |
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
-            echo "::error::VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in Production secrets for static build."
+          missing=0
+          for name in MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY MOZAS_SSH_USER; do
+            eval "val=\${$name:-}"
+            if [ -z "$val" ]; then
+              echo "::error::$name is missing in the Production environment."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Refusing silent skip — Mozas VPS deploy cannot be reported as successful."
             exit 2
           fi
-          npm ci
+          echo "Mozas SSH host is present (value not printed)."
+
+      - name: Deploy to Mozas VPS
+        env:
+          MOZAS_SSH_HOST: ${{ secrets.MOZAS_SSH_HOST }}
+          MOZAS_SSH_PRIVATE_KEY: ${{ secrets.MOZAS_SSH_PRIVATE_KEY }}
+          MOZAS_SSH_USER: ${{ secrets.MOZAS_SSH_USER }}
+        run: |
           bash scripts/deploy-vps.sh
+
+      - name: Verify TDG origin
+        run: node scripts/verify-tdg-vps-origin.mjs

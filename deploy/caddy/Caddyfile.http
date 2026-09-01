@@ -1,0 +1,47 @@
+{
+	email {$CADDY_ACME_EMAIL}
+	admin off
+}
+
+(security_headers) {
+	encode gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
+
+(themozas_upstream) {
+	import security_headers
+	reverse_proxy themozas:8080 {
+		health_uri /healthz
+		health_interval 30s
+	}
+}
+
+(tdg_upstream) {
+	import security_headers
+	reverse_proxy thedigitalgifter:8080 {
+		health_uri /healthz
+		health_interval 30s
+	}
+}
+
+# Pre-DNS / IP verification. HTTPS production hosts stay in Caddyfile.https
+# until public DNS points here (so ACME is not attempted against Vercel).
+:80 {
+	@tdg host tdg-verify.mozas-prod-01
+	handle @tdg {
+		import tdg_upstream
+	}
+	handle {
+		import themozas_upstream
+	}
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10mb
+			roll_keep 5
+		}
+	}
+}

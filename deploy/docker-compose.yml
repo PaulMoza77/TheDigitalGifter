@@ -1,0 +1,51 @@
+# TheDigitalGifter compose — reads permanent VPS secrets at build/runtime.
+# Application source is expected at /opt/mozas/projects/thedigitalgifter/repo.
+# Does not change TheMozas, VoloCar, or the secrets directory contents except TDG_RELEASE.
+name: thedigitalgifter
+
+services:
+  thedigitalgifter:
+    image: mozas/thedigitalgifter:${TDG_RELEASE:-latest}
+    container_name: thedigitalgifter
+    build:
+      context: /opt/mozas/projects/thedigitalgifter/repo
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+        VITE_APP_URL: ${VITE_APP_URL:-}
+    restart: unless-stopped
+    environment:
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+      VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+      VITE_APP_URL: ${VITE_APP_URL:-}
+      SUPABASE_URL: ${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION: ${STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION:-}
+      PET_FULFILLMENT_ENABLED: ${PET_FULFILLMENT_ENABLED:-true}
+      VERCEL_ENV: production
+      TDG_RELEASE: ${TDG_RELEASE:-latest}
+    expose:
+      - "8080"
+    networks:
+      - mozas-edge
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - with-app
+
+networks:
+  mozas-edge:
+    name: mozas-edge
+    external: true

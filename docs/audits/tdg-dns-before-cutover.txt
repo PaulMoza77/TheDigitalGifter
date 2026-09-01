@@ -1,0 +1,28 @@
+# Public DNS snapshot 2026-09-01T19:36:29Z — Vercel still origin
+
+thedigitalgifter.com.	300	IN	A	216.198.79.1
+thedigitalgifter.com.	300	IN	MX	10 server79.romania-webhosting.com.
+thedigitalgifter.com.	86400	IN	NS	rory.ns.cloudflare.com.
+thedigitalgifter.com.	86400	IN	NS	bailey.ns.cloudflare.com.
+www.thedigitalgifter.com. 300	IN	CNAME	421dfe395badf9b1.vercel-dns-017.com.
+421dfe395badf9b1.vercel-dns-017.com. 300 IN A	216.198.79.1
+421dfe395badf9b1.vercel-dns-017.com. 300 IN A	64.29.17.1
+www.thedigitalgifter.com. 300	IN	CNAME	421dfe395badf9b1.vercel-dns-017.com.
+www.thedigitalgifter.com. 300	IN	CNAME	421dfe395badf9b1.vercel-dns-017.com.
+
+# whois-like via nslookup
+Server:		1.1.1.1
+Address:	1.1.1.1#53
+
+Non-authoritative answer:
+thedigitalgifter.com
+	origin = bailey.ns.cloudflare.com
+	mail addr = dns.cloudflare.com
+	serial = 2413024420
+	refresh = 10000
+	retry = 2400
+	expire = 604800
+	minimum = 1800
+
+Authoritative answers can be found from:
+
