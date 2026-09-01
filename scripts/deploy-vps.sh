@@ -68,7 +68,14 @@ fi
 echo "themozas_post_health=ok"
 
 mozas_ssh 'set -euo pipefail
-  body="$(curl -fsS --resolve tdg-verify.mozas-prod-01:80:127.0.0.1 http://tdg-verify.mozas-prod-01/healthz)"
+  body=""
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    body="$(curl -sS --resolve tdg-verify.mozas-prod-01:80:127.0.0.1 http://tdg-verify.mozas-prod-01/healthz || true)"
+    if [[ "${body}" == "ok" ]]; then
+      break
+    fi
+    sleep 2
+  done
   test "${body}" = ok
   echo tdg_health_ok=yes
   api_code="$(curl -sS -o /tmp/tdg-api-miss.body -w "%{http_code}" --resolve tdg-verify.mozas-prod-01:80:127.0.0.1 http://tdg-verify.mozas-prod-01/api/does-not-exist)"
