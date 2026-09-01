@@ -66,6 +66,7 @@ install -m 0755 ${REMOTE_REPO}/deploy/scripts/ensure-offsite-restic.sh /opt/moza
 install -m 0755 ${REMOTE_REPO}/deploy/scripts/mozas-restore-offsite-test.sh /opt/mozas/bin/mozas-restore-offsite-test
 install -m 0755 ${REMOTE_REPO}/deploy/scripts/apply-tdg-caddy.sh /opt/mozas/bin/mozas-apply-tdg-caddy
 install -m 0755 ${REMOTE_REPO}/deploy/scripts/apply-tdg-caddy-https.sh /opt/mozas/bin/mozas-apply-tdg-caddy-https
+install -m 0755 ${REMOTE_REPO}/deploy/scripts/mozas-ensure-tdg-caddy.sh /opt/mozas/bin/mozas-ensure-tdg-caddy
 chmod 600 ${REMOTE_BLOB}
 set -a
 # shellcheck disable=SC1090

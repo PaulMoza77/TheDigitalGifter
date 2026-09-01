@@ -237,9 +237,12 @@ function origin(path, extra = []) {
     "Content-Type: application/json",
     "-d",
     JSON.stringify({
-      event_name: "v2_probe_agent",
+      event_name: "v2_landing_view",
       funnel_session_id: session,
-      path: "/pet/dog",
+      event_id: "00000000-0000-4000-8000-000000000098",
+      pathname: "/pet/dog-v2",
+      species: "dog",
+      device_type: "desktop",
     }),
   ]);
   rec(
@@ -281,14 +284,15 @@ function origin(path, extra = []) {
 
 const negFail = negative.filter((r) => !r.ok);
 const funFail = functional.filter((r) => !r.ok);
+const blkNotes = blocked.filter((r) => !r.ok);
 console.log(
-  `SUMMARY negative=${negative.length - negFail.length}/${negative.length} functional=${functional.length - funFail.length}/${functional.length} blocked=${blocked.length}`,
+  `SUMMARY negative=${negative.length - negFail.length}/${negative.length} functional=${functional.length - funFail.length}/${functional.length} blocked=${blkNotes.length}`,
 );
 if (negFail.length || funFail.length) {
   console.error("FUNCTIONAL_VERIFY_FAILED");
   process.exit(1);
 }
 console.log("FUNCTIONAL_VERIFY_OK");
-if (blocked.length) {
+if (blkNotes.length) {
   console.log("NOTE: paid end-to-end remains blocked until Stripe *test* keys are provided separately.");
 }

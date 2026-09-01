@@ -259,12 +259,19 @@ record(
   `http=${themozas}`,
 );
 
-const vercel = execFileSync(
-  "curl",
-  ["-sS", "-o", "/tmp/tdg-vercel-home", "-w", "%{http_code}", "--max-time", "20", "https://www.thedigitalgifter.com/"],
-  { encoding: "utf8" },
-);
-const vercelHtml = execFileSync("cat", ["/tmp/tdg-vercel-home"], { encoding: "utf8" });
+let vercel = "000";
+let vercelHtml = "";
+try {
+  vercel = execFileSync(
+    "curl",
+    ["-sS", "-o", "/tmp/tdg-vercel-home", "-w", "%{http_code}", "--max-time", "20", "https://www.thedigitalgifter.com/"],
+    { encoding: "utf8" },
+  );
+  vercelHtml = execFileSync("cat", ["/tmp/tdg-vercel-home"], { encoding: "utf8" });
+} catch (err) {
+  vercel = String(err?.stdout || "000");
+  vercelHtml = "";
+}
 record("rollback_vercel_live", vercel === "200" && /^\s*<!doctype html/i.test(vercelHtml), `http=${vercel}`);
 
 const failed = results.filter((row) => !row.ok);
