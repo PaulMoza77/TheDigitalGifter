@@ -1,0 +1,64 @@
+name: deploy-vercel-production
+
+# Production frontend deploy to Vercel (www.thedigitalgifter.com).
+# Unpauses Spend Management–paused projects when VERCEL_TOKEN is configured.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "supabase/**"
+      - "scripts/deploy-christmas-v2.sh"
+      - "scripts/deploy-pet-preview.sh"
+      - ".github/workflows/deploy-christmas-v2.yml"
+      - ".github/workflows/deploy-pet-preview.yml"
+      - "docs/**"
+      - "**/*.md"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: Production
+    # Only run when explicitly publishing or manually dispatched.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, '[prod-publish]')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require Vercel token
+        id: token
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || secrets.VERCEL_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::warning::VERCEL_TOKEN secret is not configured."
+            echo "Add a token from https://vercel.com/account/settings/tokens (team tdg6)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        if: steps.token.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.token.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Unpause and deploy production
+        if: steps.token.outputs.skip != 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || secrets.VERCEL_ACCESS_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: bash scripts/vercel-unpause-and-deploy.sh
