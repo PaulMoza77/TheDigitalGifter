@@ -10,6 +10,7 @@ import { sanitizeStripeCheckoutCustomerError, stripeCheckoutInitCustomerError } 
 import {
   CARD_PAY_INCOMPLETE_MESSAGE,
   isExpressCheckoutConfirmEvent,
+  resolveExpressCheckoutClick,
 } from "../expressCheckoutConfirm";
 import { getStripePromise, reloadStripeForCheckout, stripeInstanceKeyFingerprint } from "../stripeLoader";
 import { ApplePayButton } from "./ApplePayButton";
@@ -145,13 +146,19 @@ function CheckoutBody({
       setError(CARD_PAY_INCOMPLETE_MESSAGE);
       return;
     }
+    const confirmPromise = isExpress
+      ? checkoutState.checkout.confirm({
+          expressCheckoutConfirmEvent,
+          redirect: "if_required",
+        })
+      : null;
     setBusy(true);
     setError(null);
     try {
-      await syncCheckoutEmail(checkoutState.checkout);
-      const result = await checkoutState.checkout.confirm(
-        isExpress ? { expressCheckoutConfirmEvent } : {},
-      );
+      if (!isExpress) {
+        await syncCheckoutEmail(checkoutState.checkout);
+      }
+      const result = await (confirmPromise ?? checkoutState.checkout.confirm({}));
       if (result.type === "error") {
         if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
         const message = sanitizeStripeCheckoutCustomerError(result.error.message);
@@ -221,7 +228,7 @@ function CheckoutBody({
       <ExpressCheckoutElement
         options={{ ...PET_EXPRESS_CHECKOUT_OPTIONS, layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const } }}
         onConfirm={(event) => void confirm(event)}
-        onClick={markInteraction}
+        onClick={(event) => resolveExpressCheckoutClick(event, markInteraction)}
         onCancel={() => setError(null)}
       />
 

@@ -217,6 +217,8 @@ describe("V2 teaser conversion rebuild", () => {
     // Apple Pay must confirm immediately — no await onBeforeConfirm before checkout.confirm().
     expect(ui).toContain("isExpressCheckoutConfirmEvent");
     expect(ui).toContain("never block Express");
+    expect(ui).toContain("resolveExpressCheckoutClick");
+    expect(ui).toContain("start confirm() in this tick");
     expect(ui).toContain("CARD_PAY_INCOMPLETE_MESSAGE");
     expect(teaser).toContain("validateAndUpdateV2OrderContact");
     expect(teaser).toContain("setTimeout");
