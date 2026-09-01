@@ -77,4 +77,4 @@ DEPLOY_ARGS=(deploy --prebuilt --prod --yes --token "$TOKEN")
 [[ -n "$PROJECT_ID" ]] && DEPLOY_ARGS+=(--project "$PROJECT_ID")
 
 npx --yes vercel "${DEPLOY_ARGS[@]}"
-echo "Vercel production deploy complete."
+echo "Vercel production deploy complete. Live: https://www.thedigitalgifter.com"
