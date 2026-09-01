@@ -71,8 +71,8 @@ describe("Cat V3 + return URL payment hardening", () => {
       '/pet/order?token=${encodeURIComponent(publicToken)}&session_id={CHECKOUT_SESSION_ID}',
     );
     expect(edge).toContain('params.set("return_url", successUrl)');
-    expect(shared).toContain("Server Session return_url is the only source of truth");
-    expect(shared).toContain("expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {}");
+    expect(shared).toContain("isExpressCheckoutConfirmEvent");
+    expect(shared).toContain("expressCheckoutConfirmEvent } : {}");
     expect(shared).not.toContain("returnUrl:");
     expect(shared).not.toMatch(/confirm\(\s*\{[^}]*returnUrl/);
     expect(shared).not.toContain("Basil Custom Checkout requires returnUrl");

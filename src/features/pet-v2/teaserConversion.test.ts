@@ -191,6 +191,7 @@ describe("V2 teaser conversion rebuild", () => {
     const funnel = readSrc("supabase/functions/pet-funnel/index.ts");
     const hook = readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts");
     const ui = readSrc("src/features/pet-v2/components/V2ElementsCheckout.tsx");
+    const teaser = readSrc("src/features/pet-v2/screens/TeaserOfferScreen.tsx");
     // Backend must not hard-reject pending+… placeholders (blocks Apple Pay when name is filled).
     expect(funnel).toContain("emailIsPlaceholder");
     expect(funnel).toContain("emailIsReal");
@@ -209,5 +210,11 @@ describe("V2 teaser conversion rebuild", () => {
     // Express sheet must be failed closed when contact gate blocks confirm.
     expect(ui).toContain("paymentFailed");
     expect(ui).toContain('reason: "fail"');
+    // Apple Pay must confirm immediately — no await onBeforeConfirm before checkout.confirm().
+    expect(ui).toContain("isExpressCheckoutConfirmEvent");
+    expect(ui).toContain("never block Express");
+    expect(ui).toContain("CARD_PAY_INCOMPLETE_MESSAGE");
+    expect(teaser).toContain("validateAndUpdateV2OrderContact");
+    expect(teaser).toContain("setTimeout");
   });
 });
