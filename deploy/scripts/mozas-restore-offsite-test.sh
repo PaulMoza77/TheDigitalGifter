@@ -4,7 +4,7 @@
 set -euo pipefail
 
 BACKUP_ENV="${MOZAS_BACKUP_ENV:-/opt/mozas/secrets/backup.env}"
-TARGET="${MOZAS_RESTORE_OFFSITE_TARGET:-/opt/mozas/restore-test-offsite}"
+TARGET="${MOZAS_RESTORE_OFFSITE_TARGET:-${HOME}/restore-drill-offsite}"
 export MOZAS_RESTORE_OFFSITE_TARGET="${TARGET}"
 # shellcheck disable=SC1090
 set -a

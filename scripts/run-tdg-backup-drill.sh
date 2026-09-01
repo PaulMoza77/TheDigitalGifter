@@ -29,26 +29,26 @@ mozas_ssh 'set -euo pipefail
     fi
     sleep 5
   done
-  if sudo -n /opt/mozas/bin/mozas-restore-test; then
-    echo "local_restore_test=passed"
-  else
-    echo "local restore-test via sudo script failed; using restic directly" >&2
-    set -a
-    # shellcheck disable=SC1090
-    source /opt/mozas/secrets/backup.env
-    set +a
-    PASS="$(mktemp)"
-    printf "%s" "${RESTIC_PASSWORD}" >"${PASS}"
-    chmod 600 "${PASS}"
-    TARGET=/opt/mozas/restore-test
-    rm -rf "${TARGET}"
-    mkdir -p "${TARGET}"
-    sudo -n restic -r "${RESTIC_REPOSITORY}" --password-file "${PASS}" restore latest --target "${TARGET}" --tag mozas-vps
-    rm -f "${PASS}"
-    test -f "${TARGET}/opt/mozas/projects/thedigitalgifter/secrets/app.env"
-    echo "local_restore_test=passed"
-  fi
+  set -a
+  # shellcheck disable=SC1090
+  source /opt/mozas/secrets/backup.env
+  set +a
+  PASS="$(mktemp)"
+  printf "%s" "${RESTIC_PASSWORD}" >"${PASS}"
+  chmod 600 "${PASS}"
+  LOCAL_TARGET="${HOME}/restore-drill-local"
+  rm -rf "${LOCAL_TARGET}"
+  mkdir -p "${LOCAL_TARGET}"
+  sudo -n restic -r "${RESTIC_REPOSITORY}" --password-file "${PASS}" restore latest \
+    --target "${LOCAL_TARGET}" \
+    --tag mozas-vps \
+    --include /opt/mozas/projects/thedigitalgifter/secrets/app.env \
+    --include /opt/mozas/proxy/Caddyfile
+  test -f "${LOCAL_TARGET}/opt/mozas/projects/thedigitalgifter/secrets/app.env"
+  echo "local_restore_test=passed"
+  export MOZAS_RESTORE_OFFSITE_TARGET="${HOME}/restore-drill-offsite"
   /opt/mozas/bin/mozas-restore-offsite-test
+  rm -f "${PASS}"
 '
 
 echo "BACKUP_DRILL_OK"

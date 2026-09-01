@@ -58,34 +58,35 @@ mozas_rsync "${ROOT}/deploy/caddy/" "${MOZAS_EXPECTED_USER}@${MOZAS_EXPECTED_HOS
 mozas_rsync "${BLOB}" "${MOZAS_EXPECTED_USER}@${MOZAS_EXPECTED_HOST}:${REMOTE_BLOB}"
 rm -f "${BLOB}"
 
-mozas_ssh "set -euo pipefail
-  install -m 0755 ${REMOTE_REPO}/deploy/scripts/merge-tdg-app-env.sh /opt/mozas/bin/mozas-merge-tdg-app-env
-  install -m 0755 ${REMOTE_REPO}/deploy/scripts/merge-mozas-backup-env.sh /opt/mozas/bin/mozas-merge-backup-env
-  install -m 0755 ${REMOTE_REPO}/deploy/scripts/ensure-offsite-restic.sh /opt/mozas/bin/mozas-ensure-offsite-restic
-  install -m 0755 ${REMOTE_REPO}/deploy/scripts/mozas-restore-offsite-test.sh /opt/mozas/bin/mozas-restore-offsite-test
-  install -m 0755 ${REMOTE_REPO}/deploy/scripts/apply-tdg-caddy.sh /opt/mozas/bin/mozas-apply-tdg-caddy
-  install -m 0755 ${REMOTE_REPO}/deploy/scripts/apply-tdg-caddy-https.sh /opt/mozas/bin/mozas-apply-tdg-caddy-https
-  chmod 600 ${REMOTE_BLOB}
-  set -a
-  # shellcheck disable=SC1090
-  source ${REMOTE_BLOB}
-  set +a
-  /opt/mozas/bin/mozas-merge-tdg-app-env
-  /opt/mozas/bin/mozas-merge-backup-env
-  shred -u ${REMOTE_BLOB} 2>/dev/null || rm -f ${REMOTE_BLOB}
-  TDG_DIR=/opt/mozas/projects/thedigitalgifter
-  TDG_RELEASE="$(grep -E '^TDG_RELEASE=' ${TDG_DIR}/secrets/app.env | head -1 | cut -d= -f2-)"
-  export TDG_RELEASE
-  docker compose \
-    --project-directory ${TDG_DIR}/repo \
-    -f ${TDG_DIR}/docker-compose.yml \
-    --env-file ${TDG_DIR}/secrets/app.env \
-    --profile with-app \
-    up -d --no-build --force-recreate --wait
-  curl -fsS --resolve tdg-verify.mozas-prod-01:80:127.0.0.1 http://tdg-verify.mozas-prod-01/healthz
-  echo
-  curl -fsS http://127.0.0.1/healthz
-  echo
-"
+mozas_ssh bash -s <<REMOTE
+set -euo pipefail
+install -m 0755 ${REMOTE_REPO}/deploy/scripts/merge-tdg-app-env.sh /opt/mozas/bin/mozas-merge-tdg-app-env
+install -m 0755 ${REMOTE_REPO}/deploy/scripts/merge-mozas-backup-env.sh /opt/mozas/bin/mozas-merge-backup-env
+install -m 0755 ${REMOTE_REPO}/deploy/scripts/ensure-offsite-restic.sh /opt/mozas/bin/mozas-ensure-offsite-restic
+install -m 0755 ${REMOTE_REPO}/deploy/scripts/mozas-restore-offsite-test.sh /opt/mozas/bin/mozas-restore-offsite-test
+install -m 0755 ${REMOTE_REPO}/deploy/scripts/apply-tdg-caddy.sh /opt/mozas/bin/mozas-apply-tdg-caddy
+install -m 0755 ${REMOTE_REPO}/deploy/scripts/apply-tdg-caddy-https.sh /opt/mozas/bin/mozas-apply-tdg-caddy-https
+chmod 600 ${REMOTE_BLOB}
+set -a
+# shellcheck disable=SC1090
+source ${REMOTE_BLOB}
+set +a
+/opt/mozas/bin/mozas-merge-tdg-app-env
+/opt/mozas/bin/mozas-merge-backup-env
+shred -u ${REMOTE_BLOB} 2>/dev/null || rm -f ${REMOTE_BLOB}
+TDG_DIR=/opt/mozas/projects/thedigitalgifter
+TDG_RELEASE="\$(grep -E '^TDG_RELEASE=' \${TDG_DIR}/secrets/app.env | head -1 | cut -d= -f2-)"
+export TDG_RELEASE
+docker compose \\
+  --project-directory \${TDG_DIR}/repo \\
+  -f \${TDG_DIR}/docker-compose.yml \\
+  --env-file \${TDG_DIR}/secrets/app.env \\
+  --profile with-app \\
+  up -d --no-build --force-recreate --wait
+curl -fsS --resolve tdg-verify.mozas-prod-01:80:127.0.0.1 http://tdg-verify.mozas-prod-01/healthz
+echo
+curl -fsS http://127.0.0.1/healthz
+echo
+REMOTE
 
 echo "PERSIST_OK"
