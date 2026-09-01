@@ -211,6 +211,9 @@ describe("Cat V3 + return URL payment hardening", () => {
     expect(v3Ic).toContain("isCheckoutPlaceholderEmail");
     expect(funnel).toContain("isCheckoutPlaceholderEmail(asString(order.email)) ? null");
     expect(funnel).toContain("isCheckoutPlaceholderEmail(email)");
+    // Pet-name-only V2 updates may send placeholders; they must not sync to Stripe/Meta as real email.
+    expect(funnel).toContain("emailIsPlaceholder");
+    expect(funnel).toMatch(/stripeKey && emailIsReal/);
   });
 
   it("order page validates token + Stripe session relationship server-side", () => {

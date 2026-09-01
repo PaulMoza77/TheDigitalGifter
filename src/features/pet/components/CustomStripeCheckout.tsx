@@ -118,6 +118,14 @@ function CheckoutBody({
     }
   }
 
+  function failExpressCheckout(event?: StripeExpressCheckoutElementConfirmEvent) {
+    try {
+      event?.paymentFailed?.({ reason: "fail" });
+    } catch {
+      // Stripe may already have dismissed the sheet.
+    }
+  }
+
   async function confirm(expressCheckoutConfirmEvent?: StripeExpressCheckoutElementConfirmEvent) {
     if (checkoutState.type !== "success") return;
     markInteraction();
@@ -125,6 +133,7 @@ function CheckoutBody({
       try {
         const gate = await onBeforeConfirm();
         if (!gate.ok) {
+          failExpressCheckout(expressCheckoutConfirmEvent);
           setError(gate.error || "Complete the form before paying.");
           if (gate.focusId) {
             document.getElementById(gate.focusId)?.focus();
@@ -133,6 +142,7 @@ function CheckoutBody({
           return;
         }
       } catch (caught) {
+        failExpressCheckout(expressCheckoutConfirmEvent);
         const message =
           caught instanceof Error && caught.message.trim()
             ? caught.message.trim()
