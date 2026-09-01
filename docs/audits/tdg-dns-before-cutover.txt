@@ -32,3 +32,8 @@ Authoritative answers can be found from:
 # apex AAAA absent; www AAAA absent
 # HTTPS not applied — wait for www A as well
 
+# 2026-09-01T21:45Z HTTPS applied after founder DNS confirm
+# apex A + www A == MOZAS_SSH_HOST; AAAA absent
+# Caddy mode=https; LE certs for both names; HTTP 308 → HTTPS
+# Public + direct verify: HTTPS_VERIFY_OK phase=post 26/26
+

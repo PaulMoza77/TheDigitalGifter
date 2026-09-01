@@ -64,7 +64,11 @@ Origin and flow checks accept **either** plain HTTP 200 (current) **or**
 HTTP 3xx → HTTPS 200. They never follow a `:80 --resolve` redirect onto
 public `:443` (that would hit stale DNS).
 
-**Pre-DNS:** cert volume, ACME email, `Caddyfile.https.ready`, ensure script.
+**Live (2026-09-01):** Caddy mode `https`. Apex + www have Let's Encrypt certs.
+HTTP→HTTPS is 308. Deploy uses `mozas-ensure-tdg-caddy` so later deploys
+keep this file. TheMozas stays on bare-IP `:80`.
+
+**Pre-DNS / re-check storage:** cert volume, ACME email, `Caddyfile.https.ready`, ensure script.
 
 ```bash
 bash scripts/run-tdg-backup-now.sh          # fresh R2 snapshot of current config
