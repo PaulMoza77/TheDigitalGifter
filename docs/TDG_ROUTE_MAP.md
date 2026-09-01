@@ -13,7 +13,7 @@ Prices, providers, and product design are unchanged.
 | `/api/pet-v3/funnel-event` | Mozas Node origin | Same-origin V3 analytics. Same service-role requirement. |
 | `/api/pet-v3/internal-test-status` | Mozas Node origin | Returns 503 without service role. |
 | `/api/pet-provider-status` | Mozas Node origin (Edge fallback remains) | Checkout stays open if Replicate token is absent on VPS (`probe_token_absent`). |
-| `/api/christmas-funnel` | **Supabase Edge** (`christmas-funnel`) | Vercel copy is legacy fallback only; not started on VPS. |
+| `/api/christmas-funnel` | Mozas Node origin (Edge remains primary in the browser) | Same-origin Vercel-compat fallback if Edge is down. |
 | `/api/christmas-v2/funnel-event` | **Supabase Edge** primary; Mozas origin fallback | |
 | `/api/pet-v2/preview` | **Supabase Edge** `pet-v2-preview` | Vercel handler is live-disabled / unused. |
 | `/api/christmas-generate*` | **Supabase Edge** | Server-side only. |
@@ -31,4 +31,6 @@ Prices, providers, and product design are unchanged.
 Pre-cutover verify host: `tdg-verify.mozas-prod-01` via
 `curl --resolve tdg-verify.mozas-prod-01:80:$MOZAS_SSH_HOST http://tdg-verify.mozas-prod-01/`.
 
-Public `thedigitalgifter.com` / `www` stay on Vercel until DNS cutover.
+Public `thedigitalgifter.com` / `www` stay on Vercel until you change DNS.
+Caddy already matches those Host headers on `:80` via `--resolve` / after cutover.
+HTTPS for those names is applied only with `TDG_HTTPS_APPLY=yes bash scripts/apply-tdg-https.sh`.

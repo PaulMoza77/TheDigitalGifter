@@ -191,6 +191,62 @@ record(
   `http=${edgeProvider.status}`,
 );
 
+const apexCode = execFileSync(
+  "curl",
+  [
+    "-sS",
+    "-o",
+    "/tmp/tdg-apex-host",
+    "-w",
+    "%{http_code}",
+    "--max-time",
+    "15",
+    "--resolve",
+    `thedigitalgifter.com:80:${ip}`,
+    "http://thedigitalgifter.com/healthz",
+  ],
+  { encoding: "utf8" },
+);
+const apexBody = execFileSync("cat", ["/tmp/tdg-apex-host"], { encoding: "utf8" }).trim();
+record("caddy_apex_host_healthz", apexCode === "200" && apexBody === "ok", `http=${apexCode}`);
+
+const wwwCode = execFileSync(
+  "curl",
+  [
+    "-sS",
+    "-o",
+    "/tmp/tdg-www-host",
+    "-w",
+    "%{http_code}",
+    "--max-time",
+    "15",
+    "--resolve",
+    `www.thedigitalgifter.com:80:${ip}`,
+    "http://www.thedigitalgifter.com/",
+  ],
+  { encoding: "utf8" },
+);
+const wwwBody = execFileSync("cat", ["/tmp/tdg-www-host"], { encoding: "utf8" });
+record(
+  "caddy_www_host_home",
+  wwwCode === "200" && /^\s*<(!doctype html|html)/i.test(wwwBody),
+  `http=${wwwCode}`,
+);
+
+const serviceRole = originCurl("/api/pet-v3/internal-test-status", [
+  "-X",
+  "POST",
+  "-H",
+  "Content-Type: application/json",
+  "-d",
+  '{"funnel_session_id":"00000000-0000-4000-8000-000000000001"}',
+]);
+record(
+  "service_role_internal_status",
+  serviceRole.status === 200 && !serviceRole.html,
+  `http=${serviceRole.status}`,
+);
+
 const themozas = execFileSync(
   "curl",
   ["-sS", "-o", "/tmp/themozas-home", "-w", "%{http_code}", "--max-time", "15", `http://${ip}/`],

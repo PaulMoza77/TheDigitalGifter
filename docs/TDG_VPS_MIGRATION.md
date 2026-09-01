@@ -22,6 +22,24 @@ Do not use `VPS_*`.
 `scripts/mozas-ssh.sh` refuses any other host and checks the fingerprint before
 commands run.
 
+## Persist secrets (VPS, permanent)
+
+```bash
+export MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY
+export SUPABASE_SERVICE_ROLE_KEY
+export MOZAS_BACKUP_S3_ENDPOINT MOZAS_BACKUP_S3_BUCKET
+export MOZAS_BACKUP_S3_ACCESS_KEY MOZAS_BACKUP_S3_SECRET_KEY
+bash scripts/persist-tdg-vps-config.sh
+```
+
+Writes:
+
+- `/opt/mozas/projects/thedigitalgifter/secrets/app.env` — Vite keys (kept) + service role
+- `/opt/mozas/secrets/backup.env` — R2/S3 keys for offsite restic (endpoint is normalized)
+
+Never commit or print those values. Store `RESTIC_PASSWORD` off the VPS in the
+founder password manager (it already exists in `backup.env`; copy it yourself).
+
 ## Deploy
 
 From a clean checkout of the commit you want live:
@@ -35,7 +53,8 @@ The script:
 
 1. Verifies identity and TheMozas `http://127.0.0.1/healthz`.
 2. Rsyncs the repo to `/opt/mozas/projects/thedigitalgifter/repo` (never the `secrets/` directory).
-3. Applies Caddy host `tdg-verify.mozas-prod-01` while keeping default `:80` on TheMozas.
+3. Applies Caddy hosts `tdg-verify.mozas-prod-01`, `thedigitalgifter.com`, and
+   `www.thedigitalgifter.com` while keeping default `:80` on TheMozas.
 4. Builds `mozas/thedigitalgifter:<shortsha>` from VPS `app.env` Vite keys.
 5. Waits for container health. Failure is not reported as success; previous image is restored when present.
 6. Re-checks TheMozas and the TDG verify host.
@@ -49,7 +68,9 @@ Public DNS is **not** changed by deploy.
 
 ```bash
 curl --resolve tdg-verify.mozas-prod-01:80:"$MOZAS_SSH_HOST" http://tdg-verify.mozas-prod-01/healthz
+curl --resolve thedigitalgifter.com:80:"$MOZAS_SSH_HOST" http://thedigitalgifter.com/healthz
 node scripts/verify-tdg-vps-origin.mjs
+node scripts/verify-tdg-flows.mjs
 ```
 
 ## Rollback
@@ -76,42 +97,49 @@ in place for that rollback.
 ## Backup
 
 Local encrypted restic already includes `/opt/mozas/projects` (hence `app.env`).
-Offsite copy runs only when these are set in `/opt/mozas/secrets/backup.env`:
+Offsite `restic copy` runs when these are set in `/opt/mozas/secrets/backup.env`:
 
 - `MOZAS_BACKUP_S3_ENDPOINT`
 - `MOZAS_BACKUP_S3_BUCKET`
 - `MOZAS_BACKUP_S3_ACCESS_KEY`
 - `MOZAS_BACKUP_S3_SECRET_KEY`
 
-Store `RESTIC_PASSWORD` **off the VPS** (founder password manager). Do not put
-it in git or a PR.
+```bash
+bash scripts/run-tdg-backup-drill.sh
+```
+
+That initializes the R2 restic repo if needed, runs `mozas-backup.service`,
+requires `offsite=true` in `/opt/mozas/log/backup-last.json`, then restores
+latest **local** and **offsite** snapshots into isolated directories (production
+is not replaced).
 
 VPS backup is **not** a Supabase backup. Auth, Postgres, Storage, and Edge
 state remain in the Supabase project and need Supabase-native backups / PITR.
 
-Restore drill (isolated, does not replace production):
+## Manual DNS cutover (no Cloudflare token)
+
+Do this in the Cloudflare dashboard. Scripts will not change DNS.
+
+1. Keep **MX** (and any mail/TXT you did not plan to move).
+2. Point apex `thedigitalgifter.com` A to the Mozas VPS address (`MOZAS_SSH_HOST`).
+3. Point `www` A to the same address (or CNAME to the apex).
+4. Prefer DNS-only (grey cloud) for the first ACME issue. Orange-cloud can be
+   enabled later once HTTPS is green.
+5. Keep the Vercel production deployment as rollback.
+
+When public DNS already answers with the VPS:
 
 ```bash
-sudo /opt/mozas/bin/mozas-restore-test
+export MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY
+TDG_HTTPS_APPLY=yes bash scripts/apply-tdg-https.sh
 ```
 
-## DNS cutover (only after origin + backup policy)
+If Cloudflare is orange-cloud (proxied), add `TDG_HTTPS_ALLOW_PROXIED=yes`.
+That installs `deploy/caddy/Caddyfile.https.ready` (TheMozas + TDG HTTPS, verify
+host still on HTTP). Do **not** run this while public DNS still points at Vercel.
 
-```bash
-export CLOUDFLARE_API_TOKEN
-# optional: CLOUDFLARE_ZONE_ID, CLOUDFLARE_ZONE_NAME
-bash scripts/cutover-cloudflare-dns.sh
-```
+## Still optional
 
-Then install `deploy/caddy/Caddyfile.https.ready` on the proxy so ACME can
-issue certificates for `thedigitalgifter.com` / `www`.
-
-## Still required (names only)
-
-See the PR / run report. Typical gaps:
-
-- `SUPABASE_SERVICE_ROLE_KEY` (same-origin analytics persist + full sitemap)
-- Offsite S3 restic keys above
-- `CLOUDFLARE_API_TOKEN` (cutover)
+- GitHub Production `MOZAS_SSH_*` so CI deploy is not fail-closed
 - Stripe **test** keys for isolated checkout (do not replace live keys)
 - Off-VPS copy of `RESTIC_PASSWORD`

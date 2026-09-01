@@ -70,6 +70,50 @@ record(
   `http=${ingest.status}`,
 );
 
+function curlHost(hostname, path) {
+  const args = [
+    "-sS",
+    "-D",
+    "-",
+    "-o",
+    "/tmp/tdg-verify-body",
+    "--resolve",
+    `${hostname}:80:${ip}`,
+    `http://${hostname}${path}`,
+  ];
+  const out = execFileSync("curl", args, { encoding: "utf8", maxBuffer: 2_000_000 });
+  const statusMatch = out.match(/HTTP\/\S+\s+(\d+)/);
+  const status = statusMatch ? Number(statusMatch[1]) : 0;
+  const typeMatch = out.match(/content-type:\s*([^\r\n]+)/i);
+  const contentType = typeMatch ? typeMatch[1].trim() : "";
+  const body = execFileSync("cat", ["/tmp/tdg-verify-body"], { encoding: "utf8" });
+  return { status, contentType, body };
+}
+
+const apex = curlHost("thedigitalgifter.com", "/healthz");
+record("apex_host_healthz", apex.status === 200 && apex.body.trim() === "ok", `http=${apex.status}`);
+
+const www = curlHost("www.thedigitalgifter.com", "/");
+record(
+  "www_host_home",
+  www.status === 200 && /text\/html/i.test(www.contentType),
+  `http=${www.status}`,
+);
+
+const serviceRole = curl("/api/pet-v3/internal-test-status", [
+  "-X",
+  "POST",
+  "-H",
+  "Content-Type: application/json",
+  "-d",
+  '{"funnel_session_id":"00000000-0000-4000-8000-000000000001"}',
+]);
+record(
+  "service_role_internal_status",
+  serviceRole.status === 200 && !/text\/html/i.test(serviceRole.contentType),
+  `http=${serviceRole.status}`,
+);
+
 const failed = results.filter((row) => !row.ok);
 if (failed.length) {
   console.error(`VERIFY_FAILED ${failed.length}/${results.length}`);
