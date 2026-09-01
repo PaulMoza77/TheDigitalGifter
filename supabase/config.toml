@@ -70,5 +70,8 @@ verify_jwt = false
 [functions.christmas-generate-video]
 verify_jwt = false
 
+[functions.christmas-v2-funnel-event]
+verify_jwt = false
+
 [functions.delete-my-account]
 verify_jwt = true

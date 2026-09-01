@@ -5,7 +5,12 @@ import {
 } from "../pet/funnelAttribution";
 import { inferDeviceType } from "../pet/funnelSession";
 import { newFunnelUuid } from "../pet/funnelEventContract";
-import { CHRISTMAS_V2_EVENT_PATH, CHRISTMAS_V2_ROUTE } from "./config";
+import { getPublicSupabaseConfig } from "@/lib/env";
+import {
+  CHRISTMAS_V2_EVENT_EDGE_ACTION,
+  CHRISTMAS_V2_EVENT_PATH,
+  CHRISTMAS_V2_ROUTE,
+} from "./config";
 import { getChristmasV2SessionId } from "./session";
 import { CHRISTMAS_V2_EVENTS, type ChristmasV2EventName } from "./types";
 
@@ -73,25 +78,37 @@ export function trackChristmasV2Event(input: {
   }
 }
 
+function christmasEventEdgeUrl(): string {
+  const { url } = getPublicSupabaseConfig();
+  return `${url.replace(/\/$/, "")}/functions/v1/${CHRISTMAS_V2_EVENT_EDGE_ACTION}`;
+}
+
 function post(payload: Record<string, string | number | boolean | null>): void {
   const body = JSON.stringify(payload);
-  try {
-    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-      if (navigator.sendBeacon(CHRISTMAS_V2_EVENT_PATH, new Blob([body], { type: "application/json" }))) {
-        return;
-      }
-    }
-  } catch {
-    /* fall through */
-  }
   if (typeof fetch !== "function") return;
-  void fetch(CHRISTMAS_V2_EVENT_PATH, {
+
+  const { anon } = getPublicSupabaseConfig();
+  const edgeHeaders = {
+    "Content-Type": "application/json",
+    apikey: anon,
+    Authorization: `Bearer ${anon}`,
+  };
+
+  // Prefer Supabase Edge — production does not depend on Vercel deploy.
+  void fetch(christmasEventEdgeUrl(), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: edgeHeaders,
     body,
     keepalive: true,
-    credentials: "same-origin",
-  }).catch(() => undefined);
+  }).catch(() => {
+    void fetch(CHRISTMAS_V2_EVENT_PATH, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+      credentials: "same-origin",
+    }).catch(() => undefined);
+  });
 }
 
 function sendGa4(eventName: ChristmasV2EventName, product: string | null) {
