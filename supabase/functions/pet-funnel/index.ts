@@ -773,20 +773,35 @@ Deno.serve(async (req) => {
       }
       const email = asString(body.email).toLowerCase();
       const petName = asString(body.petName).slice(0, 40);
-      if (!email || !email.includes("@") || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return apiError("INVALID_REQUEST", "A valid email is required.");
-      }
-      if (isCheckoutPlaceholderEmail(email)) {
-        return apiError("INVALID_REQUEST", "A valid email is required.");
-      }
       if (petName.length < 2) return apiError("INVALID_REQUEST", "Pet name is required.");
+
+      // V2 optional gallery email: pet-name-only updates may still send the bootstrap
+      // pending+…@checkout.thedigitalgifter.com placeholder. Keep the order email as-is
+      // (Pet-name-only update / keep existing order email) and only persist pet_name
+      // so Apple Pay / Express is not blocked by optional fields.
+      const emailIsPlaceholder = isCheckoutPlaceholderEmail(email);
+      const emailIsReal =
+        Boolean(email) &&
+        !emailIsPlaceholder &&
+        email.includes("@") &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (email && !emailIsPlaceholder && !emailIsReal) {
+        return apiError("INVALID_REQUEST", "A valid email is required.");
+      }
+      if (!email && !asString(order.email)) {
+        return apiError("INVALID_REQUEST", "A valid email is required.");
+      }
+
+      const contactPatch: Record<string, string> = { pet_name: petName };
+      const persistedEmail = emailIsReal ? email : asString(order.email).toLowerCase();
+      if (emailIsReal) {
+        contactPatch.email = email;
+        contactPatch.email_normalized = email;
+      }
+
       const { error: contactUpdateError } = await service
         .from("pet_orders")
-        .update({
-          email,
-          email_normalized: email,
-          pet_name: petName,
-        })
+        .update(contactPatch)
         .eq("id", order.id);
       if (contactUpdateError) {
         console.error("[updateOrderContact] internal order update failed");
@@ -796,7 +811,7 @@ Deno.serve(async (req) => {
       const sessionId = asString(order.stripe_checkout_session_id);
       const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
       let stripeSessionSynced = false;
-      if (sessionId && stripeKey) {
+      if (sessionId && stripeKey && emailIsReal) {
         const params = new URLSearchParams();
         params.set("customer_email", email);
         params.set("metadata[email_hash]", await sha256Hex(email));
@@ -823,7 +838,7 @@ Deno.serve(async (req) => {
 
       return jsonResponse({
         orderId: order.id,
-        email,
+        email: persistedEmail || email,
         petName,
         updated: true,
         stripeSessionSynced,

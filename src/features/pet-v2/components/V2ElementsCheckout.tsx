@@ -12,6 +12,10 @@ import {
 } from "@stripe/react-stripe-js/checkout";
 import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import { sanitizeStripeCheckoutCustomerError, stripeCheckoutInitCustomerError } from "../../pet/funnelGuards";
+import {
+  CARD_PAY_INCOMPLETE_MESSAGE,
+  isExpressCheckoutConfirmEvent,
+} from "../../pet/expressCheckoutConfirm";
 import { ApplePayButton } from "../../pet/components/ApplePayButton";
 import { v2PayButtonLabel } from "../v2CheckoutHold";
 
@@ -133,11 +137,23 @@ function CheckoutBody({
     }
   }
 
+  function failExpressCheckout(event?: StripeExpressCheckoutElementConfirmEvent) {
+    try {
+      event?.paymentFailed?.({ reason: "fail" });
+    } catch {
+      // Stripe may already have dismissed the sheet.
+    }
+  }
+
   async function confirm(expressCheckoutConfirmEvent?: StripeExpressCheckoutElementConfirmEvent) {
     if (checkoutState.type !== "success") return;
     markInteraction();
     if (busy) return;
-    if (onBeforeConfirm) {
+
+    const isExpress = isExpressCheckoutConfirmEvent(expressCheckoutConfirmEvent);
+
+    // Card-only gate — never block Express; Apple Pay requires immediate checkout.confirm().
+    if (!isExpress && onBeforeConfirm) {
       try {
         const gate = await onBeforeConfirm();
         if (!gate.ok) {
@@ -157,25 +173,30 @@ function CheckoutBody({
         return;
       }
     }
-    if (!expressCheckoutConfirmEvent && !paymentComplete) {
-      setError("Enter your full card details before paying.");
+
+    if (!isExpress && !paymentComplete) {
+      setError(CARD_PAY_INCOMPLETE_MESSAGE);
       return;
     }
+
     setBusy(true);
     setError(null);
     try {
       await syncCheckoutEmail(checkoutState.checkout);
       const result = await checkoutState.checkout.confirm(
-        expressCheckoutConfirmEvent
+        isExpress
           ? { expressCheckoutConfirmEvent, redirect: "if_required" }
           : { redirect: "if_required" },
       );
       if (result.type === "error") {
+        if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
         const message = sanitizeStripeCheckoutCustomerError(result.error.message);
         console.info("[v2-elements-confirm]", { failureCode: result.error.code || "confirm_failed" });
         if (message) setError(message);
         return;
       }
+      // Best-effort contact sync after wallet success (debounced save may have missed).
+      void onBeforeConfirm?.().catch(() => undefined);
       const confirmedId =
         result.type === "success" && result.session?.id
           ? String(result.session.id)
@@ -184,6 +205,7 @@ function CheckoutBody({
         `/pet/order?token=${encodeURIComponent(publicToken)}&session_id=${encodeURIComponent(confirmedId)}`,
       );
     } catch (caught) {
+      if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
       const message = sanitizeStripeCheckoutCustomerError(caught instanceof Error ? caught.message : undefined);
       console.info("[v2-elements-confirm]", {
         failureCode: caught instanceof Error ? caught.name : "confirm_exception",

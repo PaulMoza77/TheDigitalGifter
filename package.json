@@ -15,7 +15,8 @@
     "deploy:pet-preview": "bash scripts/deploy-pet-preview.sh",
     "smoke:pet-preview": "PET_PREVIEW_SMOKE=1 node scripts/pet-preview-live-smoke.mjs",
     "smoke:pet-preview-ui": "node scripts/pet-preview-ui-e2e.mjs",
-    "secret-scan": "node scripts/secret-scan.mjs"
+    "secret-scan": "node scripts/secret-scan.mjs",
+    "deploy:pet-funnel": "bash scripts/deploy-pet-funnel.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

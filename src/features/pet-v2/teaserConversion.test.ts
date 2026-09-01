@@ -186,4 +186,35 @@ describe("V2 teaser conversion rebuild", () => {
     expect(teaser).toContain("PET_V2_PRICE_DISPLAY");
     expect(PET_V2_PRICE_DISPLAY).toBe("$2.99");
   });
+
+  it("allows pet-name-only contact save without rejecting bootstrap placeholder email", () => {
+    const funnel = readSrc("supabase/functions/pet-funnel/index.ts");
+    const hook = readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts");
+    const ui = readSrc("src/features/pet-v2/components/V2ElementsCheckout.tsx");
+    const teaser = readSrc("src/features/pet-v2/screens/TeaserOfferScreen.tsx");
+    // Backend must not hard-reject pending+… placeholders (blocks Apple Pay when name is filled).
+    expect(funnel).toContain("emailIsPlaceholder");
+    expect(funnel).toContain("emailIsReal");
+    expect(funnel).toContain("Pet-name-only update");
+    expect(funnel).toContain("keep existing order email");
+    expect(funnel).toContain("emailIsReal");
+    expect(funnel).toMatch(/if \(sessionId && stripeKey && emailIsReal\)/);
+    // Client documents the optional-field path used before Express confirm.
+    expect(hook).toContain('from "./v2ContactUpdate"');
+    expect(readSrc("src/features/pet-v2/v2ContactUpdate.ts")).toContain(
+      "Pet-name-only still sends the bootstrap pending+ email",
+    );
+    expect(readSrc("src/features/pet-v2/v2ContactUpdate.ts")).toContain(
+      "petNameOnly: hasPetName && !hasEmail",
+    );
+    // Express sheet must be failed closed when contact gate blocks confirm.
+    expect(ui).toContain("paymentFailed");
+    expect(ui).toContain('reason: "fail"');
+    // Apple Pay must confirm immediately — no await onBeforeConfirm before checkout.confirm().
+    expect(ui).toContain("isExpressCheckoutConfirmEvent");
+    expect(ui).toContain("never block Express");
+    expect(ui).toContain("CARD_PAY_INCOMPLETE_MESSAGE");
+    expect(teaser).toContain("validateAndUpdateV2OrderContact");
+    expect(teaser).toContain("setTimeout");
+  });
 });

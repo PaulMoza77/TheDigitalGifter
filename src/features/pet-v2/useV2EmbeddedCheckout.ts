@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PetApiError, uploadPhotoToSignedUrl, type PetFunnelApi } from "../pet/api";
+import { uploadPhotoToSignedUrl, type PetFunnelApi } from "../pet/api";
 import { petFunnelApi } from "../pet/supabaseApi";
 import { PET_DEFAULT_PERSONALITY } from "../pet/types";
-import { validatePetName } from "../pet/croGuards";
 import { checkoutAnalyticsContext } from "../pet/funnelInternal";
 import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "../pet/funnelGuards";
 import { buildPetOrderReturnUrl } from "../pet/orderReturnUrl";
@@ -38,7 +37,6 @@ export type V2CheckoutLoadingPhase =
 export const V2_CHECKOUT_EXPIRED_MESSAGE =
   "Your secure checkout session expired. Please upload your pet photo again.";
 const CHECKOUT_INIT_ERROR = V2_CHECKOUT_FAILED_COPY;
-const CONTACT_UPDATE_ERROR = "Could not save your details. Try again.";
 const V2_ELEMENTS_UI_MODE = "elements" as const;
 
 export type V2EmbeddedCheckoutState = {
@@ -748,70 +746,4 @@ export function useV2EmbeddedCheckout(input: {
   };
 }
 
-export async function validateAndUpdateV2OrderContact(input: {
-  api: PetFunnelApi;
-  orderId: string;
-  publicToken: string;
-  petName?: string;
-  email?: string;
-  species?: PetV2Species;
-  funnelSessionId?: string;
-}): Promise<
-  | { ok: true; petName: string; email: string; stripeSessionSynced?: boolean }
-  | { ok: false; error: string; focusId?: string }
-> {
-  const species = input.species ?? "dog";
-  const bootstrap = v2BootstrapContact(input.funnelSessionId ?? getPetV2SessionId(), species);
-  let petName = bootstrap.petName;
-  let email = bootstrap.email;
-
-  if (input.petName?.trim()) {
-    const named = validatePetName(input.petName);
-    if (!named.ok) {
-      return { ok: false, error: named.message, focusId: "v2-pet-name" };
-    }
-    petName = named.name;
-  }
-
-  if (input.email?.trim()) {
-    const trimmed = input.email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      return { ok: false, error: "Enter a valid email address.", focusId: "v2-email" };
-    }
-    email = trimmed;
-  }
-
-  if (!input.petName?.trim() && !input.email?.trim()) {
-    return { ok: true, petName, email };
-  }
-
-  try {
-    const updated = await input.api.updateOrderContact({
-      orderId: input.orderId,
-      publicToken: input.publicToken,
-      email,
-      petName,
-    });
-    if (!updated?.updated) {
-      return { ok: false, error: CONTACT_UPDATE_ERROR, focusId: "v2-email" };
-    }
-    if (updated.stripeSessionSynced === false) {
-      console.info("[v2-contact-update]", {
-        ok: true,
-        stripeSessionSynced: false,
-        fulfillmentUsesInternalEmail: true,
-      });
-    }
-    return {
-      ok: true,
-      petName,
-      email,
-      stripeSessionSynced: updated.stripeSessionSynced,
-    };
-  } catch (caught) {
-    if (caught instanceof PetApiError) {
-      return { ok: false, error: CONTACT_UPDATE_ERROR, focusId: "v2-email" };
-    }
-    return { ok: false, error: CONTACT_UPDATE_ERROR, focusId: "v2-email" };
-  }
-}
+export { validateAndUpdateV2OrderContact, V2_CONTACT_UPDATE_ERROR } from "./v2ContactUpdate";

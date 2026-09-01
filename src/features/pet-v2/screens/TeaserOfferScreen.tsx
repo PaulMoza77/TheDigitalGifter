@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,30 @@ export function TeaserOfferScreen({
 }) {
   const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const checkoutReadyFired = useRef(false);
+
+  useEffect(() => {
+    if (!checkout.checkoutReady || !checkout.orderId || !checkout.publicToken) return;
+    if (!petName?.trim() && !email?.trim()) return;
+    const timer = window.setTimeout(() => {
+      void validateAndUpdateV2OrderContact({
+        api: petFunnelApi,
+        orderId: checkout.orderId!,
+        publicToken: checkout.publicToken!,
+        petName,
+        email,
+        species,
+        funnelSessionId: getPetV2SessionId(),
+      }).catch(() => undefined);
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [
+    checkout.checkoutReady,
+    checkout.orderId,
+    checkout.publicToken,
+    petName,
+    email,
+    species,
+  ]);
 
   function markCheckoutReady() {
     if (checkoutReadyFired.current) return;

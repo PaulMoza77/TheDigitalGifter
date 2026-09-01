@@ -7,6 +7,10 @@ import {
 } from "@stripe/react-stripe-js/checkout";
 import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import { sanitizeStripeCheckoutCustomerError, stripeCheckoutInitCustomerError } from "../funnelGuards";
+import {
+  CARD_PAY_INCOMPLETE_MESSAGE,
+  isExpressCheckoutConfirmEvent,
+} from "../expressCheckoutConfirm";
 import { getStripePromise, reloadStripeForCheckout, stripeInstanceKeyFingerprint } from "../stripeLoader";
 import { ApplePayButton } from "./ApplePayButton";
 
@@ -118,10 +122,22 @@ function CheckoutBody({
     }
   }
 
+  function failExpressCheckout(event?: StripeExpressCheckoutElementConfirmEvent) {
+    try {
+      event?.paymentFailed?.({ reason: "fail" });
+    } catch {
+      // Stripe may already have dismissed the sheet.
+    }
+  }
+
   async function confirm(expressCheckoutConfirmEvent?: StripeExpressCheckoutElementConfirmEvent) {
     if (checkoutState.type !== "success") return;
     markInteraction();
-    if (onBeforeConfirm) {
+    if (busy) return;
+
+    const isExpress = isExpressCheckoutConfirmEvent(expressCheckoutConfirmEvent);
+
+    if (!isExpress && onBeforeConfirm) {
       try {
         const gate = await onBeforeConfirm();
         if (!gate.ok) {
@@ -141,26 +157,29 @@ function CheckoutBody({
         return;
       }
     }
-    if (!expressCheckoutConfirmEvent && !paymentComplete) {
-      setError("Enter your full card details before paying.");
+    if (!isExpress && !paymentComplete) {
+      setError(CARD_PAY_INCOMPLETE_MESSAGE);
       return;
     }
     setBusy(true);
     setError(null);
     try {
       await syncCheckoutEmail(checkoutState.checkout);
-      // Server Session return_url is the only source of truth — do not pass client returnUrl.
       const result = await checkoutState.checkout.confirm(
-        expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {},
+        isExpress ? { expressCheckoutConfirmEvent } : {},
       );
       if (result.type === "error") {
+        if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
         const message = sanitizeStripeCheckoutCustomerError(result.error.message);
         console.info("[stripe-checkout-confirm]", {
           failureCode: result.error.code || "confirm_failed",
         });
         if (message) setError(message);
+      } else {
+        void onBeforeConfirm?.().catch(() => undefined);
       }
     } catch (caught) {
+      if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
       const message = sanitizeStripeCheckoutCustomerError(caught instanceof Error ? caught.message : undefined);
       console.info("[stripe-checkout-confirm]", {
         failureCode: caught instanceof Error ? caught.name : "confirm_exception",

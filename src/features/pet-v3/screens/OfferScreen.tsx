@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { V3ElementsCheckout } from "../components/V3ElementsCheckout";
@@ -46,6 +46,28 @@ export function V3OfferScreen({
   const [offer, setOffer] = useState(() => v3PackOfferCopy());
   const checkoutViewedRef = useRef(false);
   const beginCheckoutRef = useRef(false);
+
+  useEffect(() => {
+    if (!checkout.checkoutReady || !checkout.orderId || !checkout.publicToken) return;
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!petName.trim() || !trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return;
+    const timer = window.setTimeout(() => {
+      void validateAndUpdateV3OrderContact({
+        api: petFunnelApi,
+        orderId: checkout.orderId!,
+        publicToken: checkout.publicToken!,
+        petName,
+        email: trimmedEmail,
+      }).catch(() => undefined);
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [
+    checkout.checkoutReady,
+    checkout.orderId,
+    checkout.publicToken,
+    petName,
+    email,
+  ]);
 
   function markCheckoutViewed() {
     if (checkoutViewedRef.current) return;
