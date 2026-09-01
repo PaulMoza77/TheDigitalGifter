@@ -12,7 +12,15 @@
 import { randomUUID } from "node:crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { waitUntil } from "@vercel/functions";
+import { waitUntil as vercelWaitUntil } from "@vercel/functions";
+
+function waitUntil(task: Promise<unknown>) {
+  try {
+    vercelWaitUntil(task);
+  } catch {
+    void task;
+  }
+}
 import {
   CHRISTMAS_PACKS,
   CHRISTMAS_PRODUCT_TYPE,

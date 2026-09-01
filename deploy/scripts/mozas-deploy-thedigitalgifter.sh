@@ -91,4 +91,6 @@ if ! docker compose \
   die "TDG deploy failed"
 fi
 
+printf '%s\n' "${RELEASE}" >"${TDG_RELEASES}/verified.tag"
+printf '%s\n' "${COMMIT}" >"${TDG_RELEASES}/verified.sha"
 log "TDG deploy ok release=${RELEASE} commit=${COMMIT}"

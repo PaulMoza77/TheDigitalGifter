@@ -54,6 +54,11 @@ node scripts/verify-tdg-vps-origin.mjs
 
 ## Rollback
 
+Verified pins after a healthy deploy:
+
+- `/opt/mozas/projects/thedigitalgifter/releases/verified.tag`
+- `/opt/mozas/projects/thedigitalgifter/releases/verified.sha`
+
 **Application image (VPS, no DNS change):**
 
 ```bash

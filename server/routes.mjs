@@ -13,6 +13,7 @@ export const API_MODULES = {
   "/api/pet-v3/internal-test-status": "pet-v3-internal-test-status.ts",
   "/api/pet-v3-internal-test-status": "pet-v3-internal-test-status.ts",
   "/api/pet-provider-status": "pet-provider-status.ts",
+  "/api/christmas-funnel": "christmas-funnel.ts",
   "/api/christmas-v2/funnel-event": "christmas-v2-funnel-event.ts",
   "/api/christmas-v2-funnel-event": "christmas-v2-funnel-event.ts",
   "/sitemap.xml": "sitemap.xml.ts",
