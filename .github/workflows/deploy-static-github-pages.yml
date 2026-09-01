@@ -36,7 +36,14 @@ jobs:
           cache: npm
 
       - name: Install and build static bundle
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in Production secrets for static build."
+            exit 2
+          fi
           npm ci
           node scripts/prepare-static-deploy.mjs
 
