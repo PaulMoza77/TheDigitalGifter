@@ -47,13 +47,29 @@ import {
 } from "../_shared/pet/mapOrder.ts";
 import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, resolveServerOwnedOffer, resolveServerOwnedPromo } from "../_shared/pet/videoGuards.ts";
 import { PET_SCENE_DEFINITIONS, sceneByKey } from "../_shared/pet/scenes.ts";
-import { petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
+import {
+  isCheckoutPlaceholderEmail,
+  parseMetaCapiClickIds,
+  petMetaCheckoutFields,
+  petPurchaseEventId,
+  sanitizeMetaClickId,
+  sendMetaCapiInitiateCheckout,
+  type MetaCapiClickIds,
+} from "../_shared/pet/meta.ts";
 import { parseCheckoutAttribution, recordPetFunnelInitiateCheckout } from "../_shared/pet/funnelEvents.ts";
 import {
   recordV3MetaInitiateCheckoutOnce,
   shouldDeferInitiateCheckoutToInteraction,
 } from "../_shared/pet/v3InitiateCheckout.ts";
-import { decideCheckoutSessionAction, isValidEmbeddedClientSecret, matchedEmbeddedCheckoutResponse, matchedOpenCheckoutResponse } from "../_shared/pet/checkout.ts";
+import { recordV3CheckoutSessionCreated } from "../_shared/pet/v3FunnelEvents.ts";
+import {
+  decideCheckoutSessionAction,
+  isValidEmbeddedClientSecret,
+  matchedEmbeddedCheckoutResponse,
+  matchedOpenCheckoutResponse,
+  normalizeCheckoutUiMode,
+  sessionMatchesRequestedUiMode,
+} from "../_shared/pet/checkout.ts";
 import {
   publishableKeyFingerprint,
   publishableKeyMatchesSecretMode,
@@ -72,15 +88,38 @@ import {
 
 type Body = Record<string, unknown>;
 
-/** Custom Checkout (`ui_mode: custom`) requires Stripe API 2025-03-31.basil or newer. */
-const STRIPE_API_VERSION = "2025-03-31.basil";
+/** Custom Checkout (`ui_mode: custom`) — Basil API used by V1. */
+const STRIPE_API_VERSION_CUSTOM = "2025-03-31.basil";
+/** Elements Checkout (`ui_mode: elements`) — official Stripe Dahlia quickstart version. */
+const STRIPE_API_VERSION_ELEMENTS = "2026-07-29.dahlia";
+/** Default for hosted / retrieve / V1 custom paths (backward compatible). */
+const STRIPE_API_VERSION = STRIPE_API_VERSION_CUSTOM;
 
-function stripeAuthHeaders(stripeKey: string, extra: Record<string, string> = {}): Record<string, string> {
+function stripeAuthHeaders(
+  stripeKey: string,
+  extra: Record<string, string> = {},
+  apiVersion: string = STRIPE_API_VERSION,
+): Record<string, string> {
   return {
     Authorization: `Bearer ${stripeKey}`,
-    "Stripe-Version": STRIPE_API_VERSION,
+    "Stripe-Version": apiVersion,
     ...extra,
   };
+}
+
+async function expireStripeCheckoutSession(stripeKey: string, sessionId: string): Promise<void> {
+  const id = String(sessionId || "").trim();
+  if (!id) return;
+  try {
+    await fetch(`https://api.stripe.com/v1/checkout/sessions/${id}/expire`, {
+      method: "POST",
+      headers: stripeAuthHeaders(stripeKey, {
+        "Content-Type": "application/x-www-form-urlencoded",
+      }),
+    });
+  } catch {
+    /* best-effort abandon of superseded unpaid sessions */
+  }
 }
 
 function apiError(code: string, message: string, status = 400, extra: Record<string, unknown> = {}) {
@@ -132,6 +171,7 @@ type CheckoutDiag = {
   sessionExists: boolean;
   livemode: boolean | null;
   customUi: boolean;
+  elementsUi: boolean;
   clientSecretValid: boolean;
   publishableMode: "live" | "test" | null;
   secretMode: "live" | "test" | null;
@@ -161,6 +201,7 @@ function buildCheckoutDiag(input: {
     sessionExists: input.sessionExists,
     livemode: input.session?.livemode ?? null,
     customUi: input.session?.ui_mode === "custom",
+    elementsUi: input.session?.ui_mode === "elements",
     clientSecretValid: isValidEmbeddedClientSecret(clientSecret, sessionId),
     publishableMode: publishableKey.startsWith("pk_live_")
       ? "live"
@@ -236,29 +277,114 @@ function isV3Funnel(value: unknown): boolean {
   return asString(value) === "v3";
 }
 
+type CheckoutCtx = {
+  funnelSessionId: string | null;
+  deviceType: string | null;
+  attribution: ReturnType<typeof parseCheckoutAttribution>;
+  metaClick: MetaCapiClickIds;
+};
+
+function applyCheckoutAttributionMetadata(
+  params: URLSearchParams,
+  checkoutCtx: CheckoutCtx,
+  funnelVariant: unknown,
+) {
+  const attr = checkoutCtx.attribution;
+  const creativeFromContent = asString(attr.utm_content)?.replace(/-FINAL$/i, "").slice(0, 120) || null;
+  for (const [key, value] of [
+    ["utm_source", attr.utm_source],
+    ["utm_medium", attr.utm_medium],
+    ["utm_campaign", attr.utm_campaign],
+    ["utm_content", attr.utm_content],
+    ["utm_term", attr.utm_term],
+    ["campaign_id", attr.campaign_id],
+    ["adset_id", attr.adset_id],
+    ["ad_id", attr.ad_id],
+    ["creative_id", creativeFromContent],
+  ] as const) {
+    const next = asString(value);
+    if (next) params.set(`metadata[${key}]`, next.slice(0, 500));
+  }
+  if (checkoutCtx.metaClick.fbc) {
+    params.set("metadata[meta_fbc]", checkoutCtx.metaClick.fbc.slice(0, 200));
+  }
+  if (checkoutCtx.metaClick.fbp) {
+    params.set("metadata[meta_fbp]", checkoutCtx.metaClick.fbp.slice(0, 200));
+  }
+  if (checkoutCtx.metaClick.hasMetaClick) {
+    params.set("metadata[has_meta_click]", "1");
+  }
+  if (isV3Funnel(funnelVariant)) {
+    params.set("metadata[funnel_version]", "v3");
+  }
+}
+
 async function maybeRecordInitiateCheckoutOnSessionCreate(
   service: ReturnType<typeof getServiceClient>,
   order: PetOrderRow,
   meta: ReturnType<typeof petMetaCheckoutFields>,
-  checkoutCtx: {
-    funnelSessionId: string | null;
-    deviceType: string | null;
-    attribution: ReturnType<typeof parseCheckoutAttribution>;
-  },
+  checkoutCtx: CheckoutCtx,
 ) {
   if (shouldDeferInitiateCheckoutToInteraction(order.funnel_variant)) return;
   await sendMetaCapiInitiateCheckout({
     eventId: meta.eventId,
     orderId: order.id,
-    email: asString(order.email),
+    email: isCheckoutPlaceholderEmail(asString(order.email)) ? null : asString(order.email),
     amountCents: meta.chargedAmountCents,
+    fbc: checkoutCtx.metaClick.fbc,
+    fbp: checkoutCtx.metaClick.fbp,
   });
   await recordPetFunnelInitiateCheckout(service, {
     orderId: order.id,
     amountCents: meta.chargedAmountCents,
     species: asString(order.species),
-    ...checkoutCtx,
+    funnelSessionId: checkoutCtx.funnelSessionId,
+    deviceType: checkoutCtx.deviceType,
+    attribution: checkoutCtx.attribution,
   });
+}
+
+async function maybeRecordV3CheckoutSessionCreated(
+  service: ReturnType<typeof getServiceClient>,
+  order: PetOrderRow,
+  stripeSessionId: string,
+  meta: ReturnType<typeof petMetaCheckoutFields>,
+  checkoutCtx: CheckoutCtx,
+) {
+  if (!isV3Funnel(order.funnel_variant)) return;
+  const attr = checkoutCtx.attribution;
+  const creativeFromContent = asString(attr.utm_content)?.replace(/-FINAL$/i, "").slice(0, 120) || null;
+  await recordV3CheckoutSessionCreated(service, {
+    orderId: order.id,
+    stripeSessionId,
+    amountCents: meta.chargedAmountCents,
+    attribution: {
+      funnelSessionId: checkoutCtx.funnelSessionId,
+      funnelVersion: "v3",
+      utmSource: attr.utm_source,
+      utmMedium: attr.utm_medium,
+      utmCampaign: attr.utm_campaign,
+      utmContent: attr.utm_content,
+      utmTerm: attr.utm_term,
+      campaignId: attr.campaign_id,
+      adsetId: attr.adset_id,
+      adId: attr.ad_id,
+      creativeId: creativeFromContent,
+      deviceType: checkoutCtx.deviceType,
+      isTest: false,
+    },
+  });
+}
+
+async function finalizeOpenCheckoutSession(
+  service: ReturnType<typeof getServiceClient>,
+  order: PetOrderRow,
+  meta: ReturnType<typeof petMetaCheckoutFields>,
+  checkoutCtx: CheckoutCtx,
+  stripeSessionId: string,
+) {
+  await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+  await maybeRecordV3CheckoutSessionCreated(service, order, stripeSessionId, meta, checkoutCtx);
 }
 
 function resolveFunnelVariant(value: unknown): "v1" | "v2" | "v3" {
@@ -690,23 +816,45 @@ Deno.serve(async (req) => {
       }
       const email = asString(body.email).toLowerCase();
       const petName = asString(body.petName).slice(0, 40);
-      if (!email || !email.includes("@") || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (petName.length < 2) return apiError("INVALID_REQUEST", "Pet name is required.");
+
+      // V2 optional gallery email: pet-name-only updates may still send the bootstrap
+      // pending+…@checkout.thedigitalgifter.com placeholder. Keep the order email as-is
+      // (Pet-name-only update / keep existing order email) and only persist pet_name
+      // so Apple Pay / Express is not blocked by optional fields.
+      const emailIsPlaceholder = isCheckoutPlaceholderEmail(email);
+      const emailIsReal =
+        Boolean(email) &&
+        !emailIsPlaceholder &&
+        email.includes("@") &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (email && !emailIsPlaceholder && !emailIsReal) {
         return apiError("INVALID_REQUEST", "A valid email is required.");
       }
-      if (petName.length < 2) return apiError("INVALID_REQUEST", "Pet name is required.");
-      await service
+      if (!email && !asString(order.email)) {
+        return apiError("INVALID_REQUEST", "A valid email is required.");
+      }
+
+      const contactPatch: Record<string, string> = { pet_name: petName };
+      const persistedEmail = emailIsReal ? email : asString(order.email).toLowerCase();
+      if (emailIsReal) {
+        contactPatch.email = email;
+        contactPatch.email_normalized = email;
+      }
+
+      const { error: contactUpdateError } = await service
         .from("pet_orders")
-        .update({
-          email,
-          email_normalized: email,
-          pet_name: petName,
-        })
+        .update(contactPatch)
         .eq("id", order.id);
+      if (contactUpdateError) {
+        console.error("[updateOrderContact] internal order update failed");
+        return apiError("INVALID_REQUEST", "Could not save your details. Try again.", 500);
+      }
 
       const sessionId = asString(order.stripe_checkout_session_id);
       const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
       let stripeSessionSynced = false;
-      if (sessionId && stripeKey) {
+      if (sessionId && stripeKey && emailIsReal) {
         const params = new URLSearchParams();
         params.set("customer_email", email);
         params.set("metadata[email_hash]", await sha256Hex(email));
@@ -722,9 +870,10 @@ Deno.serve(async (req) => {
         );
         stripeSessionSynced = stripeRes.ok;
         if (!stripeRes.ok) {
+          // Delivery/fulfillment uses pet_orders.email (internal), not Stripe customer_email.
           const stripeErr = await stripeRes.json().catch(() => ({}));
           console.error(
-            "[updateOrderContact] stripe session sync failed",
+            "[updateOrderContact] stripe session sync failed; internal delivery email preserved",
             asString((stripeErr as { error?: { message?: string } })?.error?.message) || "unknown",
           );
         }
@@ -732,7 +881,7 @@ Deno.serve(async (req) => {
 
       return jsonResponse({
         orderId: order.id,
-        email,
+        email: persistedEmail || email,
         petName,
         updated: true,
         stripeSessionSynced,
@@ -757,6 +906,8 @@ Deno.serve(async (req) => {
         orderId: order.id,
         email: asString(order.email),
         amountCents: meta.chargedAmountCents,
+        fbc: sanitizeMetaClickId(body.fbc ?? body.meta_fbc),
+        fbp: sanitizeMetaClickId(body.fbp ?? body.meta_fbp),
       });
       return jsonResponse({
         eventId: result.eventId,
@@ -816,6 +967,31 @@ Deno.serve(async (req) => {
     if (action === "createStripeCheckout") {
       const publicToken = asString(body.publicToken);
       const order = await requireOrder(service, asString(body.orderId), publicToken);
+
+      // Do not accept new V2 payments when fulfillment capacity is known unavailable.
+      if (isV2Funnel(order.funnel_variant)) {
+        const kill = String(Deno.env.get("PET_FULFILLMENT_ENABLED") || "true").trim().toLowerCase();
+        if (kill === "0" || kill === "false" || kill === "off" || kill === "disabled") {
+          return apiError(
+            "PROVIDER_UNAVAILABLE",
+            "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+            503,
+          );
+        }
+        const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        const { count: billingHolds } = await service
+          .from("pet_orders")
+          .select("id", { count: "exact", head: true })
+          .eq("last_error", "billing_required")
+          .gte("updated_at", since);
+        if ((billingHolds || 0) >= 2) {
+          return apiError(
+            "PROVIDER_UNAVAILABLE",
+            "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+            503,
+          );
+        }
+      }
       if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
       if (String(order.status) !== "awaiting_payment") {
         return apiError("INVALID_REQUEST", "This order is not ready for payment.");
@@ -823,10 +999,15 @@ Deno.serve(async (req) => {
       if (!order.photo_path || !order.photo_confirmed_at) {
         return apiError("INVALID_REQUEST", "Upload and confirm the pet photo first.");
       }
-      const checkoutCtx = {
+      const checkoutCtx: CheckoutCtx = {
         funnelSessionId: asString(body.funnelSessionId || body.funnel_session_id) || null,
         deviceType: asString(body.deviceType || body.device_type) || null,
         attribution: parseCheckoutAttribution(body.attribution),
+        metaClick: parseMetaCapiClickIds({
+          fbc: body.fbc ?? body.meta_fbc,
+          fbp: body.fbp ?? body.meta_fbp,
+          hasMetaClick: body.hasMetaClick ?? body.has_meta_click,
+        }),
       };
       const promo = resolveServerOwnedPromo(body.promoCode ?? body.promo_code, body.discountPercent ?? body.discount_percent);
       if (!promo.ok) return apiError("INVALID_REQUEST", promo.message);
@@ -914,18 +1095,29 @@ Deno.serve(async (req) => {
         amountChanged = true;
       }
 
-      const requestedOnPage = ["custom", "embedded"].includes(asString(body.uiMode || body.ui_mode));
-      const onPage = requestedOnPage;
+      const requestedUiMode = normalizeCheckoutUiMode(asString(body.uiMode || body.ui_mode));
+      const onPage = requestedUiMode === "custom" || requestedUiMode === "elements";
+      const existingMatchesUi =
+        Boolean(existingView?.id) &&
+        sessionMatchesRequestedUiMode(existingView?.ui_mode, requestedUiMode);
+      // Force recreate when amount changed OR when existing Session ui_mode mismatches the request
+      // (e.g. migrating V3 Custom secrets → Elements, or Elements → hosted fallback).
+      const forceCreate =
+        amountChanged ||
+        (Boolean(existingView?.id) && !paymentProcessing && !existingMatchesUi);
+      if (forceCreate && existingView?.id && !paymentProcessing && !existingMatchesUi) {
+        await expireStripeCheckoutSession(stripeKey, existingView.id);
+      }
       const decision = decideCheckoutSessionAction({
-        existingSession: amountChanged && existingView
+        existingSession: forceCreate && existingView
           ? { ...existingView, status: "expired" }
           : existingView,
         orderId: order.id,
         issuedCount: issuedCount || 0,
-        uiMode: onPage ? "custom" : "hosted",
+        uiMode: requestedUiMode === "elements" ? "elements" : onPage ? "custom" : "hosted",
       });
 
-      if (onPage && existingView?.id) {
+      if (onPage && existingView?.id && existingMatchesUi && !forceCreate) {
         const embeddedReuse = matchedEmbeddedCheckoutResponse({
           ...existingView,
           id: existingView.id || storedSessionId,
@@ -951,10 +1143,10 @@ Deno.serve(async (req) => {
             });
             return apiError("INVALID_REQUEST", "Stripe publishable key unavailable.", 503, embedded.diag);
           }
-          await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+          await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, embedded.sessionId);
           return jsonResponse({
             sessionId: embedded.sessionId,
-            checkoutUrl: embedded.checkoutUrl,
+            checkoutUrl: null,
             clientSecret: embedded.clientSecret,
             publishableKey: embedded.publishableKey,
             expiresAt: embedded.expiresAt,
@@ -996,7 +1188,7 @@ Deno.serve(async (req) => {
             sessionExists: Boolean(existingView),
           });
           if (embedded.ok) {
-            await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+            await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, embedded.sessionId);
             return jsonResponse({
               sessionId: embedded.sessionId,
               checkoutUrl: embedded.checkoutUrl,
@@ -1011,7 +1203,7 @@ Deno.serve(async (req) => {
           }
           if (embedded.reason === "conflict") return checkoutConflict();
         }
-        await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+        await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, matched.sessionId);
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
@@ -1022,10 +1214,15 @@ Deno.serve(async (req) => {
       }
 
       const successUrl = `${siteOrigin()}/pet/order?token=${encodeURIComponent(publicToken)}&session_id={CHECKOUT_SESSION_ID}`;
+      // Canonical Session return_url / success_url — Elements/Custom use return_url; hosted uses success_url.
       const cancelUrl = safeReturnUrl(asString(body.cancelUrl), `${siteOrigin()}/pet/checkout`);
       const params = new URLSearchParams();
       params.set("mode", "payment");
-      if (onPage) {
+      if (requestedUiMode === "elements") {
+        params.set("ui_mode", "elements");
+        params.set("return_url", successUrl);
+        params.set("expires_at", String(Math.floor(Date.now() / 1000) + 31 * 60));
+      } else if (requestedUiMode === "custom") {
         params.set("ui_mode", "custom");
         params.set("return_url", successUrl);
         params.set("expires_at", String(Math.floor(Date.now() / 1000) + 31 * 60));
@@ -1045,25 +1242,12 @@ Deno.serve(async (req) => {
       params.set("metadata[pet_order_id]", order.id);
       params.set("metadata[funnel_variant]", isV3Funnel(order.funnel_variant) ? "v3" : isV2Funnel(order.funnel_variant) ? "v2" : "v1");
       if (isV3Funnel(order.funnel_variant)) {
-        params.set("metadata[funnel_version]", "v3");
         params.set("metadata[species]", asString(order.species) || "cat");
-        const attr = checkoutCtx.attribution;
-        const creativeFromContent = asString(attr.utm_content)?.replace(/-FINAL$/i, "").slice(0, 120) || null;
-        for (const [key, value] of [
-          ["utm_source", attr.utm_source],
-          ["utm_medium", attr.utm_medium],
-          ["utm_campaign", attr.utm_campaign],
-          ["utm_content", attr.utm_content],
-          ["utm_term", attr.utm_term],
-          ["campaign_id", attr.campaign_id],
-          ["adset_id", attr.adset_id],
-          ["ad_id", attr.ad_id],
-          ["creative_id", creativeFromContent],
-        ] as const) {
-          const next = asString(value);
-          if (next) params.set(`metadata[${key}]`, next.slice(0, 500));
-        }
+      } else if (isV2Funnel(order.funnel_variant)) {
+        params.set("metadata[species]", asString(order.species) || "dog");
       }
+      // Persist UTMs + Meta click cookies on every variant so webhook CAPI can attribute.
+      applyCheckoutAttributionMetadata(params, checkoutCtx, order.funnel_variant);
       if (checkoutCtx.funnelSessionId) {
         params.set("metadata[funnel_session_id]", checkoutCtx.funnelSessionId);
       }
@@ -1072,12 +1256,18 @@ Deno.serve(async (req) => {
       params.set("payment_intent_data[metadata][sku]", PET_SKU);
       params.set("payment_intent_data[metadata][pet_order_id]", order.id);
 
+      const createApiVersion =
+        requestedUiMode === "elements" ? STRIPE_API_VERSION_ELEMENTS : STRIPE_API_VERSION_CUSTOM;
       const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
         method: "POST",
-        headers: stripeAuthHeaders(stripeKey, {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Idempotency-Key": decision.idempotencyKey,
-        }),
+        headers: stripeAuthHeaders(
+          stripeKey,
+          {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Idempotency-Key": decision.idempotencyKey,
+          },
+          createApiVersion,
+        ),
         body: params,
       });
       const session = await stripeRes.json();
@@ -1100,7 +1290,10 @@ Deno.serve(async (req) => {
         );
       }
 
-      const verifiedSession = await fetchStripeCheckoutSession(stripeKey, asString(session.id));
+      const verifiedSession =
+        asString(session.client_secret) && asString(session.id)
+          ? session
+          : await fetchStripeCheckoutSession(stripeKey, asString(session.id));
 
       const attached = await service.rpc("attach_pet_checkout_session", {
         p_order_id: order.id,
@@ -1134,7 +1327,7 @@ Deno.serve(async (req) => {
               checkoutDiag: embedded.diag,
             });
           }
-          await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+          await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, embedded.sessionId);
           return jsonResponse({
             sessionId: embedded.sessionId,
             checkoutUrl: embedded.checkoutUrl,
@@ -1150,7 +1343,7 @@ Deno.serve(async (req) => {
         const matched = matchedOpenCheckoutResponse(winner ? { ...winner, id: winner.id || attachedId } : null);
         if (!matched.ok) return checkoutConflict();
         const meta = petMetaCheckoutFields(order);
-        await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+        await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, matched.sessionId);
         return jsonResponse({
           sessionId: matched.sessionId,
           checkoutUrl: matched.checkoutUrl,
@@ -1184,12 +1377,16 @@ Deno.serve(async (req) => {
           p_order_id: order.id,
           p_action: "checkout_session_created",
           p_actor_type: "system",
-          p_payload: { ...embedded.diag, initiate_event_id: meta.eventId, ui_mode: "custom" },
+          p_payload: {
+            ...embedded.diag,
+            initiate_event_id: meta.eventId,
+            ui_mode: requestedUiMode,
+          },
         });
-        await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+        await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, embedded.sessionId);
         return jsonResponse({
           sessionId: embedded.sessionId,
-          checkoutUrl: embedded.checkoutUrl,
+          checkoutUrl: null,
           clientSecret: embedded.clientSecret,
           publishableKey: embedded.publishableKey,
           expiresAt: embedded.expiresAt,
@@ -1208,7 +1405,7 @@ Deno.serve(async (req) => {
         p_actor_type: "system",
         p_payload: { session_present: true, initiate_event_id: meta.eventId },
       });
-      await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
+      await finalizeOpenCheckoutSession(service, order, meta, checkoutCtx, matched.sessionId);
       return jsonResponse({
         sessionId: matched.sessionId,
         checkoutUrl: matched.checkoutUrl,
@@ -1460,6 +1657,14 @@ Deno.serve(async (req) => {
       const publicToken = asString(body.publicToken);
       const order = await findOrderByToken(service, publicToken);
       if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+      const checkoutSessionId = asString(body.checkoutSessionId || body.sessionId);
+      if (checkoutSessionId) {
+        const orderSessionId = asString(order.stripe_checkout_session_id);
+        // Strict relation: supplied session_id must equal the order's stored Stripe session.
+        if (!orderSessionId || orderSessionId !== checkoutSessionId) {
+          return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
+        }
+      }
       const scenes = await loadScenes(service, order.id);
       const clips = await loadClips(service, order.id);
 

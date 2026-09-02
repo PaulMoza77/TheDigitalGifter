@@ -14,5 +14,12 @@ export function isSupportWidgetHidden(pathname: string) {
     return pathname !== "/pet/order" && !pathname.startsWith("/pet/order/");
   }
 
+  if (pathname === "/christmas-ai-photos" || pathname.startsWith("/christmas-ai-photos/")) {
+    return (
+      pathname !== "/christmas-ai-photos/order" &&
+      !pathname.startsWith("/christmas-ai-photos/order/")
+    );
+  }
+
   return false;
 }

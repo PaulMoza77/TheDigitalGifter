@@ -1,4 +1,4 @@
-/** V3-isolated embedded checkout session cache (separate from V1 keys). */
+/** V3-isolated Elements checkout session cache (separate from V1 keys). */
 
 import {
   isValidEmbeddedClientSecret,
@@ -6,8 +6,13 @@ import {
 } from "../pet/funnelGuards";
 
 export const V3_CHECKOUT_HOLD_STORAGE_KEY = "tdg.petFunnelV3.checkoutHold.v1";
-export const V3_CHECKOUT_SESSION_CACHE_KEY = "tdg.petFunnelV3.checkoutSession.v1";
+/** Versioned Elements cache — never reuse Custom Checkout (v1) secrets. */
+export const V3_CHECKOUT_SESSION_CACHE_KEY = "tdg.petFunnelV3.checkoutSession.v2";
+/** Legacy Custom Checkout cache key — read only for order recovery, never for Elements secrets. */
+export const V3_CHECKOUT_SESSION_CACHE_KEY_LEGACY = "tdg.petFunnelV3.checkoutSession.v1";
 export const V3_CHECKOUT_HOLD_MS = 30 * 60 * 1000;
+export const V3_CHECKOUT_CACHE_VERSION = 2;
+export const V3_CHECKOUT_MODE_ELEMENTS = "elements" as const;
 
 export type V3CheckoutHold = {
   expiresAt: number;
@@ -26,6 +31,8 @@ export type V3CachedEmbeddedCheckout = {
   amountCents?: number;
   chargedAmountCents?: number;
   status?: "open" | "payment_processing" | "comped";
+  checkoutMode?: "elements" | "custom" | "hosted";
+  cacheVersion?: number;
 };
 
 function storage(): Storage | null {
@@ -58,6 +65,7 @@ export function readOrResetV3CheckoutHold(nowMs = Date.now()): { expiresAt: numb
   const expiresAt = nowMs + V3_CHECKOUT_HOLD_MS;
   writeV3CheckoutHold({ expiresAt });
   storage()?.removeItem(V3_CHECKOUT_SESSION_CACHE_KEY);
+  storage()?.removeItem(V3_CHECKOUT_SESSION_CACHE_KEY_LEGACY);
   return { expiresAt, reset: true };
 }
 
@@ -70,7 +78,6 @@ export function readCachedV3EmbeddedCheckout(nowMs = Date.now()): V3CachedEmbedd
       return null;
     }
     if (!isValidCachedV3EmbeddedCheckout(parsed)) {
-      storage()?.removeItem(V3_CHECKOUT_SESSION_CACHE_KEY);
       return null;
     }
     return parsed;
@@ -79,10 +86,50 @@ export function readCachedV3EmbeddedCheckout(nowMs = Date.now()): V3CachedEmbedd
   }
 }
 
-/** Reject bare cs_* session ids and other invalid values stored as clientSecret. */
+/**
+ * Order identity for refresh recovery when the cached client secret is stale/invalid.
+ * Also recovers order id/token from legacy Custom Checkout cache (v1) without reusing its secret.
+ * Never stores raw photo bytes.
+ */
+export function readRecoverableV3CheckoutOrder(nowMs = Date.now()): {
+  orderId: string;
+  publicToken: string;
+  sessionId?: string;
+  expiresAt: number;
+} | null {
+  const store = storage();
+  if (!store) return null;
+  for (const key of [V3_CHECKOUT_SESSION_CACHE_KEY, V3_CHECKOUT_SESSION_CACHE_KEY_LEGACY]) {
+    const raw = store.getItem(key);
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw) as V3CachedEmbeddedCheckout;
+      const orderId = String(parsed.orderId || "").trim();
+      const publicToken = String(parsed.publicToken || "").trim();
+      if (!orderId || !publicToken) continue;
+      if (!Number.isFinite(parsed.expiresAt) || parsed.expiresAt <= nowMs) continue;
+      return {
+        orderId,
+        publicToken,
+        sessionId: String(parsed.sessionId || "").trim() || undefined,
+        expiresAt: parsed.expiresAt,
+      };
+    } catch {
+      /* try next key */
+    }
+  }
+  return null;
+}
+
+/** Reject Custom/legacy caches and bare cs_* session ids. */
 export function isValidCachedV3EmbeddedCheckout(
-  cached: Pick<V3CachedEmbeddedCheckout, "clientSecret" | "sessionId" | "publishableKey">,
+  cached: Pick<
+    V3CachedEmbeddedCheckout,
+    "clientSecret" | "sessionId" | "publishableKey" | "checkoutMode" | "cacheVersion"
+  >,
 ): boolean {
+  if (cached.cacheVersion !== V3_CHECKOUT_CACHE_VERSION) return false;
+  if (cached.checkoutMode !== V3_CHECKOUT_MODE_ELEMENTS) return false;
   const publishableKey = String(cached.publishableKey || "").trim();
   if (!publishableKey.startsWith("pk_")) return false;
   if (!isValidEmbeddedClientSecret(cached.clientSecret, cached.sessionId)) return false;
@@ -90,11 +137,19 @@ export function isValidCachedV3EmbeddedCheckout(
 }
 
 export function writeCachedV3EmbeddedCheckout(value: V3CachedEmbeddedCheckout) {
-  storage()?.setItem(V3_CHECKOUT_SESSION_CACHE_KEY, JSON.stringify(value));
+  const payload: V3CachedEmbeddedCheckout = {
+    ...value,
+    checkoutMode: V3_CHECKOUT_MODE_ELEMENTS,
+    cacheVersion: V3_CHECKOUT_CACHE_VERSION,
+  };
+  storage()?.setItem(V3_CHECKOUT_SESSION_CACHE_KEY, JSON.stringify(payload));
+  // Drop legacy Custom secrets so they cannot be reused as Elements.
+  storage()?.removeItem(V3_CHECKOUT_SESSION_CACHE_KEY_LEGACY);
 }
 
 export function clearCachedV3EmbeddedCheckout() {
   storage()?.removeItem(V3_CHECKOUT_SESSION_CACHE_KEY);
+  storage()?.removeItem(V3_CHECKOUT_SESSION_CACHE_KEY_LEGACY);
 }
 
 /** Session-scoped placeholder contact that passes createOrder validation before the customer types. */
@@ -107,8 +162,8 @@ export function v3BootstrapContact(funnelSessionId: string): { email: string; pe
 }
 
 export function v3PayButtonLabel(petName: string) {
-  return (_payLabel: string) => {
+  return (payLabel: string) => {
     const name = petName.trim();
-    return name.length >= 2 ? `Pay $12 & unlock ${name}'s collection` : "Pay $12 & unlock your cat's collection";
+    return name.length >= 2 ? `Pay ${payLabel} & unlock ${name}'s collection` : `Pay ${payLabel} & unlock your cat's collection`;
   };
 }

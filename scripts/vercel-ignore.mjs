@@ -1,26 +1,13 @@
 #!/usr/bin/env node
 /**
- * Vercel Ignore Command.
+ * Vercel Ignore Command for this repository only.
  * Exit 0 = skip this deployment. Exit 1 = continue building.
  *
- * Preview and Development deploys always build.
- * Production deploys are skipped unless ENABLE_PRODUCTION_DEPLOY=1 so a
- * merge to main cannot publish the site by accident.
+ * Production is Mozas VPS. Skip all Vercel builds for
+ * the-digital-gifter and the-digital-gifter-d5vu so GitHub pushes
+ * do not republish those two projects. Existing Vercel deployments
+ * stay as rollback until the founder confirms a live payment.
  */
-
 const vercelEnv = String(process.env.VERCEL_ENV || "").toLowerCase();
-const allowProduction = process.env.ENABLE_PRODUCTION_DEPLOY === "1";
-const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
-const allowMarkedPublish = commitMessage.includes("[prod-publish]");
-
-if (vercelEnv === "production" && !allowProduction && !allowMarkedPublish) {
-  console.log(
-    "[release-control] Skipping production deploy. Set ENABLE_PRODUCTION_DEPLOY=1 on the Vercel Production environment, or include [prod-publish] in the commit message, when you are ready to publish.",
-  );
-  process.exit(0);
-}
-
-console.log(
-  `[release-control] Continuing ${vercelEnv || "unknown"} deploy.`,
-);
-process.exit(1);
+console.log(`[release-control] Skipping Vercel ${vercelEnv || "unknown"} deploy — TDG origin is Mozas VPS.`);
+process.exit(0);

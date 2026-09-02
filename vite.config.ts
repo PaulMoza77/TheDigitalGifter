@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import { petFunnelEventDevPlugin } from "./vite.petFunnelEventPlugin";
 import { petV2DevPlugin } from "./vite.petV2Plugin";
+import { christmasV2DevPlugin } from "./vite.christmasPlugin";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -12,7 +13,7 @@ export default defineConfig(({ mode }) => {
   process.env.REPLICATE_API_TOKEN ||= env.REPLICATE_API_TOKEN || "";
   process.env.PET_V2_PREVIEW_LIVE ||= env.PET_V2_PREVIEW_LIVE || "";
   return {
-    plugins: [react(), petFunnelEventDevPlugin(), petV2DevPlugin()],
+    plugins: [react(), petFunnelEventDevPlugin(), petV2DevPlugin(), christmasV2DevPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

@@ -76,6 +76,7 @@ export function PetOrderRoute() {
       navigation={navigation}
       api={petFunnelApi}
       publicToken={params.get("token") || undefined}
+      checkoutSessionId={params.get("session_id") || undefined}
     />
   );
 }

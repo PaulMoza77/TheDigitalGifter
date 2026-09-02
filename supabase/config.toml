@@ -61,14 +61,26 @@ verify_jwt = false
 [functions.pet-analytics-sync]
 verify_jwt = false
 
+[functions.christmas-funnel]
+verify_jwt = false
+
+[functions.christmas-generate]
+verify_jwt = false
+
+[functions.christmas-generate-video]
+verify_jwt = false
+
+[functions.christmas-v2-funnel-event]
+verify_jwt = false
+
 [functions.delete-my-account]
 verify_jwt = true
 
 [functions.christmas-checkout]
 verify_jwt = false
 
-[functions.christmas-funnel]
+[functions.christmas-photo-funnel]
 verify_jwt = false
 
-[functions.christmas-generate]
+[functions.christmas-photo-generate]
 verify_jwt = false

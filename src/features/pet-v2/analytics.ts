@@ -16,8 +16,12 @@ const SESSION_ONCE = new Set<PetV2EventName>([
   "v2_landing_view",
   "v2_upload_started",
   "v2_upload_completed",
-  "v2_preview_viewed",
+  "v2_species_confirmed",
+  "v2_teaser_viewed",
   "v2_offer_viewed",
+  "v2_preview_viewed",
+  "v2_collection_viewed",
+  "v2_checkout_canceled",
 ]);
 
 export function isPetV2EventName(value: string): value is PetV2EventName {
@@ -75,7 +79,16 @@ export function v2IdempotencyKey(input: {
       input.eventName === "v2_preview_generation_completed" ||
       input.eventName === "v2_preview_generation_failed" ||
       input.eventName === "v2_preview_regenerated" ||
-      input.eventName === "v2_begin_checkout")
+      input.eventName === "v2_teaser_generation_started" ||
+      input.eventName === "v2_teaser_generation_completed" ||
+      input.eventName === "v2_teaser_generation_failed" ||
+      input.eventName === "v2_checkout_session_requested" ||
+      input.eventName === "v2_checkout_session_created" ||
+      input.eventName === "v2_checkout_failed" ||
+      input.eventName === "v2_begin_checkout" ||
+      input.eventName === "v2_paid_generation_started" ||
+      input.eventName === "v2_paid_generation_completed" ||
+      input.eventName === "v2_paid_generation_failed")
   ) {
     return `${input.sessionId}:${input.eventName}:${attempt}`.slice(0, 180);
   }

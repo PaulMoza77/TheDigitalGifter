@@ -119,11 +119,11 @@ describe("christmas photo pricing + wiring", () => {
     );
   });
 
-  it("webhook enqueues christmas-generate after paid", () => {
+  it("webhook enqueues christmas-photo-generate after paid", () => {
     expect(readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts")).toContain(
-      "christmas-generate",
+      "christmas-photo-generate",
     );
-    expect(readSrc("supabase/functions/christmas-generate/index.ts")).toContain(
+    expect(readSrc("supabase/functions/christmas-photo-generate/index.ts")).toContain(
       'payment_status !== "paid"',
     );
   });

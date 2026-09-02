@@ -17,8 +17,13 @@ import NeedHelpCard from "@/components/client/NeedHelpCard";
 import UsageSummaryCard from "@/components/client/UsageSummaryCard";
 
 import PetsGenerations from "@/components/client/PetsGenerations";
+import ChristmasGenerations, {
+  type ChristmasAccountGallery,
+} from "@/components/client/ChristmasGenerations";
 import { petFunnelApi } from "@/features/pet/supabaseApi";
+import { christmasFunnelApi } from "@/features/christmas-v2/api";
 import { PetApiError } from "@/features/pet/api";
+import { ChristmasApiError } from "@/features/christmas-v2/api";
 import type { PetAccountGallery } from "@/features/pet/types";
 import type { ClientGeneration, ClientStat } from "@/components/client/types";
 
@@ -157,6 +162,7 @@ export default function AccountDashboard() {
   const [summary, setSummary] = React.useState<DashboardSummaryRow | null>(null);
   const [recentRows, setRecentRows] = React.useState<GenerationRow[]>([]);
   const [petGalleries, setPetGalleries] = React.useState<PetAccountGallery[]>([]);
+  const [christmasGalleries, setChristmasGalleries] = React.useState<ChristmasAccountGallery[]>([]);
   const [generationsLoadError, setGenerationsLoadError] = React.useState("");
 
   const loadDashboard = React.useCallback(async () => {
@@ -179,10 +185,11 @@ export default function AccountDashboard() {
         setSummary(null);
         setRecentRows([]);
         setPetGalleries([]);
+        setChristmasGalleries([]);
         return;
       }
 
-      const [summaryRes, generationsRes, petGalleriesRes] = await Promise.all([
+      const [summaryRes, generationsRes, petGalleriesRes, christmasGalleriesRes] = await Promise.all([
         supabase
           .from("client_dashboard_summary")
           .select("user_id, total_generations, saved_results_count, recent_activity_count")
@@ -203,6 +210,17 @@ export default function AccountDashboard() {
           console.error("[AccountDashboard] pet galleries error:", error);
           return { galleries: [] as PetAccountGallery[] };
         }),
+
+        christmasFunnelApi.listMyChristmasGalleries().catch((error) => {
+          if (
+            error instanceof ChristmasApiError &&
+            (error.status === 401 || error.code === "AUTH_REQUIRED")
+          ) {
+            return [] as ChristmasAccountGallery[];
+          }
+          console.error("[AccountDashboard] christmas galleries error:", error);
+          return [] as ChristmasAccountGallery[];
+        }),
       ]);
 
       if (summaryRes.error) {
@@ -221,12 +239,14 @@ export default function AccountDashboard() {
       }
 
       setPetGalleries(Array.isArray(petGalleriesRes.galleries) ? petGalleriesRes.galleries : []);
+      setChristmasGalleries(Array.isArray(christmasGalleriesRes) ? christmasGalleriesRes : []);
     } catch (error) {
       console.error("[AccountDashboard] fatal:", error);
 
       setSummary(null);
       setRecentRows([]);
       setPetGalleries([]);
+      setChristmasGalleries([]);
       setGenerationsLoadError(error instanceof Error ? error.message : "Failed to load dashboard.");
     } finally {
       setLoading(false);
@@ -440,6 +460,7 @@ export default function AccountDashboard() {
       ) : null}
 
       <PetsGenerations galleries={petGalleries} loading={loading} onRefresh={() => void loadDashboard()} />
+      <ChristmasGenerations galleries={christmasGalleries} loading={loading} />
 
       <section className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.5fr)_420px]">
         <RecentGenerations items={recentGenerations} />

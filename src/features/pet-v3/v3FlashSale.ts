@@ -5,7 +5,7 @@ import {
   PET_V3_PRICE_DISPLAY,
 } from "./types";
 
-/** Rolling 24-hour urgency window — resets every cycle; checkout price stays $12. */
+/** Rolling 24-hour urgency window — resets every cycle; checkout price stays $2.99. */
 export const PET_V3_SALE_CYCLE_MS = 24 * 60 * 60 * 1000;
 
 /** First cycle anchor (V3 cat funnel production launch). */
@@ -30,7 +30,7 @@ export function v3SaleRemainingMs(nowMs = Date.now()): number {
   return PET_V3_SALE_CYCLE_MS - positionInCycle;
 }
 
-/** Always $12 from $27 — timer rolls every 24h for urgency. */
+/** Always $2.99 from $27 — timer rolls every 24h for urgency. */
 export function v3FlashSale(nowMs = Date.now()): V3FlashSale {
   const remainingMs = v3SaleRemainingMs(nowMs);
   return {

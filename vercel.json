@@ -1,7 +1,25 @@
 {
   "ignoreCommand": "node scripts/vercel-ignore.mjs",
+  "headers": [
+    {
+      "source": "/.well-known/apple-developer-merchantid-domain-association",
+      "headers": [
+        { "key": "Content-Type", "value": "application/octet-stream" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    }
+  ],
   "functions": {
     "api/pet-v2/preview.ts": {
+      "maxDuration": 60
+    },
+    "api/christmas-funnel.ts": {
+      "maxDuration": 60
+    },
+    "api/christmas-generate.ts": {
+      "maxDuration": 60
+    },
+    "api/christmas-generate-video.ts": {
       "maxDuration": 60
     }
   },
@@ -23,11 +41,19 @@
       "destination": "/api/pet-v3-funnel-event"
     },
     {
+      "source": "/api/christmas-v2/funnel-event",
+      "destination": "/api/christmas-v2-funnel-event"
+    },
+    {
+      "source": "/api/pet-v3/internal-test-status",
+      "destination": "/api/pet-v3-internal-test-status"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap.xml"
     },
     {
-      "source": "/((?!api/|images/|assets/).*)",
+      "source": "/((?!api/|images/|assets/|\\.well-known/).*)",
       "destination": "/index.html"
     }
   ]

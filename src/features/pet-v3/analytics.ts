@@ -16,6 +16,7 @@ import {
   PET_V3_EVENTS,
   PET_V3_FUNNEL_VARIANT,
   PET_V3_FUNNEL_VERSION,
+  PET_V3_PRICE_CENTS,
   PET_V3_ROUTE,
   PET_V3_SPECIES,
   type PetV3EventName,
@@ -46,6 +47,7 @@ export function sanitizeV3Pathname(value?: string | null): string | null {
 }
 
 function clientTestFlag(): boolean {
+  /* Hint only — production ingest ignores this; see api/pet-v3-funnel-event.ts */
   if (typeof window === "undefined") return false;
   try {
     return new URLSearchParams(window.location.search).get("tdg_funnel_test") === "1";
@@ -135,6 +137,10 @@ export function trackPetV3Event(input: TrackV3Input): void {
         typeof input.amountCents === "number" && Number.isFinite(input.amountCents)
           ? Math.round(input.amountCents)
           : null,
+      displayed_price_cents:
+        typeof input.amountCents === "number" && Number.isFinite(input.amountCents)
+          ? Math.round(input.amountCents)
+          : PET_V3_PRICE_CENTS,
       utm_source: contract.source,
       utm_medium: contract.medium,
       utm_campaign: contract.campaign,

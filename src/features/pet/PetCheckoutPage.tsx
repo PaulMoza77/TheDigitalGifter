@@ -28,7 +28,9 @@ import {
 import { formatOfferPrice, resolveServerOwnedPromo } from "./videoGuards";
 import {
   checkoutPreparingHeadline,
+  clearCachedEmbeddedCheckout,
   formatHoldCountdown,
+  isValidCachedEmbeddedCheckout,
   readCachedEmbeddedCheckout,
   readOrResetCheckoutHold,
   remainingHoldMs,
@@ -191,10 +193,14 @@ export function PetCheckoutPage({
     }
 
     const cached = readCachedEmbeddedCheckout();
-    if (cached?.clientSecret && cached.publishableKey && !appliedPromo.code) {
-      setClientSecret(cached.clientSecret);
-      setPublishableKey(cached.publishableKey);
-      return;
+    if (cached && !appliedPromo.code) {
+      if (isValidCachedEmbeddedCheckout(cached)) {
+        setClientSecret(cached.clientSecret!);
+        setPublishableKey(cached.publishableKey!);
+        return;
+      }
+      // Legacy/partial cache (e.g. missing publicToken) would hide checkout forever — invalidate and bootstrap.
+      clearCachedEmbeddedCheckout();
     }
 
     setSubmitting(true);
@@ -360,7 +366,6 @@ export function PetCheckoutPage({
                 publishableKey={publishableKey}
                 email={draft.email}
                 dueDisplay={dueDisplay}
-                returnUrl={`${window.location.origin}/pet/order`}
               />
             ) : (
               <div className="space-y-4">

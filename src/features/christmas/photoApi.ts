@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-const FUNNEL_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-funnel`;
+const FUNNEL_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-photo-funnel`;
 const CHECKOUT_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-checkout`;
 
 async function anonHeaders(): Promise<Record<string, string>> {

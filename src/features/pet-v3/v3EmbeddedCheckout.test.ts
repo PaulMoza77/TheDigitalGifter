@@ -62,24 +62,27 @@ describe("V3 embedded checkout", () => {
 
   it("does not include the old hosted-checkout Unlock CTA on the offer screen", () => {
     const offer = readSrc("src/features/pet-v3/screens/OfferScreen.tsx");
-    expect(offer).toContain("CustomStripeCheckout");
+    expect(offer).toContain("V3ElementsCheckout");
+    expect(offer).not.toContain("CustomStripeCheckout");
     expect(offer).not.toContain("Opening secure checkout");
     expect(offer).not.toContain("onContinue");
     expect(offer).not.toContain("copy.unlockCta");
   });
 
-  it("bootstraps embedded checkout with uiMode custom without redirect", () => {
+  it("bootstraps Elements checkout with uiMode elements without redirect", () => {
     const page = readSrc("src/features/pet-v3/PetV3FunnelPage.tsx");
     const hook = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
     expect(page).toContain("useV3EmbeddedCheckout");
     expect(page).not.toContain("window.location.assign(result.checkoutUrl)");
-    expect(hook).toContain('uiMode: "custom"');
+    expect(page).not.toContain("preloadDahliaStripe");
+    expect(hook).toContain('uiMode: V3_ELEMENTS_UI_MODE');
+    expect(hook).toContain('"elements"');
     expect(hook).toContain("bootstrapped.current = true");
   });
 
-  it("uses V3-isolated checkout session cache keys", () => {
+  it("uses V3-isolated Elements checkout session cache keys", () => {
     expect(V3_CHECKOUT_SESSION_CACHE_KEY).toContain("petFunnelV3");
-    expect(V3_CHECKOUT_SESSION_CACHE_KEY).not.toContain("checkoutSession.v2");
+    expect(V3_CHECKOUT_SESSION_CACHE_KEY).toContain("checkoutSession.v2");
   });
 
   it("reuses cached session instead of creating duplicates on re-read", () => {
@@ -161,8 +164,8 @@ describe("V3 embedded checkout", () => {
   });
 
   it("formats pay button with cat name when valid", () => {
-    expect(v3PayButtonLabel("Luna")("$12")).toBe("Pay $12 & unlock Luna's collection");
-    expect(v3PayButtonLabel("")("$12")).toContain("your cat");
+    expect(v3PayButtonLabel("Luna")("$2.99")).toBe("Pay $2.99 & unlock Luna's collection");
+    expect(v3PayButtonLabel("")("$2.99")).toContain("your cat");
   });
 
   it("fires checkout_viewed without auto-firing begin_checkout on page load", () => {
@@ -175,7 +178,9 @@ describe("V3 embedded checkout", () => {
     );
     const offer = readSrc("src/features/pet-v3/screens/OfferScreen.tsx");
     expect(offer).toContain("onReady={markCheckoutViewed}");
-    expect(offer).not.toContain("onInitError={checkout.invalidateStripeSession}");
+    expect(offer).toContain("onInitError={() => {");
+    expect(offer).toContain("checkout.invalidateStripeSession()");
+    expect(offer).toContain("Continue to secure Stripe checkout");
   });
 
   it("fires begin_checkout only after meaningful payment interaction signal", () => {
@@ -203,11 +208,11 @@ describe("V3 embedded checkout", () => {
     );
   });
 
-  it("does not modify V2 hosted checkout", () => {
+  it("does not couple V3 checkout into V2 page", () => {
     const v2 = readSrc("src/features/pet-v2/PetV2FunnelPage.tsx");
-    expect(v2).toContain("window.location.assign(result.checkoutUrl)");
-    expect(v2).not.toContain('uiMode: "custom"');
+    expect(v2).toContain("useV2EmbeddedCheckout");
     expect(v2).not.toContain("useV3EmbeddedCheckout");
+    expect(v2).not.toContain('uiMode: "custom"');
   });
 
   it("updates order contact server-side before payment confirmation", () => {

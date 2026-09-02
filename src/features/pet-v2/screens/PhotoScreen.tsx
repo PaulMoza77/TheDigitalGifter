@@ -5,6 +5,7 @@ import { FieldError } from "../../pet/components/FieldError";
 import { SubtypePicker } from "../../pet/components/SubtypePicker";
 import type { PetSubtype } from "../../pet/types";
 import type { PetV2Species } from "../types";
+import { speciesConfirmLabel } from "../../pet-funnel-shared/speciesConfirm";
 
 export function V2PhotoScreen({
   species,
@@ -20,6 +21,8 @@ export function V2PhotoScreen({
   subtype,
   subtypeDetail,
   onSubtype,
+  speciesConfirmed,
+  onSpeciesConfirmed,
 }: {
   species: PetV2Species;
   previewUrl: string | null;
@@ -34,8 +37,14 @@ export function V2PhotoScreen({
   subtype?: PetSubtype | null;
   subtypeDetail?: string | null;
   onSubtype?: (subtype: PetSubtype, detail?: string) => void;
+  speciesConfirmed?: boolean;
+  onSpeciesConfirmed?: (confirmed: boolean) => void;
 }) {
   const pet = species === "cat" ? "cat" : species === "other" ? "pet" : "dog";
+  const confirmKind = species === "dog" || species === "cat" ? species : null;
+  const confirmed = Boolean(speciesConfirmed);
+  const canGenerate = Boolean(previewUrl) && !generating && (confirmKind ? confirmed : true);
+
   return (
     <div className="space-y-6 pb-28">
       <div>
@@ -47,7 +56,11 @@ export function V2PhotoScreen({
 
       {previewUrl ? (
         <div className="overflow-hidden rounded-2xl border border-[#f6efe4]/12 bg-[#1a1410]">
-          <img src={previewUrl} alt={fileName ? `Selected ${fileName}` : "Selected pet photo"} className="aspect-[4/5] w-full object-cover" />
+          <img
+            src={previewUrl}
+            alt={fileName ? `Selected ${fileName}` : "Selected pet photo"}
+            className="aspect-[4/5] w-full object-cover"
+          />
           <div className="flex gap-2 p-3">
             <Button
               type="button"
@@ -86,20 +99,29 @@ export function V2PhotoScreen({
       <FieldError id={`${inputId}-error`} message={error} />
 
       {species === "other" && onSubtype ? (
-        <SubtypePicker
-          value={subtype ?? null}
-          detail={subtypeDetail ?? null}
-          onChange={onSubtype}
-        />
+        <SubtypePicker value={subtype ?? null} detail={subtypeDetail ?? null} onChange={onSubtype} />
+      ) : null}
+
+      {confirmKind && previewUrl && onSpeciesConfirmed ? (
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#f6efe4]/12 bg-[#1a1410] px-4 py-3 text-sm leading-5 text-[#f6efe4]/85">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 accent-[#d4a84b]"
+            checked={confirmed}
+            disabled={generating}
+            onChange={(event) => onSpeciesConfirmed(event.target.checked)}
+          />
+          <span>{speciesConfirmLabel(confirmKind)}</span>
+        </label>
       ) : null}
 
       <Button
         type="button"
-        disabled={!previewUrl || generating}
+        disabled={!canGenerate}
         onClick={onGenerate}
         className="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63] disabled:opacity-40"
       >
-        Create my free preview
+        See my secret-life teaser
       </Button>
       {onViewPreview ? (
         <button
@@ -108,7 +130,7 @@ export function V2PhotoScreen({
           onClick={onViewPreview}
           className="block w-full text-center text-sm text-[#f6efe4]/60 underline-offset-4 hover:underline"
         >
-          View my preview
+          View my teaser
         </button>
       ) : null}
     </div>

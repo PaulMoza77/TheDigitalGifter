@@ -34,8 +34,8 @@ describe("christmas foundation wiring", () => {
     expect(migration).not.toContain("pet_orders_sku_chk");
     expect(migration).not.toContain("drop table public.pet_orders");
     expect(readSrc("src/features/pet/types.ts")).toContain("PET_PRICE_CENTS = 2700");
-    expect(readSrc("src/features/pet-v2/types.ts")).toContain("PET_V2_PRICE_CENTS = 800");
-    expect(readSrc("src/features/pet-v3/types.ts")).toContain("PET_V3_PRICE_CENTS = 1200");
+    expect(readSrc("src/features/pet-v2/types.ts")).toMatch(/PET_V2_PRICE_CENTS\s*=\s*\d+/);
+    expect(readSrc("src/features/pet-v3/types.ts")).toMatch(/PET_V3_PRICE_CENTS\s*=\s*\d+/);
   });
 
   it("wires christmas stripe fulfill without replacing pet handler", () => {

@@ -1,3 +1,5 @@
+import { captureMetaCapiClickIdsFromSearch } from "./metaCookies";
+
 export const FUNNEL_ATTRIBUTION_KEYS = [
   "utm_source",
   "utm_medium",
@@ -100,6 +102,8 @@ export function captureFunnelAttribution(search?: string): FunnelAttribution {
   try {
     const hrefSearch = search ?? (typeof window !== "undefined" ? window.location.search : "");
     persistFirstTouchFromLocation(hrefSearch || "");
+    // Build / persist Meta `_fbc` for CAPI without storing raw fbclid in analytics.
+    captureMetaCapiClickIdsFromSearch(hrefSearch || "");
 
     const existing = getFunnelAttribution();
     if (Object.keys(existing).length > 0) {

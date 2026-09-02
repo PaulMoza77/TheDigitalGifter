@@ -8,10 +8,13 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  */
 
 const IDENTITY_LOCK =
-  "Edit the reference photo only. Preserve the exact same pet identity: identical face shape, eyes, nose, muzzle, mouth, ears, fur color, fur texture, markings, age appearance, breed characteristics, body proportions, and general expression. Do not swap breeds or replace the pet with a different animal. Do not beautify beyond recognition. If cinematic drama conflicts with likeness, prioritize recognizable pet identity.";
+  "Use the uploaded pet photo as the authoritative identity reference. Create the same individual pet in the requested scene. Preserve its exact species, breed appearance, coat color and markings, facial structure, muzzle length and width, ear shape and size, eye placement and color, fur length and texture, body proportions, and distinctive traits. Change only the environment, clothing/accessories, and pose needed for the scene. The final image must be immediately recognizable to the owner as the same pet. Do not swap breeds. Do not replace the animal with a generic dog or cat.";
+
+const IDENTITY_NEGATIVES =
+  "Do not change breed. No German Shepherd, Labrador, husky, or mixed-breed features unless present in the reference. No short sleek coat when the reference has long, fluffy, dense, or mane-like fur. No human face, human head, human hands, or second animal. No text, logos, brand marks, watermarks, or trademarks.";
 
 const F1_DRIVER_EDIT =
-  "Create a photoreal, vibrant, cinematic transformation of the uploaded pet as a premium Formula 1 driver. Change only the scene, styling, props, and lighting — never the pet’s face or body identity. Place the pet in or leaning out of a realistic Formula 1 race car cockpit with a visually exciting, high-end racing atmosphere (bright pit lane, paddock, or sunlit racetrack). The pet should wear a tailored racing suit with vivid motorsport-inspired color accents such as red, electric blue, bright yellow, and white; keep carbon black only as support, not the dominant look. Avoid muddy brown/black dominance and dark dull color grading. Prefer helmet with open visor or helmet pushed back so the face stays fully visible, expressive, and recognizable. Use brighter, more flattering lighting, stronger contrast, vivid highlights, clean subject separation, and tasteful depth of field. The final image should feel bold, polished, luxurious, energetic, and emotionally impressive — like a premium Formula 1 advertising hero image or cinematic motorsport editorial, not a dark muddy portrait. Avoid cartoonish looks, goofy costume vibes, clutter, and distorted anatomy.";
+  "Create a photoreal, vibrant, cinematic transformation of the uploaded pet as a Formula 1 style racing driver. Change only the scene, styling, props, and lighting — never the pet’s face, fur length, fur texture, breed, ear shape, muzzle shape, or body identity. Place the SAME pet alone in a realistic open-wheel race car cockpit on a bright sunlit racetrack. Keep the pet's real head, face, mane/fur, ears, and front paws clearly visible. HARD RULE: no closed helmet, no full-face helmet, no helmet covering the ears or cheek ruff — leave the head bare or show only tiny goggles above the forehead. Preserve coat length exactly: if the reference is fluffy or has a dense mane (for example a Chow Chow lion mane), keep that fluff — never replace long/dense fur with a short sleek coat. Outfit may be racing-inspired but must not copy real commercial logos, team names, sponsors, or brand marks. Absolutely no human driver behind the pet. No logos, watermarks, or second animals.";
 
 const MODEL = "black-forest-labs/flux-kontext-pro";
 const MAX_DATA_URL_CHARS = 2_500_000;
@@ -80,12 +83,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const liveKill = String(process.env.PET_V2_PREVIEW_LIVE || "").toLowerCase() === "false";
   const token = String(process.env.REPLICATE_API_TOKEN || "").trim();
-  if (liveKill || !token) {
+  // Production free previews must use Supabase pet-v2-preview. Keep this Vercel
+  // path permanently live-disabled unless explicitly forced for local debugging.
+  const forceLegacyLive = String(process.env.PET_V2_VERCEL_PREVIEW_LIVE || "").toLowerCase() === "true";
+  if (liveKill || !token || !forceLegacyLive) {
     return res.status(200).json({
       ok: false,
       mode: "mock",
       errorCode: "live_disabled",
-      error: "Live free-preview generation is off for this environment.",
+      error: "Live free-preview generation uses the pet-v2-preview edge function.",
       remainingSession: SESSION_LIMIT,
     });
   }
@@ -138,11 +144,16 @@ async function runKontextPreview(
 ): Promise<string> {
   const prompt = [
     IDENTITY_LOCK,
+    IDENTITY_NEGATIVES,
     "Change only background, clothing, props, and lighting. Never replace the pet.",
     F1_DRIVER_EDIT,
-    `Subject is a ${species === "other" ? "pet" : species}.`,
-    "Photoreal. Single pet only. No logos, trademarks, or copyrighted characters. No text overlays. No extra animals.",
+    `Subject is a ${species === "other" ? "pet" : species}. Match the uploaded pet's exact appearance from the reference photo.`,
+    "Photoreal. Single pet only. No logos, trademarks, team names, or copyrighted characters. No text overlays. No watermarks. No extra animals. No humans in frame.",
   ].join(" ");
+
+  if (!imageDataUrl.startsWith("data:image/")) {
+    throw new Error("Reference image missing for preview generation.");
+  }
 
   const created = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
     method: "POST",

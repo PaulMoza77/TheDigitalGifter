@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useV3InternalTestBanner } from "./useV3InternalTestBanner";
 
 export function V3Shell({
   children,
@@ -15,8 +16,15 @@ export function V3Shell({
   padForSticky?: boolean;
   onBack?: () => void;
 }) {
+  const testBanner = useV3InternalTestBanner();
   return (
     <div className="min-h-[100dvh] bg-[#140e0a] text-[#f6efe4]">
+      {testBanner.active ? (
+        <div className="border-b border-amber-500/40 bg-amber-500/15 px-4 py-2 text-center text-xs text-amber-100">
+          Server-authorized analytics test mode — excluded from production KPIs
+          {testBanner.expiresAt ? ` (until ${new Date(testBanner.expiresAt).toLocaleString("en-US")})` : ""}.
+        </div>
+      ) : null}
       <div className={`mx-auto w-full max-w-3xl px-4 sm:px-6 ${padForSticky ? "pb-28" : "pb-8"} pt-6`}>
         {showBack ? (
           <Button

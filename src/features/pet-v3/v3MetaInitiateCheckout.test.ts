@@ -87,6 +87,8 @@ describe("V3 Meta InitiateCheckout timing", () => {
       orderId: "order-1",
       publicToken: "token-1",
       eventId: "pet_ic_order-1",
+      fbc: null,
+      fbp: null,
     });
   });
 

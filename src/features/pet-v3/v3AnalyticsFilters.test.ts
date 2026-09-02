@@ -54,10 +54,16 @@ describe("V3 dashboard attribution filters", () => {
     expect(sql).not.toMatch(/'\s*\|\|\s*p_campaign_id/i);
   });
 
-  it("wires filters through the analytics hook RPC calls", () => {
+  it("wires empty default attribution filters through the analytics hook RPC calls", () => {
     const hook = readSrc("src/hooks/usePetFunnelAnalytics.ts");
-    expect(hook).toContain("v3RpcFilterArgs(v3Filters)");
+    expect(hook).toContain("v3LegacyRpcFilterArgs(v3Filters)");
+    expect(hook).toContain("v3TrustedRpcFilterArgs(v3Filters)");
+    expect(hook).toContain("EMPTY_V3_ANALYTICS_FILTERS");
     expect(hook).toContain('admin_pet_v3_funnel_step_counts"');
     expect(hook).toContain('admin_pet_v3_dashboard_context"');
+    expect(hook).toContain('admin_pet_v3_trusted_summary"');
+    const page = readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx");
+    expect(page).toContain("v3ViewMode");
+    expect(page).toContain("Session drill-down");
   });
 });

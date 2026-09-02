@@ -3,7 +3,9 @@
 
 set lock_timeout = '5s';
 set statement_timeout = '180s';
+
 begin;
+
 -- ---------------------------------------------------------------------------
 -- Measurement + price cohort settings (V3-specific; V1/V2 unchanged)
 -- ---------------------------------------------------------------------------
@@ -17,6 +19,7 @@ create table if not exists public.pet_v3_measurement_settings (
   price_deploy_reference_at timestamptz,
   updated_at timestamptz not null default now()
 );
+
 insert into public.pet_v3_measurement_settings (
   id, measurement_reliable_from, price_cohort_cents, price_cohort_from,
   price_cohort_certified_at, price_deploy_reference_sha, price_deploy_reference_at
@@ -27,6 +30,7 @@ values (
   timestamptz '2026-08-27 21:28:28+00'
 )
 on conflict (id) do nothing;
+
 alter table public.pet_v3_measurement_settings enable row level security;
 drop policy if exists pet_v3_measurement_settings_admin_read on public.pet_v3_measurement_settings;
 create policy pet_v3_measurement_settings_admin_read
@@ -35,6 +39,7 @@ create policy pet_v3_measurement_settings_admin_read
 revoke all on table public.pet_v3_measurement_settings from anon, public;
 grant select on table public.pet_v3_measurement_settings to authenticated;
 grant all on table public.pet_v3_measurement_settings to service_role;
+
 -- Auditable historical session exclusions (does not delete raw events)
 create table if not exists public.pet_v3_analytics_session_exclusions (
   funnel_session_id uuid primary key,
@@ -43,6 +48,7 @@ create table if not exists public.pet_v3_analytics_session_exclusions (
   excluded_by text not null default 'system',
   notes text
 );
+
 alter table public.pet_v3_analytics_session_exclusions enable row level security;
 drop policy if exists pet_v3_analytics_session_exclusions_admin_read on public.pet_v3_analytics_session_exclusions;
 create policy pet_v3_analytics_session_exclusions_admin_read
@@ -51,6 +57,7 @@ create policy pet_v3_analytics_session_exclusions_admin_read
 revoke all on table public.pet_v3_analytics_session_exclusions from anon, public;
 grant select on table public.pet_v3_analytics_session_exclusions to authenticated;
 grant all on table public.pet_v3_analytics_session_exclusions to service_role;
+
 -- ---------------------------------------------------------------------------
 -- Event columns
 -- ---------------------------------------------------------------------------
@@ -58,13 +65,16 @@ alter table public.pet_v3_funnel_events
   add column if not exists traffic_class text,
   add column if not exists displayed_price_cents integer,
   add column if not exists stripe_checkout_session_id text;
+
 alter table public.pet_v3_funnel_events drop constraint if exists pet_v3_funnel_events_traffic_class_chk;
 alter table public.pet_v3_funnel_events
   add constraint pet_v3_funnel_events_traffic_class_chk
   check (traffic_class is null or traffic_class in ('internal_test', 'paid_meta', 'external_other', 'unattributed'));
+
 create index if not exists pet_v3_funnel_events_traffic_created_idx
   on public.pet_v3_funnel_events (traffic_class, created_at desc)
   where traffic_class is not null;
+
 alter table public.pet_v3_funnel_events drop constraint if exists pet_v3_funnel_events_name_chk;
 alter table public.pet_v3_funnel_events
   add constraint pet_v3_funnel_events_name_chk check (
@@ -86,6 +96,7 @@ alter table public.pet_v3_funnel_events
       'v3_purchase'
     )
   );
+
 -- ---------------------------------------------------------------------------
 -- Traffic classification
 -- ---------------------------------------------------------------------------
@@ -119,12 +130,14 @@ as $$
     else 'unattributed'
   end;
 $$;
+
 -- ---------------------------------------------------------------------------
 -- Ingest RPC (adds traffic_class, displayed_price_cents, stripe session id)
 -- ---------------------------------------------------------------------------
 drop function if exists public.record_pet_v3_funnel_event(
   text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text, text, text, text, text, text, text
 );
+
 create or replace function public.record_pet_v3_funnel_event(
   p_event_name text,
   p_funnel_session_id uuid,
@@ -267,12 +280,14 @@ begin
   return new_id;
 end;
 $$;
+
 revoke all on function public.record_pet_v3_funnel_event(
   text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text, text, text, text, text, text, text, integer, text
 ) from public, anon, authenticated;
 grant execute on function public.record_pet_v3_funnel_event(
   text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text, text, text, text, text, text, text, integer, text
 ) to service_role;
+
 -- Backfill traffic_class for historical rows (no deletes)
 update public.pet_v3_funnel_events e
 set traffic_class = public.classify_pet_v3_traffic(
@@ -283,6 +298,7 @@ set traffic_class = public.classify_pet_v3_traffic(
   e.has_meta_click, e.fbc, e.fbp, e.referrer_host
 )
 where e.traffic_class is null;
+
 update public.pet_v3_funnel_events e
 set displayed_price_cents = coalesce(
   e.displayed_price_cents,
@@ -294,6 +310,7 @@ set displayed_price_cents = coalesce(
   end
 )
 where e.displayed_price_cents is null;
+
 -- ---------------------------------------------------------------------------
 -- Admin: certify measurement timestamp (run once after production deploy)
 -- ---------------------------------------------------------------------------
@@ -319,8 +336,10 @@ begin
   return (select to_jsonb(s) from public.pet_v3_measurement_settings s where s.id = 1);
 end;
 $$;
+
 revoke all on function public.admin_pet_v3_certify_measurement(timestamptz, timestamptz) from public, anon;
 grant execute on function public.admin_pet_v3_certify_measurement(timestamptz, timestamptz) to authenticated, service_role;
+
 -- ---------------------------------------------------------------------------
 -- Shared filter helper for trusted V3 analytics RPCs
 -- ---------------------------------------------------------------------------
@@ -368,6 +387,7 @@ as $$
     and (p_utm_source is null or e.utm_source = p_utm_source)
     and (p_utm_medium is null or e.utm_medium = p_utm_medium);
 $$;
+
 -- ---------------------------------------------------------------------------
 -- Trusted summary: traffic breakdown + raw vs production + reconciliation
 -- ---------------------------------------------------------------------------
@@ -536,12 +556,14 @@ begin
   return result;
 end;
 $$;
+
 revoke all on function public.admin_pet_v3_trusted_summary(
   timestamptz, timestamptz, boolean, text, boolean, text, text, text, text, text, text, text
 ) from public, anon;
 grant execute on function public.admin_pet_v3_trusted_summary(
   timestamptz, timestamptz, boolean, text, boolean, text, text, text, text, text, text, text
 ) to authenticated, service_role;
+
 -- ---------------------------------------------------------------------------
 -- Session drill-down (anonymous session short ids only)
 -- ---------------------------------------------------------------------------
@@ -610,6 +632,8 @@ begin
   ), '[]'::jsonb);
 end;
 $$;
+
 revoke all on function public.admin_pet_v3_session_drilldown(timestamptz, timestamptz, boolean, text, integer) from public, anon;
 grant execute on function public.admin_pet_v3_session_drilldown(timestamptz, timestamptz, boolean, text, integer) to authenticated, service_role;
+
 commit;

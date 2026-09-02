@@ -3,11 +3,14 @@
 
 set lock_timeout = '5s';
 set statement_timeout = '180s';
+
 begin;
+
 alter table public.pet_v3_measurement_settings
   add column if not exists price_cohort_certified_at timestamptz,
   add column if not exists price_deploy_reference_sha text,
   add column if not exists price_deploy_reference_at timestamptz;
+
 update public.pet_v3_measurement_settings
 set
   price_cohort_from = null,
@@ -15,6 +18,7 @@ set
   price_deploy_reference_sha = coalesce(price_deploy_reference_sha, '01fde3223ace0c17a183db0b93ee11296795653f'),
   price_deploy_reference_at = coalesce(price_deploy_reference_at, timestamptz '2026-08-27 21:28:28+00')
 where id = 1;
+
 -- Server-authorized internal test sessions (admin registered only)
 create table if not exists public.pet_v3_internal_test_sessions (
   funnel_session_id uuid primary key,
@@ -23,6 +27,7 @@ create table if not exists public.pet_v3_internal_test_sessions (
   expires_at timestamptz,
   registered_by text not null default 'admin'
 );
+
 alter table public.pet_v3_internal_test_sessions enable row level security;
 drop policy if exists pet_v3_internal_test_sessions_admin_read on public.pet_v3_internal_test_sessions;
 create policy pet_v3_internal_test_sessions_admin_read
@@ -31,6 +36,7 @@ create policy pet_v3_internal_test_sessions_admin_read
 revoke all on table public.pet_v3_internal_test_sessions from anon, public;
 grant select on table public.pet_v3_internal_test_sessions to authenticated;
 grant all on table public.pet_v3_internal_test_sessions to service_role;
+
 create or replace function public.pet_v3_session_is_internal_test(p_funnel_session_id uuid)
 returns boolean
 language sql
@@ -49,8 +55,10 @@ as $$
         and (s.expires_at is null or s.expires_at > now())
     );
 $$;
+
 revoke all on function public.pet_v3_session_is_internal_test(uuid) from public, anon;
 grant execute on function public.pet_v3_session_is_internal_test(uuid) to service_role;
+
 create or replace function public.pet_v3_internal_test_session_status(p_funnel_session_id uuid)
 returns jsonb
 language plpgsql
@@ -80,8 +88,10 @@ begin
   return jsonb_build_object('authorized', false, 'expires_at', null);
 end;
 $$;
+
 revoke all on function public.pet_v3_internal_test_session_status(uuid) from public, anon;
 grant execute on function public.pet_v3_internal_test_session_status(uuid) to service_role;
+
 create or replace function public.admin_pet_v3_register_internal_test_session(
   p_funnel_session_id uuid,
   p_reason text default 'admin manual test',
@@ -119,6 +129,7 @@ begin
   return public.pet_v3_internal_test_session_status(p_funnel_session_id);
 end;
 $$;
+
 create or replace function public.admin_pet_v3_unregister_internal_test_session(p_funnel_session_id uuid)
 returns jsonb
 language plpgsql
@@ -134,12 +145,15 @@ begin
   return jsonb_build_object('authorized', false, 'expires_at', null);
 end;
 $$;
+
 revoke all on function public.admin_pet_v3_register_internal_test_session(uuid, text, integer) from public, anon;
 grant execute on function public.admin_pet_v3_register_internal_test_session(uuid, text, integer) to authenticated, service_role;
 revoke all on function public.admin_pet_v3_unregister_internal_test_session(uuid) from public, anon;
 grant execute on function public.admin_pet_v3_unregister_internal_test_session(uuid) to authenticated, service_role;
+
 -- Paid Meta: fbp alone is NOT sufficient; requires paid-click/campaign evidence.
 drop function if exists public.classify_pet_v3_traffic(boolean, text, text, text, text, boolean, text, text, text);
+
 create or replace function public.classify_pet_v3_traffic(
   p_is_test boolean,
   p_utm_source text,
@@ -185,6 +199,7 @@ as $$
     else 'unattributed'
   end;
 $$;
+
 -- Recompute traffic_class with hardened rules (raw rows preserved)
 update public.pet_v3_funnel_events e
 set traffic_class = public.classify_pet_v3_traffic(
@@ -192,6 +207,7 @@ set traffic_class = public.classify_pet_v3_traffic(
   e.utm_source, e.utm_medium, e.utm_campaign, e.campaign_id, e.adset_id, e.ad_id, e.creative_id,
   e.has_meta_click, e.fbc, e.fbp, e.referrer_host
 );
+
 -- Patch ingest RPC: authoritative internal test from server registry only
 create or replace function public.record_pet_v3_funnel_event(
   p_event_name text,
@@ -300,8 +316,10 @@ begin
   return new_id;
 end;
 $$;
+
 -- Parameter rename requires DROP; CREATE OR REPLACE cannot change input names.
 drop function if exists public.admin_pet_v3_certify_measurement(timestamptz, timestamptz);
+
 create or replace function public.admin_pet_v3_certify_measurement(
   p_measurement_reliable_from timestamptz,
   p_price_cohort_certified_at timestamptz default null
@@ -325,8 +343,10 @@ begin
   return (select to_jsonb(s) from public.pet_v3_measurement_settings s where s.id = 1);
 end;
 $$;
+
 revoke all on function public.admin_pet_v3_certify_measurement(timestamptz, timestamptz) from public, anon;
 grant execute on function public.admin_pet_v3_certify_measurement(timestamptz, timestamptz) to authenticated, service_role;
+
 -- Price cohort filter uses certified timestamp only (not git/deploy reference)
 create or replace function public.pet_v3_analytics_event_passes(
   e public.pet_v3_funnel_events,
@@ -372,4 +392,5 @@ as $$
     and (p_utm_source is null or e.utm_source = p_utm_source)
     and (p_utm_medium is null or e.utm_medium = p_utm_medium);
 $$;
+
 commit;

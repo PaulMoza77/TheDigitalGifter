@@ -410,18 +410,7 @@ export type UpdateOrderContactResponse = {
   email: string;
   petName: string;
   updated: true;
-};
-
-export type RecordV3InitiateCheckoutRequest = {
-  orderId: string;
-  publicToken: string;
-  eventId: string;
-};
-
-export type RecordV3InitiateCheckoutResponse = {
-  eventId: string;
-  sent: boolean;
-  alreadySent: boolean;
+  stripeSessionSynced?: boolean;
 };
 
 export type CreateStripeCheckoutRequest = {
@@ -431,9 +420,14 @@ export type CreateStripeCheckoutRequest = {
   cancelUrl: string;
   customerEmail: string;
   promoCode?: string;
-  uiMode?: "hosted" | "embedded" | "custom";
+  uiMode?: "hosted" | "embedded" | "custom" | "elements";
   funnelSessionId?: string;
   deviceType?: "mobile" | "tablet" | "desktop";
+  /** Meta click cookie (`_fbc`) for CAPI attribution — never logged. */
+  fbc?: string | null;
+  /** Meta browser cookie (`_fbp`) for CAPI matching — never logged. */
+  fbp?: string | null;
+  hasMetaClick?: boolean;
   attribution?: {
     utm_source?: string | null;
     utm_medium?: string | null;
@@ -444,6 +438,20 @@ export type CreateStripeCheckoutRequest = {
     adset_id?: string | null;
     ad_id?: string | null;
   };
+};
+
+export type RecordV3InitiateCheckoutRequest = {
+  orderId: string;
+  publicToken: string;
+  eventId: string;
+  fbc?: string | null;
+  fbp?: string | null;
+};
+
+export type RecordV3InitiateCheckoutResponse = {
+  eventId: string;
+  sent: boolean;
+  alreadySent: boolean;
 };
 
 export type CreateStripeCheckoutResponse = {
@@ -463,6 +471,7 @@ export type CreateStripeCheckoutResponse = {
     sessionExists?: boolean;
     livemode?: boolean | null;
     customUi?: boolean;
+    elementsUi?: boolean;
     clientSecretValid?: boolean;
     publishableMode?: "live" | "test" | null;
     secretMode?: "live" | "test" | null;
@@ -475,6 +484,8 @@ export type CreateStripeCheckoutResponse = {
 
 export type GetOrderByPublicTokenRequest = {
   publicToken: string;
+  /** Optional Stripe Checkout Session id from the return URL; must match the order when present. */
+  checkoutSessionId?: string;
 };
 
 export type PollGenerationProgressRequest = {

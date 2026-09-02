@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { petInitiateCheckoutEventId, sendMetaCapiInitiateCheckout } from "./meta.ts";
+import {
+  isCheckoutPlaceholderEmail,
+  petInitiateCheckoutEventId,
+  sendMetaCapiInitiateCheckout,
+} from "./meta.ts";
 
 const V3_META_IC_ACTION = "v3_meta_initiate_checkout";
 
@@ -14,6 +18,8 @@ export async function recordV3MetaInitiateCheckoutOnce(
     email?: string | null;
     amountCents: number;
     sourceUrl?: string;
+    fbc?: string | null;
+    fbp?: string | null;
   },
 ): Promise<{ sent: boolean; alreadySent: boolean; eventId: string; reason?: string }> {
   const eventId = petInitiateCheckoutEventId(input.orderId);
@@ -32,11 +38,16 @@ export async function recordV3MetaInitiateCheckoutOnce(
     return { sent: false, alreadySent: true, eventId };
   }
 
+  const emailForMeta =
+    input.email && !isCheckoutPlaceholderEmail(input.email) ? input.email : null;
   const capi = await sendMetaCapiInitiateCheckout({
     eventId,
     orderId: input.orderId,
-    email: input.email ?? null,
+    email: emailForMeta,
     amountCents: input.amountCents,
+    fbc: input.fbc,
+    fbp: input.fbp,
+    sourceUrl: input.sourceUrl,
   });
 
   await service.rpc("pet_log_event", {
@@ -47,6 +58,8 @@ export async function recordV3MetaInitiateCheckoutOnce(
       event_id: eventId,
       capi_sent: capi.sent,
       capi_reason: capi.reason ?? null,
+      has_fbc: Boolean(input.fbc),
+      has_fbp: Boolean(input.fbp),
     },
   });
 

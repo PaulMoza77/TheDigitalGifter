@@ -3,14 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 
 const SITE_URL = "https://thedigitalgifter.com";
 
-function requiredServerEnv(name: "SUPABASE_URL" | "SUPABASE_SERVICE_ROLE_KEY") {
-  const value = String(process.env[name] ?? "").trim();
-  if (!value) {
-    throw new Error(`Missing required server environment variable: ${name}`);
-  }
-  return value;
-}
-
 type SeoPageRow = {
   page_type: string;
   slug: string;
@@ -59,29 +51,56 @@ function createUrlXml({
   </url>`;
 }
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
-  try {
-    const supabaseUrl = requiredServerEnv("SUPABASE_URL");
-    const serviceRoleKey = requiredServerEnv("SUPABASE_SERVICE_ROLE_KEY");
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+const STATIC_PATHS = [
+  "/",
+  "/templates",
+  "/generator",
+  "/categories/occasions",
+  "/categories/personal",
+  "/categories/spiritual",
+  "/categories/pets",
+  "/pet-loss",
+  "/pet/dog",
+  "/pet/cat",
+  "/pet/other",
+  "/christmas",
+  "/christmas-ai-photos",
+  "/blog",
+  "/privacy",
+  "/terms",
+  "/refunds",
+];
 
-    const staticUrls = [
-      "/",
-      "/templates",
-      "/generator",
-      "/categories/occasions",
-      "/categories/personal",
-      "/categories/spiritual",
-      "/categories/pets",
-      "/pet-loss",
-      "/pet/dog",
-      "/pet/cat",
-      "/pet/other",
-      "/blog",
-      "/privacy",
-      "/terms",
-      "/refunds",
-    ];
+function staticUrlXml() {
+  return STATIC_PATHS.map((path) =>
+    createUrlXml({
+      loc: `${SITE_URL}${path}`,
+      changefreq: "weekly",
+      priority: path === "/" ? "1.0" : "0.7",
+    }),
+  );
+}
+
+function sendSitemap(res: VercelResponse, urls: string[]) {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join("\n")}
+</urlset>`;
+  res.setHeader("Content-Type", "application/xml; charset=utf-8");
+  res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");
+  res.status(200).send(xml);
+}
+
+export default async function handler(_req: VercelRequest, res: VercelResponse) {
+  const fallback = staticUrlXml();
+  try {
+    const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").trim();
+    const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+    if (!supabaseUrl || !serviceRoleKey) {
+      sendSitemap(res, fallback);
+      return;
+    }
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const { data: seoPages, error: seoPagesError } = await supabase
       .from("seo_pages")
@@ -105,17 +124,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
       throw blogPostsError;
     }
 
-    const urls: string[] = [];
-
-    for (const path of staticUrls) {
-      urls.push(
-        createUrlXml({
-          loc: `${SITE_URL}${path}`,
-          changefreq: "weekly",
-          priority: path === "/" ? "1.0" : "0.7",
-        })
-      );
-    }
+    const urls = [...fallback];
 
     for (const page of (seoPages ?? []) as SeoPageRow[]) {
       if (!page.page_type || !page.slug) continue;
@@ -126,7 +135,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
           lastmod: getLastMod(page.updated_at, page.created_at),
           changefreq: "weekly",
           priority: "0.8",
-        })
+        }),
       );
     }
 
@@ -136,32 +145,16 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
       urls.push(
         createUrlXml({
           loc: `${SITE_URL}/blog/${post.slug}`,
-          lastmod: getLastMod(
-            post.updated_at,
-            post.published_at,
-            post.created_at
-          ),
+          lastmod: getLastMod(post.updated_at, post.published_at, post.created_at),
           changefreq: "monthly",
           priority: "0.6",
-        })
+        }),
       );
     }
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.join("\n")}
-</urlset>`;
-
-    res.setHeader("Content-Type", "application/xml; charset=utf-8");
-    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");
-    res.status(200).send(xml);
+    sendSitemap(res, urls);
   } catch (error) {
-    console.error("[sitemap.xml] error:", error);
-
-    res.status(500).send(
-      `Sitemap generation failed: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`
-    );
+    console.error("[sitemap.xml] error:", error instanceof Error ? error.name : "unknown");
+    sendSitemap(res, fallback);
   }
 }

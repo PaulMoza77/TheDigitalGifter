@@ -2,6 +2,7 @@
 -- Preserves prior function signature and safe-text helpers.
 
 begin;
+
 create or replace function public.record_pet_v2_funnel_event(
   p_event_name text,
   p_funnel_session_id uuid,
@@ -129,10 +130,12 @@ begin
   return new_id;
 end;
 $$;
+
 revoke all on function public.record_pet_v2_funnel_event(
   text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text
 ) from public;
 grant execute on function public.record_pet_v2_funnel_event(
   text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text
 ) to anon, authenticated, service_role;
+
 commit;

@@ -13,6 +13,7 @@ import {
   shouldRestoreLocalPreview,
 } from "../pet-v2/previewFlow";
 import { requestV3Preview } from "./previewClient";
+import { canGenerateWithSpeciesConfirm } from "../pet-funnel-shared/speciesConfirm";
 import { V3GeneratingScreen } from "./screens/GeneratingScreen";
 import { V3LandingScreen } from "./screens/LandingScreen";
 import { V3OfferScreen } from "./screens/OfferScreen";
@@ -20,7 +21,6 @@ import { V3PhotoScreen } from "./screens/PhotoScreen";
 import { V3PreviewScreen } from "./screens/PreviewScreen";
 import { createV2LocalPreview, validateV2PhotoFile } from "../pet-v2/photo";
 import { getPetV3SessionId } from "./session";
-import { preloadDahliaStripe } from "../pet/stripeLoader";
 import {
   getV3PhotoFile,
   getV3PhotoObjectUrl,
@@ -41,6 +41,7 @@ export function PetV3FunnelPage() {
   const lastFailureCategoryRef = useRef<PetV3FailureCategory | null>(null);
   const [draft, setDraft] = useState<PetV3Draft>(() => loadV3Draft());
   const [photoError, setPhotoError] = useState<string | undefined>();
+  const [speciesConfirmed, setSpeciesConfirmed] = useState(false);
   const [genStatus, setGenStatus] = useState(STATUS_MESSAGES[0]);
   const [isGenerating, setIsGenerating] = useState(false);
   const previewUrl = getV3PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
@@ -49,10 +50,20 @@ export function PetV3FunnelPage() {
     active: draft.step === "offer",
     photo: draft.photo,
     file: photoFile,
+    onRestartExpired: () => {
+      // Preserve UTMs via existing attribution storage; clear in-memory photo and return to upload.
+      setV3PhotoFile(null);
+      setPhotoError(undefined);
+      lastFailureCategoryRef.current = null;
+      go("photo", clearPreviewOnPhotoChange({
+        photo: null,
+        uploadId: null,
+        photoPreviewDataUrl: null,
+      }));
+    },
   });
 
   useEffect(() => {
-    preloadDahliaStripe();
     const next = loadV3Draft();
     setDraft(next);
     saveV3Draft(next);
@@ -94,6 +105,7 @@ export function PetV3FunnelPage() {
     setV3PhotoFile(file);
     const local = await createV2LocalPreview(file);
     setPhotoError(undefined);
+    setSpeciesConfirmed(false);
     trackPetV3Event({ eventName: "v3_upload_completed" });
     go("photo", clearPreviewOnPhotoChange({
       photo: { fileName: file.name, contentType: check.contentType, byteSize: file.size },
@@ -108,6 +120,17 @@ export function PetV3FunnelPage() {
     const source = getV3PhotoObjectUrl() ?? draft.photoPreviewDataUrl;
     if (!file || !source) {
       setPhotoError("Re-attach the original cat photo to create a preview.");
+      go("photo");
+      return;
+    }
+
+    const confirm = canGenerateWithSpeciesConfirm({
+      hasPhoto: true,
+      confirmed: speciesConfirmed,
+      kind: "cat",
+    });
+    if (!confirm.ok) {
+      setPhotoError(confirm.message);
       go("photo");
       return;
     }
@@ -257,6 +280,7 @@ export function PetV3FunnelPage() {
           onClear={() => {
             setV3PhotoFile(null);
             setPhotoError(undefined);
+            setSpeciesConfirmed(false);
             lastFailureCategoryRef.current = null;
             go("photo", clearPreviewOnPhotoChange({
               photo: null,
@@ -264,6 +288,8 @@ export function PetV3FunnelPage() {
               photoPreviewDataUrl: null,
             }));
           }}
+          speciesConfirmed={speciesConfirmed}
+          onSpeciesConfirmed={setSpeciesConfirmed}
           onViewPreview={
             draft.generatedPreviewDataUrl
               ? () => {
@@ -292,6 +318,7 @@ export function PetV3FunnelPage() {
       {step === "preview" && draft.generatedPreviewDataUrl ? (
         <V3PreviewScreen
           previewUrl={draft.generatedPreviewDataUrl}
+          sourceUrl={previewUrl}
           petName={draft.petName}
           mode={draft.generationMode}
           canRegenerate={remainingSessionPreviews() > 0 && !isGenerating}

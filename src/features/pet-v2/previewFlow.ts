@@ -49,10 +49,16 @@ export type ResolveGenerateAttemptResult = {
  * - first generate / regen → stable per session+upload or regen nonce
  * - timeout retry → same id (resume Replicate prediction)
  * - terminal/stale failure → fresh retry suffix so DB poison cannot block the next call
+ * - upload identity change → never reuse a previous upload's attempt id
  */
 export function resolveGenerateAttempt(input: ResolveGenerateAttemptInput): ResolveGenerateAttemptResult {
   const resumeProviderAttempt =
     input.retryAfterFailure && input.lastFailureCategory === "timeout";
+
+  const attemptMatchesUpload =
+    !input.previewAttemptId ||
+    input.previewAttemptId.includes(`:${input.uploadId}`) ||
+    input.previewAttemptId.includes(`:${input.uploadId}:`);
 
   if (input.regenerate) {
     return {
@@ -66,13 +72,14 @@ export function resolveGenerateAttempt(input: ResolveGenerateAttemptInput): Reso
     };
   }
 
-  if (resumeProviderAttempt && input.previewAttemptId) {
+  if (resumeProviderAttempt && input.previewAttemptId && attemptMatchesUpload) {
     return { attemptId: input.previewAttemptId, resumeProviderAttempt: true };
   }
 
   if (
     input.retryAfterFailure &&
     input.previewAttemptId &&
+    attemptMatchesUpload &&
     input.lastFailureCategory &&
     input.lastFailureCategory !== "timeout"
   ) {
@@ -82,7 +89,7 @@ export function resolveGenerateAttempt(input: ResolveGenerateAttemptInput): Reso
     };
   }
 
-  if (input.previewAttemptId && !input.retryAfterFailure) {
+  if (input.previewAttemptId && !input.retryAfterFailure && attemptMatchesUpload) {
     return { attemptId: input.previewAttemptId, resumeProviderAttempt: false };
   }
 
@@ -100,9 +107,18 @@ export function buildV2PreviewRetryAttemptId(baseAttemptId: string, retryNonce?:
   return `${baseAttemptId}:retry:${nonce}`.slice(0, 180);
 }
 
-/** Back from preview/offer should land on preview when output already exists. */
-export function backStepFrom(current: PetV2Draft["step"], draft: Pick<PetV2Draft, "generatedPreviewDataUrl">): PetV2Draft["step"] {
+/**
+ * Back navigation:
+ * - V2 teaser rebuild: teaser/offer → photo (never clear free AI preview).
+ * - V3 (and legacy live preview): offer → preview when a live preview exists.
+ */
+export function backStepFrom(
+  current: PetV2Draft["step"],
+  draft: Pick<PetV2Draft, "generatedPreviewDataUrl" | "generationMode">,
+): PetV2Draft["step"] {
+  if (current === "teaser") return "photo";
   if (current === "offer") {
+    if (draft.generationMode === "teaser") return "photo";
     return draft.generatedPreviewDataUrl ? "preview" : "photo";
   }
   if (current === "preview" || current === "generating") return "photo";

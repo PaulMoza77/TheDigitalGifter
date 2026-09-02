@@ -1,0 +1,63 @@
+{
+	email {$CADDY_ACME_EMAIL}
+	admin off
+}
+
+(security_headers) {
+	encode gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		-Server
+	}
+}
+
+(themozas_upstream) {
+	import security_headers
+	reverse_proxy themozas:8080 {
+		health_uri /healthz
+		health_interval 30s
+	}
+}
+
+(tdg_upstream) {
+	import security_headers
+	reverse_proxy thedigitalgifter:8080 {
+		health_uri /healthz
+		health_interval 30s
+	}
+}
+
+# Keep IP HTTP available for rollback checks while DNS still points at Vercel.
+# Production names are handled by the named HTTPS sites below (HTTP→HTTPS).
+:80 {
+	@tdg host tdg-verify.mozas-prod-01
+	handle @tdg {
+		import tdg_upstream
+	}
+	handle {
+		import themozas_upstream
+	}
+}
+
+themozas.com, www.themozas.com {
+	import themozas_upstream
+	log {
+		output file /var/log/caddy/themozas.log {
+			roll_size 10mb
+			roll_keep 10
+		}
+	}
+}
+
+# Apply only after public DNS for these names points at MOZAS_SSH_HOST.
+thedigitalgifter.com, www.thedigitalgifter.com {
+	import tdg_upstream
+	log {
+		output file /var/log/caddy/thedigitalgifter.log {
+			roll_size 10mb
+			roll_keep 10
+		}
+	}
+}

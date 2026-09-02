@@ -43,8 +43,8 @@ describe("pet funnel V2 isolation", () => {
     expect(PET_PRICE_CENTS).toBe(2700);
     expect(PET_PRICE_DISPLAY).toBe("$27");
     expect(PET_V2_PRODUCTION_PRICE_CENTS).toBe(2700);
-    expect(PET_V2_TEST_PRICE_CENTS).toBe(800);
-    expect(PET_V2_PRICE_CENTS).toBe(800);
+    expect(PET_V2_TEST_PRICE_CENTS).toBe(299);
+    expect(PET_V2_PRICE_CENTS).toBe(299);
     expect(PET_SALE_PRICE_CENTS).toBe(1700);
     expect(readSrc("src/features/pet-v2/V2PackOffer.tsx")).not.toContain("petFlashSale");
     expect(readSrc("src/features/pet-v2/screens/LandingScreen.tsx")).toContain("V2StickyCta");
@@ -80,10 +80,12 @@ describe("pet funnel V2 isolation", () => {
     }
     expect(isPetV2EventName("landing_view")).toBe(false);
     expect(readSrc("src/features/pet-v2/analytics.ts")).not.toContain("trackPetFunnelInternalEvent");
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("startPetCheckout");
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain('funnelVariant: "v2"');
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).not.toContain('uiMode: "embedded"');
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).not.toContain('uiMode: "custom"');
+    expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain('funnelVariant: "v2"');
+    expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain("V2_ELEMENTS_UI_MODE");
+    expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain('"elements"');
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("useV2EmbeddedCheckout");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("buildV2PersonalizedTeaser");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).not.toContain("requestV2Preview");
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain('uiMode: "custom"');
     const handler = readSrc("api/pet-v2-funnel-event.ts");
     const lib = readSrc("api/_lib/petV2.ts");
@@ -93,6 +95,7 @@ describe("pet funnel V2 isolation", () => {
     expect(handler).toContain("res.status(500)");
     expect(handler).not.toContain("status(202).json({ ok: true, duplicate: false })");
     expect(readSrc("vercel.json")).toContain("/api/pet-v2-funnel-event");
+    expect(readSrc("vercel.json")).toContain("apple-developer-merchantid-domain-association");
   });
 
   it("uses existing mini clips and the other-pets animals already in the product", () => {
@@ -115,47 +118,37 @@ describe("pet funnel V2 isolation", () => {
     expect(readSrc("src/features/pet/catalog.ts")).toContain('"spa-bathtub": "Hedgehog"');
   });
 
-  it("keeps free preview off Stripe and charges V2 through pet-funnel at $8", () => {
-    const previewApi = readSrc("api/pet-v2/preview.ts");
+  it("keeps pre-pay teaser local ($0) and charges V2 through pet-funnel at $2.99 after payment", () => {
+    // Legacy preview edge remains for ops/smoke but must not be called pre-pay by the funnel page.
     const edgePreview = readSrc("supabase/functions/pet-v2-preview/index.ts");
-    expect(previewApi).not.toMatch(/stripe/i);
-    expect(previewApi).toContain("black-forest-labs/flux-kontext-pro");
-    expect(previewApi).not.toContain("pet-generate");
-    expect(previewApi).not.toContain("../_lib/petV2");
     expect(edgePreview).toContain("black-forest-labs/flux-kontext-pro");
-    expect(edgePreview).toContain("ctx.claimRpc");
-    expect(readSrc("supabase/functions/_shared/pet/previewFunnelContext.ts")).toContain(
-      "claim_pet_v2_preview_attempt",
-    );
-    expect(edgePreview).toContain("Idempotency-Key");
-    expect(edgePreview).toContain("idempotency_key");
-    expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain("PET_V2_PREVIEW_EDGE_PATH");
-    expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain("idempotency_key");
-    expect(readSrc("src/features/pet-v2/previewClient.ts")).toContain('errorCode === "live_disabled"');
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("generateLockRef");
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("generating={isGenerating}");
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("resolveGenerateAttempt");
-    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("shouldRestoreLocalPreview");
-    expect(readSrc("src/features/pet-v2/previewClient.ts")).not.toContain("response.mode === \"mock\" || !response.ok");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("buildV2PersonalizedTeaser");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).not.toContain("requestV2Preview");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("teaserLockRef");
+    expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain('generationMode === "teaser"');
+    expect(readSrc("src/features/pet-v2/teaser.ts")).toContain("pixelateInPlace");
+    expect(readSrc("src/features/pet-v2/teaser.ts")).toContain("boxBlurInPlace");
     expect(readSrc("supabase/functions/pet-generate/index.ts")).toContain("createReplicatePrediction");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("applyV2SaleAmount");
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("funnel_variant");
-    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 800");
+    expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("PROVIDER_UNAVAILABLE");
+    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 299");
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("applyV2SaleAmount");
+    expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain('funnelVariant: "v2"');
   });
 
-  it("always shows $8 from $27 with a rolling 24h timer", () => {
+  it("always shows $2.99 from $27 with a rolling 24h timer", () => {
     const during = v2PackOfferCopy(PET_V2_SALE_EPOCH_MS + 1000);
     expect(during.saleActive).toBe(true);
     expect(during.amountCents).toBe(PET_V2_PRICE_CENTS);
-    expect(during.priceDisplay).toBe("$8");
+    expect(during.priceDisplay).toBe("$2.99");
     expect(during.compareAtDisplay).toBe("$27");
     expect(Date.parse(during.expiresAt!)).toBeGreaterThan(PET_V2_SALE_EPOCH_MS);
 
     const nextCycle = v2FlashSale(PET_V2_SALE_EPOCH_MS + PET_V2_SALE_CYCLE_MS + 5000);
     expect(nextCycle.saleActive).toBe(true);
-    expect(nextCycle.amountCents).toBe(800);
-    expect(nextCycle.priceDisplay).toBe("$8");
+    expect(nextCycle.amountCents).toBe(299);
+    expect(nextCycle.priceDisplay).toBe("$2.99");
     expect(nextCycle.compareAtDisplay).toBe("$27");
   });
 });
@@ -175,23 +168,23 @@ describe("V2 free-preview economics", () => {
     const one = economicsAtConversion(1000, 1);
     expect(one.purchases).toBe(10);
     expect(one.generationCostUsd).toBe(40);
-    expect(one.testRevenueUsd).toBe(80);
+    expect(one.testRevenueUsd).toBe(29.9);
     expect(one.productionRevenueUsd).toBe(270);
-    expect(one.grossAfterAiTestUsd).toBe(40);
+    expect(one.grossAfterAiTestUsd).toBe(-10.1);
     expect(one.grossAfterAiProductionUsd).toBe(230);
 
     const two = economicsAtConversion(1000, 2);
     expect(two.purchases).toBe(20);
-    expect(two.grossAfterAiTestUsd).toBe(120);
+    expect(two.grossAfterAiTestUsd).toBe(19.8);
     expect(two.grossAfterAiProductionUsd).toBe(500);
 
     const five = economicsAtConversion(1000, 5);
     expect(five.purchases).toBe(50);
-    expect(five.grossAfterAiTestUsd).toBe(360);
+    expect(five.grossAfterAiTestUsd).toBe(109.5);
 
     const ten = economicsAtConversion(1000, 10);
     expect(ten.purchases).toBe(100);
-    expect(ten.grossAfterAiTestUsd).toBe(760);
+    expect(ten.grossAfterAiTestUsd).toBe(259);
   });
 });
 

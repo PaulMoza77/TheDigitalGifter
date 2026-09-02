@@ -23,6 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
+.tdg-commit
 .migration/
 .env.local
 .env*.local
@@ -50,3 +51,4 @@ storage-export/
 
 # Local AI ad generation working files (keep composed masters)
 output/tdg-pet-ad-raw/
+output/

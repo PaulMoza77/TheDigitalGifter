@@ -1,0 +1,70 @@
+name: deploy-vps-mozas
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "supabase/**"
+      - "docs/**"
+      - "**/*.md"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: Production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require Mozas SSH identity
+        env:
+          MOZAS_SSH_HOST: ${{ secrets.MOZAS_SSH_HOST }}
+          MOZAS_SSH_PRIVATE_KEY: ${{ secrets.MOZAS_SSH_PRIVATE_KEY }}
+          MOZAS_SSH_USER: ${{ secrets.MOZAS_SSH_USER }}
+        run: |
+          missing=0
+          for name in MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY MOZAS_SSH_USER; do
+            eval "val=\${$name:-}"
+            if [ -z "$val" ]; then
+              echo "::error::$name is missing in the Production environment."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Refusing silent skip — Mozas VPS deploy cannot be reported as successful."
+            exit 2
+          fi
+          echo "Mozas SSH host is present (value not printed)."
+
+      - name: Deploy to Mozas VPS
+        env:
+          MOZAS_SSH_HOST: ${{ secrets.MOZAS_SSH_HOST }}
+          MOZAS_SSH_PRIVATE_KEY: ${{ secrets.MOZAS_SSH_PRIVATE_KEY }}
+          MOZAS_SSH_USER: ${{ secrets.MOZAS_SSH_USER }}
+        run: |
+          bash scripts/deploy-vps.sh
+
+      - name: Verify TDG origin
+        env:
+          MOZAS_SSH_HOST: ${{ secrets.MOZAS_SSH_HOST }}
+          MOZAS_SSH_PRIVATE_KEY: ${{ secrets.MOZAS_SSH_PRIVATE_KEY }}
+          MOZAS_SSH_USER: ${{ secrets.MOZAS_SSH_USER }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "${MOZAS_SSH_HOST:-}" ]; then
+            echo "::error::MOZAS_SSH_HOST missing in Verify TDG origin step"
+            exit 2
+          fi
+          node scripts/verify-tdg-vps-origin.mjs
+          if [ -n "${VITE_SUPABASE_URL:-}" ] && [ -n "${VITE_SUPABASE_ANON_KEY:-}" ]; then
+            node scripts/verify-tdg-flows.mjs
+          else
+            echo "::warning::VITE_SUPABASE_* missing — skipped flow verification"
+          fi
+          # Public HTTPS (no --resolve) plus direct VPS pins.
+          TDG_HTTPS_PHASE=post node scripts/verify-tdg-https.mjs
+          node scripts/verify-apple-pay-domain.mjs

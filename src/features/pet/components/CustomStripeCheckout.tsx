@@ -7,24 +7,13 @@ import {
 } from "@stripe/react-stripe-js/checkout";
 import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import { sanitizeStripeCheckoutCustomerError, stripeCheckoutInitCustomerError } from "../funnelGuards";
+import {
+  CARD_PAY_INCOMPLETE_MESSAGE,
+  isExpressCheckoutConfirmEvent,
+} from "../expressCheckoutConfirm";
 import { getStripePromise, reloadStripeForCheckout, stripeInstanceKeyFingerprint } from "../stripeLoader";
 import { ApplePayButton } from "./ApplePayButton";
-
-const EXPRESS_OPTIONS = {
-  buttonHeight: 55,
-  buttonTheme: { applePay: "black" as const, googlePay: "black" as const },
-  buttonType: { applePay: "buy" as const, googlePay: "buy" as const },
-  layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
-  paymentMethodOrder: ["apple_pay", "google_pay"],
-  paymentMethods: {
-    applePay: "always" as const,
-    googlePay: "always" as const,
-    link: "never" as const,
-    paypal: "never" as const,
-    amazonPay: "never" as const,
-    klarna: "never" as const,
-  },
-};
+import { PET_EXPRESS_CHECKOUT_OPTIONS } from "../expressCheckoutOptions";
 
 function normalizeClientSecret(clientSecret: string): string {
   const value = String(clientSecret || "").trim();
@@ -38,7 +27,6 @@ function normalizeClientSecret(clientSecret: string): string {
 
 function CheckoutBody({
   dueDisplay,
-  returnUrl,
   email,
   payButtonLabel,
   busyLabel = "Paying…",
@@ -47,12 +35,12 @@ function CheckoutBody({
   onReady,
   onPaymentInteraction,
   onInitError,
+  onRecoverCheckout,
   onReloadCheckout,
   confirmDisabled,
   payButtonClassName,
 }: {
   dueDisplay: string;
-  returnUrl: string;
   email?: string;
   payButtonLabel?: (payLabel: string) => string;
   busyLabel?: string;
@@ -61,6 +49,8 @@ function CheckoutBody({
   onReady?: () => void;
   onPaymentInteraction?: () => void;
   onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
+  /** Order-aware recovery. When set, hides the Stripe-only secret reload retry. */
+  onRecoverCheckout?: () => void;
   onReloadCheckout?: () => void;
   confirmDisabled?: boolean;
   payButtonClassName?: string;
@@ -69,7 +59,6 @@ function CheckoutBody({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
-  const [applePayFromStripe, setApplePayFromStripe] = useState(false);
   const readyFired = useRef(false);
   const interactionFired = useRef(false);
   const initErrorHandled = useRef(false);
@@ -117,10 +106,22 @@ function CheckoutBody({
     }
   }
 
+  function failExpressCheckout(event?: StripeExpressCheckoutElementConfirmEvent) {
+    try {
+      event?.paymentFailed?.({ reason: "fail" });
+    } catch {
+      // Stripe may already have dismissed the sheet.
+    }
+  }
+
   async function confirm(expressCheckoutConfirmEvent?: StripeExpressCheckoutElementConfirmEvent) {
     if (checkoutState.type !== "success") return;
     markInteraction();
-    if (onBeforeConfirm) {
+    if (busy) return;
+
+    const isExpress = isExpressCheckoutConfirmEvent(expressCheckoutConfirmEvent);
+
+    if (!isExpress && onBeforeConfirm) {
       try {
         const gate = await onBeforeConfirm();
         if (!gate.ok) {
@@ -140,26 +141,29 @@ function CheckoutBody({
         return;
       }
     }
-    if (!expressCheckoutConfirmEvent && !paymentComplete) {
-      setError("Enter your full card details before paying.");
+    if (!isExpress && !paymentComplete) {
+      setError(CARD_PAY_INCOMPLETE_MESSAGE);
       return;
     }
     setBusy(true);
     setError(null);
     try {
       await syncCheckoutEmail(checkoutState.checkout);
-      const result = await checkoutState.checkout.confirm({
-        returnUrl,
-        ...(expressCheckoutConfirmEvent ? { expressCheckoutConfirmEvent } : {}),
-      });
+      const result = await checkoutState.checkout.confirm(
+        isExpress ? { expressCheckoutConfirmEvent } : {},
+      );
       if (result.type === "error") {
+        if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
         const message = sanitizeStripeCheckoutCustomerError(result.error.message);
         console.info("[stripe-checkout-confirm]", {
           failureCode: result.error.code || "confirm_failed",
         });
         if (message) setError(message);
+      } else {
+        void onBeforeConfirm?.().catch(() => undefined);
       }
     } catch (caught) {
+      if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
       const message = sanitizeStripeCheckoutCustomerError(caught instanceof Error ? caught.message : undefined);
       console.info("[stripe-checkout-confirm]", {
         failureCode: caught instanceof Error ? caught.name : "confirm_exception",
@@ -180,6 +184,16 @@ function CheckoutBody({
   }
 
   if (checkoutState.type === "error") {
+    // When parent owns recovery, do not offer a Stripe-only retry that reloads the same invalid secret.
+    if (onRecoverCheckout) {
+      return (
+        <div className="space-y-3 py-2">
+          <p className="text-sm text-[#9a3412]" role="alert">
+            {stripeCheckoutInitCustomerError(checkoutState.error.message)}
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="space-y-3 py-2">
         <p className="text-sm text-[#9a3412]" role="alert">
@@ -205,16 +219,11 @@ function CheckoutBody({
   return (
     <div className="space-y-4">
       <ExpressCheckoutElement
-        options={EXPRESS_OPTIONS}
-        onReady={(event) => {
-          setApplePayFromStripe(Boolean(event.availablePaymentMethods?.applePay));
-          markInteraction();
-        }}
+        options={{ ...PET_EXPRESS_CHECKOUT_OPTIONS, layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const } }}
         onConfirm={(event) => void confirm(event)}
         onClick={markInteraction}
         onCancel={() => setError(null)}
       />
-      {applePayFromStripe ? null : <ApplePayButton disabled={busy || confirmDisabled} />}
 
       <div className="flex items-center gap-3">
         <span className="h-px flex-1 bg-[#1a140e]/12" />
@@ -261,7 +270,6 @@ export function CustomStripeCheckout({
   publishableKey,
   email,
   dueDisplay,
-  returnUrl,
   payButtonLabel,
   busyLabel,
   loadingLabel,
@@ -269,6 +277,7 @@ export function CustomStripeCheckout({
   onReady,
   onPaymentInteraction,
   onInitError,
+  onRecoverCheckout,
   confirmDisabled,
   appearanceTheme = "stripe",
   appearanceVariables,
@@ -278,7 +287,6 @@ export function CustomStripeCheckout({
   publishableKey: string;
   email?: string;
   dueDisplay: string;
-  returnUrl: string;
   payButtonLabel?: (payLabel: string) => string;
   busyLabel?: string;
   loadingLabel?: string;
@@ -286,6 +294,7 @@ export function CustomStripeCheckout({
   onReady?: () => void;
   onPaymentInteraction?: () => void;
   onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
+  onRecoverCheckout?: () => void;
   confirmDisabled?: boolean;
   appearanceTheme?: "stripe" | "night";
   appearanceVariables?: Record<string, string>;
@@ -345,7 +354,6 @@ export function CustomStripeCheckout({
     >
       <CheckoutBody
         dueDisplay={dueDisplay}
-        returnUrl={returnUrl}
         email={email}
         payButtonLabel={payButtonLabel}
         busyLabel={busyLabel}
@@ -354,6 +362,7 @@ export function CustomStripeCheckout({
         onReady={handleReady}
         onPaymentInteraction={onPaymentInteraction}
         onInitError={handleInitError}
+        onRecoverCheckout={onRecoverCheckout}
         onReloadCheckout={reloadCheckout}
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}

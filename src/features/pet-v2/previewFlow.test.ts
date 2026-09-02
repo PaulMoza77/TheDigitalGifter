@@ -16,7 +16,7 @@ const uploadB = "upload-b";
 const attemptA = `preview:${sessionId}:${uploadA}`;
 
 describe("V2 preview navigation + attempt flow", () => {
-  it("restores a successful preview on Back without duplicate generation", () => {
+  it("restores a successful local preview cache without duplicate generation", () => {
     const draft = {
       uploadId: uploadA,
       previewAttemptId: attemptA,
@@ -24,7 +24,11 @@ describe("V2 preview navigation + attempt flow", () => {
       generationMode: "live" as const,
     };
     expect(shouldRestoreLocalPreview(draft, false)).toBe(true);
+    // Live/legacy (V3 shared helper): offer → preview when a live preview exists.
     expect(backStepFrom("offer", draft)).toBe("preview");
+    // Teaser rebuild: never land on clear free AI preview.
+    expect(backStepFrom("teaser", { ...draft, generationMode: "teaser" })).toBe("photo");
+    expect(backStepFrom("offer", { ...draft, generationMode: "teaser" })).toBe("photo");
     expect(
       resolveGenerateAttempt({
         sessionId,
@@ -98,6 +102,8 @@ describe("V2 preview navigation + attempt flow", () => {
     expect(previewErrorMessage({ failureCategory: "rate_limit", error: "Too many free previews" })).toBe(
       "Too many free previews",
     );
+    expect(previewErrorMessage({ failureCategory: "rate_limit" })).toMatch(/Try again in a moment/i);
+    expect(previewErrorMessage({ errorCode: "rate_limited" })).toMatch(/free previews/i);
   });
 });
 
