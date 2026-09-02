@@ -1,9 +1,20 @@
-import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import MainPage from "@/components/MainPage";
 import { PageHead } from "@/components/PageHead";
+import {
+  CHRISTMAS_CATALOG_SEED,
+  ctaStateForProduct,
+  hubProducts,
+} from "@/features/christmas/catalog";
 
+/**
+ * Christmas hub: preserves classic MainPage CTAs and adds catalog-driven suite links.
+ * No fake testimonials, reviews, or purchasable Christmas checkout CTAs.
+ */
 export default function ChristmasPage() {
   const navigate = useNavigate();
+  const products = useMemo(() => hubProducts(CHRISTMAS_CATALOG_SEED), []);
 
   return (
     <>
@@ -17,6 +28,43 @@ export default function ChristmasPage() {
         createHref="/generator?occasion=christmas"
         occasion="christmas"
       />
+      <section
+        aria-label="Christmas product suite"
+        className="mx-auto max-w-5xl px-6 pb-16"
+      >
+        <h2 className="text-xl font-semibold text-slate-900">Christmas suite</h2>
+        <p className="mt-2 max-w-2xl text-sm text-slate-600">
+          New Christmas products are rolling out on this foundation. Coming-soon
+          items are not purchasable yet.
+        </p>
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+          {products.map((product) => {
+            const cta = ctaStateForProduct(product);
+            return (
+              <li
+                key={product.productKey}
+                className="rounded-lg border border-slate-200 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium text-slate-900">{product.name}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{product.description}</p>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-slate-200 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-500">
+                    {cta === "open" ? "Open" : "Soon"}
+                  </span>
+                </div>
+                <Link
+                  to={product.routePath}
+                  className="mt-4 inline-flex text-sm font-medium text-slate-900 underline-offset-4 hover:underline"
+                >
+                  {cta === "open" ? "Open" : "View status"} →
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
     </>
   );
 }

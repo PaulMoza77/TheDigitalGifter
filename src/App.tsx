@@ -72,6 +72,7 @@ const AdminBlogPage = lazy(() => import("@/pages/admin/AdminBlogPage"));
 const PricingPage = lazy(() => import("@/pages/admin/PricingPage"));
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const PetOrdersPage = lazy(() => import("@/pages/admin/PetOrders"));
+const ChristmasOrdersPage = lazy(() => import("@/pages/admin/ChristmasOrders"));
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
@@ -110,6 +111,11 @@ const SpiritualCategoryPage = lazy(
 const PetsCategoryPage = lazy(() => import("@/pages/website/PetsCategoryPage"));
 
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
+const ChristmasShellRoute = lazy(() =>
+  import("@/features/christmas/ChristmasShellRoute").then((m) => ({
+    default: m.ChristmasShellRoute,
+  }))
+);
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
 const ThanksgivingPage = lazy(() => import("@/pages/website/ThanksgivingPage"));
@@ -421,6 +427,20 @@ function AppInner() {
             <Route path="/categories/pets" element={<PetsCategoryPage />} />
 
             <Route path="/christmas" element={<ChristmasPage />} />
+            <Route path="/christmas/photo-generator" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/family" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/couples" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/kids" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/pets" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/dogs" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/cats" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/santa-video" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/tree" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/advent" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/wishlist" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/gift-finder" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/cards" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/messages" element={<ChristmasShellRoute />} />
             <Route path="/birthday" element={<BirthdayPage />} />
             <Route path="/new-years-eve" element={<NewYearsEvePage />} />
             <Route path="/thanksgiving" element={<ThanksgivingPage />} />
@@ -567,6 +587,7 @@ function AppInner() {
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="pet-orders" element={<PetOrdersPage />} />
+            <Route path="christmas-orders" element={<ChristmasOrdersPage />} />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />

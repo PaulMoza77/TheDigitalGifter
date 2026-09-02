@@ -25,6 +25,8 @@ The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable bluepr
 
 **Recommended first implementation task:** Christmas shared product + route foundation that reuses pet checkout/generation patterns **without** shipping Santa/Tree yet.
 
+**Foundation update (`tdg-christmas-foundation-002`):** Dedicated `christmas_*` catalog/orders/events implemented (see `docs/architecture/TDG_CHRISTMAS_COMMERCE_ADR.md` and `docs/TDG_CHRISTMAS_FOUNDATION.md`). Pet schema left unchanged. Checkout kill-switched off by default.
+
 ---
 
 ## 1. Repositories / architecture
