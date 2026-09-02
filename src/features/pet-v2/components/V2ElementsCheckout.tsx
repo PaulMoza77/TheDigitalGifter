@@ -227,6 +227,14 @@ function CheckoutBody({
     <div className="space-y-4">
       <ExpressCheckoutElement
         options={PET_EXPRESS_CHECKOUT_OPTIONS}
+        onReady={(event) => {
+          const methods = event?.availablePaymentMethods;
+          console.info("[express-checkout-ready]", {
+            applePay: Boolean(methods?.applePay),
+            googlePay: Boolean(methods?.googlePay),
+            link: Boolean(methods?.link),
+          });
+        }}
         onConfirm={(event) => void confirm(event)}
         onClick={markInteraction}
         onCancel={() => {

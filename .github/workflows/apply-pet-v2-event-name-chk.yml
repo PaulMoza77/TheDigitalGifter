@@ -1,0 +1,38 @@
+name: apply-pet-v2-event-name-chk
+
+# Expands pet_v2_funnel_events CHECK so checkout session/fail/cancel events persist.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/migrations/20260902120000_pet_v2_funnel_events_name_chk.sql"
+      - "scripts/apply-pet-v2-event-name-chk.sh"
+      - ".github/workflows/apply-pet-v2-event-name-chk.yml"
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: Production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install psql client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+
+      - name: Apply name_chk migration
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: bash scripts/apply-pet-v2-event-name-chk.sh
+
+      - name: Smoke checkout event ingest
+        run: node scripts/smoke-pet-v2-checkout-events.mjs
