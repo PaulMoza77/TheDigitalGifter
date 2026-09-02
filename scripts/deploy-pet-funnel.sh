@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Safe production deploy: pet-funnel Edge only (Apple Pay contact-save fix).
-# Does NOT touch pet-provider-status, Stripe webhooks, or frontend.
+# Safe production Edge deploy for Meta purchase attribution:
+#   1) pet-funnel   — checkout metadata + InitiateCheckout CAPI (fbc/fbp)
+#   2) stripe-webhook — Purchase CAPI + v2/v3 purchase attribution (shared fulfill)
+# Does NOT touch pet-provider-status or frontend.
 # Requires: SUPABASE_ACCESS_TOKEN with deploy rights for kjlsocejpmnzhhduyumy.
 set -euo pipefail
 
@@ -14,14 +16,20 @@ fi
 
 PROJECT_REF="${SUPABASE_PROJECT_REF:-kjlsocejpmnzhhduyumy}"
 
-echo "Safe deploy: pet-funnel only → $PROJECT_REF"
-npx --yes supabase functions deploy pet-funnel \
-  --project-ref "$PROJECT_REF" \
-  --no-verify-jwt
+deploy_fn() {
+  local name="$1"
+  echo "Deploying ${name} → ${PROJECT_REF}"
+  npx --yes supabase functions deploy "${name}" \
+    --project-ref "${PROJECT_REF}" \
+    --no-verify-jwt
+}
+
+echo "Safe Edge deploy: pet-funnel + stripe-webhook → $PROJECT_REF"
+deploy_fn pet-funnel
+deploy_fn stripe-webhook
 
 EDGE_URL="https://${PROJECT_REF}.supabase.co/functions/v1/pet-funnel"
 echo "Deployed. Probe: POST $EDGE_URL (expects JSON API, not HTML)."
-# Lightweight reachability check — OPTIONS/GET may 405; any non-HTML response is fine.
 CODE="$(curl -sS -m 20 -o /tmp/pet-funnel-probe.txt -w '%{http_code}' \
   -X POST "$EDGE_URL" \
   -H 'Content-Type: application/json' \
@@ -32,4 +40,17 @@ if echo "$BODY_HEAD" | grep -qi '<html'; then
   echo "ERROR: pet-funnel returned HTML — deploy may have missed the function."
   exit 1
 fi
-echo "pet-funnel safe deploy complete."
+
+WH_URL="https://${PROJECT_REF}.supabase.co/functions/v1/stripe-webhook"
+WH_CODE="$(curl -sS -m 20 -o /tmp/stripe-webhook-probe.txt -w '%{http_code}' \
+  -X POST "$WH_URL" \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"probe"}' || true)"
+WH_HEAD="$(head -c 120 /tmp/stripe-webhook-probe.txt 2>/dev/null || true)"
+echo "stripe-webhook probe HTTP $WH_CODE body[:120]=$WH_HEAD"
+if echo "$WH_HEAD" | grep -qi '<html'; then
+  echo "ERROR: stripe-webhook returned HTML — deploy may have missed the function."
+  exit 1
+fi
+
+echo "pet-funnel + stripe-webhook safe deploy complete."
