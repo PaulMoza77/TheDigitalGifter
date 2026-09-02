@@ -30,6 +30,14 @@ type Body = {
   adset_id?: string;
   ad_id?: string;
   funnel_session_id?: string;
+  style_key?: string;
+  source_path?: string;
+  source_bucket?: string;
+  source_content_type?: string;
+  source_byte_size?: number;
+  source_width?: number;
+  source_height?: number;
+  existing_order_id?: string;
 };
 
 function asString(value: unknown): string {
@@ -100,76 +108,140 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Invalid configured price", code: "invalid_price" }, 400);
     }
 
+    const styleKey = asString(body.style_key);
+    const sourcePath = asString(body.source_path);
+    if (product.product_key === "christmas_photo") {
+      if (!styleKey || !sourcePath) {
+        return jsonResponse({ error: "style_key and source_path required", code: "missing_photo_fields" }, 400);
+      }
+      const { data: style } = await service
+        .from("christmas_styles")
+        .select("style_key,enabled")
+        .eq("style_key", styleKey)
+        .maybeSingle();
+      if (!style?.enabled) {
+        return jsonResponse({ error: "Unknown or disabled style", code: "invalid_style" }, 400);
+      }
+    }
+
     const stripeSecret = asString(Deno.env.get("STRIPE_SECRET_KEY"));
     const publishable = asString(Deno.env.get("STRIPE_PUBLISHABLE_KEY"));
     if (!stripeSecret || !publishable) {
       return jsonResponse({ error: "Stripe is not configured" }, 503);
     }
 
-    const publicToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-    const tokenHash = await sha256Hex(publicToken);
-    const sku = `xmas_${product.product_key}_${pkg.package_key}`;
     const email = asString(body.email).toLowerCase();
     const successUrl =
       asString(body.success_url) || `${siteOrigin()}/christmas/photo-generator?checkout=success`;
+    const sku = `xmas_${product.product_key}_${pkg.package_key}`;
 
-    const { data: order, error: orderError } = await service
-      .from("christmas_orders")
-      .insert({
-        public_token_hash: tokenHash,
-        email: email || null,
-        email_normalized: email || null,
-        product_key: product.product_key,
-        package_key: pkg.package_key,
-        sku,
-        currency: pkg.currency,
-        amount_cents: pkg.price_cents,
-        payment_status: "pending",
-        fulfillment_status: "not_started",
-        locale: asString(body.locale) || "en",
-        landing_path: asString(body.landing_path) || null,
-        utm_source: asString(body.utm_source) || null,
-        utm_medium: asString(body.utm_medium) || null,
-        utm_campaign: asString(body.utm_campaign) || null,
-        utm_content: asString(body.utm_content) || null,
-        utm_term: asString(body.utm_term) || null,
-        affiliate_ref: asString(body.affiliate_ref) || null,
-        campaign_id: asString(body.campaign_id) || null,
-        adset_id: asString(body.adset_id) || null,
-        ad_id: asString(body.ad_id) || null,
-        funnel_session_id: asString(body.funnel_session_id) || null,
-        metadata: { source: "christmas-checkout" },
-      })
-      .select("id")
-      .single();
-    if (orderError) throw orderError;
+    let orderId = asString(body.existing_order_id);
+    let publicToken = "";
+
+    if (orderId) {
+      const { data: existing } = await service
+        .from("christmas_orders")
+        .select("id,payment_status,stripe_checkout_session_id,amount_cents,public_token_hash")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (!existing || existing.payment_status === "paid") {
+        orderId = "";
+      } else {
+        await service
+          .from("christmas_orders")
+          .update({
+            email: email || null,
+            email_normalized: email || null,
+            style_key: styleKey || null,
+            source_path: sourcePath || null,
+            source_bucket: asString(body.source_bucket) || "christmas-source",
+            source_content_type: asString(body.source_content_type) || null,
+            source_byte_size: Number(body.source_byte_size) || null,
+            source_width: Number(body.source_width) || null,
+            source_height: Number(body.source_height) || null,
+            amount_cents: pkg.price_cents,
+            currency: pkg.currency,
+            package_key: pkg.package_key,
+            sku,
+          })
+          .eq("id", orderId);
+      }
+    }
+
+    if (!orderId) {
+      publicToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+      const tokenHash = await sha256Hex(publicToken);
+      const { data: order, error: orderError } = await service
+        .from("christmas_orders")
+        .insert({
+          public_token_hash: tokenHash,
+          email: email || null,
+          email_normalized: email || null,
+          product_key: product.product_key,
+          package_key: pkg.package_key,
+          sku,
+          currency: pkg.currency,
+          amount_cents: pkg.price_cents,
+          payment_status: "pending",
+          fulfillment_status: "not_started",
+          style_key: styleKey || null,
+          source_path: sourcePath || null,
+          source_bucket: asString(body.source_bucket) || (sourcePath ? "christmas-source" : null),
+          source_content_type: asString(body.source_content_type) || null,
+          source_byte_size: Number(body.source_byte_size) || null,
+          source_width: Number(body.source_width) || null,
+          source_height: Number(body.source_height) || null,
+          locale: asString(body.locale) || "en",
+          landing_path: asString(body.landing_path) || null,
+          utm_source: asString(body.utm_source) || null,
+          utm_medium: asString(body.utm_medium) || null,
+          utm_campaign: asString(body.utm_campaign) || null,
+          utm_content: asString(body.utm_content) || null,
+          utm_term: asString(body.utm_term) || null,
+          affiliate_ref: asString(body.affiliate_ref) || null,
+          campaign_id: asString(body.campaign_id) || null,
+          adset_id: asString(body.adset_id) || null,
+          ad_id: asString(body.ad_id) || null,
+          funnel_session_id: asString(body.funnel_session_id) || null,
+          metadata: { source: "christmas-checkout", public_token_hint: publicToken },
+        })
+        .select("id")
+        .single();
+      if (orderError) throw orderError;
+      orderId = order.id;
+    }
 
     const params = new URLSearchParams();
     params.set("mode", "payment");
     params.set("ui_mode", "custom");
-    params.set("return_url", successUrl.includes("{CHECKOUT_SESSION_ID}")
+    const returnUrl = successUrl.includes("{CHECKOUT_SESSION_ID}")
       ? successUrl
-      : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}`);
+      : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}&token=${encodeURIComponent(publicToken || "recover")}`;
+    params.set("return_url", returnUrl);
     if (email) params.set("customer_email", email);
     params.set("line_items[0][quantity]", "1");
     params.set("line_items[0][price_data][currency]", pkg.currency);
     params.set("line_items[0][price_data][unit_amount]", String(pkg.price_cents));
-    params.set("line_items[0][price_data][product_data][name]", `${product.name} — ${pkg.package_name}`);
+    params.set(
+      "line_items[0][price_data][product_data][name]",
+      `${product.name} — ${pkg.package_name}`,
+    );
     params.set("metadata[product_family]", "christmas");
     params.set("metadata[product_type]", "christmas");
     params.set("metadata[product_key]", product.product_key);
     params.set("metadata[package_key]", pkg.package_key);
     params.set("metadata[sku]", sku);
-    params.set("metadata[christmas_order_id]", order.id);
+    params.set("metadata[christmas_order_id]", orderId);
+    if (styleKey) params.set("metadata[style_key]", styleKey);
     params.set("payment_intent_data[metadata][product_family]", "christmas");
-    params.set("payment_intent_data[metadata][christmas_order_id]", order.id);
+    params.set("payment_intent_data[metadata][christmas_order_id]", orderId);
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${stripeSecret}`,
         "Content-Type": "application/x-www-form-urlencoded",
-        "Idempotency-Key": `xmas-checkout-${order.id}`,
+        "Idempotency-Key": `xmas-checkout-${orderId}`,
       },
       body: params,
     });
@@ -177,20 +249,26 @@ Deno.serve(async (req) => {
     if (!stripeRes.ok) {
       await service
         .from("christmas_orders")
-        .update({ payment_status: "failed", last_error: asString(session.error?.message || "stripe_error") })
-        .eq("id", order.id);
+        .update({
+          payment_status: "failed",
+          last_error: asString(session.error?.message || "stripe_error"),
+        })
+        .eq("id", orderId);
       return jsonResponse({ error: "Unable to create checkout session", code: "stripe_error" }, 502);
     }
 
     await service
       .from("christmas_orders")
-      .update({ stripe_checkout_session_id: asString(session.id) })
-      .eq("id", order.id);
+      .update({
+        stripe_checkout_session_id: asString(session.id),
+        payment_status: "pending",
+      })
+      .eq("id", orderId);
 
     return jsonResponse({
       ok: true,
-      orderId: order.id,
-      publicToken,
+      orderId,
+      publicToken: publicToken || null,
       sessionId: session.id,
       clientSecret: session.client_secret,
       publishableKey: publishable,

@@ -96,6 +96,28 @@ export async function handleChristmasStripeEvent(input: {
     result: { ...result, product_family: "christmas" },
   });
 
+  // Enqueue generation only after verified paid transition (or already paid replay).
+  if (result.ok === true && (result.status === "paid" || result.status === "already_paid")) {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (url && key && result.status === "paid") {
+      const runtime = (globalThis as {
+        EdgeRuntime?: { waitUntil?: (value: Promise<unknown>) => void };
+      }).EdgeRuntime;
+      const task = fetch(`${url.replace(/\/$/, "")}/functions/v1/christmas-generate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          apikey: key,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ order_id: orderId }),
+      }).catch((err) => console.error("christmas-generate enqueue failed", err));
+      if (runtime?.waitUntil) runtime.waitUntil(task);
+      else void task;
+    }
+  }
+
   return new Response(JSON.stringify({ ok: true, christmas: result }), {
     headers: { "Content-Type": "application/json" },
   });

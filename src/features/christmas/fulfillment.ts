@@ -18,11 +18,14 @@ export type ChristmasFulfillmentHandler = (
   order: ChristmasFulfillmentOrder,
 ) => Promise<{ accepted: boolean; reason?: string }>;
 
-/** Registry only — no fake result generators. */
+/**
+ * Client-side registry only — no fake result generators.
+ * christmas_photo post-pay generation is enqueued by stripeFulfill → christmas-generate
+ * (edge), not via this in-browser registry.
+ */
 export const CHRISTMAS_FULFILLMENT_HANDLERS: Partial<
   Record<string, ChristmasFulfillmentHandler>
 > = {
-  // christmas_photo: implemented in a later task
   // christmas_santa_video: implemented in a later task
 };
 

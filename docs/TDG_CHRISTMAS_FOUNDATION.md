@@ -53,17 +53,17 @@ Idempotency key unique.
 
 ## Route activation
 
-Hub `/christmas` keeps classic generator CTAs + catalog suite list.  
-Suite paths use `ChristmasFeatureShell` with `noindex` and **no checkout CTA**.
+Hub `/christmas` keeps classic generator CTAs + catalog suite list (includes Photo Generator → `/christmas/photo-generator`).  
+`/christmas/photo-generator` is a real funnel (not a shell). Other suite paths use `ChristmasFeatureShell` with `noindex` and **no checkout CTA**.
 
 Admin: `/admin/christmas-orders`
 
 ## Future generator integration
 
-Paid order → `fulfillment_status=queued` → `enqueueChristmasFulfillment` → product handler registry (`fulfillment.ts`).  
-`christmas_photo` handler is intentionally absent until the photo-generator task.
+Paid order → `fulfillment_status=queued` → webhook enqueues `christmas-generate` for `christmas_photo`.  
+Pre-payment preview is **local blur of the original upload** (see `docs/TDG_CHRISTMAS_PHOTO_GENERATOR.md`) — never Replicate.
 
-**Preview policy for next task:** heavily blur the **original upload** client/server-side — do not call expensive Replicate preview before payment.
+`enqueueChristmasFulfillment` registry remains available for non-webhook paths; photo V1 uses Stripe fulfill → generate.
 
 ## Future Santa integration
 

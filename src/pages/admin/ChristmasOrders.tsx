@@ -19,6 +19,7 @@ type ChristmasOrderRow = {
   email: string | null;
   product_key: string;
   package_key: string;
+  style_key?: string | null;
   amount_cents: number;
   currency: string;
   payment_status: string;
@@ -32,6 +33,9 @@ type ChristmasOrderRow = {
   landing_path: string | null;
   created_at: string;
   paid_at: string | null;
+  model_name?: string | null;
+  generation_started_at?: string | null;
+  generation_finished_at?: string | null;
 };
 
 function money(cents: number, currency: string) {
@@ -60,7 +64,7 @@ export default function ChristmasOrdersPage() {
     const { data, error } = await supabase
       .from("christmas_orders")
       .select(
-        "id,email,product_key,package_key,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,created_at,paid_at",
+        "id,email,product_key,package_key,style_key,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,created_at,paid_at,model_name,generation_started_at,generation_finished_at",
       )
       .order("created_at", { ascending: false })
       .limit(200);
@@ -172,6 +176,7 @@ export default function ChristmasOrdersPage() {
               <TableHead>Created</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Product</TableHead>
+              <TableHead>Style</TableHead>
               <TableHead>Package</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Payment</TableHead>
@@ -182,7 +187,7 @@ export default function ChristmasOrdersPage() {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-slate-500">
+                <TableCell colSpan={9} className="text-center text-slate-500">
                   {loading ? "Loading…" : "No Christmas orders yet."}
                 </TableCell>
               </TableRow>
@@ -200,6 +205,7 @@ export default function ChristmasOrdersPage() {
                     {row.email || "—"}
                   </TableCell>
                   <TableCell className="text-sm">{row.product_key}</TableCell>
+                  <TableCell className="text-sm">{row.style_key || "—"}</TableCell>
                   <TableCell className="text-sm">{row.package_key}</TableCell>
                   <TableCell className="text-sm">
                     {money(row.amount_cents, row.currency)}
@@ -253,6 +259,25 @@ export default function ChristmasOrdersPage() {
               <dt className="text-slate-500">UTM</dt>
               <dd>
                 {[selected.utm_source, selected.utm_campaign].filter(Boolean).join(" / ") || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Style / model</dt>
+              <dd>
+                {selected.style_key || "—"}
+                {selected.model_name ? ` · ${selected.model_name}` : ""}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Generation window</dt>
+              <dd className="text-xs">
+                {selected.generation_started_at
+                  ? new Date(selected.generation_started_at).toLocaleString()
+                  : "—"}
+                {" → "}
+                {selected.generation_finished_at
+                  ? new Date(selected.generation_finished_at).toLocaleString()
+                  : "—"}
               </dd>
             </div>
             <div>

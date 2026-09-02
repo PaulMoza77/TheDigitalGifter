@@ -12,16 +12,8 @@ export type ChristmasRouteShellDef = {
   noindex: boolean;
 };
 
+/** Unfinished suite surfaces only — `/christmas/photo-generator` is a real funnel page. */
 export const CHRISTMAS_ROUTE_SHELLS: ChristmasRouteShellDef[] = [
-  {
-    path: "/christmas/photo-generator",
-    productKey: "christmas_photo",
-    title: "Christmas AI Photo Generator",
-    status: "foundation",
-    description:
-      "Foundation is in place. The upload → blur preview → pay → generate flow ships in a later task.",
-    noindex: true,
-  },
   {
     path: "/christmas/family",
     productKey: "christmas_family",

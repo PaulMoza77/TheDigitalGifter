@@ -27,6 +27,8 @@ The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable bluepr
 
 **Foundation update (`tdg-christmas-foundation-002`):** Dedicated `christmas_*` catalog/orders/events implemented (see `docs/architecture/TDG_CHRISTMAS_COMMERCE_ADR.md` and `docs/TDG_CHRISTMAS_FOUNDATION.md`). Pet schema left unchanged. Checkout kill-switched off by default.
 
+**Photo generator update (`tdg-christmas-photo-generator-003`):** `/christmas/photo-generator` is a real funnel with local blurred-original preview (zero pre-pay Replicate), post-pay `christmas-generate`, and production purchase still disabled until package price is intentionally configured. See `docs/TDG_CHRISTMAS_PHOTO_GENERATOR.md`.
+
 ---
 
 ## 1. Repositories / architecture
