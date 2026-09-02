@@ -107,7 +107,13 @@ export async function logFunnelWriteFailure(input: FailureLog): Promise<void> {
 
 export async function writeValidatedFunnelEvent(
   validated: ValidatedFunnelIngest,
-  options: { isTest: boolean; environment: WriteEnvironment },
+  options: {
+    isTest: boolean;
+    environment: WriteEnvironment;
+    clientIp?: string | null;
+    clientIpHostname?: string | null;
+    countryCode?: string | null;
+  },
 ): Promise<{ duplicate: boolean }> {
   const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
@@ -115,41 +121,58 @@ export async function writeValidatedFunnelEvent(
     throw new Error("missing_supabase_config");
   }
 
-  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/record_pet_funnel_event`, {
-    method: "POST",
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      p_event_name: validated.eventName,
-      p_funnel_session_id: validated.funnelSessionId,
-      p_idempotency_key: validated.idempotencyKey,
-      p_order_id: validated.orderId,
-      p_species: validated.species,
-      p_utm_source: validated.utmSource,
-      p_utm_medium: validated.utmMedium,
-      p_utm_campaign: validated.utmCampaign,
-      p_utm_content: validated.utmContent,
-      p_utm_term: validated.utmTerm,
-      p_campaign_id: validated.campaignId,
-      p_adset_id: validated.adsetId,
-      p_ad_id: validated.adId,
-      p_device_type: validated.deviceType,
-      p_pathname: validated.pathname,
-      p_amount_cents: validated.amountCents,
-      p_is_test: options.isTest,
-      p_environment: options.environment,
-      p_has_meta_click: validated.hasFbclid,
-      p_referrer_host: validated.referrerHost,
-      p_client_event_id: validated.eventId,
-    }),
-  });
+  const baseBody = {
+    p_event_name: validated.eventName,
+    p_funnel_session_id: validated.funnelSessionId,
+    p_idempotency_key: validated.idempotencyKey,
+    p_order_id: validated.orderId,
+    p_species: validated.species,
+    p_utm_source: validated.utmSource,
+    p_utm_medium: validated.utmMedium,
+    p_utm_campaign: validated.utmCampaign,
+    p_utm_content: validated.utmContent,
+    p_utm_term: validated.utmTerm,
+    p_campaign_id: validated.campaignId,
+    p_adset_id: validated.adsetId,
+    p_ad_id: validated.adId,
+    p_device_type: validated.deviceType,
+    p_pathname: validated.pathname,
+    p_amount_cents: validated.amountCents,
+    p_is_test: options.isTest,
+    p_environment: options.environment,
+    p_has_meta_click: validated.hasFbclid,
+    p_referrer_host: validated.referrerHost,
+    p_client_event_id: validated.eventId,
+  };
+  const withGeo = {
+    ...baseBody,
+    p_client_ip: options.clientIp ?? null,
+    p_client_ip_hostname: options.clientIpHostname ?? null,
+    p_country_code: options.countryCode ?? null,
+  };
+  const post = (body: Record<string, unknown>) =>
+    fetch(`${supabaseUrl}/rest/v1/rpc/record_pet_funnel_event`, {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
+  let response = await post(withGeo);
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(`rpc_${response.status}:${text.slice(0, 120)}`);
+    if (response.status === 404 || /p_country_code|p_client_ip|Could not find/i.test(text)) {
+      response = await post(baseBody);
+      if (!response.ok) {
+        const retryText = await response.text().catch(() => "");
+        throw new Error(`rpc_${response.status}:${retryText.slice(0, 120)}`);
+      }
+    } else {
+      throw new Error(`rpc_${response.status}:${text.slice(0, 120)}`);
+    }
   }
   const id = await response.json().catch(() => null);
   return { duplicate: id == null };
