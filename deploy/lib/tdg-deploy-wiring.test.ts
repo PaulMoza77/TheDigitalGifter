@@ -40,7 +40,9 @@ describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
   });
 
   it("failed deploy rolls back and does not advance verified pins", () => {
-    const failBlock = deployRemote.slice(deployRemote.indexOf("up -d --remove-orphans --wait"));
+    const failBlock = deployRemote.slice(
+      deployRemote.indexOf("up -d --remove-orphans --force-recreate --wait"),
+    );
     expect(failBlock).toMatch(/mozas-rollback-thedigitalgifter/);
     expect(failBlock).toMatch(/previous verified release retained/);
     const verifiedAdvance = deployRemote.indexOf('printf \'%s\\n\' "${RELEASE}" >"${TDG_RELEASES}/verified.tag"');
