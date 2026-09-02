@@ -123,15 +123,18 @@ The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable bluepr
 5. **Offer** — `OfferScreen` / pack UI (`V2PackOffer`, `V3PackOffer`)  
    - Events: `*_offer_viewed`, `*_unlock_clicked`
 
-6. **Checkout session** — `pet-funnel` Edge actions via `petFunnelApi` / `useV3EmbeddedCheckout`  
-   - Creates/reuses Stripe Checkout Session (`ui_mode` embedded/custom)  
+6. **Checkout session** — `pet-funnel` Edge actions via `petFunnelApi` / `useV3EmbeddedCheckout` / V2 `pay()`  
+   - Creates/reuses Stripe Checkout Session  
+   - **V1 + V3:** `ui_mode: custom` (Checkout Elements on-page)  
+   - **V2:** **hosted** Checkout — `window.location.assign(result.checkoutUrl)` (not CustomStripeCheckout)  
    - Idempotency: `stripeCheckoutIdempotencyKey` in `_shared/pet/checkout.ts`  
-   - Contact update: `updateOrderContact`
+   - V3 late contact: `updateOrderContact` before confirm
 
-7. **Payment UI** — `CustomStripeCheckout.tsx`  
+7. **Payment UI (V1/V3)** — `CustomStripeCheckout.tsx`  
    - `CheckoutElementsProvider` + `PaymentElement` + `ExpressCheckoutElement` (Apple Pay / Google Pay)  
    - Custom `ApplePayButton` fallback UX  
-   - Return → `/pet/order?token=…`
+   - Return → `/pet/order?token=…`  
+   - **Christmas recommendation:** clone **V3 custom** checkout, not V2 hosted redirect
 
 8. **Webhook fulfillment** — `stripe-webhook` → `handlePetStripeEvent` (`stripeFulfill.ts`)  
    - Metadata gate: SKU `pet-secret-life-12` / `product_type` pet  
@@ -168,7 +171,7 @@ Landing → create (name/photo/personality) → checkout page → same Stripe/we
 
 | Topic | Finding | Evidence |
 | --- | --- | --- |
-| Mode | Stripe **Checkout Sessions** with **embedded/custom** UI (Payment Element + Express Checkout), not classic hosted-only redirect for V2/V3 | `CustomStripeCheckout.tsx`, `_shared/pet/checkout.ts` |
+| Mode | Stripe **Checkout Sessions**; V1/V3 **`ui_mode: custom`** (Payment Element + Express Checkout); V2 **hosted** redirect | `CustomStripeCheckout.tsx`, `PetV2FunnelPage.tsx` `pay()`, `_shared/pet/checkout.ts` |
 | Apple Pay / Google Pay | ExpressCheckoutElement `applePay`/`googlePay` always | `CustomStripeCheckout.tsx` |
 | Card | PaymentElement | same |
 | Success | `/pet/order?token=` | V3 OfferScreen / checkout hook |
