@@ -13,9 +13,12 @@ on:
     paths:
       - "supabase/functions/pet-funnel/**"
       - "supabase/functions/stripe-webhook/**"
+      - "supabase/functions/pet-analytics-sync/**"
       - "supabase/functions/_shared/pet/**"
+      - "supabase/migrations/20260902120000_pet_funnel_exclude_internal_geos.sql"
       - ".github/workflows/deploy-pet-funnel.yml"
       - "scripts/deploy-pet-funnel.sh"
+      - "scripts/deploy-exclude-internal-geos.sh"
 
 jobs:
   deploy:
@@ -44,8 +47,10 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Deploy pet-funnel + stripe-webhook (safe)
+      - name: Deploy pet-funnel + stripe-webhook + geo exclusion (safe)
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: bash scripts/deploy-pet-funnel.sh
