@@ -2,7 +2,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import { PET_PRICE_CENTS, siteOrigin } from "./constants.ts";
 import { asString, asInt, isUuid } from "./crypto.ts";
 import { stripeFulfillmentDecision } from "./guards.ts";
-import { sendMetaCapiPurchase } from "./meta.ts";
+import { parseMetaCapiClickIds, sanitizeMetaClickId, sendMetaCapiPurchase } from "./meta.ts";
 import { recordPetFunnelPurchase } from "./funnelEvents.ts";
 
 export function isPetCheckoutMetadata(metadata: Record<string, unknown>): boolean {
@@ -66,6 +66,114 @@ export async function enqueuePetGenerateIfStalled(input: {
   if (!["queued", "held", "failed"].includes(status) && !staleRunning) return false;
   enqueuePetGenerate(input.orderId);
   return true;
+}
+
+type SessionAttribution = {
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  campaign_id: string | null;
+  adset_id: string | null;
+  ad_id: string | null;
+  has_meta_click: boolean;
+  referrer_host: string | null;
+  device_type: string | null;
+  fbc: string | null;
+  fbp: string | null;
+};
+
+function attributionFromStripeMetadata(metadata: Record<string, unknown>): SessionAttribution {
+  const click = parseMetaCapiClickIds(metadata);
+  return {
+    utm_source: asString(metadata.utm_source) || null,
+    utm_medium: asString(metadata.utm_medium) || null,
+    utm_campaign: asString(metadata.utm_campaign) || null,
+    utm_content: asString(metadata.utm_content) || null,
+    utm_term: asString(metadata.utm_term) || null,
+    campaign_id: asString(metadata.campaign_id) || null,
+    adset_id: asString(metadata.adset_id) || null,
+    ad_id: asString(metadata.ad_id) || null,
+    has_meta_click: click.hasMetaClick || asString(metadata.has_meta_click) === "1",
+    referrer_host: asString(metadata.referrer_host) || null,
+    device_type: asString(metadata.device_type) || null,
+    fbc: click.fbc,
+    fbp: click.fbp,
+  };
+}
+
+async function loadV2SessionAttribution(
+  service: SupabaseClient,
+  sessionId: string,
+): Promise<Partial<SessionAttribution> | null> {
+  const { data } = await service
+    .from("pet_v2_funnel_events")
+    .select(
+      "utm_source, utm_medium, utm_campaign, utm_content, utm_term, campaign_id, adset_id, ad_id, has_meta_click, referrer_host, device_type",
+    )
+    .eq("funnel_session_id", sessionId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    utm_source: asString(data.utm_source) || null,
+    utm_medium: asString(data.utm_medium) || null,
+    utm_campaign: asString(data.utm_campaign) || null,
+    utm_content: asString(data.utm_content) || null,
+    utm_term: asString(data.utm_term) || null,
+    campaign_id: asString(data.campaign_id) || null,
+    adset_id: asString(data.adset_id) || null,
+    ad_id: asString(data.ad_id) || null,
+    has_meta_click: data.has_meta_click === true,
+    referrer_host: asString(data.referrer_host) || null,
+    device_type: asString(data.device_type) || null,
+  };
+}
+
+async function loadV3SessionClickIds(
+  service: SupabaseClient,
+  sessionId: string,
+): Promise<{ fbc: string | null; fbp: string | null; has_meta_click: boolean }> {
+  const { data } = await service
+    .from("pet_v3_funnel_events")
+    .select("fbc, fbp, has_meta_click")
+    .eq("funnel_session_id", sessionId)
+    .order("created_at", { ascending: true })
+    .limit(5);
+  const rows = Array.isArray(data) ? data : [];
+  let fbc: string | null = null;
+  let fbp: string | null = null;
+  let hasMetaClick = false;
+  for (const row of rows) {
+    fbc = fbc || sanitizeMetaClickId(row.fbc);
+    fbp = fbp || sanitizeMetaClickId(row.fbp);
+    if (row.has_meta_click === true) hasMetaClick = true;
+  }
+  return { fbc, fbp, has_meta_click: hasMetaClick || Boolean(fbc) };
+}
+
+function mergeAttribution(
+  primary: SessionAttribution,
+  fallback: Partial<SessionAttribution> | null,
+): SessionAttribution {
+  if (!fallback) return primary;
+  return {
+    utm_source: primary.utm_source || fallback.utm_source || null,
+    utm_medium: primary.utm_medium || fallback.utm_medium || null,
+    utm_campaign: primary.utm_campaign || fallback.utm_campaign || null,
+    utm_content: primary.utm_content || fallback.utm_content || null,
+    utm_term: primary.utm_term || fallback.utm_term || null,
+    campaign_id: primary.campaign_id || fallback.campaign_id || null,
+    adset_id: primary.adset_id || fallback.adset_id || null,
+    ad_id: primary.ad_id || fallback.ad_id || null,
+    has_meta_click: primary.has_meta_click || fallback.has_meta_click === true,
+    referrer_host: primary.referrer_host || fallback.referrer_host || null,
+    device_type: primary.device_type || fallback.device_type || null,
+    fbc: primary.fbc || fallback.fbc || null,
+    fbp: primary.fbp || fallback.fbp || null,
+  };
 }
 
 export async function handlePetStripeEvent(input: {
@@ -152,13 +260,25 @@ export async function handlePetStripeEvent(input: {
     if (order) {
       const charged = Number(order.charged_amount_cents ?? order.amount_cents ?? PET_PRICE_CENTS);
       if (charged > 0) {
+        let attr = attributionFromStripeMetadata(input.metadata);
+        const sessionId = asString(input.metadata.funnel_session_id);
+        const funnelVariant = asString(input.metadata.funnel_variant);
+
+        if (funnelVariant === "v2" && isUuid(sessionId)) {
+          const fromLanding = await loadV2SessionAttribution(input.service, sessionId);
+          attr = mergeAttribution(attr, fromLanding);
+        }
+        if (funnelVariant === "v3" && isUuid(sessionId)) {
+          const fromV3 = await loadV3SessionClickIds(input.service, sessionId);
+          attr = mergeAttribution(attr, fromV3);
+        }
+
         await recordPetFunnelPurchase(input.service, {
           orderId: order.id,
           amountCents: charged,
           species: asString(order.species),
         });
-        if (asString(input.metadata.funnel_variant) === "v2") {
-          const sessionId = asString(input.metadata.funnel_session_id);
+        if (funnelVariant === "v2") {
           const species = asString(order.species);
           const pathSpecies = species === "cat" || species === "other" ? species : "dog";
           if (isUuid(sessionId)) {
@@ -169,13 +289,23 @@ export async function handlePetStripeEvent(input: {
               p_species: species,
               p_pathname: `/pet/${pathSpecies}-v2`,
               p_amount_cents: charged,
+              p_utm_source: attr.utm_source,
+              p_utm_medium: attr.utm_medium,
+              p_utm_campaign: attr.utm_campaign,
+              p_utm_content: attr.utm_content,
+              p_utm_term: attr.utm_term,
+              p_campaign_id: attr.campaign_id,
+              p_adset_id: attr.adset_id,
+              p_ad_id: attr.ad_id,
+              p_device_type: attr.device_type,
+              p_has_meta_click: attr.has_meta_click,
+              p_referrer_host: attr.referrer_host,
             });
           }
         }
-        if (asString(input.metadata.funnel_variant) === "v3") {
-          const sessionId = asString(input.metadata.funnel_session_id);
+        if (funnelVariant === "v3") {
           if (isUuid(sessionId)) {
-            const creativeRaw = asString(input.metadata.creative_id) || asString(input.metadata.utm_content);
+            const creativeRaw = asString(input.metadata.creative_id) || attr.utm_content;
             const creativeId = creativeRaw ? creativeRaw.replace(/-FINAL$/i, "").slice(0, 120) : null;
             await input.service.rpc("record_pet_v3_funnel_event", {
               p_event_name: "v3_purchase",
@@ -185,15 +315,18 @@ export async function handlePetStripeEvent(input: {
               p_pathname: "/pet/cat-v3",
               p_amount_cents: charged,
               p_funnel_version: asString(input.metadata.funnel_version) || "v3",
-              p_utm_source: asString(input.metadata.utm_source) || null,
-              p_utm_medium: asString(input.metadata.utm_medium) || null,
-              p_utm_campaign: asString(input.metadata.utm_campaign) || null,
-              p_utm_content: asString(input.metadata.utm_content) || null,
-              p_utm_term: asString(input.metadata.utm_term) || null,
-              p_campaign_id: asString(input.metadata.campaign_id) || null,
-              p_adset_id: asString(input.metadata.adset_id) || null,
-              p_ad_id: asString(input.metadata.ad_id) || null,
+              p_utm_source: attr.utm_source,
+              p_utm_medium: attr.utm_medium,
+              p_utm_campaign: attr.utm_campaign,
+              p_utm_content: attr.utm_content,
+              p_utm_term: attr.utm_term,
+              p_campaign_id: attr.campaign_id,
+              p_adset_id: attr.adset_id,
+              p_ad_id: attr.ad_id,
               p_creative_id: creativeId,
+              p_has_meta_click: attr.has_meta_click,
+              p_fbc: attr.fbc,
+              p_fbp: attr.fbp,
             });
           }
         }
@@ -205,6 +338,8 @@ export async function handlePetStripeEvent(input: {
             alreadySentAt: order.meta_purchase_sent_at,
             sourceUrl: `${siteOrigin()}/pet/order`,
             amountCents: charged,
+            fbc: attr.fbc,
+            fbp: attr.fbp,
           });
           if (capi.sent) {
             await input.service

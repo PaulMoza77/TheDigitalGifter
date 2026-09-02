@@ -47,7 +47,15 @@ import {
 } from "../_shared/pet/mapOrder.ts";
 import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, resolveServerOwnedOffer, resolveServerOwnedPromo } from "../_shared/pet/videoGuards.ts";
 import { PET_SCENE_DEFINITIONS, sceneByKey } from "../_shared/pet/scenes.ts";
-import { isCheckoutPlaceholderEmail, petMetaCheckoutFields, petPurchaseEventId, sendMetaCapiInitiateCheckout } from "../_shared/pet/meta.ts";
+import {
+  isCheckoutPlaceholderEmail,
+  parseMetaCapiClickIds,
+  petMetaCheckoutFields,
+  petPurchaseEventId,
+  sanitizeMetaClickId,
+  sendMetaCapiInitiateCheckout,
+  type MetaCapiClickIds,
+} from "../_shared/pet/meta.ts";
 import { parseCheckoutAttribution, recordPetFunnelInitiateCheckout } from "../_shared/pet/funnelEvents.ts";
 import {
   recordV3MetaInitiateCheckoutOnce,
@@ -269,15 +277,53 @@ function isV3Funnel(value: unknown): boolean {
   return asString(value) === "v3";
 }
 
+type CheckoutCtx = {
+  funnelSessionId: string | null;
+  deviceType: string | null;
+  attribution: ReturnType<typeof parseCheckoutAttribution>;
+  metaClick: MetaCapiClickIds;
+};
+
+function applyCheckoutAttributionMetadata(
+  params: URLSearchParams,
+  checkoutCtx: CheckoutCtx,
+  funnelVariant: unknown,
+) {
+  const attr = checkoutCtx.attribution;
+  const creativeFromContent = asString(attr.utm_content)?.replace(/-FINAL$/i, "").slice(0, 120) || null;
+  for (const [key, value] of [
+    ["utm_source", attr.utm_source],
+    ["utm_medium", attr.utm_medium],
+    ["utm_campaign", attr.utm_campaign],
+    ["utm_content", attr.utm_content],
+    ["utm_term", attr.utm_term],
+    ["campaign_id", attr.campaign_id],
+    ["adset_id", attr.adset_id],
+    ["ad_id", attr.ad_id],
+    ["creative_id", creativeFromContent],
+  ] as const) {
+    const next = asString(value);
+    if (next) params.set(`metadata[${key}]`, next.slice(0, 500));
+  }
+  if (checkoutCtx.metaClick.fbc) {
+    params.set("metadata[meta_fbc]", checkoutCtx.metaClick.fbc.slice(0, 200));
+  }
+  if (checkoutCtx.metaClick.fbp) {
+    params.set("metadata[meta_fbp]", checkoutCtx.metaClick.fbp.slice(0, 200));
+  }
+  if (checkoutCtx.metaClick.hasMetaClick) {
+    params.set("metadata[has_meta_click]", "1");
+  }
+  if (isV3Funnel(funnelVariant)) {
+    params.set("metadata[funnel_version]", "v3");
+  }
+}
+
 async function maybeRecordInitiateCheckoutOnSessionCreate(
   service: ReturnType<typeof getServiceClient>,
   order: PetOrderRow,
   meta: ReturnType<typeof petMetaCheckoutFields>,
-  checkoutCtx: {
-    funnelSessionId: string | null;
-    deviceType: string | null;
-    attribution: ReturnType<typeof parseCheckoutAttribution>;
-  },
+  checkoutCtx: CheckoutCtx,
 ) {
   if (shouldDeferInitiateCheckoutToInteraction(order.funnel_variant)) return;
   await sendMetaCapiInitiateCheckout({
@@ -285,12 +331,16 @@ async function maybeRecordInitiateCheckoutOnSessionCreate(
     orderId: order.id,
     email: isCheckoutPlaceholderEmail(asString(order.email)) ? null : asString(order.email),
     amountCents: meta.chargedAmountCents,
+    fbc: checkoutCtx.metaClick.fbc,
+    fbp: checkoutCtx.metaClick.fbp,
   });
   await recordPetFunnelInitiateCheckout(service, {
     orderId: order.id,
     amountCents: meta.chargedAmountCents,
     species: asString(order.species),
-    ...checkoutCtx,
+    funnelSessionId: checkoutCtx.funnelSessionId,
+    deviceType: checkoutCtx.deviceType,
+    attribution: checkoutCtx.attribution,
   });
 }
 
@@ -299,14 +349,11 @@ async function maybeRecordV3CheckoutSessionCreated(
   order: PetOrderRow,
   stripeSessionId: string,
   meta: ReturnType<typeof petMetaCheckoutFields>,
-  checkoutCtx: {
-    funnelSessionId: string | null;
-    deviceType: string | null;
-    attribution: ReturnType<typeof parseCheckoutAttribution>;
-  },
+  checkoutCtx: CheckoutCtx,
 ) {
   if (!isV3Funnel(order.funnel_variant)) return;
   const attr = checkoutCtx.attribution;
+  const creativeFromContent = asString(attr.utm_content)?.replace(/-FINAL$/i, "").slice(0, 120) || null;
   await recordV3CheckoutSessionCreated(service, {
     orderId: order.id,
     stripeSessionId,
@@ -322,7 +369,7 @@ async function maybeRecordV3CheckoutSessionCreated(
       campaignId: attr.campaign_id,
       adsetId: attr.adset_id,
       adId: attr.ad_id,
-      creativeId: attr.creative_id,
+      creativeId: creativeFromContent,
       deviceType: checkoutCtx.deviceType,
       isTest: false,
     },
@@ -333,11 +380,7 @@ async function finalizeOpenCheckoutSession(
   service: ReturnType<typeof getServiceClient>,
   order: PetOrderRow,
   meta: ReturnType<typeof petMetaCheckoutFields>,
-  checkoutCtx: {
-    funnelSessionId: string | null;
-    deviceType: string | null;
-    attribution: ReturnType<typeof parseCheckoutAttribution>;
-  },
+  checkoutCtx: CheckoutCtx,
   stripeSessionId: string,
 ) {
   await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
@@ -863,6 +906,8 @@ Deno.serve(async (req) => {
         orderId: order.id,
         email: asString(order.email),
         amountCents: meta.chargedAmountCents,
+        fbc: sanitizeMetaClickId(body.fbc ?? body.meta_fbc),
+        fbp: sanitizeMetaClickId(body.fbp ?? body.meta_fbp),
       });
       return jsonResponse({
         eventId: result.eventId,
@@ -954,10 +999,15 @@ Deno.serve(async (req) => {
       if (!order.photo_path || !order.photo_confirmed_at) {
         return apiError("INVALID_REQUEST", "Upload and confirm the pet photo first.");
       }
-      const checkoutCtx = {
+      const checkoutCtx: CheckoutCtx = {
         funnelSessionId: asString(body.funnelSessionId || body.funnel_session_id) || null,
         deviceType: asString(body.deviceType || body.device_type) || null,
         attribution: parseCheckoutAttribution(body.attribution),
+        metaClick: parseMetaCapiClickIds({
+          fbc: body.fbc ?? body.meta_fbc,
+          fbp: body.fbp ?? body.meta_fbp,
+          hasMetaClick: body.hasMetaClick ?? body.has_meta_click,
+        }),
       };
       const promo = resolveServerOwnedPromo(body.promoCode ?? body.promo_code, body.discountPercent ?? body.discount_percent);
       if (!promo.ok) return apiError("INVALID_REQUEST", promo.message);
@@ -1192,25 +1242,12 @@ Deno.serve(async (req) => {
       params.set("metadata[pet_order_id]", order.id);
       params.set("metadata[funnel_variant]", isV3Funnel(order.funnel_variant) ? "v3" : isV2Funnel(order.funnel_variant) ? "v2" : "v1");
       if (isV3Funnel(order.funnel_variant)) {
-        params.set("metadata[funnel_version]", "v3");
         params.set("metadata[species]", asString(order.species) || "cat");
-        const attr = checkoutCtx.attribution;
-        const creativeFromContent = asString(attr.utm_content)?.replace(/-FINAL$/i, "").slice(0, 120) || null;
-        for (const [key, value] of [
-          ["utm_source", attr.utm_source],
-          ["utm_medium", attr.utm_medium],
-          ["utm_campaign", attr.utm_campaign],
-          ["utm_content", attr.utm_content],
-          ["utm_term", attr.utm_term],
-          ["campaign_id", attr.campaign_id],
-          ["adset_id", attr.adset_id],
-          ["ad_id", attr.ad_id],
-          ["creative_id", creativeFromContent],
-        ] as const) {
-          const next = asString(value);
-          if (next) params.set(`metadata[${key}]`, next.slice(0, 500));
-        }
+      } else if (isV2Funnel(order.funnel_variant)) {
+        params.set("metadata[species]", asString(order.species) || "dog");
       }
+      // Persist UTMs + Meta click cookies on every variant so webhook CAPI can attribute.
+      applyCheckoutAttributionMetadata(params, checkoutCtx, order.funnel_variant);
       if (checkoutCtx.funnelSessionId) {
         params.set("metadata[funnel_session_id]", checkoutCtx.funnelSessionId);
       }
