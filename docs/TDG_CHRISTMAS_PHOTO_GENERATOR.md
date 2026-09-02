@@ -80,7 +80,7 @@ Allowlisted events via `/api/christmas/funnel-event` including upload/style/prev
 
 **Synthetic payment proof (no Stripe charge):** `fulfill_christmas_order_payment` → paid/queued; unpaid `claim_christmas_generation_job` → `payment_required`; paid claim once; replay claim `already_running`.
 
-**Deployed edge functions:** `christmas-checkout`, `christmas-funnel`, `christmas-generate`, `stripe-webhook` (project `kjlsocejpmnzhhduyumy`).
+**Deployed edge functions:** `christmas-checkout`, `christmas-photo-funnel`, `christmas-photo-generate`, plus V2 `christmas-funnel` / `christmas-generate` remapped to `christmas_v2_*` tables; `stripe-webhook` dual-routes by `product_family`.
 
 **Generation proof (controlled):**
 - Mock path: order `bf8d8cae-…` completed `mock:true` (~491ms)
