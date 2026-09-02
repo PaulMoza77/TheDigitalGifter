@@ -413,18 +413,6 @@ export type UpdateOrderContactResponse = {
   stripeSessionSynced?: boolean;
 };
 
-export type RecordV3InitiateCheckoutRequest = {
-  orderId: string;
-  publicToken: string;
-  eventId: string;
-};
-
-export type RecordV3InitiateCheckoutResponse = {
-  eventId: string;
-  sent: boolean;
-  alreadySent: boolean;
-};
-
 export type CreateStripeCheckoutRequest = {
   orderId: string;
   publicToken: string;
@@ -435,6 +423,11 @@ export type CreateStripeCheckoutRequest = {
   uiMode?: "hosted" | "embedded" | "custom" | "elements";
   funnelSessionId?: string;
   deviceType?: "mobile" | "tablet" | "desktop";
+  /** Meta click cookie (`_fbc`) for CAPI attribution — never logged. */
+  fbc?: string | null;
+  /** Meta browser cookie (`_fbp`) for CAPI matching — never logged. */
+  fbp?: string | null;
+  hasMetaClick?: boolean;
   attribution?: {
     utm_source?: string | null;
     utm_medium?: string | null;
@@ -445,6 +438,20 @@ export type CreateStripeCheckoutRequest = {
     adset_id?: string | null;
     ad_id?: string | null;
   };
+};
+
+export type RecordV3InitiateCheckoutRequest = {
+  orderId: string;
+  publicToken: string;
+  eventId: string;
+  fbc?: string | null;
+  fbp?: string | null;
+};
+
+export type RecordV3InitiateCheckoutResponse = {
+  eventId: string;
+  sent: boolean;
+  alreadySent: boolean;
 };
 
 export type CreateStripeCheckoutResponse = {

@@ -4,6 +4,7 @@ import {
   PET_FUNNEL_EVENT_PATH,
   type PetFunnelAllowedEvent,
 } from "./funnelEventContract";
+import { getMetaCapiClickIds } from "./metaCookies";
 import {
   attributionParamsForInternal,
   captureFunnelAttribution,
@@ -186,6 +187,8 @@ export function trackPetFunnelInternalEvent(input: InternalFunnelEventInput): vo
 
 export function checkoutAnalyticsContext() {
   const attribution = attributionParamsForInternal();
+  const metaClick = getMetaCapiClickIds();
+  const firstTouch = getFunnelFirstTouchContext();
   return {
     funnelSessionId: getPetFunnelSessionId(),
     deviceType: inferDeviceType(),
@@ -199,5 +202,8 @@ export function checkoutAnalyticsContext() {
       adset_id: attribution.adset_id ?? null,
       ad_id: attribution.ad_id ?? null,
     },
+    fbc: metaClick.fbc,
+    fbp: metaClick.fbp,
+    hasMetaClick: metaClick.hasMetaClick || firstTouch.hasFbclid,
   };
 }

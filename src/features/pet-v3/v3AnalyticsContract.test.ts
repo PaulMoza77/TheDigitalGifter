@@ -151,10 +151,12 @@ describe("Cat V3 analytics contract", () => {
   it("writes Stripe V3 metadata with funnel_version and attribution", () => {
     const funnel = readSrc("supabase/functions/pet-funnel/index.ts");
     expect(funnel).toContain('metadata[funnel_version]", "v3"');
-    expect(funnel).toContain('["creative_id", creativeFromContent]');
+    expect(funnel).toContain("applyCheckoutAttributionMetadata");
     expect(funnel).toContain('["utm_source", attr.utm_source]');
+    expect(funnel).toContain("metadata[meta_fbc]");
     expect(readSrc("supabase/functions/_shared/pet/stripeFulfill.ts")).toContain("p_funnel_version");
     expect(readSrc("supabase/functions/_shared/pet/stripeFulfill.ts")).toContain("v3_purchase:${order.id}");
+    expect(readSrc("supabase/functions/_shared/pet/stripeFulfill.ts")).toContain("fbc: attr.fbc");
   });
 
   it("uses isolated V3 session storage key", () => {

@@ -18,6 +18,8 @@ export async function recordV3MetaInitiateCheckoutOnce(
     email?: string | null;
     amountCents: number;
     sourceUrl?: string;
+    fbc?: string | null;
+    fbp?: string | null;
   },
 ): Promise<{ sent: boolean; alreadySent: boolean; eventId: string; reason?: string }> {
   const eventId = petInitiateCheckoutEventId(input.orderId);
@@ -43,6 +45,9 @@ export async function recordV3MetaInitiateCheckoutOnce(
     orderId: input.orderId,
     email: emailForMeta,
     amountCents: input.amountCents,
+    fbc: input.fbc,
+    fbp: input.fbp,
+    sourceUrl: input.sourceUrl,
   });
 
   await service.rpc("pet_log_event", {
@@ -53,6 +58,8 @@ export async function recordV3MetaInitiateCheckoutOnce(
       event_id: eventId,
       capi_sent: capi.sent,
       capi_reason: capi.reason ?? null,
+      has_fbc: Boolean(input.fbc),
+      has_fbp: Boolean(input.fbp),
     },
   });
 

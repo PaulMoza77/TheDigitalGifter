@@ -1,4 +1,5 @@
 import { petFunnelApi } from "../pet/supabaseApi";
+import { getMetaCapiClickIds } from "../pet/metaCookies";
 import { PET_V3_SPECIES } from "./types";
 import { trackFunnelBeginCheckout } from "../pet/funnelAnalytics";
 
@@ -24,11 +25,14 @@ export function fireV3InitiateCheckoutOnce(input: {
 
   if (inFlight) return;
   sentForOrder = input.orderId;
+  const metaClick = getMetaCapiClickIds();
   inFlight = petFunnelApi
     .recordV3InitiateCheckout({
       orderId: input.orderId,
       publicToken: input.publicToken,
       eventId: input.eventId,
+      fbc: metaClick.fbc,
+      fbp: metaClick.fbp,
     })
     .then(() => undefined)
     .catch(() => undefined)

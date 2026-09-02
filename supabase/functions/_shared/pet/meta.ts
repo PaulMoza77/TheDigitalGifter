@@ -83,6 +83,55 @@ export function metaCustomDataHasForbiddenFields(data: Record<string, unknown>):
   return /https?:\/\//i.test(json) || /@/.test(json);
 }
 
+/** Meta `_fbc` / `_fbp` look like `fb.1.<ts>.<id>`. Never log these values. */
+export function sanitizeMetaClickId(value: unknown): string | null {
+  const raw = asString(value);
+  if (!raw || raw.length > 200) return null;
+  if (!raw.startsWith("fb.")) return null;
+  if (/[<>@\s]/.test(raw)) return null;
+  if (!raw.includes(".")) return null;
+  return raw;
+}
+
+export type MetaCapiClickIds = {
+  fbc: string | null;
+  fbp: string | null;
+  hasMetaClick: boolean;
+};
+
+export function parseMetaCapiClickIds(raw: unknown): MetaCapiClickIds {
+  const row = raw && typeof raw === "object" && !Array.isArray(raw)
+    ? (raw as Record<string, unknown>)
+    : {};
+  const fbc = sanitizeMetaClickId(row.fbc ?? row.meta_fbc);
+  const fbp = sanitizeMetaClickId(row.fbp ?? row.meta_fbp);
+  const hasMetaClick =
+    row.hasMetaClick === true ||
+    row.has_meta_click === true ||
+    Boolean(fbc);
+  return { fbc, fbp, hasMetaClick };
+}
+
+export function buildMetaCapiUserData(input: {
+  em?: string | null;
+  fbc?: string | null;
+  fbp?: string | null;
+  clientIpAddress?: string | null;
+  clientUserAgent?: string | null;
+}): Record<string, unknown> {
+  const userData: Record<string, unknown> = {};
+  if (input.em) userData.em = [input.em];
+  const fbc = sanitizeMetaClickId(input.fbc);
+  const fbp = sanitizeMetaClickId(input.fbp);
+  if (fbc) userData.fbc = fbc;
+  if (fbp) userData.fbp = fbp;
+  const ip = asString(input.clientIpAddress);
+  if (ip && ip.length <= 64) userData.client_ip_address = ip;
+  const ua = asString(input.clientUserAgent);
+  if (ua && ua.length <= 512) userData.client_user_agent = ua.slice(0, 512);
+  return userData;
+}
+
 function pixelId(): string {
   return asString(Deno.env.get("META_PIXEL_ID") || Deno.env.get("FACEBOOK_PIXEL_ID") || TDG_META_PIXEL_ID);
 }
@@ -139,6 +188,10 @@ export async function sendMetaCapiPurchase(input: {
   eventTime?: number;
   sourceUrl?: string;
   amountCents?: number;
+  fbc?: string | null;
+  fbp?: string | null;
+  clientIpAddress?: string | null;
+  clientUserAgent?: string | null;
 }): Promise<{ sent: boolean; reason?: string }> {
   if (!metaPurchaseShouldEmit({ alreadySentAt: input.alreadySentAt ?? null, eventId: input.eventId })) {
     return { sent: false, reason: "duplicate" };
@@ -153,6 +206,14 @@ export async function sendMetaCapiPurchase(input: {
     return { sent: false, reason: "unsafe_custom_data" };
   }
 
+  const userData = buildMetaCapiUserData({
+    em: hashedEmail,
+    fbc: input.fbc,
+    fbp: input.fbp,
+    clientIpAddress: input.clientIpAddress,
+    clientUserAgent: input.clientUserAgent,
+  });
+
   return postMetaCapi({
     data: [
       {
@@ -161,7 +222,7 @@ export async function sendMetaCapiPurchase(input: {
         event_id: input.eventId,
         action_source: "website",
         event_source_url: sanitizedEventSourceUrl(input.sourceUrl || `${siteOrigin()}/pet/order`),
-        user_data: hashedEmail ? { em: [hashedEmail] } : {},
+        user_data: userData,
         custom_data: data,
       },
     ],
@@ -173,6 +234,9 @@ export async function sendMetaCapiInitiateCheckout(input: {
   orderId: string;
   email?: string | null;
   amountCents: number;
+  fbc?: string | null;
+  fbp?: string | null;
+  sourceUrl?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   if (!input.eventId || !input.orderId || input.amountCents <= 0) {
     return { sent: false, reason: "invalid" };
@@ -182,6 +246,11 @@ export async function sendMetaCapiInitiateCheckout(input: {
   if (metaCustomDataHasForbiddenFields(data)) {
     return { sent: false, reason: "unsafe_custom_data" };
   }
+  const userData = buildMetaCapiUserData({
+    em: hashedEmail,
+    fbc: input.fbc,
+    fbp: input.fbp,
+  });
   try {
     return await postMetaCapi({
       data: [
@@ -190,8 +259,10 @@ export async function sendMetaCapiInitiateCheckout(input: {
           event_time: Math.floor(Date.now() / 1000),
           event_id: input.eventId,
           action_source: "website",
-          event_source_url: sanitizedEventSourceUrl(`${siteOrigin()}/pet/checkout`),
-          user_data: hashedEmail ? { em: [hashedEmail] } : {},
+          event_source_url: sanitizedEventSourceUrl(
+            input.sourceUrl || `${siteOrigin()}/pet/checkout`,
+          ),
+          user_data: userData,
           custom_data: data,
         },
       ],

@@ -131,8 +131,11 @@ describe("TDG Meta Pixel", () => {
     expect(JSON.stringify(data)).not.toMatch(/@|https?:|token/i);
     const capi = readSrc("supabase/functions/_shared/pet/meta.ts");
     expect(capi).toContain("hashIdentifier");
-    expect(capi).toContain("user_data: hashedEmail ? { em: [hashedEmail] } : {}");
+    expect(capi).toContain("buildMetaCapiUserData");
+    expect(capi).toContain("user_data: userData");
     expect(capi).toContain("custom_data: data");
+    expect(capi).toContain("fbc: input.fbc");
+    expect(capi).toContain("fbp: input.fbp");
     expect(capi).not.toMatch(/custom_data:\s*\{[\s\S]*email/);
   });
 
