@@ -1,7 +1,8 @@
 name: deploy-pet-funnel
 
-# Safe Edge-only deploy for pet-funnel (Apple Pay / contact update).
-# Does not deploy frontend, provider-status, or other functions.
+# Safe Edge deploy for Meta attribution / checkout:
+# pet-funnel + stripe-webhook (shared pet fulfill / CAPI Purchase).
+# Does not deploy frontend or provider-status.
 
 on:
   workflow_dispatch:
@@ -11,6 +12,7 @@ on:
       - cursor/apple-pay-contact-save-e17b
     paths:
       - "supabase/functions/pet-funnel/**"
+      - "supabase/functions/stripe-webhook/**"
       - "supabase/functions/_shared/pet/**"
       - ".github/workflows/deploy-pet-funnel.yml"
       - "scripts/deploy-pet-funnel.sh"
@@ -42,7 +44,7 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Deploy pet-funnel (safe)
+      - name: Deploy pet-funnel + stripe-webhook (safe)
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
