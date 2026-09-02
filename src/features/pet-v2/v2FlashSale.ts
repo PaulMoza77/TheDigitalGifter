@@ -6,10 +6,10 @@ import {
   PET_V2_PRICE_DISPLAY,
 } from "./types";
 
-/** Rolling 24-hour urgency window — resets every cycle; checkout price stays $2.99. */
+/** Rolling 24-hour urgency window — resets every cycle; checkout price stays $0.99. */
 export const PET_V2_SALE_CYCLE_MS = 24 * 60 * 60 * 1000;
 
-/** First cycle anchor (V2 dog funnel $2.99 rolling offer). */
+/** First cycle anchor (V2 dog funnel $0.99 rolling offer). */
 export const PET_V2_SALE_EPOCH_MS = Date.parse("2026-08-26T19:00:00.000Z");
 
 export type V2FlashSale = {
@@ -31,7 +31,7 @@ export function v2SaleRemainingMs(nowMs = Date.now()): number {
   return PET_V2_SALE_CYCLE_MS - positionInCycle;
 }
 
-/** Always $2.99 from $27 — timer rolls every 24h for urgency. */
+/** Always $0.99 from $27 — timer rolls every 24h for urgency. */
 export function v2FlashSale(nowMs = Date.now()): V2FlashSale {
   const remainingMs = v2SaleRemainingMs(nowMs);
   return {

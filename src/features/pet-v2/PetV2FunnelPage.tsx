@@ -273,7 +273,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       showBack={step !== "landing"}
       footer={
         step === "landing"
-          ? "Free personalized teaser — unlock the full collection for $2.99."
+          ? "Free personalized teaser — unlock the full collection for $0.99."
           : undefined
       }
       padForSticky={step === "landing"}
@@ -297,7 +297,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
               ? "Reveal your pet’s secret life | My Pet’s Secret Life"
               : "Reveal your dog’s secret life | My Pet’s Secret Life"
         }
-        description="Upload one photo for a free blurred teaser, then unlock 12 secret lives and 2 mini clips for $2.99."
+        description="Upload one photo for a free blurred teaser, then unlock 12 secret lives and 2 mini clips for $0.99."
       />
 
       <input

@@ -75,10 +75,10 @@ describe("V2 teaser conversion rebuild", () => {
     expect(changed).toBeGreaterThan(10);
   });
 
-  it("enforces server-side $2.99 and ignores browser price trust", () => {
-    expect(PET_V2_PRICE_CENTS).toBe(299);
-    expect(PET_V2_PRICE_DISPLAY).toBe("$2.99");
-    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 299");
+  it("enforces server-side $0.99 and ignores browser price trust", () => {
+    expect(PET_V2_PRICE_CENTS).toBe(99);
+    expect(PET_V2_PRICE_DISPLAY).toBe("$0.99");
+    expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 99");
     expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("return PET_V2_PRICE_CENTS");
     expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain("PET_V2_PRICE_CENTS");
     expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain('funnelVariant: "v2"');
@@ -188,7 +188,7 @@ describe("V2 teaser conversion rebuild", () => {
     expect(teaser).not.toMatch(/14 images are already generated/i);
     expect(teaser).toContain("secret life is ready to be revealed");
     expect(teaser).toContain("PET_V2_PRICE_DISPLAY");
-    expect(PET_V2_PRICE_DISPLAY).toBe("$2.99");
+    expect(PET_V2_PRICE_DISPLAY).toBe("$0.99");
   });
 
   it("allows pet-name-only contact save without rejecting bootstrap placeholder email", () => {

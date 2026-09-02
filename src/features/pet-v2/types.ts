@@ -1,7 +1,7 @@
 /**
  * Isolated My Pet’s Secret Life V2 funnel.
  * Keeps its own storage, session IDs, and event names. Paid 12+2 generation
- * reuses the V1 order pipeline at the V2 $2.99 price.
+ * reuses the V1 order pipeline at the V2 $0.99 price.
  *
  * Conversion rebuild: local blurred teaser before pay; expensive AI only after Stripe webhook.
  */
@@ -19,9 +19,9 @@ export const PET_V2_PREVIEW_PATH = "/api/pet-v2/preview" as const;
 export const PET_V2_PREVIEW_EDGE_PATH = "/functions/v1/pet-v2-preview" as const;
 export const PET_V2_PROVIDER_STATUS_PATH = "/functions/v1/pet-provider-status" as const;
 
-/** V2 charges $2.99 from $27. Live V1 /pet/dog checkout is a separate $17 sale. */
-export const PET_V2_PRICE_CENTS = 299 as const;
-export const PET_V2_PRICE_DISPLAY = "$2.99" as const;
+/** V2 charges $0.99 from $27. Live V1 /pet/dog checkout is a separate $17 sale. */
+export const PET_V2_PRICE_CENTS = 99 as const;
+export const PET_V2_PRICE_DISPLAY = "$0.99" as const;
 export const PET_V2_COMPARE_PRICE_CENTS = 2700 as const;
 export const PET_V2_COMPARE_PRICE_DISPLAY = "$27" as const;
 /** @deprecated Use PET_V2_PRICE_* — kept for older imports/tests. */
@@ -178,5 +178,5 @@ export const V2_CHECKOUT_FAILED_COPY =
 
 export const V2_TEASER_HEADLINE = "Your dog’s secret life is ready to be revealed.";
 export const V2_TEASER_SUPPORT =
-  "Unlock the complete personalized 12+2 image collection for $2.99.";
-export const V2_TEASER_CTA = "Reveal My Dog’s Secret Life — $2.99";
+  "Unlock the complete personalized 12+2 image collection for $0.99.";
+export const V2_TEASER_CTA = "Reveal My Dog’s Secret Life — $0.99";
