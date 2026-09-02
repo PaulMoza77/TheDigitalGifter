@@ -10,7 +10,7 @@ import {
   decodePreviewDataUrl,
   previewDiag,
 } from "../_shared/pet/previewImage.ts";
-import { unclearSpeciesMessage, validatePetSpecies } from "../_shared/pet/speciesValidate.ts";
+import { validatePetSpecies } from "../_shared/pet/speciesValidate.ts";
 
 const DEFAULT_MODEL = "black-forest-labs/flux-kontext-pro";
 const DEFAULT_OPENAI_IMAGE_MODEL = "gpt-image-1";
@@ -126,7 +126,8 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Species gate before any paid Replicate call. Blocks when vision cannot verify species.
+  // Species check is diagnostic only — never block free-preview generation.
+  // Client species-confirm remains the UX guard; vision outcomes are logged for ops.
   const expectedSpecies = species === "cat" || species === "dog" || species === "other" ? species : "dog";
   const speciesCheck = await validatePetSpecies({
     imageDataUrl,
@@ -141,56 +142,11 @@ Deno.serve(async (req) => {
     speciesConfidence: Number(speciesCheck.confidence.toFixed(3)),
     speciesAction: speciesCheck.action,
     speciesProvider: speciesCheck.provider,
-    speciesVisionWarning:
-      speciesCheck.ok && "visionWarning" in speciesCheck ? speciesCheck.visionWarning || null : null,
+    speciesVisionWarning: speciesCheck.visionWarning || null,
     imageBytes: decoded.image.byteLength,
     imageMagic: decoded.image.magic,
     imageMime: decoded.image.mime,
   });
-  if (!speciesCheck.ok) {
-    // errorCode is wrong_species | unclear_species — never start Replicate.
-    return jsonResponse(
-      {
-        ok: false,
-        mode: "mock",
-        errorCode: speciesCheck.errorCode,
-        error: speciesCheck.error,
-        failureCategory: speciesCheck.errorCode === "wrong_species" ? "wrong_species" : "invalid_image",
-        speciesDetected: speciesCheck.detected,
-        speciesConfidence: speciesCheck.confidence,
-        speciesProvider: speciesCheck.provider,
-        retryable: speciesCheck.errorCode === "unclear_species",
-      },
-      400,
-    );
-  }
-  // When vision is down, refuse Cat V3 / Dog V2 cross-risk by requiring a clearer verified photo
-  // only for mismatched funnel attempts is impossible without vision — so Cat V3 hard-requires
-  // a working classifier (do not generate royal portraits for unverified species).
-  if (
-    ctx.version === "v3" &&
-    speciesCheck.provider === "skipped" &&
-    String(Deno.env.get("PET_V3_REQUIRE_SPECIES_VISION") || "true").toLowerCase() !== "false"
-  ) {
-    return jsonResponse(
-      {
-        ok: false,
-        mode: "mock",
-        errorCode: "unclear_species",
-        error: unclearSpeciesMessage(),
-        failureCategory: "invalid_image",
-        speciesDetected: "unclear",
-        speciesConfidence: 0,
-        speciesProvider: "skipped",
-        retryable: true,
-        providerDetail: String(
-          ("visionWarning" in speciesCheck && speciesCheck.visionWarning) ||
-            "species vision unavailable",
-        ).slice(0, 180),
-      },
-      400,
-    );
-  }
 
   const token = String(Deno.env.get("REPLICATE_API_TOKEN") || "").trim();
   const liveKill =

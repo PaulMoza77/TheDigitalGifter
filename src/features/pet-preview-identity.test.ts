@@ -50,22 +50,17 @@ describe("pet preview identity + funnel integrity", () => {
     expect(readSrc("src/features/pet-v3/screens/PreviewScreen.tsx")).not.toContain("F1 driver");
   });
 
-  it("Cat funnel rejects a clearly detected dog before generation", () => {
-    const result = decideSpeciesOutcome("cat", "dog", 0.96);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.errorCode).toBe("wrong_species");
-      expect(result.error).toBe(speciesRejectMessage("cat"));
-    }
-  });
+  it("never blocks free preview on species mismatch — soft warning only", () => {
+    const dogOnCat = decideSpeciesOutcome("cat", "dog", 0.96);
+    expect(dogOnCat.ok).toBe(true);
+    expect(dogOnCat.action).toBe("proceed");
+    expect(dogOnCat.visionWarning).toMatch(/soft_mismatch/);
+    expect(speciesRejectMessage("cat")).toMatch(/cats/i);
 
-  it("Dog funnel rejects a clearly detected cat before generation", () => {
-    const result = decideSpeciesOutcome("dog", "cat", 0.91);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.errorCode).toBe("wrong_species");
-      expect(result.error).toBe(speciesRejectMessage("dog"));
-    }
+    const catOnDog = decideSpeciesOutcome("dog", "cat", 0.91);
+    expect(catOnDog.ok).toBe(true);
+    expect(catOnDog.action).toBe("proceed");
+    expect(catOnDog.visionWarning).toMatch(/soft_mismatch/);
   });
 
   it("does not auto-reject ambiguous species classifications", () => {
@@ -75,13 +70,11 @@ describe("pet preview identity + funnel integrity", () => {
     expect(unclearLow.ok).toBe(true);
   });
 
-  it("asks for a clearer image when the photo is clearly not a single pet", () => {
+  it("still proceeds when vision says the photo is unclear", () => {
     const unclear = decideSpeciesOutcome("dog", "unclear", 0.9);
-    expect(unclear.ok).toBe(false);
-    if (!unclear.ok) {
-      expect(unclear.errorCode).toBe("unclear_species");
-      expect(unclear.action).toBe("ask_clearer");
-    }
+    expect(unclear.ok).toBe(true);
+    expect(unclear.action).toBe("proceed");
+    expect(unclear.visionWarning).toMatch(/soft_unclear/);
   });
 
   it("fails safely when the reference image is missing or unreadable", () => {

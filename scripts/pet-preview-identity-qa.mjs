@@ -79,7 +79,11 @@ function offlineGateReport() {
     },
     {
       id: "species-validation-wired",
-      pass: previewFn.includes("validatePetSpecies") && previewFn.includes("wrong_species"),
+      // Vision runs for diagnostics but must fail-open — never block generation.
+      pass:
+        previewFn.includes("validatePetSpecies") &&
+        previewFn.includes("species_check") &&
+        !previewFn.includes("PET_V3_REQUIRE_SPECIES_VISION"),
     },
     {
       id: "image-decode-gate",

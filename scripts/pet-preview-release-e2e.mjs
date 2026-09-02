@@ -19,7 +19,7 @@ const projectRef = process.env.SUPABASE_PROJECT_REF || "kjlsocejpmnzhhduyumy";
 const edgeUrl =
   process.env.PET_PREVIEW_EDGE_URL ||
   `https://${projectRef}.supabase.co/functions/v1/pet-v2-preview`;
-const EXPECTED = "pet-preview-identity-2026-08-28h";
+const EXPECTED = "pet-preview-identity-2026-08-29a";
 
 function anon() {
   const v =
@@ -144,14 +144,14 @@ async function main() {
       expectOk: true,
     }),
   );
+  // Species vision is advisory — a dog photo on Cat V3 must still generate (fail-open).
   results.push(
     await genCase("dog-on-cat-v3", {
       file: join(outDir, "fixtures/chow-chow.jpg"),
       funnel: "v3",
       species: "cat",
       scene: "royal-portrait",
-      expectOk: false,
-      expectError: "wrong_species",
+      expectOk: true,
     }),
   );
   // Funnel gate
