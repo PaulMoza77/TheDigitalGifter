@@ -78,12 +78,21 @@ Allowlisted events via `/api/christmas/funnel-event` including upload/style/prev
 
 **Production apply status (project `kjlsocejpmnzhhduyumy`):** APPLIED — verified via `supabase migration list` (local=remote for all four `20260902*`) and table/catalog checks (`christmas_products`/`packages`/`styles`/`orders` commerce schema present; package `christmas_photo`/`single` remains `purchasable=false`, `price_cents=0`).
 
-**Synthetic payment proof (no Stripe charge):** `fulfill_christmas_order_payment` → paid/queued; unpaid `claim_christmas_generation_job` → `payment_required`; paid claim once; replay claim `already_running`; rows deleted. Result: `SYNTH_PAYMENT_PROOF_OK`.
+**Synthetic payment proof (no Stripe charge):** `fulfill_christmas_order_payment` → paid/queued; unpaid `claim_christmas_generation_job` → `payment_required`; paid claim once; replay claim `already_running`.
+
+**Deployed edge functions:** `christmas-checkout`, `christmas-funnel`, `christmas-generate`, `stripe-webhook` (project `kjlsocejpmnzhhduyumy`).
+
+**Generation proof (controlled):**
+- Mock path: order `bf8d8cae-…` completed `mock:true` (~491ms)
+- Real Replicate Kontext Pro: order `e30e6b9c-0879-4221-a636-013e7794a483` completed `mock:false`, `latency_ms≈9305`, `estimated_cost_usd=0.04`, `cost_state=estimated`
+- Unpaid generate → HTTP 402 `payment_required`
+- Token recovery → paid/completed + signed `resultUrl`; wrong token → 404
+
+`CHRISTMAS_CHECKOUT_ENABLED=false` (secret). Production purchase remains disabled.
 
 ## Known limitations
 
-- Real Stripe TEST Checkout Elements end-to-end and live Replicate Christmas generation not verified in this session
-- Frontend/edge functions not deployed in this session
+- Stripe Custom Checkout Elements UI not exercised end-to-end (checkout kill-switched; no live/test charge). Payment entitlement proven via fulfill RPC + webhook code path deployed.
 - Multi-person identity quality depends on Kontext limits
 - Abandoned upload TTL cleanup is configurable seam (manual/ops) — default: keep paid sources; unpaid uploads under `uploads/` should be purged by a later retention job
 - Legacy V2 tables remain as `christmas_v2_*` quarantine (not used by Photo Generator V1)
