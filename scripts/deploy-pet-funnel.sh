@@ -28,6 +28,16 @@ echo "Safe Edge deploy: pet-funnel + stripe-webhook → $PROJECT_REF"
 deploy_fn pet-funnel
 deploy_fn stripe-webhook
 
+# Also apply RO/IT geo exclusion migration + pet-analytics-sync when credentials allow.
+# Non-fatal if DB password/Management API path is unavailable; VPS ingest already excludes RO/IT.
+if [[ -x "${ROOT}/scripts/deploy-exclude-internal-geos.sh" ]]; then
+  echo "Applying RO/IT funnel geo exclusion (migration + pet-analytics-sync)…"
+  if ! bash "${ROOT}/scripts/deploy-exclude-internal-geos.sh"; then
+    echo "WARN: geo exclusion SQL/edge apply failed — pet-funnel deploy itself succeeded."
+    echo "Re-run scripts/deploy-exclude-internal-geos.sh once SUPABASE_DB_PASSWORD or Management API access works."
+  fi
+fi
+
 EDGE_URL="https://${PROJECT_REF}.supabase.co/functions/v1/pet-funnel"
 echo "Deployed. Probe: POST $EDGE_URL (expects JSON API, not HTML)."
 CODE="$(curl -sS -m 20 -o /tmp/pet-funnel-probe.txt -w '%{http_code}' \
