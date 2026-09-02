@@ -80,7 +80,9 @@ Allowlisted events via `/api/christmas/funnel-event` including upload/style/prev
 
 **Synthetic payment proof (no Stripe charge):** `fulfill_christmas_order_payment` → paid/queued; unpaid `claim_christmas_generation_job` → `payment_required`; paid claim once; replay claim `already_running`.
 
-**Deployed edge functions:** `christmas-checkout`, `christmas-photo-funnel`, `christmas-photo-generate`, plus V2 `christmas-funnel` / `christmas-generate` remapped to `christmas_v2_*` tables; `stripe-webhook` dual-routes by `product_family`.
+**Frontend deploy (Mozas VPS):** release `d382ab4` healthy on `mozas-prod-01` (image `mozas/thedigitalgifter:d382ab4`). Live bundle includes `ChristmasPhotoGenerator` / `/christmas/photo-generator`. Checkout remains killed (`christmas-checkout` → 403 `checkout_disabled`).
+
+**Frontend (Mozas VPS):** deployed release `d382ab4` (`mozas/thedigitalgifter:d382ab4`); public `https://www.thedigitalgifter.com/christmas/photo-generator` 200; bundle includes `ChristmasPhotoGeneratorPage` + checkout-disabled copy; Pet routes 200.
 
 **Generation proof (controlled):**
 - Mock path: order `bf8d8cae-…` completed `mock:true` (~491ms)

@@ -86,14 +86,18 @@ if ! docker compose \
   die "TDG image build failed"
 fi
 
-docker tag "mozas/thedigitalgifter:${RELEASE}" mozas/thedigitalgifter:latest || true
+# Retag latest for rollback convenience. Avoid Docker "AlreadyExists" races on some engines.
+if ! docker tag "mozas/thedigitalgifter:${RELEASE}" mozas/thedigitalgifter:latest 2>/dev/null; then
+  docker image rm -f mozas/thedigitalgifter:latest >/dev/null 2>&1 || true
+  docker tag "mozas/thedigitalgifter:${RELEASE}" mozas/thedigitalgifter:latest
+fi
 
 if ! docker compose \
   --project-directory "${TDG_REPO}" \
   -f "${TDG_COMPOSE}" \
   --env-file "${TDG_SECRETS}" \
   --profile with-app \
-  up -d --remove-orphans --wait; then
+  up -d --remove-orphans --force-recreate --wait; then
   log "new TDG release failed health wait — attempting rollback to previous verified image"
   # Do not advance verified.*; rollback restores the prior verified pin.
   if [[ -x /opt/mozas/bin/mozas-rollback-thedigitalgifter ]]; then
