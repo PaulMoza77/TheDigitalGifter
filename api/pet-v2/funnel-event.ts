@@ -203,6 +203,9 @@ async function writePetV2FunnelEvent(raw: unknown): Promise<{ ok: true; duplicat
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
+    if (text.includes("23514") || /pet_v2_funnel_events_name_chk/i.test(text)) {
+      throw new Error("name_chk_outdated");
+    }
     throw new Error(`rpc_${response.status}:${text.slice(0, 120)}`);
   }
   const id = await response.json().catch(() => null);
@@ -246,6 +249,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ) {
       void persistV2WriteFailure({ eventName, category: message });
       return res.status(400).json({ error: message });
+    }
+    if (message === "name_chk_outdated") {
+      void persistV2WriteFailure({ eventName, category: "name_chk_outdated" });
+      return res.status(202).json({ ok: true, duplicate: false, deferred: "name_chk_outdated" });
     }
     const category = message.startsWith("rpc_")
       ? "rpc_error"
