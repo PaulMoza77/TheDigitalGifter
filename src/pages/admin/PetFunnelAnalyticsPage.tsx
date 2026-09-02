@@ -203,7 +203,7 @@ export default function PetFunnelAnalyticsPage() {
             <h1 className="mt-1 text-2xl font-semibold text-slate-50 sm:text-3xl">Pet Funnel Analytics</h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
               Hybrid daily overview: first-party funnel, Stripe-verified purchases, Meta Ads spend, and GA4 traffic where configured.
-              Sources are never summed as separate people.
+              Sources are never summed as separate people. Production KPIs exclude Romania and Italy sessions (internal founder traffic).
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

@@ -8,6 +8,11 @@ import {
   resolveWriteEnvironment,
   writeValidatedFunnelEvent,
 } from "./api/_lib/writePetFunnelEvent";
+import {
+  clientIpFromHeaders,
+  countryCodeFromHeaders,
+  resolveFunnelIsTest,
+} from "./api/petFunnelTrafficExclude";
 
 function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) => void }): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -47,8 +52,22 @@ export function petFunnelEventDevPlugin(): Plugin {
           const clientTest = Boolean((json as { is_test_request?: boolean } | null)?.is_test_request);
           const validated = ingestFromUnknown(json, bytes);
           eventName = validated.eventName;
-          const isTest = resolveIsTest(environment, clientTest);
-          const result = await writeValidatedFunnelEvent(validated, { isTest, environment });
+          const traffic = await resolveFunnelIsTest({
+            environment,
+            clientTestFlag: environment === "production" ? false : clientTest,
+            clientIp: clientIpFromHeaders(req.headers as Record<string, string | string[] | undefined>),
+            countryCode: countryCodeFromHeaders(req.headers as Record<string, string | string[] | undefined>),
+            utmSource: validated.utmSource,
+            utmCampaign: validated.utmCampaign,
+          });
+          const isTest = traffic.isTest || resolveIsTest(environment, clientTest);
+          const result = await writeValidatedFunnelEvent(validated, {
+            isTest,
+            environment,
+            clientIp: traffic.clientIp,
+            clientIpHostname: traffic.clientIpHostname,
+            countryCode: traffic.countryCode,
+          });
           res.statusCode = 202;
           res.setHeader("Content-Type", "application/json");
           res.end(JSON.stringify({ ok: true, duplicate: result.duplicate }));

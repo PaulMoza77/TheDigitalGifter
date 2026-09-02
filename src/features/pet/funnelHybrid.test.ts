@@ -467,6 +467,10 @@ describe("pet hybrid funnel analytics", () => {
     expect(checkoutSql).toContain("promo_checkouts");
     const allowSql = readSrc("supabase/migrations/20260822160000_pet_meta_campaign_allowlist.sql");
     expect(allowSql).toContain("pet_meta_campaign_allowlist");
+    const geoSql = readSrc("supabase/migrations/20260902120000_pet_funnel_exclude_internal_geos.sql");
+    expect(geoSql).toContain("pet_funnel_country_is_internal");
+    expect(geoSql).toContain("and not public.pet_funnel_country_is_internal(g.country)");
+    expect(geoSql).toContain("'romania', 'italy'");
     expect(allowSql).toContain("120253346791240170");
     expect(allowSql).toContain("purge_unallowlisted_pet_meta_metrics");
     expect(allowSql).toContain("a.campaign_id = m.campaign_id");

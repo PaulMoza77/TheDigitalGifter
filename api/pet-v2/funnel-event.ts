@@ -1,6 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import {
+  clientIpFromHeaders,
+  countryCodeFromHeaders,
+  resolveFunnelIsTest,
+} from "../petFunnelTrafficExclude";
 
-/** Self-contained V2 ingest. Do not import ./_lib here — Vercel production was crashing at module load. */
+/** V2 ingest. Traffic helpers live in ./petFunnelTrafficExclude (not ./_lib) to avoid prior Vercel module-load crashes. */
 
 const PET_V2_EVENT_NAMES = [
   "v2_landing_view",
@@ -160,7 +165,15 @@ async function persistV2WriteFailure(input: { eventName: string; category: strin
   }
 }
 
-async function writePetV2FunnelEvent(raw: unknown): Promise<{ ok: true; duplicate: boolean }> {
+async function writePetV2FunnelEvent(
+  raw: unknown,
+  traffic: {
+    isTest: boolean;
+    clientIp: string | null;
+    clientIpHostname: string | null;
+    countryCode: string | null;
+  },
+): Promise<{ ok: true; duplicate: boolean }> {
   const validated = parseV2EventBody(raw);
   const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const serviceKey = String(
@@ -170,40 +183,57 @@ async function writePetV2FunnelEvent(raw: unknown): Promise<{ ok: true; duplicat
     throw new Error("missing_supabase_config");
   }
   const environment = resolveWriteEnvironment();
-  const isTest = environment !== "production";
-  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/record_pet_v2_funnel_event`, {
-    method: "POST",
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      p_event_name: validated.eventName,
-      p_funnel_session_id: validated.funnelSessionId,
-      p_idempotency_key: validated.idempotencyKey,
-      p_species: validated.species,
-      p_utm_source: validated.utmSource,
-      p_utm_medium: validated.utmMedium,
-      p_utm_campaign: validated.utmCampaign,
-      p_utm_content: validated.utmContent,
-      p_utm_term: validated.utmTerm,
-      p_campaign_id: validated.campaignId,
-      p_adset_id: validated.adsetId,
-      p_ad_id: validated.adId,
-      p_device_type: validated.deviceType,
-      p_pathname: validated.pathname,
-      p_amount_cents: validated.amountCents,
-      p_has_meta_click: validated.hasFbclid,
-      p_referrer_host: validated.referrerHost,
-      p_client_event_id: validated.eventId,
-      p_is_test: isTest,
-      p_environment: environment,
-    }),
-  });
+  const baseBody = {
+    p_event_name: validated.eventName,
+    p_funnel_session_id: validated.funnelSessionId,
+    p_idempotency_key: validated.idempotencyKey,
+    p_species: validated.species,
+    p_utm_source: validated.utmSource,
+    p_utm_medium: validated.utmMedium,
+    p_utm_campaign: validated.utmCampaign,
+    p_utm_content: validated.utmContent,
+    p_utm_term: validated.utmTerm,
+    p_campaign_id: validated.campaignId,
+    p_adset_id: validated.adsetId,
+    p_ad_id: validated.adId,
+    p_device_type: validated.deviceType,
+    p_pathname: validated.pathname,
+    p_amount_cents: validated.amountCents,
+    p_has_meta_click: validated.hasFbclid,
+    p_referrer_host: validated.referrerHost,
+    p_client_event_id: validated.eventId,
+    p_is_test: traffic.isTest,
+    p_environment: environment,
+  };
+  const withGeo = {
+    ...baseBody,
+    p_client_ip: traffic.clientIp,
+    p_client_ip_hostname: traffic.clientIpHostname,
+    p_country_code: traffic.countryCode,
+  };
+  const post = (body: Record<string, unknown>) =>
+    fetch(`${supabaseUrl}/rest/v1/rpc/record_pet_v2_funnel_event`, {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  let response = await post(withGeo);
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(`rpc_${response.status}:${text.slice(0, 120)}`);
+    // Migration may not be applied yet — retry without geo columns.
+    if (response.status === 404 || /p_country_code|p_client_ip|Could not find/i.test(text)) {
+      response = await post(baseBody);
+      if (!response.ok) {
+        const retryText = await response.text().catch(() => "");
+        throw new Error(`rpc_${response.status}:${retryText.slice(0, 120)}`);
+      }
+    } else {
+      throw new Error(`rpc_${response.status}:${text.slice(0, 120)}`);
+    }
   }
   const id = await response.json().catch(() => null);
   return { ok: true, duplicate: id == null };
@@ -232,7 +262,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (eventName === "v2_preview_generation_failed" && failureCategory) {
       void persistV2WriteFailure({ eventName, category: failureCategory });
     }
-    const result = await writePetV2FunnelEvent(req.body);
+    const environment = resolveWriteEnvironment();
+    const early = parseV2EventBody(req.body);
+    const traffic = await resolveFunnelIsTest({
+      environment,
+      clientIp: clientIpFromHeaders(req.headers),
+      countryCode: countryCodeFromHeaders(req.headers),
+      utmSource: early.utmSource,
+      utmCampaign: early.utmCampaign,
+    });
+    const result = await writePetV2FunnelEvent(req.body, traffic);
     return res.status(202).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "write_failed";

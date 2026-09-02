@@ -32,6 +32,13 @@ export type Ga4ConfigStatus = {
 
 const GA4_MEASUREMENT_ID = "G-YF2GRM2TL4";
 
+/** Founder / internal geos — excluded from hybrid analytics upserts. */
+const INTERNAL_GA4_COUNTRIES = new Set(["romania", "italy"]);
+
+export function ga4CountryIsInternal(country: string | null | undefined): boolean {
+  return INTERNAL_GA4_COUNTRIES.has(String(country || "").trim().toLowerCase());
+}
+
 function asString(value: unknown): string {
   return String(value ?? "").trim();
 }
@@ -287,7 +294,9 @@ export async function fetchGa4DailyMetrics(input: {
     };
     const rows = json.rows || [];
     if (attempt.label === "custom-events") {
-      return rows.map(mapGa4ReportRow).filter((r) => r.metric_date);
+      return rows
+        .map(mapGa4ReportRow)
+        .filter((r) => r.metric_date && !ga4CountryIsInternal(r.country));
     }
     return rows
       .map((row) => {
@@ -310,7 +319,7 @@ export async function fetchGa4DailyMetrics(input: {
           purchase_revenue_cents: dollarsToCents(metrics[4]?.value),
         } satisfies Ga4DailyMetricRow;
       })
-      .filter((r) => r.metric_date);
+      .filter((r) => r.metric_date && !ga4CountryIsInternal(r.country));
   }
 
   throw new Error(`GA4 Data API failed: ${errors.join(" | ").slice(0, 240)}`);
