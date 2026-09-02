@@ -113,6 +113,9 @@ export async function writePetV2FunnelEvent(raw: unknown): Promise<{ ok: true; d
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
+    if (text.includes("23514") || /pet_v2_funnel_events_name_chk/i.test(text)) {
+      throw new Error("name_chk_outdated");
+    }
     throw new Error(`rpc_${response.status}:${text.slice(0, 120)}`);
   }
   const id = await response.json().catch(() => null);
