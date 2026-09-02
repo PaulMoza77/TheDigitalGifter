@@ -71,7 +71,9 @@ Same order + package rows (`christmas_santa_video`) + long-running fulfillment s
 
 ## Migration
 
-`supabase/migrations/20260902120000_christmas_commerce_foundation.sql` — additive only; does not alter Pet schema.
+- `supabase/migrations/20260902105000_quarantine_legacy_christmas_v2_schema.sql` — quarantines conflicting remote V2 prototype (`christmas_v2_*`)
+- `supabase/migrations/20260902120000_christmas_commerce_foundation.sql` — additive commerce schema; does not alter Pet schema
+- Applied to linked production `kjlsocejpmnzhhduyumy` on 2026-09-02 (see photo generator docs for evidence)
 
 ## Rollback notes
 

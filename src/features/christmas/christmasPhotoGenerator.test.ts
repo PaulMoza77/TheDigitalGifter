@@ -127,4 +127,12 @@ describe("christmas photo pricing + wiring", () => {
       'payment_status !== "paid"',
     );
   });
+
+  it("claim RPC migration requires payment_status paid", () => {
+    const sql = readSrc(
+      "supabase/migrations/20260902150000_christmas_claim_requires_paid.sql",
+    );
+    expect(sql).toContain("payment_status <> 'paid'");
+    expect(sql).toContain("payment_required");
+  });
 });
