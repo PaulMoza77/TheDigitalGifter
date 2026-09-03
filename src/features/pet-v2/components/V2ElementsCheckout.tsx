@@ -15,8 +15,10 @@ import { sanitizeStripeCheckoutCustomerError, stripeCheckoutInitCustomerError } 
 import {
   CARD_PAY_INCOMPLETE_MESSAGE,
   isExpressCheckoutConfirmEvent,
+  logExpressCheckoutReady,
+  resolveExpressCheckoutClick,
 } from "../../pet/expressCheckoutConfirm";
-import { ApplePayButton } from "../../pet/components/ApplePayButton";
+import { ExpressWalletSkeleton } from "../../pet/components/ExpressWalletSkeleton";
 import { PET_EXPRESS_CHECKOUT_OPTIONS } from "../../pet/expressCheckoutOptions";
 import { v2PayButtonLabel } from "../v2CheckoutHold";
 
@@ -163,15 +165,22 @@ function CheckoutBody({
       return;
     }
 
+    // Express: start confirm() in this tick. Await email / setState first and
+    // Apple Pay never opens (lost user-gesture + Stripe 1s click window).
+    const confirmPromise = isExpress
+      ? checkoutState.checkout.confirm({
+          expressCheckoutConfirmEvent,
+          redirect: "if_required",
+        })
+      : null;
     setBusy(true);
     setError(null);
     try {
-      await syncCheckoutEmail(checkoutState.checkout);
-      const result = await checkoutState.checkout.confirm(
-        isExpress
-          ? { expressCheckoutConfirmEvent, redirect: "if_required" }
-          : { redirect: "if_required" },
-      );
+      if (!isExpress) {
+        await syncCheckoutEmail(checkoutState.checkout);
+      }
+      const result = await (confirmPromise ??
+        checkoutState.checkout.confirm({ redirect: "if_required" }));
       if (result.type === "error") {
         if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
         const message = sanitizeStripeCheckoutCustomerError(result.error.message);
@@ -203,7 +212,7 @@ function CheckoutBody({
   if (checkoutState.type === "loading") {
     return (
       <div className="space-y-4" role="status" aria-live="polite">
-        <ApplePayButton disabled />
+        <ExpressWalletSkeleton />
         <p className="text-center text-sm text-[#f6efe4]/55">{loadingLabel}</p>
       </div>
     );
@@ -227,8 +236,9 @@ function CheckoutBody({
     <div className="space-y-4">
       <ExpressCheckoutElement
         options={PET_EXPRESS_CHECKOUT_OPTIONS}
+        onReady={logExpressCheckoutReady}
         onConfirm={(event) => void confirm(event)}
-        onClick={markInteraction}
+        onClick={(event) => resolveExpressCheckoutClick(event, markInteraction)}
         onCancel={() => {
           setError(null);
           onExpressCancel?.();

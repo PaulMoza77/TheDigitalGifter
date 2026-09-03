@@ -89,8 +89,8 @@ describe("V2 teaser conversion rebuild", () => {
     const options = readSrc("src/features/pet/expressCheckoutOptions.ts");
     expect(ui).toContain("ExpressCheckoutElement");
     expect(ui).toContain("PET_EXPRESS_CHECKOUT_OPTIONS");
-    expect(options).toContain('applePay: "auto"');
-    expect(options).toContain('paymentMethodOrder: ["applePay", "googlePay"]');
+    expect(options).toContain('applePay: "always"');
+    expect(options).toContain('paymentMethodOrder: ["applePay", "link", "googlePay"]');
     expect(ui).toContain("PaymentElement");
     expect(options).toContain('link: "auto"');
     expect(ui).toContain("Or pay with card");
@@ -230,6 +230,8 @@ describe("V2 teaser conversion rebuild", () => {
     // Apple Pay must confirm immediately — no await onBeforeConfirm before checkout.confirm().
     expect(ui).toContain("isExpressCheckoutConfirmEvent");
     expect(ui).toContain("never block Express");
+    expect(ui).toContain("resolveExpressCheckoutClick");
+    expect(ui).toContain("start confirm() in this tick");
     expect(ui).toContain("CARD_PAY_INCOMPLETE_MESSAGE");
     expect(teaser).toContain("validateAndUpdateV2OrderContact");
     expect(teaser).toContain("setTimeout");
