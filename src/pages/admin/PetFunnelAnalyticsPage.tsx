@@ -609,11 +609,13 @@ export default function PetFunnelAnalyticsPage() {
             <SectionCard
               title="Funnel"
               subtitle={
-                report.biggestDrop
-                  ? `Biggest drop: ${report.biggestDrop.from} → ${report.biggestDrop.to} (-${report.biggestDrop.dropPct.toFixed(0)}%)`
-                  : report.rangeMode === "first_party"
-                    ? "Unique first-party funnel sessions"
-                    : "Hybrid funnel — unavailable stages show — (not zero)"
+                datasetId === "v2"
+                  ? "NOT a clean sequential cohort: mid-funnel cards are first-party RAW unique sessions; Checkout is backend Stripe customer orders; Purchase is Stripe-verified. Teaser can be undercounted when ingest rejects v2_teaser_viewed."
+                  : report.biggestDrop
+                    ? `Biggest drop: ${report.biggestDrop.from} → ${report.biggestDrop.to} (-${report.biggestDrop.dropPct.toFixed(0)}%)`
+                    : report.rangeMode === "first_party"
+                      ? "Unique first-party funnel sessions"
+                      : "Hybrid funnel — unavailable stages show — (not zero)"
               }
             >
               <div className="space-y-4">
@@ -659,6 +661,39 @@ export default function PetFunnelAnalyticsPage() {
                 ))}
               </div>
             </SectionCard>
+
+            {datasetId === "v2" ? (
+              <SectionCard
+                title="Checkout diagnostics"
+                subtitle="Evidence-backed checkout health. Apply migration 20260903140000_pet_v2_forensic_observability.sql so teaser/session/payment diagnostic events persist. Purchase authority = Stripe/server paid orders only."
+              >
+                <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-3">
+                  <p>
+                    Stripe checkouts (KPI):{" "}
+                    <span className="font-semibold text-white">{formatMetricOrDash(kpis?.checkouts)}</span>
+                  </p>
+                  <p>
+                    First-party begin_checkout (payment UI interaction): see Recent events / raw steps after
+                    migration.
+                  </p>
+                  <p>
+                    Purchases (Stripe verified):{" "}
+                    <span className="font-semibold text-white">{String(kpis?.purchases ?? 0)}</span>
+                  </p>
+                  <p>
+                    Failed ingest writes:{" "}
+                    <span className="font-semibold text-white">
+                      {report.trackingHealth?.failedWrites ?? "—"}
+                    </span>
+                  </p>
+                  <p className="sm:col-span-2 lg:col-span-3 text-xs text-slate-500">
+                    Definitions: RAW = independent unique sessions per event. SEQUENTIAL = same session must hit
+                    prior stages. The top funnel intentionally mixes FP raw + Stripe backend — do not read Offer→Checkout
+                    as a cohort conversion until sequential diagnostics RPC is live.
+                  </p>
+                </div>
+              </SectionCard>
+            ) : null}
 
             <SectionCard
               title="Campaign / ad set / ad"

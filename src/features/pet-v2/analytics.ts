@@ -22,6 +22,7 @@ const SESSION_ONCE = new Set<PetV2EventName>([
   "v2_preview_viewed",
   "v2_collection_viewed",
   "v2_checkout_canceled",
+  "v2_payment_ui_visible",
 ]);
 
 export function isPetV2EventName(value: string): value is PetV2EventName {
@@ -86,6 +87,10 @@ export function v2IdempotencyKey(input: {
       input.eventName === "v2_checkout_session_created" ||
       input.eventName === "v2_checkout_failed" ||
       input.eventName === "v2_begin_checkout" ||
+      input.eventName === "v2_payment_attempt_started" ||
+      input.eventName === "v2_payment_requires_action" ||
+      input.eventName === "v2_payment_failed" ||
+      input.eventName === "v2_checkout_abandoned" ||
       input.eventName === "v2_paid_generation_started" ||
       input.eventName === "v2_paid_generation_completed" ||
       input.eventName === "v2_paid_generation_failed")

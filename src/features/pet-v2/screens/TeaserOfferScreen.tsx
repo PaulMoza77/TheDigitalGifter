@@ -53,6 +53,8 @@ export function TeaserOfferScreen({
   onCheckoutReady,
   onCheckoutInitError,
   onExpressCancel,
+  onPaymentAttempt,
+  onPaymentFailed,
 }: {
   teaserUrl: string;
   species: PetV2Species;
@@ -66,6 +68,8 @@ export function TeaserOfferScreen({
   onCheckoutReady?: () => void;
   onCheckoutInitError?: () => void;
   onExpressCancel?: () => void;
+  onPaymentAttempt?: () => void;
+  onPaymentFailed?: (detail?: { failureCode?: string | null }) => void;
 }) {
   const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const checkoutReadyFired = useRef(false);
@@ -270,6 +274,8 @@ export function TeaserOfferScreen({
             loadingLabel="Loading secure payment…"
             onReady={markCheckoutReady}
             onPaymentInteraction={onPaymentInteraction}
+            onPaymentAttempt={onPaymentAttempt}
+            onPaymentFailed={onPaymentFailed}
             onExpressCancel={handleExpressCancel}
             onInitError={() => {
               onCheckoutInitError?.();

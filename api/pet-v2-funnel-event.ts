@@ -23,6 +23,11 @@ const PET_V2_EVENT_NAMES = [
   "v2_checkout_failed",
   "v2_begin_checkout",
   "v2_checkout_canceled",
+  "v2_payment_ui_visible",
+  "v2_payment_attempt_started",
+  "v2_payment_requires_action",
+  "v2_payment_failed",
+  "v2_checkout_abandoned",
   "v2_purchase",
   "v2_paid_generation_started",
   "v2_paid_generation_completed",
@@ -286,11 +291,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       void persistV2WriteFailure({ eventName, category: message });
       return res.status(400).json({ error: message });
     }
-    const category = message.startsWith("rpc_")
-      ? "rpc_error"
-      : message === "missing_supabase_config" || message === "missing_supabase_config"
-        ? "missing_supabase_config"
-        : "write_failed";
+    const category = /pet_v2_funnel_events_name_chk|name_chk/i.test(message)
+      ? "name_chk_outdated"
+      : message.startsWith("rpc_")
+        ? "rpc_error"
+        : message === "missing_supabase_config"
+          ? "missing_supabase_config"
+          : "write_failed";
     void persistV2WriteFailure({ eventName, category });
     return res.status(500).json({ error: "write_failed" });
   }
