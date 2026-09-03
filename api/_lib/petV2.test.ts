@@ -30,9 +30,17 @@ describe("V2 funnel ingest", () => {
     expect(row.pathname).toBeNull();
   });
 
-  it("re-exports originAllowed so the V2 serverless handler can load", async () => {
-    const mod = await import("./petV2");
-    expect(typeof mod.originAllowed).toBe("function");
-    expect(typeof mod.persistV2WriteFailure).toBe("function");
+  it("parses browser_family and in_app_browser safely", () => {
+    const row = parseV2EventBody({
+      event_name: "v2_payment_ui_visible",
+      funnel_session_id: session,
+      pathname: "/pet/dog-v2",
+      browser_family: "safari",
+      in_app_browser: "instagram_iab",
+      failure_category: "card_declined",
+    });
+    expect(row.browserFamily).toBe("safari");
+    expect(row.inAppBrowser).toBe("instagram_iab");
+    expect(row.errorCode).toBe("card_declined");
   });
 });

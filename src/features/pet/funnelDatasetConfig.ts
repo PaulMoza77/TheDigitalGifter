@@ -66,20 +66,20 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
       step2: "Photo Uploads",
       step3: "Teaser Viewed",
       step4: "Offer Viewed",
-      checkout: "Stripe Checkouts (orders)",
+      checkout: "Stripe checkout sessions created",
       purchase: "Purchases",
       landingHelper: "First-party landing",
       step2Of: "first-party landing",
       step3Of: "uploads",
       step4Of: "teasers",
-      checkoutOf: "offers (not sequential — Stripe backend)",
+      checkoutOf: "offers (infra — not Payment UI viewed)",
     },
     stageLabels: {
       landing_view: "Landing Sessions (FP raw)",
       pet_name_submitted: "Photo Uploads (FP raw)",
       photo_upload_completed: "Teaser Viewed (FP raw)",
       order_review_viewed: "Offer Viewed (FP raw)",
-      initiate_checkout: "Stripe Checkouts (backend orders)",
+      initiate_checkout: "Stripe checkout sessions created (backend)",
       purchase: "Purchase (Stripe verified)",
     },
   },
@@ -264,13 +264,13 @@ export function mapV2CountsToPrimarySteps(v2: Record<string, number>): FunnelSte
   return counts;
 }
 
-/** True sequential V2 cohort: each stage requires all prior stages in the same session. */
+/** True sequential V2 human cohort: each stage requires all prior stages in the same session. */
 export function buildV2SequentialCohort(sessionsByEvent: Record<string, Set<string>>): {
   landing: number;
   upload: number;
   teaser: number;
   offer: number;
-  checkout: number;
+  payment_ui_visible: number;
   payment_attempt: number;
   purchase: number;
 } {
@@ -285,15 +285,11 @@ export function buildV2SequentialCohort(sessionsByEvent: Record<string, Set<stri
     ),
   );
   const offer = new Set([...teaser].filter((id) => sessionsByEvent.v2_offer_viewed?.has(id)));
-  const checkout = new Set(
-    [...offer].filter(
-      (id) =>
-        sessionsByEvent.v2_checkout_session_created?.has(id) ||
-        sessionsByEvent.v2_begin_checkout?.has(id),
-    ),
+  const payment_ui_visible = new Set(
+    [...offer].filter((id) => sessionsByEvent.v2_payment_ui_visible?.has(id)),
   );
   const payment_attempt = new Set(
-    [...checkout].filter(
+    [...payment_ui_visible].filter(
       (id) =>
         sessionsByEvent.v2_payment_attempt_started?.has(id) ||
         sessionsByEvent.v2_begin_checkout?.has(id),
@@ -307,7 +303,7 @@ export function buildV2SequentialCohort(sessionsByEvent: Record<string, Set<stri
     upload: upload.size,
     teaser: teaser.size,
     offer: offer.size,
-    checkout: checkout.size,
+    payment_ui_visible: payment_ui_visible.size,
     payment_attempt: payment_attempt.size,
     purchase: purchase.size,
   };

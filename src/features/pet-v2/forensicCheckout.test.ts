@@ -44,7 +44,7 @@ describe("V2 forensic analytics integrity", () => {
     expect(mapped.initiate_checkout).toBe(34);
   });
 
-  it("builds true sequential cohort requiring prior stages", () => {
+  it("builds true sequential human cohort requiring Payment UI visible", () => {
     const s1 = "11111111-1111-4111-8111-111111111111";
     const s2 = "22222222-2222-4222-8222-222222222222";
     const s3 = "33333333-3333-4333-8333-333333333333";
@@ -53,6 +53,7 @@ describe("V2 forensic analytics integrity", () => {
       v2_upload_completed: new Set([s1, s2]),
       v2_teaser_viewed: new Set([s1]),
       v2_offer_viewed: new Set([s1, s2]), // s2 offer without teaser must not count sequentially
+      v2_payment_ui_visible: new Set([s1]),
       v2_begin_checkout: new Set([s1]),
       v2_purchase: new Set([s1]),
     });
@@ -60,7 +61,8 @@ describe("V2 forensic analytics integrity", () => {
     expect(cohort.upload).toBe(2);
     expect(cohort.teaser).toBe(1);
     expect(cohort.offer).toBe(1);
-    expect(cohort.checkout).toBe(1);
+    expect(cohort.payment_ui_visible).toBe(1);
+    expect(cohort.payment_attempt).toBe(1);
     expect(cohort.purchase).toBe(1);
   });
 
@@ -105,7 +107,8 @@ describe("V2 forensic analytics integrity", () => {
     expect(readSrc("supabase/functions/pet-funnel/index.ts")).toContain("maybeRecordV2CheckoutSessionCreated");
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("trackV2PaymentAttemptStarted");
     expect(readSrc("src/features/pet-v2/components/V2ElementsCheckout.tsx")).toContain("onPaymentAttempt");
-    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Checkout diagnostics");
+    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Human checkout funnel");
+    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Stripe infrastructure");
   });
 
   it("keeps purchase authority server/Stripe verified", () => {
@@ -114,8 +117,12 @@ describe("V2 forensic analytics integrity", () => {
     expect(readSrc("src/features/pet/funnelHybrid.ts")).toContain('"stripe_verified"');
   });
 
-  it("admin V2 labels no longer imply Checkout Opened is sequential after Offer", () => {
-    expect(readSrc("src/features/pet/funnelDatasetConfig.ts")).toContain("Stripe Checkouts (orders)");
-    expect(readSrc("src/features/pet/funnelDatasetConfig.ts")).toContain("not sequential");
+  it("admin V2 labels separate Stripe sessions from Payment UI viewed", () => {
+    expect(readSrc("src/features/pet/funnelDatasetConfig.ts")).toContain("Stripe checkout sessions created");
+    expect(readSrc("src/features/pet/funnelDatasetConfig.ts")).toContain("Payment UI viewed");
+    expect(readSrc("api/_lib/petV2.ts")).toContain("p_browser_family");
+    expect(readSrc("supabase/migrations/20260903140000_pet_v2_forensic_observability.sql")).toContain(
+      "p_browser_family",
+    );
   });
 });

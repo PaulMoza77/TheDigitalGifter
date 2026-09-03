@@ -62,8 +62,13 @@ comment on column public.pet_v2_funnel_events.error_code is
   'Safe Stripe/client error category code only — never card numbers or secrets.';
 
 -- ---------------------------------------------------------------------------
--- 2) Refresh record_pet_v2_funnel_event allow-list (same 23-arg geo signature)
+-- 2) Refresh record_pet_v2_funnel_event allow-list (+ optional diagnostic cols)
+-- Drop prior 23-arg overload so we do not leave dual signatures.
 -- ---------------------------------------------------------------------------
+drop function if exists public.record_pet_v2_funnel_event(
+  text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text, text, text, text
+);
+
 create or replace function public.record_pet_v2_funnel_event(
   p_event_name text,
   p_funnel_session_id uuid,
@@ -87,7 +92,10 @@ create or replace function public.record_pet_v2_funnel_event(
   p_environment text default null,
   p_client_ip text default null,
   p_client_ip_hostname text default null,
-  p_country_code text default null
+  p_country_code text default null,
+  p_error_code text default null,
+  p_browser_family text default null,
+  p_in_app_browser text default null
 )
 returns uuid
 language plpgsql
@@ -133,6 +141,9 @@ declare
   clean_path text;
   is_test boolean;
   country text;
+  browser_family text;
+  in_app text;
+  err_code text;
 begin
   if p_funnel_session_id is null then
     return null;
@@ -159,6 +170,21 @@ begin
   is_test := coalesce(p_is_test, false)
     or public.pet_funnel_country_is_internal(country);
 
+  browser_family := lower(left(btrim(coalesce(p_browser_family, '')), 32));
+  if browser_family not in ('safari', 'chrome', 'firefox', 'edge', 'samsung', 'other') then
+    browser_family := null;
+  end if;
+
+  in_app := lower(left(btrim(coalesce(p_in_app_browser, '')), 32));
+  if in_app not in ('facebook_iab', 'instagram_iab', 'other_iab') then
+    in_app := null;
+  end if;
+
+  err_code := left(regexp_replace(coalesce(p_error_code, ''), '[^a-zA-Z0-9_:\-.]', '', 'g'), 64);
+  if err_code = '' then
+    err_code := null;
+  end if;
+
   insert into public.pet_v2_funnel_events (
     event_name,
     funnel_session_id,
@@ -182,7 +208,10 @@ begin
     environment,
     client_ip,
     client_ip_hostname,
-    country_code
+    country_code,
+    error_code,
+    browser_family,
+    in_app_browser
   )
   values (
     p_event_name,
@@ -207,7 +236,10 @@ begin
     public.pet_funnel_safe_text(p_environment, 32),
     public.pet_funnel_safe_text(p_client_ip, 64),
     public.pet_funnel_safe_text(p_client_ip_hostname, 200),
-    country
+    country,
+    err_code,
+    browser_family,
+    in_app
   )
   on conflict (idempotency_key) do nothing
   returning id into new_id;
@@ -217,10 +249,10 @@ end;
 $$;
 
 revoke all on function public.record_pet_v2_funnel_event(
-  text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text, text, text, text
+  text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text, text, text, text, text, text, text
 ) from public;
 grant execute on function public.record_pet_v2_funnel_event(
-  text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text, text, text, text
+  text, uuid, text, text, text, text, text, text, text, text, text, text, text, text, integer, boolean, text, uuid, boolean, text, text, text, text, text, text, text
 ) to anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
@@ -276,16 +308,17 @@ begin
     from teaser t
     inner join ev e on e.funnel_session_id = t.funnel_session_id and e.event_name = 'v2_offer_viewed'
   ),
-  checkout_created as (
+  -- Human UX stage: payment UI actually rendered (not Stripe session creation).
+  payment_ui_visible as (
     select distinct o.funnel_session_id
     from offer o
     inner join ev e on e.funnel_session_id = o.funnel_session_id
-      and e.event_name in ('v2_checkout_session_created', 'v2_begin_checkout')
+      and e.event_name = 'v2_payment_ui_visible'
   ),
   payment_attempt as (
-    select distinct c.funnel_session_id
-    from checkout_created c
-    inner join ev e on e.funnel_session_id = c.funnel_session_id
+    select distinct u.funnel_session_id
+    from payment_ui_visible u
+    inner join ev e on e.funnel_session_id = u.funnel_session_id
       and e.event_name in ('v2_payment_attempt_started', 'v2_begin_checkout')
   ),
   purchase as (
@@ -324,8 +357,8 @@ begin
     'to', p_to,
     'definitions', jsonb_build_object(
       'raw', 'Independent unique-session counts per event — stages are NOT nested.',
-      'sequential', 'Session counted at stage N only if it also hit all prior required stages.',
-      'checkout_opened_admin_legacy', 'Hybrid KPI used backend Stripe customer checkout sessions, not first-party begin_checkout. Do not treat as sequential after Offer.',
+      'sequential_human', 'Landing→Upload→Teaser→Offer→Payment UI visible→Attempt→Purchase. Never equate Stripe session_created with Payment UI viewed.',
+      'stripe_infrastructure', 'pet_orders / Stripe session rows are infrastructure, not proof a human saw payment UI.',
       'purchase_authority', 'Stripe/server verified pet_orders.paid_at is authoritative.'
     ),
     'raw_event_counts', coalesce((select jsonb_agg(to_jsonb(raw_counts) order by unique_sessions desc) from raw_counts), '[]'::jsonb),
@@ -334,7 +367,7 @@ begin
       'upload', (select count(*) from upload),
       'teaser', (select count(*) from teaser),
       'offer', (select count(*) from offer),
-      'checkout', (select count(*) from checkout_created),
+      'payment_ui_visible', (select count(*) from payment_ui_visible),
       'payment_attempt', (select count(*) from payment_attempt),
       'purchase', (select count(*) from purchase)
     ),
@@ -349,12 +382,13 @@ begin
       'multi_session_orders', (select count(*) from orders where session_rows > 1)
     ),
     'checkout_diagnostics', jsonb_build_object(
-      'opened_stripe_sessions', (select count(*) from orders where stripe_checkout_session_id is not null),
+      'stripe_checkout_sessions_created', (select count(*) from orders where stripe_checkout_session_id is not null),
+      'payment_ui_visible_fp', coalesce((select sum(unique_sessions) from raw_counts where event_name = 'v2_payment_ui_visible'), 0),
       'payment_attempted_fp', coalesce((select sum(unique_sessions) from raw_counts where event_name = 'v2_payment_attempt_started'), 0),
       'begin_checkout_fp', coalesce((select sum(unique_sessions) from raw_counts where event_name = 'v2_begin_checkout'), 0),
       'session_created_fp', coalesce((select sum(unique_sessions) from raw_counts where event_name = 'v2_checkout_session_created'), 0),
       'purchased', (select count(*) from orders where paid_at is not null),
-      'no_attempt_heuristic', (
+      'abandoned_no_attempt_heuristic', (
         select count(*) from orders
         where stripe_checkout_session_id is not null
           and paid_at is null

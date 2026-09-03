@@ -6,6 +6,7 @@ import {
 import { inferDeviceType } from "../pet/funnelSession";
 import { newFunnelUuid } from "../pet/funnelEventContract";
 import { getPetV2SessionId } from "./session";
+import { classifyCheckoutBrowser } from "./paymentDiagnostics";
 import {
   PET_V2_EVENT_PATH,
   PET_V2_EVENTS,
@@ -128,6 +129,7 @@ export function trackPetV2Event(input: TrackV2Input): void {
         ? input.failureCategory.replace(/[^a-z0-9_]/gi, "").slice(0, 40)
         : null;
     const eventId = newFunnelUuid();
+    const browser = classifyCheckoutBrowser();
     const payload = {
       event_name: input.eventName,
       funnel_session_id: sessionId,
@@ -159,6 +161,8 @@ export function trackPetV2Event(input: TrackV2Input): void {
       funnel_variant: "v2_preview",
       funnel_version: "v2",
       failure_category: failureCategory,
+      browser_family: browser.browserFamily,
+      in_app_browser: browser.inAppBrowser,
     };
     post(payload);
     sendGa4Custom(input.eventName, species, failureCategory);

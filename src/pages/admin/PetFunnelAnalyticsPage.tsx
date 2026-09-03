@@ -54,8 +54,13 @@ const EVENT_COPY: Record<string, string> = {
   v2_checkout_session_requested: "checkout requested",
   v2_checkout_session_created: "checkout created",
   v2_checkout_failed: "checkout failed",
-  v2_begin_checkout: "begin checkout",
+  v2_begin_checkout: "begin checkout / payment interaction",
   v2_checkout_canceled: "checkout canceled",
+  v2_payment_ui_visible: "payment UI viewed",
+  v2_payment_attempt_started: "payment attempt started",
+  v2_payment_requires_action: "payment requires action",
+  v2_payment_failed: "payment failed",
+  v2_checkout_abandoned: "checkout abandoned",
   v2_purchase: "v2 purchase",
   v2_paid_generation_started: "paid generation started",
   v2_paid_generation_completed: "paid generation completed",
@@ -559,7 +564,7 @@ export default function PetFunnelAnalyticsPage() {
                 <StatCard
                   label={labels.checkout}
                   value={formatMetricOrDash(kpis.checkouts)}
-                  helper={["Production customer Stripe Checkout", ofPreviousLabel(kpis.checkouts, kpis.reviews, labels.checkoutOf)].filter(Boolean).join(" · ")}
+                  helper={["Stripe infrastructure (not Payment UI viewed)", ofPreviousLabel(kpis.checkouts, kpis.reviews, labels.checkoutOf)].filter(Boolean).join(" · ")}
                 />
                 <StatCard
                   label="Purchases"
@@ -664,17 +669,59 @@ export default function PetFunnelAnalyticsPage() {
 
             {datasetId === "v2" ? (
               <SectionCard
-                title="Checkout diagnostics"
-                subtitle="Evidence-backed checkout health. Apply migration 20260903140000_pet_v2_forensic_observability.sql so teaser/session/payment diagnostic events persist. Purchase authority = Stripe/server paid orders only."
+                title="Human checkout funnel (first-party)"
+                subtitle="Do NOT treat Stripe session creation as checkout opened. Prefer Payment UI viewed → Attempt → Purchase for UX decisions."
+              >
+                <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-4">
+                  <p>
+                    Landing (FP raw):{" "}
+                    <span className="font-semibold text-white">{report.steps[0]?.sessions ?? "—"}</span>
+                  </p>
+                  <p>
+                    Upload (FP raw):{" "}
+                    <span className="font-semibold text-white">{report.steps[1]?.sessions ?? "—"}</span>
+                  </p>
+                  <p>
+                    Teaser (FP raw):{" "}
+                    <span className="font-semibold text-white">{report.steps[2]?.sessions ?? "—"}</span>
+                  </p>
+                  <p>
+                    Offer (FP raw):{" "}
+                    <span className="font-semibold text-white">{report.steps[3]?.sessions ?? "—"}</span>
+                  </p>
+                  <p>
+                    Payment UI viewed (`v2_payment_ui_visible`):{" "}
+                    <span className="font-semibold text-white">
+                      {report.recent.filter((r) => r.eventName === "v2_payment_ui_visible").length
+                        ? "see Recent + diagnostics RPC"
+                        : "awaiting migration / traffic"}
+                    </span>
+                  </p>
+                  <p>
+                    Payment attempt (`v2_payment_attempt_started` / begin_checkout):{" "}
+                    <span className="font-semibold text-white">
+                      {report.recent.some((r) => r.eventName === "v2_begin_checkout")
+                        ? "see Recent events"
+                        : "—"}
+                    </span>
+                  </p>
+                  <p>
+                    Purchase (Stripe verified):{" "}
+                    <span className="font-semibold text-white">{String(kpis?.purchases ?? 0)}</span>
+                  </p>
+                </div>
+              </SectionCard>
+            ) : null}
+
+            {datasetId === "v2" ? (
+              <SectionCard
+                title="Stripe infrastructure (not human UX)"
+                subtitle="Backend order/session counts. Never label these as Checkout opened unless payment UI visibility was measured."
               >
                 <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-3">
                   <p>
-                    Stripe checkouts (KPI):{" "}
+                    Stripe checkout sessions created (orders):{" "}
                     <span className="font-semibold text-white">{formatMetricOrDash(kpis?.checkouts)}</span>
-                  </p>
-                  <p>
-                    First-party begin_checkout (payment UI interaction): see Recent events / raw steps after
-                    migration.
                   </p>
                   <p>
                     Purchases (Stripe verified):{" "}
@@ -687,9 +734,9 @@ export default function PetFunnelAnalyticsPage() {
                     </span>
                   </p>
                   <p className="sm:col-span-2 lg:col-span-3 text-xs text-slate-500">
-                    Definitions: RAW = independent unique sessions per event. SEQUENTIAL = same session must hit
-                    prior stages. The top funnel intentionally mixes FP raw + Stripe backend — do not read Offer→Checkout
-                    as a cohort conversion until sequential diagnostics RPC is live.
+                    After migration + deploy: query `admin_pet_v2_checkout_diagnostics` for awaiting_payment,
+                    payment_intent presence, failed/requires_action/abandoned heuristics. Relaunch decision table
+                    uses Payment UI visible → Attempt → outcome (Cases A–F), not session_created alone.
                   </p>
                 </div>
               </SectionCard>

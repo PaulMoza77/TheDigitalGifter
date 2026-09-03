@@ -96,6 +96,9 @@ function parseV2EventBody(raw: unknown): {
   adId: string | null;
   hasFbclid: boolean;
   referrerHost: string | null;
+  errorCode: string | null;
+  browserFamily: string | null;
+  inAppBrowser: string | null;
 } {
   if (!raw || typeof raw !== "object") throw new Error("malformed_json");
   const row = raw as Record<string, unknown>;
@@ -110,6 +113,15 @@ function parseV2EventBody(raw: unknown): {
   const deviceRaw = row.device_type;
   const deviceType =
     deviceRaw === "mobile" || deviceRaw === "tablet" || deviceRaw === "desktop" ? deviceRaw : null;
+  const browserFamilyRaw = asText(row.browser_family, 32)?.toLowerCase() ?? null;
+  const browserFamily =
+    browserFamilyRaw && ["safari", "chrome", "firefox", "edge", "samsung", "other"].includes(browserFamilyRaw)
+      ? browserFamilyRaw
+      : null;
+  const inAppRaw = asText(row.in_app_browser, 32)?.toLowerCase() ?? null;
+  const inAppBrowser =
+    inAppRaw && ["facebook_iab", "instagram_iab", "other_iab"].includes(inAppRaw) ? inAppRaw : null;
+  const errorCode = asText(row.error_code, 64) || asText(row.failure_category, 40);
   return {
     eventName: eventName as PetV2EventName,
     funnelSessionId: sessionId,
@@ -129,6 +141,9 @@ function parseV2EventBody(raw: unknown): {
     adId: asText(row.ad_id),
     hasFbclid: row.has_meta_click === true || row.has_fbclid === true,
     referrerHost: asText(row.referrer_host, 120),
+    errorCode,
+    browserFamily,
+    inAppBrowser,
   };
 }
 
@@ -210,8 +225,14 @@ async function writePetV2FunnelEvent(
     p_is_test: traffic.isTest,
     p_environment: environment,
   };
-  const withGeo = {
+  const withDiag = {
     ...baseBody,
+    p_error_code: validated.errorCode,
+    p_browser_family: validated.browserFamily,
+    p_in_app_browser: validated.inAppBrowser,
+  };
+  const withGeo = {
+    ...withDiag,
     p_client_ip: traffic.clientIp,
     p_client_ip_hostname: traffic.clientIpHostname,
     p_country_code: traffic.countryCode,
@@ -229,8 +250,11 @@ async function writePetV2FunnelEvent(
   let response = await post(withGeo);
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    // Migration may not be applied yet — retry without geo columns.
-    if (response.status === 404 || /p_country_code|p_client_ip|Could not find/i.test(text)) {
+    // Migration may not be applied yet — retry without geo/diagnostic columns.
+    if (
+      response.status === 404 ||
+      /p_country_code|p_client_ip|p_browser_family|p_in_app_browser|p_error_code|Could not find/i.test(text)
+    ) {
       response = await post(baseBody);
       if (!response.ok) {
         const retryText = await response.text().catch(() => "");
