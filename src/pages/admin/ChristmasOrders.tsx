@@ -42,12 +42,38 @@ type ChristmasOrderRow = {
   metadata?: Record<string, unknown> | null;
 };
 
+type SantaJobRow = {
+  job_status: string;
+  script_status: string;
+  audio_status: string;
+  video_status: string;
+  language: string;
+  template_key: string;
+  provider_script: string | null;
+  provider_tts: string | null;
+  provider_video: string | null;
+  model_script: string | null;
+  model_tts: string | null;
+  model_video: string | null;
+  cost_script_usd: number | null;
+  cost_tts_usd: number | null;
+  cost_still_usd: number | null;
+  cost_video_usd: number | null;
+  cost_total_usd: number | null;
+  error_code: string | null;
+  error_message_safe: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  result_video_path: string | null;
+};
+
 const PRODUCT_FILTER_PRESETS = [
   { value: "", label: "All products" },
   { value: "christmas_photo", label: "Christmas Photo" },
   { value: "christmas_family", label: "Family" },
   { value: "christmas_couple", label: "Couple" },
   { value: "christmas_pet", label: "Pet" },
+  { value: "christmas_santa_video", label: "Santa Video" },
 ];
 
 const SPECIES_FILTER_PRESETS = [
@@ -77,6 +103,8 @@ export default function ChristmasOrdersPage() {
   const [productFilter, setProductFilter] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("");
   const [selected, setSelected] = useState<ChristmasOrderRow | null>(null);
+  const [santaJob, setSantaJob] = useState<SantaJobRow | null>(null);
+  const [santaBusy, setSantaBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,6 +128,53 @@ export default function ChristmasOrdersPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSanta() {
+      setSantaJob(null);
+      if (!selected || selected.product_key !== "christmas_santa_video") return;
+      const { data, error } = await supabase
+        .from("christmas_santa_video_jobs")
+        .select(
+          "job_status,script_status,audio_status,video_status,language,template_key,provider_script,provider_tts,provider_video,model_script,model_tts,model_video,cost_script_usd,cost_tts_usd,cost_still_usd,cost_video_usd,cost_total_usd,error_code,error_message_safe,started_at,completed_at,result_video_path",
+        )
+        .eq("order_id", selected.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) {
+        toast.error(error.message || "Failed to load Santa job");
+        return;
+      }
+      setSantaJob((data || null) as SantaJobRow | null);
+    }
+    void loadSanta();
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
+
+  const retrySanta = useCallback(async () => {
+    if (!selected || selected.product_key !== "christmas_santa_video") return;
+    if (selected.payment_status !== "paid") {
+      toast.error("Paid entitlement required");
+      return;
+    }
+    setSantaBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("christmas-santa-funnel", {
+        body: { action: "retryGeneration", order_id: selected.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
+      toast.success("Santa retry queued (no new charge)");
+      void load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Retry failed");
+    } finally {
+      setSantaBusy(false);
+    }
+  }, [selected, load]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -347,6 +422,95 @@ export default function ChristmasOrdersPage() {
               <dd>{selected.affiliate_ref || "—"}</dd>
             </div>
           </dl>
+          {selected.product_key === "christmas_santa_video" ? (
+            <div className="mt-4 space-y-3 border-t border-slate-800 pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-medium text-white">Santa job</h3>
+                {selected.payment_status === "paid" &&
+                santaJob &&
+                santaJob.job_status === "failed" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={santaBusy}
+                    onClick={() => void retrySanta()}
+                  >
+                    Retry failed Santa generation
+                  </Button>
+                ) : null}
+              </div>
+              {santaJob ? (
+                <dl className="grid gap-2 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-slate-500">Job / stages</dt>
+                    <dd className="text-xs">
+                      {santaJob.job_status} · script={santaJob.script_status} · audio=
+                      {santaJob.audio_status} · video={santaJob.video_status}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Language / template</dt>
+                    <dd>
+                      {santaJob.language} · {santaJob.template_key}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Providers</dt>
+                    <dd className="text-xs">
+                      {[santaJob.provider_script, santaJob.provider_tts, santaJob.provider_video]
+                        .filter(Boolean)
+                        .join(" → ") || "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Models</dt>
+                    <dd className="text-xs">
+                      {[santaJob.model_script, santaJob.model_tts, santaJob.model_video]
+                        .filter(Boolean)
+                        .join(" · ") || "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Cost stages (est.)</dt>
+                    <dd className="text-xs">
+                      script {santaJob.cost_script_usd ?? "—"} · tts {santaJob.cost_tts_usd ?? "—"} ·
+                      still {santaJob.cost_still_usd ?? "—"} · video {santaJob.cost_video_usd ?? "—"}{" "}
+                      · total {santaJob.cost_total_usd ?? "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Safe error</dt>
+                    <dd className="text-xs">
+                      {santaJob.error_code
+                        ? `${santaJob.error_code}: ${santaJob.error_message_safe || ""}`
+                        : "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Result path</dt>
+                    <dd className="font-mono text-xs">{santaJob.result_video_path || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Timestamps</dt>
+                    <dd className="text-xs">
+                      {santaJob.started_at
+                        ? new Date(santaJob.started_at).toLocaleString()
+                        : "—"}
+                      {" → "}
+                      {santaJob.completed_at
+                        ? new Date(santaJob.completed_at).toLocaleString()
+                        : "—"}
+                    </dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className="text-xs text-slate-500">No Santa job row yet.</p>
+              )}
+              <p className="text-xs text-slate-500">
+                Child free-text personalization is hidden by default for privacy.
+              </p>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

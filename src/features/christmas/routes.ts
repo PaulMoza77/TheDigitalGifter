@@ -13,7 +13,7 @@ export type ChristmasRouteShellDef = {
   noindex: boolean;
 };
 
-/** Unfinished suite surfaces only — portrait verticals are real funnel pages. */
+/** Unfinished suite surfaces only — portrait verticals + Santa Video are real funnel pages. */
 export const CHRISTMAS_ROUTE_SHELLS: ChristmasRouteShellDef[] = [
   {
     path: "/christmas/kids",
@@ -21,14 +21,6 @@ export const CHRISTMAS_ROUTE_SHELLS: ChristmasRouteShellDef[] = [
     title: "Kids Christmas Generator",
     status: "coming_soon",
     description: "This product is not available yet. Privacy controls are required before launch.",
-    noindex: true,
-  },
-  {
-    path: "/christmas/santa-video",
-    productKey: "christmas_santa_video",
-    title: "Personalized Santa Video",
-    status: "coming_soon",
-    description: "Santa Video is not available yet. No checkout or personalization is offered here.",
     noindex: true,
   },
   {

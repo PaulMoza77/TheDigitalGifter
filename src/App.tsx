@@ -120,8 +120,8 @@ const ChristmasShellRoute = lazy(() =>
     default: m.ChristmasShellRoute,
   }))
 );
-const ChristmasPortraitFunnelPage = lazy(
-  () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
+const ChristmasSantaVideoPage = lazy(
+  () => import("@/features/christmas/ChristmasSantaVideoPage"),
 );
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
@@ -441,7 +441,7 @@ function AppInner() {
             <Route path="/christmas/pets" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/dogs" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/cats" element={<ChristmasPortraitFunnelPage />} />
-            <Route path="/christmas/santa-video" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/santa-video" element={<ChristmasSantaVideoPage />} />
             <Route path="/christmas/tree" element={<ChristmasShellRoute />} />
             <Route path="/christmas/advent" element={<ChristmasShellRoute />} />
             <Route path="/christmas/wishlist" element={<ChristmasShellRoute />} />

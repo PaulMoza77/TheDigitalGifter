@@ -26,7 +26,7 @@ export type ChristmasFulfillmentHandler = (
 export const CHRISTMAS_FULFILLMENT_HANDLERS: Partial<
   Record<string, ChristmasFulfillmentHandler>
 > = {
-  // christmas_santa_video: implemented in a later task
+  // christmas_santa_video: edge christmas-santa-generate via stripeFulfill
 };
 
 export function getChristmasFulfillmentHandler(

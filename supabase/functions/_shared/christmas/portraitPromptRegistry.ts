@@ -305,9 +305,11 @@ export function recoveryRouteForOrder(input: {
   const landing = String(input.landingPath || "").split("?")[0];
   if (landing.startsWith("/christmas/family") || landing.startsWith("/christmas/couples") ||
       landing.startsWith("/christmas/pets") || landing.startsWith("/christmas/dogs") ||
-      landing.startsWith("/christmas/cats") || landing.startsWith("/christmas/photo-generator")) {
+      landing.startsWith("/christmas/cats") || landing.startsWith("/christmas/photo-generator") ||
+      landing.startsWith("/christmas/santa-video")) {
     return landing;
   }
+  if (input.productKey === "christmas_santa_video") return "/christmas/santa-video";
   if (input.productKey === "christmas_family") return "/christmas/family";
   if (input.productKey === "christmas_couple") return "/christmas/couples";
   if (input.productKey === "christmas_pet") {

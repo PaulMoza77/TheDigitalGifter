@@ -78,7 +78,9 @@ export default function ChristmasPage() {
                     ) : null}
                     {cta === "open" && !product.packages.some((p) => p.purchasable) ? (
                       <p className="mt-2 text-xs text-amber-800">
-                        Experience open · purchase not enabled yet
+                        {product.productKey === "christmas_santa_video"
+                          ? "Preview / not yet available to purchase"
+                          : "Experience open · purchase not enabled yet"}
                       </p>
                     ) : null}
                   </div>

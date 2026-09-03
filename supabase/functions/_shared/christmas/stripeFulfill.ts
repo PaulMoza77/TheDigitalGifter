@@ -52,8 +52,16 @@ async function invokeFunction(name: string, orderId: string) {
   });
 }
 
-export function enqueueChristmasGenerate(orderId: string, mode: "commerce" | "v2" = "v2") {
-  const fn = mode === "commerce" ? "christmas-photo-generate" : "christmas-generate";
+export function enqueueChristmasGenerate(
+  orderId: string,
+  mode: "commerce" | "v2" | "santa" = "v2",
+) {
+  const fn =
+    mode === "santa"
+      ? "christmas-santa-generate"
+      : mode === "commerce"
+        ? "christmas-photo-generate"
+        : "christmas-generate";
   waitUntil(
     invokeFunction(fn, orderId).catch((err) => {
       console.error(`${fn} enqueue failed`, err);
@@ -147,7 +155,19 @@ export async function handleChristmasStripeEvent(input: {
     });
 
     if (result.ok === true && result.status === "paid") {
-      enqueueChristmasGenerate(orderId, "commerce");
+      const productKey = asString(input.metadata.product_key);
+      let mode: "commerce" | "santa" = "commerce";
+      if (productKey === "christmas_santa_video") {
+        mode = "santa";
+      } else if (!productKey) {
+        const { data: ord } = await input.service
+          .from("christmas_orders")
+          .select("product_key")
+          .eq("id", orderId)
+          .maybeSingle();
+        if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+      }
+      enqueueChristmasGenerate(orderId, mode);
     }
 
     return new Response(JSON.stringify({ ok: true, christmas: result }), {

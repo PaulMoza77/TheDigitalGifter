@@ -18,7 +18,7 @@ RUN npm run build
 
 FROM node:22-alpine
 WORKDIR /app
-RUN apk add --no-cache wget \
+RUN apk add --no-cache wget ffmpeg \
   && addgroup -S tdg && adduser -S tdg -G tdg
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm install --no-save tsx@4.20.5

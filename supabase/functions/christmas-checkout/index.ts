@@ -46,6 +46,18 @@ type Body = {
   portrait_type?: string;
   species?: string;
   source_route?: string;
+  /** Santa personalization (validated server-side). */
+  child_first_name?: string;
+  language?: string;
+  age?: number;
+  something_good?: string;
+  hobby_or_interest?: string;
+  christmas_wish?: string;
+  custom_fact?: string;
+  sender_name?: string;
+  template_key?: string;
+  guardian_consent?: boolean;
+  consent_version?: string;
   /** Ignored — prompts are server-owned. */
   prompt?: string;
   client_prompt?: string;
@@ -84,7 +96,9 @@ Deno.serve(async (req) => {
 
     const body = await readJson<Body>(req);
     const productKey = asString(body.product_key);
-    const packageKey = asString(body.package_key) || "single";
+    const packageKey =
+      asString(body.package_key) ||
+      (productKey === "christmas_santa_video" ? "basic" : "single");
     if (!productKey) return jsonResponse({ error: "product_key required" }, 400);
 
     // Client-supplied amount / prompts are intentionally ignored.
@@ -147,6 +161,51 @@ Deno.serve(async (req) => {
       }
     }
 
+    let santaPerso: Record<string, unknown> | null = null;
+    if (product.product_key === "christmas_santa_video") {
+      const name = asString(body.child_first_name);
+      const language = asString(body.language).toLowerCase();
+      const templateKey = asString(body.template_key) || "classic_santa";
+      if (!body.guardian_consent) {
+        return jsonResponse({ error: "Parent/guardian consent required", code: "consent_required" }, 400);
+      }
+      if (!name || name.length > 40) {
+        return jsonResponse({ error: "child_first_name required", code: "name_required" }, 400);
+      }
+      if (language !== "en" && language !== "ro") {
+        return jsonResponse({ error: "language must be en or ro", code: "invalid_language" }, 400);
+      }
+      if (templateKey !== "classic_santa") {
+        return jsonResponse({ error: "template unavailable", code: "template_unavailable" }, 400);
+      }
+      const injection = /ignore\s+(all\s+)?(previous|prior|above)\s+instructions|system\s*prompt/i;
+      for (const field of [
+        body.something_good,
+        body.hobby_or_interest,
+        body.christmas_wish,
+        body.custom_fact,
+        body.sender_name,
+      ]) {
+        if (field && injection.test(String(field))) {
+          return jsonResponse({ error: "Disallowed content in personalization", code: "prompt_injection" }, 400);
+        }
+      }
+      santaPerso = {
+        child_first_name: name,
+        language,
+        age: body.age == null ? null : Number(body.age),
+        something_good: asString(body.something_good).slice(0, 120) || null,
+        hobby_or_interest: asString(body.hobby_or_interest).slice(0, 80) || null,
+        christmas_wish: asString(body.christmas_wish).slice(0, 120) || null,
+        custom_fact: asString(body.custom_fact).slice(0, 120) || null,
+        sender_name: asString(body.sender_name).slice(0, 60) || null,
+        template_key: templateKey,
+        guardian_consent: true,
+        consent_version: asString(body.consent_version) || "santa_v1_2026_09",
+        consented_at: new Date().toISOString(),
+      };
+    }
+
     const stripeSecret = asString(Deno.env.get("STRIPE_SECRET_KEY"));
     const publishable = asString(Deno.env.get("STRIPE_PUBLISHABLE_KEY"));
     if (!stripeSecret || !publishable) {
@@ -155,7 +214,10 @@ Deno.serve(async (req) => {
 
     const email = asString(body.email).toLowerCase();
     const successUrl =
-      asString(body.success_url) || `${siteOrigin()}${sourceRoute}?checkout=success`;
+      asString(body.success_url) ||
+      (product.product_key === "christmas_santa_video"
+        ? `${siteOrigin()}/christmas/santa-video?checkout=success`
+        : `${siteOrigin()}${sourceRoute}?checkout=success`);
     const sku = `xmas_${product.product_key}_${pkg.package_key}`;
 
     let orderId = asString(body.existing_order_id);
@@ -228,6 +290,26 @@ Deno.serve(async (req) => {
         .single();
       if (orderError) throw orderError;
       orderId = order.id;
+    }
+
+    if (santaPerso) {
+      const { error: persoError } = await service.from("christmas_santa_personalization").upsert(
+        {
+          order_id: orderId,
+          ...santaPerso,
+        },
+        { onConflict: "order_id" },
+      );
+      if (persoError) throw persoError;
+      await service.from("christmas_santa_video_jobs").upsert(
+        {
+          order_id: orderId,
+          language: santaPerso.language,
+          template_key: santaPerso.template_key,
+          job_status: "draft",
+        },
+        { onConflict: "order_id" },
+      );
     }
 
     const params = new URLSearchParams();

@@ -58,7 +58,8 @@ describe("christmas portrait vertical config", () => {
     expect(shellForPath("/christmas/pets")).toBeNull();
     expect(shellForPath("/christmas/dogs")).toBeNull();
     expect(shellForPath("/christmas/cats")).toBeNull();
-    expect(shellForPath("/christmas/santa-video")?.status).toBe("coming_soon");
+    expect(shellForPath("/christmas/santa-video")).toBeNull();
+    expect(shellForPath("/christmas/kids")?.status).toBe("coming_soon");
   });
 });
 
@@ -144,6 +145,7 @@ describe("christmas portrait wiring", () => {
       expect(app).toContain(`path="${path}"`);
     }
     // shells remain for unfinished products
+    expect(app).toContain("ChristmasSantaVideoPage");
     expect(app).toContain('path="/christmas/santa-video"');
     expect(app).toContain("ChristmasShellRoute");
   });

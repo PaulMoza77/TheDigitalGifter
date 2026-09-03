@@ -73,7 +73,7 @@ describe("christmas catalog", () => {
     expect(hub.every((p) => p.productKey !== "christmas_hub")).toBe(true);
     expect(hub.some((p) => p.productKey === "christmas_photo")).toBe(true);
     expect(ctaStateForProduct(findProduct(CHRISTMAS_CATALOG_SEED, "christmas_santa_video")!)).toBe(
-      "coming_soon",
+      "open",
     );
   });
 });
@@ -227,7 +227,8 @@ describe("christmas analytics contract", () => {
 describe("christmas routes / activation", () => {
   it("wires suite shells and never exposes checkout on shells", () => {
     expect(shellForPath("/christmas/photo-generator")).toBeNull();
-    expect(shellForPath("/christmas/santa-video")?.noindex).toBe(true);
+    expect(shellForPath("/christmas/santa-video")).toBeNull();
+    expect(shellForPath("/christmas/kids")?.noindex).toBe(true);
     for (const shell of CHRISTMAS_ROUTE_SHELLS) {
       expect(shellExposesCheckout(shell)).toBe(false);
     }
