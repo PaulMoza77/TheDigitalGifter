@@ -73,6 +73,19 @@ Source + generated buckets remain private. No public galleries. Kids Christmas i
 
 Same Resend template; recovery link uses `source_route` / product+species mapping so the correct vertical reopens.
 
+## Real generation QA (controlled proofs)
+
+| Vertical | Order id | Style | Latency | Cost (est.) | QA |
+|----------|----------|-------|---------|-------------|-----|
+| Family | `38c43935-11b2-4c39-87cc-cc288b1cce19` | classic_family_christmas | 11207 ms | ~$0.04 | PASS — multi-person festive portrait |
+| Couple | `9d02ca2b-2d29-4365-a6fa-613540ad5f36` | couple_classic_portrait | 11378 ms | ~$0.04 | PASS — both people preserved (first romantic_snowfall attempt timed out as `prediction_processing`, retry OK) |
+| Dog | `d6cbf2ec-33f1-4fca-8b55-cd3f7569ffe8` | santa_pet | 11391 ms | ~$0.04 | PASS — dog species preserved |
+| Cat | `0c0791fe-7e9e-4371-afb1-9e8f0afb675f` | pet_cozy_christmas | 11508 ms | ~$0.04 | PASS — cat species preserved |
+
+Provider: Replicate · Model: `black-forest-labs/flux-kontext-pro` · `mock:false`
+
+Wrong-species (no generation): dog→cat route and cat→dog route both return `wrong_species` + switch path via `validateSpecies`.
+
 ## Non-goals (unchanged)
 
 Kids, Santa Video, Tree, Advent, Wishlist, Gift Finder, Cards, Messages, live pricing, full SEO factory, Pet V1/V2/V3 price changes.
