@@ -1,13 +1,18 @@
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
+import {
+  buildChristmasPortraitPrompt,
+  isPortraitProductKey,
+  recoveryRouteForOrder,
+} from "../_shared/christmas/portraitPromptRegistry.ts";
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
  * Amount is always resolved server-side from christmas_packages.
  * Disabled unless CHRISTMAS_CHECKOUT_ENABLED=true.
  *
- * Does not implement generation. Does not create live public offers by default
- * (packages must be purchasable + positive price in DB).
+ * Supports portrait vertical products: christmas_photo|family|couple|pet.
+ * Style validation uses the server-owned prompt registry (never client prompts).
  */
 
 type Body = {
@@ -38,6 +43,12 @@ type Body = {
   source_width?: number;
   source_height?: number;
   existing_order_id?: string;
+  portrait_type?: string;
+  species?: string;
+  source_route?: string;
+  /** Ignored — prompts are server-owned. */
+  prompt?: string;
+  client_prompt?: string;
 };
 
 function asString(value: unknown): string {
@@ -76,9 +87,11 @@ Deno.serve(async (req) => {
     const packageKey = asString(body.package_key) || "single";
     if (!productKey) return jsonResponse({ error: "product_key required" }, 400);
 
-    // Client-supplied amount is intentionally ignored.
+    // Client-supplied amount / prompts are intentionally ignored.
     void body.amount_cents;
     void body.currency;
+    void body.prompt;
+    void body.client_prompt;
 
     const service = getServiceClient();
     const { data: product, error: productError } = await service
@@ -110,17 +123,27 @@ Deno.serve(async (req) => {
 
     const styleKey = asString(body.style_key);
     const sourcePath = asString(body.source_path);
-    if (product.product_key === "christmas_photo") {
+    const species = asString(body.species).toLowerCase() || null;
+    const portraitType = asString(body.portrait_type) || null;
+    const sourceRoute = asString(body.source_route) ||
+      recoveryRouteForOrder({
+        productKey: product.product_key,
+        species,
+        landingPath: asString(body.landing_path),
+      });
+
+    if (isPortraitProductKey(product.product_key)) {
       if (!styleKey || !sourcePath) {
         return jsonResponse({ error: "style_key and source_path required", code: "missing_photo_fields" }, 400);
       }
-      const { data: style } = await service
-        .from("christmas_styles")
-        .select("style_key,enabled")
-        .eq("style_key", styleKey)
-        .maybeSingle();
-      if (!style?.enabled) {
-        return jsonResponse({ error: "Unknown or disabled style", code: "invalid_style" }, 400);
+      const promptCheck = buildChristmasPortraitPrompt({
+        productKey: product.product_key,
+        styleKey,
+        species,
+        clientPrompt: body.client_prompt || body.prompt,
+      });
+      if (!promptCheck.ok) {
+        return jsonResponse({ error: "Unknown or disabled style for product", code: "invalid_style" }, 400);
       }
     }
 
@@ -132,11 +155,30 @@ Deno.serve(async (req) => {
 
     const email = asString(body.email).toLowerCase();
     const successUrl =
-      asString(body.success_url) || `${siteOrigin()}/christmas/photo-generator?checkout=success`;
+      asString(body.success_url) || `${siteOrigin()}${sourceRoute}?checkout=success`;
     const sku = `xmas_${product.product_key}_${pkg.package_key}`;
 
     let orderId = asString(body.existing_order_id);
     let publicToken = "";
+
+    const orderPatch = {
+      email: email || null,
+      email_normalized: email || null,
+      style_key: styleKey || null,
+      source_path: sourcePath || null,
+      source_bucket: asString(body.source_bucket) || "christmas-source",
+      source_content_type: asString(body.source_content_type) || null,
+      source_byte_size: Number(body.source_byte_size) || null,
+      source_width: Number(body.source_width) || null,
+      source_height: Number(body.source_height) || null,
+      portrait_type: portraitType,
+      species,
+      source_route: sourceRoute,
+      amount_cents: pkg.price_cents,
+      currency: pkg.currency,
+      package_key: pkg.package_key,
+      sku,
+    };
 
     if (orderId) {
       const { data: existing } = await service
@@ -147,24 +189,7 @@ Deno.serve(async (req) => {
       if (!existing || existing.payment_status === "paid") {
         orderId = "";
       } else {
-        await service
-          .from("christmas_orders")
-          .update({
-            email: email || null,
-            email_normalized: email || null,
-            style_key: styleKey || null,
-            source_path: sourcePath || null,
-            source_bucket: asString(body.source_bucket) || "christmas-source",
-            source_content_type: asString(body.source_content_type) || null,
-            source_byte_size: Number(body.source_byte_size) || null,
-            source_width: Number(body.source_width) || null,
-            source_height: Number(body.source_height) || null,
-            amount_cents: pkg.price_cents,
-            currency: pkg.currency,
-            package_key: pkg.package_key,
-            sku,
-          })
-          .eq("id", orderId);
+        await service.from("christmas_orders").update(orderPatch).eq("id", orderId);
       }
     }
 
@@ -175,22 +200,9 @@ Deno.serve(async (req) => {
         .from("christmas_orders")
         .insert({
           public_token_hash: tokenHash,
-          email: email || null,
-          email_normalized: email || null,
           product_key: product.product_key,
-          package_key: pkg.package_key,
-          sku,
-          currency: pkg.currency,
-          amount_cents: pkg.price_cents,
           payment_status: "pending",
           fulfillment_status: "not_started",
-          style_key: styleKey || null,
-          source_path: sourcePath || null,
-          source_bucket: asString(body.source_bucket) || (sourcePath ? "christmas-source" : null),
-          source_content_type: asString(body.source_content_type) || null,
-          source_byte_size: Number(body.source_byte_size) || null,
-          source_width: Number(body.source_width) || null,
-          source_height: Number(body.source_height) || null,
           locale: asString(body.locale) || "en",
           landing_path: asString(body.landing_path) || null,
           utm_source: asString(body.utm_source) || null,
@@ -203,7 +215,14 @@ Deno.serve(async (req) => {
           adset_id: asString(body.adset_id) || null,
           ad_id: asString(body.ad_id) || null,
           funnel_session_id: asString(body.funnel_session_id) || null,
-          metadata: { source: "christmas-checkout", public_token_hint: publicToken },
+          metadata: {
+            source: "christmas-checkout",
+            public_token_hint: publicToken,
+            portrait_type: portraitType,
+            species,
+            source_route: sourceRoute,
+          },
+          ...orderPatch,
         })
         .select("id")
         .single();
@@ -233,6 +252,8 @@ Deno.serve(async (req) => {
     params.set("metadata[sku]", sku);
     params.set("metadata[christmas_order_id]", orderId);
     if (styleKey) params.set("metadata[style_key]", styleKey);
+    if (portraitType) params.set("metadata[portrait_type]", portraitType);
+    if (species) params.set("metadata[species]", species);
     params.set("payment_intent_data[metadata][product_family]", "christmas");
     params.set("payment_intent_data[metadata][christmas_order_id]", orderId);
 

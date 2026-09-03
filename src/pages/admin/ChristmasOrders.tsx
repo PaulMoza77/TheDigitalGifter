@@ -20,6 +20,9 @@ type ChristmasOrderRow = {
   product_key: string;
   package_key: string;
   style_key?: string | null;
+  portrait_type?: string | null;
+  species?: string | null;
+  source_route?: string | null;
   amount_cents: number;
   currency: string;
   payment_status: string;
@@ -36,7 +39,22 @@ type ChristmasOrderRow = {
   model_name?: string | null;
   generation_started_at?: string | null;
   generation_finished_at?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
+
+const PRODUCT_FILTER_PRESETS = [
+  { value: "", label: "All products" },
+  { value: "christmas_photo", label: "Christmas Photo" },
+  { value: "christmas_family", label: "Family" },
+  { value: "christmas_couple", label: "Couple" },
+  { value: "christmas_pet", label: "Pet" },
+];
+
+const SPECIES_FILTER_PRESETS = [
+  { value: "", label: "All species" },
+  { value: "dog", label: "Dog" },
+  { value: "cat", label: "Cat" },
+];
 
 function money(cents: number, currency: string) {
   const amount = (Number(cents) || 0) / 100;
@@ -57,6 +75,7 @@ export default function ChristmasOrdersPage() {
   const [paymentFilter, setPaymentFilter] = useState("");
   const [fulfillmentFilter, setFulfillmentFilter] = useState("");
   const [productFilter, setProductFilter] = useState("");
+  const [speciesFilter, setSpeciesFilter] = useState("");
   const [selected, setSelected] = useState<ChristmasOrderRow | null>(null);
 
   const load = useCallback(async () => {
@@ -64,7 +83,7 @@ export default function ChristmasOrdersPage() {
     const { data, error } = await supabase
       .from("christmas_orders")
       .select(
-        "id,email,product_key,package_key,style_key,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,created_at,paid_at,model_name,generation_started_at,generation_finished_at",
+        "id,email,product_key,package_key,style_key,portrait_type,species,source_route,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,created_at,paid_at,model_name,generation_started_at,generation_finished_at,metadata",
       )
       .order("created_at", { ascending: false })
       .limit(200);
@@ -88,20 +107,24 @@ export default function ChristmasOrdersPage() {
       if (paymentFilter && row.payment_status !== paymentFilter) return false;
       if (fulfillmentFilter && row.fulfillment_status !== fulfillmentFilter) return false;
       if (productFilter && row.product_key !== productFilter) return false;
+      if (speciesFilter && row.species !== speciesFilter) return false;
       if (!q) return true;
       return (
         row.id.toLowerCase().includes(q) ||
         (row.email || "").toLowerCase().includes(q) ||
         row.product_key.toLowerCase().includes(q) ||
+        (row.portrait_type || "").toLowerCase().includes(q) ||
+        (row.species || "").toLowerCase().includes(q) ||
         (row.stripe_checkout_session_id || "").toLowerCase().includes(q)
       );
     });
-  }, [rows, query, paymentFilter, fulfillmentFilter, productFilter]);
+  }, [rows, query, paymentFilter, fulfillmentFilter, productFilter, speciesFilter]);
 
-  const products = useMemo(
-    () => Array.from(new Set(rows.map((r) => r.product_key))).sort(),
-    [rows],
-  );
+  const products = useMemo(() => {
+    const fromRows = Array.from(new Set(rows.map((r) => r.product_key)));
+    const presets = PRODUCT_FILTER_PRESETS.map((p) => p.value).filter(Boolean);
+    return Array.from(new Set([...presets, ...fromRows])).sort();
+  }, [rows]);
 
   return (
     <div className="space-y-6 p-6">
@@ -136,10 +159,27 @@ export default function ChristmasOrdersPage() {
           value={productFilter}
           onChange={(e) => setProductFilter(e.target.value)}
         >
-          <option value="">All products</option>
-          {products.map((p) => (
-            <option key={p} value={p}>
-              {p}
+          {PRODUCT_FILTER_PRESETS.map((p) => (
+            <option key={p.value || "all"} value={p.value}>
+              {p.label}
+            </option>
+          ))}
+          {products
+            .filter((p) => !PRODUCT_FILTER_PRESETS.some((x) => x.value === p))
+            .map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+        </select>
+        <select
+          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
+          value={speciesFilter}
+          onChange={(e) => setSpeciesFilter(e.target.value)}
+        >
+          {SPECIES_FILTER_PRESETS.map((p) => (
+            <option key={p.value || "all-species"} value={p.value}>
+              {p.label}
             </option>
           ))}
         </select>
@@ -176,6 +216,7 @@ export default function ChristmasOrdersPage() {
               <TableHead>Created</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Product</TableHead>
+              <TableHead>Type / species</TableHead>
               <TableHead>Style</TableHead>
               <TableHead>Package</TableHead>
               <TableHead>Amount</TableHead>
@@ -187,7 +228,7 @@ export default function ChristmasOrdersPage() {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-slate-500">
+                <TableCell colSpan={10} className="text-center text-slate-500">
                   {loading ? "Loading…" : "No Christmas orders yet."}
                 </TableCell>
               </TableRow>
@@ -205,6 +246,9 @@ export default function ChristmasOrdersPage() {
                     {row.email || "—"}
                   </TableCell>
                   <TableCell className="text-sm">{row.product_key}</TableCell>
+                  <TableCell className="text-sm">
+                    {[row.portrait_type, row.species].filter(Boolean).join(" · ") || "—"}
+                  </TableCell>
                   <TableCell className="text-sm">{row.style_key || "—"}</TableCell>
                   <TableCell className="text-sm">{row.package_key}</TableCell>
                   <TableCell className="text-sm">
@@ -262,10 +306,28 @@ export default function ChristmasOrdersPage() {
               </dd>
             </div>
             <div>
+              <dt className="text-slate-500">Portrait / species</dt>
+              <dd>
+                {[selected.portrait_type, selected.species].filter(Boolean).join(" · ") || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Source route</dt>
+              <dd className="font-mono text-xs">{selected.source_route || "—"}</dd>
+            </div>
+            <div>
               <dt className="text-slate-500">Style / model</dt>
               <dd>
                 {selected.style_key || "—"}
                 {selected.model_name ? ` · ${selected.model_name}` : ""}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">AI cost (est.)</dt>
+              <dd>
+                {typeof selected.metadata?.estimated_cost_usd === "number"
+                  ? `~$${selected.metadata.estimated_cost_usd}`
+                  : "—"}
               </dd>
             </div>
             <div>

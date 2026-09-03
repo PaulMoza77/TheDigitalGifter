@@ -113,6 +113,37 @@ export async function getChristmasOrderByToken(publicToken: string) {
       currency: string;
       last_error: string | null;
       resultUrl: string | null;
+      portrait_type?: string | null;
+      species?: string | null;
+      source_route?: string | null;
     };
+  };
+}
+
+export async function validateChristmasSpecies(input: {
+  imageDataUrl: string;
+  expected: "dog" | "cat";
+}) {
+  const res = await fetch(FUNNEL_URL, {
+    method: "POST",
+    headers: await anonHeaders(),
+    body: JSON.stringify({
+      action: "validateSpecies",
+      image_data_url: input.imageDataUrl,
+      expected_species: input.expected,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok && data?.errorCode !== "wrong_species" && data?.errorCode !== "unclear_species") {
+    throw new Error(data.error || "Species validation failed");
+  }
+  return data as {
+    ok: boolean;
+    action?: string;
+    detected?: string;
+    confidence?: number;
+    provider?: string;
+    errorCode?: "wrong_species" | "unclear_species";
+    error?: string;
   };
 }

@@ -79,7 +79,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     sortOrder: 10,
     routePath: "/christmas/photo-generator",
     localeDefault: "en",
-    metadata: { foundation: true, live_offer: false },
+    metadata: { foundation: true, live_offer: false, portrait_vertical: true },
     packages: [
       {
         packageKey: "single",
@@ -101,29 +101,59 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     productKey: "christmas_family",
     slug: "family",
     productType: "photo_generator",
-    name: "Family Christmas Generator",
-    description: "Coming soon.",
+    name: "Family Christmas",
+    description: "Turn your family photo into a magical Christmas portrait.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 20,
     routePath: "/christmas/family",
     localeDefault: "en",
-    metadata: { coming_soon: true },
-    packages: [],
+    metadata: { foundation: true, live_offer: false, portrait_vertical: true },
+    packages: [
+      {
+        packageKey: "single",
+        packageName: "Single family portrait",
+        description: "Draft package — not a live public offer.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["1 Christmas family portrait"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: { live_offer: false },
+      },
+    ],
   },
   {
     productKey: "christmas_couple",
     slug: "couples",
     productType: "photo_generator",
-    name: "Couples Christmas Generator",
-    description: "Coming soon.",
+    name: "Couples Christmas",
+    description: "A romantic Christmas couple portrait from one shared photo.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 30,
     routePath: "/christmas/couples",
     localeDefault: "en",
-    metadata: { coming_soon: true },
-    packages: [],
+    metadata: { foundation: true, live_offer: false, portrait_vertical: true },
+    packages: [
+      {
+        packageKey: "single",
+        packageName: "Single couple portrait",
+        description: "Draft package — not a live public offer.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["1 Christmas couple portrait"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: { live_offer: false },
+      },
+    ],
   },
   {
     productKey: "christmas_kids",
@@ -143,15 +173,35 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     productKey: "christmas_pet",
     slug: "pets",
     productType: "photo_generator",
-    name: "Pet Christmas Generator",
-    description: "Coming soon.",
+    name: "Pet Christmas",
+    description: "Christmas pet portraits for dogs and cats (not Secret Life packs).",
     active: true,
     publicDiscoverable: true,
     sortOrder: 50,
     routePath: "/christmas/pets",
     localeDefault: "en",
-    metadata: { coming_soon: true },
-    packages: [],
+    metadata: {
+      foundation: true,
+      live_offer: false,
+      portrait_vertical: true,
+      acquisition_routes: ["/christmas/dogs", "/christmas/cats"],
+    },
+    packages: [
+      {
+        packageKey: "single",
+        packageName: "Single pet portrait",
+        description: "Draft package — not a live public offer.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["1 Christmas pet portrait"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: { live_offer: false },
+      },
+    ],
   },
   {
     productKey: "christmas_santa_video",
@@ -323,9 +373,23 @@ export function isComingSoon(product: ChristmasProductDef): boolean {
   return Boolean(product.metadata?.coming_soon) || product.packages.every((p) => !p.purchasable);
 }
 
+const PORTRAIT_VERTICAL_KEYS = new Set([
+  "christmas_photo",
+  "christmas_family",
+  "christmas_couple",
+  "christmas_pet",
+]);
+
 export function ctaStateForProduct(product: ChristmasProductDef): "open" | "coming_soon" | "unavailable" {
   if (!product.active || !product.publicDiscoverable) return "unavailable";
   if (product.packages.some((p) => p.active && p.purchasable)) return "open";
-  if (product.productKey === "christmas_photo") return "coming_soon";
+  // Portrait verticals are navigable experiences; checkout may still be disabled.
+  if (
+    PORTRAIT_VERTICAL_KEYS.has(product.productKey) &&
+    product.packages.some((p) => p.active) &&
+    !product.metadata?.coming_soon
+  ) {
+    return "open";
+  }
   return "coming_soon";
 }

@@ -120,8 +120,8 @@ const ChristmasShellRoute = lazy(() =>
     default: m.ChristmasShellRoute,
   }))
 );
-const ChristmasPhotoGeneratorPage = lazy(
-  () => import("@/features/christmas/ChristmasPhotoGeneratorPage"),
+const ChristmasPortraitFunnelPage = lazy(
+  () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
 );
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
@@ -434,13 +434,13 @@ function AppInner() {
             <Route path="/categories/pets" element={<PetsCategoryPage />} />
 
             <Route path="/christmas" element={<ChristmasPage />} />
-            <Route path="/christmas/photo-generator" element={<ChristmasPhotoGeneratorPage />} />
-            <Route path="/christmas/family" element={<ChristmasShellRoute />} />
-            <Route path="/christmas/couples" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/photo-generator" element={<ChristmasPortraitFunnelPage />} />
+            <Route path="/christmas/family" element={<ChristmasPortraitFunnelPage />} />
+            <Route path="/christmas/couples" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/kids" element={<ChristmasShellRoute />} />
-            <Route path="/christmas/pets" element={<ChristmasShellRoute />} />
-            <Route path="/christmas/dogs" element={<ChristmasShellRoute />} />
-            <Route path="/christmas/cats" element={<ChristmasShellRoute />} />
+            <Route path="/christmas/pets" element={<ChristmasPortraitFunnelPage />} />
+            <Route path="/christmas/dogs" element={<ChristmasPortraitFunnelPage />} />
+            <Route path="/christmas/cats" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/santa-video" element={<ChristmasShellRoute />} />
             <Route path="/christmas/tree" element={<ChristmasShellRoute />} />
             <Route path="/christmas/advent" element={<ChristmasShellRoute />} />

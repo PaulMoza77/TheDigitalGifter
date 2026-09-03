@@ -49,10 +49,10 @@ describe("christmas photo preview contract", () => {
   it("preview path never uses Replicate", () => {
     expect(christmasPreviewUsesReplicate()).toBe(false);
     expect(readSrc("src/features/christmas/photoPreview.ts")).not.toContain("replicate.com");
-    expect(readSrc("src/features/christmas/ChristmasPhotoGeneratorPage.tsx")).toContain(
+    expect(readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx")).toContain(
       "createBlurredOriginalPreview",
     );
-    expect(readSrc("src/features/christmas/ChristmasPhotoGeneratorPage.tsx")).not.toContain(
+    expect(readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx")).not.toContain(
       "pet-v2-preview",
     );
   });
@@ -113,9 +113,9 @@ describe("christmas photo pricing + wiring", () => {
 
   it("routes photo-generator to real page not shell", () => {
     const app = readSrc("src/App.tsx");
-    expect(app).toContain("ChristmasPhotoGeneratorPage");
-    expect(app.indexOf("ChristmasPhotoGeneratorPage")).toBeLessThan(
-      app.indexOf('path="/christmas/family"'),
+    expect(app).toContain("ChristmasPortraitFunnelPage");
+    expect(app.indexOf("ChristmasPortraitFunnelPage")).toBeLessThan(
+      app.indexOf('path="/christmas/kids"'),
     );
   });
 

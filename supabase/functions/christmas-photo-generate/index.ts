@@ -1,13 +1,18 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, isServiceRoleRequest, readJson } from "../_shared/supabase.ts";
 import { kontextProInput, replicateOutputUrl } from "../_shared/pet/replicate.ts";
+import {
+  buildChristmasPortraitPrompt,
+  recoveryRouteForOrder,
+} from "../_shared/christmas/portraitPromptRegistry.ts";
 
 /**
- * Post-payment Christmas photo generation.
+ * Post-payment Christmas portrait generation (all verticals).
  * Refuses unpaid orders. Never used for pre-payment preview.
+ * Prompts come only from the server-owned registry.
  */
 
-type Body = { order_id?: string };
+type Body = { order_id?: string; prompt?: string; client_prompt?: string };
 
 const SOURCE_BUCKET = "christmas-source";
 const RESULT_BUCKET = "christmas-generated";
@@ -75,6 +80,10 @@ Deno.serve(async (req) => {
 
   try {
     const body = await readJson<Body>(req);
+    // Never trust client-supplied prompts.
+    void body.prompt;
+    void body.client_prompt;
+
     const orderId = asString(body.order_id);
     if (!orderId) return jsonResponse({ error: "order_id required" }, 400);
     const service = getServiceClient();
@@ -115,24 +124,25 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: false, code: "generation_disabled" }, 503);
     }
 
-    const { data: style } = await service
-      .from("christmas_styles")
-      .select("style_key,prompt_template,negative_hints,enabled")
-      .eq("style_key", order.style_key)
-      .maybeSingle();
-    if (!style?.enabled) {
+    const built = buildChristmasPortraitPrompt({
+      productKey: asString(order.product_key),
+      styleKey: asString(order.style_key),
+      species: asString(order.species) || null,
+      clientPrompt: body.client_prompt || body.prompt,
+    });
+    if (!built.ok) {
       await service
         .from("christmas_generation_jobs")
-        .update({ status: "failed", last_error: "invalid_style" })
+        .update({ status: "failed", last_error: built.code })
         .eq("order_id", orderId);
       await service
         .from("christmas_orders")
-        .update({ fulfillment_status: "failed", last_error: "invalid_style" })
+        .update({ fulfillment_status: "failed", last_error: built.code })
         .eq("id", orderId);
-      return jsonResponse({ error: "invalid_style" }, 400);
+      return jsonResponse({ error: built.code, code: "invalid_style" }, 400);
     }
+    const prompt = built.prompt;
 
-    const prompt = `${style.prompt_template} Avoid: ${style.negative_hints}.`;
     const sourceBucket = asString(order.source_bucket) || SOURCE_BUCKET;
     const { data: signed } = await service.storage
       .from(sourceBucket)
@@ -204,6 +214,8 @@ Deno.serve(async (req) => {
             estimated_cost_usd: ESTIMATED_UNIT_COST_USD,
             cost_state: "estimated",
             cost_notes: "Failed attempt; tariff snapshot estimate only",
+            prompt_style_key: order.style_key,
+            product_key: order.product_key,
           },
         })
         .eq("id", orderId);
@@ -221,6 +233,9 @@ Deno.serve(async (req) => {
         sort_order: 0,
         metadata: {
           style_key: order.style_key,
+          product_key: order.product_key,
+          portrait_type: order.portrait_type,
+          species: order.species,
           mock: generationMock(),
           estimated_cost_usd: generationMock() ? 0 : ESTIMATED_UNIT_COST_USD,
           cost_state: generationMock() ? "exact" : "estimated",
@@ -256,6 +271,7 @@ Deno.serve(async (req) => {
           estimated_cost_usd: generationMock() ? 0 : ESTIMATED_UNIT_COST_USD,
           cost_state: generationMock() ? "exact" : "estimated",
           pricing_source: "ai_model_pricing_kontext_pro_tariff",
+          prompt_style_key: order.style_key,
         },
       })
       .eq("id", orderId);
@@ -275,7 +291,13 @@ Deno.serve(async (req) => {
           Deno.env.get("PUBLIC_APP_URL") ||
           "https://www.thedigitalgifter.com"
         ).replace(/\/$/, "");
-        const link = `${site}/christmas/photo-generator?token=${encodeURIComponent(tokenHint)}`;
+        const route = recoveryRouteForOrder({
+          productKey: asString(order.product_key),
+          species: asString(order.species) || null,
+          sourceRoute: asString(order.source_route) || null,
+          landingPath: asString(order.landing_path) || null,
+        });
+        const link = `${site}${route}?token=${encodeURIComponent(tokenHint)}`;
         await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -302,6 +324,8 @@ Deno.serve(async (req) => {
       estimated_cost_usd: generationMock() ? 0 : ESTIMATED_UNIT_COST_USD,
       cost_state: generationMock() ? "exact" : "estimated",
       latency_ms: latencyMs,
+      product_key: order.product_key,
+      style_key: order.style_key,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -1,9 +1,11 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson, isServiceRoleRequest } from "../_shared/supabase.ts";
+import { validatePetSpecies } from "../_shared/pet/speciesValidate.ts";
 
 /**
- * Christmas photo funnel APIs: signed upload, order lookup, admin retry enqueue.
- * Pre-payment blur preview is client-side only — this function never calls Replicate.
+ * Christmas portrait funnel APIs: signed upload, order lookup, species check, admin retry.
+ * Pre-payment blur preview is client-side only — this function never calls Replicate generation.
+ * Species validation may use vision (Moondream/OpenAI) — not image generation.
  */
 
 type Body = {
@@ -16,10 +18,11 @@ type Body = {
   public_token?: string;
   order_id?: string;
   email?: string;
+  image_data_url?: string;
+  expected_species?: string;
 };
 
 const SOURCE_BUCKET = "christmas-source";
-const RESULT_BUCKET = "christmas-generated";
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 15 * 1024 * 1024;
 
@@ -71,6 +74,53 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "validateSpecies") {
+      const expectedRaw = asString(body.expected_species).toLowerCase();
+      if (expectedRaw !== "dog" && expectedRaw !== "cat") {
+        return jsonResponse({ error: "expected_species must be dog or cat" }, 400);
+      }
+      const imageDataUrl = asString(body.image_data_url);
+      if (!imageDataUrl.startsWith("data:image/")) {
+        return jsonResponse({ error: "image_data_url required", code: "invalid_photo" }, 400);
+      }
+      // Cap payload size (~2MB base64) to avoid abuse
+      if (imageDataUrl.length > 2_800_000) {
+        return jsonResponse({ error: "Image too large for species check", code: "invalid_photo" }, 400);
+      }
+      const result = await validatePetSpecies({
+        imageDataUrl,
+        expected: expectedRaw,
+      });
+      if (!result.ok) {
+        const switchHint =
+          expectedRaw === "dog"
+            ? "This looks like a cat. Switch to Christmas Cats?"
+            : "This looks like a dog. Switch to Christmas Dogs?";
+        return jsonResponse(
+          {
+            ok: false,
+            action: result.action,
+            detected: result.detected,
+            confidence: result.confidence,
+            provider: result.provider,
+            errorCode: result.errorCode,
+            error: result.errorCode === "wrong_species" ? switchHint : result.error,
+            switch_to: result.errorCode === "wrong_species"
+              ? (expectedRaw === "dog" ? "/christmas/cats" : "/christmas/dogs")
+              : null,
+          },
+          400,
+        );
+      }
+      return jsonResponse({
+        ok: true,
+        action: result.action,
+        detected: result.detected,
+        confidence: result.confidence,
+        provider: result.provider,
+      });
+    }
+
     if (action === "getOrder") {
       const token = asString(body.public_token);
       if (!token || token.length < 32) {
@@ -80,7 +130,7 @@ Deno.serve(async (req) => {
       const { data: order, error } = await service
         .from("christmas_orders")
         .select(
-          "id,product_key,package_key,style_key,payment_status,fulfillment_status,amount_cents,currency,last_error,created_at,paid_at,generation_started_at,generation_finished_at,model_name,result_asset_id",
+          "id,product_key,package_key,style_key,payment_status,fulfillment_status,amount_cents,currency,last_error,created_at,paid_at,generation_started_at,generation_finished_at,model_name,result_asset_id,portrait_type,species,source_route,landing_path,metadata",
         )
         .eq("public_token_hash", hash)
         .maybeSingle();
@@ -113,7 +163,6 @@ Deno.serve(async (req) => {
 
     if (action === "retryGeneration") {
       if (!isServiceRoleRequest(req)) {
-        // Also allow admin JWT via service path only for now — require service role.
         return jsonResponse({ error: "Forbidden" }, 403);
       }
       const orderId = asString(body.order_id);

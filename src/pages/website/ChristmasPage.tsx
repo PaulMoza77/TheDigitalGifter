@@ -14,7 +14,21 @@ import {
  */
 export default function ChristmasPage() {
   const navigate = useNavigate();
-  const products = useMemo(() => hubProducts(CHRISTMAS_CATALOG_SEED), []);
+  const products = useMemo(() => {
+    const all = hubProducts(CHRISTMAS_CATALOG_SEED);
+    const preferred = [
+      "christmas_photo",
+      "christmas_family",
+      "christmas_couple",
+      "christmas_pet",
+      "christmas_santa_video",
+      "christmas_tree",
+      "christmas_gift_finder",
+    ];
+    return preferred
+      .map((key) => all.find((p) => p.productKey === key))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p));
+  }, []);
 
   return (
     <>
@@ -34,8 +48,8 @@ export default function ChristmasPage() {
       >
         <h2 className="text-xl font-semibold text-slate-900">Christmas suite</h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
-          New Christmas products are rolling out on this foundation. Coming-soon
-          items are not purchasable yet.
+          Portrait experiences are available to try (upload → style → blurred preview). Checkout stays
+          off until a production price is configured. Coming-soon items are not purchasable.
         </p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2">
           {products.map((product) => {
@@ -49,6 +63,24 @@ export default function ChristmasPage() {
                   <div>
                     <h3 className="font-medium text-slate-900">{product.name}</h3>
                     <p className="mt-1 text-sm text-slate-600">{product.description}</p>
+                    {product.productKey === "christmas_pet" ? (
+                      <p className="mt-2 text-xs text-slate-500">
+                        Prefer{" "}
+                        <Link className="underline" to="/christmas/dogs">
+                          Dogs
+                        </Link>{" "}
+                        or{" "}
+                        <Link className="underline" to="/christmas/cats">
+                          Cats
+                        </Link>{" "}
+                        for species-checked uploads.
+                      </p>
+                    ) : null}
+                    {cta === "open" && !product.packages.some((p) => p.purchasable) ? (
+                      <p className="mt-2 text-xs text-amber-800">
+                        Experience open · purchase not enabled yet
+                      </p>
+                    ) : null}
                   </div>
                   <span className="shrink-0 rounded-full border border-slate-200 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-500">
                     {cta === "open" ? "Open" : "Soon"}

@@ -3,6 +3,8 @@
 **Task:** `tdg-christmas-photo-generator-003`  
 **Route:** `/christmas/photo-generator`
 
+> Portrait verticals (family / couples / pets / dogs / cats) reuse this engine — see `docs/TDG_CHRISTMAS_PORTRAIT_VERTICALS.md`.
+
 ## User flow
 
 Intro → Upload → Style → **Blurred ORIGINAL preview** → Offer → Embedded checkout (when purchasable) → Paid webhook → Replicate generation → Result → Download / Share → Token recovery (+ email when configured)
