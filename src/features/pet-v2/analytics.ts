@@ -6,6 +6,7 @@ import {
 import { inferDeviceType } from "../pet/funnelSession";
 import { newFunnelUuid } from "../pet/funnelEventContract";
 import { getPetV2SessionId } from "./session";
+import { classifyCheckoutBrowser } from "./paymentDiagnostics";
 import {
   PET_V2_EVENT_PATH,
   PET_V2_EVENTS,
@@ -22,6 +23,7 @@ const SESSION_ONCE = new Set<PetV2EventName>([
   "v2_preview_viewed",
   "v2_collection_viewed",
   "v2_checkout_canceled",
+  "v2_payment_ui_visible",
 ]);
 
 export function isPetV2EventName(value: string): value is PetV2EventName {
@@ -86,6 +88,10 @@ export function v2IdempotencyKey(input: {
       input.eventName === "v2_checkout_session_created" ||
       input.eventName === "v2_checkout_failed" ||
       input.eventName === "v2_begin_checkout" ||
+      input.eventName === "v2_payment_attempt_started" ||
+      input.eventName === "v2_payment_requires_action" ||
+      input.eventName === "v2_payment_failed" ||
+      input.eventName === "v2_checkout_abandoned" ||
       input.eventName === "v2_paid_generation_started" ||
       input.eventName === "v2_paid_generation_completed" ||
       input.eventName === "v2_paid_generation_failed")
@@ -123,6 +129,7 @@ export function trackPetV2Event(input: TrackV2Input): void {
         ? input.failureCategory.replace(/[^a-z0-9_]/gi, "").slice(0, 40)
         : null;
     const eventId = newFunnelUuid();
+    const browser = classifyCheckoutBrowser();
     const payload = {
       event_name: input.eventName,
       funnel_session_id: sessionId,
@@ -154,6 +161,8 @@ export function trackPetV2Event(input: TrackV2Input): void {
       funnel_variant: "v2_preview",
       funnel_version: "v2",
       failure_category: failureCategory,
+      browser_family: browser.browserFamily,
+      in_app_browser: browser.inAppBrowser,
     };
     post(payload);
     sendGa4Custom(input.eventName, species, failureCategory);

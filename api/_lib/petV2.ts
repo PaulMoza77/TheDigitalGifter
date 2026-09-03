@@ -29,6 +29,9 @@ export function parseV2EventBody(raw: unknown): {
   adId: string | null;
   hasFbclid: boolean;
   referrerHost: string | null;
+  errorCode: string | null;
+  browserFamily: string | null;
+  inAppBrowser: string | null;
 } {
   if (!raw || typeof raw !== "object") throw new Error("malformed_json");
   const row = raw as Record<string, unknown>;
@@ -43,6 +46,16 @@ export function parseV2EventBody(raw: unknown): {
   const deviceRaw = row.device_type;
   const deviceType =
     deviceRaw === "mobile" || deviceRaw === "tablet" || deviceRaw === "desktop" ? deviceRaw : null;
+  const browserFamilyRaw = asText(row.browser_family, 32)?.toLowerCase() ?? null;
+  const browserFamily =
+    browserFamilyRaw && ["safari", "chrome", "firefox", "edge", "samsung", "other"].includes(browserFamilyRaw)
+      ? browserFamilyRaw
+      : null;
+  const inAppRaw = asText(row.in_app_browser, 32)?.toLowerCase() ?? null;
+  const inAppBrowser =
+    inAppRaw && ["facebook_iab", "instagram_iab", "other_iab"].includes(inAppRaw) ? inAppRaw : null;
+  const errorFromFailure = asText(row.failure_category, 40);
+  const errorCode = asText(row.error_code, 64) || errorFromFailure;
   return {
     eventName,
     funnelSessionId: sessionId,
@@ -62,6 +75,9 @@ export function parseV2EventBody(raw: unknown): {
     adId: asText(row.ad_id),
     hasFbclid: row.has_meta_click === true || row.has_fbclid === true,
     referrerHost: asText(row.referrer_host, 120),
+    errorCode,
+    browserFamily,
+    inAppBrowser,
   };
 }
 
@@ -109,10 +125,52 @@ export async function writePetV2FunnelEvent(raw: unknown): Promise<{ ok: true; d
       p_client_event_id: validated.eventId,
       p_is_test: isTest,
       p_environment: environment,
+      p_error_code: validated.errorCode,
+      p_browser_family: validated.browserFamily,
+      p_in_app_browser: validated.inAppBrowser,
     }),
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
+    // Forensic migration may not be applied yet — retry without diagnostic columns.
+    if (/p_browser_family|p_in_app_browser|p_error_code|Could not find/i.test(text)) {
+      const retry = await fetch(`${supabaseUrl}/rest/v1/rpc/record_pet_v2_funnel_event`, {
+        method: "POST",
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          p_event_name: validated.eventName,
+          p_funnel_session_id: validated.funnelSessionId,
+          p_idempotency_key: validated.idempotencyKey,
+          p_species: validated.species,
+          p_utm_source: validated.utmSource,
+          p_utm_medium: validated.utmMedium,
+          p_utm_campaign: validated.utmCampaign,
+          p_utm_content: validated.utmContent,
+          p_utm_term: validated.utmTerm,
+          p_campaign_id: validated.campaignId,
+          p_adset_id: validated.adsetId,
+          p_ad_id: validated.adId,
+          p_device_type: validated.deviceType,
+          p_pathname: validated.pathname,
+          p_amount_cents: validated.amountCents,
+          p_has_meta_click: validated.hasFbclid,
+          p_referrer_host: validated.referrerHost,
+          p_client_event_id: validated.eventId,
+          p_is_test: isTest,
+          p_environment: environment,
+        }),
+      });
+      if (!retry.ok) {
+        const retryText = await retry.text().catch(() => "");
+        throw new Error(`rpc_${retry.status}:${retryText.slice(0, 120)}`);
+      }
+      const retryId = await retry.json().catch(() => null);
+      return { ok: true, duplicate: retryId == null };
+    }
     throw new Error(`rpc_${response.status}:${text.slice(0, 120)}`);
   }
   const id = await response.json().catch(() => null);

@@ -5,8 +5,14 @@ import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import { validateOtherSubtype } from "../pet/croGuards";
 import { canGenerateWithSpeciesConfirm } from "../pet-funnel-shared/speciesConfirm";
 import { remainingSessionPreviews } from "./abuse";
-import { petV2LandingPath, trackPetV2Event } from "./analytics";
+import { trackPetV2Event, petV2LandingPath } from "./analytics";
 import { trackV2BeginCheckout } from "./checkoutAnalytics";
+import {
+  trackV2CheckoutAbandoned,
+  trackV2PaymentAttemptStarted,
+  trackV2PaymentFailed,
+  trackV2PaymentUiVisible,
+} from "./paymentDiagnostics";
 import { cryptoRandomId } from "./previewAttempt";
 import { backStepFrom, clearPreviewOnPhotoChange } from "./previewFlow";
 import { fetchV2ProviderStatus } from "./providerStatus";
@@ -396,7 +402,26 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
             }
           }}
           onCheckoutReady={() => {
-            /* Elements ready — begin_checkout fires on interaction */
+            trackV2PaymentUiVisible({
+              species,
+              orderId: checkout.orderId,
+              amountCents: checkout.amountCents || PET_V2_PRICE_CENTS,
+            });
+          }}
+          onPaymentAttempt={() => {
+            trackV2PaymentAttemptStarted({
+              species,
+              orderId: checkout.orderId,
+              amountCents: checkout.amountCents || PET_V2_PRICE_CENTS,
+            });
+          }}
+          onPaymentFailed={(detail) => {
+            trackV2PaymentFailed({
+              species,
+              orderId: checkout.orderId,
+              amountCents: checkout.amountCents || PET_V2_PRICE_CENTS,
+              failureCategory: detail?.failureCode || "payment_failed",
+            });
           }}
           onCheckoutInitError={() => {
             trackPetV2Event({
@@ -407,6 +432,11 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
           }}
           onExpressCancel={() => {
             trackPetV2Event({ eventName: "v2_checkout_canceled", species });
+            trackV2CheckoutAbandoned({
+              species,
+              orderId: checkout.orderId,
+              amountCents: checkout.amountCents || PET_V2_PRICE_CENTS,
+            });
           }}
         />
       ) : null}

@@ -23,6 +23,11 @@ const PET_V2_EVENT_NAMES = [
   "v2_checkout_failed",
   "v2_begin_checkout",
   "v2_checkout_canceled",
+  "v2_payment_ui_visible",
+  "v2_payment_attempt_started",
+  "v2_payment_requires_action",
+  "v2_payment_failed",
+  "v2_checkout_abandoned",
   "v2_purchase",
   "v2_paid_generation_started",
   "v2_paid_generation_completed",
@@ -91,6 +96,9 @@ function parseV2EventBody(raw: unknown): {
   adId: string | null;
   hasFbclid: boolean;
   referrerHost: string | null;
+  errorCode: string | null;
+  browserFamily: string | null;
+  inAppBrowser: string | null;
 } {
   if (!raw || typeof raw !== "object") throw new Error("malformed_json");
   const row = raw as Record<string, unknown>;
@@ -105,6 +113,15 @@ function parseV2EventBody(raw: unknown): {
   const deviceRaw = row.device_type;
   const deviceType =
     deviceRaw === "mobile" || deviceRaw === "tablet" || deviceRaw === "desktop" ? deviceRaw : null;
+  const browserFamilyRaw = asText(row.browser_family, 32)?.toLowerCase() ?? null;
+  const browserFamily =
+    browserFamilyRaw && ["safari", "chrome", "firefox", "edge", "samsung", "other"].includes(browserFamilyRaw)
+      ? browserFamilyRaw
+      : null;
+  const inAppRaw = asText(row.in_app_browser, 32)?.toLowerCase() ?? null;
+  const inAppBrowser =
+    inAppRaw && ["facebook_iab", "instagram_iab", "other_iab"].includes(inAppRaw) ? inAppRaw : null;
+  const errorCode = asText(row.error_code, 64) || asText(row.failure_category, 40);
   return {
     eventName: eventName as PetV2EventName,
     funnelSessionId: sessionId,
@@ -124,6 +141,9 @@ function parseV2EventBody(raw: unknown): {
     adId: asText(row.ad_id),
     hasFbclid: row.has_meta_click === true || row.has_fbclid === true,
     referrerHost: asText(row.referrer_host, 120),
+    errorCode,
+    browserFamily,
+    inAppBrowser,
   };
 }
 
@@ -205,8 +225,14 @@ async function writePetV2FunnelEvent(
     p_is_test: traffic.isTest,
     p_environment: environment,
   };
-  const withGeo = {
+  const withDiag = {
     ...baseBody,
+    p_error_code: validated.errorCode,
+    p_browser_family: validated.browserFamily,
+    p_in_app_browser: validated.inAppBrowser,
+  };
+  const withGeo = {
+    ...withDiag,
     p_client_ip: traffic.clientIp,
     p_client_ip_hostname: traffic.clientIpHostname,
     p_country_code: traffic.countryCode,
@@ -224,8 +250,11 @@ async function writePetV2FunnelEvent(
   let response = await post(withGeo);
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    // Migration may not be applied yet — retry without geo columns.
-    if (response.status === 404 || /p_country_code|p_client_ip|Could not find/i.test(text)) {
+    // Migration may not be applied yet — retry without geo/diagnostic columns.
+    if (
+      response.status === 404 ||
+      /p_country_code|p_client_ip|p_browser_family|p_in_app_browser|p_error_code|Could not find/i.test(text)
+    ) {
       response = await post(baseBody);
       if (!response.ok) {
         const retryText = await response.text().catch(() => "");
@@ -286,11 +315,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       void persistV2WriteFailure({ eventName, category: message });
       return res.status(400).json({ error: message });
     }
-    const category = message.startsWith("rpc_")
-      ? "rpc_error"
-      : message === "missing_supabase_config" || message === "missing_supabase_config"
-        ? "missing_supabase_config"
-        : "write_failed";
+    const category = /pet_v2_funnel_events_name_chk|name_chk/i.test(message)
+      ? "name_chk_outdated"
+      : message.startsWith("rpc_")
+        ? "rpc_error"
+        : message === "missing_supabase_config"
+          ? "missing_supabase_config"
+          : "write_failed";
     void persistV2WriteFailure({ eventName, category });
     return res.status(500).json({ error: "write_failed" });
   }

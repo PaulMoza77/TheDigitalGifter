@@ -45,6 +45,8 @@ function CheckoutBody({
   onPaymentInteraction,
   onInitError,
   onExpressCancel,
+  onPaymentAttempt,
+  onPaymentFailed,
   confirmDisabled,
   payButtonClassName,
 }: {
@@ -60,6 +62,8 @@ function CheckoutBody({
   onPaymentInteraction?: () => void;
   onInitError?: (detail?: { initFailureCode?: string }) => void;
   onExpressCancel?: () => void;
+  onPaymentAttempt?: () => void;
+  onPaymentFailed?: (detail?: { failureCode?: string | null }) => void;
   confirmDisabled?: boolean;
   payButtonClassName?: string;
 }) {
@@ -165,6 +169,7 @@ function CheckoutBody({
 
     setBusy(true);
     setError(null);
+    onPaymentAttempt?.();
     try {
       await syncCheckoutEmail(checkoutState.checkout);
       const result = await checkoutState.checkout.confirm(
@@ -174,8 +179,10 @@ function CheckoutBody({
       );
       if (result.type === "error") {
         if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
+        const failureCode = result.error.code || "confirm_failed";
         const message = sanitizeStripeCheckoutCustomerError(result.error.message);
-        console.info("[v2-elements-confirm]", { failureCode: result.error.code || "confirm_failed" });
+        console.info("[v2-elements-confirm]", { failureCode });
+        onPaymentFailed?.({ failureCode });
         if (message) setError(message);
         return;
       }
@@ -190,10 +197,10 @@ function CheckoutBody({
       );
     } catch (caught) {
       if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
+      const failureCode = caught instanceof Error ? caught.name : "confirm_exception";
       const message = sanitizeStripeCheckoutCustomerError(caught instanceof Error ? caught.message : undefined);
-      console.info("[v2-elements-confirm]", {
-        failureCode: caught instanceof Error ? caught.name : "confirm_exception",
-      });
+      console.info("[v2-elements-confirm]", { failureCode });
+      onPaymentFailed?.({ failureCode });
       if (message) setError(message);
     } finally {
       setBusy(false);
@@ -290,6 +297,8 @@ export function V2ElementsCheckout({
   onPaymentInteraction,
   onInitError,
   onExpressCancel,
+  onPaymentAttempt,
+  onPaymentFailed,
   confirmDisabled,
   appearanceVariables,
   payButtonClassName,
@@ -308,6 +317,8 @@ export function V2ElementsCheckout({
   onPaymentInteraction?: () => void;
   onInitError?: (detail?: { initFailureCode?: string }) => void;
   onExpressCancel?: () => void;
+  onPaymentAttempt?: () => void;
+  onPaymentFailed?: (detail?: { failureCode?: string | null }) => void;
   confirmDisabled?: boolean;
   appearanceVariables?: Record<string, string>;
   payButtonClassName?: string;
@@ -367,6 +378,8 @@ export function V2ElementsCheckout({
         onPaymentInteraction={onPaymentInteraction}
         onInitError={onInitError}
         onExpressCancel={onExpressCancel}
+        onPaymentAttempt={onPaymentAttempt}
+        onPaymentFailed={onPaymentFailed}
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}
       />

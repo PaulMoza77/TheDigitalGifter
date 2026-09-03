@@ -62,6 +62,7 @@ import {
   shouldDeferInitiateCheckoutToInteraction,
 } from "../_shared/pet/v3InitiateCheckout.ts";
 import { recordV3CheckoutSessionCreated } from "../_shared/pet/v3FunnelEvents.ts";
+import { recordV2CheckoutSessionCreated } from "../_shared/pet/v2FunnelEvents.ts";
 import {
   decideCheckoutSessionAction,
   isValidEmbeddedClientSecret,
@@ -376,6 +377,36 @@ async function maybeRecordV3CheckoutSessionCreated(
   });
 }
 
+async function maybeRecordV2CheckoutSessionCreated(
+  service: ReturnType<typeof getServiceClient>,
+  order: PetOrderRow,
+  stripeSessionId: string,
+  meta: ReturnType<typeof petMetaCheckoutFields>,
+  checkoutCtx: CheckoutCtx,
+) {
+  if (!isV2Funnel(order.funnel_variant)) return;
+  const attr = checkoutCtx.attribution;
+  await recordV2CheckoutSessionCreated(service, {
+    orderId: order.id,
+    stripeSessionId,
+    amountCents: meta.chargedAmountCents,
+    attribution: {
+      funnelSessionId: checkoutCtx.funnelSessionId,
+      utmSource: attr.utm_source,
+      utmMedium: attr.utm_medium,
+      utmCampaign: attr.utm_campaign,
+      utmContent: attr.utm_content,
+      utmTerm: attr.utm_term,
+      campaignId: attr.campaign_id,
+      adsetId: attr.adset_id,
+      adId: attr.ad_id,
+      deviceType: checkoutCtx.deviceType,
+      species: asString(order.species),
+      isTest: false,
+    },
+  });
+}
+
 async function finalizeOpenCheckoutSession(
   service: ReturnType<typeof getServiceClient>,
   order: PetOrderRow,
@@ -385,6 +416,7 @@ async function finalizeOpenCheckoutSession(
 ) {
   await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
   await maybeRecordV3CheckoutSessionCreated(service, order, stripeSessionId, meta, checkoutCtx);
+  await maybeRecordV2CheckoutSessionCreated(service, order, stripeSessionId, meta, checkoutCtx);
 }
 
 function resolveFunnelVariant(value: unknown): "v1" | "v2" | "v3" {
@@ -945,6 +977,26 @@ Deno.serve(async (req) => {
         orderId,
         funnelVariant: order.funnel_variant,
         stripeAccountId,
+        stripeSession: session
+          ? {
+              id: asString(session.id)?.slice(0, 14) + "…",
+              status: asString(session.status),
+              payment_status: asString(session.payment_status),
+              mode: asString(session.mode),
+              ui_mode: asString(session.ui_mode),
+              amount_total: typeof session.amount_total === "number" ? session.amount_total : null,
+              currency: asString(session.currency),
+              livemode: session.livemode === true,
+              has_payment_intent: Boolean(session.payment_intent),
+              payment_method_types: Array.isArray(session.payment_method_types)
+                ? session.payment_method_types
+                : null,
+              expires_at:
+                typeof session.expires_at === "number"
+                  ? new Date(session.expires_at * 1000).toISOString()
+                  : null,
+            }
+          : null,
         checkoutDiag: buildCheckoutDiag({
           stripeKey,
           publishableKey: publishableKey || null,

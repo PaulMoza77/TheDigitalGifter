@@ -66,21 +66,21 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
       step2: "Photo Uploads",
       step3: "Teaser Viewed",
       step4: "Offer Viewed",
-      checkout: "Checkout Opened",
+      checkout: "Stripe checkout sessions created",
       purchase: "Purchases",
       landingHelper: "First-party landing",
       step2Of: "first-party landing",
       step3Of: "uploads",
       step4Of: "teasers",
-      checkoutOf: "offers",
+      checkoutOf: "offers (infra — not Payment UI viewed)",
     },
     stageLabels: {
-      landing_view: "Landing Sessions",
-      pet_name_submitted: "Photo Uploads",
-      photo_upload_completed: "Teaser Viewed",
-      order_review_viewed: "Offer Viewed",
-      initiate_checkout: "Checkout Opened",
-      purchase: "Purchase",
+      landing_view: "Landing Sessions (FP raw)",
+      pet_name_submitted: "Photo Uploads (FP raw)",
+      photo_upload_completed: "Teaser Viewed (FP raw)",
+      order_review_viewed: "Offer Viewed (FP raw)",
+      initiate_checkout: "Stripe checkout sessions created (backend)",
+      purchase: "Purchase (Stripe verified)",
     },
   },
   v3: {
@@ -242,15 +242,69 @@ export function buildV3ExtendedFunnelSteps(counts: V3FunnelExtendedCounts) {
   });
 }
 
-/** Map isolated V2 event counts into the original 6-card funnel shape (teaser rebuild). */
+/** Prefer the larger of two unique-session counts (never JS `||`, which hides zeros incorrectly). */
+export function maxSessionCount(a: number | undefined, b: number | undefined): number {
+  return Math.max(Number(a) || 0, Number(b) || 0);
+}
+
+/**
+ * Map isolated V2 event counts into the original 6-card funnel shape (teaser rebuild).
+ * These are RAW independent unique-session counts — NOT a sequential cohort.
+ * Teaser uses max(teaser_viewed, preview_viewed). Checkout CTA uses max(session_created, begin_checkout).
+ */
 export function mapV2CountsToPrimarySteps(v2: Record<string, number>): FunnelStepCounts {
   const counts = emptyStepCounts();
   counts.landing_view = v2.v2_landing_view || 0;
   counts.pet_name_submitted = v2.v2_upload_completed || 0;
-  // Prefer teaser_viewed; fall back to legacy preview_viewed for historical windows.
-  counts.photo_upload_completed = v2.v2_teaser_viewed || v2.v2_preview_viewed || 0;
-  counts.order_review_viewed = v2.v2_offer_viewed || v2.v2_unlock_clicked || 0;
-  counts.initiate_checkout = v2.v2_begin_checkout || v2.v2_checkout_session_created || 0;
+  counts.photo_upload_completed = maxSessionCount(v2.v2_teaser_viewed, v2.v2_preview_viewed);
+  counts.order_review_viewed = maxSessionCount(v2.v2_offer_viewed, v2.v2_unlock_clicked);
+  // session_created = Stripe session opened; begin_checkout = payment UI interaction (narrower).
+  counts.initiate_checkout = maxSessionCount(v2.v2_checkout_session_created, v2.v2_begin_checkout);
   counts.purchase = v2.v2_purchase || 0;
   return counts;
+}
+
+/** True sequential V2 human cohort: each stage requires all prior stages in the same session. */
+export function buildV2SequentialCohort(sessionsByEvent: Record<string, Set<string>>): {
+  landing: number;
+  upload: number;
+  teaser: number;
+  offer: number;
+  payment_ui_visible: number;
+  payment_attempt: number;
+  purchase: number;
+} {
+  const landing = sessionsByEvent.v2_landing_view || new Set<string>();
+  const upload = new Set(
+    [...landing].filter((id) => sessionsByEvent.v2_upload_completed?.has(id)),
+  );
+  const teaser = new Set(
+    [...upload].filter(
+      (id) =>
+        sessionsByEvent.v2_teaser_viewed?.has(id) || sessionsByEvent.v2_preview_viewed?.has(id),
+    ),
+  );
+  const offer = new Set([...teaser].filter((id) => sessionsByEvent.v2_offer_viewed?.has(id)));
+  const payment_ui_visible = new Set(
+    [...offer].filter((id) => sessionsByEvent.v2_payment_ui_visible?.has(id)),
+  );
+  const payment_attempt = new Set(
+    [...payment_ui_visible].filter(
+      (id) =>
+        sessionsByEvent.v2_payment_attempt_started?.has(id) ||
+        sessionsByEvent.v2_begin_checkout?.has(id),
+    ),
+  );
+  const purchase = new Set(
+    [...payment_attempt].filter((id) => sessionsByEvent.v2_purchase?.has(id)),
+  );
+  return {
+    landing: landing.size,
+    upload: upload.size,
+    teaser: teaser.size,
+    offer: offer.size,
+    payment_ui_visible: payment_ui_visible.size,
+    payment_attempt: payment_attempt.size,
+    purchase: purchase.size,
+  };
 }
