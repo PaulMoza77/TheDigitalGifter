@@ -40,6 +40,20 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "free_gift_claimed",
   "gift_finder_started",
   "gift_finder_completed",
+  "gift_finder_failed",
+  "gift_finder_result_saved",
+  "gift_finder_to_wishlist",
+  "wishlist_page_view",
+  "wishlist_creation_started",
+  "wishlist_created",
+  "wishlist_item_added",
+  "wishlist_item_removed",
+  "wishlist_item_reordered",
+  "wishlist_share_enabled",
+  "wishlist_share",
+  "shared_wishlist_view",
+  "wishlist_external_link_clicked",
+  "wishlist_from_finder_item_added",
 ] as const;
 
 export type ChristmasFunnelEventName = (typeof CHRISTMAS_FUNNEL_ALLOWED_EVENTS)[number];

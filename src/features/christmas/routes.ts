@@ -24,22 +24,6 @@ export const CHRISTMAS_ROUTE_SHELLS: ChristmasRouteShellDef[] = [
     noindex: true,
   },
   {
-    path: "/christmas/wishlist",
-    productKey: "christmas_wishlist",
-    title: "Christmas Wishlist",
-    status: "coming_soon",
-    description: "This feature is not available yet.",
-    noindex: true,
-  },
-  {
-    path: "/christmas/gift-finder",
-    productKey: "christmas_gift_finder",
-    title: "AI Christmas Gift Finder",
-    status: "coming_soon",
-    description: "This feature is not available yet.",
-    noindex: true,
-  },
-  {
     path: "/christmas/cards",
     productKey: "christmas_card",
     title: "Personalized Christmas Cards",

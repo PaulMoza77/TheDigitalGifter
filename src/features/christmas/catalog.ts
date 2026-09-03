@@ -312,27 +312,27 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     slug: "wishlist",
     productType: "wishlist",
     name: "Christmas Wishlist",
-    description: "Coming soon.",
+    description: "Make your Christmas list. Share one link.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 100,
     routePath: "/christmas/wishlist",
     localeDefault: "en",
-    metadata: { coming_soon: true },
+    metadata: { wishlist_v1: true, live_offer: false },
     packages: [],
   },
   {
     productKey: "christmas_gift_finder",
     slug: "gift-finder",
     productType: "gift_finder",
-    name: "AI Christmas Gift Finder",
-    description: "Coming soon.",
+    name: "Christmas Gift Finder",
+    description: "Find a Christmas gift they'll actually love.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 110,
     routePath: "/christmas/gift-finder",
     localeDefault: "en",
-    metadata: { coming_soon: true },
+    metadata: { gift_finder_v1: true, live_offer: false },
     packages: [],
   },
   {
@@ -418,7 +418,14 @@ export function hubProducts(catalog: ChristmasProductDef[]): ChristmasProductDef
 }
 
 export function isComingSoon(product: ChristmasProductDef): boolean {
-  if (product.metadata?.tree_v1 || product.metadata?.advent_v1) return false;
+  if (
+    product.metadata?.tree_v1 ||
+    product.metadata?.advent_v1 ||
+    product.metadata?.wishlist_v1 ||
+    product.metadata?.gift_finder_v1
+  ) {
+    return false;
+  }
   return Boolean(product.metadata?.coming_soon) || product.packages.every((p) => !p.purchasable);
 }
 
@@ -434,6 +441,8 @@ const EXPERIENCE_OPEN_KEYS = new Set([
   ...PORTRAIT_VERTICAL_KEYS,
   "christmas_tree",
   "christmas_advent",
+  "christmas_wishlist",
+  "christmas_gift_finder",
 ]);
 
 export function ctaStateForProduct(product: ChristmasProductDef): "open" | "coming_soon" | "unavailable" {

@@ -115,6 +115,20 @@ export default function ChristmasOrdersPage() {
   const [query, setQuery] = useState("");
   const [trees, setTrees] = useState<TreeAdminRow[]>([]);
   const [treesLoading, setTreesLoading] = useState(false);
+  const [wishlists, setWishlists] = useState<
+    Array<{
+      id: string;
+      account: string;
+      share_enabled: boolean;
+      moderation_status: string;
+      item_count: number;
+      views: number;
+      shares: number;
+      external_clicks: number;
+      created_at: string;
+    }>
+  >([]);
+  const [wishlistsLoading, setWishlistsLoading] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState("");
   const [fulfillmentFilter, setFulfillmentFilter] = useState("");
   const [productFilter, setProductFilter] = useState("");
@@ -177,9 +191,44 @@ export default function ChristmasOrdersPage() {
     }
   }, [loadTrees]);
 
+  const loadWishlists = useCallback(async () => {
+    setWishlistsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("christmas-wishlist-funnel", {
+        body: { action: "adminListWishlists" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
+      setWishlists(data?.wishlists || []);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load wishlists");
+      setWishlists([]);
+    } finally {
+      setWishlistsLoading(false);
+    }
+  }, []);
+
+  const disableWishlistShare = useCallback(async (wishlistId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("christmas-wishlist-funnel", {
+        body: { action: "adminDisableWishlistShare", wishlist_id: wishlistId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
+      toast.success("Wishlist sharing disabled");
+      void loadWishlists();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Disable failed");
+    }
+  }, [loadWishlists]);
+
   useEffect(() => {
     void loadTrees();
   }, [loadTrees]);
+
+  useEffect(() => {
+    void loadWishlists();
+  }, [loadWishlists]);
 
   useEffect(() => {
     let cancelled = false;
@@ -326,6 +375,63 @@ export default function ChristmasOrdersPage() {
                       variant="ghost"
                       onClick={() => void disableTreeShare(t.id)}
                     >
+                      Disable
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="rounded-lg border border-slate-800 p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Christmas wishlists</h2>
+            <p className="text-xs text-slate-500">Aggregates only — no item notes. Disable sharing for abuse.</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void loadWishlists()}
+            disabled={wishlistsLoading}
+          >
+            Refresh wishlists
+          </Button>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Id</TableHead>
+              <TableHead>Account</TableHead>
+              <TableHead>Share</TableHead>
+              <TableHead>Items</TableHead>
+              <TableHead>Views</TableHead>
+              <TableHead>Clicks</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {wishlists.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-slate-500">
+                  {wishlistsLoading ? "Loading…" : "No wishlists yet"}
+                </TableCell>
+              </TableRow>
+            ) : (
+              wishlists.map((w) => (
+                <TableRow key={w.id}>
+                  <TableCell className="font-mono text-xs">{w.id.slice(0, 8)}…</TableCell>
+                  <TableCell>{w.account}</TableCell>
+                  <TableCell>{w.share_enabled ? "on" : "off"}</TableCell>
+                  <TableCell>{w.item_count}</TableCell>
+                  <TableCell>{w.views}</TableCell>
+                  <TableCell>{w.external_clicks}</TableCell>
+                  <TableCell>{w.moderation_status}</TableCell>
+                  <TableCell>
+                    <Button size="sm" variant="ghost" onClick={() => void disableWishlistShare(w.id)}>
                       Disable
                     </Button>
                   </TableCell>

@@ -87,3 +87,6 @@ verify_jwt = false
 
 [functions.christmas-tree-funnel]
 verify_jwt = false
+
+[functions.christmas-wishlist-funnel]
+verify_jwt = false
