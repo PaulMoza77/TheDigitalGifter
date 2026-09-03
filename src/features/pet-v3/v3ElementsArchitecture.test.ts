@@ -166,8 +166,11 @@ describe("Cat V3 Minutes Guides Elements architecture", () => {
     expect(hook).toContain('uiMode: "hosted"');
     expect(hook).toContain("https://checkout.stripe.com/");
     expect(hook).toContain("hostedFallbackUsed");
+    expect(hook).toContain("openHostedStripeCheckout");
+    expect(hook).toContain("preferNewTab");
     expect(offer).toContain("Continue to secure Stripe checkout — ${offer.priceDisplay}");
     expect(offer).toContain("startHostedFallback");
+    expect(offer).toContain("preferNewTab: true");
     expect(offer).toContain("validateAndUpdateV3OrderContact");
   });
 

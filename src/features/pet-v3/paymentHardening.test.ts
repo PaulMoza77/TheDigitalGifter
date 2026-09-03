@@ -166,12 +166,15 @@ describe("Cat V3 + return URL payment hardening", () => {
     const elements = readSrc("src/features/pet-v3/components/V3ElementsCheckout.tsx");
 
     expect(offer).toContain("onClick={checkout.retry}");
-    expect(offer).toContain("disabled={checkout.loading}");
+    expect(offer).toContain("disabled={checkout.loading || checkout.hostedFallbackBusy}");
     expect(offer).toContain("Continue to secure Stripe checkout");
+    expect(offer).toContain("Open secure Stripe checkout");
     expect(offer).toContain("onInitError={() => {");
     expect(offer).toContain("checkout.invalidateStripeSession()");
-    expect(hook).toContain("if (bootstrapInFlight.current || loading) return");
-    expect(hook).toContain("if (orderRef.current)");
+    expect(hook).toContain("if (bootstrapInFlight.current || loading || hostedFallbackBusy) return");
+    expect(hook).toContain("openHostedStripeCheckout");
+    expect(hook).toContain("preferNewTab");
+    expect(hook).toContain("promoteToHostedFallback");
     expect(hook).toContain("startHostedFallback");
     expect(elements).toContain('from "@stripe/stripe-js"');
     expect(elements).toContain("loadStripe");

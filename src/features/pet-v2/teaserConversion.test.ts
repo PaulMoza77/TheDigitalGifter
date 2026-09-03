@@ -119,6 +119,19 @@ describe("V2 teaser conversion rebuild", () => {
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("v2_checkout_canceled");
   });
 
+  it("falls back to hosted Stripe checkout instead of a Retry dead-end", () => {
+    const hook = readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts");
+    const teaser = readSrc("src/features/pet-v2/screens/TeaserOfferScreen.tsx");
+    expect(hook).toContain("openHostedStripeCheckout");
+    expect(hook).toContain("promoteToHostedFallback");
+    expect(hook).toContain('uiMode: "hosted"');
+    expect(hook).toContain("preferNewTab");
+    expect(teaser).toContain("Continue to secure Stripe checkout");
+    expect(teaser).toContain("preferNewTab: true");
+    expect(teaser).toContain("Open secure Stripe checkout");
+    expect(teaser).not.toContain(">Retry secure payment<");
+  });
+
   it("classifies Replicate 402/429/5xx for circuit breaker", () => {
     expect(classifyProviderAvailabilityError("402: insufficient credit").reason).toBe("insufficient_credit");
     expect(classifyProviderAvailabilityError("429 rate limit").reason).toBe("rate_limited");
