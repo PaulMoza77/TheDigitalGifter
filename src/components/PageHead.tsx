@@ -7,6 +7,8 @@ interface PageHeadProps {
   image?: string;
   url?: string;
   exactTitle?: boolean;
+  /** Personal share URLs should pass noindex */
+  noindex?: boolean;
 }
 
 /**
@@ -14,7 +16,7 @@ interface PageHeadProps {
  * Updates document title, meta description, and OG/Twitter tags.
  * Note: For more advanced use cases, consider react-helmet-async.
  */
-export function PageHead({ title, description, image, url, exactTitle = false }: PageHeadProps) {
+export function PageHead({ title, description, image, url, exactTitle = false, noindex = false }: PageHeadProps) {
   const location = useLocation();
   const fullTitle = exactTitle ? title : `${title} — TheDigitalGifter`;
   const pageUrl = url || `https://www.thedigitalgifter.com${location.pathname}`;
@@ -53,7 +55,9 @@ export function PageHead({ title, description, image, url, exactTitle = false }:
       document.head.appendChild(canonicalLink);
     }
     canonicalLink.setAttribute("href", pageUrl);
-  }, [fullTitle, description, pageUrl, ogImage]);
+
+    updateMetaName("robots", noindex ? "noindex,nofollow" : "index,follow");
+  }, [fullTitle, description, pageUrl, ogImage, noindex]);
 
   return null; // This component only manages head tags
 }

@@ -42,6 +42,21 @@ type ChristmasOrderRow = {
   metadata?: Record<string, unknown> | null;
 };
 
+type TreeAdminRow = {
+  id: string;
+  account: string;
+  user_id: string | null;
+  share_enabled: boolean;
+  tree_style: string;
+  moderation_status: string;
+  gift_count: number;
+  views: number;
+  shares: number;
+  opens: number;
+  created_at: string;
+  locale: string | null;
+};
+
 type SantaJobRow = {
   job_status: string;
   script_status: string;
@@ -98,6 +113,8 @@ export default function ChristmasOrdersPage() {
   const [rows, setRows] = useState<ChristmasOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [trees, setTrees] = useState<TreeAdminRow[]>([]);
+  const [treesLoading, setTreesLoading] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState("");
   const [fulfillmentFilter, setFulfillmentFilter] = useState("");
   const [productFilter, setProductFilter] = useState("");
@@ -128,6 +145,41 @@ export default function ChristmasOrdersPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const loadTrees = useCallback(async () => {
+    setTreesLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("christmas-tree-funnel", {
+        body: { action: "adminListTrees" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
+      setTrees((data?.trees || []) as TreeAdminRow[]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load trees");
+      setTrees([]);
+    } finally {
+      setTreesLoading(false);
+    }
+  }, []);
+
+  const disableTreeShare = useCallback(async (treeId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("christmas-tree-funnel", {
+        body: { action: "adminDisableShare", tree_id: treeId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
+      toast.success("Tree sharing disabled");
+      void loadTrees();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Disable failed");
+    }
+  }, [loadTrees]);
+
+  useEffect(() => {
+    void loadTrees();
+  }, [loadTrees]);
 
   useEffect(() => {
     let cancelled = false;
@@ -217,6 +269,71 @@ export default function ChristmasOrdersPage() {
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
+      </div>
+
+      <div className="rounded-lg border border-slate-800 p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Christmas trees</h2>
+            <p className="text-xs text-slate-500">
+              Aggregates only — no gift messages. Disable sharing for abuse.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void loadTrees()}
+            disabled={treesLoading}
+          >
+            Refresh trees
+          </Button>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Id</TableHead>
+              <TableHead>Account</TableHead>
+              <TableHead>Style</TableHead>
+              <TableHead>Share</TableHead>
+              <TableHead>Gifts</TableHead>
+              <TableHead>Views</TableHead>
+              <TableHead>Opens</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {trees.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-slate-500">
+                  {treesLoading ? "Loading…" : "No trees yet"}
+                </TableCell>
+              </TableRow>
+            ) : (
+              trees.map((t) => (
+                <TableRow key={t.id}>
+                  <TableCell className="font-mono text-xs">{t.id.slice(0, 8)}…</TableCell>
+                  <TableCell>{t.account}</TableCell>
+                  <TableCell>{t.tree_style}</TableCell>
+                  <TableCell>{t.share_enabled ? "on" : "off"}</TableCell>
+                  <TableCell>{t.gift_count}</TableCell>
+                  <TableCell>{t.views}</TableCell>
+                  <TableCell>{t.opens}</TableCell>
+                  <TableCell>{t.moderation_status}</TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void disableTreeShare(t.id)}
+                    >
+                      Disable
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <div className="flex flex-wrap gap-2">

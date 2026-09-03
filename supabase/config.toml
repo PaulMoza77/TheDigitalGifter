@@ -84,3 +84,6 @@ verify_jwt = false
 
 [functions.christmas-photo-generate]
 verify_jwt = false
+
+[functions.christmas-tree-funnel]
+verify_jwt = false

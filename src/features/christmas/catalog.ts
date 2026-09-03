@@ -284,13 +284,13 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     slug: "tree",
     productType: "tree",
     name: "Shareable Christmas Tree",
-    description: "Coming soon.",
+    description: "Decorate a Christmas tree, add gifts, and share securely.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 80,
     routePath: "/christmas/tree",
     localeDefault: "en",
-    metadata: { coming_soon: true },
+    metadata: { tree_v1: true, live_offer: false },
     packages: [],
   },
   {
@@ -298,13 +298,13 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     slug: "advent",
     productType: "advent",
     name: "Advent Calendar",
-    description: "Coming soon.",
+    description: "Daily Christmas rewards — starts December 1.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 90,
     routePath: "/christmas/advent",
     localeDefault: "en",
-    metadata: { coming_soon: true },
+    metadata: { advent_v1: true, starts: "2026-12-01", live_offer: false },
     packages: [],
   },
   {
@@ -418,6 +418,7 @@ export function hubProducts(catalog: ChristmasProductDef[]): ChristmasProductDef
 }
 
 export function isComingSoon(product: ChristmasProductDef): boolean {
+  if (product.metadata?.tree_v1 || product.metadata?.advent_v1) return false;
   return Boolean(product.metadata?.coming_soon) || product.packages.every((p) => !p.purchasable);
 }
 
@@ -429,13 +430,18 @@ const PORTRAIT_VERTICAL_KEYS = new Set([
   "christmas_santa_video",
 ]);
 
+const EXPERIENCE_OPEN_KEYS = new Set([
+  ...PORTRAIT_VERTICAL_KEYS,
+  "christmas_tree",
+  "christmas_advent",
+]);
+
 export function ctaStateForProduct(product: ChristmasProductDef): "open" | "coming_soon" | "unavailable" {
   if (!product.active || !product.publicDiscoverable) return "unavailable";
   if (product.packages.some((p) => p.active && p.purchasable)) return "open";
-  // Portrait verticals are navigable experiences; checkout may still be disabled.
+  // Navigable experiences; checkout may still be disabled.
   if (
-    PORTRAIT_VERTICAL_KEYS.has(product.productKey) &&
-    product.packages.some((p) => p.active) &&
+    EXPERIENCE_OPEN_KEYS.has(product.productKey) &&
     !product.metadata?.coming_soon
   ) {
     return "open";
