@@ -3,8 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
-import { trackChristmasEvent } from "../analytics";
-import { ChristmasTreeVisual } from "./ChristmasTreeVisual";
+import { trackChristmasEvent } from "./analytics";
+import { ChristmasTreeVisual } from "./tree/ChristmasTreeVisual";
 import {
   BOX_STYLES,
   defaultDecorations,
@@ -13,12 +13,12 @@ import {
   TREE_STYLES,
   writeOwnerRecovery,
   type BoxStyle,
-  type Decoration,
+  type Decorations,
   type OwnerTree,
   type SharedTree,
   type TreeStyle,
-} from "./treeApi";
-import { giftCountBucket, reorderIds } from "./treeLogic";
+} from "./tree/treeApi";
+import { giftCountBucket, reorderIds } from "./tree/treeLogic";
 
 type Mode = "create" | "owner" | "shared" | "unavailable";
 
