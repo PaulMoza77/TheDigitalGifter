@@ -4,6 +4,7 @@ import { petFunnelApi } from "../pet/supabaseApi";
 import { PET_DEFAULT_PERSONALITY } from "../pet/types";
 import { checkoutAnalyticsContext } from "../pet/funnelInternal";
 import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "../pet/funnelGuards";
+import { openHostedStripeCheckout } from "../pet/openHostedStripeCheckout";
 import { buildPetOrderReturnUrl } from "../pet/orderReturnUrl";
 import { stripeKeyAccountFingerprint } from "../pet/stripeKeys";
 import { trackPetV2Event } from "./analytics";
@@ -61,8 +62,25 @@ export type V2EmbeddedCheckoutState = {
   invalidateStripeSession: () => void;
   startHostedFallback: (opts?: {
     onSessionReady?: (session: { sessionId: string; checkoutUrl: string }) => void;
+    /** Default true (button click). Use false for automatic same-tab recovery. */
+    preferNewTab?: boolean;
   }) => Promise<void>;
 };
+
+function resolveV2CheckoutOrder(input: {
+  orderRef: { current: { orderId: string; publicToken: string } | null };
+  orderId: string | null;
+  publicToken: string | null;
+}): { orderId: string; publicToken: string } | null {
+  if (input.orderRef.current) return input.orderRef.current;
+  if (input.orderId && input.publicToken) {
+    return { orderId: input.orderId, publicToken: input.publicToken };
+  }
+  const recoverable = readRecoverableV2CheckoutOrder();
+  return recoverable
+    ? { orderId: recoverable.orderId, publicToken: recoverable.publicToken }
+    : null;
+}
 
 export function v2CheckoutLoadingCopy(phase: V2CheckoutLoadingPhase): string {
   switch (phase) {
@@ -492,7 +510,8 @@ export function useV2EmbeddedCheckout(input: {
         failureCategory: "checkout_error",
         attemptId: order.orderId,
       });
-      setInitError(CHECKOUT_INIT_ERROR);
+      // Elements contract invalid — skip scary Retry and offer hosted Stripe.
+      setInitError(null);
       setShowHostedFallback(true);
     } catch (caught) {
       trackPetV2Event({
@@ -501,8 +520,24 @@ export function useV2EmbeddedCheckout(input: {
         failureCategory: "checkout_error",
         attemptId: orderRef.current?.orderId,
       });
-      setInitError(CHECKOUT_INIT_ERROR);
-      setShowHostedFallback(Boolean(orderRef.current));
+      const recoverable = resolveV2CheckoutOrder({
+        orderRef,
+        orderId: orderRef.current?.orderId ?? null,
+        publicToken: orderRef.current?.publicToken ?? null,
+      }) || readRecoverableV2CheckoutOrder();
+      if (recoverable) {
+        orderRef.current = {
+          orderId: recoverable.orderId,
+          publicToken: recoverable.publicToken,
+        };
+        setOrderId(recoverable.orderId);
+        setPublicToken(recoverable.publicToken);
+        setInitError(null);
+        setShowHostedFallback(true);
+      } else {
+        setInitError(CHECKOUT_INIT_ERROR);
+        setShowHostedFallback(false);
+      }
       console.error("[v2-checkout-init]", caught instanceof Error ? caught.name : "error");
     } finally {
       bootstrapInFlight.current = false;
@@ -518,7 +553,20 @@ export function useV2EmbeddedCheckout(input: {
     void bootstrap();
   }, [input.active, bootstrap]);
 
+  function promoteToHostedFallback(autoOpen: boolean) {
+    setClientSecret(null);
+    setPublishableKey(null);
+    setSessionId(null);
+    setInitError(null);
+    setSessionExpired(false);
+    setShowHostedFallback(true);
+    if (autoOpen) {
+      void startHostedFallback({ preferNewTab: false });
+    }
+  }
+
   function invalidateStripeSession() {
+    // One silent Elements rebuild, then hosted Stripe (no Retry dead-end).
     if (!elementsRetryUsed.current && orderRef.current) {
       elementsRetryUsed.current = true;
       clearCachedV2EmbeddedCheckout();
@@ -540,8 +588,7 @@ export function useV2EmbeddedCheckout(input: {
               failureCategory: "checkout_error",
               attemptId: orderRef.current?.orderId,
             });
-            setInitError(CHECKOUT_INIT_ERROR);
-            setShowHostedFallback(true);
+            promoteToHostedFallback(true);
           }
         } catch {
           trackPetV2Event({
@@ -550,8 +597,7 @@ export function useV2EmbeddedCheckout(input: {
             failureCategory: "checkout_error",
             attemptId: orderRef.current?.orderId,
           });
-          setInitError(CHECKOUT_INIT_ERROR);
-          setShowHostedFallback(true);
+          promoteToHostedFallback(true);
         } finally {
           setLoading(false);
           setLoadingPhase(null);
@@ -560,12 +606,7 @@ export function useV2EmbeddedCheckout(input: {
       return;
     }
     clearCachedV2EmbeddedCheckout();
-    setClientSecret(null);
-    setPublishableKey(null);
-    setSessionId(null);
-    setInitError(CHECKOUT_INIT_ERROR);
-    setSessionExpired(false);
-    setShowHostedFallback(true);
+    promoteToHostedFallback(true);
   }
 
   function restartExpiredCheckout() {
@@ -588,11 +629,18 @@ export function useV2EmbeddedCheckout(input: {
   }
 
   function retry() {
-    if (bootstrapInFlight.current || loading) return;
-    if (showHostedFallback || elementsRetryUsed.current) {
+    if (bootstrapInFlight.current || loading || hostedFallbackBusy) return;
+
+    // Prefer hosted Stripe over another Elements loop whenever an order exists.
+    const existing = resolveV2CheckoutOrder({ orderRef, orderId, publicToken });
+    if (existing || showHostedFallback || elementsRetryUsed.current) {
+      if (existing) orderRef.current = existing;
       setShowHostedFallback(true);
+      setInitError(null);
+      void startHostedFallback({ preferNewTab: true });
       return;
     }
+
     clearCachedV2EmbeddedCheckout();
     bootstrapped.current = false;
     bootstrapInFlight.current = false;
@@ -608,32 +656,14 @@ export function useV2EmbeddedCheckout(input: {
 
     void (async () => {
       try {
-        if (orderRef.current) {
-          const recovered = await recoverExistingOrderCheckout();
-          if (recovered) return;
-          trackPetV2Event({
-            eventName: "v2_checkout_failed",
-            species: input.species,
-            failureCategory: "checkout_error",
-            attemptId: orderRef.current?.orderId,
-          });
-          setInitError(CHECKOUT_INIT_ERROR);
-          setShowHostedFallback(true);
-          return;
-        }
         const recoverable = readRecoverableV2CheckoutOrder();
         if (recoverable) {
           orderRef.current = { orderId: recoverable.orderId, publicToken: recoverable.publicToken };
-          const recovered = await recoverExistingOrderCheckout();
-          if (recovered) return;
-          trackPetV2Event({
-            eventName: "v2_checkout_failed",
-            species: input.species,
-            failureCategory: "checkout_error",
-            attemptId: recoverable.orderId,
-          });
-          setInitError(CHECKOUT_INIT_ERROR);
+          setOrderId(recoverable.orderId);
+          setPublicToken(recoverable.publicToken);
           setShowHostedFallback(true);
+          setInitError(null);
+          await startHostedFallback({ preferNewTab: true });
           return;
         }
         bootstrapped.current = true;
@@ -645,8 +675,16 @@ export function useV2EmbeddedCheckout(input: {
           failureCategory: "checkout_error",
           attemptId: orderRef.current?.orderId,
         });
-        setInitError(CHECKOUT_INIT_ERROR);
-        setShowHostedFallback(true);
+        const recoveredOrder = resolveV2CheckoutOrder({ orderRef, orderId, publicToken });
+        if (recoveredOrder) {
+          orderRef.current = recoveredOrder;
+          setShowHostedFallback(true);
+          setInitError(null);
+          await startHostedFallback({ preferNewTab: true });
+        } else {
+          setInitError(CHECKOUT_INIT_ERROR);
+          setShowHostedFallback(false);
+        }
       } finally {
         bootstrapInFlight.current = false;
         setLoading(false);
@@ -657,22 +695,22 @@ export function useV2EmbeddedCheckout(input: {
 
   async function startHostedFallback(opts?: {
     onSessionReady?: (session: { sessionId: string; checkoutUrl: string }) => void;
+    preferNewTab?: boolean;
   }) {
-    if (hostedFallbackBusy || hostedFallbackUsed.current) return;
-    const existing =
-      orderRef.current ||
-      (orderId && publicToken ? { orderId, publicToken } : null) ||
-      (() => {
-        const recoverable = readRecoverableV2CheckoutOrder();
-        return recoverable
-          ? { orderId: recoverable.orderId, publicToken: recoverable.publicToken }
-          : null;
-      })();
+    if (hostedFallbackBusy) return;
+    // Same-tab navigation is one-shot; new-tab opens can be retried if the user closes Stripe.
+    if (hostedFallbackUsed.current && opts?.preferNewTab === false) return;
+
+    const existing = resolveV2CheckoutOrder({ orderRef, orderId, publicToken });
     if (!existing) {
       setInitError(CHECKOUT_INIT_ERROR);
+      setShowHostedFallback(false);
       return;
     }
     orderRef.current = existing;
+    setOrderId(existing.orderId);
+    setPublicToken(existing.publicToken);
+    setShowHostedFallback(true);
     setHostedFallbackBusy(true);
     try {
       const analytics = checkoutAnalyticsContext();
@@ -707,8 +745,13 @@ export function useV2EmbeddedCheckout(input: {
         return;
       }
       opts?.onSessionReady?.({ sessionId: checkout.sessionId, checkoutUrl: url });
-      hostedFallbackUsed.current = true;
-      window.location.assign(url);
+      setInitError(null);
+      const mode = openHostedStripeCheckout(url, {
+        preferNewTab: opts?.preferNewTab !== false,
+      });
+      if (mode === "same_tab") {
+        hostedFallbackUsed.current = true;
+      }
     } catch {
       trackPetV2Event({
         eventName: "v2_checkout_failed",

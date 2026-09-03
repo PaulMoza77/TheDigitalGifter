@@ -132,6 +132,7 @@ export function V3OfferScreen({
       return;
     }
     await checkout.startHostedFallback({
+      preferNewTab: true,
       onSessionReady: (session) => {
         if (beginCheckoutRef.current) return;
         if (!checkout.orderId) return;
@@ -169,7 +170,10 @@ export function V3OfferScreen({
   }
 
   const showExpired = checkout.sessionExpired;
-  const showHostedFallback = checkout.showHostedFallback && !showExpired;
+  const canHosted =
+    Boolean(checkout.orderId && checkout.publicToken) || checkout.showHostedFallback;
+  const showHostedFallback =
+    !showExpired && (checkout.showHostedFallback || (Boolean(checkout.initError) && canHosted));
   const showRetry = Boolean(checkout.initError) && !showExpired && !showHostedFallback;
   const showCheckout =
     checkout.checkoutReady &&
@@ -250,8 +254,15 @@ export function V3OfferScreen({
         {showHostedFallback ? (
           <div className="space-y-3 py-4">
             <p className="text-sm text-[#f6efe4]/70">
-              Secure card fields could not load in this browser. Continue on Stripe’s hosted checkout.
+              {checkout.hostedFallbackBusy
+                ? "Opening Stripe’s secure checkout…"
+                : "Continue on Stripe’s secure checkout page to finish your one-time payment."}
             </p>
+            {checkout.initError ? (
+              <p className="text-sm text-[#9a3412]" role="alert">
+                {checkout.initError}
+              </p>
+            ) : null}
             <Button
               type="button"
               className="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] disabled:opacity-40"
@@ -271,12 +282,11 @@ export function V3OfferScreen({
             </p>
             <Button
               type="button"
-              variant="outline"
-              className="h-11 w-full rounded-full border-[#f6efe4]/20 bg-transparent text-[#f6efe4]"
+              className="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] disabled:opacity-40"
               onClick={checkout.retry}
-              disabled={checkout.loading}
+              disabled={checkout.loading || checkout.hostedFallbackBusy}
             >
-              Retry secure payment
+              {checkout.loading ? "Retrying…" : `Open secure Stripe checkout — ${offer.priceDisplay}`}
             </Button>
           </div>
         ) : null}

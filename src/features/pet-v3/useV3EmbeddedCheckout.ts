@@ -5,6 +5,7 @@ import { PET_DEFAULT_PERSONALITY } from "../pet/types";
 import { validatePetName } from "../pet/croGuards";
 import { checkoutAnalyticsContext } from "../pet/funnelInternal";
 import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "../pet/funnelGuards";
+import { openHostedStripeCheckout } from "../pet/openHostedStripeCheckout";
 import { buildPetOrderReturnUrl } from "../pet/orderReturnUrl";
 import { stripeKeyAccountFingerprint } from "../pet/stripeKeys";
 import { prepareV2CheckoutUpload } from "../pet-v2/photo";
@@ -48,8 +49,24 @@ export type V3EmbeddedCheckoutState = {
   invalidateStripeSession: () => void;
   startHostedFallback: (opts?: {
     onSessionReady?: (session: { sessionId: string; checkoutUrl: string }) => void;
+    preferNewTab?: boolean;
   }) => Promise<void>;
 };
+
+function resolveV3CheckoutOrder(input: {
+  orderRef: { current: { orderId: string; publicToken: string } | null };
+  orderId: string | null;
+  publicToken: string | null;
+}): { orderId: string; publicToken: string } | null {
+  if (input.orderRef.current) return input.orderRef.current;
+  if (input.orderId && input.publicToken) {
+    return { orderId: input.orderId, publicToken: input.publicToken };
+  }
+  const recoverable = readRecoverableV3CheckoutOrder();
+  return recoverable
+    ? { orderId: recoverable.orderId, publicToken: recoverable.publicToken }
+    : null;
+}
 
 function applyCheckoutResult(input: {
   result: {
@@ -371,11 +388,25 @@ export function useV3EmbeddedCheckout(input: {
       const applied = applyCheckoutResult({ result, holdExpiresAt: hold.expiresAt, setters });
       if (applied) return;
 
-      setInitError(CHECKOUT_INIT_ERROR);
+      setInitError(null);
       setShowHostedFallback(true);
     } catch (caught) {
-      setInitError(CHECKOUT_INIT_ERROR);
-      setShowHostedFallback(Boolean(orderRef.current));
+      const recoverable =
+        orderRef.current ||
+        readRecoverableV3CheckoutOrder();
+      if (recoverable) {
+        orderRef.current = {
+          orderId: recoverable.orderId,
+          publicToken: recoverable.publicToken,
+        };
+        setOrderId(recoverable.orderId);
+        setPublicToken(recoverable.publicToken);
+        setInitError(null);
+        setShowHostedFallback(true);
+      } else {
+        setInitError(CHECKOUT_INIT_ERROR);
+        setShowHostedFallback(false);
+      }
       console.error("[v3-checkout-init]", caught instanceof Error ? caught.name : "error");
     } finally {
       bootstrapInFlight.current = false;
@@ -390,8 +421,20 @@ export function useV3EmbeddedCheckout(input: {
     void bootstrap();
   }, [input.active, bootstrap]);
 
+  function promoteToHostedFallback(autoOpen: boolean) {
+    setClientSecret(null);
+    setPublishableKey(null);
+    setSessionId(null);
+    setInitError(null);
+    setSessionExpired(false);
+    setShowHostedFallback(true);
+    if (autoOpen) {
+      void startHostedFallback({ preferNewTab: false });
+    }
+  }
+
   function invalidateStripeSession() {
-    // One safe Elements retry, then hosted fallback CTA (no endless Retry loops).
+    // One silent Elements rebuild, then hosted Stripe (no Retry dead-end).
     if (!elementsRetryUsed.current && orderRef.current) {
       elementsRetryUsed.current = true;
       clearCachedV3EmbeddedCheckout();
@@ -406,12 +449,10 @@ export function useV3EmbeddedCheckout(input: {
         try {
           const recovered = await recoverExistingOrderCheckout();
           if (!recovered) {
-            setInitError(CHECKOUT_INIT_ERROR);
-            setShowHostedFallback(true);
+            promoteToHostedFallback(true);
           }
         } catch {
-          setInitError(CHECKOUT_INIT_ERROR);
-          setShowHostedFallback(true);
+          promoteToHostedFallback(true);
         } finally {
           setLoading(false);
         }
@@ -419,12 +460,7 @@ export function useV3EmbeddedCheckout(input: {
       return;
     }
     clearCachedV3EmbeddedCheckout();
-    setClientSecret(null);
-    setPublishableKey(null);
-    setSessionId(null);
-    setInitError(CHECKOUT_INIT_ERROR);
-    setSessionExpired(false);
-    setShowHostedFallback(true);
+    promoteToHostedFallback(true);
   }
 
   function restartExpiredCheckout() {
@@ -447,12 +483,17 @@ export function useV3EmbeddedCheckout(input: {
   }
 
   function retry() {
-    if (bootstrapInFlight.current || loading) return;
-    // Prefer hosted fallback over endless Elements retry once Elements already failed.
-    if (showHostedFallback || elementsRetryUsed.current) {
+    if (bootstrapInFlight.current || loading || hostedFallbackBusy) return;
+
+    const existing = resolveV3CheckoutOrder({ orderRef, orderId, publicToken });
+    if (existing || showHostedFallback || elementsRetryUsed.current) {
+      if (existing) orderRef.current = existing;
       setShowHostedFallback(true);
+      setInitError(null);
+      void startHostedFallback({ preferNewTab: true });
       return;
     }
+
     clearCachedV3EmbeddedCheckout();
     bootstrapped.current = false;
     bootstrapInFlight.current = false;
@@ -467,27 +508,29 @@ export function useV3EmbeddedCheckout(input: {
 
     void (async () => {
       try {
-        if (orderRef.current) {
-          const recovered = await recoverExistingOrderCheckout();
-          if (recovered) return;
-          setInitError(CHECKOUT_INIT_ERROR);
-          setShowHostedFallback(true);
-          return;
-        }
         const recoverable = readRecoverableV3CheckoutOrder();
         if (recoverable) {
           orderRef.current = { orderId: recoverable.orderId, publicToken: recoverable.publicToken };
-          const recovered = await recoverExistingOrderCheckout();
-          if (recovered) return;
-          setInitError(CHECKOUT_INIT_ERROR);
+          setOrderId(recoverable.orderId);
+          setPublicToken(recoverable.publicToken);
           setShowHostedFallback(true);
+          setInitError(null);
+          await startHostedFallback({ preferNewTab: true });
           return;
         }
         bootstrapped.current = true;
         await bootstrap();
       } catch {
-        setInitError(CHECKOUT_INIT_ERROR);
-        setShowHostedFallback(true);
+        const recoveredOrder = resolveV3CheckoutOrder({ orderRef, orderId, publicToken });
+        if (recoveredOrder) {
+          orderRef.current = recoveredOrder;
+          setShowHostedFallback(true);
+          setInitError(null);
+          await startHostedFallback({ preferNewTab: true });
+        } else {
+          setInitError(CHECKOUT_INIT_ERROR);
+          setShowHostedFallback(false);
+        }
       } finally {
         bootstrapInFlight.current = false;
         setLoading(false);
@@ -497,22 +540,21 @@ export function useV3EmbeddedCheckout(input: {
 
   async function startHostedFallback(opts?: {
     onSessionReady?: (session: { sessionId: string; checkoutUrl: string }) => void;
+    preferNewTab?: boolean;
   }) {
-    if (hostedFallbackBusy || hostedFallbackUsed.current) return;
-    const existing =
-      orderRef.current ||
-      (orderId && publicToken ? { orderId, publicToken } : null) ||
-      (() => {
-        const recoverable = readRecoverableV3CheckoutOrder();
-        return recoverable
-          ? { orderId: recoverable.orderId, publicToken: recoverable.publicToken }
-          : null;
-      })();
+    if (hostedFallbackBusy) return;
+    if (hostedFallbackUsed.current && opts?.preferNewTab === false) return;
+
+    const existing = resolveV3CheckoutOrder({ orderRef, orderId, publicToken });
     if (!existing) {
       setInitError(CHECKOUT_INIT_ERROR);
+      setShowHostedFallback(false);
       return;
     }
     orderRef.current = existing;
+    setOrderId(existing.orderId);
+    setPublicToken(existing.publicToken);
+    setShowHostedFallback(true);
     setHostedFallbackBusy(true);
     try {
       const analytics = checkoutAnalyticsContext();
@@ -532,8 +574,13 @@ export function useV3EmbeddedCheckout(input: {
         return;
       }
       opts?.onSessionReady?.({ sessionId: checkout.sessionId, checkoutUrl: url });
-      hostedFallbackUsed.current = true;
-      window.location.assign(url);
+      setInitError(null);
+      const mode = openHostedStripeCheckout(url, {
+        preferNewTab: opts?.preferNewTab !== false,
+      });
+      if (mode === "same_tab") {
+        hostedFallbackUsed.current = true;
+      }
     } catch {
       setInitError(CHECKOUT_INIT_ERROR);
     } finally {

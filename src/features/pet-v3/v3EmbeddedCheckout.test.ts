@@ -135,7 +135,8 @@ describe("V3 embedded checkout", () => {
     const hook = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
     expect(hook).toContain("recoverExistingOrderCheckout");
     expect(hook).toContain("createStripeCheckout");
-    expect(hook).toContain("if (orderRef.current) {");
+    expect(hook).toContain("resolveV3CheckoutOrder");
+    expect(hook).toContain("startHostedFallback({ preferNewTab: true })");
     expect(hook).toContain("clearCachedV3EmbeddedCheckout");
   });
 
