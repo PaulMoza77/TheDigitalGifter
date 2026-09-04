@@ -431,9 +431,16 @@ Deno.serve(async (req) => {
 
     return jsonResponse({ error: "unknown_action" }, 400);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message =
+      err instanceof Error
+        ? err.message
+        : err && typeof err === "object" && "message" in err
+          ? String((err as { message: unknown }).message)
+          : typeof err === "string"
+            ? err
+            : JSON.stringify(err);
     console.error("christmas-cards-messages-funnel", message);
-    return jsonResponse({ error: message }, 500);
+    return jsonResponse({ error: message || "internal_error" }, 500);
   }
 });
 

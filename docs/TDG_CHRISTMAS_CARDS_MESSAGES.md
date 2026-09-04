@@ -1,7 +1,7 @@
 # Christmas Cards + Message Generator
 
 **Task:** `tdg-christmas-cards-messages-011`  
-**Status:** Free acquisition/creation pair — checkout unchanged/off
+**Status:** Free acquisition/creation pair — Christmas checkout unchanged (`checkout_live=false`, paid packages `purchasable=false`)
 
 ## Product loop
 
@@ -16,91 +16,98 @@ need Christmas wording → **Message Generator** → choose/edit → **Card** wi
 
 ## Message Generator
 
-- Guided inputs: recipient, tone, length, language (EN/RO), optional custom detail
-- Returns **3** alternatives
+- Guided inputs: recipient, tone, length, language (EN/RO), optional custom detail / relationship
+- Returns **3** alternatives with `result_key`, text, tone, length, recipient, language
 - Actions: Copy · Use in Christmas Card · Generate different ideas
-- Server-owned prompts/templates in `christmas-cards-messages-funnel`
-- OpenAI when configured → **curated high-quality fallback** on quota/billing failure
+- Server-owned prompts/templates: `supabase/functions/_shared/christmas/messageGenerator.ts`
+- Edge: `christmas-cards-messages-funnel` (`runMessageGenerator`, session recovery, admin stats)
+- OpenAI when `OPENAI_API_KEY` works → **curated high-quality fallback** on quota/billing/parse failure
+- Never claim unique AI authorship when `used_fallback=true`
 - Persistence: `christmas_message_sessions` + `christmas_message_results`
-- Guest token hashed; rate limit 10/hour/bucket
+- Guest token hashed (SHA-256); rate limit **10 sessions / hour / rate_bucket**
+- Refresh reuses completed session when `session_id` present and `force_new` is false
+- Explicit regenerate sets `force_new` and creates a new attempt
 - Analytics never include message text or custom_detail
 
 ### Languages
 
-- `message_languages: en, ro` (RO with diacritics)
+- `en`, `ro` (Romanian with proper diacritics in curated bank)
 - No DE/FR/etc in V1
 
 ### Taxonomy / SEO seam
 
-Centralized in `src/features/christmas/cards/taxonomy.ts` (+ server mirror).  
-Future factory can consume `seoSlug` / `MESSAGE_SEO_INTENT_SLUGS` — **factory not built**.
+Centralized in `src/features/christmas/cards/taxonomy.ts` (+ server `messageTaxonomy.ts`).  
+Stable recipient / tone / length keys + `seoSlug` / `SEO_MESSAGE_INTENT_SLUGS` for a future factory.  
+**Programmatic SEO factory is NOT built in this task.**
+
+### Safety
+
+- Custom detail length capped (~180–200 chars)
+- Injection / harassment / CSAM / self-harm / weapons patterns rejected server-side
+- Custom detail treated as data appended carefully — never as system instructions
+- No manipulative “Santa is watching” threats to children in templates
 
 ## Cards
 
 - Photo optional; text-only supported
-- Styles: classic, elegant gold, cozy, winter, minimal, vintage, playful, romantic
-- Layouts: square 1080×1080, story 1080×1920, landscape 1600×900
-- **Renderer:** client canvas → real PNG (`cardRenderer.ts`) — $0 AI cost
-- Guest project ownership via hashed owner token
-- Message → Card handoff via `sessionStorage` result id (not full message in query string)
-- Download filename: `tdg-christmas-card-<project-ref>-<layout>.png`
-- Share: Web Share file API with download fallback
-- No public card gallery / share pages
+- Styles (8): `classic_christmas`, `elegant_gold`, `cozy_christmas`, `winter_wonderland`, `minimal_christmas`, `vintage_christmas`, `playful_christmas`, `romantic_christmas`
+- Layouts: `square` 1080×1080 · `story` 1080×1920 · `landscape` 1600×900
+- Renderer: client Canvas 2D → PNG (`cardRenderer.ts`) — **$0 AI**
+- See ADR: `docs/architecture/TDG_CHRISTMAS_CARD_RENDERING_ADR.md`
+- Persistence: `christmas_card_projects` (+ optional `christmas_card_assets` metadata rows)
+- Guest owner token (opaque, hashed); logged-in users associate via `user_id`
+- Download filename: `tdg-christmas-card-<project-ref>-<layout>.png` (no recipient names)
+- Share: Web Share files API when available → download fallback
+- No public card gallery / hosted share page in V1
+- Source photos stay on-device for V1 render; not published anonymously
 
-## Commerce
+## Message → Card handoff
 
-- Cards/messages are free experiences
-- Paid Christmas products remain `purchasable=false`
-- `checkout_live=false`
-- Live charges: NONE
+1. Message Generator writes sessionStorage handoff (`tdg.christmas.message.handoff.v1`) with result id + text + session
+2. Navigates to `/christmas/cards?from_message=1` (message body **not** in query string)
+3. Cards page prefills message; draft also persisted in `localStorage` for refresh recovery
 
-## Security / privacy
+## Analytics (privacy)
 
-- Message/card tables: RLS; anon revoked; service role via edge
-- User message drawn as canvas text (not HTML)
-- Photo validation: jpeg/png/webp ≤ 8MB
-- Private storage bucket `christmas-cards` (optional persistence seam)
-- Retention: documented as configurable; no infinite public gallery
+**Messages:** `christmas_message_page_view`, `message_generator_started|completed|failed`, `message_copied`, `message_to_card`, `message_regenerated`  
+Dimensions: recipient/tone/length/language/provider/fallback — never free text.
 
-## Analytics
-
-Messages: `christmas_message_page_view`, `message_generator_*`, `message_copied`, `message_to_card`, `message_regenerated`  
-Cards: `christmas_card_page_view`, `card_*` style/layout/photo/message/preview/generated/download/share/create_another
+**Cards:** `christmas_card_page_view`, `card_creation_started`, style/layout/photo/message/preview/generated/download/share/create_another  
+Dimensions: style_key, layout, photo_present, message_source, guest/auth — never message/name/photo URL.
 
 ## Admin
 
-Christmas admin aggregates for message sessions and card projects (no bodies/photos by default).
+Christmas admin loads aggregate `adminMessageStats` / `adminCardStats` (sessions, fallback, cost, card renders/downloads/shares). Private message bodies and photos are not shown by default.
+
+## Cost
+
+| Path | Cost |
+|------|------|
+| OpenAI message gen | recorded when tokens available; else `cost_state=unknown/estimated` |
+| Curated fallback | `cost_usd=0`, `provider=server_curated` |
+| Card PNG render | `render_cost_usd=0` |
 
 ## Retention
 
-| Artifact | Default | Notes |
-|----------|---------|-------|
-| Message sessions/results | Soft retention policy (configurable) | Guest hash only; no long-term custom_detail body |
-| Card projects | Soft retention | Guest owner token hashed; message text for owner recovery |
-| Source photos | Browser-local in V1 | Not uploaded/public by default |
-| Rendered PNG | Client download; optional private `christmas-cards` bucket seam | No public gallery |
-| Guest recovery tokens | Client localStorage | Server stores SHA-256 only |
+| Object | Default |
+|--------|---------|
+| Message sessions/results | Keep for product analytics; no indefinite PII — custom detail length only, not full free text on session |
+| Card projects | Guest recovery via hashed token; configurable purge later |
+| Client PNG / photo | Device-local for V1 download; server asset rows may store dimensions only |
+| No destructive cleanup cron shipped | Documented; add cron when policy finalized |
 
-No infinite public child/photo gallery. Destructive cleanup cron not required for V1; document + safe defaults.
+## Commerce
 
-## QA notes
+- Free preview/generation V1
+- Catalog metadata: `cards_v1` / `messages_v1`, `live_offer=false`, `checkout_live=false`
+- No production price activation
 
-- OpenAI quota → curated fallback is a **known limitation**, not a product failure when messages remain useful.
-- Card render_cost = $0 (canvas composition).
-- Paid Christmas products remain non-purchasable; checkout_live=false.
+## Migrations / functions
 
-## Retention
+- `supabase/migrations/20260904010000_christmas_cards_messages.sql`
+- `supabase/functions/christmas-cards-messages-funnel`
+- `verify_jwt = false` in `supabase/config.toml` (auth optional; service role for writes)
 
-| Asset | Default | Notes |
-|-------|---------|-------|
-| Message sessions/results | keep while useful for refresh/handoff; guest token hashed | No custom_detail body stored beyond length |
-| Card projects | metadata + counts | Message text on project for owner recovery |
-| Source photos | private; not public by default | Prefer client-only for V1 download when possible |
-| Rendered PNGs | client download primary | Server asset rows track dimensions/counts |
-| Guest projects | owner token hashed | Configurable purge later; no public gallery |
+## Non-goals (this task)
 
-No destructive cleanup cron in V1 — document + safe private defaults.
-
-## Activation
-
-Deploy edge `christmas-cards-messages-funnel` + migration `20260904010000_christmas_cards_messages.sql` + Mozas frontend.
+Full SEO factory · DE/ES/FR · print fulfillment · paid packs · checkout activation · public gallery · affiliate marketplace

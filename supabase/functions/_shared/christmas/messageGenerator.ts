@@ -370,7 +370,7 @@ export function curatedMessages(input: MessageInput): GeneratedMessage[] {
     }
     text = trimToLength(text, input.lengthKey);
     return {
-      result_key: `m${i + 1}`,
+      result_key: `msg_${i + 1}`,
       text,
       tone_key: tone,
       length_key: input.lengthKey,
@@ -454,7 +454,7 @@ async function openaiMessages(input: MessageInput): Promise<MessageGeneration | 
     const rawList = Array.isArray(parsed.messages) ? parsed.messages : [];
     const messages: GeneratedMessage[] = rawList
       .map((m, i) => ({
-        result_key: `m${i + 1}`,
+        result_key: `msg_${i + 1}`,
         text: trimToLength(String(m.text || "").trim(), input.lengthKey),
         tone_key: input.toneKey,
         length_key: input.lengthKey,

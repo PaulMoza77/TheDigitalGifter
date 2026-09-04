@@ -362,9 +362,10 @@ export default function ChristmasCardsPage() {
           </div>
         </fieldset>
 
-        <label className="block text-sm">
+        <label className="block text-sm" htmlFor="card-message">
           <span className="font-medium">Christmas message</span>
           <textarea
+            id="card-message"
             className="mt-1 min-h-[120px] w-full rounded-md border border-slate-300 px-3 py-2"
             maxLength={MAX_CARD_MESSAGE_CHARS}
             value={message}
@@ -452,6 +453,15 @@ export default function ChristmasCardsPage() {
               onClick={() => void onShare()}
             >
               Share
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              onClick={() => {
+                setResult(null);
+              }}
+            >
+              Edit card
             </button>
             <button
               type="button"

@@ -1,49 +1,43 @@
-# Christmas Card Rendering ADR
+# ADR: Christmas Card Rendering
 
-**Task:** `tdg-christmas-cards-messages-011`  
-**Status:** Accepted for V1
+## Status
+
+Accepted — V1 (`tdg-christmas-cards-messages-011`)
+
+## Context
+
+Personalized Christmas Cards must produce **actual downloadable image files**, work without paid AI image APIs, support EN/RO Unicode (diacritics), optional photos, and three social layouts — without activating Christmas checkout.
 
 ## Decision
 
-Use **client-side Canvas 2D** composition to produce a real **PNG** blob (`toBlob("image/png")`).
+**Client-side Canvas 2D composition → PNG blob.**
 
-Flow:
+1. Semantic card config (`style_key`, `layout_key`, message, optional photo, optional names)
+2. Deterministic renderer in `src/features/christmas/cards/cardRenderer.ts`
+3. Linear gradient styles from centralized `CARD_STYLES` registry (no Replicate decorative generation)
+4. Adaptive font sizing + measured line wrapping with safe margins
+5. Message sanitized as plain text; never interpreted as HTML
+6. `canvas.toBlob('image/png')` for download + Web Share files
+7. Server (`christmas_card_projects` / `christmas_card_assets`) persists metadata, ownership, and counters — not a public CDN of private photos in V1
 
-1. Semantic card config (style key, layout key, message, optional photo, optional to/from)
-2. Deterministic template fill (gradient + accent frame + optional photo cover crop + text panel)
-3. Adaptive font sizing + line wrapping with safe margins
-4. Download / Web Share file API (download fallback)
+## Alternatives considered
 
-## Why not alternatives
+| Option | Why not |
+|--------|---------|
+| HTML → html2canvas | Extra dependency; CSS/font drift; XSS surface |
+| Server SVG→PNG | Needs sharp/canvas on edge; slower iteration |
+| Replicate decorative generation | Cost + latency; unnecessary for frames/backgrounds |
+| HTML preview only | Fails DoD (must export real asset) |
 
-| Option | Why not for V1 |
-|--------|----------------|
-| html2canvas / DOM screenshot | Extra dependency; CSS/layout drift; harder diacritic/font control |
-| SVG → raster server-side | Needs Edge/Deno canvas or external service; more ops cost |
-| Replicate / AI borders | Unnecessary spend; decorative styles are CSS/canvas templates |
-| HTML-only “preview as card” | Does not meet “actual image file” DoD |
+## Consequences
 
-## Cost
+- **render_cost = $0** local composition
+- Visual fidelity depends on client fonts (Georgia/serif stack)
+- Safari/WebKit may lack `navigator.canShare({ files })` → download fallback
+- Message Generator LLM remains separate; OpenAI quota → curated templates is expected and not a card-render blocker
 
-`render_cost = $0` local composition. No AI provider for styles/layouts.
+## Related
 
-## Privacy
-
-- Source photos are optional and processed in-browser for V1 render
-- Project metadata persisted via `christmas_card_projects` with hashed guest owner token
-- Rendered assets metadata in `christmas_card_assets` (dimensions/bytes); no public gallery
-- Download filenames: `tdg-christmas-card-<project-ref>-<layout>.png` (no recipient names)
-
-## Layouts
-
-- square: 1080×1080
-- story: 1080×1920
-- landscape: 1600×900
-
-## Styles
-
-Central registry keys: `classic_christmas`, `elegant_gold`, `cozy_christmas`, `winter_wonderland`, `minimal_christmas`, `vintage_christmas`, `playful_christmas`, `romantic_christmas`.
-
-## Text
-
-Plain text only after sanitize/escape. User message never interpreted as HTML.
+- Product docs: `docs/TDG_CHRISTMAS_CARDS_MESSAGES.md`
+- Styles/layouts: `src/features/christmas/cards/cardStyles.ts`
+- Edge funnel: `supabase/functions/christmas-cards-messages-funnel`
