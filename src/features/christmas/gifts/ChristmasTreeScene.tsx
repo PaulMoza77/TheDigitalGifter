@@ -63,6 +63,7 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
         maxWidth: 520,
         margin: "0 auto",
         aspectRatio: "3 / 4",
+        maxHeight: "100%",
         filter: "drop-shadow(0 24px 48px rgba(0,0,0,0.45))",
       }}
     >

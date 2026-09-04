@@ -268,7 +268,7 @@ export default function ChristmasGiftsPage() {
         {/* Atmospheric particles */}
         {!reduceMotion ? (
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            {Array.from({ length: 18 }).map((_, i) => (
+            {Array.from({ length: 14 }).map((_, i) => (
               <span
                 key={i}
                 className="absolute rounded-full bg-white/70"
@@ -285,50 +285,51 @@ export default function ChristmasGiftsPage() {
           </div>
         ) : null}
 
-        <div className="relative mx-auto flex min-h-[100dvh] max-w-5xl flex-col px-4 pb-10 pt-8 sm:px-6">
-          <header className="relative z-20 mx-auto max-w-xl text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-200/75">
+        <div className="relative mx-auto flex min-h-[100dvh] max-w-5xl flex-col px-4 pb-6 pt-5 sm:px-6 sm:pb-10 sm:pt-7">
+          <header className="relative z-20 mx-auto max-w-xl shrink-0 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200/75 sm:text-[11px] sm:tracking-[0.24em]">
               A little Christmas magic is waiting for you
             </p>
-            <h1 className="mt-3 font-serif text-4xl leading-tight text-amber-50 sm:text-5xl">
+            <h1 className="mt-2 font-serif text-[1.85rem] leading-tight text-amber-50 sm:mt-3 sm:text-5xl">
               Get Your Christmas Gift
             </h1>
-            <p className="mt-3 text-sm text-rose-100/75 sm:text-base">
+            <p className="mt-2 text-sm text-rose-100/75 sm:mt-3 sm:text-base">
               Choose a present under the tree and discover what&apos;s waiting inside.
             </p>
             {!freeUsed ? (
-              <p className="mt-4 text-xs text-amber-100/65">Tap a gift to open it ✨</p>
+              <p className="mt-2 text-xs text-amber-100/65 sm:mt-3">Tap a gift to open it ✨</p>
             ) : null}
           </header>
 
           <section
-            className="relative z-10 mx-auto mt-2 w-full max-w-xl flex-1 sm:mt-4 sm:max-w-2xl"
+            className="relative z-10 mx-auto mt-1 flex w-full max-w-[22rem] flex-1 flex-col justify-end sm:mt-2 sm:max-w-xl md:max-w-2xl"
             aria-label="Christmas tree and presents"
+            style={{ minHeight: "min(62dvh, 560px)" }}
           >
             <ChristmasTreeScene
               reduceMotion={reduceMotion}
-              className="relative z-0 w-full translate-y-2 sm:translate-y-0"
+              className="relative z-0 mx-auto w-[min(100%,420px)] max-h-[min(58dvh,520px)] sm:w-full"
             />
             <div
               className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
-              style={{ height: "38%" }}
+              style={{ height: "36%" }}
               aria-hidden
             >
               <div
-                className="absolute inset-x-[6%] bottom-[8%] h-[55%]"
+                className="absolute inset-x-[6%] bottom-[6%] h-[55%]"
                 style={{
                   background:
                     "radial-gradient(ellipse at 50% 80%, rgba(20,40,30,0.55), transparent 70%)",
                 }}
               />
             </div>
-            <div className="absolute inset-x-0 bottom-0 z-20 h-[42%] sm:h-[38%]">
+            <div className="absolute inset-x-0 bottom-0 z-20 h-[36%] sm:h-[34%]">
               {presents.map((p) => (
                 <ChristmasPresent
                   key={p.id}
                   present={p}
                   state={presentState(p.id)}
-                  scale={compact ? 0.85 : 1}
+                  scale={compact ? 0.78 : 0.92}
                   reduceMotion={reduceMotion}
                   onSelect={(id) => void runOpen(id)}
                 />
