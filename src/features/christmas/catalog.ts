@@ -280,6 +280,49 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     packages: [],
   },
   {
+    productKey: "christmas_gift_tree",
+    slug: "gifts",
+    productType: "tree",
+    name: "Get Your Christmas Gift",
+    description: "Pick a present under the tree and reveal a Christmas reward.",
+    active: true,
+    publicDiscoverable: true,
+    sortOrder: 75,
+    routePath: "/christmas/gifts",
+    localeDefault: "en",
+    metadata: { gift_tree_v1: true, live_offer: false },
+    packages: [
+      {
+        packageKey: "open_another",
+        packageName: "Open Another Gift",
+        description: "Future paid extra gift — not purchasable yet.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["1 extra gift opening"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: { live_offer: false },
+      },
+      {
+        packageKey: "open_five",
+        packageName: "Open 5 Gifts",
+        description: "Future gift bundle — not purchasable yet.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["5 gift openings"],
+        sortOrder: 20,
+        localeDefault: "en",
+        metadata: { live_offer: false },
+      },
+    ],
+  },
+  {
     productKey: "christmas_tree",
     slug: "tree",
     productType: "tree",
@@ -420,6 +463,7 @@ export function hubProducts(catalog: ChristmasProductDef[]): ChristmasProductDef
 export function isComingSoon(product: ChristmasProductDef): boolean {
   if (
     product.metadata?.tree_v1 ||
+    product.metadata?.gift_tree_v1 ||
     product.metadata?.advent_v1 ||
     product.metadata?.wishlist_v1 ||
     product.metadata?.gift_finder_v1 ||
@@ -442,6 +486,7 @@ const PORTRAIT_VERTICAL_KEYS = new Set([
 const EXPERIENCE_OPEN_KEYS = new Set([
   ...PORTRAIT_VERTICAL_KEYS,
   "christmas_tree",
+  "christmas_gift_tree",
   "christmas_advent",
   "christmas_wishlist",
   "christmas_gift_finder",
