@@ -323,7 +323,7 @@ export default function ChristmasGiftsPage() {
                 }}
               />
             </div>
-            <div className="absolute inset-x-0 bottom-0 z-20 h-[36%] sm:h-[34%]">
+            <div className="absolute inset-x-0 bottom-0 z-30 h-[36%] sm:h-[34%]">
               {presents.map((p) => (
                 <ChristmasPresent
                   key={p.id}

@@ -65,6 +65,7 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
         aspectRatio: "3 / 4",
         maxHeight: "100%",
         filter: "drop-shadow(0 24px 48px rgba(0,0,0,0.45))",
+        pointerEvents: "none",
       }}
     >
       <svg viewBox="0 0 200 280" width="100%" height="100%" aria-hidden="true">
