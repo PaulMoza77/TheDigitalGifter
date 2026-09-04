@@ -153,14 +153,18 @@ Deno.serve(async (req) => {
 
       try {
         await service.from("ai_cost_ledger").insert({
+          provider: generation.provider,
           prediction_id: `christmas_message_generator:${session.id}`,
           product_family: "christmas_message_generator",
+          attempt_number: 1,
+          is_retry: false,
+          is_mock: generation.usedFallback,
           product_sku: "christmas_message_generator",
-          media_type: "text",
-          provider: generation.provider,
-          model: generation.model,
-          input_tokens: generation.inputTokens,
-          output_tokens: generation.outputTokens,
+          model_name: generation.model,
+          provider_status: "succeeded",
+          pricing_method: generation.provider === "openai" ? "per_token" : "none",
+          unit_cost_usd: 0,
+          billable_units: (generation.inputTokens || 0) + (generation.outputTokens || 0),
           cost_usd: generation.costUsd ?? 0,
           cost_state:
             generation.costState === "estimated"
@@ -168,9 +172,16 @@ Deno.serve(async (req) => {
               : generation.costState === "none"
                 ? "exact"
                 : "estimated",
-          is_mock: generation.usedFallback,
+          pricing_source: "server_estimate",
+          tariff_snapshot: {
+            operation: "christmas_message_generator",
+            input_tokens: generation.inputTokens,
+            output_tokens: generation.outputTokens,
+          },
+          currency: "usd",
+          media_type: "text",
           cost_notes: "christmas_message_generator",
-          latency_ms: generation.latencyMs,
+          completed_at: new Date().toISOString(),
         });
       } catch {
         /* non-fatal */
@@ -431,14 +442,20 @@ Deno.serve(async (req) => {
 
     return jsonResponse({ error: "unknown_action" }, 400);
   } catch (err) {
-    const message =
-      err instanceof Error
-        ? err.message
-        : err && typeof err === "object" && "message" in err
-          ? String((err as { message: unknown }).message)
-          : typeof err === "string"
-            ? err
-            : JSON.stringify(err);
+    let message = "internal_error";
+    if (err instanceof Error) message = err.message;
+    else if (typeof err === "string") message = err;
+    else if (err && typeof err === "object") {
+      const m = (err as { message?: unknown }).message;
+      if (typeof m === "string" && m) message = m;
+      else {
+        try {
+          message = JSON.stringify(err);
+        } catch {
+          message = "internal_error";
+        }
+      }
+    }
     console.error("christmas-cards-messages-funnel", message);
     return jsonResponse({ error: message || "internal_error" }, 500);
   }
