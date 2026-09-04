@@ -521,7 +521,7 @@ describe("pet hybrid funnel analytics", () => {
     expect(readSrc("src/hooks/usePetFunnelAnalytics.ts")).not.toContain("backendCheckouts || firstPartyKpis.checkouts");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Landing → Purchase");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Free / 100% Discount Orders");
-    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Production customer Stripe Checkout");
+    expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Stripe infrastructure (not human UX)");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("Historical detail unavailable");
     expect(readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx")).toContain("grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5");
   });
