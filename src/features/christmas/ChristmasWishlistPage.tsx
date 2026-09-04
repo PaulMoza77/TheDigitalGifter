@@ -536,6 +536,10 @@ export default function ChristmasWishlistPage() {
                 Find gift ideas
               </Link>
               {" · "}
+              <Link className="underline" to="/christmas/cards">
+                Create a Christmas Card
+              </Link>
+              {" · "}
               <Link className="underline" to="/christmas/tree">
                 Put a special gift under your Christmas Tree
               </Link>

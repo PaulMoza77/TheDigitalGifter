@@ -425,6 +425,10 @@ export default function ChristmasGiftFinderPage() {
             Open your Wishlist
           </Link>
           {" · "}
+          <Link className="underline" to="/christmas/cards">
+            Add a personalized Christmas Card idea
+          </Link>
+          {" · "}
           <Link className="underline" to="/christmas/tree">
             Christmas Tree
           </Link>

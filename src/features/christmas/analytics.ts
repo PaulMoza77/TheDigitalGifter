@@ -34,6 +34,8 @@ export async function trackChristmasEvent(
     styleKey?: string | null;
     amountCents?: number | null;
     pathname?: string | null;
+    locale?: string | null;
+    metadata?: Record<string, unknown> | null;
   },
 ): Promise<void> {
   if (typeof window === "undefined") return;
@@ -49,7 +51,7 @@ export async function trackChristmasEvent(
     product_key: extra?.productKey ?? "christmas_photo",
     package_key: extra?.packageKey ?? null,
     order_id: extra?.orderId ?? null,
-    locale: "en",
+    locale: extra?.locale === "ro" ? "ro" : "en",
     pathname: extra?.pathname ?? window.location.pathname,
     landing_path: `${window.location.pathname}${window.location.search}`.slice(0, 120),
     device_type: inferDeviceType(),
@@ -63,7 +65,10 @@ export async function trackChristmasEvent(
     adset_id: attr.adset_id ?? null,
     ad_id: attr.ad_id ?? null,
     has_fbclid: firstTouch.hasFbclid,
-    metadata: extra?.styleKey ? { style_key: extra.styleKey } : {},
+    metadata: {
+      ...(extra?.styleKey ? { style_key: extra.styleKey } : {}),
+      ...(extra?.metadata || {}),
+    },
   };
 
   try {

@@ -23,22 +23,6 @@ export const CHRISTMAS_ROUTE_SHELLS: ChristmasRouteShellDef[] = [
     description: "This product is not available yet. Privacy controls are required before launch.",
     noindex: true,
   },
-  {
-    path: "/christmas/cards",
-    productKey: "christmas_card",
-    title: "Personalized Christmas Cards",
-    status: "coming_soon",
-    description: "This product is not available yet.",
-    noindex: true,
-  },
-  {
-    path: "/christmas/messages",
-    productKey: "christmas_messages",
-    title: "AI Christmas Message Generator",
-    status: "coming_soon",
-    description: "This product is not available yet.",
-    noindex: true,
-  },
 ];
 
 export function shellForPath(pathname: string): ChristmasRouteShellDef | null {

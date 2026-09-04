@@ -90,3 +90,6 @@ verify_jwt = false
 
 [functions.christmas-wishlist-funnel]
 verify_jwt = false
+
+[functions.christmas-cards-messages-funnel]
+verify_jwt = false

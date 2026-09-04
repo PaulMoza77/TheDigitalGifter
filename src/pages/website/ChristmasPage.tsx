@@ -26,6 +26,8 @@ export default function ChristmasPage() {
       "christmas_advent",
       "christmas_wishlist",
       "christmas_gift_finder",
+      "christmas_card",
+      "christmas_messages",
     ];
     return preferred
       .map((key) => all.find((p) => p.productKey === key))
@@ -35,8 +37,8 @@ export default function ChristmasPage() {
   return (
     <>
       <PageHead
-        title="Create AI Christmas Cards"
-        description="Generate beautiful, personalized holiday cards and videos using AI. Choose templates, upload family photos, and create professional results in seconds."
+        title="Christmas at The Digital Gifter"
+        description="Personalized Christmas cards, free message generator, portraits, Santa video, wishlist, and gift finder — create something worth sending."
       />
       <MainPage
         onStartCreating={() => void navigate("/generator?occasion=christmas")}
@@ -90,7 +92,11 @@ export default function ChristmasPage() {
                                 ? "Create Your Christmas Wishlist"
                                 : product.productKey === "christmas_gift_finder"
                                   ? "Find the Perfect Christmas Gift"
-                                  : "Experience open · purchase not enabled yet"}
+                                  : product.productKey === "christmas_card"
+                                    ? "Create a card with your photo and message"
+                                    : product.productKey === "christmas_messages"
+                                      ? "Find the right words for anyone on your Christmas list"
+                                      : "Experience open · purchase not enabled yet"}
                       </p>
                     ) : null}
                   </div>

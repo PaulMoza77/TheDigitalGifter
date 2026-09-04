@@ -270,13 +270,13 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     slug: "cards",
     productType: "card",
     name: "Personalized Christmas Cards",
-    description: "Coming soon.",
+    description: "Turn your photo and Christmas message into a card worth sending.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 70,
     routePath: "/christmas/cards",
     localeDefault: "en",
-    metadata: { coming_soon: true },
+    metadata: { cards_v1: true, live_offer: false },
     packages: [],
   },
   {
@@ -339,14 +339,14 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     productKey: "christmas_messages",
     slug: "messages",
     productType: "messages",
-    name: "AI Christmas Message Generator",
-    description: "Coming soon.",
+    name: "Christmas Message Generator",
+    description: "Find the right Christmas words in seconds.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 120,
     routePath: "/christmas/messages",
     localeDefault: "en",
-    metadata: { coming_soon: true },
+    metadata: { messages_v1: true, live_offer: false },
     packages: [],
   },
 ];
@@ -422,7 +422,9 @@ export function isComingSoon(product: ChristmasProductDef): boolean {
     product.metadata?.tree_v1 ||
     product.metadata?.advent_v1 ||
     product.metadata?.wishlist_v1 ||
-    product.metadata?.gift_finder_v1
+    product.metadata?.gift_finder_v1 ||
+    product.metadata?.cards_v1 ||
+    product.metadata?.messages_v1
   ) {
     return false;
   }
@@ -443,6 +445,8 @@ const EXPERIENCE_OPEN_KEYS = new Set([
   "christmas_advent",
   "christmas_wishlist",
   "christmas_gift_finder",
+  "christmas_card",
+  "christmas_messages",
 ]);
 
 export function ctaStateForProduct(product: ChristmasProductDef): "open" | "coming_soon" | "unavailable" {

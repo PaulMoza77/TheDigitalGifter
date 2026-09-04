@@ -129,6 +129,21 @@ export default function ChristmasOrdersPage() {
     }>
   >([]);
   const [wishlistsLoading, setWishlistsLoading] = useState(false);
+  const [msgStats, setMsgStats] = useState<{
+    totals?: { sessions: number; completed: number; failed: number; fallback: number };
+    recent?: Array<Record<string, unknown>>;
+  } | null>(null);
+  const [cardStats, setCardStats] = useState<{
+    totals?: {
+      projects: number;
+      rendered: number;
+      downloads: number;
+      shares: number;
+      failures: number;
+    };
+    recent?: Array<Record<string, unknown>>;
+  } | null>(null);
+  const [cardsMsgLoading, setCardsMsgLoading] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState("");
   const [fulfillmentFilter, setFulfillmentFilter] = useState("");
   const [productFilter, setProductFilter] = useState("");
@@ -208,6 +223,47 @@ export default function ChristmasOrdersPage() {
     }
   }, []);
 
+  const loadCardsMessagesStats = useCallback(async () => {
+    setCardsMsgLoading(true);
+    try {
+      const [msg, cards] = await Promise.all([
+        supabase.functions.invoke("christmas-cards-messages-funnel", {
+          body: { action: "adminMessageStats" },
+        }),
+        supabase.functions.invoke("christmas-cards-messages-funnel", {
+          body: { action: "adminCardStats" },
+        }),
+      ]);
+      if (msg.error) throw msg.error;
+      if (cards.error) throw cards.error;
+      const m = (msg.data || {}) as Record<string, unknown>;
+      const c = (cards.data || {}) as Record<string, unknown>;
+      setMsgStats({
+        totals: {
+          sessions: Number(m.sessions ?? 0) || 0,
+          completed: Number(m.completed ?? 0) || 0,
+          failed: Number(m.failed ?? 0) || 0,
+          fallback: Number(m.fallback_used ?? m.fallback ?? 0) || 0,
+        },
+        recent: Array.isArray(m.recent) ? (m.recent as Array<Record<string, unknown>>) : [],
+      });
+      setCardStats({
+        totals: {
+          projects: Number(c.projects ?? 0) || 0,
+          rendered: Number(c.renders ?? c.rendered ?? 0) || 0,
+          downloads: Number(c.downloads ?? 0) || 0,
+          shares: Number(c.shares ?? 0) || 0,
+          failures: Number(c.render_failures ?? c.failures ?? 0) || 0,
+        },
+        recent: Array.isArray(c.recent) ? (c.recent as Array<Record<string, unknown>>) : [],
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load cards/messages stats");
+    } finally {
+      setCardsMsgLoading(false);
+    }
+  }, []);
+
   const disableWishlistShare = useCallback(async (wishlistId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("christmas-wishlist-funnel", {
@@ -229,6 +285,10 @@ export default function ChristmasOrdersPage() {
   useEffect(() => {
     void loadWishlists();
   }, [loadWishlists]);
+
+  useEffect(() => {
+    void loadCardsMessagesStats();
+  }, [loadCardsMessagesStats]);
 
   useEffect(() => {
     let cancelled = false;
@@ -440,6 +500,42 @@ export default function ChristmasOrdersPage() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="rounded-lg border border-slate-800 p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Cards &amp; messages</h2>
+            <p className="text-xs text-slate-500">
+              Aggregates only — no message bodies or card photos.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void loadCardsMessagesStats()}
+            disabled={cardsMsgLoading}
+          >
+            Refresh stats
+          </Button>
+        </div>
+        <div className="grid gap-3 text-xs text-slate-300 sm:grid-cols-2">
+          <div className="rounded border border-slate-800 p-3">
+            <p className="font-medium text-white">Message generator</p>
+            <p className="mt-1">
+              sessions {msgStats?.totals?.sessions ?? "—"} · completed {msgStats?.totals?.completed ?? "—"} ·
+              failed {msgStats?.totals?.failed ?? "—"} · fallback {msgStats?.totals?.fallback ?? "—"}
+            </p>
+          </div>
+          <div className="rounded border border-slate-800 p-3">
+            <p className="font-medium text-white">Cards</p>
+            <p className="mt-1">
+              projects {cardStats?.totals?.projects ?? "—"} · rendered {cardStats?.totals?.rendered ?? "—"} ·
+              downloads {cardStats?.totals?.downloads ?? "—"} · shares {cardStats?.totals?.shares ?? "—"} ·
+              failures {cardStats?.totals?.failures ?? "—"}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
