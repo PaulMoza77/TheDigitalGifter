@@ -259,7 +259,7 @@ export default function ChristmasGiftsPage() {
       />
 
       <main
-        className="relative h-[100dvh] max-h-[100dvh] overflow-hidden text-rose-50"
+        className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden text-rose-50"
         style={{
           background:
             "radial-gradient(ellipse at 50% 18%, #3a1d2a 0%, #141c24 42%, #0a1210 78%), linear-gradient(180deg, #1b1020 0%, #0e1a24 55%, #132018 100%)",
@@ -285,7 +285,7 @@ export default function ChristmasGiftsPage() {
           </div>
         ) : null}
 
-        <div className="relative mx-auto flex h-[100dvh] max-h-[100dvh] max-w-5xl flex-col overflow-hidden px-4 pb-3 pt-4 sm:px-6 sm:pb-5 sm:pt-5">
+        <div className="relative mx-auto flex h-full max-w-5xl flex-col overflow-hidden px-4 pb-3 pt-3 sm:px-6 sm:pb-4 sm:pt-4">
           <header className="relative z-20 mx-auto max-w-xl shrink-0 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200/75 sm:text-[11px] sm:tracking-[0.24em]">
               A little Christmas magic is waiting for you
