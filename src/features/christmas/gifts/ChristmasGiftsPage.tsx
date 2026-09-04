@@ -259,7 +259,7 @@ export default function ChristmasGiftsPage() {
       />
 
       <main
-        className="relative min-h-[100dvh] overflow-x-hidden text-rose-50"
+        className="relative h-[100dvh] max-h-[100dvh] overflow-hidden text-rose-50"
         style={{
           background:
             "radial-gradient(ellipse at 50% 18%, #3a1d2a 0%, #141c24 42%, #0a1210 78%), linear-gradient(180deg, #1b1020 0%, #0e1a24 55%, #132018 100%)",
@@ -285,51 +285,50 @@ export default function ChristmasGiftsPage() {
           </div>
         ) : null}
 
-        <div className="relative mx-auto flex min-h-[100dvh] max-w-5xl flex-col px-4 pb-6 pt-5 sm:px-6 sm:pb-10 sm:pt-7">
+        <div className="relative mx-auto flex h-[100dvh] max-h-[100dvh] max-w-5xl flex-col overflow-hidden px-4 pb-3 pt-4 sm:px-6 sm:pb-5 sm:pt-5">
           <header className="relative z-20 mx-auto max-w-xl shrink-0 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200/75 sm:text-[11px] sm:tracking-[0.24em]">
               A little Christmas magic is waiting for you
             </p>
-            <h1 className="mt-2 font-serif text-[1.85rem] leading-tight text-amber-50 sm:mt-3 sm:text-5xl">
+            <h1 className="mt-1.5 font-serif text-[1.65rem] leading-tight text-amber-50 sm:mt-2 sm:text-4xl md:text-5xl">
               Get Your Christmas Gift
             </h1>
-            <p className="mt-2 text-sm text-rose-100/75 sm:mt-3 sm:text-base">
+            <p className="mt-1.5 text-sm text-rose-100/75 sm:mt-2 sm:text-base">
               Choose a present under the tree and discover what&apos;s waiting inside.
             </p>
             {!freeUsed ? (
-              <p className="mt-2 text-xs text-amber-100/65 sm:mt-3">Tap a gift to open it ✨</p>
+              <p className="mt-1.5 text-xs text-amber-100/65 sm:mt-2">Tap a gift to open it ✨</p>
             ) : null}
           </header>
 
           <section
-            className="relative z-10 mx-auto mt-1 flex w-full max-w-[22rem] flex-1 flex-col justify-end sm:mt-2 sm:max-w-xl md:max-w-2xl"
+            className="relative z-10 mx-auto mt-0 flex w-full max-w-[20rem] min-h-0 flex-1 flex-col justify-end sm:max-w-lg md:max-w-xl"
             aria-label="Christmas tree and presents"
-            style={{ minHeight: "min(62dvh, 560px)" }}
           >
             <ChristmasTreeScene
               reduceMotion={reduceMotion}
-              className="relative z-0 mx-auto w-[min(100%,420px)] max-h-[min(58dvh,520px)] sm:w-full"
+              className="relative z-0 mx-auto w-full max-h-[min(52dvh,440px)]"
             />
             <div
               className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
-              style={{ height: "36%" }}
+              style={{ height: "34%" }}
               aria-hidden
             >
               <div
-                className="absolute inset-x-[6%] bottom-[6%] h-[55%]"
+                className="absolute inset-x-[6%] bottom-[4%] h-[55%]"
                 style={{
                   background:
                     "radial-gradient(ellipse at 50% 80%, rgba(20,40,30,0.55), transparent 70%)",
                 }}
               />
             </div>
-            <div className="absolute inset-x-0 bottom-0 z-30 h-[36%] sm:h-[34%]">
+            <div className="absolute inset-x-0 bottom-[2%] z-30 h-[32%] sm:h-[30%]">
               {presents.map((p) => (
                 <ChristmasPresent
                   key={p.id}
                   present={p}
                   state={presentState(p.id)}
-                  scale={compact ? 0.78 : 0.92}
+                  scale={compact ? 0.72 : 0.88}
                   reduceMotion={reduceMotion}
                   onSelect={(id) => void runOpen(id)}
                 />
@@ -349,23 +348,23 @@ export default function ChristmasGiftsPage() {
           </section>
 
           {error ? (
-            <p className="relative z-20 mt-4 text-center text-sm text-red-200" role="alert">
+            <p className="relative z-20 mt-2 shrink-0 text-center text-sm text-red-200" role="alert">
               {error}
             </p>
           ) : null}
 
           {freeUsed && !canOpen ? (
-            <section className="relative z-20 mx-auto mt-8 max-w-md text-center">
-              <h2 className="font-serif text-2xl text-amber-50">Want to open another gift?</h2>
-              <p className="mt-2 text-sm text-rose-100/70">
+            <section className="relative z-20 mx-auto mt-3 max-w-md shrink-0 text-center sm:mt-4">
+              <h2 className="font-serif text-xl text-amber-50 sm:text-2xl">Want to open another gift?</h2>
+              <p className="mt-1 text-sm text-rose-100/70">
                 There&apos;s more Christmas magic under the tree.
               </p>
-              <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <div className="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:justify-center">
                 {GIFT_TREE_PAID_OFFERS.map((offer) => (
                   <button
                     key={offer.packageKey}
                     type="button"
-                    className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-rose-50/90"
+                    className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-rose-50/90"
                     onClick={() => {
                       void trackChristmasEvent("christmas_open_another_gift_clicked", {
                         productKey: GIFT_TREE_PRODUCT_KEY,
@@ -383,14 +382,14 @@ export default function ChristmasGiftsPage() {
                 ))}
               </div>
               {claimHint ? (
-                <p className="mt-3 text-xs text-amber-100/70" role="status">
+                <p className="mt-2 text-xs text-amber-100/70" role="status">
                   {claimHint}
                 </p>
               ) : null}
             </section>
           ) : null}
 
-          <footer className="relative z-20 mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-xs text-rose-100/55">
+          <footer className="relative z-20 mt-3 flex shrink-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 pb-1 text-center text-[11px] text-rose-100/55 sm:mt-4 sm:text-xs">
             <Link className="underline-offset-4 hover:underline" to="/christmas">
               Christmas hub
             </Link>
