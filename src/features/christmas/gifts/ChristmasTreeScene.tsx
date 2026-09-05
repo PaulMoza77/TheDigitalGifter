@@ -21,9 +21,11 @@ export const SCENE_MEDIA_ASPECT = {
   mobile: 720 / 1280,
 } as const;
 
-/** Clear breathing room under the header for the tree tip. */
-const MEDIA_TRANSFORM = "translateY(4.5%) scale(1.08)";
+/** Keep the tree tip clear of the header without shoving gifts into the CTA. */
+const MEDIA_TRANSFORM = "translateY(1.5%) scale(1.04)";
 const MEDIA_TRANSFORM_ORIGIN = "50% 0%";
+/** Solid top inset so the star tip isn't flush against the nav. */
+const SCENE_TOP_INSET_PX = 14;
 
 function preferMobile(): boolean {
   if (typeof window === "undefined") return false;
@@ -121,7 +123,6 @@ export function ChristmasTreeScene({
 
   return (
     <div
-      ref={containerRef}
       className={className}
       style={{
         position: "relative",
@@ -130,59 +131,66 @@ export function ChristmasTreeScene({
         minHeight: 280,
         overflow: "hidden",
         zIndex: 0,
+        background: "#0a0705",
       }}
     >
+      {/* Top inset keeps the star tip clear of the sticky header */}
       <div
-        className="absolute inset-0 bg-[#0a0705]"
-        role="img"
-        aria-label="Luxury Christmas chalet with a realistic Christmas tree and gifts"
-        style={{ zIndex: 0 }}
+        ref={containerRef}
+        className="absolute inset-x-0 bottom-0"
+        style={{ top: SCENE_TOP_INSET_PX }}
       >
-        <div style={mediaFrameStyle}>
-          {reduceMotion ? (
-            <picture className="absolute inset-0 block h-full w-full">
-              <source
-                type="image/webp"
-                srcSet={
-                  isMobile
-                    ? "/christmas/gifts/scene-mobile.webp"
-                    : "/christmas/gifts/scene-desktop.webp"
-                }
-              />
-              <img
-                src={poster}
-                alt=""
-                className="h-full w-full"
+        <div
+          className="absolute inset-0"
+          role="img"
+          aria-label="Luxury Christmas chalet with a realistic Christmas tree and gifts"
+          style={{ zIndex: 0 }}
+        >
+          <div style={mediaFrameStyle}>
+            {reduceMotion ? (
+              <picture className="absolute inset-0 block h-full w-full">
+                <source
+                  type="image/webp"
+                  srcSet={
+                    isMobile
+                      ? "/christmas/gifts/scene-mobile.webp"
+                      : "/christmas/gifts/scene-desktop.webp"
+                  }
+                />
+                <img
+                  src={poster}
+                  alt=""
+                  className="h-full w-full"
+                  style={{ objectFit: "fill" }}
+                  decoding="async"
+                  fetchPriority="high"
+                />
+              </picture>
+            ) : (
+              <video
+                key={src}
+                ref={videoRef}
+                className="absolute inset-0 h-full w-full"
                 style={{ objectFit: "fill" }}
-                decoding="async"
-                fetchPriority="high"
-              />
-            </picture>
-          ) : (
-            <video
-              key={src}
-              ref={videoRef}
-              className="absolute inset-0 h-full w-full"
-              style={{ objectFit: "fill" }}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              poster={poster}
-            >
-              <source src={src} type="video/mp4" />
-            </video>
-          )}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                poster={poster}
+              >
+                <source src={src} type="video/mp4" />
+              </video>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          zIndex: 1,
-          background: `
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            zIndex: 1,
+            background: `
             radial-gradient(ellipse at 50% 48%,
               transparent 38%,
               rgba(5,5,5,0.04) 70%,
@@ -193,19 +201,19 @@ export function ChristmasTreeScene({
               transparent 78%,
               rgba(8,6,5,0.28) 100%)
           `,
-        }}
-      />
+          }}
+        />
 
-      {reduceMotion ? <TreeLightLayer reduceMotion /> : null}
+        {reduceMotion ? <TreeLightLayer reduceMotion /> : null}
 
-      {/* Interactive hotspots share the same cover + shift frame as the media */}
-      {children ? (
-        <div className="pointer-events-none absolute inset-0" style={{ zIndex: 4 }}>
-          <div className="pointer-events-auto" style={mediaFrameStyle}>
-            <div className="absolute inset-0">{children}</div>
+        {children ? (
+          <div className="pointer-events-none absolute inset-0" style={{ zIndex: 4 }}>
+            <div className="pointer-events-auto" style={mediaFrameStyle}>
+              <div className="absolute inset-0">{children}</div>
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }
