@@ -16,6 +16,7 @@ describe("isSupportWidgetHidden", () => {
   it("hides Help on Christmas V2 sales funnel, keeps it on results", () => {
     expect(isSupportWidgetHidden("/christmas-ai-photos")).toBe(true);
     expect(isSupportWidgetHidden("/christmas-ai-photos/order")).toBe(false);
+    expect(isSupportWidgetHidden("/christmas/gifts")).toBe(true);
   });
 
   it("keeps Help on the post-purchase order page and the rest of the site", () => {

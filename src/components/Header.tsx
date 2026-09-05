@@ -1,6 +1,6 @@
 // FILE: src/components/Header.tsx
 import * as React from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutGrid,
   LogOut,
@@ -42,6 +42,8 @@ const desktopNavItems = [
 
 export default function Header({ onBuyCredits }: HeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isChristmasGifts = location.pathname.startsWith("/christmas/gifts");
   const { user, loading: authLoading } = useAuth();
 
   const {
@@ -90,7 +92,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[rgba(4,8,18,0.72)] backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:h-20 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-8">
           <Link
             to="/"
@@ -98,8 +100,28 @@ export default function Header({ onBuyCredits }: HeaderProps) {
             className="shrink-0"
             onClick={() => setMobileOpen(false)}
           >
-            <Logo />
+            {/* Christmas gifts: brand is centered in the empty header space on mobile */}
+            <span className={isChristmasGifts ? "hidden lg:inline-flex" : undefined}>
+              <Logo />
+            </span>
+            {isChristmasGifts ? <span className="inline-block w-8 lg:hidden" aria-hidden /> : null}
           </Link>
+
+          {isChristmasGifts ? (
+            <Link
+              to="/"
+              aria-label="The Digital Gifter home"
+              className="pointer-events-auto absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 lg:hidden"
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="grid h-7 w-7 place-items-center rounded-full border border-amber-200/50 bg-[radial-gradient(circle_at_35%_35%,#fff,#ffe39d_35%,#ffb85b_70%)] text-xs text-black shadow-[0_0_12px_rgba(255,195,90,.75)]">
+                ★
+              </span>
+              <span className="whitespace-nowrap font-serif text-[15px] tracking-wide text-amber-50">
+                The Digital Gifter
+              </span>
+            </Link>
+          ) : null}
 
           <nav className="hidden items-center gap-2 lg:flex">
             {desktopNavItems.map((item) => (

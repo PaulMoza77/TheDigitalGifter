@@ -280,6 +280,50 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     packages: [],
   },
   {
+    productKey: "christmas_gift_tree",
+    slug: "gifts",
+    productType: "tree",
+    name: "Get Your Christmas Gift",
+    description: "Pick a present under the tree and reveal a Christmas reward.",
+    active: true,
+    publicDiscoverable: true,
+    sortOrder: 75,
+    routePath: "/christmas/gifts",
+    localeDefault: "en",
+    metadata: { gift_tree_v1: true, live_offer: true },
+    packages: [
+      {
+        packageKey: "open_another",
+        packageName: "1 more gift",
+        description: "Open one more present under the Christmas gift tree.",
+        currency: "usd",
+        priceCents: 199,
+        compareAtCents: 399,
+        active: true,
+        purchasable: true,
+        features: ["1 gift opening", "Reward applied to your account"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: { live_offer: true, opens_granted: 1, gift_tree_opens: true },
+      },
+      {
+        packageKey: "open_five",
+        packageName: "5 more gifts",
+        description: "Open five more presents under the Christmas tree.",
+        currency: "usd",
+        priceCents: 499,
+        compareAtCents: 995,
+        active: true,
+        purchasable: true,
+        features: ["5 gift openings", "Best value"],
+        sortOrder: 20,
+        localeDefault: "en",
+        metadata: { live_offer: true, opens_granted: 5, gift_tree_opens: true },
+      },
+    
+    ],
+  },
+  {
     productKey: "christmas_tree",
     slug: "tree",
     productType: "tree",
@@ -420,6 +464,7 @@ export function hubProducts(catalog: ChristmasProductDef[]): ChristmasProductDef
 export function isComingSoon(product: ChristmasProductDef): boolean {
   if (
     product.metadata?.tree_v1 ||
+    product.metadata?.gift_tree_v1 ||
     product.metadata?.advent_v1 ||
     product.metadata?.wishlist_v1 ||
     product.metadata?.gift_finder_v1 ||
@@ -442,6 +487,7 @@ const PORTRAIT_VERTICAL_KEYS = new Set([
 const EXPERIENCE_OPEN_KEYS = new Set([
   ...PORTRAIT_VERTICAL_KEYS,
   "christmas_tree",
+  "christmas_gift_tree",
   "christmas_advent",
   "christmas_wishlist",
   "christmas_gift_finder",

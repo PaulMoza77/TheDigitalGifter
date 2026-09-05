@@ -33,6 +33,8 @@ const MIME = {
   ".txt": "text/plain; charset=utf-8",
   ".woff2": "font/woff2",
   ".map": "application/json; charset=utf-8",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
 };
 
 function safeJoin(base, requestPath) {
@@ -44,15 +46,70 @@ function safeJoin(base, requestPath) {
   return abs;
 }
 
-function sendFile(res, filePath, extraHeaders = {}) {
+function parseRange(rangeHeader, size) {
+  const m = /^bytes=(\d*)-(\d*)$/i.exec(String(rangeHeader || "").trim());
+  if (!m) return null;
+  let start = m[1] === "" ? null : Number(m[1]);
+  let end = m[2] === "" ? null : Number(m[2]);
+  if (start == null && end == null) return null;
+  if (start == null) {
+    const suffix = end;
+    if (!Number.isFinite(suffix) || suffix <= 0) return null;
+    start = Math.max(0, size - suffix);
+    end = size - 1;
+  } else {
+    if (!Number.isFinite(start) || start < 0 || start >= size) return null;
+    end = end == null || !Number.isFinite(end) ? size - 1 : Math.min(end, size - 1);
+    if (end < start) return null;
+  }
+  return { start, end };
+}
+
+function sendFile(res, filePath, extraHeaders = {}, req = null) {
   const stat = statSync(filePath);
   if (!stat.isFile()) return false;
   const type = MIME[extname(filePath).toLowerCase()] || "application/octet-stream";
-  res.statusCode = 200;
-  res.setHeader("Content-Type", type);
-  res.setHeader("Content-Length", String(stat.size));
-  for (const [key, value] of Object.entries(extraHeaders)) {
+  const size = stat.size;
+  const method = String(req?.method || "GET").toUpperCase();
+  const rangeHeader = req?.headers?.range;
+  const extra = { ...extraHeaders };
+
+  // Media needs Accept-Ranges for seeking / progressive playback.
+  if (type.startsWith("video/") || type.startsWith("audio/") || type === "image/jpeg" || type === "image/webp") {
+    if (!extra["Accept-Ranges"]) extra["Accept-Ranges"] = "bytes";
+  }
+
+  for (const [key, value] of Object.entries(extra)) {
     res.setHeader(key, value);
+  }
+  res.setHeader("Content-Type", type);
+
+  if (rangeHeader && (type.startsWith("video/") || type.startsWith("audio/"))) {
+    const range = parseRange(rangeHeader, size);
+    if (!range) {
+      res.statusCode = 416;
+      res.setHeader("Content-Range", `bytes */${size}`);
+      res.end();
+      return true;
+    }
+    const { start, end } = range;
+    const chunk = end - start + 1;
+    res.statusCode = 206;
+    res.setHeader("Content-Range", `bytes ${start}-${end}/${size}`);
+    res.setHeader("Content-Length", String(chunk));
+    if (method === "HEAD") {
+      res.end();
+      return true;
+    }
+    createReadStream(filePath, { start, end }).pipe(res);
+    return true;
+  }
+
+  res.statusCode = 200;
+  res.setHeader("Content-Length", String(size));
+  if (method === "HEAD") {
+    res.end();
+    return true;
   }
   createReadStream(filePath).pipe(res);
   return true;
@@ -127,7 +184,7 @@ async function handle(req, res) {
       if (existsSync(candidate) && sendFile(res, candidate, {
         "Content-Type": "application/octet-stream",
         "Cache-Control": "public, max-age=86400",
-      })) {
+      }, req)) {
         return;
       }
     }
@@ -140,15 +197,26 @@ async function handle(req, res) {
   if (String(req.method || "GET").toUpperCase() === "HEAD" || String(req.method || "GET").toUpperCase() === "GET") {
     const asset = safeJoin(distDir, url.pathname);
     if (asset && existsSync(asset) && statSync(asset).isFile()) {
-      const extra = url.pathname.startsWith("/assets/")
-        ? { "Cache-Control": "public, max-age=31536000, immutable" }
-        : {};
-      sendFile(res, asset, extra);
+      let extra = {};
+      if (url.pathname.startsWith("/assets/")) {
+        // Vite fingerprinted bundles
+        extra = { "Cache-Control": "public, max-age=31536000, immutable" };
+      } else if (url.pathname.startsWith("/christmas/gifts/")) {
+        // Versioned via ?v= content stamp in giftTreeMedia.ts
+        const hasVersion = url.searchParams.has("v");
+        extra = {
+          "Cache-Control": hasVersion
+            ? "public, max-age=31536000, immutable"
+            : "public, max-age=86400",
+          "Accept-Ranges": "bytes",
+        };
+      }
+      sendFile(res, asset, extra, req);
       return;
     }
     const index = join(distDir, "index.html");
     if (existsSync(index)) {
-      sendFile(res, index, { "Cache-Control": "no-cache" });
+      sendFile(res, index, { "Cache-Control": "no-cache" }, req);
       return;
     }
   }
