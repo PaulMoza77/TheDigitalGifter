@@ -32,16 +32,17 @@ type Hotspot = Omit<PresentVisual, "id" | "style" | "ribbon">;
  * Invisible borders mapped to gifts already in the scene photo/video.
  * Coordinates are % of the source media (not the cropped viewport).
  */
+/** Slightly generous hit boxes so desktop clicks reliably catch photo gifts. */
 const DESKTOP_HOTSPOTS: Hotspot[] = [
-  { leftPct: 37.4, topPct: 74.6, widthPct: 4.4, heightPct: 8.6, depth: 1 },
-  { leftPct: 41.0, topPct: 73.0, widthPct: 5.8, heightPct: 10.8, depth: 2 },
-  { leftPct: 45.4, topPct: 73.8, widthPct: 5.8, heightPct: 11.4, depth: 3 },
-  { leftPct: 50.4, topPct: 78.8, widthPct: 5.0, heightPct: 6.8, depth: 4 },
-  { leftPct: 54.8, topPct: 75.4, widthPct: 6.0, heightPct: 10.4, depth: 3 },
-  { leftPct: 60.0, topPct: 73.0, widthPct: 6.4, heightPct: 9.6, depth: 1 },
-  { leftPct: 60.6, topPct: 79.8, widthPct: 3.6, heightPct: 6.2, depth: 5 },
-  { leftPct: 66.0, topPct: 75.0, widthPct: 5.2, heightPct: 9.0, depth: 2 },
-  { leftPct: 68.8, topPct: 78.0, widthPct: 4.4, heightPct: 7.2, depth: 4 },
+  { leftPct: 36.6, topPct: 73.8, widthPct: 5.4, heightPct: 10.0, depth: 1 },
+  { leftPct: 40.2, topPct: 72.2, widthPct: 6.6, heightPct: 12.0, depth: 2 },
+  { leftPct: 44.8, topPct: 72.8, widthPct: 6.8, heightPct: 12.6, depth: 3 },
+  { leftPct: 49.6, topPct: 77.6, widthPct: 6.2, heightPct: 8.4, depth: 4 },
+  { leftPct: 53.8, topPct: 74.4, widthPct: 7.0, heightPct: 11.6, depth: 3 },
+  { leftPct: 59.0, topPct: 72.2, widthPct: 7.4, heightPct: 11.0, depth: 1 },
+  { leftPct: 59.8, topPct: 78.8, widthPct: 4.8, heightPct: 7.6, depth: 5 },
+  { leftPct: 65.0, topPct: 74.0, widthPct: 6.4, heightPct: 10.4, depth: 2 },
+  { leftPct: 68.0, topPct: 76.8, widthPct: 5.6, heightPct: 8.8, depth: 4 },
 ];
 
 const MOBILE_HOTSPOTS: Hotspot[] = [

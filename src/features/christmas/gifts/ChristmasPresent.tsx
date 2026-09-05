@@ -11,7 +11,6 @@ export type PresentVisual = {
   /** Height as % of the source scene media */
   heightPct: number;
   depth: number;
-  /** Kept for layout identity / tests — not rendered as a fake gift */
   style?: string;
   ribbon?: string;
 };
@@ -22,13 +21,12 @@ type Props = {
   onSelect: (id: string) => void;
   reduceMotion?: boolean;
   selected?: boolean;
-  /** Subtle one-at-a-time idle nudge attention (glow only). */
   attention?: boolean;
 };
 
 /**
- * Invisible hotspot over a gift already in the scene photo/video.
- * Hover / focus → warm glow. Click / tap → open.
+ * Invisible hotspot over a gift in the photo/video.
+ * Locked gifts stay clickable so desktop can open “Get more chances”.
  */
 export function ChristmasPresent({
   present,
@@ -38,15 +36,23 @@ export function ChristmasPresent({
   selected = false,
   attention = false,
 }: Props) {
-  const interactive = state === "available";
+  const available = state === "available";
   const opening = state === "opening";
-  const locked = state === "locked" || state === "opened";
+  const opened = state === "opened";
+  // Keep locked gifts clickable (opens more-chances). Only block while opening.
+  const canPress = state !== "opening";
+  const showGlowIdle = available || state === "locked";
+
+  function activate() {
+    if (!canPress) return;
+    onSelect(present.id);
+  }
 
   function onKeyDown(e: KeyboardEvent<HTMLButtonElement>) {
-    if (!interactive) return;
+    if (!canPress) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      onSelect(present.id);
+      activate();
     }
   }
 
@@ -54,59 +60,59 @@ export function ChristmasPresent({
     <button
       type="button"
       aria-label={
-        interactive
+        available
           ? `Open Christmas gift ${present.id.replace("_", " ")}`
-          : state === "opened"
+          : opened
             ? "Already opened gift"
-            : "Gift locked — one free gift per visitor"
+            : "Gift locked — get more chances to open another"
       }
       aria-pressed={selected}
-      disabled={!interactive}
-      onClick={() => interactive && onSelect(present.id)}
+      aria-disabled={!canPress || opened}
+      // IMPORTANT: do not use disabled for locked — desktop clicks were swallowed.
+      disabled={opening}
+      onClick={activate}
       onKeyDown={onKeyDown}
       className={`gt-hotspot absolute touch-manipulation outline-none ${
-        interactive && !reduceMotion ? "gt-hotspot-interactive" : ""
-      } ${attention && interactive && !reduceMotion ? "gt-hotspot-attention" : ""} ${
+        showGlowIdle && !reduceMotion ? "gt-hotspot-interactive" : ""
+      } ${attention && available && !reduceMotion ? "gt-hotspot-attention" : ""} ${
         opening ? "gt-hotspot-opening" : ""
-      } ${selected && interactive ? "gt-hotspot-selected" : ""}`}
+      } ${selected && available ? "gt-hotspot-selected" : ""}`}
       style={{
         left: `${present.leftPct}%`,
         top: `${present.topPct}%`,
         width: `${present.widthPct}%`,
         height: `${present.heightPct}%`,
         zIndex: 20 + present.depth,
-        cursor: interactive ? "pointer" : "default",
+        cursor: canPress && !opened ? "pointer" : opened ? "default" : "pointer",
         background: "transparent",
         border: "none",
-        borderRadius: 10,
-        opacity: locked && state !== "opened" ? 0.4 : 1,
-        // Invisible hit target — glow only via CSS classes / pseudo glow layer
+        borderRadius: 12,
+        opacity: opened ? 0.45 : 1,
         boxShadow: "none",
         transition: reduceMotion
           ? "opacity 150ms ease"
-          : "transform 220ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease",
+          : "transform 200ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease",
       }}
     >
-      {/* Soft gold bloom — stays invisible until hover/focus/open */}
       <span aria-hidden className="gt-hotspot-glow" />
       <style>{`
         .gt-hotspot-glow {
           position: absolute;
-          inset: -8%;
-          border-radius: 14px;
+          inset: -14%;
+          border-radius: 16px;
           pointer-events: none;
           opacity: 0;
           background:
             radial-gradient(ellipse at 50% 55%,
-              rgba(255,230,150,0.42) 0%,
-              rgba(255,190,90,0.18) 42%,
-              transparent 72%);
+              rgba(255,230,150,0.5) 0%,
+              rgba(255,190,90,0.22) 40%,
+              transparent 70%);
           box-shadow:
-            inset 0 0 0 1.5px rgba(255,236,190,0.55),
-            0 0 18px rgba(255,200,110,0.45),
-            0 0 36px rgba(255,170,60,0.28);
-          transition: opacity 180ms ease, transform 220ms ease;
-          transform: scale(0.96);
+            inset 0 0 0 2px rgba(255,236,190,0.65),
+            0 0 22px rgba(255,200,110,0.55),
+            0 0 42px rgba(255,170,60,0.32);
+          transition: opacity 160ms ease, transform 200ms ease;
+          transform: scale(0.94);
         }
         @media (hover: hover) and (pointer: fine) {
           .gt-hotspot-interactive:hover:not(:disabled) .gt-hotspot-glow {
@@ -114,7 +120,7 @@ export function ChristmasPresent({
             transform: scale(1);
           }
           .gt-hotspot-interactive:hover:not(:disabled) {
-            transform: translateY(-2px) scale(1.03);
+            transform: translateY(-2px) scale(1.04);
           }
         }
         .gt-hotspot-interactive:focus-visible .gt-hotspot-glow,
@@ -122,15 +128,12 @@ export function ChristmasPresent({
           opacity: 1;
           transform: scale(1);
         }
-        .gt-hotspot-interactive:focus-visible {
-          outline: none;
-        }
         .gt-hotspot-interactive:active:not(:disabled) {
           transform: scale(0.97);
         }
         .gt-hotspot-opening .gt-hotspot-glow {
           opacity: 1;
-          transform: scale(1.08);
+          transform: scale(1.1);
           animation: gt-hotspot-bloom 700ms ease-out forwards;
         }
         .gt-hotspot-attention .gt-hotspot-glow {
@@ -138,12 +141,12 @@ export function ChristmasPresent({
         }
         @keyframes gt-hotspot-bloom {
           0% { opacity: 0.55; filter: brightness(1); }
-          45% { opacity: 1; filter: brightness(1.25); }
+          45% { opacity: 1; filter: brightness(1.3); }
           100% { opacity: 0.9; filter: brightness(1.1); }
         }
         @keyframes gt-hotspot-nudge {
-          0%, 100% { opacity: 0; transform: scale(0.96); }
-          45%, 55% { opacity: 0.85; transform: scale(1.02); }
+          0%, 100% { opacity: 0; transform: scale(0.94); }
+          45%, 55% { opacity: 0.9; transform: scale(1.02); }
         }
         @media (prefers-reduced-motion: reduce) {
           .gt-hotspot-attention .gt-hotspot-glow,
