@@ -241,8 +241,8 @@ export async function claimAndSendLifecycleEmail(input: {
       ? `${input.siteOrigin.replace(/\/$/, "")}${input.crossSellUrl}`
       : undefined,
     unsubscribeUrl:
-      category === "marketing" && emailNormalized
-        ? `${input.siteOrigin.replace(/\/$/, "")}/unsubscribe?email=${encodeURIComponent(emailNormalized)}`
+      category === "marketing" && email
+        ? `${input.siteOrigin.replace(/\/$/, "")}/unsubscribe?email=${encodeURIComponent(email)}`
         : undefined,
   });
 

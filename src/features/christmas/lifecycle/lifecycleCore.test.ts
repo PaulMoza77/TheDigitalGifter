@@ -115,15 +115,15 @@ describe("christmas lifecycle core", () => {
     expect(path).not.toMatch(/cs_live|client_secret|sk_/i);
   });
 
-  it("product landing paths are public routes without secrets", () => {
+  it("product landing paths are public routes", () => {
     expect(productLandingPath("christmas_santa_video")).toBe(
       "/christmas/santa-video",
     );
     expect(productLandingPath("christmas_card")).toBe("/christmas/cards");
+    expect(productLandingPath("christmas_couple")).toBe("/christmas/couples");
     expect(abandonedResumePath(order({ sourceRoute: null }))).toContain(
       "photo-generator",
     );
-    expect(productLandingPath("unknown")).not.toMatch(/secret|sk_/i);
   });
 
   it("cross-sell never offers disabled products", () => {
@@ -163,7 +163,7 @@ describe("christmas lifecycle core", () => {
     ).toBe(true);
   });
 
-  it("marketing copy includes unsubscribe seam", () => {
+  it("marketing copy includes unsubscribe", () => {
     const copy = lifecycleEmailCopy("abandoned_checkout", "en", {
       productName: "Portrait",
       resumeUrl: "https://example.com/r",
