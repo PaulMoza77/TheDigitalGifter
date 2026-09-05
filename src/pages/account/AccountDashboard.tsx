@@ -460,7 +460,18 @@ export default function AccountDashboard() {
       ) : null}
 
       <PetsGenerations galleries={petGalleries} loading={loading} onRefresh={() => void loadDashboard()} />
-      <ChristmasGenerations galleries={christmasGalleries} loading={loading} />
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-white">Christmas</h2>
+          <Link
+            to="/account/christmas"
+            className="text-sm text-amber-300 underline-offset-2 hover:underline"
+          >
+            Open Christmas hub
+          </Link>
+        </div>
+        <ChristmasGenerations galleries={christmasGalleries} loading={loading} />
+      </div>
 
       <section className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.5fr)_420px]">
         <RecentGenerations items={recentGenerations} />

@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { Download } from "lucide-react";
 import ClientEmptyState from "@/components/client/ClientEmptyState";
 import { CHRISTMAS_V2_ROUTE } from "@/features/christmas-v2/config";
+import type { ChristmasLocale } from "@/features/christmas/catalog";
+import { t } from "@/features/christmas/i18n";
 
 export type ChristmasAccountGallery = {
   orderId: string;
@@ -35,14 +37,16 @@ function packLabel(packKey: string) {
 export default function ChristmasGenerations({
   galleries,
   loading,
+  locale = "en",
 }: {
   galleries: ChristmasAccountGallery[];
   loading?: boolean;
+  locale?: ChristmasLocale;
 }) {
   if (loading && galleries.length === 0) {
     return (
       <div className="rounded-[24px] border border-white/10 bg-zinc-950/70 p-5 text-sm text-zinc-400">
-        Loading Christmas portraits…
+        {t(locale, "account.packsLoading")}
       </div>
     );
   }
@@ -50,9 +54,9 @@ export default function ChristmasGenerations({
   if (galleries.length === 0) {
     return (
       <ClientEmptyState
-        title="No Christmas packs yet"
-        description="Create your first $3 Christmas portrait pack."
-        ctaLabel="Try Christmas AI Photos"
+        title={t(locale, "account.packsEmptyTitle")}
+        description={t(locale, "account.packsEmptyDescription")}
+        ctaLabel={t(locale, "account.packsEmptyCta")}
         ctaTo={CHRISTMAS_V2_ROUTE}
       />
     );
@@ -67,13 +71,17 @@ export default function ChristmasGenerations({
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-xs uppercase tracking-[0.16em] text-amber-300/80">Christmas</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-amber-300/80">
+                {t(locale, "account.eyebrow")}
+              </p>
               <h3 className="text-base font-semibold text-white">
                 {gallery.packName || packLabel(gallery.packKey)}
               </h3>
               <p className="mt-1 text-xs text-zinc-400">
-                {new Date(gallery.createdAt).toLocaleDateString()} · {gallery.status} ·{" "}
-                {gallery.imageCount} photos
+                {new Date(gallery.createdAt).toLocaleDateString(
+                  locale === "ro" ? "ro-RO" : "en-US",
+                )}{" "}
+                · {gallery.status} · {gallery.imageCount} photos
                 {gallery.videoCount ? ` · ${gallery.videoCount} videos` : ""}
               </p>
             </div>
@@ -81,7 +89,7 @@ export default function ChristmasGenerations({
               to={`/christmas-ai-photos/order?token=${encodeURIComponent(gallery.publicToken)}`}
               className="text-sm text-amber-300 underline-offset-2 hover:underline"
             >
-              Open results
+              {t(locale, "account.openResults")}
             </Link>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -96,7 +104,11 @@ export default function ChristmasGenerations({
                   rel="noreferrer"
                   className="group relative overflow-hidden rounded-xl"
                 >
-                  <img src={scene.imageUrl || ""} alt={scene.title} className="aspect-[3/4] w-full object-cover" />
+                  <img
+                    src={scene.imageUrl || ""}
+                    alt={scene.title}
+                    className="aspect-[3/4] w-full object-cover"
+                  />
                   <span className="absolute bottom-1 right-1 grid h-7 w-7 place-items-center rounded-full bg-black/55 text-white opacity-0 transition group-hover:opacity-100">
                     <Download className="h-3.5 w-3.5" />
                   </span>

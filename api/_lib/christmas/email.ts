@@ -5,6 +5,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { CHRISTMAS_PACKS, siteOrigin } from "./constants";
 import { asString } from "./crypto";
+import {
+  christmasV2DeliveryEmailCopy,
+  normalizeEmailLocale,
+} from "./emailI18n";
 
 function escapeHtml(value: string): string {
   return value
@@ -20,6 +24,8 @@ export async function sendChristmasDeliveryEmail(input: {
   email: string;
   publicToken: string;
   packKey: keyof typeof CHRISTMAS_PACKS;
+  /** Persisted order/user locale — never infer from webhook headers alone. */
+  locale?: string | null;
 }): Promise<{ sent: boolean; reason?: string }> {
   const kind =
     input.packKey === "magic"
@@ -38,21 +44,20 @@ export async function sendChristmasDeliveryEmail(input: {
 
   const pack = CHRISTMAS_PACKS[input.packKey];
   const url = `${siteOrigin()}/christmas-ai-photos/order?token=${encodeURIComponent(input.publicToken)}`;
-  const subject =
-    input.packKey === "magic"
-      ? "Your Christmas Magic Pack is ready"
-      : input.packKey === "ultimate"
-        ? "Your Ultimate Christmas Pack is ready"
-        : "Your Christmas photos are ready \u{1F384}";
+  const copy = christmasV2DeliveryEmailCopy(normalizeEmailLocale(input.locale), {
+    packKey: input.packKey,
+    packName: pack.name,
+    imageCount: pack.imageCount,
+    videoCount: pack.videoCount,
+  });
+  const subject = copy.subject;
 
   const html = `<!doctype html><html><body style="font-family:Georgia,serif;background:#3b0610;color:#F7F0E4;padding:32px">
   <div style="max-width:560px;margin:0 auto;background:#5c0a14;border-radius:18px;padding:28px">
     <h1 style="font-size:28px;margin:0 0 12px">${escapeHtml(subject)}</h1>
-    <p style="line-height:1.6;opacity:.9">${escapeHtml(pack.name)} includes ${pack.imageCount} Christmas photos${
-      pack.videoCount ? ` and ${pack.videoCount} short AI video${pack.videoCount > 1 ? "s" : ""}` : ""
-    }.</p>
-    <p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#1B4332;color:#F7F0E4;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600">View your results</a></p>
-    <p style="font-size:12px;opacity:.55">Digital Gifter \u00b7 No subscription</p>
+    <p style="line-height:1.6;opacity:.9">${escapeHtml(copy.body)}</p>
+    <p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#1B4332;color:#F7F0E4;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600">${escapeHtml(copy.cta)}</a></p>
+    <p style="font-size:12px;opacity:.55">${escapeHtml(copy.footer)}</p>
   </div></body></html>`;
 
   const apiKey = asString(process.env.RESEND_API_KEY);

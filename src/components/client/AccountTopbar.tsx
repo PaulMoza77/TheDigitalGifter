@@ -2,6 +2,7 @@
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
+  Gift,
   LayoutGrid,
   LogOut,
   Menu,
@@ -69,6 +70,7 @@ export default function AccountTopbar() {
   const items: TopbarItem[] = React.useMemo(() => {
     const base: TopbarItem[] = [
       { label: "Dashboard", to: "/account/dashboard", icon: LayoutGrid },
+      { label: "Christmas", to: "/account/christmas", icon: Gift },
       { label: "Affiliate", to: "/account/affiliate", icon: Users },
     ];
 
