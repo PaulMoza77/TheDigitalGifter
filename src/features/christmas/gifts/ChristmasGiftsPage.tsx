@@ -56,9 +56,12 @@ export default function ChristmasGiftsPage() {
   const [error, setError] = useState<string | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [compact, setCompact] = useState(false);
+  const [isMobileScene, setIsMobileScene] = useState(false);
   const [attentionId, setAttentionId] = useState<string | null>(null);
-  const presents = useMemo(() => presentLayout(compact ? 4 : 5), [compact]);
+  const presents = useMemo(
+    () => presentLayout(isMobileScene ? 6 : 7, isMobileScene ? "mobile" : "desktop"),
+    [isMobileScene],
+  );
   const [checkout, setCheckout] = useState<{
     clientSecret: string;
     publishableKey: string;
@@ -75,9 +78,7 @@ export default function ChristmasGiftsPage() {
 
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
-    const syncCompact = () => setCompact(window.innerWidth < 1024);
-    syncCompact();
-    window.addEventListener("resize", syncCompact);
+    setIsMobileScene(window.matchMedia("(max-width: 767px)").matches);
     captureFunnelAttribution(window.location.search);
     void supabase.auth.getSession().then(({ data }) => {
       const isAuthed = Boolean(data.session?.user);
@@ -95,7 +96,6 @@ export default function ChristmasGiftsPage() {
       setAuthed(Boolean(session?.user));
     });
     return () => {
-      window.removeEventListener("resize", syncCompact);
       sub.subscription.unsubscribe();
     };
   }, []);
@@ -386,53 +386,50 @@ export default function ChristmasGiftsPage() {
       />
 
       <div className="relative h-[calc(100dvh-4.05rem)] max-h-[calc(100dvh-4.05rem)] overflow-hidden text-rose-50">
-        <ChristmasTreeScene reduceMotion={reduceMotion} className="absolute inset-0" />
+        <ChristmasTreeScene
+          reduceMotion={reduceMotion}
+          className="absolute inset-0"
+          onBreakpointChange={setIsMobileScene}
+        >
+          <section className="absolute inset-0" aria-label="Christmas presents">
+            {presents.map((p) => (
+              <ChristmasPresent
+                key={p.id}
+                present={p}
+                state={presentState(p.id)}
+                selected={selectedId === p.id}
+                attention={attentionId === p.id}
+                reduceMotion={reduceMotion}
+                onSelect={requestOpen}
+              />
+            ))}
+            {burst && !reduceMotion ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(circle at 50% 78%, rgba(255,220,150,0.35), transparent 38%)",
+                  animation: "gt-burst 700ms ease-out forwards",
+                }}
+              />
+            ) : null}
+          </section>
+        </ChristmasTreeScene>
 
         {/* Brand lives in the site header on this route — no floating chip over the tree */}
 
-        {/* No side reward panels — room stays fully visible. Surprises via link below. */}
-
-        {/* z4 — interactive presents nestled on the gift pile under the tree */}
-        <section
-          className="absolute inset-x-0 bottom-[5.35rem] z-[4] mx-auto h-[11%] max-w-[min(480px,78vw)] sm:bottom-[5.6rem] sm:h-[13%] sm:max-w-[min(640px,42vw)]"
-          aria-label="Christmas presents"
-        >
-          {presents.map((p) => (
-            <ChristmasPresent
-              key={p.id}
-              present={p}
-              state={presentState(p.id)}
-              selected={selectedId === p.id}
-              attention={attentionId === p.id}
-              scale={compact ? 0.82 : 0.9}
-              reduceMotion={reduceMotion}
-              onSelect={requestOpen}
-            />
-          ))}
-          {burst && !reduceMotion ? (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(circle at 50% 70%, rgba(255,220,150,0.45), transparent 42%)",
-                animation: "gt-burst 700ms ease-out forwards",
-              }}
-            />
-          ) : null}
-        </section>
-
         {error ? (
           <p
-            className="absolute inset-x-0 bottom-[3.6rem] z-[6] text-center text-sm text-red-200"
+            className="absolute inset-x-0 bottom-[4.6rem] z-[6] text-center text-sm text-red-200"
             role="alert"
           >
             {error}
           </p>
         ) : null}
 
-        {/* z6 — CTA tucked onto the floor pad under the gift story */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] px-4 pb-[max(0.1rem,env(safe-area-inset-bottom))] pt-0">
+        {/* CTA sits on the rug under the photo gifts */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] px-4 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-0">
           <div className="pointer-events-auto mx-auto flex w-[calc(100%-32px)] max-w-[360px] flex-col items-center sm:w-full">
             <button
               type="button"

@@ -39,10 +39,14 @@ describe("christmas gift tree catalog", () => {
     expect(unique.size).toBeGreaterThan(1);
   });
 
-  it("lays out 6–7 distinct presents", () => {
-    const layout = presentLayout(6);
-    expect(layout.length).toBe(6);
-    expect(new Set(layout.map((p) => p.style)).size).toBeGreaterThan(3);
+  it("lays out distinct photo-aligned present hotspots", () => {
+    const desktop = presentLayout(7, "desktop");
+    const mobile = presentLayout(6, "mobile");
+    expect(desktop.length).toBe(7);
+    expect(mobile.length).toBe(6);
+    expect(new Set(desktop.map((p) => p.id)).size).toBe(7);
+    expect(desktop.every((p) => p.widthPct > 0 && p.heightPct > 0)).toBe(true);
+    expect(mobile.every((p) => p.topPct > 50)).toBe(true);
   });
 });
 
