@@ -179,10 +179,10 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
               height: "40%",
               borderRadius: "50%",
               background:
-                "radial-gradient(ellipse at 40% 60%, rgba(255,130,40,0.5) 0%, rgba(255,170,60,0.28) 32%, transparent 68%)",
-              filter: "blur(16px)",
+                "radial-gradient(ellipse at 40% 60%, rgba(255,140,50,0.62) 0%, rgba(255,180,70,0.35) 30%, transparent 68%)",
+              filter: "blur(14px)",
               mixBlendMode: "screen",
-              animation: "gt-fire-flicker 2.2s ease-in-out infinite",
+              animation: "gt-fire-flicker 1.9s ease-in-out infinite",
               willChange: "opacity, transform",
             }}
           />

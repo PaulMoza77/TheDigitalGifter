@@ -39,7 +39,6 @@ function prefersReducedMotion(): boolean {
 
 export default function ChristmasGiftsPage() {
   const navigate = useNavigate();
-  const presents = useMemo(() => presentLayout(6), []);
   const [state, setState] = useState<GiftTreePersistedState>(() => readGiftTreeState());
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -59,6 +58,7 @@ export default function ChristmasGiftsPage() {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [compact, setCompact] = useState(false);
   const [attentionId, setAttentionId] = useState<string | null>(null);
+  const presents = useMemo(() => presentLayout(compact ? 4 : 5), [compact]);
   const [checkout, setCheckout] = useState<{
     clientSecret: string;
     publishableKey: string;
@@ -388,61 +388,54 @@ export default function ChristmasGiftsPage() {
       <main className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden text-rose-50">
         <ChristmasTreeScene reduceMotion={reduceMotion} className="absolute inset-0" />
 
-        {/* z6 — header brand chip */}
-        <div className="pointer-events-none absolute inset-x-0 top-3 z-[6] flex justify-center px-3">
-          <div className="flex items-center gap-2 rounded-full border border-amber-200/20 bg-black/20 px-3 py-1.5 backdrop-blur-md">
-            <img
-              src="/TheDigitalGifter.png"
-              alt=""
-              className="h-6 w-6 rounded-full object-cover ring-1 ring-amber-200/35"
-            />
-            <p className="font-serif text-sm tracking-wide text-amber-50/95">The Digital Gifter</p>
-          </div>
-        </div>
+        {/* Brand lives in the site header on this route — no floating chip over the tree */}
 
-        {/* z5 — floating reward cards (no full-height columns) */}
+        {/* z5 — floating reward cards clear of the tree */}
         {!compact ? (
           <>
             <PrizeRail
               side="left"
               limit={4}
-              className="gt-rail-left pointer-events-auto absolute top-[16%] z-[5] hidden w-[180px] lg:block"
+              className="gt-rail-left pointer-events-auto absolute top-[18%] z-[5] hidden w-[170px] lg:block"
             />
             <PrizeRail
               side="right"
               limit={4}
-              className="gt-rail-right pointer-events-auto absolute top-[16%] z-[5] hidden w-[180px] lg:block"
+              className="gt-rail-right pointer-events-auto absolute top-[18%] z-[5] hidden w-[170px] lg:block"
             />
           </>
         ) : (
-          <>
+          <div className="pointer-events-auto absolute inset-x-2 bottom-[7.15rem] z-[5] flex gap-2">
+            {/* Bottom strip under the tree — never covers the canopy */}
             <PrizeRail
               side="left"
-              limit={3}
+              limit={2}
               compact
               onSeeAll={() => setSeeAllOpen(true)}
-              className="pointer-events-auto absolute left-2 top-[14%] z-[5] w-[min(105px,26vw)] sm:w-[108px]"
+              className="min-w-0 flex-1"
             />
             <PrizeRail
               side="right"
-              limit={3}
+              limit={2}
               compact
               onSeeAll={() => setSeeAllOpen(true)}
-              className="pointer-events-auto absolute right-2 top-[14%] z-[5] w-[min(105px,26vw)] sm:w-[108px]"
+              className="min-w-0 flex-1"
             />
-          </>
+          </div>
         )}
 
         {!compact ? (
           <style>{`
-            .gt-rail-left { left: clamp(20px, 3vw, 60px); }
-            .gt-rail-right { right: clamp(20px, 3vw, 60px); }
+            .gt-rail-left { left: clamp(16px, 2.5vw, 48px); }
+            .gt-rail-right { right: clamp(16px, 2.5vw, 48px); }
           `}</style>
         ) : null}
 
-        {/* z4 — interactive presents */}
+        {/* z4 — interactive presents (spaced, no overlap) */}
         <section
-          className="absolute inset-x-0 bottom-[8.75rem] z-[4] mx-auto h-[32%] max-w-[min(780px,88vw)] sm:bottom-[9.25rem] sm:h-[34%]"
+          className={`absolute inset-x-0 z-[4] mx-auto h-[28%] max-w-[min(640px,88vw)] sm:h-[30%] sm:max-w-[min(720px,70vw)] ${
+            compact ? "bottom-[12.6rem]" : "bottom-[8.75rem] sm:bottom-[9.25rem]"
+          }`}
           aria-label="Christmas presents"
         >
           {presents.map((p) => (

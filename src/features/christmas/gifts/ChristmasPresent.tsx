@@ -150,9 +150,9 @@ export function ChristmasPresent({
         opacity: locked && state !== "opened" ? 0.48 : 1,
         filter:
           opening || selected
-            ? "drop-shadow(0 0 18px rgba(212,175,110,0.7))"
+            ? "drop-shadow(0 0 22px rgba(255,210,120,0.95)) drop-shadow(0 8px 14px rgba(0,0,0,0.35))"
             : interactive
-              ? "drop-shadow(0 10px 16px rgba(0,0,0,0.4))"
+              ? "drop-shadow(0 0 14px rgba(255,200,110,0.72)) drop-shadow(0 8px 12px rgba(0,0,0,0.35))"
               : "drop-shadow(0 5px 12px rgba(0,0,0,0.3))",
         transition: reduceMotion
           ? "opacity 150ms ease"
@@ -266,7 +266,7 @@ export function ChristmasPresent({
         @media (hover: hover) and (pointer: fine) {
           .gt-present-interactive:hover:not(:disabled) {
             transform: translateY(-5px) scale(1.025) !important;
-            filter: drop-shadow(0 0 16px rgba(212,175,110,0.65)) !important;
+            filter: drop-shadow(0 0 20px rgba(255,210,120,0.9)) drop-shadow(0 8px 14px rgba(0,0,0,0.35)) !important;
           }
         }
         .gt-present-interactive:active:not(:disabled) {

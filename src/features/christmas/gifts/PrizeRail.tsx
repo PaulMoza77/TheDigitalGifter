@@ -38,7 +38,7 @@ function RewardIcon({ id, compact }: { id: string; compact?: boolean }) {
       : id.includes("santa") || id.includes("discount")
         ? "%"
         : "🎁";
-  const size = compact ? 28 : 32;
+  const size = compact ? 22 : 32;
   return (
     <span
       aria-hidden
@@ -46,7 +46,7 @@ function RewardIcon({ id, compact }: { id: string; compact?: boolean }) {
       style={{
         width: size,
         height: size,
-        fontSize: compact ? 11 : 13,
+        fontSize: compact ? 10 : 13,
         background:
           "linear-gradient(145deg, rgba(232,201,122,0.28), rgba(80,50,30,0.45))",
         border: "1px solid rgba(232,201,122,0.28)",
@@ -85,31 +85,31 @@ export function PrizeRail({
       aria-label="Possible Christmas surprises"
       style={{
         background: compact
-          ? "rgba(15, 12, 10, 0.40)"
+          ? "rgba(15, 12, 10, 0.38)"
           : "rgba(15, 12, 10, 0.42)",
         border: "1px solid rgba(235,190,90,0.22)",
         backdropFilter: "blur(10px)",
         WebkitBackdropFilter: "blur(10px)",
-        borderRadius: 16,
-        padding: compact ? "7px" : "9px",
+        borderRadius: compact ? 12 : 16,
+        padding: compact ? "5px" : "9px",
         boxShadow: "0 4px 18px rgba(0,0,0,0.18)",
       }}
     >
       <p
-        className={`mb-1.5 font-semibold uppercase tracking-[0.14em] text-amber-200/70 ${
-          compact ? "text-[8px]" : "text-[9px]"
+        className={`mb-1 font-semibold uppercase tracking-[0.14em] text-amber-200/70 ${
+          compact ? "text-[7px]" : "text-[9px]"
         }`}
       >
-        Possible surprises
+        {compact ? "Surprises" : "Possible surprises"}
       </p>
-      <ul className="space-y-2">
+      <ul className={compact ? "space-y-1" : "space-y-2"}>
         {items.map((item) => (
           <li
             key={item.id}
-            className="flex items-center gap-2 rounded-xl"
+            className="flex items-center gap-1.5 rounded-lg"
             style={{
-              minHeight: compact ? 52 : 56,
-              padding: compact ? "8px" : "8px 10px",
+              minHeight: compact ? 36 : 56,
+              padding: compact ? "5px 6px" : "8px 10px",
               background: "rgba(255,255,255,0.035)",
             }}
           >
@@ -117,14 +117,14 @@ export function PrizeRail({
             <div className="min-w-0 flex-1">
               <p
                 className={`line-clamp-2 font-medium leading-tight text-amber-50/95 ${
-                  compact ? "text-[10px]" : "text-[12px]"
+                  compact ? "text-[9px]" : "text-[12px]"
                 }`}
               >
                 {item.title}
               </p>
               <p
                 className={`capitalize ${rarityTone(item.rarity)} ${
-                  compact ? "text-[9px]" : "text-[10px]"
+                  compact ? "text-[8px]" : "text-[10px]"
                 }`}
               >
                 {item.rarity}
@@ -137,7 +137,9 @@ export function PrizeRail({
         <button
           type="button"
           onClick={onSeeAll}
-          className="mt-2 w-full text-center text-[9px] font-semibold uppercase tracking-[0.14em] text-amber-200/70 hover:text-amber-100"
+          className={`mt-1.5 w-full text-center font-semibold uppercase tracking-[0.14em] text-amber-200/70 hover:text-amber-100 ${
+            compact ? "text-[8px]" : "text-[9px]"
+          }`}
         >
           See all
         </button>

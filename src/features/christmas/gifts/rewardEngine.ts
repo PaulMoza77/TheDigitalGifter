@@ -46,17 +46,17 @@ export function presentLayout(count = 8): Array<{
     "ivory",
   ] as const;
   const ribbons = ["classic", "cross", "bow"] as const;
-  // Arc at the photoreal tree base — lower + more centered under the trunk.
+  // Spaced arc under the tree — no overlapping boxes (leftPct = left edge).
   const positions = [
-    { leftPct: 18, bottomPct: 6, depth: 1, width: 52, height: 44 },
-    { leftPct: 30, bottomPct: 2, depth: 3, width: 64, height: 52 },
-    { leftPct: 44, bottomPct: 0, depth: 4, width: 72, height: 58 },
-    { leftPct: 56, bottomPct: 3, depth: 3, width: 62, height: 50 },
-    { leftPct: 68, bottomPct: 7, depth: 1, width: 50, height: 42 },
-    { leftPct: 36, bottomPct: 12, depth: 0, width: 46, height: 38 },
-    { leftPct: 54, bottomPct: 13, depth: 0, width: 44, height: 36 },
+    { leftPct: 6, bottomPct: 10, depth: 1, width: 54, height: 46 },
+    { leftPct: 28, bottomPct: 2, depth: 3, width: 58, height: 50 },
+    { leftPct: 50, bottomPct: 2, depth: 3, width: 58, height: 50 },
+    { leftPct: 72, bottomPct: 10, depth: 1, width: 54, height: 46 },
+    { leftPct: 17, bottomPct: 18, depth: 0, width: 48, height: 40 },
+    { leftPct: 61, bottomPct: 18, depth: 0, width: 48, height: 40 },
   ];
-  return positions.slice(0, Math.min(Math.max(count, 6), 7)).map((pos, i) => ({
+  const n = Math.min(Math.max(count, 4), 6);
+  return positions.slice(0, n).map((pos, i) => ({
     id: `present_${i + 1}`,
     style: styles[i % styles.length]!,
     ribbon: ribbons[i % ribbons.length]!,
