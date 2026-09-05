@@ -141,12 +141,16 @@ function capiToken(): string {
   return asString(Deno.env.get("META_CAPI_ACCESS_TOKEN") || Deno.env.get("META_ACCESS_TOKEN"));
 }
 
-async function postMetaCapi(payload: Record<string, unknown>): Promise<{ sent: boolean; reason?: string }> {
+async function postMetaCapi(
+  payload: Record<string, unknown>,
+  options?: { testEventCode?: string | null },
+): Promise<{ sent: boolean; reason?: string; eventsReceived?: number }> {
   const id = pixelId();
   const token = capiToken();
   if (!id || !token) return { sent: false, reason: "unconfigured" };
 
-  const testCode = asString(Deno.env.get("META_TEST_EVENT_CODE"));
+  const testCode =
+    asString(options?.testEventCode) || asString(Deno.env.get("META_TEST_EVENT_CODE"));
   const body: Record<string, unknown> = { ...payload };
   if (testCode) body.test_event_code = testCode;
 
@@ -159,11 +163,18 @@ async function postMetaCapi(payload: Record<string, unknown>): Promise<{ sent: b
     },
     body: JSON.stringify(body),
   });
+  const text = await res.text();
   if (!res.ok) {
-    const text = await res.text();
     throw new Error(`Meta CAPI failed (${res.status}): ${text.slice(0, 180)}`);
   }
-  return { sent: true };
+  let eventsReceived: number | undefined;
+  try {
+    const parsed = JSON.parse(text) as { events_received?: number };
+    if (typeof parsed.events_received === "number") eventsReceived = parsed.events_received;
+  } catch {
+    /* Meta may return an empty body on some successes */
+  }
+  return { sent: true, eventsReceived };
 }
 
 function customData(input: { amountCents: number; orderId?: string }): Record<string, unknown> {
@@ -192,7 +203,9 @@ export async function sendMetaCapiPurchase(input: {
   fbp?: string | null;
   clientIpAddress?: string | null;
   clientUserAgent?: string | null;
-}): Promise<{ sent: boolean; reason?: string }> {
+  /** When set, routes to Meta Test Events only (never production Ads metrics). */
+  testEventCode?: string | null;
+}): Promise<{ sent: boolean; reason?: string; eventsReceived?: number }> {
   if (!metaPurchaseShouldEmit({ alreadySentAt: input.alreadySentAt ?? null, eventId: input.eventId })) {
     return { sent: false, reason: "duplicate" };
   }
@@ -214,19 +227,31 @@ export async function sendMetaCapiPurchase(input: {
     clientUserAgent: input.clientUserAgent,
   });
 
-  return postMetaCapi({
-    data: [
-      {
-        event_name: "Purchase",
-        event_time: input.eventTime || Math.floor(Date.now() / 1000),
-        event_id: input.eventId,
-        action_source: "website",
-        event_source_url: sanitizedEventSourceUrl(input.sourceUrl || `${siteOrigin()}/pet/order`),
-        user_data: userData,
-        custom_data: data,
-      },
-    ],
-  });
+  return postMetaCapi(
+    {
+      data: [
+        {
+          event_name: "Purchase",
+          event_time: input.eventTime || Math.floor(Date.now() / 1000),
+          event_id: input.eventId,
+          action_source: "website",
+          event_source_url: sanitizedEventSourceUrl(input.sourceUrl || `${siteOrigin()}/pet/order`),
+          user_data: userData,
+          custom_data: data,
+        },
+      ],
+    },
+    { testEventCode: input.testEventCode },
+  );
+}
+
+/** Production Meta dataset id used for CAPI (never log tokens). */
+export function metaCapiPixelId(): string {
+  return pixelId();
+}
+
+export function metaTestEventCodeConfigured(): boolean {
+  return Boolean(asString(Deno.env.get("META_TEST_EVENT_CODE")));
 }
 
 export async function sendMetaCapiInitiateCheckout(input: {

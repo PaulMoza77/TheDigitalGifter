@@ -42,6 +42,18 @@ describe("Meta CAPI purchase attribution", () => {
     expect(fulfill).toContain("p_utm_source: attr.utm_source");
   });
 
+  it("service-role metaCapiTestPurchase uses real CAPI Purchase with test_event_code", () => {
+    const funnel = readSrc("supabase/functions/pet-funnel/index.ts");
+    const meta = readSrc("supabase/functions/_shared/pet/meta.ts");
+    expect(funnel).toContain('action === "metaCapiTestPurchase"');
+    expect(funnel).toContain("sendMetaCapiPurchase");
+    expect(funnel).toContain("testEventCode");
+    expect(funnel).toContain("isServiceRoleRequest");
+    expect(meta).toContain("testEventCode");
+    expect(meta).toContain("test_event_code");
+    expect(meta).toContain("metaCapiPixelId");
+  });
+
   it("stripe-webhook boots: single christmas import and pet Purchase path intact", () => {
     const webhook = readSrc("supabase/functions/stripe-webhook/index.ts");
     expect(webhook.match(/from "\.\.\/_shared\/christmas\/stripeFulfill\.ts"/g)?.length).toBe(1);

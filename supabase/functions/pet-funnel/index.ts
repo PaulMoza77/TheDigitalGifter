@@ -11,6 +11,7 @@ import {
   PET_SPECIES,
   PET_PERSONALITIES,
   PET_RESULT_BUCKET,
+  PET_V2_PRICE_CENTS,
   siteOrigin,
   publicDeliveryEstimate,
 } from "../_shared/pet/constants.ts";
@@ -49,11 +50,14 @@ import { formatOfferPrice, rejectClientPriceTampering as rejectAgainstOffer, res
 import { PET_SCENE_DEFINITIONS, sceneByKey } from "../_shared/pet/scenes.ts";
 import {
   isCheckoutPlaceholderEmail,
+  metaCapiPixelId,
+  metaTestEventCodeConfigured,
   parseMetaCapiClickIds,
   petMetaCheckoutFields,
   petPurchaseEventId,
   sanitizeMetaClickId,
   sendMetaCapiInitiateCheckout,
+  sendMetaCapiPurchase,
   type MetaCapiClickIds,
 } from "../_shared/pet/meta.ts";
 import { parseCheckoutAttribution, recordPetFunnelInitiateCheckout } from "../_shared/pet/funnelEvents.ts";
@@ -946,6 +950,72 @@ Deno.serve(async (req) => {
         sent: result.sent,
         alreadySent: result.alreadySent,
       });
+    }
+
+    if (action === "metaCapiTestPurchase") {
+      // Service-role only. Sends Meta Test Events Purchase via the real CAPI helper.
+      // Never creates orders, Stripe charges, or production Ads revenue metrics.
+      if (!isServiceRoleRequest(req)) {
+        return apiError("INVALID_REQUEST", "Unauthorized.", 401);
+      }
+      const testEventCode = asString(body.testEventCode ?? body.test_event_code);
+      const envConfigured = metaTestEventCodeConfigured();
+      if (!testEventCode && !envConfigured) {
+        return apiError(
+          "INVALID_REQUEST",
+          "Provide testEventCode (Events Manager → Test Events) or set META_TEST_EVENT_CODE on Edge.",
+          400,
+          { testEventCodeConfigured: false },
+        );
+      }
+      if (testEventCode && !/^TEST[A-Z0-9]+$/i.test(testEventCode)) {
+        return apiError("INVALID_REQUEST", "testEventCode must look like TEST12345.", 400);
+      }
+      const now = Date.now();
+      const eventId = `pet_purchase_test_${crypto.randomUUID()}`;
+      const fbc =
+        sanitizeMetaClickId(body.fbc ?? body.meta_fbc) ||
+        `fb.1.${now}.tdg_meta_test_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+      const fbp =
+        sanitizeMetaClickId(body.fbp ?? body.meta_fbp) ||
+        `fb.1.${now}.${Math.floor(Math.random() * 1e10)}`;
+      const amountCents = PET_V2_PRICE_CENTS;
+      try {
+        const capi = await sendMetaCapiPurchase({
+          eventId,
+          orderId: `test_${eventId}`,
+          amountCents,
+          fbc,
+          fbp,
+          sourceUrl: `${siteOrigin()}/pet/dog-v2`,
+          clientUserAgent: asString(req.headers.get("user-agent")) || "tdg-meta-capi-test",
+          testEventCode: testEventCode || null,
+        });
+        return jsonResponse({
+          ok: capi.sent === true,
+          sent: capi.sent === true,
+          reason: capi.reason ?? null,
+          eventsReceived: capi.eventsReceived ?? null,
+          eventId,
+          eventName: "Purchase",
+          pixelId: metaCapiPixelId(),
+          amountCents,
+          currency: "USD",
+          sku: PET_SKU,
+          hasFbc: Boolean(fbc),
+          hasFbp: Boolean(fbp),
+          testEventMode: true,
+          testEventCodeConfigured: envConfigured || Boolean(testEventCode),
+          dedupeEventIdFormat: "pet_purchase_<orderId>|pet_purchase_test_<uuid>",
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return apiError("META_CAPI_FAILED", message.slice(0, 240), 502, {
+          eventId,
+          pixelId: metaCapiPixelId(),
+          testEventMode: true,
+        });
+      }
     }
 
     if (action === "debugStripeCheckout") {
