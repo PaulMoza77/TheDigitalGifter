@@ -466,12 +466,14 @@ Deno.serve(async (req) => {
     params.set("payment_intent_data[metadata][product_family]", "christmas");
     params.set("payment_intent_data[metadata][christmas_order_id]", orderId);
 
+    // Custom Checkout requires Basil+; match christmas-funnel / pet-funnel.
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${stripeSecret}`,
         "Content-Type": "application/x-www-form-urlencoded",
         "Idempotency-Key": `xmas-checkout-${orderId}`,
+        "Stripe-Version": "2025-03-31.basil",
       },
       body: params,
     });

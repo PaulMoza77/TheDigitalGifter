@@ -111,3 +111,5 @@ npx --yes supabase secrets list --project-ref "$PROJECT_REF" || true
 echo "Activation deploy complete for $PROJECT_REF @ $(git rev-parse HEAD)"
 
 # activation-trigger: 20260905T165200Z
+
+# stripe-api-version-fix: 20260905T165021Z
