@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { ChevronRight, LayoutGrid, Shield, Users, Wand2 } from "lucide-react";
+import { ChevronRight, LayoutGrid, Shield, Users, Wand2, Gift} from "lucide-react";
 import { useAccountOverview } from "@/hooks/useAccountOverview";
 
 function navClass(active: boolean) {
@@ -27,6 +27,11 @@ export default function AccountSidebar() {
         label: "Dashboard",
         to: "/account/dashboard",
         icon: LayoutGrid,
+      },
+      {
+        label: "My Gifts",
+        to: "/account/gifts",
+        icon: Gift,
       },
       {
         label: "Affiliate",

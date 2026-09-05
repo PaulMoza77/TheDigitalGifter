@@ -19,13 +19,54 @@ export type GiftTreeOpenResult = {
     type: string;
     value: number;
     title: string;
+    headline?: string;
     description: string;
     entitlement_key: string;
     claim_path: string;
   };
   credits_granted: number;
   requires_auth_for_credits: boolean;
-  extra_opens?: number;
+  remaining_opens?: number;
+  email_claimed?: boolean;
+  open_slot?: number;
+};
+
+export type GiftTreeStatusResult = {
+  ok: boolean;
+  remaining_opens: number;
+  free_claimed_today: boolean;
+  free_claim_id: string | null;
+  free_reward: GiftTreeOpenResult["reward"] | null;
+  authenticated: boolean;
+  packs: Array<{
+    package_key: string;
+    label: string;
+    price_cents: number;
+    opens_granted: number;
+  }>;
+};
+
+export type GiftTreeEmailClaimResult = {
+  ok: boolean;
+  already?: boolean;
+  claim_id: string;
+  reward_id: string;
+  reward: GiftTreeOpenResult["reward"];
+  email: string;
+  email_sent: boolean;
+  credits_granted: number;
+  remaining_opens: number;
+};
+
+export type MyGiftItem = {
+  id: string;
+  reward: GiftTreeOpenResult["reward"];
+  status: string;
+  claimed_email_at: string | null;
+  expires_at: string | null;
+  redeemed_at: string | null;
+  created_at: string | null;
+  claim_path: string;
 };
 
 async function authBearer(): Promise<string | null> {
@@ -61,7 +102,6 @@ async function postGiftTree<T>(
   return data;
 }
 
-/** Prefer same-origin Mozas API; fall back to Supabase Edge tree funnel. */
 async function giftTreeRequest<T>(body: Record<string, unknown>): Promise<T> {
   const bearer = await authBearer();
   try {
@@ -71,9 +111,17 @@ async function giftTreeRequest<T>(body: Record<string, unknown>): Promise<T> {
   }
 }
 
+export async function getGiftTreeStatus(): Promise<GiftTreeStatusResult> {
+  const guestToken = getOrCreateGiftTreeGuestToken();
+  return giftTreeRequest<GiftTreeStatusResult>({
+    action: "getGiftTreeStatus",
+    guest_token: guestToken,
+    product_key: GIFT_TREE_PRODUCT_KEY,
+  });
+}
+
 export async function openGiftTreeOnServer(input: {
   presentId: string;
-  /** 0 = free first open; >0 = paid/extra open slot for unique source_ref */
   openSlot?: number;
 }): Promise<GiftTreeOpenResult> {
   const guestToken = getOrCreateGiftTreeGuestToken();
@@ -85,6 +133,20 @@ export async function openGiftTreeOnServer(input: {
     action: "openGiftTree",
     present_id: input.presentId,
     open_slot: openSlot,
+    guest_token: guestToken,
+    product_key: GIFT_TREE_PRODUCT_KEY,
+  });
+}
+
+export async function claimGiftEmailOnServer(input: {
+  claimId: string;
+  email: string;
+}): Promise<GiftTreeEmailClaimResult> {
+  const guestToken = getOrCreateGiftTreeGuestToken();
+  return giftTreeRequest<GiftTreeEmailClaimResult>({
+    action: "claimGiftEmail",
+    claim_id: input.claimId,
+    email: input.email,
     guest_token: guestToken,
     product_key: GIFT_TREE_PRODUCT_KEY,
   });
@@ -112,6 +174,15 @@ export async function claimGiftTreeOnServer(input: {
   });
 }
 
+export async function listMyGiftsOnServer(): Promise<{ ok: boolean; gifts: MyGiftItem[] }> {
+  const guestToken = getOrCreateGiftTreeGuestToken();
+  return giftTreeRequest<{ ok: boolean; gifts: MyGiftItem[] }>({
+    action: "listMyGifts",
+    guest_token: guestToken,
+    product_key: GIFT_TREE_PRODUCT_KEY,
+  });
+}
+
 export function rewardFromServerPayload(
   payload: GiftTreeOpenResult["reward"],
 ): GiftTreeRewardDef | null {
@@ -122,7 +193,7 @@ export function rewardFromServerPayload(
     type: payload.type as GiftTreeRewardDef["type"],
     value: payload.value,
     title: payload.title,
-    headline: payload.title,
+    headline: payload.headline || payload.title,
     description: payload.description,
     weight: 1,
     rarity: "common",

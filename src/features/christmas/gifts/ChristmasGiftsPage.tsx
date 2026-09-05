@@ -13,6 +13,7 @@ import { MoreChancesModal } from "./MoreChancesModal";
 import { PrizeRail } from "./PrizeRail";
 import {
   canOpenGift,
+  getOrCreateGiftTreeGuestToken,
   readGiftTreeState,
   resolvedRewardFromState,
   writeGiftTreeState,
@@ -24,14 +25,16 @@ import {
   type GiftTreeRewardDef,
 } from "./rewardCatalog";
 import { presentLayout, pickWeightedReward } from "./rewardEngine";
-import { RewardRevealModal } from "./RewardRevealModal";
+import { RewardRevealModal, type RewardRevealStep } from "./RewardRevealModal";
 import {
-  claimGiftTreeOnServer,
+  claimGiftEmailOnServer,
+  getGiftTreeStatus,
   openGiftTreeOnServer,
   rewardFromServerPayload,
 } from "./giftTreeApi";
 
 const OPEN_MS = 2600;
+/** Approved gift-open clip — do not replace. */
 const GIFT_OPEN_CLIP = "/christmas/gifts/gift-open.mp4";
 
 function prefersReducedMotion(): boolean {
@@ -55,6 +58,10 @@ export default function ChristmasGiftsPage() {
   const [claiming, setClaiming] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [claimHint, setClaimHint] = useState<string | null>(null);
+  const [revealStep, setRevealStep] = useState<RewardRevealStep>("reveal");
+  const [claimEmail, setClaimEmail] = useState("");
+  const [showTapHint, setShowTapHint] = useState(true);
+  const [remainingOpens, setRemainingOpens] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -71,9 +78,34 @@ export default function ChristmasGiftsPage() {
     currency: string;
     packageKey: string;
   } | null>(null);
+
   const viewed = useRef(false);
+  const promptViewed = useRef(false);
   const anotherViewed = useRef(false);
   const paidReturnHandled = useRef(false);
+
+  const persist = useCallback((next: GiftTreePersistedState) => {
+    setState(next);
+    writeGiftTreeState(next);
+  }, []);
+
+  const syncStatus = useCallback(async () => {
+    try {
+      const status = await getGiftTreeStatus();
+      setRemainingOpens(status.remaining_opens || 0);
+      if (status.remaining_opens > 0) {
+        persist({ ...readGiftTreeState(), extraOpens: status.remaining_opens });
+      }
+      if (status.free_claimed_today) setShowTapHint(false);
+      return status;
+    } catch {
+      return null;
+    }
+  }, [persist]);
+
+  useEffect(() => {
+    void syncStatus();
+  }, [syncStatus]);
 
   const freeUsed = Boolean(state.openedAt);
   const canOpen = canOpenGift(state);
@@ -81,7 +113,6 @@ export default function ChristmasGiftsPage() {
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
     setIsMobileScene(window.matchMedia("(max-width: 767px)").matches);
-    // Warm the gift-open clip so the first tap feels instant.
     const warm = document.createElement("link");
     warm.rel = "preload";
     warm.as = "video";
@@ -96,9 +127,15 @@ export default function ChristmasGiftsPage() {
     void supabase.auth.getSession().then(({ data }) => {
       const isAuthed = Boolean(data.session?.user);
       setAuthed(isAuthed);
+      if (data.session?.user?.email) setClaimEmail(data.session.user.email);
       if (!viewed.current) {
         viewed.current = true;
         void trackChristmasEvent("christmas_gift_tree_view", {
+          productKey: GIFT_TREE_PRODUCT_KEY,
+          pathname: "/christmas/gifts",
+          metadata: { authenticated: isAuthed },
+        });
+        void trackChristmasEvent("christmas_tree_view", {
           productKey: GIFT_TREE_PRODUCT_KEY,
           pathname: "/christmas/gifts",
           metadata: { authenticated: isAuthed },
@@ -107,6 +144,7 @@ export default function ChristmasGiftsPage() {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setAuthed(Boolean(session?.user));
+      if (session?.user?.email) setClaimEmail(session.user.email);
     });
     return () => {
       sub.subscription.unsubscribe();
@@ -114,22 +152,30 @@ export default function ChristmasGiftsPage() {
   }, []);
 
   useEffect(() => {
+    if (!showTapHint || freeUsed || promptViewed.current) return;
+    promptViewed.current = true;
+    void trackChristmasEvent("christmas_free_gift_prompt_view", {
+      productKey: GIFT_TREE_PRODUCT_KEY,
+      pathname: "/christmas/gifts",
+    });
+  }, [showTapHint, freeUsed]);
+
+  useEffect(() => {
     if (freeUsed && !canOpen && !anotherViewed.current) {
       anotherViewed.current = true;
-      void trackChristmasEvent("christmas_open_another_gift_viewed", {
+      void trackChristmasEvent("christmas_extra_gift_offer_view", {
         productKey: GIFT_TREE_PRODUCT_KEY,
         pathname: "/christmas/gifts",
+        metadata: { source: "locked_tree" },
       });
     }
   }, [freeUsed, canOpen]);
 
-  // One subtle idle nudge on an unopened present every 8–15s
   useEffect(() => {
     if (reduceMotion || !canOpen) return;
     let cancelled = false;
     let timer: number | undefined;
     const schedule = () => {
-      const wait = 8000 + Math.floor(Math.random() * 7000);
       timer = window.setTimeout(() => {
         if (cancelled) return;
         const available = presents.filter(
@@ -143,7 +189,7 @@ export default function ChristmasGiftsPage() {
           }, 1200);
         }
         schedule();
-      }, wait);
+      }, 8000 + Math.floor(Math.random() * 7000));
     };
     schedule();
     return () => {
@@ -158,27 +204,28 @@ export default function ChristmasGiftsPage() {
     if (params.get("gift_chances") !== "1") return;
     paidReturnHandled.current = true;
     const packageKey = params.get("package") || "open_another";
-    const offer = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === packageKey);
-    const granted = offer?.opensGranted ?? 1;
-    const next: GiftTreePersistedState = {
-      ...state,
-      extraOpens: state.extraOpens + granted,
-    };
-    setState(next);
-    writeGiftTreeState(next);
-    setClaimHint(`Payment received — ${granted} extra gift${granted > 1 ? "s" : ""} unlocked.`);
-    setMoreOpen(false);
-    setCheckout(null);
+    void trackChristmasEvent("christmas_extra_gift_purchase", {
+      productKey: GIFT_TREE_PRODUCT_KEY,
+      pathname: "/christmas/gifts",
+      packageKey,
+    });
+    void syncStatus().then((status) => {
+      const opens = status?.remaining_opens ?? 0;
+      setClaimHint(
+        opens > 0
+          ? `🎁 ${opens} more gift${opens === 1 ? "" : "s"} ${opens === 1 ? "is" : "are"} waiting for you`
+          : "Payment received — your gifts will appear shortly. Tap a present.",
+      );
+      setMoreOpen(false);
+      setCheckout(null);
+      setModalOpen(false);
+      setRevealStep("reveal");
+    });
     params.delete("gift_chances");
     params.delete("package");
     const qs = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
-  }, [state]);
-
-  const persist = useCallback((next: GiftTreePersistedState) => {
-    setState(next);
-    writeGiftTreeState(next);
-  }, []);
+  }, [syncStatus]);
 
   const runOpen = useCallback(
     async (presentId: string) => {
@@ -187,31 +234,36 @@ export default function ChristmasGiftsPage() {
       setSelectedId(presentId);
       setOpeningId(presentId);
       setBurst(false);
-      void trackChristmasEvent("christmas_present_selected", {
+      setShowTapHint(false);
+
+      const openSlot = state.openedAt ? Math.max(1, state.extraOpens) : 0;
+      void trackChristmasEvent("christmas_gift_tap", {
         productKey: GIFT_TREE_PRODUCT_KEY,
         pathname: "/christmas/gifts",
-        metadata: { present_id: presentId, authenticated: authed },
+        metadata: { present_id: presentId, open_slot: openSlot, authenticated: authed },
       });
       void trackChristmasEvent("christmas_gift_open_started", {
         productKey: GIFT_TREE_PRODUCT_KEY,
         pathname: "/christmas/gifts",
         metadata: { present_id: presentId },
       });
+      if (openSlot > 0) {
+        void trackChristmasEvent("christmas_paid_gift_open", {
+          productKey: GIFT_TREE_PRODUCT_KEY,
+          pathname: "/christmas/gifts",
+          metadata: { present_id: presentId, open_slot: openSlot },
+        });
+      }
 
       const animDelay = reduceMotion ? 180 : OPEN_MS;
       let serverResult: Awaited<ReturnType<typeof openGiftTreeOnServer>> | null = null;
       let localFallback: GiftTreeRewardDef | null = null;
-      const openSlot = state.openedAt ? Math.max(1, state.extraOpens) : 0;
 
       try {
         serverResult = await openGiftTreeOnServer({ presentId, openSlot });
-      } catch (e) {
+      } catch {
         localFallback = pickWeightedReward();
-        setClaimHint(
-          e instanceof Error
-            ? "Saved on this device. Sign in later to sync durable rewards."
-            : "Saved on this device.",
-        );
+        setClaimHint("Saved on this device. Enter your email to keep it permanently.");
       }
 
       window.setTimeout(() => {
@@ -224,14 +276,15 @@ export default function ChristmasGiftsPage() {
           setOpeningId(null);
           return;
         }
+
         const next: GiftTreePersistedState = {
           ...state,
           presentId,
           rewardId: resolved.id,
           claimId: serverResult?.claim_id || state.claimId,
-          openedAt: new Date().toISOString(),
+          openedAt: state.openedAt || new Date().toISOString(),
           claimed: Boolean(serverResult?.already && state.claimed),
-          creditsGranted: (serverResult?.credits_granted || 0) > 0,
+          creditsGranted: (serverResult?.credits_granted || 0) > 0 || state.creditsGranted,
           extraOpens: state.extraOpens,
         };
         if (!state.openedAt && resolved.type === "gift_token") {
@@ -240,20 +293,36 @@ export default function ChristmasGiftsPage() {
           next.extraOpens = Math.max(0, state.extraOpens - 1);
           if (resolved.type === "gift_token") next.extraOpens += 1;
         }
+        if (typeof serverResult?.remaining_opens === "number") {
+          next.extraOpens = serverResult.remaining_opens;
+          setRemainingOpens(serverResult.remaining_opens);
+        }
+
         persist(next);
         setReward(resolved);
+        setRevealStep("reveal");
         setModalOpen(true);
         setOpeningId(null);
-        void trackChristmasEvent("christmas_reward_revealed", {
+
+        void trackChristmasEvent("christmas_reward_reveal", {
           productKey: GIFT_TREE_PRODUCT_KEY,
           pathname: "/christmas/gifts",
           metadata: {
             reward_id: resolved.id,
             reward_type: resolved.type,
             present_id: presentId,
-            authenticated: authed,
             server: Boolean(serverResult),
           },
+        });
+        void trackChristmasEvent("christmas_reward_revealed", {
+          productKey: GIFT_TREE_PRODUCT_KEY,
+          pathname: "/christmas/gifts",
+          metadata: { reward_id: resolved.id, reward_type: resolved.type },
+        });
+        void trackChristmasEvent("christmas_free_reward_assigned", {
+          productKey: GIFT_TREE_PRODUCT_KEY,
+          pathname: "/christmas/gifts",
+          metadata: { reward_id: resolved.id, reward_type: resolved.type, open_slot: openSlot },
         });
       }, animDelay);
     },
@@ -265,7 +334,7 @@ export default function ChristmasGiftsPage() {
       setSelectedId(presentId);
       if (!canOpenGift(state)) {
         setMoreOpen(true);
-        void trackChristmasEvent("christmas_open_another_gift_viewed", {
+        void trackChristmasEvent("christmas_extra_gift_offer_view", {
           productKey: GIFT_TREE_PRODUCT_KEY,
           pathname: "/christmas/gifts",
           metadata: { source: "present_tap" },
@@ -277,28 +346,27 @@ export default function ChristmasGiftsPage() {
     [runOpen, state],
   );
 
-  const onPrimaryCta = useCallback(() => {
-    if (!canOpen) {
-      setMoreOpen(true);
-      return;
-    }
-    if (selectedId) {
-      void runOpen(selectedId);
-      return;
-    }
-    const first = presents[2] ?? presents[0];
-    if (first) requestOpen(first.id);
-  }, [canOpen, presents, requestOpen, runOpen, selectedId]);
-
   const onPurchase = useCallback(async (packageKey: string) => {
     setPurchasing(true);
     setPurchaseError(null);
+    setRevealStep("checkout");
+    void trackChristmasEvent("christmas_extra_gift_pack_select", {
+      productKey: GIFT_TREE_PRODUCT_KEY,
+      pathname: "/christmas/gifts",
+      packageKey,
+    });
+    void trackChristmasEvent("christmas_extra_gift_payment_start", {
+      productKey: GIFT_TREE_PRODUCT_KEY,
+      pathname: "/christmas/gifts",
+      packageKey,
+    });
     void trackChristmasEvent("christmas_open_another_gift_clicked", {
       productKey: GIFT_TREE_PRODUCT_KEY,
       pathname: "/christmas/gifts",
-      metadata: { package_key: packageKey, purchasable: true },
+      packageKey,
     });
     try {
+      const guestToken = getOrCreateGiftTreeGuestToken();
       const result = await startChristmasCheckout({
         product_key: GIFT_TREE_PRODUCT_KEY,
         package_key: packageKey,
@@ -306,6 +374,7 @@ export default function ChristmasGiftsPage() {
         currency: "usd",
         landing_path: "/christmas/gifts",
         source_route: "/christmas/gifts",
+        guest_token: guestToken,
         success_url: `${window.location.origin}/christmas/gifts?gift_chances=1&package=${encodeURIComponent(packageKey)}`,
         cancel_url: `${window.location.origin}/christmas/gifts?gift_chances=cancel`,
       });
@@ -317,6 +386,12 @@ export default function ChristmasGiftsPage() {
         packageKey,
       });
       setMoreOpen(false);
+      void trackChristmasEvent("christmas_express_checkout_available", {
+        productKey: GIFT_TREE_PRODUCT_KEY,
+        pathname: "/christmas/gifts",
+        packageKey,
+        amountCents: result.amountCents,
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not start checkout.";
       setPurchaseError(
@@ -324,63 +399,90 @@ export default function ChristmasGiftsPage() {
           ? "Checkout is warming up — try again shortly."
           : msg,
       );
+      void trackChristmasEvent("christmas_extra_gift_payment_failed", {
+        productKey: GIFT_TREE_PRODUCT_KEY,
+        pathname: "/christmas/gifts",
+        packageKey,
+        metadata: { reason: msg.slice(0, 120) },
+      });
     } finally {
       setPurchasing(false);
     }
   }, []);
 
-  const onClaim = useCallback(async () => {
+  const onSendGift = useCallback(async () => {
     if (!reward) return;
-    setClaiming(true);
-    setClaimHint(null);
-    void trackChristmasEvent("christmas_reward_claim_started", {
-      productKey: GIFT_TREE_PRODUCT_KEY,
-      pathname: "/christmas/gifts",
-      metadata: { reward_id: reward.id, reward_type: reward.type, authenticated: authed },
-    });
-    try {
-      if (reward.requiresAuthToGrant && !authed) {
-        navigate(`/account?next=${encodeURIComponent("/christmas/gifts?claim=1")}`);
-        return;
-      }
-      if (state.claimId || authed) {
-        try {
-          const claimed = await claimGiftTreeOnServer({ claimId: state.claimId });
-          persist({
-            ...state,
-            claimed: true,
-            creditsGranted: claimed.credits_granted > 0 || state.creditsGranted,
-          });
-        } catch {
-          persist({ ...state, claimed: true });
-        }
-      } else {
-        persist({ ...state, claimed: true });
-      }
-      void trackChristmasEvent("christmas_reward_claimed", {
+    if (revealStep === "reveal") {
+      setRevealStep("email");
+      void trackChristmasEvent("christmas_email_claim_view", {
         productKey: GIFT_TREE_PRODUCT_KEY,
         pathname: "/christmas/gifts",
-        metadata: { reward_id: reward.id, reward_type: reward.type, authenticated: authed },
+        metadata: { reward_id: reward.id },
       });
-      if (reward.type === "gift_token") {
-        setModalOpen(false);
-        setClaimHint("Extra gift unlocked — tap another present.");
-        return;
+      return;
+    }
+    if (revealStep !== "email") return;
+    const email = claimEmail.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      setClaimHint("Enter a valid email so we can save your gift.");
+      return;
+    }
+    setClaiming(true);
+    setClaimHint(null);
+    void trackChristmasEvent("christmas_email_claim_submit", {
+      productKey: GIFT_TREE_PRODUCT_KEY,
+      pathname: "/christmas/gifts",
+      metadata: { reward_id: reward.id, authenticated: authed },
+    });
+    try {
+      const claimed = await claimGiftEmailOnServer({
+        claimId: state.claimId || "",
+        email,
+      });
+      const next: GiftTreePersistedState = {
+        ...state,
+        claimed: true,
+        creditsGranted: claimed.credits_granted > 0 || state.creditsGranted,
+        extraOpens:
+          typeof claimed.remaining_opens === "number"
+            ? claimed.remaining_opens
+            : state.extraOpens,
+      };
+      persist(next);
+      if (typeof claimed.remaining_opens === "number") {
+        setRemainingOpens(claimed.remaining_opens);
       }
-      navigate(reward.claimPath);
+      setRevealStep("saved");
+      void trackChristmasEvent("christmas_email_claim_success", {
+        productKey: GIFT_TREE_PRODUCT_KEY,
+        pathname: "/christmas/gifts",
+        metadata: { reward_id: reward.id, email_sent: claimed.email_sent },
+      });
+      window.setTimeout(() => {
+        setRevealStep("upsell");
+        void trackChristmasEvent("christmas_extra_gift_offer_view", {
+          productKey: GIFT_TREE_PRODUCT_KEY,
+          pathname: "/christmas/gifts",
+          metadata: { source: "post_claim" },
+        });
+      }, 1200);
+    } catch (e) {
+      setClaimHint(e instanceof Error ? e.message : "Could not save your gift email.");
     } finally {
       setClaiming(false);
     }
-  }, [authed, navigate, persist, reward, state]);
+  }, [authed, claimEmail, persist, revealStep, reward, state]);
 
-  useEffect(() => {
-    if (!authed) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("claim") === "1" && reward && state.openedAt && !state.creditsGranted) {
-      setModalOpen(true);
-      setClaimHint("You're signed in — claim your Christmas credits.");
-    }
-  }, [authed, reward, state.creditsGranted, state.openedAt]);
+  const onSkipUpsell = useCallback(() => {
+    void trackChristmasEvent("christmas_offer_skip", {
+      productKey: GIFT_TREE_PRODUCT_KEY,
+      pathname: "/christmas/gifts",
+    });
+    setModalOpen(false);
+    setCheckout(null);
+    setRevealStep("reveal");
+    setClaimHint("Your free gift is already yours — tap another present anytime.");
+  }, []);
 
   function presentState(id: string): "available" | "opening" | "opened" | "locked" {
     if (openingId === id) return "opening";
@@ -388,6 +490,8 @@ export default function ChristmasGiftsPage() {
     if (!canOpen) return "locked";
     return "available";
   }
+
+  const waitingOpens = remainingOpens || state.extraOpens;
 
   return (
     <>
@@ -399,7 +503,6 @@ export default function ChristmasGiftsPage() {
       />
 
       <div className="relative h-[calc(100dvh-4.05rem)] max-h-[calc(100dvh-4.05rem)] overflow-hidden text-rose-50">
-        {/* Scene ends above the CTA band so the button never covers photo gifts */}
         <ChristmasTreeScene
           reduceMotion={reduceMotion}
           className="absolute inset-x-0 top-0 bottom-[7.6rem] sm:bottom-[7.15rem]"
@@ -431,8 +534,6 @@ export default function ChristmasGiftsPage() {
           </section>
         </ChristmasTreeScene>
 
-        {/* Brand lives in the site header on this route — no floating chip over the tree */}
-
         {error ? (
           <p
             className="absolute inset-x-0 bottom-[6.85rem] z-[6] text-center text-sm text-red-200"
@@ -442,7 +543,6 @@ export default function ChristmasGiftsPage() {
           </p>
         ) : null}
 
-        {/* CTA band under the scene — rug / floor, never over the gift pile */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] flex h-[7.6rem] items-end px-4 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1 sm:h-[7.15rem]">
           <div
             aria-hidden
@@ -453,25 +553,41 @@ export default function ChristmasGiftsPage() {
             }}
           />
           <div className="pointer-events-auto relative mx-auto flex w-[calc(100%-32px)] max-w-[360px] flex-col items-center sm:w-full">
-            <button
-              type="button"
-              disabled={Boolean(openingId)}
-              onClick={onPrimaryCta}
-              className="gt-cta relative flex min-h-[44px] w-full flex-col items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-[#f6e7c0] via-[#e4c57a] to-[#c9a35a] px-6 py-1.5 text-[#2a1c0e] shadow-[0_14px_44px_rgba(201,163,90,0.42)] transition hover:brightness-105 active:scale-[0.98] disabled:opacity-70"
-            >
-              <span className="relative z-[1] text-[15px] font-semibold tracking-wide sm:text-base">
-                {openingId
-                  ? "Opening…"
-                  : freeUsed && !canOpen
-                    ? "Get More Chances"
-                    : "Choose Your Gift"}
-              </span>
-              <span className="relative z-[1] text-[11px] font-medium text-[#4a3820]/75">
-                {freeUsed && !canOpen
-                  ? "Unlock another present under the tree"
-                  : "Tap a present under the tree"}
-              </span>
-            </button>
+            {showTapHint && !freeUsed ? (
+              <div
+                className="pointer-events-none mb-2 rounded-full border border-amber-100/20 px-4 py-2 text-center shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+                style={{
+                  background: "linear-gradient(180deg, rgba(48,32,28,0.55), rgba(22,24,30,0.6))",
+                  backdropFilter: "blur(10px)",
+                  animation: reduceMotion ? undefined : "gt-hint-float 3.2s ease-in-out infinite",
+                }}
+              >
+                <p className="text-[12px] font-semibold tracking-wide text-amber-50 sm:text-[13px]">
+                  {isMobileScene ? "🎁 Tap a gift" : "🎁 Your free Christmas gift is waiting"}
+                </p>
+                {!isMobileScene ? (
+                  <p className="text-[10px] text-amber-100/70 sm:text-[11px]">Tap a present to open it</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {freeUsed && !canOpen ? (
+              <button
+                type="button"
+                onClick={() => setMoreOpen(true)}
+                className="relative flex min-h-[40px] w-full flex-col items-center justify-center overflow-hidden rounded-full border border-amber-100/25 bg-white/10 px-5 py-1.5 text-amber-50 backdrop-blur-md transition hover:bg-white/15 active:scale-[0.98]"
+              >
+                <span className="text-[13px] font-semibold tracking-wide">Want to open another?</span>
+                <span className="text-[10px] text-amber-100/70">Optional · your free gift is already yours</span>
+              </button>
+            ) : waitingOpens > 0 ? (
+              <p
+                className="rounded-full border border-amber-100/20 bg-black/25 px-4 py-1.5 text-[11px] text-amber-100/85 backdrop-blur-md"
+                role="status"
+              >
+                🎁 {waitingOpens} gift{waitingOpens === 1 ? "" : "s"} waiting — tap a present
+              </p>
+            ) : null}
 
             {claimHint ? (
               <p className="mt-1 text-center text-[11px] text-amber-100/75" role="status">
@@ -487,52 +603,45 @@ export default function ChristmasGiftsPage() {
               >
                 Surprises
               </button>
-              <span aria-hidden className="text-white/35">·</span>
-              <nav
-                aria-label="Christmas links"
-                className="contents"
-              >
-                <Link className="hover:text-white/80" to="/christmas">
-                  Christmas Hub
-                </Link>
-                <span aria-hidden>|</span>
-                <Link className="hover:text-white/80" to="/christmas/tree">
-                  Build a Tree
-                </Link>
-                <span aria-hidden>|</span>
-                <Link className="hover:text-white/80" to="/christmas/advent">
-                  Advent
-                </Link>
-                <span aria-hidden>|</span>
-                <Link className="hover:text-white/80" to="/christmas/photo-generator">
-                  Portraits
-                </Link>
-              </nav>
+              <span aria-hidden className="text-white/35">
+                ·
+              </span>
+              <Link className="hover:text-white/80" to="/account/gifts">
+                My Gifts
+              </Link>
+              <span aria-hidden>|</span>
+              <Link className="hover:text-white/80" to="/christmas">
+                Christmas Hub
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
-      <GiftOpenCeremony
-        open={Boolean(openingId)}
-        reduceMotion={reduceMotion}
-        clipSrc={GIFT_OPEN_CLIP}
-      />
+      <GiftOpenCeremony open={Boolean(openingId)} reduceMotion={reduceMotion} clipSrc={GIFT_OPEN_CLIP} />
 
       {reward ? (
         <RewardRevealModal
           reward={reward}
           open={modalOpen}
-          authenticated={authed}
+          step={revealStep}
+          email={claimEmail}
           claiming={claiming}
+          purchasing={purchasing}
           claimHint={claimHint}
-          onClaim={() => void onClaim()}
-          onClose={() => setModalOpen(false)}
-          showOpenAnother={reward.type === "gift_token" || canOpen || freeUsed}
-          onOpenAnother={() => {
-            setModalOpen(false);
-            if (!canOpen) setMoreOpen(true);
+          purchaseError={purchaseError}
+          remainingOpens={waitingOpens}
+          checkout={checkout}
+          onEmailChange={setClaimEmail}
+          onSendGift={() => void onSendGift()}
+          onSkipUpsell={onSkipUpsell}
+          onSelectPack={(key) => void onPurchase(key)}
+          onCloseCheckout={() => {
+            setCheckout(null);
+            setRevealStep("upsell");
           }}
+          onClose={() => setModalOpen(false)}
+          onCreateNow={() => navigate(reward.claimPath)}
         />
       ) : null}
 
@@ -568,16 +677,12 @@ export default function ChristmasGiftsPage() {
         </div>
       ) : null}
 
-      {checkout ? (
+      {checkout && revealStep !== "checkout" ? (
         <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-2xl border border-amber-200/20 bg-[#14110e] p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
               <p className="font-serif text-xl text-amber-50">Complete payment</p>
-              <button
-                type="button"
-                className="text-xs text-amber-100/60"
-                onClick={() => setCheckout(null)}
-              >
+              <button type="button" className="text-xs text-amber-100/60" onClick={() => setCheckout(null)}>
                 Cancel
               </button>
             </div>
@@ -586,6 +691,9 @@ export default function ChristmasGiftsPage() {
               publishableKey={checkout.publishableKey}
               dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
             />
+            <p className="mt-2 text-center text-[11px] text-amber-100/60">
+              {GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === checkout.packageKey)?.label || "Extra gifts"}
+            </p>
           </div>
         </div>
       ) : null}
@@ -595,30 +703,9 @@ export default function ChristmasGiftsPage() {
           from { opacity: 0.9; }
           to { opacity: 0; }
         }
-        .gt-cta::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            110deg,
-            transparent 30%,
-            rgba(255,255,255,0.35) 48%,
-            transparent 62%
-          );
-          transform: translateX(-120%);
-          pointer-events: none;
-        }
-        @media (hover: hover) and (pointer: fine) {
-          .gt-cta:hover::after {
-            animation: gt-cta-sheen 900ms ease-out 1;
-          }
-        }
-        @keyframes gt-cta-sheen {
-          from { transform: translateX(-120%); }
-          to { transform: translateX(120%); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .gt-cta::after { display: none; }
+        @keyframes gt-hint-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
         }
       `}</style>
     </>

@@ -212,7 +212,9 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Stripe is not configured" }, 503);
     }
 
-    const email = asString(body.email).toLowerCase();
+    const email = asString(body.email);
+    const guestToken = asString(body.guest_token).trim();
+    const guestTokenHash = guestToken ? await sha256Hex(guestToken) : "";
     const successUrl =
       asString(body.success_url) ||
       (product.product_key === "christmas_santa_video"
@@ -279,6 +281,7 @@ Deno.serve(async (req) => {
           funnel_session_id: asString(body.funnel_session_id) || null,
           metadata: {
             source: "christmas-checkout",
+            guest_token_hash: guestTokenHash || null,
             public_token_hint: publicToken,
             portrait_type: portraitType,
             species,
@@ -331,6 +334,7 @@ Deno.serve(async (req) => {
     params.set("metadata[product_type]", "christmas");
     params.set("metadata[product_key]", product.product_key);
     params.set("metadata[package_key]", pkg.package_key);
+    if (guestTokenHash) params.set("metadata[guest_token_hash]", guestTokenHash);
     params.set("metadata[sku]", sku);
     params.set("metadata[christmas_order_id]", orderId);
     if (styleKey) params.set("metadata[style_key]", styleKey);

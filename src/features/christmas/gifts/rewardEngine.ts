@@ -26,6 +26,28 @@ export function pickWeightedReward(
   return active[active.length - 1]!;
 }
 
+/**
+ * Weighted pick that prefers variety: excludes previousRewardId when alternatives exist.
+ * Also drops zero-weight / obviously ineligible entries.
+ */
+export function pickEligibleGiftTreeReward(
+  catalog: GiftTreeRewardDef[] = GIFT_TREE_REWARD_CATALOG,
+  options: {
+    previousRewardId?: string | null;
+    random?: () => number;
+  } = {},
+): GiftTreeRewardDef {
+  const random = options.random ?? Math.random;
+  const eligible = catalog.filter((r) => r.weight > 0);
+  if (eligible.length === 0) throw new Error("empty_reward_catalog");
+  const previous = options.previousRewardId || null;
+  const withoutPrev =
+    previous && eligible.length > 1
+      ? eligible.filter((r) => r.id !== previous)
+      : eligible;
+  return pickWeightedReward(withoutPrev, random);
+}
+
 type Hotspot = Omit<PresentVisual, "id" | "style" | "ribbon">;
 
 /**

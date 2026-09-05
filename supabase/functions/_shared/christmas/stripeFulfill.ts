@@ -156,18 +156,54 @@ export async function handleChristmasStripeEvent(input: {
 
     if (result.ok === true && result.status === "paid") {
       const productKey = asString(input.metadata.product_key);
-      let mode: "commerce" | "santa" = "commerce";
-      if (productKey === "christmas_santa_video") {
-        mode = "santa";
-      } else if (!productKey) {
-        const { data: ord } = await input.service
-          .from("christmas_orders")
-          .select("product_key")
-          .eq("id", orderId)
-          .maybeSingle();
-        if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+      const packageKey = asString(input.metadata.package_key);
+
+      // Gift Tree packs buy additional opens — never enqueue photo/video generation.
+      if (productKey === "christmas_gift_tree") {
+        const opens =
+          packageKey === "open_five" || packageKey === "open_5"
+            ? 5
+            : packageKey === "open_another"
+              ? 1
+              : 0;
+        if (opens > 0) {
+          const { data: ord } = await input.service
+            .from("christmas_orders")
+            .select("user_id,email,metadata")
+            .eq("id", orderId)
+            .maybeSingle();
+          const meta = (ord?.metadata || {}) as Record<string, unknown>;
+          const guestHash = asString(meta.guest_token_hash) || asString(input.metadata.guest_token_hash);
+          const email = asString(ord?.email) || asString(input.metadata.email);
+          await input.service.rpc("christmas_gift_tree_grant_opens", {
+            p_season_year: 2026,
+            p_opens: opens,
+            p_source: "purchase",
+            p_source_ref: `stripe_order:${orderId}`,
+            p_user_id: ord?.user_id || null,
+            p_guest_token_hash: guestHash || null,
+            p_email_normalized: email ? email.trim().toLowerCase() : null,
+            p_metadata: {
+              package_key: packageKey,
+              stripe_session_id: sessionId,
+              christmas_order_id: orderId,
+            },
+          });
+        }
+      } else {
+        let mode: "commerce" | "santa" = "commerce";
+        if (productKey === "christmas_santa_video") {
+          mode = "santa";
+        } else if (!productKey) {
+          const { data: ord } = await input.service
+            .from("christmas_orders")
+            .select("product_key")
+            .eq("id", orderId)
+            .maybeSingle();
+          if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+        }
+        enqueueChristmasGenerate(orderId, mode);
       }
-      enqueueChristmasGenerate(orderId, mode);
     }
 
     return new Response(JSON.stringify({ ok: true, christmas: result }), {
