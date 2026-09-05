@@ -4,7 +4,7 @@
 **Mission:** Christmas suite work **not** owned by the primary e6f4 send-a-gift / durable-continue loop  
 **Repo:** `PaulMoza77/TheDigitalGifter`  
 **PR foundation/i18n:** https://github.com/PaulMoza77/TheDigitalGifter/pull/97  
-**PR lifecycle (stacked):** see `cursor/christmas-gap-lifecycle-577a`
+**PR lifecycle (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/98 (`cursor/christmas-gap-lifecycle-577a` → foundation)
 
 ---
 
