@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { useCoverMediaBox } from "./useCoverMediaBox";
 
 type Props = {
@@ -12,7 +18,7 @@ type Props = {
 
 const DESKTOP_SRC = "/christmas/gifts/scene-desktop.mp4";
 const MOBILE_SRC = "/christmas/gifts/scene-mobile.mp4";
-/** Full-res posters — avoid soft 720p upscales behind the video. */
+/** Full-res posters — sharp still while the 1080p clip warms up. */
 const DESKTOP_POSTER = "/christmas/gifts/scene-desktop.jpg";
 const MOBILE_POSTER = "/christmas/gifts/scene-mobile.jpg";
 
@@ -24,17 +30,19 @@ export const SCENE_MEDIA_ASPECT = {
 /** Minimal shift — large scales blur the 1080p scene. Tip clearance via top inset. */
 const MEDIA_TRANSFORM = "translateY(0.8%)";
 const MEDIA_TRANSFORM_ORIGIN = "50% 0%";
-/** Solid top inset so the star tip isn't flush against the nav. */
 const SCENE_TOP_INSET_PX = 22;
+
+/** Cache blob URLs across remounts within the same session. */
+const blobCache = new Map<string, string>();
+const blobInflight = new Map<string, Promise<string>>();
 
 function preferMobile(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(max-width: 767px)").matches;
 }
 
-function preloadVideo(href: string) {
-  const existing = document.querySelector(`link[data-gt-video-preload="${href}"]`);
-  if (existing) return;
+function markPreloadLink(href: string) {
+  if (document.querySelector(`link[data-gt-video-preload="${href}"]`)) return;
   const link = document.createElement("link");
   link.rel = "preload";
   link.as = "video";
@@ -42,14 +50,35 @@ function preloadVideo(href: string) {
   link.type = "video/mp4";
   link.setAttribute("data-gt-video-preload", href);
   document.head.appendChild(link);
+}
 
-  void fetch(href, {
-    method: "GET",
-    credentials: "same-origin",
-    headers: { Range: "bytes=0-2621440" },
-  }).catch(() => {
-    /* video element still loads normally */
-  });
+/**
+ * Download the full clip once and play from a blob URL.
+ * After that, loops never touch the network → no mid-loop stutter.
+ */
+function loadSceneBlob(href: string): Promise<string> {
+  const cached = blobCache.get(href);
+  if (cached) return Promise.resolve(cached);
+
+  const pending = blobInflight.get(href);
+  if (pending) return pending;
+
+  const job = fetch(href, { credentials: "same-origin", priority: "high" } as RequestInit)
+    .then(async (res) => {
+      if (!res.ok) throw new Error(`scene_video_${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      blobCache.set(href, url);
+      blobInflight.delete(href);
+      return url;
+    })
+    .catch((err) => {
+      blobInflight.delete(href);
+      throw err;
+    });
+
+  blobInflight.set(href, job);
+  return job;
 }
 
 /**
@@ -66,8 +95,13 @@ export function ChristmasTreeScene({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMobile, setIsMobile] = useState(preferMobile);
+  const [playbackSrc, setPlaybackSrc] = useState<string | null>(null);
+  const [videoVisible, setVideoVisible] = useState(false);
   const mediaAspect = isMobile ? SCENE_MEDIA_ASPECT.mobile : SCENE_MEDIA_ASPECT.desktop;
   const box = useCoverMediaBox(containerRef, mediaAspect, 0.5, 0);
+
+  const networkSrc = isMobile ? MOBILE_SRC : DESKTOP_SRC;
+  const poster = isMobile ? MOBILE_POSTER : DESKTOP_POSTER;
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -81,35 +115,73 @@ export function ChristmasTreeScene({
     return () => mq.removeEventListener("change", sync);
   }, [onBreakpointChange]);
 
+  // Full blob first → play from memory. Sharp poster covers the warm-up.
   useEffect(() => {
     if (reduceMotion) return;
-    preloadVideo(isMobile ? MOBILE_SRC : DESKTOP_SRC);
-  }, [isMobile, reduceMotion]);
+    let cancelled = false;
+    setVideoVisible(false);
 
+    const cached = blobCache.get(networkSrc);
+    if (cached) {
+      setPlaybackSrc(cached);
+    } else {
+      setPlaybackSrc(null);
+    }
+
+    markPreloadLink(networkSrc);
+    void loadSceneBlob(networkSrc)
+      .then((url) => {
+        if (!cancelled) setPlaybackSrc(url);
+      })
+      .catch(() => {
+        // Fallback: progressive network stream if blob fetch fails.
+        if (!cancelled) setPlaybackSrc(networkSrc);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isMobile, networkSrc, reduceMotion]);
+
+  // Play + seamless loop (native loop often hitchs at the wrap).
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || reduceMotion) return;
+    if (!video || reduceMotion || !playbackSrc) return;
 
     let cancelled = false;
+
     const tryPlay = () => {
       if (cancelled) return;
       const p = video.play();
       if (p && typeof p.catch === "function") p.catch(() => undefined);
     };
 
+    const onPlaying = () => {
+      if (!cancelled) setVideoVisible(true);
+    };
+
+    const onTimeUpdate = () => {
+      // Restart a hair before EOF so the decoder never stalls on loop seam.
+      if (video.duration && video.currentTime >= video.duration - 0.05) {
+        video.currentTime = 0.001;
+        tryPlay();
+      }
+    };
+
     video.addEventListener("loadeddata", tryPlay);
     video.addEventListener("canplay", tryPlay);
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("timeupdate", onTimeUpdate);
     tryPlay();
 
     return () => {
       cancelled = true;
       video.removeEventListener("loadeddata", tryPlay);
       video.removeEventListener("canplay", tryPlay);
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("timeupdate", onTimeUpdate);
     };
-  }, [isMobile, reduceMotion]);
-
-  const src = isMobile ? MOBILE_SRC : DESKTOP_SRC;
-  const poster = isMobile ? MOBILE_POSTER : DESKTOP_POSTER;
+  }, [playbackSrc, isMobile, reduceMotion]);
 
   const mediaFrameStyle: CSSProperties = {
     position: "absolute",
@@ -147,41 +219,52 @@ export function ChristmasTreeScene({
           style={{ zIndex: 0 }}
         >
           <div style={mediaFrameStyle}>
-            {reduceMotion ? (
-              <picture className="absolute inset-0 block h-full w-full">
-                <source
-                  type="image/webp"
-                  srcSet={
-                    isMobile
-                      ? "/christmas/gifts/scene-mobile.webp"
-                      : "/christmas/gifts/scene-desktop.webp"
-                  }
-                />
-                <img
-                  src={poster}
-                  alt=""
-                  className="h-full w-full"
-                  style={{ objectFit: "fill" }}
-                  decoding="async"
-                  fetchPriority="high"
-                />
-              </picture>
-            ) : (
+            {/* Sharp still always underneath — no blank/soft frame while video buffers */}
+            <picture className="absolute inset-0 block h-full w-full">
+              <source
+                type="image/webp"
+                srcSet={
+                  isMobile
+                    ? "/christmas/gifts/scene-mobile.webp"
+                    : "/christmas/gifts/scene-desktop.webp"
+                }
+              />
+              <img
+                src={poster}
+                alt=""
+                className="h-full w-full"
+                style={{ objectFit: "fill" }}
+                decoding="async"
+                fetchPriority="high"
+                draggable={false}
+              />
+            </picture>
+
+            {!reduceMotion && playbackSrc ? (
               <video
-                key={src}
+                key={playbackSrc}
                 ref={videoRef}
                 className="absolute inset-0 h-full w-full"
-                style={{ objectFit: "fill" }}
+                style={{
+                  objectFit: "fill",
+                  opacity: videoVisible ? 1 : 0,
+                  transition: "opacity 280ms ease",
+                  // Promote to its own compositor layer for smoother decode/paint.
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                }}
                 autoPlay
                 muted
-                loop
                 playsInline
                 preload="auto"
+                // loop handled manually for a clean wrap
                 poster={poster}
+                disablePictureInPicture
+                disableRemotePlayback
               >
-                <source src={src} type="video/mp4" />
+                <source src={playbackSrc} type="video/mp4" />
               </video>
-            )}
+            ) : null}
           </div>
         </div>
 
