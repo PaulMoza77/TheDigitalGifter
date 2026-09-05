@@ -99,6 +99,15 @@ if [[ -d supabase/functions/stripe-webhook ]]; then
   deploy_fn stripe-webhook
 fi
 
+echo "Ensuring Christmas checkout flag is enabled on Edge secrets…"
+# Do not print secret values. Only set the enable flag; Stripe/Resend must already exist.
+npx --yes supabase secrets set \
+  CHRISTMAS_CHECKOUT_ENABLED=true \
+  --project-ref "$PROJECT_REF"
+
+echo "Edge secret names (values redacted):"
+npx --yes supabase secrets list --project-ref "$PROJECT_REF" || true
+
 echo "Activation deploy complete for $PROJECT_REF @ $(git rev-parse HEAD)"
 
-# activation-trigger: 20260905T164001Z
+# activation-trigger: 20260905T165200Z
