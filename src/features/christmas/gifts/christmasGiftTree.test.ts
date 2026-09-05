@@ -40,11 +40,11 @@ describe("christmas gift tree catalog", () => {
   });
 
   it("lays out distinct photo-aligned present hotspots", () => {
-    const desktop = presentLayout(7, "desktop");
-    const mobile = presentLayout(6, "mobile");
-    expect(desktop.length).toBe(7);
-    expect(mobile.length).toBe(6);
-    expect(new Set(desktop.map((p) => p.id)).size).toBe(7);
+    const desktop = presentLayout(8, "desktop");
+    const mobile = presentLayout(7, "mobile");
+    expect(desktop.length).toBe(8);
+    expect(mobile.length).toBe(7);
+    expect(new Set(desktop.map((p) => p.id)).size).toBe(8);
     expect(desktop.every((p) => p.widthPct > 0 && p.heightPct > 0)).toBe(true);
     expect(mobile.every((p) => p.topPct > 50)).toBe(true);
   });

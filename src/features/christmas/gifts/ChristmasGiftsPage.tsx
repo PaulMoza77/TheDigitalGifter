@@ -8,6 +8,7 @@ import { startChristmasCheckout } from "../photoApi";
 import { trackChristmasEvent } from "../analytics";
 import { ChristmasPresent } from "./ChristmasPresent";
 import { ChristmasTreeScene } from "./ChristmasTreeScene";
+import { GiftOpenCeremony } from "./GiftOpenCeremony";
 import { MoreChancesModal } from "./MoreChancesModal";
 import { PrizeRail } from "./PrizeRail";
 import {
@@ -30,7 +31,8 @@ import {
   rewardFromServerPayload,
 } from "./giftTreeApi";
 
-const OPEN_MS = 1100;
+const OPEN_MS = 2600;
+const GIFT_OPEN_CLIP = "/christmas/gifts/gift-open.mp4";
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
@@ -59,7 +61,7 @@ export default function ChristmasGiftsPage() {
   const [isMobileScene, setIsMobileScene] = useState(false);
   const [attentionId, setAttentionId] = useState<string | null>(null);
   const presents = useMemo(
-    () => presentLayout(isMobileScene ? 6 : 7, isMobileScene ? "mobile" : "desktop"),
+    () => presentLayout(isMobileScene ? 7 : 8, isMobileScene ? "mobile" : "desktop"),
     [isMobileScene],
   );
   const [checkout, setCheckout] = useState<{
@@ -79,6 +81,17 @@ export default function ChristmasGiftsPage() {
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
     setIsMobileScene(window.matchMedia("(max-width: 767px)").matches);
+    // Warm the gift-open clip so the first tap feels instant.
+    const warm = document.createElement("link");
+    warm.rel = "preload";
+    warm.as = "video";
+    warm.href = GIFT_OPEN_CLIP;
+    warm.type = "video/mp4";
+    warm.setAttribute("data-gt-open-clip", "1");
+    if (!document.querySelector('link[data-gt-open-clip="1"]')) {
+      document.head.appendChild(warm);
+    }
+    void fetch(GIFT_OPEN_CLIP, { credentials: "same-origin" }).catch(() => undefined);
     captureFunnelAttribution(window.location.search);
     void supabase.auth.getSession().then(({ data }) => {
       const isAuthed = Boolean(data.session?.user);
@@ -499,6 +512,12 @@ export default function ChristmasGiftsPage() {
           </div>
         </div>
       </div>
+
+      <GiftOpenCeremony
+        open={Boolean(openingId)}
+        reduceMotion={reduceMotion}
+        clipSrc={GIFT_OPEN_CLIP}
+      />
 
       {reward ? (
         <RewardRevealModal

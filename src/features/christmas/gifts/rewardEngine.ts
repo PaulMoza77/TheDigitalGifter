@@ -29,29 +29,30 @@ export function pickWeightedReward(
 type Hotspot = Omit<PresentVisual, "id" | "style" | "ribbon">;
 
 /**
- * Hotspots mapped to gifts already in the scene photo/video.
+ * Invisible borders mapped to gifts already in the scene photo/video.
  * Coordinates are % of the source media (not the cropped viewport).
  */
 const DESKTOP_HOTSPOTS: Hotspot[] = [
-  { leftPct: 37.2, topPct: 74.8, widthPct: 4.4, heightPct: 6.8, depth: 1 },
-  { leftPct: 40.0, topPct: 79.2, widthPct: 4.6, heightPct: 5.6, depth: 3 },
-  { leftPct: 42.2, topPct: 73.6, widthPct: 5.2, heightPct: 7.4, depth: 0 },
-  { leftPct: 45.4, topPct: 72.8, widthPct: 6.2, heightPct: 12.2, depth: 4 },
-  { leftPct: 51.0, topPct: 78.6, widthPct: 4.8, heightPct: 6.2, depth: 3 },
-  { leftPct: 54.6, topPct: 73.8, widthPct: 5.8, heightPct: 8.2, depth: 1 },
-  { leftPct: 59.4, topPct: 78.4, widthPct: 6.2, heightPct: 7.8, depth: 4 },
-  { leftPct: 65.0, topPct: 74.6, widthPct: 4.4, heightPct: 7.4, depth: 2 },
+  { leftPct: 37.4, topPct: 74.6, widthPct: 4.4, heightPct: 8.6, depth: 1 },
+  { leftPct: 41.0, topPct: 73.0, widthPct: 5.8, heightPct: 10.8, depth: 2 },
+  { leftPct: 45.4, topPct: 73.8, widthPct: 5.8, heightPct: 11.4, depth: 3 },
+  { leftPct: 50.4, topPct: 78.8, widthPct: 5.0, heightPct: 6.8, depth: 4 },
+  { leftPct: 54.8, topPct: 75.4, widthPct: 6.0, heightPct: 10.4, depth: 3 },
+  { leftPct: 60.0, topPct: 73.0, widthPct: 6.4, heightPct: 9.6, depth: 1 },
+  { leftPct: 60.6, topPct: 79.8, widthPct: 3.6, heightPct: 6.2, depth: 5 },
+  { leftPct: 66.0, topPct: 75.0, widthPct: 5.2, heightPct: 9.0, depth: 2 },
+  { leftPct: 68.8, topPct: 78.0, widthPct: 4.4, heightPct: 7.2, depth: 4 },
 ];
 
 const MOBILE_HOTSPOTS: Hotspot[] = [
-  { leftPct: 5.5, topPct: 70.5, widthPct: 10.5, heightPct: 9.5, depth: 1 },
-  { leftPct: 14.0, topPct: 62.0, widthPct: 14.0, heightPct: 16.0, depth: 0 },
-  { leftPct: 28.0, topPct: 66.0, widthPct: 19.0, heightPct: 16.5, depth: 3 },
-  { leftPct: 48.0, topPct: 72.0, widthPct: 16.5, heightPct: 12.5, depth: 2 },
-  { leftPct: 66.0, topPct: 70.5, widthPct: 13.5, heightPct: 11.5, depth: 1 },
-  { leftPct: 72.0, topPct: 80.5, widthPct: 11.0, heightPct: 9.0, depth: 4 },
-  { leftPct: 79.0, topPct: 66.5, widthPct: 15.0, heightPct: 14.0, depth: 0 },
-  { leftPct: 30.5, topPct: 84.5, widthPct: 9.0, heightPct: 6.5, depth: 5 },
+  { leftPct: 5.0, topPct: 70.0, widthPct: 11.0, heightPct: 10.0, depth: 1 },
+  { leftPct: 13.5, topPct: 61.5, widthPct: 14.5, heightPct: 16.5, depth: 0 },
+  { leftPct: 27.5, topPct: 65.5, widthPct: 19.5, heightPct: 17.0, depth: 3 },
+  { leftPct: 47.5, topPct: 71.5, widthPct: 17.0, heightPct: 13.0, depth: 2 },
+  { leftPct: 65.5, topPct: 70.0, widthPct: 14.0, heightPct: 12.0, depth: 1 },
+  { leftPct: 71.5, topPct: 80.0, widthPct: 11.5, heightPct: 9.5, depth: 4 },
+  { leftPct: 78.5, topPct: 66.0, widthPct: 15.5, heightPct: 14.5, depth: 0 },
+  { leftPct: 30.0, topPct: 84.0, widthPct: 9.5, heightPct: 7.0, depth: 5 },
 ];
 
 const STYLES = [
