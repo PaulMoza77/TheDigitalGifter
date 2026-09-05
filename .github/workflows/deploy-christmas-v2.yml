@@ -62,3 +62,58 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: bash scripts/deploy-christmas-v2.sh
+
+      # Gift Tree funnel activation (PR #91): migrations + christmas-checkout / christmas-tree-funnel / stripe-webhook
+      - name: Activate Christmas Gift Tree funnel
+        if: steps.token.outputs.skip != 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: bash scripts/activate-christmas-gift-tree.sh
+
+      - name: Verify remote gift-tree schema via service role
+        if: steps.token.outputs.skip != 'true'
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          if [ -z "${VITE_SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "::warning::Missing service role/url secrets — skipping REST verify step."
+            exit 0
+          fi
+          node <<'NODE'
+          const url = process.env.VITE_SUPABASE_URL.replace(/\/$/, '');
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const headers = { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' };
+          async function get(path) {
+            const res = await fetch(url + path, { headers });
+            const text = await res.text();
+            return { status: res.status, text: text.slice(0, 800) };
+          }
+          (async () => {
+            const product = await get('/rest/v1/christmas_products?product_key=eq.christmas_gift_tree&select=id,product_key,active');
+            console.log('product', product.status, product.text);
+            const opens = await get('/rest/v1/christmas_gift_tree_opens?select=id&limit=1');
+            console.log('opens', opens.status, opens.text);
+            const ents = await get('/rest/v1/christmas_reward_entitlements?select=id,email_normalized,claimed_email_at,claim_campaign,expires_at,redeemed_at,status,metadata&limit=1');
+            console.log('entitlements', ents.status, ents.text);
+            const productJson = JSON.parse(product.text || '[]');
+            const productId = productJson[0]?.id;
+            let packs = [];
+            if (productId) {
+              const packages = await get(`/rest/v1/christmas_packages?product_id=eq.${productId}&select=package_key,price_cents,purchasable,metadata`);
+              console.log('packages', packages.status, packages.text);
+              packs = JSON.parse(packages.text || '[]');
+            }
+            const another = packs.find((p) => p.package_key === 'open_another');
+            const five = packs.find((p) => p.package_key === 'open_five' || p.package_key === 'open_5');
+            const packsOk = another?.price_cents === 199 && another?.purchasable === true && five?.price_cents === 499 && five?.purchasable === true;
+            console.log('packsOk', packsOk, { another, five });
+            if (product.status !== 200 || !String(product.text).includes('christmas_gift_tree') || opens.status !== 200 || !packsOk) {
+              console.error('VERIFY_FAILED');
+              process.exit(2);
+            }
+            console.log('VERIFY_OK');
+          })();
+          NODE
