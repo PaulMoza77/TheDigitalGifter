@@ -7,6 +7,18 @@ function readSrc(rel: string) {
 }
 
 describe("Meta CAPI purchase attribution", () => {
+  it("createStripeCheckout null-checks order before reading funnel_variant", () => {
+    const funnel = readSrc("supabase/functions/pet-funnel/index.ts");
+    const idxAction = funnel.indexOf('action === "createStripeCheckout"');
+    const slice = funnel.slice(idxAction, idxAction + 900);
+    const nullCheck = slice.indexOf('if (!order) return apiError("ORDER_NOT_FOUND"');
+    const funnelRead = slice.indexOf("order.funnel_variant");
+    expect(idxAction).toBeGreaterThan(-1);
+    expect(nullCheck).toBeGreaterThan(-1);
+    expect(funnelRead).toBeGreaterThan(-1);
+    expect(nullCheck).toBeLessThan(funnelRead);
+  });
+
   it("checkout context sends fbc/fbp for every pet funnel variant", () => {
     const internal = readSrc("src/features/pet/funnelInternal.ts");
     expect(internal).toContain("getMetaCapiClickIds");
