@@ -341,7 +341,7 @@ export default function ChristmasGiftsPage() {
           {/* Scene + rails */}
           <div className="relative z-10 mt-2 flex min-h-0 flex-1 items-stretch gap-3">
             {!compact ? (
-              <PrizeRail className="hidden w-[148px] shrink-0 lg:block" />
+              <PrizeRail side="left" className="hidden w-[148px] shrink-0 lg:block" />
             ) : null}
 
             <section
@@ -386,11 +386,13 @@ export default function ChristmasGiftsPage() {
             </section>
 
             {!compact ? (
-              <PrizeRail className="hidden w-[148px] shrink-0 lg:block" />
+              <PrizeRail side="right" className="hidden w-[148px] shrink-0 lg:block" />
             ) : null}
           </div>
 
-          {compact ? <PrizeRail compact className="relative z-20 mt-2 shrink-0" /> : null}
+          {compact ? (
+            <PrizeRail compact className="relative z-20 mt-1.5 shrink-0" />
+          ) : null}
 
           {error ? (
             <p className="relative z-20 mt-2 text-center text-sm text-red-200" role="alert">
@@ -482,17 +484,17 @@ export default function ChristmasGiftsPage() {
             </div>
           ) : null}
 
-          <footer className="relative z-20 mt-auto flex shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-2 text-[10px] text-rose-100/45 sm:text-[11px]">
-            <Link className="hover:text-rose-100/70" to="/christmas">
+          <footer className="relative z-20 mt-auto hidden shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-1 text-[10px] text-rose-100/40 sm:flex sm:text-[11px]">
+            <Link className="hover:text-rose-100/65" to="/christmas">
               Christmas hub
             </Link>
-            <Link className="hover:text-rose-100/70" to="/christmas/tree">
+            <Link className="hover:text-rose-100/65" to="/christmas/tree">
               Build a tree
             </Link>
-            <Link className="hover:text-rose-100/70" to="/christmas/advent">
+            <Link className="hover:text-rose-100/65" to="/christmas/advent">
               Advent
             </Link>
-            <Link className="hover:text-rose-100/70" to="/christmas/photo-generator">
+            <Link className="hover:text-rose-100/65" to="/christmas/photo-generator">
               Portraits
             </Link>
           </footer>

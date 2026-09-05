@@ -3,15 +3,28 @@ import { GIFT_TREE_REWARD_CATALOG } from "./rewardCatalog";
 type Props = {
   className?: string;
   compact?: boolean;
+  /** Split catalog for left/right desktop rails */
+  side?: "left" | "right" | "all";
 };
 
-/** Elegant prize preview rail — uses real reward titles, no clutter. */
-export function PrizeRail({ className, compact }: Props) {
-  const items = GIFT_TREE_REWARD_CATALOG.filter((r) =>
-    ["credits_25", "free_image", "christmas_portrait", "santa_discount_15", "credits_50"].includes(
-      r.id,
-    ),
+/** Elegant prize preview rail — real reward titles, airy premium cards. */
+export function PrizeRail({ className, compact, side = "all" }: Props) {
+  const all = GIFT_TREE_REWARD_CATALOG.filter((r) =>
+    [
+      "credits_25",
+      "free_image",
+      "christmas_portrait",
+      "santa_discount_15",
+      "credits_50",
+    ].includes(r.id),
   );
+
+  const items =
+    side === "left"
+      ? all.filter((_, i) => i % 2 === 0)
+      : side === "right"
+        ? all.filter((_, i) => i % 2 === 1)
+        : all;
 
   return (
     <aside
@@ -39,7 +52,9 @@ export function PrizeRail({ className, compact }: Props) {
                 : "rounded-xl bg-black/20 px-3 py-2.5"
             }
           >
-            <p className="text-[11px] font-medium leading-snug text-amber-50/95">{item.title}</p>
+            <p className="text-[11px] font-medium leading-snug text-amber-50/95">
+              {item.title}
+            </p>
             <p className="mt-0.5 text-[10px] capitalize text-rose-100/45">{item.rarity}</p>
           </li>
         ))}

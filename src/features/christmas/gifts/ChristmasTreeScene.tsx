@@ -8,8 +8,8 @@ type Props = {
 };
 
 /**
- * Luxury holiday suite backdrop + premium layered Christmas tree.
- * Pure SVG/CSS — no external assets required.
+ * Cinematic luxury-suite backdrop + organic Christmas tree.
+ * SVG/CSS only — tuned for mobile-first premium impression.
  */
 export function ChristmasTreeScene({
   className,
@@ -21,31 +21,33 @@ export function ChristmasTreeScene({
   const lights = useMemo(
     () =>
       [
-        [88, 72, 1],
-        [112, 78, 0],
-        [100, 96, 1],
-        [74, 112, 0],
-        [126, 118, 1],
-        [92, 130, 0],
-        [110, 138, 1],
-        [68, 152, 0],
-        [132, 158, 1],
-        [86, 170, 0],
-        [116, 176, 1],
-        [58, 188, 0],
-        [100, 192, 1],
-        [142, 196, 0],
-        [76, 210, 1],
-        [124, 216, 0],
-        [98, 228, 1],
-        [64, 236, 0],
-        [136, 240, 1],
-        [88, 250, 0],
-        [112, 256, 1],
-        [80, 140, 0],
-        [120, 200, 1],
-        [70, 230, 0],
-        [130, 175, 1],
+        [100, 58, 1],
+        [88, 78, 0],
+        [112, 82, 1],
+        [76, 102, 0],
+        [124, 108, 1],
+        [96, 118, 0],
+        [108, 128, 1],
+        [68, 138, 0],
+        [132, 144, 1],
+        [86, 156, 0],
+        [116, 162, 1],
+        [58, 174, 0],
+        [100, 178, 1],
+        [142, 184, 0],
+        [74, 196, 1],
+        [126, 202, 0],
+        [94, 214, 1],
+        [64, 224, 0],
+        [136, 228, 1],
+        [84, 240, 0],
+        [112, 246, 1],
+        [78, 148, 0],
+        [120, 188, 1],
+        [70, 218, 0],
+        [130, 166, 1],
+        [90, 98, 0],
+        [110, 208, 1],
       ] as const,
     [],
   );
@@ -53,45 +55,50 @@ export function ChristmasTreeScene({
   const ornaments = useMemo(
     () =>
       [
-        { x: 82, y: 108, r: 4.2, c: "#c45c4a" },
-        { x: 118, y: 114, r: 3.8, c: "#d4af6a" },
-        { x: 70, y: 148, r: 4.6, c: "#8b1e2d" },
-        { x: 130, y: 156, r: 4.0, c: "#c9a227" },
-        { x: 94, y: 168, r: 3.6, c: "#e8e2d6" },
-        { x: 112, y: 186, r: 4.4, c: "#5b7c8a" },
-        { x: 78, y: 204, r: 4.0, c: "#b84a3a" },
-        { x: 126, y: 212, r: 3.8, c: "#d4af6a" },
-        { x: 96, y: 232, r: 4.2, c: "#8b1e2d" },
-        { x: 108, y: 248, r: 3.5, c: "#e8e2d6" },
-        { x: 88, y: 190, r: 3.2, c: "#d4af6a" },
-        { x: 118, y: 140, r: 3.4, c: "#c45c4a" },
+        { x: 84, y: 96, r: 4.4, c: "#c45c4a" },
+        { x: 118, y: 104, r: 3.9, c: "#d4af6a" },
+        { x: 72, y: 136, r: 4.8, c: "#8b1e2d" },
+        { x: 130, y: 144, r: 4.1, c: "#c9a227" },
+        { x: 96, y: 154, r: 3.5, c: "#e8e2d6" },
+        { x: 114, y: 172, r: 4.5, c: "#5b7c8a" },
+        { x: 78, y: 190, r: 4.0, c: "#b84a3a" },
+        { x: 128, y: 198, r: 3.8, c: "#d4af6a" },
+        { x: 94, y: 218, r: 4.3, c: "#8b1e2d" },
+        { x: 110, y: 234, r: 3.6, c: "#e8e2d6" },
+        { x: 88, y: 176, r: 3.3, c: "#d4af6a" },
+        { x: 120, y: 128, r: 3.5, c: "#c45c4a" },
+        { x: 66, y: 210, r: 3.7, c: "#d4af6a" },
+        { x: 138, y: 216, r: 3.4, c: "#e8e2d6" },
       ] as const,
     [],
   );
 
-  /** Fine needle tips for natural foliage texture */
+  /** Dense short needles — readable at phone size */
   const needles = useMemo(() => {
-    const pts: Array<{ x1: number; y1: number; x2: number; y2: number; o: number }> = [];
-    const tiers = [
-      { cy: 78, halfW: 38, n: 10 },
-      { cy: 110, halfW: 52, n: 14 },
-      { cy: 148, halfW: 68, n: 16 },
-      { cy: 190, halfW: 82, n: 18 },
-      { cy: 232, halfW: 90, n: 20 },
+    const pts: Array<{ x1: number; y1: number; x2: number; y2: number; o: number }> =
+      [];
+    const bands = [
+      { cy: 70, halfW: 28, n: 12 },
+      { cy: 95, halfW: 42, n: 16 },
+      { cy: 125, halfW: 56, n: 20 },
+      { cy: 158, halfW: 70, n: 24 },
+      { cy: 192, halfW: 82, n: 26 },
+      { cy: 228, halfW: 92, n: 28 },
+      { cy: 255, halfW: 96, n: 22 },
     ];
-    for (const t of tiers) {
+    for (const t of bands) {
       for (let i = 0; i < t.n; i++) {
         const side = i % 2 === 0 ? -1 : 1;
-        const along = (i / (t.n - 1)) * 0.92 + 0.04;
+        const along = (i / Math.max(t.n - 1, 1)) * 0.94 + 0.03;
         const x = 100 + side * t.halfW * along;
-        const y = t.cy + (i % 3) * 2.2 - 3;
-        const len = 7 + (i % 4);
+        const y = t.cy + (i % 5) * 1.8 - 4;
+        const len = 6 + (i % 5);
         pts.push({
           x1: x,
           y1: y,
-          x2: x + side * len * 0.85,
-          y2: y + len * 0.55,
-          o: 0.18 + (i % 4) * 0.05,
+          x2: x + side * len * 0.9,
+          y2: y + len * 0.5,
+          o: 0.22 + (i % 4) * 0.07,
         });
       }
     }
@@ -100,12 +107,12 @@ export function ChristmasTreeScene({
 
   const snowflakes = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) => ({
-        x: 18 + ((i * 17) % 70),
-        y: 28 + ((i * 13) % 90),
-        r: 0.6 + (i % 3) * 0.35,
-        delay: (i % 5) * 0.4,
-        dur: 4 + (i % 4),
+      Array.from({ length: 16 }, (_, i) => ({
+        x: 16 + ((i * 17) % 72),
+        y: 22 + ((i * 13) % 95),
+        r: 0.55 + (i % 3) * 0.4,
+        delay: (i % 5) * 0.35,
+        dur: 3.8 + (i % 4),
       })),
     [],
   );
@@ -124,70 +131,74 @@ export function ChristmasTreeScene({
         overflow: "hidden",
         pointerEvents: "none",
         boxShadow:
-          "inset 0 0 0 1px rgba(255,255,255,0.06), 0 30px 80px rgba(0,0,0,0.45)",
+          "inset 0 0 0 1px rgba(255,255,255,0.07), 0 28px 70px rgba(0,0,0,0.5)",
       }}
     >
-      {/* Room shell */}
+      {/* Room volume */}
       <div
         aria-hidden
         className="absolute inset-0"
         style={{
           background: `
-            linear-gradient(180deg, rgba(0,0,0,0.18) 0%, transparent 16%),
-            linear-gradient(90deg, rgba(0,0,0,0.32) 0%, transparent 16%, transparent 84%, rgba(0,0,0,0.32) 100%),
-            radial-gradient(ellipse at 50% 100%, ${theme.accentGlow} 0%, transparent 55%),
-            linear-gradient(180deg, ${theme.roomWarmth} 0%, ${theme.wood} 58%, ${theme.carpet} 100%)
+            linear-gradient(180deg, rgba(0,0,0,0.22) 0%, transparent 14%),
+            linear-gradient(90deg, rgba(0,0,0,0.38) 0%, transparent 14%, transparent 86%, rgba(0,0,0,0.38) 100%),
+            radial-gradient(ellipse at 50% 100%, ${theme.accentGlow} 0%, transparent 52%),
+            linear-gradient(180deg, ${theme.roomWarmth} 0%, ${theme.wood} 54%, ${theme.carpet} 100%)
           `,
         }}
       />
 
-      {/* Wood paneling */}
+      {/* Wall paneling + crown molding */}
       <div
         aria-hidden
         className="absolute inset-x-0 top-0"
         style={{
-          height: "56%",
+          height: "52%",
           background: `
             repeating-linear-gradient(
               90deg,
-              rgba(255,255,255,0.018) 0px,
-              rgba(255,255,255,0.018) 1px,
+              rgba(255,255,255,0.02) 0px,
+              rgba(255,255,255,0.02) 1px,
               transparent 1px,
-              transparent 38px
+              transparent 36px
             ),
-            linear-gradient(180deg, rgba(255,255,255,0.05), transparent 42%)
+            linear-gradient(180deg, rgba(255,255,255,0.06), transparent 40%)
           `,
-          opacity: 0.75,
+          opacity: 0.8,
         }}
       />
+      <div
+        aria-hidden
+        className="absolute inset-x-[4%] top-[5.5%] h-[1.5px]"
+        style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,110,0.35), transparent)" }}
+      />
 
-      {/* Ceiling string lights */}
+      {/* Ceiling fairy lights */}
       <svg
         aria-hidden
-        className="absolute inset-x-[6%] top-[2%] h-8 w-[88%]"
-        viewBox="0 0 200 24"
+        className="absolute inset-x-[5%] top-[1.5%] h-7 w-[90%]"
+        viewBox="0 0 200 22"
         preserveAspectRatio="none"
       >
         <path
-          d="M0 8 Q50 18 100 6 T200 10"
+          d="M0 7 Q50 16 100 5 T200 9"
           fill="none"
-          stroke="rgba(212,175,110,0.35)"
-          strokeWidth="0.8"
+          stroke="rgba(212,175,110,0.32)"
+          strokeWidth="0.7"
         />
-        {[12, 36, 60, 84, 108, 132, 156, 180].map((x, i) => (
+        {[10, 32, 54, 76, 98, 120, 142, 164, 186].map((x, i) => (
           <circle
             key={x}
             cx={x}
-            cy={i % 2 === 0 ? 10 : 14}
-            r="1.6"
+            cy={i % 2 === 0 ? 9 : 13}
+            r="1.55"
             fill={i % 3 === 0 ? "#f0c090" : "#ffe6a8"}
-            opacity={reduceMotion ? 0.7 : undefined}
             style={
               reduceMotion
-                ? undefined
+                ? { opacity: 0.7 }
                 : {
-                    animation: `gt-light-breathe ${2.4 + (i % 3) * 0.5}s ease-in-out ${
-                      i * 0.18
+                    animation: `gt-light-breathe ${2.3 + (i % 3) * 0.45}s ease-in-out ${
+                      i * 0.16
                     }s infinite`,
                   }
             }
@@ -195,24 +206,23 @@ export function ChristmasTreeScene({
         ))}
       </svg>
 
-      {/* Panoramic window */}
+      {/* Panoramic night window */}
       <div
         aria-hidden
-        className="absolute left-[7%] top-[8%] right-[7%] h-[32%] overflow-hidden rounded-[16px]"
+        className="absolute left-[6%] top-[8%] right-[6%] h-[30%] overflow-hidden rounded-[14px]"
         style={{
           boxShadow:
-            "inset 0 0 0 2px rgba(212,175,110,0.2), 0 14px 44px rgba(0,0,0,0.4)",
+            "inset 0 0 0 2px rgba(212,175,110,0.22), 0 16px 40px rgba(0,0,0,0.42)",
           background: theme.windowSky,
         }}
       >
-        {/* Distant mountains */}
         <div
-          className="absolute inset-x-0 bottom-0 h-[55%]"
+          className="absolute inset-x-0 bottom-0 h-[60%]"
           style={{
             background: `
-              linear-gradient(180deg, transparent 0%, rgba(180,200,220,0.12) 100%),
-              radial-gradient(ellipse at 30% 100%, rgba(220,230,240,0.35) 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 100%, rgba(200,215,230,0.28) 0%, transparent 48%)
+              linear-gradient(180deg, transparent, rgba(190,210,230,0.14)),
+              radial-gradient(ellipse at 28% 100%, rgba(230,235,245,0.4) 0%, transparent 48%),
+              radial-gradient(ellipse at 72% 100%, rgba(200,215,230,0.32) 0%, transparent 46%)
             `,
           }}
         />
@@ -220,14 +230,14 @@ export function ChristmasTreeScene({
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(circle at 78% 18%, rgba(255,255,255,0.6) 0 2.5px, transparent 3.5px), radial-gradient(circle at 28% 36%, rgba(255,255,255,0.35) 0 1px, transparent 2px), radial-gradient(ellipse at 50% 100%, rgba(200,220,240,0.2), transparent 55%)",
+              "radial-gradient(circle at 76% 16%, rgba(255,255,255,0.65) 0 2.4px, transparent 3.4px), radial-gradient(circle at 24% 34%, rgba(255,255,255,0.35) 0 1px, transparent 2px)",
           }}
         />
         {!reduceMotion
           ? snowflakes.map((s, i) => (
               <span
                 key={i}
-                className="absolute rounded-full bg-white/70"
+                className="absolute rounded-full bg-white/75"
                 style={{
                   left: `${s.x}%`,
                   top: `${s.y}%`,
@@ -238,86 +248,87 @@ export function ChristmasTreeScene({
               />
             ))
           : null}
-        {/* Velvet curtains */}
         <div
-          className="absolute inset-y-0 left-0 w-[16%]"
+          className="absolute inset-y-0 left-0 w-[15%]"
           style={{
             background:
-              "linear-gradient(90deg, rgba(72,38,32,0.95), rgba(110,62,48,0.55), transparent)",
+              "linear-gradient(90deg, rgba(78,40,34,0.96), rgba(118,68,52,0.5), transparent)",
           }}
         />
         <div
-          className="absolute inset-y-0 right-0 w-[16%]"
+          className="absolute inset-y-0 right-0 w-[15%]"
           style={{
             background:
-              "linear-gradient(270deg, rgba(72,38,32,0.95), rgba(110,62,48,0.55), transparent)",
+              "linear-gradient(270deg, rgba(78,40,34,0.96), rgba(118,68,52,0.5), transparent)",
           }}
         />
         <div
-          className="absolute inset-x-[14%] top-0 h-[12%]"
+          className="absolute inset-x-[13%] top-0 h-[11%]"
           style={{
-            background: "linear-gradient(180deg, rgba(212,175,110,0.4), transparent)",
+            background: "linear-gradient(180deg, rgba(212,175,110,0.42), transparent)",
           }}
         />
-        {/* Window mullion */}
         <div
-          className="absolute left-1/2 top-[8%] bottom-[8%] w-px -translate-x-1/2"
-          style={{ background: "rgba(212,175,110,0.22)" }}
+          className="absolute left-1/2 top-[7%] bottom-[7%] w-px -translate-x-1/2"
+          style={{ background: "rgba(212,175,110,0.2)" }}
+        />
+        <div
+          className="absolute inset-x-[7%] top-1/2 h-px"
+          style={{ background: "rgba(212,175,110,0.12)" }}
         />
       </div>
 
-      {/* Side lounge silhouettes */}
+      {/* Lounge chairs */}
       <div
         aria-hidden
-        className="absolute bottom-[18%] left-[1.5%] h-[22%] w-[14%] rounded-t-[40%]"
+        className="absolute bottom-[16%] left-[1%] h-[24%] w-[13%] rounded-t-[42%]"
         style={{
           background:
-            "linear-gradient(180deg, rgba(55,35,28,0.55), rgba(30,18,14,0.7))",
-          boxShadow: "inset 0 8px 16px rgba(255,200,140,0.06)",
+            "linear-gradient(180deg, rgba(62,38,30,0.62), rgba(28,16,12,0.78))",
+          boxShadow: "inset 0 10px 18px rgba(255,200,140,0.07)",
         }}
       />
       <div
         aria-hidden
-        className="absolute bottom-[18%] right-[1.5%] h-[22%] w-[14%] rounded-t-[40%]"
+        className="absolute bottom-[16%] right-[1%] h-[24%] w-[13%] rounded-t-[42%]"
         style={{
           background:
-            "linear-gradient(180deg, rgba(55,35,28,0.55), rgba(30,18,14,0.7))",
-          boxShadow: "inset 0 8px 16px rgba(255,200,140,0.06)",
-        }}
-      />
-
-      {/* Warm floor lamps */}
-      <div
-        aria-hidden
-        className="absolute left-[3%] top-[40%] h-20 w-12 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(255,190,110,0.5) 0%, transparent 70%)",
-          filter: "blur(3px)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute right-[3%] top-[40%] h-20 w-12 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(255,190,110,0.5) 0%, transparent 70%)",
-          filter: "blur(3px)",
+            "linear-gradient(180deg, rgba(62,38,30,0.62), rgba(28,16,12,0.78))",
+          boxShadow: "inset 0 10px 18px rgba(255,200,140,0.07)",
         }}
       />
 
-      {/* Soft rug under tree */}
+      {/* Floor lamps */}
       <div
         aria-hidden
-        className="absolute bottom-[3%] left-1/2 h-[14%] w-[82%] -translate-x-1/2 rounded-[100%]"
+        className="absolute left-[2%] top-[38%] h-[22%] w-[11%] rounded-full"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 50%, rgba(140,60,50,0.35) 0%, rgba(80,40,32,0.18) 45%, transparent 72%)",
-          boxShadow: "0 0 48px rgba(0,0,0,0.4)",
+            "radial-gradient(circle, rgba(255,190,110,0.55) 0%, transparent 68%)",
+          filter: "blur(2px)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute right-[2%] top-[38%] h-[22%] w-[11%] rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(255,190,110,0.55) 0%, transparent 68%)",
+          filter: "blur(2px)",
         }}
       />
 
-      {/* Tree SVG */}
+      {/* Rug */}
+      <div
+        aria-hidden
+        className="absolute bottom-[2.5%] left-1/2 h-[15%] w-[84%] -translate-x-1/2 rounded-[100%]"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 50%, rgba(150,55,48,0.4) 0%, rgba(90,40,32,0.2) 42%, transparent 72%)",
+          boxShadow: "0 0 50px rgba(0,0,0,0.42)",
+        }}
+      />
+
       <svg
         viewBox="0 0 200 320"
         width="100%"
@@ -328,106 +339,128 @@ export function ChristmasTreeScene({
         style={
           reduceMotion
             ? undefined
-            : { animation: "gt-scene-breathe 8s ease-in-out infinite" }
+            : { animation: "gt-scene-breathe 9s ease-in-out infinite" }
         }
       >
         <defs>
-          <linearGradient id="gt-needle-a" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4a9a62" />
-            <stop offset="28%" stopColor="#2a7040" />
-            <stop offset="70%" stopColor="#174a28" />
-            <stop offset="100%" stopColor="#0a2816" />
+          <linearGradient id="gt-foliage-lit" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#5aad6e" />
+            <stop offset="22%" stopColor="#2f7a45" />
+            <stop offset="65%" stopColor="#174a2a" />
+            <stop offset="100%" stopColor="#071a10" />
           </linearGradient>
-          <linearGradient id="gt-needle-b" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#3a8850" />
-            <stop offset="55%" stopColor="#1c5530" />
-            <stop offset="100%" stopColor="#0f3220" />
+          <linearGradient id="gt-foliage-mid" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#3f8f55" />
+            <stop offset="50%" stopColor="#1c5730" />
+            <stop offset="100%" stopColor="#0a2818" />
           </linearGradient>
-          <linearGradient id="gt-needle-deep" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2d6e42" />
-            <stop offset="100%" stopColor="#081c12" />
+          <linearGradient id="gt-foliage-deep" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2a6a3c" />
+            <stop offset="100%" stopColor="#04140c" />
           </linearGradient>
-          <radialGradient id="gt-tree-bloom" cx="50%" cy="32%" r="58%">
-            <stop offset="0%" stopColor="rgba(255,220,140,0.36)" />
-            <stop offset="45%" stopColor="rgba(255,200,100,0.08)" />
+          <radialGradient id="gt-tree-glow" cx="50%" cy="30%" r="58%">
+            <stop offset="0%" stopColor="rgba(255,220,145,0.4)" />
+            <stop offset="40%" stopColor="rgba(255,200,100,0.1)" />
             <stop offset="100%" stopColor="rgba(255,200,100,0)" />
           </radialGradient>
           <filter id="gt-soft-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="1.7" />
+            <feGaussianBlur stdDeviation="1.8" />
           </filter>
-          <filter id="gt-branch-soft" x="-8%" y="-8%" width="116%" height="116%">
-            <feGaussianBlur stdDeviation="0.28" />
+          <filter id="gt-branch-blur" x="-6%" y="-6%" width="112%" height="112%">
+            <feGaussianBlur stdDeviation="0.22" />
           </filter>
         </defs>
 
-        <ellipse cx="100" cy="300" rx="68" ry="10" fill="rgba(0,0,0,0.4)" />
-        <circle cx="100" cy="148" r="92" fill="url(#gt-tree-bloom)" />
+        <ellipse cx="100" cy="302" rx="70" ry="11" fill="rgba(0,0,0,0.45)" />
+        <circle cx="100" cy="145" r="95" fill="url(#gt-tree-glow)" />
 
-        {/* Trunk + planter */}
-        <ellipse cx="100" cy="292" rx="22" ry="5" fill="#3a2818" opacity="0.85" />
-        <rect x="91" y="266" width="18" height="28" rx="2" fill="#5c3c24" />
-        <rect x="94" y="268" width="3" height="24" fill="rgba(255,255,255,0.1)" />
+        {/* Planter + trunk */}
+        <ellipse cx="100" cy="294" rx="24" ry="5.5" fill="#3a2818" opacity="0.9" />
         <path
-          d="M78 292 Q100 278 122 292 Q100 298 78 292Z"
+          d="M76 294 Q100 278 124 294 Q100 302 76 294Z"
           fill="#4a3220"
-          opacity="0.9"
         />
+        <rect x="92" y="262" width="16" height="32" rx="2" fill="#5c3c24" />
+        <rect x="95" y="264" width="3" height="28" fill="rgba(255,255,255,0.1)" />
 
-        {/* Layered foliage — organic scalloped tiers */}
-        <g filter="url(#gt-branch-soft)">
+        {/* Organic foliage — irregular overlapping lobes (not stacked triangles) */}
+        <g filter="url(#gt-branch-blur)">
+          {/* Back depth mass */}
           <path
-            d="M100 38
-               C116 52 128 66 138 86
-               C126 82 114 80 100 80
-               C86 80 74 82 62 86
-               C72 66 84 52 100 38Z"
-            fill="url(#gt-needle-a)"
+            d="M100 48
+               C122 70 138 96 148 128
+               C136 120 118 116 100 116
+               C82 116 64 120 52 128
+               C62 96 78 70 100 48Z"
+            fill="url(#gt-foliage-deep)"
+            opacity="0.9"
           />
+
+          {/* Upper crown — asymmetrical */}
           <path
-            d="M100 62
-               C122 82 140 102 154 126
-               C138 118 118 114 100 114
-               C82 114 62 118 46 126
-               C60 102 78 82 100 62Z"
-            fill="url(#gt-needle-b)"
+            d="M100 36
+               C112 48 124 62 132 80
+               C124 74 112 72 100 72
+               C88 72 78 74 68 82
+               C78 60 90 46 100 36Z"
+            fill="url(#gt-foliage-lit)"
           />
+          <ellipse cx="92" cy="78" rx="18" ry="14" fill="url(#gt-foliage-mid)" opacity="0.85" />
+          <ellipse cx="110" cy="82" rx="16" ry="13" fill="url(#gt-foliage-lit)" opacity="0.8" />
+
+          {/* Mid-upper */}
           <path
-            d="M100 94
-               C128 118 150 142 166 170
-               C146 160 122 154 100 154
-               C78 154 54 160 34 170
-               C50 142 72 118 100 94Z"
-            fill="url(#gt-needle-deep)"
+            d="M100 66
+               C126 90 146 116 156 146
+               C140 136 120 132 100 132
+               C80 132 60 136 44 146
+               C54 116 74 90 100 66Z"
+            fill="url(#gt-foliage-mid)"
           />
+          <ellipse cx="74" cy="118" rx="22" ry="16" fill="url(#gt-foliage-deep)" opacity="0.75" />
+          <ellipse cx="128" cy="122" rx="24" ry="17" fill="url(#gt-foliage-lit)" opacity="0.7" />
+          <ellipse cx="100" cy="128" rx="28" ry="12" fill="url(#gt-foliage-mid)" opacity="0.65" />
+
+          {/* Mid */}
           <path
-            d="M100 128
-               C134 156 160 184 178 220
-               C154 206 126 198 100 198
-               C74 198 46 206 22 220
-               C40 184 66 156 100 128Z"
-            fill="url(#gt-needle-a)"
+            d="M100 108
+               C134 138 158 170 170 204
+               C148 190 122 184 100 184
+               C78 184 52 190 30 204
+               C42 170 66 138 100 108Z"
+            fill="url(#gt-foliage-deep)"
           />
+          <ellipse cx="62" cy="168" rx="28" ry="20" fill="url(#gt-foliage-mid)" opacity="0.8" />
+          <ellipse cx="140" cy="172" rx="30" ry="21" fill="url(#gt-foliage-lit)" opacity="0.72" />
+          <ellipse cx="96" cy="178" rx="34" ry="14" fill="url(#gt-foliage-mid)" opacity="0.6" />
+
+          {/* Lower canopy */}
           <path
-            d="M100 168
-               C138 200 166 232 186 268
-               C156 252 126 244 100 244
-               C74 244 44 252 14 268
-               C34 232 62 200 100 168Z"
-            fill="url(#gt-needle-b)"
+            d="M100 152
+               C140 186 168 222 184 262
+               C156 246 126 240 100 240
+               C74 240 44 246 16 262
+               C32 222 60 186 100 152Z"
+            fill="url(#gt-foliage-mid)"
           />
-          {/* Soft under-layer for depth */}
+          <ellipse cx="48" cy="220" rx="32" ry="22" fill="url(#gt-foliage-deep)" opacity="0.78" />
+          <ellipse cx="154" cy="224" rx="34" ry="23" fill="url(#gt-foliage-lit)" opacity="0.7" />
+          <ellipse cx="100" cy="236" rx="42" ry="16" fill="url(#gt-foliage-deep)" opacity="0.55" />
+
+          {/* Skirt */}
           <path
-            d="M100 200
-               C142 228 168 252 190 286
-               C158 274 128 268 100 268
-               C72 268 42 274 10 286
-               C32 258 58 228 100 200Z"
-            fill="url(#gt-needle-deep)"
-            opacity="0.85"
+            d="M100 196
+               C146 230 172 258 192 288
+               C158 276 128 270 100 270
+               C72 270 42 276 8 288
+               C28 258 54 230 100 196Z"
+            fill="url(#gt-foliage-deep)"
           />
+          <ellipse cx="40" cy="262" rx="28" ry="16" fill="url(#gt-foliage-mid)" opacity="0.65" />
+          <ellipse cx="160" cy="264" rx="30" ry="16" fill="url(#gt-foliage-lit)" opacity="0.6" />
         </g>
 
-        {/* Natural needle tips */}
+        {/* Needle fringe */}
         <g strokeLinecap="round">
           {needles.map((n, i) => (
             <line
@@ -436,28 +469,30 @@ export function ChristmasTreeScene({
               y1={n.y1}
               x2={n.x2}
               y2={n.y2}
-              stroke={i % 3 === 0 ? "rgba(160,210,150,0.35)" : "rgba(40,90,55,0.55)"}
-              strokeWidth={0.7}
+              stroke={
+                i % 3 === 0 ? "rgba(170,220,160,0.42)" : "rgba(30,80,48,0.6)"
+              }
+              strokeWidth={0.75}
               opacity={n.o}
             />
           ))}
         </g>
 
-        {/* Soft branch edge highlights */}
+        {/* Soft highlight arcs */}
         <path
-          d="M66 118 Q100 104 134 118"
+          d="M72 110 Q100 96 128 110"
           fill="none"
-          stroke="rgba(190,230,180,0.2)"
+          stroke="rgba(200,235,190,0.22)"
           strokeWidth="1.1"
         />
         <path
-          d="M50 164 Q100 146 150 164"
+          d="M52 164 Q100 144 148 164"
           fill="none"
-          stroke="rgba(180,220,170,0.16)"
+          stroke="rgba(190,230,180,0.16)"
           strokeWidth="1.2"
         />
         <path
-          d="M38 216 Q100 194 162 216"
+          d="M36 220 Q100 196 164 220"
           fill="none"
           stroke="rgba(180,220,170,0.13)"
           strokeWidth="1.3"
@@ -465,13 +500,13 @@ export function ChristmasTreeScene({
 
         {ornaments.map((o, i) => (
           <g key={`o-${i}`}>
-            <circle cx={o.x} cy={o.y} r={o.r + 0.6} fill="rgba(0,0,0,0.25)" />
-            <circle cx={o.x} cy={o.y} r={o.r} fill={o.c} opacity={0.94} />
+            <circle cx={o.x} cy={o.y + 0.8} r={o.r + 0.5} fill="rgba(0,0,0,0.28)" />
+            <circle cx={o.x} cy={o.y} r={o.r} fill={o.c} opacity={0.95} />
             <circle
-              cx={o.x - o.r * 0.28}
-              cy={o.y - o.r * 0.32}
-              r={o.r * 0.28}
-              fill="rgba(255,255,255,0.48)"
+              cx={o.x - o.r * 0.3}
+              cy={o.y - o.r * 0.34}
+              r={o.r * 0.3}
+              fill="rgba(255,255,255,0.5)"
             />
           </g>
         ))}
@@ -481,7 +516,7 @@ export function ChristmasTreeScene({
             key={`l-${i}`}
             cx={x}
             cy={y}
-            r={warm ? 2.5 : 2.15}
+            r={warm ? 2.6 : 2.2}
             fill={
               warm
                 ? "#ffe6a8"
@@ -492,36 +527,35 @@ export function ChristmasTreeScene({
                     : "#ffe6a8"
             }
             filter="url(#gt-soft-glow)"
-            opacity={reduceMotion ? 0.85 : undefined}
             style={
               reduceMotion
-                ? undefined
+                ? { opacity: 0.85 }
                 : {
-                    animation: `gt-light-breathe ${2.1 + (i % 5) * 0.45}s ease-in-out ${
-                      (i % 6) * 0.22
+                    animation: `gt-light-breathe ${2 + (i % 5) * 0.4}s ease-in-out ${
+                      (i % 6) * 0.2
                     }s infinite`,
                   }
             }
           />
         ))}
 
-        {/* Elegant star topper */}
-        <g transform="translate(100 34)">
+        {/* Star topper */}
+        <g transform="translate(100 32)">
           <polygon
-            points="0,-15 3.6,-3.6 15,-3.6 5.6,2.6 9.2,14.5 0,7.2 -9.2,14.5 -5.6,2.6 -15,-3.6 -3.6,-3.6"
+            points="0,-15 3.5,-3.5 15,-3.5 5.5,2.5 9,14.5 0,7 -9,14.5 -5.5,2.5 -15,-3.5 -3.5,-3.5"
             fill="#e8c97a"
           />
           <polygon
-            points="0,-10 2.2,-2.4 9.5,-2.4 3.6,1.6 5.8,9 0,4.6 -5.8,9 -3.6,1.6 -9.5,-2.4 -2.2,-2.4"
+            points="0,-9 2,-2.2 9,-2.2 3.4,1.5 5.5,8.5 0,4.2 -5.5,8.5 -3.4,1.5 -9,-2.2 -2,-2.2"
             fill="#fff4d0"
             opacity="0.55"
           />
           {!reduceMotion ? (
-            <circle r="22" fill="rgba(232,201,122,0.18)">
+            <circle r="22" fill="rgba(232,201,122,0.2)">
               <animate
                 attributeName="opacity"
-                values="0.1;0.3;0.1"
-                dur="3.4s"
+                values="0.1;0.32;0.1"
+                dur="3.2s"
                 repeatCount="indefinite"
               />
             </circle>
@@ -536,12 +570,12 @@ export function ChristmasTreeScene({
           70% { opacity: 0.55; }
         }
         @keyframes gt-window-snow {
-          0% { transform: translateY(0); opacity: 0.5; }
-          100% { transform: translateY(52px); opacity: 0; }
+          0% { transform: translateY(0); opacity: 0.55; }
+          100% { transform: translateY(54px); opacity: 0; }
         }
         @keyframes gt-scene-breathe {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
+          50% { transform: translateY(-2.5px); }
         }
         @media (prefers-reduced-motion: reduce) {
           [style*="gt-light-breathe"],

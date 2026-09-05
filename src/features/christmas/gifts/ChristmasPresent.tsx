@@ -14,55 +14,63 @@ export type PresentVisual = {
 
 const WRAP: Record<
   string,
-  { body: string; lid: string; ribbon: string; face: string }
+  { body: string; lid: string; ribbon: string; face: string; side: string }
 > = {
   red: {
     body: "#6b1a22",
     lid: "#8b2430",
     ribbon: "#d4af6a",
     face: "#4a1016",
+    side: "#3a0c12",
   },
   gold: {
     body: "#8a6a2e",
     lid: "#b08a3c",
     ribbon: "#f2e2b0",
     face: "#5c4518",
+    side: "#4a3814",
   },
   green: {
     body: "#1e3d2e",
     lid: "#2a5640",
     ribbon: "#d4af6a",
     face: "#12261c",
+    side: "#0c1a14",
   },
   blue: {
     body: "#1a2a3c",
     lid: "#24384e",
     ribbon: "#c9a86a",
     face: "#0e1824",
+    side: "#0a1218",
   },
   snow: {
     body: "#e8e2d8",
     lid: "#f4efe8",
     ribbon: "#8b2430",
     face: "#d8d0c4",
+    side: "#c8c0b4",
   },
   wine: {
     body: "#4a1520",
     lid: "#6a1e2c",
     ribbon: "#e0c078",
     face: "#2e0c14",
+    side: "#220910",
   },
   forest: {
     body: "#163028",
     lid: "#1f4034",
     ribbon: "#c9a86a",
     face: "#0c1c18",
+    side: "#081410",
   },
   ivory: {
     body: "#f0ebe3",
     lid: "#faf7f2",
     ribbon: "#2a4a44",
     face: "#ddd5ca",
+    side: "#cfc6ba",
   },
 };
 
@@ -125,51 +133,66 @@ export function ChristmasPresent({
         zIndex: 20 + present.depth,
         cursor: interactive ? "pointer" : "default",
         transform: opening
-          ? "translateY(-12px) scale(1.1)"
+          ? "translateY(-14px) scale(1.12)"
           : selected
-            ? "translateY(-8px) scale(1.06)"
+            ? "translateY(-9px) scale(1.07)"
             : locked
-              ? "scale(0.95)"
+              ? "scale(0.94)"
               : undefined,
-        opacity: locked && state !== "opened" ? 0.5 : 1,
+        opacity: locked && state !== "opened" ? 0.48 : 1,
         filter: opening || selected
-          ? "drop-shadow(0 0 20px rgba(212,175,110,0.7))"
+          ? "drop-shadow(0 0 22px rgba(212,175,110,0.75))"
           : interactive
-            ? "drop-shadow(0 10px 18px rgba(0,0,0,0.4))"
-            : "drop-shadow(0 4px 10px rgba(0,0,0,0.28))",
+            ? "drop-shadow(0 12px 18px rgba(0,0,0,0.45))"
+            : "drop-shadow(0 5px 12px rgba(0,0,0,0.3))",
         transition: reduceMotion
           ? "opacity 150ms ease"
           : "transform 420ms cubic-bezier(0.22,1,0.36,1), filter 420ms ease, opacity 300ms ease",
       }}
     >
+      {/* Right side face for depth */}
+      <span
+        aria-hidden
+        className="absolute"
+        style={{
+          top: "6%",
+          right: "-7%",
+          width: "14%",
+          height: "88%",
+          borderRadius: "0 8px 8px 0",
+          background: `linear-gradient(180deg, ${colors.side}, ${colors.face})`,
+          transform: "skewY(-8deg)",
+          opacity: 0.85,
+        }}
+      />
+
       <span
         className="relative block h-full w-full"
         style={{
-          borderRadius: 10,
-          background: `linear-gradient(152deg, ${colors.lid} 0%, ${colors.body} 42%, ${colors.face} 100%)`,
+          borderRadius: 9,
+          background: `linear-gradient(155deg, ${colors.lid} 0%, ${colors.body} 46%, ${colors.face} 100%)`,
           boxShadow: `inset 0 1px 0 ${theme.lidSheen}, inset 0 -10px 18px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.1)`,
         }}
       >
-        {/* Soft side bevel */}
         <span
           aria-hidden
-          className="absolute inset-y-[8%] left-0 w-[10%] rounded-l-[10px]"
+          className="absolute inset-y-[8%] left-0 w-[11%] rounded-l-[9px]"
           style={{
-            background: "linear-gradient(90deg, rgba(255,255,255,0.12), transparent)",
+            background: "linear-gradient(90deg, rgba(255,255,255,0.14), transparent)",
           }}
         />
 
-        {/* 3D lid */}
+        {/* Lid */}
         <span
           aria-hidden
-          className="absolute left-0 right-0 top-0"
+          className="absolute left-[-3%] right-[-3%] top-0"
           style={{
             height: "28%",
-            borderRadius: "10px 10px 2px 2px",
+            borderRadius: "9px 9px 2px 2px",
             background: `linear-gradient(180deg, ${colors.lid}, ${colors.body})`,
-            boxShadow: `inset 0 1px 0 ${theme.lidSheen}, 0 2px 4px rgba(0,0,0,0.2)`,
+            boxShadow: `inset 0 1px 0 ${theme.lidSheen}, 0 3px 6px rgba(0,0,0,0.28)`,
             transform:
-              opening && !reduceMotion ? "translateY(-11px) rotate(-6deg)" : undefined,
+              opening && !reduceMotion ? "translateY(-12px) rotate(-7deg)" : undefined,
             transition: reduceMotion ? undefined : "transform 520ms ease",
           }}
         />
@@ -179,11 +202,10 @@ export function ChristmasPresent({
           aria-hidden
           className="absolute top-0 bottom-0"
           style={{
-            left: "41%",
-            width: "18%",
-            background: `linear-gradient(90deg, transparent 0%, ${colors.ribbon} 28%, ${colors.ribbon} 72%, transparent 100%)`,
-            opacity: 0.96,
-            boxShadow: "inset 0 0 6px rgba(255,255,255,0.15)",
+            left: "40%",
+            width: "20%",
+            background: `linear-gradient(90deg, transparent 0%, ${colors.ribbon} 26%, ${colors.ribbon} 74%, transparent 100%)`,
+            boxShadow: "inset 0 0 8px rgba(255,255,255,0.18)",
           }}
         />
         <span
@@ -191,32 +213,28 @@ export function ChristmasPresent({
           className="absolute left-0 right-0"
           style={{
             top: "38%",
-            height: "14%",
-            background: `linear-gradient(180deg, transparent 0%, ${colors.ribbon} 30%, ${colors.ribbon} 70%, transparent 100%)`,
-            opacity: 0.96,
+            height: "15%",
+            background: `linear-gradient(180deg, transparent 0%, ${colors.ribbon} 28%, ${colors.ribbon} 72%, transparent 100%)`,
           }}
         />
 
-        {/* Bow */}
         {(present.ribbon === "bow" || theme.mysteryMark) && (
           <span
             aria-hidden
             className="absolute"
             style={{
               left: "50%",
-              top: "26%",
+              top: "24%",
               width: "34%",
               height: "18%",
               transform: "translate(-50%, -50%)",
               background: colors.ribbon,
               borderRadius: "50%",
-              boxShadow: `-10px 0 0 ${colors.ribbon}, 10px 0 0 ${colors.ribbon}, 0 2px 4px rgba(0,0,0,0.25)`,
-              opacity: 0.96,
+              boxShadow: `-10px 0 0 ${colors.ribbon}, 10px 0 0 ${colors.ribbon}, 0 2px 5px rgba(0,0,0,0.3)`,
             }}
           />
         )}
 
-        {/* Mystery mark */}
         {theme.mysteryMark ? (
           <span
             aria-hidden
@@ -226,9 +244,8 @@ export function ChristmasPresent({
               height: "36%",
               color: colors.ribbon,
               fontSize: Math.max(15, h * 0.3),
-              textShadow: "0 1px 3px rgba(0,0,0,0.5)",
+              textShadow: "0 1px 3px rgba(0,0,0,0.55)",
               opacity: 0.92,
-              letterSpacing: "0.02em",
             }}
           >
             ?
@@ -238,11 +255,11 @@ export function ChristmasPresent({
         {interactive && !reduceMotion ? (
           <span
             aria-hidden
-            className="absolute inset-0 rounded-[10px]"
+            className="absolute inset-0 rounded-[9px]"
             style={{
               animation: "gt-present-shimmer 3.2s ease-in-out infinite",
               background:
-                "linear-gradient(110deg, transparent 28%, rgba(255,255,255,0.22) 48%, transparent 64%)",
+                "linear-gradient(110deg, transparent 28%, rgba(255,255,255,0.24) 48%, transparent 64%)",
               backgroundSize: "220% 100%",
             }}
           />
@@ -250,9 +267,9 @@ export function ChristmasPresent({
       </span>
       <style>{`
         @keyframes gt-present-shimmer {
-          0% { background-position: 130% 0; opacity: 0.3; }
-          50% { opacity: 0.65; }
-          100% { background-position: -50% 0; opacity: 0.3; }
+          0% { background-position: 130% 0; opacity: 0.28; }
+          50% { opacity: 0.7; }
+          100% { background-position: -50% 0; opacity: 0.28; }
         }
       `}</style>
     </button>
