@@ -5,6 +5,12 @@ import {
   isPortraitProductKey,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import {
+  applyPercentOff,
+  pickDiscountEntitlement,
+  pickFreeEntitlement,
+} from "../_shared/christmas/giftTreeRedemption.ts";
+import { enqueueChristmasGenerate } from "../_shared/christmas/stripeFulfill.ts";
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
@@ -61,6 +67,7 @@ type Body = {
   /** Ignored — prompts are server-owned. */
   prompt?: string;
   client_prompt?: string;
+  guest_token?: string;
 };
 
 function asString(value: unknown): string {
@@ -206,15 +213,72 @@ Deno.serve(async (req) => {
       };
     }
 
-    const stripeSecret = asString(Deno.env.get("STRIPE_SECRET_KEY"));
-    const publishable = asString(Deno.env.get("STRIPE_PUBLISHABLE_KEY"));
-    if (!stripeSecret || !publishable) {
-      return jsonResponse({ error: "Stripe is not configured" }, 503);
-    }
-
     const email = asString(body.email);
     const guestToken = asString(body.guest_token).trim();
     const guestTokenHash = guestToken ? await sha256Hex(guestToken) : "";
+
+    // Optional auth user (Bearer) for entitlement lookup.
+    let userId: string | null = null;
+    const authHeader = req.headers.get("Authorization") || "";
+    if (authHeader.toLowerCase().startsWith("bearer ")) {
+      try {
+        const jwt = authHeader.slice(7).trim();
+        const { data: authData } = await service.auth.getUser(jwt);
+        userId = authData.user?.id || null;
+      } catch {
+        userId = null;
+      }
+    }
+
+    // Resolve Gift Tree entitlements (free product / percent discount). Soft-fail if schema pending.
+    let amountCents = Number(pkg.price_cents) || 0;
+    let giftEntitlementId: string | null = null;
+    let giftEntitlementKey: string | null = null;
+    let giftDiscountPercent = 0;
+    let giftAppliedLabel: string | null = null;
+    try {
+      const entitlementKeys = [
+        "gift_tree_free_image",
+        "gift_tree_christmas_portrait",
+        "gift_tree_pet_christmas_portrait",
+        "gift_tree_santa_discount_15",
+        "gift_tree_premium_discount_25",
+      ];
+      let q = service
+        .from("christmas_reward_entitlements")
+        .select("id,entitlement_key,redeemed_at,status,expires_at")
+        .in("entitlement_key", entitlementKeys)
+        .is("redeemed_at", null)
+        .limit(50);
+      if (userId) q = q.eq("user_id", userId);
+      else if (guestTokenHash) q = q.eq("guest_token_hash", guestTokenHash);
+      else q = null as any;
+      const rows = q ? ((await q).data || []) : [];
+      const free = pickFreeEntitlement(rows as any, product.product_key);
+      if (free) {
+        amountCents = 0;
+        giftEntitlementId = free.id;
+        giftEntitlementKey = free.entitlement_key;
+        giftAppliedLabel = "🎁 Christmas Gift applied — free create";
+      } else {
+        const discount = pickDiscountEntitlement(rows as any, product.product_key);
+        if (discount) {
+          amountCents = applyPercentOff(amountCents, discount.percent_off);
+          giftEntitlementId = discount.id;
+          giftEntitlementKey = discount.entitlement_key;
+          giftDiscountPercent = discount.percent_off;
+          giftAppliedLabel = `🎁 Christmas Gift applied — ${discount.percent_off}% off`;
+        }
+      }
+    } catch (entErr) {
+      console.warn("gift_tree_entitlement_lookup_failed", entErr);
+    }
+
+    const stripeSecret = asString(Deno.env.get("STRIPE_SECRET_KEY"));
+    const publishable = asString(Deno.env.get("STRIPE_PUBLISHABLE_KEY"));
+    if (amountCents > 0 && (!stripeSecret || !publishable)) {
+      return jsonResponse({ error: "Stripe is not configured" }, 503);
+    }
     const successUrl =
       asString(body.success_url) ||
       (product.product_key === "christmas_santa_video"
@@ -238,7 +302,7 @@ Deno.serve(async (req) => {
       portrait_type: portraitType,
       species,
       source_route: sourceRoute,
-      amount_cents: pkg.price_cents,
+      amount_cents: amountCents,
       currency: pkg.currency,
       package_key: pkg.package_key,
       sku,
@@ -286,6 +350,10 @@ Deno.serve(async (req) => {
             portrait_type: portraitType,
             species,
             source_route: sourceRoute,
+            gift_tree_entitlement_id: giftEntitlementId,
+            gift_tree_entitlement_key: giftEntitlementKey,
+            gift_tree_discount_percent: giftDiscountPercent || null,
+            gift_tree_list_price_cents: pkg.price_cents,
           },
           ...orderPatch,
         })
@@ -315,6 +383,58 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fully covered by Gift Tree free entitlement — no Stripe charge.
+    if (amountCents <= 0 && giftEntitlementId) {
+      const { error: redeemErr } = await service
+        .from("christmas_reward_entitlements")
+        .update({
+          redeemed_at: new Date().toISOString(),
+          status: "redeemed",
+          metadata: {
+            redeemed_via: "christmas_checkout_free",
+            product_key: product.product_key,
+            package_key: pkg.package_key,
+            order_id: orderId,
+          },
+        })
+        .eq("id", giftEntitlementId)
+        .is("redeemed_at", null);
+      if (redeemErr) {
+        return jsonResponse({ error: "Unable to redeem Christmas gift", code: "redeem_failed" }, 409);
+      }
+      await service
+        .from("christmas_orders")
+        .update({
+          payment_status: "paid",
+          amount_cents: 0,
+          paid_at: new Date().toISOString(),
+          metadata: {
+            source: "christmas-checkout",
+            guest_token_hash: guestTokenHash || null,
+            gift_tree_entitlement_id: giftEntitlementId,
+            gift_tree_entitlement_key: giftEntitlementKey,
+            gift_tree_free: true,
+          },
+        })
+        .eq("id", orderId);
+      const mode = product.product_key === "christmas_santa_video" ? "santa" : "commerce";
+      enqueueChristmasGenerate(orderId, mode as any);
+      return jsonResponse({
+        ok: true,
+        orderId,
+        publicToken: publicToken || null,
+        sessionId: null,
+        clientSecret: null,
+        publishableKey: publishable || null,
+        amountCents: 0,
+        listAmountCents: pkg.price_cents,
+        currency: pkg.currency,
+        uiMode: "custom",
+        freeCheckout: true,
+        giftApplied: giftAppliedLabel,
+      });
+    }
+
     const params = new URLSearchParams();
     params.set("mode", "payment");
     params.set("ui_mode", "custom");
@@ -325,7 +445,7 @@ Deno.serve(async (req) => {
     if (email) params.set("customer_email", email);
     params.set("line_items[0][quantity]", "1");
     params.set("line_items[0][price_data][currency]", pkg.currency);
-    params.set("line_items[0][price_data][unit_amount]", String(pkg.price_cents));
+    params.set("line_items[0][price_data][unit_amount]", String(amountCents));
     params.set(
       "line_items[0][price_data][product_data][name]",
       `${product.name} — ${pkg.package_name}`,
@@ -337,6 +457,9 @@ Deno.serve(async (req) => {
     if (guestTokenHash) params.set("metadata[guest_token_hash]", guestTokenHash);
     params.set("metadata[sku]", sku);
     params.set("metadata[christmas_order_id]", orderId);
+    if (giftEntitlementId) params.set("metadata[gift_tree_entitlement_id]", giftEntitlementId);
+    if (giftEntitlementKey) params.set("metadata[gift_tree_entitlement_key]", giftEntitlementKey);
+    if (giftDiscountPercent) params.set("metadata[gift_tree_discount_percent]", String(giftDiscountPercent));
     if (styleKey) params.set("metadata[style_key]", styleKey);
     if (portraitType) params.set("metadata[portrait_type]", portraitType);
     if (species) params.set("metadata[species]", species);
@@ -379,9 +502,12 @@ Deno.serve(async (req) => {
       sessionId: session.id,
       clientSecret: session.client_secret,
       publishableKey: publishable,
-      amountCents: pkg.price_cents,
+      amountCents,
+      listAmountCents: pkg.price_cents,
       currency: pkg.currency,
       uiMode: "custom",
+      freeCheckout: false,
+      giftApplied: giftAppliedLabel,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

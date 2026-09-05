@@ -160,7 +160,8 @@ export function giftTreeClaimIdempotency(input: {
       ? Math.max(0, Math.floor(input.openSlot))
       : 0;
   if (slot > 0) return `${base}:open:${slot}`;
-  return base;
+  const day = new Date().toISOString().slice(0, 10);
+  return `${base}:day:${day}`;
 }
 
 export function publicGiftTreeReward(reward: GiftTreeReward) {
@@ -174,3 +175,20 @@ export function publicGiftTreeReward(reward: GiftTreeReward) {
     claim_path: reward.claim_path,
   };
 }
+
+
+/** Paid packs — keep in sync with rewardCatalog.ts + funnel migration. */
+export const GIFT_TREE_PAID_OFFERS = [
+  {
+    package_key: "open_another",
+    label: "1 more gift",
+    price_cents: 199,
+    opens_granted: 1,
+  },
+  {
+    package_key: "open_five",
+    label: "5 more gifts",
+    price_cents: 499,
+    opens_granted: 5,
+  },
+] as const;

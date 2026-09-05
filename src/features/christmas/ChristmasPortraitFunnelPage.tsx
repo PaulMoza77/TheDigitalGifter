@@ -75,6 +75,8 @@ export default function ChristmasPortraitFunnelPage() {
     clientSecret: string;
     publishableKey: string;
     amountCents: number;
+    listAmountCents?: number;
+    giftApplied?: string | null;
     currency: string;
   } | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -402,6 +404,8 @@ export default function ChristmasPortraitFunnelPage() {
         clientSecret: result.clientSecret,
         publishableKey: result.publishableKey,
         amountCents: result.amountCents,
+        listAmountCents: (result as any).listAmountCents,
+        giftApplied: (result as any).giftApplied,
         currency: result.currency,
       });
       setStep("checkout", {
@@ -639,6 +643,12 @@ export default function ChristmasPortraitFunnelPage() {
         {draft.step === "checkout" && checkout && (
           <section className="mt-8 space-y-4">
             <h2 className="text-lg font-medium">Secure payment</h2>
+            {checkout.giftApplied ? (
+              <p className="mb-2 text-center text-sm font-medium text-amber-200/95">{checkout.giftApplied}</p>
+            ) : null}
+            {typeof checkout.listAmountCents === "number" && checkout.listAmountCents > checkout.amountCents ? (
+              <p className="mb-1 text-center text-xs text-white/60"><span className="line-through">${(checkout.listAmountCents/100).toFixed(2)}</span> → ${(checkout.amountCents/100).toFixed(2)}</p>
+            ) : null}
             <CustomStripeCheckout
               clientSecret={checkout.clientSecret}
               publishableKey={checkout.publishableKey}

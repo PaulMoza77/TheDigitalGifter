@@ -191,6 +191,33 @@ export async function handleChristmasStripeEvent(input: {
           });
         }
       } else {
+        // Consume Gift Tree percent-off entitlement after successful payment (not on checkout open).
+        {
+          const { data: ordMeta } = await input.service
+            .from("christmas_orders")
+            .select("metadata")
+            .eq("id", orderId)
+            .maybeSingle();
+          const meta = (ordMeta?.metadata || {}) as Record<string, unknown>;
+          const entId =
+            asString(input.metadata.gift_tree_entitlement_id) ||
+            asString(meta.gift_tree_entitlement_id);
+          if (entId) {
+            await input.service
+              .from("christmas_reward_entitlements")
+              .update({
+                redeemed_at: new Date().toISOString(),
+                status: "redeemed",
+                metadata: {
+                  redeemed_via: "stripe_webhook",
+                  christmas_order_id: orderId,
+                  stripe_session_id: sessionId,
+                },
+              })
+              .eq("id", entId)
+              .is("redeemed_at", null);
+          }
+        }
         let mode: "commerce" | "santa" = "commerce";
         if (productKey === "christmas_santa_video") {
           mode = "santa";
