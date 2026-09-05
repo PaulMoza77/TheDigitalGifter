@@ -93,18 +93,18 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
       {/* z0 — environment background (single immersive plane) */}
       <div
         aria-hidden
-        className={`absolute inset-0 ${reduceMotion ? "" : "gt-scene-breathe"}`}
-        style={{ zIndex: 0, transformOrigin: "50% 45%" }}
+        className={`absolute inset-0 bg-[#0a0705] ${reduceMotion ? "" : "gt-scene-breathe"}`}
+        style={{ zIndex: 0, transformOrigin: "50% 42%" }}
       >
         <picture className="absolute inset-0 hidden md:block">
           <source type="image/webp" srcSet="/christmas/gifts/scene-desktop.webp" />
           <img
             src="/christmas/gifts/scene-desktop-1280.jpg"
             alt=""
-            className="h-full w-full object-cover object-[center_78%]"
+            className="h-full w-full object-contain object-top"
             decoding="async"
             fetchPriority="high"
-            style={{ filter: "brightness(1.16) saturate(1.14) contrast(1.03)" }}
+            style={{ filter: "brightness(1.12) saturate(1.1) contrast(1.02)" }}
           />
         </picture>
 
@@ -113,10 +113,10 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
           <img
             src="/christmas/gifts/scene-mobile-640.jpg"
             alt=""
-            className="h-full w-full object-cover object-[center_96%]"
+            className="h-full w-full object-contain object-top"
             decoding="async"
             fetchPriority="high"
-            style={{ filter: "brightness(1.18) saturate(1.15) contrast(1.03)" }}
+            style={{ filter: "brightness(1.12) saturate(1.1) contrast(1.02)" }}
           />
         </picture>
       </div>
@@ -163,13 +163,13 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
             className="gt-fire-glow absolute"
             style={{
               zIndex: 3,
-              left: "6%",
-              top: "50%",
-              width: "30%",
-              height: "40%",
+              left: "2%",
+              top: "58%",
+              width: "22%",
+              height: "32%",
               borderRadius: "50%",
               background:
-                "radial-gradient(ellipse at 40% 60%, rgba(255,140,50,0.62) 0%, rgba(255,180,70,0.35) 30%, transparent 68%)",
+                "radial-gradient(ellipse at 40% 60%, rgba(255,140,50,0.38) 0%, rgba(255,180,70,0.18) 28%, transparent 68%)",
               filter: "blur(14px)",
               mixBlendMode: "screen",
               animation: "gt-fire-flicker 1.9s ease-in-out infinite",

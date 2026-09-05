@@ -48,12 +48,12 @@ export function presentLayout(count = 8): Array<{
   const ribbons = ["classic", "cross", "bow"] as const;
   // Nestled under the tree on the rug — low, tight, story-first cluster.
   const positions = [
-    { leftPct: 12, bottomPct: 0, depth: 1, width: 48, height: 40 },
-    { leftPct: 30, bottomPct: 0, depth: 3, width: 54, height: 46 },
-    { leftPct: 50, bottomPct: 0, depth: 3, width: 54, height: 46 },
-    { leftPct: 70, bottomPct: 0, depth: 1, width: 48, height: 40 },
-    { leftPct: 22, bottomPct: 8, depth: 0, width: 42, height: 34 },
-    { leftPct: 58, bottomPct: 8, depth: 0, width: 42, height: 34 },
+    { leftPct: 10, bottomPct: 2, depth: 1, width: 50, height: 42 },
+    { leftPct: 30, bottomPct: 0, depth: 3, width: 56, height: 48 },
+    { leftPct: 50, bottomPct: 0, depth: 3, width: 56, height: 48 },
+    { leftPct: 70, bottomPct: 2, depth: 1, width: 50, height: 42 },
+    { leftPct: 22, bottomPct: 12, depth: 0, width: 44, height: 36 },
+    { leftPct: 58, bottomPct: 12, depth: 0, width: 44, height: 36 },
   ];
   const n = Math.min(Math.max(count, 4), 6);
   return positions.slice(0, n).map((pos, i) => ({

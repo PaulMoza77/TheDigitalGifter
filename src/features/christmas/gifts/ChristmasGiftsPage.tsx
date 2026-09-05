@@ -394,7 +394,7 @@ export default function ChristmasGiftsPage() {
 
         {/* z4 — interactive presents nestled on the gift pile under the tree */}
         <section
-          className="absolute inset-x-0 bottom-[5.05rem] z-[4] mx-auto h-[13%] max-w-[min(520px,86vw)] sm:bottom-[7.25rem] sm:h-[18%] sm:max-w-[min(700px,50vw)]"
+          className="absolute inset-x-0 bottom-[5.35rem] z-[4] mx-auto h-[11%] max-w-[min(480px,78vw)] sm:bottom-[5.6rem] sm:h-[13%] sm:max-w-[min(640px,42vw)]"
           aria-label="Christmas presents"
         >
           {presents.map((p) => (
