@@ -405,7 +405,7 @@ export default function ChristmasGiftsPage() {
             />
           </>
         ) : (
-          <div className="pointer-events-auto absolute inset-x-2 bottom-[7.15rem] z-[5] flex gap-2">
+          <div className="pointer-events-auto absolute inset-x-2 bottom-[6.9rem] z-[5] flex gap-2">
             {/* Bottom strip under the tree — never covers the canopy */}
             <PrizeRail
               side="left"
@@ -431,10 +431,12 @@ export default function ChristmasGiftsPage() {
           `}</style>
         ) : null}
 
-        {/* z4 — interactive presents (spaced, no overlap) */}
+        {/* z4 — interactive presents (spaced, no overlap; sit above the mobile reward strip) */}
         <section
-          className={`absolute inset-x-0 z-[4] mx-auto h-[28%] max-w-[min(640px,88vw)] sm:h-[30%] sm:max-w-[min(720px,70vw)] ${
-            compact ? "bottom-[12.6rem]" : "bottom-[8.75rem] sm:bottom-[9.25rem]"
+          className={`absolute inset-x-0 z-[4] mx-auto max-w-[min(640px,90vw)] sm:max-w-[min(720px,70vw)] ${
+            compact
+              ? "bottom-[15.75rem] h-[24%]"
+              : "bottom-[8.75rem] h-[28%] sm:bottom-[9.25rem] sm:h-[30%]"
           }`}
           aria-label="Christmas presents"
         >
