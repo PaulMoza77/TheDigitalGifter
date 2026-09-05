@@ -390,54 +390,11 @@ export default function ChristmasGiftsPage() {
 
         {/* Brand lives in the site header on this route — no floating chip over the tree */}
 
-        {/* z5 — floating reward cards clear of the tree */}
-        {!compact ? (
-          <>
-            <PrizeRail
-              side="left"
-              limit={4}
-              className="gt-rail-left pointer-events-auto absolute top-[18%] z-[5] hidden w-[170px] lg:block"
-            />
-            <PrizeRail
-              side="right"
-              limit={4}
-              className="gt-rail-right pointer-events-auto absolute top-[18%] z-[5] hidden w-[170px] lg:block"
-            />
-          </>
-        ) : (
-          <div className="pointer-events-auto absolute inset-x-2 bottom-[6.9rem] z-[5] flex gap-2">
-            {/* Bottom strip under the tree — never covers the canopy */}
-            <PrizeRail
-              side="left"
-              limit={2}
-              compact
-              onSeeAll={() => setSeeAllOpen(true)}
-              className="min-w-0 flex-1"
-            />
-            <PrizeRail
-              side="right"
-              limit={2}
-              compact
-              onSeeAll={() => setSeeAllOpen(true)}
-              className="min-w-0 flex-1"
-            />
-          </div>
-        )}
+        {/* No side reward panels — room stays fully visible. Surprises via link below. */}
 
-        {!compact ? (
-          <style>{`
-            .gt-rail-left { left: clamp(16px, 2.5vw, 48px); }
-            .gt-rail-right { right: clamp(16px, 2.5vw, 48px); }
-          `}</style>
-        ) : null}
-
-        {/* z4 — interactive presents (spaced, no overlap; sit above the mobile reward strip) */}
+        {/* z4 — interactive presents (spaced, no overlap) */}
         <section
-          className={`absolute inset-x-0 z-[4] mx-auto max-w-[min(640px,90vw)] sm:max-w-[min(720px,70vw)] ${
-            compact
-              ? "bottom-[15.75rem] h-[24%]"
-              : "bottom-[8.75rem] h-[28%] sm:bottom-[9.25rem] sm:h-[30%]"
-          }`}
+          className="absolute inset-x-0 bottom-[8.75rem] z-[4] mx-auto h-[30%] max-w-[min(720px,92vw)] sm:bottom-[9.25rem] sm:h-[32%] sm:max-w-[min(780px,70vw)]"
           aria-label="Christmas presents"
         >
           {presents.map((p) => (
@@ -502,6 +459,14 @@ export default function ChristmasGiftsPage() {
                 {claimHint}
               </p>
             ) : null}
+
+            <button
+              type="button"
+              onClick={() => setSeeAllOpen(true)}
+              className="mt-2 text-[11px] font-medium tracking-wide text-amber-200/75 underline-offset-2 hover:text-amber-100 hover:underline"
+            >
+              See possible surprises
+            </button>
 
             <nav
               aria-label="Christmas links"

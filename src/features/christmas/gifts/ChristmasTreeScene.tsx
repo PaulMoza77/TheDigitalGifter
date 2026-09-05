@@ -152,17 +152,7 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
         }}
       />
 
-      {/* z2 — extremely restrained central frame (transparent, room continues) */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[7%] hidden h-[74%] w-[min(620px,64vw)] -translate-x-1/2 rounded-[24px] md:block"
-        style={{
-          zIndex: 2,
-          border: "1px solid rgba(220,180,95,0.22)",
-          background: "transparent",
-          boxShadow: "none",
-        }}
-      />
+      {/* z2 — no central glass frame (was reading as side panels) */}
 
       {/* z3 — ambient animation layers */}
       {!reduceMotion ? (
