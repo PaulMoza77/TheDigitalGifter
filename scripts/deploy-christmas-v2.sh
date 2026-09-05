@@ -83,5 +83,21 @@ deploy_fn christmas-generate-video
 deploy_fn christmas-v2-funnel-event
 deploy_fn stripe-webhook
 
+WH_URL="https://${PROJECT_REF}.supabase.co/functions/v1/stripe-webhook"
+WH_CODE="$(curl -sS -m 20 -o /tmp/stripe-webhook-probe.txt -w '%{http_code}' \
+  -X POST "$WH_URL" \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"probe"}' || true)"
+WH_HEAD="$(head -c 200 /tmp/stripe-webhook-probe.txt 2>/dev/null || true)"
+echo "stripe-webhook probe HTTP $WH_CODE body[:200]=$WH_HEAD"
+if echo "$WH_HEAD" | grep -qi '<html\|BOOT_ERROR'; then
+  echo "ERROR: stripe-webhook failed health probe after Christmas deploy."
+  exit 1
+fi
+if [[ "$WH_CODE" == "503" ]]; then
+  echo "ERROR: stripe-webhook HTTP 503 after deploy — refusing to leave Pet/Christmas fulfill broken."
+  exit 1
+fi
+
 echo "Edge deploy complete for $PROJECT_REF."
 echo "Probe: curl -sS -X OPTIONS https://${PROJECT_REF}.supabase.co/functions/v1/christmas-funnel"

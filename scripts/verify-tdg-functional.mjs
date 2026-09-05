@@ -111,6 +111,12 @@ function origin(path, extra = []) {
   const wh = await edge("/functions/v1/stripe-webhook", { type: "probe" });
   rec(
     negative,
+    "stripe_webhook_boots",
+    wh.status !== 503 && wh.json?.code !== "BOOT_ERROR" && !wh.html,
+    `http=${wh.status} code=${wh.json?.code || ""}`,
+  );
+  rec(
+    negative,
     "stripe_webhook_unsigned_rejected",
     wh.status >= 400 && wh.status < 500 && !wh.html,
     `http=${wh.status}`,

@@ -56,10 +56,14 @@ WH_CODE="$(curl -sS -m 20 -o /tmp/stripe-webhook-probe.txt -w '%{http_code}' \
   -X POST "$WH_URL" \
   -H 'Content-Type: application/json' \
   -d '{"type":"probe"}' || true)"
-WH_HEAD="$(head -c 120 /tmp/stripe-webhook-probe.txt 2>/dev/null || true)"
-echo "stripe-webhook probe HTTP $WH_CODE body[:120]=$WH_HEAD"
+WH_HEAD="$(head -c 200 /tmp/stripe-webhook-probe.txt 2>/dev/null || true)"
+echo "stripe-webhook probe HTTP $WH_CODE body[:200]=$WH_HEAD"
 if echo "$WH_HEAD" | grep -qi '<html'; then
   echo "ERROR: stripe-webhook returned HTML — deploy may have missed the function."
+  exit 1
+fi
+if [[ "$WH_CODE" == "503" ]] || echo "$WH_HEAD" | grep -qi 'BOOT_ERROR'; then
+  echo "ERROR: stripe-webhook BOOT_ERROR — function failed to start (check duplicate imports / edge logs)."
   exit 1
 fi
 
