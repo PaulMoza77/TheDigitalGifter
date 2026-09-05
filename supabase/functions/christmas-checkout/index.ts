@@ -240,6 +240,7 @@ Deno.serve(async (req) => {
       currency: pkg.currency,
       package_key: pkg.package_key,
       sku,
+      locale: asString(body.locale) === "ro" ? "ro" : "en",
     };
 
     if (orderId) {

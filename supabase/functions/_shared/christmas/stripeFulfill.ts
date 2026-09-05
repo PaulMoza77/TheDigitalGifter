@@ -7,6 +7,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
+import { claimAndSendChristmasLifecycle } from "./lifecycle.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -157,15 +158,51 @@ export async function handleChristmasStripeEvent(input: {
     if (result.ok === true && result.status === "paid") {
       const productKey = asString(input.metadata.product_key);
       let mode: "commerce" | "santa" = "commerce";
-      if (productKey === "christmas_santa_video") {
-        mode = "santa";
-      } else if (!productKey) {
+      let orderLocale: string | null = null;
+      let orderEmail: string | null = null;
+      let amountCents = amountTotal;
+      let currencyCode = currency;
+      let resolvedProductKey = productKey;
+      {
         const { data: ord } = await input.service
           .from("christmas_orders")
-          .select("product_key")
+          .select("product_key,locale,email,amount_cents,currency")
           .eq("id", orderId)
           .maybeSingle();
-        if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+        if (ord) {
+          resolvedProductKey = asString(ord.product_key) || productKey;
+          orderLocale = asString(ord.locale) || "en";
+          orderEmail = asString(ord.email) || null;
+          amountCents = asInt(ord.amount_cents) || amountTotal;
+          currencyCode = asString(ord.currency) || currency;
+        }
+        if (resolvedProductKey === "christmas_santa_video") mode = "santa";
+      }
+      waitUntil(
+        claimAndSendChristmasLifecycle({
+          service: input.service,
+          template: "payment_confirmation",
+          orderId,
+          productKey: resolvedProductKey || "christmas_photo",
+          locale: orderLocale,
+          email: orderEmail,
+          productName: resolvedProductKey || "Christmas",
+          amountCents,
+          currency: currencyCode,
+        }).catch((err) => console.error("christmas payment_confirmation email failed", err)),
+      );
+      if (mode === "santa") {
+        waitUntil(
+          claimAndSendChristmasLifecycle({
+            service: input.service,
+            template: "generation_started",
+            orderId,
+            productKey: "christmas_santa_video",
+            locale: orderLocale,
+            email: orderEmail,
+            productName: "Santa Video",
+          }).catch((err) => console.error("christmas generation_started email failed", err)),
+        );
       }
       enqueueChristmasGenerate(orderId, mode);
     }

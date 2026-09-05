@@ -391,6 +391,7 @@ export default function ChristmasPortraitFunnelPage() {
         amount_cents: 1,
         currency: "eur",
         email: draft.email || undefined,
+        locale,
         style_key: draft.styleKey,
         source_path: draft.sourcePath,
         source_bucket: "christmas-source",
