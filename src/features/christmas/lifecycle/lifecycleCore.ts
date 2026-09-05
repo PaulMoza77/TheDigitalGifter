@@ -287,6 +287,7 @@ export function resultAccessPath(order: ChristmasOrderLifecycleView): string {
   const route = order.sourceRoute || productLandingPath(order.productKey);
   const base = route.startsWith("/") ? route : `/${route}`;
   const token = order.publicTokenHint;
+  // Prefer tokenized capability URL. Never fall back to order-id-only public access.
   if (token) return `${base}?token=${encodeURIComponent(token)}`;
-  return `${base}?order=${encodeURIComponent(order.id)}`;
+  return `${base}?resume=1`;
 }

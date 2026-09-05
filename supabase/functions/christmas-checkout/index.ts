@@ -5,6 +5,7 @@ import {
   isPortraitProductKey,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import { encryptPublicToken, sha256Hex as sharedSha256 } from "../_shared/christmas/crypto.ts";
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
@@ -43,6 +44,8 @@ type Body = {
   source_width?: number;
   source_height?: number;
   existing_order_id?: string;
+  /** Required when updating an existing unpaid order (ownership proof). */
+  public_token?: string;
   portrait_type?: string;
   species?: string;
   source_route?: string;
@@ -81,8 +84,7 @@ function siteOrigin(): string {
 }
 
 async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return sharedSha256(value);
 }
 
 Deno.serve(async (req) => {
@@ -221,7 +223,7 @@ Deno.serve(async (req) => {
     const sku = `xmas_${product.product_key}_${pkg.package_key}`;
 
     let orderId = asString(body.existing_order_id);
-    let publicToken = "";
+    let publicToken = asString(body.public_token);
 
     const orderPatch = {
       email: email || null,
@@ -244,25 +246,48 @@ Deno.serve(async (req) => {
     };
 
     if (orderId) {
+      if (!publicToken || publicToken.length < 32) {
+        return jsonResponse(
+          { error: "public_token required to update existing order", code: "token_required" },
+          403,
+        );
+      }
+      const proofHash = await sha256Hex(publicToken);
       const { data: existing } = await service
         .from("christmas_orders")
         .select("id,payment_status,stripe_checkout_session_id,amount_cents,public_token_hash")
         .eq("id", orderId)
+        .eq("public_token_hash", proofHash)
         .maybeSingle();
       if (!existing || existing.payment_status === "paid") {
         orderId = "";
+        publicToken = "";
       } else {
-        await service.from("christmas_orders").update(orderPatch).eq("id", orderId);
+        await service
+          .from("christmas_orders")
+          .update({
+            ...orderPatch,
+            metadata: {
+              source: "christmas-checkout",
+              portrait_type: portraitType,
+              species,
+              source_route: sourceRoute,
+            },
+          })
+          .eq("id", orderId)
+          .eq("public_token_hash", proofHash);
       }
     }
 
     if (!orderId) {
       publicToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
       const tokenHash = await sha256Hex(publicToken);
+      const tokenCipher = await encryptPublicToken(publicToken);
       const { data: order, error: orderError } = await service
         .from("christmas_orders")
         .insert({
           public_token_hash: tokenHash,
+          public_token_ciphertext: tokenCipher,
           product_key: product.product_key,
           payment_status: "pending",
           fulfillment_status: "not_started",
@@ -280,7 +305,6 @@ Deno.serve(async (req) => {
           funnel_session_id: asString(body.funnel_session_id) || null,
           metadata: {
             source: "christmas-checkout",
-            public_token_hint: publicToken,
             portrait_type: portraitType,
             species,
             source_route: sourceRoute,

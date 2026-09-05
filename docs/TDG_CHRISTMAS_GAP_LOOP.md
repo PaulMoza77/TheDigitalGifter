@@ -4,7 +4,8 @@
 **Mission:** Christmas suite work **not** owned by the primary e6f4 send-a-gift / durable-continue loop  
 **Repo:** `PaulMoza77/TheDigitalGifter`  
 **PR foundation/i18n:** https://github.com/PaulMoza77/TheDigitalGifter/pull/97  
-**PR lifecycle (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/98 (`cursor/christmas-gap-lifecycle-577a` → foundation)
+**PR lifecycle (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/98 (`cursor/christmas-gap-lifecycle-577a` → foundation)  
+**PR kids privacy (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/99 (`cursor/christmas-gap-kids-privacy-577a` → lifecycle)
 
 ---
 
@@ -51,6 +52,40 @@ Full product doc: `docs/TDG_CHRISTMAS_LIFECYCLE.md`
 
 ---
 
+## KIDS / PRIVATE MEDIA PRIVACY (DONE harden — `TDG-CHRISTMAS-GAP-KIDS-PRIVACY-HARDEN-007`)
+
+**previous_006_work_found:** NONE (no branch/PR/commits for `-006`; only backlog queue)  
+**PR:** kids-privacy stacked branch (see PR link after open)
+
+### Privacy matrix
+
+| surface | data type | private/public | authorization | storage | delivery | email | analytics | indexing | retention | tests | production |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Portrait upload | customer photo | private | signed upload URL | `christmas-source` private | N/A | none | categorical only | N/A | unpaid uploads ops seam | unit guards | buckets private |
+| Portrait/Santa result | generated media | private | `public_token` hash (≥32 hex) + revoke flag | `christmas-generated` private | short-lived signed URL (15–30m) | app `?token=` route only | no URLs/tokens | funnel pages public; account/kids noindex | policy_pending_founder_legal | privacyCore + foundation | flag-gated checkout |
+| Delivery token | capability secret | private | hash auth; ciphertext for server recovery | DB hash + ciphertext | never in metadata | decrypt server-side for mail | stripped | N/A | with order | scrub migration | scrub applied in code |
+| Kids route | shell | N/A | coming_soon | none | none | none | page views only | **noindex** | N/A | foundation test | not production-active |
+| Account Christmas | galleries | private | auth + email match (V2) / RLS user_id | signed | signed | none | none | **noindex** | V2 scoped | manual | V2 galleries only |
+| Admin orders | metadata | admin | `is_admin` | refs only by default | explicit | none | none | noindex admin | — | — | ledger + metadata without token hints |
+
+### privacy_gaps_before → after
+
+| Before | After |
+| --- | --- |
+| Full token in `metadata.public_token_hint` | ciphertext column; hint scrubbed |
+| `getOrder` echoed metadata | safe projection + Cache-Control private |
+| `existing_order_id` update without token | requires matching `public_token` |
+| Kids shell noindex race | `PageHead noindex={shell.noindex}` |
+| Analytics metadata unsanitized | `sanitizeChristmasAnalyticsMetadata` |
+| `resultAccessPath` fell back to `?order=` | token or resume only |
+
+### remaining_policy_decisions
+
+- Auto-purge duration for unpaid uploads / paid results → **policy_pending_founder_legal**
+- Kids commercial product launch still blocked until product + consent UX exist
+
+---
+
 ## Gap backlog (secondary queue)
 
 | ID | Gap | Priority | Status |
@@ -58,11 +93,13 @@ Full product doc: `docs/TDG_CHRISTMAS_LIFECYCLE.md`
 | `TDG-CHRISTMAS-GAP-ACCOUNT-002` | `/account/christmas` | P1 | **DONE** |
 | `TDG-CHRISTMAS-GAP-LOCALIZATION-002` | EN/RO i18n | P1 | **DONE** |
 | `TDG-CHRISTMAS-GAP-LIFECYCLE-003` | Lifecycle emails + locale persist | P1 | **DONE** (infra; sends flag-gated) |
-| `TDG-CHRISTMAS-GAP-KIDS-PRIVACY-006` | Kids product privacy/access hardening | P0 | **NEXT** |
-| `TDG-CHRISTMAS-GAP-ADMIN-KPIS-005` | Admin KPIs / lifecycle observability UI deepen | P1 | queued (order detail ledger shipped in #98) |
+| `TDG-CHRISTMAS-GAP-KIDS-PRIVACY-006` | (superseded) | P0 | **ABSORBED** by HARDEN-007 (no prior impl) |
+| `TDG-CHRISTMAS-GAP-KIDS-PRIVACY-HARDEN-007` | Kids/private media access harden | P0 | **DONE** |
+| `TDG-CHRISTMAS-GAP-ADMIN-KPIS-005` | Admin KPIs / lifecycle observability UI deepen | P1 | **NEXT** |
 | `TDG-CHRISTMAS-GAP-CHECKOUT-READY-007` | Price go-live | P0 | founder-gated |
 | `TDG-CHRISTMAS-GAP-CARDS-HARDEN-011` | Cards completion deepen | P1 | queued |
 | `TDG-CHRISTMAS-GAP-SANTA-PROD-012` | Santa production hardening | P1 | queued |
+| Conversion gaps (Apple Pay / scene-mobile.mp4 / +5 chances) | P0/P1 | audit next if not primary-owned |
 | Localization deepen (tree/wishlist/…) | P2 | queued |
 
 ---
@@ -73,6 +110,7 @@ Full product doc: `docs/TDG_CHRISTMAS_LIFECYCLE.md`
 | --- | --- |
 | Commerce portrait/Santa transactional email | SECONDARY_OWNS |
 | Abandoned/cross-sell Christmas commerce | SECONDARY_OWNS (marketing off) |
+| Kids/private media access | SECONDARY_OWNS |
 | `/send-a-gift` emails | PRIMARY_OWNS_FULLY |
 | `/christmas/gifts` | PRIMARY_OWNS_FULLY |
 | V2 pack delivery (`christmas_v2_email_deliveries`) | SECONDARY_OWNS (legacy; coexist) |

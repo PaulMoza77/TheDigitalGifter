@@ -27,7 +27,7 @@ export function ChristmasFeatureShell({ shell }: { shell: ChristmasRouteShellDef
 
   return (
     <>
-      <PageHead title={title} description={description} exactTitle={false} />
+      <PageHead title={title} description={description} exactTitle={false} noindex={shell.noindex} />
       <main className="mx-auto flex min-h-[60vh] max-w-2xl flex-col justify-center px-6 py-16 text-slate-900">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-medium uppercase tracking-wide text-slate-500">

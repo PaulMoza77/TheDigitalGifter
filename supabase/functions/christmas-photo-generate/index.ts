@@ -6,6 +6,7 @@ import {
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
 import { claimAndSendChristmasLifecycle } from "../_shared/christmas/lifecycle.ts";
+import { resolveDeliveryToken } from "../_shared/christmas/crypto.ts";
 
 /**
  * Post-payment Christmas portrait generation (all verticals).
@@ -292,10 +293,14 @@ Deno.serve(async (req) => {
 
     try {
       const email = asString(order.email);
-      const tokenHint = asString(
-        (order.metadata as Record<string, unknown> | null)?.public_token_hint,
-      );
-      if (email && tokenHint) {
+      const deliveryToken = resolveDeliveryToken({
+        public_token_ciphertext: asString(order.public_token_ciphertext) || null,
+        metadata:
+          typeof order.metadata === "object" && order.metadata
+            ? (order.metadata as Record<string, unknown>)
+            : null,
+      });
+      if (email && deliveryToken) {
         const site = (
           Deno.env.get("SITE_URL") ||
           Deno.env.get("PUBLIC_APP_URL") ||
@@ -307,7 +312,7 @@ Deno.serve(async (req) => {
           sourceRoute: asString(order.source_route) || null,
           landingPath: asString(order.landing_path) || null,
         });
-        const link = `${site}${route}?token=${encodeURIComponent(tokenHint)}`;
+        const link = `${site}${route}?token=${encodeURIComponent(deliveryToken)}`;
         await claimAndSendChristmasLifecycle({
           service,
           template: "generation_ready",

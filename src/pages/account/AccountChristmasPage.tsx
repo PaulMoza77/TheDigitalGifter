@@ -68,6 +68,7 @@ export default function AccountChristmasPage() {
       <PageHead
         title={t("account.pageTitle")}
         description={t("account.pageDescription")}
+        noindex
       />
 
       <section className="rounded-[28px] border border-white/10 bg-zinc-950/70 p-6 sm:p-8">
