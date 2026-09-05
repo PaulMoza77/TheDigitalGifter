@@ -1,0 +1,11 @@
+{
+  "name": "TheDigitalGifter",
+  "install": "npm ci && if [ ! -f .env.local ] && [ -z \"$VITE_SUPABASE_URL\" ]; then printf 'VITE_SUPABASE_URL=https://placeholder.supabase.co\\nVITE_SUPABASE_ANON_KEY=placeholder-anon-key-for-local-dev\\n' > .env.local; fi",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "npx vite --host 0.0.0.0 --port 5173"
+    }
+  ],
+  "ports": [5173]
+}
