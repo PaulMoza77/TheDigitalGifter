@@ -29,6 +29,10 @@
       "destination": "/api/christmas-funnel-event"
     },
     {
+      "source": "/api/christmas/gift-tree",
+      "destination": "/api/christmas-gift-tree"
+    },
+    {
       "source": "/api/pet/funnel-event",
       "destination": "/api/pet-funnel-event"
     },

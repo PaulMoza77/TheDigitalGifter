@@ -53,3 +53,6 @@ storage-export/
 output/tdg-pet-ad-raw/
 output/
 tmp/
+.env.*
+!.env.example
+.env.replicate

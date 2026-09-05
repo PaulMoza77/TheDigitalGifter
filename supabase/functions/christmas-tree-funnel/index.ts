@@ -14,6 +14,16 @@ import {
   sanitizeText,
   sha256Hex,
 } from "../_shared/christmas/treeAdvent.ts";
+import {
+  findGiftTreeReward,
+  giftTreeClaimIdempotency,
+  giftTreeCreditsEnabled,
+  giftTreeEnabled,
+  GIFT_TREE_REWARDS,
+  GIFT_TREE_SEASON_YEAR,
+  pickGiftTreeReward,
+  publicGiftTreeReward,
+} from "../_shared/christmas/giftTreeRewards.ts";
 
 type Body = Record<string, unknown>;
 
@@ -605,6 +615,266 @@ Deno.serve(async (req) => {
           entitlement_key: entitlementKey,
           message: asString((picked.config as Record<string, unknown>)?.message) || null,
         },
+      });
+    }
+
+    // ---- Gift Tree marketing experience (/christmas/gifts) ----
+    if (action === "openGiftTree") {
+      if (!giftTreeEnabled() && !body.__test_force) {
+        return jsonResponse({ error: "gift_tree_disabled" }, 403);
+      }
+      const guestToken = asString(body.guest_token);
+      const guestHash = guestToken.length >= 32 ? await sha256Hex(guestToken) : null;
+      if (!user?.id && !guestHash) return jsonResponse({ error: "identity_required" }, 400);
+
+      const openSlotRaw = Number(body.open_slot);
+      const openSlot = Number.isFinite(openSlotRaw)
+        ? Math.max(0, Math.floor(openSlotRaw))
+        : 0;
+      // Paid opens must go through Origin API (consume RPC). Edge must never grant without consume.
+      if (openSlot > 0) {
+        return jsonResponse({ error: "paid_opens_require_origin_api" }, 409);
+      }
+      const idem = giftTreeClaimIdempotency({
+        seasonYear: GIFT_TREE_SEASON_YEAR,
+        userId: user?.id,
+        guestHash,
+        openSlot,
+      });
+
+      const { data: existing } = await service
+        .from("christmas_reward_entitlements")
+        .select("*")
+        .eq("source", "christmas_tree")
+        .eq("source_ref", idem)
+        .maybeSingle();
+      if (existing) {
+        const reward =
+          GIFT_TREE_REWARDS.find((r) => r.entitlement_key === existing.entitlement_key) ||
+          findGiftTreeReward(asString(existing.entitlement_key).replace("gift_tree_", ""));
+        if (!reward) {
+          return jsonResponse({
+            error: "unknown_reward_entitlement",
+            claim_id: existing.id,
+            entitlement_key: existing.entitlement_key,
+          }, 409);
+        }
+        return jsonResponse({
+          ok: true,
+          already: true,
+          claim_id: existing.id,
+          reward_id: reward.id,
+          reward: publicGiftTreeReward(reward),
+          credits_granted: 0,
+          requires_auth_for_credits: reward.type === "credits" && !user?.id,
+          open_slot: openSlot,
+        });
+      }
+
+      const picked = pickGiftTreeReward();
+      const { data: claim, error: claimErr } = await service
+        .from("christmas_reward_entitlements")
+        .insert({
+          user_id: user?.id || null,
+          guest_token_hash: user?.id ? null : guestHash,
+          entitlement_key: picked.entitlement_key,
+          source: "christmas_tree",
+          source_ref: idem,
+        })
+        .select("id")
+        .single();
+      if (claimErr) {
+        if (claimErr.code === "23505") {
+          const { data: again } = await service
+            .from("christmas_reward_entitlements")
+            .select("*")
+            .eq("source", "christmas_tree")
+            .eq("source_ref", idem)
+            .maybeSingle();
+          const reward =
+            GIFT_TREE_REWARDS.find((r) => r.entitlement_key === again?.entitlement_key) ||
+            picked;
+          return jsonResponse({
+            ok: true,
+            already: true,
+            claim_id: again?.id,
+            reward_id: reward.id,
+            reward: publicGiftTreeReward(reward),
+            credits_granted: 0,
+            requires_auth_for_credits: reward.type === "credits" && !user?.id,
+            open_slot: openSlot,
+          });
+        }
+        throw claimErr;
+      }
+
+      let creditsGranted = 0;
+      if (
+        picked.type === "credits" &&
+        user?.id &&
+        user.email &&
+        giftTreeCreditsEnabled() &&
+        claim?.id
+      ) {
+        const credits = Math.min(Math.max(Number(picked.value) || 0, 0), 100);
+        if (credits > 0) {
+          const note = `christmas_gift_tree:${GIFT_TREE_SEASON_YEAR}:${claim.id}`;
+          const { data: existingLed } = await service
+            .from("credits_ledger")
+            .select("id")
+            .eq("note", note)
+            .maybeSingle();
+          if (existingLed) {
+            creditsGranted = 0;
+          } else {
+            const { error: ledErr } = await service.from("credits_ledger").insert({
+              user_convex_id: user.email.trim().toLowerCase(),
+              user_id: user.id,
+              direction: "in",
+              credits,
+              event_type: "christmas_gift_tree",
+              category: "christmas_gift_tree",
+              note,
+              amount: null,
+              currency: "eur",
+            });
+            if (!ledErr) creditsGranted = credits;
+          }
+        }
+      }
+
+      return jsonResponse({
+        ok: true,
+        claim_id: claim.id,
+        reward_id: picked.id,
+        reward: publicGiftTreeReward(picked),
+        credits_granted: creditsGranted,
+        requires_auth_for_credits: picked.type === "credits" && !user?.id,
+        present_id: asString(body.present_id) || null,
+        open_slot: openSlot,
+      });
+    }
+
+    if (action === "claimGiftTree") {
+      if (!giftTreeEnabled() && !body.__test_force) {
+        return jsonResponse({ error: "gift_tree_disabled" }, 403);
+      }
+      const guestToken = asString(body.guest_token);
+      const guestHash = guestToken.length >= 32 ? await sha256Hex(guestToken) : null;
+      const claimId = asString(body.claim_id);
+
+      let entitlement: Record<string, unknown> | null = null;
+      if (claimId) {
+        const { data } = await service
+          .from("christmas_reward_entitlements")
+          .select("*")
+          .eq("id", claimId)
+          .eq("source", "christmas_tree")
+          .maybeSingle();
+        entitlement = data;
+      }
+      if (!entitlement) {
+        const idem = giftTreeClaimIdempotency({
+          seasonYear: GIFT_TREE_SEASON_YEAR,
+          userId: user?.id,
+          guestHash,
+        });
+        const { data } = await service
+          .from("christmas_reward_entitlements")
+          .select("*")
+          .eq("source", "christmas_tree")
+          .eq("source_ref", idem)
+          .maybeSingle();
+        entitlement = data;
+      }
+      // Guest claim → attach to logged-in user when possible
+      if (!entitlement && user?.id && guestHash) {
+        const guestIdem = giftTreeClaimIdempotency({
+          seasonYear: GIFT_TREE_SEASON_YEAR,
+          guestHash,
+        });
+        const { data } = await service
+          .from("christmas_reward_entitlements")
+          .select("*")
+          .eq("source", "christmas_tree")
+          .eq("source_ref", guestIdem)
+          .maybeSingle();
+        entitlement = data;
+        if (entitlement && !entitlement.user_id) {
+          await service
+            .from("christmas_reward_entitlements")
+            .update({ user_id: user.id })
+            .eq("id", entitlement.id);
+        }
+      }
+      if (!entitlement) return jsonResponse({ error: "claim_not_found" }, 404);
+
+      const reward =
+        GIFT_TREE_REWARDS.find((r) => r.entitlement_key === entitlement!.entitlement_key) ||
+        null;
+      if (!reward) return jsonResponse({ error: "unknown_reward" }, 400);
+
+      let creditsGranted = 0;
+      if (reward.type === "credits") {
+        if (!user?.id || !user.email) {
+          return jsonResponse({ error: "auth_required_for_credits" }, 401);
+        }
+        if (!giftTreeCreditsEnabled()) {
+          return jsonResponse({ error: "credits_disabled" }, 403);
+        }
+        const credits = Math.min(Math.max(Number(reward.value) || 0, 0), 100);
+        const note = `christmas_gift_tree:${GIFT_TREE_SEASON_YEAR}:${entitlement.id}`;
+        const { data: existingLed } = await service
+          .from("credits_ledger")
+          .select("id")
+          .eq("note", note)
+          .maybeSingle();
+        if (existingLed) {
+          return jsonResponse({
+            ok: true,
+            already: true,
+            reward_id: reward.id,
+            credits_granted: 0,
+            claim_id: entitlement.id,
+          });
+        }
+        const { data: led, error: ledErr } = await service
+          .from("credits_ledger")
+          .insert({
+            user_convex_id: user.email.trim().toLowerCase(),
+            user_id: user.id,
+            direction: "in",
+            credits,
+            event_type: "christmas_gift_tree",
+            category: "christmas_gift_tree",
+            note,
+            amount: null,
+            currency: "eur",
+          })
+          .select("id")
+          .single();
+        if (ledErr) {
+          if (ledErr.code === "23505" || String(ledErr.message || "").includes("duplicate")) {
+            return jsonResponse({
+              ok: true,
+              already: true,
+              reward_id: reward.id,
+              credits_granted: 0,
+              claim_id: entitlement.id,
+            });
+          }
+          throw ledErr;
+        }
+        creditsGranted = credits;
+        void led;
+      }
+
+      return jsonResponse({
+        ok: true,
+        reward_id: reward.id,
+        credits_granted: creditsGranted,
+        claim_id: entitlement.id,
+        reward: publicGiftTreeReward(reward),
       });
     }
 

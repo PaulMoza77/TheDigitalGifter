@@ -21,5 +21,9 @@ export function isSupportWidgetHidden(pathname: string) {
     );
   }
 
+  if (pathname === "/christmas/gifts" || pathname.startsWith("/christmas/gifts/")) {
+    return true;
+  }
+
   return false;
 }
