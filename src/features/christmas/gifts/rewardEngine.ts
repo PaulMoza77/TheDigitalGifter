@@ -46,14 +46,14 @@ export function presentLayout(count = 8): Array<{
     "ivory",
   ] as const;
   const ribbons = ["classic", "cross", "bow"] as const;
-  // Spaced arc under the tree — no overlapping boxes (leftPct = left edge).
+  // Nestled under the tree on the rug — low, tight, story-first cluster.
   const positions = [
-    { leftPct: 6, bottomPct: 10, depth: 1, width: 54, height: 46 },
-    { leftPct: 28, bottomPct: 2, depth: 3, width: 58, height: 50 },
-    { leftPct: 50, bottomPct: 2, depth: 3, width: 58, height: 50 },
-    { leftPct: 72, bottomPct: 10, depth: 1, width: 54, height: 46 },
-    { leftPct: 17, bottomPct: 18, depth: 0, width: 48, height: 40 },
-    { leftPct: 61, bottomPct: 18, depth: 0, width: 48, height: 40 },
+    { leftPct: 12, bottomPct: 0, depth: 1, width: 48, height: 40 },
+    { leftPct: 30, bottomPct: 0, depth: 3, width: 54, height: 46 },
+    { leftPct: 50, bottomPct: 0, depth: 3, width: 54, height: 46 },
+    { leftPct: 70, bottomPct: 0, depth: 1, width: 48, height: 40 },
+    { leftPct: 22, bottomPct: 8, depth: 0, width: 42, height: 34 },
+    { leftPct: 58, bottomPct: 8, depth: 0, width: 42, height: 34 },
   ];
   const n = Math.min(Math.max(count, 4), 6);
   return positions.slice(0, n).map((pos, i) => ({

@@ -259,12 +259,16 @@ function FunnelAttributionCapture() {
 
 function WebsiteLayout() {
   const [showPricing, setShowPricing] = useState(false);
+  const location = useLocation();
+  const hideFooter =
+    location.pathname === "/christmas/gifts" ||
+    location.pathname.startsWith("/christmas/gifts/");
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
       <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
 
-      <main className="flex-1">
+      <main className={`flex-1 ${hideFooter ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
@@ -273,7 +277,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      <WebsiteFooter />
+      {hideFooter ? null : <WebsiteFooter />}
     </div>
   );
 }

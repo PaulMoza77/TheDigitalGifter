@@ -385,16 +385,16 @@ export default function ChristmasGiftsPage() {
         url="https://www.thedigitalgifter.com/christmas/gifts"
       />
 
-      <main className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden text-rose-50">
+      <div className="relative h-[calc(100dvh-4.05rem)] max-h-[calc(100dvh-4.05rem)] overflow-hidden text-rose-50">
         <ChristmasTreeScene reduceMotion={reduceMotion} className="absolute inset-0" />
 
         {/* Brand lives in the site header on this route — no floating chip over the tree */}
 
         {/* No side reward panels — room stays fully visible. Surprises via link below. */}
 
-        {/* z4 — interactive presents (spaced, no overlap) */}
+        {/* z4 — interactive presents nestled on the gift pile under the tree */}
         <section
-          className="absolute inset-x-0 bottom-[8.75rem] z-[4] mx-auto h-[30%] max-w-[min(720px,92vw)] sm:bottom-[9.25rem] sm:h-[32%] sm:max-w-[min(780px,70vw)]"
+          className="absolute inset-x-0 bottom-[5.05rem] z-[4] mx-auto h-[13%] max-w-[min(520px,86vw)] sm:bottom-[7.25rem] sm:h-[18%] sm:max-w-[min(700px,50vw)]"
           aria-label="Christmas presents"
         >
           {presents.map((p) => (
@@ -404,7 +404,7 @@ export default function ChristmasGiftsPage() {
               state={presentState(p.id)}
               selected={selectedId === p.id}
               attention={attentionId === p.id}
-              scale={compact ? 0.95 : 1}
+              scale={compact ? 0.82 : 0.9}
               reduceMotion={reduceMotion}
               onSelect={requestOpen}
             />
@@ -424,21 +424,21 @@ export default function ChristmasGiftsPage() {
 
         {error ? (
           <p
-            className="absolute inset-x-0 bottom-[6.6rem] z-[6] text-center text-sm text-red-200"
+            className="absolute inset-x-0 bottom-[3.6rem] z-[6] text-center text-sm text-red-200"
             role="alert"
           >
             {error}
           </p>
         ) : null}
 
-        {/* z6 — CTA */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] px-4 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-6">
+        {/* z6 — CTA tucked onto the floor pad under the gift story */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] px-4 pb-[max(0.1rem,env(safe-area-inset-bottom))] pt-0">
           <div className="pointer-events-auto mx-auto flex w-[calc(100%-32px)] max-w-[360px] flex-col items-center sm:w-full">
             <button
               type="button"
               disabled={Boolean(openingId)}
               onClick={onPrimaryCta}
-              className="gt-cta relative flex min-h-[56px] w-full flex-col items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-[#f6e7c0] via-[#e4c57a] to-[#c9a35a] px-6 py-3.5 text-[#2a1c0e] shadow-[0_14px_44px_rgba(201,163,90,0.42)] transition hover:brightness-105 active:scale-[0.98] disabled:opacity-70"
+              className="gt-cta relative flex min-h-[44px] w-full flex-col items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-[#f6e7c0] via-[#e4c57a] to-[#c9a35a] px-6 py-1.5 text-[#2a1c0e] shadow-[0_14px_44px_rgba(201,163,90,0.42)] transition hover:brightness-105 active:scale-[0.98] disabled:opacity-70"
             >
               <span className="relative z-[1] text-[15px] font-semibold tracking-wide sm:text-base">
                 {openingId
@@ -450,47 +450,49 @@ export default function ChristmasGiftsPage() {
               <span className="relative z-[1] text-[11px] font-medium text-[#4a3820]/75">
                 {freeUsed && !canOpen
                   ? "Unlock another present under the tree"
-                  : "Tap a present to start here"}
+                  : "Tap a present under the tree"}
               </span>
             </button>
 
             {claimHint ? (
-              <p className="mt-2 text-center text-[11px] text-amber-100/75" role="status">
+              <p className="mt-1 text-center text-[11px] text-amber-100/75" role="status">
                 {claimHint}
               </p>
             ) : null}
 
-            <button
-              type="button"
-              onClick={() => setSeeAllOpen(true)}
-              className="mt-2 text-[11px] font-medium tracking-wide text-amber-200/75 underline-offset-2 hover:text-amber-100 hover:underline"
-            >
-              See possible surprises
-            </button>
-
-            <nav
-              aria-label="Christmas links"
-              className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[10px] text-white/55 sm:text-[11px]"
-            >
-              <Link className="hover:text-white/80" to="/christmas">
-                Christmas Hub
-              </Link>
-              <span aria-hidden>|</span>
-              <Link className="hover:text-white/80" to="/christmas/tree">
-                Build a Tree
-              </Link>
-              <span aria-hidden>|</span>
-              <Link className="hover:text-white/80" to="/christmas/advent">
-                Advent
-              </Link>
-              <span aria-hidden>|</span>
-              <Link className="hover:text-white/80" to="/christmas/photo-generator">
-                Portraits
-              </Link>
-            </nav>
+            <div className="mt-0.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[10px] text-white/55 sm:text-[11px]">
+              <button
+                type="button"
+                onClick={() => setSeeAllOpen(true)}
+                className="font-medium tracking-wide text-amber-200/80 underline-offset-2 hover:text-amber-100 hover:underline"
+              >
+                Surprises
+              </button>
+              <span aria-hidden className="text-white/35">·</span>
+              <nav
+                aria-label="Christmas links"
+                className="contents"
+              >
+                <Link className="hover:text-white/80" to="/christmas">
+                  Christmas Hub
+                </Link>
+                <span aria-hidden>|</span>
+                <Link className="hover:text-white/80" to="/christmas/tree">
+                  Build a Tree
+                </Link>
+                <span aria-hidden>|</span>
+                <Link className="hover:text-white/80" to="/christmas/advent">
+                  Advent
+                </Link>
+                <span aria-hidden>|</span>
+                <Link className="hover:text-white/80" to="/christmas/photo-generator">
+                  Portraits
+                </Link>
+              </nav>
+            </div>
           </div>
         </div>
-      </main>
+      </div>
 
       {reward ? (
         <RewardRevealModal

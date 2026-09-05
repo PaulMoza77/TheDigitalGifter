@@ -101,7 +101,7 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
           <img
             src="/christmas/gifts/scene-desktop-1280.jpg"
             alt=""
-            className="h-full w-full object-cover object-[center_52%]"
+            className="h-full w-full object-cover object-[center_78%]"
             decoding="async"
             fetchPriority="high"
             style={{ filter: "brightness(1.16) saturate(1.14) contrast(1.03)" }}
@@ -113,7 +113,7 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
           <img
             src="/christmas/gifts/scene-mobile-640.jpg"
             alt=""
-            className="h-full w-full object-cover object-[center_40%]"
+            className="h-full w-full object-cover object-[center_96%]"
             decoding="async"
             fetchPriority="high"
             style={{ filter: "brightness(1.18) saturate(1.15) contrast(1.03)" }}
