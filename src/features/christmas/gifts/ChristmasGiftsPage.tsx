@@ -58,6 +58,7 @@ export default function ChristmasGiftsPage() {
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [compact, setCompact] = useState(false);
+  const [attentionId, setAttentionId] = useState<string | null>(null);
   const [checkout, setCheckout] = useState<{
     clientSecret: string;
     publishableKey: string;
@@ -108,6 +109,35 @@ export default function ChristmasGiftsPage() {
       });
     }
   }, [freeUsed, canOpen]);
+
+  // One subtle idle nudge on an unopened present every 8–15s
+  useEffect(() => {
+    if (reduceMotion || !canOpen) return;
+    let cancelled = false;
+    let timer: number | undefined;
+    const schedule = () => {
+      const wait = 8000 + Math.floor(Math.random() * 7000);
+      timer = window.setTimeout(() => {
+        if (cancelled) return;
+        const available = presents.filter(
+          (p) => p.id !== openingId && p.id !== state.presentId,
+        );
+        if (available.length > 0) {
+          const pick = available[Math.floor(Math.random() * available.length)]!;
+          setAttentionId(pick.id);
+          window.setTimeout(() => {
+            if (!cancelled) setAttentionId(null);
+          }, 1200);
+        }
+        schedule();
+      }, wait);
+    };
+    schedule();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [reduceMotion, canOpen, presents, openingId, state.presentId]);
 
   useEffect(() => {
     if (paidReturnHandled.current) return;
@@ -358,8 +388,9 @@ export default function ChristmasGiftsPage() {
       <main className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden text-rose-50">
         <ChristmasTreeScene reduceMotion={reduceMotion} className="absolute inset-0" />
 
-        <div className="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center px-3">
-          <div className="flex items-center gap-2 rounded-full border border-amber-200/20 bg-black/25 px-3 py-1.5 backdrop-blur-md">
+        {/* z6 — header brand chip */}
+        <div className="pointer-events-none absolute inset-x-0 top-3 z-[6] flex justify-center px-3">
+          <div className="flex items-center gap-2 rounded-full border border-amber-200/20 bg-black/20 px-3 py-1.5 backdrop-blur-md">
             <img
               src="/TheDigitalGifter.png"
               alt=""
@@ -369,17 +400,18 @@ export default function ChristmasGiftsPage() {
           </div>
         </div>
 
+        {/* z5 — floating reward cards (no full-height columns) */}
         {!compact ? (
           <>
             <PrizeRail
               side="left"
-              limit={5}
-              className="absolute left-3 top-[18%] z-30 hidden w-[200px] lg:block xl:left-6 xl:w-[220px]"
+              limit={4}
+              className="gt-rail-left pointer-events-auto absolute top-[16%] z-[5] hidden w-[190px] lg:block"
             />
             <PrizeRail
               side="right"
-              limit={5}
-              className="absolute right-3 top-[18%] z-30 hidden w-[200px] lg:block xl:right-6 xl:w-[220px]"
+              limit={4}
+              className="gt-rail-right pointer-events-auto absolute top-[16%] z-[5] hidden w-[190px] lg:block"
             />
           </>
         ) : (
@@ -389,20 +421,28 @@ export default function ChristmasGiftsPage() {
               limit={3}
               compact
               onSeeAll={() => setSeeAllOpen(true)}
-              className="absolute left-2 top-[16%] z-30 w-[108px] sm:w-[120px]"
+              className="pointer-events-auto absolute left-2 top-[14%] z-[5] w-[min(115px,28vw)] sm:w-[115px]"
             />
             <PrizeRail
               side="right"
               limit={3}
               compact
               onSeeAll={() => setSeeAllOpen(true)}
-              className="absolute right-2 top-[16%] z-30 w-[108px] sm:w-[120px]"
+              className="pointer-events-auto absolute right-2 top-[14%] z-[5] w-[min(115px,28vw)] sm:w-[115px]"
             />
           </>
         )}
 
+        {!compact ? (
+          <style>{`
+            .gt-rail-left { left: clamp(20px, 3vw, 60px); }
+            .gt-rail-right { right: clamp(20px, 3vw, 60px); }
+          `}</style>
+        ) : null}
+
+        {/* z4 — interactive presents */}
         <section
-          className="absolute inset-x-0 bottom-[7.5rem] z-30 mx-auto h-[28%] max-w-[min(820px,92vw)] sm:bottom-[8.25rem] sm:h-[30%]"
+          className="absolute inset-x-0 bottom-[7.5rem] z-[4] mx-auto h-[28%] max-w-[min(820px,92vw)] sm:bottom-[8.25rem] sm:h-[30%]"
           aria-label="Christmas presents"
         >
           {presents.map((p) => (
@@ -411,7 +451,8 @@ export default function ChristmasGiftsPage() {
               present={p}
               state={presentState(p.id)}
               selected={selectedId === p.id}
-              scale={compact ? 0.9 : 1}
+              attention={attentionId === p.id}
+              scale={compact ? 0.95 : 1}
               reduceMotion={reduceMotion}
               onSelect={requestOpen}
             />
@@ -431,34 +472,33 @@ export default function ChristmasGiftsPage() {
 
         {error ? (
           <p
-            className="absolute inset-x-0 bottom-[6.6rem] z-40 text-center text-sm text-red-200"
+            className="absolute inset-x-0 bottom-[6.6rem] z-[6] text-center text-sm text-red-200"
             role="alert"
           >
             {error}
           </p>
         ) : null}
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-6">
-          <div className="pointer-events-auto mx-auto flex w-full max-w-[420px] flex-col items-center">
+        {/* z6 — CTA */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] px-4 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-6">
+          <div className="pointer-events-auto mx-auto flex w-[calc(100%-32px)] max-w-[360px] flex-col items-center sm:w-full">
             <button
               type="button"
               disabled={Boolean(openingId)}
               onClick={onPrimaryCta}
-              className="flex min-h-[56px] w-full flex-col items-center justify-center rounded-full bg-gradient-to-b from-[#f6e7c0] via-[#e4c57a] to-[#c9a35a] px-6 py-3.5 text-[#2a1c0e] shadow-[0_14px_44px_rgba(201,163,90,0.42)] transition hover:brightness-105 active:scale-[0.98] disabled:opacity-70"
+              className="gt-cta relative flex min-h-[56px] w-full flex-col items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-[#f6e7c0] via-[#e4c57a] to-[#c9a35a] px-6 py-3.5 text-[#2a1c0e] shadow-[0_14px_44px_rgba(201,163,90,0.42)] transition hover:brightness-105 active:scale-[0.98] disabled:opacity-70"
             >
-              <span className="text-[15px] font-semibold tracking-wide sm:text-base">
+              <span className="relative z-[1] text-[15px] font-semibold tracking-wide sm:text-base">
                 {openingId
                   ? "Opening…"
                   : freeUsed && !canOpen
                     ? "Get More Chances"
-                    : selectedId
-                      ? "Open Selected Gift"
-                      : "Choose Your Gift"}
+                    : "Choose Your Gift"}
               </span>
-              <span className="text-[11px] font-medium text-[#4a3820]/75">
+              <span className="relative z-[1] text-[11px] font-medium text-[#4a3820]/75">
                 {freeUsed && !canOpen
                   ? "Unlock another present under the tree"
-                  : "Tap a present or start here"}
+                  : "Tap a present to start here"}
               </span>
             </button>
 
@@ -567,6 +607,31 @@ export default function ChristmasGiftsPage() {
         @keyframes gt-burst {
           from { opacity: 0.9; }
           to { opacity: 0; }
+        }
+        .gt-cta::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            110deg,
+            transparent 30%,
+            rgba(255,255,255,0.35) 48%,
+            transparent 62%
+          );
+          transform: translateX(-120%);
+          pointer-events: none;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .gt-cta:hover::after {
+            animation: gt-cta-sheen 900ms ease-out 1;
+          }
+        }
+        @keyframes gt-cta-sheen {
+          from { transform: translateX(-120%); }
+          to { transform: translateX(120%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .gt-cta::after { display: none; }
         }
       `}</style>
     </>

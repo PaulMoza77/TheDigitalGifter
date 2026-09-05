@@ -30,7 +30,7 @@ function rarityTone(rarity: GiftTreeRewardDef["rarity"]): string {
   }
 }
 
-function RewardIcon({ id }: { id: string }) {
+function RewardIcon({ id, compact }: { id: string; compact?: boolean }) {
   const label = id.includes("credit")
     ? "✦"
     : id.includes("portrait") || id.includes("image")
@@ -38,13 +38,17 @@ function RewardIcon({ id }: { id: string }) {
       : id.includes("santa") || id.includes("discount")
         ? "%"
         : "🎁";
+  const size = compact ? 28 : 32;
   return (
     <span
       aria-hidden
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[13px] md:h-9 md:w-9"
+      className="flex shrink-0 items-center justify-center rounded-lg"
       style={{
+        width: size,
+        height: size,
+        fontSize: compact ? 11 : 13,
         background:
-          "linear-gradient(145deg, rgba(232,201,122,0.28), rgba(80,50,30,0.55))",
+          "linear-gradient(145deg, rgba(232,201,122,0.28), rgba(80,50,30,0.45))",
         border: "1px solid rgba(232,201,122,0.28)",
       }}
     >
@@ -53,7 +57,10 @@ function RewardIcon({ id }: { id: string }) {
   );
 }
 
-/** Compact glass prize previews — secondary to the tree. */
+/**
+ * Compact floating glass prize previews — no full-height dark columns.
+ * Each rail floats independently over the room.
+ */
 export function PrizeRail({
   className,
   compact,
@@ -77,31 +84,47 @@ export function PrizeRail({
       className={className}
       aria-label="Possible Christmas surprises"
       style={{
-        background:
-          "linear-gradient(165deg, rgba(12,10,9,0.55), rgba(12,10,9,0.32))",
-        border: "1px solid rgba(232,201,122,0.22)",
-        backdropFilter: "blur(16px)",
+        background: "rgba(15, 12, 10, 0.58)",
+        border: "1px solid rgba(235,190,90,0.25)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
         borderRadius: 16,
-        padding: compact ? "8px 8px" : "10px 10px",
-        boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+        padding: compact ? "8px" : "10px",
+        boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
       }}
     >
-      <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-amber-200/70">
+      <p
+        className={`mb-1.5 font-semibold uppercase tracking-[0.14em] text-amber-200/70 ${
+          compact ? "text-[8px]" : "text-[9px]"
+        }`}
+      >
         Possible surprises
       </p>
-      <ul className={compact ? "space-y-1.5" : "space-y-1.5"}>
+      <ul className="space-y-2">
         {items.map((item) => (
           <li
             key={item.id}
-            className="flex items-center gap-2 rounded-xl px-1.5 py-1.5"
-            style={{ background: "rgba(255,255,255,0.04)" }}
+            className="flex items-center gap-2 rounded-xl"
+            style={{
+              minHeight: compact ? 52 : 56,
+              padding: compact ? "8px" : "8px 10px",
+              background: "rgba(255,255,255,0.035)",
+            }}
           >
-            <RewardIcon id={item.id} />
+            <RewardIcon id={item.id} compact={compact} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-medium leading-tight text-amber-50/95 md:text-[12px]">
+              <p
+                className={`line-clamp-2 font-medium leading-tight text-amber-50/95 ${
+                  compact ? "text-[10px]" : "text-[12px]"
+                }`}
+              >
                 {item.title}
               </p>
-              <p className={`text-[10px] capitalize ${rarityTone(item.rarity)}`}>
+              <p
+                className={`capitalize ${rarityTone(item.rarity)} ${
+                  compact ? "text-[9px]" : "text-[10px]"
+                }`}
+              >
                 {item.rarity}
               </p>
             </div>
@@ -112,7 +135,7 @@ export function PrizeRail({
         <button
           type="button"
           onClick={onSeeAll}
-          className="mt-2 w-full text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-200/70 hover:text-amber-100"
+          className="mt-2 w-full text-center text-[9px] font-semibold uppercase tracking-[0.14em] text-amber-200/70 hover:text-amber-100"
         >
           See all
         </button>

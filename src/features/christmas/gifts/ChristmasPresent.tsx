@@ -82,6 +82,8 @@ type Props = {
   reduceMotion?: boolean;
   boxTheme?: GiftBoxTheme;
   selected?: boolean;
+  /** Subtle one-at-a-time idle nudge attention. */
+  attention?: boolean;
 };
 
 export function ChristmasPresent({
@@ -92,6 +94,7 @@ export function ChristmasPresent({
   reduceMotion,
   boxTheme = "mystery_velvet",
   selected = false,
+  attention = false,
 }: Props) {
   const colors = WRAP[present.style] || WRAP.red!;
   const theme = BOX_THEMES[boxTheme];
@@ -110,6 +113,15 @@ export function ChristmasPresent({
   const w = present.width * scale;
   const h = present.height * scale;
 
+  let transform: string | undefined;
+  if (opening) {
+    transform = "translateY(-14px) scale(1.12)";
+  } else if (selected) {
+    transform = "translateY(-7px) scale(1.04)";
+  } else if (locked) {
+    transform = "scale(0.94)";
+  }
+
   return (
     <button
       type="button"
@@ -124,7 +136,9 @@ export function ChristmasPresent({
       disabled={!interactive}
       onClick={() => interactive && onSelect(present.id)}
       onKeyDown={onKeyDown}
-      className="absolute touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-amber-200/80"
+      className={`gt-present absolute touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-amber-200/80 ${
+        interactive && !reduceMotion ? "gt-present-interactive" : ""
+      } ${attention && interactive && !reduceMotion ? "gt-present-attention" : ""}`}
       style={{
         left: `${present.leftPct}%`,
         bottom: `${present.bottomPct}%`,
@@ -132,22 +146,17 @@ export function ChristmasPresent({
         height: h,
         zIndex: 20 + present.depth,
         cursor: interactive ? "pointer" : "default",
-        transform: opening
-          ? "translateY(-14px) scale(1.12)"
-          : selected
-            ? "translateY(-9px) scale(1.07)"
-            : locked
-              ? "scale(0.94)"
-              : undefined,
+        transform,
         opacity: locked && state !== "opened" ? 0.48 : 1,
-        filter: opening || selected
-          ? "drop-shadow(0 0 22px rgba(212,175,110,0.75))"
-          : interactive
-            ? "drop-shadow(0 12px 18px rgba(0,0,0,0.45))"
-            : "drop-shadow(0 5px 12px rgba(0,0,0,0.3))",
+        filter:
+          opening || selected
+            ? "drop-shadow(0 0 18px rgba(212,175,110,0.7))"
+            : interactive
+              ? "drop-shadow(0 10px 16px rgba(0,0,0,0.4))"
+              : "drop-shadow(0 5px 12px rgba(0,0,0,0.3))",
         transition: reduceMotion
           ? "opacity 150ms ease"
-          : "transform 420ms cubic-bezier(0.22,1,0.36,1), filter 420ms ease, opacity 300ms ease",
+          : "transform 220ms cubic-bezier(0.22,1,0.36,1), filter 220ms ease, opacity 200ms ease",
       }}
     >
       {/* Right side face for depth */}
@@ -251,25 +260,32 @@ export function ChristmasPresent({
             ?
           </span>
         ) : null}
-
-        {interactive && !reduceMotion ? (
-          <span
-            aria-hidden
-            className="absolute inset-0 rounded-[9px]"
-            style={{
-              animation: "gt-present-shimmer 3.2s ease-in-out infinite",
-              background:
-                "linear-gradient(110deg, transparent 28%, rgba(255,255,255,0.24) 48%, transparent 64%)",
-              backgroundSize: "220% 100%",
-            }}
-          />
-        ) : null}
       </span>
+
       <style>{`
-        @keyframes gt-present-shimmer {
-          0% { background-position: 130% 0; opacity: 0.28; }
-          50% { opacity: 0.7; }
-          100% { background-position: -50% 0; opacity: 0.28; }
+        @media (hover: hover) and (pointer: fine) {
+          .gt-present-interactive:hover:not(:disabled) {
+            transform: translateY(-5px) scale(1.025) !important;
+            filter: drop-shadow(0 0 16px rgba(212,175,110,0.65)) !important;
+          }
+        }
+        .gt-present-interactive:active:not(:disabled) {
+          transform: scale(0.97) !important;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .gt-present-interactive:active:not(:disabled) {
+            transform: translateY(-5px) scale(1.02) !important;
+          }
+        }
+        .gt-present-attention {
+          animation: gt-present-nudge 1.1s ease-in-out 1;
+        }
+        @keyframes gt-present-nudge {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-2px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .gt-present-attention { animation: none !important; }
         }
       `}</style>
     </button>

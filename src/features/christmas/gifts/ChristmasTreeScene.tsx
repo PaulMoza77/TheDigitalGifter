@@ -1,28 +1,80 @@
-import { useMemo } from "react";
+import { TreeLightLayer } from "./TreeLightLayer";
 
 type Props = {
   className?: string;
   reduceMotion?: boolean;
 };
 
+type Glow = {
+  left: string;
+  top: string;
+  w: string;
+  h: string;
+  color: string;
+  delay: string;
+  duration: string;
+};
+
+const AMBIENT_GLOWS: Glow[] = [
+  {
+    left: "18%",
+    top: "58%",
+    w: "22%",
+    h: "28%",
+    color: "rgba(255,140,50,0.22)",
+    delay: "0s",
+    duration: "2.6s",
+  },
+  {
+    left: "72%",
+    top: "42%",
+    w: "16%",
+    h: "20%",
+    color: "rgba(255,200,120,0.14)",
+    delay: "0.8s",
+    duration: "3.4s",
+  },
+  {
+    left: "42%",
+    top: "68%",
+    w: "20%",
+    h: "18%",
+    color: "rgba(255,190,90,0.16)",
+    delay: "1.4s",
+    duration: "2.9s",
+  },
+  {
+    left: "48%",
+    top: "22%",
+    w: "14%",
+    h: "16%",
+    color: "rgba(255,220,140,0.12)",
+    delay: "0.4s",
+    duration: "3.8s",
+  },
+];
+
+const SNOW_DESKTOP = Array.from({ length: 16 }, (_, i) => ({
+  left: `${62 + ((i * 17) % 34)}%`,
+  delay: `${(i * 0.7) % 9}s`,
+  duration: `${8 + (i % 10)}s`,
+  size: 1.5 + (i % 3) * 0.6,
+  opacity: 0.18 + (i % 4) * 0.04,
+}));
+
+const SNOW_MOBILE = Array.from({ length: 10 }, (_, i) => ({
+  left: `${58 + ((i * 19) % 38)}%`,
+  delay: `${(i * 0.9) % 8}s`,
+  duration: `${9 + (i % 8)}s`,
+  size: 1.4 + (i % 2) * 0.5,
+  opacity: 0.16 + (i % 3) * 0.04,
+}));
+
 /**
- * Photoreal luxury-chalet scene — raster WebP/JPEG layers + ambient CSS.
+ * Photoreal luxury-chalet scene — full-bleed raster + living ambient CSS.
  * Interactive gifts are separate DOM overlays (not baked into the image).
  */
 export function ChristmasTreeScene({ className, reduceMotion }: Props) {
-  const ambient = useMemo(
-    () =>
-      reduceMotion
-        ? null
-        : Array.from({ length: 10 }, (_, i) => ({
-            left: `${12 + ((i * 23) % 76)}%`,
-            top: `${18 + ((i * 17) % 50)}%`,
-            delay: `${i * 0.45}s`,
-            size: 2 + (i % 3),
-          })),
-    [reduceMotion],
-  );
-
   return (
     <div
       className={className}
@@ -35,87 +87,212 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
         minHeight: 280,
         overflow: "hidden",
         pointerEvents: "none",
-        borderRadius: 0,
+        zIndex: 0,
       }}
     >
-      {/* Full-bleed ambient room fill */}
+      {/* z0 — environment background (single immersive plane) */}
       <div
         aria-hidden
-        className="absolute inset-0 scale-110"
-        style={{
-          backgroundImage: "url(/christmas/gifts/scene-ambient.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "blur(18px) saturate(1.05)",
-          transform: "scale(1.12)",
-        }}
-      />
+        className={`absolute inset-0 ${reduceMotion ? "" : "gt-scene-breathe"}`}
+        style={{ zIndex: 0, transformOrigin: "50% 45%" }}
+      >
+        <picture className="absolute inset-0 hidden md:block">
+          <source type="image/webp" srcSet="/christmas/gifts/scene-desktop.webp" />
+          <img
+            src="/christmas/gifts/scene-desktop-1280.jpg"
+            alt=""
+            className="h-full w-full object-cover object-[center_52%]"
+            decoding="async"
+            fetchPriority="high"
+          />
+        </picture>
 
-      {/* Desktop / tablet photoreal scene */}
-      <picture className="absolute inset-0 hidden md:block">
-        <source
-          type="image/webp"
-          srcSet="/christmas/gifts/scene-desktop.webp"
-        />
-        <img
-          src="/christmas/gifts/scene-desktop-1280.jpg"
-          alt=""
-          className="h-full w-full object-cover object-[center_58%]"
-          decoding="async"
-          fetchPriority="high"
-        />
-      </picture>
+        <picture className="absolute inset-0 md:hidden">
+          <source type="image/webp" srcSet="/christmas/gifts/scene-mobile.webp" />
+          <img
+            src="/christmas/gifts/scene-mobile-640.jpg"
+            alt=""
+            className="h-full w-full object-cover object-[center_40%]"
+            decoding="async"
+            fetchPriority="high"
+          />
+        </picture>
+      </div>
 
-      {/* Mobile photoreal scene */}
-      <picture className="absolute inset-0 md:hidden">
-        <source type="image/webp" srcSet="/christmas/gifts/scene-mobile.webp" />
-        <img
-          src="/christmas/gifts/scene-mobile-640.jpg"
-          alt=""
-          className="h-full w-full object-cover object-[center_42%]"
-          decoding="async"
-          fetchPriority="high"
-        />
-      </picture>
-
-      {/* Soft vignette + warm center so edges blend into viewport */}
+      {/* z1 — edge vignette only; bright warm center */}
       <div
         aria-hidden
         className="absolute inset-0"
         style={{
+          zIndex: 1,
           background: `
-            radial-gradient(ellipse at 50% 42%, rgba(255,210,140,0.12) 0%, transparent 42%),
-            radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(0,0,0,0.45) 100%),
-            linear-gradient(180deg, rgba(8,6,5,0.25) 0%, transparent 18%, transparent 72%, rgba(8,6,5,0.55) 100%)
+            radial-gradient(ellipse at 50% 48%,
+              transparent 20%,
+              rgba(5,5,5,0.05) 55%,
+              rgba(5,5,5,0.38) 100%),
+            linear-gradient(180deg,
+              rgba(8,6,5,0.18) 0%,
+              transparent 14%,
+              transparent 78%,
+              rgba(8,6,5,0.42) 100%)
           `,
         }}
       />
 
-      {/* Subtle twinkle over tree lights */}
-      {ambient
-        ? ambient.map((dot, i) => (
-            <span
-              key={i}
-              className="absolute rounded-full bg-amber-100"
+      {/* Warm center clarity lift (not a dark card) */}
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          zIndex: 1,
+          background:
+            "radial-gradient(ellipse at 50% 42%, rgba(255,210,140,0.10) 0%, transparent 48%)",
+          mixBlendMode: "soft-light",
+        }}
+      />
+
+      {/* z2 — extremely restrained central frame */}
+      <div
+        aria-hidden
+        className="absolute left-1/2 top-[8%] hidden h-[72%] w-[min(560px,58vw)] -translate-x-1/2 rounded-[22px] md:block"
+        style={{
+          zIndex: 2,
+          border: "1px solid rgba(220,180,95,0.30)",
+          background: "transparent",
+          boxShadow: "inset 0 0 40px rgba(255,210,140,0.04)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* z3 — ambient animation layers */}
+      {!reduceMotion ? (
+        <>
+          {/* Fireplace flicker glow */}
+          <div
+            aria-hidden
+            className="gt-fire-glow absolute"
+            style={{
+              zIndex: 3,
+              left: "8%",
+              top: "52%",
+              width: "26%",
+              height: "36%",
+              borderRadius: "50%",
+              background:
+                "radial-gradient(ellipse at 40% 60%, rgba(255,120,40,0.38) 0%, rgba(255,160,60,0.18) 35%, transparent 70%)",
+              filter: "blur(18px)",
+              mixBlendMode: "screen",
+              animation: "gt-fire-flicker 2.4s ease-in-out infinite",
+              willChange: "opacity, transform",
+            }}
+          />
+
+          {AMBIENT_GLOWS.map((g, i) => (
+            <div
+              key={`ag-${i}`}
+              aria-hidden
+              className="gt-ambient-glow absolute rounded-full"
               style={{
-                left: dot.left,
-                top: dot.top,
-                width: dot.size,
-                height: dot.size,
-                opacity: 0.35,
-                animation: `gt-twinkle ${2.8 + (i % 4) * 0.5}s ease-in-out ${dot.delay} infinite`,
+                zIndex: 3,
+                left: g.left,
+                top: g.top,
+                width: g.w,
+                height: g.h,
+                transform: "translate(-50%, -50%)",
+                background: `radial-gradient(circle, ${g.color} 0%, transparent 70%)`,
+                filter: "blur(22px)",
+                mixBlendMode: "screen",
+                animation: `gt-ambient-breathe ${g.duration} ease-in-out ${g.delay} infinite`,
+                willChange: "opacity, transform",
               }}
             />
-          ))
-        : null}
+          ))}
+
+          {/* Window snow — desktop (right exterior) */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block"
+            style={{ zIndex: 3, clipPath: "inset(8% 0 18% 58%)" }}
+          >
+            {SNOW_DESKTOP.map((s, i) => (
+              <span
+                key={`sd-${i}`}
+                className="gt-snow absolute rounded-full bg-white"
+                style={{
+                  left: s.left,
+                  top: "-4%",
+                  width: s.size,
+                  height: s.size,
+                  opacity: s.opacity,
+                  animation: `gt-snow-fall ${s.duration} linear ${s.delay} infinite`,
+                  willChange: "transform, opacity",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Window snow — mobile (right exterior) */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 overflow-hidden md:hidden"
+            style={{ zIndex: 3, clipPath: "inset(10% 0 22% 52%)" }}
+          >
+            {SNOW_MOBILE.map((s, i) => (
+              <span
+                key={`sm-${i}`}
+                className="gt-snow absolute rounded-full bg-white"
+                style={{
+                  left: s.left,
+                  top: "-4%",
+                  width: s.size,
+                  height: s.size,
+                  opacity: s.opacity,
+                  animation: `gt-snow-fall ${s.duration} linear ${s.delay} infinite`,
+                  willChange: "transform, opacity",
+                }}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      <TreeLightLayer reduceMotion={reduceMotion} />
 
       <style>{`
-        @keyframes gt-twinkle {
-          0%, 100% { opacity: 0.15; transform: scale(0.85); }
-          50% { opacity: 0.7; transform: scale(1.15); }
+        @keyframes gt-scene-breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.006); }
+        }
+        .gt-scene-breathe {
+          animation: gt-scene-breathe 24s ease-in-out infinite;
+          will-change: transform;
+        }
+        @keyframes gt-fire-flicker {
+          0%, 100% { opacity: 0.55; transform: scale(1) translate(0, 0); }
+          30% { opacity: 0.85; transform: scale(1.06) translate(1%, -1%); }
+          55% { opacity: 0.62; transform: scale(0.97) translate(-1%, 1%); }
+          75% { opacity: 0.9; transform: scale(1.04) translate(0.5%, -0.5%); }
+        }
+        @keyframes gt-ambient-breathe {
+          0%, 100% { opacity: 0.45; transform: translate(-50%, -50%) scale(0.96); }
+          50% { opacity: 0.85; transform: translate(-50%, -50%) scale(1.05); }
+        }
+        @keyframes gt-snow-fall {
+          0% { transform: translate3d(0, -5%, 0); opacity: 0; }
+          8% { opacity: 0.35; }
+          90% { opacity: 0.2; }
+          100% { transform: translate3d(-8px, 110vh, 0); opacity: 0; }
         }
         @media (prefers-reduced-motion: reduce) {
-          [style*="gt-twinkle"] { animation: none !important; }
+          .gt-scene-breathe,
+          .gt-fire-glow,
+          .gt-ambient-glow,
+          .gt-snow {
+            animation: none !important;
+          }
+          .gt-fire-glow { opacity: 0.5; }
+          .gt-ambient-glow { opacity: 0.4; }
+          .gt-snow { display: none; }
         }
       `}</style>
     </div>
