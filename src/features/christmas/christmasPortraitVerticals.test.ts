@@ -188,13 +188,14 @@ describe("christmas portrait wiring", () => {
 describe("christmas portrait funnel e2e contract (component)", () => {
   it("shared funnel exposes upload → style → blur preview → offer for all verticals", () => {
     const page = readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx");
-    expect(page).toContain("Upload your photo");
-    expect(page).toContain("Choose a Christmas style");
+    expect(page).toContain('t("portrait.uploadPhoto")');
+    expect(page).toContain('t("portrait.chooseStyle")');
     expect(page).toContain("createBlurredOriginalPreview");
-    expect(page).toContain("Continue to offer");
-    expect(page).toContain("Production checkout is not enabled yet");
-    expect(page).toContain("Switch to");
+    expect(page).toContain('t("portrait.continue")');
+    expect(page).toContain('t("portrait.checkoutOff")');
+    expect(page).toContain('t("portrait.switchTo"');
     expect(page).toContain("/christmas/cats");
     expect(page).toContain("/christmas/dogs");
+    expect(page).toContain("useChristmasLocale");
   });
 });

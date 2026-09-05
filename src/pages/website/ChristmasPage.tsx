@@ -7,6 +7,12 @@ import {
   ctaStateForProduct,
   hubProducts,
 } from "@/features/christmas/catalog";
+import { ChristmasLocaleToggle } from "@/features/christmas/i18n/ChristmasLocaleToggle";
+import { useChristmasLocale } from "@/features/christmas/i18n/useChristmasLocale";
+import {
+  productDescription,
+  productName,
+} from "@/features/christmas/i18n";
 
 /**
  * Christmas hub: preserves classic MainPage CTAs and adds catalog-driven suite links.
@@ -14,6 +20,7 @@ import {
  */
 export default function ChristmasPage() {
   const navigate = useNavigate();
+  const { locale, setLocale, t } = useChristmasLocale();
   const products = useMemo(() => {
     const all = hubProducts(CHRISTMAS_CATALOG_SEED);
     const preferred = [
@@ -37,8 +44,8 @@ export default function ChristmasPage() {
   return (
     <>
       <PageHead
-        title="Christmas at The Digital Gifter"
-        description="Personalized Christmas cards, free message generator, portraits, Santa video, wishlist, and gift finder — create something worth sending."
+        title={t("hub.pageTitle")}
+        description={t("hub.pageDescription")}
       />
       <MainPage
         onStartCreating={() => void navigate("/generator?occasion=christmas")}
@@ -50,14 +57,66 @@ export default function ChristmasPage() {
         aria-label="Christmas product suite"
         className="mx-auto max-w-5xl px-6 pb-16"
       >
-        <h2 className="text-xl font-semibold text-slate-900">Christmas suite</h2>
-        <p className="mt-2 max-w-2xl text-sm text-slate-600">
-          Portrait experiences are available to try (upload → style → blurred preview). Checkout stays
-          off until a production price is configured. Coming-soon items are not purchasable.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">
+              {t("hub.suiteHeading")}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-600">
+              {t("hub.suiteSupport")}
+            </p>
+          </div>
+          <ChristmasLocaleToggle locale={locale} onChange={setLocale} />
+        </div>
+        <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-700">
+          <p className="font-medium text-slate-900">{t("hub.guidesHeading")}</p>
+          <ul className="mt-2 grid gap-1 sm:grid-cols-2">
+            <li>
+              <Link className="underline" to="/christmas/gifts-for-mom">
+                Gifts for Mom
+              </Link>
+            </li>
+            <li>
+              <Link className="underline" to="/christmas/messages-for-mom">
+                Messages for Mom
+              </Link>
+            </li>
+            <li>
+              <Link className="underline" to="/christmas/funny-christmas-messages">
+                Funny Christmas messages
+              </Link>
+            </li>
+            <li>
+              <Link className="underline" to="/christmas/family-christmas-photos">
+                Family Christmas photos
+              </Link>
+            </li>
+            <li>
+              <Link className="underline" to="/christmas/personalized-christmas-cards">
+                Personalized Christmas cards
+              </Link>
+            </li>
+            <li>
+              <Link className="underline" to="/christmas/personalized-santa-video">
+                Personalized Santa video
+              </Link>
+            </li>
+            <li>
+              <Link className="underline" to="/ro/christmas/cadouri-de-craciun-pentru-mama">
+                Cadouri pentru mama (RO)
+              </Link>
+            </li>
+          </ul>
+        </div>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2">
           {products.map((product) => {
             const cta = ctaStateForProduct(product);
+            const name = productName(locale, product.productKey, product.name);
+            const description = productDescription(
+              locale,
+              product.productKey,
+              product.description,
+            );
             return (
               <li
                 key={product.productKey}
@@ -65,50 +124,33 @@ export default function ChristmasPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-medium text-slate-900">{product.name}</h3>
-                    <p className="mt-1 text-sm text-slate-600">{product.description}</p>
+                    <h3 className="font-medium text-slate-900">{name}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{description}</p>
                     {product.productKey === "christmas_pet" ? (
                       <p className="mt-2 text-xs text-slate-500">
-                        Prefer{" "}
-                        <Link className="underline" to="/christmas/dogs">
-                          Dogs
+                        {locale === "ro" ? "Preferă " : "Prefer "}
+                        <Link className="underline" to={`/christmas/dogs?lang=${locale}`}>
+                          {t("hub.dogs")}
                         </Link>{" "}
-                        or{" "}
-                        <Link className="underline" to="/christmas/cats">
-                          Cats
+                        {locale === "ro" ? "sau " : "or "}
+                        <Link className="underline" to={`/christmas/cats?lang=${locale}`}>
+                          {t("hub.cats")}
                         </Link>{" "}
-                        for species-checked uploads.
-                      </p>
-                    ) : null}
-                    {cta === "open" && !product.packages.some((p) => p.purchasable) ? (
-                      <p className="mt-2 text-xs text-amber-800">
-                        {product.productKey === "christmas_santa_video"
-                          ? "Preview / not yet available to purchase"
-                          : product.productKey === "christmas_advent"
-                            ? "Starts December 1 · claims gated until season"
-                            : product.productKey === "christmas_tree"
-                              ? "Free experience · shareable after you enable it"
-                              : product.productKey === "christmas_wishlist"
-                                ? "Create Your Christmas Wishlist"
-                                : product.productKey === "christmas_gift_finder"
-                                  ? "Find the Perfect Christmas Gift"
-                                  : product.productKey === "christmas_card"
-                                    ? "Create a card with your photo and message"
-                                    : product.productKey === "christmas_messages"
-                                      ? "Find the right words for anyone on your Christmas list"
-                                      : "Experience open · purchase not enabled yet"}
+                        {locale === "ro"
+                          ? "pentru verificarea speciilor."
+                          : "for species-checked uploads."}
                       </p>
                     ) : null}
                   </div>
                   <span className="shrink-0 rounded-full border border-slate-200 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-500">
-                    {cta === "open" ? "Open" : "Soon"}
+                    {cta === "open" ? t("common.open") : t("common.soon")}
                   </span>
                 </div>
                 <Link
-                  to={product.routePath}
+                  to={`${product.routePath}?lang=${locale}`}
                   className="mt-4 inline-flex text-sm font-medium text-slate-900 underline-offset-4 hover:underline"
                 >
-                  {cta === "open" ? "Open" : "View status"} →
+                  {cta === "open" ? t("common.open") : t("common.viewStatus")} →
                 </Link>
               </li>
             );

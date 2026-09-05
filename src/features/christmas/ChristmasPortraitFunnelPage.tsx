@@ -27,6 +27,24 @@ import {
   type ChristmasPortraitVertical,
 } from "./portraitVerticals";
 import { enabledChristmasStyles } from "./styles";
+import { ChristmasLocaleToggle } from "./i18n/ChristmasLocaleToggle";
+import { useChristmasLocale } from "./i18n/useChristmasLocale";
+import type { ChristmasEnKey } from "./i18n/en";
+import type { ChristmasPortraitVerticalId } from "./portraitVerticals";
+
+function verticalCopyKey(
+  id: ChristmasPortraitVerticalId,
+  field:
+    | "pageTitle"
+    | "metaDescription"
+    | "heroHeadline"
+    | "heroSupport"
+    | "uploadHint"
+    | "deliverableLine"
+    | "privacyLine",
+): ChristmasEnKey {
+  return `portrait.${id}.${field}` as ChristmasEnKey;
+}
 
 function readDraft(key: string): ChristmasPortraitDraft {
   try {
@@ -61,6 +79,7 @@ function useVertical(): ChristmasPortraitVertical {
 
 export default function ChristmasPortraitFunnelPage() {
   const vertical = useVertical();
+  const { locale, setLocale, t } = useChristmasLocale();
   const [params] = useSearchParams();
   const [draft, setDraft] = useState<ChristmasPortraitDraft>(() =>
     readDraft(vertical.draftStorageKey),
@@ -298,7 +317,7 @@ export default function ChristmasPortraitFunnelPage() {
 
   async function onStyleSelected(styleKey: string) {
     if (!draft.sourcePath || (!fileBlobRef.current && !draft.localPreviewUrl)) {
-      setStep("upload", { lastError: "Please upload a photo first." });
+      setStep("upload", { lastError: t("portrait.uploadFirst") });
       return;
     }
     setBusy(true);
@@ -347,12 +366,12 @@ export default function ChristmasPortraitFunnelPage() {
   async function startCheckout() {
     if (!purchasable) {
       setStep("offer", {
-        lastError: "Checkout is not enabled yet — production price is not configured.",
+        lastError: t("common.checkoutDisabled"),
       });
       return;
     }
     if (!draft.styleKey || !draft.sourcePath) {
-      setStep("upload", { lastError: "Upload and style are required." });
+      setStep("upload", { lastError: t("portrait.styleRequired") });
       return;
     }
     setBusy(true);
@@ -469,22 +488,32 @@ export default function ChristmasPortraitFunnelPage() {
   }
 
   const styleName = styles.find((s) => s.styleKey === draft.styleKey)?.displayName;
+  const pageTitle = t(verticalCopyKey(vertical.id, "pageTitle"));
+  const metaDescription = t(verticalCopyKey(vertical.id, "metaDescription"));
+  const heroHeadline = t(verticalCopyKey(vertical.id, "heroHeadline"));
+  const heroSupport = t(verticalCopyKey(vertical.id, "heroSupport"));
+  const uploadHint = t(verticalCopyKey(vertical.id, "uploadHint"));
+  const deliverableLine = t(verticalCopyKey(vertical.id, "deliverableLine"));
+  const privacyLine = t(verticalCopyKey(vertical.id, "privacyLine"));
 
   return (
     <>
       <PageHead
-        title={vertical.pageTitle}
-        description={vertical.metaDescription}
+        title={pageTitle}
+        description={metaDescription}
         exactTitle
         url={`https://www.thedigitalgifter.com${vertical.routePath}`}
       />
       <main className="mx-auto min-h-[70vh] max-w-lg px-4 py-8 text-slate-900">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          The Digital Gifter · Christmas
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{vertical.heroHeadline}</h1>
-        <p className="mt-2 text-sm text-slate-600">{vertical.heroSupport}</p>
-        <p className="mt-2 text-xs text-slate-500">{vertical.privacyLine}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            {t("brand.eyebrow")}
+          </p>
+          <ChristmasLocaleToggle locale={locale} onChange={setLocale} />
+        </div>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{heroHeadline}</h1>
+        <p className="mt-2 text-sm text-slate-600">{heroSupport}</p>
+        <p className="mt-2 text-xs text-slate-500">{privacyLine}</p>
 
         {draft.lastError ? (
           <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
@@ -495,8 +524,8 @@ export default function ChristmasPortraitFunnelPage() {
         {speciesHint ? (
           <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
             {speciesHint.message}{" "}
-            <Link className="font-medium underline" to={speciesHint.switchTo}>
-              Switch to {speciesHint.label}
+            <Link className="font-medium underline" to={`${speciesHint.switchTo}?lang=${locale}`}>
+              {t("portrait.switchTo", { label: speciesHint.label })}
             </Link>
           </p>
         ) : null}
@@ -506,16 +535,16 @@ export default function ChristmasPortraitFunnelPage() {
             {vertical.id === "pets" ? (
               <div className="flex gap-2">
                 <Link
-                  to="/christmas/dogs"
+                  to={`/christmas/dogs?lang=${locale}`}
                   className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-medium"
                 >
-                  Dogs
+                  {t("hub.dogs")}
                 </Link>
                 <Link
-                  to="/christmas/cats"
+                  to={`/christmas/cats?lang=${locale}`}
                   className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-medium"
                 >
-                  Cats
+                  {t("hub.cats")}
                 </Link>
               </div>
             ) : null}
@@ -528,7 +557,7 @@ export default function ChristmasPortraitFunnelPage() {
               }}
               disabled={busy}
             >
-              {busy ? "Working…" : "Upload your photo"}
+              {busy ? t("common.loading") : t("portrait.uploadPhoto")}
             </button>
             <input
               ref={fileRef}
@@ -538,7 +567,7 @@ export default function ChristmasPortraitFunnelPage() {
               className="hidden"
               onChange={(e) => void onFileChosen(e.target.files?.[0] || null)}
             />
-            <p className="text-xs text-slate-500">{vertical.uploadHint}</p>
+            <p className="text-xs text-slate-500">{uploadHint}</p>
             <p className="text-xs text-slate-500">JPEG, PNG, or WebP · under 15 MB</p>
           </section>
         )}
@@ -552,7 +581,7 @@ export default function ChristmasPortraitFunnelPage() {
                 className="mb-4 max-h-48 w-full rounded-lg object-cover"
               />
             ) : null}
-            <h2 className="text-lg font-medium">Choose a Christmas style</h2>
+            <h2 className="text-lg font-medium">{t("portrait.chooseStyle")}</h2>
             <div className="mt-4 grid grid-cols-2 gap-3">
               {styles.map((style) => (
                 <button
@@ -578,31 +607,27 @@ export default function ChristmasPortraitFunnelPage() {
               alt="Blurred preview of your photo"
               className="w-full rounded-lg"
             />
-            <p className="text-sm text-slate-600">
-              Your Christmas transformation is ready to create. This preview is your original photo,
-              heavily blurred — the finished AI portrait unlocks after payment.
-            </p>
+            <p className="text-sm text-slate-600">{t("portrait.previewSupport")}</p>
             <button
               type="button"
               className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
               onClick={goOffer}
             >
-              Continue to offer
+              {t("portrait.continue")}
             </button>
           </section>
         )}
 
         {draft.step === "offer" && (
           <section className="mt-8 space-y-4">
-            <h2 className="text-lg font-medium">Unlock your Christmas portrait</h2>
+            <h2 className="text-lg font-medium">{t("portrait.createPortrait")}</h2>
             <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600">
               <li>Style: {styleName || draft.styleKey}</li>
-              <li>{vertical.deliverableLine}</li>
-              <li>Usually ready a few minutes after payment</li>
-              <li>Private by default · download via your order link</li>
+              <li>{deliverableLine}</li>
+              <li>{privacyLine}</li>
             </ul>
             <label className="block text-sm">
-              Email for receipt / recovery (optional)
+              {t("portrait.emailPlaceholder")}
               <input
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
                 type="email"
@@ -618,19 +643,17 @@ export default function ChristmasPortraitFunnelPage() {
                 onClick={() => void startCheckout()}
               >
                 {busy
-                  ? "Preparing checkout…"
+                  ? t("common.loading")
                   : `Pay ${(catalogAmount / 100).toFixed(2)} ${product?.packages[0]?.currency?.toUpperCase() || "USD"}`}
               </button>
             ) : (
               <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                Production checkout is not enabled yet (price not configured / not purchasable). The
-                upload → blur preview flow works; payment stays disabled until launch configuration.
+                {t("portrait.checkoutOff")}
               </p>
             )}
             {product ? (
               <p className="text-xs text-slate-500">
-                Product status: {ctaStateForProduct(product)} · Apple Pay / Google Pay / card when
-                checkout is enabled
+                Product status: {ctaStateForProduct(product)}
               </p>
             ) : null}
           </section>
@@ -658,11 +681,8 @@ export default function ChristmasPortraitFunnelPage() {
 
         {draft.step === "generating" && (
           <section className="mt-8 space-y-3 text-sm text-slate-600">
-            <h2 className="text-lg font-medium text-slate-900">Creating your portrait</h2>
-            <p>Payment confirmed</p>
-            <p>Preparing photo</p>
-            <p>Creating Christmas portrait…</p>
-            <p className="text-xs">You can close this page — reopen your order link anytime.</p>
+            <h2 className="text-lg font-medium text-slate-900">{t("portrait.processing")}</h2>
+            <p className="text-xs">{t("common.loading")}</p>
           </section>
         )}
 
@@ -676,7 +696,7 @@ export default function ChristmasPortraitFunnelPage() {
                 className="rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
                 onClick={() => void onDownload()}
               >
-                Download
+                {t("portrait.download")}
               </button>
               <button
                 type="button"
@@ -697,13 +717,16 @@ export default function ChristmasPortraitFunnelPage() {
                   fileBlobRef.current = null;
                 }}
               >
-                Create another
+                {t("common.retry")}
               </button>
             </div>
             <div className="flex flex-wrap gap-3 text-sm">
-              <span className="text-slate-500">Try another:</span>
               {vertical.crossLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="underline underline-offset-4">
+                <Link
+                  key={link.to}
+                  to={`${link.to}?lang=${locale}`}
+                  className="underline underline-offset-4"
+                >
                   {link.label}
                 </Link>
               ))}
@@ -713,25 +736,28 @@ export default function ChristmasPortraitFunnelPage() {
 
         {draft.step === "error" && (
           <section className="mt-8 space-y-3">
-            <h2 className="text-lg font-medium">Something went wrong</h2>
-            <p className="text-sm text-slate-600">
-              If you already paid, keep your order link — support can retry fulfillment without charging
-              again.
-            </p>
-            <Link to="/christmas" className="text-sm underline">
-              Christmas hub
+            <h2 className="text-lg font-medium">{t("common.errorGeneric")}</h2>
+            <Link to={`/christmas?lang=${locale}`} className="text-sm underline">
+              {t("account.hubCta")}
             </Link>
           </section>
         )}
 
         <nav className="mt-10 flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-200 pt-4 text-xs text-slate-500">
           {vertical.crossLinks.map((link) => (
-            <Link key={link.to} to={link.to} className="underline-offset-2 hover:underline">
+            <Link
+              key={link.to}
+              to={`${link.to}?lang=${locale}`}
+              className="underline-offset-2 hover:underline"
+            >
               {link.label}
             </Link>
           ))}
-          <Link to="/christmas" className="underline-offset-2 hover:underline">
-            Christmas hub
+          <Link
+            to={`/christmas?lang=${locale}`}
+            className="underline-offset-2 hover:underline"
+          >
+            {t("account.hubCta")}
           </Link>
         </nav>
       </main>
