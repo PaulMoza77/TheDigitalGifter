@@ -166,6 +166,9 @@ const BlogPostPage = lazy(() => import("@/pages/blog/BlogPostPage"));
 
 // ================= CLIENT ACCOUNT =================
 const AccountDashboard = lazy(() => import("@/pages/account/AccountDashboard"));
+const AccountChristmasPage = lazy(
+  () => import("@/pages/account/AccountChristmasPage"),
+);
 const AccountAffiliate = lazy(() => import("@/pages/account/AccountAffiliate"));
 const AccountGeneratorRedirect = lazy(
   () => import("@/pages/account/AccountGeneratorRedirect")
@@ -557,6 +560,7 @@ function AppInner() {
                 element={<Navigate to="/account/dashboard" replace />}
               />
               <Route path="dashboard" element={<AccountDashboard />} />
+              <Route path="christmas" element={<AccountChristmasPage />} />
               <Route path="affiliate" element={<AccountAffiliate />} />
               <Route path="generator" element={<AccountGeneratorRedirect />} />
             </Route>
