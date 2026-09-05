@@ -171,7 +171,7 @@ export const GIFT_TREE_REWARD_CATALOG: GiftTreeRewardDef[] = [
 export const GIFT_TREE_PAID_OFFERS = [
   {
     packageKey: "open_another",
-    label: "1 more gift",
+    label: "1 more chance",
     description: "Open one more present under the tree.",
     purchasable: true,
     priceCents: 199,
@@ -179,7 +179,7 @@ export const GIFT_TREE_PAID_OFFERS = [
   },
   {
     packageKey: "open_five",
-    label: "5 more gifts",
+    label: "Get 5 More Chances",
     description: "Open five more presents under the tree.",
     purchasable: true,
     priceCents: 499,

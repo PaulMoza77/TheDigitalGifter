@@ -67,7 +67,30 @@ export async function uploadChristmasBlob(signedUrl: string, token: string, blob
   if (!res.ok) throw new Error("Upload failed");
 }
 
+const christmasCheckoutInflight = new Map<string, Promise<unknown>>();
+
+function christmasCheckoutDedupeKey(body: Record<string, unknown>): string {
+  return [
+    String(body.product_key || ""),
+    String(body.package_key || ""),
+    String(body.guest_token || ""),
+    String(body.existing_order_id || body.order_id || ""),
+    String(body.success_url || ""),
+  ].join("|");
+}
+
 export async function startChristmasCheckout(body: Record<string, unknown>) {
+  const key = christmasCheckoutDedupeKey(body);
+  const existing = christmasCheckoutInflight.get(key);
+  if (existing) return existing as ReturnType<typeof startChristmasCheckoutRequest>;
+  const pending = startChristmasCheckoutRequest(body).finally(() => {
+    christmasCheckoutInflight.delete(key);
+  });
+  christmasCheckoutInflight.set(key, pending);
+  return pending;
+}
+
+async function startChristmasCheckoutRequest(body: Record<string, unknown>) {
   const res = await fetch(CHECKOUT_URL, {
     method: "POST",
     headers: await anonHeaders(),

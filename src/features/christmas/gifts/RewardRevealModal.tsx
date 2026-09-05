@@ -150,13 +150,13 @@ export function RewardRevealModal({
           {step === "upsell" || step === "checkout" ? (
             <>
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-200/75">
-                Want to open another? 🎁
+                Get 5 More Chances 🎁
               </p>
               <h2 id={titleId} className="mt-2 font-serif text-[1.7rem] leading-tight text-amber-50 sm:text-3xl">
                 Your free gift is already yours
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-rose-100/75">
-                Optionally unlock more presents under the tree.
+                Unlock five more presents under the tree — or grab one more if you prefer.
               </p>
             </>
           ) : null}
@@ -245,27 +245,6 @@ export function RewardRevealModal({
 
           {step === "upsell" || step === "checkout" ? (
             <div className="mt-5 space-y-3">
-              {one ? (
-                <button
-                  type="button"
-                  disabled={purchasing}
-                  onClick={() => {
-                    setSelectedPack(one.packageKey);
-                    onSelectPack(one.packageKey);
-                  }}
-                  className={`flex w-full flex-col items-center rounded-2xl border px-5 py-3.5 transition ${
-                    selectedPack === one.packageKey
-                      ? "border-amber-200/35 bg-white/10"
-                      : "border-white/10 bg-white/5 hover:bg-white/10"
-                  }`}
-                >
-                  <span className="text-[15px] font-semibold text-amber-50">{one.label}</span>
-                  <span className="text-[12px] text-amber-100/70">
-                    ${(one.priceCents / 100).toFixed(2)}
-                  </span>
-                </button>
-              ) : null}
-
               {five ? (
                 <button
                   ref={primaryRef}
@@ -287,6 +266,27 @@ export function RewardRevealModal({
                   <span className="text-[15px] font-semibold text-amber-50">{five.label}</span>
                   <span className="text-[12px] text-amber-100/70">
                     ${(five.priceCents / 100).toFixed(2)}
+                  </span>
+                </button>
+              ) : null}
+
+              {one ? (
+                <button
+                  type="button"
+                  disabled={purchasing}
+                  onClick={() => {
+                    setSelectedPack(one.packageKey);
+                    onSelectPack(one.packageKey);
+                  }}
+                  className={`flex w-full flex-col items-center rounded-2xl border px-5 py-3.5 transition ${
+                    selectedPack === one.packageKey
+                      ? "border-amber-200/35 bg-white/10"
+                      : "border-white/10 bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <span className="text-[15px] font-semibold text-amber-50">{one.label}</span>
+                  <span className="text-[12px] text-amber-100/70">
+                    ${(one.priceCents / 100).toFixed(2)}
                   </span>
                 </button>
               ) : null}

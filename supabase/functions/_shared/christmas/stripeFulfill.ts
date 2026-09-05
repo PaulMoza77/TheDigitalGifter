@@ -7,6 +7,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
+import { GIFT_TREE_PAID_OFFERS } from "./giftTreeRewards.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -160,12 +161,12 @@ export async function handleChristmasStripeEvent(input: {
 
       // Gift Tree packs buy additional opens — never enqueue photo/video generation.
       if (productKey === "christmas_gift_tree") {
-        const opens =
-          packageKey === "open_five" || packageKey === "open_5"
-            ? 5
-            : packageKey === "open_another"
-              ? 1
-              : 0;
+        // Server-authoritative entitlement: never trust client quantity.
+        const paid = GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey)
+          || (packageKey === "open_5"
+            ? GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === "open_five")
+            : undefined);
+        const opens = paid?.opens_granted ?? 0;
         if (opens > 0) {
           const { data: ord } = await input.service
             .from("christmas_orders")

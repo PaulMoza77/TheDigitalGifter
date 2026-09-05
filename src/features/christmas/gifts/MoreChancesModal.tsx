@@ -9,7 +9,10 @@ type Props = {
   onPurchase: (packageKey: string) => void;
 };
 
-/** Paid “Get more chances” sheet after the free gift is used. */
+/**
+ * Paid “Get more chances” sheet after the free gift is used.
+ * Higher-value pack (5 chances) is the primary CTA — never present $4.99 as “1 more”.
+ */
 export function MoreChancesModal({
   open,
   purchasing,
@@ -38,8 +41,8 @@ export function MoreChancesModal({
 
   if (!open) return null;
 
-  const primary = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === "open_another");
-  const bundle = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === "open_five");
+  const five = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === "open_five");
+  const one = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === "open_another");
 
   return (
     <div
@@ -71,47 +74,48 @@ export function MoreChancesModal({
         />
         <div className="relative px-6 pb-7 pt-8 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-200/75">
-            Get more chances
+            Best value
           </p>
           <h2 id={titleId} className="mt-2 font-serif text-3xl text-amber-50">
-            Open another gift
+            Get 5 More Chances
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-rose-100/70">
-            Your free Christmas gift is already open. Unlock more presents under the
-            tree — rewards apply to your account when you claim them.
+            Your free Christmas gift is already open. Unlock five more presents under
+            the tree — rewards apply to your account when you claim them.
           </p>
 
           <div className="mt-6 space-y-3">
-            {primary ? (
+            {five ? (
               <button
                 ref={primaryRef}
                 type="button"
-                disabled={purchasing || !primary.purchasable}
-                onClick={() => onPurchase(primary.packageKey)}
-                className="flex w-full flex-col items-center rounded-full bg-gradient-to-b from-[#f3e2b5] via-[#e0c078] to-[#c9a35a] px-5 py-3.5 text-[#2a1c0e] shadow-[0_12px_40px_rgba(201,163,90,0.35)] transition enabled:hover:brightness-105 disabled:opacity-60"
+                disabled={purchasing || !five.purchasable}
+                onClick={() => onPurchase(five.packageKey)}
+                className="relative flex w-full flex-col items-center rounded-full bg-gradient-to-b from-[#f3e2b5] via-[#e0c078] to-[#c9a35a] px-5 py-3.5 text-[#2a1c0e] shadow-[0_12px_40px_rgba(201,163,90,0.35)] transition enabled:hover:brightness-105 disabled:opacity-60"
               >
+                <span className="absolute right-4 top-2 rounded-full bg-[#2a1c0e]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                  Best value
+                </span>
                 <span className="text-[15px] font-semibold tracking-wide">
-                  {purchasing ? "Starting checkout…" : primary.label}
+                  {purchasing ? "Starting checkout…" : five.label}
                 </span>
                 <span className="text-[11px] font-medium text-[#4a3820]/80">
-                  {primary.priceCents > 0
-                    ? `$${(primary.priceCents / 100).toFixed(2)} · 1 extra opening`
-                    : primary.description}
+                  {five.priceCents > 0
+                    ? `$${(five.priceCents / 100).toFixed(2)} · 5 extra openings`
+                    : five.description}
                 </span>
               </button>
             ) : null}
 
-            {bundle ? (
+            {one ? (
               <button
                 type="button"
-                disabled={purchasing || !bundle.purchasable}
-                onClick={() => onPurchase(bundle.packageKey)}
+                disabled={purchasing || !one.purchasable}
+                onClick={() => onPurchase(one.packageKey)}
                 className="w-full rounded-full border border-amber-100/25 bg-white/5 px-5 py-3 text-sm font-medium text-amber-50/90 transition hover:bg-white/10 disabled:opacity-60"
               >
-                {bundle.label}
-                {bundle.priceCents > 0
-                  ? ` · $${(bundle.priceCents / 100).toFixed(2)}`
-                  : ""}
+                {one.label}
+                {one.priceCents > 0 ? ` · $${(one.priceCents / 100).toFixed(2)}` : ""}
               </button>
             ) : null}
           </div>

@@ -12,7 +12,6 @@ import {
   isExpressCheckoutConfirmEvent,
 } from "../expressCheckoutConfirm";
 import { getStripePromise, reloadStripeForCheckout, stripeInstanceKeyFingerprint } from "../stripeLoader";
-import { ApplePayButton } from "./ApplePayButton";
 import { PET_EXPRESS_CHECKOUT_OPTIONS } from "../expressCheckoutOptions";
 
 function normalizeClientSecret(clientSecret: string): string {
@@ -39,6 +38,7 @@ function CheckoutBody({
   onReloadCheckout,
   confirmDisabled,
   payButtonClassName,
+  onWalletAvailability,
 }: {
   dueDisplay: string;
   email?: string;
@@ -54,6 +54,12 @@ function CheckoutBody({
   onReloadCheckout?: () => void;
   confirmDisabled?: boolean;
   payButtonClassName?: string;
+  onWalletAvailability?: (info: {
+    applePay: boolean;
+    googlePay: boolean;
+    link: boolean;
+    any: boolean;
+  }) => void;
 }) {
   const checkoutState = useCheckoutElements();
   const [busy, setBusy] = useState(false);
@@ -62,6 +68,7 @@ function CheckoutBody({
   const readyFired = useRef(false);
   const interactionFired = useRef(false);
   const initErrorHandled = useRef(false);
+  const walletReported = useRef(false);
 
   useEffect(() => {
     if (checkoutState.type === "success" && !readyFired.current) {
@@ -177,7 +184,8 @@ function CheckoutBody({
   if (checkoutState.type === "loading") {
     return (
       <div className="space-y-4" role="status" aria-live="polite">
-        <ApplePayButton disabled />
+        {/* Neutral skeleton only — never a decorative fake Apple Pay button. */}
+        <div className="h-12 w-full animate-pulse rounded-xl bg-[#1a140e]/08" />
         <p className="text-center text-sm text-[#1a140e]/55">{loadingLabel}</p>
       </div>
     );
@@ -219,7 +227,36 @@ function CheckoutBody({
   return (
     <div className="space-y-4">
       <ExpressCheckoutElement
-        options={{ ...PET_EXPRESS_CHECKOUT_OPTIONS, layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const } }}
+        options={{
+          ...PET_EXPRESS_CHECKOUT_OPTIONS,
+          layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
+        }}
+        onReady={(event) => {
+          const methods = event.availablePaymentMethods;
+          const applePay = Boolean(methods?.applePay);
+          const googlePay = Boolean(methods?.googlePay);
+          const link = Boolean(methods?.link);
+          const info = {
+            applePay,
+            googlePay,
+            link,
+            any: applePay || googlePay || link,
+          };
+          if (!walletReported.current) {
+            walletReported.current = true;
+            if (import.meta.env.DEV) {
+              console.info("[stripe-express-wallets]", {
+                applePay: info.applePay,
+                googlePay: info.googlePay,
+                link: info.link,
+                reason: info.any
+                  ? "wallet_available"
+                  : "wallet_unavailable_device_or_domain_or_stripe_config",
+              });
+            }
+            onWalletAvailability?.(info);
+          }
+        }}
         onConfirm={(event) => void confirm(event)}
         onClick={markInteraction}
         onCancel={() => setError(null)}
@@ -282,6 +319,7 @@ export function CustomStripeCheckout({
   appearanceTheme = "stripe",
   appearanceVariables,
   payButtonClassName,
+  onWalletAvailability,
 }: {
   clientSecret: string;
   publishableKey: string;
@@ -299,6 +337,12 @@ export function CustomStripeCheckout({
   appearanceTheme?: "stripe" | "night";
   appearanceVariables?: Record<string, string>;
   payButtonClassName?: string;
+  onWalletAvailability?: (info: {
+    applePay: boolean;
+    googlePay: boolean;
+    link: boolean;
+    any: boolean;
+  }) => void;
 }) {
   const [reloadNonce, setReloadNonce] = useState(0);
   const hasAutoRetried = useRef(false);
@@ -366,6 +410,7 @@ export function CustomStripeCheckout({
         onReloadCheckout={reloadCheckout}
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}
+        onWalletAvailability={onWalletAvailability}
       />
     </CheckoutElementsProvider>
   );

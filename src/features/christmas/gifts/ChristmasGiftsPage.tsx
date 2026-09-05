@@ -9,6 +9,7 @@ import { trackChristmasEvent } from "../analytics";
 import { ChristmasPresent } from "./ChristmasPresent";
 import { ChristmasTreeScene } from "./ChristmasTreeScene";
 import { GiftOpenCeremony } from "./GiftOpenCeremony";
+import { GIFT_TREE_SCENE } from "./giftTreeMedia";
 import { MoreChancesModal } from "./MoreChancesModal";
 import { PrizeRail } from "./PrizeRail";
 import {
@@ -34,8 +35,6 @@ import {
 } from "./giftTreeApi";
 
 const OPEN_MS = 2600;
-/** Approved gift-open clip — do not replace. */
-const GIFT_OPEN_CLIP = "/christmas/gifts/gift-open.mp4";
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
@@ -83,6 +82,9 @@ export default function ChristmasGiftsPage() {
   const promptViewed = useRef(false);
   const anotherViewed = useRef(false);
   const paidReturnHandled = useRef(false);
+  const purchaseInFlight = useRef(false);
+  const giftOpenWarmed = useRef(false);
+  const heroReadyTracked = useRef(false);
 
   const persist = useCallback((next: GiftTreePersistedState) => {
     setState(next);
@@ -113,16 +115,8 @@ export default function ChristmasGiftsPage() {
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
     setIsMobileScene(window.matchMedia("(max-width: 767px)").matches);
-    const warm = document.createElement("link");
-    warm.rel = "preload";
-    warm.as = "video";
-    warm.href = GIFT_OPEN_CLIP;
-    warm.type = "video/mp4";
-    warm.setAttribute("data-gt-open-clip", "1");
-    if (!document.querySelector('link[data-gt-open-clip="1"]')) {
-      document.head.appendChild(warm);
-    }
-    void fetch(GIFT_OPEN_CLIP, { credentials: "same-origin" }).catch(() => undefined);
+    // Do NOT preload gift-open.mp4 here — it races the hero MP4 (~3.8MB).
+    // Warm it only after the hero is ready (see onHeroReady).
     captureFunnelAttribution(window.location.search);
     void supabase.auth.getSession().then(({ data }) => {
       const isAuthed = Boolean(data.session?.user);
@@ -346,11 +340,57 @@ export default function ChristmasGiftsPage() {
     [runOpen, state],
   );
 
+  const warmGiftOpenClip = useCallback(() => {
+    if (giftOpenWarmed.current || typeof document === "undefined") return;
+    giftOpenWarmed.current = true;
+    if (document.querySelector('link[data-gt-open-clip="1"]')) return;
+    const warm = document.createElement("link");
+    warm.rel = "preload";
+    warm.as = "video";
+    warm.href = GIFT_TREE_SCENE.giftOpenMp4;
+    warm.type = "video/mp4";
+    warm.setAttribute("data-gt-open-clip", "1");
+    document.head.appendChild(warm);
+  }, []);
+
+  const onHeroReady = useCallback(() => {
+    if (!heroReadyTracked.current) {
+      heroReadyTracked.current = true;
+      void trackChristmasEvent("christmas_hero_video_ready", {
+        productKey: GIFT_TREE_PRODUCT_KEY,
+        pathname: "/christmas/gifts",
+      });
+    }
+    // Defer gift-open warm so it never competes with the first hero transfer.
+    const ric = (
+      window as Window & {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      }
+    ).requestIdleCallback;
+    if (typeof ric === "function") {
+      ric(() => warmGiftOpenClip(), { timeout: 2500 });
+    } else {
+      window.setTimeout(() => warmGiftOpenClip(), 1200);
+    }
+  }, [warmGiftOpenClip]);
+
   const onPurchase = useCallback(async (packageKey: string) => {
+    if (purchaseInFlight.current) return;
+    purchaseInFlight.current = true;
     setPurchasing(true);
     setPurchaseError(null);
     setRevealStep("checkout");
+    void trackChristmasEvent("christmas_chance_pack_selected", {
+      productKey: GIFT_TREE_PRODUCT_KEY,
+      pathname: "/christmas/gifts",
+      packageKey,
+    });
     void trackChristmasEvent("christmas_extra_gift_pack_select", {
+      productKey: GIFT_TREE_PRODUCT_KEY,
+      pathname: "/christmas/gifts",
+      packageKey,
+    });
+    void trackChristmasEvent("christmas_checkout_started", {
       productKey: GIFT_TREE_PRODUCT_KEY,
       pathname: "/christmas/gifts",
       packageKey,
@@ -360,17 +400,11 @@ export default function ChristmasGiftsPage() {
       pathname: "/christmas/gifts",
       packageKey,
     });
-    void trackChristmasEvent("christmas_open_another_gift_clicked", {
-      productKey: GIFT_TREE_PRODUCT_KEY,
-      pathname: "/christmas/gifts",
-      packageKey,
-    });
     try {
       const guestToken = getOrCreateGiftTreeGuestToken();
       const result = await startChristmasCheckout({
         product_key: GIFT_TREE_PRODUCT_KEY,
         package_key: packageKey,
-        amount_cents: 1,
         currency: "usd",
         landing_path: "/christmas/gifts",
         source_route: "/christmas/gifts",
@@ -406,6 +440,7 @@ export default function ChristmasGiftsPage() {
         metadata: { reason: msg.slice(0, 120) },
       });
     } finally {
+      purchaseInFlight.current = false;
       setPurchasing(false);
     }
   }, []);
@@ -507,6 +542,7 @@ export default function ChristmasGiftsPage() {
           reduceMotion={reduceMotion}
           className="absolute inset-x-0 top-0 bottom-[7.6rem] sm:bottom-[7.15rem]"
           onBreakpointChange={setIsMobileScene}
+          onHeroReady={onHeroReady}
         >
           <section className="absolute inset-0" aria-label="Christmas presents">
             {presents.map((p) => (
@@ -618,7 +654,11 @@ export default function ChristmasGiftsPage() {
         </div>
       </div>
 
-      <GiftOpenCeremony open={Boolean(openingId)} reduceMotion={reduceMotion} clipSrc={GIFT_OPEN_CLIP} />
+      <GiftOpenCeremony
+        open={Boolean(openingId)}
+        reduceMotion={reduceMotion}
+        clipSrc={GIFT_TREE_SCENE.giftOpenMp4}
+      />
 
       {reward ? (
         <RewardRevealModal
@@ -690,6 +730,38 @@ export default function ChristmasGiftsPage() {
               clientSecret={checkout.clientSecret}
               publishableKey={checkout.publishableKey}
               dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
+              onWalletAvailability={(info) => {
+                void trackChristmasEvent(
+                  info.applePay
+                    ? "christmas_apple_pay_available"
+                    : "christmas_apple_pay_unavailable",
+                  {
+                    productKey: GIFT_TREE_PRODUCT_KEY,
+                    pathname: "/christmas/gifts",
+                    packageKey: checkout.packageKey,
+                    metadata: {
+                      applePay: info.applePay,
+                      googlePay: info.googlePay,
+                      link: info.link,
+                      reason: info.any
+                        ? "wallet_available"
+                        : "wallet_unavailable_device_or_domain_or_stripe_config",
+                    },
+                  },
+                );
+                if (info.any) {
+                  void trackChristmasEvent("christmas_express_checkout_available", {
+                    productKey: GIFT_TREE_PRODUCT_KEY,
+                    pathname: "/christmas/gifts",
+                    packageKey: checkout.packageKey,
+                    metadata: {
+                      applePay: info.applePay,
+                      googlePay: info.googlePay,
+                      link: info.link,
+                    },
+                  });
+                }
+              }}
             />
             <p className="mt-2 text-center text-[11px] text-amber-100/60">
               {GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === checkout.packageKey)?.label || "Extra gifts"}

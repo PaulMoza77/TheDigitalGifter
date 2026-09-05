@@ -181,13 +181,13 @@ export function publicGiftTreeReward(reward: GiftTreeReward) {
 export const GIFT_TREE_PAID_OFFERS = [
   {
     package_key: "open_another",
-    label: "1 more gift",
+    label: "1 more chance",
     price_cents: 199,
     opens_granted: 1,
   },
   {
     package_key: "open_five",
-    label: "5 more gifts",
+    label: "Get 5 More Chances",
     price_cents: 499,
     opens_granted: 5,
   },

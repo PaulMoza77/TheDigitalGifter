@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CHRISTMAS_FUNNEL_ALLOWED_EVENTS } from "../funnelEventContract";
 import { findProduct, ctaStateForProduct, CHRISTMAS_CATALOG_SEED } from "../catalog";
@@ -100,6 +102,9 @@ describe("christmas gift tree product wiring", () => {
       "christmas_extra_gift_offer_view",
       "christmas_extra_gift_pack_select",
       "christmas_express_checkout_available",
+      "christmas_apple_pay_available",
+      "christmas_apple_pay_unavailable",
+      "christmas_hero_video_ready",
       "christmas_extra_gift_payment_start",
       "christmas_extra_gift_purchase",
       "christmas_extra_gift_payment_failed",
@@ -115,5 +120,77 @@ describe("christmas gift tree product wiring", () => {
 describe("christmas gift tree payment authority", () => {
   it("never trusts client-provided pack amounts", () => {
     expect(GIFT_TREE_PAID_OFFERS.map((o) => o.priceCents).sort()).toEqual([199, 499]);
+  });
+});
+
+
+describe("christmas gift tree 5 more chances entitlement", () => {
+  it("labels the higher paid pack as Get 5 More Chances (not 1 more)", () => {
+    const five = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === "open_five");
+    const one = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === "open_another");
+    expect(five?.label).toBe("Get 5 More Chances");
+    expect(five?.opensGranted).toBe(5);
+    expect(five?.priceCents).toBe(499);
+    expect(one?.label).toBe("1 more chance");
+    expect(one?.opensGranted).toBe(1);
+    expect(five?.label.toLowerCase()).not.toContain("1 more");
+  });
+});
+
+describe("christmas gift tree media architecture", () => {
+  it("does not manually fetch or link-preload the hero mp4", () => {
+    const scene = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/ChristmasTreeScene.tsx"), "utf8");
+    // Strip comments so instructional text does not false-positive.
+    const code = scene.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+    expect(code).not.toMatch(/fetch\(\s*[`'"][^`'"]*scene-(mobile|desktop)\.mp4/);
+    expect(code).not.toMatch(/rel\s*=\s*[`'"]preload[`'"][\s\S]{0,80}as\s*=\s*[`'"]video[`'"]/);
+    expect(code).toMatch(/<video[\s\S]*preload=["']auto["']/);
+    expect(code).toMatch(/posterWebp|posterJpg|\.poster\.(webp|jpg)/);
+  });
+
+  it("defers gift-open warm until after hero ready", () => {
+    const page = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/ChristmasGiftsPage.tsx"), "utf8");
+    expect(page).toMatch(/onHeroReady/);
+    expect(page).toMatch(/requestIdleCallback|setTimeout/);
+    // Must not warm gift-open at initial mount via network APIs.
+    const mountEffect = page.match(/useEffect\(\(\) => \{[\s\S]*?\}, \[\]\)/);
+    if (mountEffect) {
+      const code = mountEffect[0].replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+      expect(code).not.toMatch(/fetch\([^)]*giftOpen|createElement\([`'"]link[`'"]\)[\s\S]*giftOpen|giftOpenMp4/);
+      expect(code).not.toMatch(/rel\s*=\s*[`'"]preload[`'"]/);
+    }
+  });
+
+  it("uses versioned media URLs for cache-busting", () => {
+    const media = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/giftTreeMedia.ts"), "utf8");
+    expect(media).toMatch(/\?v=/);
+    expect(media).toMatch(/scene-mobile\.poster\.webp/);
+  });
+});
+
+describe("christmas gift tree checkout lock", () => {
+  it("guards purchase with an in-flight lock on the gifts page", () => {
+    const page = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/ChristmasGiftsPage.tsx"), "utf8");
+    expect(page).toMatch(/purchaseInFlight/);
+    expect(page).toMatch(/if \(purchaseInFlight\.current\) return/);
+  });
+
+  it("dedupes concurrent startChristmasCheckout calls in photoApi", () => {
+    const api = readFileSync(resolve(process.cwd(), "src/features/christmas/photoApi.ts"), "utf8");
+    expect(api).toMatch(/christmasCheckoutInflight/);
+    expect(api).toMatch(/christmasCheckoutDedupeKey/);
+  });
+});
+
+describe("christmas gift tree stripe entitlement mapping", () => {
+  it("maps open_five to +5 opens server-side from GIFT_TREE_PAID_OFFERS", () => {
+    const fulfill = readFileSync(
+      resolve(process.cwd(), "supabase/functions/_shared/christmas/stripeFulfill.ts"),
+      "utf8",
+    );
+    expect(fulfill).toMatch(/GIFT_TREE_PAID_OFFERS/);
+    expect(fulfill).toMatch(/opens_granted/);
+    // Must not credit from a client-supplied quantity field.
+    expect(fulfill).not.toMatch(/body\.quantity|metadata\.quantity\s*\*\s*1/);
   });
 });

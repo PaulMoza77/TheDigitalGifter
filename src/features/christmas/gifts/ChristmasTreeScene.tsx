@@ -5,6 +5,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { GIFT_TREE_SCENE } from "./giftTreeMedia";
 import { useCoverMediaBox } from "./useCoverMediaBox";
 
 type Props = {
@@ -12,13 +13,9 @@ type Props = {
   reduceMotion?: boolean;
   children?: ReactNode;
   onBreakpointChange?: (isMobile: boolean) => void;
+  /** Fires once when the hero video can play through the first frames. */
+  onHeroReady?: () => void;
 };
-
-const DESKTOP_SRC = "/christmas/gifts/scene-desktop.mp4";
-const MOBILE_SRC = "/christmas/gifts/scene-mobile.mp4";
-/** Prefer sharp JPEG posters — WebP was too soft on retina desktop. */
-const DESKTOP_POSTER = "/christmas/gifts/scene-desktop.jpg";
-const MOBILE_POSTER = "/christmas/gifts/scene-mobile.jpg";
 
 export const SCENE_MEDIA_ASPECT = {
   desktop: 1920 / 1080,
@@ -33,38 +30,33 @@ function preferMobile(): boolean {
   return window.matchMedia("(max-width: 767px)").matches;
 }
 
-function markPreloadLink(href: string) {
-  if (document.querySelector(`link[data-gt-video-preload="${href}"]`)) return;
-  const link = document.createElement("link");
-  link.rel = "preload";
-  link.as = "video";
-  link.href = href;
-  link.type = "video/mp4";
-  link.setAttribute("data-gt-video-preload", href);
-  document.head.appendChild(link);
-}
-
 /**
  * Photoreal chalet scene.
- * Visuals use CSS object-fit:cover (sharp, no JS stretch).
- * Hotspots share the same cover math so clicks land on the photo gifts.
+ * ONE network owner for the hero MP4: the <video> element itself.
+ * Do not add <link rel=preload as=video> or fetch(mp4) — those duplicate the ~3.8MB transfer.
  */
 export function ChristmasTreeScene({
   className,
   reduceMotion,
   children,
   onBreakpointChange,
+  onHeroReady,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMobile, setIsMobile] = useState(preferMobile);
   const [ready, setReady] = useState(false);
+  const heroReadyFired = useRef(false);
   const mediaAspect = isMobile ? SCENE_MEDIA_ASPECT.mobile : SCENE_MEDIA_ASPECT.desktop;
-  // Gift-safe Y: wide/short viewports crop vertically — keep presents under the tree in view.
   const box = useCoverMediaBox(containerRef, mediaAspect, 0.5, "gift-safe");
 
-  const src = isMobile ? MOBILE_SRC : DESKTOP_SRC;
-  const poster = isMobile ? MOBILE_POSTER : DESKTOP_POSTER;
+  const src = isMobile ? GIFT_TREE_SCENE.mobileMp4 : GIFT_TREE_SCENE.desktopMp4;
+  const posterJpg = isMobile
+    ? GIFT_TREE_SCENE.mobilePosterJpg
+    : GIFT_TREE_SCENE.desktopPosterJpg;
+  const posterWebp = isMobile
+    ? GIFT_TREE_SCENE.mobilePosterWebp
+    : GIFT_TREE_SCENE.desktopPosterWebp;
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -79,48 +71,40 @@ export function ChristmasTreeScene({
   }, [onBreakpointChange]);
 
   useEffect(() => {
-    if (reduceMotion) return;
-    markPreloadLink(src);
-    // Warm first ~2.5MB so playback can start without waiting for the full file.
-    void fetch(src, {
-      credentials: "same-origin",
-      headers: { Range: "bytes=0-2621440" },
-      // @ts-expect-error priority is widely supported
-      priority: "high",
-    }).catch(() => undefined);
-  }, [isMobile, reduceMotion, src]);
-
-  useEffect(() => {
+    heroReadyFired.current = false;
+    setReady(false);
     const video = videoRef.current;
     if (!video || reduceMotion) return;
 
     let cancelled = false;
-    setReady(false);
+
+    const markReady = () => {
+      if (cancelled) return;
+      setReady(true);
+      if (!heroReadyFired.current) {
+        heroReadyFired.current = true;
+        onHeroReady?.();
+      }
+    };
 
     const tryPlay = () => {
       if (cancelled) return;
       const p = video.play();
-      if (p && typeof p.catch === "function") {
-        p.catch(() => undefined);
-      }
-    };
-
-    const onPlaying = () => {
-      if (!cancelled) setReady(true);
+      if (p && typeof p.catch === "function") p.catch(() => undefined);
     };
 
     video.addEventListener("loadeddata", tryPlay);
     video.addEventListener("canplay", tryPlay);
-    video.addEventListener("playing", onPlaying);
+    video.addEventListener("playing", markReady);
     tryPlay();
 
     return () => {
       cancelled = true;
       video.removeEventListener("loadeddata", tryPlay);
       video.removeEventListener("canplay", tryPlay);
-      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("playing", markReady);
     };
-  }, [isMobile, reduceMotion, src]);
+  }, [isMobile, reduceMotion, src, onHeroReady]);
 
   const hotspotFrameStyle: CSSProperties = {
     position: "absolute",
@@ -162,15 +146,18 @@ export function ChristmasTreeScene({
           role="img"
           aria-label="Luxury Christmas chalet with a realistic Christmas tree and gifts"
         >
-          {/* Sharp still under the video */}
-          <img
-            src={poster}
-            alt=""
-            style={mediaStyle}
-            decoding="async"
-            fetchPriority="high"
-            draggable={false}
-          />
+          {/* Crisp poster under the video — webp first, jpg fallback. */}
+          <picture>
+            <source srcSet={posterWebp} type="image/webp" />
+            <img
+              src={posterJpg}
+              alt=""
+              style={mediaStyle}
+              decoding="async"
+              fetchPriority="high"
+              draggable={false}
+            />
+          </picture>
 
           {!reduceMotion ? (
             <video
@@ -185,8 +172,9 @@ export function ChristmasTreeScene({
               muted
               loop
               playsInline
+              // Sole network owner for the hero MP4. Do not combine with fetch()/preload link.
               preload="auto"
-              poster={poster}
+              poster={posterJpg}
               disablePictureInPicture
               // @ts-expect-error non-standard but supported
               disableRemotePlayback
