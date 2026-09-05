@@ -21,8 +21,8 @@ export const SCENE_MEDIA_ASPECT = {
   mobile: 720 / 1280,
 } as const;
 
-/** Slight downward shift so the tree tip clears the top edge. */
-const MEDIA_TRANSFORM = "translateY(2.2%) scale(1.045)";
+/** Clear breathing room under the header for the tree tip. */
+const MEDIA_TRANSFORM = "translateY(4.5%) scale(1.08)";
 const MEDIA_TRANSFORM_ORIGIN = "50% 0%";
 
 function preferMobile(): boolean {

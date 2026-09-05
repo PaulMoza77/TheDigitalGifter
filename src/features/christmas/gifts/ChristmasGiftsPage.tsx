@@ -386,9 +386,10 @@ export default function ChristmasGiftsPage() {
       />
 
       <div className="relative h-[calc(100dvh-4.05rem)] max-h-[calc(100dvh-4.05rem)] overflow-hidden text-rose-50">
+        {/* Scene ends above the CTA band so the button never covers photo gifts */}
         <ChristmasTreeScene
           reduceMotion={reduceMotion}
-          className="absolute inset-0"
+          className="absolute inset-x-0 top-0 bottom-[5.85rem] sm:bottom-[5.5rem]"
           onBreakpointChange={setIsMobileScene}
         >
           <section className="absolute inset-0" aria-label="Christmas presents">
@@ -421,16 +422,24 @@ export default function ChristmasGiftsPage() {
 
         {error ? (
           <p
-            className="absolute inset-x-0 bottom-[4.6rem] z-[6] text-center text-sm text-red-200"
+            className="absolute inset-x-0 bottom-[5.1rem] z-[6] text-center text-sm text-red-200"
             role="alert"
           >
             {error}
           </p>
         ) : null}
 
-        {/* CTA sits on the rug under the photo gifts */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] px-4 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-0">
-          <div className="pointer-events-auto mx-auto flex w-[calc(100%-32px)] max-w-[360px] flex-col items-center sm:w-full">
+        {/* CTA band under the scene — rug / floor, never over the gift pile */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] flex h-[5.85rem] items-end px-4 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1 sm:h-[5.5rem]">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, transparent 0%, rgba(8,6,5,0.55) 42%, rgba(8,6,5,0.82) 100%)",
+            }}
+          />
+          <div className="pointer-events-auto relative mx-auto flex w-[calc(100%-32px)] max-w-[360px] flex-col items-center sm:w-full">
             <button
               type="button"
               disabled={Boolean(openingId)}
