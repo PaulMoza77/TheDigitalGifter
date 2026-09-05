@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
+import { startChristmasCheckout } from "../photoApi";
 import { trackChristmasEvent } from "../analytics";
 import { ChristmasPresent } from "./ChristmasPresent";
 import { ChristmasTreeScene } from "./ChristmasTreeScene";
+import { MoreChancesModal } from "./MoreChancesModal";
 import { PrizeRail } from "./PrizeRail";
 import {
   canOpenGift,
@@ -26,17 +29,6 @@ import {
   openGiftTreeOnServer,
   rewardFromServerPayload,
 } from "./giftTreeApi";
-import {
-  BOX_THEMES,
-  CTA_STYLES,
-  DEFAULT_BOX_THEME,
-  DEFAULT_CTA_STYLE,
-  DEFAULT_SCENE_MOOD,
-  SCENE_MOODS,
-  type GiftBoxTheme,
-  type GiftCtaStyle,
-  type GiftSceneMood,
-} from "./sceneMoods";
 
 const OPEN_MS = 1100;
 
@@ -56,26 +48,33 @@ export default function ChristmasGiftsPage() {
     resolvedRewardFromState(readGiftTreeState()),
   );
   const [modalOpen, setModalOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [seeAllOpen, setSeeAllOpen] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
   const [claimHint, setClaimHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [compact, setCompact] = useState(false);
-  const [mood, setMood] = useState<GiftSceneMood>(DEFAULT_SCENE_MOOD);
-  const [ctaStyle, setCtaStyle] = useState<GiftCtaStyle>(DEFAULT_CTA_STYLE);
-  const [boxTheme, setBoxTheme] = useState<GiftBoxTheme>(DEFAULT_BOX_THEME);
-  const [showVariants, setShowVariants] = useState(false);
+  const [checkout, setCheckout] = useState<{
+    clientSecret: string;
+    publishableKey: string;
+    amountCents: number;
+    currency: string;
+    packageKey: string;
+  } | null>(null);
   const viewed = useRef(false);
   const anotherViewed = useRef(false);
+  const paidReturnHandled = useRef(false);
 
   const freeUsed = Boolean(state.openedAt);
   const canOpen = canOpenGift(state);
-  const cta = CTA_STYLES[ctaStyle];
 
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
-    const syncCompact = () => setCompact(window.innerWidth < 768);
+    const syncCompact = () => setCompact(window.innerWidth < 1024);
     syncCompact();
     window.addEventListener("resize", syncCompact);
     captureFunnelAttribution(window.location.search);
@@ -110,6 +109,29 @@ export default function ChristmasGiftsPage() {
     }
   }, [freeUsed, canOpen]);
 
+  useEffect(() => {
+    if (paidReturnHandled.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("gift_chances") !== "1") return;
+    paidReturnHandled.current = true;
+    const packageKey = params.get("package") || "open_another";
+    const offer = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === packageKey);
+    const granted = offer?.opensGranted ?? 1;
+    const next: GiftTreePersistedState = {
+      ...state,
+      extraOpens: state.extraOpens + granted,
+    };
+    setState(next);
+    writeGiftTreeState(next);
+    setClaimHint(`Payment received — ${granted} extra gift${granted > 1 ? "s" : ""} unlocked.`);
+    setMoreOpen(false);
+    setCheckout(null);
+    params.delete("gift_chances");
+    params.delete("package");
+    const qs = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+  }, [state]);
+
   const persist = useCallback((next: GiftTreePersistedState) => {
     setState(next);
     writeGiftTreeState(next);
@@ -136,9 +158,10 @@ export default function ChristmasGiftsPage() {
       const animDelay = reduceMotion ? 180 : OPEN_MS;
       let serverResult: Awaited<ReturnType<typeof openGiftTreeOnServer>> | null = null;
       let localFallback: GiftTreeRewardDef | null = null;
+      const openSlot = state.openedAt ? Math.max(1, state.extraOpens) : 0;
 
       try {
-        serverResult = await openGiftTreeOnServer({ presentId });
+        serverResult = await openGiftTreeOnServer({ presentId, openSlot });
       } catch (e) {
         localFallback = pickWeightedReward();
         setClaimHint(
@@ -194,9 +217,26 @@ export default function ChristmasGiftsPage() {
     [authed, openingId, persist, reduceMotion, state],
   );
 
+  const requestOpen = useCallback(
+    (presentId: string) => {
+      setSelectedId(presentId);
+      if (!canOpenGift(state)) {
+        setMoreOpen(true);
+        void trackChristmasEvent("christmas_open_another_gift_viewed", {
+          productKey: GIFT_TREE_PRODUCT_KEY,
+          pathname: "/christmas/gifts",
+          metadata: { source: "present_tap" },
+        });
+        return;
+      }
+      void runOpen(presentId);
+    },
+    [runOpen, state],
+  );
+
   const onPrimaryCta = useCallback(() => {
     if (!canOpen) {
-      setClaimHint("Your free Christmas gift is already open — more openings coming soon.");
+      setMoreOpen(true);
       return;
     }
     if (selectedId) {
@@ -204,11 +244,47 @@ export default function ChristmasGiftsPage() {
       return;
     }
     const first = presents[2] ?? presents[0];
-    if (first) {
-      setSelectedId(first.id);
-      void runOpen(first.id);
+    if (first) requestOpen(first.id);
+  }, [canOpen, presents, requestOpen, runOpen, selectedId]);
+
+  const onPurchase = useCallback(async (packageKey: string) => {
+    setPurchasing(true);
+    setPurchaseError(null);
+    void trackChristmasEvent("christmas_open_another_gift_clicked", {
+      productKey: GIFT_TREE_PRODUCT_KEY,
+      pathname: "/christmas/gifts",
+      metadata: { package_key: packageKey, purchasable: true },
+    });
+    try {
+      const result = await startChristmasCheckout({
+        product_key: GIFT_TREE_PRODUCT_KEY,
+        package_key: packageKey,
+        amount_cents: 1,
+        currency: "usd",
+        landing_path: "/christmas/gifts",
+        source_route: "/christmas/gifts",
+        success_url: `${window.location.origin}/christmas/gifts?gift_chances=1&package=${encodeURIComponent(packageKey)}`,
+        cancel_url: `${window.location.origin}/christmas/gifts?gift_chances=cancel`,
+      });
+      setCheckout({
+        clientSecret: result.clientSecret,
+        publishableKey: result.publishableKey,
+        amountCents: result.amountCents,
+        currency: result.currency,
+        packageKey,
+      });
+      setMoreOpen(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not start checkout.";
+      setPurchaseError(
+        /not enabled|checkout_disabled|disabled/i.test(msg)
+          ? "Checkout is warming up — try again shortly."
+          : msg,
+      );
+    } finally {
+      setPurchasing(false);
     }
-  }, [canOpen, presents, runOpen, selectedId]);
+  }, []);
 
   const onClaim = useCallback(async () => {
     if (!reward) return;
@@ -219,14 +295,11 @@ export default function ChristmasGiftsPage() {
       pathname: "/christmas/gifts",
       metadata: { reward_id: reward.id, reward_type: reward.type, authenticated: authed },
     });
-
     try {
       if (reward.requiresAuthToGrant && !authed) {
-        const returnTo = encodeURIComponent("/christmas/gifts?claim=1");
-        navigate(`/account?next=${returnTo}`);
+        navigate(`/account?next=${encodeURIComponent("/christmas/gifts?claim=1")}`);
         return;
       }
-
       if (state.claimId || authed) {
         try {
           const claimed = await claimGiftTreeOnServer({ claimId: state.claimId });
@@ -241,19 +314,16 @@ export default function ChristmasGiftsPage() {
       } else {
         persist({ ...state, claimed: true });
       }
-
       void trackChristmasEvent("christmas_reward_claimed", {
         productKey: GIFT_TREE_PRODUCT_KEY,
         pathname: "/christmas/gifts",
         metadata: { reward_id: reward.id, reward_type: reward.type, authenticated: authed },
       });
-
       if (reward.type === "gift_token") {
         setModalOpen(false);
         setClaimHint("Extra gift unlocked — tap another present.");
         return;
       }
-
       navigate(reward.claimPath);
     } finally {
       setClaiming(false);
@@ -281,252 +351,143 @@ export default function ChristmasGiftsPage() {
       <PageHead
         exactTitle
         title="Get Your Christmas Gift | The Digital Gifter"
-        description="Choose a present under the Christmas tree and reveal a premium Digital Gifter Christmas surprise."
+        description="Open a present under the Christmas tree and reveal a premium Digital Gifter Christmas surprise."
         url="https://www.thedigitalgifter.com/christmas/gifts"
       />
 
       <main className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden text-rose-50">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(ellipse at 50% 0%, ${SCENE_MOODS[mood].accentGlow} 0%, transparent 42%),
-              linear-gradient(180deg, #120c10 0%, #1a1214 40%, #0c1014 100%)
-            `,
-          }}
-        />
+        <ChristmasTreeScene reduceMotion={reduceMotion} className="absolute inset-0" />
 
-        {!reduceMotion ? (
-          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            {Array.from({ length: 16 }).map((_, i) => (
-              <span
-                key={i}
-                className="absolute rounded-full bg-amber-100/70"
-                style={{
-                  width: 1.5 + (i % 3),
-                  height: 1.5 + (i % 3),
-                  left: `${(i * 19) % 100}%`,
-                  top: `-${(i * 11) % 20}%`,
-                  opacity: 0.15 + (i % 4) * 0.08,
-                  animation: `gt-sparkle ${12 + (i % 5) * 2}s linear ${i * 0.35}s infinite`,
-                }}
-              />
-            ))}
+        <div className="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center px-3">
+          <div className="flex items-center gap-2 rounded-full border border-amber-200/20 bg-black/25 px-3 py-1.5 backdrop-blur-md">
+            <img
+              src="/TheDigitalGifter.png"
+              alt=""
+              className="h-6 w-6 rounded-full object-cover ring-1 ring-amber-200/35"
+            />
+            <p className="font-serif text-sm tracking-wide text-amber-50/95">The Digital Gifter</p>
           </div>
-        ) : null}
-
-        <div className="relative mx-auto flex h-full max-w-6xl flex-col px-3 pb-[5.75rem] pt-3 sm:px-5 sm:pb-24 sm:pt-4">
-          {/* Branding + copy */}
-          <header className="relative z-30 mx-auto w-full max-w-xl shrink-0 text-center">
-            <div className="mb-1.5 flex items-center justify-center gap-2.5">
-              <img
-                src="/TheDigitalGifter.png"
-                alt=""
-                className="h-8 w-8 rounded-full object-cover ring-1 ring-amber-200/35"
-              />
-              <p className="font-serif text-lg tracking-wide text-amber-50 sm:text-xl">
-                The Digital Gifter
-              </p>
-            </div>
-            <h1 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-200/70 sm:text-xs">
-              Choose a gift under the tree
-            </h1>
-            <p className="mt-1 text-sm text-rose-100/70 sm:text-[15px]">
-              {freeUsed
-                ? "Your Christmas surprise is ready."
-                : "Tap a gift to reveal your surprise"}
-            </p>
-          </header>
-
-          {/* Scene + rails */}
-          <div className="relative z-10 mt-2 flex min-h-0 flex-1 items-stretch gap-3">
-            {!compact ? (
-              <PrizeRail side="left" className="hidden w-[148px] shrink-0 lg:block" />
-            ) : null}
-
-            <section
-              className="relative mx-auto min-h-0 w-full max-w-xl flex-1"
-              aria-label="Christmas suite and presents"
-            >
-              <ChristmasTreeScene
-                mood={mood}
-                reduceMotion={reduceMotion}
-                className="absolute inset-0"
-              />
-
-              <div className="absolute inset-x-[4%] bottom-[3%] z-30 h-[34%] sm:h-[32%]">
-                {presents.map((p) => (
-                  <ChristmasPresent
-                    key={p.id}
-                    present={p}
-                    state={presentState(p.id)}
-                    selected={selectedId === p.id}
-                    scale={compact ? 0.82 : 0.95}
-                    reduceMotion={reduceMotion}
-                    boxTheme={boxTheme}
-                    onSelect={(id) => {
-                      setSelectedId(id);
-                      if (canOpen) void runOpen(id);
-                    }}
-                  />
-                ))}
-              </div>
-
-              {burst && !reduceMotion ? (
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 z-40"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 50% 72%, rgba(255,220,150,0.4), transparent 40%)",
-                    animation: "gt-burst 700ms ease-out forwards",
-                  }}
-                />
-              ) : null}
-            </section>
-
-            {!compact ? (
-              <PrizeRail side="right" className="hidden w-[148px] shrink-0 lg:block" />
-            ) : null}
-          </div>
-
-          {compact ? (
-            <PrizeRail compact className="relative z-20 mt-1.5 shrink-0" />
-          ) : null}
-
-          {error ? (
-            <p className="relative z-20 mt-2 text-center text-sm text-red-200" role="alert">
-              {error}
-            </p>
-          ) : null}
-
-          {freeUsed && !canOpen ? (
-            <section className="relative z-20 mx-auto mt-2 max-w-md shrink-0 text-center">
-              <p className="font-serif text-lg text-amber-50">Want to open another gift?</p>
-              <div className="mt-2 flex flex-wrap justify-center gap-2">
-                {GIFT_TREE_PAID_OFFERS.map((offer) => (
-                  <button
-                    key={offer.packageKey}
-                    type="button"
-                    className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-rose-50/85"
-                    onClick={() => {
-                      void trackChristmasEvent("christmas_open_another_gift_clicked", {
-                        productKey: GIFT_TREE_PRODUCT_KEY,
-                        pathname: "/christmas/gifts",
-                        metadata: { package_key: offer.packageKey, purchasable: false },
-                      });
-                      setClaimHint(
-                        "Extra gift openings are coming soon — your first gift is already yours.",
-                      );
-                    }}
-                  >
-                    {offer.label}
-                  </button>
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          <div className="relative z-20 mt-2 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setShowVariants((v) => !v)}
-              className="text-[10px] uppercase tracking-[0.16em] text-amber-100/40 hover:text-amber-100/70"
-            >
-              {showVariants ? "Hide looks" : "Compare looks"}
-            </button>
-          </div>
-
-          {showVariants ? (
-            <div className="relative z-30 mx-auto mt-2 grid max-w-xl grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-black/30 p-2 text-[10px] backdrop-blur-md">
-              <label className="space-y-1">
-                <span className="text-amber-100/50">Room</span>
-                <select
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-amber-50"
-                  value={mood}
-                  onChange={(e) => setMood(e.target.value as GiftSceneMood)}
-                >
-                  {Object.values(SCENE_MOODS).map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-1">
-                <span className="text-amber-100/50">CTA</span>
-                <select
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-amber-50"
-                  value={ctaStyle}
-                  onChange={(e) => setCtaStyle(e.target.value as GiftCtaStyle)}
-                >
-                  {(Object.keys(CTA_STYLES) as GiftCtaStyle[]).map((k) => (
-                    <option key={k} value={k}>
-                      {CTA_STYLES[k].label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-1">
-                <span className="text-amber-100/50">Gifts</span>
-                <select
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-amber-50"
-                  value={boxTheme}
-                  onChange={(e) => setBoxTheme(e.target.value as GiftBoxTheme)}
-                >
-                  {(Object.keys(BOX_THEMES) as GiftBoxTheme[]).map((k) => (
-                    <option key={k} value={k}>
-                      {BOX_THEMES[k].label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          ) : null}
-
-          <footer className="relative z-20 mt-auto hidden shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-1 text-[10px] text-rose-100/40 sm:flex sm:text-[11px]">
-            <Link className="hover:text-rose-100/65" to="/christmas">
-              Christmas hub
-            </Link>
-            <Link className="hover:text-rose-100/65" to="/christmas/tree">
-              Build a tree
-            </Link>
-            <Link className="hover:text-rose-100/65" to="/christmas/advent">
-              Advent
-            </Link>
-            <Link className="hover:text-rose-100/65" to="/christmas/photo-generator">
-              Portraits
-            </Link>
-          </footer>
         </div>
 
-        {/* Sticky bottom CTA */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-8">
-          <div className="pointer-events-auto mx-auto max-w-md">
+        {!compact ? (
+          <>
+            <PrizeRail
+              side="left"
+              limit={5}
+              className="absolute left-3 top-[18%] z-30 hidden w-[200px] lg:block xl:left-6 xl:w-[220px]"
+            />
+            <PrizeRail
+              side="right"
+              limit={5}
+              className="absolute right-3 top-[18%] z-30 hidden w-[200px] lg:block xl:right-6 xl:w-[220px]"
+            />
+          </>
+        ) : (
+          <>
+            <PrizeRail
+              side="left"
+              limit={3}
+              compact
+              onSeeAll={() => setSeeAllOpen(true)}
+              className="absolute left-2 top-[16%] z-30 w-[108px] sm:w-[120px]"
+            />
+            <PrizeRail
+              side="right"
+              limit={3}
+              compact
+              onSeeAll={() => setSeeAllOpen(true)}
+              className="absolute right-2 top-[16%] z-30 w-[108px] sm:w-[120px]"
+            />
+          </>
+        )}
+
+        <section
+          className="absolute inset-x-0 bottom-[7.5rem] z-30 mx-auto h-[28%] max-w-[min(820px,92vw)] sm:bottom-[8.25rem] sm:h-[30%]"
+          aria-label="Christmas presents"
+        >
+          {presents.map((p) => (
+            <ChristmasPresent
+              key={p.id}
+              present={p}
+              state={presentState(p.id)}
+              selected={selectedId === p.id}
+              scale={compact ? 0.9 : 1}
+              reduceMotion={reduceMotion}
+              onSelect={requestOpen}
+            />
+          ))}
+          {burst && !reduceMotion ? (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 70%, rgba(255,220,150,0.45), transparent 42%)",
+                animation: "gt-burst 700ms ease-out forwards",
+              }}
+            />
+          ) : null}
+        </section>
+
+        {error ? (
+          <p
+            className="absolute inset-x-0 bottom-[6.6rem] z-40 text-center text-sm text-red-200"
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-6">
+          <div className="pointer-events-auto mx-auto flex w-full max-w-[420px] flex-col items-center">
             <button
               type="button"
               disabled={Boolean(openingId)}
               onClick={onPrimaryCta}
-              className={`flex w-full flex-col items-center justify-center rounded-full px-6 py-3.5 transition active:scale-[0.98] disabled:opacity-70 ${cta.className}`}
+              className="flex min-h-[56px] w-full flex-col items-center justify-center rounded-full bg-gradient-to-b from-[#f6e7c0] via-[#e4c57a] to-[#c9a35a] px-6 py-3.5 text-[#2a1c0e] shadow-[0_14px_44px_rgba(201,163,90,0.42)] transition hover:brightness-105 active:scale-[0.98] disabled:opacity-70"
             >
-              <span className="text-[15px] font-semibold tracking-wide">
-                {freeUsed && !canOpen
-                  ? "Gift Opened"
-                  : selectedId
-                    ? "Open Selected Gift"
-                    : "Choose Your Gift"}
+              <span className="text-[15px] font-semibold tracking-wide sm:text-base">
+                {openingId
+                  ? "Opening…"
+                  : freeUsed && !canOpen
+                    ? "Get More Chances"
+                    : selectedId
+                      ? "Open Selected Gift"
+                      : "Choose Your Gift"}
               </span>
-              <span className={`text-[11px] font-medium ${cta.subClassName}`}>
+              <span className="text-[11px] font-medium text-[#4a3820]/75">
                 {freeUsed && !canOpen
-                  ? "Come back for more Christmas magic"
+                  ? "Unlock another present under the tree"
                   : "Tap a present or start here"}
               </span>
             </button>
+
             {claimHint ? (
-              <p className="mt-2 text-center text-[11px] text-amber-100/70" role="status">
+              <p className="mt-2 text-center text-[11px] text-amber-100/75" role="status">
                 {claimHint}
               </p>
             ) : null}
+
+            <nav
+              aria-label="Christmas links"
+              className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[10px] text-white/55 sm:text-[11px]"
+            >
+              <Link className="hover:text-white/80" to="/christmas">
+                Christmas Hub
+              </Link>
+              <span aria-hidden>|</span>
+              <Link className="hover:text-white/80" to="/christmas/tree">
+                Build a Tree
+              </Link>
+              <span aria-hidden>|</span>
+              <Link className="hover:text-white/80" to="/christmas/advent">
+                Advent
+              </Link>
+              <span aria-hidden>|</span>
+              <Link className="hover:text-white/80" to="/christmas/photo-generator">
+                Portraits
+              </Link>
+            </nav>
           </div>
         </div>
       </main>
@@ -540,29 +501,72 @@ export default function ChristmasGiftsPage() {
           claimHint={claimHint}
           onClaim={() => void onClaim()}
           onClose={() => setModalOpen(false)}
-          showOpenAnother={reward.type === "gift_token" || canOpen}
+          showOpenAnother={reward.type === "gift_token" || canOpen || freeUsed}
           onOpenAnother={() => {
             setModalOpen(false);
-            void trackChristmasEvent("christmas_open_another_gift_clicked", {
-              productKey: GIFT_TREE_PRODUCT_KEY,
-              pathname: "/christmas/gifts",
-              metadata: { source: "modal" },
-            });
+            if (!canOpen) setMoreOpen(true);
           }}
         />
       ) : null}
 
+      <MoreChancesModal
+        open={moreOpen}
+        purchasing={purchasing}
+        error={purchaseError}
+        onClose={() => setMoreOpen(false)}
+        onPurchase={(key) => void onPurchase(key)}
+      />
+
+      {seeAllOpen ? (
+        <div className="fixed inset-0 z-[85] flex items-end justify-center p-4 sm:items-center">
+          <button
+            type="button"
+            aria-label="Close rewards"
+            className="absolute inset-0 bg-black/70"
+            onClick={() => setSeeAllOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-amber-200/20 bg-[#16120f]/95 p-4 backdrop-blur-xl">
+            <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+              Possible surprises
+            </p>
+            <PrizeRail side="all" className="!static w-full" />
+            <button
+              type="button"
+              className="mt-3 w-full text-center text-xs text-amber-100/60"
+              onClick={() => setSeeAllOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {checkout ? (
+        <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-2xl border border-amber-200/20 bg-[#14110e] p-4 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-serif text-xl text-amber-50">Complete payment</p>
+              <button
+                type="button"
+                className="text-xs text-amber-100/60"
+                onClick={() => setCheckout(null)}
+              >
+                Cancel
+              </button>
+            </div>
+            <CustomStripeCheckout
+              clientSecret={checkout.clientSecret}
+              publishableKey={checkout.publishableKey}
+              dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
+            />
+          </div>
+        </div>
+      ) : null}
+
       <style>{`
-        @keyframes gt-sparkle {
-          from { transform: translateY(0); opacity: 0.2; }
-          to { transform: translateY(110vh); opacity: 0; }
-        }
         @keyframes gt-burst {
           from { opacity: 0.9; }
           to { opacity: 0; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [style*="gt-sparkle"], [style*="gt-burst"] { animation: none !important; }
         }
       `}</style>
     </>

@@ -627,10 +627,15 @@ Deno.serve(async (req) => {
       const guestHash = guestToken.length >= 32 ? await sha256Hex(guestToken) : null;
       if (!user?.id && !guestHash) return jsonResponse({ error: "identity_required" }, 400);
 
+      const openSlotRaw = Number(body.open_slot);
+      const openSlot = Number.isFinite(openSlotRaw)
+        ? Math.max(0, Math.floor(openSlotRaw))
+        : 0;
       const idem = giftTreeClaimIdempotency({
         seasonYear: GIFT_TREE_SEASON_YEAR,
         userId: user?.id,
         guestHash,
+        openSlot,
       });
 
       const { data: existing } = await service
@@ -653,6 +658,7 @@ Deno.serve(async (req) => {
           reward: publicGiftTreeReward(resolved),
           credits_granted: 0,
           requires_auth_for_credits: resolved.type === "credits" && !user?.id,
+          open_slot: openSlot,
         });
       }
 
@@ -687,6 +693,7 @@ Deno.serve(async (req) => {
             reward: publicGiftTreeReward(reward),
             credits_granted: 0,
             requires_auth_for_credits: reward.type === "credits" && !user?.id,
+            open_slot: openSlot,
           });
         }
         throw claimErr;
@@ -734,6 +741,7 @@ Deno.serve(async (req) => {
         credits_granted: creditsGranted,
         requires_auth_for_credits: picked.type === "credits" && !user?.id,
         present_id: asString(body.present_id) || null,
+        open_slot: openSlot,
       });
     }
 

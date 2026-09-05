@@ -60,9 +60,27 @@ function giftTreeCreditsEnabled(): boolean {
   return raw === "true" || raw === "1" || raw === "on";
 }
 
-function claimIdem(userId: string | null, guestHash: string | null): string {
-  if (userId) return `gift_tree:${GIFT_TREE_SEASON_YEAR}:user:${userId}`;
-  return `gift_tree:${GIFT_TREE_SEASON_YEAR}:guest:${guestHash}`;
+/**
+ * Free open (slot 0): gift_tree:YEAR:user:ID (or guest:HASH)
+ * Paid/extra opens (slot > 0): gift_tree:YEAR:user:ID:open:N
+ */
+function claimIdem(
+  userId: string | null,
+  guestHash: string | null,
+  openSlot = 0,
+): string {
+  const base = userId
+    ? `gift_tree:${GIFT_TREE_SEASON_YEAR}:user:${userId}`
+    : `gift_tree:${GIFT_TREE_SEASON_YEAR}:guest:${guestHash}`;
+  const slot = Number.isFinite(openSlot) ? Math.max(0, Math.floor(openSlot)) : 0;
+  if (slot > 0) return `${base}:open:${slot}`;
+  return base;
+}
+
+function parseOpenSlot(raw: unknown): number {
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.floor(n));
 }
 
 async function supabaseRest<T>(
@@ -218,7 +236,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === "openGiftTree") {
-      const idem = claimIdem(user?.id || null, guestHash);
+      const openSlot = parseOpenSlot(body.open_slot);
+      const idem = claimIdem(user?.id || null, guestHash, openSlot);
       const existing = await findEntitlementByRef(idem);
       if (existing) {
         const reward = rewardFromEntitlement(existing);
@@ -230,6 +249,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           reward: publicReward(reward),
           credits_granted: 0,
           requires_auth_for_credits: reward.type === "credits" && !user?.id,
+          open_slot: openSlot,
         });
       }
 
@@ -257,6 +277,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             reward: publicReward(reward),
             credits_granted: 0,
             requires_auth_for_credits: reward.type === "credits" && !user?.id,
+            open_slot: openSlot,
           });
         }
         throw new Error(insert.error);
@@ -281,6 +302,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         credits_granted: creditsGranted,
         requires_auth_for_credits: picked.type === "credits" && !user?.id,
         present_id: String(body.present_id || "") || null,
+        open_slot: openSlot,
       });
     }
 

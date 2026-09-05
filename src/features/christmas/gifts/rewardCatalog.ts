@@ -167,21 +167,23 @@ export const GIFT_TREE_REWARD_CATALOG: GiftTreeRewardDef[] = [
   },
 ];
 
-/** Future paid extras — not purchasable until server products are priced. */
+/** Paid more chances packages — checkout resolves price server-side. */
 export const GIFT_TREE_PAID_OFFERS = [
   {
     packageKey: "open_another",
-    label: "Open Another Gift",
+    label: "Get 1 More Chance",
     description: "Unlock one more present under the tree.",
-    purchasable: false,
-    priceCents: 0,
+    purchasable: true,
+    priceCents: 199,
+    opensGranted: 1,
   },
   {
     packageKey: "open_five",
-    label: "Open 5 Gifts",
+    label: "Get 5 More Chances",
     description: "A bundle of five Christmas gift openings.",
-    purchasable: false,
-    priceCents: 0,
+    purchasable: true,
+    priceCents: 699,
+    opensGranted: 5,
   },
 ] as const;
 

@@ -150,9 +150,17 @@ export function giftTreeClaimIdempotency(input: {
   seasonYear: number;
   userId?: string | null;
   guestHash?: string | null;
+  openSlot?: number;
 }): string {
-  if (input.userId) return `gift_tree:${input.seasonYear}:user:${input.userId}`;
-  return `gift_tree:${input.seasonYear}:guest:${input.guestHash}`;
+  const base = input.userId
+    ? `gift_tree:${input.seasonYear}:user:${input.userId}`
+    : `gift_tree:${input.seasonYear}:guest:${input.guestHash}`;
+  const slot =
+    typeof input.openSlot === "number" && Number.isFinite(input.openSlot)
+      ? Math.max(0, Math.floor(input.openSlot))
+      : 0;
+  if (slot > 0) return `${base}:open:${slot}`;
+  return base;
 }
 
 export function publicGiftTreeReward(reward: GiftTreeReward) {

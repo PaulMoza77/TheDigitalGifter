@@ -33,7 +33,7 @@ async function authBearer(): Promise<string | null> {
   return data.session?.access_token || null;
 }
 
-async function postGiftTree<T extends { error?: string }>(
+async function postGiftTree<T>(
   url: string,
   body: Record<string, unknown>,
   bearer: string | null,
@@ -54,7 +54,7 @@ async function postGiftTree<T extends { error?: string }>(
     headers,
     body: JSON.stringify(body),
   });
-  const data = (await res.json()) as T;
+  const data = (await res.json()) as T & { error?: string };
   if (!res.ok) {
     throw new Error(data.error || `gift_tree_${res.status}`);
   }
@@ -62,9 +62,7 @@ async function postGiftTree<T extends { error?: string }>(
 }
 
 /** Prefer same-origin Mozas API; fall back to Supabase Edge tree funnel. */
-async function giftTreeRequest<T extends { error?: string }>(
-  body: Record<string, unknown>,
-): Promise<T> {
+async function giftTreeRequest<T>(body: Record<string, unknown>): Promise<T> {
   const bearer = await authBearer();
   try {
     return await postGiftTree<T>(ORIGIN_API_URL, body, bearer, false);
@@ -75,11 +73,18 @@ async function giftTreeRequest<T extends { error?: string }>(
 
 export async function openGiftTreeOnServer(input: {
   presentId: string;
+  /** 0 = free first open; >0 = paid/extra open slot for unique source_ref */
+  openSlot?: number;
 }): Promise<GiftTreeOpenResult> {
   const guestToken = getOrCreateGiftTreeGuestToken();
+  const openSlot =
+    typeof input.openSlot === "number" && Number.isFinite(input.openSlot)
+      ? Math.max(0, Math.floor(input.openSlot))
+      : 0;
   return giftTreeRequest<GiftTreeOpenResult>({
     action: "openGiftTree",
     present_id: input.presentId,
+    open_slot: openSlot,
     guest_token: guestToken,
     product_key: GIFT_TREE_PRODUCT_KEY,
   });
@@ -94,7 +99,12 @@ export async function claimGiftTreeOnServer(input: {
   already?: boolean;
 }> {
   const guestToken = getOrCreateGiftTreeGuestToken();
-  return giftTreeRequest({
+  return giftTreeRequest<{
+    ok: boolean;
+    credits_granted: number;
+    reward_id: string;
+    already?: boolean;
+  }>({
     action: "claimGiftTree",
     claim_id: input.claimId || undefined,
     guest_token: guestToken,
