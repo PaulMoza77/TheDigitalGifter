@@ -145,7 +145,7 @@ describe("christmas gift tree media architecture", () => {
     expect(code).not.toMatch(/fetch\(\s*[`'"][^`'"]*scene-(mobile|desktop)\.mp4/);
     expect(code).not.toMatch(/rel\s*=\s*[`'"]preload[`'"][\s\S]{0,80}as\s*=\s*[`'"]video[`'"]/);
     expect(code).toMatch(/<video[\s\S]*preload=["']auto["']/);
-    expect(code).toMatch(/posterWebp|posterJpg|\.poster\.(webp|jpg)/);
+    expect(code).toMatch(/PosterWebp|PosterJpg|posterWebp|posterJpg|\.poster\.(webp|jpg)/);
   });
 
   it("defers gift-open warm until after hero ready", () => {
