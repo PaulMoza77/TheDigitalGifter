@@ -58,8 +58,8 @@ Full product doc: `docs/TDG_CHRISTMAS_LIFECYCLE.md`
 | `TDG-CHRISTMAS-GAP-ACCOUNT-002` | `/account/christmas` | P1 | **DONE** |
 | `TDG-CHRISTMAS-GAP-LOCALIZATION-002` | EN/RO i18n | P1 | **DONE** |
 | `TDG-CHRISTMAS-GAP-LIFECYCLE-003` | Lifecycle emails + locale persist | P1 | **DONE** (infra; sends flag-gated) |
-| `TDG-CHRISTMAS-GAP-ADMIN-KPIS-005` | Admin KPIs / lifecycle observability UI | P1 | **NEXT** |
-| `TDG-CHRISTMAS-GAP-KIDS-PRIVACY-006` | Kids product | P0 | queued |
+| `TDG-CHRISTMAS-GAP-KIDS-PRIVACY-006` | Kids product privacy/access hardening | P0 | **NEXT** |
+| `TDG-CHRISTMAS-GAP-ADMIN-KPIS-005` | Admin KPIs / lifecycle observability UI deepen | P1 | queued (order detail ledger shipped in #98) |
 | `TDG-CHRISTMAS-GAP-CHECKOUT-READY-007` | Price go-live | P0 | founder-gated |
 | `TDG-CHRISTMAS-GAP-CARDS-HARDEN-011` | Cards completion deepen | P1 | queued |
 | `TDG-CHRISTMAS-GAP-SANTA-PROD-012` | Santa production hardening | P1 | queued |
