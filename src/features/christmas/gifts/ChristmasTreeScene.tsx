@@ -60,8 +60,8 @@ export function ChristmasTreeScene({
   const [isMobile, setIsMobile] = useState(preferMobile);
   const [ready, setReady] = useState(false);
   const mediaAspect = isMobile ? SCENE_MEDIA_ASPECT.mobile : SCENE_MEDIA_ASPECT.desktop;
-  // object-position: 50% 0% (center, top)
-  const box = useCoverMediaBox(containerRef, mediaAspect, 0.5, 0);
+  // Gift-safe Y: wide/short viewports crop vertically — keep presents under the tree in view.
+  const box = useCoverMediaBox(containerRef, mediaAspect, 0.5, "gift-safe");
 
   const src = isMobile ? MOBILE_SRC : DESKTOP_SRC;
   const poster = isMobile ? MOBILE_POSTER : DESKTOP_POSTER;
@@ -136,7 +136,7 @@ export function ChristmasTreeScene({
     width: "100%",
     height: "100%",
     objectFit: "cover",
-    objectPosition: "50% 0%",
+    objectPosition: `${box.objectPositionX * 100}% ${box.objectPositionY * 100}%`,
   };
 
   return (
@@ -209,8 +209,8 @@ export function ChristmasTreeScene({
               linear-gradient(180deg,
                 rgba(8,6,5,0.05) 0%,
                 transparent 14%,
-                transparent 78%,
-                rgba(8,6,5,0.22) 100%)
+                transparent 88%,
+                rgba(8,6,5,0.1) 100%)
             `,
           }}
         />

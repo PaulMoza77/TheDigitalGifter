@@ -114,10 +114,17 @@ export function ChristmasPresent({
           transition: opacity 160ms ease, transform 200ms ease;
           transform: scale(0.94);
         }
+        /* Soft idle cue so photo gifts stay discoverable without covering them. */
+        .gt-hotspot-interactive .gt-hotspot-glow {
+          opacity: 0.32;
+          transform: scale(0.97);
+          animation: gt-hotspot-idle 2.8s ease-in-out infinite;
+        }
         @media (hover: hover) and (pointer: fine) {
           .gt-hotspot-interactive:hover:not(:disabled) .gt-hotspot-glow {
             opacity: 1;
             transform: scale(1);
+            animation: none;
           }
           .gt-hotspot-interactive:hover:not(:disabled) {
             transform: translateY(-2px) scale(1.04);
@@ -145,12 +152,17 @@ export function ChristmasPresent({
           100% { opacity: 0.9; filter: brightness(1.1); }
         }
         @keyframes gt-hotspot-nudge {
-          0%, 100% { opacity: 0; transform: scale(0.94); }
-          45%, 55% { opacity: 0.9; transform: scale(1.02); }
+          0%, 100% { opacity: 0.32; transform: scale(0.97); }
+          45%, 55% { opacity: 0.95; transform: scale(1.02); }
+        }
+        @keyframes gt-hotspot-idle {
+          0%, 100% { opacity: 0.26; transform: scale(0.96); }
+          50% { opacity: 0.4; transform: scale(0.99); }
         }
         @media (prefers-reduced-motion: reduce) {
+          .gt-hotspot-interactive .gt-hotspot-glow,
           .gt-hotspot-attention .gt-hotspot-glow,
-          .gt-hotspot-opening .gt-hotspot-glow { animation: none !important; opacity: 0.75; }
+          .gt-hotspot-opening .gt-hotspot-glow { animation: none !important; opacity: 0.4; }
         }
       `}</style>
     </button>
