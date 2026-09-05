@@ -104,6 +104,7 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
             className="h-full w-full object-cover object-[center_52%]"
             decoding="async"
             fetchPriority="high"
+            style={{ filter: "brightness(1.16) saturate(1.14) contrast(1.03)" }}
           />
         </picture>
 
@@ -115,11 +116,12 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
             className="h-full w-full object-cover object-[center_40%]"
             decoding="async"
             fetchPriority="high"
+            style={{ filter: "brightness(1.18) saturate(1.15) contrast(1.03)" }}
           />
         </picture>
       </div>
 
-      {/* z1 — edge vignette only; bright warm center */}
+      {/* z1 — soft edge vignette only; keep center vivid */}
       <div
         aria-hidden
         className="absolute inset-0"
@@ -127,62 +129,60 @@ export function ChristmasTreeScene({ className, reduceMotion }: Props) {
           zIndex: 1,
           background: `
             radial-gradient(ellipse at 50% 48%,
-              transparent 20%,
-              rgba(5,5,5,0.05) 55%,
-              rgba(5,5,5,0.38) 100%),
+              transparent 34%,
+              rgba(5,5,5,0.02) 62%,
+              rgba(5,5,5,0.22) 100%),
             linear-gradient(180deg,
-              rgba(8,6,5,0.18) 0%,
-              transparent 14%,
-              transparent 78%,
-              rgba(8,6,5,0.42) 100%)
+              rgba(8,6,5,0.08) 0%,
+              transparent 10%,
+              transparent 82%,
+              rgba(8,6,5,0.26) 100%)
           `,
         }}
       />
 
-      {/* Warm center clarity lift (not a dark card) */}
+      {/* Warm center lift — no blend mode (Safari-safe) */}
       <div
         aria-hidden
         className="absolute inset-0"
         style={{
           zIndex: 1,
           background:
-            "radial-gradient(ellipse at 50% 42%, rgba(255,210,140,0.10) 0%, transparent 48%)",
-          mixBlendMode: "soft-light",
+            "radial-gradient(ellipse at 50% 42%, rgba(255,215,150,0.11) 0%, transparent 50%)",
         }}
       />
 
-      {/* z2 — extremely restrained central frame */}
+      {/* z2 — extremely restrained central frame (transparent, room continues) */}
       <div
         aria-hidden
-        className="absolute left-1/2 top-[8%] hidden h-[72%] w-[min(560px,58vw)] -translate-x-1/2 rounded-[22px] md:block"
+        className="pointer-events-none absolute left-1/2 top-[7%] hidden h-[74%] w-[min(620px,64vw)] -translate-x-1/2 rounded-[24px] md:block"
         style={{
           zIndex: 2,
-          border: "1px solid rgba(220,180,95,0.30)",
+          border: "1px solid rgba(220,180,95,0.22)",
           background: "transparent",
-          boxShadow: "inset 0 0 40px rgba(255,210,140,0.04)",
-          pointerEvents: "none",
+          boxShadow: "none",
         }}
       />
 
       {/* z3 — ambient animation layers */}
       {!reduceMotion ? (
         <>
-          {/* Fireplace flicker glow */}
+          {/* Fireplace flicker glow — stronger so fire reads alive */}
           <div
             aria-hidden
             className="gt-fire-glow absolute"
             style={{
               zIndex: 3,
-              left: "8%",
-              top: "52%",
-              width: "26%",
-              height: "36%",
+              left: "6%",
+              top: "50%",
+              width: "30%",
+              height: "40%",
               borderRadius: "50%",
               background:
-                "radial-gradient(ellipse at 40% 60%, rgba(255,120,40,0.38) 0%, rgba(255,160,60,0.18) 35%, transparent 70%)",
-              filter: "blur(18px)",
+                "radial-gradient(ellipse at 40% 60%, rgba(255,130,40,0.5) 0%, rgba(255,170,60,0.28) 32%, transparent 68%)",
+              filter: "blur(16px)",
               mixBlendMode: "screen",
-              animation: "gt-fire-flicker 2.4s ease-in-out infinite",
+              animation: "gt-fire-flicker 2.2s ease-in-out infinite",
               willChange: "opacity, transform",
             }}
           />

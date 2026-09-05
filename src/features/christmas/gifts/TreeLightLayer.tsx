@@ -15,34 +15,34 @@ type Glint = {
   duration: string;
 };
 
-/** Strategically placed warm lights across the photoreal tree canopy. */
+/** Warm lights across the photoreal tree canopy — sized to read as sparkle, not CSS dots. */
 const TREE_LIGHTS: Light[] = [
-  { left: "48%", top: "14%", size: 5, delay: "0.2s", duration: "3.4s", opacity: 0.85, blur: true },
-  { left: "52%", top: "18%", size: 4, delay: "1.1s", duration: "4.2s", opacity: 0.7 },
-  { left: "44%", top: "20%", size: 6, delay: "0.6s", duration: "2.8s", opacity: 0.9, blur: true },
-  { left: "56%", top: "22%", size: 3, delay: "2.0s", duration: "5.1s", opacity: 0.65 },
-  { left: "40%", top: "26%", size: 7, delay: "0.4s", duration: "3.8s", opacity: 0.8, blur: true },
-  { left: "50%", top: "28%", size: 4, delay: "1.7s", duration: "2.5s", opacity: 0.75 },
-  { left: "60%", top: "30%", size: 5, delay: "0.9s", duration: "4.6s", opacity: 0.85 },
-  { left: "37%", top: "34%", size: 4, delay: "2.4s", duration: "3.1s", opacity: 0.7 },
-  { left: "46%", top: "35%", size: 8, delay: "0.15s", duration: "3.6s", opacity: 0.95, blur: true },
-  { left: "54%", top: "36%", size: 3, delay: "1.4s", duration: "5.4s", opacity: 0.6 },
-  { left: "62%", top: "38%", size: 6, delay: "0.75s", duration: "2.9s", opacity: 0.8 },
-  { left: "42%", top: "42%", size: 5, delay: "2.1s", duration: "4.0s", opacity: 0.75, blur: true },
-  { left: "50%", top: "44%", size: 4, delay: "0.35s", duration: "3.3s", opacity: 0.85 },
-  { left: "58%", top: "45%", size: 7, delay: "1.8s", duration: "4.8s", opacity: 0.9, blur: true },
-  { left: "35%", top: "48%", size: 4, delay: "1.0s", duration: "2.6s", opacity: 0.65 },
-  { left: "47%", top: "50%", size: 6, delay: "2.6s", duration: "3.9s", opacity: 0.8 },
-  { left: "55%", top: "52%", size: 3, delay: "0.55s", duration: "5.2s", opacity: 0.7 },
-  { left: "63%", top: "50%", size: 5, delay: "1.55s", duration: "3.2s", opacity: 0.75 },
-  { left: "39%", top: "56%", size: 5, delay: "0.85s", duration: "4.4s", opacity: 0.8, blur: true },
-  { left: "49%", top: "58%", size: 8, delay: "2.2s", duration: "2.7s", opacity: 0.9, blur: true },
-  { left: "57%", top: "57%", size: 4, delay: "1.25s", duration: "3.7s", opacity: 0.7 },
-  { left: "44%", top: "62%", size: 6, delay: "0.05s", duration: "4.1s", opacity: 0.85 },
-  { left: "52%", top: "64%", size: 5, delay: "1.9s", duration: "3.0s", opacity: 0.75 },
-  { left: "41%", top: "68%", size: 4, delay: "0.7s", duration: "5.0s", opacity: 0.65 },
-  { left: "48%", top: "70%", size: 7, delay: "2.35s", duration: "3.5s", opacity: 0.85, blur: true },
-  { left: "56%", top: "69%", size: 3, delay: "1.35s", duration: "2.4s", opacity: 0.6 },
+  { left: "48%", top: "14%", size: 9, delay: "0.2s", duration: "3.4s", opacity: 0.9, blur: true },
+  { left: "52%", top: "18%", size: 7, delay: "1.1s", duration: "4.2s", opacity: 0.75 },
+  { left: "44%", top: "20%", size: 11, delay: "0.6s", duration: "2.8s", opacity: 0.95, blur: true },
+  { left: "56%", top: "22%", size: 6, delay: "2.0s", duration: "5.1s", opacity: 0.7 },
+  { left: "40%", top: "26%", size: 12, delay: "0.4s", duration: "3.8s", opacity: 0.85, blur: true },
+  { left: "50%", top: "28%", size: 8, delay: "1.7s", duration: "2.5s", opacity: 0.8 },
+  { left: "60%", top: "30%", size: 9, delay: "0.9s", duration: "4.6s", opacity: 0.9 },
+  { left: "37%", top: "34%", size: 7, delay: "2.4s", duration: "3.1s", opacity: 0.75 },
+  { left: "46%", top: "35%", size: 13, delay: "0.15s", duration: "3.6s", opacity: 1, blur: true },
+  { left: "54%", top: "36%", size: 6, delay: "1.4s", duration: "5.4s", opacity: 0.65 },
+  { left: "62%", top: "38%", size: 10, delay: "0.75s", duration: "2.9s", opacity: 0.85 },
+  { left: "42%", top: "42%", size: 9, delay: "2.1s", duration: "4.0s", opacity: 0.8, blur: true },
+  { left: "50%", top: "44%", size: 8, delay: "0.35s", duration: "3.3s", opacity: 0.9 },
+  { left: "58%", top: "45%", size: 12, delay: "1.8s", duration: "4.8s", opacity: 0.95, blur: true },
+  { left: "35%", top: "48%", size: 7, delay: "1.0s", duration: "2.6s", opacity: 0.7 },
+  { left: "47%", top: "50%", size: 10, delay: "2.6s", duration: "3.9s", opacity: 0.85 },
+  { left: "55%", top: "52%", size: 6, delay: "0.55s", duration: "5.2s", opacity: 0.75 },
+  { left: "63%", top: "50%", size: 9, delay: "1.55s", duration: "3.2s", opacity: 0.8 },
+  { left: "39%", top: "56%", size: 9, delay: "0.85s", duration: "4.4s", opacity: 0.85, blur: true },
+  { left: "49%", top: "58%", size: 13, delay: "2.2s", duration: "2.7s", opacity: 0.95, blur: true },
+  { left: "57%", top: "57%", size: 7, delay: "1.25s", duration: "3.7s", opacity: 0.75 },
+  { left: "44%", top: "62%", size: 10, delay: "0.05s", duration: "4.1s", opacity: 0.9 },
+  { left: "52%", top: "64%", size: 8, delay: "1.9s", duration: "3.0s", opacity: 0.8 },
+  { left: "41%", top: "68%", size: 7, delay: "0.7s", duration: "5.0s", opacity: 0.7 },
+  { left: "48%", top: "70%", size: 11, delay: "2.35s", duration: "3.5s", opacity: 0.9, blur: true },
+  { left: "56%", top: "69%", size: 6, delay: "1.35s", duration: "2.4s", opacity: 0.65 },
 ];
 
 const STAR_GLINTS: Glint[] = [
@@ -79,17 +79,18 @@ export function TreeLightLayer({ reduceMotion }: Props) {
           style={{
             left: light.left,
             top: light.top,
-            width: light.size,
-            height: light.size,
-            marginLeft: -light.size / 2,
-            marginTop: -light.size / 2,
+            width: light.size + 6,
+            height: light.size + 6,
+            marginLeft: -(light.size + 6) / 2,
+            marginTop: -(light.size + 6) / 2,
             opacity: light.opacity,
             background: `radial-gradient(circle,
-              rgba(255,245,190,1) 0%,
-              rgba(255,205,90,0.9) 25%,
-              rgba(255,170,40,0.35) 55%,
-              transparent 75%)`,
-            filter: light.blur ? "blur(0.6px)" : undefined,
+              rgba(255,250,210,1) 0%,
+              rgba(255,220,110,0.95) 18%,
+              rgba(255,180,50,0.55) 40%,
+              rgba(255,150,30,0.18) 62%,
+              transparent 78%)`,
+            filter: light.blur ? "blur(1.1px)" : "blur(0.45px)",
             animation: `gt-tree-twinkle ${light.duration} ease-in-out ${light.delay} infinite`,
             willChange: "opacity, transform",
           }}
@@ -103,10 +104,11 @@ export function TreeLightLayer({ reduceMotion }: Props) {
           style={{
             left: g.left,
             top: g.top,
-            width: 10,
-            height: 10,
-            marginLeft: -5,
-            marginTop: -5,
+            width: 14,
+            height: 14,
+            marginLeft: -7,
+            marginTop: -7,
+            mixBlendMode: "screen",
             animation: `gt-star-glint ${g.duration} ease-in-out ${g.delay} infinite`,
             willChange: "opacity, transform",
           }}
@@ -118,9 +120,9 @@ export function TreeLightLayer({ reduceMotion }: Props) {
           transform: scale(0.9);
         }
         @keyframes gt-tree-twinkle {
-          0%, 100% { opacity: 0.45; transform: scale(0.8); }
-          45% { opacity: 1; transform: scale(1.2); }
-          70% { opacity: 0.65; transform: scale(0.95); }
+          0%, 100% { opacity: 0.35; transform: scale(0.7); }
+          40% { opacity: 1; transform: scale(1.45); }
+          65% { opacity: 0.55; transform: scale(0.9); }
         }
         .gt-star-glint {
           opacity: 0;
@@ -131,13 +133,13 @@ export function TreeLightLayer({ reduceMotion }: Props) {
         }
         @keyframes gt-star-glint {
           0%, 100% { opacity: 0; transform: scale(0); }
-          40% { opacity: 0.85; transform: scale(1); }
-          55% { opacity: 0.4; transform: scale(0.7); }
+          40% { opacity: 0.9; transform: scale(1); }
+          55% { opacity: 0.45; transform: scale(0.7); }
           70% { opacity: 0; transform: scale(0); }
         }
         @media (prefers-reduced-motion: reduce) {
           .gt-tree-light,
-          .gt-star-glint { animation: none !important; opacity: 0.55 !important; }
+          .gt-star-glint { animation: none !important; }
           .gt-star-glint { opacity: 0 !important; }
         }
       `}</style>

@@ -84,13 +84,15 @@ export function PrizeRail({
       className={className}
       aria-label="Possible Christmas surprises"
       style={{
-        background: "rgba(15, 12, 10, 0.58)",
-        border: "1px solid rgba(235,190,90,0.25)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        background: compact
+          ? "rgba(15, 12, 10, 0.40)"
+          : "rgba(15, 12, 10, 0.42)",
+        border: "1px solid rgba(235,190,90,0.22)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
         borderRadius: 16,
-        padding: compact ? "8px" : "10px",
-        boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
+        padding: compact ? "7px" : "9px",
+        boxShadow: "0 4px 18px rgba(0,0,0,0.18)",
       }}
     >
       <p

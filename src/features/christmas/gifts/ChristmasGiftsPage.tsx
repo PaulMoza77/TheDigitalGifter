@@ -406,12 +406,12 @@ export default function ChristmasGiftsPage() {
             <PrizeRail
               side="left"
               limit={4}
-              className="gt-rail-left pointer-events-auto absolute top-[16%] z-[5] hidden w-[190px] lg:block"
+              className="gt-rail-left pointer-events-auto absolute top-[16%] z-[5] hidden w-[180px] lg:block"
             />
             <PrizeRail
               side="right"
               limit={4}
-              className="gt-rail-right pointer-events-auto absolute top-[16%] z-[5] hidden w-[190px] lg:block"
+              className="gt-rail-right pointer-events-auto absolute top-[16%] z-[5] hidden w-[180px] lg:block"
             />
           </>
         ) : (
@@ -421,14 +421,14 @@ export default function ChristmasGiftsPage() {
               limit={3}
               compact
               onSeeAll={() => setSeeAllOpen(true)}
-              className="pointer-events-auto absolute left-2 top-[14%] z-[5] w-[min(115px,28vw)] sm:w-[115px]"
+              className="pointer-events-auto absolute left-2 top-[14%] z-[5] w-[min(105px,26vw)] sm:w-[108px]"
             />
             <PrizeRail
               side="right"
               limit={3}
               compact
               onSeeAll={() => setSeeAllOpen(true)}
-              className="pointer-events-auto absolute right-2 top-[14%] z-[5] w-[min(115px,28vw)] sm:w-[115px]"
+              className="pointer-events-auto absolute right-2 top-[14%] z-[5] w-[min(105px,26vw)] sm:w-[108px]"
             />
           </>
         )}
@@ -442,7 +442,7 @@ export default function ChristmasGiftsPage() {
 
         {/* z4 — interactive presents */}
         <section
-          className="absolute inset-x-0 bottom-[7.5rem] z-[4] mx-auto h-[28%] max-w-[min(820px,92vw)] sm:bottom-[8.25rem] sm:h-[30%]"
+          className="absolute inset-x-0 bottom-[8.75rem] z-[4] mx-auto h-[32%] max-w-[min(780px,88vw)] sm:bottom-[9.25rem] sm:h-[34%]"
           aria-label="Christmas presents"
         >
           {presents.map((p) => (
