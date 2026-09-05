@@ -1089,6 +1089,7 @@ Deno.serve(async (req) => {
     if (action === "createStripeCheckout") {
       const publicToken = asString(body.publicToken);
       const order = await requireOrder(service, asString(body.orderId), publicToken);
+      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
 
       // Do not accept new V2 payments when fulfillment capacity is known unavailable.
       if (isV2Funnel(order.funnel_variant)) {
@@ -1114,7 +1115,6 @@ Deno.serve(async (req) => {
           );
         }
       }
-      if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
       if (String(order.status) !== "awaiting_payment") {
         return apiError("INVALID_REQUEST", "This order is not ready for payment.");
       }
