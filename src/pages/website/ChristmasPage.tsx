@@ -22,6 +22,7 @@ export default function ChristmasPage() {
       "christmas_couple",
       "christmas_pet",
       "christmas_santa_video",
+      "christmas_gift_tree",
       "christmas_tree",
       "christmas_advent",
       "christmas_wishlist",
@@ -86,7 +87,9 @@ export default function ChristmasPage() {
                           ? "Preview / not yet available to purchase"
                           : product.productKey === "christmas_advent"
                             ? "Starts December 1 · claims gated until season"
-                            : product.productKey === "christmas_tree"
+                            : product.productKey === "christmas_gift_tree"
+                              ? "Free first gift · tap a present under the tree"
+                              : product.productKey === "christmas_tree"
                               ? "Free experience · shareable after you enable it"
                               : product.productKey === "christmas_wishlist"
                                 ? "Create Your Christmas Wishlist"

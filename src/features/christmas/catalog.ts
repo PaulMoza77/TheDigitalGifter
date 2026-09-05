@@ -280,6 +280,50 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     packages: [],
   },
   {
+    productKey: "christmas_gift_tree",
+    slug: "gifts",
+    productType: "tree",
+    name: "Get Your Christmas Gift",
+    description: "Pick a present under the tree and reveal a Christmas reward.",
+    active: true,
+    publicDiscoverable: true,
+    sortOrder: 75,
+    routePath: "/christmas/gifts",
+    localeDefault: "en",
+    metadata: { gift_tree_v1: true, live_offer: true },
+    packages: [
+      {
+        packageKey: "open_another",
+        packageName: "Get 1 More Chance",
+        description: "Unlock one more present under the Christmas gift tree.",
+        currency: "usd",
+        priceCents: 199,
+        compareAtCents: 399,
+        active: true,
+        purchasable: true,
+        features: ["1 extra gift opening", "Reward applied to your account"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: { live_offer: true, opens_granted: 1 },
+      },
+      {
+        packageKey: "open_five",
+        packageName: "Get 5 More Chances",
+        description: "Bundle of five extra Christmas gift openings.",
+        currency: "usd",
+        priceCents: 699,
+        compareAtCents: 1495,
+        active: true,
+        purchasable: true,
+        features: ["5 extra gift openings", "Best value"],
+        sortOrder: 20,
+        localeDefault: "en",
+        metadata: { live_offer: true, opens_granted: 5 },
+      },
+    
+    ],
+  },
+  {
     productKey: "christmas_tree",
     slug: "tree",
     productType: "tree",
@@ -420,6 +464,7 @@ export function hubProducts(catalog: ChristmasProductDef[]): ChristmasProductDef
 export function isComingSoon(product: ChristmasProductDef): boolean {
   if (
     product.metadata?.tree_v1 ||
+    product.metadata?.gift_tree_v1 ||
     product.metadata?.advent_v1 ||
     product.metadata?.wishlist_v1 ||
     product.metadata?.gift_finder_v1 ||
@@ -442,6 +487,7 @@ const PORTRAIT_VERTICAL_KEYS = new Set([
 const EXPERIENCE_OPEN_KEYS = new Set([
   ...PORTRAIT_VERTICAL_KEYS,
   "christmas_tree",
+  "christmas_gift_tree",
   "christmas_advent",
   "christmas_wishlist",
   "christmas_gift_finder",

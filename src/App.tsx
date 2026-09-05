@@ -141,6 +141,12 @@ const ChristmasCardsPage = lazy(
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
 );
+const ChristmasGiftsPage = lazy(
+  () => import("@/features/christmas/gifts/ChristmasGiftsPage"),
+);
+const ChristmasPortraitFunnelPage = lazy(
+  () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
+);
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
 const ThanksgivingPage = lazy(() => import("@/pages/website/ThanksgivingPage"));
@@ -253,12 +259,16 @@ function FunnelAttributionCapture() {
 
 function WebsiteLayout() {
   const [showPricing, setShowPricing] = useState(false);
+  const location = useLocation();
+  const hideFooter =
+    location.pathname === "/christmas/gifts" ||
+    location.pathname.startsWith("/christmas/gifts/");
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
       <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
 
-      <main className="flex-1">
+      <main className={`flex-1 ${hideFooter ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
@@ -267,7 +277,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      <WebsiteFooter />
+      {hideFooter ? null : <WebsiteFooter />}
     </div>
   );
 }
@@ -463,6 +473,7 @@ function AppInner() {
             <Route path="/christmas/tree" element={<ChristmasTreePage />} />
             <Route path="/christmas/tree/:shareId" element={<ChristmasTreePage />} />
             <Route path="/christmas/advent" element={<ChristmasAdventPage />} />
+            <Route path="/christmas/gifts" element={<ChristmasGiftsPage />} />
             <Route path="/christmas/wishlist" element={<ChristmasWishlistPage />} />
             <Route path="/wishlist/:shareId" element={<ChristmasWishlistPage />} />
             <Route path="/christmas/gift-finder" element={<ChristmasGiftFinderPage />} />
