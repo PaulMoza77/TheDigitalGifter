@@ -39,8 +39,8 @@ RPC: `claim_christmas_lifecycle_event` (insert-or-return)
 | --- | --- | --- |
 | payment_confirmation | transactional | Stripe fulfill → `paid` |
 | generation_started | transactional | Santa only (photo skipped — near-instant) |
-| generation_ready | transactional | Photo generate completed + tokenized app URL |
-| generation_failed | transactional | Terminal failure path (copy ready; wire on fail updates) |
+| generation_ready | transactional | Photo + Santa completed + tokenized app URL |
+| generation_failed | transactional | Photo/Santa terminal fail (idempotent; no per-retry spam) |
 | abandoned_checkout | marketing | Cron: pending+email+aged; recheck paid |
 | cross_sell | marketing | Cron: paid+completed+24h; only purchasable targets |
 
@@ -55,6 +55,31 @@ Header: `x-cron-secret: $CHRISTMAS_LIFECYCLE_CRON_SECRET`
 
 ## Marketing consent
 
-Uses existing `email_preferences.marketing` + `unsubscribe_marketing`.  
+Uses existing `email_preferences.marketing` + `unsubscribe_marketing` (`/unsubscribe`).  
 Marketing templates suppressed when consent is false or marketing flag off.  
 Transactional is not gated by marketing consent.
+
+## Analytics (first-party)
+
+Ledger metadata + `christmas_funnel_events` (no email PII):
+
+- `christmas_email_queued` / `_sent` / `_failed` / `_suppressed`
+- `abandoned_checkout_eligible` / `_recovered` (recovered = purchase after abandon; tracked when paid race skip + future checkout success)
+- `cross_sell_sent` / `_clicked` / `_purchase` (click/purchase client seams queued for admin KPIs)
+
+## Admin observability
+
+Admin can `select` `christmas_lifecycle_events` (RLS `is_admin`). Full KPI UI → `TDG-CHRISTMAS-GAP-ADMIN-KPIS-005`.
+
+## Analytics (no PII)
+
+Server inserts into `christmas_funnel_events` (idempotent keys):
+
+- `christmas_email_queued` / `christmas_email_sent` / `christmas_email_failed` / `christmas_email_suppressed`
+- `abandoned_checkout_eligible`
+
+Ledger table remains the source of delivery truth for admin observability.
+
+## Checkout locale persistence
+
+`christmas-checkout` persists `locale` on create **and** on session update patch so webhook/email paths never depend on browser localStorage.

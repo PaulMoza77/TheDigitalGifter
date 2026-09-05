@@ -12,12 +12,13 @@ import {
   abandonedResumePath,
   crossSellTargets,
   DEFAULT_ABANDONED_CHECKOUT_DELAY_MS,
-  resultAccessPath,
+  productLandingPath,
   type ChristmasOrderLifecycleView,
 } from "../src/features/christmas/lifecycle/lifecycleCore";
 import {
   claimAndSendLifecycleEmail,
   lifecycleMarketingEnabled,
+  recordChristmasLifecycleAnalytics,
 } from "./_lib/christmas/lifecycle";
 
 function asString(value: unknown): string {
@@ -141,6 +142,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       continue;
     }
     summary.abandoned_eligible += 1;
+    await recordChristmasLifecycleAnalytics(service, {
+      eventName: "abandoned_checkout_eligible",
+      orderId: order.id,
+      productKey: order.productKey,
+      locale: order.locale || "en",
+      template: "abandoned_checkout",
+      status: "eligible",
+    });
     const result = await claimAndSendLifecycleEmail({
       service,
       template: "abandoned_checkout",
@@ -200,11 +209,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         order,
         productName: order.productKey,
         crossSellName: target,
-        crossSellUrl: resultAccessPath({
-          ...order,
-          sourceRoute: `/christmas/${target.replace("christmas_", "").replace("_", "-")}`,
-          publicTokenHint: null,
-        }),
+        crossSellUrl: productLandingPath(target),
         eventSuffix: target,
         siteOrigin: origin,
       });

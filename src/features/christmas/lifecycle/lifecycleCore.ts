@@ -163,6 +163,7 @@ export function lifecycleEmailCopy(
     resumeUrl?: string;
     crossSellName?: string;
     crossSellUrl?: string;
+    unsubscribeUrl?: string;
   },
 ): LifecycleEmailCopy {
   const ro = locale === "ro";
@@ -213,20 +214,22 @@ export function lifecycleEmailCopy(
         ? `Mai vrei să finalizezi ${product}?`
         : `Still want to finish your ${product}?`;
       const link = vars.resumeUrl || "#";
+      const unsub = vars.unsubscribeUrl || "/unsubscribe";
       const body = ro
-        ? `<p>Ai început checkout-ul pentru <strong>${esc(product)}</strong>, dar plata nu s-a finalizat.</p><p><a href="${esc(link)}">Reia acolo unde ai rămas</a></p><p>Dacă ai plătit deja, ignoră acest mesaj.</p><p>— The Digital Gifter</p>`
-        : `<p>You started checkout for <strong>${esc(product)}</strong>, but payment wasn't completed.</p><p><a href="${esc(link)}">Resume where you left off</a></p><p>If you already paid, please ignore this message.</p><p>— The Digital Gifter</p>`;
+        ? `<p>Ai început checkout-ul pentru <strong>${esc(product)}</strong>, dar plata nu s-a finalizat.</p><p><a href="${esc(link)}">Reia acolo unde ai rămas</a></p><p>Dacă ai plătit deja, ignoră acest mesaj.</p><p style="font-size:12px;opacity:.8"><a href="${esc(unsub)}">Dezabonare</a></p><p>— The Digital Gifter</p>`
+        : `<p>You started checkout for <strong>${esc(product)}</strong>, but payment wasn't completed.</p><p><a href="${esc(link)}">Resume where you left off</a></p><p>If you already paid, please ignore this message.</p><p style="font-size:12px;opacity:.8"><a href="${esc(unsub)}">Unsubscribe</a></p><p>— The Digital Gifter</p>`;
       return { subject, htmlBody: body, textBody: body.replace(/<[^>]+>/g, "") };
     }
     case "cross_sell": {
       const name = vars.crossSellName || "Christmas";
       const link = vars.crossSellUrl || "#";
+      const unsub = vars.unsubscribeUrl || "/unsubscribe";
       const subject = ro
         ? `Poate îți place și: ${name}`
         : `You might also like: ${name}`;
       const body = ro
-        ? `<p>Mulțumim pentru comandă! Descoperă și <strong>${esc(name)}</strong>.</p><p><a href="${esc(link)}">Vezi produsul</a></p><p>— The Digital Gifter</p>`
-        : `<p>Thanks for your order! You might also like <strong>${esc(name)}</strong>.</p><p><a href="${esc(link)}">See the product</a></p><p>— The Digital Gifter</p>`;
+        ? `<p>Mulțumim pentru comandă! Descoperă și <strong>${esc(name)}</strong>.</p><p><a href="${esc(link)}">Vezi produsul</a></p><p style="font-size:12px;opacity:.8"><a href="${esc(unsub)}">Dezabonare</a></p><p>— The Digital Gifter</p>`
+        : `<p>Thanks for your order! You might also like <strong>${esc(name)}</strong>.</p><p><a href="${esc(link)}">See the product</a></p><p style="font-size:12px;opacity:.8"><a href="${esc(unsub)}">Unsubscribe</a></p><p>— The Digital Gifter</p>`;
       return { subject, htmlBody: body, textBody: body.replace(/<[^>]+>/g, "") };
     }
     default: {
@@ -254,15 +257,34 @@ export function marketingSendAllowed(input: {
   return { ok: true, reason: "allowed" };
 }
 
+/** Public product landing paths for cross-sell CTAs (no secrets). */
+export function productLandingPath(productKey: string): string {
+  switch (productKey) {
+    case "christmas_santa_video":
+      return "/christmas/santa-video";
+    case "christmas_card":
+      return "/christmas/cards";
+    case "christmas_family":
+      return "/christmas/family";
+    case "christmas_couple":
+      return "/christmas/couples";
+    case "christmas_pet":
+      return "/christmas/pets";
+    case "christmas_photo":
+    default:
+      return "/christmas/photo-generator";
+  }
+}
+
 /** Opaque resume path — never includes Stripe secrets. */
 export function abandonedResumePath(order: ChristmasOrderLifecycleView): string {
-  const route = order.sourceRoute || "/christmas/photo-generator";
+  const route = order.sourceRoute || productLandingPath(order.productKey);
   const base = route.startsWith("/") ? route : `/${route}`;
   return `${base}?resume=1&order=${encodeURIComponent(order.id)}`;
 }
 
 export function resultAccessPath(order: ChristmasOrderLifecycleView): string {
-  const route = order.sourceRoute || "/christmas/photo-generator";
+  const route = order.sourceRoute || productLandingPath(order.productKey);
   const base = route.startsWith("/") ? route : `/${route}`;
   const token = order.publicTokenHint;
   if (token) return `${base}?token=${encodeURIComponent(token)}`;

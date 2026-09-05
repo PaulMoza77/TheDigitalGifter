@@ -2,6 +2,10 @@
  * Deno Edge Christmas lifecycle claim + optional Resend send.
  * Keep template copy aligned with src/features/christmas/lifecycle/lifecycleCore.ts
  * Default dry-run unless CHRISTMAS_LIFECYCLE_SEND_ENABLED=true.
+ *
+ * RPC contract must match claim_christmas_lifecycle_event migration:
+ * p_event_key, p_template_key, p_category, p_locale, p_order_id,
+ * p_product_key, p_email_normalized, p_metadata
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -16,6 +20,10 @@ export type LifecycleTemplate =
 function normalizeLocale(value: string | null | undefined): "en" | "ro" {
   const raw = asString(value).toLowerCase();
   return raw === "ro" || raw.startsWith("ro") ? "ro" : "en";
+}
+
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
 }
 
 function sendEnabled(): boolean {
@@ -68,12 +76,41 @@ function emailCopy(
   };
 }
 
-async function sha256Hex(value: string): Promise<string> {
-  const data = new TextEncoder().encode(value.trim().toLowerCase());
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+async function recordLifecycleAnalytics(
+  service: SupabaseClient,
+  input: {
+    eventName: string;
+    orderId: string;
+    productKey: string;
+    locale: string;
+    template: string;
+    status: string;
+  },
+): Promise<void> {
+  try {
+    const idempotencyKey = `lifecycle:${input.eventName}:${input.orderId}:${input.template}:${input.status}`;
+    await service.from("christmas_funnel_events").upsert(
+      {
+        event_name: input.eventName,
+        funnel_session_id: "00000000-0000-4000-8000-000000000001",
+        idempotency_key: idempotencyKey,
+        product_key: input.productKey,
+        order_id: input.orderId,
+        locale: input.locale,
+        pathname: "/lifecycle/email",
+        is_test: asString(Deno.env.get("VERCEL_ENV")) !== "production",
+        environment: asString(Deno.env.get("VERCEL_ENV")) || "edge",
+        metadata: {
+          template: input.template,
+          status: input.status,
+          source: "christmas_lifecycle",
+        },
+      },
+      { onConflict: "idempotency_key", ignoreDuplicates: true },
+    );
+  } catch {
+    /* analytics best-effort */
+  }
 }
 
 export async function claimAndSendChristmasLifecycle(input: {
@@ -90,7 +127,7 @@ export async function claimAndSendChristmasLifecycle(input: {
 }): Promise<{ status: string; eventKey: string }> {
   const locale = normalizeLocale(input.locale);
   const key = eventKey(input.template, input.orderId);
-  const email = asString(input.email);
+  const email = normalizeEmail(asString(input.email));
   if (!email) return { status: "skipped_no_email", eventKey: key };
 
   const dryRun = !sendEnabled();
@@ -101,8 +138,7 @@ export async function claimAndSendChristmasLifecycle(input: {
     p_order_id: input.orderId,
     p_product_key: input.productKey,
     p_locale: locale,
-    p_recipient_email_hash: await sha256Hex(email),
-    p_dry_run: dryRun,
+    p_email_normalized: email,
     p_metadata: { product_key: input.productKey },
   });
   const claimed = Boolean((claim as { claimed?: boolean } | null)?.claimed);
@@ -113,7 +149,26 @@ export async function claimAndSendChristmasLifecycle(input: {
     };
   }
 
-  if (dryRun) return { status: "dry_run", eventKey: key };
+  await recordLifecycleAnalytics(input.service, {
+    eventName: "christmas_email_queued",
+    orderId: input.orderId,
+    productKey: input.productKey,
+    locale,
+    template: input.template,
+    status: dryRun ? "dry_run" : "sending",
+  });
+
+  if (dryRun) {
+    await input.service
+      .from("christmas_lifecycle_events")
+      .update({
+        status: "dry_run",
+        last_error: "send_flag_off",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("event_key", key);
+    return { status: "dry_run", eventKey: key };
+  }
 
   const amountLabel =
     input.amountCents && input.amountCents > 0
@@ -162,6 +217,14 @@ export async function claimAndSendChristmasLifecycle(input: {
         updated_at: new Date().toISOString(),
       })
       .eq("event_key", key);
+    await recordLifecycleAnalytics(input.service, {
+      eventName: "christmas_email_failed",
+      orderId: input.orderId,
+      productKey: input.productKey,
+      locale,
+      template: input.template,
+      status: "failed",
+    });
     return { status: "failed", eventKey: key };
   }
   const body = await res.json();
@@ -174,5 +237,13 @@ export async function claimAndSendChristmasLifecycle(input: {
       updated_at: new Date().toISOString(),
     })
     .eq("event_key", key);
+  await recordLifecycleAnalytics(input.service, {
+    eventName: "christmas_email_sent",
+    orderId: input.orderId,
+    productKey: input.productKey,
+    locale,
+    template: input.template,
+    status: "sent",
+  });
   return { status: "sent", eventKey: key };
 }

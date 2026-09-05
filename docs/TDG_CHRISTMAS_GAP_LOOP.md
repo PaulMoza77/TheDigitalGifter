@@ -33,8 +33,8 @@ Full product doc: `docs/TDG_CHRISTMAS_LIFECYCLE.md`
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | payment_confirmation | SECONDARY | yes | flag-gated | order.locale | Stripe fulfill paid | event_key unique | no | unit |
 | generation_started | SECONDARY | yes (Santa only) | flag-gated | order.locale | after paid enqueue | event_key | no | unit |
-| generation_ready | SECONDARY | yes | flag-gated | order.locale | photo-generate complete | event_key | no | unit |
-| generation_failed | SECONDARY | copy+ledger ready | flag-gated | order.locale | terminal fail (wire on fail updates) | event_key | no | unit copy |
+| generation_ready | SECONDARY | yes | flag-gated | order.locale | photo + Santa complete | event_key | no | unit |
+| generation_failed | SECONDARY | yes | flag-gated | order.locale | photo/Santa terminal fail (once/event_key) | event_key | no | unit |
 | abandoned_checkout | SECONDARY | yes engine | marketing+send flags | order.locale | cron aged pending | event_key + paid recheck | yes | unit |
 | cross_sell | SECONDARY | yes engine | marketing+send + purchasable | order.locale | cron completed+24h | event_key+target | yes | unit |
 | welcome | — | **blocked_by_lead_capture** | no | — | — | — | — | — |

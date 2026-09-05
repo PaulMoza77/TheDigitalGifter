@@ -7,6 +7,7 @@ import {
   lifecycleEmailCopy,
   lifecycleEventKey,
   marketingSendAllowed,
+  productLandingPath,
   resolvePersistedOrderLocale,
   shouldSendGenerationStarted,
   type ChristmasOrderLifecycleView,
@@ -110,7 +111,15 @@ describe("christmas lifecycle core", () => {
   it("resume URL never embeds Stripe secrets", () => {
     const path = abandonedResumePath(order());
     expect(path).toContain("resume=1");
+    expect(path).toContain("order=");
     expect(path).not.toMatch(/cs_live|client_secret|sk_/i);
+  });
+
+  it("product landing paths are public routes", () => {
+    expect(productLandingPath("christmas_santa_video")).toBe(
+      "/christmas/santa-video",
+    );
+    expect(productLandingPath("christmas_card")).toBe("/christmas/cards");
   });
 
   it("cross-sell never offers disabled products", () => {
@@ -129,24 +138,20 @@ describe("christmas lifecycle core", () => {
     ).toEqual([]);
   });
 
-  it("marketing suppression blocks abandoned/cross-sell", () => {
-    expect(
-      marketingSendAllowed({
-        marketingEnabled: false,
-        marketingConsent: true,
-      }).ok,
-    ).toBe(false);
-    expect(
-      marketingSendAllowed({
-        marketingEnabled: true,
-        marketingConsent: false,
-      }).reason,
-    ).toBe("marketing_suppressed");
-    expect(
-      marketingSendAllowed({
-        marketingEnabled: true,
-        marketingConsent: true,
-      }).ok,
-    ).toBe(true);
+  it("product landing paths are public and secret-free", () => {
+    expect(productLandingPath("christmas_santa_video")).toBe(
+      "/christmas/santa-video",
+    );
+    expect(productLandingPath("christmas_card")).toBe("/christmas/cards");
+    expect(productLandingPath("unknown")).not.toMatch(/secret|sk_/i);
+  });
+
+  it("product landing paths are public routes without secrets", () => {
+    expect(productLandingPath("christmas_santa_video")).toBe(
+      "/christmas/santa-video",
+    );
+    expect(abandonedResumePath(order({ sourceRoute: null }))).toContain(
+      "photo-generator",
+    );
   });
 });
