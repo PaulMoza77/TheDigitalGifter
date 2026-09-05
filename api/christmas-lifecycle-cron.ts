@@ -14,7 +14,7 @@ import {
   DEFAULT_ABANDONED_CHECKOUT_DELAY_MS,
   resultAccessPath,
   type ChristmasOrderLifecycleView,
-} from "../../src/features/christmas/lifecycle/lifecycleCore";
+} from "../src/features/christmas/lifecycle/lifecycleCore";
 import {
   claimAndSendLifecycleEmail,
   lifecycleMarketingEnabled,
