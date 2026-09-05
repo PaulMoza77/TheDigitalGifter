@@ -43,6 +43,9 @@ describe("christmas foundation wiring", () => {
     expect(webhook).toContain("handleChristmasStripeEvent");
     expect(webhook).toContain("handlePetStripeEvent");
     expect(webhook).toContain("isPetCheckoutMetadata");
+    // Duplicate named imports crash Deno boot (production BOOT_ERROR).
+    expect(webhook.match(/handleChristmasStripeEvent/g)?.length).toBe(2); // import + call
+    expect(webhook.match(/from "\.\.\/_shared\/christmas\/stripeFulfill\.ts"/g)?.length).toBe(1);
   });
 
   it("documents ADR and foundation", () => {

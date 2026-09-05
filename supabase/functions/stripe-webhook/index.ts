@@ -6,10 +6,6 @@ import {
 } from "../_shared/christmas/stripeFulfill.ts";
 import { handlePetStripeEvent, isPetCheckoutMetadata } from "../_shared/pet/stripeFulfill.ts";
 import { handlePetUpsellStripeEvent, isPetUpsellMetadata } from "../_shared/pet/stripeUpsellFulfill.ts";
-import {
-  handleChristmasStripeEvent,
-  isChristmasCheckoutMetadata,
-} from "../_shared/christmas/stripeFulfill.ts";
 
 type StripeEvent = {
   id?: string;

@@ -42,6 +42,17 @@ describe("Meta CAPI purchase attribution", () => {
     expect(fulfill).toContain("p_utm_source: attr.utm_source");
   });
 
+  it("stripe-webhook boots: single christmas import and pet Purchase path intact", () => {
+    const webhook = readSrc("supabase/functions/stripe-webhook/index.ts");
+    expect(webhook.match(/from "\.\.\/_shared\/christmas\/stripeFulfill\.ts"/g)?.length).toBe(1);
+    expect(webhook.match(/from "\.\.\/_shared\/pet\/stripeFulfill\.ts"/g)?.length).toBe(1);
+    expect(webhook).toContain("handlePetStripeEvent");
+    expect(webhook).toContain("handleChristmasStripeEvent");
+    // Pet CAPI Purchase lives in shared fulfill loaded by this function.
+    const fulfill = readSrc("supabase/functions/_shared/pet/stripeFulfill.ts");
+    expect(fulfill).toContain("sendMetaCapiPurchase");
+  });
+
   it("landing fbclid is converted to fbc without analytics fbclid storage", () => {
     const cookies = readSrc("src/features/pet/metaCookies.ts");
     const attribution = readSrc("src/features/pet/funnelAttribution.ts");
