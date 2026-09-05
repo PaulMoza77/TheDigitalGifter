@@ -692,7 +692,7 @@ export default function ChristmasGiftsPage() {
         </div>
       ) : null}
 
-      {(shouldShowGiftTreeCheckoutStarting({ purchasing, checkout }) ? (
+      {shouldShowGiftTreeCheckoutStarting({ purchasing, checkout }) ? (
         <div className="fixed inset-0 z-[94] flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-sm rounded-2xl border border-amber-200/20 bg-[#14110e] px-6 py-8 text-center shadow-2xl">
             <p className="font-serif text-xl text-amber-50">Starting checkout…</p>
@@ -701,7 +701,7 @@ export default function ChristmasGiftsPage() {
         </div>
       ) : null}
 
-      {(shouldShowGiftTreePaymentSheet({ checkout }) ? (
+      {shouldShowGiftTreePaymentSheet({ checkout }) ? (
         <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-2xl border border-amber-200/20 bg-[#14110e] p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
@@ -711,12 +711,12 @@ export default function ChristmasGiftsPage() {
               </button>
             </div>
             <CustomStripeCheckout
-              clientSecret={checkout.clientSecret}
-              publishableKey={checkout.publishableKey}
-              dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
+              clientSecret={checkout!.clientSecret}
+              publishableKey={checkout!.publishableKey}
+              dueDisplay={`$${(checkout!.amountCents / 100).toFixed(2)}`}
             />
             <p className="mt-2 text-center text-[11px] text-amber-100/60">
-              {GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === checkout.packageKey)?.label || "Extra gifts"}
+              {GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === checkout!.packageKey)?.label || "Extra gifts"}
             </p>
           </div>
         </div>
