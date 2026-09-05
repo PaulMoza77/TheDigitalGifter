@@ -13,6 +13,7 @@ on:
     paths:
       - "supabase/migrations/20260904210000_christmas_gift_tree.sql"
       - "supabase/migrations/20260905150000_christmas_gift_tree_funnel.sql"
+      - "supabase/migrations/20260905180000_christmas_gift_tree_hardening.sql"
       - "scripts/activate-christmas-gift-tree.sh"
       - ".github/workflows/activate-christmas-gift-tree.yml"
       - "supabase/functions/christmas-checkout/**"

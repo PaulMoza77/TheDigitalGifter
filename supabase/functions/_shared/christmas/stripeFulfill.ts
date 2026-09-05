@@ -69,6 +69,78 @@ export function enqueueChristmasGenerate(
   );
 }
 
+
+/** Opens for Gift Tree packages — authoritative server mapping (ignore client amounts). */
+export function giftTreeOpensForPackage(packageKey: string): number {
+  if (packageKey === "open_five" || packageKey === "open_5") return 5;
+  if (packageKey === "open_another") return 1;
+  return 0;
+}
+
+/**
+ * Idempotent grant for Gift Tree purchases. Safe to call on webhook retries
+ * (RPC uses p_source_ref uniqueness).
+ */
+export async function reconcileChristmasGiftTreeOpens(input: {
+  service: SupabaseClient;
+  eventId: string;
+  obj: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+}): Promise<{ granted: boolean; opens: number; orderId: string | null }> {
+  const productKey = asString(input.metadata.product_key);
+  if (productKey !== "christmas_gift_tree") {
+    return { granted: false, opens: 0, orderId: null };
+  }
+  const packageKey = asString(input.metadata.package_key);
+  const opens = giftTreeOpensForPackage(packageKey);
+  if (opens <= 0) return { granted: false, opens: 0, orderId: null };
+
+  const orderId =
+    asString(input.metadata.christmas_order_id) ||
+    asString(input.metadata.order_id) ||
+    null;
+
+  let userId: string | null = asString(input.metadata.user_id) || null;
+  let guestHash = asString(input.metadata.guest_token_hash) || null;
+  let email = asString(input.metadata.email) || null;
+
+  if (orderId) {
+    const { data: ord } = await input.service
+      .from("christmas_orders")
+      .select("user_id,email,metadata")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (ord) {
+      userId = ord.user_id || userId;
+      email = asString(ord.email) || email;
+      const meta = (ord.metadata || {}) as Record<string, unknown>;
+      guestHash = asString(meta.guest_token_hash) || guestHash;
+    }
+  }
+
+  const sessionId = asString(input.obj.id);
+  const sourceRef = orderId ? `stripe_order:${orderId}` : `stripe_session:${sessionId || input.eventId}`;
+
+  await input.service.rpc("christmas_gift_tree_grant_opens", {
+    p_season_year: 2026,
+    p_opens: opens,
+    p_source: "purchase",
+    p_source_ref: sourceRef,
+    p_user_id: userId,
+    p_guest_token_hash: guestHash,
+    p_email_normalized: email ? email.trim().toLowerCase() : null,
+    p_metadata: {
+      package_key: packageKey,
+      stripe_session_id: sessionId,
+      christmas_order_id: orderId,
+      stripe_event_id: input.eventId,
+      reconcile: true,
+    },
+  });
+
+  return { granted: true, opens, orderId };
+}
+
 export async function handleChristmasStripeEvent(input: {
   service: SupabaseClient;
   eventId: string;
@@ -147,49 +219,25 @@ export async function handleChristmasStripeEvent(input: {
     }
 
     const result = (data || {}) as Record<string, unknown>;
-    await input.service.from("processed_stripe_events").insert({
-      event_id: input.eventId,
-      event_type: input.eventType,
-      stripe_session_id: sessionId,
-      result: { ...result, product_family: "christmas" },
-    });
 
     if (result.ok === true && result.status === "paid") {
       const productKey = asString(input.metadata.product_key);
       const packageKey = asString(input.metadata.package_key);
 
-      // Gift Tree packs buy additional opens — never enqueue photo/video generation.
+      // Gift Tree: grant opens BEFORE marking processed so retries can recover.
+      // Never enqueue photo/video generation for gift-tree packs.
       if (productKey === "christmas_gift_tree") {
-        const opens =
-          packageKey === "open_five" || packageKey === "open_5"
-            ? 5
-            : packageKey === "open_another"
-              ? 1
-              : 0;
-        if (opens > 0) {
-          const { data: ord } = await input.service
-            .from("christmas_orders")
-            .select("user_id,email,metadata")
-            .eq("id", orderId)
-            .maybeSingle();
-          const meta = (ord?.metadata || {}) as Record<string, unknown>;
-          const guestHash = asString(meta.guest_token_hash) || asString(input.metadata.guest_token_hash);
-          const email = asString(ord?.email) || asString(input.metadata.email);
-          await input.service.rpc("christmas_gift_tree_grant_opens", {
-            p_season_year: 2026,
-            p_opens: opens,
-            p_source: "purchase",
-            p_source_ref: `stripe_order:${orderId}`,
-            p_user_id: ord?.user_id || null,
-            p_guest_token_hash: guestHash || null,
-            p_email_normalized: email ? email.trim().toLowerCase() : null,
-            p_metadata: {
-              package_key: packageKey,
-              stripe_session_id: sessionId,
-              christmas_order_id: orderId,
-            },
-          });
-        }
+        await reconcileChristmasGiftTreeOpens({
+          service: input.service,
+          eventId: input.eventId,
+          obj: input.obj,
+          metadata: {
+            ...input.metadata,
+            christmas_order_id: orderId,
+            package_key: packageKey,
+            product_key: productKey,
+          },
+        });
       } else {
         // Consume Gift Tree percent-off entitlement after successful payment (not on checkout open).
         {
@@ -232,6 +280,13 @@ export async function handleChristmasStripeEvent(input: {
         enqueueChristmasGenerate(orderId, mode);
       }
     }
+
+    await input.service.from("processed_stripe_events").insert({
+      event_id: input.eventId,
+      event_type: input.eventType,
+      stripe_session_id: sessionId,
+      result: { ...result, product_family: "christmas" },
+    });
 
     return new Response(JSON.stringify({ ok: true, christmas: result }), {
       headers: { "Content-Type": "application/json" },

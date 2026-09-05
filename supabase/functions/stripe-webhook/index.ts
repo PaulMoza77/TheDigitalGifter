@@ -109,6 +109,28 @@ Deno.serve(async (req) => {
       .eq("event_id", eventId)
       .maybeSingle();
     if (already) {
+      // Reconcile Gift Tree opens: prior runs may have marked processed before grant completed.
+      try {
+        const meta = ((event.data?.object as Record<string, unknown> | undefined)?.metadata ||
+          {}) as Record<string, unknown>;
+        if (String(meta.product_key || "") === "christmas_gift_tree") {
+          const { reconcileChristmasGiftTreeOpens } = await import(
+            "../_shared/christmas/stripeFulfill.ts"
+          );
+          await reconcileChristmasGiftTreeOpens({
+            service,
+            eventId,
+            obj: (event.data?.object || {}) as Record<string, unknown>,
+            metadata: meta,
+          });
+        }
+      } catch (reconcileErr) {
+        console.error(JSON.stringify({
+          action: "stripe_webhook_gift_tree_reconcile",
+          event_id: eventId,
+          error: reconcileErr instanceof Error ? reconcileErr.message : String(reconcileErr),
+        }));
+      }
       return jsonResponse({ ok: true, status: "already_processed", event_id: eventId });
     }
 

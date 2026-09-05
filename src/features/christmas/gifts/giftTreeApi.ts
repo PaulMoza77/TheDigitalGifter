@@ -102,22 +102,34 @@ async function postGiftTree<T>(
   return data;
 }
 
-async function giftTreeRequest<T>(body: Record<string, unknown>): Promise<T> {
+/**
+ * Status may fall back to Edge when Origin is down (read-only).
+ * Entitlement/money actions MUST stay on Origin — Edge historically skipped
+ * paid-open consume and could grant duplicate rewards on Origin 4xx fallback.
+ */
+async function giftTreeRequest<T>(
+  body: Record<string, unknown>,
+  opts: { allowEdgeFallback?: boolean } = {},
+): Promise<T> {
   const bearer = await authBearer();
   try {
     return await postGiftTree<T>(ORIGIN_API_URL, body, bearer, false);
-  } catch {
+  } catch (err) {
+    if (!opts.allowEdgeFallback) throw err;
     return await postGiftTree<T>(EDGE_FUNNEL_URL, body, bearer, true);
   }
 }
 
 export async function getGiftTreeStatus(): Promise<GiftTreeStatusResult> {
   const guestToken = getOrCreateGiftTreeGuestToken();
-  return giftTreeRequest<GiftTreeStatusResult>({
-    action: "getGiftTreeStatus",
-    guest_token: guestToken,
-    product_key: GIFT_TREE_PRODUCT_KEY,
-  });
+  return giftTreeRequest<GiftTreeStatusResult>(
+    {
+      action: "getGiftTreeStatus",
+      guest_token: guestToken,
+      product_key: GIFT_TREE_PRODUCT_KEY,
+    },
+    { allowEdgeFallback: true },
+  );
 }
 
 export async function openGiftTreeOnServer(input: {

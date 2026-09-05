@@ -24,7 +24,7 @@ import {
   GIFT_TREE_PRODUCT_KEY,
   type GiftTreeRewardDef,
 } from "./rewardCatalog";
-import { presentLayout, pickWeightedReward } from "./rewardEngine";
+import { presentLayout } from "./rewardEngine";
 import { RewardRevealModal, type RewardRevealStep } from "./RewardRevealModal";
 import {
   claimGiftEmailOnServer,
@@ -257,20 +257,24 @@ export default function ChristmasGiftsPage() {
 
       const animDelay = reduceMotion ? 180 : OPEN_MS;
       let serverResult: Awaited<ReturnType<typeof openGiftTreeOnServer>> | null = null;
-      let localFallback: GiftTreeRewardDef | null = null;
+      let openFailed = false;
 
       try {
         serverResult = await openGiftTreeOnServer({ presentId, openSlot });
       } catch {
-        localFallback = pickWeightedReward();
-        setClaimHint("Saved on this device. Enter your email to keep it permanently.");
+        // Never invent a local reward — that can diverge from server entitlements.
+        openFailed = true;
       }
 
       window.setTimeout(() => {
         setBurst(true);
-        const resolved = serverResult
-          ? rewardFromServerPayload(serverResult.reward)
-          : localFallback;
+        if (openFailed || !serverResult) {
+          setError("We could not open that gift. Please try again.");
+          setOpeningId(null);
+          setBurst(false);
+          return;
+        }
+        const resolved = rewardFromServerPayload(serverResult.reward);
         if (!resolved) {
           setError("Something went wrong opening your gift.");
           setOpeningId(null);

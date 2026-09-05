@@ -10,6 +10,7 @@ PROJECT_REF="${SUPABASE_PROJECT_REF:-kjlsocejpmnzhhduyumy}"
 MIGRATIONS=(
   "supabase/migrations/20260904210000_christmas_gift_tree.sql"
   "supabase/migrations/20260905150000_christmas_gift_tree_funnel.sql"
+  "supabase/migrations/20260905180000_christmas_gift_tree_hardening.sql"
 )
 
 if [[ "$PROJECT_REF" != "kjlsocejpmnzhhduyumy" ]]; then

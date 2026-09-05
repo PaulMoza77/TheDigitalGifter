@@ -179,11 +179,24 @@ async function getUserFromAuthHeader(
 }
 
 function rewardFromEntitlement(row: EntitlementRow): GiftTreeRewardDef {
-  return (
+  const reward =
     GIFT_TREE_REWARD_CATALOG.find((r) => r.entitlementKey === row.entitlement_key) ||
-    findGiftTreeReward(row.entitlement_key) ||
-    GIFT_TREE_REWARD_CATALOG[0]!
-  );
+    findGiftTreeReward(row.entitlement_key);
+  if (!reward) {
+    // Never substitute a different financial entitlement.
+    throw new Error(`unknown_gift_tree_reward:${row.entitlement_key}`);
+  }
+  return reward;
+}
+
+/** Spend/balance identity: authenticated user XOR guest hash (never trust client email for spend). */
+function spendIdentity(input: {
+  userId: string | null;
+  guestHash: string | null;
+}): { userId: string | null; guestHash: string | null; email: string | null } {
+  if (input.userId) return { userId: input.userId, guestHash: null, email: null };
+  if (input.guestHash) return { userId: null, guestHash: input.guestHash, email: null };
+  return { userId: null, guestHash: null, email: null };
 }
 
 async function findEntitlementByRef(sourceRef: string): Promise<EntitlementRow | null> {
@@ -354,7 +367,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (action === "getGiftTreeStatus") {
       const email = normalizeEmail(user?.email || body.email);
-      const remaining = await remainingOpens({ userId: user?.id || null, guestHash, email });
+      const remaining = await remainingOpens(spendIdentity({ userId: user?.id || null, guestHash }));
       const freeExisting = await findEntitlementByRef(buildClaimIdem(user?.id || null, guestHash, 0));
       return res.status(200).json({
         ok: true,
@@ -377,14 +390,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data } = await supabaseRest<EntitlementRow[]>(
         `christmas_reward_entitlements?source=eq.christmas_tree&user_id=eq.${encodeURIComponent(user.id)}&select=id,entitlement_key,source_ref,email_normalized,claimed_email_at,status,expires_at,redeemed_at,created_at&order=created_at.desc&limit=100`,
       );
-      const gifts = (data || []).map((row) => {
-        const reward = rewardFromEntitlement(row);
+      const gifts = (data || []).flatMap((row) => {
+        let reward;
+        try {
+          reward = rewardFromEntitlement(row);
+        } catch {
+          console.error(JSON.stringify({
+            action: "listMyGifts",
+            error: "unknown_reward_entitlement",
+            entitlement_id: row.id,
+            entitlement_key: row.entitlement_key,
+          }));
+          return [{
+            id: row.id,
+            reward: null,
+            status: "unavailable",
+            claimed_email_at: row.claimed_email_at || null,
+            expires_at: row.expires_at || null,
+            redeemed_at: row.redeemed_at || null,
+            created_at: row.created_at || null,
+            claim_path: "/account/gifts",
+            error: "unknown_reward_entitlement",
+          }];
+        }
         const expired = row.expires_at ? new Date(row.expires_at).getTime() < Date.now() : false;
         let status = row.status || "available";
         if (row.redeemed_at) status = "redeemed";
         else if (expired) status = "expired";
         else if (reward.type === "credits" && status === "available") status = "credits_added";
-        return {
+        return [{
           id: row.id,
           reward: toPublicReward(reward),
           status,
@@ -393,7 +427,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           redeemed_at: row.redeemed_at || null,
           created_at: row.created_at || null,
           claim_path: reward.claimPath,
-        };
+        }];
       });
       return res.status(200).json({ ok: true, gifts });
     }
@@ -401,12 +435,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (action === "openGiftTree") {
       const openSlot = parseOpenSlot(body.open_slot);
       const email = normalizeEmail(user?.email || body.email);
-      let remaining = await remainingOpens({ userId: user?.id || null, guestHash, email });
+      const spend = spendIdentity({ userId: user?.id || null, guestHash });
+      let remaining = await remainingOpens(spend);
 
       const idem = buildClaimIdem(user?.id || null, guestHash, openSlot);
-      const existing = await findEntitlementByRef(idem);
+      let existing = await findEntitlementByRef(idem);
+
+      // Guest free gift → login same day: return the same entitlement (no second free roll).
+      if (!existing && openSlot === 0 && user?.id && guestHash) {
+        const guestIdem = buildClaimIdem(null, guestHash, 0);
+        const guestExisting = await findEntitlementByRef(guestIdem);
+        if (guestExisting) {
+          if (!guestExisting.user_id) {
+            await supabaseRest(`christmas_reward_entitlements?id=eq.${encodeURIComponent(guestExisting.id)}`, {
+              method: "PATCH",
+              body: JSON.stringify({ user_id: user.id, email_normalized: email || guestExisting.email_normalized }),
+            });
+            guestExisting.user_id = user.id;
+          }
+          existing = guestExisting;
+        }
+      }
+
+      // Email already claimed a free gift today (another browser/session).
+      if (!existing && openSlot === 0 && email) {
+        const day = calendarDayUtc();
+        const { data: byEmail } = await supabaseRest<EntitlementRow[]>(
+          `christmas_reward_entitlements?source=eq.christmas_tree&email_normalized=eq.${encodeURIComponent(email)}&source_ref=like.*${encodeURIComponent(":day:" + day)}&select=id,entitlement_key,user_id,guest_token_hash,source_ref,email_normalized,claimed_email_at,status,expires_at,redeemed_at,created_at&limit=1`,
+        );
+        if (byEmail?.[0]) existing = byEmail[0];
+      }
+
       if (existing) {
-        const reward = rewardFromEntitlement(existing);
+        let reward;
+        try {
+          reward = rewardFromEntitlement(existing);
+        } catch {
+          return res.status(409).json({
+            error: "unknown_reward_entitlement",
+            claim_id: existing.id,
+            entitlement_key: existing.entitlement_key,
+          });
+        }
         return res.status(200).json({
           ok: true,
           already: true,
@@ -422,7 +492,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (openSlot > 0) {
-        const consumed = await consumePaidOpen({ userId: user?.id || null, guestHash, email });
+        const consumed = await consumePaidOpen(spend);
         if (!consumed.ok) {
           return res.status(402).json({ error: "no_gift_opens_remaining", remaining_opens: remaining });
         }
@@ -495,7 +565,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           p_email_normalized: email,
           p_metadata: { reward_id: picked.id },
         });
-        remaining = await remainingOpens({ userId: user?.id || null, guestHash, email });
+        remaining = await remainingOpens(spendIdentity({ userId: user?.id || null, guestHash }));
       }
 
       return res.status(200).json({
@@ -573,7 +643,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      const remaining = await remainingOpens({ userId: user?.id || null, guestHash, email });
+      const remaining = await remainingOpens(spendIdentity({ userId: user?.id || null, guestHash }));
       return res.status(200).json({
         ok: true,
         already,
@@ -635,6 +705,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "Unknown action" });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: message });
+    if (message.startsWith("unknown_gift_tree_reward:")) {
+      return res.status(409).json({ error: "unknown_reward_entitlement", detail: message });
+    }
+    console.error(JSON.stringify({ action: "christmas_gift_tree", error: message }));
+    return res.status(500).json({ error: "internal_error" });
   }
 }

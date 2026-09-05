@@ -21,6 +21,7 @@ on:
       - "supabase/migrations/20260831190000_christmas_v2_funnel.sql"
       - "supabase/migrations/20260904210000_christmas_gift_tree.sql"
       - "supabase/migrations/20260905150000_christmas_gift_tree_funnel.sql"
+      - "supabase/migrations/20260905180000_christmas_gift_tree_hardening.sql"
       - "scripts/activate-christmas-gift-tree.sh"
       - ".github/workflows/deploy-christmas-v2.yml"
       - "scripts/deploy-christmas-v2.sh"

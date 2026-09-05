@@ -64,7 +64,8 @@ if [[ "${PUSH_RC:-1}" != "0" ]]; then
   echo "WARN: db push reported non-zero; attempting Management API SQL apply for gift-tree SQL files…"
   for SQL in \
     supabase/migrations/20260904210000_christmas_gift_tree.sql \
-    supabase/migrations/20260905150000_christmas_gift_tree_funnel.sql
+    supabase/migrations/20260905150000_christmas_gift_tree_funnel.sql \
+    supabase/migrations/20260905180000_christmas_gift_tree_hardening.sql
   do
     echo "Management API apply: $SQL"
     payload="$(node -e 'const fs=require("fs"); process.stdout.write(JSON.stringify({query: fs.readFileSync(process.argv[1],"utf8")}))' "$SQL")"
@@ -113,3 +114,5 @@ echo "Activation deploy complete for $PROJECT_REF @ $(git rev-parse HEAD)"
 # activation-trigger: 20260905T165200Z
 
 # stripe-api-version-fix: 20260905T165021Z
+
+# hardening-migration: 20260905T180000Z

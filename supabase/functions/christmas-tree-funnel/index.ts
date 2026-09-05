@@ -631,6 +631,10 @@ Deno.serve(async (req) => {
       const openSlot = Number.isFinite(openSlotRaw)
         ? Math.max(0, Math.floor(openSlotRaw))
         : 0;
+      // Paid opens must go through Origin API (consume RPC). Edge must never grant without consume.
+      if (openSlot > 0) {
+        return jsonResponse({ error: "paid_opens_require_origin_api" }, 409);
+      }
       const idem = giftTreeClaimIdempotency({
         seasonYear: GIFT_TREE_SEASON_YEAR,
         userId: user?.id,
@@ -647,17 +651,22 @@ Deno.serve(async (req) => {
       if (existing) {
         const reward =
           GIFT_TREE_REWARDS.find((r) => r.entitlement_key === existing.entitlement_key) ||
-          findGiftTreeReward(asString(existing.entitlement_key).replace("gift_tree_", "")) ||
-          GIFT_TREE_REWARDS.find((r) => r.id === asString(body.reward_id));
-        const resolved = reward || GIFT_TREE_REWARDS[0]!;
+          findGiftTreeReward(asString(existing.entitlement_key).replace("gift_tree_", ""));
+        if (!reward) {
+          return jsonResponse({
+            error: "unknown_reward_entitlement",
+            claim_id: existing.id,
+            entitlement_key: existing.entitlement_key,
+          }, 409);
+        }
         return jsonResponse({
           ok: true,
           already: true,
           claim_id: existing.id,
-          reward_id: resolved.id,
-          reward: publicGiftTreeReward(resolved),
+          reward_id: reward.id,
+          reward: publicGiftTreeReward(reward),
           credits_granted: 0,
-          requires_auth_for_credits: resolved.type === "credits" && !user?.id,
+          requires_auth_for_credits: reward.type === "credits" && !user?.id,
           open_slot: openSlot,
         });
       }
@@ -704,11 +713,12 @@ Deno.serve(async (req) => {
         picked.type === "credits" &&
         user?.id &&
         user.email &&
-        giftTreeCreditsEnabled()
+        giftTreeCreditsEnabled() &&
+        claim?.id
       ) {
-        const credits = Math.min(Math.max(Number(picked.value) || 0, 0), 50);
+        const credits = Math.min(Math.max(Number(picked.value) || 0, 0), 100);
         if (credits > 0) {
-          const note = `christmas_gift_tree:${GIFT_TREE_SEASON_YEAR}:${user.id}`;
+          const note = `christmas_gift_tree:${GIFT_TREE_SEASON_YEAR}:${claim.id}`;
           const { data: existingLed } = await service
             .from("credits_ledger")
             .select("id")
@@ -812,8 +822,8 @@ Deno.serve(async (req) => {
         if (!giftTreeCreditsEnabled()) {
           return jsonResponse({ error: "credits_disabled" }, 403);
         }
-        const credits = Math.min(Math.max(Number(reward.value) || 0, 0), 50);
-        const note = `christmas_gift_tree:${GIFT_TREE_SEASON_YEAR}:${user.id}`;
+        const credits = Math.min(Math.max(Number(reward.value) || 0, 0), 100);
+        const note = `christmas_gift_tree:${GIFT_TREE_SEASON_YEAR}:${entitlement.id}`;
         const { data: existingLed } = await service
           .from("credits_ledger")
           .select("id")
