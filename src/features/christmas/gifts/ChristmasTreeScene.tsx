@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { TreeLightLayer } from "./TreeLightLayer";
 import { useCoverMediaBox } from "./useCoverMediaBox";
 
 type Props = {
@@ -13,19 +12,20 @@ type Props = {
 
 const DESKTOP_SRC = "/christmas/gifts/scene-desktop.mp4";
 const MOBILE_SRC = "/christmas/gifts/scene-mobile.mp4";
-const DESKTOP_POSTER = "/christmas/gifts/scene-desktop-1280.jpg";
-const MOBILE_POSTER = "/christmas/gifts/scene-mobile-640.jpg";
+/** Full-res posters — avoid soft 720p upscales behind the video. */
+const DESKTOP_POSTER = "/christmas/gifts/scene-desktop.jpg";
+const MOBILE_POSTER = "/christmas/gifts/scene-mobile.jpg";
 
 export const SCENE_MEDIA_ASPECT = {
-  desktop: 1280 / 720,
-  mobile: 720 / 1280,
+  desktop: 1920 / 1080,
+  mobile: 1080 / 1920,
 } as const;
 
-/** Keep the tree tip clear of the header without shoving gifts into the CTA. */
-const MEDIA_TRANSFORM = "translateY(1.5%) scale(1.04)";
+/** Minimal shift — large scales blur the 1080p scene. Tip clearance via top inset. */
+const MEDIA_TRANSFORM = "translateY(0.8%)";
 const MEDIA_TRANSFORM_ORIGIN = "50% 0%";
 /** Solid top inset so the star tip isn't flush against the nav. */
-const SCENE_TOP_INSET_PX = 14;
+const SCENE_TOP_INSET_PX = 22;
 
 function preferMobile(): boolean {
   if (typeof window === "undefined") return false;
@@ -46,7 +46,7 @@ function preloadVideo(href: string) {
   void fetch(href, {
     method: "GET",
     credentials: "same-origin",
-    headers: { Range: "bytes=0-1572864" },
+    headers: { Range: "bytes=0-2621440" },
   }).catch(() => {
     /* video element still loads normally */
   });
