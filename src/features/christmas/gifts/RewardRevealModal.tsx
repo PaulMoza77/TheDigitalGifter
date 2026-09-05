@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { GIFT_TREE_PAID_OFFERS, type GiftTreeRewardDef } from "./rewardCatalog";
 
 export type RewardRevealStep =
@@ -297,14 +296,15 @@ export function RewardRevealModal({
                 </p>
               ) : null}
 
+              {step === "checkout" && !checkout && purchasing ? (
+                <p className="text-sm text-amber-100/80" role="status">
+                  Starting checkout…
+                </p>
+              ) : null}
               {step === "checkout" && checkout ? (
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-3 text-left">
-                  <CustomStripeCheckout
-                    clientSecret={checkout.clientSecret}
-                    publishableKey={checkout.publishableKey}
-                    dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
-                  />
-                </div>
+                <p className="text-sm text-amber-100/80" role="status">
+                  Complete payment in the checkout sheet.
+                </p>
               ) : null}
 
               {remainingOpens > 0 ? (

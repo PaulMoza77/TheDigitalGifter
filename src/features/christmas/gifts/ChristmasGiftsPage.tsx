@@ -10,6 +10,10 @@ import { ChristmasPresent } from "./ChristmasPresent";
 import { ChristmasTreeScene } from "./ChristmasTreeScene";
 import { GiftOpenCeremony } from "./GiftOpenCeremony";
 import { MoreChancesModal } from "./MoreChancesModal";
+import {
+  shouldShowGiftTreeCheckoutStarting,
+  shouldShowGiftTreePaymentSheet,
+} from "./giftTreeCheckoutUi";
 import { PrizeRail } from "./PrizeRail";
 import {
   canOpenGift,
@@ -353,7 +357,11 @@ export default function ChristmasGiftsPage() {
   const onPurchase = useCallback(async (packageKey: string) => {
     setPurchasing(true);
     setPurchaseError(null);
-    setRevealStep("checkout");
+    // Close pack pickers immediately and show a dedicated payment sheet.
+    // Do NOT gate that sheet on revealStep === "checkout" (that hid checkout).
+    setMoreOpen(false);
+    setModalOpen(false);
+    setRevealStep("upsell");
     void trackChristmasEvent("christmas_extra_gift_pack_select", {
       productKey: GIFT_TREE_PRODUCT_KEY,
       pathname: "/christmas/gifts",
@@ -374,7 +382,6 @@ export default function ChristmasGiftsPage() {
       const result = await startChristmasCheckout({
         product_key: GIFT_TREE_PRODUCT_KEY,
         package_key: packageKey,
-        amount_cents: 1,
         currency: "usd",
         landing_path: "/christmas/gifts",
         source_route: "/christmas/gifts",
@@ -382,6 +389,9 @@ export default function ChristmasGiftsPage() {
         success_url: `${window.location.origin}/christmas/gifts?gift_chances=1&package=${encodeURIComponent(packageKey)}`,
         cancel_url: `${window.location.origin}/christmas/gifts?gift_chances=cancel`,
       });
+      if (!result.clientSecret || !result.publishableKey) {
+        throw new Error("Checkout session missing payment credentials.");
+      }
       setCheckout({
         clientSecret: result.clientSecret,
         publishableKey: result.publishableKey,
@@ -389,7 +399,6 @@ export default function ChristmasGiftsPage() {
         currency: result.currency,
         packageKey,
       });
-      setMoreOpen(false);
       void trackChristmasEvent("christmas_express_checkout_available", {
         productKey: GIFT_TREE_PRODUCT_KEY,
         pathname: "/christmas/gifts",
@@ -403,6 +412,8 @@ export default function ChristmasGiftsPage() {
           ? "Checkout is warming up — try again shortly."
           : msg,
       );
+      // Re-open pack picker so the user can retry after a failed session create.
+      setMoreOpen(true);
       void trackChristmasEvent("christmas_extra_gift_payment_failed", {
         productKey: GIFT_TREE_PRODUCT_KEY,
         pathname: "/christmas/gifts",
@@ -681,7 +692,16 @@ export default function ChristmasGiftsPage() {
         </div>
       ) : null}
 
-      {checkout && revealStep !== "checkout" ? (
+      {(shouldShowGiftTreeCheckoutStarting({ purchasing, checkout }) ? (
+        <div className="fixed inset-0 z-[94] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-amber-200/20 bg-[#14110e] px-6 py-8 text-center shadow-2xl">
+            <p className="font-serif text-xl text-amber-50">Starting checkout…</p>
+            <p className="mt-2 text-sm text-amber-100/70">Preparing Apple Pay and card payment.</p>
+          </div>
+        </div>
+      ) : null}
+
+      {(shouldShowGiftTreePaymentSheet({ checkout }) ? (
         <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-2xl border border-amber-200/20 bg-[#14110e] p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
