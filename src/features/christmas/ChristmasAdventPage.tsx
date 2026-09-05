@@ -268,7 +268,11 @@ export default function ChristmasAdventPage() {
         <section className="mt-10 rounded-md border border-white/15 p-4" aria-label="Free Christmas Gift">
           <h2 className="font-serif text-lg">Get Your Christmas Gift</h2>
           <p className="mt-1 text-sm text-rose-100/70">
-            A free seasonal surprise — no cash credits for anonymous visitors.
+            Prefer the full tree experience?{" "}
+            <Link className="underline" to="/christmas/gifts">
+              Open the Christmas Gift Tree
+            </Link>
+            . Or claim a simple seasonal surprise here — no cash credits for anonymous visitors.
           </p>
           <button
             type="button"
