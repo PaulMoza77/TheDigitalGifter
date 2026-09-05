@@ -59,26 +59,19 @@ Uses existing `email_preferences.marketing` + `unsubscribe_marketing` (`/unsubsc
 Marketing templates suppressed when consent is false or marketing flag off.  
 Transactional is not gated by marketing consent.
 
-## Analytics (first-party)
+## Analytics (first-party, no email PII)
 
-Ledger metadata + `christmas_funnel_events` (no email PII):
+Server inserts into `christmas_funnel_events` (idempotent keys) + ledger metadata:
 
 - `christmas_email_queued` / `_sent` / `_failed` / `_suppressed`
-- `abandoned_checkout_eligible` / `_recovered` (recovered = purchase after abandon; tracked when paid race skip + future checkout success)
-- `cross_sell_sent` / `_clicked` / `_purchase` (click/purchase client seams queued for admin KPIs)
+- `abandoned_checkout_eligible` / `_recovered` (recovered seam for post-abandon purchase)
+- `cross_sell_sent` / `_clicked` / `_purchase` (click/purchase client seams → admin KPIs)
+
+Ledger table remains delivery source of truth.
 
 ## Admin observability
 
 Admin can `select` `christmas_lifecycle_events` (RLS `is_admin`). Full KPI UI → `TDG-CHRISTMAS-GAP-ADMIN-KPIS-005`.
-
-## Analytics (no PII)
-
-Server inserts into `christmas_funnel_events` (idempotent keys):
-
-- `christmas_email_queued` / `christmas_email_sent` / `christmas_email_failed` / `christmas_email_suppressed`
-- `abandoned_checkout_eligible`
-
-Ledger table remains the source of delivery truth for admin observability.
 
 ## Checkout locale persistence
 
