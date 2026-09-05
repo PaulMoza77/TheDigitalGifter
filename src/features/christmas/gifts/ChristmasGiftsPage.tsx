@@ -389,7 +389,7 @@ export default function ChristmasGiftsPage() {
         {/* Scene ends above the CTA band so the button never covers photo gifts */}
         <ChristmasTreeScene
           reduceMotion={reduceMotion}
-          className="absolute inset-x-0 top-0 bottom-[5.85rem] sm:bottom-[5.5rem]"
+          className="absolute inset-x-0 top-0 bottom-[6.75rem] sm:bottom-[6.35rem]"
           onBreakpointChange={setIsMobileScene}
         >
           <section className="absolute inset-0" aria-label="Christmas presents">
@@ -422,7 +422,7 @@ export default function ChristmasGiftsPage() {
 
         {error ? (
           <p
-            className="absolute inset-x-0 bottom-[5.1rem] z-[6] text-center text-sm text-red-200"
+            className="absolute inset-x-0 bottom-[6rem] z-[6] text-center text-sm text-red-200"
             role="alert"
           >
             {error}
@@ -430,7 +430,7 @@ export default function ChristmasGiftsPage() {
         ) : null}
 
         {/* CTA band under the scene — rug / floor, never over the gift pile */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] flex h-[5.85rem] items-end px-4 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1 sm:h-[5.5rem]">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] flex h-[6.75rem] items-end px-4 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1 sm:h-[6.35rem]">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"

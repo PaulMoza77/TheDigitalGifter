@@ -204,8 +204,6 @@ export function ChristmasTreeScene({
           }}
         />
 
-        {reduceMotion ? <TreeLightLayer reduceMotion /> : null}
-
         {children ? (
           <div className="pointer-events-none absolute inset-0" style={{ zIndex: 4 }}>
             <div className="pointer-events-auto" style={mediaFrameStyle}>
