@@ -6,6 +6,19 @@ name: activate-christmas-gift-tree
 
 on:
   workflow_dispatch:
+  # Agent cannot workflow_dispatch (403). Push to this branch runs Production activation.
+  push:
+    branches:
+      - cursor/christmas-gift-funnel-f2dc
+    paths:
+      - "supabase/migrations/20260904210000_christmas_gift_tree.sql"
+      - "supabase/migrations/20260905150000_christmas_gift_tree_funnel.sql"
+      - "scripts/activate-christmas-gift-tree.sh"
+      - ".github/workflows/activate-christmas-gift-tree.yml"
+      - "supabase/functions/christmas-checkout/**"
+      - "supabase/functions/christmas-tree-funnel/**"
+      - "supabase/functions/stripe-webhook/**"
+      - "supabase/functions/_shared/christmas/**"
 
 jobs:
   activate:

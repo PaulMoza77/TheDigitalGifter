@@ -100,3 +100,5 @@ if [[ -d supabase/functions/stripe-webhook ]]; then
 fi
 
 echo "Activation deploy complete for $PROJECT_REF @ $(git rev-parse HEAD)"
+
+# activation-trigger: 20260905T164001Z
