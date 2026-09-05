@@ -5,7 +5,8 @@
 **Repo:** `PaulMoza77/TheDigitalGifter`  
 **Foundation task:** `TDG-CHRISTMAS-GAP-LOOP-FOUNDATION-001`  
 **Audit date:** 2026-09-05  
-**Inspected HEAD (at foundation):** `ed4b901baddb4b71bd9b8f536c00fbc166a4c5c0` (`main` worktree)
+**PR base:** `origin/main` @ `8edd7316825c680db1802bc90e0565b8ee2170a4`  
+**Note:** Local `main` may still hold unpushed SEO-factory commits; this gap PR intentionally does not include them.
 
 ---
 
