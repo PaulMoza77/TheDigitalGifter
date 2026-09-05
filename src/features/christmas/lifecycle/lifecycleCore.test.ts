@@ -115,11 +115,15 @@ describe("christmas lifecycle core", () => {
     expect(path).not.toMatch(/cs_live|client_secret|sk_/i);
   });
 
-  it("product landing paths are public routes", () => {
+  it("product landing paths are public routes without secrets", () => {
     expect(productLandingPath("christmas_santa_video")).toBe(
       "/christmas/santa-video",
     );
     expect(productLandingPath("christmas_card")).toBe("/christmas/cards");
+    expect(abandonedResumePath(order({ sourceRoute: null }))).toContain(
+      "photo-generator",
+    );
+    expect(productLandingPath("unknown")).not.toMatch(/secret|sk_/i);
   });
 
   it("cross-sell never offers disabled products", () => {
@@ -138,20 +142,33 @@ describe("christmas lifecycle core", () => {
     ).toEqual([]);
   });
 
-  it("product landing paths are public and secret-free", () => {
-    expect(productLandingPath("christmas_santa_video")).toBe(
-      "/christmas/santa-video",
-    );
-    expect(productLandingPath("christmas_card")).toBe("/christmas/cards");
-    expect(productLandingPath("unknown")).not.toMatch(/secret|sk_/i);
+  it("marketing suppression blocks abandoned/cross-sell", () => {
+    expect(
+      marketingSendAllowed({
+        marketingEnabled: false,
+        marketingConsent: true,
+      }).ok,
+    ).toBe(false);
+    expect(
+      marketingSendAllowed({
+        marketingEnabled: true,
+        marketingConsent: false,
+      }).reason,
+    ).toBe("marketing_suppressed");
+    expect(
+      marketingSendAllowed({
+        marketingEnabled: true,
+        marketingConsent: true,
+      }).ok,
+    ).toBe(true);
   });
 
-  it("product landing paths are public routes without secrets", () => {
-    expect(productLandingPath("christmas_santa_video")).toBe(
-      "/christmas/santa-video",
-    );
-    expect(abandonedResumePath(order({ sourceRoute: null }))).toContain(
-      "photo-generator",
-    );
+  it("marketing copy includes unsubscribe seam", () => {
+    const copy = lifecycleEmailCopy("abandoned_checkout", "en", {
+      productName: "Portrait",
+      resumeUrl: "https://example.com/r",
+      unsubscribeUrl: "https://example.com/unsubscribe",
+    });
+    expect(copy.htmlBody).toMatch(/unsubscribe/i);
   });
 });
