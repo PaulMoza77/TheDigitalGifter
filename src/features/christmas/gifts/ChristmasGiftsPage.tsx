@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "../analytics";
 import { ChristmasPresent } from "./ChristmasPresent";
 import { ChristmasTreeScene } from "./ChristmasTreeScene";
+import { PrizeRail } from "./PrizeRail";
 import {
   canOpenGift,
   readGiftTreeState,
@@ -18,14 +19,24 @@ import {
   GIFT_TREE_PRODUCT_KEY,
   type GiftTreeRewardDef,
 } from "./rewardCatalog";
-import { presentLayout } from "./rewardEngine";
+import { presentLayout, pickWeightedReward } from "./rewardEngine";
 import { RewardRevealModal } from "./RewardRevealModal";
 import {
   claimGiftTreeOnServer,
   openGiftTreeOnServer,
   rewardFromServerPayload,
 } from "./giftTreeApi";
-import { pickWeightedReward } from "./rewardEngine";
+import {
+  BOX_THEMES,
+  CTA_STYLES,
+  DEFAULT_BOX_THEME,
+  DEFAULT_CTA_STYLE,
+  DEFAULT_SCENE_MOOD,
+  SCENE_MOODS,
+  type GiftBoxTheme,
+  type GiftCtaStyle,
+  type GiftSceneMood,
+} from "./sceneMoods";
 
 const OPEN_MS = 1100;
 
@@ -36,9 +47,10 @@ function prefersReducedMotion(): boolean {
 
 export default function ChristmasGiftsPage() {
   const navigate = useNavigate();
-  const presents = useMemo(() => presentLayout(8), []);
+  const presents = useMemo(() => presentLayout(6), []);
   const [state, setState] = useState<GiftTreePersistedState>(() => readGiftTreeState());
   const [openingId, setOpeningId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [burst, setBurst] = useState(false);
   const [reward, setReward] = useState<GiftTreeRewardDef | null>(() =>
     resolvedRewardFromState(readGiftTreeState()),
@@ -50,15 +62,20 @@ export default function ChristmasGiftsPage() {
   const [error, setError] = useState<string | null>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [compact, setCompact] = useState(false);
+  const [mood, setMood] = useState<GiftSceneMood>(DEFAULT_SCENE_MOOD);
+  const [ctaStyle, setCtaStyle] = useState<GiftCtaStyle>(DEFAULT_CTA_STYLE);
+  const [boxTheme, setBoxTheme] = useState<GiftBoxTheme>(DEFAULT_BOX_THEME);
+  const [showVariants, setShowVariants] = useState(false);
   const viewed = useRef(false);
   const anotherViewed = useRef(false);
 
   const freeUsed = Boolean(state.openedAt);
   const canOpen = canOpenGift(state);
+  const cta = CTA_STYLES[ctaStyle];
 
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
-    const syncCompact = () => setCompact(window.innerWidth < 420);
+    const syncCompact = () => setCompact(window.innerWidth < 768);
     syncCompact();
     window.addEventListener("resize", syncCompact);
     captureFunnelAttribution(window.location.search);
@@ -84,7 +101,7 @@ export default function ChristmasGiftsPage() {
   }, []);
 
   useEffect(() => {
-    if (freeUsed && canOpen === false && !anotherViewed.current) {
+    if (freeUsed && !canOpen && !anotherViewed.current) {
       anotherViewed.current = true;
       void trackChristmasEvent("christmas_open_another_gift_viewed", {
         productKey: GIFT_TREE_PRODUCT_KEY,
@@ -102,6 +119,7 @@ export default function ChristmasGiftsPage() {
     async (presentId: string) => {
       if (openingId || !canOpenGift(state)) return;
       setError(null);
+      setSelectedId(presentId);
       setOpeningId(presentId);
       setBurst(false);
       void trackChristmasEvent("christmas_present_selected", {
@@ -122,7 +140,6 @@ export default function ChristmasGiftsPage() {
       try {
         serverResult = await openGiftTreeOnServer({ presentId });
       } catch (e) {
-        // Soft fallback for offline/edge downtime — local reveal only, no durable credits.
         localFallback = pickWeightedReward();
         setClaimHint(
           e instanceof Error
@@ -149,12 +166,8 @@ export default function ChristmasGiftsPage() {
           openedAt: new Date().toISOString(),
           claimed: Boolean(serverResult?.already && state.claimed),
           creditsGranted: (serverResult?.credits_granted || 0) > 0,
-          extraOpens:
-            resolved.type === "gift_token"
-              ? state.extraOpens + 1
-              : Math.max(0, state.extraOpens - (state.openedAt ? 1 : 0)),
+          extraOpens: state.extraOpens,
         };
-        // First free open shouldn't consume an extra token.
         if (!state.openedAt && resolved.type === "gift_token") {
           next.extraOpens = state.extraOpens + 1;
         } else if (state.openedAt) {
@@ -180,6 +193,22 @@ export default function ChristmasGiftsPage() {
     },
     [authed, openingId, persist, reduceMotion, state],
   );
+
+  const onPrimaryCta = useCallback(() => {
+    if (!canOpen) {
+      setClaimHint("Your free Christmas gift is already open — more openings coming soon.");
+      return;
+    }
+    if (selectedId) {
+      void runOpen(selectedId);
+      return;
+    }
+    const first = presents[2] ?? presents[0];
+    if (first) {
+      setSelectedId(first.id);
+      void runOpen(first.id);
+    }
+  }, [canOpen, presents, runOpen, selectedId]);
 
   const onClaim = useCallback(async () => {
     if (!reward) return;
@@ -207,7 +236,6 @@ export default function ChristmasGiftsPage() {
             creditsGranted: claimed.credits_granted > 0 || state.creditsGranted,
           });
         } catch {
-          // Non-credit rewards can still navigate with local entitlement.
           persist({ ...state, claimed: true });
         }
       } else {
@@ -232,7 +260,6 @@ export default function ChristmasGiftsPage() {
     }
   }, [authed, navigate, persist, reward, state]);
 
-  // Resume claim after login
   useEffect(() => {
     if (!authed) return;
     const params = new URLSearchParams(window.location.search);
@@ -254,123 +281,137 @@ export default function ChristmasGiftsPage() {
       <PageHead
         exactTitle
         title="Get Your Christmas Gift | The Digital Gifter"
-        description="Pick a present under the Christmas tree and reveal a magical Digital Gifter Christmas reward."
+        description="Choose a present under the Christmas tree and reveal a premium Digital Gifter Christmas surprise."
         url="https://www.thedigitalgifter.com/christmas/gifts"
       />
 
-      <main
-        className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden text-rose-50"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 18%, #3a1d2a 0%, #141c24 42%, #0a1210 78%), linear-gradient(180deg, #1b1020 0%, #0e1a24 55%, #132018 100%)",
-        }}
-      >
-        {/* Atmospheric particles */}
+      <main className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden text-rose-50">
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(ellipse at 50% 0%, ${SCENE_MOODS[mood].accentGlow} 0%, transparent 42%),
+              linear-gradient(180deg, #120c10 0%, #1a1214 40%, #0c1014 100%)
+            `,
+          }}
+        />
+
         {!reduceMotion ? (
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            {Array.from({ length: 14 }).map((_, i) => (
+            {Array.from({ length: 16 }).map((_, i) => (
               <span
                 key={i}
-                className="absolute rounded-full bg-white/70"
+                className="absolute rounded-full bg-amber-100/70"
                 style={{
-                  width: 2 + (i % 3),
-                  height: 2 + (i % 3),
-                  left: `${(i * 17) % 100}%`,
-                  top: `-${(i * 13) % 30}%`,
-                  opacity: 0.25 + (i % 4) * 0.1,
-                  animation: `gt-snow ${10 + (i % 6) * 2}s linear ${i * 0.4}s infinite`,
+                  width: 1.5 + (i % 3),
+                  height: 1.5 + (i % 3),
+                  left: `${(i * 19) % 100}%`,
+                  top: `-${(i * 11) % 20}%`,
+                  opacity: 0.15 + (i % 4) * 0.08,
+                  animation: `gt-sparkle ${12 + (i % 5) * 2}s linear ${i * 0.35}s infinite`,
                 }}
               />
             ))}
           </div>
         ) : null}
 
-        <div className="relative mx-auto flex h-full max-w-5xl flex-col overflow-hidden px-4 pb-3 pt-3 sm:px-6 sm:pb-4 sm:pt-4">
-          <header className="relative z-20 mx-auto max-w-xl shrink-0 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200/75 sm:text-[11px] sm:tracking-[0.24em]">
-              A little Christmas magic is waiting for you
-            </p>
-            <h1 className="mt-1.5 font-serif text-[1.65rem] leading-tight text-amber-50 sm:mt-2 sm:text-4xl md:text-5xl">
-              Get Your Christmas Gift
+        <div className="relative mx-auto flex h-full max-w-6xl flex-col px-3 pb-[5.75rem] pt-3 sm:px-5 sm:pb-24 sm:pt-4">
+          {/* Branding + copy */}
+          <header className="relative z-30 mx-auto w-full max-w-xl shrink-0 text-center">
+            <div className="mb-1.5 flex items-center justify-center gap-2.5">
+              <img
+                src="/TheDigitalGifter.png"
+                alt=""
+                className="h-8 w-8 rounded-full object-cover ring-1 ring-amber-200/35"
+              />
+              <p className="font-serif text-lg tracking-wide text-amber-50 sm:text-xl">
+                The Digital Gifter
+              </p>
+            </div>
+            <h1 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-200/70 sm:text-xs">
+              Choose a gift under the tree
             </h1>
-            <p className="mt-1.5 text-sm text-rose-100/75 sm:mt-2 sm:text-base">
-              Choose a present under the tree and discover what&apos;s waiting inside.
+            <p className="mt-1 text-sm text-rose-100/70 sm:text-[15px]">
+              {freeUsed
+                ? "Your Christmas surprise is ready."
+                : "Tap a gift to reveal your surprise"}
             </p>
-            {!freeUsed ? (
-              <p className="mt-1.5 text-xs text-amber-100/65 sm:mt-2">Tap a gift to open it ✨</p>
-            ) : null}
           </header>
 
-          <section
-            className="relative z-10 mx-auto mt-0 flex w-full max-w-[20rem] min-h-0 flex-1 flex-col justify-end sm:max-w-lg md:max-w-xl"
-            aria-label="Christmas tree and presents"
-          >
-            <ChristmasTreeScene
-              reduceMotion={reduceMotion}
-              className="relative z-0 mx-auto w-full max-h-[min(46dvh,400px)]"
-            />
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
-              style={{ height: "34%" }}
-              aria-hidden
-            >
-              <div
-                className="absolute inset-x-[6%] bottom-[4%] h-[55%]"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 50% 80%, rgba(20,40,30,0.55), transparent 70%)",
-                }}
-              />
-            </div>
-            <div className="absolute inset-x-0 bottom-[2%] z-30 h-[32%] sm:h-[30%]">
-              {presents.map((p) => (
-                <ChristmasPresent
-                  key={p.id}
-                  present={p}
-                  state={presentState(p.id)}
-                  scale={compact ? 0.72 : 0.88}
-                  reduceMotion={reduceMotion}
-                  onSelect={(id) => void runOpen(id)}
-                />
-              ))}
-            </div>
-            {burst && !reduceMotion ? (
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 z-30"
-                style={{
-                  background:
-                    "radial-gradient(circle at 50% 70%, rgba(255,230,150,0.35), transparent 42%)",
-                  animation: "gt-burst 700ms ease-out forwards",
-                }}
-              />
+          {/* Scene + rails */}
+          <div className="relative z-10 mt-2 flex min-h-0 flex-1 items-stretch gap-3">
+            {!compact ? (
+              <PrizeRail className="hidden w-[148px] shrink-0 lg:block" />
             ) : null}
-          </section>
+
+            <section
+              className="relative mx-auto min-h-0 w-full max-w-xl flex-1"
+              aria-label="Christmas suite and presents"
+            >
+              <ChristmasTreeScene
+                mood={mood}
+                reduceMotion={reduceMotion}
+                className="absolute inset-0"
+              />
+
+              <div className="absolute inset-x-[4%] bottom-[3%] z-30 h-[34%] sm:h-[32%]">
+                {presents.map((p) => (
+                  <ChristmasPresent
+                    key={p.id}
+                    present={p}
+                    state={presentState(p.id)}
+                    selected={selectedId === p.id}
+                    scale={compact ? 0.82 : 0.95}
+                    reduceMotion={reduceMotion}
+                    boxTheme={boxTheme}
+                    onSelect={(id) => {
+                      setSelectedId(id);
+                      if (canOpen) void runOpen(id);
+                    }}
+                  />
+                ))}
+              </div>
+
+              {burst && !reduceMotion ? (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 z-40"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 50% 72%, rgba(255,220,150,0.4), transparent 40%)",
+                    animation: "gt-burst 700ms ease-out forwards",
+                  }}
+                />
+              ) : null}
+            </section>
+
+            {!compact ? (
+              <PrizeRail className="hidden w-[148px] shrink-0 lg:block" />
+            ) : null}
+          </div>
+
+          {compact ? <PrizeRail compact className="relative z-20 mt-2 shrink-0" /> : null}
 
           {error ? (
-            <p className="relative z-20 mt-2 shrink-0 text-center text-sm text-red-200" role="alert">
+            <p className="relative z-20 mt-2 text-center text-sm text-red-200" role="alert">
               {error}
             </p>
           ) : null}
 
           {freeUsed && !canOpen ? (
-            <section className="relative z-20 mx-auto mt-3 max-w-md shrink-0 text-center sm:mt-4">
-              <h2 className="font-serif text-xl text-amber-50 sm:text-2xl">Want to open another gift?</h2>
-              <p className="mt-1 text-sm text-rose-100/70">
-                There&apos;s more Christmas magic under the tree.
-              </p>
-              <div className="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:justify-center">
+            <section className="relative z-20 mx-auto mt-2 max-w-md shrink-0 text-center">
+              <p className="font-serif text-lg text-amber-50">Want to open another gift?</p>
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
                 {GIFT_TREE_PAID_OFFERS.map((offer) => (
                   <button
                     key={offer.packageKey}
                     type="button"
-                    className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-rose-50/90"
+                    className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-rose-50/85"
                     onClick={() => {
                       void trackChristmasEvent("christmas_open_another_gift_clicked", {
                         productKey: GIFT_TREE_PRODUCT_KEY,
                         pathname: "/christmas/gifts",
-                        packageKey: offer.packageKey,
-                        metadata: { purchasable: false },
+                        metadata: { package_key: offer.packageKey, purchasable: false },
                       });
                       setClaimHint(
                         "Extra gift openings are coming soon — your first gift is already yours.",
@@ -381,28 +422,110 @@ export default function ChristmasGiftsPage() {
                   </button>
                 ))}
               </div>
-              {claimHint ? (
-                <p className="mt-2 text-xs text-amber-100/70" role="status">
-                  {claimHint}
-                </p>
-              ) : null}
             </section>
           ) : null}
 
-          <footer className="relative z-20 mt-3 flex shrink-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 pb-1 text-center text-[11px] text-rose-100/55 sm:mt-4 sm:text-xs">
-            <Link className="underline-offset-4 hover:underline" to="/christmas">
+          <div className="relative z-20 mt-2 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setShowVariants((v) => !v)}
+              className="text-[10px] uppercase tracking-[0.16em] text-amber-100/40 hover:text-amber-100/70"
+            >
+              {showVariants ? "Hide looks" : "Compare looks"}
+            </button>
+          </div>
+
+          {showVariants ? (
+            <div className="relative z-30 mx-auto mt-2 grid max-w-xl grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-black/30 p-2 text-[10px] backdrop-blur-md">
+              <label className="space-y-1">
+                <span className="text-amber-100/50">Room</span>
+                <select
+                  className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-amber-50"
+                  value={mood}
+                  onChange={(e) => setMood(e.target.value as GiftSceneMood)}
+                >
+                  {Object.values(SCENE_MOODS).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-amber-100/50">CTA</span>
+                <select
+                  className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-amber-50"
+                  value={ctaStyle}
+                  onChange={(e) => setCtaStyle(e.target.value as GiftCtaStyle)}
+                >
+                  {(Object.keys(CTA_STYLES) as GiftCtaStyle[]).map((k) => (
+                    <option key={k} value={k}>
+                      {CTA_STYLES[k].label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-amber-100/50">Gifts</span>
+                <select
+                  className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-amber-50"
+                  value={boxTheme}
+                  onChange={(e) => setBoxTheme(e.target.value as GiftBoxTheme)}
+                >
+                  {(Object.keys(BOX_THEMES) as GiftBoxTheme[]).map((k) => (
+                    <option key={k} value={k}>
+                      {BOX_THEMES[k].label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : null}
+
+          <footer className="relative z-20 mt-auto flex shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-2 text-[10px] text-rose-100/45 sm:text-[11px]">
+            <Link className="hover:text-rose-100/70" to="/christmas">
               Christmas hub
             </Link>
-            <Link className="underline-offset-4 hover:underline" to="/christmas/tree">
-              Build a Christmas Tree
+            <Link className="hover:text-rose-100/70" to="/christmas/tree">
+              Build a tree
             </Link>
-            <Link className="underline-offset-4 hover:underline" to="/christmas/advent">
-              Advent Calendar
+            <Link className="hover:text-rose-100/70" to="/christmas/advent">
+              Advent
             </Link>
-            <Link className="underline-offset-4 hover:underline" to="/christmas/photo-generator">
-              Christmas Portraits
+            <Link className="hover:text-rose-100/70" to="/christmas/photo-generator">
+              Portraits
             </Link>
           </footer>
+        </div>
+
+        {/* Sticky bottom CTA */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-8">
+          <div className="pointer-events-auto mx-auto max-w-md">
+            <button
+              type="button"
+              disabled={Boolean(openingId)}
+              onClick={onPrimaryCta}
+              className={`flex w-full flex-col items-center justify-center rounded-full px-6 py-3.5 transition active:scale-[0.98] disabled:opacity-70 ${cta.className}`}
+            >
+              <span className="text-[15px] font-semibold tracking-wide">
+                {freeUsed && !canOpen
+                  ? "Gift Opened"
+                  : selectedId
+                    ? "Open Selected Gift"
+                    : "Choose Your Gift"}
+              </span>
+              <span className={`text-[11px] font-medium ${cta.subClassName}`}>
+                {freeUsed && !canOpen
+                  ? "Come back for more Christmas magic"
+                  : "Tap a present or start here"}
+              </span>
+            </button>
+            {claimHint ? (
+              <p className="mt-2 text-center text-[11px] text-amber-100/70" role="status">
+                {claimHint}
+              </p>
+            ) : null}
+          </div>
         </div>
       </main>
 
@@ -428,16 +551,16 @@ export default function ChristmasGiftsPage() {
       ) : null}
 
       <style>{`
-        @keyframes gt-snow {
-          from { transform: translateY(0); }
-          to { transform: translateY(110vh); }
+        @keyframes gt-sparkle {
+          from { transform: translateY(0); opacity: 0.2; }
+          to { transform: translateY(110vh); opacity: 0; }
         }
         @keyframes gt-burst {
           from { opacity: 0.9; }
           to { opacity: 0; }
         }
         @media (prefers-reduced-motion: reduce) {
-          [style*="gt-snow"], [style*="gt-burst"] { animation: none !important; }
+          [style*="gt-sparkle"], [style*="gt-burst"] { animation: none !important; }
         }
       `}</style>
     </>

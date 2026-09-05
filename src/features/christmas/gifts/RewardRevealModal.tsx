@@ -25,13 +25,13 @@ export function RewardRevealModal({
   claimHint,
 }: Props) {
   const titleId = useId();
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const claimRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
     previouslyFocused.current = document.activeElement as HTMLElement | null;
-    const t = window.setTimeout(() => closeRef.current?.focus(), 50);
+    const t = window.setTimeout(() => claimRef.current?.focus(), 40);
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
@@ -61,30 +61,38 @@ export function RewardRevealModal({
       <button
         type="button"
         aria-label="Close reward"
-        className="absolute inset-0 bg-[#07050a]/75 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-[#07050a]/78 backdrop-blur-[3px]"
         onClick={onClose}
       />
       <div
-        className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-amber-200/20 shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-[28px] border border-amber-200/20 shadow-[0_28px_90px_rgba(0,0,0,0.6)]"
         style={{
           background:
-            "linear-gradient(165deg, #2a1824 0%, #141c24 48%, #122018 100%)",
+            "linear-gradient(165deg, rgba(48,32,28,0.96) 0%, rgba(22,24,30,0.98) 52%, rgba(18,28,24,0.98) 100%)",
           animation: "gt-modal-in 520ms cubic-bezier(0.22,1,0.36,1)",
         }}
       >
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-40"
+          className="pointer-events-none absolute inset-x-0 top-0 h-44"
           style={{
             background:
-              "radial-gradient(ellipse at 50% 0%, rgba(245,215,110,0.28), transparent 70%)",
+              "radial-gradient(ellipse at 50% 0%, rgba(232,201,122,0.32), transparent 70%)",
           }}
         />
-        <div className="relative px-6 pb-6 pt-8 text-center text-rose-50">
-          <p className="text-4xl" aria-hidden>
-            🎁
-          </p>
-          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200/80">
+        <div className="relative px-6 pb-7 pt-9 text-center text-rose-50">
+          <div
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl"
+            style={{
+              background:
+                "linear-gradient(145deg, #8b2430 0%, #5a1820 100%)",
+              boxShadow: "0 8px 24px rgba(139,36,48,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
+            }}
+            aria-hidden
+          >
+            <span className="font-serif text-2xl text-amber-200">?</span>
+          </div>
+          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200/80">
             You won
           </p>
           <h2 id={titleId} className="mt-2 font-serif text-3xl leading-tight text-amber-50">
@@ -98,11 +106,11 @@ export function RewardRevealModal({
           ) : null}
 
           <button
-            ref={closeRef}
+            ref={claimRef}
             type="button"
             disabled={claiming}
             onClick={onClaim}
-            className="mt-7 w-full rounded-xl bg-gradient-to-b from-amber-200 to-amber-300 py-3.5 text-sm font-semibold text-slate-900 shadow-[0_8px_24px_rgba(245,215,110,0.25)] transition hover:from-amber-100 hover:to-amber-200 disabled:opacity-60"
+            className="mt-7 w-full rounded-full bg-gradient-to-b from-[#f3e2b5] via-[#e0c078] to-[#c9a35a] py-3.5 text-sm font-semibold text-[#2a1c0e] shadow-[0_10px_30px_rgba(201,163,90,0.3)] transition hover:brightness-105 disabled:opacity-60"
           >
             {claiming ? "Claiming…" : claimLabel}
           </button>
@@ -111,7 +119,7 @@ export function RewardRevealModal({
             <button
               type="button"
               onClick={onOpenAnother}
-              className="mt-3 w-full rounded-xl border border-white/15 bg-white/5 py-3 text-sm font-medium text-rose-50/90 transition hover:bg-white/10"
+              className="mt-3 w-full rounded-full border border-white/15 bg-white/5 py-3 text-sm font-medium text-rose-50/90 transition hover:bg-white/10"
             >
               Open Another Gift
             </button>

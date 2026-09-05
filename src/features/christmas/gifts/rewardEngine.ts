@@ -46,18 +46,17 @@ export function presentLayout(count = 8): Array<{
     "ivory",
   ] as const;
   const ribbons = ["classic", "cross", "bow"] as const;
+  // Arc under the tree — cleaner mobile composition (6–7 gifts).
   const positions = [
-    { leftPct: 6, bottomPct: 10, depth: 2, width: 58, height: 48 },
-    { leftPct: 20, bottomPct: 4, depth: 3, width: 72, height: 56 },
-    { leftPct: 34, bottomPct: 12, depth: 1, width: 52, height: 44 },
-    { leftPct: 46, bottomPct: 2, depth: 4, width: 80, height: 62 },
-    { leftPct: 60, bottomPct: 11, depth: 2, width: 56, height: 50 },
-    { leftPct: 72, bottomPct: 5, depth: 3, width: 68, height: 54 },
-    { leftPct: 12, bottomPct: 22, depth: 0, width: 46, height: 40 },
-    { leftPct: 82, bottomPct: 16, depth: 1, width: 50, height: 42 },
-    { leftPct: 54, bottomPct: 22, depth: 0, width: 44, height: 38 },
+    { leftPct: 8, bottomPct: 14, depth: 1, width: 54, height: 46 },
+    { leftPct: 24, bottomPct: 6, depth: 3, width: 66, height: 54 },
+    { leftPct: 42, bottomPct: 2, depth: 4, width: 74, height: 60 },
+    { leftPct: 60, bottomPct: 7, depth: 3, width: 64, height: 52 },
+    { leftPct: 76, bottomPct: 15, depth: 1, width: 52, height: 44 },
+    { leftPct: 34, bottomPct: 18, depth: 0, width: 48, height: 40 },
+    { leftPct: 56, bottomPct: 20, depth: 0, width: 46, height: 38 },
   ];
-  return positions.slice(0, Math.min(Math.max(count, 7), 9)).map((pos, i) => ({
+  return positions.slice(0, Math.min(Math.max(count, 6), 7)).map((pos, i) => ({
     id: `present_${i + 1}`,
     style: styles[i % styles.length]!,
     ribbon: ribbons[i % ribbons.length]!,

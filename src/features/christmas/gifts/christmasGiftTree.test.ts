@@ -39,9 +39,9 @@ describe("christmas gift tree catalog", () => {
     expect(unique.size).toBeGreaterThan(1);
   });
 
-  it("lays out 7–9 distinct presents", () => {
-    const layout = presentLayout(8);
-    expect(layout.length).toBe(8);
+  it("lays out 6–7 distinct presents", () => {
+    const layout = presentLayout(6);
+    expect(layout.length).toBe(6);
     expect(new Set(layout.map((p) => p.style)).size).toBeGreaterThan(3);
   });
 });
