@@ -8,6 +8,7 @@ import {
   santaStillPrompt,
 } from "../_shared/christmas/santaVideo.ts";
 import { claimAndSendChristmasLifecycle } from "../_shared/christmas/lifecycle.ts";
+import { resolveDeliveryToken } from "../_shared/christmas/crypto.ts";
 
 /**
  * Post-payment Santa Video pipeline (async stages).
@@ -387,16 +388,20 @@ Deno.serve(async (req) => {
         // Best-effort idempotent lifecycle delivery (persisted order.locale)
         try {
           const email = asString(order.email);
-          const tokenHint = asString(
-            (order.metadata as Record<string, unknown> | null)?.public_token_hint,
-          );
-          if (email && tokenHint) {
+          const deliveryToken = resolveDeliveryToken({
+            public_token_ciphertext: asString(order.public_token_ciphertext) || null,
+            metadata:
+              typeof order.metadata === "object" && order.metadata
+                ? (order.metadata as Record<string, unknown>)
+                : null,
+          });
+          if (email && deliveryToken) {
             const site = (
               Deno.env.get("SITE_URL") ||
               Deno.env.get("PUBLIC_APP_URL") ||
               "https://www.thedigitalgifter.com"
             ).replace(/\/$/, "");
-            const link = `${site}/christmas/santa-video?token=${encodeURIComponent(tokenHint)}`;
+            const link = `${site}/christmas/santa-video?token=${encodeURIComponent(deliveryToken)}`;
             await claimAndSendChristmasLifecycle({
               service,
               template: "generation_ready",

@@ -26,7 +26,43 @@ export function generatePublicToken(): string {
 
 export async function encryptPublicToken(token: string): Promise<string> {
   // Soft ciphertext for recovery tooling — hashed token remains the auth gate.
+  // Never store plaintext tokens in metadata or API responses.
   return btoa(token);
+}
+
+export function decryptPublicToken(ciphertext: string | null | undefined): string | null {
+  const raw = asString(ciphertext);
+  if (!raw) return null;
+  try {
+    const token = atob(raw);
+    return token.length >= 32 ? token : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Resolve delivery token for emails: ciphertext first, legacy metadata hint last (then scrub). */
+export function resolveDeliveryToken(order: {
+  public_token_ciphertext?: string | null;
+  metadata?: Record<string, unknown> | null;
+}): string | null {
+  const fromCipher = decryptPublicToken(order.public_token_ciphertext);
+  if (fromCipher) return fromCipher;
+  const meta = order.metadata && typeof order.metadata === "object" ? order.metadata : null;
+  const legacy = asString(meta?.public_token_hint);
+  return legacy.length >= 32 ? legacy : null;
+}
+
+export function scrubSensitiveOrderMetadata(
+  metadata: Record<string, unknown> | null | undefined,
+): Record<string, unknown> {
+  if (!metadata || typeof metadata !== "object") return {};
+  const next = { ...metadata };
+  delete next.public_token_hint;
+  delete next.public_token;
+  delete next.delivery_token;
+  delete next.owner_token;
+  return next;
 }
 
 export function extensionFromContentType(contentType: string): string {

@@ -1,4 +1,4 @@
-import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
+import { optionsResponse, jsonResponse, corsHeaders } from "../_shared/cors.ts";
 import {
   assertAdmin,
   getAuthUser,
@@ -6,11 +6,13 @@ import {
   isServiceRoleRequest,
   readJson,
 } from "../_shared/supabase.ts";
+import { sha256Hex } from "../_shared/christmas/crypto.ts";
 
 /**
  * Santa Video funnel: order lookup / admin retry.
  * Personalization is persisted at checkout time (service role).
  * Never starts generation without paid entitlement (retry requires service role or admin + paid).
+ * Privacy: getOrder returns safe projection only (no metadata / plaintext tokens).
  */
 
 type Body = {
@@ -23,9 +25,22 @@ function asString(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+function privateJsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+      "Cache-Control": "private, no-store",
+      "Referrer-Policy": "no-referrer",
+    },
+  });
+}
+
+function isDeliveryRevoked(metadata: unknown): boolean {
+  if (!metadata || typeof metadata !== "object") return false;
+  const m = metadata as Record<string, unknown>;
+  return m.delivery_revoked === true || Boolean(m.delivery_revoked_at);
 }
 
 Deno.serve(async (req) => {
@@ -39,7 +54,7 @@ Deno.serve(async (req) => {
 
     if (action === "getOrder") {
       const token = asString(body.public_token);
-      if (!token || token.length < 32) return jsonResponse({ error: "Invalid token" }, 400);
+      if (!token || token.length < 32) return privateJsonResponse({ error: "Invalid token" }, 400);
       const hash = await sha256Hex(token);
       const { data: order, error } = await service
         .from("christmas_orders")
@@ -49,9 +64,12 @@ Deno.serve(async (req) => {
         .eq("public_token_hash", hash)
         .maybeSingle();
       if (error) throw error;
-      if (!order) return jsonResponse({ error: "Order not found" }, 404);
+      if (!order) return privateJsonResponse({ error: "Order not found" }, 404);
       if (order.product_key !== "christmas_santa_video") {
-        return jsonResponse({ error: "Not a Santa Video order" }, 400);
+        return privateJsonResponse({ error: "Not a Santa Video order" }, 400);
+      }
+      if (isDeliveryRevoked(order.metadata)) {
+        return privateJsonResponse({ error: "Access revoked", code: "delivery_revoked" }, 403);
       }
 
       const { data: job } = await service
@@ -89,12 +107,40 @@ Deno.serve(async (req) => {
         }
       }
 
-      return jsonResponse({
+      return privateJsonResponse({
         ok: true,
         order: {
-          ...order,
+          id: order.id,
+          product_key: order.product_key,
+          package_key: order.package_key,
+          payment_status: order.payment_status,
+          fulfillment_status: order.fulfillment_status,
+          amount_cents: order.amount_cents,
+          currency: order.currency,
+          last_error: order.last_error,
+          created_at: order.created_at,
+          paid_at: order.paid_at,
           resultUrl,
-          job,
+          job: job
+            ? {
+                id: job.id,
+                job_status: job.job_status,
+                script_status: job.script_status,
+                audio_status: job.audio_status,
+                video_status: job.video_status,
+                language: job.language,
+                template_key: job.template_key,
+                estimated_duration_seconds: job.estimated_duration_seconds,
+                error_code: job.error_code,
+                error_message_safe: job.error_message_safe,
+                cost_total_usd: job.cost_total_usd,
+                cost_state: job.cost_state,
+                latency_total_ms: job.latency_total_ms,
+                started_at: job.started_at,
+                completed_at: job.completed_at,
+                // intentionally omit result_video_path/bucket from client projection
+              }
+            : null,
           personalization_summary: perso
             ? {
                 child_first_name: perso.child_first_name,
