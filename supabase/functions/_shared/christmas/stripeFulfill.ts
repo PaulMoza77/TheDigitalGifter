@@ -7,6 +7,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
+import { activateSendAGiftAfterPaid, isSendAGiftProductKey } from "./sendAGift.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -154,20 +155,59 @@ export async function handleChristmasStripeEvent(input: {
       result: { ...result, product_family: "christmas" },
     });
 
-    if (result.ok === true && result.status === "paid") {
-      const productKey = asString(input.metadata.product_key);
-      let mode: "commerce" | "santa" = "commerce";
-      if (productKey === "christmas_santa_video") {
-        mode = "santa";
-      } else if (!productKey) {
+    if (result.ok === true && (result.status === "paid" || result.status === "already_paid")) {
+      let productKey = asString(input.metadata.product_key);
+      if (!productKey) {
         const { data: ord } = await input.service
           .from("christmas_orders")
           .select("product_key")
           .eq("id", orderId)
           .maybeSingle();
-        if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+        productKey = asString(ord?.product_key);
       }
-      enqueueChristmasGenerate(orderId, mode);
+
+      if (isSendAGiftProductKey(productKey)) {
+        // Prepaid gift: activate share + entitlements exactly once (no portrait enqueue).
+        // Replay / already_paid still calls activate; RPC is idempotent and will not remint.
+        const activated = await activateSendAGiftAfterPaid({
+          service: input.service,
+          orderId,
+          activationEventId: input.eventId,
+        });
+        if (activated.ok && activated.share_id && activated.created) {
+          const { data: ordMeta } = await input.service
+            .from("christmas_orders")
+            .select("metadata")
+            .eq("id", orderId)
+            .maybeSingle();
+          const prev =
+            ordMeta && typeof ordMeta.metadata === "object" && ordMeta.metadata
+              ? (ordMeta.metadata as Record<string, unknown>)
+              : {};
+          await input.service
+            .from("christmas_orders")
+            .update({
+              metadata: {
+                ...prev,
+                send_gift_share_id: activated.share_id,
+                send_gift_share_id_gift: activated.gift_share_id,
+              },
+            })
+            .eq("id", orderId);
+        }
+        result.send_a_gift = {
+          ok: activated.ok,
+          status: activated.status,
+          gift_share_id: activated.gift_share_id,
+          has_share_id: Boolean(activated.share_id),
+          created: activated.created,
+          reason: activated.reason ?? null,
+        };
+      } else if (result.status === "paid") {
+        let mode: "commerce" | "santa" = "commerce";
+        if (productKey === "christmas_santa_video") mode = "santa";
+        enqueueChristmasGenerate(orderId, mode);
+      }
     }
 
     return new Response(JSON.stringify({ ok: true, christmas: result }), {

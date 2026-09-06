@@ -17,6 +17,7 @@ export const CHRISTMAS_PRODUCT_TYPES = [
   "gift_finder",
   "messages",
   "hub",
+  "send_a_gift",
   "other",
 ] as const;
 export type ChristmasProductType = (typeof CHRISTMAS_PRODUCT_TYPES)[number];
@@ -67,6 +68,91 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     localeDefault: "en",
     metadata: { shell: false },
     packages: [],
+  },
+  {
+    productKey: "christmas_send_a_gift",
+    slug: "send-a-gift",
+    productType: "send_a_gift",
+    name: "Send a Gift",
+    description: "One-time prepaid TDG gift packages with a secure recipient share link.",
+    active: true,
+    publicDiscoverable: true,
+    sortOrder: 5,
+    routePath: "/send-a-gift",
+    localeDefault: "en",
+    metadata: {
+      foundation: true,
+      live_offer: false,
+      production_purchasable: false,
+      funnel: "christmas_send_a_gift",
+    },
+    packages: [
+      {
+        packageKey: "starter",
+        packageName: "Starter Gift",
+        description: "Small prepaid creative bundle. Live price pending founder activation.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["1 Christmas portrait credit"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: {
+          live_offer: false,
+          production_purchasable: false,
+          entitlements: [{ service_key: "christmas_photo", quantity: 1 }],
+        },
+      },
+      {
+        packageKey: "classic",
+        packageName: "Christmas Gift",
+        description: "Balanced portrait + Santa video bundle. Live price pending founder activation.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["1 Christmas portrait credit", "1 Santa video credit"],
+        sortOrder: 20,
+        localeDefault: "en",
+        metadata: {
+          live_offer: false,
+          production_purchasable: false,
+          entitlements: [
+            { service_key: "christmas_photo", quantity: 1 },
+            { service_key: "christmas_santa_video", quantity: 1 },
+          ],
+        },
+      },
+      {
+        packageKey: "premium",
+        packageName: "Premium Gift",
+        description: "Richer multi-service prepaid bundle. Live price pending founder activation.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: [
+          "2 Christmas portrait credits",
+          "1 Santa video credit",
+          "1 Christmas card credit",
+        ],
+        sortOrder: 30,
+        localeDefault: "en",
+        metadata: {
+          live_offer: false,
+          production_purchasable: false,
+          entitlements: [
+            { service_key: "christmas_photo", quantity: 2 },
+            { service_key: "christmas_santa_video", quantity: 1 },
+            { service_key: "christmas_card", quantity: 1 },
+          ],
+        },
+      },
+    ],
   },
   {
     productKey: "christmas_photo",
@@ -447,6 +533,7 @@ const EXPERIENCE_OPEN_KEYS = new Set([
   "christmas_gift_finder",
   "christmas_card",
   "christmas_messages",
+  "christmas_send_a_gift",
 ]);
 
 export function ctaStateForProduct(product: ChristmasProductDef): "open" | "coming_soon" | "unavailable" {
