@@ -2,6 +2,10 @@ import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
 import { SEND_A_GIFT_PRODUCT_KEY } from "../_shared/christmas/sendAGift.ts";
 import { sendSendAGiftRecipientEmail } from "../_shared/christmas/sendAGiftEmail.ts";
+import {
+  sendAGiftMetaPurchaseEventId,
+  sendSendAGiftMetaCapiPurchase,
+} from "../_shared/christmas/sendAGiftMeta.ts";
 
 /**
  * Send-a-Gift seam — christmas_gift_shares / entitlements / redemptions.
@@ -16,6 +20,11 @@ type Body = {
   gift_share_id?: string;
   recipient_email?: string;
   force_resend?: boolean;
+  test_event_code?: string;
+  testEventCode?: string;
+  order_id?: string;
+  amount_cents?: number;
+  package_key?: string;
 };
 
 function asString(value: unknown): string {
@@ -133,9 +142,46 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, result: data, idempotency_key: idempotencyKey });
     }
 
-    if (action === "adminList" || action === "adminDisable" || action === "adminResendEmail" || action === "adminRedemptions") {
+    if (action === "adminList" || action === "adminDisable" || action === "adminResendEmail" || action === "adminRedemptions" || action === "adminMetaTestPurchase") {
       const gate = await requireAdmin(req, service);
       if (!gate.ok) return jsonResponse({ error: gate.error }, gate.status);
+
+      if (action === "adminMetaTestPurchase") {
+        // Meta Test Events only — never production Ads without test_event_code.
+        const testEventCode = asString(body.test_event_code ?? body.testEventCode);
+        const envConfigured = Boolean(asString(Deno.env.get("META_TEST_EVENT_CODE")));
+        if (!testEventCode && !envConfigured) {
+          return jsonResponse(
+            {
+              error: "test_event_code_required",
+              hint: "Provide testEventCode (Events Manager → Test Events) or set META_TEST_EVENT_CODE on Edge.",
+            },
+            400,
+          );
+        }
+        if (testEventCode && !/^TEST[A-Z0-9]+$/i.test(testEventCode)) {
+          return jsonResponse({ error: "invalid_test_event_code" }, 400);
+        }
+        const orderId = asString(body.order_id) || crypto.randomUUID();
+        const amountCents = Number(body.amount_cents);
+        const safeAmount = Number.isFinite(amountCents) && amountCents > 0 ? Math.floor(amountCents) : 1999;
+        const packageKey = asString(body.package_key) || "classic";
+        const eventId = sendAGiftMetaPurchaseEventId(orderId);
+        const capi = await sendSendAGiftMetaCapiPurchase({
+          orderId,
+          amountCents: safeAmount,
+          currency: "usd",
+          packageKey,
+          testEventCode: testEventCode || null,
+          sourceUrl: "https://thedigitalgifter.com/send-a-gift",
+        });
+        return jsonResponse({
+          ok: capi.sent,
+          result: capi,
+          event_id: eventId,
+          note: "Test Events only; no Stripe charge; no customer email.",
+        });
+      }
 
       if (action === "adminDisable") {
         const shareId = asString(body.share_id);

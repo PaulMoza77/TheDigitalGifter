@@ -10,8 +10,8 @@ export function isSendAGiftProductKey(value: unknown): boolean {
 export type ActivateSendAGiftResult = {
   ok: boolean;
   status?: string;
-  gift_id?: string | null;
-  share_token?: string | null;
+  gift_share_id?: string | null;
+  share_id?: string | null;
   created?: boolean;
   reason?: string | null;
 };
@@ -33,8 +33,8 @@ export async function activateSendAGiftAfterPaid(input: {
   return {
     ok: result.ok === true,
     status: asString(result.status) || undefined,
-    gift_id: asString(result.gift_share_id) || asString(result.share_id) || null,
-    share_token: asString(result.share_id) || null,
+    gift_share_id: asString(result.gift_share_id) || null,
+    share_id: asString(result.share_id) || null,
     created: asString(result.status) === "activated",
     reason: asString(result.reason) || null,
   };

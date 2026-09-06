@@ -7,7 +7,9 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
+import { parseMetaCapiClickIds } from "../pet/meta.ts";
 import { activateSendAGiftAfterPaid, isSendAGiftProductKey } from "./sendAGift.ts";
+import { sendSendAGiftMetaCapiPurchase } from "./sendAGiftMeta.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -172,29 +174,51 @@ export async function handleChristmasStripeEvent(input: {
         const activated = await activateSendAGiftAfterPaid({
           service: input.service,
           orderId,
-          activationEventId: input.eventId,
+          eventId: input.eventId,
         });
-        if (activated.ok && activated.share_id && activated.created) {
-          const { data: ordMeta } = await input.service
-            .from("christmas_orders")
-            .select("metadata")
-            .eq("id", orderId)
-            .maybeSingle();
-          const prev =
-            ordMeta && typeof ordMeta.metadata === "object" && ordMeta.metadata
-              ? (ordMeta.metadata as Record<string, unknown>)
-              : {};
-          await input.service
-            .from("christmas_orders")
-            .update({
-              metadata: {
-                ...prev,
-                send_gift_share_id: activated.share_id,
-                send_gift_share_id_gift: activated.gift_share_id,
-              },
-            })
-            .eq("id", orderId);
+        const { data: ordRow } = await input.service
+          .from("christmas_orders")
+          .select("email,amount_cents,currency,package_key,metadata")
+          .eq("id", orderId)
+          .maybeSingle();
+        const prev =
+          ordRow && typeof ordRow.metadata === "object" && ordRow.metadata
+            ? (ordRow.metadata as Record<string, unknown>)
+            : {};
+        const metaPatch: Record<string, unknown> = { ...prev };
+        if (activated.ok && activated.share_id) {
+          metaPatch.send_gift_share_id = activated.share_id;
+          metaPatch.send_gift_share_id_gift = activated.gift_share_id;
+          metaPatch.send_a_gift_share_id = activated.share_id;
         }
+
+        // Meta CAPI Purchase — same event_id as browser Pixel; skip when amount is 0 (pre-activation).
+        const clicks = parseMetaCapiClickIds(prev);
+        const alreadySentAt = asString(prev.meta_purchase_sent_at) || null;
+        const alreadyEventId = asString(prev.meta_purchase_event_id) || null;
+        const amountCents = asInt(ordRow?.amount_cents) || asInt(amountTotal) || 0;
+        const capi = await sendSendAGiftMetaCapiPurchase({
+          orderId,
+          amountCents,
+          currency: asString(ordRow?.currency) || currency,
+          packageKey: asString(ordRow?.package_key) || asString(input.metadata.package_key),
+          email: asString(ordRow?.email) || null,
+          alreadySentAt,
+          alreadyEventId,
+          fbc: clicks.fbc,
+          fbp: clicks.fbp,
+          sourceUrl: `${asString(Deno.env.get("SITE_ORIGIN") || "https://thedigitalgifter.com")}/send-a-gift`,
+        });
+        if (capi.sent) {
+          metaPatch.meta_purchase_sent_at = new Date().toISOString();
+          metaPatch.meta_purchase_event_id = capi.eventId;
+        }
+
+        await input.service
+          .from("christmas_orders")
+          .update({ metadata: metaPatch })
+          .eq("id", orderId);
+
         result.send_a_gift = {
           ok: activated.ok,
           status: activated.status,
@@ -202,6 +226,11 @@ export async function handleChristmasStripeEvent(input: {
           has_share_id: Boolean(activated.share_id),
           created: activated.created,
           reason: activated.reason ?? null,
+          meta_capi: {
+            sent: capi.sent,
+            reason: capi.reason ?? null,
+            event_id: capi.eventId,
+          },
         };
       } else if (result.status === "paid") {
         let mode: "commerce" | "santa" = "commerce";
