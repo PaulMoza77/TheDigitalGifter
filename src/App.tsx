@@ -150,7 +150,7 @@ const GiftRedeemPage = lazy(() =>
 );
 const FunnelAnalyticsPage = lazy(() => import("@/pages/admin/FunnelAnalyticsPage"));
 const ChristmasControlCenterPage = lazy(() => import("@/pages/admin/ChristmasControlCenterPage"));
-const SendAGiftOpsPage = lazy(() => import("@/pages/admin/SendAGiftOpsPage"));
+const SendAGiftAdminPage = lazy(() => import("@/pages/admin/SendAGiftAdminPage"));
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
 );
@@ -637,8 +637,8 @@ function AppInner() {
             <Route path="christmas-orders" element={<ChristmasOrdersPage />} />
             <Route path="funnel-analytics" element={<FunnelAnalyticsPage />} />
             <Route path="christmas-control" element={<ChristmasControlCenterPage />} />
-            <Route path="send-a-gift-ops" element={<SendAGiftOpsPage />} />
-            <Route path="send-a-gift" element={<SendAGiftOpsPage />} />
+            <Route path="send-a-gift-ops" element={<SendAGiftAdminPage />} />
+            <Route path="send-a-gift" element={<SendAGiftAdminPage />} />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
