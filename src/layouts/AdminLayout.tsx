@@ -1,9 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Suspense } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AdminErrorBoundary } from "@/components/AdminErrorBoundary";
 import { Logo } from "@/components/ui/logo";
-import { AdminRouteErrorBoundary } from "@/components/AdminRouteErrorBoundary";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Menu,
@@ -434,8 +432,7 @@ const AdminLayout: React.FC = () => {
       </aside>
 
       <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-950 pt-14 md:pt-0">
-        <AdminRouteErrorBoundary routeKey={location.pathname}>
-          <AdminErrorBoundary label="admin-outlet">
+        <AdminErrorBoundary label={location.pathname}>
           <Suspense
             fallback={
               <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
@@ -446,7 +443,6 @@ const AdminLayout: React.FC = () => {
             <Outlet />
           </Suspense>
         </AdminErrorBoundary>
-        </AdminRouteErrorBoundary>
       </main>
     </div>
   );
