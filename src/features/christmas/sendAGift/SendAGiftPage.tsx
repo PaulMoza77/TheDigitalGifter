@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { trackChristmasEvent } from "../analytics";
 import {
@@ -9,15 +9,20 @@ import {
   type SendAGiftPackageKey,
 } from "./packageComposition";
 import { fetchSendAGiftCatalog } from "./sendAGiftApi";
+import { copyGiftLink, mailtoGiftLink, nativeShareGift } from "./shareActions";
 
-type Step = "packages" | "personalize" | "checkout";
+type Step = "packages" | "personalize" | "checkout" | "share";
 
 export default function SendAGiftPage() {
-  const [step, setStep] = useState<Step>("packages");
+  const [searchParams] = useSearchParams();
+  const recoveryShare = (searchParams.get("share") || "").trim();
+  const [step, setStep] = useState<Step>(recoveryShare.length >= 32 ? "share" : "packages");
   const [packageKey, setPackageKey] = useState<SendAGiftPackageKey | null>(null);
   const [senderLabel, setSenderLabel] = useState("");
   const [recipientLabel, setRecipientLabel] = useState("");
   const [message, setMessage] = useState("");
+  const [shareId] = useState(recoveryShare.length >= 32 ? recoveryShare : "");
+  const [shareHint, setShareHint] = useState<string | null>(null);
   const [catalogNote, setCatalogNote] = useState<string | null>(null);
   const viewed = useRef(false);
 
@@ -61,7 +66,7 @@ export default function SendAGiftPage() {
           </p>
         </header>
 
-        {catalogNote ? (
+        {catalogNote && step !== "share" ? (
           <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
             {catalogNote}
           </p>
@@ -184,6 +189,73 @@ export default function SendAGiftPage() {
             >
               Back
             </button>
+            <p className="text-xs text-slate-500">
+              After payment, recover sharing via{" "}
+              <code className="text-emerald-200">/send-a-gift?share=…</code> (refresh-safe).
+            </p>
+          </section>
+        ) : null}
+
+        {step === "share" && shareId ? (
+          <section className="space-y-4" aria-label="Share gift">
+            <h2 className="text-lg font-medium">Share your gift</h2>
+            <p className="text-sm text-slate-300">
+              Secure recipient link is ready. Success pages are never payment authority — sharing only.
+            </p>
+            <p className="break-all rounded-xl border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs text-emerald-100">
+              {typeof window !== "undefined"
+                ? `${window.location.origin}/gift/${shareId}`
+                : `/gift/${shareId}`}
+            </p>
+            {shareHint ? <p className="text-sm text-emerald-200">{shareHint}</p> : null}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-950"
+                onClick={async () => {
+                  const ok = await copyGiftLink(shareId);
+                  setShareHint(ok ? "Link copied." : "Could not copy.");
+                  void trackChristmasEvent("copy_link", {
+                    productKey: SEND_A_GIFT_PRODUCT_KEY,
+                    metadata: { funnel: "christmas_send_a_gift" },
+                  });
+                }}
+              >
+                Copy link
+              </button>
+              <button
+                type="button"
+                className="rounded-xl border border-white/15 px-4 py-2 text-sm"
+                onClick={async () => {
+                  const result = await nativeShareGift({ shareId });
+                  setShareHint(
+                    result === "shared"
+                      ? "Shared."
+                      : result === "copied"
+                        ? "Copied."
+                        : "Share unavailable.",
+                  );
+                  void trackChristmasEvent("native_share", {
+                    productKey: SEND_A_GIFT_PRODUCT_KEY,
+                    metadata: { funnel: "christmas_send_a_gift", result },
+                  });
+                }}
+              >
+                Native share
+              </button>
+              <a
+                className="rounded-xl border border-white/15 px-4 py-2 text-sm"
+                href={mailtoGiftLink({ shareId })}
+                onClick={() => {
+                  void trackChristmasEvent("email_requested", {
+                    productKey: SEND_A_GIFT_PRODUCT_KEY,
+                    metadata: { funnel: "christmas_send_a_gift", channel: "mailto" },
+                  });
+                }}
+              >
+                Email link
+              </a>
+            </div>
           </section>
         ) : null}
 

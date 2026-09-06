@@ -14,12 +14,23 @@
 - Recipient redeems included services without second payment; no subscription
 - Live prices intentionally absent until founder activation
 
+## Sharing / email
+
+- Recovery share UI: `/send-a-gift?share={share_id}` — copy, native share, mailto
+- Resend: edge `adminResendEmail` + allowlist (`SEND_A_GIFT_EMAIL_ALLOWLIST`); fail-closed when disabled/empty
+- No QA emails to real customers without allowlist
+
+## Analytics
+
+- GA4 Purchase helper: `transaction_id`, `value`, `currency`, `items` (persistent once-key)
+- Meta Pixel IC/Purchase event ids shared with CAPI Purchase builder
+- Registry health remains `unverified` until external delivery evidence
+- Pet Purchase path unchanged
+
 ## Schema
 
-- `christmas_gift_shares`
-- `christmas_gift_entitlements`
-- `christmas_gift_redemptions`
-- RPCs: `activate_christmas_send_a_gift`, `redeem_christmas_gift_entitlement`, `mark_christmas_gift_opened`, `disable_christmas_gift_share`
+- `christmas_gift_shares` / `christmas_gift_entitlements` / `christmas_gift_redemptions`
+- RPCs: activate / redeem / mark opened / disable
 
 ## Protected surfaces
 
@@ -27,9 +38,10 @@ Does **not** modify `/christmas/gifts` UI. Preserves `/christmas/tree` and `/chr
 
 ## Admin
 
-- `/admin/send-a-gift` — ops (payment/share/email/entitlements; no private message by default)
+- `/admin/send-a-gift` — ops (copy URL, resend, redemptions, disable; no private message)
 - `/admin/christmas-control` — suite control center
 - `/admin/funnel-analytics` — unified registry
+- Admin SPA nav smoke: `scripts/smoke-admin-spa-nav.mjs`
 
 ## Live charges
 

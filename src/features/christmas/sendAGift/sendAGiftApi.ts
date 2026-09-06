@@ -97,6 +97,36 @@ export async function adminDisableSendGift(bearer: string, shareId: string) {
   return invoke({ action: "adminDisable", share_id: shareId }, bearer);
 }
 
+export async function adminResendGiftEmail(
+  bearer: string,
+  shareId: string,
+  opts?: { recipientEmail?: string; forceResend?: boolean },
+) {
+  return invoke<{ ok: boolean; result: Record<string, unknown> }>(
+    {
+      action: "adminResendEmail",
+      share_id: shareId,
+      recipient_email: opts?.recipientEmail,
+      force_resend: opts?.forceResend === true,
+    },
+    bearer,
+  );
+}
+
+export async function adminListRedemptions(bearer: string, shareId: string) {
+  return invoke<{
+    ok: boolean;
+    redemptions: Array<{
+      id: string;
+      service_key: string;
+      quantity: number;
+      status: string;
+      created_at: string;
+      idempotency_key_prefix: string;
+    }>;
+  }>({ action: "adminRedemptions", share_id: shareId }, bearer);
+}
+
 export function isPackageKey(value: string): value is SendAGiftPackageKey {
   return (SEND_A_GIFT_PACKAGE_KEYS as readonly string[]).includes(value);
 }

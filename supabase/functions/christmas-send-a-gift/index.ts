@@ -1,6 +1,7 @@
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
 import { SEND_A_GIFT_PRODUCT_KEY } from "../_shared/christmas/sendAGift.ts";
+import { sendSendAGiftRecipientEmail } from "../_shared/christmas/sendAGiftEmail.ts";
 
 /**
  * Send-a-Gift seam — christmas_gift_shares / entitlements / redemptions.
@@ -13,6 +14,8 @@ type Body = {
   service_key?: string;
   idempotency_key?: string;
   gift_share_id?: string;
+  recipient_email?: string;
+  force_resend?: boolean;
 };
 
 function asString(value: unknown): string {
@@ -130,7 +133,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, result: data, idempotency_key: idempotencyKey });
     }
 
-    if (action === "adminList" || action === "adminDisable") {
+    if (action === "adminList" || action === "adminDisable" || action === "adminResendEmail" || action === "adminRedemptions") {
       const gate = await requireAdmin(req, service);
       if (!gate.ok) return jsonResponse({ error: gate.error }, gate.status);
 
@@ -142,6 +145,67 @@ Deno.serve(async (req) => {
         });
         if (error) return jsonResponse({ error: error.message }, 500);
         return jsonResponse({ ok: true, result: data });
+      }
+
+      if (action === "adminRedemptions") {
+        const shareId = asString(body.share_id);
+        const { data: gift } = await service
+          .from("christmas_gift_shares")
+          .select("id,share_id")
+          .eq("share_id", shareId)
+          .maybeSingle();
+        if (!gift) return jsonResponse({ error: "gift_not_found" }, 404);
+        const { data: redemptions, error } = await service
+          .from("christmas_gift_redemptions")
+          .select("id,service_key,quantity,idempotency_key,status,created_at")
+          .eq("gift_share_id", gift.id)
+          .order("created_at", { ascending: false })
+          .limit(100);
+        if (error) return jsonResponse({ error: error.message }, 500);
+        return jsonResponse({
+          ok: true,
+          share_id: gift.share_id,
+          redemptions: (redemptions || []).map((r) => ({
+            id: r.id,
+            service_key: r.service_key,
+            quantity: r.quantity,
+            status: r.status,
+            created_at: r.created_at,
+            // idempotency_key truncated — not a secret but keep short
+            idempotency_key_prefix: String(r.idempotency_key || "").slice(0, 12),
+          })),
+        });
+      }
+
+      if (action === "adminResendEmail") {
+        const shareId = asString(body.share_id);
+        const toEmail = asString(body.recipient_email);
+        const { data: gift } = await service
+          .from("christmas_gift_shares")
+          .select("id,share_id,order_id,status")
+          .eq("share_id", shareId)
+          .maybeSingle();
+        if (!gift) return jsonResponse({ error: "gift_not_found" }, 404);
+
+        let recipient = toEmail;
+        if (!recipient) {
+          const { data: order } = await service
+            .from("christmas_orders")
+            .select("email")
+            .eq("id", gift.order_id)
+            .maybeSingle();
+          recipient = asString(order?.email);
+        }
+        if (!recipient) return jsonResponse({ error: "recipient_email_required" }, 400);
+
+        const result = await sendSendAGiftRecipientEmail({
+          service,
+          giftShareId: gift.id,
+          shareId: gift.share_id,
+          toEmail: recipient,
+          forceResend: body.force_resend === true,
+        });
+        return jsonResponse({ ok: result.sent || result.reason === "already_sent", result });
       }
 
       const { data: gifts, error } = await service
