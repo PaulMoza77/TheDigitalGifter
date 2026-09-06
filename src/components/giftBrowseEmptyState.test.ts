@@ -48,6 +48,18 @@ describe("gift browse empty-state copy", () => {
   });
 });
 
+describe("lint script", () => {
+  it("does not shell out to a PATH tsc binary", () => {
+    const packageJson = JSON.parse(readSrc("package.json"));
+    const runner = readSrc("scripts/run-lint.mjs");
+
+    expect(packageJson.scripts.lint).toBe("node scripts/run-lint.mjs");
+    expect(packageJson.scripts.lint).not.toMatch(/(^|[\s;&|])tsc(\s|$)/);
+    expect(runner).toContain("node_modules/typescript/bin/tsc");
+    expect(runner).toContain("process.execPath");
+  });
+});
+
 describe("gift browse empty-state wiring", () => {
   it("renders the shared empty state with a visible explore-categories CTA", () => {
     const browseGrid = readSrc("src/components/TemplatesGrid.tsx");
