@@ -5,7 +5,22 @@
 **Repo:** `PaulMoza77/TheDigitalGifter`  
 **PR foundation/i18n:** https://github.com/PaulMoza77/TheDigitalGifter/pull/97  
 **PR lifecycle (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/98 (`cursor/christmas-gap-lifecycle-577a` → foundation)  
-**PR kids privacy (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/99 (`cursor/christmas-gap-kids-privacy-577a` → lifecycle)
+**PR kids privacy (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/99 (`cursor/christmas-gap-kids-privacy-577a` → lifecycle)  
+**PR admin KPIs (stacked):** (open from `cursor/christmas-gap-admin-kpis-577a` → kids privacy)
+
+---
+
+## ADMIN KPIs (DONE — `TDG-CHRISTMAS-GAP-ADMIN-KPIS-013`)
+
+Route: `/admin/christmas-kpis` (AdminRoute only)  
+Core: `src/features/christmas/adminKpis/kpiCore.ts`  
+UI: `src/pages/admin/ChristmasKpisPage.tsx`
+
+- Commercial truth: `christmas_orders` (paid / refunded / fulfillment / Stripe session)
+- Funnel stages: `christmas_funnel_events` unique `funnel_session_id` (aggregate ratios, not cohort-exact)
+- Lifecycle email: `christmas_lifecycle_events` template×status
+- Excludes `is_test` events; no emails/media/tokens in UI select list
+- Date presets: Today / 7d / 30d / All
 
 ---
 
@@ -95,10 +110,11 @@ Full product doc: `docs/TDG_CHRISTMAS_LIFECYCLE.md`
 | `TDG-CHRISTMAS-GAP-LIFECYCLE-003` | Lifecycle emails + locale persist | P1 | **DONE** (infra; sends flag-gated) |
 | `TDG-CHRISTMAS-GAP-KIDS-PRIVACY-006` | (superseded) | P0 | **ABSORBED** by HARDEN-007 (no prior impl) |
 | `TDG-CHRISTMAS-GAP-KIDS-PRIVACY-HARDEN-007` | Kids/private media access harden | P0 | **DONE** |
-| `TDG-CHRISTMAS-GAP-ADMIN-KPIS-005` | Admin KPIs / lifecycle observability UI deepen | P1 | **NEXT** |
+| `TDG-CHRISTMAS-GAP-ADMIN-KPIS-013` | Founder Christmas KPI dashboard | P0 | **DONE** |
+| `TDG-CHRISTMAS-GAP-ADMIN-KPIS-005` | (superseded numbering) | P1 | **ABSORBED** by ADMIN-KPIS-013 |
 | `TDG-CHRISTMAS-GAP-CHECKOUT-READY-007` | Price go-live | P0 | founder-gated |
 | `TDG-CHRISTMAS-GAP-CARDS-HARDEN-011` | Cards completion deepen | P1 | queued |
-| `TDG-CHRISTMAS-GAP-SANTA-PROD-012` | Santa production hardening | P1 | queued |
+| `TDG-CHRISTMAS-GAP-SANTA-PROD-012` | Santa production hardening | P1 | **NEXT** |
 | Conversion gaps (Apple Pay / scene-mobile.mp4 / +5 chances) | P0/P1 | audit next if not primary-owned |
 | Localization deepen (tree/wishlist/…) | P2 | queued |
 
