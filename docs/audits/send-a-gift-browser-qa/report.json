@@ -1,0 +1,318 @@
+{
+  "base": "http://127.0.0.1:4173",
+  "checkedAt": "2026-09-06T07:02:21.867Z",
+  "mobile": {
+    "375": {
+      "ok": true,
+      "package_buttons_seen": 3,
+      "pay_disabled": true,
+      "horizontal_overflow": false,
+      "screenshot": "/Users/paul/Downloads/TheDigitalGifter-main/docs/audits/send-a-gift-browser-qa/sender-375.png",
+      "terminal": true
+    },
+    "390": {
+      "ok": true,
+      "package_buttons_seen": 3,
+      "pay_disabled": true,
+      "horizontal_overflow": false,
+      "screenshot": "/Users/paul/Downloads/TheDigitalGifter-main/docs/audits/send-a-gift-browser-qa/sender-390.png",
+      "terminal": true
+    },
+    "430": {
+      "ok": true,
+      "package_buttons_seen": 3,
+      "pay_disabled": true,
+      "horizontal_overflow": false,
+      "screenshot": "/Users/paul/Downloads/TheDigitalGifter-main/docs/audits/send-a-gift-browser-qa/sender-430.png",
+      "terminal": true
+    }
+  },
+  "recipient_invalid": {
+    "ok": true,
+    "text_sample": "★\nGift unavailable\n\nThis gift link is invalid.\n\n★\n\nCreate stunning AI-powered cards and share-ready visuals for holidays, celebrations and meaningful moments.\n\nQUICK LINKS\nHome\nGen",
+    "screenshot": "/Users/paul/Downloads/TheDigitalGifter-main/docs/audits/send-a-gift-browser-qa/recipient-invalid-390.png"
+  },
+  "protected": {
+    "/christmas/tree": {
+      "ok": true,
+      "sample": "★\n\nTHE DIGITAL GIFTER\n\nYour Christmas Tree\n\nI've made you a Christmas tree — tap a gift.\n\nGifts under the tree\nNo gifts ",
+      "screenshot": "/Users/paul/Downloads/TheDigitalGifter-main/docs/audits/send-a-gift-browser-qa/protected-_christmas_tree.png"
+    },
+    "/christmas/tree/demo-share-placeholder": {
+      "ok": true,
+      "sample": "★\nThis tree is private\n\nAsk the sender for a fresh share link, or build your own.\n\nBuild your Christmas Tree\n★\n\nCreate s",
+      "screenshot": "/Users/paul/Downloads/TheDigitalGifter-main/docs/audits/send-a-gift-browser-qa/protected-_christmas_tree_demo_share_placeholder.png"
+    }
+  },
+  "admin": {
+    "actual_sidebar_routes_count": 18,
+    "forward": [
+      {
+        "path": "/admin",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/templates",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/blog",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/funnel",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/support-tickets",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/email/templates",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/email/offers",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/email/campaigns",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/pricing",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/credits",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/orders",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/pet-orders",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/christmas-orders",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/christmas-control",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/funnel-analytics",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/send-a-gift",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/pet-funnel-analytics",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/customers",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      }
+    ],
+    "reverse": [
+      {
+        "path": "/admin/customers",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/pet-funnel-analytics",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/send-a-gift",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/funnel-analytics",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/christmas-control",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/christmas-orders",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/pet-orders",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/orders",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/credits",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/pricing",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/email/campaigns",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/email/offers",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/email/templates",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/support-tickets",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/funnel",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/blog",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin/templates",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      },
+      {
+        "path": "/admin",
+        "ok": true,
+        "still_spinning": false,
+        "nav": "hard_goto_unauth_gate",
+        "sample": "TDG ADMIN\n\nSign in required\n\nPet Funnel Analytics and other admin pages are not public. Sign in with"
+      }
+    ],
+    "infinite_spinner": false,
+    "error_retry": "n/a_unauth_gate",
+    "navigation_mode": "spa_click"
+  },
+  "errors": [],
+  "summary": {
+    "mobile_ok": true,
+    "recipient_invalid_ok": true,
+    "admin_spa_ok": true,
+    "protected_ok": true,
+    "error_count": 0
+  },
+  "ok": true
+}
