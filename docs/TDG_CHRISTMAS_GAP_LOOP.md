@@ -6,7 +6,7 @@
 **PR foundation/i18n:** https://github.com/PaulMoza77/TheDigitalGifter/pull/97  
 **PR lifecycle (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/98 (`cursor/christmas-gap-lifecycle-577a` → foundation)  
 **PR kids privacy (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/99 (`cursor/christmas-gap-kids-privacy-577a` → lifecycle)  
-**PR admin KPIs (stacked):** (open from `cursor/christmas-gap-admin-kpis-577a` → kids privacy)
+**PR admin KPIs (stacked):** https://github.com/PaulMoza77/TheDigitalGifter/pull/101 (`cursor/christmas-gap-admin-kpis-577a` → kids privacy)
 
 ---
 
