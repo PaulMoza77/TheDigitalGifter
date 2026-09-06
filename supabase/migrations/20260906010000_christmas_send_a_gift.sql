@@ -136,7 +136,7 @@ declare
   order_row public.christmas_orders%rowtype;
   pkg_row public.christmas_packages%rowtype;
   share_row public.christmas_gift_shares%rowtype;
-  ent jsonb; service_key text; qty integer; share_token text; existing_count integer;
+  ent jsonb; v_service_key text; v_qty integer; share_token text; existing_count integer;
 begin
   if p_order_id is null then return jsonb_build_object('ok', false, 'reason', 'missing_order_id'); end if;
   select * into order_row from public.christmas_orders where id = p_order_id for update;
@@ -157,7 +157,7 @@ begin
     where p.product_key = 'christmas_send_a_gift' and pkg.package_key = order_row.package_key;
   if not found then return jsonb_build_object('ok', false, 'reason', 'package_not_found'); end if;
   if share_row.id is null then
-    share_token := encode(gen_random_bytes(24), 'hex');
+    share_token := encode(extensions.gen_random_bytes(24), 'hex');
     insert into public.christmas_gift_shares (
       order_id, share_id, status, package_key, sender_display_name, recipient_display_name,
       gift_message_ciphertext, activated_at, activation_event_id, metadata
@@ -179,11 +179,11 @@ begin
   select count(*) into existing_count from public.christmas_gift_entitlements where gift_share_id = share_row.id;
   if existing_count = 0 then
     for ent in select * from jsonb_array_elements(coalesce(pkg_row.metadata->'entitlements','[]'::jsonb)) loop
-      service_key := nullif(trim(ent->>'service_key'),'');
-      qty := coalesce((ent->>'quantity')::integer, 0);
-      if service_key is null or qty <= 0 then continue; end if;
+      v_service_key := nullif(trim(ent->>'service_key'),'');
+      v_qty := coalesce((ent->>'quantity')::integer, 0);
+      if v_service_key is null or v_qty <= 0 then continue; end if;
       insert into public.christmas_gift_entitlements (gift_share_id, order_id, service_key, total_quantity, used_quantity)
-      values (share_row.id, p_order_id, service_key, qty, 0)
+      values (share_row.id, p_order_id, v_service_key, v_qty, 0)
       on conflict (gift_share_id, service_key) do nothing;
     end loop;
   end if;
