@@ -9,7 +9,7 @@
     "build": "vite build",
     "build:static": "node scripts/prepare-static-deploy.mjs",
     "deploy:static": "node scripts/prepare-static-deploy.mjs",
-    "lint": "tsc -p . --noEmit --pretty false && vite build",
+    "lint": "node scripts/run-lint.mjs",
     "test": "vitest run",
     "test:pet-preview-identity": "vitest run src/features/pet-preview-identity.test.ts && node scripts/pet-preview-identity-qa.mjs",
     "deploy:pet-preview": "bash scripts/deploy-pet-preview.sh",
