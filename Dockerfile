@@ -25,6 +25,7 @@ RUN npm ci --omit=dev && npm install --no-save tsx@4.20.5
 COPY --from=build /app/dist ./dist
 COPY api ./api
 COPY server ./server
+COPY src ./src
 COPY public/.well-known ./public/.well-known
 ENV NODE_ENV=production \
     VERCEL_ENV=production \
