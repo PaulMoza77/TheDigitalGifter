@@ -143,6 +143,16 @@ export function isUniqueViolationStatus(status: number, bodyText: string): boole
   );
 }
 
+export function isMissingRelationStatus(status: number, bodyText: string): boolean {
+  const lower = bodyText.toLowerCase();
+  return (
+    status === 404 ||
+    lower.includes("pgrst205") ||
+    lower.includes("does not exist") ||
+    lower.includes("schema cache")
+  );
+}
+
 export type ChristmasClubSignupRow = {
   email: string;
   user_id: string | null;

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { clubEmailValidationMessage, isValidClubEmail, normalizeClubEmail } from "./email";
 import {
   ChristmasClubSignupError,
+  isMissingRelationStatus,
   isUniqueViolationStatus,
   validateChristmasClubSignupPayload,
 } from "./signupContract";
@@ -57,5 +58,15 @@ describe("christmas club signup contract", () => {
       true,
     );
     expect(isUniqueViolationStatus(500, "server exploded")).toBe(false);
+  });
+
+  it("detects a missing signup table so we can fall back safely", () => {
+    expect(
+      isMissingRelationStatus(
+        404,
+        `{"code":"PGRST205","message":"Could not find the table 'public.christmas_club_signups' in the schema cache"}`,
+      ),
+    ).toBe(true);
+    expect(isMissingRelationStatus(200, "[]")).toBe(false);
   });
 });

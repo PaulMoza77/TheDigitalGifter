@@ -3,6 +3,7 @@ import { CHRISTMAS_CLUB_MAX_BODY_BYTES } from "../src/features/christmas/club/co
 import {
   ChristmasClubSignupError,
   clubSignupRowFromValidated,
+  isMissingRelationStatus,
   isUniqueViolationStatus,
   validateChristmasClubSignupPayload,
 } from "../src/features/christmas/club/signupContract";
@@ -73,11 +74,45 @@ async function resolveAuthUser(
   return { id: json.id, email: json.email ?? null };
 }
 
-async function insertSignup(
+async function insertViaFunnelLeadsFallback(
   supabaseUrl: string,
   serviceKey: string,
   row: ReturnType<typeof clubSignupRowFromValidated>,
 ): Promise<{ alreadyJoined: boolean }> {
+  const rpc = await fetch(`${supabaseUrl}/rest/v1/rpc/upsert_funnel_lead`, {
+    method: "POST",
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      p_email: row.email,
+      p_occasion: "christmas",
+      p_style_id: row.signup_method,
+      p_funnel_slug: `christmas_club_${row.campaign_year}`,
+    }),
+  });
+  if (!rpc.ok) {
+    const detail = await rpc.text();
+    console.error(
+      JSON.stringify({
+        source: "christmas-club-signup",
+        error_category: "fallback_write_failed",
+        status: rpc.status,
+        detail: detail.slice(0, 180),
+      }),
+    );
+    throw new Error("Write failed");
+  }
+  return { alreadyJoined: false };
+}
+
+async function insertSignup(
+  supabaseUrl: string,
+  serviceKey: string,
+  row: ReturnType<typeof clubSignupRowFromValidated>,
+): Promise<{ alreadyJoined: boolean; storage: "christmas_club_signups" | "funnel_leads" }> {
   const write = await fetch(`${supabaseUrl}/rest/v1/christmas_club_signups`, {
     method: "POST",
     headers: {
@@ -89,9 +124,21 @@ async function insertSignup(
     body: JSON.stringify(row),
   });
 
-  if (write.ok) return { alreadyJoined: false };
+  if (write.ok) return { alreadyJoined: false, storage: "christmas_club_signups" };
 
   const detail = await write.text();
+  if (isMissingRelationStatus(write.status, detail)) {
+    console.warn(
+      JSON.stringify({
+        source: "christmas-club-signup",
+        error_category: "table_missing_fallback",
+        detail: "christmas_club_signups missing; using funnel_leads",
+      }),
+    );
+    const fallback = await insertViaFunnelLeadsFallback(supabaseUrl, serviceKey, row);
+    return { ...fallback, storage: "funnel_leads" };
+  }
+
   if (!isUniqueViolationStatus(write.status, detail)) {
     console.error(
       JSON.stringify({
@@ -125,7 +172,7 @@ async function insertSignup(
     body: JSON.stringify(patch),
   });
 
-  return { alreadyJoined: true };
+  return { alreadyJoined: true, storage: "christmas_club_signups" };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
