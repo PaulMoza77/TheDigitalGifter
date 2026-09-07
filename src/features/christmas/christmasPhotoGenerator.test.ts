@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  CHRISTMAS_PAYMENT_REQUIRED_HTTP,
   assertStyleAllowed,
   canGenerateChristmasPhoto,
+  christmasOrderIsPaid,
   clientPaymentClaimAuthorizesGeneration,
+  interpretChristmasGenerationClaim,
+  parseChristmasGenerationClaim,
 } from "./generationGuards";
 import {
   christmasPreviewUsesReplicate,
@@ -71,6 +75,34 @@ describe("christmas photo payment gates generation", () => {
     expect(clientPaymentClaimAuthorizesGeneration({ paymentSucceeded: true })).toBe(false);
   });
 
+  it("treats payment_status as source of truth over paid_at", () => {
+    expect(christmasOrderIsPaid({ paymentStatus: "pending", paidAt: "2026-09-02T00:00:00Z" })).toBe(false);
+    expect(christmasOrderIsPaid({ paymentStatus: "paid", paidAt: null })).toBe(true);
+    expect(christmasOrderIsPaid({ paymentStatus: null, paidAt: "2026-09-02T00:00:00Z" })).toBe(true);
+    expect(christmasOrderIsPaid({ paymentStatus: "", paidAt: null })).toBe(false);
+  });
+
+  it("maps unpaid claim RPC to HTTP 402, never 200", () => {
+    const unpaid = interpretChristmasGenerationClaim({
+      claimed: false,
+      reason: "payment_required",
+      payment_status: "draft",
+    });
+    expect(unpaid.kind).toBe("payment_required");
+    if (unpaid.kind !== "payment_required") return;
+    expect(unpaid.httpStatus).toBe(CHRISTMAS_PAYMENT_REQUIRED_HTTP);
+    expect(unpaid.body.code).toBe("payment_required");
+
+    const parsed = parseChristmasGenerationClaim(
+      JSON.stringify({ claimed: false, reason: "payment_required", payment_status: "pending" }),
+    );
+    expect(interpretChristmasGenerationClaim(parsed).kind).toBe("payment_required");
+
+    const replay = interpretChristmasGenerationClaim({ claimed: false, status: "already_running" });
+    expect(replay.kind).toBe("not_claimed");
+    expect(interpretChristmasGenerationClaim({ claimed: true }).kind).toBe("proceed");
+  });
+
   it("duplicate paid transition is idempotent", () => {
     const base = {
       id: "33333333-3333-4333-8333-333333333333",
@@ -124,7 +156,7 @@ describe("christmas photo pricing + wiring", () => {
       "christmas-photo-generate",
     );
     expect(readSrc("supabase/functions/christmas-photo-generate/index.ts")).toContain(
-      'payment_status !== "paid"',
+      "christmasOrderIsPaid",
     );
   });
 
@@ -134,5 +166,33 @@ describe("christmas photo pricing + wiring", () => {
     );
     expect(sql).toContain("payment_status <> 'paid'");
     expect(sql).toContain("payment_required");
+    expect(sql).toContain("grant execute on function public.claim_christmas_generation_job(uuid) to service_role");
+    expect(sql).toContain("revoke all on function public.claim_christmas_generation_job(uuid) from anon, authenticated, public");
+  });
+
+  it("generate handlers are service-role, unpaid 402, and honor claim payment_required", () => {
+    const photo = readSrc("supabase/functions/christmas-photo-generate/index.ts");
+    const edge = readSrc("supabase/functions/christmas-generate/index.ts");
+    const node = readSrc("api/christmas-generate.ts");
+    for (const src of [photo, edge, node]) {
+      expect(src).toContain("isServiceRoleRequest");
+      expect(src).toContain("christmasOrderIsPaid");
+      expect(src).toContain("interpretChristmasGenerationClaim");
+      expect(src).toContain("generationMock");
+    }
+    expect(photo).toContain("claim_christmas_generation_job");
+    expect(photo).toContain("black-forest-labs/flux-kontext-pro");
+    expect(edge).toContain("claim_christmas_v2_generation_job");
+    expect(node).toContain("claim_christmas_v2_generation_job");
+    expect(node).toContain("christmas_v2_orders");
+  });
+
+  it("keeps production purchase disabled in seed catalog", () => {
+    const pkg = CHRISTMAS_CATALOG_SEED
+      .find((p) => p.productKey === "christmas_photo")
+      ?.packages.find((item) => item.packageKey === "single");
+    expect(pkg?.purchasable).toBe(false);
+    expect(pkg?.priceCents).toBe(0);
+    expect(readSrc("src/features/christmas/checkout.ts")).toContain("CHRISTMAS_CHECKOUT_ENABLED");
   });
 });
