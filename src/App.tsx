@@ -120,6 +120,9 @@ const ChristmasShellRoute = lazy(() =>
     default: m.ChristmasShellRoute,
   }))
 );
+const ChristmasPortraitFunnelPage = lazy(
+  () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
+);
 const ChristmasSantaVideoPage = lazy(
   () => import("@/features/christmas/ChristmasSantaVideoPage"),
 );

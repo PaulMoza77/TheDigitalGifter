@@ -15,6 +15,9 @@ describe("christmas foundation wiring", () => {
     expect(seo).toBeGreaterThan(photo);
     expect(app).toContain('path="/christmas/santa-video"');
     expect(app).toContain('path="/christmas/gifts"');
+    expect(app).toContain('import("@/features/christmas/ChristmasPortraitFunnelPage")');
+    expect(app).toContain("ChristmasPortraitFunnelPage");
+    expect(app).toContain("ChristmasGiftTreePage");
     expect(app).toContain('path="christmas-orders"');
   });
 
