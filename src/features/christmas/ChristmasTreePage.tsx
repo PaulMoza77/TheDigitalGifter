@@ -728,6 +728,10 @@ export default function ChristmasTreePage() {
                 </p>
 
                 <div className="text-center text-sm">
+                  <Link className="underline" to="/christmas/gifts">
+                    Chance Gift Tree
+                  </Link>
+                  {" · "}
                   <Link className="underline" to="/christmas/advent">
                     Open Advent Calendar
                   </Link>

@@ -32,6 +32,7 @@ const TDG_ROUTES: Record<string, { path: string; label: string }> = {
   christmas_pet: { path: "/christmas/pets", label: "Explore Pet Portrait" },
   christmas_santa_video: { path: "/christmas/santa-video", label: "Explore Santa Video" },
   christmas_tree: { path: "/christmas/tree", label: "Build a Christmas Tree" },
+  christmas_gift_tree: { path: "/christmas/gifts", label: "Open the Gift Tree" },
 };
 
 async function authBearer() {

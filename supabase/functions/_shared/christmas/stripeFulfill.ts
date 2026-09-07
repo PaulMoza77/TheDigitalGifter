@@ -7,6 +7,8 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
+import { sendGiftTreePackEmail } from "./email.ts";
+import { GIFT_TREE_PRODUCT_KEY, grantPaidGiftTreeOpens } from "./giftTree.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -156,18 +158,46 @@ export async function handleChristmasStripeEvent(input: {
 
     if (result.ok === true && result.status === "paid") {
       const productKey = asString(input.metadata.product_key);
-      let mode: "commerce" | "santa" = "commerce";
-      if (productKey === "christmas_santa_video") {
-        mode = "santa";
-      } else if (!productKey) {
-        const { data: ord } = await input.service
-          .from("christmas_orders")
-          .select("product_key")
-          .eq("id", orderId)
-          .maybeSingle();
-        if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+      const { data: ord } = await input.service
+        .from("christmas_orders")
+        .select("product_key, package_key, user_id, email, metadata")
+        .eq("id", orderId)
+        .maybeSingle();
+      const resolvedProduct = productKey || asString(ord?.product_key);
+      if (resolvedProduct === GIFT_TREE_PRODUCT_KEY) {
+        const meta =
+          ord?.metadata && typeof ord.metadata === "object"
+            ? (ord.metadata as Record<string, unknown>)
+            : {};
+        const grant = await grantPaidGiftTreeOpens({
+          service: input.service,
+          orderId,
+          packageKey: asString(input.metadata.package_key) || asString(ord?.package_key),
+          userId: asString(ord?.user_id) || asString(input.metadata.user_id) || null,
+          guestHash:
+            asString(meta.gift_tree_guest_hash) ||
+            asString(input.metadata.gift_tree_guest_hash) ||
+            null,
+          stripeEventId: input.eventId,
+        });
+        if (grant.ok && !grant.already && asString(ord?.email)) {
+          waitUntil(
+            sendGiftTreePackEmail({
+              service: input.service,
+              orderId,
+              email: asString(ord?.email),
+              opensGranted: grant.opens_granted || 0,
+              packageName: asString(input.metadata.package_key) || "Gift Tree pack",
+            }).catch((err) => {
+              console.error("gift tree pack email failed", err);
+            }),
+          );
+        }
+      } else {
+        let mode: "commerce" | "santa" = "commerce";
+        if (resolvedProduct === "christmas_santa_video") mode = "santa";
+        enqueueChristmasGenerate(orderId, mode);
       }
-      enqueueChristmasGenerate(orderId, mode);
     }
 
     return new Response(JSON.stringify({ ok: true, christmas: result }), {
