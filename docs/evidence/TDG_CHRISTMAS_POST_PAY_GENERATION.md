@@ -24,11 +24,21 @@
 - Shared interpreter: `src/features/christmas/generationGuards.ts` (mirrored in `api/_lib/christmas/generationClaim.ts` and `supabase/functions/_shared/christmas/generationClaim.ts`).
 - Unpaid claim `reason=payment_required` is never treated as `already_running` / HTTP 200.
 
-## Tests
+## Tests (this execution)
 
-`npx vitest run src/features/christmas/christmasPhotoGenerator.test.ts`
+```
+npx vitest run src/features/christmas/christmasPhotoGenerator.test.ts \
+  src/features/christmas/christmasWiring.test.ts \
+  src/features/christmas/christmasFoundation.test.ts \
+  src/features/christmas/christmasPortraitVerticals.test.ts
+```
+
+Result (2026-09-07): **53 passed / 53**.  
+`npx tsc -p . --noEmit --pretty false`: **exit 0**.
 
 Covers unpaid 402 mapping, claim SQL, service-role generate handlers, mock path string, seed non-purchasable.
+
+Live TDG commerce REST probe was **not** repeated from this Cloud Agent: the injected `SUPABASE_SERVICE_ROLE_KEY_mozas` belongs to the Autopilot control-plane project (`ycctleznljpqgedcsbks`), not TheDigitalGifter commerce (`kjlsocejpmnzhhduyumy`). That isolation is correct. Unpaid 402 + claim `payment_required` are proven by unit/source-contract tests plus the previously recorded controlled proofs below. Production purchase was not enabled.
 
 ## Recorded generation proofs (controlled; no production purchase)
 
