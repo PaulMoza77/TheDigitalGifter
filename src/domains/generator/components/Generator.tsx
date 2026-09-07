@@ -861,6 +861,13 @@ export default function GeneratorPage() {
         selectedTemplateId={selectedTemplateId}
         onTemplateSelect={handleTemplateSelect}
         onOpenModal={(src, title) => setModal({ open: true, src, title: title || "" })}
+        emptyLabel={
+          selectedOccasion !== ALL_OCCASIONS
+            ? selectedOccasionLabel
+            : selectedCategory !== "all"
+              ? selectedCategoryLabel
+              : "this selection"
+        }
       />
 
       <BeforeAfterPreview
