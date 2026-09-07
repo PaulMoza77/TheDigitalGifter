@@ -51,9 +51,9 @@ describe("gift browse empty-state wiring", () => {
     expect(browse).toContain("giftBrowseEmptyStateCopy");
     expect(generator).toContain("GiftBrowseEmptyState");
     expect(emptyUi).toContain('data-testid="gift-browse-empty-state"');
-    expect(emptyUi).toContain("Explore categories");
-    expect(emptyUi).toContain("/categories/occasions");
-    expect(emptyUi).toContain("role=\"status\"");
+    expect(emptyUi).toContain("GIFT_BROWSE_EMPTY_CTA_LABEL");
+    expect(emptyUi).toContain("GIFT_BROWSE_EMPTY_CTA_HREF");
+    expect(emptyUi).toContain('role="status"');
     expect(emptyUi).not.toContain("console.");
     expect(browse).not.toContain("No Templates Found");
     expect(generator).not.toContain("No templates found");
