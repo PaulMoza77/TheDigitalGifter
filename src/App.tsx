@@ -115,6 +115,9 @@ const SpiritualCategoryPage = lazy(
 const PetsCategoryPage = lazy(() => import("@/pages/website/PetsCategoryPage"));
 
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
+const ChristmasPortraitFunnelPage = lazy(
+  () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
+);
 const ChristmasShellRoute = lazy(() =>
   import("@/features/christmas/ChristmasShellRoute").then((m) => ({
     default: m.ChristmasShellRoute,
