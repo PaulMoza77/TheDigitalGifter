@@ -63,6 +63,7 @@ describe("christmas portrait vertical config", () => {
     expect(shellForPath("/christmas/advent")).toBeNull();
     expect(shellForPath("/christmas/wishlist")).toBeNull();
     expect(shellForPath("/christmas/gift-finder")).toBeNull();
+    expect(shellForPath("/christmas/gifts")).toBeNull();
     expect(shellForPath("/christmas/kids")?.status).toBe("coming_soon");
   });
 });

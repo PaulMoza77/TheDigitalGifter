@@ -10,6 +10,7 @@ Interactive Christmas engagement system: **Tree + Gifts + Secure Share + Advent 
 | Shared tree | `/christmas/tree/:shareId` | Read-only; `noindex`; 404 if share disabled |
 | Advent | `/christmas/advent` | Calendar + claim engine; production claims gated |
 | Free gift | Advent page section | Server-owned outcome; guest non-monetary only |
+| Gift Tree chance funnel | `/christmas/gifts` | Paid/free catalog opens — **not** this shareable tree |
 
 Feature flags (Edge / Deno env):
 
