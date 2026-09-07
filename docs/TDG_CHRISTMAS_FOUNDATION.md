@@ -60,8 +60,9 @@ Admin: `/admin/christmas-orders`
 
 ## Future generator integration
 
-Paid order → `fulfillment_status=queued` → webhook enqueues `christmas-generate` for `christmas_photo`.  
-Pre-payment preview is **local blur of the original upload** (see `docs/TDG_CHRISTMAS_PHOTO_GENERATOR.md`) — never Replicate.
+Paid order → `fulfillment_status=queued` → webhook enqueues `christmas-photo-generate` for `christmas_photo`.  
+Pre-payment preview is **local blur of the original upload** (see `docs/TDG_CHRISTMAS_PHOTO_GENERATOR.md`) — never Replicate.  
+Production purchase stays off until GAP-007 (package price + `CHRISTMAS_CHECKOUT_ENABLED`).
 
 `enqueueChristmasFulfillment` registry remains available for non-webhook paths; photo V1 uses Stripe fulfill → generate.
 

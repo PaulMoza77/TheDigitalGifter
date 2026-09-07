@@ -48,10 +48,10 @@ export default function ChristmasPage() {
       />
       <section
         aria-label="Christmas product suite"
-        className="mx-auto max-w-5xl px-6 pb-16"
+        className="mx-auto max-w-5xl px-6 pb-16 text-slate-900"
       >
-        <h2 className="text-xl font-semibold text-slate-900">Christmas suite</h2>
-        <p className="mt-2 max-w-2xl text-sm text-slate-600">
+        <h2 className="text-xl font-semibold text-zinc-50">Christmas suite</h2>
+        <p className="mt-2 max-w-2xl text-sm text-zinc-300">
           Portrait experiences are available to try (upload → style → blurred preview). Checkout stays
           off until a production price is configured. Coming-soon items are not purchasable.
         </p>
@@ -61,7 +61,7 @@ export default function ChristmasPage() {
             return (
               <li
                 key={product.productKey}
-                className="rounded-lg border border-slate-200 p-4"
+                className="rounded-lg border border-white/10 bg-zinc-50 p-4 text-slate-900"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -106,7 +106,7 @@ export default function ChristmasPage() {
                 </div>
                 <Link
                   to={product.routePath}
-                  className="mt-4 inline-flex text-sm font-medium text-slate-900 underline-offset-4 hover:underline"
+                  className="mt-4 inline-flex rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white"
                 >
                   {cta === "open" ? "Open" : "View status"} →
                 </Link>

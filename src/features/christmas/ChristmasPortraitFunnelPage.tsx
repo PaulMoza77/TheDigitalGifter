@@ -258,20 +258,31 @@ export default function ChristmasPortraitFunnelPage() {
 
       const localUrl = URL.createObjectURL(file);
       fileBlobRef.current = file;
-      const upload = await createChristmasUpload({
-        contentType: validation.contentType,
-        byteSize: file.size,
-        width: validation.width,
-        height: validation.height,
-      });
-      if (upload.replicate_preview !== false) {
-        throw new Error("Preview contract violated");
+      let uploadId: string | null = null;
+      let sourcePath: string | null = null;
+      try {
+        const upload = await createChristmasUpload({
+          contentType: validation.contentType,
+          byteSize: file.size,
+          width: validation.width,
+          height: validation.height,
+        });
+        if (upload.replicate_preview !== false) {
+          throw new Error("Preview contract violated");
+        }
+        await uploadChristmasBlob(upload.signedUrl, upload.token, file, validation.contentType);
+        uploadId = upload.uploadId;
+        sourcePath = upload.path;
+      } catch (uploadErr) {
+        // V1 purchase is off until GAP-007. Keep the local blur funnel usable
+        // when the upload edge is unavailable; checkout still cannot start.
+        if (purchasable) throw uploadErr;
+        sourcePath = `local-draft/${crypto.randomUUID()}`;
       }
-      await uploadChristmasBlob(upload.signedUrl, upload.token, file, validation.contentType);
       setStep("style", {
         localPreviewUrl: localUrl,
-        uploadId: upload.uploadId,
-        sourcePath: upload.path,
+        uploadId,
+        sourcePath,
         sourceContentType: validation.contentType,
         sourceWidth: validation.width,
         sourceHeight: validation.height,
@@ -478,7 +489,8 @@ export default function ChristmasPortraitFunnelPage() {
         exactTitle
         url={`https://www.thedigitalgifter.com${vertical.routePath}`}
       />
-      <main className="mx-auto min-h-[70vh] max-w-lg px-4 py-8 text-slate-900">
+      <main className="mx-auto min-h-[70vh] max-w-lg px-4 py-8">
+        <div className="rounded-2xl border border-white/10 bg-zinc-50 p-6 text-slate-900 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           The Digital Gifter · Christmas
         </p>
@@ -501,7 +513,7 @@ export default function ChristmasPortraitFunnelPage() {
           </p>
         ) : null}
 
-        {(draft.step === "intro" || draft.step === "upload") && (
+        {draft.step === "intro" && (
           <section className="mt-8 space-y-4">
             {vertical.id === "pets" ? (
               <div className="flex gap-2">
@@ -519,11 +531,38 @@ export default function ChristmasPortraitFunnelPage() {
                 </Link>
               </div>
             ) : null}
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-600">
+              <li>Upload your photo</li>
+              <li>Pick a Christmas style</li>
+              <li>See a blurred preview of your original</li>
+              <li>Unlock the finished portrait after checkout</li>
+            </ol>
             <button
               type="button"
               className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
               onClick={() => {
                 setStep("upload");
+                void trackChristmasEvent("product_selected", {
+                  productKey: vertical.productKey,
+                  pathname: vertical.routePath,
+                  metadata: {
+                    portraitType: vertical.portraitType,
+                    species: vertical.expectedSpecies,
+                  },
+                });
+              }}
+            >
+              Get started
+            </button>
+          </section>
+        )}
+
+        {draft.step === "upload" && (
+          <section className="mt-8 space-y-4">
+            <button
+              type="button"
+              className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
+              onClick={() => {
                 fileRef.current?.click();
               }}
               disabled={busy}
@@ -540,6 +579,13 @@ export default function ChristmasPortraitFunnelPage() {
             />
             <p className="text-xs text-slate-500">{vertical.uploadHint}</p>
             <p className="text-xs text-slate-500">JPEG, PNG, or WebP · under 15 MB</p>
+            <button
+              type="button"
+              className="text-xs text-slate-500 underline-offset-2 hover:underline"
+              onClick={() => setStep("intro")}
+            >
+              Back
+            </button>
           </section>
         )}
 
@@ -734,6 +780,7 @@ export default function ChristmasPortraitFunnelPage() {
             Christmas hub
           </Link>
         </nav>
+        </div>
       </main>
     </>
   );

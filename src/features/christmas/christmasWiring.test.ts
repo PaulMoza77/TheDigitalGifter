@@ -15,6 +15,9 @@ describe("christmas foundation wiring", () => {
     expect(seo).toBeGreaterThan(photo);
     expect(app).toContain('path="/christmas/santa-video"');
     expect(app).toContain('path="christmas-orders"');
+    // Route JSX alone is not enough — Santa Video once dropped the lazy import
+    // and /christmas/photo-generator crashed at render.
+    expect(app).toContain('import("@/features/christmas/ChristmasPortraitFunnelPage")');
   });
 
   it("does not remove classic /christmas hub route", () => {
@@ -25,6 +28,11 @@ describe("christmas foundation wiring", () => {
     expect(readSrc("src/pages/website/ChristmasPage.tsx")).toContain(
       "/generator?occasion=christmas",
     );
+    const hub = readSrc("src/pages/website/ChristmasPage.tsx");
+    expect(hub).toContain("christmas_photo");
+    expect(hub).toContain("product.routePath");
+    expect(hub).toContain('bg-zinc-50');
+    expect(hub).toContain("Open");
   });
 
   it("leaves pet SKU constraint and prices alone", () => {
