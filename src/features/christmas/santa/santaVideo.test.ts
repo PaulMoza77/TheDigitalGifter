@@ -101,6 +101,13 @@ describe("santa payment entitlement", () => {
     expect(fulfill).toContain("christmas-santa-generate");
     expect(fulfill).toContain("christmas_santa_video");
   });
+
+  it("sends V1 transactional delivery email via shared Resend seam + source_route", () => {
+    const generate = readSrc("supabase/functions/christmas-santa-generate/index.ts");
+    expect(generate).toContain("sendPhotoSantaDeliveryEmail");
+    expect(generate).toContain("order.source_route");
+    expect(generate).not.toContain("api.resend.com/emails");
+  });
 });
 
 describe("santa pipeline wiring", () => {

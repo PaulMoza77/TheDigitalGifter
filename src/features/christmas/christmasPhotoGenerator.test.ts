@@ -128,6 +128,15 @@ describe("christmas photo pricing + wiring", () => {
     );
   });
 
+  it("sends V1 transactional delivery email via shared Resend seam", () => {
+    const generate = readSrc("supabase/functions/christmas-photo-generate/index.ts");
+    expect(generate).toContain("sendPhotoSantaDeliveryEmail");
+    expect(generate).toContain("sourceRoute:");
+    expect(readSrc("supabase/functions/_shared/christmas/deliveryEmail.ts")).toContain(
+      'reason: "unconfigured"',
+    );
+  });
+
   it("claim RPC migration requires payment_status paid", () => {
     const sql = readSrc(
       "supabase/migrations/20260902150000_christmas_claim_requires_paid.sql",
