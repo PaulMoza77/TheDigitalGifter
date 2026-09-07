@@ -32,8 +32,10 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 
 ## Generation
 
-- Edge: `christmas-generate` (service role only)
-- Gate: `payment_status === paid` required (402 otherwise)
+- Commerce edge: `christmas-photo-generate` (service role only)
+- Legacy V2 packs: `christmas-generate` / `/api/christmas-generate` (service role only; quarantined `christmas_v2_*` tables)
+- Gate: `payment_status === paid` required (HTTP 402 `payment_required` otherwise)
+- Claim RPC: `claim_christmas_generation_job` refuses unpaid (`reason=payment_required`); generate maps that to 402
 - Model default: `black-forest-labs/flux-kontext-pro`
 - Mock: `CHRISTMAS_GENERATION_MOCK=true` copies source to result bucket for pipeline proof
 - Cost: estimated `$0.04` tariff snapshot stored on order metadata (`cost_state: estimated`) — pet `ai_cost_ledger` remains pet-scoped

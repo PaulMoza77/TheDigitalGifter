@@ -60,7 +60,8 @@ Admin: `/admin/christmas-orders`
 
 ## Future generator integration
 
-Paid order → `fulfillment_status=queued` → webhook enqueues `christmas-generate` for `christmas_photo`.  
+Paid order → `fulfillment_status=queued` → webhook enqueues `christmas-photo-generate` for `christmas_photo`.  
+Unpaid generate is HTTP 402; `claim_christmas_generation_job` also requires `payment_status=paid`.  
 Pre-payment preview is **local blur of the original upload** (see `docs/TDG_CHRISTMAS_PHOTO_GENERATOR.md`) — never Replicate.
 
 `enqueueChristmasFulfillment` registry remains available for non-webhook paths; photo V1 uses Stripe fulfill → generate.
