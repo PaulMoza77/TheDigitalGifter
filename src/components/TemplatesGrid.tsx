@@ -1,6 +1,11 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { X } from "lucide-react";
 
+import GiftBrowseEmptyState from "@/components/GiftBrowseEmptyState";
+import {
+  formatGiftBrowseCategoryLabel,
+  giftBrowseEmptyStateCopy,
+} from "@/components/giftBrowseEmptyState";
 import VideoModal from "./VideoModal";
 import TemplateCard from "./TemplateCard";
 
@@ -280,12 +285,15 @@ function TemplatesGridComponent({
   const hasActiveFilters =
     scene !== "all" || orientation !== "all" || priceRange !== "all";
 
-  const emptyLabel =
+  const emptySubject =
     activeOccasion && activeOccasion !== "all"
       ? prettyOccasion(activeOccasion)
-      : activeCategory !== "all"
-        ? activeCategory
-        : "this category";
+      : formatGiftBrowseCategoryLabel(activeCategory);
+
+  const emptyCopy = giftBrowseEmptyStateCopy({
+    subjectLabel: emptySubject,
+    hasActiveFilters,
+  });
 
   return (
     <div className="space-y-8">
@@ -415,30 +423,15 @@ function TemplatesGridComponent({
           ))}
         </div>
       ) : (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-16">
-          <div className="mx-auto max-w-md text-center">
-            <div className="mb-4 text-6xl">
-              {emojiForOccasion(occasionFilter)}
-            </div>
-
-            <h3 className="mb-2 text-xl font-bold text-[#fffef5]">
-              No Templates Found
-            </h3>
-
-            <p className="mb-6 text-[#c1c8d8]">
-              Try adjusting your filters to find the perfect template for{" "}
-              {emptyLabel}.
-            </p>
-
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className="inline-flex items-center gap-2 rounded-lg border border-transparent bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] px-6 py-3 font-semibold text-[#1a1a1a] transition-all hover:brightness-110"
-            >
-              Clear Filters
-            </button>
-          </div>
-        </div>
+        <GiftBrowseEmptyState
+          title={emptyCopy.title}
+          description={emptyCopy.description}
+          primaryCtaLabel={emptyCopy.primaryCtaLabel}
+          primaryCtaTo={emptyCopy.primaryCtaTo}
+          emoji={emojiForOccasion(occasionFilter)}
+          showClearFilters={hasActiveFilters}
+          onClearFilters={handleClearFilters}
+        />
       )}
 
       {modal.open && (
