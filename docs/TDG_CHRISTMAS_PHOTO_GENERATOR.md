@@ -51,8 +51,13 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 
 ## Email
 
-- Resend transactional after success when `RESEND_API_KEY` + from + email + token hint present
-- No marketing content
+V1 seam only (`src/features/christmas/deliveryEmail.ts` + `supabase/functions/_shared/christmas/deliveryEmail.ts`). Welcome / abandon / cross-sell / locale persistence are **GAP-LIFECYCLE-003** (PR 98).
+
+- `christmas-photo-generate` calls `sendPhotoSantaDeliveryEmail` after fulfillment success
+- Resend path when `RESEND_API_KEY` + (`CHRISTMAS_EMAIL_FROM` or `TRANSACTIONAL_EMAIL_FROM`) + email + token hint present
+- **No customer emails in testing** when keys are absent (`unconfigured` skip — no Resend POST)
+- Recovery link uses `source_route` (then landing path / product+species) via `recoveryRouteForOrder`
+- Transactional copy only — no marketing, upgrade, or cross-sell
 
 ## Analytics
 

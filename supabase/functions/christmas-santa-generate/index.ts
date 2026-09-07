@@ -7,6 +7,7 @@ import {
   generateSantaTalkingVideo,
   santaStillPrompt,
 } from "../_shared/christmas/santaVideo.ts";
+import { sendPhotoSantaDeliveryEmail } from "../_shared/christmas/deliveryEmail.ts";
 
 /**
  * Post-payment Santa Video pipeline (async stages).
@@ -383,39 +384,20 @@ Deno.serve(async (req) => {
           })
           .eq("id", orderId);
 
-        // Best-effort email
+        // Best-effort transactional delivery email (skipped without Resend keys)
         try {
-          const email = asString(order.email);
-          const apiKey = asString(Deno.env.get("RESEND_API_KEY"));
-          const from = asString(
-            Deno.env.get("CHRISTMAS_EMAIL_FROM") || Deno.env.get("TRANSACTIONAL_EMAIL_FROM"),
-          );
-          const tokenHint = asString(
-            (order.metadata as Record<string, unknown> | null)?.public_token_hint,
-          );
-          if (email && apiKey && from && tokenHint) {
-            const site = (
-              Deno.env.get("SITE_URL") ||
-              Deno.env.get("PUBLIC_APP_URL") ||
-              "https://www.thedigitalgifter.com"
-            ).replace(/\/$/, "");
-            const link = `${site}/christmas/santa-video?token=${encodeURIComponent(tokenHint)}`;
-            await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                from,
-                to: [email],
-                subject: "Your Santa video is ready",
-                html: `<p>Your personalized Santa video is ready.</p><p><a href="${link}">Open your result</a></p><p>— The Digital Gifter</p>`,
-              }),
-            });
-          }
+          await sendPhotoSantaDeliveryEmail({
+            email: asString(order.email),
+            tokenHint: asString(
+              (order.metadata as Record<string, unknown> | null)?.public_token_hint,
+            ),
+            productKey: asString(order.product_key),
+            sourceRoute: asString(order.source_route) || null,
+            landingPath: asString(order.landing_path) || null,
+            species: asString(order.species) || null,
+          });
         } catch {
-          /* ignore */
+          /* best-effort transactional email — never block fulfillment */
         }
 
         return jsonResponse({
