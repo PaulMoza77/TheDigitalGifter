@@ -478,7 +478,8 @@ export default function ChristmasPortraitFunnelPage() {
         exactTitle
         url={`https://www.thedigitalgifter.com${vertical.routePath}`}
       />
-      <main className="mx-auto min-h-[70vh] max-w-lg px-4 py-8 text-slate-900">
+      <main className="mx-auto min-h-[70vh] max-w-lg px-4 py-8">
+        <div className="rounded-2xl border border-white/10 bg-zinc-50 p-6 text-slate-900 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           The Digital Gifter · Christmas
         </p>
@@ -768,6 +769,7 @@ export default function ChristmasPortraitFunnelPage() {
             Christmas hub
           </Link>
         </nav>
+        </div>
       </main>
     </>
   );

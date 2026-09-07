@@ -156,6 +156,8 @@ describe("christmas photo pricing + wiring", () => {
     expect(page).toContain("createBlurredOriginalPreview");
     expect(page).toContain("Continue to offer");
     expect(page).toContain("Your Christmas transformation is ready to create");
+    expect(page).toContain("bg-zinc-50");
+    expect(page).toContain("text-slate-900");
   });
 
   it("claim RPC migration requires payment_status paid", () => {
