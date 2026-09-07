@@ -1,5 +1,5 @@
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
-import { getServiceClient, readJson } from "../_shared/supabase.ts";
+import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
 import {
   buildChristmasPortraitPrompt,
   isPortraitProductKey,
@@ -58,6 +58,8 @@ type Body = {
   template_key?: string;
   guardian_consent?: boolean;
   consent_version?: string;
+  /** Gift Tree chance-funnel identity (hashed server-side). */
+  gift_tree_guest_token?: string;
   /** Ignored — prompts are server-owned. */
   prompt?: string;
   client_prompt?: string;
@@ -95,6 +97,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await readJson<Body>(req);
+    const { user } = await getAuthUser(req);
     const productKey = asString(body.product_key);
     const packageKey =
       asString(body.package_key) ||
@@ -145,6 +148,13 @@ Deno.serve(async (req) => {
         species,
         landingPath: asString(body.landing_path),
       });
+
+    const isGiftTree = product.product_key === "christmas_gift_tree";
+    const giftTreeGuestToken = asString(body.gift_tree_guest_token);
+    let giftTreeGuestHash = "";
+    if (isGiftTree && giftTreeGuestToken.length >= 32) {
+      giftTreeGuestHash = await sha256Hex(giftTreeGuestToken);
+    }
 
     if (isPortraitProductKey(product.product_key)) {
       if (!styleKey || !sourcePath) {
@@ -217,7 +227,9 @@ Deno.serve(async (req) => {
       asString(body.success_url) ||
       (product.product_key === "christmas_santa_video"
         ? `${siteOrigin()}/christmas/santa-video?checkout=success`
-        : `${siteOrigin()}${sourceRoute}?checkout=success`);
+        : isGiftTree
+          ? `${siteOrigin()}/christmas/gifts?checkout=success`
+          : `${siteOrigin()}${sourceRoute}?checkout=success`);
     const sku = `xmas_${product.product_key}_${pkg.package_key}`;
 
     let orderId = asString(body.existing_order_id);
@@ -277,12 +289,19 @@ Deno.serve(async (req) => {
           adset_id: asString(body.adset_id) || null,
           ad_id: asString(body.ad_id) || null,
           funnel_session_id: asString(body.funnel_session_id) || null,
+          user_id: user?.id || null,
           metadata: {
             source: "christmas-checkout",
             public_token_hint: publicToken,
             portrait_type: portraitType,
             species,
             source_route: sourceRoute,
+            ...(isGiftTree
+              ? {
+                  gift_tree_guest_hash: giftTreeGuestHash || null,
+                  chance_funnel: true,
+                }
+              : {}),
           },
           ...orderPatch,
         })
@@ -333,6 +352,10 @@ Deno.serve(async (req) => {
     params.set("metadata[package_key]", pkg.package_key);
     params.set("metadata[sku]", sku);
     params.set("metadata[christmas_order_id]", orderId);
+    if (isGiftTree && giftTreeGuestHash) {
+      params.set("metadata[gift_tree_guest_hash]", giftTreeGuestHash);
+    }
+    if (user?.id) params.set("metadata[user_id]", user.id);
     if (styleKey) params.set("metadata[style_key]", styleKey);
     if (portraitType) params.set("metadata[portrait_type]", portraitType);
     if (species) params.set("metadata[species]", species);

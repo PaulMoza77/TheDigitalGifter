@@ -16,6 +16,7 @@ export const CHRISTMAS_PRODUCT_TYPES = [
   "wishlist",
   "gift_finder",
   "messages",
+  "gift_tree",
   "hub",
   "other",
 ] as const;
@@ -294,6 +295,63 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     packages: [],
   },
   {
+    productKey: "christmas_gift_tree",
+    slug: "gifts",
+    productType: "gift_tree",
+    name: "Christmas Gift Tree",
+    description: "Open gifts on your chance tree. Catalog rewards — never invented in the browser.",
+    active: true,
+    publicDiscoverable: true,
+    sortOrder: 85,
+    routePath: "/christmas/gifts",
+    localeDefault: "en",
+    metadata: { gift_tree_v1: true, live_offer: false, chance_funnel: true },
+    packages: [
+      {
+        packageKey: "open_1",
+        packageName: "1 Gift Open",
+        description: "Draft package — not a live public offer.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["1 catalog gift open"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: { opens: 1, live_offer: false },
+      },
+      {
+        packageKey: "open_3",
+        packageName: "3 Gift Opens",
+        description: "Draft package — not a live public offer.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["3 catalog gift opens"],
+        sortOrder: 20,
+        localeDefault: "en",
+        metadata: { opens: 3, live_offer: false },
+      },
+      {
+        packageKey: "open_5",
+        packageName: "5 Gift Opens",
+        description: "Draft package — not a live public offer.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["5 catalog gift opens"],
+        sortOrder: 30,
+        localeDefault: "en",
+        metadata: { opens: 5, live_offer: false },
+      },
+    ],
+  },
+  {
     productKey: "christmas_advent",
     slug: "advent",
     productType: "advent",
@@ -420,6 +478,7 @@ export function hubProducts(catalog: ChristmasProductDef[]): ChristmasProductDef
 export function isComingSoon(product: ChristmasProductDef): boolean {
   if (
     product.metadata?.tree_v1 ||
+    product.metadata?.gift_tree_v1 ||
     product.metadata?.advent_v1 ||
     product.metadata?.wishlist_v1 ||
     product.metadata?.gift_finder_v1 ||
@@ -442,6 +501,7 @@ const PORTRAIT_VERTICAL_KEYS = new Set([
 const EXPERIENCE_OPEN_KEYS = new Set([
   ...PORTRAIT_VERTICAL_KEYS,
   "christmas_tree",
+  "christmas_gift_tree",
   "christmas_advent",
   "christmas_wishlist",
   "christmas_gift_finder",
