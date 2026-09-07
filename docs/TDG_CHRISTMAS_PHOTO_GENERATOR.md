@@ -7,7 +7,7 @@
 
 ## User flow
 
-Intro → Upload → Style → **Blurred ORIGINAL preview** → Offer → Embedded checkout (when purchasable) → Paid webhook → Replicate generation → Result → Download / Share → Token recovery (+ email when configured)
+Intro → Upload → Style → **Blurred ORIGINAL preview** → Offer → Embedded checkout (when purchasable) → Paid webhook → `christmas-photo-generate` → Result → Download / Share → Token recovery (+ email when configured)
 
 ## Preview architecture (critical)
 
@@ -32,7 +32,8 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 
 ## Generation
 
-- Edge: `christmas-generate` (service role only)
+- Edge: `christmas-photo-generate` (service role only) for commerce `christmas_photo` / portrait verticals
+- Legacy V2 pack funnel still uses `christmas-generate` against quarantined `christmas_v2_*` tables — not this product
 - Gate: `payment_status === paid` required (402 otherwise)
 - Model default: `black-forest-labs/flux-kontext-pro`
 - Mock: `CHRISTMAS_GENERATION_MOCK=true` copies source to result bucket for pipeline proof
@@ -46,7 +47,7 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 
 ## Recovery
 
-- `?token=` public token → `christmas-funnel` `getOrder`
+- `?token=` public token → `christmas-photo-funnel` `getOrder`
 - Draft persisted in sessionStorage for in-progress unpaid flow
 
 ## Email
@@ -93,6 +94,8 @@ Allowlisted events via `/api/christmas/funnel-event` including upload/style/prev
 - Token recovery → paid/completed + signed `resultUrl`; wrong token → 404
 
 `CHRISTMAS_CHECKOUT_ENABLED=false` (secret). Production purchase remains disabled.
+
+**Go-live** is a separate founder-gated task (`TDG-CHRISTMAS-GAP-CHECKOUT-READY-007` / GAP-007): set a real `price_cents`, flip `purchasable=true`, and enable `CHRISTMAS_CHECKOUT_ENABLED`. This V1 PR must not production-push that flip.
 
 ## Known limitations
 

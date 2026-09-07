@@ -501,7 +501,7 @@ export default function ChristmasPortraitFunnelPage() {
           </p>
         ) : null}
 
-        {(draft.step === "intro" || draft.step === "upload") && (
+        {draft.step === "intro" && (
           <section className="mt-8 space-y-4">
             {vertical.id === "pets" ? (
               <div className="flex gap-2">
@@ -519,11 +519,38 @@ export default function ChristmasPortraitFunnelPage() {
                 </Link>
               </div>
             ) : null}
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-600">
+              <li>Upload your photo</li>
+              <li>Pick a Christmas style</li>
+              <li>See a blurred preview of your original</li>
+              <li>Unlock the finished portrait after checkout</li>
+            </ol>
             <button
               type="button"
               className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
               onClick={() => {
                 setStep("upload");
+                void trackChristmasEvent("product_selected", {
+                  productKey: vertical.productKey,
+                  pathname: vertical.routePath,
+                  metadata: {
+                    portraitType: vertical.portraitType,
+                    species: vertical.expectedSpecies,
+                  },
+                });
+              }}
+            >
+              Get started
+            </button>
+          </section>
+        )}
+
+        {draft.step === "upload" && (
+          <section className="mt-8 space-y-4">
+            <button
+              type="button"
+              className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
+              onClick={() => {
                 fileRef.current?.click();
               }}
               disabled={busy}
@@ -540,6 +567,13 @@ export default function ChristmasPortraitFunnelPage() {
             />
             <p className="text-xs text-slate-500">{vertical.uploadHint}</p>
             <p className="text-xs text-slate-500">JPEG, PNG, or WebP · under 15 MB</p>
+            <button
+              type="button"
+              className="text-xs text-slate-500 underline-offset-2 hover:underline"
+              onClick={() => setStep("intro")}
+            >
+              Back
+            </button>
           </section>
         )}
 

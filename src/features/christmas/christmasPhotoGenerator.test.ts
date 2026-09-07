@@ -114,18 +114,48 @@ describe("christmas photo pricing + wiring", () => {
   it("routes photo-generator to real page not shell", () => {
     const app = readSrc("src/App.tsx");
     expect(app).toContain("ChristmasPortraitFunnelPage");
+    expect(app).toContain(
+      'import("@/features/christmas/ChristmasPortraitFunnelPage")',
+    );
     expect(app.indexOf("ChristmasPortraitFunnelPage")).toBeLessThan(
       app.indexOf('path="/christmas/kids"'),
     );
+    expect(readSrc("src/features/christmas/routes.ts")).not.toContain(
+      '"/christmas/photo-generator"',
+    );
   });
 
-  it("webhook enqueues christmas-photo-generate after paid", () => {
-    expect(readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts")).toContain(
-      "christmas-photo-generate",
+  it("webhook enqueues christmas-photo-generate after paid (commerce path)", () => {
+    const fulfill = readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts");
+    expect(fulfill).toContain('mode === "commerce"');
+    expect(fulfill).toContain('"christmas-photo-generate"');
+    const generate = readSrc("supabase/functions/christmas-photo-generate/index.ts");
+    expect(generate).toContain('payment_status !== "paid"');
+    expect(generate).toContain("payment_required");
+    expect(generate).toContain("Forbidden");
+    expect(generate).not.toContain("pet-v2-preview");
+  });
+
+  it("checkout stays disabled until CHRISTMAS_CHECKOUT_ENABLED and purchasable price", () => {
+    expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain(
+      "CHRISTMAS_CHECKOUT_ENABLED",
     );
-    expect(readSrc("supabase/functions/christmas-photo-generate/index.ts")).toContain(
-      'payment_status !== "paid"',
+    expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain(
+      "checkout_disabled",
     );
+    expect(readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx")).toContain(
+      "Production checkout is not enabled yet",
+    );
+  });
+
+  it("funnel is intro → upload → style → blur preview → offer", () => {
+    const page = readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx");
+    expect(page).toContain("Get started");
+    expect(page).toContain("Upload your photo");
+    expect(page).toContain("Choose a Christmas style");
+    expect(page).toContain("createBlurredOriginalPreview");
+    expect(page).toContain("Continue to offer");
+    expect(page).toContain("Your Christmas transformation is ready to create");
   });
 
   it("claim RPC migration requires payment_status paid", () => {
