@@ -138,6 +138,7 @@ describe("christmas portrait wiring", () => {
   it("App routes five verticals to shared funnel", () => {
     const app = readSrc("src/App.tsx");
     expect(app).toContain("ChristmasPortraitFunnelPage");
+    expect(app).toContain('import("@/features/christmas/ChristmasPortraitFunnelPage")');
     for (const path of [
       "/christmas/photo-generator",
       "/christmas/family",
@@ -188,6 +189,7 @@ describe("christmas portrait wiring", () => {
 describe("christmas portrait funnel e2e contract (component)", () => {
   it("shared funnel exposes upload → style → blur preview → offer for all verticals", () => {
     const page = readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx");
+    expect(page).toContain("Get started");
     expect(page).toContain("Upload your photo");
     expect(page).toContain("Choose a Christmas style");
     expect(page).toContain("createBlurredOriginalPreview");

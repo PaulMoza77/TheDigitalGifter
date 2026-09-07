@@ -32,7 +32,7 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 
 ## Generation
 
-- Edge: `christmas-generate` (service role only)
+- Commerce edge: `christmas-photo-generate` (service role only). Legacy V2 packs still use `christmas-generate`.
 - Gate: `payment_status === paid` required (402 otherwise)
 - Model default: `black-forest-labs/flux-kontext-pro`
 - Mock: `CHRISTMAS_GENERATION_MOCK=true` copies source to result bucket for pipeline proof
@@ -46,7 +46,7 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 
 ## Recovery
 
-- `?token=` public token → `christmas-funnel` `getOrder`
+- `?token=` public token → `christmas-photo-funnel` `getOrder`
 - Draft persisted in sessionStorage for in-progress unpaid flow
 
 ## Email
@@ -92,7 +92,9 @@ Allowlisted events via `/api/christmas/funnel-event` including upload/style/prev
 - Unpaid generate → HTTP 402 `payment_required`
 - Token recovery → paid/completed + signed `resultUrl`; wrong token → 404
 
-`CHRISTMAS_CHECKOUT_ENABLED=false` (secret). Production purchase remains disabled.
+`CHRISTMAS_CHECKOUT_ENABLED=false` (secret). Production purchase remains disabled until GAP-007 (intentional founder gate — do not flip purchasable/price or production-push from this V1 task).
+
+V1 funnel contract (attempt 2 evidence, 2026-09-07): route is a real page (`ChristmasPortraitFunnelPage` lazy-imported in `src/App.tsx` — route JSX alone previously crashed after Santa Video dropped the import). Local canvas blur of the original only (`createBlurredOriginalPreview`). Post-pay enqueue is `christmas-photo-generate`. Seed package stays `purchasable=false` / `price_cents=0`.
 
 ## Known limitations
 

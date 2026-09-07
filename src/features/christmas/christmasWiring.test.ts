@@ -15,6 +15,9 @@ describe("christmas foundation wiring", () => {
     expect(seo).toBeGreaterThan(photo);
     expect(app).toContain('path="/christmas/santa-video"');
     expect(app).toContain('path="christmas-orders"');
+    // Route JSX alone is not enough — Santa Video once dropped the lazy import
+    // and /christmas/photo-generator crashed at render.
+    expect(app).toContain('import("@/features/christmas/ChristmasPortraitFunnelPage")');
   });
 
   it("does not remove classic /christmas hub route", () => {
