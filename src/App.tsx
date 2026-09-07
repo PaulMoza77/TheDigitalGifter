@@ -135,6 +135,9 @@ const ChristmasWishlistPage = lazy(
 const ChristmasGiftFinderPage = lazy(
   () => import("@/features/christmas/ChristmasGiftFinderPage"),
 );
+const ChristmasPortraitFunnelPage = lazy(
+  () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
+);
 const ChristmasCardsPage = lazy(
   () => import("@/features/christmas/ChristmasCardsPage"),
 );
