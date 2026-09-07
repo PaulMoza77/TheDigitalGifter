@@ -20,8 +20,9 @@ export type ChristmasFulfillmentHandler = (
 
 /**
  * Client-side registry only — no fake result generators.
- * christmas_photo post-pay generation is enqueued by stripeFulfill → christmas-generate
- * (edge), not via this in-browser registry.
+ * christmas_photo post-pay generation is enqueued by stripeFulfill →
+ * christmas-photo-generate (commerce edge). Legacy V2 packs still use christmas-generate.
+ * Not via this in-browser registry.
  */
 export const CHRISTMAS_FULFILLMENT_HANDLERS: Partial<
   Record<string, ChristmasFulfillmentHandler>
