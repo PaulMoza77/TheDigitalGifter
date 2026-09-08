@@ -41,14 +41,18 @@ Guest flow:
 
 ### GIFT
 
-Table `christmas_tree_gifts`:
+Table `christmas_tree_gifts` — tree-ornament gifts (not `/christmas/gifts` chance funnel, not Send-a-Gift prepaid links):
 
-- `sort_order` (stable reorder)
+- `sort_order` (stable reorder; max 24 gifts)
 - `gift_type`: `message` | `tdg_reward` | `product_link` | `cosmetic`
-- unlock: `immediate` | `on_date` (server enforces unlock before reveal)
-- Future paid seam: `linked_order_id`, `linked_product_key`, `reward_definition_id`
+- unlock: `immediate` | `on_date` (server enforces unlock before reveal; date-only values use Europe/Bucharest midnight)
+- `product_link` / `tdg_reward` store an **allowlisted** TDG `linked_product_key` (no arbitrary URLs)
+- `cosmetic` stores an allowlisted ornament key in `linked_product_key`
+- Future paid seam: `linked_order_id`, `reward_definition_id`
 
-Opening tracked via `opened_at` + tree `open_count`.
+Share (`getSharedTree`) is read-only: payload (message / product path / cosmetic) is omitted until `openGift` succeeds after the unlock clock. Opening tracked via `opened_at` + tree `open_count`.
+
+Analytics (`gift_added`, `gift_opened`) send `gift_type` / `unlock_mode` / buckets only — never message, names, or tokens.
 
 ### REWARD / ADVENT
 
@@ -93,6 +97,8 @@ Christmas admin can inspect tree aggregates via service role / future RPC. Messa
 ## Edge function
 
 `christmas-tree-funnel` actions: `createTree`, `getOwnerTree`, `updateTree`, `setShareEnabled`, `getSharedTree`, `addGift`, `reorderGifts`, `openGift`, `claimGuestTree`, `listMyTrees`, `adventStatus`, `claimAdvent`, `claimFreeGift`.
+
+`addGift` validates type + unlock via `normalizeTreeGiftInput`. Shared reads project via `projectSharedGift`.
 
 ## Activation report
 

@@ -15,10 +15,12 @@ export type Decoration = {
   ornaments: "classic" | "gold" | "minimal" | "colorful";
 };
 
+export type TreeGiftType = "message" | "tdg_reward" | "product_link" | "cosmetic";
+
 export type TreeGift = {
   id: string;
   sort_order: number;
-  gift_type: string;
+  gift_type: TreeGiftType | string;
   box_style: string;
   display_name: string;
   message?: string | null;
@@ -27,7 +29,12 @@ export type TreeGift = {
   opened?: boolean;
   opened_at?: string | null;
   can_open?: boolean;
+  linked_product_key?: string | null;
+  product_path?: string | null;
+  cosmetic_key?: string | null;
 };
+
+export type { Decoration as Decorations };
 
 export type OwnerTree = {
   id: string;

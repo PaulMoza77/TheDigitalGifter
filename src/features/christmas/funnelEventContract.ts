@@ -254,11 +254,31 @@ export function validateChristmasFunnelIngestPayload(
     adId: sanitizeFunnelText(body.ad_id, 120),
     hasFbclid: Boolean(body.has_fbclid),
     referrerHost: sanitizeFunnelText(body.referrer_host, 120),
-    metadata:
-      body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata)
-        ? body.metadata
-        : {},
+    metadata: sanitizeIngestMetadata(body.metadata),
   };
+}
+
+function sanitizeIngestMetadata(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const blocked = new Set([
+    "message",
+    "title",
+    "from_name",
+    "display_name",
+    "owner_token",
+    "gift_message",
+    "recipient",
+    "cosmetic_key",
+    "linked_product_key",
+    "product_path",
+  ]);
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (blocked.has(k)) continue;
+    if (typeof v === "string" && v.length > 80) continue;
+    out[k] = v;
+  }
+  return out;
 }
 
 export function christmasEventRowFromValidated(
