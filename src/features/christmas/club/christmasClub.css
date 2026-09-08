@@ -124,7 +124,7 @@
 
 .cc-hero h1 {
   margin: 0;
-  max-width: 14ch;
+  max-width: 16ch;
   font-size: clamp(2.15rem, 9vw, 3.4rem);
   font-weight: 600;
   line-height: 1.05;
@@ -142,10 +142,17 @@
 
 .cc-countdown {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.35rem 1rem;
+  margin: 1.75rem 0 1.6rem;
+  max-width: 22.5rem;
+}
+
+.cc-countdown[data-compact="true"] {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.55rem;
-  margin: 1.5rem 0 1.35rem;
-  max-width: 28rem;
+  max-width: 22rem;
+  margin: 1.1rem 0 1.2rem;
 }
 
 .cc-unit {
@@ -153,11 +160,58 @@
   flex-direction: column;
   align-items: center;
   min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cc-unit--product {
+  gap: 0.45rem;
+}
+
+.cc-print {
+  display: block;
+  width: 100%;
+  padding: 0.38rem 0.38rem 1.15rem;
+  background: #f3ead6;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+  transform: rotate(-1.4deg);
+}
+
+.cc-unit:nth-child(2) .cc-print {
+  transform: rotate(1.8deg);
+}
+
+.cc-unit:nth-child(3) .cc-print {
+  transform: rotate(1.1deg);
+}
+
+.cc-unit:nth-child(4) .cc-print {
+  transform: rotate(-2deg);
+}
+
+.cc-print img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 6;
+  max-height: 7.4rem;
+  object-fit: cover;
+}
+
+.cc-unit--product:hover .cc-print,
+.cc-unit--product:focus-visible .cc-print {
+  transform: rotate(0deg) translateY(-3px);
+}
+
+.cc-countdown-note {
+  margin: 1.35rem 0 0;
+  max-width: 34ch;
+  font-size: 0.92rem;
+  color: rgba(247, 240, 228, 0.7);
 }
 
 .cc-digit {
   font-family: var(--cc-display);
-  font-size: clamp(2.35rem, 11vw, 4.4rem);
+  font-size: clamp(2.2rem, 10vw, 3.4rem);
   font-weight: 600;
   line-height: 0.92;
   letter-spacing: -0.04em;
@@ -171,12 +225,19 @@
 }
 
 .cc-label {
-  margin-top: 0.35rem;
+  margin-top: 0.2rem;
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--cc-gold);
+}
+
+.cc-product-name {
+  margin-top: 0.12rem;
+  font-family: var(--cc-display);
+  font-size: 0.95rem;
+  color: rgba(247, 240, 228, 0.78);
 }
 
 .cc-arrived {
@@ -254,9 +315,10 @@
 }
 
 .cc-error {
-  margin: 0.2rem 0 0;
-  font-size: 0.82rem;
-  color: #ffc5b8;
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #ffd2c4;
 }
 
 .cc-divider {
@@ -350,38 +412,12 @@
 }
 
 .cc-gifts {
-  width: 100%;
-  max-width: 36rem;
-  margin: 1.4rem 0 0;
-  border-radius: 1.4rem;
+  width: min(100%, 28rem);
+  margin: 2rem 0 0;
+  border-radius: 0.4rem;
   object-fit: cover;
   aspect-ratio: 4 / 3;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-}
-
-.cc-moments {
-  display: grid;
-  gap: 0.9rem;
-  margin-top: 1.4rem;
-}
-
-.cc-moment {
-  padding: 0.15rem 0;
-}
-
-.cc-moment strong {
-  display: block;
-  font-family: var(--cc-display);
-  font-size: 1.35rem;
-  font-weight: 600;
-}
-
-.cc-moment span {
-  display: block;
-  margin-top: 0.25rem;
-  color: rgba(247, 240, 228, 0.68);
-  font-size: 0.95rem;
-  line-height: 1.5;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
 }
 
 .cc-finale {
@@ -468,7 +504,7 @@
   .cc-hero {
     justify-content: center;
     padding: 1.5rem 3rem 4rem;
-    max-width: 46rem;
+    max-width: 52rem;
   }
 
   .cc-hero h1 {
@@ -481,12 +517,26 @@
   }
 
   .cc-countdown {
-    max-width: 34rem;
-    gap: 1rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-width: 40rem;
+    gap: 1.6rem 1.35rem;
+  }
+
+  .cc-print img {
+    max-height: none;
+    aspect-ratio: 4 / 5;
+  }
+
+  .cc-countdown[data-compact="true"] {
+    max-width: 28rem;
   }
 
   .cc-digit {
-    font-size: clamp(4.2rem, 7vw, 7.2rem);
+    font-size: clamp(2.8rem, 4.4vw, 4.4rem);
+  }
+
+  .cc-countdown[data-compact="true"] .cc-digit {
+    font-size: clamp(3.2rem, 5vw, 5.4rem);
   }
 
   .cc-join,
@@ -498,18 +548,16 @@
     padding: 1rem 3rem 5.5rem;
   }
 
-  .cc-moments {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.4rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cc-scene__glow,
   .cc-scene__twinkle,
   .cc-digit,
-  .cc-cta {
+  .cc-cta,
+  .cc-print {
     animation: none !important;
     transition: none !important;
+    transform: none !important;
   }
 }

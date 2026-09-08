@@ -58,6 +58,40 @@ export const CHRISTMAS_CLUB_ASSETS = {
   og: "/christmas/og-countdown.png",
 } as const;
 
+export type ChristmasClubCountdownUnit = "days" | "hours" | "minutes" | "seconds";
+
+/** One Christmas product sits inside each countdown unit — photos, not SaaS cards. */
+export const CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS = [
+  {
+    unit: "days" as const,
+    productKey: "christmas_family",
+    name: "Family",
+    href: "/christmas/family",
+    image: "/assets/funnel/christmas-after.png",
+  },
+  {
+    unit: "hours" as const,
+    productKey: "christmas_photo",
+    name: "Portraits",
+    href: "/christmas/photo-generator",
+    image: "/assets/funnel/christmas-ex2-after.png",
+  },
+  {
+    unit: "minutes" as const,
+    productKey: "christmas_pet",
+    name: "Pets",
+    href: "/christmas/pets",
+    image: "/pet/dog/scenes/christmas-portrait.webp",
+  },
+  {
+    unit: "seconds" as const,
+    productKey: "christmas_card",
+    name: "Cards",
+    href: "/christmas/cards",
+    image: "/assets/funnel/christmas-ex3-after.png",
+  },
+] as const;
+
 export const CHRISTMAS_CLUB_SEO = {
   title: "Christmas Countdown | The Digital Gifter",
   description:
