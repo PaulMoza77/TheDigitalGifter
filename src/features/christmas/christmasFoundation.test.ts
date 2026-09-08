@@ -212,6 +212,16 @@ describe("christmas analytics contract", () => {
     expect(validated.affiliateRef).toBe("partner1");
     expect(validated.hasFbclid).toBe(true);
     expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain("purchase");
+    const sanitized = validateChristmasFunnelIngestPayload({
+      event_name: "christmas_page_view",
+      funnel_session_id: session,
+      metadata: {
+        style_key: "cozy",
+        email: "a@b.com",
+        public_token: "deadbeef",
+      },
+    });
+    expect(sanitized.metadata).toEqual({ style_key: "cozy" });
   });
 
   it("rejects invalid event", () => {

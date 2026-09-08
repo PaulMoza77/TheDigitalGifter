@@ -1,8 +1,31 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import AccountTopbar from "@/components/client/AccountTopbar";
 
+/** Account galleries are private — never index /account*. */
+function useAccountNoIndex() {
+  useEffect(() => {
+    let robots = document.querySelector('meta[name="robots"]');
+    const created = !robots;
+    if (!robots) {
+      robots = document.createElement("meta");
+      robots.setAttribute("name", "robots");
+      document.head.appendChild(robots);
+    }
+    const previous = robots.getAttribute("content");
+    robots.setAttribute("content", "noindex,nofollow");
+    return () => {
+      if (created && robots?.parentNode) {
+        robots.parentNode.removeChild(robots);
+      } else if (robots && previous != null) {
+        robots.setAttribute("content", previous);
+      }
+    };
+  }, []);
+}
+
 export default function ClientLayout() {
+  useAccountNoIndex();
   return (
     <div className="min-h-screen bg-[#09090b] text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
