@@ -1,14 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
-import { getChristmasFunnelSessionId, trackChristmasEvent, trackChristmasEventOnce } from "@/features/christmas/analytics";
+import { trackChristmasEvent, trackChristmasEventOnce } from "@/features/christmas/analytics";
 import {
   CHRISTMAS_COUNTDOWN_DEFAULTS,
   type ChristmasCountdownPublicConfig,
 } from "@/features/christmas-countdown/defaults";
-import { christmasAuthCallbackUrl, rememberChristmasJoinPending } from "@/features/christmas-countdown/joinAuth";
-import { attributionForSignup } from "@/features/christmas-countdown/utm";
+import {
+  christmasAuthCallbackUrl,
+  clearChristmasJoinOptIn,
+  clearChristmasJoinQuery,
+  peekChristmasJoinOptIn,
+  rememberChristmasJoinPending,
+} from "@/features/christmas-countdown/joinAuth";
+import { registerChristmasCountdownSignup } from "@/features/christmas-countdown/registerSignup";
 
 function pad(value: number) {
   return String(Math.max(0, value)).padStart(2, "0");
@@ -29,44 +34,18 @@ function remainingParts(targetIso: string, now: number) {
   };
 }
 
-async function registerSignup(input: {
-  email: string;
-  signupMethod: "email" | "google";
-  userId?: string | null;
-  marketingOptIn: boolean;
-  campaignYear: number;
-}) {
-  const attr = attributionForSignup();
-  const { data, error } = await supabase.rpc("register_christmas_countdown_signup", {
-    p_email: input.email,
-    p_signup_method: input.signupMethod,
-    p_user_id: input.userId ?? null,
-    p_source: attr.source,
-    p_medium: attr.medium,
-    p_campaign: attr.campaign,
-    p_utm_content: attr.content,
-    p_utm_term: attr.term,
-    p_referrer: attr.referrer,
-    p_landing_page: attr.landingPage || "/christmas",
-    p_funnel_session_id: getChristmasFunnelSessionId(),
-    p_marketing_opt_in: input.marketingOptIn,
-    p_campaign_year: input.campaignYear,
-  });
-  if (error) throw error;
-  return data as { ok?: boolean; created?: boolean; duplicate?: boolean } | null;
-}
-
 export function ChristmasCountdownJoin({
   config,
 }: {
   config: ChristmasCountdownPublicConfig;
 }) {
-  const { user, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle } = useAuth();
   const [now, setNow] = useState(() => Date.now());
   const [email, setEmail] = useState("");
   const [optIn, setOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [joined, setJoined] = useState(false);
+  const googleCompleteStarted = useRef(false);
   const parts = useMemo(
     () => remainingParts(config.countdownTargetAt || CHRISTMAS_COUNTDOWN_DEFAULTS.countdownTargetAt, now),
     [config.countdownTargetAt, now],
@@ -77,15 +56,21 @@ export function ChristmasCountdownJoin({
     return () => window.clearInterval(id);
   }, []);
 
+  const markJoined = useCallback(() => {
+    clearChristmasJoinOptIn();
+    clearChristmasJoinQuery();
+    setJoined(true);
+  }, []);
+
   const completeGoogle = useCallback(async () => {
     if (!user?.email) return;
     setSubmitting(true);
     try {
-      await registerSignup({
+      await registerChristmasCountdownSignup({
         email: user.email,
         signupMethod: "google",
         userId: user.id,
-        marketingOptIn: optIn,
+        marketingOptIn: peekChristmasJoinOptIn() || optIn,
         campaignYear: config.campaignYear,
       });
       void trackChristmasEvent("christmas_google_auth_completed", {
@@ -97,21 +82,24 @@ export function ChristmasCountdownJoin({
         pathname: "/christmas",
         metadata: { signup_method: "google" },
       });
-      setJoined(true);
+      markJoined();
     } catch (err) {
+      googleCompleteStarted.current = false;
       console.error("[ChristmasCountdownJoin] google complete failed", err);
       toast.error("Could not finish Google signup. Please try again.");
     } finally {
       setSubmitting(false);
     }
-  }, [config.campaignYear, optIn, user?.email, user?.id]);
+  }, [config.campaignYear, markJoined, optIn, user?.email, user?.id]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("join") === "google" && user?.email && !joined) {
-      void completeGoogle();
-    }
-  }, [completeGoogle, joined, user?.email]);
+    if (params.get("join") !== "google" || joined) return;
+    if (loading || !user?.email) return;
+    if (googleCompleteStarted.current) return;
+    googleCompleteStarted.current = true;
+    void completeGoogle();
+  }, [completeGoogle, joined, loading, user?.email]);
 
   if (!config.pageActive && !config.signupActive) return null;
 
@@ -162,7 +150,7 @@ export function ChristmasCountdownJoin({
                 pathname: "/christmas",
               });
               setSubmitting(true);
-              void registerSignup({
+              void registerChristmasCountdownSignup({
                 email: clean,
                 signupMethod: "email",
                 userId: user?.id ?? null,
@@ -175,11 +163,13 @@ export function ChristmasCountdownJoin({
                     pathname: "/christmas",
                     metadata: { signup_method: "email" },
                   });
-                  setJoined(true);
+                  markJoined();
                 })
                 .catch((err) => {
                   console.error("[ChristmasCountdownJoin] email signup failed", err);
-                  toast.error("Could not join right now. Please try again.");
+                  toast.error(err instanceof Error && err.message === "Enter a valid email"
+                    ? "Enter a valid email to join."
+                    : "Could not join right now. Please try again.");
                 })
                 .finally(() => setSubmitting(false));
             }}
@@ -230,7 +220,13 @@ export function ChristmasCountdownJoin({
                     productKey: "christmas_countdown",
                     pathname: "/christmas",
                   });
-                  rememberChristmasJoinPending();
+                  if (user?.email) {
+                    if (googleCompleteStarted.current) return;
+                    googleCompleteStarted.current = true;
+                    void completeGoogle();
+                    return;
+                  }
+                  rememberChristmasJoinPending(optIn);
                   void signInWithGoogle({ redirectTo: christmasAuthCallbackUrl() }).catch((err) => {
                     console.error("[ChristmasCountdownJoin] google start failed", err);
                     toast.error("Google sign-in failed.");

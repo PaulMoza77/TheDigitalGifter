@@ -93,6 +93,9 @@ describe("christmas countdown admin wiring", () => {
     );
     expect(sql).toContain("revoke all on table public.christmas_countdown_signups");
     expect(sql).not.toMatch(/grant select on table public.christmas_countdown_signups to anon/);
+    expect(readSrc("src/features/christmas-countdown/registerSignup.ts")).toContain("/api/christmas-countdown-signup");
+    expect(readSrc("src/features/christmas-countdown/ChristmasCountdownJoin.tsx")).toContain("registerChristmasCountdownSignup");
+    expect(readSrc("src/pages/AuthCallback.tsx")).toContain("/christmas?join=google");
   });
 
   it("copies src into the origin image so countdown APIs can import shared modules", () => {
