@@ -127,10 +127,13 @@ describe("christmas privacy wiring", () => {
   });
 
   it("getOrder returns a private cache-safe projection", () => {
+    const cors = readSrc("supabase/functions/_shared/cors.ts");
+    expect(cors).toContain("private, no-store");
+    expect(cors).toContain("function privateJsonResponse");
     const photo = readSrc("supabase/functions/christmas-photo-funnel/index.ts");
     const santa = readSrc("supabase/functions/christmas-santa-funnel/index.ts");
     for (const src of [photo, santa]) {
-      expect(src).toContain("private, no-store");
+      expect(src).toContain("privateJsonResponse");
       expect(src).toContain("delivery_revoked");
       expect(src).not.toMatch(/return (privateJsonResponse|jsonResponse)\(\{[\s\S]*\.\.\.order/);
     }
