@@ -32,6 +32,11 @@ describe("admin return path", () => {
     expect(takeAuthReturnTo("/")).toBe("/");
   });
 
+  it("returns Christmas joiners to /christmas after Google OAuth", () => {
+    expect(readFileSync(resolve(root, "src/pages/AuthCallback.tsx"), "utf8")).toContain("takeChristmasJoinPending");
+    expect(readFileSync(resolve(root, "src/pages/AuthCallback.tsx"), "utf8")).toContain("/christmas?join=google");
+  });
+
   it("keeps unauthenticated admin visitors on a sign-in gate instead of sending them home", () => {
     const adminRoute = readFileSync(resolve(root, "src/components/AdminRoute.tsx"), "utf8");
     expect(adminRoute).toContain("AdminSignInGate");

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { takeAuthReturnTo } from "@/lib/auth/returnTo";
+import { takeChristmasJoinPending } from "@/features/christmas-countdown/joinAuth";
 
 function getHashParams() {
   const hash = window.location.hash.startsWith("#")
@@ -20,7 +21,16 @@ export default function AuthCallback() {
 
     async function finish() {
       if (!mounted) return;
-      navigate(takeAuthReturnTo("/"), { replace: true });
+      const adminPath = takeAuthReturnTo("");
+      if (adminPath) {
+        navigate(adminPath, { replace: true });
+        return;
+      }
+      if (takeChristmasJoinPending()) {
+        navigate("/christmas?join=google", { replace: true });
+        return;
+      }
+      navigate("/", { replace: true });
     }
 
     async function fail(reason: string) {

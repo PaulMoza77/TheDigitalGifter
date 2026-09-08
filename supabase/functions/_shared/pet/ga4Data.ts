@@ -117,7 +117,7 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
   );
 }
 
-async function googleAccessToken(): Promise<string> {
+export async function googleAccessToken(): Promise<string> {
   const { clientEmail, privateKey } = parseServiceAccount();
   const now = Math.floor(Date.now() / 1000);
   const header = base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));

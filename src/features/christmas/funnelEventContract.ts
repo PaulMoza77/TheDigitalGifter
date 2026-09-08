@@ -2,6 +2,11 @@ export const CHRISTMAS_FUNNEL_EVENT_PATH = "/api/christmas/funnel-event";
 
 export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "christmas_page_view",
+  "christmas_join_started",
+  "christmas_join_completed",
+  "christmas_google_auth_started",
+  "christmas_google_auth_completed",
+  "christmas_return_visit",
   "product_selected",
   "upload_started",
   "upload_completed",
