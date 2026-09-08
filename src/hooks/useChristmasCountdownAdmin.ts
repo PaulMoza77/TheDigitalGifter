@@ -68,11 +68,26 @@ async function invokeAdmin<T>(action: string, payload: Record<string, unknown> =
   const { data, error } = await supabase.functions.invoke("christmas-admin", {
     body: { action, ...payload },
   });
-  if (error) throw error;
-  if (data && typeof data === "object" && "error" in data && (data as { error?: string }).error) {
-    throw new Error(String((data as { error: string }).error));
+  if (!error && data && typeof data === "object" && !("error" in (data as object) && (data as { error?: string }).error)) {
+    return data as T;
   }
-  return data as T;
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error(error?.message || "Admin authentication required");
+  const res = await fetch("/api/christmas-admin", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  const json = (await res.json()) as T & { error?: string };
+  if (!res.ok || (json && typeof json === "object" && json.error)) {
+    throw new Error(json?.error || error?.message || `Admin request failed (${res.status})`);
+  }
+  return json;
 }
 
 export function useChristmasCountdownAdmin(preset: ChristmasDatePreset, custom?: { from: string; to: string }) {

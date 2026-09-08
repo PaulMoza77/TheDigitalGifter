@@ -46,13 +46,14 @@ describe("christmas countdown admin wiring", () => {
     expect(page).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(hook).toContain('supabase.functions.invoke("christmas-admin"');
     expect(readSrc("supabase/functions/christmas-admin/index.ts")).toContain("assertAdmin");
-    expect(readSrc("supabase/functions/christmas-admin/index.ts")).not.toContain("private_key");
+    expect(readSrc("api/christmas-admin.ts")).toContain("Forbidden: not an admin");
+    expect(readSrc("api/christmas-admin.ts")).not.toContain("private_key");
   });
 
   it("serves first-party Christmas hub events on the VPS origin", () => {
     const routes = readSrc("server/routes.mjs");
     expect(routes).toContain('"/api/christmas/funnel-event": "christmas-funnel-event.ts"');
-    expect(routes).toContain('"/api/christmas-countdown-config": "christmas-countdown-config.ts"');
+    expect(routes).toContain('"/api/christmas-admin": "christmas-admin.ts"');
   });
 
   it("falls back to hardcoded public copy when config is missing", () => {

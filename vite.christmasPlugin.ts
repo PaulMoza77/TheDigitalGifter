@@ -3,6 +3,7 @@ import funnelHandler from "./api/christmas-v2-funnel-event";
 import foundationFunnelHandler from "./api/christmas-funnel-event";
 import countdownConfigHandler from "./api/christmas-countdown-config";
 import countdownSignupHandler from "./api/christmas-countdown-signup";
+import christmasAdminHandler from "./api/christmas-admin";
 
 function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) => void }): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -60,7 +61,9 @@ export function christmasV2DevPlugin(): Plugin {
                 ? countdownConfigHandler
                 : url === "/api/christmas-countdown-signup"
                   ? countdownSignupHandler
-                  : null;
+                  : url === "/api/christmas-admin"
+                    ? christmasAdminHandler
+                    : null;
         if (!handler) return next();
         if (req.method === "OPTIONS") {
           res.statusCode = 204;

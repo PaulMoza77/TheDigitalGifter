@@ -18,6 +18,7 @@ export const API_MODULES = {
   "/api/christmas/funnel-event": "christmas-funnel-event.ts",
   "/api/christmas-countdown-config": "christmas-countdown-config.ts",
   "/api/christmas-countdown-signup": "christmas-countdown-signup.ts",
+  "/api/christmas-admin": "christmas-admin.ts",
   "/api/christmas-santa-compose": "christmas-santa-compose.ts",
   "/api/christmas-v2/funnel-event": "christmas-v2-funnel-event.ts",
   "/api/christmas-v2-funnel-event": "christmas-v2-funnel-event.ts",
