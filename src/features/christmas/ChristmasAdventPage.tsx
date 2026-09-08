@@ -114,7 +114,12 @@ export default function ChristmasAdventPage() {
       });
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Claim failed");
+      const msg = e instanceof Error ? e.message : "Claim failed";
+      setError(
+        msg.includes("advent_disabled")
+          ? "Advent claims open when the season is live."
+          : msg,
+      );
     } finally {
       setBusy(false);
     }

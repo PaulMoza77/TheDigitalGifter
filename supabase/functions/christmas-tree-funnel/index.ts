@@ -1,9 +1,14 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { assertAdmin, getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
 import {
+  evaluateAdventClaimRequest,
+  parseAdventNow,
+} from "../_shared/christmas/adventClaimPolicy.ts";
+import {
   adventCreditsEnabled,
   adventDayParts,
   adventEnabled,
+  adventTestHooksEnabled,
   asString,
   BOX_STYLES,
   freeGiftEnabled,
@@ -345,9 +350,13 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true });
     }
 
+    const testHooks = adventTestHooksEnabled();
+    const testForce = testHooks && Boolean(body.__test_force);
+    const adventNow = parseAdventNow(body.__test_date, testHooks);
+
     // ---- Advent ----
     if (action === "adventStatus") {
-      const parts = adventDayParts(parseInjectedDate(body), SEASON_YEAR);
+      const parts = adventDayParts(adventNow, SEASON_YEAR);
       const { data: rewards } = await service
         .from("christmas_advent_rewards")
         .select("id,day,reward_type,title,description,active,config")
@@ -392,18 +401,18 @@ Deno.serve(async (req) => {
 
     if (action === "claimAdvent") {
       if (!user?.id || !user.email) return jsonResponse({ error: "auth_required" }, 401);
-      if (!adventEnabled() && !body.__test_force) {
-        return jsonResponse({ error: "advent_disabled", code: "advent_disabled" }, 403);
+      const parts = adventDayParts(adventNow, SEASON_YEAR);
+      const decision = evaluateAdventClaimRequest({
+        adventEnabled: adventEnabled(),
+        testHooksEnabled: testHooks,
+        testForce: Boolean(body.__test_force),
+        requestedDay: body.day,
+        eligibleDay: parts.eligibleDay,
+      });
+      if (!decision.ok) {
+        return jsonResponse({ error: decision.error, code: decision.error }, decision.status);
       }
-      const parts = adventDayParts(parseInjectedDate(body), SEASON_YEAR);
-      const requestedDay = Number(body.day);
-      if (!Number.isInteger(requestedDay) || requestedDay < 1 || requestedDay > 24) {
-        return jsonResponse({ error: "invalid_day" }, 400);
-      }
-      // Production: only eligibleDay. Test inject allows matching injected date.
-      if (parts.eligibleDay !== requestedDay) {
-        return jsonResponse({ error: "not_eligible", code: "not_eligible" }, 403);
-      }
+      const requestedDay = decision.day;
       const { data: reward } = await service
         .from("christmas_advent_rewards")
         .select("*")
@@ -411,7 +420,7 @@ Deno.serve(async (req) => {
         .eq("day", requestedDay)
         .eq("locale", "en")
         .maybeSingle();
-      if (!reward || (!reward.active && !body.__test_force)) {
+      if (!reward || (!reward.active && !testForce)) {
         return jsonResponse({ error: "inactive_reward" }, 403);
       }
       if (reward.reward_type === "credits" && !adventCreditsEnabled()) {
@@ -517,7 +526,7 @@ Deno.serve(async (req) => {
 
     // ---- Free gift ----
     if (action === "claimFreeGift") {
-      if (!freeGiftEnabled() && !body.__test_force) {
+      if (!freeGiftEnabled() && !testForce) {
         return jsonResponse({ error: "free_gift_disabled" }, 403);
       }
       const guestToken = asString(body.guest_token);
@@ -554,7 +563,7 @@ Deno.serve(async (req) => {
       // Never grant monetary credits to anonymous/guest free-gift traffic.
       let candidates = (pool || []).filter((g: Record<string, unknown>) => {
         if (g.reward_type === "credits") return false;
-        if (body.__test_force) return true;
+        if (testForce) return true;
         return Boolean(g.active);
       });
       if (candidates.length === 0) return jsonResponse({ error: "no_gifts" }, 503);
@@ -660,15 +669,6 @@ async function loadOwnerTree(
     if (data) return data;
   }
   return null;
-}
-
-function parseInjectedDate(body: Body): Date {
-  const raw = asString(body.__test_date);
-  if (raw && /^\d{4}-\d{2}-\d{2}/.test(raw)) {
-    const d = new Date(raw + (raw.includes("T") ? "" : "T12:00:00+02:00"));
-    if (!Number.isNaN(d.getTime())) return d;
-  }
-  return new Date();
 }
 
 function weightedPick(items: Record<string, unknown>[]): Record<string, unknown> {
