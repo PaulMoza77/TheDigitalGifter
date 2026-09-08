@@ -86,7 +86,9 @@ Christmas admin can inspect tree aggregates via service role / future RPC. Messa
 
 ## Privacy / SEO
 
-- Personal share pages: `noindex`
+- Personal share pages: `noindex` (PageHead + `X-Robots-Tag` on `/christmas/tree/:shareId` + `robots.txt` Disallow `/christmas/tree/`)
+- Creator `/christmas/tree` stays indexable; share IDs are never sitemap-listed
+- Distinct from paid Gift Tree (`/christmas/gifts`) and Send a Gift (`/send-a-gift`)
 - No `/trees` directory
 - OG copy for shares is generic (“A Christmas Tree is waiting for you”) — SPA limitation: no server-rendered per-tree OG image yet
 

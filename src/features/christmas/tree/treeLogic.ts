@@ -81,6 +81,31 @@ export function sanitizeTreeAnalyticsMeta(meta: Record<string, unknown>): Record
   return out;
 }
 
+/** 32-byte hex write token — never used as the public shareId. */
+export function generateOpaqueOwnerToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** High-entropy public read capability (base64url, ≥22 chars). Distinct from owner token. */
+export function generatePublicShareId(): string {
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+export function isOpaqueOwnerToken(value: string): boolean {
+  return /^[0-9a-f]{64}$/.test(value);
+}
+
+export function isPublicShareId(value: string): boolean {
+  return value.length >= 22 && /^[A-Za-z0-9_-]+$/.test(value) && !isOpaqueOwnerToken(value);
+}
+
 export function reorderIds(ids: string[], fromIndex: number, toIndex: number): string[] {
   if (
     fromIndex < 0 ||
