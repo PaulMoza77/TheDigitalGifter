@@ -432,6 +432,10 @@ export default function ChristmasGiftFinderPage() {
           <Link className="underline" to="/christmas/tree">
             Christmas Tree
           </Link>
+          {" · "}
+          <Link className="underline" to="/christmas/gifts">
+            Gift Tree chances
+          </Link>
         </p>
       </div>
     </div>

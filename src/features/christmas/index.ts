@@ -28,3 +28,8 @@ export {
   canEnqueueFulfillment,
 } from "./fulfillment";
 export { CHRISTMAS_ROUTE_SHELLS, shellForPath, shellExposesCheckout } from "./routes";
+export {
+  GIFT_TREE_PRODUCT_KEY,
+  GIFT_TREE_ROUTE,
+  opensForPackage,
+} from "./giftTree/giftTreeLogic";

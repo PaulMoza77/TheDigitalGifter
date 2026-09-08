@@ -14,7 +14,7 @@ TDG already has `public.credits_ledger`: integer purchase/generation points with
 2. **Do not invent a second cash balance.**
 3. **Non-cash rewards** (ornaments, toppers, surprise messages) live in `christmas_reward_entitlements` and Advent/free-gift catalogs — never labeled as “credits” in UX when they are not ledger credits.
 4. **Guest / anonymous traffic cannot claim monetary credits.** Login required.
-5. **Production defaults:** Advent reward rows `active=false`; `CHRISTMAS_ADVENT_CREDITS_ENABLED` off; free-gift monetary pool inactive.
+5. **Production defaults:** Advent reward rows `active=false`; `CHRISTMAS_ADVENT_CREDITS_ENABLED` off; free-gift monetary pool inactive. Gift Tree chance-funnel (`christmas_gift_tree`) reuses the same ledger with note prefix `christmas_gift_tree:` and stays inactive until founder flags.
 
 ## Consequences
 
