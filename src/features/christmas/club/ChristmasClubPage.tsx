@@ -70,7 +70,8 @@ export function ChristmasClubPage() {
       const preload = document.createElement("link");
       preload.rel = "preload";
       preload.as = "image";
-      preload.href = CHRISTMAS_CLUB_ASSETS.hero;
+      preload.href = CHRISTMAS_CLUB_ASSETS.hero1920;
+      preload.type = "image/webp";
       preload.setAttribute("data-cc-preload", "hero");
       document.head.appendChild(preload);
     }
@@ -216,29 +217,39 @@ export function ChristmasClubPage() {
       </a>
 
       <section className="cc-hero">
-        <p className="cc-eyebrow">The Digital Gifter presents</p>
-        <h1>Something magical is coming this Christmas.</h1>
-        <p className="cc-lede">
-          Join our Christmas countdown and discover little surprises along the way.
-        </p>
-        <p className="cc-countdown-note">A few gifts already waiting inside the countdown.</p>
-        <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} />
-        {showForm ? (
-          <>
-            <h2 className="sr-only">Join the Christmas Countdown</h2>
-            <ChristmasJoinForm
-              submitting={submitting}
-              googleBusy={googleBusy || authLoading}
-              googleAvailable
-              error={error}
-              onEmailJoin={(email) => void handleEmailJoin(email)}
-              onGoogleJoin={() => void handleGoogleJoin()}
-              onStarted={markJoinStarted}
-            />
-          </>
-        ) : (
-          <ChristmasClubSuccess />
-        )}
+        <div className="cc-hero__copy">
+          <p className="cc-eyebrow">The Digital Gifter presents</p>
+          <h1>Something magical is coming this Christmas.</h1>
+          <p className="cc-lede">
+            Join our Christmas countdown and discover little surprises along the way.
+          </p>
+        </div>
+
+        <div className="cc-dock">
+          <div className="cc-dock__countdown">
+            <p className="cc-countdown-note">A few gifts already waiting inside the countdown.</p>
+            <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} />
+          </div>
+
+          <div className="cc-dock__join" id="join">
+            {showForm ? (
+              <>
+                <h2 className="sr-only">Join the Christmas Countdown</h2>
+                <ChristmasJoinForm
+                  submitting={submitting}
+                  googleBusy={googleBusy || authLoading}
+                  googleAvailable
+                  error={error}
+                  onEmailJoin={(email) => void handleEmailJoin(email)}
+                  onGoogleJoin={() => void handleGoogleJoin()}
+                  onStarted={markJoinStarted}
+                />
+              </>
+            ) : (
+              <ChristmasClubSuccess />
+            )}
+          </div>
+        </div>
       </section>
 
       <div className="cc-story">
@@ -256,25 +267,14 @@ export function ChristmasClubPage() {
             Join once. Come back as Christmas gets closer. New surprises may be waiting for you
             beneath the tree.
           </p>
-          <img
-            className="cc-gifts"
-            src={CHRISTMAS_CLUB_ASSETS.gifts}
-            alt="Elegant wrapped Christmas gifts beneath warm fairy lights"
-            width={1024}
-            height={768}
-            loading="lazy"
-          />
         </section>
 
         <section className="cc-panel cc-finale">
           <h2>Ready for Christmas?</h2>
           {showForm ? (
-            <>
-              <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} compact />
-              <a className="cc-cta" href="#join" style={{ display: "inline-block", textDecoration: "none" }}>
-                Join the Countdown
-              </a>
-            </>
+            <a className="cc-cta" href="#join" style={{ display: "inline-block", textDecoration: "none" }}>
+              Join the Countdown
+            </a>
           ) : (
             <ChristmasClubSuccess />
           )}

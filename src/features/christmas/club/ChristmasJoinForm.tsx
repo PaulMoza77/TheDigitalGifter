@@ -54,7 +54,7 @@ export function ChristmasJoinForm({
   }
 
   return (
-    <div className="cc-join" id="join">
+    <div className="cc-join">
       <p>Be part of the magic. We’ll have little surprises waiting for you along the way.</p>
       <form className="cc-form" onSubmit={handleSubmit} noValidate>
         <label className="sr-only" htmlFor="christmas-club-email">

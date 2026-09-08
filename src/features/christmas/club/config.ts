@@ -52,10 +52,18 @@ export type ChristmasClubConfig = {
 };
 
 export const CHRISTMAS_CLUB_ASSETS = {
-  hero: "/christmas/hero-living-room.png",
-  tree: "/christmas/tree-portrait.png",
+  hero: "/christmas/cabin-hero-1920.webp",
+  hero1280: "/christmas/cabin-hero-1280.webp",
+  hero1920: "/christmas/cabin-hero-1920.webp",
+  hero2560: "/christmas/cabin-hero-2560.webp",
+  hero1280Jpg: "/christmas/cabin-hero-1280.jpg",
+  hero1920Jpg: "/christmas/cabin-hero-1920.jpg",
+  hero2560Jpg: "/christmas/cabin-hero-2560.jpg",
+  heroLoop: "/christmas/cabin-hero-loop.mp4",
+  heroLoop720: "/christmas/cabin-hero-loop-720.mp4",
+  tree: "/christmas/cabin-hero-1280.webp",
   gifts: "/christmas/gifts-still-life.png",
-  og: "/christmas/og-countdown.png",
+  og: "/christmas/og-countdown.jpg",
 } as const;
 
 export type ChristmasClubCountdownUnit = "days" | "hours" | "minutes" | "seconds";
@@ -97,5 +105,5 @@ export const CHRISTMAS_CLUB_SEO = {
   description:
     "Count down to Christmas with The Digital Gifter and join us for a little extra magic along the way.",
   canonical: "https://www.thedigitalgifter.com/christmas",
-  ogImage: "https://www.thedigitalgifter.com/christmas/og-countdown.png",
+  ogImage: "https://www.thedigitalgifter.com/christmas/og-countdown.jpg",
 } as const;
