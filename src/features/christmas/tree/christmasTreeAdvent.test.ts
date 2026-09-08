@@ -12,6 +12,14 @@ import {
   reorderIds,
   sanitizeTreeAnalyticsMeta,
 } from "./treeLogic";
+import {
+  entitlementKeyFromGift,
+  filterFreeGiftCandidates,
+  freeGiftClaimAllowed,
+  freeGiftIdempotencyKey,
+  parseFeatureFlag,
+  weightedPick,
+} from "./freeGiftClaim";
 
 function readSrc(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
@@ -180,7 +188,127 @@ describe("christmas tree security invariants (source)", () => {
 
   it("free gift never picks credits for guests in funnel", () => {
     const fn = readSrc("supabase/functions/christmas-tree-funnel/index.ts");
-    expect(fn).toContain('if (g.reward_type === "credits") return false');
+    expect(fn).toContain("filterFreeGiftCandidates");
+    expect(fn).toContain("freeGiftClaimAllowed");
     expect(fn).toContain("auth_required_for_credits");
+    expect(fn).toContain("creditsAllowed: false");
+    expect(fn).toContain("claimFreeGift");
+    expect(fn.indexOf("claimFreeGift")).toBeLessThan(fn.lastIndexOf("christmas_free_gift_claims"));
+  });
+
+  it("client __test_force cannot open claims without server bypass", () => {
+    const fn = readSrc("supabase/functions/christmas-tree-funnel/index.ts");
+    const policy = readSrc("supabase/functions/_shared/christmas/freeGiftClaim.ts");
+    expect(fn).toContain("christmasTestBypassEnabled");
+    expect(policy).toContain("Client `__test_force` cannot open claims without a server bypass env");
+    expect(readSrc("supabase/functions/_shared/christmas/treeAdvent.ts")).toContain(
+      'Deno.env.get("CHRISTMAS_FREE_GIFT_ENABLED") || "false"',
+    );
+  });
+});
+
+describe("free-gift claim policy", () => {
+  it("defaults CHRISTMAS_FREE_GIFT_ENABLED off", () => {
+    expect(parseFeatureFlag(undefined)).toBe(false);
+    expect(parseFeatureFlag(null)).toBe(false);
+    expect(parseFeatureFlag("")).toBe(false);
+    expect(parseFeatureFlag("false")).toBe(false);
+    expect(parseFeatureFlag("true")).toBe(true);
+    expect(parseFeatureFlag("1")).toBe(true);
+    expect(parseFeatureFlag("on")).toBe(true);
+  });
+
+  it("rejects client test force unless server bypass is on", () => {
+    expect(freeGiftClaimAllowed({ enabled: false, clientTestForce: true })).toBe(false);
+    expect(
+      freeGiftClaimAllowed({
+        enabled: false,
+        clientTestForce: true,
+        serverTestBypass: true,
+      }),
+    ).toBe(true);
+    expect(freeGiftClaimAllowed({ enabled: true })).toBe(true);
+  });
+
+  it("issues one idempotency key per identity per season", () => {
+    expect(
+      freeGiftIdempotencyKey({ seasonYear: 2026, userId: "u1" }),
+    ).toBe("free_gift:2026:user:u1");
+    expect(
+      freeGiftIdempotencyKey({ seasonYear: 2026, guestHash: "abc" }),
+    ).toBe("free_gift:2026:guest:abc");
+    expect(freeGiftIdempotencyKey({ seasonYear: 2026 })).toBeNull();
+    expect(
+      freeGiftIdempotencyKey({ seasonYear: 2026, userId: "u1", guestHash: "abc" }),
+    ).toBe("free_gift:2026:user:u1");
+  });
+
+  it("excludes credits for guests and inactive rows by default", () => {
+    const pool = [
+      { id: "c", reward_type: "credits", active: true, weight: 99 },
+      { id: "m", reward_type: "surprise_message", active: true, weight: 1 },
+      { id: "x", reward_type: "cosmetic", active: false, weight: 1 },
+    ];
+    const guest = filterFreeGiftCandidates(pool, { isAuthenticated: false });
+    expect(guest.map((g) => g.id)).toEqual(["m"]);
+    const authed = filterFreeGiftCandidates(pool, {
+      isAuthenticated: true,
+      creditsAllowed: false,
+    });
+    expect(authed.map((g) => g.id)).toEqual(["m"]);
+    const lab = filterFreeGiftCandidates(pool, {
+      isAuthenticated: false,
+      includeInactive: true,
+    });
+    expect(lab.map((g) => g.id)).toEqual(["m", "x"]);
+  });
+
+  it("never lets guests win a credits pick even if creditsAllowed is true", () => {
+    const pool = [{ id: "c", reward_type: "credits", active: true, weight: 1 }];
+    expect(
+      filterFreeGiftCandidates(pool, { isAuthenticated: false, creditsAllowed: true }),
+    ).toEqual([]);
+    expect(
+      filterFreeGiftCandidates(pool, { isAuthenticated: true, creditsAllowed: true }),
+    ).toHaveLength(1);
+  });
+
+  it("picks by weight and derives cosmetic entitlement keys", () => {
+    const picked = weightedPick(
+      [
+        { id: "a", weight: 1 },
+        { id: "b", weight: 9 },
+      ],
+      () => 0.15,
+    );
+    expect(picked?.id).toBe("b");
+    expect(weightedPick([])).toBeNull();
+    expect(
+      entitlementKeyFromGift({
+        id: "o",
+        reward_type: "cosmetic",
+        config: { entitlement_key: "snow_globe_ornament" },
+      }),
+    ).toBe("snow_globe_ornament");
+    expect(entitlementKeyFromGift({ id: "m", reward_type: "surprise_message" })).toBeNull();
+  });
+
+  it("migration enforces one claim per user/guest per season and default-off catalog", () => {
+    const sql = readSrc("supabase/migrations/20260903180000_christmas_tree_advent.sql");
+    expect(sql).toContain("christmas_free_gifts");
+    expect(sql).toContain("christmas_free_gift_claims");
+    expect(sql).toContain("christmas_free_gift_claims_user_season_uidx");
+    expect(sql).toContain("christmas_free_gift_claims_guest_season_uidx");
+    expect(sql).toContain("christmas_free_gift_claims_idem_uidx");
+    expect(sql).toContain("(2026, 'credits', 1, 'Test Credit (disabled)'");
+    expect(sql).toMatch(/active boolean not null default false/);
+  });
+
+  it("Advent page fail-closes the claim button when the flag is off", () => {
+    const page = readSrc("src/features/christmas/ChristmasAdventPage.tsx");
+    expect(page).toContain("free_gift_enabled");
+    expect(page).toContain("disabled={busy || !status?.free_gift_enabled || Boolean(freeGift)}");
+    expect(page).toContain("guest_token: getOrCreateFreeGiftGuestToken()");
+    expect(page).toContain("token");
   });
 });

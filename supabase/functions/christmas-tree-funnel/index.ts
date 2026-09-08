@@ -6,6 +6,7 @@ import {
   adventEnabled,
   asString,
   BOX_STYLES,
+  christmasTestBypassEnabled,
   freeGiftEnabled,
   generateOpaqueToken,
   generateShareId,
@@ -14,6 +15,14 @@ import {
   sanitizeText,
   sha256Hex,
 } from "../_shared/christmas/treeAdvent.ts";
+import {
+  entitlementKeyFromGift,
+  filterFreeGiftCandidates,
+  freeGiftClaimAllowed,
+  freeGiftIdempotencyKey,
+  weightedPick,
+  type FreeGiftRow,
+} from "../_shared/christmas/freeGiftClaim.ts";
 
 type Body = Record<string, unknown>;
 
@@ -387,6 +396,9 @@ Deno.serve(async (req) => {
           claimed: claims.some((c) => Number(c.day) === Number(r.day)),
         })),
         auth_required_for_claim: true,
+        free_gift_enabled: freeGiftEnabled(),
+        production_free_gift_live: freeGiftEnabled(),
+        free_gift: await loadPublicFreeGiftClaim(service, user?.id, body),
       });
     }
 
@@ -517,16 +529,24 @@ Deno.serve(async (req) => {
 
     // ---- Free gift ----
     if (action === "claimFreeGift") {
-      if (!freeGiftEnabled() && !body.__test_force) {
+      const allowTest = christmasTestBypassEnabled() && Boolean(body.__test_force);
+      if (!freeGiftClaimAllowed({
+        enabled: freeGiftEnabled(),
+        clientTestForce: Boolean(body.__test_force),
+        serverTestBypass: christmasTestBypassEnabled(),
+      })) {
         return jsonResponse({ error: "free_gift_disabled" }, 403);
       }
       const guestToken = asString(body.guest_token);
-      const guestHash = guestToken ? await sha256Hex(guestToken) : null;
+      const guestHash = guestToken.length >= 32 ? await sha256Hex(guestToken) : null;
       if (!user?.id && !guestHash) return jsonResponse({ error: "identity_required" }, 400);
 
-      const idem = user?.id
-        ? `free_gift:${SEASON_YEAR}:user:${user.id}`
-        : `free_gift:${SEASON_YEAR}:guest:${guestHash}`;
+      const idem = freeGiftIdempotencyKey({
+        seasonYear: SEASON_YEAR,
+        userId: user?.id,
+        guestHash,
+      });
+      if (!idem) return jsonResponse({ error: "identity_required" }, 400);
 
       const { data: existing } = await service
         .from("christmas_free_gift_claims")
@@ -534,16 +554,13 @@ Deno.serve(async (req) => {
         .eq("idempotency_key", idem)
         .maybeSingle();
       if (existing) {
-        const g = existing.christmas_free_gifts as Record<string, unknown>;
         return jsonResponse({
           ok: true,
           already: true,
-          gift: {
-            title: g?.title,
-            description: g?.description,
-            reward_type: g?.reward_type,
-            entitlement_key: existing.entitlement_key,
-          },
+          gift: publicFreeGiftView(
+            existing.christmas_free_gifts as Record<string, unknown> | null,
+            asString(existing.entitlement_key) || null,
+          ),
         });
       }
 
@@ -551,25 +568,21 @@ Deno.serve(async (req) => {
         .from("christmas_free_gifts")
         .select("*")
         .eq("season_year", SEASON_YEAR);
-      // Never grant monetary credits to anonymous/guest free-gift traffic.
-      let candidates = (pool || []).filter((g: Record<string, unknown>) => {
-        if (g.reward_type === "credits") return false;
-        if (body.__test_force) return true;
-        return Boolean(g.active);
+      // Service-owned pool. Guests never receive credits; monetary rows stay inactive.
+      const candidates = filterFreeGiftCandidates((pool || []) as FreeGiftRow[], {
+        isAuthenticated: Boolean(user?.id),
+        includeInactive: allowTest,
+        creditsAllowed: false,
       });
       if (candidates.length === 0) return jsonResponse({ error: "no_gifts" }, 503);
 
       const picked = weightedPick(candidates);
+      if (!picked) return jsonResponse({ error: "no_gifts" }, 503);
       if (picked.reward_type === "credits" && !user?.id) {
         return jsonResponse({ error: "auth_required_for_credits" }, 401);
       }
 
-      let entitlementKey: string | null = null;
-      if (picked.reward_type === "cosmetic") {
-        entitlementKey =
-          asString((picked.config as Record<string, unknown>)?.entitlement_key) ||
-          "snow_globe_ornament";
-      }
+      const entitlementKey = entitlementKeyFromGift(picked);
 
       const { data: claim, error: claimErr } = await service
         .from("christmas_free_gift_claims")
@@ -598,13 +611,7 @@ Deno.serve(async (req) => {
       }
       return jsonResponse({
         ok: true,
-        gift: {
-          title: picked.title,
-          description: picked.description,
-          reward_type: picked.reward_type,
-          entitlement_key: entitlementKey,
-          message: asString((picked.config as Record<string, unknown>)?.message) || null,
-        },
+        gift: publicFreeGiftView(picked as Record<string, unknown>, entitlementKey),
       });
     }
 
@@ -671,12 +678,49 @@ function parseInjectedDate(body: Body): Date {
   return new Date();
 }
 
-function weightedPick(items: Record<string, unknown>[]): Record<string, unknown> {
-  const total = items.reduce((s, i) => s + (Number(i.weight) || 1), 0);
-  let r = Math.random() * total;
-  for (const item of items) {
-    r -= Number(item.weight) || 1;
-    if (r <= 0) return item;
+function publicFreeGiftView(
+  gift: Record<string, unknown> | null | undefined,
+  entitlementKey: string | null,
+) {
+  const config =
+    gift?.config && typeof gift.config === "object"
+      ? (gift.config as Record<string, unknown>)
+      : {};
+  return {
+    title: gift?.title ?? null,
+    description: gift?.description ?? null,
+    reward_type: gift?.reward_type ?? null,
+    entitlement_key: entitlementKey,
+    message: asString(config.message) || null,
+  };
+}
+
+async function loadPublicFreeGiftClaim(
+  service: ReturnType<typeof getServiceClient>,
+  userId: string | null | undefined,
+  body: Body,
+) {
+  const guestToken = asString(body.guest_token);
+  const guestHash = guestToken.length >= 32 ? await sha256Hex(guestToken) : null;
+  const idem = freeGiftIdempotencyKey({
+    seasonYear: SEASON_YEAR,
+    userId,
+    guestHash,
+  });
+  if (!idem) {
+    return { already: false, gift: null as null };
   }
-  return items[items.length - 1];
+  const { data } = await service
+    .from("christmas_free_gift_claims")
+    .select("entitlement_key, christmas_free_gifts(*)")
+    .eq("idempotency_key", idem)
+    .maybeSingle();
+  if (!data) return { already: false, gift: null as null };
+  return {
+    already: true,
+    gift: publicFreeGiftView(
+      data.christmas_free_gifts as Record<string, unknown> | null,
+      asString(data.entitlement_key) || null,
+    ),
+  };
 }
