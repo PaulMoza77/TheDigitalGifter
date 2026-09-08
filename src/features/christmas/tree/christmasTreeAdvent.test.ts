@@ -170,13 +170,15 @@ describe("christmas tree / advent product wiring", () => {
 
   it("edge funnel enforces shareId read vs owner write", () => {
     const fn = readSrc("supabase/functions/christmas-tree-funnel/index.ts");
+    const policy = readSrc("supabase/functions/_shared/christmas/adventClaimPolicy.ts");
     expect(fn).toContain('action === "getSharedTree"');
     expect(fn).toContain("loadOwnerTree");
     expect(fn).toContain("owner_token_hash");
-    expect(fn).toContain("not_eligible");
+    expect(fn).toContain("evaluateAdventClaimRequest");
     expect(fn).toContain("auth_required");
     expect(fn).toContain("idempotency_key");
     expect(fn).toContain("Europe/Bucharest");
+    expect(policy).toContain("not_eligible");
     expect(fn).not.toMatch(/share_id.*updateTree|updateTree.*share_id/);
   });
 
