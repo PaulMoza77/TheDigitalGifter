@@ -120,4 +120,12 @@ describe("santa pipeline wiring", () => {
     expect(readSrc("Dockerfile")).toMatch(/ffmpeg/);
     expect(readSrc("api/christmas-santa-compose.ts")).toContain("still_audio_mux");
   });
+
+  it("sends V1 transactional delivery email via shared Resend seam with source_route", () => {
+    const generate = readSrc("supabase/functions/christmas-santa-generate/index.ts");
+    expect(generate).toContain("sendPhotoSantaDeliveryEmail");
+    expect(generate).toContain("sourceRoute:");
+    expect(generate).toContain("order.source_route");
+    expect(generate).not.toContain("api.resend.com/emails");
+  });
 });
