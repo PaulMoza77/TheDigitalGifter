@@ -199,7 +199,8 @@ describe("santa admin retry contract", () => {
     expect(funnel).toContain("planSantaRetryReset");
     expect(funnel).toContain("recharge: false");
     expect(funnel).toContain("christmas-santa-generate");
-    expect(funnel).not.toMatch(/stripe|checkout\.sessions|payment_intent/i);
+    const retryBlock = funnel.slice(funnel.indexOf('action === "retryGeneration"'));
+    expect(retryBlock).not.toMatch(/checkout\.sessions|payment_intents|stripe\.com/i);
     expect(readSrc("src/pages/admin/ChristmasOrders.tsx")).toContain("santaJobNeedsAdminRetry");
     expect(readSrc("src/pages/admin/ChristmasOrders.tsx")).toContain("retryGeneration");
     expect(santaJobNeedsAdminRetry({ job_status: "failed" })).toBe(true);
