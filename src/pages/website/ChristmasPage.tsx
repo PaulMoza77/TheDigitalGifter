@@ -28,6 +28,7 @@ export default function ChristmasPage() {
       "christmas_gift_finder",
       "christmas_card",
       "christmas_messages",
+      "christmas_send_a_gift",
     ];
     return preferred
       .map((key) => all.find((p) => p.productKey === key))

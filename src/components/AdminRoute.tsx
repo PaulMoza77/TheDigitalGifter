@@ -59,6 +59,7 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
 
         if (error) {
           console.error("[AdminRoute] admin_users check error:", error);
+          // Terminate loading with explicit non-admin rather than hang
           setGate({ ready: true, email: normalizedEmail, isAdmin: false });
           return;
         }
@@ -70,12 +71,21 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
         });
       } catch (e) {
         console.error("[AdminRoute] checkAdmin fatal:", e);
-        if (mounted) setGate({ ready: true, email: null, isAdmin: false });
+        if (mounted) setGate({ ready: true, email: normalizedEmail || null, isAdmin: false });
       }
     }
 
     if (authLoading) return;
-    setGate((prev) => ({ ...prev, ready: false }));
+
+    const nextEmail = (user?.email || "").trim().toLowerCase();
+    // Avoid infinite "Verifying…" flash on SPA nav when already verified for same email
+    setGate((prev) => {
+      if (prev.ready && prev.email === nextEmail && nextEmail) {
+        void checkAdmin(user?.email ?? null);
+        return prev;
+      }
+      return { ...prev, ready: false };
+    });
     void checkAdmin(user?.email ?? null);
 
     return () => {
