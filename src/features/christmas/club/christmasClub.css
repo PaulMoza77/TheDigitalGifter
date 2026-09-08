@@ -48,140 +48,6 @@
   object-position: center center;
 }
 
-/* Mobile: keep fireplace + tree in frame (desktop stays centered). */
-@media (max-width: 959px) {
-  .cc-scene__poster img,
-  .cc-scene__video {
-    object-position: 72% 42%;
-  }
-
-  .cc-scene__veil {
-    background:
-      linear-gradient(180deg, rgba(8, 3, 2, 0.42) 0%, rgba(8, 3, 2, 0.08) 22%, rgba(8, 3, 2, 0.2) 48%, rgba(8, 3, 2, 0.86) 100%),
-      linear-gradient(90deg, rgba(8, 3, 2, 0.5) 0%, transparent 42%, transparent 70%, rgba(8, 3, 2, 0.22) 100%);
-  }
-
-  .cc-brand {
-    padding: 0.85rem 1rem 0;
-    gap: 0.55rem;
-  }
-
-  .cc-brand img {
-    width: 1.9rem;
-    height: 1.9rem;
-  }
-
-  .cc-brand span {
-    font-size: 0.95rem;
-  }
-
-  /* Same first-viewport composition as desktop: brand, copy, bottom dock. */
-  .cc-hero {
-    min-height: calc(100svh - 3.5rem);
-    justify-content: space-between;
-    gap: 0.85rem;
-    padding: 0.55rem 0.95rem 1rem;
-  }
-
-  .cc-hero__copy {
-    max-width: 20rem;
-    padding-top: 0.15rem;
-  }
-
-  .cc-eyebrow {
-    margin-bottom: 0.4rem;
-    font-size: 0.6rem;
-    letter-spacing: 0.22em;
-  }
-
-  .cc-hero h1 {
-    max-width: 14ch;
-    font-size: clamp(1.85rem, 7.6vw, 2.55rem);
-  }
-
-  .cc-lede {
-    margin-top: 0.45rem;
-    max-width: 28ch;
-    font-size: 0.92rem;
-    line-height: 1.4;
-  }
-
-  .cc-dock {
-    gap: 0.75rem;
-  }
-
-  .cc-countdown-note {
-    margin-bottom: 0.45rem;
-    font-size: 0.78rem;
-  }
-
-  /* Match desktop: four products in one row */
-  .cc-countdown {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.4rem 0.35rem;
-    max-width: none;
-    width: 100%;
-  }
-
-  .cc-print {
-    padding: 0.18rem 0.18rem 0.55rem;
-    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.28);
-  }
-
-  .cc-print img {
-    max-height: 4.1rem;
-    aspect-ratio: 4 / 5;
-  }
-
-  .cc-digit {
-    font-size: clamp(1.35rem, 5.8vw, 1.85rem);
-  }
-
-  .cc-label {
-    font-size: 0.5rem;
-    letter-spacing: 0.14em;
-  }
-
-  .cc-product-name {
-    font-size: 0.72rem;
-  }
-
-  .cc-join,
-  .cc-success {
-    max-width: none;
-    width: 100%;
-    padding: 0.85rem 0.9rem 0.95rem;
-    border-radius: 1.15rem;
-  }
-
-  .cc-join p {
-    margin-bottom: 0.55rem;
-    font-size: 0.84rem;
-    line-height: 1.35;
-  }
-
-  .cc-form {
-    gap: 0.45rem;
-  }
-
-  .cc-form input[type="email"],
-  .cc-cta,
-  .cc-google {
-    padding-top: 0.78rem;
-    padding-bottom: 0.78rem;
-    font-size: 0.95rem;
-  }
-
-  .cc-divider {
-    margin: 0.55rem 0;
-  }
-
-  .cc-story {
-    margin-top: 0;
-    padding-top: 2rem;
-  }
-}
-
 .cc-scene__video {
   opacity: 0;
   transition: opacity 700ms ease;
@@ -674,6 +540,138 @@
 
   .cc-story {
     padding: 3rem 2.5rem 5rem;
+  }
+}
+
+/* Mobile only — after base + desktop rules so cascade wins. Desktop 960px+ untouched. */
+@media (max-width: 959px) {
+  .cc-scene__poster img,
+  .cc-scene__video {
+    object-position: 72% 42%;
+  }
+
+  .cc-scene__veil {
+    background:
+      linear-gradient(180deg, rgba(8, 3, 2, 0.42) 0%, rgba(8, 3, 2, 0.08) 22%, rgba(8, 3, 2, 0.2) 48%, rgba(8, 3, 2, 0.86) 100%),
+      linear-gradient(90deg, rgba(8, 3, 2, 0.5) 0%, transparent 42%, transparent 70%, rgba(8, 3, 2, 0.22) 100%);
+  }
+
+  .cc-brand {
+    padding: 0.85rem 1rem 0;
+    gap: 0.55rem;
+  }
+
+  .cc-brand img {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  .cc-brand span {
+    font-size: 0.95rem;
+  }
+
+  .cc-hero {
+    min-height: calc(100svh - 3.5rem);
+    justify-content: space-between;
+    gap: 0.85rem;
+    padding: 0.55rem 0.95rem 1rem;
+  }
+
+  .cc-hero__copy {
+    max-width: 20rem;
+    padding-top: 0.15rem;
+  }
+
+  .cc-eyebrow {
+    margin-bottom: 0.4rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
+  }
+
+  .cc-hero h1 {
+    max-width: 14ch;
+    font-size: clamp(1.85rem, 7.6vw, 2.55rem);
+  }
+
+  .cc-lede {
+    margin-top: 0.45rem;
+    max-width: 28ch;
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+
+  .cc-dock {
+    gap: 0.75rem;
+  }
+
+  .cc-countdown-note {
+    margin-bottom: 0.45rem;
+    font-size: 0.78rem;
+  }
+
+  .cc-countdown {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem 0.35rem;
+    max-width: none;
+    width: 100%;
+  }
+
+  .cc-print {
+    padding: 0.18rem 0.18rem 0.55rem;
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.28);
+  }
+
+  .cc-print img {
+    max-height: 4.1rem;
+    aspect-ratio: 4 / 5;
+  }
+
+  .cc-digit {
+    font-size: clamp(1.35rem, 5.8vw, 1.85rem);
+  }
+
+  .cc-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.14em;
+  }
+
+  .cc-product-name {
+    font-size: 0.72rem;
+  }
+
+  .cc-join,
+  .cc-success {
+    max-width: none;
+    width: 100%;
+    padding: 0.85rem 0.9rem 0.95rem;
+    border-radius: 1.15rem;
+  }
+
+  .cc-join p {
+    margin-bottom: 0.55rem;
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .cc-form {
+    gap: 0.45rem;
+  }
+
+  .cc-form input[type="email"],
+  .cc-cta,
+  .cc-google {
+    padding-top: 0.78rem;
+    padding-bottom: 0.78rem;
+    font-size: 0.95rem;
+  }
+
+  .cc-divider {
+    margin: 0.55rem 0;
+  }
+
+  .cc-story {
+    margin-top: 0;
+    padding-top: 2rem;
   }
 }
 
