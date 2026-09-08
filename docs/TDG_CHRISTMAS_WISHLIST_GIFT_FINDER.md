@@ -18,7 +18,9 @@ Same invariants as Christmas Tree:
 
 - `share_id` = read capability
 - `owner_token_hash` / `user_id` = write capability
+- Invariant: `owner_token_hash ≠ share_id` (DB check + create-time guard)
 - Private until Share enabled
+- Public read uses `toPublicWishlistDto` (`noindex` on `/wishlist/:shareId`)
 - Guest claim-to-account via `claimGuestWishlist`
 
 ## Gift Finder

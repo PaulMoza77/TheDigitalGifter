@@ -9,6 +9,10 @@ import {
 } from "../_shared/christmas/treeAdvent.ts";
 import { generateGiftIdeas, validateFinderInput, type FinderInput } from "../_shared/christmas/giftFinder.ts";
 import { PRIORITY_KEYS } from "../_shared/christmas/giftTaxonomy.ts";
+import {
+  assertOwnerTokenHashDistinctFromShareId,
+  toPublicWishlistDto,
+} from "../_shared/christmas/wishlistShare.ts";
 
 type Body = Record<string, unknown>;
 type Service = ReturnType<typeof getServiceClient>;
@@ -31,7 +35,9 @@ Deno.serve(async (req) => {
     if (action === "createWishlist") {
       const ownerToken = generateOpaqueToken();
       const ownerHash = await sha256Hex(ownerToken);
-      const shareId = generateShareId();
+      let shareId = generateShareId();
+      if (ownerHash === shareId) shareId = generateShareId();
+      assertOwnerTokenHashDistinctFromShareId(user?.id ? null : ownerHash, shareId);
       const row = {
         user_id: user?.id || null,
         owner_token_hash: user?.id ? null : ownerHash,
@@ -112,7 +118,9 @@ Deno.serve(async (req) => {
       if (shareId.length < 22) return jsonResponse({ error: "invalid_share" }, 400);
       const { data: list } = await service
         .from("christmas_wishlists")
-        .select("*")
+        .select(
+          "id,share_id,share_enabled,moderation_status,title,description,locale,show_budgets_public,view_count",
+        )
         .eq("share_id", shareId)
         .maybeSingle();
       if (!list || !list.share_enabled || list.moderation_status !== "active") {
@@ -131,26 +139,9 @@ Deno.serve(async (req) => {
         .eq("wishlist_id", list.id)
         .eq("status", "active")
         .order("sort_order", { ascending: true });
-      const showBudgets = Boolean(list.show_budgets_public);
       return jsonResponse({
         ok: true,
-        wishlist: {
-          share_id: list.share_id,
-          title: list.title,
-          description: list.description,
-          locale: list.locale,
-          items: (items || []).map((it: Record<string, unknown>) => ({
-            id: it.id,
-            sort_order: it.sort_order,
-            title: it.title,
-            note: it.note || "",
-            external_url: it.external_url || null,
-            priority: it.priority,
-            budget_amount: showBudgets ? it.budget_amount : null,
-            currency: showBudgets ? it.currency : null,
-            source_type: it.source_type === "gift_finder" ? "gift_finder" : it.source_type === "tdg_product" ? "tdg_product" : "manual",
-          })),
-        },
+        wishlist: toPublicWishlistDto(list, (items || []) as Record<string, unknown>[]),
       });
     }
 

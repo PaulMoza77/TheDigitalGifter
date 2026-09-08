@@ -12,6 +12,14 @@ import {
   SEO_RECIPIENT_SLUGS,
 } from "./taxonomy";
 import { itemCountBucket, reorderIds, sanitizeExternalUrlClient } from "./wishlistApi";
+import {
+  PUBLIC_WISHLIST_ITEM_KEYS,
+  PUBLIC_WISHLIST_KEYS,
+  WISHLIST_WRITE_CAPABILITY_KEYS,
+  assertOwnerTokenHashDistinctFromShareId,
+  publicWishlistLeaksWriteCapability,
+  toPublicWishlistDto,
+} from "./wishlistShare";
 
 function readSrc(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
@@ -43,6 +51,62 @@ describe("wishlist ordering helpers", () => {
   });
 });
 
+describe("wishlist public DTO + owner/share invariant", () => {
+  it("rejects owner_token_hash equal to share_id", () => {
+    expect(() => assertOwnerTokenHashDistinctFromShareId("same-value", "same-value")).toThrow(
+      "owner_token_hash_eq_share_id",
+    );
+    expect(() => assertOwnerTokenHashDistinctFromShareId("hash-64-hex", "share-id-read")).not.toThrow();
+    expect(() => assertOwnerTokenHashDistinctFromShareId(null, "share-id-read")).not.toThrow();
+  });
+
+  it("public read DTO omits write capability and reservation fields", () => {
+    const dto = toPublicWishlistDto(
+      {
+        id: "w1",
+        user_id: "user-secret",
+        owner_token_hash: "abc123ownerhash",
+        share_id: "publicShareIdValue",
+        share_enabled: true,
+        title: "Kids list",
+        description: "For family",
+        locale: "en",
+        show_budgets_public: false,
+        view_count: 9,
+      },
+      [
+        {
+          id: "i1",
+          sort_order: 0,
+          title: "Train set",
+          note: "red",
+          external_url: "https://example.com/train",
+          priority: "would_love",
+          budget_amount: 40,
+          currency: "USD",
+          source_type: "manual",
+          source_ref: "finder-secret",
+          reservation_status: "reserved",
+          reservation_token_hash: "reserve-secret",
+        },
+      ],
+    );
+    expect(Object.keys(dto).sort()).toEqual([...PUBLIC_WISHLIST_KEYS].sort());
+    expect(Object.keys(dto.items[0]).sort()).toEqual([...PUBLIC_WISHLIST_ITEM_KEYS].sort());
+    expect(dto.share_id).toBe("publicShareIdValue");
+    expect(dto.items[0].budget_amount).toBeNull();
+    expect(dto.items[0].currency).toBeNull();
+    expect(publicWishlistLeaksWriteCapability(dto)).toBe(false);
+    for (const key of WISHLIST_WRITE_CAPABILITY_KEYS) {
+      expect(dto).not.toHaveProperty(key);
+      expect(dto.items[0]).not.toHaveProperty(key);
+    }
+    expect(JSON.stringify(dto)).not.toContain("abc123ownerhash");
+    expect(JSON.stringify(dto)).not.toContain("user-secret");
+    expect(JSON.stringify(dto)).not.toContain("reserve-secret");
+  });
+});
+
 describe("wishlist / gift finder wiring", () => {
   it("removes shells and opens catalog CTAs", () => {
     expect(shellForPath("/christmas/wishlist")).toBeNull();
@@ -67,6 +131,9 @@ describe("wishlist / gift finder wiring", () => {
     expect(sql).toContain("christmas_wishlist_items_finder_uidx");
     expect(sql).toContain("reservation_status");
     expect(sql).toContain("revoke all on table public.christmas_wishlists from anon");
+    const distinct = readSrc("supabase/migrations/20260908233000_christmas_wishlist_share_owner_distinct.sql");
+    expect(distinct).toContain("christmas_wishlists_share_owner_distinct_chk");
+    expect(distinct).toContain("owner_token_hash is null or owner_token_hash <> share_id");
   });
 
   it("edge funnel isolates shareId writes and sanitizes URLs", () => {
@@ -77,6 +144,31 @@ describe("wishlist / gift finder wiring", () => {
     expect(fn).toContain("rate_limited");
     expect(fn).toContain("runGiftFinder");
     expect(fn).toContain("claimGuestWishlist");
+    expect(fn).toContain("toPublicWishlistDto");
+    expect(fn).toContain("assertOwnerTokenHashDistinctFromShareId");
+    expect(fn).not.toMatch(/eq\("share_id".*updateWishlist|updateWishlist.*eq\("share_id"/);
+  });
+
+  it("loadOwnerWishlist never treats share_id as write auth", () => {
+    const fn = readSrc("supabase/functions/christmas-wishlist-funnel/index.ts");
+    const helper = fn.slice(fn.indexOf("async function loadOwnerWishlist"));
+    expect(helper).toContain("owner_token_hash");
+    expect(helper).not.toContain('.eq("share_id"');
+  });
+
+  it("claimGuestWishlist attaches user_id and clears owner_token_hash", () => {
+    const fn = readSrc("supabase/functions/christmas-wishlist-funnel/index.ts");
+    expect(fn).toMatch(/action === "claimGuestWishlist"/);
+    expect(fn).toContain("update({ user_id: user.id, owner_token_hash: null })");
+    expect(fn).toContain("auth_required");
+  });
+
+  it("shared wishlist page is noindex and robots disallow /wishlist/", () => {
+    const page = readSrc("src/features/christmas/ChristmasWishlistPage.tsx");
+    expect(page).toContain("noindex={isShare}");
+    expect(page).toContain('title="Wishlist unavailable"');
+    expect(readSrc("public/robots.txt")).toContain("Disallow: /wishlist/");
+    expect(readSrc("api/sitemap.xml.ts")).not.toContain("/wishlist/");
   });
 
   it("gift finder keeps prompts server-owned with injection resistance", () => {
