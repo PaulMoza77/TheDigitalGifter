@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { ChristmasClubSnow } from "./ChristmasClubSnow";
 import { CHRISTMAS_CLUB_ASSETS } from "./config";
 
 /**
  * Full-bleed cabin scene: sharp WebP poster paints instantly, then a muted
- * cinematic loop fades in. No Replicate token in this environment yet —
- * Seedance can replace the loop file later without changing the layout.
+ * 5s living loop (snow / fire / candles / twinkle) fades in. Canvas snow
+ * reinforces outdoor flakes. Seedance can replace the MP4 when Replicate is available.
  */
 export function ChristmasClubScene() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -74,6 +75,7 @@ export function ChristmasClubScene() {
       />
 
       <div className="cc-scene__veil" />
+      <ChristmasClubSnow />
       <div className="cc-scene__glow" />
       <div className="cc-scene__ember" />
     </div>

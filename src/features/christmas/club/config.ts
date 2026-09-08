@@ -59,8 +59,9 @@ export const CHRISTMAS_CLUB_ASSETS = {
   hero1280Jpg: "/christmas/cabin-hero-1280.jpg",
   hero1920Jpg: "/christmas/cabin-hero-1920.jpg",
   hero2560Jpg: "/christmas/cabin-hero-2560.jpg",
-  heroLoop: "/christmas/cabin-hero-loop.mp4",
-  heroLoop720: "/christmas/cabin-hero-loop-720.mp4",
+  // Cache-bust when the living loop is regenerated (snow/fire/candles).
+  heroLoop: "/christmas/cabin-hero-loop.mp4?v=living3",
+  heroLoop720: "/christmas/cabin-hero-loop-720.mp4?v=living3",
   tree: "/christmas/cabin-hero-1280.webp",
   gifts: "/christmas/gifts-still-life.png",
   og: "/christmas/og-countdown.jpg",
