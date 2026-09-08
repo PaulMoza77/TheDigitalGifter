@@ -87,7 +87,8 @@ describe("christmas admin kpi core", () => {
       events: [
         event({ event_name: "christmas_page_view" }),
         event({ event_name: "checkout_started" }),
-        event({ event_name: "purchase", funnel_session_id: "s-client" }),
+        event({ event_name: "purchase", funnel_session_id: "s-client-1" }),
+        event({ event_name: "purchase", funnel_session_id: "s-client-2" }),
       ],
       orders: [
         order({ id: "o1", payment_status: "pending" }),
@@ -101,6 +102,7 @@ describe("christmas admin kpi core", () => {
       ],
     });
     expect(snap.commercial.checkoutSessionsCreated).toBe(2);
+    expect(snap.funnel.clientPurchaseEvents).toBe(2);
     expect(snap.commercial.paidOrders).toBe(1);
     expect(snap.commercial.abandonedCheckouts).toBe(1);
     expect(snap.commercial.grossRevenueCents).toBe(1499);
