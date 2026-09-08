@@ -1,6 +1,7 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson, isServiceRoleRequest } from "../_shared/supabase.ts";
 import { validatePetSpecies } from "../_shared/pet/speciesValidate.ts";
+import { isKidsProductKey, validateKidsConsent } from "../_shared/christmas/kidsPrivacy.ts";
 
 /**
  * Christmas portrait funnel APIs: signed upload, order lookup, species check, admin retry.
@@ -20,6 +21,9 @@ type Body = {
   email?: string;
   image_data_url?: string;
   expected_species?: string;
+  product_key?: string;
+  guardian_consent?: boolean;
+  consent_version?: string;
 };
 
 const SOURCE_BUCKET = "christmas-source";
@@ -53,9 +57,21 @@ Deno.serve(async (req) => {
       if (!Number.isFinite(byteSize) || byteSize <= 0 || byteSize > MAX_BYTES) {
         return jsonResponse({ error: "Invalid file size", code: "invalid_photo" }, 400);
       }
+      const productKey = asString(body.product_key);
+      if (isKidsProductKey(productKey)) {
+        const consent = validateKidsConsent({
+          guardianConsent: Boolean(body.guardian_consent),
+          consentVersion: asString(body.consent_version),
+        });
+        if (!consent.ok) {
+          return jsonResponse({ error: consent.message, code: consent.code }, 400);
+        }
+      }
       const uploadId = crypto.randomUUID();
       const ext = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
-      const path = `uploads/${uploadId}.${ext}`;
+      const path = isKidsProductKey(productKey)
+        ? `uploads/kids/${uploadId}.${ext}`
+        : `uploads/${uploadId}.${ext}`;
       const { data, error } = await service.storage
         .from(SOURCE_BUCKET)
         .createSignedUploadUrl(path);

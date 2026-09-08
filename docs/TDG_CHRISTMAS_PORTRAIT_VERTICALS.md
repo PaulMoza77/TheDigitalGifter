@@ -10,6 +10,7 @@
 | `/christmas/photo-generator` | `christmas_photo` | — |
 | `/christmas/family` | `christmas_family` | — |
 | `/christmas/couples` | `christmas_couple` | — |
+| `/christmas/kids` | `christmas_kids` | child; consent + noindex |
 | `/christmas/pets` | `christmas_pet` | optional / any |
 | `/christmas/dogs` | `christmas_pet` | `dog` |
 | `/christmas/cats` | `christmas_pet` | `cat` |
@@ -67,7 +68,7 @@ Each vertical sets unique `PageHead` title, description, canonical, OG via exist
 
 ## Privacy
 
-Source + generated buckets remain private. No public galleries. Kids Christmas is out of scope.
+Source + generated buckets remain private. No public galleries. Kids Christmas is a separate privacy-first vertical (`docs/TDG_CHRISTMAS_KIDS.md`): consent, noindex, private ACL, decided retention.
 
 ## Email / recovery
 
@@ -88,4 +89,4 @@ Wrong-species (no generation): dog→cat route and cat→dog route both return `
 
 ## Non-goals (unchanged)
 
-Kids, Santa Video, Tree, Advent, Wishlist, Gift Finder, Cards, Messages, live pricing, full SEO factory, Pet V1/V2/V3 price changes.
+Santa Video (already shipped separately), Tree, Advent, Wishlist, Gift Finder, Cards, Messages, live pricing, full SEO factory, Pet V1/V2/V3 price changes. Kids privacy-first funnel is documented in `docs/TDG_CHRISTMAS_KIDS.md`.

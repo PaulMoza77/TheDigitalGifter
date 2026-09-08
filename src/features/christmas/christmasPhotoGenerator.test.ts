@@ -114,9 +114,7 @@ describe("christmas photo pricing + wiring", () => {
   it("routes photo-generator to real page not shell", () => {
     const app = readSrc("src/App.tsx");
     expect(app).toContain("ChristmasPortraitFunnelPage");
-    expect(app.indexOf("ChristmasPortraitFunnelPage")).toBeLessThan(
-      app.indexOf('path="/christmas/kids"'),
-    );
+    expect(app).toContain('path="/christmas/kids" element={<ChristmasPortraitFunnelPage />}');
   });
 
   it("webhook enqueues christmas-photo-generate after paid", () => {

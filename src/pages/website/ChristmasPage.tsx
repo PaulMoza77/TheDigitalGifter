@@ -20,6 +20,7 @@ export default function ChristmasPage() {
       "christmas_photo",
       "christmas_family",
       "christmas_couple",
+      "christmas_kids",
       "christmas_pet",
       "christmas_santa_video",
       "christmas_tree",
@@ -84,7 +85,9 @@ export default function ChristmasPage() {
                       <p className="mt-2 text-xs text-amber-800">
                         {product.productKey === "christmas_santa_video"
                           ? "Preview / not yet available to purchase"
-                          : product.productKey === "christmas_advent"
+                          : product.productKey === "christmas_kids"
+                            ? "Private kids funnel · parent consent required · purchase not enabled"
+                            : product.productKey === "christmas_advent"
                             ? "Starts December 1 · claims gated until season"
                             : product.productKey === "christmas_tree"
                               ? "Free experience · shareable after you enable it"

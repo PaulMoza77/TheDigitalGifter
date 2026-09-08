@@ -281,6 +281,97 @@ export const CHRISTMAS_PET_STYLES: ChristmasStyleDef[] = [
   },
 ];
 
+export const CHRISTMAS_KIDS_STYLES: ChristmasStyleDef[] = [
+  {
+    styleKey: "kids_classic_christmas",
+    displayName: "Classic Christmas",
+    description: "Warm traditional portrait that keeps their real age.",
+    enabled: true,
+    sortOrder: 10,
+    accent: "#c43c2c",
+    promptTemplate:
+      "Transform this child’s photo into a photoreal classic Christmas portrait. Preserve the exact facial identity, real age, and likeness. Do not age the child up or make them look older or more adult. Child-appropriate festive clothing only — no makeup, no adult styling. Soft warm Christmas-tree light, natural skin, no text, no watermark, no extra people, no deformed hands.",
+    negativeHints: "age-up, adult makeup, sexualized, cartoon, text, watermark, extra people, deformed face",
+  },
+  {
+    styleKey: "kids_cozy_fireplace",
+    displayName: "Cozy Fireplace",
+    description: "Soft firelight, pajamas-and-cocoa mood.",
+    enabled: true,
+    sortOrder: 20,
+    accent: "#d97706",
+    promptTemplate:
+      "Transform this child’s photo into a photoreal cozy fireplace Christmas portrait. Preserve exact identity and real age — do not age up. Warm fireplace glow, soft knit textures, child-appropriate clothing. Natural skin, no makeup, no text, no watermark, no extra people.",
+    negativeHints: "age-up, adult styling, cartoon, text, watermark, extra people",
+  },
+  {
+    styleKey: "kids_winter_wonderland",
+    displayName: "Winter Wonderland",
+    description: "Snowy outdoor Christmas magic, age-safe.",
+    enabled: true,
+    sortOrder: 30,
+    accent: "#6b9bd1",
+    promptTemplate:
+      "Transform this child’s photo into a photoreal winter wonderland Christmas portrait. Preserve exact facial identity and real age. Soft falling snow, evergreens, warm lanterns. Realistic winter clothing suitable for a child. No makeup, no text, no watermark, no extra people.",
+    negativeHints: "age-up, adult fashion, cartoon, text, watermark, extra people",
+  },
+  {
+    styleKey: "kids_santas_workshop",
+    displayName: "Santa's Workshop",
+    description: "Playful workshop scene without hiding their face.",
+    enabled: true,
+    sortOrder: 40,
+    accent: "#15803d",
+    promptTemplate:
+      "Transform this child’s photo into a photoreal Santa's workshop Christmas portrait. Preserve exact identity and real age. Wooden toys, warm workshop lamps, subtle festive props that do not hide the face. Child-appropriate clothing. Natural proportions, no makeup, no text, no watermark, no extra people.",
+    negativeHints: "age-up, face covered, cartoon, text, watermark, extra people",
+  },
+  {
+    styleKey: "kids_christmas_morning",
+    displayName: "Christmas Morning",
+    description: "Soft morning light and festive calm.",
+    enabled: true,
+    sortOrder: 50,
+    accent: "#f59e0b",
+    promptTemplate:
+      "Transform this child’s photo into a photoreal Christmas morning portrait. Preserve exact identity and real age — do not age up. Soft daylight, calm festive living room, child-appropriate clothing. Natural skin, no makeup, no text, no watermark, no extra people.",
+    negativeHints: "age-up, adult styling, cartoon, text, watermark, extra people",
+  },
+  {
+    styleKey: "kids_north_pole",
+    displayName: "North Pole",
+    description: "Gentle aurora and snow, still photoreal.",
+    enabled: true,
+    sortOrder: 60,
+    accent: "#0e7490",
+    promptTemplate:
+      "Transform this child’s photo into a photoreal North Pole Christmas portrait. Preserve exact facial identity and real age. Soft aurora sky, snow crystals, magical but realistic. Child-appropriate winter clothing. Natural face detail, no makeup, no text, no watermark, no extra people.",
+    negativeHints: "age-up, neon overload, cartoon, text, watermark, extra people",
+  },
+  {
+    styleKey: "kids_christmas_movie",
+    displayName: "Christmas Movie",
+    description: "Cinematic holiday still, child-safe.",
+    enabled: true,
+    sortOrder: 70,
+    accent: "#7c3aed",
+    promptTemplate:
+      "Transform this child’s photo into a photoreal Christmas-movie cinematic portrait. Preserve exact identity and real age. Soft bokeh, warm practical lights, storybook porch or living room. Child-appropriate clothing. Film-still aesthetic, no logos, no text, no watermark, no extra people.",
+    negativeHints: "age-up, logos, title card, cartoon, text, watermark, extra people",
+  },
+  {
+    styleKey: "kids_vintage_christmas",
+    displayName: "Vintage Christmas",
+    description: "Nostalgic film-era warmth, age preserved.",
+    enabled: true,
+    sortOrder: 80,
+    accent: "#92400e",
+    promptTemplate:
+      "Transform this child’s photo into a photoreal vintage Christmas portrait with gentle film grain. Preserve exact identity and real age. Mid-century holiday décor cues, soft vignette, natural skin. Child-appropriate clothing, no makeup, no text, no watermark, no extra people.",
+    negativeHints: "age-up, heavy filter obscuring identity, cartoon, text, watermark, extra people",
+  },
+];
+
 /** Server + client: resolve a style for a commerce product key. */
 export function stylesForProductKey(productKey: string): ChristmasStyleDef[] {
   switch (productKey) {
@@ -290,6 +381,8 @@ export function stylesForProductKey(productKey: string): ChristmasStyleDef[] {
       return CHRISTMAS_COUPLE_STYLES;
     case "christmas_pet":
       return CHRISTMAS_PET_STYLES;
+    case "christmas_kids":
+      return CHRISTMAS_KIDS_STYLES;
     case "christmas_photo":
     default:
       return CHRISTMAS_PHOTO_STYLES;

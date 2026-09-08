@@ -7,6 +7,7 @@ import type { ChristmasStyleDef } from "./styles";
 import {
   CHRISTMAS_COUPLE_STYLES,
   CHRISTMAS_FAMILY_STYLES,
+  CHRISTMAS_KIDS_STYLES,
   CHRISTMAS_PET_STYLES,
   CHRISTMAS_PHOTO_STYLES,
 } from "./portraitStyles";
@@ -15,6 +16,7 @@ export type PortraitSubject =
   | "person"
   | "family"
   | "couple"
+  | "child"
   | "pet";
 
 export type PortraitSpecies = "dog" | "cat" | "any" | null;
@@ -23,13 +25,19 @@ export type ChristmasPortraitVerticalId =
   | "photo"
   | "family"
   | "couples"
+  | "kids"
   | "pets"
   | "dogs"
   | "cats";
 
 export type ChristmasPortraitVertical = {
   id: ChristmasPortraitVerticalId;
-  productKey: "christmas_photo" | "christmas_family" | "christmas_couple" | "christmas_pet";
+  productKey:
+    | "christmas_photo"
+    | "christmas_family"
+    | "christmas_couple"
+    | "christmas_kids"
+    | "christmas_pet";
   packageKey: "single";
   routePath: string;
   portraitType: PortraitSubject;
@@ -46,6 +54,9 @@ export type ChristmasPortraitVertical = {
   crossLinks: Array<{ label: string; to: string }>;
   styles: ChristmasStyleDef[];
   allowMultiplePeople: boolean;
+  requiresGuardianConsent: boolean;
+  noindex: boolean;
+  hidePublicShare: boolean;
 };
 
 const PHOTO_CROSS = [
@@ -78,6 +89,9 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     crossLinks: PHOTO_CROSS,
     styles: CHRISTMAS_PHOTO_STYLES,
     allowMultiplePeople: true,
+    requiresGuardianConsent: false,
+    noindex: false,
+    hidePublicShare: false,
   },
   family: {
     id: "family",
@@ -102,6 +116,9 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     ],
     styles: CHRISTMAS_FAMILY_STYLES,
     allowMultiplePeople: true,
+    requiresGuardianConsent: false,
+    noindex: false,
+    hidePublicShare: false,
   },
   couples: {
     id: "couples",
@@ -126,6 +143,37 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     ],
     styles: CHRISTMAS_COUPLE_STYLES,
     allowMultiplePeople: true,
+    requiresGuardianConsent: false,
+    noindex: false,
+    hidePublicShare: false,
+  },
+  kids: {
+    id: "kids",
+    productKey: "christmas_kids",
+    packageKey: "single",
+    routePath: "/christmas/kids",
+    portraitType: "child",
+    expectedSpecies: null,
+    draftStorageKey: "tdg.christmas.portrait.kids.v1",
+    pageTitle: "Kids Christmas Portrait | The Digital Gifter",
+    metaDescription:
+      "Create a private Christmas portrait of your child. Parent or guardian consent required. Not indexed. No public gallery.",
+    heroHeadline: "A private Christmas portrait of your child.",
+    heroSupport:
+      "Upload their photo, pick a child-safe Christmas style, preview a blur of the original, then create after checkout. This page is not indexed and results stay private.",
+    uploadHint: "A clear, recent photo of your child works best. Parent or guardian permission is required.",
+    deliverableLine: "One private Christmas kids portrait — download via your order link only.",
+    privacyLine:
+      "Private by default. No public gallery. Not listed for search engines. Unpaid uploads deleted after 7 days; paid portraits after 90 days.",
+    crossLinks: [
+      { label: "Family Christmas", to: "/christmas/family" },
+      { label: "Classic portrait", to: "/christmas/photo-generator" },
+    ],
+    styles: CHRISTMAS_KIDS_STYLES,
+    allowMultiplePeople: true,
+    requiresGuardianConsent: true,
+    noindex: true,
+    hidePublicShare: true,
   },
   pets: {
     id: "pets",
@@ -150,6 +198,9 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     ],
     styles: CHRISTMAS_PET_STYLES,
     allowMultiplePeople: false,
+    requiresGuardianConsent: false,
+    noindex: false,
+    hidePublicShare: false,
   },
   dogs: {
     id: "dogs",
@@ -173,6 +224,9 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     ],
     styles: CHRISTMAS_PET_STYLES,
     allowMultiplePeople: false,
+    requiresGuardianConsent: false,
+    noindex: false,
+    hidePublicShare: false,
   },
   cats: {
     id: "cats",
@@ -196,6 +250,9 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     ],
     styles: CHRISTMAS_PET_STYLES,
     allowMultiplePeople: false,
+    requiresGuardianConsent: false,
+    noindex: false,
+    hidePublicShare: false,
   },
 };
 
@@ -218,6 +275,7 @@ export const PORTRAIT_COMMERCE_PRODUCT_KEYS = [
   "christmas_photo",
   "christmas_family",
   "christmas_couple",
+  "christmas_kids",
   "christmas_pet",
 ] as const;
 

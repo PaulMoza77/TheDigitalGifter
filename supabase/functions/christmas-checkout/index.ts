@@ -5,13 +5,20 @@ import {
   isPortraitProductKey,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import {
+  isKidsProductKey,
+  kidsRetentionDeleteAfter,
+  KIDS_CONSENT_VERSION,
+  KIDS_VISIBILITY,
+  validateKidsConsent,
+} from "../_shared/christmas/kidsPrivacy.ts";
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
  * Amount is always resolved server-side from christmas_packages.
  * Disabled unless CHRISTMAS_CHECKOUT_ENABLED=true.
  *
- * Supports portrait vertical products: christmas_photo|family|couple|pet.
+ * Supports portrait vertical products: christmas_photo|family|couple|kids|pet.
  * Style validation uses the server-owned prompt registry (never client prompts).
  */
 
@@ -161,6 +168,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    let kidsConsentMeta: Record<string, unknown> | null = null;
+    if (isKidsProductKey(product.product_key)) {
+      const consent = validateKidsConsent({
+        guardianConsent: Boolean(body.guardian_consent),
+        consentVersion: asString(body.consent_version) || KIDS_CONSENT_VERSION,
+      });
+      if (!consent.ok) {
+        return jsonResponse({ error: consent.message, code: consent.code }, 400);
+      }
+      kidsConsentMeta = {
+        guardian_consent: true,
+        consent_version: consent.consentVersion,
+        consented_at: new Date().toISOString(),
+        visibility: KIDS_VISIBILITY,
+        public_gallery: false,
+        noindex: true,
+      };
+    }
+
     let santaPerso: Record<string, unknown> | null = null;
     if (product.product_key === "christmas_santa_video") {
       const name = asString(body.child_first_name);
@@ -236,6 +262,13 @@ Deno.serve(async (req) => {
       portrait_type: portraitType,
       species,
       source_route: sourceRoute,
+      visibility: kidsConsentMeta ? KIDS_VISIBILITY : "private",
+      guardian_consent: kidsConsentMeta ? true : null,
+      consent_version: kidsConsentMeta ? KIDS_CONSENT_VERSION : null,
+      consented_at: kidsConsentMeta ? kidsConsentMeta.consented_at : null,
+      retention_delete_after: kidsConsentMeta
+        ? kidsRetentionDeleteAfter("unpaid_source").toISOString()
+        : null,
       amount_cents: pkg.price_cents,
       currency: pkg.currency,
       package_key: pkg.package_key,
@@ -283,6 +316,7 @@ Deno.serve(async (req) => {
             portrait_type: portraitType,
             species,
             source_route: sourceRoute,
+            ...(kidsConsentMeta || {}),
           },
           ...orderPatch,
         })

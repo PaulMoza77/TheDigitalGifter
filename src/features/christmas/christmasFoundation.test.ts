@@ -228,7 +228,7 @@ describe("christmas routes / activation", () => {
   it("wires suite shells and never exposes checkout on shells", () => {
     expect(shellForPath("/christmas/photo-generator")).toBeNull();
     expect(shellForPath("/christmas/santa-video")).toBeNull();
-    expect(shellForPath("/christmas/kids")?.noindex).toBe(true);
+    expect(shellForPath("/christmas/kids")).toBeNull();
     for (const shell of CHRISTMAS_ROUTE_SHELLS) {
       expect(shellExposesCheckout(shell)).toBe(false);
     }

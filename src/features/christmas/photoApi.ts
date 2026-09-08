@@ -23,6 +23,9 @@ export async function createChristmasUpload(input: {
   byteSize: number;
   width?: number;
   height?: number;
+  productKey?: string;
+  guardianConsent?: boolean;
+  consentVersion?: string;
 }) {
   const res = await fetch(FUNNEL_URL, {
     method: "POST",
@@ -33,6 +36,9 @@ export async function createChristmasUpload(input: {
       byte_size: input.byteSize,
       width: input.width,
       height: input.height,
+      product_key: input.productKey,
+      guardian_consent: input.guardianConsent,
+      consent_version: input.consentVersion,
     }),
   });
   const data = await res.json();
