@@ -14,6 +14,12 @@ function readSrc(relative: string) {
 }
 
 describe("christmas countdown admin wiring", () => {
+  it("lazy-imports ChristmasPortraitFunnelPage used by portrait routes", () => {
+    const app = readSrc("src/App.tsx");
+    expect(app).toMatch(/const ChristmasPortraitFunnelPage = lazy\(/);
+    expect(app).toContain('import("@/features/christmas/ChristmasPortraitFunnelPage")');
+  });
+
   it("registers /admin/christmas/countdown behind AdminRoute", () => {
     const app = readSrc("src/App.tsx");
     expect(app).toContain("christmas/countdown");
