@@ -221,6 +221,7 @@ export function ChristmasClubPage() {
         <p className="cc-lede">
           Join our Christmas countdown and discover little surprises along the way.
         </p>
+        <p className="cc-countdown-note">A few gifts already waiting inside the countdown.</p>
         <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} />
         {showForm ? (
           <>
@@ -263,20 +264,6 @@ export function ChristmasClubPage() {
             height={768}
             loading="lazy"
           />
-          <div className="cc-moments">
-            <div className="cc-moment">
-              <strong>Wrapped and waiting</strong>
-              <span>Quiet gifts of atmosphere, messages, and little digital treasures.</span>
-            </div>
-            <div className="cc-moment">
-              <strong>Unlocks, later</strong>
-              <span>Some things stay hidden until the season is ready to show them.</span>
-            </div>
-            <div className="cc-moment">
-              <strong>Come back closer to Christmas</strong>
-              <span>The page will keep the fire going until the morning itself arrives.</span>
-            </div>
-          </div>
         </section>
 
         <section className="cc-panel cc-finale">

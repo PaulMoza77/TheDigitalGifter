@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS,
+  type ChristmasClubConfig,
+  type ChristmasClubCountdownUnit,
+} from "./config";
 import {
   padCountdownValue,
   remainingUntilChristmas,
   type ChristmasCountdownParts,
 } from "./countdown";
-import type { ChristmasClubConfig } from "./config";
 
-const UNITS: Array<{ key: keyof Pick<ChristmasCountdownParts, "days" | "hours" | "minutes" | "seconds">; label: string }> = [
+const UNITS: Array<{ key: ChristmasClubCountdownUnit; label: string }> = [
   { key: "days", label: "Days" },
   { key: "hours", label: "Hours" },
   { key: "minutes", label: "Minutes" },
   { key: "seconds", label: "Seconds" },
 ];
+
+export function productForCountdownUnit(unit: ChristmasClubCountdownUnit) {
+  return CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS.find((product) => product.unit === unit) ?? null;
+}
 
 export function ChristmasCountdown({
   config,
@@ -48,12 +57,38 @@ export function ChristmasCountdown({
       aria-label={`${parts.days} days, ${parts.hours} hours, ${parts.minutes} minutes, ${parts.seconds} seconds until Christmas`}
       data-compact={compact ? "true" : "false"}
     >
-      {UNITS.map((unit) => (
-        <div className="cc-unit" key={unit.key}>
-          <span className="cc-digit">{padCountdownValue(parts[unit.key])}</span>
-          <span className="cc-label">{unit.label}</span>
-        </div>
-      ))}
+      {UNITS.map((unit) => {
+        const product = productForCountdownUnit(unit.key);
+        const digit = (
+          <>
+            <span className="cc-digit">{padCountdownValue(parts[unit.key])}</span>
+            <span className="cc-label">{unit.label}</span>
+            {product && !compact ? <span className="cc-product-name">{product.name}</span> : null}
+          </>
+        );
+
+        if (compact || !product) {
+          return (
+            <div className="cc-unit" key={unit.key}>
+              {digit}
+            </div>
+          );
+        }
+
+        return (
+          <Link
+            className="cc-unit cc-unit--product"
+            key={unit.key}
+            to={product.href}
+            aria-label={`${padCountdownValue(parts[unit.key])} ${unit.label} · ${product.name}`}
+          >
+            <span className="cc-print">
+              <img src={product.image} alt="" width={480} height={600} loading="lazy" />
+            </span>
+            {digit}
+          </Link>
+        );
+      })}
     </div>
   );
 }
