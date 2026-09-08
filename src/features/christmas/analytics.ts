@@ -1,3 +1,4 @@
+import { trackEvent } from "@/lib/analytics";
 import {
   attributionParamsForInternal,
   captureFunnelAttribution,
@@ -72,6 +73,18 @@ export async function trackChristmasEvent(
   };
 
   try {
+    trackEvent(eventName, {
+      page_path: body.pathname,
+      product_key: body.product_key,
+      utm_source: body.utm_source,
+      utm_medium: body.utm_medium,
+      utm_campaign: body.utm_campaign,
+    });
+  } catch {
+    // GA must never break the funnel.
+  }
+
+  try {
     await fetch(CHRISTMAS_FUNNEL_EVENT_PATH, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -81,4 +94,20 @@ export async function trackChristmasEvent(
   } catch {
     // Analytics must never break the funnel.
   }
+}
+
+export function trackChristmasEventOnce(
+  eventName: ChristmasFunnelEventName,
+  extra?: Parameters<typeof trackChristmasEvent>[1],
+): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  const sessionId = getChristmasFunnelSessionId();
+  const key = `tdg.christmas.event.once.${eventName}.${sessionId}`;
+  try {
+    if (window.sessionStorage.getItem(key)) return Promise.resolve();
+    window.sessionStorage.setItem(key, "1");
+  } catch {
+    /* private mode still tracks once via in-memory fallback below */
+  }
+  return trackChristmasEvent(eventName, extra);
 }

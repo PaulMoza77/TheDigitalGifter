@@ -1,19 +1,33 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainPage from "@/components/MainPage";
 import { PageHead } from "@/components/PageHead";
+import { supabase } from "@/lib/supabase";
 import {
   CHRISTMAS_CATALOG_SEED,
   ctaStateForProduct,
   hubProducts,
 } from "@/features/christmas/catalog";
+import { trackChristmasEventOnce } from "@/features/christmas/analytics";
+import { ChristmasCountdownJoin } from "@/features/christmas-countdown/ChristmasCountdownJoin";
+import {
+  CHRISTMAS_COUNTDOWN_DEFAULTS,
+  publicConfigFromUnknown,
+  type ChristmasCountdownPublicConfig,
+} from "@/features/christmas-countdown/defaults";
+import { takeChristmasJoinPending } from "@/features/christmas-countdown/joinAuth";
+import { captureChristmasCountdownAttribution } from "@/features/christmas-countdown/utm";
+
+const RETURN_FLAG = "tdg.christmas.hub.seen.v1";
+const RETURN_SESSION = "tdg.christmas.hub.return.session.v1";
 
 /**
  * Christmas hub: preserves classic MainPage CTAs and adds catalog-driven suite links.
- * No fake testimonials, reviews, or purchasable Christmas checkout CTAs.
+ * Copy/countdown/signup are config-driven with hardcoded fallbacks if the config request fails.
  */
 export default function ChristmasPage() {
   const navigate = useNavigate();
+  const [config, setConfig] = useState<ChristmasCountdownPublicConfig>({ ...CHRISTMAS_COUNTDOWN_DEFAULTS });
   const products = useMemo(() => {
     const all = hubProducts(CHRISTMAS_CATALOG_SEED);
     const preferred = [
@@ -34,6 +48,56 @@ export default function ChristmasPage() {
       .filter((p): p is NonNullable<typeof p> => Boolean(p));
   }, []);
 
+  useEffect(() => {
+    captureChristmasCountdownAttribution(window.location.search);
+    void trackChristmasEventOnce("christmas_page_view", {
+      productKey: "christmas_countdown",
+      pathname: "/christmas",
+    });
+    try {
+      const seen = window.localStorage.getItem(RETURN_FLAG);
+      if (seen && !window.sessionStorage.getItem(RETURN_SESSION)) {
+        window.sessionStorage.setItem(RETURN_SESSION, "1");
+        void trackChristmasEventOnce("christmas_return_visit", {
+          productKey: "christmas_countdown",
+          pathname: "/christmas",
+        });
+      }
+      window.localStorage.setItem(RETURN_FLAG, "1");
+    } catch {
+      /* private mode */
+    }
+    if (takeChristmasJoinPending()) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("join", "google");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const { data, error } = await supabase.rpc("public_christmas_countdown_config");
+        if (cancelled) return;
+        if (error) {
+          const res = await fetch("/api/christmas-countdown-config");
+          if (!res.ok) return;
+          const json = (await res.json()) as { config?: unknown };
+          if (!cancelled) setConfig(publicConfigFromUnknown(json.config));
+          return;
+        }
+        setConfig(publicConfigFromUnknown(data));
+      } catch {
+        if (!cancelled) setConfig({ ...CHRISTMAS_COUNTDOWN_DEFAULTS });
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <>
       <PageHead
@@ -45,6 +109,10 @@ export default function ChristmasPage() {
         onViewTemplates={() => void navigate("/templates?occasion=christmas")}
         createHref="/generator?occasion=christmas"
         occasion="christmas"
+        headline={config.headline}
+        supportingCopy={config.supportingCopy}
+        ctaText={config.ctaText}
+        belowCta={<ChristmasCountdownJoin config={config} />}
       />
       <section
         aria-label="Christmas product suite"

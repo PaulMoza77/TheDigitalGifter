@@ -234,8 +234,8 @@ const SidebarNavigation: React.FC<{
             alertCount: alerts.petOrders,
           },
           {
-            label: "Christmas Orders",
-            path: "/admin/christmas-orders",
+            label: "Christmas",
+            path: "/admin/christmas",
             icon: Gift,
           },
           {

@@ -78,6 +78,8 @@ const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const PetOrdersPage = lazy(() => import("@/pages/admin/PetOrders"));
 const ChristmasOrdersPage = lazy(() => import("@/pages/admin/ChristmasOrders"));
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
+const AdminChristmasLayoutPage = lazy(() => import("@/pages/admin/christmas/Index"));
+const ChristmasCountdownPage = lazy(() => import("@/pages/admin/christmas/CountdownPage"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 const SupportTicketsPage = lazy(
@@ -619,10 +621,16 @@ function AppInner() {
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="pet-orders" element={<PetOrdersPage />} />
-            <Route path="christmas-orders" element={<ChristmasOrdersPage />} />
+            <Route path="christmas-orders" element={<Navigate to="/admin/christmas/orders" replace />} />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
+
+            <Route path="christmas" element={<AdminChristmasLayoutPage />}>
+              <Route index element={<Navigate to="/admin/christmas/countdown" replace />} />
+              <Route path="countdown" element={<ChristmasCountdownPage />} />
+              <Route path="orders" element={<ChristmasOrdersPage />} />
+            </Route>
 
             <Route path="email" element={<AdminEmailLayoutPage />}>
               <Route

@@ -1,5 +1,8 @@
 import type { Plugin } from "vite";
 import funnelHandler from "./api/christmas-v2-funnel-event";
+import foundationFunnelHandler from "./api/christmas-funnel-event";
+import countdownConfigHandler from "./api/christmas-countdown-config";
+import countdownSignupHandler from "./api/christmas-countdown-signup";
 
 function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) => void }): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -48,8 +51,21 @@ export function christmasV2DevPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url?.split("?")[0] || "";
-        if (url !== "/api/christmas-v2-funnel-event" && url !== "/api/christmas-v2/funnel-event") {
-          return next();
+        const handler =
+          url === "/api/christmas-v2-funnel-event" || url === "/api/christmas-v2/funnel-event"
+            ? funnelHandler
+            : url === "/api/christmas/funnel-event" || url === "/api/christmas-funnel-event"
+              ? foundationFunnelHandler
+              : url === "/api/christmas-countdown-config"
+                ? countdownConfigHandler
+                : url === "/api/christmas-countdown-signup"
+                  ? countdownSignupHandler
+                  : null;
+        if (!handler) return next();
+        if (req.method === "OPTIONS") {
+          res.statusCode = 204;
+          res.end();
+          return;
         }
         const raw = req.method === "POST" ? await readRawBody(req as never) : "";
         let body: unknown = {};
@@ -65,7 +81,7 @@ export function christmasV2DevPlugin(): Plugin {
         }
         const fakeReq = { method: req.method, headers: req.headers as Record<string, unknown>, body };
         const { req: vReq, res: vRes } = vercelLike(fakeReq, res);
-        await funnelHandler(vReq, vRes);
+        await handler(vReq, vRes);
       });
     },
   };

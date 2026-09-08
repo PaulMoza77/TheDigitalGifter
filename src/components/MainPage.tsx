@@ -11,6 +11,27 @@ interface TheDigitalGifterMainPageProps {
   onViewTemplates: () => void;
   createHref?: string; // Used for href links if needed
   occasion?: string; // Occasion context for template navigation (e.g., "christmas")
+  headline?: string;
+  supportingCopy?: string;
+  ctaText?: string;
+  belowCta?: React.ReactNode;
+}
+
+function MagicalHeadline({ headline }: { headline: string }) {
+  const marker = "Christmas Cards";
+  const idx = headline.indexOf(marker);
+  if (idx < 0) {
+    return <>{headline}</>;
+  }
+  return (
+    <>
+      {headline.slice(0, idx)}
+      <span className="bg-clip-text text-transparent bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] animate-gradientShift">
+        {marker}
+      </span>
+      {headline.slice(idx + marker.length)}
+    </>
+  );
 }
 
 export default function TheDigitalGifterMainPage({
@@ -18,6 +39,10 @@ export default function TheDigitalGifterMainPage({
   onViewTemplates,
   createHref: _createHref = "/generator",
   occasion,
+  headline = "Create Magical Christmas Cards with AI",
+  supportingCopy = "Transform your holiday memories into stunning, personalized Christmas cards in seconds. No design skills needed — just upload, customize, and let our AI work its magic.",
+  ctaText = "Start Creating",
+  belowCta,
 }: TheDigitalGifterMainPageProps) {
   const stats = [
     { value: "50,000+", label: "Cards Created" },
@@ -109,16 +134,10 @@ export default function TheDigitalGifterMainPage({
             ❄️ Christmas Special – Limited Time
           </div>
           <h1 className="mt-6 text-5xl md:text-6xl font-extrabold leading-[1.05] text-[#fffef5]">
-            Create Magical{" "}
-            <span className="bg-clip-text text-transparent bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] animate-gradientShift">
-              Christmas Cards
-            </span>{" "}
-            with AI
+            <MagicalHeadline headline={headline} />
           </h1>
           <p className="mt-4 text-[#dfe6f1] max-w-2xl mx-auto">
-            Transform your holiday memories into stunning, personalized
-            Christmas cards in seconds. No design skills needed — just upload,
-            customize, and let our AI work its magic.
+            {supportingCopy}
           </p>
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
             <button
@@ -126,7 +145,7 @@ export default function TheDigitalGifterMainPage({
               aria-label="Start creating your AI Christmas card"
               className="inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 font-extrabold text-[#1a1a1a] border border-white/60 bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] bg-[length:250%_250%] animate-gradientShift shadow-[0_12px_30px_rgba(255,170,90,.45),_0_0_0_2px_rgba(255,210,150,.45)_inset] hover:scale-[1.04] transition"
             >
-              Start Creating <ChevronRight size={18} />
+              {ctaText} <ChevronRight size={18} />
             </button>
             <button
               onClick={onViewTemplates}
@@ -136,6 +155,7 @@ export default function TheDigitalGifterMainPage({
               View Templates
             </button>
           </div>
+          {belowCta}
         </section>
 
         {/* CAROUSEL */}
