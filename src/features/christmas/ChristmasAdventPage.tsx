@@ -305,7 +305,7 @@ export default function ChristmasAdventPage() {
           ) : null}
           <button
             type="button"
-            className="mt-4 w-full rounded-md bg-rose-200 py-2.5 text-sm font-semibold text-slate-900 disabled:opacity-50"
+            className="mt-4 w-full rounded-md bg-rose-200 py-2.5 text-sm font-semibold text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={busy || !status?.free_gift_enabled || Boolean(freeGift)}
             onClick={() => void claimFreeGift()}
           >
