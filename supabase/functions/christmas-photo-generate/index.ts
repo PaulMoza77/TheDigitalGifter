@@ -5,6 +5,7 @@ import {
   buildChristmasPortraitPrompt,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import { claimAndSendChristmasLifecycle } from "../_shared/christmas/lifecycle.ts";
 
 /**
  * Post-payment Christmas portrait generation (all verticals).
@@ -219,6 +220,19 @@ Deno.serve(async (req) => {
           },
         })
         .eq("id", orderId);
+      try {
+        await claimAndSendChristmasLifecycle({
+          service,
+          template: "generation_failed",
+          orderId,
+          productKey: asString(order.product_key) || "christmas_photo",
+          locale: asString(order.locale) || "en",
+          email: asString(order.email) || null,
+          productName: asString(order.product_key) || "Christmas portrait",
+        });
+      } catch {
+        /* best-effort */
+      }
       return jsonResponse({ ok: false, error: message, code: "generation_failed" }, 502);
     }
 
@@ -278,14 +292,10 @@ Deno.serve(async (req) => {
 
     try {
       const email = asString(order.email);
-      const apiKey = asString(Deno.env.get("RESEND_API_KEY"));
-      const from = asString(
-        Deno.env.get("CHRISTMAS_EMAIL_FROM") || Deno.env.get("TRANSACTIONAL_EMAIL_FROM"),
-      );
       const tokenHint = asString(
         (order.metadata as Record<string, unknown> | null)?.public_token_hint,
       );
-      if (email && apiKey && from && tokenHint) {
+      if (email && tokenHint) {
         const site = (
           Deno.env.get("SITE_URL") ||
           Deno.env.get("PUBLIC_APP_URL") ||
@@ -298,18 +308,15 @@ Deno.serve(async (req) => {
           landingPath: asString(order.landing_path) || null,
         });
         const link = `${site}${route}?token=${encodeURIComponent(tokenHint)}`;
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from,
-            to: [email],
-            subject: "Your Christmas portrait is ready",
-            html: `<p>Your personalized Christmas portrait is ready.</p><p><a href="${link}">Open your result</a></p><p>— The Digital Gifter</p>`,
-          }),
+        await claimAndSendChristmasLifecycle({
+          service,
+          template: "generation_ready",
+          orderId,
+          productKey: asString(order.product_key) || "christmas_photo",
+          locale: asString(order.locale) || "en",
+          email,
+          productName: asString(order.product_key) || "Christmas portrait",
+          resultUrl: link,
         });
       }
     } catch {

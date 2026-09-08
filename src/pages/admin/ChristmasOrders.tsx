@@ -34,6 +34,7 @@ type ChristmasOrderRow = {
   utm_campaign: string | null;
   affiliate_ref: string | null;
   landing_path: string | null;
+  locale?: string | null;
   created_at: string;
   paid_at: string | null;
   model_name?: string | null;
@@ -151,13 +152,25 @@ export default function ChristmasOrdersPage() {
   const [selected, setSelected] = useState<ChristmasOrderRow | null>(null);
   const [santaJob, setSantaJob] = useState<SantaJobRow | null>(null);
   const [santaBusy, setSantaBusy] = useState(false);
+  const [lifecycleEvents, setLifecycleEvents] = useState<
+    Array<{
+      event_key: string;
+      template_key: string;
+      locale: string;
+      status: string;
+      attempt_count: number;
+      last_error: string | null;
+      sent_at: string | null;
+      created_at: string;
+    }>
+  >([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("christmas_orders")
       .select(
-        "id,email,product_key,package_key,style_key,portrait_type,species,source_route,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,created_at,paid_at,model_name,generation_started_at,generation_finished_at,metadata",
+        "id,email,product_key,package_key,style_key,portrait_type,species,source_route,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,locale,created_at,paid_at,model_name,generation_started_at,generation_finished_at,metadata",
       )
       .order("created_at", { ascending: false })
       .limit(200);
@@ -310,6 +323,31 @@ export default function ChristmasOrdersPage() {
       setSantaJob((data || null) as SantaJobRow | null);
     }
     void loadSanta();
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadLifecycle() {
+      setLifecycleEvents([]);
+      if (!selected) return;
+      const { data, error } = await supabase
+        .from("christmas_lifecycle_events")
+        .select(
+          "event_key,template_key,locale,status,attempt_count,last_error,sent_at,created_at",
+        )
+        .eq("order_id", selected.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (cancelled) return;
+      if (error) {
+        return;
+      }
+      setLifecycleEvents((data || []) as typeof lifecycleEvents);
+    }
+    void loadLifecycle();
     return () => {
       cancelled = true;
     };
@@ -740,7 +778,29 @@ export default function ChristmasOrdersPage() {
               <dt className="text-slate-500">Affiliate</dt>
               <dd>{selected.affiliate_ref || "—"}</dd>
             </div>
+            <div>
+              <dt className="text-slate-500">Locale</dt>
+              <dd>{selected.locale || "en"}</dd>
+            </div>
           </dl>
+          <div className="mt-4 space-y-2 border-t border-slate-800 pt-4">
+            <h3 className="font-medium text-white">Lifecycle emails</h3>
+            {lifecycleEvents.length === 0 ? (
+              <p className="text-xs text-slate-500">No lifecycle ledger rows for this order.</p>
+            ) : (
+              <ul className="space-y-1 text-xs font-mono text-slate-300">
+                {lifecycleEvents.map((ev) => (
+                  <li key={ev.event_key} className="flex flex-wrap gap-x-2 gap-y-0.5">
+                    <span>{ev.template_key}</span>
+                    <Badge variant="outline">{ev.status}</Badge>
+                    <span>{ev.locale}</span>
+                    <span>attempts={ev.attempt_count}</span>
+                    {ev.last_error ? <span className="text-amber-400">{ev.last_error}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {selected.product_key === "christmas_santa_video" ? (
             <div className="mt-4 space-y-3 border-t border-slate-800 pt-4">
               <div className="flex flex-wrap items-center justify-between gap-2">

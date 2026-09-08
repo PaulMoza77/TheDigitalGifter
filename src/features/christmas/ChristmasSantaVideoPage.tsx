@@ -294,6 +294,7 @@ export default function ChristmasSantaVideoPage() {
         amount_cents: 1,
         currency: "eur",
         email: draft.email || undefined,
+        locale: v.language === "ro" ? "ro" : "en",
         child_first_name: v.childFirstName,
         language: v.language,
         age: v.age,
