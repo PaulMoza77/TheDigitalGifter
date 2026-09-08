@@ -7,6 +7,13 @@ import {
   generateSantaTalkingVideo,
   santaStillPrompt,
 } from "../_shared/christmas/santaVideo.ts";
+import {
+  SANTA_FINAL_VIDEO_RETENTION_DAYS,
+  SANTA_INTERMEDIATE_RETENTION_DAYS,
+  SANTA_PERSONALIZATION_RETENTION_DAYS,
+  SANTA_VIDEO_PROD_MODE,
+  santaVideoProviderLabel,
+} from "../_shared/christmas/santaOps.ts";
 
 /**
  * Post-payment Santa Video pipeline (async stages).
@@ -326,8 +333,25 @@ Deno.serve(async (req) => {
 
         const totalCost = costs.script + costs.tts + costs.still + costs.video;
         const totalLatency = Date.now() - pipelineStarted;
-        const retentionDays = Number(Deno.env.get("CHRISTMAS_SANTA_RETENTION_DAYS") || 365);
-        const deleteAfter = new Date(Date.now() + retentionDays * 86400000).toISOString();
+        const days = (name: string, fallback: number) => {
+          const raw = Number(Deno.env.get(name) || fallback);
+          return Number.isFinite(raw) && raw > 0 ? raw : fallback;
+        };
+        const nowMs = Date.now();
+        const deleteAfter = new Date(
+          nowMs + days("CHRISTMAS_SANTA_RETENTION_DAYS", SANTA_FINAL_VIDEO_RETENTION_DAYS) * 86400000,
+        ).toISOString();
+        const intermediatesAfter = new Date(
+          nowMs +
+            days("CHRISTMAS_SANTA_INTERMEDIATE_RETENTION_DAYS", SANTA_INTERMEDIATE_RETENTION_DAYS) *
+              86400000,
+        ).toISOString();
+        const personalizationAfter = new Date(
+          nowMs +
+            days("CHRISTMAS_SANTA_PERSONALIZATION_RETENTION_DAYS", SANTA_PERSONALIZATION_RETENTION_DAYS) *
+              86400000,
+        ).toISOString();
+        const videoMode = mock ? "mock" : (videoMeta.mode as "lipsync" | "still_audio_mux");
 
         await service
           .from("christmas_santa_video_jobs")
@@ -337,11 +361,7 @@ Deno.serve(async (req) => {
             result_video_bucket: RESULT_BUCKET,
             result_video_path: videoPath,
             result_asset_id: asset.id,
-            provider_video: mock
-              ? "mock"
-              : videoMeta.mode === "still_audio_mux"
-              ? "ffmpeg_compose"
-              : "replicate",
+            provider_video: santaVideoProviderLabel(videoMode),
             model_video: videoMeta.model,
             provider_job_id: videoMeta.predictionId,
             cost_video_usd: videoMeta.estimatedCostUsd,
@@ -351,11 +371,16 @@ Deno.serve(async (req) => {
             latency_total_ms: totalLatency,
             completed_at: new Date().toISOString(),
             retention_delete_after: deleteAfter,
+            intermediates_purge_after: intermediatesAfter,
+            personalization_purge_after: personalizationAfter,
             error_code: null,
             error_message_safe: null,
             metadata: {
               ...(typeof job.metadata === "object" && job.metadata ? job.metadata : {}),
               video_mode: videoMeta.mode,
+              prod_mode: SANTA_VIDEO_PROD_MODE,
+              lipsync_skip_reason:
+                (videoMeta as { lipsyncSkipReason?: string }).lipsyncSkipReason || null,
             },
           })
           .eq("order_id", orderId);

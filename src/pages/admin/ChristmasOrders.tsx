@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { santaJobNeedsAdminRetry } from "@/features/christmas/santa/santaOps";
 import { RefreshCw, Search, Gift } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -745,9 +746,7 @@ export default function ChristmasOrdersPage() {
             <div className="mt-4 space-y-3 border-t border-slate-800 pt-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-medium text-white">Santa job</h3>
-                {selected.payment_status === "paid" &&
-                santaJob &&
-                santaJob.job_status === "failed" ? (
+                {selected.payment_status === "paid" && santaJobNeedsAdminRetry(santaJob) ? (
                   <Button
                     size="sm"
                     variant="outline"

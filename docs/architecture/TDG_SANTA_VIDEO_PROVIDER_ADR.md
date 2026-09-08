@@ -1,9 +1,9 @@
 # TDG Santa Video Provider ADR
 
 **Task:** `tdg-christmas-santa-video-007`  
-**Status:** Accepted for V1  
+**Status:** Accepted for V1; mux-as-prod is the production path  
 **Date:** 2026-09-03  
-**Updated:** 2026-09-03 (compose fallback)
+**Updated:** 2026-09-08 (production hardening: mux-as-prod + retention cron)
 
 ## Context
 
@@ -34,13 +34,15 @@ Reject for V1: credentials and adapters do not exist in production secrets. Do n
 - **Script:** `gpt-4o-mini` when billed; otherwise **server-owned EN/RO templates** (still personalized). Never accepts browser system prompts.
 - **TTS:** OpenAI `tts-1-hd` when billed; **fallback** Replicate `minimax/speech-02-hd` (EN + Romanian `language_boost`). Synthetic character voice config only.
 - **Santa still:** Template key → Flux still of classic Santa (cached under `christmas-source`).
-- **Video:** Try Replicate talking-head models (`CHRISTMAS_SANTA_VIDEO_MODEL`, defaults including `cjwbw/sadtalker`). **Verified 2026-09-03:** current default slugs returned 404 “resource could not be found.”
+- **Video:** Try Replicate talking-head **only when** `CHRISTMAS_SANTA_VIDEO_MODEL` (optional comma list `CHRISTMAS_SANTA_VIDEO_MODELS`) is set. Do **not** probe known-404 default slugs. **Verified 2026-09-03:** `cjwbw/sadtalker` / `camenduru/sadtalker` returned 404.
 
 ### D. Pre-rendered licensed Santa plate + lip-sync only
 Attractive later if we own plates; V1 generates the still via Flux to avoid licensing blockers.
 
-### E. Still + full TTS mux via ffmpeg (**chosen V1 deliverable**)
-When lipsync is unavailable, origin endpoint `/api/christmas-santa-compose` (service-role auth) downloads still + speech audio and muxes **one MP4** (`libx264` stillimage + AAC, `-shortest`). Duration equals TTS length (~30–40s in proofs). This is a coherent downloadable file with matched spoken content — **not** a 5s clip plus detached audio.
+### E. Still + full TTS mux via ffmpeg (**production path / mux-as-prod**)
+Origin endpoint `/api/christmas-santa-compose` (service-role auth) downloads still + speech audio and muxes **one MP4** (`libx264` stillimage + AAC, `-shortest`). Duration equals TTS length (~30–40s in proofs). This is a coherent downloadable file with matched spoken content — **not** a 5s clip plus detached audio.
+
+**2026-09-08:** mux-as-prod is the documented production video provider until a working lipsync model is confirmed and set on `CHRISTMAS_SANTA_VIDEO_MODEL`. This is not a mock and is not reported as a temporary gap.
 
 ## Why E for V1 (with C as upgrade)
 
@@ -84,7 +86,7 @@ Record into order/job metadata + cost_* fields; label `estimated` when exact inv
 
 - Child photo **not required** in V1 and **not sent** to providers.
 - Private buckets; no public gallery.
-- Retention defaults configurable (see product doc).
+- Retention defaults configurable; cron `christmas-santa-retention` enforces 14d / 90d / 365d.
 
 ## Fallback
 
@@ -94,8 +96,12 @@ Record into order/job metadata + cost_* fields; label `estimated` when exact inv
 
 ## Limitations (honest)
 
-- V1 mux mode has **no lip-sync**; appearance is a static Santa portrait with full personalized audio.
+- Mux-as-prod has **no lip motion**; appearance is a static Santa portrait with full personalized audio.
 - Romanian TTS accent quality depends on MiniMax/OpenAI, not a dedicated RO Santa talent.
 - OpenAI billing may be exhausted → template script + Replicate TTS.
 - No ElevenLabs / Sync Labs until credentials + adapters are added.
-- SadTalker-class Replicate models were unavailable (404) at acceptance time.
+- SadTalker-class Replicate models were unavailable (404) at V1 acceptance; they are no longer auto-probed.
+
+## Retention cron
+
+Edge `christmas-santa-retention` + origin `/api/christmas-santa-retention-cron`. Intermediates 14d, personalization 90d, final video 365d. Service-role / cron-secret only.

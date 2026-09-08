@@ -7,8 +7,22 @@ import {
   SANTA_PRODUCT_KEY,
   validateSantaPersonalization,
 } from "./santaTypes";
-import { CHRISTMAS_CATALOG_SEED, resolvePurchasableOffer } from "../catalog";
+import {
+  isLipsyncModelMissing,
+  isOrderScopedSantaPath,
+  planSantaRetryReset,
+  SANTA_VIDEO_PROD_MODE,
+  santaFinalStorageTargets,
+  santaIntermediateStorageTargets,
+  santaJobNeedsAdminRetry,
+  santaLipsyncModelCandidates,
+  santaPersonalizationRedaction,
+  santaRetentionDue,
+  santaRetryEligibility,
+} from "./santaOps";
+import { CHRISTMAS_CATALOG_SEED, findProduct, resolvePurchasableOffer } from "../catalog";
 import { canGenerateChristmasPhoto } from "../generationGuards";
+import { planChristmasCheckout } from "../checkout";
 import { shellForPath } from "../routes";
 
 function readSrc(path: string) {
@@ -119,5 +133,155 @@ describe("santa pipeline wiring", () => {
     expect(readSrc("server/routes.mjs")).toContain("/api/christmas-santa-compose");
     expect(readSrc("Dockerfile")).toMatch(/ffmpeg/);
     expect(readSrc("api/christmas-santa-compose.ts")).toContain("still_audio_mux");
+  });
+});
+
+describe("santa mux-as-prod + lipsync-when-model", () => {
+  it("documents mux-as-prod as the production video provider", () => {
+    expect(SANTA_VIDEO_PROD_MODE).toBe("mux_as_prod");
+    expect(readSrc("docs/architecture/TDG_SANTA_VIDEO_PROVIDER_ADR.md")).toContain("mux-as-prod");
+    expect(readSrc("docs/TDG_CHRISTMAS_SANTA_VIDEO.md")).toContain("mux-as-prod");
+    expect(readSrc("supabase/functions/_shared/christmas/santaVideo.ts")).toContain(
+      "santaLipsyncModelCandidates",
+    );
+    expect(readSrc("supabase/functions/_shared/christmas/santaVideo.ts")).not.toContain(
+      '"cjwbw/sadtalker"',
+    );
+  });
+
+  it("tries lipsync only when a model is configured", () => {
+    expect(santaLipsyncModelCandidates({})).toEqual([]);
+    expect(santaLipsyncModelCandidates({ primaryModel: "  " })).toEqual([]);
+    expect(
+      santaLipsyncModelCandidates({
+        primaryModel: "owner/working-lipsync",
+        extraModels: "extra/one, extra/one, extra/two",
+      }),
+    ).toEqual(["owner/working-lipsync", "extra/one", "extra/two"]);
+    expect(isLipsyncModelMissing(404, { detail: "Not found" })).toBe(true);
+    expect(isLipsyncModelMissing(422, { detail: "resource could not be found" })).toBe(true);
+    expect(isLipsyncModelMissing(200, { status: "succeeded" })).toBe(false);
+  });
+});
+
+describe("santa admin retry contract", () => {
+  it("requires paid Santa entitlement and never recharges", () => {
+    expect(santaRetryEligibility({ payment_status: "pending", product_key: SANTA_PRODUCT_KEY })).toEqual({
+      ok: false,
+      code: "payment_required",
+    });
+    expect(santaRetryEligibility({ payment_status: "paid", product_key: "christmas_photo" })).toEqual({
+      ok: false,
+      code: "wrong_product",
+    });
+    expect(santaRetryEligibility({ payment_status: "paid", product_key: SANTA_PRODUCT_KEY })).toEqual({
+      ok: true,
+    });
+  });
+
+  it("resets only failed stages and keeps ready script/audio", () => {
+    const reset = planSantaRetryReset({
+      script_status: "ready",
+      audio_status: "ready",
+      video_status: "failed",
+      job_status: "failed",
+    });
+    expect(reset.recharge).toBe(false);
+    expect(reset.job_status).toBe("queued");
+    expect(reset.script_status).toBeUndefined();
+    expect(reset.audio_status).toBeUndefined();
+    expect(reset.video_status).toBe("pending");
+    expect(reset.reset_stages).toEqual(["video"]);
+  });
+
+  it("wires admin + funnel retry without Stripe", () => {
+    const funnel = readSrc("supabase/functions/christmas-santa-funnel/index.ts");
+    expect(funnel).toContain("planSantaRetryReset");
+    expect(funnel).toContain("recharge: false");
+    expect(funnel).toContain("christmas-santa-generate");
+    expect(funnel).not.toMatch(/stripe|checkout\.sessions|payment_intent/i);
+    expect(readSrc("src/pages/admin/ChristmasOrders.tsx")).toContain("santaJobNeedsAdminRetry");
+    expect(readSrc("src/pages/admin/ChristmasOrders.tsx")).toContain("retryGeneration");
+    expect(santaJobNeedsAdminRetry({ job_status: "failed" })).toBe(true);
+    expect(santaJobNeedsAdminRetry({ job_status: "completed" })).toBe(false);
+    expect(
+      santaJobNeedsAdminRetry(
+        { job_status: "video_processing", started_at: new Date(Date.now() - 21 * 60 * 1000).toISOString() },
+        Date.now(),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("santa retention job", () => {
+  const orderId = "11111111-1111-1111-1111-111111111111";
+  const job = {
+    order_id: orderId,
+    created_at: "2026-01-01T00:00:00.000Z",
+    completed_at: "2026-01-01T00:00:00.000Z",
+    source_audio_bucket: "christmas-generated",
+    source_audio_path: `santa/${orderId}/speech.mp3`,
+    santa_still_bucket: "christmas-source",
+    santa_still_path: `santa/${orderId}/santa_still.jpg`,
+    result_video_bucket: "christmas-generated",
+    result_video_path: `santa/${orderId}/result.mp4`,
+  };
+
+  it("applies 14/90/365 policy and never deletes template cache", () => {
+    expect(
+      santaRetentionDue(job, new Date("2026-01-10T00:00:00.000Z")),
+    ).toEqual({ intermediates: false, personalization: false, finalVideo: false });
+    expect(
+      santaRetentionDue(job, new Date("2026-01-16T00:00:00.000Z")),
+    ).toEqual({ intermediates: true, personalization: false, finalVideo: false });
+    expect(
+      santaRetentionDue(job, new Date("2026-04-02T00:00:00.000Z")),
+    ).toEqual({ intermediates: true, personalization: true, finalVideo: false });
+    expect(
+      santaRetentionDue(job, new Date("2027-01-02T00:00:00.000Z")),
+    ).toEqual({ intermediates: true, personalization: true, finalVideo: true });
+
+    expect(isOrderScopedSantaPath("santa/templates/classic_santa.jpg", orderId)).toBe(false);
+    const intermediates = santaIntermediateStorageTargets(job);
+    expect(intermediates.some((t) => t.path.includes("templates/"))).toBe(false);
+    expect(santaFinalStorageTargets(job).some((t) => t.path.endsWith("result.mp4"))).toBe(true);
+    expect(santaPersonalizationRedaction().child_first_name).toBe("redacted");
+  });
+
+  it("wires Edge + origin cron + migration", () => {
+    expect(readSrc("supabase/functions/christmas-santa-retention/index.ts")).toContain(
+      "santaRetentionDue",
+    );
+    expect(readSrc("api/christmas-santa-retention-cron.ts")).toContain("christmas-santa-retention");
+    expect(readSrc("api/christmas-santa-retention-cron.ts")).toContain("401");
+    expect(readSrc("server/routes.mjs")).toContain("/api/christmas-santa-retention-cron");
+    expect(readSrc("supabase/migrations/20260908120000_christmas_santa_production_hardening.sql")).toContain(
+      "purchasable = false",
+    );
+    expect(readSrc("supabase/config.toml")).toContain("christmas-santa-retention");
+  });
+});
+
+describe("santa founder purchase gate", () => {
+  it("does not invent a live Santa price", () => {
+    const product = findProduct(CHRISTMAS_CATALOG_SEED, SANTA_PRODUCT_KEY);
+    expect(product?.packages.every((pkg) => pkg.purchasable === false && pkg.priceCents === 0)).toBe(
+      true,
+    );
+    const prev = process.env.CHRISTMAS_CHECKOUT_ENABLED;
+    process.env.CHRISTMAS_CHECKOUT_ENABLED = "true";
+    const plan = planChristmasCheckout({
+      productKey: SANTA_PRODUCT_KEY,
+      packageKey: "basic",
+      clientAmountCents: 1999,
+      successUrl: "https://www.thedigitalgifter.com/christmas/santa-video",
+    });
+    if (prev == null) delete process.env.CHRISTMAS_CHECKOUT_ENABLED;
+    else process.env.CHRISTMAS_CHECKOUT_ENABLED = prev;
+    expect(plan.ok).toBe(false);
+    expect(plan.ok ? "" : plan.code).toBe("not_purchasable");
+    expect(readSrc("src/features/christmas/ChristmasSantaVideoPage.tsx")).toContain(
+      "production price is not configured",
+    );
   });
 });

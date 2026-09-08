@@ -93,3 +93,12 @@ verify_jwt = false
 
 [functions.christmas-cards-messages-funnel]
 verify_jwt = false
+
+[functions.christmas-santa-funnel]
+verify_jwt = false
+
+[functions.christmas-santa-generate]
+verify_jwt = false
+
+[functions.christmas-santa-retention]
+verify_jwt = false
