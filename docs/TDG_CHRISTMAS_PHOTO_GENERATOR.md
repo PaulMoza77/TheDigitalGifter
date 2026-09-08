@@ -94,9 +94,17 @@ Allowlisted events via `/api/christmas/funnel-event` including upload/style/prev
 
 `CHRISTMAS_CHECKOUT_ENABLED=false` (secret). Production purchase remains disabled.
 
+## Express Checkout (Apple Pay / Google Pay)
+
+Portrait / Santa / Christmas V2 paid sheets reuse Pet `CustomStripeCheckout` + `PET_EXPRESS_CHECKOUT_OPTIONS` (`applePay: "auto"`). Wallet chrome is Stripe-reported only (`onWalletAvailability`); loading uses a neutral skeleton, not a decorative Apple Pay button.
+
+`CHRISTMAS_CHECKOUT_ENABLED` remains founder-gated (default off). Suite Edge checkout uses Stripe API `2025-03-31.basil` so Custom Checkout can return a client secret when the flag is enabled.
+
+**Founder QA (required before claiming production Apple Pay):** iPhone Safari on a live/test charge path after enabling checkout + a purchasable package. Gift Tree device QA remains on PRs 91/92.
+
 ## Known limitations
 
-- Stripe Custom Checkout Elements UI not exercised end-to-end (checkout kill-switched; no live/test charge). Payment entitlement proven via fulfill RPC + webhook code path deployed.
+- Stripe Custom Checkout Elements UI not exercised end-to-end (checkout kill-switched; no live/test charge). Payment entitlement proven via fulfill RPC + webhook code path deployed. Express Checkout is wired; wallet availability is truthful in code. Physical iPhone Safari QA is still a founder gate.
 - Multi-person identity quality depends on Kontext limits
 - Abandoned upload TTL cleanup is configurable seam (manual/ops) — default: keep paid sources; unpaid uploads under `uploads/` should be purged by a later retention job
 - Legacy V2 tables remain as `christmas_v2_*` quarantine (not used by Photo Generator V1)

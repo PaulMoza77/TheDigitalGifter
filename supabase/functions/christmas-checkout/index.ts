@@ -15,6 +15,8 @@ import {
  * Style validation uses the server-owned prompt registry (never client prompts).
  */
 
+const STRIPE_API_VERSION_CUSTOM = "2025-03-31.basil";
+
 type Body = {
   product_key?: string;
   package_key?: string;
@@ -344,6 +346,7 @@ Deno.serve(async (req) => {
       headers: {
         Authorization: `Bearer ${stripeSecret}`,
         "Content-Type": "application/x-www-form-urlencoded",
+        "Stripe-Version": STRIPE_API_VERSION_CUSTOM,
         "Idempotency-Key": `xmas-checkout-${orderId}`,
       },
       body: params,

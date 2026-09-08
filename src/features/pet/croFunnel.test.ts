@@ -236,7 +236,8 @@ describe("pet funnel CRO", () => {
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("ApplePayButton");
     expect(readSrc("src/features/pet/PetCheckoutPage.tsx")).toContain("formatHoldCountdown");
     expect(readSrc("src/features/pet/components/CustomStripeCheckout.tsx")).toContain("ExpressCheckoutElement");
-    expect(readSrc("src/features/pet/components/CustomStripeCheckout.tsx")).toContain("ApplePayButton");
+    expect(readSrc("src/features/pet/components/CustomStripeCheckout.tsx")).toContain("onWalletAvailability");
+    expect(readSrc("src/features/pet/components/CustomStripeCheckout.tsx")).not.toContain("ApplePayButton");
     expect(readSrc("src/features/pet/components/CustomStripeCheckout.tsx")).toContain('link: "never"');
     expect(PET_CURRENCY).toBe("usd");
     expect(PET_PRICE_CENTS).toBe(2700);

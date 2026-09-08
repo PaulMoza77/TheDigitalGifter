@@ -22,6 +22,9 @@ const SESSION_ONCE = new Set<ChristmasV2EventName>([
   "christmas_v2_results_viewed",
   "christmas_v2_upsell_viewed",
   "christmas_v2_checkout_canceled",
+  "christmas_v2_apple_pay_available",
+  "christmas_v2_apple_pay_unavailable",
+  "christmas_v2_express_checkout_available",
 ]);
 
 export function isChristmasV2EventName(value: string): value is ChristmasV2EventName {

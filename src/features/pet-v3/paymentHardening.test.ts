@@ -72,7 +72,7 @@ describe("Cat V3 + return URL payment hardening", () => {
     );
     expect(edge).toContain('params.set("return_url", successUrl)');
     expect(shared).toContain("isExpressCheckoutConfirmEvent");
-    expect(shared).toContain("expressCheckoutConfirmEvent } : {}");
+    expect(shared).toContain("expressCheckoutConfirmEvent");
     expect(shared).not.toContain("returnUrl:");
     expect(shared).not.toMatch(/confirm\(\s*\{[^}]*returnUrl/);
     expect(shared).not.toContain("Basil Custom Checkout requires returnUrl");

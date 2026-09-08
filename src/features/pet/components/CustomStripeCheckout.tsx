@@ -12,8 +12,12 @@ import {
   isExpressCheckoutConfirmEvent,
 } from "../expressCheckoutConfirm";
 import { getStripePromise, reloadStripeForCheckout, stripeInstanceKeyFingerprint } from "../stripeLoader";
-import { ApplePayButton } from "./ApplePayButton";
-import { PET_EXPRESS_CHECKOUT_OPTIONS } from "../expressCheckoutOptions";
+import {
+  expressWalletAvailabilityFromMethods,
+  expressWalletAvailabilityReason,
+  PET_EXPRESS_CHECKOUT_OPTIONS,
+  type ExpressWalletAvailability,
+} from "../expressCheckoutOptions";
 
 function normalizeClientSecret(clientSecret: string): string {
   const value = String(clientSecret || "").trim();
@@ -30,15 +34,20 @@ function CheckoutBody({
   email,
   payButtonLabel,
   busyLabel = "Paying…",
-  loadingLabel = "Loading Apple Pay and card…",
+  loadingLabel = "Loading secure payment…",
   onBeforeConfirm,
   onReady,
   onPaymentInteraction,
+  onConfirmStart,
+  onConfirmSuccess,
   onInitError,
   onRecoverCheckout,
   onReloadCheckout,
   confirmDisabled,
   payButtonClassName,
+  onWalletAvailability,
+  onExpressCancel,
+  redirectIfRequired,
 }: {
   dueDisplay: string;
   email?: string;
@@ -48,12 +57,17 @@ function CheckoutBody({
   onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
+  onConfirmStart?: () => void;
+  onConfirmSuccess?: (detail: { sessionId?: string | null }) => void | Promise<void>;
   onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
   /** Order-aware recovery. When set, hides the Stripe-only secret reload retry. */
   onRecoverCheckout?: () => void;
   onReloadCheckout?: () => void;
   confirmDisabled?: boolean;
   payButtonClassName?: string;
+  onWalletAvailability?: (info: ExpressWalletAvailability) => void;
+  onExpressCancel?: () => void;
+  redirectIfRequired?: boolean;
 }) {
   const checkoutState = useCheckoutElements();
   const [busy, setBusy] = useState(false);
@@ -62,6 +76,7 @@ function CheckoutBody({
   const readyFired = useRef(false);
   const interactionFired = useRef(false);
   const initErrorHandled = useRef(false);
+  const walletReported = useRef(false);
 
   useEffect(() => {
     if (checkoutState.type === "success" && !readyFired.current) {
@@ -147,11 +162,18 @@ function CheckoutBody({
     }
     setBusy(true);
     setError(null);
+    onConfirmStart?.();
     try {
       await syncCheckoutEmail(checkoutState.checkout);
-      const result = await checkoutState.checkout.confirm(
-        isExpress ? { expressCheckoutConfirmEvent } : {},
-      );
+      const confirmOptions = isExpress
+        ? {
+            expressCheckoutConfirmEvent,
+            ...(redirectIfRequired ? { redirect: "if_required" as const } : {}),
+          }
+        : redirectIfRequired
+          ? { redirect: "if_required" as const }
+          : {};
+      const result = await checkoutState.checkout.confirm(confirmOptions);
       if (result.type === "error") {
         if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
         const message = sanitizeStripeCheckoutCustomerError(result.error.message);
@@ -161,6 +183,11 @@ function CheckoutBody({
         if (message) setError(message);
       } else {
         void onBeforeConfirm?.().catch(() => undefined);
+        const sessionId =
+          result.type === "success" && result.session && typeof result.session === "object"
+            ? String((result.session as { id?: string }).id || "") || null
+            : null;
+        await onConfirmSuccess?.({ sessionId });
       }
     } catch (caught) {
       if (isExpress) failExpressCheckout(expressCheckoutConfirmEvent);
@@ -177,7 +204,8 @@ function CheckoutBody({
   if (checkoutState.type === "loading") {
     return (
       <div className="space-y-4" role="status" aria-live="polite">
-        <ApplePayButton disabled />
+        {/* Neutral skeleton only — never a decorative fake Apple Pay button. */}
+        <div className="h-12 w-full animate-pulse rounded-xl bg-[#1a140e]/08" />
         <p className="text-center text-sm text-[#1a140e]/55">{loadingLabel}</p>
       </div>
     );
@@ -219,10 +247,31 @@ function CheckoutBody({
   return (
     <div className="space-y-4">
       <ExpressCheckoutElement
-        options={{ ...PET_EXPRESS_CHECKOUT_OPTIONS, layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const } }}
+        options={{
+          ...PET_EXPRESS_CHECKOUT_OPTIONS,
+          layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
+        }}
+        onReady={(event) => {
+          const info = expressWalletAvailabilityFromMethods(event.availablePaymentMethods);
+          if (!walletReported.current) {
+            walletReported.current = true;
+            if (import.meta.env.DEV) {
+              console.info("[stripe-express-wallets]", {
+                applePay: info.applePay,
+                googlePay: info.googlePay,
+                link: info.link,
+                reason: expressWalletAvailabilityReason(info),
+              });
+            }
+            onWalletAvailability?.(info);
+          }
+        }}
         onConfirm={(event) => void confirm(event)}
         onClick={markInteraction}
-        onCancel={() => setError(null)}
+        onCancel={() => {
+          setError(null);
+          onExpressCancel?.();
+        }}
       />
 
       <div className="flex items-center gap-3">
@@ -276,12 +325,17 @@ export function CustomStripeCheckout({
   onBeforeConfirm,
   onReady,
   onPaymentInteraction,
+  onConfirmStart,
+  onConfirmSuccess,
   onInitError,
   onRecoverCheckout,
   confirmDisabled,
   appearanceTheme = "stripe",
   appearanceVariables,
   payButtonClassName,
+  onWalletAvailability,
+  onExpressCancel,
+  redirectIfRequired,
 }: {
   clientSecret: string;
   publishableKey: string;
@@ -293,12 +347,17 @@ export function CustomStripeCheckout({
   onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
+  onConfirmStart?: () => void;
+  onConfirmSuccess?: (detail: { sessionId?: string | null }) => void | Promise<void>;
   onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
   onRecoverCheckout?: () => void;
   confirmDisabled?: boolean;
   appearanceTheme?: "stripe" | "night";
   appearanceVariables?: Record<string, string>;
   payButtonClassName?: string;
+  onWalletAvailability?: (info: ExpressWalletAvailability) => void;
+  onExpressCancel?: () => void;
+  redirectIfRequired?: boolean;
 }) {
   const [reloadNonce, setReloadNonce] = useState(0);
   const hasAutoRetried = useRef(false);
@@ -361,11 +420,16 @@ export function CustomStripeCheckout({
         onBeforeConfirm={onBeforeConfirm}
         onReady={handleReady}
         onPaymentInteraction={onPaymentInteraction}
+        onConfirmStart={onConfirmStart}
+        onConfirmSuccess={onConfirmSuccess}
         onInitError={handleInitError}
         onRecoverCheckout={onRecoverCheckout}
         onReloadCheckout={reloadCheckout}
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}
+        onWalletAvailability={onWalletAvailability}
+        onExpressCancel={onExpressCancel}
+        redirectIfRequired={redirectIfRequired}
       />
     </CheckoutElementsProvider>
   );

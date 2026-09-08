@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { PET_EXPRESS_CHECKOUT_OPTIONS } from "./expressCheckoutOptions";
+import {
+  expressWalletAvailabilityFromMethods,
+  expressWalletAvailabilityReason,
+  PET_EXPRESS_CHECKOUT_OPTIONS,
+} from "./expressCheckoutOptions";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -20,12 +24,31 @@ describe("expressCheckoutOptions", () => {
   it("is shared by V2/V3 Elements checkout (no dead decorative Apple Pay button)", () => {
     const v2 = readSrc("src/features/pet-v2/components/V2ElementsCheckout.tsx");
     const v3 = readSrc("src/features/pet-v3/components/V3ElementsCheckout.tsx");
+    const shared = readSrc("src/features/pet/components/CustomStripeCheckout.tsx");
     expect(v2).toContain("PET_EXPRESS_CHECKOUT_OPTIONS");
     expect(v3).toContain("PET_EXPRESS_CHECKOUT_OPTIONS");
+    expect(shared).toContain("PET_EXPRESS_CHECKOUT_OPTIONS");
     expect(v2).not.toContain("applePayFromStripe");
     expect(v3).not.toContain("applePayFromStripe");
+    expect(shared).not.toContain("ApplePayButton");
     expect(v2).not.toMatch(/ApplePayButton disabled=\{busy \|\| confirmDisabled\}/);
     expect(v3).not.toMatch(/ApplePayButton disabled=\{busy \|\| confirmDisabled\}/);
+  });
+
+  it("reports Stripe wallet availability without inventing Apple Pay", () => {
+    expect(expressWalletAvailabilityFromMethods(null)).toEqual({
+      applePay: false,
+      googlePay: false,
+      link: false,
+      any: false,
+    });
+    expect(expressWalletAvailabilityReason(expressWalletAvailabilityFromMethods(null))).toBe(
+      "wallet_unavailable_device_or_domain_or_stripe_config",
+    );
+    const available = expressWalletAvailabilityFromMethods({ applePay: true });
+    expect(available.applePay).toBe(true);
+    expect(available.any).toBe(true);
+    expect(expressWalletAvailabilityReason(available)).toBe("wallet_available");
   });
 
   it("documents live Apple Pay domain verification on both public hosts (VPS, not Vercel)", () => {

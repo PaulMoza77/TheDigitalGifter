@@ -1,148 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { loadStripe } from "@stripe/stripe-js";
-import {
-  CheckoutElementsProvider,
-  ExpressCheckoutElement,
-  PaymentElement,
-  useCheckoutElements,
-} from "@stripe/react-stripe-js/checkout";
-import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { christmasFunnelApi } from "../api";
+import { trackChristmasV2Event } from "../analytics";
 import { CHRISTMAS_PACKS, CHRISTMAS_V2_ORDER_ROUTE } from "../config";
+import type { ExpressWalletAvailability } from "@/features/pet/expressCheckoutOptions";
 
-const EXPRESS_OPTIONS = {
-  buttonHeight: 52,
-  buttonTheme: { applePay: "black" as const, googlePay: "black" as const },
-  buttonType: { applePay: "buy" as const, googlePay: "buy" as const },
-  layout: { maxColumns: 1, maxRows: 4 },
-  paymentMethodOrder: ["applePay", "googlePay"],
-  paymentMethods: {
-    applePay: "auto" as const,
-    googlePay: "auto" as const,
-    link: "auto" as const,
-    paypal: "never" as const,
-    amazonPay: "never" as const,
-    klarna: "never" as const,
-  },
-};
-
-function CheckoutBody({
-  email,
-  publicToken,
-  sessionId,
-  onReady,
-  onPaymentInteraction,
-  onSubmit,
-  onExpressCancel,
-}: {
-  email?: string;
-  publicToken: string | null;
-  sessionId: string | null;
-  onReady?: () => void;
-  onPaymentInteraction?: () => void;
-  onSubmit?: () => void;
-  onExpressCancel?: () => void;
-}) {
-  const checkoutState = useCheckoutElements();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const readyFired = useRef(false);
-
-  useEffect(() => {
-    if (checkoutState.type === "success" && !readyFired.current) {
-      readyFired.current = true;
-      onReady?.();
-    }
-  }, [checkoutState.type, onReady]);
-
-  async function finalizeAndNavigate(confirmedSessionId?: string | null) {
-    const resolvedSessionId = confirmedSessionId || sessionId;
-    // Best-effort fulfillment nudge — verifies payment with Stripe and runs the same
-    // RPC the webhook uses, so results unlock immediately even if stripe-webhook (Edge)
-    // hasn't been redeployed yet. Never block navigation on this call.
-    if (publicToken && resolvedSessionId) {
-      try {
-        await christmasFunnelApi.confirmStripePayment({ publicToken, sessionId: resolvedSessionId });
-      } catch (err) {
-        console.error("confirmStripePayment failed", err);
-      }
-    }
-    const params = new URLSearchParams();
-    if (publicToken) params.set("token", publicToken);
-    if (resolvedSessionId) params.set("session_id", resolvedSessionId);
-    window.location.assign(`${CHRISTMAS_V2_ORDER_ROUTE}?${params.toString()}`);
+function trackV2WalletAvailability(info: ExpressWalletAvailability) {
+  trackChristmasV2Event({
+    eventName: info.applePay
+      ? "christmas_v2_apple_pay_available"
+      : "christmas_v2_apple_pay_unavailable",
+  });
+  if (info.any) {
+    trackChristmasV2Event({ eventName: "christmas_v2_express_checkout_available" });
   }
-
-  async function confirm() {
-    if (checkoutState.type !== "success") return;
-    setBusy(true);
-    setError(null);
-    onSubmit?.();
-    try {
-      const result = await checkoutState.checkout.confirm({ email: email || undefined, redirect: "if_required" });
-      if (result.type === "error") {
-        setError(result.error.message || "Payment failed. Please try again.");
-        return;
-      }
-      await finalizeAndNavigate(result.type === "success" ? result.session?.id : undefined);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Payment failed. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (checkoutState.type === "loading") {
-    return <p className="text-sm text-[#5c0a14]/65">Loading secure payment…</p>;
-  }
-  if (checkoutState.type === "error") {
-    return <p className="text-sm text-[#9a3412]">{checkoutState.error.message}</p>;
-  }
-
-  return (
-    <div className="space-y-4">
-      <ExpressCheckoutElement
-        options={EXPRESS_OPTIONS}
-        onConfirm={async (event: StripeExpressCheckoutElementConfirmEvent) => {
-          onPaymentInteraction?.();
-          onSubmit?.();
-          setBusy(true);
-          try {
-            const result = await checkoutState.checkout.confirm({
-              expressCheckoutConfirmEvent: event,
-              redirect: "if_required",
-            });
-            if (result.type === "error") {
-              setError(result.error.message || "Payment failed.");
-              return;
-            }
-            await finalizeAndNavigate(result.type === "success" ? result.session?.id : undefined);
-          } catch (err) {
-            setError(err instanceof Error ? err.message : "Payment failed.");
-          } finally {
-            setBusy(false);
-          }
-        }}
-        onCancel={() => onExpressCancel?.()}
-      />
-      <div className="relative py-1 text-center text-xs uppercase tracking-wide text-[#5c0a14]/45">
-        <span className="bg-[#F7F0E4] px-2">or pay with card</span>
-      </div>
-      <PaymentElement options={{ layout: "tabs" }} onChange={() => onPaymentInteraction?.()} />
-      {error ? <p className="text-sm text-[#9a3412]">{error}</p> : null}
-      <Button
-        type="button"
-        disabled={busy}
-        onClick={() => void confirm()}
-        className="h-12 w-full rounded-full bg-[#1B4332] text-base font-semibold text-[#F7F0E4] hover:bg-[#245C41]"
-      >
-        {busy ? "Processing…" : `Pay ${CHRISTMAS_PACKS.starter.priceDisplay} securely`}
-      </Button>
-    </div>
-  );
 }
 
 export function ChristmasCheckoutScreen({
@@ -180,9 +54,28 @@ export function ChristmasCheckoutScreen({
   onExpressCancel?: () => void;
   hostedFallbackUrl?: string | null;
 }) {
-  const stripePromise = useMemo(
-    () => (publishableKey ? loadStripe(publishableKey) : null),
-    [publishableKey],
+  const finalizeAndNavigate = useCallback(
+    async (confirmedSessionId?: string | null) => {
+      const resolvedSessionId = confirmedSessionId || sessionId;
+      // Best-effort fulfillment nudge — verifies payment with Stripe and runs the same
+      // RPC the webhook uses, so results unlock immediately even if stripe-webhook (Edge)
+      // hasn't been redeployed yet. Never block navigation on this call.
+      if (publicToken && resolvedSessionId) {
+        try {
+          await christmasFunnelApi.confirmStripePayment({
+            publicToken,
+            sessionId: resolvedSessionId,
+          });
+        } catch (err) {
+          console.error("confirmStripePayment failed", err);
+        }
+      }
+      const params = new URLSearchParams();
+      if (publicToken) params.set("token", publicToken);
+      if (resolvedSessionId) params.set("session_id", resolvedSessionId);
+      window.location.assign(`${CHRISTMAS_V2_ORDER_ROUTE}?${params.toString()}`);
+    },
+    [publicToken, sessionId],
   );
 
   return (
@@ -236,36 +129,31 @@ export function ChristmasCheckoutScreen({
           </div>
         ) : null}
 
-        {clientSecret && stripePromise ? (
-          <CheckoutElementsProvider
-            stripe={stripePromise}
-            options={{
-              clientSecret,
-              elementsOptions: {
-                appearance: {
-                  theme: "stripe",
-                  variables: {
-                    colorPrimary: "#1B4332",
-                    colorBackground: "#F7F0E4",
-                    colorText: "#3b0610",
-                    colorDanger: "#9a3412",
-                    borderRadius: "14px",
-                    fontFamily: "Source Sans 3, Segoe UI, sans-serif",
-                  },
-                },
-              },
+        {clientSecret && publishableKey ? (
+          <CustomStripeCheckout
+            clientSecret={clientSecret}
+            publishableKey={publishableKey}
+            email={email}
+            dueDisplay={CHRISTMAS_PACKS.starter.priceDisplay}
+            loadingLabel="Loading secure payment…"
+            payButtonLabel={() => `Pay ${CHRISTMAS_PACKS.starter.priceDisplay} securely`}
+            payButtonClassName="h-12 w-full rounded-full bg-[#1B4332] text-base font-semibold text-[#F7F0E4] hover:bg-[#245C41]"
+            appearanceVariables={{
+              colorPrimary: "#1B4332",
+              colorBackground: "#F7F0E4",
+              colorText: "#3b0610",
+              colorDanger: "#9a3412",
+              borderRadius: "14px",
+              fontFamily: "Source Sans 3, Segoe UI, sans-serif",
             }}
-          >
-            <CheckoutBody
-              email={email}
-              publicToken={publicToken ?? null}
-              sessionId={sessionId ?? null}
-              onReady={onReady}
-              onPaymentInteraction={onPaymentInteraction}
-              onSubmit={onSubmit}
-              onExpressCancel={onExpressCancel}
-            />
-          </CheckoutElementsProvider>
+            redirectIfRequired
+            onReady={onReady}
+            onPaymentInteraction={onPaymentInteraction}
+            onConfirmStart={onSubmit}
+            onExpressCancel={onExpressCancel}
+            onConfirmSuccess={(detail) => void finalizeAndNavigate(detail.sessionId)}
+            onWalletAvailability={trackV2WalletAvailability}
+          />
         ) : null}
       </div>
     </div>
