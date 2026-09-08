@@ -56,7 +56,7 @@ Idempotency key unique.
 Hub `/christmas` keeps classic generator CTAs + catalog suite list (includes Photo Generator → `/christmas/photo-generator`).  
 `/christmas/photo-generator` is a real funnel (not a shell). Other suite paths use `ChristmasFeatureShell` with `noindex` and **no checkout CTA**.
 
-Admin: `/admin/christmas-orders`
+Admin: `/admin/christmas-orders` (ops) and `/admin/christmas-kpis` (founder commercial + aggregate funnel sessions; checkout ≠ purchase).
 
 ## Future generator integration
 

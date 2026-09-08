@@ -15,6 +15,7 @@ describe("christmas foundation wiring", () => {
     expect(seo).toBeGreaterThan(photo);
     expect(app).toContain('path="/christmas/santa-video"');
     expect(app).toContain('path="christmas-orders"');
+    expect(app).toContain('path="christmas-kpis"');
   });
 
   it("does not remove classic /christmas hub route", () => {
