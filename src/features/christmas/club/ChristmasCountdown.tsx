@@ -83,7 +83,17 @@ export function ChristmasCountdown({
             aria-label={`${padCountdownValue(parts[unit.key])} ${unit.label} · ${product.name}`}
           >
             <span className="cc-print">
-              <img src={product.image} alt="" width={480} height={600} loading="lazy" />
+              <img
+                src={product.image}
+                srcSet={product.imageSrcSet}
+                sizes="(max-width: 959px) 5.6rem, 7.5rem"
+                alt=""
+                width={480}
+                height={720}
+                loading="eager"
+                decoding="async"
+                fetchPriority="low"
+              />
             </span>
             {digit}
           </Link>

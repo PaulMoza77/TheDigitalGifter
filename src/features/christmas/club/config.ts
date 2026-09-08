@@ -69,35 +69,39 @@ export const CHRISTMAS_CLUB_ASSETS = {
 
 export type ChristmasClubCountdownUnit = "days" | "hours" | "minutes" | "seconds";
 
-/** One Christmas product sits inside each countdown unit — photos, not SaaS cards. */
+/** One Christmas product sits inside each countdown unit — display-sized WebP thumbs. */
 export const CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS = [
   {
     unit: "days" as const,
     productKey: "christmas_family",
     name: "Family",
     href: "/christmas/family",
-    image: "/assets/funnel/christmas-after.png",
+    image: "/christmas/prints/family-480.webp",
+    imageSrcSet: "/christmas/prints/family-240.webp 240w, /christmas/prints/family-480.webp 480w",
   },
   {
     unit: "hours" as const,
     productKey: "christmas_photo",
     name: "Portraits",
     href: "/christmas/photo-generator",
-    image: "/assets/funnel/christmas-ex2-after.png",
+    image: "/christmas/prints/portraits-480.webp",
+    imageSrcSet: "/christmas/prints/portraits-240.webp 240w, /christmas/prints/portraits-480.webp 480w",
   },
   {
     unit: "minutes" as const,
     productKey: "christmas_pet",
     name: "Pets",
     href: "/christmas/pets",
-    image: "/pet/dog/scenes/christmas-portrait.webp",
+    image: "/christmas/prints/pets-480.webp",
+    imageSrcSet: "/christmas/prints/pets-240.webp 240w, /christmas/prints/pets-480.webp 480w",
   },
   {
     unit: "seconds" as const,
     productKey: "christmas_card",
     name: "Cards",
     href: "/christmas/cards",
-    image: "/assets/funnel/christmas-ex3-after.png",
+    image: "/christmas/prints/cards-480.webp",
+    imageSrcSet: "/christmas/prints/cards-240.webp 240w, /christmas/prints/cards-480.webp 480w",
   },
 ] as const;
 

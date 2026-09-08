@@ -1,25 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { CHRISTMAS_CLUB_ASSETS } from "./config";
 
+function pickHeroLoop(): string {
+  if (typeof window === "undefined") return CHRISTMAS_CLUB_ASSETS.heroLoop720;
+  // Prefer high-quality Seedance on desktop; never start on 720 then upgrade.
+  return window.matchMedia("(min-width: 901px)").matches
+    ? CHRISTMAS_CLUB_ASSETS.heroLoop
+    : CHRISTMAS_CLUB_ASSETS.heroLoop720;
+}
+
 /**
- * Full-bleed cabin scene: sharp WebP poster paints instantly, then the muted
- * Seedance 5s photoreal loop (snow / fire / candles / twinkle) fades in.
+ * Full-bleed cabin scene: sharp WebP poster is LCP, then the muted Seedance
+ * 5s photoreal loop fades in once buffered. Quality is never downgraded.
  */
 export function ChristmasClubScene() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoReady, setVideoReady] = useState(false);
-  const [loopSrc, setLoopSrc] = useState(CHRISTMAS_CLUB_ASSETS.heroLoop720);
+  const [loopSrc] = useState(pickHeroLoop);
 
   useEffect(() => {
-    const pick = () => {
-      const wide = window.matchMedia("(min-width: 901px)").matches;
-      setLoopSrc(wide ? CHRISTMAS_CLUB_ASSETS.heroLoop : CHRISTMAS_CLUB_ASSETS.heroLoop720);
-    };
-    pick();
-    const mq = window.matchMedia("(min-width: 901px)");
-    const onChange = () => pick();
-    mq.addEventListener?.("change", onChange);
-    return () => mq.removeEventListener?.("change", onChange);
+    // Remove HTML boot poster once React scene owns the viewport.
+    document.getElementById("cc-boot")?.remove();
   }, []);
 
   useEffect(() => {
@@ -30,7 +31,6 @@ export function ChristmasClubScene() {
     if (video.readyState >= 2) markReady();
     video.addEventListener("loadeddata", markReady);
     video.addEventListener("canplay", markReady);
-    video.load();
     void video.play().catch(() => {
       /* autoplay can be blocked; poster still shows */
     });
@@ -55,7 +55,7 @@ export function ChristmasClubScene() {
           alt=""
           width={1920}
           height={1080}
-          decoding="async"
+          decoding="sync"
           fetchPriority="high"
         />
       </picture>
@@ -63,7 +63,6 @@ export function ChristmasClubScene() {
       <video
         ref={videoRef}
         className={`cc-scene__video${videoReady ? " is-ready" : ""}`}
-        poster={CHRISTMAS_CLUB_ASSETS.hero1920Jpg}
         muted
         playsInline
         loop

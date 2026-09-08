@@ -34,6 +34,33 @@ function loadClubFonts() {
   document.head.appendChild(link);
 }
 
+function preloadHeroAssets() {
+  if (document.querySelector('link[data-cc-preload="hero"]')) return;
+  const preload = document.createElement("link");
+  preload.rel = "preload";
+  preload.as = "image";
+  preload.type = "image/webp";
+  preload.href = CHRISTMAS_CLUB_ASSETS.hero1920;
+  preload.setAttribute(
+    "imagesrcset",
+    `${CHRISTMAS_CLUB_ASSETS.hero1280} 1280w, ${CHRISTMAS_CLUB_ASSETS.hero1920} 1920w, ${CHRISTMAS_CLUB_ASSETS.hero2560} 2560w`,
+  );
+  preload.setAttribute("imagesizes", "100vw");
+  preload.setAttribute("fetchpriority", "high");
+  preload.setAttribute("data-cc-preload", "hero");
+  document.head.appendChild(preload);
+
+  if (!document.querySelector('link[data-cc-preload="loop"]')) {
+    const wide = window.matchMedia("(min-width: 901px)").matches;
+    const loop = document.createElement("link");
+    loop.rel = "preload";
+    loop.as = "video";
+    loop.href = wide ? CHRISTMAS_CLUB_ASSETS.heroLoop : CHRISTMAS_CLUB_ASSETS.heroLoop720;
+    loop.setAttribute("data-cc-preload", "loop");
+    document.head.appendChild(loop);
+  }
+}
+
 function setThemeColor(color: string) {
   let meta = document.querySelector('meta[name="theme-color"]');
   if (!meta) {
@@ -65,17 +92,8 @@ export function ChristmasClubPage() {
 
   useEffect(() => {
     loadClubFonts();
+    preloadHeroAssets();
     setThemeColor("#140409");
-    if (!document.querySelector('link[data-cc-preload="hero"]')) {
-      const preload = document.createElement("link");
-      preload.rel = "preload";
-      preload.as = "image";
-      preload.href = CHRISTMAS_CLUB_ASSETS.hero1920Jpg;
-      preload.setAttribute("imagesrcset", `${CHRISTMAS_CLUB_ASSETS.hero1280Jpg} 1280w, ${CHRISTMAS_CLUB_ASSETS.hero1920Jpg} 1920w, ${CHRISTMAS_CLUB_ASSETS.hero2560Jpg} 2560w`);
-      preload.setAttribute("imagesizes", "100vw");
-      preload.setAttribute("data-cc-preload", "hero");
-      document.head.appendChild(preload);
-    }
     void trackChristmasEvent("christmas_page_view", {
       productKey: CHRISTMAS_CLUB_CONFIG.productKey,
       pathname: "/christmas",

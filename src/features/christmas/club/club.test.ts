@@ -14,7 +14,7 @@ describe("christmas club countdown products", () => {
     expect(CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS).toHaveLength(4);
     expect(productForCountdownUnit("days")?.productKey).toBe("christmas_family");
     expect(productForCountdownUnit("hours")?.href).toBe("/christmas/photo-generator");
-    expect(productForCountdownUnit("minutes")?.image).toContain("christmas-portrait");
+    expect(productForCountdownUnit("minutes")?.image).toContain("/christmas/prints/pets");
     expect(productForCountdownUnit("seconds")?.name).toBe("Cards");
   });
 });
