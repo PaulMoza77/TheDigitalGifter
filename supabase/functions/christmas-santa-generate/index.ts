@@ -7,6 +7,7 @@ import {
   generateSantaTalkingVideo,
   santaStillPrompt,
 } from "../_shared/christmas/santaVideo.ts";
+import { resolveDeliveryToken } from "../_shared/christmas/crypto.ts";
 
 /**
  * Post-payment Santa Video pipeline (async stages).
@@ -390,16 +391,20 @@ Deno.serve(async (req) => {
           const from = asString(
             Deno.env.get("CHRISTMAS_EMAIL_FROM") || Deno.env.get("TRANSACTIONAL_EMAIL_FROM"),
           );
-          const tokenHint = asString(
-            (order.metadata as Record<string, unknown> | null)?.public_token_hint,
-          );
-          if (email && apiKey && from && tokenHint) {
+          const deliveryToken = resolveDeliveryToken({
+            public_token_ciphertext: asString(order.public_token_ciphertext) || null,
+            metadata:
+              typeof order.metadata === "object" && order.metadata
+                ? (order.metadata as Record<string, unknown>)
+                : null,
+          });
+          if (email && apiKey && from && deliveryToken) {
             const site = (
               Deno.env.get("SITE_URL") ||
               Deno.env.get("PUBLIC_APP_URL") ||
               "https://www.thedigitalgifter.com"
             ).replace(/\/$/, "");
-            const link = `${site}/christmas/santa-video?token=${encodeURIComponent(tokenHint)}`;
+            const link = `${site}/christmas/santa-video?token=${encodeURIComponent(deliveryToken)}`;
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: {

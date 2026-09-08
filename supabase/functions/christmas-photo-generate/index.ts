@@ -5,6 +5,7 @@ import {
   buildChristmasPortraitPrompt,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import { resolveDeliveryToken } from "../_shared/christmas/crypto.ts";
 
 /**
  * Post-payment Christmas portrait generation (all verticals).
@@ -282,10 +283,14 @@ Deno.serve(async (req) => {
       const from = asString(
         Deno.env.get("CHRISTMAS_EMAIL_FROM") || Deno.env.get("TRANSACTIONAL_EMAIL_FROM"),
       );
-      const tokenHint = asString(
-        (order.metadata as Record<string, unknown> | null)?.public_token_hint,
-      );
-      if (email && apiKey && from && tokenHint) {
+      const deliveryToken = resolveDeliveryToken({
+        public_token_ciphertext: asString(order.public_token_ciphertext) || null,
+        metadata:
+          typeof order.metadata === "object" && order.metadata
+            ? (order.metadata as Record<string, unknown>)
+            : null,
+      });
+      if (email && apiKey && from && deliveryToken) {
         const site = (
           Deno.env.get("SITE_URL") ||
           Deno.env.get("PUBLIC_APP_URL") ||
@@ -297,7 +302,7 @@ Deno.serve(async (req) => {
           sourceRoute: asString(order.source_route) || null,
           landingPath: asString(order.landing_path) || null,
         });
-        const link = `${site}${route}?token=${encodeURIComponent(tokenHint)}`;
+        const link = `${site}${route}?token=${encodeURIComponent(deliveryToken)}`;
         await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {

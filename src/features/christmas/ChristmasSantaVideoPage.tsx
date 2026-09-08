@@ -307,6 +307,7 @@ export default function ChristmasSantaVideoPage() {
         consent_version: SANTA_CONSENT_VERSION,
         source_route: SANTA_ROUTE,
         existing_order_id: draft.orderId,
+        public_token: draft.publicToken || undefined,
         funnel_session_id: getChristmasFunnelSessionId(),
         landing_path: `${window.location.pathname}${window.location.search}`.slice(0, 120),
         utm_source: attr.utm_source,

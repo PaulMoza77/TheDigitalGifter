@@ -12,6 +12,19 @@ export function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+/** Private media / token-gated order lookups must not be cached or referrer-leaked. */
+export function privateJsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+      "Cache-Control": "private, no-store",
+      "Referrer-Policy": "no-referrer",
+    },
+  });
+}
+
 export function optionsResponse() {
   return new Response("ok", { headers: corsHeaders });
 }
