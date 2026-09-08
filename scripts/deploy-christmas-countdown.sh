@@ -14,7 +14,10 @@ if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
 fi
 
 PROJECT_REF="${SUPABASE_PROJECT_REF:-kjlsocejpmnzhhduyumy}"
-MIGRATION="supabase/migrations/20260908120000_christmas_countdown.sql"
+MIGRATIONS=(
+  "supabase/migrations/20260908120000_christmas_countdown.sql"
+  "supabase/migrations/20260908140000_christmas_countdown_kpis_service_role.sql"
+)
 
 if [[ "$PROJECT_REF" != "kjlsocejpmnzhhduyumy" ]]; then
   echo "BLOCKED: refusing deploy to unexpected project ref '$PROJECT_REF'."
@@ -45,7 +48,7 @@ apply_sql_file() {
   return 0
 }
 
-echo "Applying $MIGRATION"
+echo "Applying Christmas countdown SQL"
 APPLIED=0
 if [[ -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
   for HOST in \
@@ -62,10 +65,13 @@ if [[ -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
   done
 fi
 if [[ "$APPLIED" != "1" ]]; then
-  apply_sql_file "$MIGRATION" || {
-    echo "BLOCKED: could not apply $MIGRATION"
-    exit 2
-  }
+  for MIGRATION in "${MIGRATIONS[@]}"; do
+    echo "Applying $MIGRATION"
+    apply_sql_file "$MIGRATION" || {
+      echo "BLOCKED: could not apply $MIGRATION"
+      exit 2
+    }
+  done
 fi
 
 echo "Deploying christmas-admin → ${PROJECT_REF}"

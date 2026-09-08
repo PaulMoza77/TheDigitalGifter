@@ -1,6 +1,6 @@
-export function conversionRate(signups: number, uniqueUsers: number): number | null {
-  if (!Number.isFinite(signups) || signups < 0) return null;
-  if (!Number.isFinite(uniqueUsers) || uniqueUsers <= 0) return null;
+export function conversionRate(signups: number | null | undefined, uniqueUsers: number | null | undefined): number | null {
+  if (signups == null || !Number.isFinite(signups) || signups < 0) return null;
+  if (uniqueUsers == null || !Number.isFinite(uniqueUsers) || uniqueUsers <= 0) return null;
   return (signups / uniqueUsers) * 100;
 }
 
@@ -30,14 +30,14 @@ export type FunnelStep = {
 
 export function buildCountdownFunnel(input: {
   visitors: number | null;
-  joinStarted: number;
-  joined: number;
-  returned: number;
+  joinStarted: number | null;
+  joined: number | null;
+  returned: number | null;
 }): FunnelStep[] {
   const visitors = input.visitors;
-  const started = Math.max(0, input.joinStarted);
-  const joined = Math.max(0, input.joined);
-  const returned = Math.max(0, input.returned);
+  const started = input.joinStarted;
+  const joined = input.joined;
+  const returned = input.returned;
   return [
     {
       key: "visitors",
@@ -50,22 +50,22 @@ export function buildCountdownFunnel(input: {
       key: "join_started",
       label: "Join Started",
       count: started,
-      fromPreviousPct: visitors == null ? null : stepConversionPct(started, visitors),
-      ofBasePct: visitors == null ? null : stepConversionPct(started, visitors),
+      fromPreviousPct: started == null || visitors == null ? null : stepConversionPct(started, visitors),
+      ofBasePct: started == null || visitors == null ? null : stepConversionPct(started, visitors),
     },
     {
       key: "joined",
       label: "Joined",
       count: joined,
-      fromPreviousPct: stepConversionPct(joined, started),
-      ofBasePct: visitors == null ? null : stepConversionPct(joined, visitors),
+      fromPreviousPct: joined == null || started == null ? null : stepConversionPct(joined, started),
+      ofBasePct: joined == null || visitors == null ? null : stepConversionPct(joined, visitors),
     },
     {
       key: "returned",
       label: "Returned",
       count: returned,
-      fromPreviousPct: stepConversionPct(returned, joined),
-      ofBasePct: visitors == null ? null : stepConversionPct(returned, visitors),
+      fromPreviousPct: returned == null || joined == null ? null : stepConversionPct(returned, joined),
+      ofBasePct: returned == null || visitors == null ? null : stepConversionPct(returned, visitors),
     },
   ];
 }

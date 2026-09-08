@@ -1,6 +1,7 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { assertAdmin, getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
 import { fetchChristmasGa4Realtime, fetchChristmasGa4Report, ga4ConfigStatus } from "../_shared/christmas/ga4.ts";
+import { loadChristmasFirstPartyKpis } from "../_shared/christmas/firstParty.ts";
 
 type Body = Record<string, unknown>;
 
@@ -97,10 +98,10 @@ Deno.serve(async (req) => {
       const ga4Status = ga4ConfigStatus();
       const cacheKey = `${range.from}:${range.to}:${year}`;
 
-      const firstParty = await service.rpc("admin_christmas_countdown_kpis", {
-        p_from: range.fromIso,
-        p_to: range.toIso,
-        p_campaign_year: year,
+      const firstParty = await loadChristmasFirstPartyKpis(service, {
+        fromIso: range.fromIso,
+        toIso: range.toIso,
+        campaignYear: year,
       });
 
       let analytics: unknown = cacheGet(historicalCache, cacheKey);
@@ -146,8 +147,8 @@ Deno.serve(async (req) => {
           realtime,
           realtimeError,
         },
-        firstParty: firstParty.error ? null : firstParty.data,
-        firstPartyError: firstParty.error ? firstParty.error.message : null,
+        firstParty: firstParty.data,
+        firstPartyError: firstParty.error,
         instrumentationNote:
           "Custom Christmas join events are first-party from deploy date onward. Historical GA4 page metrics for /christmas are shown where the property already recorded them.",
       });

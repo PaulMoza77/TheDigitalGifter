@@ -104,14 +104,14 @@ export default function ChristmasCountdownPage() {
   const visitors = ga4?.report?.totals.totalUsers ?? null;
   const pageViews = ga4?.report?.totals.pageViews ?? null;
   const signupsTotal = firstParty?.signups_total ?? null;
-  const conversion = conversionRate(signupsTotal ?? 0, visitors ?? 0);
+  const conversion = conversionRate(firstParty ? signupsTotal : null, visitors);
   const funnel = useMemo(
     () =>
       buildCountdownFunnel({
         visitors,
-        joinStarted: firstParty?.join_started_sessions ?? 0,
-        joined: firstParty?.signups_total ?? 0,
-        returned: firstParty?.return_visit_sessions ?? firstParty?.signups_returning ?? 0,
+        joinStarted: firstParty ? firstParty.join_started_sessions ?? 0 : null,
+        joined: firstParty ? firstParty.signups_total ?? 0 : null,
+        returned: firstParty ? firstParty.return_visit_sessions || firstParty.signups_returning || 0 : null,
       }),
     [visitors, firstParty],
   );
@@ -221,7 +221,8 @@ export default function ChristmasCountdownPage() {
 
       {firstPartyError ? (
         <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Signup metrics could not be loaded. {firstPartyError}
+          Signup metrics could not be loaded.
+          {/forbidden/i.test(firstPartyError) ? "" : ` ${firstPartyError}`}
         </div>
       ) : null}
 

@@ -52,6 +52,8 @@ describe("christmas countdown admin wiring", () => {
     expect(page).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(hook).toContain('supabase.functions.invoke("christmas-admin"');
     expect(readSrc("supabase/functions/christmas-admin/index.ts")).toContain("assertAdmin");
+    expect(readSrc("supabase/functions/christmas-admin/index.ts")).toContain("loadChristmasFirstPartyKpis");
+    expect(readSrc("api/christmas-admin.ts")).toContain("loadFirstPartyKpis");
     expect(readSrc("api/christmas-admin.ts")).toContain("Forbidden: not an admin");
     expect(readSrc("api/christmas-admin.ts")).not.toContain("private_key");
   });
@@ -86,6 +88,9 @@ describe("christmas countdown admin wiring", () => {
     expect(sql).toContain("marketing_opt_in");
     expect(sql).toContain("Never auto-subscribe");
     expect(sql).toContain("if not public.is_admin()");
+    expect(readSrc("supabase/migrations/20260908140000_christmas_countdown_kpis_service_role.sql")).toContain(
+      "auth.role() is distinct from 'service_role'",
+    );
     expect(sql).toContain("revoke all on table public.christmas_countdown_signups");
     expect(sql).not.toMatch(/grant select on table public.christmas_countdown_signups to anon/);
   });

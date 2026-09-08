@@ -12,6 +12,7 @@ import {
   stepConversionPct,
   yyyymmddToIso,
 } from "./metrics";
+import { kpisFromSignupAndEventRows } from "../../../supabase/functions/_shared/christmas/firstParty";
 import { captureChristmasCountdownAttribution, CHRISTMAS_COUNTDOWN_ATTRIBUTION_KEY } from "./utm";
 
 describe("christmas countdown conversion math", () => {
@@ -19,6 +20,14 @@ describe("christmas countdown conversion math", () => {
     expect(conversionRate(12, 0)).toBeNull();
     expect(conversionRate(0, 0)).toBeNull();
     expect(formatPct(conversionRate(12, 0))).toBe("—");
+  });
+
+  it("returns null conversion when signup data is missing instead of 0%", () => {
+    expect(conversionRate(null, 14)).toBeNull();
+    expect(conversionRate(undefined, 14)).toBeNull();
+    expect(formatPct(conversionRate(null, 14))).toBe("—");
+    expect(conversionRate(0, 14)).toBe(0);
+    expect(formatPct(conversionRate(0, 14))).toBe("0.0%");
   });
 
   it("computes signups / unique users * 100", () => {
@@ -44,6 +53,21 @@ describe("christmas countdown conversion math", () => {
     expect(steps[1]?.fromPreviousPct).toBeCloseTo((184 / 1240) * 100, 6);
     expect(steps[2]?.fromPreviousPct).toBeCloseTo((132 / 184) * 100, 6);
     expect(steps[3]?.fromPreviousPct).toBeCloseTo((41 / 132) * 100, 6);
+  });
+
+  it("keeps funnel join steps unknown when first-party data failed to load", () => {
+    const steps = buildCountdownFunnel({
+      visitors: 14,
+      joinStarted: null,
+      joined: null,
+      returned: null,
+    });
+    expect(steps[0]?.count).toBe(14);
+    expect(steps[1]?.count).toBeNull();
+    expect(steps[2]?.count).toBeNull();
+    expect(steps[3]?.count).toBeNull();
+    expect(steps[1]?.fromPreviousPct).toBeNull();
+    expect(formatPct(steps[2]?.fromPreviousPct ?? null)).toBe("—");
   });
 
   it("keeps funnel join steps when GA4 visitors are missing", () => {
@@ -100,6 +124,26 @@ describe("GA4 response mapping", () => {
 });
 
 describe("signup method counts and CSV", () => {
+  it("counts first-party KPIs from signup and event rows", () => {
+    const kpis = kpisFromSignupAndEventRows(
+      [
+        { signup_method: "email", created_at: "2026-09-08T00:00:00.000Z", last_seen_at: "2026-09-08T00:00:00.000Z" },
+        { signup_method: "google", created_at: "2026-09-08T00:00:00.000Z", last_seen_at: "2026-09-09T00:00:00.000Z" },
+      ],
+      [
+        { event_name: "christmas_page_view", funnel_session_id: "s1", pathname: "/christmas" },
+        { event_name: "christmas_join_started", funnel_session_id: "s1", pathname: "/christmas" },
+        { event_name: "christmas_join_completed", funnel_session_id: "s1", pathname: "/christmas" },
+      ],
+    );
+    expect(kpis.signups_total).toBe(2);
+    expect(kpis.signups_email).toBe(1);
+    expect(kpis.signups_google).toBe(1);
+    expect(kpis.signups_returning).toBe(1);
+    expect(kpis.join_started_sessions).toBe(1);
+    expect(kpis.join_completed_sessions).toBe(1);
+  });
+
   it("counts email vs google", () => {
     expect(
       signupMethodCounts([{ signup_method: "email" }, { signup_method: "google" }, { signup_method: "google" }]),
