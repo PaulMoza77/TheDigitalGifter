@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { christmasUtmMix } from "@/features/christmas/attributionJoin";
 
 type ChristmasOrderRow = {
   id: string;
@@ -351,7 +352,9 @@ export default function ChristmasOrdersPage() {
         row.product_key.toLowerCase().includes(q) ||
         (row.portrait_type || "").toLowerCase().includes(q) ||
         (row.species || "").toLowerCase().includes(q) ||
-        (row.stripe_checkout_session_id || "").toLowerCase().includes(q)
+        (row.stripe_checkout_session_id || "").toLowerCase().includes(q) ||
+        (row.utm_source || "").toLowerCase().includes(q) ||
+        (row.affiliate_ref || "").toLowerCase().includes(q)
       );
     });
   }, [rows, query, paymentFilter, fulfillmentFilter, productFilter, speciesFilter]);
@@ -361,6 +364,8 @@ export default function ChristmasOrdersPage() {
     const presets = PRODUCT_FILTER_PRESETS.map((p) => p.value).filter(Boolean);
     return Array.from(new Set([...presets, ...fromRows])).sort();
   }, [rows]);
+
+  const utmMix = useMemo(() => christmasUtmMix(filtered), [filtered]);
 
   return (
     <div className="space-y-6 p-6">
@@ -378,6 +383,30 @@ export default function ChristmasOrdersPage() {
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
+      </div>
+
+      <div className="rounded-lg border border-slate-800 p-4" data-testid="christmas-utm-mix">
+        <h2 className="text-sm font-semibold text-white">Christmas UTM mix</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          First-touch UTMs and affiliate_ref on commerce orders (portraits / Santa).
+        </p>
+        <p className="mt-2 text-sm text-slate-300">
+          {utmMix.total} orders · {utmMix.paid} paid · {utmMix.withUtm} with UTM · {utmMix.withAffiliate}{" "}
+          affiliate
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {utmMix.buckets.length === 0 ? (
+            <span className="text-xs text-slate-500">No attribution rows yet.</span>
+          ) : (
+            utmMix.buckets.map((bucket) => (
+              <Badge key={bucket.source} variant="outline" className="text-xs">
+                {bucket.source}: {bucket.orders}
+                {bucket.campaigns.length ? ` · ${bucket.campaigns.slice(0, 3).join(", ")}` : ""}
+                {bucket.affiliate ? ` · aff ${bucket.affiliate}` : ""}
+              </Badge>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border border-slate-800 p-4">
@@ -616,13 +645,14 @@ export default function ChristmasOrdersPage() {
               <TableHead>Amount</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Fulfillment</TableHead>
+              <TableHead>UTM</TableHead>
               <TableHead>Stripe</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-slate-500">
+                <TableCell colSpan={11} className="text-center text-slate-500">
                   {loading ? "Loading…" : "No Christmas orders yet."}
                 </TableCell>
               </TableRow>
@@ -653,6 +683,10 @@ export default function ChristmasOrdersPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">{row.fulfillment_status}</Badge>
+                  </TableCell>
+                  <TableCell className="max-w-[160px] truncate text-xs text-slate-300">
+                    {[row.utm_source, row.utm_campaign].filter(Boolean).join(" / ") || "—"}
+                    {row.affiliate_ref ? ` · ${row.affiliate_ref}` : ""}
                   </TableCell>
                   <TableCell className="max-w-[140px] truncate font-mono text-xs text-slate-400">
                     {row.stripe_checkout_session_id || "—"}

@@ -7,6 +7,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
+import { joinAndSendChristmasPurchase } from "./attribution.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -154,20 +155,31 @@ export async function handleChristmasStripeEvent(input: {
       result: { ...result, product_family: "christmas" },
     });
 
-    if (result.ok === true && result.status === "paid") {
-      const productKey = asString(input.metadata.product_key);
-      let mode: "commerce" | "santa" = "commerce";
-      if (productKey === "christmas_santa_video") {
-        mode = "santa";
-      } else if (!productKey) {
-        const { data: ord } = await input.service
-          .from("christmas_orders")
-          .select("product_key")
-          .eq("id", orderId)
-          .maybeSingle();
-        if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+    if (result.ok === true && (result.status === "paid" || result.status === "already_paid")) {
+      try {
+        await joinAndSendChristmasPurchase({
+          service: input.service,
+          orderId,
+          metadata: input.metadata,
+        });
+      } catch (err) {
+        console.error("christmas purchase join failed", err);
       }
-      enqueueChristmasGenerate(orderId, mode);
+      if (result.status === "paid") {
+        const productKey = asString(input.metadata.product_key);
+        let mode: "commerce" | "santa" = "commerce";
+        if (productKey === "christmas_santa_video") {
+          mode = "santa";
+        } else if (!productKey) {
+          const { data: ord } = await input.service
+            .from("christmas_orders")
+            .select("product_key")
+            .eq("id", orderId)
+            .maybeSingle();
+          if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+        }
+        enqueueChristmasGenerate(orderId, mode);
+      }
     }
 
     return new Response(JSON.stringify({ ok: true, christmas: result }), {

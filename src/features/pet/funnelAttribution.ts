@@ -165,9 +165,10 @@ function readFirstTouch(): FunnelFirstTouchContext | null {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const row = parsed as Record<string, unknown>;
     return {
-      landingPathname: sanitizeAttributionValue(row.landingPathname)?.startsWith("/pet")
-        ? String(row.landingPathname).slice(0, 64)
-        : null,
+      landingPathname: (() => {
+        const landing = sanitizeAttributionValue(row.landingPathname);
+        return landing && isTrackedFunnelLandingPath(landing) ? landing.slice(0, 64) : null;
+      })(),
       referrerHost: sanitizeAttributionValue(row.referrerHost),
       hasFbclid: row.hasFbclid === true,
     };
@@ -191,6 +192,13 @@ function writeFirstTouch(value: FunnelFirstTouchContext) {
   }
 }
 
+export function isTrackedFunnelLandingPath(pathname: string | null | undefined): boolean {
+  const path = String(pathname || "").split("?")[0];
+  if (path === "/pet" || path.startsWith("/pet/")) return true;
+  if (path === "/christmas" || path.startsWith("/christmas/")) return true;
+  return false;
+}
+
 export function getFunnelFirstTouchContext(): FunnelFirstTouchContext {
   return (
     readFirstTouch() || {
@@ -207,7 +215,7 @@ function persistFirstTouchFromLocation(search: string) {
   const pathname =
     typeof window !== "undefined" ? String(window.location.pathname || "").split("?")[0].slice(0, 64) : null;
   writeFirstTouch({
-    landingPathname: pathname && (pathname === "/pet" || pathname.startsWith("/pet/")) ? pathname : null,
+    landingPathname: pathname && isTrackedFunnelLandingPath(pathname) ? pathname : null,
     referrerHost: referrerHostFromDocument(),
     hasFbclid: Boolean(incoming.fbclid),
   });

@@ -3,6 +3,8 @@ import {
   captureFunnelAttribution,
   FUNNEL_ATTRIBUTION_STORAGE_KEY,
   getFunnelAttribution,
+  getFunnelFirstTouchContext,
+  isTrackedFunnelLandingPath,
   parseFunnelAttributionSearch,
   sanitizeAttributionValue,
 } from "./funnelAttribution";
@@ -24,8 +26,12 @@ function installStorage() {
     value: {
       sessionStorage: storage(session),
       localStorage: storage(local),
-      location: { search: "" },
+      location: { search: "", pathname: "/christmas/family", hostname: "www.thedigitalgifter.com" },
     },
+  });
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: { referrer: "", cookie: "" },
   });
   return { session, local };
 }
@@ -85,6 +91,17 @@ describe("funnel attribution", () => {
     expect(getFunnelAttribution()).toEqual({});
     expect(captureFunnelAttribution("?utm_medium=paid_social")).toEqual({
       utm_medium: "paid_social",
+    });
+  });
+
+  it("records Christmas first-touch landing and fbclid without wiping later navigations", () => {
+    expect(isTrackedFunnelLandingPath("/christmas/santa-video")).toBe(true);
+    expect(isTrackedFunnelLandingPath("/pet/dog-v2")).toBe(true);
+    expect(isTrackedFunnelLandingPath("/account")).toBe(false);
+    captureFunnelAttribution("?utm_source=facebook&fbclid=ClickToken");
+    expect(getFunnelFirstTouchContext()).toMatchObject({
+      landingPathname: "/christmas/family",
+      hasFbclid: true,
     });
   });
 });

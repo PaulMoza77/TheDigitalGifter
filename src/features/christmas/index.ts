@@ -23,6 +23,12 @@ export {
 } from "./funnelEventContract";
 export { applyPaymentPaid, isIdempotentPaidReplay } from "./orderStatus";
 export {
+  coalesceChristmasAttribution,
+  christmasPurchaseEventId,
+  christmasUtmMix,
+} from "./attributionJoin";
+export { buildChristmasCheckoutAttribution, readStoredAffiliateRef } from "./checkoutAttribution";
+export {
   enqueueChristmasFulfillment,
   getChristmasFulfillmentHandler,
   canEnqueueFulfillment,

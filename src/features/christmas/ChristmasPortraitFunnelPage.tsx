@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
-import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
-import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
+import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
+import { trackChristmasEvent } from "./analytics";
+import { buildChristmasCheckoutAttribution } from "./checkoutAttribution";
 import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
 import {
   createChristmasUpload,
@@ -153,6 +154,13 @@ export default function ChristmasPortraitFunnelPage() {
           return next;
         });
         if (order.resultUrl) setResultUrl(order.resultUrl);
+        if (order.payment_status === "paid") {
+          void trackChristmasEvent("purchase", {
+            productKey: vertical.productKey,
+            orderId: order.id,
+            amountCents: order.amount_cents,
+          });
+        }
         if (order.payment_status === "paid" && order.fulfillment_status !== "completed") {
           setStep("generating", { orderId: order.id, publicToken: token });
         }
@@ -364,8 +372,7 @@ export default function ChristmasPortraitFunnelPage() {
       species: vertical.expectedSpecies,
     });
     try {
-      captureFunnelAttribution(window.location.search);
-      const attr = attributionParamsForInternal();
+      const attr = buildChristmasCheckoutAttribution();
       const result = await startChristmasCheckout({
         product_key: vertical.productKey,
         package_key: vertical.packageKey,
@@ -386,16 +393,7 @@ export default function ChristmasPortraitFunnelPage() {
             : null),
         source_route: vertical.routePath,
         existing_order_id: draft.orderId,
-        funnel_session_id: getChristmasFunnelSessionId(),
-        landing_path: `${window.location.pathname}${window.location.search}`.slice(0, 120),
-        utm_source: attr.utm_source,
-        utm_medium: attr.utm_medium,
-        utm_campaign: attr.utm_campaign,
-        utm_content: attr.utm_content,
-        utm_term: attr.utm_term,
-        campaign_id: attr.campaign_id,
-        adset_id: attr.adset_id,
-        ad_id: attr.ad_id,
+        ...attr,
         success_url: `${window.location.origin}${vertical.routePath}?checkout=success`,
       });
       setCheckout({

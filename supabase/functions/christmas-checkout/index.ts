@@ -5,6 +5,13 @@ import {
   isPortraitProductKey,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import {
+  applyChristmasCheckoutAttributionMetadata,
+  attributionFromClientBody,
+  attributionFromOrderRow,
+  coalesceChristmasAttribution,
+  orderAttributionColumns,
+} from "../_shared/christmas/attribution.ts";
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
@@ -35,6 +42,9 @@ type Body = {
   adset_id?: string;
   ad_id?: string;
   funnel_session_id?: string;
+  fbc?: string;
+  fbp?: string;
+  has_meta_click?: boolean;
   style_key?: string;
   source_path?: string;
   source_bucket?: string;
@@ -222,6 +232,7 @@ Deno.serve(async (req) => {
 
     let orderId = asString(body.existing_order_id);
     let publicToken = "";
+    const incomingAttr = attributionFromClientBody(body as Record<string, unknown>);
 
     const orderPatch = {
       email: email || null,
@@ -242,16 +253,30 @@ Deno.serve(async (req) => {
       sku,
     };
 
+    let resolvedAttr = incomingAttr;
+
     if (orderId) {
       const { data: existing } = await service
         .from("christmas_orders")
-        .select("id,payment_status,stripe_checkout_session_id,amount_cents,public_token_hash")
+        .select(
+          "id,payment_status,stripe_checkout_session_id,amount_cents,public_token_hash,landing_path,utm_source,utm_medium,utm_campaign,utm_content,utm_term,affiliate_ref,campaign_id,adset_id,ad_id,funnel_session_id,metadata",
+        )
         .eq("id", orderId)
         .maybeSingle();
       if (!existing || existing.payment_status === "paid") {
         orderId = "";
       } else {
-        await service.from("christmas_orders").update(orderPatch).eq("id", orderId);
+        resolvedAttr = coalesceChristmasAttribution(
+          attributionFromOrderRow(existing as Record<string, unknown>),
+          incomingAttr,
+        );
+        await service
+          .from("christmas_orders")
+          .update({
+            ...orderPatch,
+            ...orderAttributionColumns(resolvedAttr),
+          })
+          .eq("id", orderId);
       }
     }
 
@@ -266,30 +291,22 @@ Deno.serve(async (req) => {
           payment_status: "pending",
           fulfillment_status: "not_started",
           locale: asString(body.locale) || "en",
-          landing_path: asString(body.landing_path) || null,
-          utm_source: asString(body.utm_source) || null,
-          utm_medium: asString(body.utm_medium) || null,
-          utm_campaign: asString(body.utm_campaign) || null,
-          utm_content: asString(body.utm_content) || null,
-          utm_term: asString(body.utm_term) || null,
-          affiliate_ref: asString(body.affiliate_ref) || null,
-          campaign_id: asString(body.campaign_id) || null,
-          adset_id: asString(body.adset_id) || null,
-          ad_id: asString(body.ad_id) || null,
-          funnel_session_id: asString(body.funnel_session_id) || null,
           metadata: {
             source: "christmas-checkout",
             public_token_hint: publicToken,
             portrait_type: portraitType,
             species,
             source_route: sourceRoute,
+            has_meta_click: incomingAttr.has_meta_click,
           },
           ...orderPatch,
+          ...orderAttributionColumns(incomingAttr),
         })
         .select("id")
         .single();
       if (orderError) throw orderError;
       orderId = order.id;
+      resolvedAttr = incomingAttr;
     }
 
     if (santaPerso) {
@@ -333,6 +350,7 @@ Deno.serve(async (req) => {
     params.set("metadata[package_key]", pkg.package_key);
     params.set("metadata[sku]", sku);
     params.set("metadata[christmas_order_id]", orderId);
+    applyChristmasCheckoutAttributionMetadata(params, resolvedAttr, orderId);
     if (styleKey) params.set("metadata[style_key]", styleKey);
     if (portraitType) params.set("metadata[portrait_type]", portraitType);
     if (species) params.set("metadata[species]", species);

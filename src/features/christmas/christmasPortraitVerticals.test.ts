@@ -196,5 +196,6 @@ describe("christmas portrait funnel e2e contract (component)", () => {
     expect(page).toContain("Switch to");
     expect(page).toContain("/christmas/cats");
     expect(page).toContain("/christmas/dogs");
+    expect(page).toContain("buildChristmasCheckoutAttribution");
   });
 });

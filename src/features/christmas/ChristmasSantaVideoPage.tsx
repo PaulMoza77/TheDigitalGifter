@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
-import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
-import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
+import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
+import { trackChristmasEvent } from "./analytics";
+import { buildChristmasCheckoutAttribution } from "./checkoutAttribution";
 import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
 import { startChristmasCheckout } from "./photoApi";
 import {
@@ -152,6 +153,13 @@ export default function ChristmasSantaVideoPage() {
         });
         if (data.order.job?.job_status) setJobStatus(data.order.job.job_status);
         if (data.order.resultUrl) setResultUrl(data.order.resultUrl);
+        if (data.order.payment_status === "paid") {
+          void trackChristmasEvent("purchase", {
+            productKey: SANTA_PRODUCT_KEY,
+            orderId: data.order.id,
+            amountCents: data.order.amount_cents ?? null,
+          });
+        }
       } catch (err) {
         if (!cancelled) {
           patch({
@@ -286,8 +294,7 @@ export default function ChristmasSantaVideoPage() {
       packageKey: SANTA_DEFAULT_PACKAGE,
     });
     try {
-      captureFunnelAttribution(window.location.search);
-      const attr = attributionParamsForInternal();
+      const attr = buildChristmasCheckoutAttribution();
       const result = await startChristmasCheckout({
         product_key: SANTA_PRODUCT_KEY,
         package_key: SANTA_DEFAULT_PACKAGE,
@@ -307,11 +314,7 @@ export default function ChristmasSantaVideoPage() {
         consent_version: SANTA_CONSENT_VERSION,
         source_route: SANTA_ROUTE,
         existing_order_id: draft.orderId,
-        funnel_session_id: getChristmasFunnelSessionId(),
-        landing_path: `${window.location.pathname}${window.location.search}`.slice(0, 120),
-        utm_source: attr.utm_source,
-        utm_medium: attr.utm_medium,
-        utm_campaign: attr.utm_campaign,
+        ...attr,
         success_url: `${window.location.origin}${SANTA_ROUTE}?checkout=success`,
       });
       setCheckout({

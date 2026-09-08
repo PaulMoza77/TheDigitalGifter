@@ -177,14 +177,21 @@ async function postMetaCapi(
   return { sent: true, eventsReceived };
 }
 
-function customData(input: { amountCents: number; orderId?: string }): Record<string, unknown> {
+function customData(input: {
+  amountCents: number;
+  orderId?: string;
+  sku?: string;
+  currency?: string;
+}): Record<string, unknown> {
   const value = input.amountCents / 100;
+  const sku = asString(input.sku) || PET_SKU;
+  const currency = (asString(input.currency) || "USD").toUpperCase();
   const data: Record<string, unknown> = {
-    currency: "USD",
+    currency,
     value,
-    content_ids: [PET_SKU],
+    content_ids: [sku],
     content_type: "product",
-    contents: [{ id: PET_SKU, quantity: 1, item_price: value }],
+    contents: [{ id: sku, quantity: 1, item_price: value }],
     num_items: 1,
   };
   if (input.orderId) data.order_id = input.orderId;
@@ -205,6 +212,9 @@ export async function sendMetaCapiPurchase(input: {
   clientUserAgent?: string | null;
   /** When set, routes to Meta Test Events only (never production Ads metrics). */
   testEventCode?: string | null;
+  /** Optional SKU override — Christmas reuses this helper (do not add a second CAPI client). */
+  sku?: string | null;
+  currency?: string | null;
 }): Promise<{ sent: boolean; reason?: string; eventsReceived?: number }> {
   if (!metaPurchaseShouldEmit({ alreadySentAt: input.alreadySentAt ?? null, eventId: input.eventId })) {
     return { sent: false, reason: "duplicate" };
@@ -214,7 +224,12 @@ export async function sendMetaCapiPurchase(input: {
   }
 
   const hashedEmail = await hashCustomerEmailForMeta(input.email);
-  const data = customData({ amountCents: input.amountCents, orderId: input.orderId });
+  const data = customData({
+    amountCents: input.amountCents,
+    orderId: input.orderId,
+    sku: input.sku || undefined,
+    currency: input.currency || undefined,
+  });
   if (metaCustomDataHasForbiddenFields(data)) {
     return { sent: false, reason: "unsafe_custom_data" };
   }
