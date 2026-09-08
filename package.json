@@ -16,6 +16,7 @@
     "smoke:pet-preview": "PET_PREVIEW_SMOKE=1 node scripts/pet-preview-live-smoke.mjs",
     "smoke:pet-preview-ui": "node scripts/pet-preview-ui-e2e.mjs",
     "secret-scan": "node scripts/secret-scan.mjs",
+    "smoke:admin-spa": "node scripts/smoke-admin-spa-nav.mjs",
     "deploy:pet-funnel": "bash scripts/deploy-pet-funnel.sh"
   },
   "dependencies": {
