@@ -22,7 +22,6 @@ import {
 import {
   cosmeticLabelForKey,
   giftCountBucket,
-  productPathForKey,
   reorderIds,
   sanitizeTreeAnalyticsMeta,
   TREE_COSMETICS,
