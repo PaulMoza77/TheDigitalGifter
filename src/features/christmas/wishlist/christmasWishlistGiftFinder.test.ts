@@ -120,6 +120,8 @@ describe("wishlist / gift finder wiring", () => {
     expect(app).toContain('path="/christmas/wishlist"');
     expect(app).toContain('path="/wishlist/:shareId"');
     expect(app).toContain('path="/christmas/gift-finder"');
+    expect(app).toContain('import("@/features/christmas/ChristmasWishlistPage")');
+    expect(app).toContain('import("@/features/christmas/ChristmasPortraitFunnelPage")');
   });
 
   it("migration enforces share/owner separation and finder uniqueness", () => {
