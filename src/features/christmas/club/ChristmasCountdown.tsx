@@ -86,7 +86,7 @@ export function ChristmasCountdown({
               <img
                 src={product.image}
                 srcSet={product.imageSrcSet}
-                sizes="(max-width: 959px) 5.6rem, 7.5rem"
+                sizes="(max-width: 959px) 22vw, 7.5rem"
                 alt=""
                 width={480}
                 height={720}

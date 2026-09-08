@@ -165,10 +165,13 @@
         });
 
         var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
         add("preload", {
           as: "image",
           type: "image/webp",
-          href: "/christmas/cabin-hero-1920.webp",
+          href: heroStill,
           imagesrcset:
             "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
           imagesizes: "100vw",
@@ -188,7 +191,11 @@
         bootCss.textContent =
           "html,body{margin:0;background:#0b0504}" +
           "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
-          "background:#0b0504 url(/christmas/cabin-hero-1920.webp) center/cover no-repeat}" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
           "#cc-boot::after{content:'';position:absolute;inset:0;" +
           "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
           "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
