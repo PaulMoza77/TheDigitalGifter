@@ -54,6 +54,7 @@ describe("christmas countdown admin wiring", () => {
     const routes = readSrc("server/routes.mjs");
     expect(routes).toContain('"/api/christmas/funnel-event": "christmas-funnel-event.ts"');
     expect(routes).toContain('"/api/christmas-admin": "christmas-admin.ts"');
+    expect(readSrc("Dockerfile")).toContain("COPY src ./src");
   });
 
   it("falls back to hardcoded public copy when config is missing", () => {
@@ -81,6 +82,13 @@ describe("christmas countdown admin wiring", () => {
     expect(sql).toContain("if not public.is_admin()");
     expect(sql).toContain("revoke all on table public.christmas_countdown_signups");
     expect(sql).not.toMatch(/grant select on table public.christmas_countdown_signups to anon/);
+  });
+
+  it("copies src into the origin image so countdown APIs can import shared modules", () => {
+    const docker = readSrc("Dockerfile");
+    expect(docker).toContain("COPY src ./src");
+    expect(docker).toContain("COPY api ./api");
+    expect(readSrc("api/christmas-countdown-config.ts")).toContain("../src/features/christmas-countdown/defaults");
   });
 
   it("queries GA4 server-side for the /christmas path only", () => {

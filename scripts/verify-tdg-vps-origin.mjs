@@ -71,6 +71,27 @@ record(
   `http=${ingest.status}`,
 );
 
+const christmasConfig = curl("/api/christmas-countdown-config");
+record(
+  "christmas_countdown_config_json",
+  christmasConfig.status === 200 && /json/i.test(christmasConfig.contentType),
+  `http=${christmasConfig.status}`,
+);
+
+const christmasAdmin = curl("/api/christmas-admin", ["-X", "POST", "-H", "Content-Type: application/json", "-d", '{"action":"dashboard"}']);
+record(
+  "christmas_admin_not_html",
+  christmasAdmin.status >= 400 && christmasAdmin.status < 600 && !/text\/html/i.test(christmasAdmin.contentType),
+  `http=${christmasAdmin.status}`,
+);
+
+const christmasIngest = curl("/api/christmas/funnel-event", ["-X", "POST", "-H", "Content-Type: application/json", "-d", "{}"]);
+record(
+  "christmas_funnel_ingest_not_html",
+  christmasIngest.status >= 400 && christmasIngest.status < 600 && !/text\/html/i.test(christmasIngest.contentType),
+  `http=${christmasIngest.status}`,
+);
+
 const apex = fetchTdgNamedHost({ host: "thedigitalgifter.com", path: "/healthz", ip });
 record(
   "apex_host_healthz",

@@ -106,7 +106,13 @@ async function handle(req, res) {
       const handler = await loadHandler(classified.module);
       await invokeVercelHandler(handler, req, res, url);
     } catch (error) {
-      console.error(JSON.stringify({ source: "tdg-origin", kind: "api_error", path: url.pathname }));
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(JSON.stringify({
+        source: "tdg-origin",
+        kind: "api_error",
+        path: url.pathname,
+        message: message.slice(0, 180),
+      }));
       if (!res.headersSent) {
         sendJson(res, 500, { error: "handler_failed" });
       }

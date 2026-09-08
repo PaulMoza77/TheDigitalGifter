@@ -46,10 +46,26 @@ apply_sql_file() {
 }
 
 echo "Applying $MIGRATION"
+APPLIED=0
 if [[ -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
-  npx --yes supabase db push --db-url "postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-eu-central-1.pooler.supabase.com:6543/postgres" --include-all || apply_sql_file "$MIGRATION"
-else
-  apply_sql_file "$MIGRATION" || npx --yes supabase db push --linked --include-all
+  for HOST in \
+    "aws-0-eu-central-1.pooler.supabase.com" \
+    "aws-0-eu-west-1.pooler.supabase.com" \
+    "aws-1-eu-west-1.pooler.supabase.com" \
+    "aws-0-eu-west-2.pooler.supabase.com"
+  do
+    echo "Trying db push via $HOST…"
+    if npx --yes supabase db push --db-url "postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@${HOST}:6543/postgres" --include-all; then
+      APPLIED=1
+      break
+    fi
+  done
+fi
+if [[ "$APPLIED" != "1" ]]; then
+  apply_sql_file "$MIGRATION" || {
+    echo "BLOCKED: could not apply $MIGRATION"
+    exit 2
+  }
 fi
 
 echo "Deploying christmas-admin → ${PROJECT_REF}"
