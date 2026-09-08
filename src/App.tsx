@@ -141,6 +141,9 @@ const ChristmasCardsPage = lazy(
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
 );
+const ChristmasPortraitFunnelPage = lazy(
+  () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
+);
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
 const ThanksgivingPage = lazy(() => import("@/pages/website/ThanksgivingPage"));

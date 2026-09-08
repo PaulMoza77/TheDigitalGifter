@@ -145,6 +145,8 @@ describe("christmas tree / advent product wiring", () => {
     expect(app).toContain('path="/christmas/advent"');
     expect(app).toContain("ChristmasTreePage");
     expect(app).toContain("ChristmasAdventPage");
+    expect(app).toMatch(/const ChristmasPortraitFunnelPage = lazy\(/);
+    expect(app).toContain('import("@/features/christmas/ChristmasPortraitFunnelPage")');
   });
 
   it("migration defines share/owner separation and advent uniqueness", () => {
