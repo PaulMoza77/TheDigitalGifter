@@ -9,25 +9,37 @@ import { CHRISTMAS_CLUB_ASSETS } from "./config";
 export function ChristmasClubScene() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoReady, setVideoReady] = useState(false);
+  const [loopSrc, setLoopSrc] = useState(CHRISTMAS_CLUB_ASSETS.heroLoop720);
+
+  useEffect(() => {
+    const pick = () => {
+      const wide = window.matchMedia("(min-width: 901px)").matches;
+      setLoopSrc(wide ? CHRISTMAS_CLUB_ASSETS.heroLoop : CHRISTMAS_CLUB_ASSETS.heroLoop720);
+    };
+    pick();
+    const mq = window.matchMedia("(min-width: 901px)");
+    const onChange = () => pick();
+    mq.addEventListener?.("change", onChange);
+    return () => mq.removeEventListener?.("change", onChange);
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    setVideoReady(false);
     const markReady = () => setVideoReady(true);
     if (video.readyState >= 2) markReady();
     video.addEventListener("loadeddata", markReady);
     video.addEventListener("canplay", markReady);
-    const play = () => {
-      void video.play().catch(() => {
-        /* autoplay can be blocked; poster still shows */
-      });
-    };
-    play();
+    video.load();
+    void video.play().catch(() => {
+      /* autoplay can be blocked; poster still shows */
+    });
     return () => {
       video.removeEventListener("loadeddata", markReady);
       video.removeEventListener("canplay", markReady);
     };
-  }, []);
+  }, [loopSrc]);
 
   return (
     <div className="cc-scene" aria-hidden="true">
@@ -57,15 +69,9 @@ export function ChristmasClubScene() {
         playsInline
         loop
         autoPlay
-        preload="metadata"
-      >
-        <source
-          src={CHRISTMAS_CLUB_ASSETS.heroLoop720}
-          type="video/mp4"
-          media="(max-width: 900px)"
-        />
-        <source src={CHRISTMAS_CLUB_ASSETS.heroLoop} type="video/mp4" />
-      </video>
+        preload="auto"
+        src={loopSrc}
+      />
 
       <div className="cc-scene__veil" />
       <div className="cc-scene__glow" />

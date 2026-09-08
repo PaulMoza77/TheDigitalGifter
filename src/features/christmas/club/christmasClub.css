@@ -45,7 +45,7 @@
 .cc-scene__poster img,
 .cc-scene__video {
   object-fit: cover;
-  object-position: center 42%;
+  object-position: center center;
 }
 
 .cc-scene__video {

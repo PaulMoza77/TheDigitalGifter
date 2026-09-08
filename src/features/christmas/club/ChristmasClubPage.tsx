@@ -70,8 +70,9 @@ export function ChristmasClubPage() {
       const preload = document.createElement("link");
       preload.rel = "preload";
       preload.as = "image";
-      preload.href = CHRISTMAS_CLUB_ASSETS.hero1920;
-      preload.type = "image/webp";
+      preload.href = CHRISTMAS_CLUB_ASSETS.hero1920Jpg;
+      preload.setAttribute("imagesrcset", `${CHRISTMAS_CLUB_ASSETS.hero1280Jpg} 1280w, ${CHRISTMAS_CLUB_ASSETS.hero1920Jpg} 1920w, ${CHRISTMAS_CLUB_ASSETS.hero2560Jpg} 2560w`);
+      preload.setAttribute("imagesizes", "100vw");
       preload.setAttribute("data-cc-preload", "hero");
       document.head.appendChild(preload);
     }
