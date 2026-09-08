@@ -162,6 +162,17 @@ describe("christmas portrait wiring", () => {
     expect(readSrc("supabase/functions/christmas-photo-funnel/index.ts")).toContain("validatePetSpecies");
   });
 
+  it("checkout persists locale on create and update; generation uses lifecycle ledger", () => {
+    const checkout = readSrc("supabase/functions/christmas-checkout/index.ts");
+    expect(checkout).toContain("locale: asString(body.locale).toLowerCase().startsWith(\"ro\") ? \"ro\" : \"en\"");
+    expect(readSrc("supabase/functions/christmas-photo-generate/index.ts")).toContain("claimAndSendChristmasLifecycle");
+    expect(readSrc("supabase/functions/christmas-santa-generate/index.ts")).toContain("generation_failed");
+    expect(readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts")).toContain("payment_confirmation");
+    const sql = readSrc("supabase/migrations/20260908120000_christmas_lifecycle_events.sql");
+    expect(sql).toContain("create unique index if not exists christmas_lifecycle_events_event_key_uidx");
+    expect(sql).toContain("claim_christmas_lifecycle_event");
+  });
+
   it("migration seeds vertical packages purchasable false", () => {
     const sql = readSrc("supabase/migrations/20260903010000_christmas_portrait_verticals.sql");
     expect(sql).toContain("christmas_family");

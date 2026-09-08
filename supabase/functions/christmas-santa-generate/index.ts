@@ -7,6 +7,7 @@ import {
   generateSantaTalkingVideo,
   santaStillPrompt,
 } from "../_shared/christmas/santaVideo.ts";
+import { claimAndSendChristmasLifecycle } from "../_shared/christmas/lifecycle.ts";
 
 /**
  * Post-payment Santa Video pipeline (async stages).
@@ -383,35 +384,28 @@ Deno.serve(async (req) => {
           })
           .eq("id", orderId);
 
-        // Best-effort email
+        // Best-effort idempotent lifecycle delivery (persisted order.locale)
         try {
           const email = asString(order.email);
-          const apiKey = asString(Deno.env.get("RESEND_API_KEY"));
-          const from = asString(
-            Deno.env.get("CHRISTMAS_EMAIL_FROM") || Deno.env.get("TRANSACTIONAL_EMAIL_FROM"),
-          );
           const tokenHint = asString(
             (order.metadata as Record<string, unknown> | null)?.public_token_hint,
           );
-          if (email && apiKey && from && tokenHint) {
+          if (email && tokenHint) {
             const site = (
               Deno.env.get("SITE_URL") ||
               Deno.env.get("PUBLIC_APP_URL") ||
               "https://www.thedigitalgifter.com"
             ).replace(/\/$/, "");
             const link = `${site}/christmas/santa-video?token=${encodeURIComponent(tokenHint)}`;
-            await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                from,
-                to: [email],
-                subject: "Your Santa video is ready",
-                html: `<p>Your personalized Santa video is ready.</p><p><a href="${link}">Open your result</a></p><p>— The Digital Gifter</p>`,
-              }),
+            await claimAndSendChristmasLifecycle({
+              service,
+              template: "generation_ready",
+              orderId,
+              productKey: "christmas_santa_video",
+              locale: asString(order.locale) || "en",
+              email,
+              productName: "Santa Video",
+              resultUrl: link,
             });
           }
         } catch {
@@ -461,4 +455,24 @@ async function failJob(
     .from("christmas_orders")
     .update({ fulfillment_status: "failed", last_error: safeMessage })
     .eq("id", orderId);
+  try {
+    const { data: ord } = await service
+      .from("christmas_orders")
+      .select("email,locale,product_key")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (ord) {
+      await claimAndSendChristmasLifecycle({
+        service,
+        template: "generation_failed",
+        orderId,
+        productKey: asString(ord.product_key) || "christmas_santa_video",
+        locale: asString(ord.locale) || "en",
+        email: asString(ord.email) || null,
+        productName: "Santa Video",
+      });
+    }
+  } catch {
+    /* best-effort terminal failure email once via ledger */
+  }
 }

@@ -29,6 +29,10 @@
       "destination": "/api/christmas-funnel-event"
     },
     {
+      "source": "/api/christmas/lifecycle-cron",
+      "destination": "/api/christmas-lifecycle-cron"
+    },
+    {
       "source": "/api/pet/funnel-event",
       "destination": "/api/pet-funnel-event"
     },

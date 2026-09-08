@@ -212,6 +212,8 @@ describe("christmas analytics contract", () => {
     expect(validated.affiliateRef).toBe("partner1");
     expect(validated.hasFbclid).toBe(true);
     expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain("purchase");
+    expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain("christmas_email_queued");
+    expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain("abandoned_checkout_eligible");
   });
 
   it("rejects invalid event", () => {

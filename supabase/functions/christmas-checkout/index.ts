@@ -240,6 +240,7 @@ Deno.serve(async (req) => {
       currency: pkg.currency,
       package_key: pkg.package_key,
       sku,
+      locale: asString(body.locale).toLowerCase().startsWith("ro") ? "ro" : "en",
     };
 
     if (orderId) {
@@ -265,7 +266,6 @@ Deno.serve(async (req) => {
           product_key: product.product_key,
           payment_status: "pending",
           fulfillment_status: "not_started",
-          locale: asString(body.locale) || "en",
           landing_path: asString(body.landing_path) || null,
           utm_source: asString(body.utm_source) || null,
           utm_medium: asString(body.utm_medium) || null,

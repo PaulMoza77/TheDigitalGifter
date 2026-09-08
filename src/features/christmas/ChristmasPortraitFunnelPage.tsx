@@ -27,6 +27,7 @@ import {
   type ChristmasPortraitVertical,
 } from "./portraitVerticals";
 import { enabledChristmasStyles } from "./styles";
+import { checkoutLocaleFromBrowser } from "./locale";
 
 function readDraft(key: string): ChristmasPortraitDraft {
   try {
@@ -372,6 +373,7 @@ export default function ChristmasPortraitFunnelPage() {
         amount_cents: 1,
         currency: "eur",
         email: draft.email || undefined,
+        locale: checkoutLocaleFromBrowser(),
         style_key: draft.styleKey,
         source_path: draft.sourcePath,
         source_bucket: "christmas-source",
