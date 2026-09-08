@@ -15,6 +15,7 @@ import {
   CHRISTMAS_FAMILY_STYLES,
   CHRISTMAS_COUPLE_STYLES,
   CHRISTMAS_PET_STYLES,
+  CHRISTMAS_KIDS_STYLES,
 } from "./portraitStyles";
 import {
   CHRISTMAS_PORTRAIT_VERTICALS,
@@ -37,6 +38,8 @@ describe("christmas portrait vertical config", () => {
     expect(verticalFromPathname("/christmas/pets")?.productKey).toBe("christmas_pet");
     expect(verticalFromPathname("/christmas/dogs")?.productKey).toBe("christmas_pet");
     expect(verticalFromPathname("/christmas/cats")?.productKey).toBe("christmas_pet");
+    expect(verticalFromPathname("/christmas/kids")?.productKey).toBe("christmas_kids");
+    expect(verticalFromPathname("/christmas/kids")?.portraitType).toBe("child");
     expect(verticalFromPathname("/christmas/dogs")?.expectedSpecies).toBe("dog");
     expect(verticalFromPathname("/christmas/cats")?.expectedSpecies).toBe("cat");
   });
@@ -63,7 +66,7 @@ describe("christmas portrait vertical config", () => {
     expect(shellForPath("/christmas/advent")).toBeNull();
     expect(shellForPath("/christmas/wishlist")).toBeNull();
     expect(shellForPath("/christmas/gift-finder")).toBeNull();
-    expect(shellForPath("/christmas/kids")?.status).toBe("coming_soon");
+    expect(shellForPath("/christmas/kids")).toBeNull();
   });
 });
 
@@ -72,6 +75,8 @@ describe("christmas portrait style registry", () => {
     expect(resolveProductStyle("christmas_family", "classic_family_christmas")?.promptTemplate.length).toBeGreaterThan(40);
     expect(resolveProductStyle("christmas_couple", "romantic_snowfall")).toBeTruthy();
     expect(resolveProductStyle("christmas_pet", "santa_pet")).toBeTruthy();
+    expect(resolveProductStyle("christmas_kids", "kids_classic_christmas")?.promptTemplate).toMatch(/real age/);
+    expect(enabledChristmasStyles(CHRISTMAS_KIDS_STYLES).length).toBeGreaterThanOrEqual(6);
     expect(enabledChristmasStyles(CHRISTMAS_FAMILY_STYLES).length).toBeGreaterThanOrEqual(6);
     expect(enabledChristmasStyles(CHRISTMAS_COUPLE_STYLES).length).toBeGreaterThanOrEqual(6);
     expect(enabledChristmasStyles(CHRISTMAS_PET_STYLES).length).toBeGreaterThanOrEqual(6);
@@ -95,6 +100,9 @@ describe("christmas portrait style registry", () => {
     for (const key of stylesForProductKey("christmas_family").map((s) => s.styleKey)) {
       expect(deno).toContain(`"styleKey": "${key}"`);
     }
+    for (const key of stylesForProductKey("christmas_kids").map((s) => s.styleKey)) {
+      expect(deno).toContain(`"styleKey": "${key}"`);
+    }
     expect(deno).toContain("buildChristmasPortraitPrompt");
     expect(deno).toContain("never trusted");
   });
@@ -112,7 +120,7 @@ describe("christmas portrait preview contract", () => {
 });
 
 describe("christmas portrait packages remain non-purchasable", () => {
-  for (const productKey of ["christmas_photo", "christmas_family", "christmas_couple", "christmas_pet"]) {
+  for (const productKey of ["christmas_photo", "christmas_family", "christmas_couple", "christmas_kids", "christmas_pet"]) {
     it(`${productKey} seed package is not purchasable`, () => {
       const result = resolvePurchasableOffer({
         catalog: CHRISTMAS_CATALOG_SEED,
@@ -142,16 +150,16 @@ describe("christmas portrait wiring", () => {
       "/christmas/photo-generator",
       "/christmas/family",
       "/christmas/couples",
+      "/christmas/kids",
       "/christmas/pets",
       "/christmas/dogs",
       "/christmas/cats",
     ]) {
       expect(app).toContain(`path="${path}"`);
     }
-    // shells remain for unfinished products
     expect(app).toContain("ChristmasSantaVideoPage");
     expect(app).toContain('path="/christmas/santa-video"');
-    expect(app).toContain("ChristmasShellRoute");
+    expect(app).toContain('path="/christmas/kids" element={<ChristmasPortraitFunnelPage />}');
   });
 
   it("checkout + generate use server registry and never trust client prompts", () => {
@@ -180,6 +188,7 @@ describe("christmas portrait wiring", () => {
   it("admin filters product + species", () => {
     const admin = readSrc("src/pages/admin/ChristmasOrders.tsx");
     expect(admin).toContain("christmas_family");
+    expect(admin).toContain("christmas_kids");
     expect(admin).toContain("speciesFilter");
     expect(admin).toContain("portrait_type");
   });

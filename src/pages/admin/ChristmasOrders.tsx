@@ -87,6 +87,7 @@ const PRODUCT_FILTER_PRESETS = [
   { value: "christmas_photo", label: "Christmas Photo" },
   { value: "christmas_family", label: "Family" },
   { value: "christmas_couple", label: "Couple" },
+  { value: "christmas_kids", label: "Kids" },
   { value: "christmas_pet", label: "Pet" },
   { value: "christmas_santa_video", label: "Santa Video" },
 ];

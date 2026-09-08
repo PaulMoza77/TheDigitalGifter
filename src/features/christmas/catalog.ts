@@ -160,14 +160,37 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     slug: "kids",
     productType: "photo_generator",
     name: "Kids Christmas Generator",
-    description: "Coming soon.",
+    description: "A private Christmas portrait of your child. Parent consent required. Never shown in a public gallery.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 40,
     routePath: "/christmas/kids",
     localeDefault: "en",
-    metadata: { coming_soon: true, privacy_required: true },
-    packages: [],
+    metadata: {
+      kids_v1: true,
+      foundation: true,
+      live_offer: false,
+      portrait_vertical: true,
+      privacy_required: true,
+      noindex: true,
+      public_gallery: false,
+    },
+    packages: [
+      {
+        packageKey: "single",
+        packageName: "Single kids portrait",
+        description: "Draft package — not a live public offer.",
+        currency: "usd",
+        priceCents: 0,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["1 private Christmas kids portrait", "Parent/guardian consent required"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: { live_offer: false },
+      },
+    ],
   },
   {
     productKey: "christmas_pet",
@@ -424,7 +447,8 @@ export function isComingSoon(product: ChristmasProductDef): boolean {
     product.metadata?.wishlist_v1 ||
     product.metadata?.gift_finder_v1 ||
     product.metadata?.cards_v1 ||
-    product.metadata?.messages_v1
+    product.metadata?.messages_v1 ||
+    product.metadata?.kids_v1
   ) {
     return false;
   }
@@ -435,6 +459,7 @@ const PORTRAIT_VERTICAL_KEYS = new Set([
   "christmas_photo",
   "christmas_family",
   "christmas_couple",
+  "christmas_kids",
   "christmas_pet",
   "christmas_santa_video",
 ]);

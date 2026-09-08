@@ -5,6 +5,11 @@ import {
   buildChristmasPortraitPrompt,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import {
+  isKidsProductKey,
+  kidsRetentionDeleteAfter,
+  KIDS_VISIBILITY,
+} from "../_shared/christmas/kidsPrivacy.ts";
 
 /**
  * Post-payment Christmas portrait generation (all verticals).
@@ -100,6 +105,15 @@ Deno.serve(async (req) => {
     }
     if (!order.source_path || !order.style_key) {
       return jsonResponse({ error: "missing_source_or_style" }, 400);
+    }
+    if (isKidsProductKey(asString(order.product_key))) {
+      const meta = (order.metadata && typeof order.metadata === "object"
+        ? order.metadata
+        : {}) as Record<string, unknown>;
+      const consented = order.guardian_consent === true || meta.guardian_consent === true;
+      if (!consented) {
+        return jsonResponse({ error: "Parent/guardian consent required", code: "consent_required" }, 400);
+      }
     }
 
     const claim = await service.rpc("claim_christmas_generation_job", { p_order_id: orderId });
@@ -239,6 +253,8 @@ Deno.serve(async (req) => {
           mock: generationMock(),
           estimated_cost_usd: generationMock() ? 0 : ESTIMATED_UNIT_COST_USD,
           cost_state: generationMock() ? "exact" : "estimated",
+          visibility: isKidsProductKey(asString(order.product_key)) ? KIDS_VISIBILITY : "private",
+          public_gallery: false,
         },
       })
       .select("id")
@@ -265,6 +281,10 @@ Deno.serve(async (req) => {
         model_name: model,
         replicate_prediction_id: predictionId,
         last_error: null,
+        visibility: isKidsProductKey(asString(order.product_key)) ? KIDS_VISIBILITY : undefined,
+        retention_delete_after: isKidsProductKey(asString(order.product_key))
+          ? kidsRetentionDeleteAfter("paid_result").toISOString()
+          : undefined,
         metadata: {
           ...(typeof order.metadata === "object" && order.metadata ? order.metadata : {}),
           generation_latency_ms: latencyMs,
@@ -272,6 +292,7 @@ Deno.serve(async (req) => {
           cost_state: generationMock() ? "exact" : "estimated",
           pricing_source: "ai_model_pricing_kontext_pro_tariff",
           prompt_style_key: order.style_key,
+          public_gallery: false,
         },
       })
       .eq("id", orderId);

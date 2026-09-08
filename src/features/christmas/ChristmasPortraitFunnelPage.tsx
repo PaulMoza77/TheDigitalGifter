@@ -27,6 +27,12 @@ import {
   type ChristmasPortraitVertical,
 } from "./portraitVerticals";
 import { enabledChristmasStyles } from "./styles";
+import {
+  KIDS_CONSENT_LABEL,
+  KIDS_CONSENT_VERSION,
+  kidsAnalyticsDimensions,
+  validateKidsConsent,
+} from "./kids/kidsPrivacy";
 
 function readDraft(key: string): ChristmasPortraitDraft {
   try {
@@ -218,8 +224,22 @@ export default function ChristmasPortraitFunnelPage() {
     });
   }
 
+  function kidsConsentOk(): boolean {
+    if (!vertical.requiresGuardianConsent) return true;
+    return validateKidsConsent({ guardianConsent: draft.guardianConsent }).ok;
+  }
+
   async function onFileChosen(file: File | null) {
     if (!file) return;
+    if (!kidsConsentOk()) {
+      const check = validateKidsConsent({ guardianConsent: false });
+      setStep("upload", {
+        lastError: check.ok
+          ? "Parent/guardian permission is required."
+          : check.message,
+      });
+      return;
+    }
     setSpeciesHint(null);
     void trackChristmasEvent("upload_started", {
       productKey: vertical.productKey,
@@ -263,6 +283,9 @@ export default function ChristmasPortraitFunnelPage() {
         byteSize: file.size,
         width: validation.width,
         height: validation.height,
+        productKey: vertical.productKey,
+        guardianConsent: vertical.requiresGuardianConsent ? draft.guardianConsent : undefined,
+        consentVersion: vertical.requiresGuardianConsent ? KIDS_CONSENT_VERSION : undefined,
       });
       if (upload.replicate_preview !== false) {
         throw new Error("Preview contract violated");
@@ -351,6 +374,12 @@ export default function ChristmasPortraitFunnelPage() {
       });
       return;
     }
+    if (!kidsConsentOk()) {
+      setStep("offer", {
+        lastError: "Parent/guardian permission is required.",
+      });
+      return;
+    }
     if (!draft.styleKey || !draft.sourcePath) {
       setStep("upload", { lastError: "Upload and style are required." });
       return;
@@ -385,6 +414,8 @@ export default function ChristmasPortraitFunnelPage() {
             ? vertical.expectedSpecies
             : null),
         source_route: vertical.routePath,
+        guardian_consent: vertical.requiresGuardianConsent ? true : undefined,
+        consent_version: vertical.requiresGuardianConsent ? KIDS_CONSENT_VERSION : undefined,
         existing_order_id: draft.orderId,
         funnel_session_id: getChristmasFunnelSessionId(),
         landing_path: `${window.location.pathname}${window.location.search}`.slice(0, 120),
@@ -441,6 +472,33 @@ export default function ChristmasPortraitFunnelPage() {
 
   async function onShare() {
     if (!resultUrl) return;
+    if (vertical.hidePublicShare) {
+      void trackChristmasEvent("share", {
+        productKey: vertical.productKey,
+        orderId: draft.orderId,
+        portraitType: vertical.portraitType,
+        ...kidsAnalyticsDimensions({
+          styleKey: draft.styleKey,
+          hasConsent: draft.guardianConsent,
+        }),
+      });
+      try {
+        const res = await fetch(resultUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `tdg-christmas-kids-portrait.jpg`, {
+          type: blob.type || "image/jpeg",
+        });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "Private Christmas portrait",
+          });
+        }
+      } catch {
+        /* user cancelled or share unsupported — no URL fallback */
+      }
+      return;
+    }
     void trackChristmasEvent("share", {
       productKey: vertical.productKey,
       orderId: draft.orderId,
@@ -477,6 +535,7 @@ export default function ChristmasPortraitFunnelPage() {
         description={vertical.metaDescription}
         exactTitle
         url={`https://www.thedigitalgifter.com${vertical.routePath}`}
+        noindex={vertical.noindex}
       />
       <main className="mx-auto min-h-[70vh] max-w-lg px-4 py-8 text-slate-900">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -503,6 +562,35 @@ export default function ChristmasPortraitFunnelPage() {
 
         {(draft.step === "intro" || draft.step === "upload") && (
           <section className="mt-8 space-y-4">
+            {vertical.requiresGuardianConsent ? (
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
+                <p>
+                  This page is <strong>not indexed</strong>. Photos of children are never shown in a
+                  public gallery. Unpaid uploads are deleted after 7 days; paid portraits after 90
+                  days.
+                </p>
+                <label className="mt-3 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={draft.guardianConsent}
+                    onChange={(e) =>
+                      setDraft((prev) => {
+                        const next = {
+                          ...prev,
+                          guardianConsent: e.target.checked,
+                          consentVersion: e.target.checked ? KIDS_CONSENT_VERSION : null,
+                          lastError: null,
+                        };
+                        writeDraft(vertical.draftStorageKey, next);
+                        return next;
+                      })
+                    }
+                  />
+                  <span>{KIDS_CONSENT_LABEL}</span>
+                </label>
+              </div>
+            ) : null}
             {vertical.id === "pets" ? (
               <div className="flex gap-2">
                 <Link
@@ -523,10 +611,17 @@ export default function ChristmasPortraitFunnelPage() {
               type="button"
               className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
               onClick={() => {
+                if (!kidsConsentOk()) {
+                  const check = validateKidsConsent({ guardianConsent: false });
+                  setStep("upload", {
+                    lastError: check.ok ? "Parent/guardian permission is required." : check.message,
+                  });
+                  return;
+                }
                 setStep("upload");
                 fileRef.current?.click();
               }}
-              disabled={busy}
+              disabled={busy || (vertical.requiresGuardianConsent && !draft.guardianConsent)}
             >
               {busy ? "Working…" : "Upload your photo"}
             </button>
@@ -678,13 +773,19 @@ export default function ChristmasPortraitFunnelPage() {
               >
                 Download
               </button>
-              <button
-                type="button"
-                className="rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"
-                onClick={() => void onShare()}
-              >
-                Share
-              </button>
+              {vertical.hidePublicShare ? (
+                <p className="text-xs text-slate-500">
+                  Private delivery only — no public gallery or shareable page URL.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"
+                  onClick={() => void onShare()}
+                >
+                  Share
+                </button>
+              )}
               <button
                 type="button"
                 className="rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"

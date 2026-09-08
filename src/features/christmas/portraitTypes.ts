@@ -27,6 +27,8 @@ export type ChristmasPortraitDraft = {
   email: string;
   portraitType: string | null;
   species: string | null;
+  guardianConsent: boolean;
+  consentVersion: string | null;
   lastError: string | null;
   updatedAt: string;
 };
@@ -47,6 +49,8 @@ export function emptyPortraitDraft(): ChristmasPortraitDraft {
     email: "",
     portraitType: null,
     species: null,
+    guardianConsent: false,
+    consentVersion: null,
     lastError: null,
     updatedAt: new Date().toISOString(),
   };
