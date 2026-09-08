@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
+import { trackChristmasWalletAvailability } from "./expressCheckoutWallets";
 import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
 import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
 import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
@@ -589,8 +590,17 @@ export default function ChristmasSantaVideoPage() {
               clientSecret={checkout.clientSecret}
               publishableKey={checkout.publishableKey}
               dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
-              returnUrl={`${window.location.origin}${SANTA_ROUTE}?checkout=success&token=${encodeURIComponent(draft.publicToken || "")}`}
               email={draft.email}
+              loadingLabel="Loading secure payment…"
+              onWalletAvailability={(info) => {
+                trackChristmasWalletAvailability(info, {
+                  productKey: SANTA_PRODUCT_KEY,
+                  packageKey: SANTA_DEFAULT_PACKAGE,
+                  orderId: draft.orderId,
+                  pathname: SANTA_ROUTE,
+                  amountCents: checkout.amountCents,
+                });
+              }}
             />
           </section>
         )}

@@ -156,6 +156,7 @@ describe("christmas portrait wiring", () => {
 
   it("checkout + generate use server registry and never trust client prompts", () => {
     expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("buildChristmasPortraitPrompt");
+    expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("2025-03-31.basil");
     expect(readSrc("supabase/functions/christmas-photo-generate/index.ts")).toContain("buildChristmasPortraitPrompt");
     expect(readSrc("supabase/functions/christmas-photo-generate/index.ts")).toContain("Never trust client-supplied prompts");
     expect(readSrc("supabase/functions/christmas-photo-funnel/index.ts")).toContain("validateSpecies");

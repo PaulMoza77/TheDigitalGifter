@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
+import { trackChristmasWalletAvailability } from "./expressCheckoutWallets";
 import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
 import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
 import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
@@ -643,12 +644,21 @@ export default function ChristmasPortraitFunnelPage() {
               clientSecret={checkout.clientSecret}
               publishableKey={checkout.publishableKey}
               dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
-              returnUrl={`${window.location.origin}${vertical.routePath}?checkout=success&token=${encodeURIComponent(draft.publicToken || "")}`}
               email={draft.email}
+              loadingLabel="Loading secure payment…"
               onReady={() => {
                 void trackChristmasEvent("payment_sheet_opened", {
                   productKey: vertical.productKey,
                   orderId: draft.orderId,
+                  amountCents: checkout.amountCents,
+                });
+              }}
+              onWalletAvailability={(info) => {
+                trackChristmasWalletAvailability(info, {
+                  productKey: vertical.productKey,
+                  packageKey: vertical.packageKey,
+                  orderId: draft.orderId,
+                  pathname: vertical.routePath,
                   amountCents: checkout.amountCents,
                 });
               }}
