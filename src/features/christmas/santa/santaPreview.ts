@@ -24,11 +24,13 @@ export function buildSantaMessagePreview(input: SantaPreviewInput): string {
       input.somethingGood
         ? `Am aflat că ${input.somethingGood}, și asta m-a bucurat foarte tare.`
         : `Am auzit că ai fost un copil minunat anul acesta.`,
+      input.hobbyOrInterest ? `\nȘtiu cât de mult iubești ${input.hobbyOrInterest}.` : "",
       "",
       input.christmasWish
         ? `Am notat cu grijă dorința ta: ${input.christmasWish}.`
         : `Am ascultat dorințele tale de Crăciun.`,
       input.customFact ? `\nȘi am reținut și asta: ${input.customFact}.` : "",
+      input.senderName ? `\nAceastă urare specială vine de la ${input.senderName}.` : "",
       "",
       `Fii bun cu cei din jur și păstrează magia iernii în inimă.`,
       `Crăciun fericit, ${name}!`,
@@ -45,18 +47,23 @@ export function buildSantaMessagePreview(input: SantaPreviewInput): string {
         : `I heard that you ${input.somethingGood.trim().replace(/^[Yy]ou\s+/, "")}, and I’m very proud of you.`
     : `I heard you’ve been doing wonderful things this year, and I’m very proud of you.`;
 
+  const hobby = input.hobbyOrInterest
+    ? `\nI also know how much you love ${input.hobbyOrInterest}.`
+    : "";
+
   const wish = input.christmasWish
     ? `The elves also told me you’ve been hoping for ${input.christmasWish}.`
     : `I’ve been listening carefully to your Christmas wishes.`;
 
   const extra = input.customFact ? `\nAnd I remembered this too: ${input.customFact}.` : "";
+  const from = input.senderName ? `\nThis warm Christmas wish comes from ${input.senderName}.` : "";
 
   return [
     `Ho ho ho, ${name}!`,
     "",
-    proud,
+    proud + hobby,
     "",
-    wish + extra,
+    wish + extra + from,
     "",
     `Keep being kind, ${name}. I’ll see what the elves can do!`,
     `Merry Christmas!`,

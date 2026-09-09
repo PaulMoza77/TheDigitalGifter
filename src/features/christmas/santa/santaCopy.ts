@@ -6,7 +6,7 @@
 export type SantaRecipientType = "child" | "siblings" | "family" | "special";
 
 export const SANTA_COPY = {
-  brand: "The Digital Gifter",
+  brand: "TheDigitalGifter",
   productName: "Personalized Santa Video",
   seo: {
     title: "Personalized Santa Video for Kids | TheDigitalGifter",
@@ -15,15 +15,26 @@ export const SANTA_COPY = {
     canonical: "https://www.thedigitalgifter.com/christmas/santa-video",
   },
   hero: {
+    /** Static SEO H1 — always present in the document. */
     h1: "Personalized Santa Video",
     h1Alt: "A Personal Christmas Message From Santa",
     support:
-      "Create a personalized Santa video with their name, Christmas wishes and special moments from the year.",
-    ctaDirect: "Create Their Santa Video",
+      "Santa can say their name, talk about their year and even mention what they’re wishing for this Christmas.",
+    ctaDirect: "Start the Magic",
     ctaPrefill: (name: string) => `Continue ${name}’s Santa Message`,
-    handoffHeadline: (name: string) => `Let’s make ${name}’s Christmas magical.`,
+    handoffHeadline: (name: string) => `Santa already knows ${name}.`,
     handoffSupport: (name: string) =>
-      `Tell Santa a few things about ${name} and we’ll create a personalized Christmas message just for them.`,
+      `Tell Santa a few little things about ${name} and he’ll create a magical video message just for them — with their name, a warm detail or two, and a special Christmas wish.`,
+    magicialHeadline: (name: string) => `Let’s make ${name}’s Christmas magical.`,
+    kicker: "A personalized message from Santa",
+    namePrompt: "Who is Santa making this for?",
+    namePlaceholder: "Your child’s name",
+    privacy: "Your details stay private. We never share personal information.",
+  },
+  language: {
+    label: "Santa speaks",
+    en: "English",
+    ro: "Romanian",
   },
   steps: {
     recipient: {
@@ -36,35 +47,62 @@ export const SANTA_COPY = {
       ],
     },
     name: {
-      title: "What’s their name?",
-      placeholder: "Emma",
-      cta: "Continue",
+      title: "Who is Santa making this for?",
+      placeholder: "Your child’s name",
+      cta: "Start the Magic",
       helper: "Santa will say their name in the video.",
     },
     age: {
       title: (name: string) => `How old is ${name}?`,
-      helper: "This helps Santa make the message feel more natural. Optional.",
+      helper: "This helps Santa make the message feel natural.",
       skip: "Skip",
       cta: "Continue",
+      unit: "years old",
     },
     achievement: {
       title: (name: string) => `What made you proud of ${name} this year?`,
-      placeholder: "She learned how to ride her bike without training wheels.",
+      placeholder: "He learned to ride his bike without training wheels.",
       chips: [
-        "you did well at school",
-        "you learned something new",
-        "you helped others",
-        "you were brave",
-        "you were kind",
+        { label: "Did well at school", value: "did well at school" },
+        { label: "Learned something new", value: "learned something new" },
+        { label: "Helped others", value: "helped others" },
+        { label: "Was brave", value: "were brave" },
+        { label: "Was kind", value: "were kind" },
       ],
+      somethingElse: "Something else",
       cta: "Continue",
+    },
+    interest: {
+      title: (name: string) => `What does ${name} love?`,
+      placeholder: "Football, LEGO, dinosaurs…",
+      chips: [
+        "Football",
+        "LEGO",
+        "Dinosaurs",
+        "Gaming",
+        "Drawing",
+        "Music",
+        "Animals",
+        "Cars",
+      ],
+      somethingElse: "Something else",
+      cta: "Continue",
+      skip: "Skip",
     },
     wish: {
       title: (name: string) => `What is ${name} hoping for this Christmas?`,
-      placeholder: "A pink bicycle",
-      helper: "Santa can mention it in the video. Optional.",
+      placeholder: "A red bicycle",
+      helper: "Santa can mention it in the video.",
       skip: "Skip for now",
       cta: "Continue",
+    },
+    sender: {
+      title: "Who is this magical message from?",
+      placeholder: "Mom & Dad",
+      chips: ["Mom & Dad", "Mum", "Dad", "Grandma & Grandpa", "The whole family"],
+      somethingElse: "Someone else",
+      cta: "See message preview",
+      skip: "Skip",
     },
     detail: {
       title: "Anything else Santa should know?",
@@ -79,12 +117,13 @@ export const SANTA_COPY = {
       cta: "See message preview",
     },
     preview: {
-      eyebrow: "Message preview",
-      title: (name: string) => `${name}’s Santa Message`,
-      change: "Make a change",
-      perfect: "This is perfect",
+      eyebrow: "Santa’s message",
+      title: (name: string) => `Santa’s message for ${name}`,
+      change: "Edit details",
+      perfect: "This looks magical",
       cta: (name: string) => `Create ${name}’s Santa Video`,
       mentionsTitle: "Santa will mention:",
+      note: "Preview only — the final spoken video may vary slightly.",
     },
     offer: {
       title: "Your Personalized Santa Video",
@@ -98,7 +137,7 @@ export const SANTA_COPY = {
         "Shareable link",
       ],
       consentNote:
-        "Details you enter are used only to create this private personalized video. Founder review: confirm retention policy copy before launch.",
+        "Details you enter are used only to create this private personalized video.",
       emailLabel: "Email for receipt / recovery (optional)",
       checkoutSoon:
         "Personalization is ready. Purchase unlocks when production pricing is configured.",
@@ -108,28 +147,46 @@ export const SANTA_COPY = {
       title: (name: string) => `Creating ${name}’s Santa video`,
       stages: [
         (name: string) => `Santa is reading ${name}’s letter…`,
-        "The elves are preparing the message…",
+        "The elves are preparing his message…",
+        "Santa is getting ready…",
         "Adding a little Christmas magic…",
         (name: string) => `${name}’s video is almost ready…`,
       ],
     },
     result: {
-      title: (name: string) => `${name}’s Santa message is ready`,
+      title: (name: string) => `Santa made this for ${name}`,
+      play: "Play Video",
       download: "Download",
       share: "Share",
       another: "Create Another",
-      crossSellCard: "Turn this into a Christmas Card",
-      crossSellTree: "Put it under a Digital Christmas Tree",
+      crossSellCard: "Turn a Christmas photo into a Card",
+      crossSellTree: "Put it under a Christmas Tree",
       crossSellPortrait: "Create a Christmas Portrait",
     },
   },
+  trust: [
+    {
+      title: "Private & secure",
+      body: "Your child’s details stay private.",
+    },
+    {
+      title: "A truly magical experience",
+      body: "A video they’ll always remember.",
+    },
+    {
+      title: "Made for real memories",
+      body: "Perfect for children and families.",
+    },
+  ],
   sections: {
     examples: {
-      h2: "See Personalized Santa Video Examples",
-      intro: "Demo messages that show how Santa can personalize a greeting. These are examples — not customer reviews.",
+      h2: "See Santa Video Examples",
+      intro:
+        "Demo messages that show how Santa can personalize a greeting. These are examples — not customer reviews.",
+      viewMore: "View more examples",
     },
     how: {
-      h2: "How Personalized Santa Videos Work",
+      h2: "How It Works",
       steps: [
         {
           title: "Tell Santa about them",
@@ -146,11 +203,11 @@ export const SANTA_COPY = {
       ],
     },
     personal: {
-      h2: "Make Santa’s Message Personal",
-      body: "Santa can say their name and weave in achievements, wishes, and little details that make Christmas morning feel magical.",
+      h2: "What Can Santa Mention?",
+      body: "Santa can say their name and weave in achievements, wishes, hobbies, and little details that make Christmas morning feel magical.",
     },
     proof: {
-      h2: "Made for Christmas morning surprises",
+      h2: "A Magical Christmas Surprise",
       items: [
         {
           title: "Made for Christmas morning surprises",
@@ -190,7 +247,7 @@ export const SANTA_COPY = {
         },
         {
           q: "What can I personalize?",
-          a: "You can include their name, optional age, something they did well, a Christmas wish, and an extra detail like a pet or hobby.",
+          a: "You can include their name, optional age, something they did well, a hobby, a Christmas wish, and who the message is from.",
         },
         {
           q: "Can Santa mention a Christmas gift?",
@@ -198,7 +255,7 @@ export const SANTA_COPY = {
         },
         {
           q: "Can I make a video for more than one child?",
-          a: "You can start with siblings as the recipient type. For best results today, include both names in the name field (for example “Sofia & Luca”). Dedicated multi-child scripting will expand later.",
+          a: "For best results today, include both names in the name field (for example “Sofia & Luca”). Dedicated multi-child scripting will expand later.",
         },
         {
           q: "Which languages are available?",
@@ -234,5 +291,5 @@ export const SANTA_COPY = {
 } as const;
 
 export function progressLabel(current: number, total: number): string {
-  return `${current} of ${total}`;
+  return `Step ${current} of ${total}`;
 }

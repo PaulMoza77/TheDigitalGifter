@@ -111,8 +111,15 @@ describe("santa preview + funnel progress", () => {
   it("skips name steps in progress when name is already known", () => {
     const withName = santaFunnelProgress("age", true);
     const without = santaFunnelProgress("age", false);
-    expect(withName?.total).toBeLessThan(without!.total);
+    expect(withName?.total).toBe(5);
+    expect(without?.total).toBe(6);
     expect(withName?.current).toBe(1);
+  });
+
+  it("maps interest and sender into the guided question flow", () => {
+    expect(santaFunnelProgress("interest", true)?.current).toBe(3);
+    expect(santaFunnelProgress("sender", true)?.current).toBe(5);
+    expect(santaFunnelProgress("preview", true)?.current).toBe(5);
   });
 });
 
@@ -170,6 +177,12 @@ describe("santa pipeline wiring", () => {
     expect(readSrc("src/features/christmas/santa/santaTypes.ts")).toMatch(/parent\/guardian/i);
     expect(readSrc("src/features/christmas/ChristmasSantaVideoPage.tsx")).toContain(
       "SANTA_CONSENT_LABEL",
+    );
+    expect(readSrc("src/features/christmas/ChristmasSantaVideoPage.tsx")).toContain(
+      "SantaWorkshopHero",
+    );
+    expect(readSrc("src/features/christmas/ChristmasSantaVideoPage.tsx")).not.toContain(
+      "nameHandoffApplied",
     );
     expect(readSrc("server/routes.mjs")).toContain("/api/christmas-santa-compose");
     expect(readSrc("Dockerfile")).toMatch(/ffmpeg/);

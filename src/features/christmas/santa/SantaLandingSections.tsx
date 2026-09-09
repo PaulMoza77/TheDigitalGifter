@@ -5,18 +5,29 @@ import { SantaDemoPlayer } from "./SantaDemoPlayer";
 
 export function SantaLandingSections() {
   const { sections } = SANTA_COPY;
+  const examples = SANTA_DEMO_EXAMPLES.slice(0, 3);
 
   return (
     <div className="mx-auto max-w-5xl space-y-20 px-4 pb-20 pt-12 sm:px-6">
       <section aria-labelledby="santa-examples-heading">
-        <h2 id="santa-examples-heading" className="santa-display text-3xl text-[#F5EDE0] sm:text-4xl">
-          {sections.examples.h2}
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#F5EDE0]/70 sm:text-base">
-          {sections.examples.intro}
-        </p>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2">
-          {SANTA_DEMO_EXAMPLES.map((example, index) => (
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="santa-examples-heading" className="santa-display text-3xl text-[#F5EDE0] sm:text-4xl">
+              {sections.examples.h2}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#F5EDE0]/70 sm:text-base">
+              {sections.examples.intro}
+            </p>
+          </div>
+          <a
+            href="#santa-examples-heading"
+            className="text-sm font-semibold text-[#c9a227] hover:underline"
+          >
+            {sections.examples.viewMore} →
+          </a>
+        </div>
+        <div className="mt-8 grid gap-5 sm:grid-cols-3">
+          {examples.map((example, index) => (
             <SantaDemoPlayer key={example.id} example={example} featured={index === 0} />
           ))}
         </div>
@@ -29,7 +40,7 @@ export function SantaLandingSections() {
         <ol className="mt-8 grid gap-8 sm:grid-cols-3">
           {sections.how.steps.map((step, i) => (
             <li key={step.title} className="relative">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#d4af37]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#c9a227]">
                 Step {i + 1}
               </p>
               <h3 className="santa-display mt-2 text-xl text-[#F5EDE0]">{step.title}</h3>
@@ -97,22 +108,22 @@ export function SantaLandingSections() {
         </ul>
         <p className="mt-6 text-sm text-[#F5EDE0]/55">
           Explore more:{" "}
-          <Link className="text-[#d4af37] underline-offset-2 hover:underline" to="/christmas">
+          <Link className="text-[#c9a227] underline-offset-2 hover:underline" to="/christmas">
             Christmas hub
           </Link>
           {" · "}
           <Link
-            className="text-[#d4af37] underline-offset-2 hover:underline"
+            className="text-[#c9a227] underline-offset-2 hover:underline"
             to="/christmas/photo-generator"
           >
             Christmas portrait
           </Link>
           {" · "}
-          <Link className="text-[#d4af37] underline-offset-2 hover:underline" to="/christmas/cards">
+          <Link className="text-[#c9a227] underline-offset-2 hover:underline" to="/christmas/cards">
             Christmas cards
           </Link>
           {" · "}
-          <Link className="text-[#d4af37] underline-offset-2 hover:underline" to="/christmas/tree">
+          <Link className="text-[#c9a227] underline-offset-2 hover:underline" to="/christmas/tree">
             Digital Christmas tree
           </Link>
         </p>
