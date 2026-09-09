@@ -2,15 +2,15 @@ import { memo, useMemo } from "react";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 
 /** Deterministic flakes for the window pane — no Math.random on each render. */
-const WINDOW_FLAKES = Array.from({ length: 18 }, (_, i) => {
+const WINDOW_FLAKES = Array.from({ length: 22 }, (_, i) => {
   const n = i + 1;
   return {
     id: i,
     left: 6 + ((n * 17) % 88),
-    size: 1.5 + (n % 3) * 0.7,
-    duration: 7 + (n % 6) * 1.1,
+    size: 1.6 + (n % 3) * 0.85,
+    duration: 6.5 + (n % 6) * 1.1,
     delay: -((n * 0.9) % 10),
-    opacity: 0.35 + (n % 4) * 0.12,
+    opacity: 0.45 + (n % 4) * 0.12,
     drift: (n % 2 === 0 ? 1 : -1) * (4 + (n % 4) * 2),
   };
 });
