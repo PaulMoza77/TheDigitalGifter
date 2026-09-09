@@ -676,7 +676,7 @@ export default function ChristmasCardsPage() {
       <div className="ccm-wrap">
         <div className="ccm-crumb">
           <Link to="/christmas">{t("breadcrumb.christmas")}</Link>
-          <span Aria-hidden="true">/</span>
+          <span aria-hidden="true">/</span>
           <span>{t("breadcrumb.cards")}</span>
           <div className="ccm-lang" role="group" aria-label="Language">
             {(["en", "ro"] as LocaleCode[]).map((code) => (
