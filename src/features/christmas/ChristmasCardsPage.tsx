@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { CHRISTMAS_CARDS_SEO, christmasPageUrl } from "./seo/christmasPageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
@@ -309,9 +310,10 @@ export default function ChristmasCardsPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-10 text-slate-900">
       <PageHead
-        title="Personalized Christmas Cards"
-        description="Turn your photo and Christmas message into a card worth sending. Free digital Christmas cards — square, story, and landscape."
-        url="https://www.thedigitalgifter.com/christmas/cards"
+        title={CHRISTMAS_CARDS_SEO.title}
+        description={CHRISTMAS_CARDS_SEO.description}
+        url={christmasPageUrl(CHRISTMAS_CARDS_SEO.path)}
+        indexable
       />
       <p className="text-sm text-slate-500">
         <Link to="/christmas" className="underline-offset-2 hover:underline">

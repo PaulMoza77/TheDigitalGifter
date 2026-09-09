@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { CHRISTMAS_ADVENT_SEO, christmasPageUrl } from "./seo/christmasPageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
@@ -182,8 +183,10 @@ export default function ChristmasAdventPage() {
       }}
     >
       <PageHead
-        title="Christmas Advent Calendar"
-        description="Open a daily Christmas door from December 1. Sign in to claim rewards when the season is live."
+        title={CHRISTMAS_ADVENT_SEO.title}
+        description={CHRISTMAS_ADVENT_SEO.description}
+        url={christmasPageUrl(CHRISTMAS_ADVENT_SEO.path)}
+        indexable
       />
 
       <div className="mx-auto max-w-lg px-4 pb-20 pt-8">

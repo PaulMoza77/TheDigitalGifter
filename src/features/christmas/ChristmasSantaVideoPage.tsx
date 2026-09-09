@@ -597,6 +597,7 @@ export default function ChristmasSantaVideoPage() {
         exactTitle
         url={SANTA_COPY.seo.canonical}
         image="https://www.thedigitalgifter.com/images/occasions/christmas.png"
+        indexable
       />
 
       <div className="santa-video-page relative min-h-screen overflow-x-hidden text-[#F5EDE0]">

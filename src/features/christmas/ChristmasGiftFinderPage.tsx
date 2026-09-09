@@ -4,6 +4,7 @@ import { parseGiftRecipient } from "./landing/handoff";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Heart, RefreshCw, Search, Sparkles } from "lucide-react";
 import { PageHead } from "@/components/PageHead";
+import { CHRISTMAS_GIFT_FINDER_SEO, christmasPageUrl } from "./seo/christmasPageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { supabase } from "@/lib/supabase";
@@ -277,8 +278,10 @@ export default function ChristmasGiftFinderPage() {
   return (
     <div className={`gf-page ${fontsReady ? "gf-page--fonts" : ""}`}>
       <PageHead
-        title="Christmas Gift Finder"
-        description="Find a Christmas gift they'll actually love — guided ideas for any recipient and budget."
+        title={CHRISTMAS_GIFT_FINDER_SEO.title}
+        description={CHRISTMAS_GIFT_FINDER_SEO.description}
+        url={christmasPageUrl(CHRISTMAS_GIFT_FINDER_SEO.path)}
+        indexable
       />
       <ChristmasSnowfall />
 

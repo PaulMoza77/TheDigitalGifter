@@ -19,6 +19,7 @@ export default function ChristmasPage() {
         image={seo.image}
         url={seo.url}
         exactTitle
+        indexable
       />
       <ChristmasLandingExperience />
     </>

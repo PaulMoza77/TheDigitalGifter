@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { christmasPageUrl } from "./seo/christmasPageHead";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
@@ -624,7 +625,9 @@ export default function ChristmasWishlistPage() {
         title={pageTitle}
         description={pageDesc}
         exactTitle={!isShare}
+        url={isShare ? undefined : christmasPageUrl("/christmas/wishlist")}
         noindex={isShare}
+        indexable={!isShare}
       />
       <ChristmasSnowfall />
       <div className="wl-glow wl-glow--ember" aria-hidden />

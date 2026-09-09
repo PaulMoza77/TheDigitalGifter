@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { CHRISTMAS_MESSAGES_SEO, christmasPageUrl } from "./seo/christmasPageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
@@ -167,9 +168,10 @@ export default function ChristmasMessagesPage() {
   return (
     <main className="mx-auto max-w-3xl overflow-x-hidden px-4 py-10 text-slate-900 sm:px-6">
       <PageHead
-        title="Christmas Message Generator"
-        description="Find the right Christmas words in seconds. Warm, funny, romantic, or professional messages in English and Romanian."
-        url="https://www.thedigitalgifter.com/christmas/messages"
+        title={CHRISTMAS_MESSAGES_SEO.title}
+        description={CHRISTMAS_MESSAGES_SEO.description}
+        url={christmasPageUrl(CHRISTMAS_MESSAGES_SEO.path)}
+        indexable
       />
       <p className="text-sm text-slate-500">
         <Link to="/christmas" className="underline-offset-2 hover:underline">
