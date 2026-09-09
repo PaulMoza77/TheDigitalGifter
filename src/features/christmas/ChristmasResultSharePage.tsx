@@ -63,14 +63,14 @@ export default function ChristmasResultSharePage() {
           exactTitle
           noindex
         />
-        <main className="mx-auto min-h-[60vh] max-w-lg px-4 py-16 text-center text-slate-900">
+        <main className="mx-auto min-h-[60vh] max-w-lg px-4 py-16 text-center text-white">
           <h1 className="text-2xl font-semibold">This share is unavailable</h1>
-          <p className="mt-3 text-sm text-slate-600">
+          <p className="mt-3 text-sm text-white/70">
             The result is private by default. Ask the sender for a fresh link, or create your own.
           </p>
           <Link
             to="/christmas/photo-generator"
-            className="mt-6 inline-block rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
+            className="mt-6 inline-block rounded-md bg-white px-4 py-3 text-sm font-medium text-black"
           >
             Create your Christmas portrait
           </Link>
@@ -87,16 +87,16 @@ export default function ChristmasResultSharePage() {
         exactTitle
         noindex
       />
-      <main className="mx-auto min-h-[60vh] max-w-lg px-4 py-10 text-slate-900">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+      <main className="mx-auto min-h-[60vh] max-w-lg px-4 py-10 text-white">
+        <p className="text-xs font-medium uppercase tracking-wide text-white/50">
           The Digital Gifter · Shared result
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">A Christmas result</h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-white/70">
           Private share · links can be revoked anytime by the creator.
         </p>
         {mode === "loading" ? (
-          <p className="mt-8 text-sm text-slate-500">Loading…</p>
+          <p className="mt-8 text-sm text-white/50">Loading…</p>
         ) : result?.resultUrl ? (
           <section className="mt-8 space-y-4">
             {isVideo ? (
@@ -114,11 +114,11 @@ export default function ChristmasResultSharePage() {
               />
             )}
             {result.style_key ? (
-              <p className="text-sm text-slate-600">Style: {result.style_key.replace(/_/g, " ")}</p>
+              <p className="text-sm text-white/70">Style: {result.style_key.replace(/_/g, " ")}</p>
             ) : null}
             <Link
               to={cta.to}
-              className="block rounded-md bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white"
+              className="block rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-black"
             >
               {cta.label}
             </Link>
