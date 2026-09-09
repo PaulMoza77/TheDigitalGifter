@@ -74,6 +74,18 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "card_create_another",
   "christmas_hub_cta",
   "christmas_hub_interact",
+  // Photo generator hub (SEO/money page) — privacy-safe; never include image bytes
+  "christmas_photo_generator_page_view",
+  "christmas_photo_upload_started",
+  "christmas_photo_upload_completed",
+  "christmas_photo_subject_selected",
+  "christmas_photo_style_selected",
+  "christmas_photo_generation_started",
+  "christmas_photo_generation_completed",
+  "christmas_photo_style_retry",
+  "christmas_photo_downloaded",
+  "christmas_photo_shared",
+  "christmas_photo_card_cross_sell",
 ] as const;
 
 export type ChristmasFunnelEventName = (typeof CHRISTMAS_FUNNEL_ALLOWED_EVENTS)[number];

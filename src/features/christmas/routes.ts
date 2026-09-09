@@ -1,6 +1,7 @@
 /**
  * Route shells for unfinished Christmas suite surfaces.
- * Portrait verticals (photo/family/couples/pets/dogs/cats) use ChristmasPortraitFunnelPage.
+ * Portrait verticals (family / couples / pets / dogs / cats) use ChristmasPortraitFunnelPage.
+ * Hub `/christmas/photo-generator` uses ChristmasPhotoGeneratorExperience.
  * No fake payment CTAs or AI results on shells.
  */
 
