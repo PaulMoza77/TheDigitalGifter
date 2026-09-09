@@ -770,7 +770,13 @@
 
   .advent-room__bg img {
     object-position: center 35%;
-    filter: saturate(1.05) brightness(0.88);
+    filter: saturate(1.08) brightness(0.95);
+  }
+
+  .advent-room__vignette {
+    background:
+      radial-gradient(ellipse 55% 48% at 50% 45%, rgba(8, 3, 5, 0.08) 0%, rgba(8, 3, 5, 0.42) 62%, rgba(5, 2, 3, 0.72) 100%),
+      linear-gradient(180deg, rgba(10, 5, 8, 0.4) 0%, transparent 18%, transparent 70%, rgba(8, 4, 6, 0.82) 100%);
   }
 
   .advent-grid {
