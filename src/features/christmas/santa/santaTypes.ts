@@ -228,21 +228,21 @@ export function santaProgressCopy(status: SantaJobStatus): string {
   switch (status) {
     case "queued":
     case "draft":
-      return "Payment confirmed";
+      return "Santa is reading the letter…";
     case "script_ready":
     case "audio_queued":
-      return "Preparing Santa’s message";
+      return "The elves are preparing the message…";
     case "audio_ready":
     case "video_queued":
-      return "Recording Santa’s voice";
+      return "Adding a little Christmas magic…";
     case "video_processing":
     case "rendering":
-      return "Creating your video";
+      return "The video is almost ready…";
     case "completed":
-      return "Finishing the magic";
+      return "Finishing the magic…";
     case "failed":
       return "Something went wrong — your payment is safe";
     default:
-      return "Working on your Santa video";
+      return "Working on your Santa video…";
   }
 }

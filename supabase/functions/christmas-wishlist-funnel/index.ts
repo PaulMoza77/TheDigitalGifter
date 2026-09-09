@@ -32,7 +32,11 @@ Deno.serve(async (req) => {
       const ownerToken = generateOpaqueToken();
       const ownerHash = await sha256Hex(ownerToken);
       const shareId = generateShareId();
-      const row = {
+      const audience = asString(body.audience) || "me";
+      if (!["me", "child", "family", "someone_else"].includes(audience)) {
+        return jsonResponse({ error: "invalid_audience" }, 400);
+      }
+      const baseRow = {
         user_id: user?.id || null,
         owner_token_hash: user?.id ? null : ownerHash,
         share_id: shareId,
@@ -43,8 +47,24 @@ Deno.serve(async (req) => {
         currency: sanitizeText(body.currency, 8) || null,
         show_budgets_public: body.show_budgets_public === false ? false : true,
       };
-      const { data, error } = await service.from("christmas_wishlists").insert(row).select("id,share_id").single();
-      if (error) throw error;
+      let data: { id: string; share_id: string } | null = null;
+      {
+        const first = await service
+          .from("christmas_wishlists")
+          .insert({ ...baseRow, audience })
+          .select("id,share_id")
+          .single();
+        if (first.error && /audience|column/i.test(String(first.error.message || ""))) {
+          const fallback = await service.from("christmas_wishlists").insert(baseRow).select("id,share_id").single();
+          if (fallback.error) throw fallback.error;
+          data = fallback.data;
+        } else if (first.error) {
+          throw first.error;
+        } else {
+          data = first.data;
+        }
+      }
+      if (!data) throw new Error("create_failed");
       return jsonResponse({
         ok: true,
         wishlist_id: data.id,
@@ -74,7 +94,11 @@ Deno.serve(async (req) => {
           locale: list.locale,
           currency: list.currency,
           show_budgets_public: list.show_budgets_public,
-          items: items || [],
+          audience: list.audience || "me",
+          view_count: list.view_count || 0,
+          share_count: list.share_count || 0,
+          // Anti-spoiler: strip reservation identity + status from owner DTO
+          items: (items || []).map((it: Record<string, unknown>) => publicOwnerItem(it)),
         },
       });
     }
@@ -86,6 +110,13 @@ Deno.serve(async (req) => {
       if (body.title != null) patch.title = sanitizeText(body.title, 80) || "My Christmas Wishlist";
       if (body.description != null) patch.description = sanitizeText(body.description, 500);
       if (body.show_budgets_public != null) patch.show_budgets_public = Boolean(body.show_budgets_public);
+      if (body.audience != null) {
+        const audience = asString(body.audience);
+        if (!["me", "child", "family", "someone_else"].includes(audience)) {
+          return jsonResponse({ error: "invalid_audience" }, 400);
+        }
+        patch.audience = audience;
+      }
       const { error } = await service.from("christmas_wishlists").update(patch).eq("id", list.id);
       if (error) throw error;
       return jsonResponse({ ok: true });
@@ -125,12 +156,27 @@ Deno.serve(async (req) => {
           last_viewed_at: new Date().toISOString(),
         })
         .eq("id", list.id);
-      const { data: items } = await service
+      const { data: items, error: itemsErr } = await service
         .from("christmas_wishlist_items")
-        .select("id,sort_order,title,note,external_url,priority,budget_amount,currency,source_type")
+        .select(
+          "id,sort_order,title,note,external_url,image_url,priority,budget_amount,currency,quantity,preference_size,preference_color,source_type,reservation_status",
+        )
         .eq("wishlist_id", list.id)
         .eq("status", "active")
         .order("sort_order", { ascending: true });
+      let sharedItems = items;
+      if (itemsErr && /image_url|quantity|preference_|column/i.test(String(itemsErr.message || ""))) {
+        const legacy = await service
+          .from("christmas_wishlist_items")
+          .select("id,sort_order,title,note,external_url,priority,budget_amount,currency,source_type,reservation_status")
+          .eq("wishlist_id", list.id)
+          .eq("status", "active")
+          .order("sort_order", { ascending: true });
+        if (legacy.error) throw legacy.error;
+        sharedItems = legacy.data;
+      } else if (itemsErr) {
+        throw itemsErr;
+      }
       const showBudgets = Boolean(list.show_budgets_public);
       return jsonResponse({
         ok: true,
@@ -139,16 +185,32 @@ Deno.serve(async (req) => {
           title: list.title,
           description: list.description,
           locale: list.locale,
-          items: (items || []).map((it: Record<string, unknown>) => ({
+          items: (sharedItems || []).map((it: Record<string, unknown>) => ({
             id: it.id,
             sort_order: it.sort_order,
             title: it.title,
             note: it.note || "",
             external_url: it.external_url || null,
+            image_url: it.image_url || null,
             priority: it.priority,
             budget_amount: showBudgets ? it.budget_amount : null,
             currency: showBudgets ? it.currency : null,
-            source_type: it.source_type === "gift_finder" ? "gift_finder" : it.source_type === "tdg_product" ? "tdg_product" : "manual",
+            quantity: it.quantity == null ? 1 : Number(it.quantity),
+            preference_size: it.preference_size || "",
+            preference_color: it.preference_color || "",
+            source_type:
+              it.source_type === "gift_finder"
+                ? "gift_finder"
+                : it.source_type === "tdg_product"
+                ? "tdg_product"
+                : "manual",
+            // Status only — never token / identity
+            reservation_status:
+              it.reservation_status === "purchased"
+                ? "purchased"
+                : it.reservation_status === "reserved"
+                ? "reserved"
+                : "none",
           })),
         },
       });
@@ -190,29 +252,258 @@ Deno.serve(async (req) => {
         .order("sort_order", { ascending: false })
         .limit(1);
       const nextSort = last?.[0] ? Number(last[0].sort_order) + 1 : 0;
-      const { data, error } = await service
-        .from("christmas_wishlist_items")
-        .insert({
-          wishlist_id: list.id,
-          sort_order: nextSort,
-          title,
-          note: sanitizeText(body.note, 500),
-          external_url: url,
-          priority,
-          budget_amount: body.budget_amount == null || body.budget_amount === ""
-            ? null
-            : Number(body.budget_amount),
-          currency: sanitizeText(body.currency, 8) || list.currency,
-          source_type: sourceType,
-          source_ref: sourceRef,
-        })
-        .select("id,sort_order")
-        .single();
-      if (error) {
-        if (error.code === "23505") return jsonResponse({ ok: true, already: true });
-        throw error;
+      const imageUrl = sanitizeExternalUrl(body.image_url);
+      if (body.image_url != null && asString(body.image_url) && !imageUrl) {
+        return jsonResponse({ error: "invalid_image_url" }, 400);
+      }
+      let quantity = body.quantity == null || body.quantity === "" ? 1 : Number(body.quantity);
+      if (!Number.isFinite(quantity) || quantity < 1 || quantity > 20) {
+        return jsonResponse({ error: "invalid_quantity" }, 400);
+      }
+      quantity = Math.floor(quantity);
+      const fullRow = {
+        wishlist_id: list.id,
+        sort_order: nextSort,
+        title,
+        note: sanitizeText(body.note, 500),
+        external_url: url,
+        image_url: imageUrl,
+        priority,
+        budget_amount: body.budget_amount == null || body.budget_amount === ""
+          ? null
+          : Number(body.budget_amount),
+        currency: sanitizeText(body.currency, 8) || list.currency,
+        quantity,
+        preference_size: sanitizeText(body.preference_size, 40),
+        preference_color: sanitizeText(body.preference_color, 40),
+        source_type: sourceType,
+        source_ref: sourceRef,
+      };
+      let data: { id: string; sort_order: number } | null = null;
+      {
+        const first = await service.from("christmas_wishlist_items").insert(fullRow).select("id,sort_order").single();
+        if (first.error?.code === "23505") return jsonResponse({ ok: true, already: true });
+        if (
+          first.error &&
+          /image_url|quantity|preference_|really_want|column|check/i.test(String(first.error.message || ""))
+        ) {
+          const legacyPriority = priority === "really_want" ? "would_love" : priority;
+          const legacy = await service
+            .from("christmas_wishlist_items")
+            .insert({
+              wishlist_id: list.id,
+              sort_order: nextSort,
+              title,
+              note: sanitizeText(body.note, 500),
+              external_url: url,
+              priority: legacyPriority,
+              budget_amount: body.budget_amount == null || body.budget_amount === ""
+                ? null
+                : Number(body.budget_amount),
+              currency: sanitizeText(body.currency, 8) || list.currency,
+              source_type: sourceType,
+              source_ref: sourceRef,
+            })
+            .select("id,sort_order")
+            .single();
+          if (legacy.error) {
+            if (legacy.error.code === "23505") return jsonResponse({ ok: true, already: true });
+            throw legacy.error;
+          }
+          data = legacy.data;
+        } else if (first.error) {
+          throw first.error;
+        } else {
+          data = first.data;
+        }
       }
       return jsonResponse({ ok: true, item: data });
+    }
+
+    if (action === "updateWishlistItem") {
+      const list = await loadOwnerWishlist(service, body, user?.id);
+      if (!list) return jsonResponse({ error: "forbidden" }, 403);
+      const itemId = asString(body.item_id);
+      if (!itemId) return jsonResponse({ error: "missing_item" }, 400);
+      const patch: Record<string, unknown> = {};
+      if (body.title != null) {
+        const title = sanitizeText(body.title, 120);
+        if (!title) return jsonResponse({ error: "title_required" }, 400);
+        patch.title = title;
+      }
+      if (body.note != null) patch.note = sanitizeText(body.note, 500);
+      if (body.external_url !== undefined) {
+        const url = sanitizeExternalUrl(body.external_url);
+        if (body.external_url != null && asString(body.external_url) && !url) {
+          return jsonResponse({ error: "invalid_url" }, 400);
+        }
+        patch.external_url = url;
+      }
+      if (body.image_url !== undefined) {
+        const imageUrl = sanitizeExternalUrl(body.image_url);
+        if (body.image_url != null && asString(body.image_url) && !imageUrl) {
+          return jsonResponse({ error: "invalid_image_url" }, 400);
+        }
+        patch.image_url = imageUrl;
+      }
+      if (body.priority != null) {
+        const priority = asString(body.priority);
+        if (!PRIORITY_KEYS.has(priority)) return jsonResponse({ error: "invalid_priority" }, 400);
+        patch.priority = priority;
+      }
+      if (body.budget_amount !== undefined) {
+        patch.budget_amount =
+          body.budget_amount == null || body.budget_amount === "" ? null : Number(body.budget_amount);
+      }
+      if (body.currency !== undefined) patch.currency = sanitizeText(body.currency, 8) || list.currency;
+      if (body.quantity !== undefined) {
+        const quantity = Number(body.quantity);
+        if (!Number.isFinite(quantity) || quantity < 1 || quantity > 20) {
+          return jsonResponse({ error: "invalid_quantity" }, 400);
+        }
+        patch.quantity = Math.floor(quantity);
+      }
+      if (body.preference_size !== undefined) patch.preference_size = sanitizeText(body.preference_size, 40);
+      if (body.preference_color !== undefined) patch.preference_color = sanitizeText(body.preference_color, 40);
+      if (Object.keys(patch).length === 0) return jsonResponse({ error: "empty_patch" }, 400);
+      const { error } = await service
+        .from("christmas_wishlist_items")
+        .update(patch)
+        .eq("id", itemId)
+        .eq("wishlist_id", list.id)
+        .eq("status", "active");
+      if (error) throw error;
+      return jsonResponse({ ok: true });
+    }
+
+    if (action === "reserveWishlistItem") {
+      const shareId = asString(body.share_id);
+      const itemId = asString(body.item_id);
+      if (shareId.length < 22 || !itemId) return jsonResponse({ error: "invalid_request" }, 400);
+      const { data: list } = await service
+        .from("christmas_wishlists")
+        .select("id,share_enabled,moderation_status")
+        .eq("share_id", shareId)
+        .maybeSingle();
+      if (!list || !list.share_enabled || list.moderation_status !== "active") {
+        return jsonResponse({ error: "unavailable" }, 404);
+      }
+      const reservationToken = generateOpaqueToken();
+      const reservationHash = await sha256Hex(reservationToken);
+      const now = new Date().toISOString();
+      const { data: updated, error } = await service
+        .from("christmas_wishlist_items")
+        .update({
+          reservation_status: "reserved",
+          reservation_token_hash: reservationHash,
+          reserved_at: now,
+          purchased_at: null,
+        })
+        .eq("id", itemId)
+        .eq("wishlist_id", list.id)
+        .eq("status", "active")
+        .eq("reservation_status", "none")
+        .select("id,reservation_status")
+        .maybeSingle();
+      if (error) throw error;
+      if (!updated) {
+        const { data: current } = await service
+          .from("christmas_wishlist_items")
+          .select("reservation_status")
+          .eq("id", itemId)
+          .eq("wishlist_id", list.id)
+          .maybeSingle();
+        return jsonResponse(
+          {
+            error: "already_reserved",
+            reservation_status: current?.reservation_status || "reserved",
+          },
+          409,
+        );
+      }
+      return jsonResponse({
+        ok: true,
+        item_id: updated.id,
+        reservation_status: "reserved",
+        reservation_token: reservationToken,
+      });
+    }
+
+    if (action === "markWishlistItemPurchased") {
+      const shareId = asString(body.share_id);
+      const itemId = asString(body.item_id);
+      const reservationToken = asString(body.reservation_token);
+      if (shareId.length < 22 || !itemId || reservationToken.length < 32) {
+        return jsonResponse({ error: "invalid_request" }, 400);
+      }
+      const { data: list } = await service
+        .from("christmas_wishlists")
+        .select("id,share_enabled,moderation_status")
+        .eq("share_id", shareId)
+        .maybeSingle();
+      if (!list || !list.share_enabled || list.moderation_status !== "active") {
+        return jsonResponse({ error: "unavailable" }, 404);
+      }
+      const hash = await sha256Hex(reservationToken);
+      const now = new Date().toISOString();
+      const { data: updated, error } = await service
+        .from("christmas_wishlist_items")
+        .update({
+          reservation_status: "purchased",
+          purchased_at: now,
+        })
+        .eq("id", itemId)
+        .eq("wishlist_id", list.id)
+        .eq("status", "active")
+        .eq("reservation_token_hash", hash)
+        .in("reservation_status", ["reserved", "purchased"])
+        .select("id,reservation_status")
+        .maybeSingle();
+      if (error) throw error;
+      if (!updated) return jsonResponse({ error: "forbidden" }, 403);
+      return jsonResponse({ ok: true, item_id: updated.id, reservation_status: "purchased" });
+    }
+
+    if (action === "releaseWishlistItemReservation") {
+      const shareId = asString(body.share_id);
+      const itemId = asString(body.item_id);
+      const reservationToken = asString(body.reservation_token);
+      if (shareId.length < 22 || !itemId || reservationToken.length < 32) {
+        return jsonResponse({ error: "invalid_request" }, 400);
+      }
+      const { data: list } = await service
+        .from("christmas_wishlists")
+        .select("id,share_enabled,moderation_status")
+        .eq("share_id", shareId)
+        .maybeSingle();
+      if (!list || !list.share_enabled || list.moderation_status !== "active") {
+        return jsonResponse({ error: "unavailable" }, 404);
+      }
+      const hash = await sha256Hex(reservationToken);
+      const { data: updated, error } = await service
+        .from("christmas_wishlist_items")
+        .update({
+          reservation_status: "none",
+          reservation_token_hash: null,
+          reserved_at: null,
+          purchased_at: null,
+        })
+        .eq("id", itemId)
+        .eq("wishlist_id", list.id)
+        .eq("status", "active")
+        .eq("reservation_token_hash", hash)
+        .select("id,reservation_status")
+        .maybeSingle();
+      if (error) throw error;
+      if (!updated) return jsonResponse({ error: "forbidden" }, 403);
+      return jsonResponse({ ok: true, item_id: updated.id, reservation_status: "none" });
+    }
+
+    if (action === "previewExternalUrl") {
+      const url = sanitizeExternalUrl(body.url);
+      if (!url) return jsonResponse({ error: "invalid_url", extracted: false, url: null }, 400);
+      const preview = await previewProductUrl(url);
+      return jsonResponse({ ok: true, ...preview });
     }
 
     if (action === "removeWishlistItem") {
@@ -638,6 +929,26 @@ function publicIdea(r: Record<string, unknown>) {
   };
 }
 
+/** Owner DTO — never leak reservation tokens or spoiler status. */
+function publicOwnerItem(it: Record<string, unknown>) {
+  return {
+    id: it.id,
+    sort_order: it.sort_order,
+    title: it.title,
+    note: it.note || "",
+    external_url: it.external_url || null,
+    image_url: it.image_url || null,
+    priority: it.priority,
+    budget_amount: it.budget_amount ?? null,
+    currency: it.currency || null,
+    quantity: it.quantity == null ? 1 : Number(it.quantity),
+    preference_size: it.preference_size || "",
+    preference_color: it.preference_color || "",
+    source_type: it.source_type || "manual",
+    source_ref: it.source_ref || null,
+  };
+}
+
 function sanitizeExternalUrl(value: unknown): string | null {
   const raw = asString(value);
   if (!raw) return null;
@@ -648,6 +959,120 @@ function sanitizeExternalUrl(value: unknown): string | null {
     return u.toString().slice(0, 500);
   } catch {
     return null;
+  }
+}
+
+function isPrivateHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local")) return true;
+  if (host === "metadata.google.internal") return true;
+  // IPv4 literal
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    const parts = host.split(".").map((x) => Number(x));
+    if (parts[0] === 10) return true;
+    if (parts[0] === 127) return true;
+    if (parts[0] === 0) return true;
+    if (parts[0] === 169 && parts[1] === 254) return true;
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+    if (parts[0] === 192 && parts[1] === 168) return true;
+  }
+  // IPv6 / bare
+  if (host.includes(":")) return true;
+  return false;
+}
+
+function extractMeta(html: string, property: string): string | null {
+  const patterns = [
+    new RegExp(
+      `<meta[^>]+(?:property|name)=["']${property}["'][^>]+content=["']([^"']+)["']`,
+      "i",
+    ),
+    new RegExp(
+      `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${property}["']`,
+      "i",
+    ),
+  ];
+  for (const re of patterns) {
+    const m = html.match(re);
+    if (m?.[1]) return decodeHtml(m[1].trim());
+  }
+  return null;
+}
+
+function decodeHtml(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+async function previewProductUrl(url: string): Promise<{
+  url: string;
+  title: string | null;
+  image_url: string | null;
+  retailer: string | null;
+  extracted: boolean;
+  error?: string;
+}> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { url, title: null, image_url: null, retailer: null, extracted: false, error: "invalid_url" };
+  }
+  if (isPrivateHostname(parsed.hostname)) {
+    return { url, title: null, image_url: null, retailer: null, extracted: false, error: "blocked_host" };
+  }
+  const retailer = parsed.hostname.replace(/^www\./i, "");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4500);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "TheDigitalGifterWishlistBot/1.0 (+https://www.thedigitalgifter.com)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+    });
+    if (!res.ok) {
+      return { url, title: null, image_url: null, retailer, extracted: false, error: `http_${res.status}` };
+    }
+    const ctype = res.headers.get("content-type") || "";
+    if (!/text\/html|application\/xhtml/i.test(ctype) && ctype && !ctype.includes("text/")) {
+      return { url, title: null, image_url: null, retailer, extracted: false, error: "unsupported_type" };
+    }
+    const buf = await res.arrayBuffer();
+    const slice = buf.byteLength > 350_000 ? buf.slice(0, 350_000) : buf;
+    const html = new TextDecoder("utf-8", { fatal: false }).decode(slice);
+    const ogTitle = extractMeta(html, "og:title") || extractMeta(html, "twitter:title");
+    const titleTag = html.match(/<title[^>]*>([^<]{1,200})<\/title>/i)?.[1];
+    const title = sanitizeText(ogTitle || decodeHtml(String(titleTag || "").trim()), 120) || null;
+    const ogImage = extractMeta(html, "og:image") || extractMeta(html, "twitter:image");
+    let imageUrl: string | null = null;
+    if (ogImage) {
+      try {
+        imageUrl = sanitizeExternalUrl(new URL(ogImage, url).toString());
+      } catch {
+        imageUrl = null;
+      }
+    }
+    const extracted = Boolean(title || imageUrl);
+    return {
+      url,
+      title,
+      image_url: imageUrl,
+      retailer,
+      extracted,
+      error: extracted ? undefined : "no_metadata",
+    };
+  } catch {
+    return { url, title: null, image_url: null, retailer, extracted: false, error: "fetch_failed" };
+  } finally {
+    clearTimeout(timer);
   }
 }
 

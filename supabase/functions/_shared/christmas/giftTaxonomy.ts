@@ -143,7 +143,8 @@ export const REFINEMENT_OPTIONS: Taxon[] = [
 ];
 
 export const WISHLIST_PRIORITIES: Taxon[] = [
-  { key: "would_love", labelEn: "Would love", labelRo: "Mi-ar plăcea mult" },
+  { key: "really_want", labelEn: "Really want this", labelRo: "Chiar îmi doresc" },
+  { key: "would_love", labelEn: "Would love this", labelRo: "Mi-ar plăcea mult" },
   { key: "nice_to_have", labelEn: "Nice to have", labelRo: "Ar fi drăguț" },
   { key: "surprise_me", labelEn: "Surprise me", labelRo: "Surprinde-mă" },
 ];

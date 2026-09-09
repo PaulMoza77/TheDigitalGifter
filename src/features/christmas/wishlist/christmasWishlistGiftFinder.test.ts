@@ -101,6 +101,11 @@ describe("wishlist / gift finder wiring", () => {
       "wishlist_share",
       "shared_wishlist_view",
       "gift_finder_page_view",
+      "wishlist_item_reserved",
+      "wishlist_item_purchased",
+      "wishlist_first_wish_added",
+      "wishlist_create_from_shared_clicked",
+      "wishlist_gift_finder_clicked",
       "gift_finder_started",
       "gift_finder_recipient_selected",
       "gift_finder_completed",
@@ -125,5 +130,46 @@ describe("wishlist / gift finder wiring", () => {
     expect(readSrc("src/features/christmas/giftFinder/copy.ts")).toContain("Find Their Gift");
     expect(readSrc("src/features/christmas/giftFinder/seo.ts")).toContain("FAQPage");
     expect(readSrc("src/features/christmas/wishlist/taxonomy.ts")).toContain("SEO_TAXONOMY_LINKS");
+  });
+
+  it("activates reservation actions and URL preview with SSRF guards", () => {
+    const fn = readSrc("supabase/functions/christmas-wishlist-funnel/index.ts");
+    expect(fn).toContain("reserveWishlistItem");
+    expect(fn).toContain("markWishlistItemPurchased");
+    expect(fn).toContain("releaseWishlistItemReservation");
+    expect(fn).toContain("previewExternalUrl");
+    expect(fn).toContain("isPrivateHostname");
+    expect(fn).toContain("publicOwnerItem");
+    expect(fn).toContain("reservation_status");
+    expect(fn).toContain('eq("reservation_status", "none")');
+    expect(fn).toContain("legacyPriority");
+  });
+
+  it("ships wishlist v2 migration for priorities media and audience", () => {
+    const sql = readSrc("supabase/migrations/20260909140000_christmas_wishlist_v2_reservations.sql");
+    expect(sql).toContain("really_want");
+    expect(sql).toContain("image_url");
+    expect(sql).toContain("audience");
+    expect(sql).toContain("reservation_token_hash");
+  });
+
+  it("rebuilds wishlist page with letter UX viral loop and SEO", () => {
+    const page = readSrc("src/features/christmas/ChristmasWishlistPage.tsx");
+    const copyFile = readSrc("src/features/christmas/wishlist/copy.ts");
+    expect(copyFile).toContain("Create Mine Free");
+    expect(copyFile).toContain("I’m getting this");
+    expect(copyFile).toContain("Make a Christmas Wishlist Everyone Can Actually Use");
+    expect(page).toContain("copy.viralCta");
+    expect(page).toContain("copy.heroH1");
+    expect(page).toContain("wishlist_create_from_shared_clicked");
+    expect(page).toContain("noindex");
+    expect(page).toContain("/christmas/gift-finder");
+    expect(page).toContain("WISHLIST_FAQ_EN");
+    expect(page).toContain("reserveWishlistItem");
+  });
+
+  it("share pages use noindex,follow", () => {
+    const head = readSrc("src/components/PageHead.tsx");
+    expect(head).toContain("noindex,follow");
   });
 });
