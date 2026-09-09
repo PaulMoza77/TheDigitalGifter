@@ -5,7 +5,7 @@ import {
   CHRISTMAS_TREE_CREATOR_SEO,
   CHRISTMAS_TREE_SHARE_SEO,
   christmasPageUrl,
-} from "./seo/christmasPageHead";
+} from "./seo/christmasPageHeadCopy";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";

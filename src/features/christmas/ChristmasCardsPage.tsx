@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
-import { CHRISTMAS_CARDS_SEO, christmasPageUrl } from "./seo/christmasPageHead";
+import { CHRISTMAS_CARDS_SEO, christmasPageUrl } from "./seo/christmasPageHeadCopy";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";

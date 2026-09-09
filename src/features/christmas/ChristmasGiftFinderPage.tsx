@@ -4,7 +4,7 @@ import { parseGiftRecipient } from "./landing/handoff";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Heart, RefreshCw, Search, Sparkles } from "lucide-react";
 import { PageHead } from "@/components/PageHead";
-import { CHRISTMAS_GIFT_FINDER_SEO, christmasPageUrl } from "./seo/christmasPageHead";
+import { CHRISTMAS_GIFT_FINDER_SEO, christmasPageUrl } from "./seo/christmasPageHeadCopy";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { supabase } from "@/lib/supabase";

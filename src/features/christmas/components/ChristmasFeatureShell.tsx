@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
-import { christmasPageUrl } from "../seo/christmasPageHead";
+import { christmasPageUrl } from "../seo/christmasPageHeadCopy";
 import type { ChristmasRouteShellDef } from "../routes";
 import { shellExposesCheckout } from "../routes";
 
