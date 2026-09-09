@@ -4,9 +4,9 @@ import { PageHead } from "@/components/PageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
-import { trackChristmasEvent, getChristmasFunnelSessionId } from "../analytics";
-import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "../catalog";
-import { startChristmasCheckout } from "../photoApi";
+import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
+import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
+import { startChristmasCheckout } from "./photoApi";
 import {
   SANTA_CONSENT_LABEL,
   SANTA_CONSENT_VERSION,
@@ -19,8 +19,8 @@ import {
   validateSantaPersonalization,
   type SantaJobStatus,
   type SantaPersonalization,
-} from "./santaTypes";
-import { SANTA_COPY, progressLabel, type SantaRecipientType } from "./santaCopy";
+} from "./santa/santaTypes";
+import { SANTA_COPY, progressLabel, type SantaRecipientType } from "./santa/santaCopy";
 import {
   emptySantaDraft,
   readSantaDraft,
@@ -28,13 +28,13 @@ import {
   writeSantaDraft,
   type SantaDraft,
   type SantaUiStep,
-} from "./santaDraft";
-import { resolveIncomingSantaName } from "./santaHandoff";
-import { buildSantaMessagePreview, santaMentionChecklist } from "./santaPreview";
-import { SANTA_DEMO_EXAMPLES } from "./santaExamples";
-import { SantaWorkshopScene } from "./SantaWorkshopScene";
-import { SantaDemoPlayer } from "./SantaDemoPlayer";
-import { SantaLandingSections } from "./SantaLandingSections";
+} from "./santa/santaDraft";
+import { resolveIncomingSantaName } from "./santa/santaHandoff";
+import { buildSantaMessagePreview, santaMentionChecklist } from "./santa/santaPreview";
+import { SANTA_DEMO_EXAMPLES } from "./santa/santaExamples";
+import { SantaWorkshopScene } from "./santa/SantaWorkshopScene";
+import { SantaDemoPlayer } from "./santa/SantaDemoPlayer";
+import { SantaLandingSections } from "./santa/SantaLandingSections";
 
 const FUNNEL_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-santa-funnel`;
 
