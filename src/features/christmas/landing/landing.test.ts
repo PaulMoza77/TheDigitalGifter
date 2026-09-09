@@ -82,6 +82,7 @@ describe("christmas landing wiring", () => {
     expect(experience).toContain("SantaScene");
     expect(experience).toContain("GiftTreeLandingScene");
     expect(experience).not.toContain("GiftFinderScene");
+    expect(experience).not.toContain("WorldTransition");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("santa-alpha.webm");
     expect(experience).toContain("/generator?occasion=christmas");
     expect(readSrc("src/features/christmas/ChristmasSantaVideoPage.tsx")).toContain("consumeSantaNameHandoff");

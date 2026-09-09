@@ -313,12 +313,12 @@
 }
 
 .xmas-gift-tree-landing {
-  padding-block: clamp(3.2rem, 7vw, 5.5rem);
+  padding-block: clamp(1.8rem, 4vw, 3rem);
 }
 
 .xmas-gift-tree-landing__intro {
   max-width: 40rem;
-  margin: 0 auto 1.6rem;
+  margin: 0 auto 1.1rem;
   padding-inline: 1.25rem;
   text-align: center;
 }
@@ -333,9 +333,15 @@
   padding-inline: 1.1rem;
 }
 
+.xmas-scene {
+  position: relative;
+  z-index: 1;
+  padding: clamp(2.2rem, 5vw, 3.6rem) 1.25rem;
+}
+
 .xmas-scene__inner {
   display: grid;
-  gap: clamp(1.6rem, 4vw, 3.4rem);
+  gap: clamp(1.2rem, 3vw, 2.4rem);
   max-width: 1120px;
   margin: 0 auto;
   align-items: center;
@@ -362,7 +368,7 @@
 
 .xmas-transition {
   text-align: center;
-  padding-block: clamp(3.5rem, 8vw, 6.5rem);
+  padding-block: clamp(1.8rem, 4vw, 3rem);
 }
 
 .xmas-transition .xmas-copy {

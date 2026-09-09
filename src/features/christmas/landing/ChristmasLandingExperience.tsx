@@ -29,7 +29,6 @@ import { PortraitScene } from "./scenes/PortraitScene";
 import { SantaScene } from "./scenes/SantaScene";
 import { TreeScene } from "./scenes/TreeScene";
 import { WishlistScene } from "./scenes/WishlistScene";
-import { WorldTransition } from "./scenes/WorldTransition";
 import { christmasLandingJsonLd, upsertJsonLd } from "./seo";
 
 const LOCALE = CHRISTMAS_LANDING_DEFAULT_LOCALE;
@@ -75,18 +74,17 @@ export function ChristmasLandingExperience() {
 
   return (
     <article className="xmas-landing" dir={landingDir(LOCALE)} lang={LOCALE}>
-      <a className="xmas-skip" href="#christmas-world">
-        Skip to Christmas world
+      <a className="xmas-skip" href="#gift-tree">
+        Skip to Christmas gifts
       </a>
       <AmbientSnow />
       <ImmersiveHero
         locale={LOCALE}
         onPrimary={() => goCreate("hero")}
         onExplore={() => {
-          document.getElementById("christmas-world")?.scrollIntoView({ behavior: "smooth" });
+          document.getElementById("gift-tree")?.scrollIntoView({ behavior: "smooth" });
         }}
       />
-      <WorldTransition locale={LOCALE} />
       <GiftTreeLandingScene
         locale={LOCALE}
         onViewed={() => {
