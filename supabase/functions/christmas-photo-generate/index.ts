@@ -2,9 +2,14 @@ import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, isServiceRoleRequest, readJson } from "../_shared/supabase.ts";
 import { kontextProInput, replicateOutputUrl } from "../_shared/pet/replicate.ts";
 import {
+  alternateStylesForProduct,
   buildChristmasPortraitPrompt,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import {
+  extraCountFromPackageMetadata,
+  isPortraitAovPackageKey,
+} from "../_shared/christmas/upsells.ts";
 
 /**
  * Post-payment Christmas portrait generation (all verticals).
@@ -12,7 +17,7 @@ import {
  * Prompts come only from the server-owned registry.
  */
 
-type Body = { order_id?: string; prompt?: string; client_prompt?: string };
+type Body = { order_id?: string; upsell_id?: string; prompt?: string; client_prompt?: string };
 
 const SOURCE_BUCKET = "christmas-source";
 const RESULT_BUCKET = "christmas-generated";
@@ -73,6 +78,213 @@ async function createChristmasPrediction(input: {
   return current;
 }
 
+type ServiceClient = ReturnType<typeof getServiceClient>;
+
+async function fulfillPortraitUpsell(service: ServiceClient, upsellId: string) {
+  const { data: upsell, error } = await service
+    .from("christmas_order_upsells")
+    .select("*")
+    .eq("id", upsellId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!upsell) return jsonResponse({ error: "upsell not found" }, 404);
+  if (upsell.status !== "paid") {
+    return jsonResponse({ error: "payment_required", code: "payment_required" }, 402);
+  }
+  if (!isPortraitAovPackageKey(asString(upsell.upsell_key))) {
+    return jsonResponse({ error: "invalid_upsell_key", code: "not_v2_pack" }, 400);
+  }
+
+  const { data: parent, error: parentError } = await service
+    .from("christmas_orders")
+    .select("*")
+    .eq("id", upsell.parent_order_id)
+    .maybeSingle();
+  if (parentError) throw parentError;
+  if (!parent || parent.payment_status !== "paid") {
+    return jsonResponse({ error: "parent_not_paid", code: "parent_not_paid" }, 402);
+  }
+  if (!parent.source_path) {
+    return jsonResponse({ error: "missing_source_or_style" }, 400);
+  }
+
+  if (upsell.fulfillment_status === "completed") {
+    return jsonResponse({ ok: true, status: "already_completed", upsell_id: upsellId });
+  }
+
+  await service
+    .from("christmas_order_upsells")
+    .update({ fulfillment_status: "processing", last_error: null })
+    .eq("id", upsellId);
+
+  const meta = (upsell.metadata || {}) as Record<string, unknown>;
+  const extraCount = extraCountFromPackageMetadata(meta, upsell.upsell_key);
+  const kind = asString(upsell.upsell_key);
+
+  if (kind === "video") {
+    await service.from("christmas_order_assets").insert({
+      order_id: parent.id,
+      asset_kind: "video",
+      sort_order: 50,
+      metadata: {
+        upsell_id: upsellId,
+        fulfill_kind: "video",
+        status: "queued",
+        note: "Portrait video queued after paid AOV. Provider is founder-gated; no V2 pack path.",
+      },
+    });
+    await service
+      .from("christmas_order_upsells")
+      .update({
+        fulfillment_status: "queued",
+        last_error: null,
+        metadata: {
+          ...meta,
+          video_status: "queued",
+          video_provider: "unset",
+        },
+      })
+      .eq("id", upsellId);
+    return jsonResponse({
+      ok: true,
+      status: "queued",
+      upsell_id: upsellId,
+      fulfill_kind: "video",
+    });
+  }
+
+  const requestedStyles = Array.isArray(meta.extra_style_keys)
+    ? meta.extra_style_keys.map((k) => asString(k)).filter(Boolean)
+    : [];
+  const styleKeys =
+    kind === "extra_images"
+      ? Array.from({ length: extraCount }, () => asString(parent.style_key))
+      : kind === "extra_styles"
+        ? (requestedStyles.length
+            ? requestedStyles
+            : alternateStylesForProduct(asString(parent.product_key), asString(parent.style_key), extraCount)
+                .map((s) => s.styleKey)
+          ).slice(0, extraCount)
+        : [];
+
+  if (!styleKeys.length || styleKeys.some((k) => !k)) {
+    await service
+      .from("christmas_order_upsells")
+      .update({ fulfillment_status: "failed", last_error: "missing_style" })
+      .eq("id", upsellId);
+    return jsonResponse({ error: "missing_style", code: "invalid_style" }, 400);
+  }
+
+  if (!generationEnabled() && !generationMock()) {
+    await service
+      .from("christmas_order_upsells")
+      .update({ fulfillment_status: "failed", last_error: "generation_disabled" })
+      .eq("id", upsellId);
+    return jsonResponse({ ok: false, code: "generation_disabled" }, 503);
+  }
+
+  const sourceBucket = asString(parent.source_bucket) || SOURCE_BUCKET;
+  const { data: signed } = await service.storage
+    .from(sourceBucket)
+    .createSignedUrl(parent.source_path, 60 * 15);
+  if (!signed?.signedUrl) throw new Error("Could not sign source photo");
+
+  const model = asString(Deno.env.get("CHRISTMAS_IMAGE_MODEL")) || DEFAULT_MODEL;
+  const createdIds: string[] = [];
+
+  try {
+    for (let i = 0; i < styleKeys.length; i += 1) {
+      const styleKey = styleKeys[i];
+      const built = buildChristmasPortraitPrompt({
+        productKey: asString(parent.product_key),
+        styleKey,
+        species: asString(parent.species) || null,
+        clientPrompt: null,
+      });
+      if (!built.ok) throw new Error(built.code);
+
+      let resultPath = `results/${parent.id}_${upsellId}_${i}.jpg`;
+      if (generationMock()) {
+        const { data: blob, error: dlError } = await service.storage
+          .from(sourceBucket)
+          .download(parent.source_path);
+        if (dlError || !blob) throw dlError || new Error("mock download failed");
+        const { error: upError } = await service.storage.from(RESULT_BUCKET).upload(resultPath, blob, {
+          contentType: parent.source_content_type || "image/jpeg",
+          upsert: true,
+        });
+        if (upError) throw upError;
+      } else {
+        const prediction = await createChristmasPrediction({
+          prompt: built.prompt,
+          imageUrl: signed.signedUrl,
+          model,
+        });
+        if (String(prediction.status) !== "succeeded") {
+          throw new Error(asString(prediction.error) || `prediction_${prediction.status}`);
+        }
+        const remoteUrl = replicateOutputUrl(prediction.output);
+        if (!remoteUrl) throw new Error("missing_output_url");
+        const download = await fetch(remoteUrl);
+        if (!download.ok) throw new Error("result_download_failed");
+        const bytes = new Uint8Array(await download.arrayBuffer());
+        const { error: upError } = await service.storage.from(RESULT_BUCKET).upload(resultPath, bytes, {
+          contentType: "image/jpeg",
+          upsert: true,
+        });
+        if (upError) throw upError;
+      }
+
+      const { data: asset, error: assetError } = await service
+        .from("christmas_order_assets")
+        .insert({
+          order_id: parent.id,
+          asset_kind: "image",
+          storage_bucket: RESULT_BUCKET,
+          storage_path: resultPath,
+          sort_order: 10 + i,
+          metadata: {
+            upsell_id: upsellId,
+            fulfill_kind: kind,
+            style_key: styleKey,
+            product_key: parent.product_key,
+            mock: generationMock(),
+          },
+        })
+        .select("id")
+        .single();
+      if (assetError) throw assetError;
+      createdIds.push(asString(asset.id));
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await service
+      .from("christmas_order_upsells")
+      .update({ fulfillment_status: "failed", last_error: message.slice(0, 280) })
+      .eq("id", upsellId);
+    return jsonResponse({ ok: false, error: message, code: "generation_failed" }, 502);
+  }
+
+  await service
+    .from("christmas_order_upsells")
+    .update({
+      fulfillment_status: "completed",
+      fulfilled_at: new Date().toISOString(),
+      last_error: null,
+      metadata: { ...meta, result_asset_ids: createdIds },
+    })
+    .eq("id", upsellId);
+
+  return jsonResponse({
+    ok: true,
+    status: "completed",
+    upsell_id: upsellId,
+    fulfill_kind: kind,
+    asset_ids: createdIds,
+    mock: generationMock(),
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -84,9 +296,14 @@ Deno.serve(async (req) => {
     void body.prompt;
     void body.client_prompt;
 
+    const service = getServiceClient();
+    const upsellId = asString(body.upsell_id);
+    if (upsellId) {
+      return await fulfillPortraitUpsell(service, upsellId);
+    }
+
     const orderId = asString(body.order_id);
     if (!orderId) return jsonResponse({ error: "order_id required" }, 400);
-    const service = getServiceClient();
 
     const { data: order, error } = await service
       .from("christmas_orders")

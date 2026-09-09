@@ -272,6 +272,17 @@ export function resolveProductStyle(
   return style;
 }
 
+export function alternateStylesForProduct(
+  productKey: string,
+  excludeStyleKey: string | null | undefined,
+  limit = 2,
+): ChristmasPromptStyle[] {
+  const exclude = String(excludeStyleKey || "").trim();
+  return stylesForProductKey(productKey)
+    .filter((style) => style.enabled && style.styleKey !== exclude)
+    .slice(0, Math.max(0, limit));
+}
+
 export function buildChristmasPortraitPrompt(input: {
   productKey: string;
   styleKey: string;

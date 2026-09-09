@@ -92,6 +92,18 @@ export async function startChristmasCheckout(body: Record<string, unknown>) {
   };
 }
 
+export type ChristmasUpsellOfferDto = {
+  packageKey: string;
+  packageName: string;
+  description: string;
+  features: string[];
+  currency: string;
+  amountCents: number | null;
+  purchasable: boolean;
+  extraCount: number;
+  purchased?: boolean;
+};
+
 export async function getChristmasOrderByToken(publicToken: string) {
   const res = await fetch(FUNNEL_URL, {
     method: "POST",
@@ -116,7 +128,35 @@ export async function getChristmasOrderByToken(publicToken: string) {
       portrait_type?: string | null;
       species?: string | null;
       source_route?: string | null;
+      upsells?: ChristmasUpsellOfferDto[];
     };
+  };
+}
+
+export async function startChristmasUpsellCheckout(body: Record<string, unknown>) {
+  const res = await fetch(CHECKOUT_URL, {
+    method: "POST",
+    headers: await anonHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const err = new Error(data.error || "Upsell checkout failed") as Error & { code?: string };
+    err.code = data.code;
+    throw err;
+  }
+  return data as {
+    ok: true;
+    upsellId: string;
+    parentOrderId: string;
+    publicToken: string;
+    sessionId: string;
+    clientSecret: string;
+    publishableKey: string;
+    amountCents: number;
+    currency: string;
+    packageKey: string;
+    uiMode: "custom";
   };
 }
 

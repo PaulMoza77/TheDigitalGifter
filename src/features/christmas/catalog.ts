@@ -52,6 +52,75 @@ export type ChristmasProductDef = {
   packages: ChristmasPackageDef[];
 };
 
+/** Unpublished AOV add-ons. Prices stay 0 until a founder launch task sets them. */
+export function portraitAovPackageSeeds(): ChristmasPackageDef[] {
+  return [
+    {
+      packageKey: "extra_images",
+      packageName: "Extra portraits",
+      description: "Two more portraits in the same Christmas style. Draft AOV offer — price unpublished.",
+      currency: "usd",
+      priceCents: 0,
+      compareAtCents: null,
+      active: true,
+      purchasable: false,
+      features: ["2 extra Christmas portraits", "Same style as your paid portrait"],
+      sortOrder: 20,
+      localeDefault: "en",
+      metadata: {
+        live_offer: false,
+        kind: "upsell",
+        upsell_key: "extra_images",
+        extra_count: 2,
+        fulfill_kind: "extra_images",
+        v2_pack: false,
+      },
+    },
+    {
+      packageKey: "extra_styles",
+      packageName: "Extra styles",
+      description: "Two more portraits in different Christmas styles. Draft AOV offer — price unpublished.",
+      currency: "usd",
+      priceCents: 0,
+      compareAtCents: null,
+      active: true,
+      purchasable: false,
+      features: ["2 extra style variants", "Server-owned styles only"],
+      sortOrder: 30,
+      localeDefault: "en",
+      metadata: {
+        live_offer: false,
+        kind: "upsell",
+        upsell_key: "extra_styles",
+        extra_count: 2,
+        fulfill_kind: "extra_styles",
+        v2_pack: false,
+      },
+    },
+    {
+      packageKey: "video",
+      packageName: "Portrait video",
+      description: "A short motion clip from your Christmas portrait. Draft AOV offer — price unpublished.",
+      currency: "usd",
+      priceCents: 0,
+      compareAtCents: null,
+      active: true,
+      purchasable: false,
+      features: ["1 short Christmas motion clip"],
+      sortOrder: 40,
+      localeDefault: "en",
+      metadata: {
+        live_offer: false,
+        kind: "upsell",
+        upsell_key: "video",
+        extra_count: 1,
+        fulfill_kind: "video",
+        v2_pack: false,
+      },
+    },
+  ];
+}
+
 /** Draft seed used by unit tests and offline fallback. Mirrors migration defaults. */
 export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
   {
@@ -95,6 +164,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         localeDefault: "en",
         metadata: { live_offer: false },
       },
+      ...portraitAovPackageSeeds(),
     ],
   },
   {
@@ -124,6 +194,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         localeDefault: "en",
         metadata: { live_offer: false },
       },
+      ...portraitAovPackageSeeds(),
     ],
   },
   {
@@ -153,6 +224,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         localeDefault: "en",
         metadata: { live_offer: false },
       },
+      ...portraitAovPackageSeeds(),
     ],
   },
   {
@@ -201,6 +273,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         localeDefault: "en",
         metadata: { live_offer: false },
       },
+      ...portraitAovPackageSeeds(),
     ],
   },
   {

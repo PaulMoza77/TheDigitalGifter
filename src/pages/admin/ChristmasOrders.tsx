@@ -151,6 +151,16 @@ export default function ChristmasOrdersPage() {
   const [selected, setSelected] = useState<ChristmasOrderRow | null>(null);
   const [santaJob, setSantaJob] = useState<SantaJobRow | null>(null);
   const [santaBusy, setSantaBusy] = useState(false);
+  const [selectedUpsells, setSelectedUpsells] = useState<
+    Array<{
+      id: string;
+      package_key: string;
+      amount_cents: number;
+      currency: string;
+      status: string;
+      fulfillment_status: string;
+    }>
+  >([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -174,6 +184,36 @@ export default function ChristmasOrdersPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!selected?.id) {
+      setSelectedUpsells([]);
+      return;
+    }
+    let cancelled = false;
+    void supabase
+      .from("christmas_order_upsells")
+      .select("id,package_key,amount_cents,currency,status,fulfillment_status")
+      .eq("parent_order_id", selected.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (!cancelled) {
+          setSelectedUpsells(
+            (data || []) as Array<{
+              id: string;
+              package_key: string;
+              amount_cents: number;
+              currency: string;
+              status: string;
+              fulfillment_status: string;
+            }>,
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected?.id]);
 
   const loadTrees = useCallback(async () => {
     setTreesLoading(true);
@@ -739,6 +779,19 @@ export default function ChristmasOrdersPage() {
             <div>
               <dt className="text-slate-500">Affiliate</dt>
               <dd>{selected.affiliate_ref || "—"}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-slate-500">Portrait AOV upsells</dt>
+              <dd>
+                {selectedUpsells.length === 0
+                  ? "—"
+                  : selectedUpsells.map((row) => (
+                      <div key={row.id} className="text-xs">
+                        {row.package_key} · {row.status}/{row.fulfillment_status} ·{" "}
+                        {money(row.amount_cents, row.currency)}
+                      </div>
+                    ))}
+              </dd>
             </div>
           </dl>
           {selected.product_key === "christmas_santa_video" ? (

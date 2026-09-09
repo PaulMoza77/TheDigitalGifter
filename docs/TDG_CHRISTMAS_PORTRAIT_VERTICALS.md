@@ -47,6 +47,8 @@ Columns (migration `20260903010000_christmas_portrait_verticals.sql`):
 
 Packages for family/couple/pet seeded with **`purchasable=false`**, **`price_cents=0`**. No price invented.
 
+AOV add-ons (`extra_images`, `extra_styles`, `video`) are also seeded unpublished for these four commerce products — see `docs/TDG_CHRISTMAS_PORTRAIT_AOV.md`. Not Christmas V2 packs.
+
 ## Validation notes
 
 - **Family:** multi-subject uploads allowed structurally. No pre-pay face-counting AI (cost/latency). Prompt strategy asks model to preserve headcount; known limitation: Flux may still drop/merge people.

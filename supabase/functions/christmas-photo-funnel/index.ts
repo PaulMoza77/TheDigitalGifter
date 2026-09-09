@@ -1,6 +1,11 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson, isServiceRoleRequest } from "../_shared/supabase.ts";
 import { validatePetSpecies } from "../_shared/pet/speciesValidate.ts";
+import {
+  extraCountFromPackageMetadata,
+  isPortraitAovPackageKey,
+  isPortraitAovProductKey,
+} from "../_shared/christmas/upsells.ts";
 
 /**
  * Christmas portrait funnel APIs: signed upload, order lookup, species check, admin retry.
@@ -20,6 +25,7 @@ type Body = {
   email?: string;
   image_data_url?: string;
   expected_species?: string;
+  product_key?: string;
 };
 
 const SOURCE_BUCKET = "christmas-source";
@@ -152,12 +158,103 @@ Deno.serve(async (req) => {
         }
       }
 
+      let upsellRows: Array<Record<string, unknown>> = [];
+      let catalogOffers: Array<Record<string, unknown>> = [];
+      try {
+        const { data: rows } = await service
+          .from("christmas_order_upsells")
+          .select(
+            "id,package_key,upsell_key,amount_cents,currency,status,fulfillment_status,paid_at,fulfilled_at,metadata",
+          )
+          .eq("parent_order_id", order.id)
+          .order("created_at", { ascending: true });
+        upsellRows = rows || [];
+
+        const { data: product } = await service
+          .from("christmas_products")
+          .select("id,product_key")
+          .eq("product_key", order.product_key)
+          .maybeSingle();
+        if (product?.id && isPortraitAovProductKey(asString(order.product_key))) {
+          const { data: pkgs } = await service
+            .from("christmas_packages")
+            .select("package_key,package_name,description,features,currency,price_cents,purchasable,active,metadata")
+            .eq("product_id", product.id)
+            .in("package_key", ["extra_images", "extra_styles", "video"])
+            .eq("active", true);
+          catalogOffers = (pkgs || []).map((pkg) => {
+            const key = asString(pkg.package_key);
+            const meta = (pkg.metadata || {}) as Record<string, unknown>;
+            const priced = Boolean(pkg.purchasable && pkg.price_cents > 0);
+            const purchased = upsellRows.some(
+              (row) => asString(row.upsell_key) === key && row.status === "paid",
+            );
+            return {
+              packageKey: key,
+              packageName: pkg.package_name,
+              description: pkg.description,
+              features: pkg.features,
+              currency: pkg.currency,
+              amountCents: priced ? pkg.price_cents : null,
+              purchasable: priced,
+              extraCount: isPortraitAovPackageKey(key)
+                ? extraCountFromPackageMetadata(meta, key)
+                : 1,
+              purchased,
+            };
+          });
+        }
+      } catch {
+        upsellRows = [];
+        catalogOffers = [];
+      }
+
       return jsonResponse({
         ok: true,
         order: {
           ...order,
           resultUrl,
+          upsells: catalogOffers,
+          purchasedUpsells: upsellRows || [],
         },
+      });
+    }
+
+    if (action === "listUpsells") {
+      const productKey = asString(body.product_key);
+      if (!isPortraitAovProductKey(productKey)) {
+        return jsonResponse({ error: "Unknown product", code: "unknown_product" }, 400);
+      }
+      const { data: product } = await service
+        .from("christmas_products")
+        .select("id")
+        .eq("product_key", productKey)
+        .maybeSingle();
+      if (!product) return jsonResponse({ ok: true, upsells: [] });
+      const { data: pkgs } = await service
+        .from("christmas_packages")
+        .select("package_key,package_name,description,features,currency,price_cents,purchasable,active,metadata")
+        .eq("product_id", product.id)
+        .in("package_key", ["extra_images", "extra_styles", "video"])
+        .eq("active", true);
+      return jsonResponse({
+        ok: true,
+        upsells: (pkgs || []).map((pkg) => {
+          const key = asString(pkg.package_key);
+          const priced = Boolean(pkg.purchasable && pkg.price_cents > 0);
+          return {
+            packageKey: key,
+            packageName: pkg.package_name,
+            description: pkg.description,
+            features: pkg.features,
+            currency: pkg.currency,
+            amountCents: priced ? pkg.price_cents : null,
+            purchasable: priced,
+            extraCount: isPortraitAovPackageKey(key)
+              ? extraCountFromPackageMetadata((pkg.metadata || {}) as Record<string, unknown>, key)
+              : 1,
+          };
+        }),
       });
     }
 

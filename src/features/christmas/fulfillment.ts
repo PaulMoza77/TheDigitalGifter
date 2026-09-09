@@ -20,8 +20,10 @@ export type ChristmasFulfillmentHandler = (
 
 /**
  * Client-side registry only — no fake result generators.
- * christmas_photo post-pay generation is enqueued by stripeFulfill → christmas-generate
+ * christmas_photo post-pay generation is enqueued by stripeFulfill → christmas-photo-generate
  * (edge), not via this in-browser registry.
+ * Portrait AOV upsells (extra_images / extra_styles / video) fulfill via
+ * fulfill_christmas_upsell_payment → christmas-photo-generate { upsell_id }.
  */
 export const CHRISTMAS_FULFILLMENT_HANDLERS: Partial<
   Record<string, ChristmasFulfillmentHandler>

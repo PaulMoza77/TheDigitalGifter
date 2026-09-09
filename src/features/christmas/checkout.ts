@@ -114,10 +114,41 @@ export function planChristmasCheckout(
   };
 }
 
+export const CHRISTMAS_UPSELL_PRODUCT_TYPE = "christmas_upsell" as const;
+
 export function isChristmasCheckoutMetadata(metadata: Record<string, unknown>): boolean {
   const family = String(metadata.product_family || "").trim();
   const productType = String(metadata.product_type || "").trim();
-  return family === CHRISTMAS_PRODUCT_FAMILY || productType === "christmas";
+  return (
+    family === CHRISTMAS_PRODUCT_FAMILY ||
+    productType === "christmas" ||
+    productType === CHRISTMAS_UPSELL_PRODUCT_TYPE
+  );
+}
+
+export function isChristmasUpsellMetadata(metadata: Record<string, unknown>): boolean {
+  return String(metadata.product_type || "").trim() === CHRISTMAS_UPSELL_PRODUCT_TYPE;
+}
+
+export function planChristmasUpsellCheckout(
+  input: CreateChristmasCheckoutInput & { parentOrderPaid?: boolean },
+): ChristmasCheckoutPlan {
+  if (input.parentOrderPaid === false) {
+    return {
+      ok: false,
+      code: "parent_not_paid",
+      message: "Portrait upsells require a paid parent order.",
+    };
+  }
+  const plan = planChristmasCheckout(input);
+  if (!plan.ok) return plan;
+  return {
+    ...plan,
+    metadata: {
+      ...plan.metadata,
+      product_type: CHRISTMAS_UPSELL_PRODUCT_TYPE,
+    },
+  };
 }
 
 export function stripeCheckoutIdempotencyKey(orderId: string, issuedCount = 0): string {

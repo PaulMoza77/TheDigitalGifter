@@ -5,6 +5,13 @@ import {
   isPortraitProductKey,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import {
+  CHRISTMAS_UPSELL_PRODUCT_TYPE,
+  extraCountFromPackageMetadata,
+  isChristmasV2PackKey,
+  isPortraitAovPackageKey,
+  isPortraitAovProductKey,
+} from "../_shared/christmas/upsells.ts";
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
@@ -43,6 +50,9 @@ type Body = {
   source_width?: number;
   source_height?: number;
   existing_order_id?: string;
+  parent_public_token?: string;
+  parent_order_id?: string;
+  extra_style_keys?: string[];
   portrait_type?: string;
   species?: string;
   source_route?: string;
@@ -133,6 +143,167 @@ Deno.serve(async (req) => {
     }
     if (!pkg.price_cents || pkg.price_cents <= 0) {
       return jsonResponse({ error: "Invalid configured price", code: "invalid_price" }, 400);
+    }
+
+    const isUpsell = isPortraitAovPackageKey(pkg.package_key);
+    if (isUpsell) {
+      if (!isPortraitAovProductKey(product.product_key) || isChristmasV2PackKey(pkg.package_key)) {
+        return jsonResponse({ error: "Unknown or inactive package", code: "inactive_package" }, 400);
+      }
+      const parentToken = asString(body.parent_public_token);
+      if (!parentToken || parentToken.length < 32) {
+        return jsonResponse({ error: "parent_public_token required", code: "parent_required" }, 400);
+      }
+      const parentHash = await sha256Hex(parentToken);
+      const { data: parent, error: parentError } = await service
+        .from("christmas_orders")
+        .select(
+          "id,product_key,package_key,payment_status,style_key,source_path,source_bucket,portrait_type,species,source_route,email,email_normalized,locale,landing_path,funnel_session_id",
+        )
+        .eq("public_token_hash", parentHash)
+        .maybeSingle();
+      if (parentError) throw parentError;
+      if (!parent || parent.payment_status !== "paid") {
+        return jsonResponse({ error: "Paid portrait order required", code: "parent_not_paid" }, 400);
+      }
+      if (parent.product_key !== product.product_key) {
+        return jsonResponse({ error: "Upsell product mismatch", code: "product_mismatch" }, 400);
+      }
+      if (parent.package_key === pkg.package_key) {
+        return jsonResponse({ error: "Invalid parent package", code: "invalid_parent" }, 400);
+      }
+
+      const { data: already } = await service
+        .from("christmas_order_upsells")
+        .select("id,status")
+        .eq("parent_order_id", parent.id)
+        .eq("upsell_key", pkg.package_key)
+        .in("status", ["paid"])
+        .maybeSingle();
+      if (already) {
+        return jsonResponse({ error: "Upsell already purchased", code: "already_purchased" }, 409);
+      }
+
+      const extraStyleKeys = Array.isArray(body.extra_style_keys)
+        ? body.extra_style_keys.map((k) => asString(k)).filter(Boolean).slice(0, 8)
+        : [];
+      for (const style of extraStyleKeys) {
+        const promptCheck = buildChristmasPortraitPrompt({
+          productKey: product.product_key,
+          styleKey: style,
+          species: asString(parent.species) || null,
+        });
+        if (!promptCheck.ok) {
+          return jsonResponse({ error: "Unknown or disabled style for product", code: "invalid_style" }, 400);
+        }
+      }
+
+      const stripeSecret = asString(Deno.env.get("STRIPE_SECRET_KEY"));
+      const publishable = asString(Deno.env.get("STRIPE_PUBLISHABLE_KEY"));
+      if (!stripeSecret || !publishable) {
+        return jsonResponse({ error: "Stripe is not configured" }, 503);
+      }
+
+      const sku = `xmas_${product.product_key}_${pkg.package_key}`;
+      const extraCount = extraCountFromPackageMetadata(
+        (pkg.metadata || {}) as Record<string, unknown>,
+        pkg.package_key,
+      );
+      const { data: upsell, error: upsellError } = await service
+        .from("christmas_order_upsells")
+        .insert({
+          parent_order_id: parent.id,
+          product_key: product.product_key,
+          package_key: pkg.package_key,
+          upsell_key: pkg.package_key,
+          sku,
+          currency: pkg.currency,
+          amount_cents: pkg.price_cents,
+          status: "pending",
+          fulfillment_status: "not_started",
+          metadata: {
+            source: "christmas-checkout",
+            extra_count: extraCount,
+            extra_style_keys: extraStyleKeys,
+            parent_style_key: parent.style_key,
+            parent_public_token_hint: parentToken.slice(0, 8),
+          },
+        })
+        .select("id")
+        .single();
+      if (upsellError) throw upsellError;
+
+      const successUrl =
+        asString(body.success_url) ||
+        `${siteOrigin()}${asString(parent.source_route) || "/christmas/photo-generator"}?upsell=success&token=${encodeURIComponent(parentToken)}`;
+      const params = new URLSearchParams();
+      params.set("mode", "payment");
+      params.set("ui_mode", "custom");
+      const returnUrl = successUrl.includes("{CHECKOUT_SESSION_ID}")
+        ? successUrl
+        : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}`;
+      params.set("return_url", returnUrl);
+      if (asString(parent.email)) params.set("customer_email", asString(parent.email));
+      params.set("line_items[0][quantity]", "1");
+      params.set("line_items[0][price_data][currency]", pkg.currency);
+      params.set("line_items[0][price_data][unit_amount]", String(pkg.price_cents));
+      params.set(
+        "line_items[0][price_data][product_data][name]",
+        `${product.name} — ${pkg.package_name}`,
+      );
+      params.set("metadata[product_family]", "christmas");
+      params.set("metadata[product_type]", CHRISTMAS_UPSELL_PRODUCT_TYPE);
+      params.set("metadata[product_key]", product.product_key);
+      params.set("metadata[package_key]", pkg.package_key);
+      params.set("metadata[sku]", sku);
+      params.set("metadata[christmas_upsell_id]", upsell.id);
+      params.set("metadata[parent_order_id]", parent.id);
+      if (parent.funnel_session_id) {
+        params.set("metadata[funnel_session_id]", asString(parent.funnel_session_id));
+      }
+      params.set("payment_intent_data[metadata][product_family]", "christmas");
+      params.set("payment_intent_data[metadata][product_type]", CHRISTMAS_UPSELL_PRODUCT_TYPE);
+      params.set("payment_intent_data[metadata][christmas_upsell_id]", upsell.id);
+
+      const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${stripeSecret}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Idempotency-Key": `xmas-upsell-${upsell.id}`,
+        },
+        body: params,
+      });
+      const session = await stripeRes.json();
+      if (!stripeRes.ok) {
+        await service
+          .from("christmas_order_upsells")
+          .update({ status: "failed", last_error: asString(session.error?.message || "stripe_error") })
+          .eq("id", upsell.id);
+        return jsonResponse({ error: "Unable to create checkout session", code: "stripe_error" }, 502);
+      }
+
+      await service
+        .from("christmas_order_upsells")
+        .update({
+          stripe_checkout_session_id: asString(session.id),
+          status: "pending",
+        })
+        .eq("id", upsell.id);
+
+      return jsonResponse({
+        ok: true,
+        upsellId: upsell.id,
+        parentOrderId: parent.id,
+        publicToken: parentToken,
+        sessionId: session.id,
+        clientSecret: session.client_secret,
+        publishableKey: publishable,
+        amountCents: pkg.price_cents,
+        currency: pkg.currency,
+        packageKey: pkg.package_key,
+        uiMode: "custom",
+      });
     }
 
     const styleKey = asString(body.style_key);

@@ -306,3 +306,15 @@ export function resolveProductStyle(
   if (!style || !style.enabled) return null;
   return style;
 }
+
+/** Extra-style AOV: other enabled styles for the same product, excluding the paid one. */
+export function alternateStylesForProduct(
+  productKey: string,
+  excludeStyleKey: string | null | undefined,
+  limit = 2,
+): ChristmasStyleDef[] {
+  const exclude = String(excludeStyleKey || "").trim();
+  return stylesForProductKey(productKey)
+    .filter((style) => style.enabled && style.styleKey !== exclude)
+    .slice(0, Math.max(0, limit));
+}

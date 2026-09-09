@@ -27,6 +27,8 @@ import {
   type ChristmasPortraitVertical,
 } from "./portraitVerticals";
 import { enabledChristmasStyles } from "./styles";
+import { PortraitAovUpsellPanel } from "./components/PortraitAovUpsellPanel";
+import type { ChristmasUpsellOfferDto } from "./photoApi";
 
 function readDraft(key: string): ChristmasPortraitDraft {
   try {
@@ -78,6 +80,7 @@ export default function ChristmasPortraitFunnelPage() {
     currency: string;
   } | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [upsellOffers, setUpsellOffers] = useState<ChristmasUpsellOfferDto[] | null>(null);
   const [purchasable, setPurchasable] = useState(false);
   const [catalogAmount, setCatalogAmount] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -95,6 +98,7 @@ export default function ChristmasPortraitFunnelPage() {
     setSpeciesHint(null);
     setCheckout(null);
     setResultUrl(null);
+    setUpsellOffers(null);
     pageViewed.current = false;
   }, [vertical.draftStorageKey, vertical.routePath]);
 
@@ -153,6 +157,7 @@ export default function ChristmasPortraitFunnelPage() {
           return next;
         });
         if (order.resultUrl) setResultUrl(order.resultUrl);
+        if (order.upsells) setUpsellOffers(order.upsells);
         if (order.payment_status === "paid" && order.fulfillment_status !== "completed") {
           setStep("generating", { orderId: order.id, publicToken: token });
         }
@@ -693,6 +698,7 @@ export default function ChristmasPortraitFunnelPage() {
                   writeDraft(vertical.draftStorageKey, next);
                   setDraft(next);
                   setResultUrl(null);
+                  setUpsellOffers(null);
                   setCheckout(null);
                   fileBlobRef.current = null;
                 }}
@@ -700,6 +706,12 @@ export default function ChristmasPortraitFunnelPage() {
                 Create another
               </button>
             </div>
+            <PortraitAovUpsellPanel
+              productKey={vertical.productKey}
+              publicToken={draft.publicToken}
+              orderId={draft.orderId}
+              serverOffers={upsellOffers}
+            />
             <div className="flex flex-wrap gap-3 text-sm">
               <span className="text-slate-500">Try another:</span>
               {vertical.crossLinks.map((link) => (

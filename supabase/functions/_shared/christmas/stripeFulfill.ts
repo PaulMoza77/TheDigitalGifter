@@ -7,6 +7,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
+import { handleChristmasUpsellStripeEvent, isChristmasUpsellMetadata } from "./stripeUpsellFulfill.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -28,6 +29,7 @@ export function isChristmasCheckoutMetadata(metadata: Record<string, unknown>): 
     family === CHRISTMAS_PRODUCT_FAMILY ||
     productType === CHRISTMAS_PRODUCT_TYPE ||
     productType === "christmas" ||
+    productType === "christmas_upsell" ||
     sku.startsWith("christmas-") ||
     sku.startsWith("xmas_")
   );
@@ -77,6 +79,10 @@ export async function handleChristmasStripeEvent(input: {
   metadata: Record<string, unknown>;
 }): Promise<Response | null> {
   if (!isChristmasCheckoutMetadata(input.metadata)) return null;
+
+  if (isChristmasUpsellMetadata(input.metadata)) {
+    return handleChristmasUpsellStripeEvent(input);
+  }
 
   if (input.eventType === "invoice.paid") {
     await input.service.from("processed_stripe_events").insert({
