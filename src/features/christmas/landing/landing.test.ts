@@ -39,10 +39,14 @@ describe("christmas landing copy + seo", () => {
 });
 
 describe("christmas landing handoff", () => {
-  it("builds santa URL with preserved name", () => {
-    expect(santaExperienceUrl("Emma")).toBe("/christmas/santa-video?name=Emma");
+  it("builds santa URL without leaking the child's name", () => {
+    expect(santaExperienceUrl("Emma")).toBe("/christmas/santa-video");
     expect(isLikelyKidName("Emma")).toBe(true);
+    expect(isLikelyKidName("José")).toBe(true);
+    expect(isLikelyKidName("Łukasz")).toBe(true);
+    expect(isLikelyKidName("محمد")).toBe(true);
     expect(isLikelyKidName("")).toBe(false);
+    expect(isLikelyKidName("Emma<script>")).toBe(false);
     expect(sanitizeKidName("  Emma  ")).toBe("Emma");
   });
 
@@ -74,7 +78,11 @@ describe("christmas landing wiring", () => {
     expect(page).not.toContain("hubProducts");
     expect(experience).toContain("SantaScene");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("santa-alpha.webm");
+    expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("santa-static.png");
     expect(experience).toContain("/generator?occasion=christmas");
+    expect(readSrc("src/features/christmas/landing/scenes/SantaScene.tsx")).toContain(
+      "santa.h2Personalized",
+    );
     expect(readSrc("src/features/christmas/ChristmasSantaVideoPage.tsx")).toContain("consumeSantaNameHandoff");
     expect(readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx")).toContain("parseGiftRecipient");
   });
