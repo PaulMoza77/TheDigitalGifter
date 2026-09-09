@@ -85,6 +85,11 @@ export default function ChristmasGiftFinderPage() {
   const [recipient, setRecipient] = useState(
     () => parseGiftRecipient(params.get("recipient") || params.get("for")) || "mom",
   );
+
+  useEffect(() => {
+    const next = parseGiftRecipient(params.get("recipient") || params.get("for"));
+    if (next) setRecipient(next);
+  }, [params]);
   const [age, setAge] = useState("45_54");
   const [interests, setInterests] = useState<string[]>(["gardening", "cooking"]);
   const [customInterest, setCustomInterest] = useState("");
