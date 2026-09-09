@@ -63,6 +63,9 @@ export async function cardsMessagesFunnel<T = Record<string, unknown>>(
   body: Record<string, unknown>,
   authBearer?: string | null,
 ): Promise<T> {
+  if (!FUNNEL_URL.startsWith("http")) {
+    throw new Error("cards_messages_funnel_unconfigured");
+  }
   const res = await fetch(FUNNEL_URL, {
     method: "POST",
     headers: await headers(authBearer),
@@ -71,6 +74,21 @@ export async function cardsMessagesFunnel<T = Record<string, unknown>>(
   const data = (await res.json()) as T & { error?: string };
   if (!res.ok) throw new Error(data.error || `cards_messages_funnel_${res.status}`);
   return data;
+}
+
+/** Device-local project id when Supabase persist is unavailable. Canvas PNG still renders. */
+export function mintLocalCardProjectId(): string {
+  const bytes = new Uint8Array(8);
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  return `local-${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
+}
+
+export function isPersistedCardProject(projectId: string | null | undefined): boolean {
+  return Boolean(projectId && !projectId.startsWith("local-"));
 }
 
 export const cardsFunnel = cardsMessagesFunnel;

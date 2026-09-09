@@ -5,6 +5,10 @@ import { CHRISTMAS_CATALOG_SEED, ctaStateForProduct, findProduct } from "../cata
 import { CHRISTMAS_FUNNEL_ALLOWED_EVENTS } from "../funnelEventContract";
 import { shellForPath } from "../routes";
 import {
+  isPersistedCardProject,
+  mintLocalCardProjectId,
+} from "./cardsApi";
+import {
   cardDownloadFilename,
   sanitizeCardPlainText,
   wrapTextLines,
@@ -126,6 +130,16 @@ describe("message validation + curated quality", () => {
   });
 });
 
+describe("card persist helpers", () => {
+  it("mints local draft ids that are not treated as server projects", () => {
+    const localId = mintLocalCardProjectId();
+    expect(localId.startsWith("local-")).toBe(true);
+    expect(isPersistedCardProject(localId)).toBe(false);
+    expect(isPersistedCardProject("a1b2c3d4-uuid")).toBe(true);
+    expect(isPersistedCardProject(null)).toBe(false);
+  });
+});
+
 describe("card renderer helpers", () => {
   it("wraps long text and strips HTML", () => {
     const ctx = { measureText: (t: string) => ({ width: t.length * 10 }) };
@@ -162,6 +176,8 @@ describe("product wiring", () => {
     expect(app).toContain("ChristmasCardsPage");
     expect(app).toContain('path="/christmas/messages"');
     expect(app).toContain("ChristmasMessagesPage");
+    expect(app).not.toMatch(/path="\/christmas\/cards\/(gallery|share)/);
+    expect(app).not.toContain("CardGallery");
     for (const ev of [
       "christmas_message_page_view",
       "message_generator_completed",
@@ -192,5 +208,13 @@ describe("product wiring", () => {
     expect(funnel).toContain("recordCardRender");
     expect(readSrc("docs/TDG_CHRISTMAS_CARDS_MESSAGES.md")).toContain("tdg-christmas-cards-messages-011");
     expect(readSrc("docs/architecture/TDG_CHRISTMAS_CARD_RENDERING_ADR.md")).toContain("Canvas 2D");
+    const page = readSrc("src/features/christmas/ChristmasCardsPage.tsx");
+    expect(page).toContain("mintLocalCardProjectId");
+    expect(page).toContain("isPersistedCardProject");
+    expect(page).toContain("renderChristmasCard");
+    expect(page).toContain("shareCardFile");
+    expect(page).toContain("downloadBlob");
+    expect(readSrc("scripts/qa-christmas-cards-render.mjs")).toContain("CARD_QA_PASS");
+    expect(readSrc("scripts/christmas-cards-messages-qa.mjs")).toContain("/christmas/cards");
   });
 });

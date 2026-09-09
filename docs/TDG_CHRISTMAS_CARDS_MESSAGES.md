@@ -52,7 +52,7 @@ Stable recipient / tone / length keys + `seoSlug` / `SEO_MESSAGE_INTENT_SLUGS` f
 - Photo optional; text-only supported
 - Styles (8): `classic_christmas`, `elegant_gold`, `cozy_christmas`, `winter_wonderland`, `minimal_christmas`, `vintage_christmas`, `playful_christmas`, `romantic_christmas`
 - Layouts: `square` 1080×1080 · `story` 1080×1920 · `landscape` 1600×900
-- Renderer: client Canvas 2D → PNG (`cardRenderer.ts`) — **$0 AI**
+- Renderer: client Canvas 2D → PNG (`cardRenderer.ts`) — **$0 AI**. Create/download still works if the cards funnel is unavailable (local draft id; persist is best-effort).
 - See ADR: `docs/architecture/TDG_CHRISTMAS_CARD_RENDERING_ADR.md`
 - Persistence: `christmas_card_projects` (+ optional `christmas_card_assets` metadata rows)
 - Guest owner token (opaque, hashed); logged-in users associate via `user_id`

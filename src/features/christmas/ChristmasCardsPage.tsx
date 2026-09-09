@@ -22,6 +22,8 @@ import {
   cardsMessagesFunnel,
   clearMessageToCardHandoff,
   getOrCreateMessageGuestToken,
+  isPersistedCardProject,
+  mintLocalCardProjectId,
   readCardDraft,
   readCardOwner,
   readMessageToCardHandoff,
@@ -167,32 +169,40 @@ export default function ChristmasCardsPage() {
     }
   }
 
-  async function ensureProject(): Promise<{ id: string; token: string | null }> {
-    if (projectId) return { id: projectId, token: ownerToken };
-    const data = await cardsMessagesFunnel<{
-      ok: boolean;
-      project_id: string;
-      owner_token: string | null;
-    }>(
-      {
-        action: "createCardProject",
-        style_key: styleKey,
-        layout_key: layoutKey,
-        message,
-        recipient_name: recipientName,
-        from_name: fromName,
-        message_source: messageSource,
-        message_result_id: messageResultId,
-        guest_token: getOrCreateMessageGuestToken(),
-      },
-      await authBearer(),
-    );
-    setProjectId(data.project_id);
-    if (data.owner_token) {
-      setOwnerToken(data.owner_token);
-      writeCardOwner({ projectId: data.project_id, ownerToken: data.owner_token });
+  async function ensureProject(): Promise<{ id: string; token: string | null; persisted: boolean }> {
+    if (isPersistedCardProject(projectId)) {
+      return { id: projectId!, token: ownerToken, persisted: true };
     }
-    return { id: data.project_id, token: data.owner_token };
+    try {
+      const data = await cardsMessagesFunnel<{
+        ok: boolean;
+        project_id: string;
+        owner_token: string | null;
+      }>(
+        {
+          action: "createCardProject",
+          style_key: styleKey,
+          layout_key: layoutKey,
+          message,
+          recipient_name: recipientName,
+          from_name: fromName,
+          message_source: messageSource,
+          message_result_id: messageResultId,
+          guest_token: getOrCreateMessageGuestToken(),
+        },
+        await authBearer(),
+      );
+      setProjectId(data.project_id);
+      if (data.owner_token) {
+        setOwnerToken(data.owner_token);
+        writeCardOwner({ projectId: data.project_id, ownerToken: data.owner_token });
+      }
+      return { id: data.project_id, token: data.owner_token, persisted: true };
+    } catch {
+      const localId = projectId?.startsWith("local-") ? projectId : mintLocalCardProjectId();
+      if (localId !== projectId) setProjectId(localId);
+      return { id: localId, token: null, persisted: false };
+    }
   }
 
   async function generate() {
@@ -210,21 +220,27 @@ export default function ChristmasCardsPage() {
         metadata: { layout: layoutKey },
       });
       const project = await ensureProject();
-      await cardsMessagesFunnel(
-        {
-          action: "updateCardProject",
-          project_id: project.id,
-          owner_token: project.token,
-          style_key: styleKey,
-          layout_key: layoutKey,
-          message,
-          recipient_name: recipientName,
-          from_name: fromName,
-          message_source: messageSource,
-          photo_present: Boolean(photoEl),
-        },
-        await authBearer(),
-      );
+      if (project.persisted) {
+        try {
+          await cardsMessagesFunnel(
+            {
+              action: "updateCardProject",
+              project_id: project.id,
+              owner_token: project.token,
+              style_key: styleKey,
+              layout_key: layoutKey,
+              message,
+              recipient_name: recipientName,
+              from_name: fromName,
+              message_source: messageSource,
+              photo_present: Boolean(photoEl),
+            },
+            await authBearer(),
+          );
+        } catch {
+          /* persist is best-effort — local PNG still proceeds */
+        }
+      }
       void trackChristmasEvent("card_preview_seen", { productKey: PRODUCT });
       const rendered = await renderChristmasCard({
         message,
@@ -235,18 +251,24 @@ export default function ChristmasCardsPage() {
         photo: photoEl,
         projectRef: project.id.slice(0, 8),
       });
-      await cardsMessagesFunnel(
-        {
-          action: "recordCardRender",
-          project_id: project.id,
-          owner_token: project.token,
-          layout_key: layoutKey,
-          width: rendered.width,
-          height: rendered.height,
-          byte_size: rendered.byteSize,
-        },
-        await authBearer(),
-      );
+      if (project.persisted) {
+        try {
+          await cardsMessagesFunnel(
+            {
+              action: "recordCardRender",
+              project_id: project.id,
+              owner_token: project.token,
+              layout_key: layoutKey,
+              width: rendered.width,
+              height: rendered.height,
+              byte_size: rendered.byteSize,
+            },
+            await authBearer(),
+          );
+        } catch {
+          /* counters are optional */
+        }
+      }
       setResult({
         dataUrl: rendered.dataUrl,
         blob: rendered.blob,
@@ -266,7 +288,7 @@ export default function ChristmasCardsPage() {
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create card");
-      if (projectId) {
+      if (isPersistedCardProject(projectId)) {
         void cardsMessagesFunnel({
           action: "recordCardRender",
           project_id: projectId,
@@ -284,7 +306,7 @@ export default function ChristmasCardsPage() {
     if (!result) return;
     downloadBlob(result.blob, result.filename);
     void trackChristmasEvent("card_download", { productKey: PRODUCT });
-    if (projectId) {
+    if (isPersistedCardProject(projectId)) {
       void cardsMessagesFunnel({
         action: "trackCardDownload",
         project_id: projectId,
@@ -297,7 +319,7 @@ export default function ChristmasCardsPage() {
     if (!result) return;
     await shareCardFile(result.blob, result.filename);
     void trackChristmasEvent("card_share", { productKey: PRODUCT });
-    if (projectId) {
+    if (isPersistedCardProject(projectId)) {
       void cardsMessagesFunnel({
         action: "trackCardShare",
         project_id: projectId,
