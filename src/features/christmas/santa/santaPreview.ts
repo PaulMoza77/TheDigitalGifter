@@ -38,7 +38,11 @@ export function buildSantaMessagePreview(input: SantaPreviewInput): string {
   }
 
   const proud = input.somethingGood
-    ? `I heard ${input.somethingGood}, and I’m very proud of you.`
+    ? /^you\b/i.test(input.somethingGood.trim())
+      ? `I heard ${input.somethingGood.trim()}, and I’m very proud of you.`
+      : /^(she|he|they|we)\b/i.test(input.somethingGood.trim())
+        ? `I heard ${input.somethingGood.trim()}, and I’m very proud of you.`
+        : `I heard that you ${input.somethingGood.trim().replace(/^[Yy]ou\s+/, "")}, and I’m very proud of you.`
     : `I heard you’ve been doing wonderful things this year, and I’m very proud of you.`;
 
   const wish = input.christmasWish
