@@ -10,6 +10,10 @@ import {
 import { CHRISTMAS_CATALOG_SEED, resolvePurchasableOffer } from "../catalog";
 import { canGenerateChristmasPhoto } from "../generationGuards";
 import { shellForPath } from "../routes";
+import { buildSantaMessagePreview } from "./santaPreview";
+import { normalizeSantaFirstName } from "./santaHandoff";
+import { santaFunnelProgress } from "./santaDraft";
+import { CHRISTMAS_FUNNEL_ALLOWED_EVENTS } from "../funnelEventContract";
 
 function readSrc(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
@@ -59,6 +63,17 @@ describe("santa form validation", () => {
       }).ok,
     ).toBe(false);
   });
+
+  it("accepts unicode names", () => {
+    const ok = validateSantaPersonalization({
+      childFirstName: "Andrei",
+      language: "ro",
+      guardianConsent: true,
+    });
+    expect(ok.ok).toBe(true);
+    expect(normalizeSantaFirstName("Émile")).toBe("Émile");
+    expect(normalizeSantaFirstName("Emma!!!")).toBeNull();
+  });
 });
 
 describe("santa analytics privacy", () => {
@@ -70,6 +85,34 @@ describe("santa analytics privacy", () => {
     });
     expect(JSON.stringify(dims)).not.toMatch(/bicycle|Alex|wish text/i);
     expect(dims.has_wish).toBe(true);
+  });
+
+  it("allowlists rebuilt santa funnel events", () => {
+    expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain("christmas_santa_page_view");
+    expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain("christmas_santa_preview_viewed");
+    expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain("christmas_santa_shared");
+  });
+});
+
+describe("santa preview + funnel progress", () => {
+  it("builds a personalized preview without claiming live generation", () => {
+    const script = buildSantaMessagePreview({
+      childFirstName: "Emma",
+      language: "en",
+      somethingGood: "learned how to ride her bike",
+      christmasWish: "a pink bicycle",
+      customFact: "Her dog is called Milo",
+    });
+    expect(script).toMatch(/Emma/);
+    expect(script).toMatch(/pink bicycle/i);
+    expect(script).toMatch(/Milo/);
+  });
+
+  it("skips name steps in progress when name is already known", () => {
+    const withName = santaFunnelProgress("age", true);
+    const without = santaFunnelProgress("age", false);
+    expect(withName?.total).toBeLessThan(without!.total);
+    expect(withName?.current).toBe(1);
   });
 });
 
@@ -87,6 +130,16 @@ describe("santa pricing + routing", () => {
   it("routes santa-video to real page not shell", () => {
     expect(shellForPath("/christmas/santa-video")).toBeNull();
     expect(readSrc("src/App.tsx")).toContain("ChristmasSantaVideoPage");
+  });
+
+  it("includes santa-video in sitemap", () => {
+    expect(readSrc("api/sitemap.xml.ts")).toContain("/christmas/santa-video");
+  });
+
+  it("hub supports santa name handoff", () => {
+    const hub = readSrc("src/pages/website/ChristmasPage.tsx");
+    expect(hub).toContain("writeSantaNameHandoff");
+    expect(hub).toContain("/christmas/santa-video");
   });
 });
 
