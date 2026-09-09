@@ -11,6 +11,9 @@ export const LANDING_ASSETS = {
   santaWebm: "/assets/christmas/santa-alpha.webm",
   santaIdle: "/assets/christmas/santa-idle.webp",
   santaSpeak: "/assets/christmas/santa-speak.webp",
+  /** Higher-quality transparent PNG fallbacks (reduced-motion / no WebM). */
+  santaStatic: "/assets/christmas/santa/santa-static.png",
+  santaStaticMobile: "/assets/christmas/santa/santa-static-480.png",
 } as const;
 
 export const FONT_HREF =
