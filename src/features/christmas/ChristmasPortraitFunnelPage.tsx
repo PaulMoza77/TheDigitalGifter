@@ -1,7 +1,8 @@
 /**
  * Shared Christmas portrait funnel for specialized verticals:
- * /christmas/family | couples | pets | dogs | cats
- * Hub page `/christmas/photo-generator` uses ChristmasPhotoGeneratorExperience.
+ * /christmas/couples | pets | dogs | cats
+ * Hub `/christmas/photo-generator` → ChristmasPhotoGeneratorExperience
+ * Hub `/christmas/family` → ChristmasFamilyExperience
  */
 
 import { useEffect } from "react";
