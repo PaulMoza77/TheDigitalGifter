@@ -21,6 +21,7 @@ import {
   BarChart3,
   PawPrint,
   Gift,
+  SlidersHorizontal,
 } from "lucide-react";
 import { formatAlertCount } from "@/hooks/adminNavAlerts";
 import { useAdminNavAlerts, type AdminNavAlerts } from "@/hooks/useAdminNavAlerts";
@@ -237,6 +238,11 @@ const SidebarNavigation: React.FC<{
             label: "Christmas Orders",
             path: "/admin/christmas-orders",
             icon: Gift,
+          },
+          {
+            label: "Christmas Control",
+            path: "/admin/christmas-control",
+            icon: SlidersHorizontal,
           },
           {
             label: "Pet Funnel Analytics",
