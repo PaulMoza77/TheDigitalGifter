@@ -311,37 +311,64 @@ export function useChristmasPortraitFunnel({
 
       const localUrl = URL.createObjectURL(file);
       fileBlobRef.current = file;
-      const upload = await createChristmasUpload({
-        contentType: validation.contentType,
-        byteSize: file.size,
-        width: validation.width,
-        height: validation.height,
-      });
-      if (upload.replicate_preview !== false) {
-        throw new Error("Preview contract violated");
-      }
-      await uploadChristmasBlob(upload.signedUrl, upload.token, file, validation.contentType);
-      const nextStep: ChristmasPortraitStep = mode === "hub" ? "subject" : "style";
-      setStep(nextStep, {
+      // Show the photo immediately for conversion momentum; server upload follows.
+      setStep(mode === "hub" ? "subject" : "style", {
         localPreviewUrl: localUrl,
-        uploadId: upload.uploadId,
-        sourcePath: upload.path,
-        sourceContentType: validation.contentType,
-        sourceWidth: validation.width,
-        sourceHeight: validation.height,
-        blurredPreviewUrl: null,
-        portraitType: vertical.portraitType,
         softWarning,
+        lastError: null,
+        portraitType: vertical.portraitType,
         species:
           vertical.expectedSpecies === "dog" || vertical.expectedSpecies === "cat"
             ? vertical.expectedSpecies
             : null,
       });
-      onUploadCompleted?.();
-      void trackChristmasEvent("upload_completed", {
-        productKey: activeProductKey,
-        metadata: { portrait_type: activePortraitType, species: vertical.expectedSpecies },
-      });
+
+      try {
+        const upload = await createChristmasUpload({
+          contentType: validation.contentType,
+          byteSize: file.size,
+          width: validation.width,
+          height: validation.height,
+        });
+        if (upload.replicate_preview !== false) {
+          throw new Error("Preview contract violated");
+        }
+        await uploadChristmasBlob(upload.signedUrl, upload.token, file, validation.contentType);
+        setStep(mode === "hub" ? "subject" : "style", {
+          localPreviewUrl: localUrl,
+          uploadId: upload.uploadId,
+          sourcePath: upload.path,
+          sourceContentType: validation.contentType,
+          sourceWidth: validation.width,
+          sourceHeight: validation.height,
+          blurredPreviewUrl: null,
+          softWarning,
+          lastError: null,
+          portraitType: vertical.portraitType,
+          species:
+            vertical.expectedSpecies === "dog" || vertical.expectedSpecies === "cat"
+              ? vertical.expectedSpecies
+              : null,
+        });
+        onUploadCompleted?.();
+        void trackChristmasEvent("upload_completed", {
+          productKey: activeProductKey,
+          metadata: { portrait_type: activePortraitType, species: vertical.expectedSpecies },
+        });
+      } catch (uploadErr) {
+        const msg =
+          uploadErr instanceof Error ? uploadErr.message : "Upload failed";
+        const friendly =
+          /fetch|network|failed to fetch|json|503|502|unexpected end/i.test(msg)
+            ? "Connection hiccup. Your photo is saved on this device — you can continue choosing a style, then retry upload at checkout."
+            : msg.length > 160
+              ? "We couldn’t upload this photo just now. Your selection is saved — please try again."
+              : msg;
+        setStep(mode === "hub" ? "subject" : "upload", {
+          localPreviewUrl: localUrl,
+          lastError: friendly,
+        });
+      }
     } catch (err) {
       setStep("upload", {
         lastError: err instanceof Error ? err.message : "Upload failed",
@@ -364,7 +391,7 @@ export function useChristmasPortraitFunnel({
   }
 
   async function onStylePick(styleKey: string) {
-    if (!draft.sourcePath || (!fileBlobRef.current && !draft.localPreviewUrl)) {
+    if (!fileBlobRef.current && !draft.localPreviewUrl) {
       setStep("upload", { lastError: "Please upload a photo first." });
       return;
     }
@@ -387,7 +414,7 @@ export function useChristmasPortraitFunnel({
       if (preview.replicateCalls !== 0 || christmasPreviewUsesReplicate()) {
         throw new Error("Preview must not call Replicate");
       }
-      setStep("preview", { styleKey, blurredPreviewUrl: preview.dataUrl });
+      setStep("preview", { styleKey, blurredPreviewUrl: preview.dataUrl, lastError: null });
       void trackChristmasEvent("preview_seen", {
         productKey: activeProductKey,
         styleKey,

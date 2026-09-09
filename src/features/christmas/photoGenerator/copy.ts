@@ -27,7 +27,7 @@ const EN: CopyBag = {
   "seo.h1": "AI Christmas Photo Generator",
   "seo.ogAlt": "Before and after Christmas portrait transformation",
 
-  "hero.kicker": "AI Christmas Photo Generator",
+  "hero.kicker": "Christmas portraits",
   "hero.h1": "Turn Your Photo Into Christmas Magic",
   "hero.lede":
     "Upload a favorite photo and create a magical Christmas portrait for your family, partner or pet.",

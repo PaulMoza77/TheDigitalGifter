@@ -111,7 +111,7 @@ export default function ChristmasPortraitFunnelPage() {
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   capture="environment"
-                  className="hidden"
+                  className="pg-file-input"
                   onChange={(e) => void funnel.onFileChosen(e.target.files?.[0] || null)}
                 />
                 <p className="xmas-lede" style={{ fontSize: "0.88rem" }}>
@@ -298,7 +298,16 @@ export default function ChristmasPortraitFunnelPage() {
             <Link to="/christmas/photo-generator">AI Christmas Photo Generator</Link>
           </nav>
         </div>
-        <style>{`.hidden { display: none !important; }`}</style>
+        <style>{`
+          .pg-file-input {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border: 0;
+            opacity: 0;
+          }
+        `}</style>
       </main>
     </>
   );

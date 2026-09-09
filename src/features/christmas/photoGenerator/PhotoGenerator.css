@@ -22,6 +22,16 @@
   }
 }
 
+@media (max-width: 899px) {
+  .pg-hero__visual {
+    order: -1;
+  }
+
+  .pg-ba {
+    max-height: min(52vh, 420px);
+  }
+}
+
 .pg-hero__copy h1 {
   margin: 0.55rem 0 0;
   font-size: clamp(2.35rem, 5.6vw, 4.4rem);

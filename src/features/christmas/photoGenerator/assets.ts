@@ -4,7 +4,8 @@ export const PHOTO_GEN_ASSETS = {
   heroRoom: LANDING_ASSETS.hero,
   familyBefore: LANDING_ASSETS.portraitFamilyBefore,
   familyAfter: LANDING_ASSETS.portraitFamily,
-  coupleBefore: "/assets/funnel/christmas-before.png",
+  /** Demo everyday photo stand-in until a dedicated couple-before webp ships */
+  coupleBefore: LANDING_ASSETS.portraitFamilyBefore,
   coupleAfter: LANDING_ASSETS.portraitCouple,
   dogBefore: "/pet/dog/source.webp",
   dogAfter: "/pet/dog/scenes/christmas-portrait.webp",
@@ -12,13 +13,13 @@ export const PHOTO_GEN_ASSETS = {
   catAfter: "/pet/cat/scenes/christmas-portrait.webp",
   familyPetAfter: LANDING_ASSETS.portraitPet,
   styleCozy: LANDING_ASSETS.portraitFamily,
-  styleWinter: "/assets/funnel/christmas-ex2-after.png",
+  styleWinter: LANDING_ASSETS.finale,
   styleLuxury: LANDING_ASSETS.portraitCouple,
-  styleMorning: "/assets/funnel/christmas-ex3-after.png",
+  styleMorning: LANDING_ASSETS.portraitFamily,
   styleCabin: LANDING_ASSETS.finale,
   styleClassic: LANDING_ASSETS.portraitFamily,
   styleElegant: LANDING_ASSETS.portraitCouple,
-  styleMarket: "/assets/funnel/christmas-after.png",
+  styleMarket: LANDING_ASSETS.card,
 } as const;
 
 export type ExampleCategory = "family" | "couples" | "pets";
