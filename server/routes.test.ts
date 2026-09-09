@@ -15,6 +15,22 @@ describe("TDG origin path classification", () => {
     expect(classifyPath("/api/christmas-funnel").kind).toBe("api");
     expect(classifyPath("/api/christmas-santa-compose").kind).toBe("api");
     expect(classifyPath("/sitemap.xml").kind).toBe("api");
+    expect(classifyPath("/christmas/gifts-for-mom")).toEqual({
+      kind: "api",
+      module: "christmas-seo.ts",
+    });
+    expect(classifyPath("/christmas/messages-for-dad")).toEqual({
+      kind: "api",
+      module: "christmas-seo.ts",
+    });
+    expect(classifyPath("/christmas/funny-christmas-messages")).toEqual({
+      kind: "api",
+      module: "christmas-seo.ts",
+    });
+    expect(classifyPath("/ro/christmas/gifts-for-mom")).toEqual({
+      kind: "api",
+      module: "christmas-seo.ts",
+    });
   });
 
   it("returns api-miss for unknown /api routes instead of static/SPA", () => {

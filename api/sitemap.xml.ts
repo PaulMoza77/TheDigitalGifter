@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import { listChristmasSeoSitemapRows } from "./_lib/christmas/seoPages";
+import { sitemapEntriesForRows } from "../src/features/christmas/seo/factory";
 
 const SITE_URL = "https://thedigitalgifter.com";
 
@@ -36,18 +38,27 @@ function createUrlXml({
   lastmod,
   changefreq,
   priority,
+  alternates,
 }: {
   loc: string;
   lastmod?: string;
   changefreq: "daily" | "weekly" | "monthly";
   priority: string;
+  alternates?: Array<{ locale: string; href: string }>;
 }) {
+  const links = (alternates ?? [])
+    .map(
+      (alt) =>
+        `    <xhtml:link rel="alternate" hreflang="${escapeXml(alt.locale)}" href="${escapeXml(alt.href)}" />`,
+    )
+    .join("\n");
   return `
   <url>
     <loc>${escapeXml(loc)}</loc>
     ${lastmod ? `<lastmod>${escapeXml(lastmod)}</lastmod>` : ""}
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
+${links}
   </url>`;
 }
 
@@ -93,7 +104,7 @@ function staticUrlXml() {
 
 function sendSitemap(res: VercelResponse, urls: string[]) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls.join("\n")}
 </urlset>`;
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
@@ -135,6 +146,33 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     }
 
     const urls = [...fallback];
+
+    try {
+      const christmasRows = await listChristmasSeoSitemapRows();
+      const lastmodByPath = new Map<string, string>();
+      for (const row of christmasRows) {
+        lastmodByPath.set(
+          `${row.canonical_path}:${row.locale}`,
+          getLastMod(row.updated_at, row.created_at),
+        );
+      }
+      for (const entry of sitemapEntriesForRows(christmasRows)) {
+        urls.push(
+          createUrlXml({
+            loc: entry.loc,
+            lastmod: lastmodByPath.get(`${entry.canonicalPath}:${entry.locale}`),
+            changefreq: "weekly",
+            priority: entry.locale === "en" ? "0.8" : "0.7",
+            alternates: entry.alternates,
+          }),
+        );
+      }
+    } catch (clusterError) {
+      console.error(
+        "[sitemap.xml] christmas cluster:",
+        clusterError instanceof Error ? clusterError.name : "unknown",
+      );
+    }
 
     for (const page of (seoPages ?? []) as SeoPageRow[]) {
       if (!page.page_type || !page.slug) continue;

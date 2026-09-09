@@ -18,7 +18,8 @@ Prices, providers, and product design are unchanged.
 | `/api/pet-v2/preview` | **Supabase Edge** `pet-v2-preview` | Vercel handler is live-disabled / unused. |
 | `/api/christmas-generate*` | **Supabase Edge** | Server-side only. |
 | `/api/pet-analytics-cron` | **Supabase Edge** `pet-analytics-sync` | Cron Vercel shim is unused. Schedule Edge directly. |
-| `/sitemap.xml` | Mozas Node origin | Static URLs always; SEO/blog URLs when service role is present. |
+| `/sitemap.xml` | Mozas Node origin | Static URLs always; SEO/blog + Christmas cluster URLs when service role is present. |
+| `/christmas/gifts-for-*`, `/christmas/messages-for-*`, message-intent slugs, `/ro/christmas/...` | Mozas Node origin → `api/christmas-seo.ts` | SSR HTML from `seo_pages`. Not the SPA shell. |
 | `/robots.txt` | Mozas static `dist` | |
 | `/.well-known/apple-developer-merchantid-domain-association` | Mozas static / env | Must not be HTML. |
 | `/api/*` unknown | Mozas origin **404 JSON** | Never `index.html`. |

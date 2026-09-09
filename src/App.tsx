@@ -144,6 +144,9 @@ const ChristmasCardsPage = lazy(
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
 );
+const ChristmasSeoClusterPage = lazy(
+  () => import("@/features/christmas/seo/ChristmasSeoClusterPage"),
+);
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
 const ThanksgivingPage = lazy(() => import("@/pages/website/ThanksgivingPage"));
@@ -472,6 +475,20 @@ function AppInner() {
             <Route path="/christmas/gifts" element={<ChristmasGiftFinderPage />} />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
+            <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/messages-for-:slug" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/funny-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/romantic-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/professional-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/short-christmas-wishes" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/christmas-messages-for-family" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/messages-for-:slug" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/funny-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/romantic-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/professional-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/short-christmas-wishes" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/christmas-messages-for-family" element={<ChristmasSeoClusterPage />} />
             <Route path="/birthday" element={<BirthdayPage />} />
             <Route path="/new-years-eve" element={<NewYearsEvePage />} />
             <Route path="/thanksgiving" element={<ThanksgivingPage />} />
