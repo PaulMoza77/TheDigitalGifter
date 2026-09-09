@@ -289,31 +289,7 @@ export default function ChristmasGiftFinderPage() {
       <SnowflakeSvg className="gf-flake gf-flake--c" />
 
       <div className="relative z-[3] mx-auto max-w-2xl px-4 pb-24 pt-5 sm:px-6">
-        <header className="flex items-center justify-between gap-3 py-2">
-          <Link to="/christmas" className="flex items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4A017]">
-            <img
-              src={LOGO_SRC}
-              alt="The Digital Gifter"
-              width={40}
-              height={40}
-              decoding="async"
-              fetchPriority="high"
-              className="h-10 w-10 rounded-full object-cover ring-1 ring-[#D4A017]/45 shadow-[0_0_24px_rgba(212,160,23,0.35)]"
-            />
-            <span className="gf-display text-lg font-semibold tracking-tight text-[#F7F0E4] sm:text-xl">
-              The Digital Gifter
-            </span>
-          </Link>
-          <Link
-            to="/christmas/wishlist"
-            className="inline-flex items-center gap-1.5 text-sm text-[#F7F0E4]/70 transition hover:text-[#F7F0E4]"
-          >
-            <Heart className="h-4 w-4" aria-hidden="true" />
-            Wishlist
-          </Link>
-        </header>
-
-        <section className="relative mt-6 overflow-hidden rounded-[1.75rem] px-1 pb-2 pt-4 sm:mt-8">
+        <section className="relative mt-4 overflow-hidden px-1 pb-2 pt-2 sm:mt-6">
           <div className="gf-hero-wash" aria-hidden="true" />
           <motion.div
             initial={{ opacity: 0, y: 14 }}
@@ -321,16 +297,37 @@ export default function ChristmasGiftFinderPage() {
             transition={{ duration: 0.5 }}
             className="relative text-center"
           >
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#F3D98A]">
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <img
+                src={LOGO_SRC}
+                alt=""
+                width={52}
+                height={52}
+                decoding="async"
+                fetchPriority="high"
+                className="h-12 w-12 rounded-full object-cover ring-1 ring-[#D4A017]/50 shadow-[0_0_28px_rgba(212,160,23,0.4)] sm:h-14 sm:w-14"
+              />
+            </div>
+            <p className="gf-display text-2xl font-semibold tracking-tight text-[#F7F0E4] sm:text-3xl">
+              The Digital Gifter
+            </p>
+            <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#F3D98A]">
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
               Christmas Gift Finder
             </p>
-            <h1 className="gf-display mx-auto mt-3 max-w-xl text-[2.15rem] font-semibold leading-[1.08] tracking-tight text-[#F7F0E4] sm:text-5xl">
-              The Digital Gifter finds gifts they’ll actually love
+            <h1 className="gf-display mx-auto mt-3 max-w-xl text-[2rem] font-semibold leading-[1.08] tracking-tight text-[#F7F0E4] sm:text-[2.75rem]">
+              Find gifts they’ll actually love
             </h1>
             <p className="mx-auto mt-3 max-w-md text-base leading-7 text-[#F7F0E4]/72 sm:text-lg">
               A few festive picks. Thoughtful ideas in under a minute — no endless scrolling.
             </p>
+            <Link
+              to="/christmas/wishlist"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm text-[#F7F0E4]/65 transition hover:text-[#F7F0E4]"
+            >
+              <Heart className="h-4 w-4" aria-hidden="true" />
+              Open Wishlist
+            </Link>
           </motion.div>
         </section>
 
