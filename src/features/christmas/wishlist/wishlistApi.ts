@@ -87,12 +87,20 @@ export async function wishlistFunnel<T = Record<string, unknown>>(
   body: Record<string, unknown>,
   authBearer?: string | null,
 ): Promise<T> {
-  const res = await fetch(FUNNEL_URL, {
-    method: "POST",
-    headers: await headers(authBearer),
-    body: JSON.stringify(body),
-  });
-  const data = (await res.json()) as T & { error?: string };
+  if (!FUNNEL_URL || FUNNEL_URL.includes("placeholder.supabase")) {
+    throw new Error("Wishlist service is not configured yet. Please try again later.");
+  }
+  let res: Response;
+  try {
+    res = await fetch(FUNNEL_URL, {
+      method: "POST",
+      headers: await headers(authBearer),
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("Could not reach the wishlist service. Check your connection and try again.");
+  }
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
   if (!res.ok) throw new Error(data.error || `wishlist_funnel_${res.status}`);
   return data;
 }
