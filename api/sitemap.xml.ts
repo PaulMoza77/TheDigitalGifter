@@ -1,5 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import {
+  christmasIndexableSitemapPaths,
+  shouldOmitFromSitemap,
+} from "./_lib/christmas/sitemapPaths";
 
 const SITE_URL = "https://thedigitalgifter.com";
 
@@ -42,6 +46,7 @@ function createUrlXml({
   changefreq: "daily" | "weekly" | "monthly";
   priority: string;
 }) {
+  if (shouldOmitFromSitemap(loc)) return "";
   return `
   <url>
     <loc>${escapeXml(loc)}</loc>
@@ -63,18 +68,7 @@ const STATIC_PATHS = [
   "/pet/dog",
   "/pet/cat",
   "/pet/other",
-  "/christmas",
-  "/christmas/gift-finder",
-  "/christmas/family",
-  "/christmas/couples",
-  "/christmas/pets",
-  "/christmas/santa-video",
-  "/christmas/wishlist",
-  "/christmas/tree",
-  "/christmas/advent",
-  "/christmas/cards",
-  "/christmas/messages",
-  "/christmas-ai-photos",
+  ...christmasIndexableSitemapPaths(),
   "/blog",
   "/privacy",
   "/terms",
@@ -94,7 +88,7 @@ function staticUrlXml() {
 function sendSitemap(res: VercelResponse, urls: string[]) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.join("\n")}
+${urls.filter(Boolean).join("\n")}
 </urlset>`;
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
   res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");
@@ -138,10 +132,12 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
 
     for (const page of (seoPages ?? []) as SeoPageRow[]) {
       if (!page.page_type || !page.slug) continue;
+      const loc = `${SITE_URL}/${page.page_type}/${page.slug}`;
+      if (shouldOmitFromSitemap(loc)) continue;
 
       urls.push(
         createUrlXml({
-          loc: `${SITE_URL}/${page.page_type}/${page.slug}`,
+          loc,
           lastmod: getLastMod(page.updated_at, page.created_at),
           changefreq: "weekly",
           priority: "0.8",
