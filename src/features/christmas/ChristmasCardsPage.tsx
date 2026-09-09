@@ -17,6 +17,7 @@ import {
   MAX_CARD_MESSAGE_CHARS,
   type CardLayoutKey,
 } from "./cards/taxonomy";
+import { CARD_THEME_TO_STYLE, parseCardTheme } from "./landing/handoff";
 import {
   cardsMessagesFunnel,
   clearMessageToCardHandoff,
@@ -81,6 +82,8 @@ export default function ChristmasCardsPage() {
       if (draft.messageSource) setMessageSource(draft.messageSource);
       if (draft.messageResultId) setMessageResultId(draft.messageResultId);
     }
+    const theme = parseCardTheme(params.get("theme") || params.get("style"));
+    if (theme) setStyleKey(CARD_THEME_TO_STYLE[theme]);
     const owner = readCardOwner();
     if (owner) {
       setProjectId(owner.projectId);

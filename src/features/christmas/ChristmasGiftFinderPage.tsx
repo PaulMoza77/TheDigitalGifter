@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { parseGiftRecipient } from "./landing/handoff";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Heart, RefreshCw, Search, Sparkles } from "lucide-react";
 import { PageHead } from "@/components/PageHead";
@@ -78,8 +79,11 @@ function FieldLabel({ children }: { children: ReactNode }) {
 
 export default function ChristmasGiftFinderPage() {
   const resultsId = useId();
+  const [params] = useSearchParams();
   const [locale] = useState<LocaleCode>("en");
-  const [recipient, setRecipient] = useState("mom");
+  const [recipient, setRecipient] = useState(
+    () => parseGiftRecipient(params.get("recipient") || params.get("for")) || "mom",
+  );
   const [age, setAge] = useState("45_54");
   const [interests, setInterests] = useState<string[]>(["gardening", "cooking"]);
   const [customInterest, setCustomInterest] = useState("");

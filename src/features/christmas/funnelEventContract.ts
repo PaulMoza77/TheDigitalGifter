@@ -72,6 +72,8 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "card_download",
   "card_share",
   "card_create_another",
+  "christmas_hub_cta",
+  "christmas_hub_interact",
 ] as const;
 
 export type ChristmasFunnelEventName = (typeof CHRISTMAS_FUNNEL_ALLOWED_EVENTS)[number];

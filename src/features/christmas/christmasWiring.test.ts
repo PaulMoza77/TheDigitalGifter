@@ -19,10 +19,8 @@ describe("christmas foundation wiring", () => {
 
   it("does not remove classic /christmas hub route", () => {
     expect(readSrc("src/App.tsx")).toContain('path="/christmas"');
-    expect(readSrc("src/pages/website/ChristmasPage.tsx")).toContain(
-      'occasion="christmas"',
-    );
-    expect(readSrc("src/pages/website/ChristmasPage.tsx")).toContain(
+    expect(readSrc("src/pages/website/ChristmasPage.tsx")).toContain("ChristmasLandingExperience");
+    expect(readSrc("src/features/christmas/landing/ChristmasLandingExperience.tsx")).toContain(
       "/generator?occasion=christmas",
     );
   });
