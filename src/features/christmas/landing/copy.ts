@@ -30,7 +30,7 @@ const EN: CopyBag = {
     "Step into a living Christmas world — gifts under the tree, portraits by the fire, and a message from Santa made just for them.",
   "hero.cta": "Start creating",
   "hero.secondary": "Explore this Christmas",
-  "hero.alt": "A cozy Christmas living room with a glowing tree, fireplace, and wrapped gifts",
+  "hero.alt": "A luxury mountain cabin at Christmas with floor-to-ceiling windows, a stone fireplace, and a glowing tree",
   "hero.countdown.eyebrow": "Christmas is coming",
   "hero.countdown.days": "Days",
   "hero.countdown.hours": "Hours",

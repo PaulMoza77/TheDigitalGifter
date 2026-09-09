@@ -1,6 +1,5 @@
-import { LANDING_ASSETS } from "../assets";
 import { landingT, type ChristmasLandingLocale } from "../copy";
-import { HeroAtmosphere } from "../HeroAtmosphere";
+import { CabinHeroScene } from "../CabinHeroScene";
 import { HeroCountdown } from "../HeroCountdown";
 
 export function ImmersiveHero({
@@ -15,19 +14,9 @@ export function ImmersiveHero({
   const t = (key: string) => landingT(key, locale);
 
   return (
-    <section className="xmas-hero" aria-labelledby="christmas-hero-title">
+    <section className="xmas-hero xmas-hero--cabin" aria-labelledby="christmas-hero-title">
       <div className="xmas-hero__stage">
-        <img
-          className="xmas-hero__img"
-          src={LANDING_ASSETS.hero}
-          alt={t("hero.alt")}
-          width={1280}
-          height={720}
-          fetchPriority="high"
-          decoding="async"
-        />
-        <div className="xmas-hero__veil" />
-        <HeroAtmosphere />
+        <CabinHeroScene alt={t("hero.alt")} />
       </div>
       <div className="xmas-hero__content">
         <p className="xmas-kicker">{t("hero.eyebrow")}</p>

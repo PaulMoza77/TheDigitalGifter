@@ -85,12 +85,14 @@ describe("christmas landing wiring", () => {
     expect(readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx")).toContain("parseGiftRecipient");
   });
 
-  it("keeps an alive hero with editorial countdown wiring", () => {
+  it("keeps an alive cabin hero with editorial countdown wiring", () => {
     const hero = readSrc("src/features/christmas/landing/scenes/ImmersiveHero.tsx");
-    expect(hero).toContain("HeroAtmosphere");
+    expect(hero).toContain("CabinHeroScene");
     expect(hero).toContain("HeroCountdown");
     expect(hero).toContain('t("hero.h1")');
-    expect(readSrc("src/features/christmas/landing/HeroAtmosphere.tsx")).toContain("xmas-hero__window");
+    expect(readSrc("src/features/christmas/landing/CabinHeroScene.tsx")).toContain("cabinLoop");
+    expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("cabin-hero-loop.mp4");
+    expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("cabin-hero-1920.webp");
     expect(readSrc("src/features/christmas/landing/HeroCountdown.tsx")).not.toContain("cc-unit");
   });
 
