@@ -1233,11 +1233,11 @@ export default function ChristmasWishlistPage() {
               ))}
             </section>
 
-            <nav className="wl-links" aria-label="More Christmas gifts">
+            <nav className="wl-links" aria-label="Christmas experiences">
               <Link to="/christmas/gift-finder">Gift Finder</Link>
               <Link to="/christmas/tree">Christmas Tree</Link>
               <Link to="/christmas/cards">Christmas Cards</Link>
-              <Link to="/christmas">All Christmas gifts</Link>
+              <Link to="/christmas">Christmas hub</Link>
             </nav>
           </>
         ) : null}

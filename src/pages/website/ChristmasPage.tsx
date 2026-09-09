@@ -3,9 +3,9 @@ import { ChristmasLandingExperience } from "@/features/christmas/landing/Christm
 import { christmasLandingSeo } from "@/features/christmas/landing/seo";
 
 /**
- * Flagship Christmas landing.
- * Hero remains an immersive Christmas world; the rest is scene-based storytelling.
- * Classic generator CTA is preserved: /generator?occasion=christmas
+ * Flagship Christmas landing — storytelling hub, not a catalog rebuild.
+ * Suite IA: Gift Finder ≠ Christmas Tree ≠ Send a Gift. No checkout CTAs.
+ * Classic generator remains adjacent: /generator?occasion=christmas
  * Santa name handoff is owned by ChristmasLandingExperience → /christmas/santa-video?name=
  */
 export default function ChristmasPage() {

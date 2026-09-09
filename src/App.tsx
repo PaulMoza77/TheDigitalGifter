@@ -135,6 +135,11 @@ const ChristmasWishlistPage = lazy(
 const ChristmasGiftFinderPage = lazy(
   () => import("@/features/christmas/ChristmasGiftFinderPage"),
 );
+const GiftFinderLegacyRedirect = lazy(() =>
+  import("@/features/christmas/landing/GiftFinderLegacyRedirect").then((m) => ({
+    default: m.GiftFinderLegacyRedirect,
+  })),
+);
 const ChristmasPortraitFunnelPage = lazy(
   () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
 );
@@ -469,7 +474,7 @@ function AppInner() {
             <Route path="/christmas/wishlist" element={<ChristmasWishlistPage />} />
             <Route path="/wishlist/:shareId" element={<ChristmasWishlistPage />} />
             <Route path="/christmas/gift-finder" element={<ChristmasGiftFinderPage />} />
-            <Route path="/christmas/gifts" element={<ChristmasGiftFinderPage />} />
+            <Route path="/christmas/gifts" element={<GiftFinderLegacyRedirect />} />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
             <Route path="/birthday" element={<BirthdayPage />} />

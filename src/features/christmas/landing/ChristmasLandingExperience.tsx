@@ -19,6 +19,8 @@ import {
   type GiftFinderRecipient,
   type PortraitVertical,
 } from "./handoff";
+import { CLASSIC_GENERATOR_HREF } from "./hubIa";
+import { HubPriorityNav } from "./HubPriorityNav";
 import { trackHubEvent } from "./hubAnalytics";
 import { AdventScene } from "./scenes/AdventScene";
 import { CardsScene } from "./scenes/CardsScene";
@@ -35,7 +37,6 @@ import { WorldTransition } from "./scenes/WorldTransition";
 import { christmasLandingJsonLd, upsertJsonLd } from "./seo";
 
 const LOCALE = CHRISTMAS_LANDING_DEFAULT_LOCALE;
-const CREATE_HREF = "/generator?occasion=christmas";
 
 function ensureLandingFonts() {
   if (document.querySelector(`link[data-xmas-fonts="1"]`)) return;
@@ -62,7 +63,7 @@ export function ChristmasLandingExperience() {
   const goCreate = useCallback(
     (surface: string) => {
       trackHubEvent("christmas_hub_cta", { surface, cta: "start_creating" }, "christmas_hub");
-      void navigate(CREATE_HREF);
+      void navigate(CLASSIC_GENERATOR_HREF);
     },
     [navigate],
   );
@@ -75,10 +76,15 @@ export function ChristmasLandingExperience() {
     trackHubEvent("santa_form_started", { surface: "hub_santa", action: "input_started" }, "christmas_santa_video");
   }, []);
 
+  const jumpToScene = useCallback((sceneId: string) => {
+    trackHubEvent("christmas_hub_interact", { surface: "hub_rail", action: "jump", scene: sceneId }, "christmas_hub");
+    document.getElementById(sceneId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   return (
     <article className="xmas-landing" dir={landingDir(LOCALE)} lang={LOCALE}>
-      <a className="xmas-skip" href="#christmas-world">
-        Skip to Christmas world
+      <a className="xmas-skip" href="#christmas-suite">
+        Skip to Christmas experiences
       </a>
       <AmbientSnow />
       <ImmersiveHero
@@ -89,13 +95,18 @@ export function ChristmasLandingExperience() {
         }}
       />
       <WorldTransition locale={LOCALE} />
+      <HubPriorityNav locale={LOCALE} onJump={jumpToScene} />
       <GiftFinderScene
         locale={LOCALE}
         onSelect={(recipient) => {
           trackHubEvent("christmas_hub_interact", { surface: "hub_gifts", action: "recipient_selected", recipient_key: recipient }, "christmas_gift_finder");
         }}
-        onCta={(recipient: GiftFinderRecipient) => {
-          trackHubEvent("christmas_hub_cta", { surface: "hub_gifts", recipient_key: recipient }, "christmas_gift_finder");
+        onCta={(recipient: GiftFinderRecipient | null) => {
+          trackHubEvent(
+            "christmas_hub_cta",
+            { surface: "hub_gifts", recipient_key: recipient || "any" },
+            "christmas_gift_finder",
+          );
           void navigate(giftFinderUrl(recipient));
         }}
       />
@@ -171,7 +182,11 @@ export function ChristmasLandingExperience() {
           void navigate(messagesUrl(recipient, tone));
         }}
       />
-      <FinalCtaScene locale={LOCALE} onCta={() => goCreate("finale")} />
+      <FinalCtaScene
+        locale={LOCALE}
+        onCta={() => goCreate("finale")}
+        onBrowse={() => jumpToScene("christmas-suite")}
+      />
       <FaqScene locale={LOCALE} />
     </article>
   );

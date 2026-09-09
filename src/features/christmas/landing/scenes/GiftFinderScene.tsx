@@ -29,20 +29,18 @@ export function GiftFinderScene({
 }: {
   locale: ChristmasLandingLocale;
   onSelect: (recipient: GiftFinderRecipient) => void;
-  onCta: (recipient: GiftFinderRecipient) => void;
+  onCta: (recipient: GiftFinderRecipient | null) => void;
 }) {
   const t = (key: string) => landingT(key, locale);
   const [who, setWho] = useState<GiftFinderRecipient | null>(null);
 
   const visual = useMemo(
     () => (
-      <div className="xmas-gifts" aria-hidden="true">
-        <div className="xmas-gifts__tree" />
-        <div className="xmas-gifts__trunk" />
+      <div className="xmas-gifts xmas-gifts--ideas" aria-hidden="true">
         {GIFT_FINDER_RECIPIENTS.slice(0, 3).map((key) => (
           <div key={key} className={`xmas-gift ${who === key ? "is-lit" : ""}`} />
         ))}
-        {who ? <div className="xmas-label">{t(LABELS[who])}</div> : null}
+        <div className="xmas-label">{who ? t(LABELS[who]) : t("gifts.hint")}</div>
       </div>
     ),
     [who, locale],
@@ -75,16 +73,15 @@ export function GiftFinderScene({
           </button>
         ))}
       </div>
+      <p className="xmas-note">{t("gifts.note")}</p>
       <p className="xmas-react" aria-live="polite">
         {who ? t(REACTIONS[who]) : "\u00a0"}
       </p>
-      {who ? (
-        <div className="xmas-actions">
-          <button type="button" className="xmas-btn xmas-btn--gold" onClick={() => onCta(who)}>
-            {t("gifts.cta")}
-          </button>
-        </div>
-      ) : null}
+      <div className="xmas-actions">
+        <button type="button" className="xmas-btn xmas-btn--gold" onClick={() => onCta(who)}>
+          {t("gifts.cta")}
+        </button>
+      </div>
     </SceneShell>
   );
 }

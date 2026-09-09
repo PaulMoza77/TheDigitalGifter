@@ -4,9 +4,11 @@ import { landingT, type ChristmasLandingLocale } from "../copy";
 export function FinalCtaScene({
   locale,
   onCta,
+  onBrowse,
 }: {
   locale: ChristmasLandingLocale;
   onCta: () => void;
+  onBrowse: () => void;
 }) {
   const t = (key: string) => landingT(key, locale);
 
@@ -31,6 +33,9 @@ export function FinalCtaScene({
         <div className="xmas-actions">
           <button type="button" className="xmas-btn xmas-btn--gold" onClick={onCta}>
             {t("finale.cta")}
+          </button>
+          <button type="button" className="xmas-btn xmas-btn--ghost" onClick={onBrowse}>
+            {t("finale.secondary")}
           </button>
         </div>
       </div>

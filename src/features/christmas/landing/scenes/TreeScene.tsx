@@ -98,6 +98,7 @@ export function TreeScene({
         </div>
       }
     >
+      <p className="xmas-note">{t("tree.note")}</p>
       <div className="xmas-actions">
         <button type="button" className="xmas-btn xmas-btn--gold" onClick={onCta}>
           {t("tree.cta")}

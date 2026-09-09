@@ -78,7 +78,8 @@ export function santaExperienceUrl(childFirstName: string): string {
   return q ? `${SANTA_ROUTE}?${q}` : SANTA_ROUTE;
 }
 
-export function giftFinderUrl(recipient: GiftFinderRecipient): string {
+export function giftFinderUrl(recipient?: GiftFinderRecipient | null): string {
+  if (!recipient) return "/christmas/gift-finder";
   return `/christmas/gift-finder?recipient=${encodeURIComponent(recipient)}`;
 }
 

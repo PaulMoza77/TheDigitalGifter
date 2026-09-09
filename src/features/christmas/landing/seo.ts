@@ -1,4 +1,5 @@
 import { landingT, type ChristmasLandingLocale } from "./copy";
+import { CLASSIC_GENERATOR_HREF, hubSuiteByPriority } from "./hubIa";
 
 export const CHRISTMAS_LANDING_PATH = "/christmas";
 export const CHRISTMAS_SITE_ORIGIN = "https://www.thedigitalgifter.com";
@@ -9,18 +10,12 @@ export const LANDING_FAQS = [
   { qKey: "faq.3.q", aKey: "faq.3.a" },
   { qKey: "faq.4.q", aKey: "faq.4.a" },
   { qKey: "faq.5.q", aKey: "faq.5.a" },
+  { qKey: "faq.6.q", aKey: "faq.6.a" },
 ] as const;
 
 export const LANDING_INTERNAL_LINKS = [
-  { href: "/christmas/gift-finder", labelKey: "nav.gifts" },
-  { href: "/christmas/family", labelKey: "nav.portraits" },
-  { href: "/christmas/santa-video", labelKey: "nav.santa" },
-  { href: "/christmas/wishlist", labelKey: "nav.wishlist" },
-  { href: "/christmas/tree", labelKey: "nav.tree" },
-  { href: "/christmas/advent", labelKey: "nav.advent" },
-  { href: "/christmas/cards", labelKey: "nav.cards" },
-  { href: "/christmas/messages", labelKey: "nav.messages" },
-  { href: "/generator?occasion=christmas", labelKey: "hero.cta" },
+  ...hubSuiteByPriority().map((item) => ({ href: item.path, labelKey: item.navKey })),
+  { href: CLASSIC_GENERATOR_HREF, labelKey: "hero.cta" },
 ] as const;
 
 export function christmasLandingSeo(locale: ChristmasLandingLocale = "en") {
