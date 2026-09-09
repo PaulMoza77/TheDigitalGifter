@@ -175,6 +175,13 @@ describe("christmas gift tree checkout lock", () => {
     expect(page).toMatch(/if \(purchaseInFlight\.current\) return/);
   });
 
+  it("shows Stripe Elements after MoreChancesModal purchase (not only inside RewardReveal)", () => {
+    const page = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/ChristmasGiftsPage.tsx"), "utf8");
+    // Standalone overlay must render when checkout is set outside RewardRevealModal.
+    expect(page).toMatch(/checkout && !\(modalOpen && revealStep === "checkout"\)/);
+    expect(page).toMatch(/CustomStripeCheckout/);
+  });
+
   it("dedupes concurrent startChristmasCheckout calls in photoApi", () => {
     const api = readFileSync(resolve(process.cwd(), "src/features/christmas/photoApi.ts"), "utf8");
     expect(api).toMatch(/christmasCheckoutInflight/);

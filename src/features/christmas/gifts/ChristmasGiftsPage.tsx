@@ -728,12 +728,21 @@ export function ChristmasGiftsExperience({
         </div>
       ) : null}
 
-      {checkout && revealStep !== "checkout" ? (
+      {/* Standalone Stripe sheet for MoreChancesModal purchases.
+          RewardRevealModal already embeds Elements when modalOpen && step===checkout. */}
+      {checkout && !(modalOpen && revealStep === "checkout") ? (
         <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-2xl border border-amber-200/20 bg-[#14110e] p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
               <p className="font-serif text-xl text-amber-50">Complete payment</p>
-              <button type="button" className="text-xs text-amber-100/60" onClick={() => setCheckout(null)}>
+              <button
+                type="button"
+                className="text-xs text-amber-100/60"
+                onClick={() => {
+                  setCheckout(null);
+                  setMoreOpen(true);
+                }}
+              >
                 Cancel
               </button>
             </div>
