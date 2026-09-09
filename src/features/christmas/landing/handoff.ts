@@ -3,8 +3,28 @@
 export const SANTA_HANDOFF_KEY = "tdg.christmas.santa.handoff.v1";
 export const SANTA_ROUTE = "/christmas/santa-video";
 
-export const GIFT_FINDER_RECIPIENTS = ["mom", "dad", "partner", "friend", "child"] as const;
+export const GIFT_FINDER_RECIPIENTS = [
+  "mom",
+  "dad",
+  "wife",
+  "husband",
+  "girlfriend",
+  "boyfriend",
+  "partner",
+  "daughter",
+  "son",
+  "teen",
+  "child",
+  "grandma",
+  "grandpa",
+  "friend",
+  "coworker",
+  "teacher",
+  "other",
+] as const;
 export type GiftFinderRecipient = (typeof GIFT_FINDER_RECIPIENTS)[number];
+
+export const GIFT_FINDER_LANDING_RECIPIENTS = ["mom", "dad", "partner", "friend", "child"] as const;
 
 export const PORTRAIT_VERTICALS = ["family", "couples", "pets"] as const;
 export type PortraitVertical = (typeof PORTRAIT_VERTICALS)[number];
@@ -101,7 +121,7 @@ export function messagesUrl(recipient: string, tone: string): string {
 
 export function parseGiftRecipient(value: string | null): GiftFinderRecipient | null {
   if (!value) return null;
-  const key = value === "kids" ? "child" : value;
+  const key = value === "kids" ? "child" : value === "grandparent" ? "grandma" : value;
   return (GIFT_FINDER_RECIPIENTS as readonly string[]).includes(key)
     ? (key as GiftFinderRecipient)
     : null;

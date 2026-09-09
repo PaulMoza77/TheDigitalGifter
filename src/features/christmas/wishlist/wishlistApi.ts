@@ -60,6 +60,8 @@ export type GiftIdea = {
   budget_max: number | null;
   currency?: string | null;
   category: string;
+  gift_type?: string | null;
+  ranking_role?: string | null;
   search_query: string;
   tdg_product_key?: string | null;
 };
