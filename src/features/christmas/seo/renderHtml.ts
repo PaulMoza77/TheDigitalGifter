@@ -4,6 +4,7 @@ import {
   specForCanonicalPath,
 } from "./factory";
 import {
+  CHRISTMAS_SEO_HERO_PATH,
   CHRISTMAS_SEO_OG_IMAGE,
   CHRISTMAS_SEO_SITE_ORIGIN,
   type ChristmasSeoLocale,
@@ -70,6 +71,7 @@ export function renderChristmasSeoHtml(row: ChristmasSeoPageRow, locale: Christm
   const localizedPath = localizePath(row.canonical_path, locale);
   const canonical = absoluteUrl(localizedPath);
   const image = row.hero_image_url || CHRISTMAS_SEO_OG_IMAGE;
+  const visibleImage = CHRISTMAS_SEO_HERO_PATH;
   const jsonLd = christmasSeoJsonLd(row, locale);
   const otherLocale: ChristmasSeoLocale = locale === "ro" ? "en" : "ro";
   const otherHref = localizePath(row.canonical_path, otherLocale);
@@ -177,7 +179,7 @@ export function renderChristmasSeoHtml(row: ChristmasSeoPageRow, locale: Christm
             <a class="cta secondary" href="#faq">FAQ</a>
           </p>
         </div>
-        <img src="${escapeHtml(image)}" alt="${escapeHtml(row.image_alt)}" width="1600" height="900" />
+        <img src="${escapeHtml(visibleImage)}" alt="${escapeHtml(row.image_alt)}" width="1600" height="900" />
       </section>
       ${sections}
       <section>

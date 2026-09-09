@@ -4,7 +4,7 @@ import { PageHead } from "@/components/PageHead";
 import { parseChristmasSeoPath, localizePath, absoluteUrl } from "./factory";
 import { christmasSeoJsonLd } from "./renderHtml";
 import { fetchChristmasSeoPage } from "./seoPagesService";
-import type { ChristmasSeoPageRow } from "./types";
+import { CHRISTMAS_SEO_HERO_PATH, type ChristmasSeoPageRow } from "./types";
 import { upsertJsonLd } from "../landing/seo";
 
 export default function ChristmasSeoClusterPage() {
@@ -121,7 +121,7 @@ export default function ChristmasSeoClusterPage() {
         </div>
         {page.hero_image_url ? (
           <img
-            src={page.hero_image_url}
+            src={CHRISTMAS_SEO_HERO_PATH}
             alt={page.image_alt}
             width={1600}
             height={900}

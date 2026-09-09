@@ -89,7 +89,8 @@ export type ParsedChristmasSeoPath = {
 
 export const CHRISTMAS_SEO_SITE_ORIGIN = "https://thedigitalgifter.com";
 export const CHRISTMAS_SEO_OG_IMAGE =
-  "https://thedigitalgifter.com/assets/christmas/christmas_hero_room.webp";
+  "https://www.thedigitalgifter.com/assets/christmas/christmas_hero_room.webp";
+export const CHRISTMAS_SEO_HERO_PATH = "/assets/christmas/christmas_hero_room.webp";
 
 export const THIN_PAGE_LIMITS = {
   intro: 400,
