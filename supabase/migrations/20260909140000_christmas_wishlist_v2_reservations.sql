@@ -64,3 +64,5 @@ comment on column public.christmas_wishlists.audience is
   'Who the wishlist is for. Soft metadata for UX; not required for sharing.';
 
 commit;
+
+-- apply trigger 20260909T193436Z
