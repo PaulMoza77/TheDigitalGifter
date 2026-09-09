@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
           last_viewed_at: new Date().toISOString(),
         })
         .eq("id", list.id);
-      const { data: items } = await service
+      const { data: items, error: itemsErr } = await service
         .from("christmas_wishlist_items")
         .select(
           "id,sort_order,title,note,external_url,image_url,priority,budget_amount,currency,quantity,preference_size,preference_color,source_type,reservation_status",
@@ -164,6 +164,19 @@ Deno.serve(async (req) => {
         .eq("wishlist_id", list.id)
         .eq("status", "active")
         .order("sort_order", { ascending: true });
+      let sharedItems = items;
+      if (itemsErr && /image_url|quantity|preference_|column/i.test(String(itemsErr.message || ""))) {
+        const legacy = await service
+          .from("christmas_wishlist_items")
+          .select("id,sort_order,title,note,external_url,priority,budget_amount,currency,source_type,reservation_status")
+          .eq("wishlist_id", list.id)
+          .eq("status", "active")
+          .order("sort_order", { ascending: true });
+        if (legacy.error) throw legacy.error;
+        sharedItems = legacy.data;
+      } else if (itemsErr) {
+        throw itemsErr;
+      }
       const showBudgets = Boolean(list.show_budgets_public);
       return jsonResponse({
         ok: true,
@@ -172,7 +185,7 @@ Deno.serve(async (req) => {
           title: list.title,
           description: list.description,
           locale: list.locale,
-          items: (items || []).map((it: Record<string, unknown>) => ({
+          items: (sharedItems || []).map((it: Record<string, unknown>) => ({
             id: it.id,
             sort_order: it.sort_order,
             title: it.title,
@@ -248,31 +261,61 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: "invalid_quantity" }, 400);
       }
       quantity = Math.floor(quantity);
-      const { data, error } = await service
-        .from("christmas_wishlist_items")
-        .insert({
-          wishlist_id: list.id,
-          sort_order: nextSort,
-          title,
-          note: sanitizeText(body.note, 500),
-          external_url: url,
-          image_url: imageUrl,
-          priority,
-          budget_amount: body.budget_amount == null || body.budget_amount === ""
-            ? null
-            : Number(body.budget_amount),
-          currency: sanitizeText(body.currency, 8) || list.currency,
-          quantity,
-          preference_size: sanitizeText(body.preference_size, 40),
-          preference_color: sanitizeText(body.preference_color, 40),
-          source_type: sourceType,
-          source_ref: sourceRef,
-        })
-        .select("id,sort_order")
-        .single();
-      if (error) {
-        if (error.code === "23505") return jsonResponse({ ok: true, already: true });
-        throw error;
+      const fullRow = {
+        wishlist_id: list.id,
+        sort_order: nextSort,
+        title,
+        note: sanitizeText(body.note, 500),
+        external_url: url,
+        image_url: imageUrl,
+        priority,
+        budget_amount: body.budget_amount == null || body.budget_amount === ""
+          ? null
+          : Number(body.budget_amount),
+        currency: sanitizeText(body.currency, 8) || list.currency,
+        quantity,
+        preference_size: sanitizeText(body.preference_size, 40),
+        preference_color: sanitizeText(body.preference_color, 40),
+        source_type: sourceType,
+        source_ref: sourceRef,
+      };
+      let data: { id: string; sort_order: number } | null = null;
+      {
+        const first = await service.from("christmas_wishlist_items").insert(fullRow).select("id,sort_order").single();
+        if (first.error?.code === "23505") return jsonResponse({ ok: true, already: true });
+        if (
+          first.error &&
+          /image_url|quantity|preference_|really_want|column|check/i.test(String(first.error.message || ""))
+        ) {
+          const legacyPriority = priority === "really_want" ? "would_love" : priority;
+          const legacy = await service
+            .from("christmas_wishlist_items")
+            .insert({
+              wishlist_id: list.id,
+              sort_order: nextSort,
+              title,
+              note: sanitizeText(body.note, 500),
+              external_url: url,
+              priority: legacyPriority,
+              budget_amount: body.budget_amount == null || body.budget_amount === ""
+                ? null
+                : Number(body.budget_amount),
+              currency: sanitizeText(body.currency, 8) || list.currency,
+              source_type: sourceType,
+              source_ref: sourceRef,
+            })
+            .select("id,sort_order")
+            .single();
+          if (legacy.error) {
+            if (legacy.error.code === "23505") return jsonResponse({ ok: true, already: true });
+            throw legacy.error;
+          }
+          data = legacy.data;
+        } else if (first.error) {
+          throw first.error;
+        } else {
+          data = first.data;
+        }
       }
       return jsonResponse({ ok: true, item: data });
     }

@@ -117,6 +117,7 @@ describe("wishlist / gift finder wiring", () => {
     expect(fn).toContain("publicOwnerItem");
     expect(fn).toContain("reservation_status");
     expect(fn).toContain('eq("reservation_status", "none")');
+    expect(fn).toContain("legacyPriority");
   });
 
   it("ships wishlist v2 migration for priorities media and audience", () => {
