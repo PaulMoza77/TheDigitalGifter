@@ -178,9 +178,10 @@ describe("christmas control wiring", () => {
     expect(app).toContain('path="send-a-gift"');
     expect(layout).toContain(CHRISTMAS_CONTROL_PATH);
     expect(layout).toContain("Christmas Control");
-    expect(page).toContain(CHRISTMAS_ORDERS_PATH);
-    expect(page).toContain(CHRISTMAS_SEND_A_GIFT_PATH);
-    expect(page).toContain("#funnels");
+    expect(page).toContain("CHRISTMAS_CONTROL_PRIMARY_LINKS");
+    expect(page).toContain("CHRISTMAS_ORDERS_PATH");
+    expect(page).toContain('id="send-a-gift"');
+    expect(page).toContain('id="funnels"');
     expect(page).not.toMatch(/from ["']@\/lib\/supabase["']/);
     expect(service).toContain('from("christmas_orders")');
     expect(service).toContain("CHRISTMAS_CONTROL_ORDER_SELECT");
