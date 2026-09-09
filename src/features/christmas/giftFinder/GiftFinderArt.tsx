@@ -1,8 +1,8 @@
 /** Illustrated gift motifs — SVG art keyed by idea category / title cues. */
 
-import type { ReactElement } from "react";
+import type { CSSProperties, ReactElement } from "react";
 
-type ArtProps = { className?: string };
+type ArtProps = { className?: string; style?: CSSProperties };
 
 function hashHue(seed: string): number {
   let h = 0;
@@ -239,9 +239,9 @@ function PortraitArt({ className }: ArtProps) {
   );
 }
 
-export function PineCorner({ className }: ArtProps) {
+export function PineCorner({ className, style }: ArtProps) {
   return (
-    <svg viewBox="0 0 160 120" className={className} fill="none" aria-hidden="true">
+    <svg viewBox="0 0 160 120" className={className} style={style} fill="none" aria-hidden="true">
       <path d="M20 110 L50 40 L80 110Z" fill="#1B4332" />
       <path d="M45 110 L75 28 L105 110Z" fill="#2D6A4F" />
       <path d="M70 110 L100 48 L130 110Z" fill="#40916C" />
@@ -253,9 +253,9 @@ export function PineCorner({ className }: ArtProps) {
   );
 }
 
-export function OrnamentSvg({ className }: ArtProps) {
+export function OrnamentSvg({ className, style }: ArtProps) {
   return (
-    <svg viewBox="0 0 48 64" className={className} fill="none" aria-hidden="true">
+    <svg viewBox="0 0 48 64" className={className} style={style} fill="none" aria-hidden="true">
       <rect x="18" y="4" width="12" height="8" rx="2" fill="#D4A017" />
       <circle cx="24" cy="36" r="20" fill="#C1121F" />
       <circle cx="24" cy="36" r="14" fill="none" stroke="#F4D35E" strokeWidth="2" opacity=".7" />
@@ -264,9 +264,9 @@ export function OrnamentSvg({ className }: ArtProps) {
   );
 }
 
-export function SnowflakeSvg({ className }: ArtProps) {
+export function SnowflakeSvg({ className, style }: ArtProps) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none" aria-hidden="true">
+    <svg viewBox="0 0 32 32" className={className} style={style} fill="none" aria-hidden="true">
       <path
         d="M16 2v28M4.5 9l23 14M4.5 23l23-14"
         stroke="currentColor"
