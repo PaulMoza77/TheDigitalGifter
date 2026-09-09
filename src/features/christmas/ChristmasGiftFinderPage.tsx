@@ -455,7 +455,12 @@ export default function ChristmasGiftFinderPage() {
         locale,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save to wishlist");
+      const raw = e instanceof Error ? e.message : "Could not save to wishlist";
+      setError(
+        /failed to fetch|network|supabase/i.test(raw)
+          ? "We couldn’t reach your wishlist just now. Please try again in a moment."
+          : raw,
+      );
     } finally {
       setBusy(false);
     }
