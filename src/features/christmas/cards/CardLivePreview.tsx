@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getCardStyle, type CardLayoutKey } from "./cardStyles";
+import { getCardLayout, getCardStyle, type CardLayoutKey } from "./cardStyles";
 import { renderChristmasCard } from "./cardRenderer";
 
 type Props = {
@@ -12,11 +12,14 @@ type Props = {
   year?: string;
   label: string;
   emptyLabel: string;
+  /** Wrap the canvas PNG in a physical card + envelope stage. */
+  physical?: boolean;
+  asideNote?: string;
 };
 
 /**
  * Debounced client canvas preview — same renderer as the final PNG.
- * Keeps the finished-card object as the hero during editing.
+ * Optional physical framing keeps the finished card as the visual hero.
  */
 export function CardLivePreview({
   message,
@@ -28,11 +31,14 @@ export function CardLivePreview({
   year,
   label,
   emptyLabel,
+  physical = true,
+  asideNote,
 }: Props) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const gen = useRef(0);
   const style = getCardStyle(styleKey);
+  const layout = getCardLayout(layoutKey);
 
   useEffect(() => {
     const id = ++gen.current;
@@ -63,14 +69,25 @@ export function CardLivePreview({
         .finally(() => {
           if (gen.current === id) setBusy(false);
         });
-    }, 180);
+    }, 160);
     return () => window.clearTimeout(timer);
   }, [message, styleKey, layoutKey, recipientName, fromName, photo, year]);
 
-  return (
-    <div className="ccm-live" aria-label={label} aria-busy={busy || undefined}>
+  const frame = (
+    <div
+      className={`ccm-live ccm-live--${layoutKey}`}
+      aria-label={label}
+      aria-busy={busy || undefined}
+      style={{ aspectRatio: `${layout.width} / ${layout.height}` }}
+    >
       {dataUrl ? (
-        <img src={dataUrl} alt={label} width={1080} height={1080} />
+        <img
+          src={dataUrl}
+          alt={label}
+          width={layout.width}
+          height={layout.height}
+          decoding="async"
+        />
       ) : (
         <div
           className="ccm-live__empty"
@@ -82,6 +99,21 @@ export function CardLivePreview({
           {emptyLabel}
         </div>
       )}
+      <span className="ccm-live__grain" aria-hidden="true" />
+    </div>
+  );
+
+  if (!physical) return frame;
+
+  return (
+    <div className={`ccm-physical-stage ccm-physical-stage--${layoutKey}`}>
+      <div className="ccm-envelope" aria-hidden="true" />
+      <div className="ccm-card-object">{frame}</div>
+      {asideNote ? (
+        <p className="ccm-aside-note" aria-hidden="true">
+          {asideNote}
+        </p>
+      ) : null}
     </div>
   );
 }
