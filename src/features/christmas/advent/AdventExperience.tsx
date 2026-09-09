@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
@@ -90,7 +90,7 @@ function ensureFont() {
 
 export function AdventExperience() {
   const locale = ADVENT_DEFAULT_LOCALE;
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const seo = useMemo(() => adventSeo(locale), [locale]);
   const [status, setStatus] = useState<AdventStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -105,7 +105,14 @@ export function AdventExperience() {
   const hintTimer = useRef<number | null>(null);
 
   const seasonYear = status?.season_year || 2026;
-  const simDate = useMemo(() => parseSimDate(location.search), [location.search]);
+  const simDate = useMemo(() => {
+    const fromQuery = parseSimDate(`?${searchParams.toString()}`);
+    if (fromQuery) return fromQuery;
+    if (typeof window !== "undefined") {
+      return parseSimDate(window.location.search);
+    }
+    return null;
+  }, [searchParams]);
 
   const calendar = useMemo(() => {
     if (simDate) {
@@ -504,7 +511,13 @@ export function AdventExperience() {
   };
 
   return (
-    <div className="advent-page" dir={ADVENT_LOCALE_DIR[locale] || "ltr"} lang={locale}>
+    <div
+      className="advent-page"
+      dir={ADVENT_LOCALE_DIR[locale] || "ltr"}
+      lang={locale}
+      data-advent-sim={simDate ? searchParams.get("sim") : undefined}
+      data-advent-day={calendar.eligible_day ?? (calendar.before_season ? "pre" : calendar.after_season ? "after" : "none")}
+    >
       <PageHead
         title={seo.title}
         description={seo.description}
