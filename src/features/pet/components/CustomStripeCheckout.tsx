@@ -25,6 +25,29 @@ function normalizeClientSecret(clientSecret: string): string {
   }
 }
 
+export type WalletAvailability = {
+  applePay: boolean;
+  googlePay: boolean;
+  link: boolean;
+  any: boolean;
+};
+
+const DARK_EXPRESS_OPTIONS = {
+  ...PET_EXPRESS_CHECKOUT_OPTIONS,
+  buttonHeight: 52,
+  buttonTheme: { applePay: "white" as const, googlePay: "white" as const },
+  buttonType: { applePay: "buy" as const, googlePay: "buy" as const },
+  layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
+  paymentMethodOrder: ["applePay", "googlePay"],
+  paymentMethods: {
+    ...PET_EXPRESS_CHECKOUT_OPTIONS.paymentMethods,
+    // Always reserve Apple Pay at the top when the device can offer it.
+    applePay: "always" as const,
+    googlePay: "auto" as const,
+    link: "never" as const,
+  },
+};
+
 function CheckoutBody({
   dueDisplay,
   email,
@@ -37,8 +60,10 @@ function CheckoutBody({
   onInitError,
   onRecoverCheckout,
   onReloadCheckout,
+  onWalletAvailability,
   confirmDisabled,
   payButtonClassName,
+  surface = "light",
 }: {
   dueDisplay: string;
   email?: string;
@@ -52,8 +77,10 @@ function CheckoutBody({
   /** Order-aware recovery. When set, hides the Stripe-only secret reload retry. */
   onRecoverCheckout?: () => void;
   onReloadCheckout?: () => void;
+  onWalletAvailability?: (info: WalletAvailability) => void;
   confirmDisabled?: boolean;
   payButtonClassName?: string;
+  surface?: "light" | "dark";
 }) {
   const checkoutState = useCheckoutElements();
   const [busy, setBusy] = useState(false);
@@ -174,11 +201,19 @@ function CheckoutBody({
     }
   }
 
+  const mutedText = surface === "dark" ? "text-amber-50/70" : "text-[#1a140e]/55";
+  const rule = surface === "dark" ? "bg-white/18" : "bg-[#1a140e]/12";
+  const alertText = surface === "dark" ? "text-rose-200" : "text-[#9a3412]";
+  const defaultPayClass =
+    surface === "dark"
+      ? "h-14 min-h-[56px] w-full rounded-xl bg-gradient-to-b from-[#f3e2b5] via-[#e0c078] to-[#c9a35a] text-[16px] font-semibold text-[#2a1c0e] disabled:opacity-60"
+      : "h-14 min-h-[56px] w-full rounded-xl bg-[#1a140e] text-[16px] font-semibold text-white disabled:opacity-60";
+
   if (checkoutState.type === "loading") {
     return (
       <div className="space-y-4" role="status" aria-live="polite">
         <ApplePayButton disabled />
-        <p className="text-center text-sm text-[#1a140e]/55">{loadingLabel}</p>
+        <p className={`text-center text-sm ${mutedText}`}>{loadingLabel}</p>
       </div>
     );
   }
@@ -188,7 +223,7 @@ function CheckoutBody({
     if (onRecoverCheckout) {
       return (
         <div className="space-y-3 py-2">
-          <p className="text-sm text-[#9a3412]" role="alert">
+          <p className={`text-sm ${alertText}`} role="alert">
             {stripeCheckoutInitCustomerError(checkoutState.error.message)}
           </p>
         </div>
@@ -196,7 +231,7 @@ function CheckoutBody({
     }
     return (
       <div className="space-y-3 py-2">
-        <p className="text-sm text-[#9a3412]" role="alert">
+        <p className={`text-sm ${alertText}`} role="alert">
           {stripeCheckoutInitCustomerError(checkoutState.error.message)}
         </p>
         <button
@@ -205,7 +240,11 @@ function CheckoutBody({
             initErrorHandled.current = false;
             onReloadCheckout?.();
           }}
-          className="h-11 w-full rounded-full border border-[#f6efe4]/20 bg-transparent text-sm text-[#f6efe4]"
+          className={
+            surface === "dark"
+              ? "h-11 w-full rounded-full border border-[#f6efe4]/25 bg-transparent text-sm text-[#f6efe4]"
+              : "h-11 w-full rounded-full border border-[#1a140e]/20 bg-transparent text-sm text-[#1a140e]"
+          }
         >
           Retry secure payment
         </button>
@@ -214,21 +253,42 @@ function CheckoutBody({
   }
 
   const payLabel = dueDisplay.replace(" USD", "");
-  const buttonText = payButtonLabel ? payButtonLabel(payLabel) : `Pay ${payLabel} — Get portraits`;
+  const buttonText = payButtonLabel ? payButtonLabel(payLabel) : `Pay ${payLabel}`;
 
   return (
     <div className="space-y-4">
-      <ExpressCheckoutElement
-        options={{ ...PET_EXPRESS_CHECKOUT_OPTIONS, layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const } }}
-        onConfirm={(event) => void confirm(event)}
-        onClick={markInteraction}
-        onCancel={() => setError(null)}
-      />
+      <div className="min-h-[52px]">
+        <ExpressCheckoutElement
+          options={surface === "dark" ? DARK_EXPRESS_OPTIONS : {
+            ...PET_EXPRESS_CHECKOUT_OPTIONS,
+            layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
+            paymentMethods: {
+              ...PET_EXPRESS_CHECKOUT_OPTIONS.paymentMethods,
+              applePay: "always" as const,
+            },
+          }}
+          onReady={(event) => {
+            const methods = event?.availablePaymentMethods || {};
+            const applePay = Boolean(methods.applePay);
+            const googlePay = Boolean(methods.googlePay);
+            const link = Boolean(methods.link);
+            onWalletAvailability?.({
+              applePay,
+              googlePay,
+              link,
+              any: applePay || googlePay || link,
+            });
+          }}
+          onConfirm={(event) => void confirm(event)}
+          onClick={markInteraction}
+          onCancel={() => setError(null)}
+        />
+      </div>
 
       <div className="flex items-center gap-3">
-        <span className="h-px flex-1 bg-[#1a140e]/12" />
-        <span className="text-[12px] text-[#1a140e]/45">Or pay with card</span>
-        <span className="h-px flex-1 bg-[#1a140e]/12" />
+        <span className={`h-px flex-1 ${rule}`} />
+        <span className={`text-[12px] font-medium ${mutedText}`}>Or pay with card</span>
+        <span className={`h-px flex-1 ${rule}`} />
       </div>
 
       <div onFocusCapture={markInteraction} onChangeCapture={markInteraction}>
@@ -248,16 +308,13 @@ function CheckoutBody({
         type="button"
         disabled={busy || confirmDisabled}
         onClick={() => void confirm()}
-        className={
-          payButtonClassName ??
-          "h-14 min-h-[56px] w-full rounded-xl bg-[#1a140e] text-[16px] font-semibold text-white disabled:opacity-60"
-        }
+        className={payButtonClassName ?? defaultPayClass}
       >
         {busy ? busyLabel : buttonText}
       </button>
 
       {error ? (
-        <p className="text-sm text-[#9a3412]" role="alert">
+        <p className={`text-sm ${alertText}`} role="alert">
           {error}
         </p>
       ) : null}
@@ -278,6 +335,7 @@ export function CustomStripeCheckout({
   onPaymentInteraction,
   onInitError,
   onRecoverCheckout,
+  onWalletAvailability,
   confirmDisabled,
   appearanceTheme = "stripe",
   appearanceVariables,
@@ -295,6 +353,7 @@ export function CustomStripeCheckout({
   onPaymentInteraction?: () => void;
   onInitError?: (detail?: { initFailureCode?: string; stripeInstanceKeyFp?: string | null }) => void;
   onRecoverCheckout?: () => void;
+  onWalletAvailability?: (info: WalletAvailability) => void;
   confirmDisabled?: boolean;
   appearanceTheme?: "stripe" | "night";
   appearanceVariables?: Record<string, string>;
@@ -334,6 +393,25 @@ export function CustomStripeCheckout({
     onReady?.();
   }
 
+  const surface = appearanceTheme === "night" ? "dark" : "light";
+  const variables =
+    appearanceVariables ??
+    (appearanceTheme === "night"
+      ? {
+          colorPrimary: "#e0c078",
+          colorBackground: "#1a1512",
+          colorText: "#f6efe4",
+          colorTextSecondary: "#e8dcc8",
+          colorDanger: "#f5a8a0",
+          borderRadius: "12px",
+          fontFamily: 'system-ui, "Segoe UI", sans-serif',
+          fontSizeBase: "16px",
+        }
+      : {
+          colorPrimary: "#1a140e",
+          borderRadius: "12px",
+        });
+
   return (
     <CheckoutElementsProvider
       key={`${publishableKey}:${reloadNonce}:${normalizedClientSecret.includes("_secret_") ? "secret" : "invalid"}`}
@@ -344,10 +422,35 @@ export function CustomStripeCheckout({
         elementsOptions: {
           appearance: {
             theme: appearanceTheme,
-            variables: appearanceVariables ?? {
-              colorPrimary: "#1a140e",
-              borderRadius: "12px",
-            },
+            variables,
+            rules: appearanceTheme === "night"
+              ? {
+                  ".Label": {
+                    color: "#f0e6d4",
+                    fontWeight: "600",
+                    fontSize: "13px",
+                  },
+                  ".Input": {
+                    backgroundColor: "#2a221c",
+                    color: "#f6efe4",
+                    border: "1px solid rgba(246, 239, 228, 0.28)",
+                  },
+                  ".Input:focus": {
+                    border: "1px solid rgba(224, 192, 120, 0.8)",
+                    boxShadow: "0 0 0 1px rgba(224, 192, 120, 0.35)",
+                  },
+                  ".Tab": {
+                    color: "#e8dcc8",
+                    border: "1px solid rgba(246, 239, 228, 0.18)",
+                    backgroundColor: "#1a1512",
+                  },
+                  ".Tab--selected": {
+                    color: "#1a140e",
+                    backgroundColor: "#e0c078",
+                    border: "1px solid #e0c078",
+                  },
+                }
+              : undefined,
           },
         },
       }}
@@ -364,8 +467,10 @@ export function CustomStripeCheckout({
         onInitError={handleInitError}
         onRecoverCheckout={onRecoverCheckout}
         onReloadCheckout={reloadCheckout}
+        onWalletAvailability={onWalletAvailability}
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}
+        surface={surface}
       />
     </CheckoutElementsProvider>
   );

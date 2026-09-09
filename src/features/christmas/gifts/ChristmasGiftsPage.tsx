@@ -750,6 +750,14 @@ export function ChristmasGiftsExperience({
               clientSecret={checkout.clientSecret}
               publishableKey={checkout.publishableKey}
               dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
+              appearanceTheme="night"
+              payButtonLabel={(pay) => {
+                const offer = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === checkout.packageKey);
+                const opens = offer?.opensGranted ?? 0;
+                if (opens > 1) return `Pay ${pay} — ${opens} more chances`;
+                if (opens === 1) return `Pay ${pay} — 1 more chance`;
+                return `Pay ${pay}`;
+              }}
               onWalletAvailability={(info) => {
                 void trackChristmasEvent(
                   info.applePay

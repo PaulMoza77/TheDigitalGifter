@@ -182,6 +182,19 @@ describe("christmas gift tree checkout lock", () => {
     expect(page).toMatch(/CustomStripeCheckout/);
   });
 
+  it("uses a dark readable Stripe sheet with Apple Pay forced on top", () => {
+    const page = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/ChristmasGiftsPage.tsx"), "utf8");
+    const checkout = readFileSync(
+      resolve(process.cwd(), "src/features/pet/components/CustomStripeCheckout.tsx"),
+      "utf8",
+    );
+    expect(page).toMatch(/appearanceTheme="night"/);
+    expect(page).toMatch(/more chances|1 more chance/);
+    expect(checkout).toMatch(/applePay: "always"/);
+    expect(checkout).toMatch(/onWalletAvailability/);
+    expect(checkout).toMatch(/colorText: "#f6efe4"/);
+  });
+
   it("dedupes concurrent startChristmasCheckout calls in photoApi", () => {
     const api = readFileSync(resolve(process.cwd(), "src/features/christmas/photoApi.ts"), "utf8");
     expect(api).toMatch(/christmasCheckoutInflight/);
