@@ -27,6 +27,11 @@ import {
   type ChristmasPortraitVertical,
 } from "./portraitVerticals";
 import { enabledChristmasStyles } from "./styles";
+import {
+  cardsUrlFromPortrait,
+  writeLastPortraitResult,
+  writePortraitToCardHandoff,
+} from "./cards/portraitHandoff";
 
 function readDraft(key: string): ChristmasPortraitDraft {
   try {
@@ -152,7 +157,15 @@ export default function ChristmasPortraitFunnelPage() {
           writeDraft(vertical.draftStorageKey, next);
           return next;
         });
-        if (order.resultUrl) setResultUrl(order.resultUrl);
+        if (order.resultUrl) {
+          setResultUrl(order.resultUrl);
+          writeLastPortraitResult({
+            imageUrl: order.resultUrl,
+            verticalId: vertical.id,
+            productKey: vertical.productKey,
+            orderId: order.id,
+          });
+        }
         if (order.payment_status === "paid" && order.fulfillment_status !== "completed") {
           setStep("generating", { orderId: order.id, publicToken: token });
         }
@@ -181,6 +194,12 @@ export default function ChristmasPortraitFunnelPage() {
         if (order.fulfillment_status === "completed" && order.resultUrl) {
           setResultUrl(order.resultUrl);
           setStep("result");
+          writeLastPortraitResult({
+            imageUrl: order.resultUrl,
+            verticalId: vertical.id,
+            productKey: vertical.productKey,
+            orderId: order.id,
+          });
           void trackChristmasEvent("generation_success", {
             productKey: vertical.productKey,
             orderId: order.id,
@@ -685,6 +704,32 @@ export default function ChristmasPortraitFunnelPage() {
               >
                 Share
               </button>
+              <Link
+                to={cardsUrlFromPortrait()}
+                className="rounded-md border border-emerald-800 bg-emerald-950 px-4 py-3 text-center text-sm font-medium text-emerald-50"
+                onClick={() => {
+                  writePortraitToCardHandoff({
+                    imageUrl: resultUrl,
+                    source: "portrait_result",
+                    verticalId: vertical.id,
+                    productKey: vertical.productKey,
+                    orderId: draft.orderId,
+                  });
+                  writeLastPortraitResult({
+                    imageUrl: resultUrl,
+                    verticalId: vertical.id,
+                    productKey: vertical.productKey,
+                    orderId: draft.orderId,
+                  });
+                  void trackChristmasEvent("card_portrait_cross_sell_clicked", {
+                    productKey: vertical.productKey,
+                    pathname: vertical.routePath,
+                    metadata: { placement: "portrait_result" },
+                  });
+                }}
+              >
+                Turn This Into a Christmas Card
+              </Link>
               <button
                 type="button"
                 className="rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"
