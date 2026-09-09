@@ -317,7 +317,7 @@ export function ChristmasClubPage() {
           <p>
             <Link to={CHRISTMAS_CLUB_SUITE_ROUTE}>Explore Christmas experiences</Link>
             {" · "}
-            <Link to={CHRISTMAS_CLUB_GIFTS_ROUTE}>Christmas gifts</Link>
+            <Link to={CHRISTMAS_CLUB_GIFTS_ROUTE}>Christmas tree gifts</Link>
             {" · "}
             <Link to="/generator?occasion=christmas">Christmas generator</Link>
             {" · "}
