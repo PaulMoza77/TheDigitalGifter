@@ -390,59 +390,90 @@
   }
 
   .ff-hero__layout {
-    padding-top: 1.1rem;
-    padding-bottom: 2rem;
+    padding-top: 0.85rem;
+    padding-bottom: 1.75rem;
+    gap: 1.1rem;
+  }
+
+  .ff-hero__visual {
+    min-height: 0;
   }
 
   .ff-hero__room {
-    object-position: 30% 48%;
-    transform: scale(1.08);
-    filter: saturate(1.12) contrast(1.06) brightness(1.08);
+    object-position: 28% 42%;
+    transform: scale(1.12);
+    filter: saturate(1.15) contrast(1.05) brightness(1.12);
   }
 
   .ff-hero__veil {
     background:
       linear-gradient(
         180deg,
-        rgba(10, 5, 6, 0.12) 0%,
-        rgba(10, 5, 6, 0.08) 38%,
-        rgba(12, 6, 8, 0.55) 78%,
-        rgba(12, 6, 8, 0.78) 100%
-      ),
-      radial-gradient(ellipse at 50% 100%, rgba(107, 20, 32, 0.22), transparent 52%);
+        rgba(10, 5, 6, 0.08) 0%,
+        rgba(10, 5, 6, 0.05) 34%,
+        rgba(12, 6, 8, 0.42) 72%,
+        rgba(12, 6, 8, 0.82) 100%
+      );
   }
 
   .ff-hero__fire {
-    inset: auto 10% 35% 10%;
-    height: 45%;
-    opacity: 0.9;
+    inset: auto 5% 40% 5%;
+    height: 48%;
+    opacity: 1;
   }
 
   .ff-hero__twinkle {
-    inset: 4% 8% 55% 8%;
+    inset: 2% 5% 52% 5%;
     opacity: 1;
   }
 
   .ff-table {
-    min-height: 16.5rem;
-    aspect-ratio: 5 / 4;
+    width: 100%;
     max-width: none;
+    min-height: 0;
+    aspect-ratio: 1.15 / 1;
+    padding-bottom: 2%;
+    overflow: visible;
+  }
+
+  .ff-table__wood {
+    height: 18%;
+    opacity: 0.72;
   }
 
   .ff-frame {
-    width: min(46%, 10.5rem);
-    left: 2%;
-    bottom: 18%;
+    width: 42%;
+    left: 4%;
+    bottom: 16%;
+    transform: rotate(-2.5deg);
   }
 
   .ff-card {
-    width: min(52%, 12rem);
-    right: 2%;
-    bottom: 14%;
+    width: 46%;
+    right: 4%;
+    bottom: 12%;
+    transform: rotate(3deg);
+  }
+
+  .ff-prop--gift,
+  .ff-prop--candle {
+    display: none;
+  }
+
+  .ff-hero__copy {
+    max-width: none;
   }
 
   .ff-hero__copy h1 {
-    font-size: clamp(1.95rem, 7.5vw, 2.45rem);
+    font-size: clamp(1.85rem, 7.2vw, 2.35rem);
+  }
+
+  .ff-chips {
+    margin-top: 1rem;
+  }
+
+  .ff-trust-inline {
+    display: none;
   }
 }
 
