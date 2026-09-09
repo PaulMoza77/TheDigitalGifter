@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       if (!["me", "child", "family", "someone_else"].includes(audience)) {
         return jsonResponse({ error: "invalid_audience" }, 400);
       }
-      const row = {
+      const baseRow = {
         user_id: user?.id || null,
         owner_token_hash: user?.id ? null : ownerHash,
         share_id: shareId,
@@ -46,10 +46,25 @@ Deno.serve(async (req) => {
         locale: asString(body.locale) === "ro" ? "ro" : "en",
         currency: sanitizeText(body.currency, 8) || null,
         show_budgets_public: body.show_budgets_public === false ? false : true,
-        audience,
       };
-      const { data, error } = await service.from("christmas_wishlists").insert(row).select("id,share_id").single();
-      if (error) throw error;
+      let data: { id: string; share_id: string } | null = null;
+      {
+        const first = await service
+          .from("christmas_wishlists")
+          .insert({ ...baseRow, audience })
+          .select("id,share_id")
+          .single();
+        if (first.error && /audience|column/i.test(String(first.error.message || ""))) {
+          const fallback = await service.from("christmas_wishlists").insert(baseRow).select("id,share_id").single();
+          if (fallback.error) throw fallback.error;
+          data = fallback.data;
+        } else if (first.error) {
+          throw first.error;
+        } else {
+          data = first.data;
+        }
+      }
+      if (!data) throw new Error("create_failed");
       return jsonResponse({
         ok: true,
         wishlist_id: data.id,
