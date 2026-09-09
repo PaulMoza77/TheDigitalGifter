@@ -1,6 +1,7 @@
 # Christmas Cards + Message Generator
 
 **Task:** `tdg-christmas-cards-messages-011`  
+**Harden:** `TDG-CHRISTMAS-GAP-CARDS-HARDEN-011` (does **not** restart CHRISTMAS-028 card-maker rebuild)  
 **Status:** Free acquisition/creation pair — Christmas checkout unchanged (`checkout_live=false`, paid packages `purchasable=false`)
 
 ## Product loop
@@ -57,9 +58,11 @@ Stable recipient / tone / length keys + `seoSlug` / `SEO_MESSAGE_INTENT_SLUGS` f
 - Persistence: `christmas_card_projects` (+ optional `christmas_card_assets` metadata rows)
 - Guest owner token (opaque, hashed); logged-in users associate via `user_id`
 - Download filename: `tdg-christmas-card-<project-ref>-<layout>.png` (no recipient names)
-- Share: Web Share files API when available → download fallback
-- No public card gallery / hosted share page in V1
+- Share: Web Share files API when available → download fallback (device file, not a hosted URL)
+- No public card gallery / hosted share page in V1 — funnel actions that would list or publish cards return `not_supported_v1`
 - Source photos stay on-device for V1 render; not published anonymously
+- PNG create is **local-first**: the card still downloads if `christmas-cards-messages-funnel` is unavailable
+- Card-create abuse cap: **20 projects / hour** via `touch_edge_rate_limit` (user / guest token / IP)
 
 ## Message → Card handoff
 
@@ -111,3 +114,21 @@ Christmas admin loads aggregate `adminMessageStats` / `adminCardStats` (sessions
 ## Non-goals (this task)
 
 Full SEO factory · DE/ES/FR · print fulfillment · paid packs · checkout activation · public gallery · affiliate marketplace
+
+## Harden 011 — remaining gaps
+
+V1 product work stays in place. This harden does **not** duplicate CHRISTMAS-028 (premium stepped card-maker UI). Print fulfillment remains a documented non-goal. Hosted share and paid packs stay explicitly out of 011.
+
+| Gap | Status |
+|-----|--------|
+| Local PNG when funnel is down | **Closed** — render proceeds; persist is best-effort |
+| Card-create rate limit | **Closed** — 20/hour via `touch_edge_rate_limit` |
+| Unpaid public gallery | **Prohibited** — no list/publish actions; no `/christmas/cards/:id` route |
+| Hosted share page | **Out of 011** — Web Share files / download only |
+| Print fulfillment / postal | **Non-goal** |
+| Paid packs / checkout activation | **Out of 011** — founder gate; `checkout_live=false`, no purchasable packages |
+| Programmatic SEO factory | **Out of 011** (separate task) |
+| DE/ES/FR locales | **Out of 011** |
+| Retention / purge cron | **Deferred** until policy finalized |
+| Multi-page print surfaces | **Out of 011** |
+| Uploading rendered PNG to public storage | **Out of V1** — assets table stores dimensions only |

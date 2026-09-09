@@ -18,10 +18,12 @@ import {
   type CardLayoutKey,
 } from "./cards/taxonomy";
 import { CARD_THEME_TO_STYLE, parseCardTheme } from "./landing/handoff";
+import { localCardProjectRef } from "./cards/cardHarden";
 import {
   cardsMessagesFunnel,
   clearMessageToCardHandoff,
   getOrCreateMessageGuestToken,
+  persistCardMetadataBestEffort,
   readCardDraft,
   readCardOwner,
   readMessageToCardHandoff,
@@ -209,22 +211,33 @@ export default function ChristmasCardsPage() {
         productKey: PRODUCT,
         metadata: { layout: layoutKey },
       });
-      const project = await ensureProject();
-      await cardsMessagesFunnel(
-        {
-          action: "updateCardProject",
-          project_id: project.id,
-          owner_token: project.token,
-          style_key: styleKey,
-          layout_key: layoutKey,
-          message,
-          recipient_name: recipientName,
-          from_name: fromName,
-          message_source: messageSource,
-          photo_present: Boolean(photoEl),
-        },
-        await authBearer(),
-      );
+
+      let project: { id: string; token: string | null } = {
+        id: projectId || "local",
+        token: ownerToken,
+      };
+      const bearer = await authBearer();
+      try {
+        project = await ensureProject();
+        await persistCardMetadataBestEffort(
+          {
+            action: "updateCardProject",
+            project_id: project.id,
+            owner_token: project.token,
+            style_key: styleKey,
+            layout_key: layoutKey,
+            message,
+            recipient_name: recipientName,
+            from_name: fromName,
+            message_source: messageSource,
+            photo_present: Boolean(photoEl),
+          },
+          bearer,
+        );
+      } catch {
+        /* Local PNG still proceeds — funnel persist is best-effort. */
+      }
+
       void trackChristmasEvent("card_preview_seen", { productKey: PRODUCT });
       const rendered = await renderChristmasCard({
         message,
@@ -233,20 +246,24 @@ export default function ChristmasCardsPage() {
         recipientName,
         fromName,
         photo: photoEl,
-        projectRef: project.id.slice(0, 8),
+        projectRef: localCardProjectRef(project.id),
       });
-      await cardsMessagesFunnel(
-        {
-          action: "recordCardRender",
-          project_id: project.id,
-          owner_token: project.token,
-          layout_key: layoutKey,
-          width: rendered.width,
-          height: rendered.height,
-          byte_size: rendered.byteSize,
-        },
-        await authBearer(),
-      );
+
+      if (project.id !== "local") {
+        await persistCardMetadataBestEffort(
+          {
+            action: "recordCardRender",
+            project_id: project.id,
+            owner_token: project.token,
+            layout_key: layoutKey,
+            width: rendered.width,
+            height: rendered.height,
+            byte_size: rendered.byteSize,
+          },
+          bearer,
+        );
+      }
+
       setResult({
         dataUrl: rendered.dataUrl,
         blob: rendered.blob,
@@ -262,18 +279,19 @@ export default function ChristmasCardsPage() {
           layout: layoutKey,
           photo_present: Boolean(photoEl),
           message_source: messageSource,
+          persist: project.id !== "local",
         },
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create card");
       if (projectId) {
-        void cardsMessagesFunnel({
+        void persistCardMetadataBestEffort({
           action: "recordCardRender",
           project_id: projectId,
           owner_token: ownerToken,
           failed: true,
           error_code: e instanceof Error ? e.message : "render_failed",
-        }).catch(() => undefined);
+        });
       }
     } finally {
       setBusy(false);
@@ -416,7 +434,8 @@ export default function ChristmasCardsPage() {
             onChange={(e) => void onPhoto(e.target.files?.[0] || null)}
           />
           <span className="mt-1 block text-xs text-slate-500">
-            JPEG/PNG/WebP up to 8MB. Rendered on your device; not published to a gallery.
+            JPEG/PNG/WebP up to 8MB. Rendered on your device. No public gallery, hosted share page,
+            or print fulfillment in V1.
           </span>
         </label>
 
@@ -499,6 +518,8 @@ export default function ChristmasCardsPage() {
         <p className="mt-2">
           Create personalized Christmas photo cards and text-only holiday cards for sharing. Styles are
           designed templates — not AI-generated borders — so results stay fast and free to preview.
+          Download or native-share the PNG. There is no unpaid public card gallery and no print
+          fulfillment in this version.
         </p>
         <p className="mt-2">
           Need a gift idea?{" "}

@@ -1,3 +1,5 @@
+import { sanitizeCardDraft } from "./cardHarden";
+
 /** Client API for Christmas Cards + Message Generator. */
 
 const FUNNEL_NAME = "christmas-cards-messages-funnel";
@@ -183,9 +185,24 @@ export function readCardDraft(): CardDraft | null {
   try {
     const raw = localStorage.getItem(CARD_DRAFT_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as CardDraft;
+    return sanitizeCardDraft(JSON.parse(raw));
   } catch {
     return null;
+  }
+}
+
+export { sanitizeCardDraft } from "./cardHarden";
+
+/** Persist project/render metadata. Failures never block the local PNG. */
+export async function persistCardMetadataBestEffort(
+  body: Record<string, unknown>,
+  authBearer?: string | null,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await cardsMessagesFunnel(body, authBearer);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "funnel_unavailable" };
   }
 }
 

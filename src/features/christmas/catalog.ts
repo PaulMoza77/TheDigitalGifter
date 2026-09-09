@@ -276,7 +276,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     sortOrder: 70,
     routePath: "/christmas/cards",
     localeDefault: "en",
-    metadata: { cards_v1: true, live_offer: false },
+    metadata: { cards_v1: true, live_offer: false, checkout_live: false },
     packages: [],
   },
   {
