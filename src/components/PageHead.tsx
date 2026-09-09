@@ -9,18 +9,35 @@ interface PageHeadProps {
   exactTitle?: boolean;
   /** Personal share URLs should pass noindex */
   noindex?: boolean;
+  /**
+   * Explicit indexability. Cards/messages pass `indexable`.
+   * `noindex` wins when both are set. Default is indexable.
+   */
+  indexable?: boolean;
 }
 
 /**
  * Simple head tag manager for per-page SEO meta tags.
  * Updates document title, meta description, and OG/Twitter tags.
+ *
+ * Known SPA limitation: client-updated tags are not SSR HTML.
+ * Crawlers that skip JavaScript still see the generic index.html shell.
  * Note: For more advanced use cases, consider react-helmet-async.
  */
-export function PageHead({ title, description, image, url, exactTitle = false, noindex = false }: PageHeadProps) {
+export function PageHead({
+  title,
+  description,
+  image,
+  url,
+  exactTitle = false,
+  noindex = false,
+  indexable,
+}: PageHeadProps) {
   const location = useLocation();
   const fullTitle = exactTitle ? title : `${title} — TheDigitalGifter`;
   const pageUrl = url || `https://www.thedigitalgifter.com${location.pathname}`;
   const ogImage = image || "https://www.thedigitalgifter.com/og-preview.png";
+  const robotsNoindex = noindex || indexable === false;
 
   useEffect(() => {
     // Update document title
@@ -57,8 +74,8 @@ export function PageHead({ title, description, image, url, exactTitle = false, n
     canonicalLink.setAttribute("href", pageUrl);
 
     // Shared wishlists/trees: noindex but follow so create-your-own links stay crawlable.
-    updateMetaName("robots", noindex ? "noindex,follow" : "index,follow");
-  }, [fullTitle, description, pageUrl, ogImage, noindex]);
+    updateMetaName("robots", robotsNoindex ? "noindex,follow" : "index,follow");
+  }, [fullTitle, description, pageUrl, ogImage, robotsNoindex]);
 
   return null; // This component only manages head tags
 }

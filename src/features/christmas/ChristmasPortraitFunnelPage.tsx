@@ -477,6 +477,7 @@ export default function ChristmasPortraitFunnelPage() {
         description={vertical.metaDescription}
         exactTitle
         url={`https://www.thedigitalgifter.com${vertical.routePath}`}
+        indexable
       />
       <main className="mx-auto min-h-[70vh] max-w-lg px-4 py-8 text-slate-900">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">

@@ -63,7 +63,7 @@ Packages for family/couple/pet seeded with **`purchasable=false`**, **`price_cen
 
 ## SEO basics
 
-Each vertical sets unique `PageHead` title, description, canonical, OG via existing SPA head manager. **Limitation:** client-updated tags are not fully SSR/indexable HTML.
+Each vertical sets unique `PageHead` title, description, canonical, OG via existing SPA head manager. See `docs/TDG_CHRISTMAS_SPA_PAGEHEAD.md` (CHRISTMAS-032). **Limitation:** client-updated tags are not fully SSR/indexable HTML. Factory pages are CHRISTMAS-033.
 
 ## Privacy
 

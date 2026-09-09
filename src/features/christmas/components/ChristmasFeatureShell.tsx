@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { christmasPageUrl } from "../seo/christmasPageHeadCopy";
 import type { ChristmasRouteShellDef } from "../routes";
 import { shellExposesCheckout } from "../routes";
 
@@ -18,6 +19,9 @@ export function ChristmasFeatureShell({ shell }: { shell: ChristmasRouteShellDef
         title={shell.title}
         description={shell.description}
         exactTitle={false}
+        url={christmasPageUrl(shell.path)}
+        noindex={shell.noindex}
+        indexable={!shell.noindex}
       />
       <main className="mx-auto flex min-h-[60vh] max-w-2xl flex-col justify-center px-6 py-16 text-slate-900">
         <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
