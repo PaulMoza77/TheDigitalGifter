@@ -760,7 +760,12 @@
 @media (max-width: 720px) {
   .advent-room {
     min-height: auto;
-    padding-top: 2.75rem;
+    padding: 2.75rem 0.65rem 2rem;
+  }
+
+  .advent-room__content {
+    width: 100%;
+    padding-inline: 0;
   }
 
   .advent-room__bg img {
@@ -770,20 +775,30 @@
 
   .advent-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.48rem;
+    gap: 0.42rem;
   }
 
   .advent-board {
-    padding: 0.7rem;
+    padding: 0.55rem;
     max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .advent-door__number {
-    font-size: clamp(1.2rem, 6.5vw, 1.55rem);
+    font-size: clamp(1.15rem, 6vw, 1.45rem);
+  }
+
+  .advent-door__deco--wreath {
+    width: 30%;
   }
 
   .advent-snow {
     opacity: 0.35;
+  }
+
+  .advent-header {
+    padding-inline: 0.35rem;
   }
 }
 
