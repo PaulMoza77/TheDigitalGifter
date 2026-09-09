@@ -92,14 +92,9 @@ export default function Header({ onBuyCredits }: HeaderProps) {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[rgba(4,8,18,0.72)] backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-8">
-          <Link
-            to="/"
-            aria-label="Go to homepage"
-            className="shrink-0"
-            onClick={() => setMobileOpen(false)}
-          >
+          <div className="shrink-0" onClick={() => setMobileOpen(false)}>
             <Logo />
-          </Link>
+          </div>
 
           <nav className="hidden items-center gap-2 lg:flex">
             {desktopNavItems.map((item) => (

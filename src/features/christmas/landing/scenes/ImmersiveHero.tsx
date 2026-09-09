@@ -1,5 +1,5 @@
-import { LANDING_ASSETS } from "./assets";
-import { landingT, type ChristmasLandingLocale } from "./copy";
+import { LANDING_ASSETS } from "../assets";
+import { landingT, type ChristmasLandingLocale } from "../copy";
 
 export function ImmersiveHero({
   locale,
