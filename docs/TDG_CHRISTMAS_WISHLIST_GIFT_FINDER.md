@@ -8,7 +8,7 @@ Paired acquisition loop: **Gift Finder → Wishlist → Share → Reserve → vi
 |--------|-------|----------|
 | Wishlist create | `/christmas/wishlist` | Guest-first letter UX, ordered wishes, private-by-default share |
 | Shared wishlist | `/wishlist/:shareId` | Read-only DTO + reserve/purchased, `noindex,follow` |
-| Gift Finder | `/christmas/gift-finder` | Guided form → structured ideas → Add to Wishlist |
+| Gift Finder | `/christmas/gift-finder` | Guided form → structured ideas → Add to Wishlist (not `/christmas/gifts`) |
 
 Paid Christmas checkout remains **off** for wishlist (`purchasable=false`).
 

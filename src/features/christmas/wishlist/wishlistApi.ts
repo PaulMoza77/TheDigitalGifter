@@ -64,6 +64,29 @@ export type GiftIdea = {
   tdg_product_key?: string | null;
 };
 
+export type GiftFinderRunInput = {
+  locale: string;
+  recipient_key: string;
+  age_range_key: string;
+  interest_keys: string[];
+  custom_interest?: string;
+  budget_key: string;
+  gift_type_key: string;
+  vibe_key?: string;
+  force_new?: boolean;
+};
+
+export type GiftFinderRunResult = {
+  ok: boolean;
+  session_id: string;
+  ideas: GiftIdea[];
+  provider: string;
+  model: string;
+  latency_ms?: number;
+  already?: boolean;
+  used_fallback?: boolean;
+};
+
 export type UrlPreview = {
   ok: boolean;
   title?: string | null;
@@ -149,6 +172,34 @@ export function writeReservation(itemId: string, token: string | null) {
   } catch {
     /* ignore */
   }
+}
+
+export async function runGiftFinder(
+  input: GiftFinderRunInput,
+  authBearer?: string | null,
+): Promise<GiftFinderRunResult> {
+  return wishlistFunnel<GiftFinderRunResult>(
+    {
+      action: "runGiftFinder",
+      guest_token: getOrCreateFinderGuestToken(),
+      ...input,
+    },
+    authBearer,
+  );
+}
+
+export async function getGiftFinderSession(
+  sessionId: string,
+  authBearer?: string | null,
+): Promise<GiftFinderRunResult> {
+  return wishlistFunnel<GiftFinderRunResult>(
+    {
+      action: "getGiftFinderSession",
+      session_id: sessionId,
+      guest_token: getOrCreateFinderGuestToken(),
+    },
+    authBearer,
+  );
 }
 
 export function getOrCreateFinderGuestToken(): string {

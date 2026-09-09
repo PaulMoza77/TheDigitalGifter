@@ -27,8 +27,9 @@ import {
 } from "./wishlist/taxonomy";
 import {
   FINDER_SESSION_KEY,
-  getOrCreateFinderGuestToken,
+  getGiftFinderSession,
   readWishlistOwner,
+  runGiftFinder,
   wishlistFunnel,
   writeWishlistOwner,
   type GiftIdea,
@@ -122,17 +123,7 @@ export default function ChristmasGiftFinderPage() {
     try {
       const sid = sessionStorage.getItem(FINDER_SESSION_KEY);
       if (sid) {
-        void wishlistFunnel<{
-          ok: boolean;
-          session_id: string;
-          ideas: GiftIdea[];
-          provider?: string;
-          model?: string;
-        }>({
-          action: "getGiftFinderSession",
-          session_id: sid,
-          guest_token: getOrCreateFinderGuestToken(),
-        })
+        void getGiftFinderSession(sid)
           .then((data) => {
             setSessionId(data.session_id);
             setIdeas(data.ideas || []);
@@ -157,18 +148,8 @@ export default function ChristmasGiftFinderPage() {
     setError(null);
     setSavedMsg(null);
     try {
-      const data = await wishlistFunnel<{
-        ok: boolean;
-        session_id: string;
-        ideas: GiftIdea[];
-        provider: string;
-        model: string;
-        latency_ms?: number;
-        already?: boolean;
-      }>(
+      const data = await runGiftFinder(
         {
-          action: "runGiftFinder",
-          guest_token: getOrCreateFinderGuestToken(),
           locale,
           recipient_key: recipient,
           age_range_key: age,

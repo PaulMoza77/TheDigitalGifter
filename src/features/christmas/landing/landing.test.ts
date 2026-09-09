@@ -83,6 +83,8 @@ describe("christmas landing wiring", () => {
     const origin = readSrc("server/origin.mjs");
     expect(origin).toContain("applyRouteMeta");
     expect(origin).toContain("Christmas Gifts, Portraits & Santa Messages");
+    expect(origin).toContain("/christmas/gift-finder");
+    expect(origin).not.toContain('normalized === "/christmas/gifts"');
     expect(origin).toContain('".webm": "video/webm"');
   });
 });

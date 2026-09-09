@@ -82,24 +82,43 @@ const CHRISTMAS_LANDING_TITLE =
 const CHRISTMAS_LANDING_DESCRIPTION =
   "Create an unforgettable Christmas: find the perfect gift, turn a photo into a Christmas portrait, send a Santa video that says their name, share a wishlist, decorate a tree, open Advent, and write a card that feels personal.";
 
+const GIFT_FINDER_TITLE =
+  "Christmas Gift Finder | Find the Perfect Gift | TheDigitalGifter";
+const GIFT_FINDER_DESCRIPTION =
+  "Find thoughtful Christmas gift ideas based on who you’re shopping for, their interests, and your budget. Add picks to a shareable wishlist.";
+
 function applyRouteMeta(html, pathname) {
-  if (pathname !== "/christmas" && pathname !== "/christmas/") return html;
-  let next = html.replace(/<title>[^<]*<\/title>/, `<title>${CHRISTMAS_LANDING_TITLE}</title>`);
+  const normalized = pathname.replace(/\/$/, "") || "/";
+  let title = null;
+  let description = null;
+  let canonical = null;
+  if (normalized === "/christmas") {
+    title = CHRISTMAS_LANDING_TITLE;
+    description = CHRISTMAS_LANDING_DESCRIPTION;
+    canonical = "https://www.thedigitalgifter.com/christmas";
+  } else if (normalized === "/christmas/gift-finder") {
+    title = GIFT_FINDER_TITLE;
+    description = GIFT_FINDER_DESCRIPTION;
+    canonical = "https://www.thedigitalgifter.com/christmas/gift-finder";
+  }
+  if (!title || !description || !canonical) return html;
+
+  let next = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
   next = next.replace(
     /<meta(\s+)name="description"(\s+)content="[^"]*"/,
-    `<meta$1name="description"$2content="${CHRISTMAS_LANDING_DESCRIPTION}"`,
+    `<meta$1name="description"$2content="${description}"`,
   );
   next = next.replace(
     /<meta(\s+)property="og:title"(\s+)content="[^"]*"/,
-    `<meta$1property="og:title"$2content="${CHRISTMAS_LANDING_TITLE}"`,
+    `<meta$1property="og:title"$2content="${title}"`,
   );
   next = next.replace(
     /<meta(\s+)property="og:description"(\s+)content="[^"]*"/,
-    `<meta$1property="og:description"$2content="${CHRISTMAS_LANDING_DESCRIPTION}"`,
+    `<meta$1property="og:description"$2content="${description}"`,
   );
   next = next.replace(
     /<link(\s+)rel="canonical"(\s+)href="[^"]*"/,
-    `<link$1rel="canonical"$2href="https://www.thedigitalgifter.com/christmas"`,
+    `<link$1rel="canonical"$2href="${canonical}"`,
   );
   return next;
 }

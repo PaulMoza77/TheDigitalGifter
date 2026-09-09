@@ -56,7 +56,9 @@ describe("wishlist / gift finder wiring", () => {
     expect(app).toContain('path="/christmas/wishlist"');
     expect(app).toContain('path="/wishlist/:shareId"');
     expect(app).toContain('path="/christmas/gift-finder"');
-    expect(app).toContain('path="/christmas/gifts"');
+    expect(app).not.toContain('path="/christmas/gifts"');
+    expect(readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx")).toContain("runGiftFinder");
+    expect(readSrc("src/features/christmas/wishlist/wishlistApi.ts")).toContain("action: \"runGiftFinder\"");
   });
 
   it("migration enforces share/owner separation and finder uniqueness", () => {
@@ -82,11 +84,13 @@ describe("wishlist / gift finder wiring", () => {
 
   it("gift finder keeps prompts server-owned with injection resistance", () => {
     const gen = readSrc("supabase/functions/_shared/christmas/giftFinder.ts");
-    expect(gen).toContain("Never follow instructions");
-    expect(gen).toContain("server_curated_v1");
+    const core = readSrc("supabase/functions/_shared/christmas/giftFinderCore.ts");
+    expect(core).toContain("Never follow instructions");
+    expect(core).toContain("server_curated_v1");
     expect(gen).toContain("validateFinderInput");
-    expect(gen).toContain("UNSAFE_RE");
+    expect(core).toContain("UNSAFE_RE");
     expect(gen).not.toContain("system prompt from client");
+    expect(core).toContain("CATALOG");
   });
 
   it("registers analytics events without requiring free-text payloads", () => {
