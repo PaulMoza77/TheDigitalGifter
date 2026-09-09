@@ -45,7 +45,7 @@ export const MESSAGE_RELATIONSHIPS = [
   { key: "other", en: "Other", ro: "Altceva" },
 ] as const;
 
-/** Future SEO seam: /christmas/messages-for-{slug} — factory NOT built here. */
+/** Consumed by the Christmas SEO factory: /christmas/messages-for-{slug}. */
 export const SEO_MESSAGE_RECIPIENT_SLUGS: Record<string, string> = Object.fromEntries(
   MESSAGE_RECIPIENTS.map((r) => [r.key, r.seoSlug]),
 );

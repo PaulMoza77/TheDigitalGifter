@@ -77,7 +77,7 @@ export const SEO_MESSAGE_INTENT_SLUGS = {
   family: "christmas-messages-for-family",
 } as const;
 
-/** Flat list for SEO factory seam / tests (factory NOT started here). */
+/** Flat list consumed by the Christmas SEO factory. */
 export const MESSAGE_SEO_INTENT_SLUGS = [
   "messages-for-mom",
   "messages-for-dad",

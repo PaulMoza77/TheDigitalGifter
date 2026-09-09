@@ -120,7 +120,7 @@ export function budgetRangeUsd(key: string): { min: number; max: number | null }
   }
 }
 
-/** SEO factory can later map these keys to /christmas/gifts-for-{slug}. */
+/** Consumed by the Christmas SEO factory: /christmas/gifts-for-{slug}. */
 export const SEO_RECIPIENT_SLUGS: Record<string, string> = {
   mom: "mom",
   dad: "dad",
