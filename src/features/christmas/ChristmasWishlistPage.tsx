@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
@@ -9,27 +9,24 @@ import { EXAMPLE_WISHES, WISHLIST_COPY_EN, WISHLIST_FAQ_EN } from "./wishlist/co
 import {
   PRIORITY_EMOJI,
   WISHLIST_AUDIENCES,
-  WISHLIST_PRIORITIES,
   labelFor,
   type LocaleCode,
 } from "./wishlist/taxonomy";
 import {
   defaultWishlistTitle,
-  formatMoney,
   readReservations,
   readWishlistOwner,
-  reorderIds,
-  retailerFromUrl,
-  sanitizeExternalUrlClient,
   shareMessage,
   wishlistFunnel,
   writeReservation,
   writeWishlistOwner,
   type OwnerWishlist,
   type SharedWishlist,
-  type UrlPreview,
   type WishlistItem,
 } from "./wishlist/wishlistApi";
+import { DEFAULT_LETTER, serializeLetterDescription } from "./wishlist/letterModel";
+import { WishlistLetterEditor } from "./wishlist/WishlistLetterEditor";
+import { WishlistLetterViewer } from "./wishlist/WishlistLetterViewer";
 import "./wishlist/wishlist.css";
 
 const PRODUCT = "christmas_wishlist";
@@ -37,7 +34,6 @@ const PATH = "/christmas/wishlist";
 const LOGO_SRC = "/TheDigitalGifter.png";
 const copy = WISHLIST_COPY_EN;
 
-type ComposerMode = "closed" | "link" | "manual" | "edit";
 type LandingPhase = "hero" | "create";
 
 async function authBearer() {
@@ -45,32 +41,11 @@ async function authBearer() {
   return data.session?.access_token || null;
 }
 
-function PriorityLabel({ priority, locale }: { priority?: string; locale: LocaleCode }) {
-  if (!priority) return null;
-  const emoji = PRIORITY_EMOJI[priority] || "🎁";
-  return (
-    <span className="wl-badge">
-      {emoji} {labelFor(WISHLIST_PRIORITIES, priority, locale)}
-    </span>
-  );
-}
-
-function WishMedia({ item }: { item: Pick<WishlistItem, "title" | "image_url"> }) {
-  return (
-    <div className="wl-wish__media" aria-hidden={!item.image_url}>
-      {item.image_url ? (
-        <img src={item.image_url} alt="" loading="lazy" />
-      ) : (
-        <div className="grid h-full place-items-center text-lg text-[#f7f0e4]/80">🎁</div>
-      )}
-    </div>
-  );
-}
-
 export default function ChristmasWishlistPage() {
   const { shareId: routeShareId } = useParams<{ shareId?: string }>();
   const isShare = Boolean(routeShareId);
   const howId = useId();
+  const navigate = useNavigate();
   const locale: LocaleCode = "en";
 
   const [busy, setBusy] = useState(false);
@@ -82,24 +57,11 @@ export default function ChristmasWishlistPage() {
   const [phase, setPhase] = useState<LandingPhase>("hero");
   const [title, setTitle] = useState(() => defaultWishlistTitle());
   const [audience, setAudience] = useState("me");
-  const [description, setDescription] = useState("");
-  const [composer, setComposer] = useState<ComposerMode>("closed");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [itemTitle, setItemTitle] = useState("");
-  const [itemNote, setItemNote] = useState("");
-  const [itemUrl, setItemUrl] = useState("");
-  const [itemImage, setItemImage] = useState("");
-  const [itemPriority, setItemPriority] = useState("would_love");
-  const [itemBudget, setItemBudget] = useState("");
-  const [itemSize, setItemSize] = useState("");
-  const [itemColor, setItemColor] = useState("");
-  const [itemQty, setItemQty] = useState("1");
-  const [showDetails, setShowDetails] = useState(false);
-  const [linkPreview, setLinkPreview] = useState<UrlPreview | null>(null);
-  const [previewBusy, setPreviewBusy] = useState(false);
+  const [description, setDescription] = useState(() => serializeLetterDescription(DEFAULT_LETTER));
   const [shareHint, setShareHint] = useState<string | null>(null);
   const [myReservations, setMyReservations] = useState<Record<string, string>>({});
   const [fontsReady, setFontsReady] = useState(false);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const viewed = useRef(false);
   const firstWishTracked = useRef(false);
 
@@ -126,7 +88,7 @@ export default function ChristmasWishlistPage() {
 
   useEffect(() => {
     const href =
-      "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Source+Sans+3:wght@400;500;600;700&display=swap";
+      "https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Great+Vibes&family=Source+Sans+3:wght@400;500;600;700&display=swap";
     if (!document.querySelector(`link[href="${href}"]`)) {
       const link = document.createElement("link");
       link.rel = "stylesheet";
@@ -151,6 +113,18 @@ export default function ChristmasWishlistPage() {
   }, []);
 
   useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
+      const meta = data.user?.user_metadata as Record<string, unknown> | undefined;
+      const name =
+        (typeof meta?.full_name === "string" && meta.full_name) ||
+        (typeof meta?.name === "string" && meta.name) ||
+        "";
+      if (name) setProfileName(String(name).split(" ")[0]);
+    })();
+  }, []);
+
+  useEffect(() => {
     if (isShare && routeShareId) {
       let cancelled = false;
       (async () => {
@@ -171,6 +145,82 @@ export default function ChristmasWishlistPage() {
         cancelled = true;
       };
     }
+
+    // Dev-only visual demo for the standalone letter editor (no backend required).
+    if (import.meta.env.DEV) {
+      const demo = new URLSearchParams(window.location.search).get("demo");
+      if (demo === "letter" || demo === "viewer") {
+        const demoList = {
+          id: "demo-wishlist",
+          share_id: "demoShareWishlistLetter01",
+          share_enabled: true,
+          title: "My Christmas Wishlist",
+          description: serializeLetterDescription({
+            ...DEFAULT_LETTER,
+            signature: "Paul",
+          }),
+          locale: "en",
+          currency: "EUR",
+          show_budgets_public: true,
+          audience: "me",
+          view_count: 0,
+          share_count: 0,
+          items: [
+            {
+              id: "d1",
+              sort_order: 0,
+              title: "A cozy weekend in the mountains ❄️",
+              priority: "really_want",
+            },
+            {
+              id: "d2",
+              sort_order: 1,
+              title: "New headphones",
+              external_url: "https://example.com/headphones",
+              budget_amount: 399,
+              currency: "EUR",
+              priority: "would_love",
+            },
+            {
+              id: "d3",
+              sort_order: 2,
+              title: "A family Christmas portrait",
+              priority: "really_want",
+            },
+            {
+              id: "d4",
+              sort_order: 3,
+              title: "A new book set",
+              priority: "nice_to_have",
+            },
+            {
+              id: "d5",
+              sort_order: 4,
+              title: "More time with the people I love",
+              priority: "would_love",
+            },
+          ],
+        } satisfies OwnerWishlist;
+
+        if (demo === "letter") {
+          setOwner(demoList);
+          setOwnerToken("demo");
+        } else {
+          setShared({
+            share_id: demoList.share_id,
+            title: "Paul’s Christmas Wishlist",
+            description: demoList.description,
+            locale: demoList.locale,
+            items: demoList.items.map((item, index) => ({
+              ...item,
+              reservation_status: index === 1 ? "reserved" : "none",
+            })),
+          });
+        }
+        return;
+      }
+    }
+
     const recovery = readWishlistOwner();
     if (recovery) {
       void loadOwner(recovery.wishlistId, recovery.ownerToken);
@@ -201,42 +251,6 @@ export default function ChristmasWishlistPage() {
     return id ? `${window.location.origin}/wishlist/${id}` : "";
   }, [owner?.share_id, routeShareId]);
 
-  function resetComposer() {
-    setComposer("closed");
-    setEditingId(null);
-    setItemTitle("");
-    setItemNote("");
-    setItemUrl("");
-    setItemImage("");
-    setItemPriority("would_love");
-    setItemBudget("");
-    setItemSize("");
-    setItemColor("");
-    setItemQty("1");
-    setShowDetails(false);
-    setLinkPreview(null);
-  }
-
-  function openComposer(mode: ComposerMode, item?: WishlistItem) {
-    if (item) {
-      setEditingId(item.id);
-      setItemTitle(item.title);
-      setItemNote(item.note || "");
-      setItemUrl(item.external_url || "");
-      setItemImage(item.image_url || "");
-      setItemPriority(item.priority || "would_love");
-      setItemBudget(item.budget_amount != null ? String(item.budget_amount) : "");
-      setItemSize(item.preference_size || "");
-      setItemColor(item.preference_color || "");
-      setItemQty(String(item.quantity || 1));
-      setShowDetails(Boolean(item.preference_size || item.preference_color || item.budget_amount || (item.quantity || 1) > 1));
-      setComposer("edit");
-      return;
-    }
-    setEditingId(null);
-    setComposer(mode);
-  }
-
   async function createList() {
     setBusy(true);
     setError(null);
@@ -245,6 +259,12 @@ export default function ChristmasWishlistPage() {
       pathname: PATH,
     });
     try {
+      const letterDescription =
+        description.trim() ||
+        serializeLetterDescription({
+          ...DEFAULT_LETTER,
+          signature: profileName || "",
+        });
       const data = await wishlistFunnel<{
         ok: boolean;
         wishlist_id: string;
@@ -253,8 +273,8 @@ export default function ChristmasWishlistPage() {
       }>(
         {
           action: "createWishlist",
-          title: title.trim() || defaultWishlistTitle(),
-          description,
+          title: title.trim() || defaultWishlistTitle(profileName),
+          description: letterDescription,
           audience,
         },
         await authBearer(),
@@ -271,164 +291,8 @@ export default function ChristmasWishlistPage() {
         pathname: PATH,
       });
       await loadOwner(data.wishlist_id, data.owner_token);
-      setComposer("closed");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Create failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function previewLink() {
-    const url = sanitizeExternalUrlClient(itemUrl);
-    if (!url) {
-      setError("Link must start with https:// (or http://)");
-      return;
-    }
-    setPreviewBusy(true);
-    setError(null);
-    setLinkPreview(null);
-    try {
-      const data = await wishlistFunnel<UrlPreview>({ action: "previewExternalUrl", url });
-      setLinkPreview(data);
-      if (data.extracted) {
-        if (data.title && !itemTitle.trim()) setItemTitle(data.title);
-        if (data.image_url && !itemImage.trim()) setItemImage(data.image_url);
-      }
-    } catch {
-      setLinkPreview({
-        ok: false,
-        url,
-        extracted: false,
-        title: null,
-        image_url: null,
-        retailer: retailerFromUrl(url),
-        error: "fetch_failed",
-      });
-    } finally {
-      setPreviewBusy(false);
-    }
-  }
-
-  async function saveWish(e?: FormEvent) {
-    e?.preventDefault();
-    if (!owner) return;
-    const url = itemUrl ? sanitizeExternalUrlClient(itemUrl) : null;
-    if (itemUrl && !url) {
-      setError("Link must start with https:// (or http://)");
-      return;
-    }
-    const image = itemImage ? sanitizeExternalUrlClient(itemImage) : null;
-    if (itemImage && !image) {
-      setError("Image link must be a valid http(s) URL");
-      return;
-    }
-    if (!itemTitle.trim()) {
-      setError("Please add a wish title");
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    const wasEmpty = owner.items.length === 0;
-    try {
-      if (editingId) {
-        await wishlistFunnel(
-          {
-            action: "updateWishlistItem",
-            wishlist_id: owner.id,
-            owner_token: ownerToken || undefined,
-            item_id: editingId,
-            title: itemTitle,
-            note: itemNote,
-            external_url: url,
-            image_url: image,
-            priority: itemPriority,
-            budget_amount: itemBudget === "" ? null : Number(itemBudget),
-            preference_size: itemSize,
-            preference_color: itemColor,
-            quantity: Number(itemQty) || 1,
-          },
-          await authBearer(),
-        );
-      } else {
-        await wishlistFunnel(
-          {
-            action: "addWishlistItem",
-            wishlist_id: owner.id,
-            owner_token: ownerToken || undefined,
-            title: itemTitle,
-            note: itemNote,
-            external_url: url,
-            image_url: image,
-            priority: itemPriority,
-            budget_amount: itemBudget === "" ? null : Number(itemBudget),
-            preference_size: itemSize,
-            preference_color: itemColor,
-            quantity: Number(itemQty) || 1,
-            source_type: "manual",
-          },
-          await authBearer(),
-        );
-        void trackChristmasEvent("wishlist_item_added", { productKey: PRODUCT, pathname: PATH });
-        if (wasEmpty && !firstWishTracked.current) {
-          firstWishTracked.current = true;
-          void trackChristmasEvent("wishlist_first_wish_added", { productKey: PRODUCT, pathname: PATH });
-        }
-        if (url) {
-          void trackChristmasEvent("wishlist_link_added", { productKey: PRODUCT, pathname: PATH });
-        }
-      }
-      resetComposer();
-      await loadOwner(owner.id, ownerToken);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save wish");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function moveItem(index: number, dir: -1 | 1) {
-    if (!owner) return;
-    const ids = owner.items.map((i) => i.id);
-    const next = reorderIds(ids, index, index + dir);
-    if (next.join() === ids.join()) return;
-    setBusy(true);
-    try {
-      await wishlistFunnel(
-        {
-          action: "reorderWishlistItems",
-          wishlist_id: owner.id,
-          owner_token: ownerToken || undefined,
-          item_ids: next,
-        },
-        await authBearer(),
-      );
-      void trackChristmasEvent("wishlist_item_reordered", { productKey: PRODUCT, pathname: PATH });
-      await loadOwner(owner.id, ownerToken);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Reorder failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function removeItem(id: string) {
-    if (!owner) return;
-    setBusy(true);
-    try {
-      await wishlistFunnel(
-        {
-          action: "removeWishlistItem",
-          wishlist_id: owner.id,
-          owner_token: ownerToken || undefined,
-          item_id: id,
-        },
-        await authBearer(),
-      );
-      void trackChristmasEvent("wishlist_item_removed", { productKey: PRODUCT, pathname: PATH });
-      await loadOwner(owner.id, ownerToken);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Remove failed");
     } finally {
       setBusy(false);
     }
@@ -479,30 +343,6 @@ export default function ChristmasWishlistPage() {
       } catch {
         setShareHint(shareUrl);
       }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function toggleShare(enabled: boolean) {
-    if (!owner) return;
-    setBusy(true);
-    try {
-      await wishlistFunnel(
-        {
-          action: "setWishlistShareEnabled",
-          wishlist_id: owner.id,
-          owner_token: ownerToken || undefined,
-          share_enabled: enabled,
-        },
-        await authBearer(),
-      );
-      if (enabled) {
-        void trackChristmasEvent("wishlist_share_enabled", { productKey: PRODUCT, pathname: PATH });
-      }
-      await loadOwner(owner.id, ownerToken);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Share update failed");
     } finally {
       setBusy(false);
     }
@@ -592,6 +432,32 @@ export default function ChristmasWishlistPage() {
     }
   }
 
+  const demoMode =
+    import.meta.env.DEV ? new URLSearchParams(window.location.search).get("demo") : null;
+  const letterMode = isShare || Boolean(owner) || demoMode === "viewer";
+  const showViewer = Boolean(isShare || (demoMode === "viewer" && shared));
+
+  useEffect(() => {
+    if (!letterMode) {
+      delete document.documentElement.dataset.wlImmersive;
+      window.dispatchEvent(new Event("wl-immersive-change"));
+      return;
+    }
+    document.documentElement.dataset.wlImmersive = "1";
+    window.dispatchEvent(new Event("wl-immersive-change"));
+    return () => {
+      delete document.documentElement.dataset.wlImmersive;
+      window.dispatchEvent(new Event("wl-immersive-change"));
+    };
+  }, [letterMode]);
+
+  const pageTitle = isShare
+    ? copy.shareSeoTitle(shared?.title || "Christmas Wishlist")
+    : copy.seoTitle;
+  const pageDesc = isShare
+    ? copy.shareSeoDescription(shared?.title || "Christmas Wishlist")
+    : copy.seoDescription;
+
   if (unavailable) {
     return (
       <div className="wl-page" data-fonts={fontsReady ? "ready" : "loading"}>
@@ -610,550 +476,334 @@ export default function ChristmasWishlistPage() {
     );
   }
 
-  const items = owner?.items || shared?.items || [];
-  const pageTitle = isShare
-    ? copy.shareSeoTitle(shared?.title || "Christmas Wishlist")
-    : copy.seoTitle;
-  const pageDesc = isShare
-    ? copy.shareSeoDescription(shared?.title || "Christmas Wishlist")
-    : copy.seoDescription;
-
   return (
-    <div className="wl-page" data-fonts={fontsReady ? "ready" : "loading"}>
-      <PageHead
-        title={pageTitle}
-        description={pageDesc}
-        exactTitle={!isShare}
-        noindex={isShare}
-      />
-      <ChristmasSnowfall />
+    <div
+      className={`wl-page ${letterMode ? "wl-page--letter" : ""}`}
+      data-fonts={fontsReady ? "ready" : "loading"}
+    >
+      <PageHead title={pageTitle} description={pageDesc} exactTitle={!isShare} noindex={isShare} />
+      {!letterMode ? <ChristmasSnowfall /> : null}
       <div className="wl-glow wl-glow--ember" aria-hidden />
       <div className="wl-glow wl-glow--gold" aria-hidden />
 
-      <div className="wl-shell">
-        {/* ——— Shared public view ——— */}
-        {isShare ? (
+      <div className={`wl-shell ${letterMode ? "wl-shell--letter" : ""}`}>
+        {/* ——— Shared public letter ——— */}
+        {showViewer ? (
+          shared ? (
+            <WishlistLetterViewer
+              shared={shared}
+              busy={busy}
+              error={error}
+              myReservations={myReservations}
+              viralTitle={copy.viralTitle}
+              viralCta={copy.viralCta}
+              giftFinderLabel={copy.tryGiftFinder}
+              onReserve={reserveItem}
+              onMarkPurchased={markPurchased}
+              onExternalClick={trackExternal}
+              onCreateMine={() => {
+                void trackChristmasEvent("wishlist_create_from_shared_clicked", {
+                  productKey: PRODUCT,
+                  pathname: window.location.pathname,
+                });
+                navigate("/christmas/wishlist");
+              }}
+            />
+          ) : (
+            <p className="wl-hero-support text-center">{copy.loading}</p>
+          )
+        ) : null}
+
+        {/* ——— Owner letter editor (standalone) ——— */}
+        {!showViewer && owner ? (
           <>
-            <header className="wl-brand">
-              <p className="wl-made-with text-center !text-[rgba(247,240,228,0.55)]">{copy.madeWith}</p>
-            </header>
-            <div className="wl-letter" role="region" aria-label={shared?.title || "Christmas Wishlist"}>
-              <div className="wl-letter__ribbon" aria-hidden />
-              <div className="wl-letter__inner">
-                <h1 className="wl-letter-title">{shared?.title || copy.loading}</h1>
-                {shared?.description ? <p className="wl-letter-note">“{shared.description}”</p> : (
-                  <p className="wl-letter-note">Thanks for making Christmas magical ❤️</p>
-                )}
-                {error ? <p className="wl-alert" role="alert">{error}</p> : null}
-
-                <ul className="mt-4" aria-label="Wishlist items">
-                  {busy && !shared ? (
-                    <li className="wl-hint">{copy.loading}</li>
-                  ) : items.length === 0 ? (
-                    <li className="wl-hint">No wishes on this list yet.</li>
-                  ) : (
-                    items.map((item) => {
-                      const taken = item.reservation_status === "reserved" || item.reservation_status === "purchased";
-                      const mine = Boolean(myReservations[item.id]);
-                      return (
-                        <li
-                          key={item.id}
-                          className={`wl-wish ${taken ? "wl-wish--taken" : ""}`}
-                        >
-                          <WishMedia item={item} />
-                          <div>
-                            <p className="wl-wish__title">{item.title}</p>
-                            {item.note ? <p className="wl-wish__note">{item.note}</p> : null}
-                            <div className="wl-wish__meta">
-                              <PriorityLabel priority={item.priority} locale={locale} />
-                              {formatMoney(item.budget_amount, item.currency, locale) ? (
-                                <span>{formatMoney(item.budget_amount, item.currency, locale)}</span>
-                              ) : null}
-                              {item.preference_size ? <span>{copy.size}: {item.preference_size}</span> : null}
-                              {item.preference_color ? <span>{copy.color}: {item.preference_color}</span> : null}
-                              {taken ? (
-                                <span className="wl-badge wl-badge--taken">
-                                  {item.reservation_status === "purchased" ? copy.purchased : copy.reserved}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="wl-wish__actions">
-                              {item.external_url ? (
-                                <a
-                                  className="wl-btn wl-btn--soft"
-                                  href={item.external_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={() => trackExternal(item)}
-                                >
-                                  {copy.openLink}
-                                </a>
-                              ) : null}
-                              {!taken ? (
-                                <button
-                                  type="button"
-                                  className="wl-btn wl-btn--primary"
-                                  disabled={busy}
-                                  onClick={() => void reserveItem(item)}
-                                >
-                                  {copy.reserve}
-                                </button>
-                              ) : null}
-                              {mine && item.reservation_status === "reserved" ? (
-                                <button
-                                  type="button"
-                                  className="wl-btn wl-btn--soft"
-                                  disabled={busy}
-                                  onClick={() => void markPurchased(item)}
-                                >
-                                  {copy.markPurchased}
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })
-                  )}
-                </ul>
-              </div>
-            </div>
-
-            <div className="wl-viral">
-              <h2>{copy.viralTitle}</h2>
-              <Link
-                className="wl-cta mt-4"
-                to="/christmas/wishlist"
-                onClick={() =>
-                  void trackChristmasEvent("wishlist_create_from_shared_clicked", {
-                    productKey: PRODUCT,
-                    pathname: window.location.pathname,
-                  })
-                }
-              >
-                {copy.viralCta}
+            <nav className="wl-topnav" aria-label="Wishlist navigation">
+              <Link className="wl-topnav__brand" to="/christmas">
+                <img src={LOGO_SRC} alt="" />
+                <span>{copy.brand}</span>
               </Link>
-              <p className="mt-3 text-sm text-[rgba(247,240,228,0.6)]">
-                <Link
-                  className="underline"
-                  to="/christmas/gift-finder"
-                  onClick={() =>
-                    void trackChristmasEvent("wishlist_gift_finder_clicked", {
-                      productKey: PRODUCT,
-                      pathname: window.location.pathname,
-                    })
-                  }
-                >
-                  {copy.tryGiftFinder}
-                </Link>
-              </p>
-            </div>
+              <Link to="/christmas">Home</Link>
+            </nav>
+            <WishlistLetterEditor
+              owner={owner}
+              busy={busy}
+              error={error}
+              shareUrl={shareUrl}
+              shareHint={shareHint}
+              profileName={profileName}
+              onMetaSave={async (patch) => {
+                if (owner.id === "demo-wishlist") {
+                  setOwner((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          title: patch.title ?? prev.title,
+                          description: patch.description ?? prev.description,
+                        }
+                      : prev,
+                  );
+                  return;
+                }
+                await wishlistFunnel(
+                  {
+                    action: "updateWishlist",
+                    wishlist_id: owner.id,
+                    owner_token: ownerToken || undefined,
+                    ...patch,
+                  },
+                  await authBearer(),
+                );
+                setOwner((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        title: patch.title ?? prev.title,
+                        description: patch.description ?? prev.description,
+                      }
+                    : prev,
+                );
+              }}
+              onAddWish={async (input) => {
+                if (owner.id === "demo-wishlist") {
+                  setOwner((prev) => {
+                    if (!prev) return prev;
+                    const id = `d${Date.now()}`;
+                    return {
+                      ...prev,
+                      items: [
+                        ...prev.items,
+                        {
+                          id,
+                          sort_order: prev.items.length,
+                          title: input.title,
+                          external_url: input.external_url,
+                          priority: input.priority || "would_love",
+                          note: input.note,
+                        },
+                      ],
+                    };
+                  });
+                  return;
+                }
+                const wasEmpty = owner.items.length === 0;
+                await wishlistFunnel(
+                  {
+                    action: "addWishlistItem",
+                    wishlist_id: owner.id,
+                    owner_token: ownerToken || undefined,
+                    title: input.title,
+                    external_url: input.external_url,
+                    note: input.note || "",
+                    priority: input.priority || "would_love",
+                    source_type: "manual",
+                  },
+                  await authBearer(),
+                );
+                void trackChristmasEvent("wishlist_item_added", { productKey: PRODUCT, pathname: PATH });
+                if (wasEmpty && !firstWishTracked.current) {
+                  firstWishTracked.current = true;
+                  void trackChristmasEvent("wishlist_first_wish_added", {
+                    productKey: PRODUCT,
+                    pathname: PATH,
+                  });
+                }
+                if (input.external_url) {
+                  void trackChristmasEvent("wishlist_link_added", { productKey: PRODUCT, pathname: PATH });
+                }
+                await loadOwner(owner.id, ownerToken);
+              }}
+              onUpdateWish={async (itemId, patch) => {
+                if (owner.id === "demo-wishlist") {
+                  setOwner((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          items: prev.items.map((item) =>
+                            item.id === itemId ? ({ ...item, ...patch } as WishlistItem) : item,
+                          ),
+                        }
+                      : prev,
+                  );
+                  return;
+                }
+                await wishlistFunnel(
+                  {
+                    action: "updateWishlistItem",
+                    wishlist_id: owner.id,
+                    owner_token: ownerToken || undefined,
+                    item_id: itemId,
+                    ...patch,
+                  },
+                  await authBearer(),
+                );
+                await loadOwner(owner.id, ownerToken);
+              }}
+              onRemoveWish={async (itemId) => {
+                if (owner.id === "demo-wishlist") {
+                  setOwner((prev) =>
+                    prev ? { ...prev, items: prev.items.filter((item) => item.id !== itemId) } : prev,
+                  );
+                  return;
+                }
+                await wishlistFunnel(
+                  {
+                    action: "removeWishlistItem",
+                    wishlist_id: owner.id,
+                    owner_token: ownerToken || undefined,
+                    item_id: itemId,
+                  },
+                  await authBearer(),
+                );
+                void trackChristmasEvent("wishlist_item_removed", { productKey: PRODUCT, pathname: PATH });
+                await loadOwner(owner.id, ownerToken);
+              }}
+              onReorder={async (itemIds) => {
+                if (owner.id === "demo-wishlist") {
+                  setOwner((prev) => {
+                    if (!prev) return prev;
+                    const map = new Map(prev.items.map((item) => [item.id, item]));
+                    return {
+                      ...prev,
+                      items: itemIds
+                        .map((id, index) => {
+                          const item = map.get(id);
+                          return item ? { ...item, sort_order: index } : null;
+                        })
+                        .filter(Boolean) as WishlistItem[],
+                    };
+                  });
+                  return;
+                }
+                await wishlistFunnel(
+                  {
+                    action: "reorderWishlistItems",
+                    wishlist_id: owner.id,
+                    owner_token: ownerToken || undefined,
+                    item_ids: itemIds,
+                  },
+                  await authBearer(),
+                );
+                void trackChristmasEvent("wishlist_item_reordered", {
+                  productKey: PRODUCT,
+                  pathname: PATH,
+                });
+                await loadOwner(owner.id, ownerToken);
+              }}
+              onShare={async (channel) => {
+                if (owner.id === "demo-wishlist") {
+                  setShareHint(copy.linkCopied);
+                  return;
+                }
+                await shareVia(channel);
+              }}
+              onPreviewGuest={() => {
+                if (owner.id === "demo-wishlist") return;
+                if (owner.share_id) {
+                  void ensureShareEnabled().then(() => {
+                    window.open(`/wishlist/${owner.share_id}`, "_blank", "noopener,noreferrer");
+                  });
+                }
+              }}
+            />
           </>
         ) : null}
 
-        {/* ——— Owner / landing ——— */}
-        {!isShare ? (
+        {/* ——— Marketing landing (no owner yet) ——— */}
+        {!showViewer && !owner ? (
           <>
-            {!owner ? (
-              <>
-                <header className="wl-brand">
-                  <img src={LOGO_SRC} alt="" />
-                  <p className="wl-brand-name">{copy.brand}</p>
-                  <p className="wl-eyebrow">Christmas Wishlist</p>
-                </header>
-                <h1 className="wl-hero-h1">{copy.heroH1}</h1>
-                <p className="wl-hero-support">{copy.heroSupport}</p>
-                <div className="wl-cta-row">
-                  <button
-                    type="button"
-                    className="wl-cta"
-                    onClick={() => {
-                      setPhase("create");
-                      void trackChristmasEvent("wishlist_creation_started", {
-                        productKey: PRODUCT,
-                        pathname: PATH,
-                      });
-                      requestAnimationFrame(() => {
-                        document.getElementById("wl-create")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                      });
-                    }}
-                  >
-                    {copy.ctaCreate}
-                  </button>
-                  <a className="wl-cta-ghost" href={`#${howId}`}>
-                    {copy.ctaHow}
-                  </a>
-                </div>
+            <header className="wl-brand">
+              <img src={LOGO_SRC} alt="" />
+              <p className="wl-brand-name">{copy.brand}</p>
+              <p className="wl-eyebrow">Christmas Wishlist</p>
+            </header>
+            <h1 className="wl-hero-h1">{copy.heroH1}</h1>
+            <p className="wl-hero-support">{copy.heroSupport}</p>
+            <div className="wl-cta-row">
+              <button
+                type="button"
+                className="wl-cta"
+                onClick={() => {
+                  setPhase("create");
+                  void trackChristmasEvent("wishlist_creation_started", {
+                    productKey: PRODUCT,
+                    pathname: PATH,
+                  });
+                  requestAnimationFrame(() => {
+                    document.getElementById("wl-create")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
+                }}
+              >
+                {copy.ctaCreate}
+              </button>
+              <a className="wl-cta-ghost" href={`#${howId}`}>
+                {copy.ctaHow}
+              </a>
+            </div>
 
-                {/* Example letter */}
-                <aside className="wl-letter" aria-label="Example wishlist">
-                  <div className="wl-letter__ribbon" aria-hidden />
-                  <div className="wl-letter__inner">
-                    <h2 className="wl-letter-title">{copy.exampleTitle}</h2>
-                    <p className="wl-made-with">Example only · not a real customer list</p>
-                    <ul className="mt-3">
-                      {EXAMPLE_WISHES.map((w) => (
-                        <li key={w.title} className="wl-example-item">
-                          <strong>
-                            {PRIORITY_EMOJI[w.priority] || "🎁"} {w.title}
-                          </strong>
-                          {w.note ? <em>{w.note}</em> : null}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </aside>
+            <aside className="wl-letter" aria-label="Example wishlist">
+              <div className="wl-letter__ribbon" aria-hidden />
+              <div className="wl-letter__inner">
+                <h2 className="wl-letter-title">{copy.exampleTitle}</h2>
+                <p className="wl-made-with">Example only · not a real customer list</p>
+                <ul className="mt-3">
+                  {EXAMPLE_WISHES.map((w) => (
+                    <li key={w.title} className="wl-example-item">
+                      <strong>
+                        {PRIORITY_EMOJI[w.priority] || "🎁"} {w.title}
+                      </strong>
+                      {w.note ? <em>{w.note}</em> : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
 
-                <section id="wl-create" className="wl-letter mt-6" aria-label="Create wishlist">
-                    <div className="wl-letter__inner">
-                      <h2 className="wl-letter-title">{copy.createTitleAsk}</h2>
-                      <label className="mt-4 block">
-                        <span className="wl-label">Wishlist name</span>
-                        <input
-                          className="wl-input"
-                          value={title}
-                          maxLength={80}
-                          placeholder={copy.createTitlePlaceholder}
-                          onChange={(e) => setTitle(e.target.value)}
-                        />
-                      </label>
-                      <div className="mt-4">
-                        <p className="wl-label">{copy.createForAsk}</p>
-                        <div className="wl-audience" role="group" aria-label={copy.createForAsk}>
-                          {WISHLIST_AUDIENCES.map((a) => (
-                            <button
-                              key={a.key}
-                              type="button"
-                              className={`wl-chip ${audience === a.key ? "wl-chip--on" : ""}`}
-                              aria-pressed={audience === a.key}
-                              onClick={() => setAudience(a.key)}
-                            >
-                              {labelFor(WISHLIST_AUDIENCES, a.key, locale)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <label className="mt-4 block">
-                        <span className="wl-label">Optional message</span>
-                        <textarea
-                          className="wl-textarea"
-                          value={description}
-                          maxLength={500}
-                          placeholder="Thanks for making Christmas magical ❤️"
-                          onChange={(e) => setDescription(e.target.value)}
-                        />
-                      </label>
-                      {error ? <p className="wl-alert" role="alert">{error}</p> : null}
+            <section id="wl-create" className="wl-letter mt-6" aria-label="Create wishlist">
+              <div className="wl-letter__inner">
+                <h2 className="wl-letter-title">{copy.createTitleAsk}</h2>
+                <label className="mt-4 block">
+                  <span className="wl-label">Wishlist name</span>
+                  <input
+                    className="wl-input"
+                    value={title}
+                    maxLength={80}
+                    placeholder={copy.createTitlePlaceholder}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </label>
+                <div className="mt-4">
+                  <p className="wl-label">{copy.createForAsk}</p>
+                  <div className="wl-audience" role="group" aria-label={copy.createForAsk}>
+                    {WISHLIST_AUDIENCES.map((a) => (
                       <button
+                        key={a.key}
                         type="button"
-                        className="wl-cta mt-5"
-                        disabled={busy || !title.trim()}
-                        onClick={() => void createList()}
+                        className={`wl-chip ${audience === a.key ? "wl-chip--on" : ""}`}
+                        aria-pressed={audience === a.key}
+                        onClick={() => setAudience(a.key)}
                       >
-                        {copy.createSubmit}
+                        {labelFor(WISHLIST_AUDIENCES, a.key, locale)}
                       </button>
-                      <p className="wl-hint">{copy.saveListHint}</p>
-                    </div>
-                  </section>
-              </>
-            ) : (
-              <>
-                <header className="wl-brand">
-                  <img src={LOGO_SRC} alt="" />
-                  <p className="wl-brand-name text-[1.65rem]">{copy.brand}</p>
-                </header>
-                <div className="wl-letter" role="region" aria-label={owner.title}>
-                  <div className="wl-letter__ribbon" aria-hidden />
-                  <div className="wl-letter__inner">
-                    <h1 className="wl-letter-title">{owner.title}</h1>
-                    {owner.description ? <p className="wl-letter-note">“{owner.description}”</p> : null}
-                    <p className="wl-stats">
-                      {copy.ownerStats(owner.items.length, owner.share_count || 0, owner.view_count || 0)}
-                    </p>
-                    {error ? <p className="wl-alert" role="alert">{error}</p> : null}
-
-                    {owner.items.length === 0 && composer === "closed" ? (
-                      <div className="wl-empty">
-                        <h3>{copy.emptyAsk}</h3>
-                        <button type="button" className="wl-cta mt-4" onClick={() => openComposer("manual")}>
-                          {copy.emptyCta}
-                        </button>
-                        <div className="wl-mode-row">
-                          <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("link")}>
-                            {copy.pasteLink}
-                          </button>
-                          <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("manual")}>
-                            {copy.writeWish}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <ul className="mt-2" aria-label="Your wishes">
-                        {owner.items.map((item, idx) => (
-                          <li key={item.id} className="wl-wish">
-                            <WishMedia item={item} />
-                            <div>
-                              <p className="wl-wish__title">{item.title}</p>
-                              {item.note ? <p className="wl-wish__note">{item.note}</p> : null}
-                              <div className="wl-wish__meta">
-                                <PriorityLabel priority={item.priority} locale={locale} />
-                                {formatMoney(item.budget_amount, item.currency, locale) ? (
-                                  <span>{formatMoney(item.budget_amount, item.currency, locale)}</span>
-                                ) : null}
-                                {retailerFromUrl(item.external_url) ? (
-                                  <span>{retailerFromUrl(item.external_url)}</span>
-                                ) : null}
-                              </div>
-                              <div className="wl-wish__actions">
-                                {item.external_url ? (
-                                  <a
-                                    className="wl-btn wl-btn--soft"
-                                    href={item.external_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    {copy.openLink}
-                                  </a>
-                                ) : null}
-                                <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("edit", item)}>
-                                  {copy.edit}
-                                </button>
-                                <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void moveItem(idx, -1)}>
-                                  {copy.moveUp}
-                                </button>
-                                <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void moveItem(idx, 1)}>
-                                  {copy.moveDown}
-                                </button>
-                                <button type="button" className="wl-btn wl-btn--danger" disabled={busy} onClick={() => void removeItem(item.id)}>
-                                  {copy.remove}
-                                </button>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    {composer !== "closed" ? (
-                      <form className="mt-4 border-t border-[rgba(26,18,15,0.1)] pt-4" onSubmit={(e) => void saveWish(e)}>
-                        <h3 className="wl-letter-title text-[1.25rem]">
-                          {composer === "edit" ? copy.edit : composer === "link" ? copy.pasteLink : copy.writeWish}
-                        </h3>
-                        {(composer === "link" || composer === "edit") && (
-                          <label className="mt-3 block">
-                            <span className="wl-label">{copy.pasteLink}</span>
-                            <input
-                              className="wl-input"
-                              value={itemUrl}
-                              placeholder={copy.pasteLinkHint}
-                              inputMode="url"
-                              autoComplete="url"
-                              onChange={(e) => setItemUrl(e.target.value)}
-                            />
-                          </label>
-                        )}
-                        {composer === "link" ? (
-                          <button
-                            type="button"
-                            className="wl-btn wl-btn--soft mt-2"
-                            disabled={previewBusy || !itemUrl.trim()}
-                            onClick={() => void previewLink()}
-                          >
-                            {previewBusy ? copy.loading : "Look up link"}
-                          </button>
-                        ) : null}
-                        {linkPreview && !linkPreview.extracted ? (
-                          <p className="wl-hint">{copy.linkImportFail}</p>
-                        ) : null}
-                        {linkPreview?.retailer ? (
-                          <p className="wl-hint">Store: {linkPreview.retailer}</p>
-                        ) : null}
-
-                        <label className="mt-3 block">
-                          <span className="wl-label">{copy.whatWant}</span>
-                          <input
-                            className="wl-input"
-                            value={itemTitle}
-                            maxLength={120}
-                            placeholder={copy.whatWantExample}
-                            required
-                            onChange={(e) => setItemTitle(e.target.value)}
-                          />
-                        </label>
-                        <label className="mt-3 block">
-                          <span className="wl-label">{copy.addNote}</span>
-                          <input
-                            className="wl-input"
-                            value={itemNote}
-                            maxLength={500}
-                            placeholder={copy.noteExample}
-                            onChange={(e) => setItemNote(e.target.value)}
-                          />
-                        </label>
-
-                        <p className="wl-label mt-4">Priority</p>
-                        <div className="wl-priority" role="group">
-                          {WISHLIST_PRIORITIES.filter((p) => p.key !== "surprise_me").map((p) => (
-                            <button
-                              key={p.key}
-                              type="button"
-                              aria-pressed={itemPriority === p.key}
-                              onClick={() => setItemPriority(p.key)}
-                            >
-                              {PRIORITY_EMOJI[p.key]} {labelFor(WISHLIST_PRIORITIES, p.key, locale)}
-                            </button>
-                          ))}
-                        </div>
-
-                        <button
-                          type="button"
-                          className="wl-details-toggle"
-                          onClick={() => setShowDetails((v) => !v)}
-                        >
-                          {copy.addDetails}
-                        </button>
-                        {showDetails ? (
-                          <div className="mt-2 space-y-3">
-                            {composer === "manual" ? (
-                              <label className="block">
-                                <span className="wl-label">{copy.externalLink}</span>
-                                <input
-                                  className="wl-input"
-                                  value={itemUrl}
-                                  placeholder={copy.pasteLinkHint}
-                                  onChange={(e) => setItemUrl(e.target.value)}
-                                />
-                              </label>
-                            ) : null}
-                            <label className="block">
-                              <span className="wl-label">{copy.imageUrl}</span>
-                              <input
-                                className="wl-input"
-                                value={itemImage}
-                                placeholder="https://"
-                                onChange={(e) => setItemImage(e.target.value)}
-                              />
-                            </label>
-                            <label className="block">
-                              <span className="wl-label">{copy.preferredPrice}</span>
-                              <input
-                                className="wl-input"
-                                value={itemBudget}
-                                inputMode="decimal"
-                                onChange={(e) => setItemBudget(e.target.value)}
-                              />
-                            </label>
-                            <div className="grid grid-cols-2 gap-2">
-                              <label className="block">
-                                <span className="wl-label">{copy.size}</span>
-                                <input className="wl-input" value={itemSize} maxLength={40} onChange={(e) => setItemSize(e.target.value)} />
-                              </label>
-                              <label className="block">
-                                <span className="wl-label">{copy.color}</span>
-                                <input className="wl-input" value={itemColor} maxLength={40} onChange={(e) => setItemColor(e.target.value)} />
-                              </label>
-                            </div>
-                            <label className="block">
-                              <span className="wl-label">{copy.quantity}</span>
-                              <input
-                                className="wl-input"
-                                value={itemQty}
-                                inputMode="numeric"
-                                onChange={(e) => setItemQty(e.target.value)}
-                              />
-                            </label>
-                          </div>
-                        ) : null}
-
-                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                          <button type="submit" className="wl-cta flex-1" disabled={busy || !itemTitle.trim()}>
-                            {copy.saveWish}
-                          </button>
-                          <button type="button" className="wl-cta-ghost flex-1 !text-[var(--wl-ink)] !border-[rgba(26,18,15,0.15)]" onClick={resetComposer}>
-                            {copy.cancel}
-                          </button>
-                        </div>
-                      </form>
-                    ) : null}
-
-                    {owner.items.length > 0 && composer === "closed" ? (
-                      <div className="wl-sticky-add">
-                        <button type="button" className="wl-cta wl-cta--gold" onClick={() => openComposer("manual")}>
-                          {copy.addWish}
-                        </button>
-                        <div className="wl-mode-row">
-                          <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("link")}>
-                            {copy.pasteLink}
-                          </button>
-                          <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("manual")}>
-                            {copy.writeWish}
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    <div className="wl-share-panel">
-                      <h3 className="wl-letter-title text-[1.25rem]">{copy.shareCta}</h3>
-                      <p className="wl-hint">
-                        {owner.share_enabled ? copy.sharingOn : copy.enableShareFirst}
-                      </p>
-                      <div className="wl-share-grid">
-                        <button type="button" className="wl-btn wl-btn--primary" disabled={busy} onClick={() => void shareVia("copy")}>
-                          {copy.copyLink}
-                        </button>
-                        <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void shareVia("whatsapp")}>
-                          {copy.shareWhatsApp}
-                        </button>
-                        <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void shareVia("email")}>
-                          {copy.shareEmail}
-                        </button>
-                        <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void shareVia("native")}>
-                          {copy.shareNative}
-                        </button>
-                      </div>
-                      {shareHint ? <p className="wl-hint break-all">{shareHint}</p> : null}
-                      {owner.share_enabled ? (
-                        <button type="button" className="wl-btn wl-btn--danger mt-3" onClick={() => void toggleShare(false)}>
-                          {copy.turnShareOff}
-                        </button>
-                      ) : null}
-                      {owner.share_enabled && shareUrl ? (
-                        <p className="wl-hint mt-2 break-all">{shareUrl}</p>
-                      ) : null}
-                    </div>
+                    ))}
                   </div>
                 </div>
+                {error ? (
+                  <p className="wl-alert" role="alert">
+                    {error}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  className="wl-cta mt-5"
+                  disabled={busy || !title.trim()}
+                  onClick={() => void createList()}
+                >
+                  {copy.createSubmit}
+                </button>
+                <p className="wl-hint">{copy.saveListHint}</p>
+              </div>
+            </section>
 
-                <div className="wl-section text-center">
-                  <p className="text-[rgba(247,240,228,0.7)]">{copy.notSure}</p>
-                  <Link
-                    className="wl-cta-ghost mt-3 inline-flex !w-auto"
-                    to="/christmas/gift-finder"
-                    onClick={() =>
-                      void trackChristmasEvent("wishlist_gift_finder_clicked", {
-                        productKey: PRODUCT,
-                        pathname: PATH,
-                      })
-                    }
-                  >
-                    {copy.tryGiftFinder}
-                  </Link>
-                </div>
-
-                <div className="wl-section">
-                  <h2 className="!text-left text-[1.25rem]">{copy.personalIdeas}</h2>
-                  <div className="wl-links !justify-start !mt-3">
-                    <Link to="/christmas/photo-generator">{copy.addPortrait}</Link>
-                    <Link to="/christmas/santa-video">{copy.addSanta}</Link>
-                    <Link to="/christmas/cards">{copy.addCard}</Link>
-                    <Link to="/christmas/tree">{copy.addTree}</Link>
-                  </div>
-                  <p className="mt-3 text-sm text-[rgba(247,240,228,0.55)]">{copy.putUnderTree}</p>
-                </div>
-              </>
-            )}
-
-            {/* How it works + SEO / GEO */}
             <section className="wl-section" id={howId} aria-labelledby={`${howId}-title`}>
               <h2 id={`${howId}-title`}>{copy.howTitle}</h2>
               <ol className="wl-how">
@@ -1212,14 +862,6 @@ export default function ChristmasWishlistPage() {
               <article className="wl-seo-block">
                 <h2>{copy.geoWhatTitle}</h2>
                 <p>{copy.geoWhatBody}</p>
-                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[rgba(247,240,228,0.78)]">
-                  <li>Can I add products from different stores? Yes — paste any store link or add a wish manually.</li>
-                  <li>Can people reserve gifts? Yes — viewers can mark “I’m getting this.”</li>
-                  <li>Will I know who bought my gift? No — reservations stay anonymous to protect the surprise.</li>
-                  <li>Can I share one link? Yes — one wishlist link is enough for everyone.</li>
-                  <li>Can I create one for my child? Yes — choose “My child” when creating.</li>
-                  <li>Can I add non-product wishes? Yes — experiences and handwritten wishes are welcome.</li>
-                </ul>
               </article>
             </section>
 

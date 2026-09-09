@@ -23,4 +23,9 @@ describe("isSupportWidgetHidden", () => {
     expect(isSupportWidgetHidden("/")).toBe(false);
     expect(isSupportWidgetHidden("/account")).toBe(false);
   });
+
+  it("hides Help on Christmas wishlist letter experiences", () => {
+    expect(isSupportWidgetHidden("/christmas/wishlist")).toBe(true);
+    expect(isSupportWidgetHidden("/wishlist/abc123")).toBe(true);
+  });
 });
