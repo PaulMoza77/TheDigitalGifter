@@ -1,7 +1,8 @@
 export const ADVENT_ASSETS = {
-  room: "/assets/christmas/advent_room.webp",
+  /** Cinematic room without baked-in UI (calendar/title live in the app). */
+  room: "/assets/christmas/christmas_finale_room.webp",
   roomFallback: "/assets/christmas/christmas_hero_room.webp",
-  og: "/assets/christmas/advent_room.webp",
+  og: "/assets/christmas/christmas_finale_room.webp",
 } as const;
 
 export const ADVENT_FONT_HREF =

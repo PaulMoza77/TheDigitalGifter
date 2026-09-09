@@ -64,16 +64,16 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 35%;
-  filter: saturate(1.05) contrast(1.04);
+  object-position: center 40%;
+  filter: saturate(1.08) contrast(1.05) brightness(0.92);
 }
 
 .advent-room__vignette {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 55% 45% at 50% 42%, transparent 0%, rgba(8, 3, 5, 0.35) 70%, rgba(5, 2, 3, 0.72) 100%),
-    linear-gradient(180deg, rgba(10, 5, 8, 0.35) 0%, transparent 18%, transparent 72%, rgba(8, 4, 6, 0.75) 100%);
+    radial-gradient(ellipse 48% 42% at 50% 48%, rgba(8, 3, 5, 0.15) 0%, rgba(8, 3, 5, 0.55) 58%, rgba(5, 2, 3, 0.82) 100%),
+    linear-gradient(180deg, rgba(10, 5, 8, 0.5) 0%, transparent 16%, transparent 68%, rgba(8, 4, 6, 0.88) 100%);
   pointer-events: none;
 }
 
@@ -82,9 +82,9 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 18% 62%, rgba(255, 170, 70, 0.12), transparent 22%),
-    radial-gradient(circle at 82% 48%, rgba(255, 190, 90, 0.1), transparent 26%),
-    radial-gradient(circle at 50% 55%, rgba(212, 179, 106, 0.06), transparent 40%);
+    radial-gradient(circle at 28% 55%, rgba(255, 140, 50, 0.14), transparent 24%),
+    radial-gradient(circle at 72% 42%, rgba(255, 190, 90, 0.12), transparent 28%),
+    radial-gradient(circle at 50% 58%, rgba(212, 179, 106, 0.08), transparent 38%);
   animation: advent-ambient-breathe 7s ease-in-out infinite;
 }
 
@@ -93,8 +93,7 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  opacity: 0.55;
-  mask-image: linear-gradient(90deg, #000 0%, #000 28%, transparent 42%, transparent 58%, #000 72%, #000 100%);
+  opacity: 0.45;
 }
 
 .advent-flake {
@@ -752,8 +751,8 @@
   }
 
   .advent-room__bg img {
-    object-position: center 42%;
-    filter: saturate(1.02) brightness(0.92);
+    object-position: center 35%;
+    filter: saturate(1.05) brightness(0.88);
   }
 
   .advent-grid {
@@ -772,7 +771,6 @@
 
   .advent-snow {
     opacity: 0.35;
-    mask-image: none;
   }
 }
 
