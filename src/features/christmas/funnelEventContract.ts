@@ -92,6 +92,9 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "card_create_another",
   "christmas_hub_cta",
   "christmas_hub_interact",
+  "result_share_enabled",
+  "result_share_revoked",
+  "shared_result_view",
 ] as const;
 
 export type ChristmasFunnelEventName = (typeof CHRISTMAS_FUNNEL_ALLOWED_EVENTS)[number];
@@ -274,11 +277,69 @@ export function validateChristmasFunnelIngestPayload(
     adId: sanitizeFunnelText(body.ad_id, 120),
     hasFbclid: Boolean(body.has_fbclid),
     referrerHost: sanitizeFunnelText(body.referrer_host, 120),
-    metadata:
+    metadata: sanitizeChristmasFunnelMetadata(
       body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata)
         ? body.metadata
         : {},
+    ),
   };
+}
+
+const BLOCKED_FUNNEL_META_KEYS = new Set([
+  "resulturl",
+  "result_url",
+  "imageurl",
+  "image_url",
+  "media_url",
+  "mediaurl",
+  "signedurl",
+  "signed_url",
+  "public_url",
+  "publicurl",
+  "storage_path",
+  "storagepath",
+  "storage_bucket",
+  "storagebucket",
+  "source_url",
+  "sourceurl",
+  "preview_url",
+  "previewurl",
+  "download_url",
+  "downloadurl",
+  "file_url",
+  "fileurl",
+  "token",
+  "share_token",
+  "sharetoken",
+  "public_token",
+  "publictoken",
+  "owner_token",
+  "ownertoken",
+  "ciphertext",
+]);
+
+function looksLikeMediaOrSignedUrl(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const v = value.trim();
+  if (!v) return false;
+  if (/^https?:\/\//i.test(v)) return true;
+  if (/^data:image\//i.test(v)) return true;
+  if (v.includes("/storage/v1/object")) return true;
+  if (v.includes("supabase.co/storage")) return true;
+  return false;
+}
+
+/** Ingest must never persist media URLs or share/owner capability tokens. */
+export function sanitizeChristmasFunnelMetadata(
+  meta: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(meta)) {
+    if (BLOCKED_FUNNEL_META_KEYS.has(key.toLowerCase())) continue;
+    if (looksLikeMediaOrSignedUrl(value)) continue;
+    out[key] = value;
+  }
+  return out;
 }
 
 export function christmasEventRowFromValidated(

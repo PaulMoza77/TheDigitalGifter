@@ -214,6 +214,21 @@ describe("christmas analytics contract", () => {
     expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain("purchase");
   });
 
+  it("strips media URLs from ingest metadata", () => {
+    const validated = validateChristmasFunnelIngestPayload({
+      event_name: "shared_result_view",
+      funnel_session_id: "22222222-2222-4222-8222-222222222222",
+      metadata: {
+        generation_id: "11111111-1111-4111-8111-111111111111",
+        resultUrl: "https://example.supabase.co/storage/v1/object/sign/x.jpg",
+        token: "secret-share-token-value",
+      },
+    });
+    expect(validated.metadata).toEqual({
+      generation_id: "11111111-1111-4111-8111-111111111111",
+    });
+  });
+
   it("rejects invalid event", () => {
     expect(() =>
       validateChristmasFunnelIngestPayload({

@@ -7,6 +7,7 @@ import { inferDeviceType } from "@/features/pet/funnelSession";
 import {
   CHRISTMAS_FUNNEL_EVENT_PATH,
   newFunnelUuid,
+  sanitizeChristmasFunnelMetadata,
   type ChristmasFunnelEventName,
 } from "./funnelEventContract";
 
@@ -65,10 +66,10 @@ export async function trackChristmasEvent(
     adset_id: attr.adset_id ?? null,
     ad_id: attr.ad_id ?? null,
     has_fbclid: firstTouch.hasFbclid,
-    metadata: {
+    metadata: sanitizeChristmasFunnelMetadata({
       ...(extra?.styleKey ? { style_key: extra.styleKey } : {}),
       ...(extra?.metadata || {}),
-    },
+    }),
   };
 
   try {

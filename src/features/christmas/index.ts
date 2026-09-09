@@ -28,3 +28,7 @@ export {
   canEnqueueFulfillment,
 } from "./fulfillment";
 export { CHRISTMAS_ROUTE_SHELLS, shellForPath, shellExposesCheckout } from "./routes";
+export {
+  buildResultSharePath,
+  sanitizeResultShareAnalyticsMeta,
+} from "./share/shareLogic";

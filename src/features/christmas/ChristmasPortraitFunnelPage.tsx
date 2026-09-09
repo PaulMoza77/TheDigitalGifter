@@ -26,6 +26,7 @@ import {
   verticalFromPathname,
   type ChristmasPortraitVertical,
 } from "./portraitVerticals";
+import { ResultShareControls } from "./share/ResultShareControls";
 import { enabledChristmasStyles } from "./styles";
 
 function readDraft(key: string): ChristmasPortraitDraft {
@@ -599,7 +600,7 @@ export default function ChristmasPortraitFunnelPage() {
               <li>Style: {styleName || draft.styleKey}</li>
               <li>{vertical.deliverableLine}</li>
               <li>Usually ready a few minutes after payment</li>
-              <li>Private by default · download via your order link</li>
+              <li>Private by default · optional tokenized share link you can revoke</li>
             </ul>
             <label className="block text-sm">
               Email for receipt / recovery (optional)
@@ -683,8 +684,13 @@ export default function ChristmasPortraitFunnelPage() {
                 className="rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"
                 onClick={() => void onShare()}
               >
-                Share
+                Share file
               </button>
+              <ResultShareControls
+                publicToken={draft.publicToken}
+                orderId={draft.orderId}
+                productKey={vertical.productKey}
+              />
               <button
                 type="button"
                 className="rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"

@@ -42,7 +42,7 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 
 - Buckets: `christmas-source`, `christmas-generated` (private)
 - Results via short-lived signed URLs
-- Default private; share uses Web Share API / file share (no public result page in V1)
+- Default private; optional durable share at `/share/:generationId?token=` (token gate + revoke). File share via Web Share API remains. See `docs/TDG_CHRISTMAS_RESULT_SHARE.md`.
 
 ## Recovery
 

@@ -28,6 +28,8 @@ Table: `christmas_orders`
 
 Assets: `christmas_order_assets` for future image/video/card outputs (optional `generation_id` / `job_id` links).
 
+Optional hosted share: `christmas_generation_shares` + `/share/:generationId?token=` — private by default, tokenized public read, owner revoke. See `docs/TDG_CHRISTMAS_RESULT_SHARE.md`.
+
 ## Status contract
 
 Payment: `draft | pending | paid | failed | refunded`  

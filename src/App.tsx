@@ -144,6 +144,9 @@ const ChristmasCardsPage = lazy(
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
 );
+const ChristmasResultSharePage = lazy(
+  () => import("@/features/christmas/ChristmasResultSharePage"),
+);
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
 const ThanksgivingPage = lazy(() => import("@/pages/website/ThanksgivingPage"));
@@ -472,6 +475,7 @@ function AppInner() {
             <Route path="/christmas/gifts" element={<ChristmasGiftFinderPage />} />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
+            <Route path="/share/:generationId" element={<ChristmasResultSharePage />} />
             <Route path="/birthday" element={<BirthdayPage />} />
             <Route path="/new-years-eve" element={<NewYearsEvePage />} />
             <Route path="/thanksgiving" element={<ThanksgivingPage />} />
