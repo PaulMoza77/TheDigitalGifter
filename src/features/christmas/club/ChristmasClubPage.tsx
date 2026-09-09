@@ -292,12 +292,12 @@ export function ChristmasClubPage() {
         <section className="cc-panel">
           <h2>Still looking for the right gift?</h2>
           <p>
-            When the countdown isn’t enough, our Christmas gift finder helps you choose something
-            warm and personal — for family, friends, or someone hard to shop for.
+            When the countdown isn’t enough, open a present under our Christmas gift tree —
+            a small surprise waiting for you beneath the lights.
           </p>
           <p className="cc-story-link-wrap">
             <Link className="cc-story-link" to={CHRISTMAS_CLUB_GIFTS_ROUTE}>
-              Explore Christmas gifts
+              Open gifts under the tree
             </Link>
           </p>
         </section>

@@ -319,7 +319,8 @@
   box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.18);
 }
 
-.cc-cta {
+.cc-cta,
+.christmas-club a.cc-cta {
   border: 0;
   border-radius: 999px;
   background: linear-gradient(180deg, #f3e3b8 0%, #c9a227 100%);
@@ -332,7 +333,9 @@
   transition: transform 160ms ease, filter 160ms ease;
 }
 
+.christmas-club a.cc-cta:hover,
 .cc-cta:hover:not(:disabled) {
+  color: #2a1408;
   filter: brightness(1.06);
   transform: translateY(-1px);
 }

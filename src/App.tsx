@@ -139,6 +139,9 @@ const ChristmasWishlistPage = lazy(
 const ChristmasGiftFinderPage = lazy(
   () => import("@/features/christmas/ChristmasGiftFinderPage"),
 );
+const ChristmasGiftsPage = lazy(
+  () => import("@/features/christmas/gifts/ChristmasGiftsPage"),
+);
 const ChristmasCardsPage = lazy(
   () => import("@/features/christmas/ChristmasCardsPage"),
 );
@@ -257,12 +260,18 @@ function FunnelAttributionCapture() {
 
 function WebsiteLayout() {
   const [showPricing, setShowPricing] = useState(false);
+  const location = useLocation();
+  const hideChromeExtras =
+    location.pathname === "/christmas/tree-gifts" ||
+    location.pathname.startsWith("/christmas/tree-gifts/") ||
+    location.pathname === "/christmas/gifts" ||
+    location.pathname.startsWith("/christmas/gifts/");
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
       <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
 
-      <main className="flex-1">
+      <main className={`flex-1 ${hideChromeExtras ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
@@ -271,7 +280,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      <WebsiteFooter />
+      {hideChromeExtras ? null : <WebsiteFooter />}
     </div>
   );
 }
@@ -475,11 +484,12 @@ function AppInner() {
             <Route path="/christmas/santa-video" element={<ChristmasSantaVideoPage />} />
             <Route path="/christmas/tree" element={<ChristmasTreePage />} />
             <Route path="/christmas/tree/:shareId" element={<ChristmasTreePage />} />
+            <Route path="/christmas/tree-gifts" element={<ChristmasGiftsPage />} />
+            <Route path="/christmas/gifts" element={<Navigate to="/christmas/tree-gifts" replace />} />
             <Route path="/christmas/advent" element={<ChristmasAdventPage />} />
             <Route path="/christmas/wishlist" element={<ChristmasWishlistPage />} />
             <Route path="/wishlist/:shareId" element={<ChristmasWishlistPage />} />
             <Route path="/christmas/gift-finder" element={<ChristmasGiftFinderPage />} />
-            <Route path="/christmas/gifts" element={<ChristmasGiftFinderPage />} />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
             <Route path="/birthday" element={<BirthdayPage />} />
