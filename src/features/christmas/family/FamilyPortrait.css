@@ -17,6 +17,7 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+  pointer-events: none;
 }
 
 .ff-hero__room {
@@ -322,17 +323,20 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  min-height: 2.55rem;
-  padding: 0.2rem 0.75rem 0.2rem 0.2rem;
+  min-height: 2.85rem;
+  padding: 0.25rem 0.9rem 0.25rem 0.25rem;
   border-radius: 999px;
   border: 1px solid rgba(246, 239, 227, 0.2);
-  background: rgba(12, 6, 8, 0.42);
+  background: rgba(12, 6, 8, 0.55);
   color: var(--xmas-ivory);
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 3;
 }
 
 .ff-chip img {
