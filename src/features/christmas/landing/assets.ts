@@ -1,4 +1,14 @@
 export const LANDING_ASSETS = {
+  /** Luxury mountain-cabin hero (poster + living loop). */
+  cabin1280: "/christmas/cabin-hero-1280.webp",
+  cabin1920: "/christmas/cabin-hero-1920.webp",
+  cabin2560: "/christmas/cabin-hero-2560.webp",
+  cabin1280Jpg: "/christmas/cabin-hero-1280.jpg",
+  cabin1920Jpg: "/christmas/cabin-hero-1920.jpg",
+  cabin2560Jpg: "/christmas/cabin-hero-2560.jpg",
+  cabinLoop: "/christmas/cabin-hero-loop.mp4?v=seedance1",
+  cabinLoop720: "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+  /** Kept for OG / finale continuity with the storytelling rooms. */
   hero: "/assets/christmas/christmas_hero_room.webp",
   finale: "/assets/christmas/christmas_finale_room.webp",
   portraitFamily: "/assets/christmas/portrait_family.webp",
