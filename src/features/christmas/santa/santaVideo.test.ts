@@ -133,7 +133,8 @@ describe("santa pricing + routing", () => {
   });
 
   it("includes santa-video in sitemap", () => {
-    expect(readSrc("api/sitemap.xml.ts")).toContain("/christmas/santa-video");
+    expect(readSrc("api/_lib/christmas/sitemapPaths.ts")).toContain("/christmas/santa-video");
+    expect(readSrc("api/sitemap.xml.ts")).toContain("christmasIndexableSitemapPaths");
   });
 
   it("hub supports santa name handoff", () => {
