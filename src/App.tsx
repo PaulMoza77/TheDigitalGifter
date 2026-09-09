@@ -115,6 +115,10 @@ const SpiritualCategoryPage = lazy(
 const PetsCategoryPage = lazy(() => import("@/pages/website/PetsCategoryPage"));
 
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
+const ChristmasSuitePage = lazy(() => import("@/pages/website/ChristmasSuitePage"));
+const ChristmasPortraitFunnelPage = lazy(
+  () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
+);
 const ChristmasShellRoute = lazy(() =>
   import("@/features/christmas/ChristmasShellRoute").then((m) => ({
     default: m.ChristmasShellRoute,
@@ -454,7 +458,7 @@ function AppInner() {
             />
             <Route path="/categories/pets" element={<PetsCategoryPage />} />
 
-            <Route path="/christmas" element={<ChristmasPage />} />
+            <Route path="/christmas/suite" element={<ChristmasSuitePage />} />
             <Route path="/christmas/photo-generator" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/family" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/couples" element={<ChristmasPortraitFunnelPage />} />
@@ -596,6 +600,7 @@ function AppInner() {
             <Route path="/pet/cat-v2" element={<PetV2Route />} />
             <Route path="/pet/other-v2" element={<PetV2Route />} />
             <Route path="/pet/cat-v3" element={<PetV3Route />} />
+            <Route path="/christmas" element={<ChristmasPage />} />
             <Route path="/christmas-ai-photos" element={<ChristmasV2Route />} />
             <Route
               path="/christmas-ai-photos/order"
