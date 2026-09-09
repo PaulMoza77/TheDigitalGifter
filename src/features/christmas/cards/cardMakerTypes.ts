@@ -97,16 +97,16 @@ export function getCardType(key: string) {
   return CARD_TYPES.find((t) => t.key === key) || CARD_TYPES[0]!;
 }
 
-/** Curated design directions shown in step 3 (subset / ordered for UX). */
+/** Curated design directions shown in the creator (ordered for UX). */
 export const CARD_DESIGN_ORDER: CardStyleKey[] = [
   "classic_christmas",
   "elegant_gold",
   "cozy_christmas",
   "winter_wonderland",
-  "romantic_christmas",
-  "playful_christmas",
   "minimal_christmas",
   "vintage_christmas",
+  "playful_christmas",
+  "romantic_christmas",
 ];
 
 export const CARD_DESIGN_BLURBS: Record<
@@ -128,14 +128,14 @@ export const CARD_DESIGN_BLURBS: Record<
   cozy_christmas: {
     en: "Warm home atmosphere and soft typography.",
     ro: "Atmosferă de acasă și tipografie blândă.",
-    categoryEn: "Cozy Family",
-    categoryRo: "Familie cozy",
+    categoryEn: "Cozy Christmas",
+    categoryRo: "Crăciun cozy",
   },
   winter_wonderland: {
     en: "Winter white, snow and quiet cold light.",
     ro: "Alb de iarnă, zăpadă și lumină rece.",
-    categoryEn: "Snowy Christmas",
-    categoryRo: "Crăciun înzăpezit",
+    categoryEn: "Winter Wonderland",
+    categoryRo: "Iarnă magică",
   },
   romantic_christmas: {
     en: "Couples, warm lights, soft romance.",
@@ -146,8 +146,8 @@ export const CARD_DESIGN_BLURBS: Record<
   playful_christmas: {
     en: "Playful energy — great for pets and laughs.",
     ro: "Energie jucăușă — perfect pentru animale și glume.",
-    categoryEn: "Funny / Pet",
-    categoryRo: "Amuzant / Pet",
+    categoryEn: "Playful Christmas",
+    categoryRo: "Crăciun jucăuș",
   },
   minimal_christmas: {
     en: "Clean typography with breathing room.",
@@ -306,7 +306,6 @@ export const CARD_MESSAGE_RECIPIENTS = [
   "family",
   "friend",
   "coworker",
-  "grandma",
 ] as const;
 
 export const CARD_MESSAGE_TONES = [
@@ -314,9 +313,21 @@ export const CARD_MESSAGE_TONES = [
   "warm",
   "romantic",
   "funny",
-  "short_and_sweet",
   "professional",
+  "short_and_sweet",
 ] as const;
+
+/** Compact style thumbnail imagery — small crops, not full cards. */
+export const STYLE_THUMB_SRC: Record<CardStyleKey, string> = {
+  classic_christmas: LANDING_ASSETS.card,
+  elegant_gold: LANDING_ASSETS.card,
+  cozy_christmas: LANDING_ASSETS.portraitFamily,
+  winter_wonderland: LANDING_ASSETS.hero,
+  romantic_christmas: LANDING_ASSETS.portraitCouple,
+  playful_christmas: LANDING_ASSETS.portraitPet,
+  minimal_christmas: LANDING_ASSETS.portraitFamilyBefore,
+  vintage_christmas: LANDING_ASSETS.finale,
+};
 
 export const DEMO_MESSAGES = {
   heartfeltFamily: {

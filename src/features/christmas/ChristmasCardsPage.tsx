@@ -4,7 +4,7 @@ import { PageHead } from "@/components/PageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
-import { FONT_HREF } from "./landing/assets";
+import { FONT_HREF, LANDING_ASSETS } from "./landing/assets";
 import { CARD_THEME_TO_STYLE, parseCardTheme } from "./landing/handoff";
 import { upsertJsonLd } from "./landing/seo";
 import { CardLivePreview } from "./cards/CardLivePreview";
@@ -22,11 +22,9 @@ import {
   CARD_TYPES,
   DEMO_MESSAGES,
   EXAMPLES_GALLERY,
-  HERO_EXAMPLES,
+  STYLE_THUMB_SRC,
   getCardType,
-  type CardMakerStep,
   type CardTypeKey,
-  type HeroExampleKey,
 } from "./cards/cardMakerTypes";
 import {
   downloadBlob,
@@ -36,6 +34,7 @@ import {
   validatePhotoFile,
 } from "./cards/cardRenderer";
 import {
+  CARD_LAYOUTS,
   CARD_STYLES,
   MAX_CARD_MESSAGE_CHARS,
   MESSAGE_RECIPIENTS,
@@ -56,27 +55,25 @@ import {
   type GeneratedMessage,
 } from "./cards/cardsApi";
 import {
-  cardsUrlFromPortrait,
   clearPortraitToCardHandoff,
   loadImageFromUrl,
   readLastPortraitResult,
   readPortraitToCardHandoff,
-  writePortraitToCardHandoff,
 } from "./cards/portraitHandoff";
 import "./cards/CardsMaker.css";
 
 const PRODUCT = "christmas_card";
 const PATH = "/christmas/cards";
-const EDITOR_STEPS: CardMakerStep[] = ["type", "photo", "design", "message", "preview"];
 
 async function authBearer() {
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token || null;
 }
 
-function stepIndex(step: CardMakerStep) {
-  const i = EDITOR_STEPS.indexOf(step);
-  return i < 0 ? EDITOR_STEPS.length : i;
+function toneLabel(key: string, locale: LocaleCode, t: (k: string) => string) {
+  if (key === "professional") return t("tone.elegant");
+  if (key === "short_and_sweet") return t("tone.short");
+  return labelFor(MESSAGE_TONES, key, locale);
 }
 
 export default function ChristmasCardsPage() {
@@ -88,23 +85,22 @@ export default function ChristmasCardsPage() {
   const messageHandoffApplied = useRef(false);
   const portraitHandoffApplied = useRef(false);
   const messageStartedTracked = useRef(false);
+  const previewTracked = useRef(false);
+  const creationTracked = useRef(false);
 
   const [locale, setLocale] = useState<LocaleCode>("en");
   const [fontsReady, setFontsReady] = useState(false);
-  const [creatorOpen, setCreatorOpen] = useState(false);
-  const [step, setStep] = useState<CardMakerStep>("type");
-  const [mobilePane, setMobilePane] = useState<"edit" | "preview">("edit");
-  const [heroKey, setHeroKey] = useState<HeroExampleKey>("family");
-  const [heroOpen, setHeroOpen] = useState(false);
+  const [mobilePane, setMobilePane] = useState<"edit" | "preview">("preview");
+  const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const [messageHelpOpen, setMessageHelpOpen] = useState(false);
 
   const [cardType, setCardType] = useState<CardTypeKey>("family");
-  const [styleKey, setStyleKey] = useState("cozy_christmas");
-  const [layoutKey] = useState<CardLayoutKey>("square");
-  const [message, setMessage] = useState("");
+  const [styleKey, setStyleKey] = useState("classic_christmas");
+  const [layoutKey, setLayoutKey] = useState<CardLayoutKey>("square");
+  const [message, setMessage] = useState<string>(DEMO_MESSAGES.heartfeltFamily.en);
   const [messageSource, setMessageSource] = useState<"manual" | "message_generator">("manual");
   const [messageResultId, setMessageResultId] = useState<string | null>(null);
-  const [messageMode, setMessageMode] = useState<"write" | "help">("write");
-  const [helpRecipient, setHelpRecipient] = useState("grandma");
+  const [helpRecipient, setHelpRecipient] = useState("family");
   const [helpTone, setHelpTone] = useState("heartfelt");
   const [suggestions, setSuggestions] = useState<GeneratedMessage[]>([]);
   const [messageSessionId, setMessageSessionId] = useState<string | null>(null);
@@ -131,10 +127,12 @@ export default function ChristmasCardsPage() {
     height: number;
     filename: string;
   } | null>(null);
+  const [showResult, setShowResult] = useState(false);
 
   const t = (key: string) => cardsT(key, locale);
-  const hero = HERO_EXAMPLES.find((e) => e.key === heroKey) || HERO_EXAMPLES[0]!;
   const seo = cardsMakerSeo(locale);
+  const layoutDef = CARD_LAYOUTS.find((l) => l.key === layoutKey) || CARD_LAYOUTS[0]!;
+  const hasPortrait = Boolean(readLastPortraitResult() || readPortraitToCardHandoff());
 
   useEffect(() => {
     if (!document.querySelector(`link[href="${FONT_HREF}"]`)) {
@@ -166,6 +164,9 @@ export default function ChristmasCardsPage() {
     if (draft) {
       if (draft.message) setMessage(draft.message);
       if (draft.styleKey) setStyleKey(draft.styleKey);
+      if (draft.layoutKey === "square" || draft.layoutKey === "story" || draft.layoutKey === "landscape") {
+        setLayoutKey(draft.layoutKey);
+      }
       if (draft.recipientName) setRecipientName(draft.recipientName);
       if (draft.fromName) setFromName(draft.fromName);
       if (draft.messageSource) setMessageSource(draft.messageSource);
@@ -175,6 +176,8 @@ export default function ChristmasCardsPage() {
       }
       if (draft.year) setYear(draft.year);
       if (draft.locale === "ro" || draft.locale === "en") setLocale(draft.locale);
+    } else if (locale === "ro") {
+      setMessage(DEMO_MESSAGES.heartfeltFamily.ro);
     }
 
     const theme = parseCardTheme(params.get("theme") || params.get("style"));
@@ -186,17 +189,12 @@ export default function ChristmasCardsPage() {
       setOwnerToken(owner.ownerToken);
     }
 
-    const startStep = params.get("step");
     const fromPortrait = params.get("from_portrait") === "1";
-    const startCreator = params.get("create") === "1" || fromPortrait || params.get("from_message") === "1";
+    const fromMessage = params.get("from_message") === "1";
+    const startCreator =
+      params.get("create") === "1" || fromPortrait || fromMessage;
     if (startCreator) {
-      setCreatorOpen(true);
-      void trackChristmasEvent("card_creation_started", { productKey: PRODUCT, pathname: PATH });
-    }
-    if (startStep === "design" || (fromPortrait && startStep !== "type")) {
-      setStep("design");
-    } else if (startStep && EDITOR_STEPS.includes(startStep as CardMakerStep)) {
-      setStep(startStep as CardMakerStep);
+      markCreationStarted();
     }
   }, [params]);
 
@@ -207,8 +205,7 @@ export default function ChristmasCardsPage() {
     if (!handoff) return;
     if (!fromMessage && !handoff.text) return;
     messageHandoffApplied.current = true;
-    setCreatorOpen(true);
-    setStep("preview");
+    setMobilePane("preview");
 
     if (handoff.text) {
       setMessage(handoff.text);
@@ -253,8 +250,6 @@ export default function ChristmasCardsPage() {
     if (!source?.imageUrl) return;
     if (!fromPortrait && !handoff) return;
     portraitHandoffApplied.current = true;
-    setCreatorOpen(true);
-    setStep("design");
     setMobilePane("preview");
 
     void loadImageFromUrl(source.imageUrl)
@@ -302,17 +297,25 @@ export default function ChristmasCardsPage() {
     year,
   ]);
 
-  function startCreator(nextStep: CardMakerStep = "type") {
-    setCreatorOpen(true);
-    setStep(nextStep);
-    setResult(null);
-    setError(null);
-    setMobilePane("edit");
+  function markCreationStarted() {
+    if (creationTracked.current) return;
+    creationTracked.current = true;
     void trackChristmasEvent("card_creation_started", { productKey: PRODUCT, pathname: PATH });
-    requestAnimationFrame(() => {
-      document.getElementById("ccm-maker")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
   }
+
+  function markPreviewSeen() {
+    if (previewTracked.current) return;
+    previewTracked.current = true;
+    void trackChristmasEvent("card_preview_seen", { productKey: PRODUCT, pathname: PATH });
+  }
+
+  useEffect(() => {
+    if (locale === "ro" && message === DEMO_MESSAGES.heartfeltFamily.en) {
+      setMessage(DEMO_MESSAGES.heartfeltFamily.ro);
+    } else if (locale === "en" && message === DEMO_MESSAGES.heartfeltFamily.ro) {
+      setMessage(DEMO_MESSAGES.heartfeltFamily.en);
+    }
+  }, [locale]);
 
   function scrollToExamples() {
     document.getElementById("ccm-examples")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -320,6 +323,7 @@ export default function ChristmasCardsPage() {
 
   async function onPhotoFile(file: File | null) {
     setError(null);
+    markCreationStarted();
     if (!file) {
       setPhotoEl(null);
       setPhotoPreviewUrl(null);
@@ -351,6 +355,7 @@ export default function ChristmasCardsPage() {
 
   async function useExistingPortrait() {
     setError(null);
+    markCreationStarted();
     const last = readLastPortraitResult();
     const handoff = readPortraitToCardHandoff();
     const source = handoff || last;
@@ -368,33 +373,36 @@ export default function ChristmasCardsPage() {
         pathname: PATH,
         metadata: { source: handoff ? "handoff" : "last_portrait" },
       });
-      setStep("design");
+      setMobilePane("preview");
     } catch {
       setError(t("photo.uploadFailed"));
     }
   }
 
-  function selectType(key: CardTypeKey) {
-    const def = getCardType(key);
-    setCardType(key);
-    setStyleKey(def.defaultStyle);
-    setHelpRecipient(def.defaultRecipient);
-    setHelpTone(def.defaultTone);
-    void trackChristmasEvent("card_type_selected", {
-      productKey: PRODUCT,
-      metadata: { card_type: key },
-    });
-  }
-
   function selectStyle(key: string) {
+    markCreationStarted();
+    markPreviewSeen();
     setStyleKey(key);
+    const match = CARD_TYPES.find((c) => c.defaultStyle === key);
+    if (match) setCardType(match.key);
     void trackChristmasEvent("card_style_selected", {
       productKey: PRODUCT,
       metadata: { style_key: key },
     });
   }
 
+  function selectLayout(key: CardLayoutKey) {
+    markCreationStarted();
+    markPreviewSeen();
+    setLayoutKey(key);
+    void trackChristmasEvent("card_layout_selected", {
+      productKey: PRODUCT,
+      metadata: { layout_key: key },
+    });
+  }
+
   function onMessageChange(value: string) {
+    markCreationStarted();
     setMessage(value);
     setMessageSource("manual");
     if (!messageStartedTracked.current && value.trim()) {
@@ -488,6 +496,7 @@ export default function ChristmasCardsPage() {
     setMessage(m.text);
     setMessageSource("message_generator");
     setMessageResultId(m.id || m.result_key || null);
+    setMessageHelpOpen(false);
     void trackChristmasEvent("card_message_added", {
       productKey: PRODUCT,
       metadata: { message_source: "message_generator", language: m.language || locale },
@@ -522,7 +531,6 @@ export default function ChristmasCardsPage() {
       }
       return { id: data.project_id, token: data.owner_token };
     } catch {
-      // Local draft id — canvas render still works offline / when funnel is unavailable.
       const localId = `local-${crypto.randomUUID().slice(0, 8)}`;
       setProjectId(localId);
       return { id: localId, token: null };
@@ -535,7 +543,8 @@ export default function ChristmasCardsPage() {
     setShareError(null);
     try {
       if (!message.trim()) throw new Error(t("message.ask"));
-      void trackChristmasEvent("card_preview_seen", { productKey: PRODUCT });
+      markCreationStarted();
+      markPreviewSeen();
       const project = await ensureProject();
       if (project.token) {
         try {
@@ -592,7 +601,7 @@ export default function ChristmasCardsPage() {
         height: rendered.height,
         filename: rendered.filename,
       });
-      setStep("result");
+      setShowResult(true);
       clearMessageToCardHandoff();
       clearPortraitToCardHandoff();
       void trackChristmasEvent("card_generated", {
@@ -606,6 +615,9 @@ export default function ChristmasCardsPage() {
           card_type: cardType,
           local_only: !project.token,
         },
+      });
+      requestAnimationFrame(() => {
+        document.getElementById("ccm-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     } catch {
       setError(t("preview.failed"));
@@ -677,26 +689,310 @@ export default function ChristmasCardsPage() {
     }
   }
 
-  function goBack() {
-    const i = stepIndex(step);
-    if (i <= 0) return;
-    setStep(EDITOR_STEPS[i - 1]!);
-    setMobilePane("edit");
+  function applyInspiration(key: string) {
+    const ex = EXAMPLES_GALLERY.find((e) => e.key === key);
+    if (!ex) return;
+    markCreationStarted();
+    markPreviewSeen();
+    setStyleKey(ex.styleKey);
+    setMessage(locale === "ro" ? ex.messageRo : ex.messageEn);
+    setRecipientName(locale === "ro" ? ex.toRo : ex.toEn);
+    setFromName(locale === "ro" ? ex.fromRo : ex.fromEn);
+    const type = CARD_TYPES.find((c) => c.key === key) || getCardType(cardType);
+    if (CARD_TYPES.some((c) => c.key === key)) setCardType(key as CardTypeKey);
+    else setCardType(type.key);
+    void trackChristmasEvent("card_style_selected", {
+      productKey: PRODUCT,
+      metadata: { style_key: ex.styleKey, source: "inspiration", example: key },
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setMobilePane("preview");
   }
 
-  function goNext() {
-    if (step === "type") setStep("photo");
-    else if (step === "photo") setStep("design");
-    else if (step === "design") setStep("message");
-    else if (step === "message") {
-      setStep("preview");
-      void trackChristmasEvent("card_preview_seen", { productKey: PRODUCT });
-      setMobilePane("preview");
-    }
-  }
+  const creatorControls = (
+    <div className="ccm-creator">
+      <header className="ccm-creator__intro">
+        <p className="ccm-kicker">{t("hero.kicker")}</p>
+        <h1>{t("hero.h1")}</h1>
+        <p className="ccm-lede">{t("hero.lede")}</p>
+      </header>
 
-  const styleDef = CARD_STYLES.find((s) => s.key === styleKey) || CARD_STYLES[0]!;
-  const hasPortrait = Boolean(readLastPortraitResult() || readPortraitToCardHandoff());
+      <fieldset className="ccm-block">
+        <legend className="ccm-label">{t("design.ask")}</legend>
+        <div className="ccm-styles" role="listbox" aria-label={t("design.ask")}>
+          {CARD_DESIGN_ORDER.map((key) => {
+            const style = CARD_STYLES.find((s) => s.key === key)!;
+            const blurb = CARD_DESIGN_BLURBS[key];
+            const thumb = STYLE_THUMB_SRC[key];
+            return (
+              <button
+                key={key}
+                type="button"
+                role="option"
+                className="ccm-style"
+                aria-selected={styleKey === key}
+                aria-label={locale === "ro" ? blurb.categoryRo : blurb.categoryEn}
+                onClick={() => selectStyle(key)}
+              >
+                <span
+                  className="ccm-style__thumb"
+                  style={{
+                    background: `linear-gradient(155deg, ${style.bgTop}, ${style.bgBottom})`,
+                  }}
+                >
+                  <img
+                    src={thumb}
+                    alt=""
+                    width={120}
+                    height={90}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span className="ccm-style__shine" aria-hidden="true" />
+                </span>
+                <span className="ccm-style__name">
+                  {locale === "ro" ? blurb.categoryRo : blurb.categoryEn}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <fieldset className="ccm-block">
+        <legend className="ccm-label">{t("layout.ask")}</legend>
+        <div className="ccm-segment" role="group" aria-label={t("layout.ask")}>
+          {CARD_LAYOUTS.map((layout) => (
+            <button
+              key={layout.key}
+              type="button"
+              className="ccm-segment__btn"
+              aria-pressed={layoutKey === layout.key}
+              onClick={() => selectLayout(layout.key)}
+            >
+              {locale === "ro" ? layout.labelRo : layout.labelEn}
+            </button>
+          ))}
+        </div>
+        <p className="ccm-note">
+          {t("layout.dims")}: {layoutDef.width}×{layoutDef.height}
+        </p>
+      </fieldset>
+
+      <div className="ccm-block">
+        <div className="ccm-field">
+          <label htmlFor={`${makerId}-message`}>{t("message.ask")}</label>
+          <textarea
+            id={`${makerId}-message`}
+            className="ccm-textarea"
+            maxLength={MAX_CARD_MESSAGE_CHARS}
+            value={message}
+            onChange={(e) => onMessageChange(e.target.value)}
+            placeholder={t("message.placeholder")}
+          />
+          <div className="ccm-message-meta">
+            <span>
+              {message.length}/{MAX_CARD_MESSAGE_CHARS}
+            </span>
+            <button
+              type="button"
+              className="ccm-text-link"
+              aria-expanded={messageHelpOpen}
+              onClick={() => setMessageHelpOpen((v) => !v)}
+            >
+              {messageHelpOpen ? t("message.hideHelp") : t("message.helpWrite")}
+            </button>
+          </div>
+        </div>
+
+        {messageHelpOpen ? (
+          <div className="ccm-help" aria-label={t("message.helpWrite")}>
+            <fieldset className="ccm-help__group">
+              <legend className="ccm-label">{t("message.who")}</legend>
+              <div className="ccm-pills">
+                {CARD_MESSAGE_RECIPIENTS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="ccm-pill"
+                    aria-pressed={helpRecipient === key}
+                    onClick={() => setHelpRecipient(key)}
+                  >
+                    {labelFor(MESSAGE_RECIPIENTS, key, locale)}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="ccm-help__group">
+              <legend className="ccm-label">{t("message.tone")}</legend>
+              <div className="ccm-pills">
+                {CARD_MESSAGE_TONES.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="ccm-pill"
+                    aria-pressed={helpTone === key}
+                    onClick={() => setHelpTone(key)}
+                  >
+                    {toneLabel(key, locale, t)}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <div className="ccm-actions ccm-actions--tight">
+              <button
+                type="button"
+                className="ccm-btn ccm-btn--gold"
+                disabled={msgBusy}
+                onClick={() => void generateMessages(Boolean(suggestions.length))}
+              >
+                {msgBusy ? t("message.generating") : t("message.generate")}
+              </button>
+              {msgError ? (
+                <button
+                  type="button"
+                  className="ccm-btn ccm-btn--ghost"
+                  onClick={() => void generateMessages(true)}
+                >
+                  {t("message.retry")}
+                </button>
+              ) : null}
+            </div>
+            {msgError ? <p className="ccm-error">{msgError}</p> : null}
+            {suggestions.length > 0 ? (
+              <ul className="ccm-suggestions">
+                {suggestions.map((m) => (
+                  <li key={m.id || m.result_key}>
+                    <p>{m.text}</p>
+                    <button type="button" className="ccm-text-link" onClick={() => applySuggestion(m)}>
+                      {t("message.useSuggestion")}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="ccm-block ccm-personal">
+        <div className="ccm-field">
+          <label htmlFor={`${makerId}-to`}>{t("personalize.to")}</label>
+          <input
+            id={`${makerId}-to`}
+            className="ccm-input"
+            maxLength={80}
+            value={recipientName}
+            onChange={(e) => setRecipientName(e.target.value)}
+            placeholder={t("personalize.toPlaceholder")}
+            autoComplete="off"
+          />
+        </div>
+        <div className="ccm-field">
+          <label htmlFor={`${makerId}-from`}>{t("personalize.from")}</label>
+          <input
+            id={`${makerId}-from`}
+            className="ccm-input"
+            maxLength={80}
+            value={fromName}
+            onChange={(e) => setFromName(e.target.value)}
+            placeholder={t("personalize.fromPlaceholder")}
+            autoComplete="name"
+          />
+        </div>
+      </div>
+
+      <div className="ccm-block">
+        <p className="ccm-label">{t("photo.ask")}</p>
+        <div className="ccm-photo">
+          {photoPreviewUrl ? (
+            <div className="ccm-photo__preview">
+              <img src={photoPreviewUrl} alt="" width={96} height={96} />
+            </div>
+          ) : null}
+          <div className="ccm-photo__actions">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              id={`${makerId}-photo`}
+              onChange={(e) => void onPhotoFile(e.target.files?.[0] || null)}
+            />
+            <button
+              type="button"
+              className="ccm-btn ccm-btn--ghost"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {photoPreviewUrl ? t("photo.change") : t("photo.upload")}
+            </button>
+            {hasPortrait || photoSource === "portrait" ? (
+              <button
+                type="button"
+                className="ccm-btn ccm-btn--ghost"
+                onClick={() => void useExistingPortrait()}
+              >
+                {t("photo.usePortrait")}
+              </button>
+            ) : (
+              <Link className="ccm-btn ccm-btn--ghost" to="/christmas/photo-generator">
+                {t("portrait.make")}
+              </Link>
+            )}
+            {photoPreviewUrl ? (
+              <button type="button" className="ccm-text-link" onClick={() => void onPhotoFile(null)}>
+                {t("photo.remove")}
+              </button>
+            ) : null}
+          </div>
+          <p className="ccm-note">
+            {photoSource === "portrait" ? t("photo.portraitLoaded") : t("photo.hint")}
+          </p>
+        </div>
+        {error ? <p className="ccm-error">{error}</p> : null}
+      </div>
+
+      <div className="ccm-cta-block">
+        <button
+          type="button"
+          className="ccm-btn ccm-btn--gold ccm-btn--xl"
+          disabled={busy || !message.trim()}
+          onClick={() => void createCard()}
+        >
+          {busy ? t("preview.creating") : t("preview.create")}
+        </button>
+        <p className="ccm-note ccm-note--center">{t("hero.giftNote")}</p>
+      </div>
+    </div>
+  );
+
+  const livePreview = (
+    <aside className="ccm-stage-pane" aria-label={t("a11y.livePreview")}>
+      <CardLivePreview
+        message={message}
+        styleKey={styleKey}
+        layoutKey={layoutKey}
+        recipientName={recipientName}
+        fromName={fromName}
+        photo={photoEl}
+        year={year}
+        label={t("a11y.livePreview")}
+        emptyLabel={locale === "ro" ? "Crăciun Fericit" : "Merry Christmas"}
+        asideNote={t("hero.asideNote")}
+      />
+      <div className="ccm-stage-pane__cta">
+        <button
+          type="button"
+          className="ccm-btn ccm-btn--gold ccm-btn--xl"
+          disabled={busy || !message.trim()}
+          onClick={() => void createCard()}
+        >
+          {busy ? t("preview.creating") : t("preview.create")}
+        </button>
+        <p className="ccm-note ccm-note--center">{t("hero.giftNote")}</p>
+      </div>
+    </aside>
+  );
 
   return (
     <div className={`ccm-page ${fontsReady ? "ccm-page--fonts" : ""}`} lang={locale} dir="ltr">
@@ -707,8 +1003,14 @@ export default function ChristmasCardsPage() {
         image={seo.image}
         exactTitle
       />
-      <div className="ccm-ambient" aria-hidden="true">
-        <div className="ccm-ambient__glow" />
+
+      <div className="ccm-world" aria-hidden="true">
+        <div
+          className="ccm-world__photo"
+          style={{ backgroundImage: `url(${LANDING_ASSETS.hero})` }}
+        />
+        <div className="ccm-world__vignette" />
+        <div className="ccm-world__bokeh" />
       </div>
 
       <div className="ccm-wrap">
@@ -724,99 +1026,102 @@ export default function ChristmasCardsPage() {
                 aria-pressed={locale === code}
                 onClick={() => setLocale(code)}
               >
-                {t(code === "en" ? "lang.en" : "lang.ro")}
+                {code === "en" ? "EN" : "RO"}
               </button>
             ))}
           </div>
         </div>
 
-        <section className="ccm-hero" aria-label={t("a11y.heroCard")}>
-          <div>
-            <p className="ccm-kicker">{t("hero.kicker")}</p>
-            <p className="ccm-display" style={{ margin: "0.85rem 0 0", fontSize: "1.2rem", color: "var(--ccm-gold-bright)" }}>
-              {t("brand")}
-            </p>
-            <h1>{t("hero.h1")}</h1>
-            <p className="ccm-lede">{t("hero.lede")}</p>
-            <p className="ccm-lede" style={{ marginTop: "0.55rem", fontSize: "0.98rem" }}>
-              {t("hero.support")}
-            </p>
-            <div className="ccm-actions">
-              <button type="button" className="ccm-btn ccm-btn--gold" onClick={() => startCreator("type")}>
-                {t("hero.cta")}
+        <section className="ccm-hero-creator" aria-label={t("a11y.heroCard")} id="ccm-maker">
+          <div className="ccm-mobile-bar">
+            <button
+              type="button"
+              className="ccm-chip"
+              aria-pressed={mobilePane === "preview"}
+              onClick={() => {
+                setMobilePane("preview");
+                setPreviewCollapsed(false);
+              }}
+            >
+              {t("preview.mobilePreview")}
+            </button>
+            <button
+              type="button"
+              className="ccm-chip"
+              aria-pressed={mobilePane === "edit"}
+              onClick={() => setMobilePane("edit")}
+            >
+              {t("preview.mobileEdit")}
+            </button>
+            {mobilePane === "preview" ? (
+              <button
+                type="button"
+                className="ccm-text-link"
+                onClick={() => setPreviewCollapsed((v) => !v)}
+              >
+                {previewCollapsed ? t("preview.expand") : t("preview.collapse")}
               </button>
-              <button type="button" className="ccm-btn ccm-btn--ghost" onClick={scrollToExamples}>
-                {t("hero.secondary")}
-              </button>
-            </div>
+            ) : null}
           </div>
 
-          <div>
-            <div className="ccm-stage">
-              <div className={`ccm-physical ${heroOpen ? "is-open" : ""}`}>
-                <button
-                  type="button"
-                  className="ccm-physical__inner"
-                  aria-expanded={heroOpen}
-                  aria-label={heroOpen ? t("hero.close") : t("hero.open")}
-                  onClick={() => setHeroOpen((v) => !v)}
-                >
-                  <div
-                    className="ccm-face"
-                    style={{
-                      background: `linear-gradient(165deg, ${CARD_STYLES.find((s) => s.key === hero.styleKey)?.bgTop}, ${CARD_STYLES.find((s) => s.key === hero.styleKey)?.bgBottom})`,
-                      color: CARD_STYLES.find((s) => s.key === hero.styleKey)?.text,
-                    }}
-                  >
-                    <img
-                      className="ccm-face__photo"
-                      src={hero.photoSrc}
-                      alt={locale === "ro" ? hero.photoAltRo : hero.photoAltEn}
-                      width={640}
-                      height={800}
-                      fetchPriority="high"
-                    />
-                    <div
-                      className="ccm-face__panel"
-                      style={{
-                        background: CARD_STYLES.find((s) => s.key === hero.styleKey)?.panel,
-                      }}
-                    >
-                      <p className="ccm-face__greeting">
-                        {locale === "ro" ? hero.greetingRo : hero.greetingEn}
-                      </p>
-                      <p className="ccm-face__meta">
-                        {`${locale === "ro" ? hero.toRo : hero.toEn} · ${locale === "ro" ? hero.fromRo : hero.fromEn}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="ccm-face ccm-face--back">
-                    <p>{locale === "ro" ? hero.messageRo : hero.messageEn}</p>
-                    <p className="ccm-face__sign">
-                      {`${locale === "ro" ? hero.fromRo : hero.fromEn} · ${t("brand")}`}
-                    </p>
-                  </div>
-                </button>
-              </div>
-            </div>
-            <div className="ccm-tags" role="group" aria-label={t("examples.h2")}>
-              {HERO_EXAMPLES.map((ex) => (
-                <button
-                  key={ex.key}
-                  type="button"
-                  className="ccm-chip"
-                  aria-pressed={heroKey === ex.key}
-                  onClick={() => {
-                    setHeroKey(ex.key);
-                    setHeroOpen(false);
-                  }}
-                >
-                  {locale === "ro" ? ex.labelRo : ex.labelEn}
-                </button>
-              ))}
-            </div>
+          <div
+            className={`ccm-hero-grid ${
+              mobilePane === "preview" ? "is-mobile-preview" : "is-mobile-edit"
+            } ${previewCollapsed ? "is-preview-collapsed" : ""}`}
+          >
+            <div className="ccm-hero-grid__controls">{creatorControls}</div>
+            <div className="ccm-hero-grid__preview">{livePreview}</div>
           </div>
         </section>
+
+        {showResult && result ? (
+          <section className="ccm-section ccm-result-hero" id="ccm-result" aria-labelledby="ccm-result-title">
+            <h2 id="ccm-result-title">{t("result.h2")}</h2>
+            <p className="ccm-lede">{t("result.lede")}</p>
+            <img src={result.dataUrl} alt={t("result.h2")} width={result.width} height={result.height} />
+            <p className="ccm-note">{t("result.formatNote")}</p>
+            {shareError ? <p className="ccm-error">{shareError}</p> : null}
+            <div className="ccm-actions">
+              <button type="button" className="ccm-btn ccm-btn--gold" onClick={() => void onDownload()}>
+                {t("result.download")}
+              </button>
+              <button type="button" className="ccm-btn ccm-btn--ghost" onClick={() => void onShare()}>
+                {t("result.share")}
+              </button>
+              <button type="button" className="ccm-btn ccm-btn--ghost" onClick={shareWhatsApp}>
+                {t("result.whatsapp")}
+              </button>
+              <button type="button" className="ccm-btn ccm-btn--ghost" onClick={shareEmail}>
+                {t("result.email")}
+              </button>
+              <button type="button" className="ccm-btn ccm-btn--ghost" onClick={() => void copyPageLink()}>
+                {copied ? t("result.copied") : t("result.copyLink")}
+              </button>
+              <button
+                type="button"
+                className="ccm-btn ccm-btn--ghost"
+                onClick={() => {
+                  setShowResult(false);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                {t("result.edit")}
+              </button>
+              <button
+                type="button"
+                className="ccm-btn ccm-btn--solid"
+                onClick={() => {
+                  setShowResult(false);
+                  setResult(null);
+                  void trackChristmasEvent("card_create_another", { productKey: PRODUCT });
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                {t("result.another")}
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         <section className="ccm-section" id="ccm-examples" aria-labelledby={`${examplesId}-title`}>
           <h2 id={`${examplesId}-title`}>{t("examples.h2")}</h2>
@@ -824,492 +1129,42 @@ export default function ChristmasCardsPage() {
           <div className="ccm-gallery">
             {EXAMPLES_GALLERY.map((ex) => (
               <article key={ex.key}>
-                <span className="ccm-badge">{t("examples.demoBadge")}</span>
-                <img
-                  src={ex.photoSrc}
-                  alt={locale === "ro" ? ex.photoAltRo : ex.photoAltEn}
-                  width={480}
-                  height={600}
-                  loading="lazy"
-                />
-                <div className="ccm-gallery__cap">
-                  <h3>{locale === "ro" ? ex.labelRo : ex.labelEn}</h3>
-                  <p>{locale === "ro" ? ex.messageRo : ex.messageEn}</p>
-                </div>
+                <button type="button" className="ccm-gallery__hit" onClick={() => applyInspiration(ex.key)}>
+                  <span className="ccm-badge">{t("examples.demoBadge")}</span>
+                  <img
+                    src={ex.photoSrc}
+                    alt={locale === "ro" ? ex.photoAltRo : ex.photoAltEn}
+                    width={480}
+                    height={600}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div className="ccm-gallery__cap">
+                    <h3>{locale === "ro" ? ex.labelRo : ex.labelEn}</h3>
+                    <p>{locale === "ro" ? ex.messageRo : ex.messageEn}</p>
+                  </div>
+                </button>
               </article>
             ))}
           </div>
+          <div className="ccm-actions">
+            <button type="button" className="ccm-btn ccm-btn--ghost" onClick={scrollToExamples}>
+              {t("hero.secondary")}
+            </button>
+          </div>
         </section>
 
-        <section className="ccm-section" id="ccm-maker" aria-labelledby={`${makerId}-title`}>
-          <h2 id={`${makerId}-title`}>{t("create.h2")}</h2>
-          <p className="ccm-lede">{t("create.lede")}</p>
-
-          {!creatorOpen ? (
-            <div className="ccm-actions">
-              <button type="button" className="ccm-btn ccm-btn--gold" onClick={() => startCreator("type")}>
-                {t("hero.cta")}
-              </button>
-            </div>
-          ) : step === "result" && result ? (
-            <div className="ccm-result-hero">
-              <h3 className="ccm-display" style={{ margin: "0 0 0.75rem", fontSize: "1.8rem" }}>
-                {t("result.h2")}
-              </h3>
-              <p className="ccm-lede" style={{ marginTop: 0 }}>
-                {t("result.lede")}
-              </p>
-              <img src={result.dataUrl} alt={t("result.h2")} width={result.width} height={result.height} />
-              <p className="ccm-note">{t("result.formatNote")}</p>
-              {shareError ? <p className="ccm-error">{shareError}</p> : null}
-              <div className="ccm-actions">
-                <button type="button" className="ccm-btn ccm-btn--gold" onClick={() => void onDownload()}>
-                  {t("result.download")}
-                </button>
-                <button type="button" className="ccm-btn ccm-btn--ghost" onClick={() => void onShare()}>
-                  {t("result.share")}
-                </button>
-                <button type="button" className="ccm-btn ccm-btn--ghost" onClick={shareWhatsApp}>
-                  {t("result.whatsapp")}
-                </button>
-                <button type="button" className="ccm-btn ccm-btn--ghost" onClick={shareEmail}>
-                  {t("result.email")}
-                </button>
-                <button type="button" className="ccm-btn ccm-btn--ghost" onClick={() => void copyPageLink()}>
-                  {copied ? t("result.copied") : t("result.copyLink")}
-                </button>
-                <button
-                  type="button"
-                  className="ccm-btn ccm-btn--ghost"
-                  onClick={() => {
-                    setResult(null);
-                    setStep("preview");
-                  }}
-                >
-                  {t("result.edit")}
-                </button>
-                <button
-                  type="button"
-                  className="ccm-btn ccm-btn--solid"
-                  onClick={() => {
-                    setResult(null);
-                    setStep("type");
-                    void trackChristmasEvent("card_create_another", { productKey: PRODUCT });
-                  }}
-                >
-                  {t("result.another")}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className={`ccm-maker ${mobilePane === "preview" ? "is-preview" : "is-edit"}`}>
-              <div className="ccm-mobile-tabs" role="tablist" aria-label="Editor">
-                <button
-                  type="button"
-                  className="ccm-chip"
-                  role="tab"
-                  aria-selected={mobilePane === "edit"}
-                  onClick={() => setMobilePane("edit")}
-                >
-                  {t("preview.mobileEdit")}
-                </button>
-                <button
-                  type="button"
-                  className="ccm-chip"
-                  role="tab"
-                  aria-selected={mobilePane === "preview"}
-                  onClick={() => setMobilePane("preview")}
-                >
-                  {t("preview.mobilePreview")}
-                </button>
-              </div>
-
-              <div className="ccm-editor-pane ccm-panel">
-                <div className="ccm-progress" aria-label={t("a11y.progress")}>
-                  {EDITOR_STEPS.map((s) => (
-                    <span
-                      key={s}
-                      className={
-                        step === s ? "is-active" : stepIndex(step) > stepIndex(s) ? "is-done" : ""
-                      }
-                    >
-                      {t(`step.${s}`)}
-                    </span>
-                  ))}
-                </div>
-
-                {step === "type" ? (
-                  <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
-                    <legend className="ccm-ask">{t("type.ask")}</legend>
-                    <div className="ccm-types">
-                      {CARD_TYPES.map((type) => (
-                        <button
-                          key={type.key}
-                          type="button"
-                          className="ccm-type"
-                          aria-pressed={cardType === type.key}
-                          onClick={() => selectType(type.key)}
-                        >
-                          {locale === "ro" ? type.labelRo : type.labelEn}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="ccm-nav">
-                      <button type="button" className="ccm-btn ccm-btn--gold" onClick={goNext}>
-                        {t("nav.continue")}
-                      </button>
-                    </div>
-                  </fieldset>
-                ) : null}
-
-                {step === "photo" ? (
-                  <div>
-                    <p className="ccm-ask">{t("photo.ask")}</p>
-                    <p className="ccm-hint">{t("photo.hint")}</p>
-                    <div className="ccm-upload">
-                      {photoPreviewUrl ? (
-                        <div className="ccm-upload__preview">
-                          <img src={photoPreviewUrl} alt="" />
-                        </div>
-                      ) : (
-                        <div className="ccm-upload__box">
-                          <p className="ccm-hint" style={{ margin: 0 }}>
-                            {photoSource === "portrait" ? t("photo.portraitLoaded") : t("photo.skipHint")}
-                          </p>
-                        </div>
-                      )}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="sr-only"
-                        id={`${makerId}-photo`}
-                        onChange={(e) => void onPhotoFile(e.target.files?.[0] || null)}
-                      />
-                      <div className="ccm-actions">
-                        <button
-                          type="button"
-                          className="ccm-btn ccm-btn--gold"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          {photoPreviewUrl ? t("photo.change") : t("photo.upload")}
-                        </button>
-                        <button
-                          type="button"
-                          className="ccm-btn ccm-btn--ghost"
-                          onClick={() => void useExistingPortrait()}
-                        >
-                          {t("photo.usePortrait")}
-                        </button>
-                        {photoPreviewUrl ? (
-                          <button
-                            type="button"
-                            className="ccm-btn ccm-btn--ghost"
-                            onClick={() => void onPhotoFile(null)}
-                          >
-                            {t("photo.remove")}
-                          </button>
-                        ) : null}
-                      </div>
-                      {photoSource === "portrait" ? (
-                        <p className="ccm-note">{t("photo.portraitLoaded")}</p>
-                      ) : null}
-                      {!hasPortrait ? <p className="ccm-note">{t("photo.noneAvailable")}</p> : null}
-                    </div>
-                    {error ? <p className="ccm-error">{error}</p> : null}
-                    <div className="ccm-nav">
-                      <button type="button" className="ccm-btn ccm-btn--ghost" onClick={goBack}>
-                        {t("nav.back")}
-                      </button>
-                      <button type="button" className="ccm-btn ccm-btn--gold" onClick={goNext}>
-                        {photoPreviewUrl ? t("nav.continue") : t("nav.skipPhoto")}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                {step === "design" ? (
-                  <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
-                    <legend className="ccm-ask">{t("design.ask")}</legend>
-                    <p className="ccm-hint">{t("design.lede")}</p>
-                    <div className="ccm-designs">
-                      {CARD_DESIGN_ORDER.map((key) => {
-                        const style = CARD_STYLES.find((s) => s.key === key)!;
-                        const blurb = CARD_DESIGN_BLURBS[key];
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            className="ccm-design"
-                            aria-pressed={styleKey === key}
-                            style={{
-                              background: `linear-gradient(155deg, ${style.bgTop}, ${style.bgBottom})`,
-                              color: style.text,
-                            }}
-                            onClick={() => selectStyle(key)}
-                          >
-                            <strong>{locale === "ro" ? blurb.categoryRo : blurb.categoryEn}</strong>
-                            <span>{locale === "ro" ? blurb.ro : blurb.en}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="ccm-nav">
-                      <button type="button" className="ccm-btn ccm-btn--ghost" onClick={goBack}>
-                        {t("nav.back")}
-                      </button>
-                      <button type="button" className="ccm-btn ccm-btn--gold" onClick={goNext}>
-                        {t("nav.continue")}
-                      </button>
-                    </div>
-                  </fieldset>
-                ) : null}
-
-                {step === "message" ? (
-                  <div>
-                    <p className="ccm-ask">{t("message.ask")}</p>
-                    <div className="ccm-tags" role="group" style={{ justifyContent: "flex-start" }}>
-                      <button
-                        type="button"
-                        className="ccm-chip"
-                        aria-pressed={messageMode === "write"}
-                        onClick={() => setMessageMode("write")}
-                      >
-                        {t("message.writeOwn")}
-                      </button>
-                      <button
-                        type="button"
-                        className="ccm-chip"
-                        aria-pressed={messageMode === "help"}
-                        onClick={() => setMessageMode("help")}
-                      >
-                        {t("message.helpWrite")}
-                      </button>
-                    </div>
-
-                    {messageMode === "help" ? (
-                      <div>
-                        <fieldset style={{ border: 0, margin: "1rem 0 0", padding: 0 }}>
-                          <legend className="ccm-label">{t("message.who")}</legend>
-                          <div className="ccm-tags" style={{ justifyContent: "flex-start" }}>
-                            {CARD_MESSAGE_RECIPIENTS.map((key) => {
-                              const row = MESSAGE_RECIPIENTS.find((r) => r.key === key);
-                              if (!row) return null;
-                              return (
-                                <button
-                                  key={key}
-                                  type="button"
-                                  className="ccm-chip"
-                                  aria-pressed={helpRecipient === key}
-                                  onClick={() => setHelpRecipient(key)}
-                                >
-                                  {labelFor(MESSAGE_RECIPIENTS, key, locale)}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </fieldset>
-                        <fieldset style={{ border: 0, margin: "1rem 0 0", padding: 0 }}>
-                          <legend className="ccm-label">{t("message.tone")}</legend>
-                          <div className="ccm-tags" style={{ justifyContent: "flex-start" }}>
-                            {CARD_MESSAGE_TONES.map((key) => (
-                              <button
-                                key={key}
-                                type="button"
-                                className="ccm-chip"
-                                aria-pressed={helpTone === key}
-                                onClick={() => setHelpTone(key)}
-                              >
-                                {labelFor(MESSAGE_TONES, key, locale)}
-                              </button>
-                            ))}
-                          </div>
-                        </fieldset>
-                        <div className="ccm-actions">
-                          <button
-                            type="button"
-                            className="ccm-btn ccm-btn--gold"
-                            disabled={msgBusy}
-                            onClick={() => void generateMessages(Boolean(suggestions.length))}
-                          >
-                            {msgBusy ? t("message.generating") : t("message.generate")}
-                          </button>
-                          {msgError ? (
-                            <button
-                              type="button"
-                              className="ccm-btn ccm-btn--ghost"
-                              onClick={() => void generateMessages(true)}
-                            >
-                              {t("message.retry")}
-                            </button>
-                          ) : null}
-                        </div>
-                        {msgError ? <p className="ccm-error">{msgError}</p> : null}
-                        {suggestions.length > 0 ? (
-                          <div style={{ marginTop: "1rem" }}>
-                            <p className="ccm-label">{t("message.suggestions")}</p>
-                            <ul style={{ listStyle: "none", margin: "0.6rem 0 0", padding: 0, display: "grid", gap: "0.65rem" }}>
-                              {suggestions.map((m) => (
-                                <li
-                                  key={m.id || m.result_key}
-                                  style={{
-                                    border: "1px solid rgba(246,239,227,0.14)",
-                                    borderRadius: "0.9rem",
-                                    padding: "0.85rem",
-                                  }}
-                                >
-                                  <p style={{ margin: 0, lineHeight: 1.5 }}>{m.text}</p>
-                                  <button
-                                    type="button"
-                                    className="ccm-btn ccm-btn--ghost"
-                                    style={{ marginTop: "0.65rem", minHeight: "2.4rem" }}
-                                    onClick={() => applySuggestion(m)}
-                                  >
-                                    {t("message.useSuggestion")}
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : (
-                          <div style={{ marginTop: "1rem" }}>
-                            <p className="ccm-hint">
-                              {locale === "ro" ? DEMO_MESSAGES.heartfeltFamily.ro : DEMO_MESSAGES.heartfeltFamily.en}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
-
-                    <div className="ccm-field">
-                      <label htmlFor={`${makerId}-message`}>{t("message.started")}</label>
-                      <textarea
-                        id={`${makerId}-message`}
-                        className="ccm-textarea"
-                        maxLength={MAX_CARD_MESSAGE_CHARS}
-                        value={message}
-                        onChange={(e) => onMessageChange(e.target.value)}
-                        placeholder={t("message.placeholder")}
-                      />
-                      <span className="ccm-note">
-                        {message.length}/{MAX_CARD_MESSAGE_CHARS} ·{" "}
-                        <Link to="/christmas/messages" style={{ color: "var(--ccm-gold-bright)" }}>
-                          {t("message.moreInspiration")}
-                        </Link>
-                      </span>
-                    </div>
-
-                    <div className="ccm-field">
-                      <label htmlFor={`${makerId}-to`}>{t("personalize.to")}</label>
-                      <input
-                        id={`${makerId}-to`}
-                        className="ccm-input"
-                        maxLength={80}
-                        value={recipientName}
-                        onChange={(e) => setRecipientName(e.target.value)}
-                        placeholder={t("personalize.toPlaceholder")}
-                      />
-                    </div>
-                    <div className="ccm-field">
-                      <label htmlFor={`${makerId}-from`}>{t("personalize.from")}</label>
-                      <input
-                        id={`${makerId}-from`}
-                        className="ccm-input"
-                        maxLength={80}
-                        value={fromName}
-                        onChange={(e) => setFromName(e.target.value)}
-                        placeholder={t("personalize.fromPlaceholder")}
-                      />
-                    </div>
-                    <div className="ccm-field">
-                      <label htmlFor={`${makerId}-year`}>{t("personalize.year")}</label>
-                      <input
-                        id={`${makerId}-year`}
-                        className="ccm-input"
-                        maxLength={4}
-                        inputMode="numeric"
-                        value={year}
-                        onChange={(e) => setYear(e.target.value.replace(/[^\d]/g, "").slice(0, 4))}
-                      />
-                    </div>
-
-                    <div className="ccm-nav">
-                      <button type="button" className="ccm-btn ccm-btn--ghost" onClick={goBack}>
-                        {t("nav.back")}
-                      </button>
-                      <button
-                        type="button"
-                        className="ccm-btn ccm-btn--gold"
-                        disabled={!message.trim()}
-                        onClick={goNext}
-                      >
-                        {t("nav.continue")}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                {step === "preview" ? (
-                  <div>
-                    <p className="ccm-ask">{t("preview.h2")}</p>
-                    <p className="ccm-hint">{t("preview.lede")}</p>
-                    {error ? <p className="ccm-error">{error}</p> : null}
-                    <div className="ccm-nav">
-                      <button type="button" className="ccm-btn ccm-btn--ghost" onClick={goBack}>
-                        {t("nav.back")}
-                      </button>
-                      <button
-                        type="button"
-                        className="ccm-btn ccm-btn--ghost"
-                        onClick={() => setStep("message")}
-                      >
-                        {t("preview.edit")}
-                      </button>
-                      <button
-                        type="button"
-                        className="ccm-btn ccm-btn--gold"
-                        disabled={busy || !message.trim()}
-                        onClick={() => void createCard()}
-                      >
-                        {busy ? t("preview.creating") : t("preview.create")}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <aside className="ccm-preview-pane">
-                <div className="ccm-panel">
-                  <p className="ccm-label" style={{ marginBottom: "0.75rem" }}>
-                    {styleDef.labelEn} · {t("a11y.livePreview")}
-                  </p>
-                  <CardLivePreview
-                    message={message}
-                    styleKey={styleKey}
-                    layoutKey={layoutKey}
-                    recipientName={recipientName}
-                    fromName={fromName}
-                    photo={photoEl}
-                    year={year}
-                    label={t("a11y.livePreview")}
-                    emptyLabel={locale === "ro" ? hero.greetingRo : hero.greetingEn}
-                  />
-                  {step === "preview" ? (
-                    <div className="ccm-nav">
-                      <button
-                        type="button"
-                        className="ccm-btn ccm-btn--gold"
-                        disabled={busy || !message.trim()}
-                        onClick={() => void createCard()}
-                      >
-                        {busy ? t("preview.creating") : t("preview.create")}
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-              </aside>
-            </div>
-          )}
+        <section className="ccm-section" aria-labelledby="ccm-how-title">
+          <h2 id="ccm-how-title">{t("how.h2")}</h2>
+          <div className="ccm-how">
+            {[1, 2, 3, 4].map((n) => (
+              <article key={n}>
+                <span className="ccm-num">0{n}</span>
+                <h3>{t(`how.${n}.title`)}</h3>
+                <p>{t(`how.${n}.body`)}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section className="ccm-section" aria-labelledby="ccm-photos-title">
@@ -1341,7 +1196,6 @@ export default function ChristmasCardsPage() {
                   metadata: { placement: "cards_page" },
                 });
                 if (hasPortrait) {
-                  startCreator("photo");
                   void useExistingPortrait();
                 } else {
                   window.location.assign("/christmas/photo-generator");
@@ -1366,19 +1220,6 @@ export default function ChristmasCardsPage() {
           </div>
         </section>
 
-        <section className="ccm-section" aria-labelledby="ccm-how-title">
-          <h2 id="ccm-how-title">{t("how.h2")}</h2>
-          <div className="ccm-how">
-            {[1, 2, 3, 4].map((n) => (
-              <article key={n}>
-                <span className="ccm-num">0{n}</span>
-                <h3>{t(`how.${n}.title`)}</h3>
-                <p>{t(`how.${n}.body`)}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
         <section className="ccm-section ccm-faq" aria-labelledby="ccm-faq-title">
           <h2 id="ccm-faq-title">{t("faq.h2")}</h2>
           {CARD_MAKER_FAQ_KEYS.map((base) => (
@@ -1393,16 +1234,22 @@ export default function ChristmasCardsPage() {
           {t("hero.promise")} ·{" "}
           <Link to="/christmas" style={{ color: "var(--ccm-gold-bright)" }}>
             {t("breadcrumb.christmas")}
-          </Link>{" "}
-          ·{" "}
-          <Link to="/christmas/gift-finder" style={{ color: "var(--ccm-gold-bright)" }}>
-            Gift Finder
           </Link>
         </p>
+      </div>
+
+      <div className="ccm-sticky-cta" aria-hidden={showResult || undefined}>
+        <button
+          type="button"
+          className="ccm-btn ccm-btn--gold ccm-btn--xl"
+          disabled={busy || !message.trim()}
+          onClick={() => void createCard()}
+        >
+          {busy ? t("preview.creating") : t("preview.create")}
+        </button>
       </div>
     </div>
   );
 }
 
-// Re-export for portrait funnel convenience without circular imports in tests.
-export { cardsUrlFromPortrait, writePortraitToCardHandoff };
+export { cardsUrlFromPortrait } from "./cards/portraitHandoff";
