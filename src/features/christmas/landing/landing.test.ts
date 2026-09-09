@@ -16,6 +16,11 @@ import {
   santaExperienceUrl,
 } from "./handoff";
 import { christmasLandingSeo, LANDING_FAQS } from "./seo";
+import {
+  CHRISTMAS_COUNTDOWN_YEAR,
+  padCountdownValue,
+  remainingUntilChristmas,
+} from "./countdown";
 
 function readSrc(rel: string) {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
@@ -24,6 +29,7 @@ function readSrc(rel: string) {
 describe("christmas landing copy + seo", () => {
   it("resolves required English keys", () => {
     expect(landingT("hero.h1")).toMatch(/remember/i);
+    expect(landingT("hero.countdown.eyebrow")).toMatch(/coming/i);
     expect(landingT("santa.bubble")).toMatch(/Ho ho ho/i);
     expect(landingT("gifts.cta")).toBe("Find the Perfect Gift");
     expect(LANDING_COPY_KEYS).toContain("seo.title");
@@ -79,10 +85,43 @@ describe("christmas landing wiring", () => {
     expect(readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx")).toContain("parseGiftRecipient");
   });
 
+  it("keeps an alive hero with editorial countdown wiring", () => {
+    const hero = readSrc("src/features/christmas/landing/scenes/ImmersiveHero.tsx");
+    expect(hero).toContain("HeroAtmosphere");
+    expect(hero).toContain("HeroCountdown");
+    expect(hero).toContain('t("hero.h1")');
+    expect(readSrc("src/features/christmas/landing/HeroAtmosphere.tsx")).toContain("xmas-hero__window");
+    expect(readSrc("src/features/christmas/landing/HeroCountdown.tsx")).not.toContain("cc-unit");
+  });
+
   it("origin injects /christmas meta for crawlers", () => {
     const origin = readSrc("server/origin.mjs");
     expect(origin).toContain("applyRouteMeta");
     expect(origin).toContain("Christmas Gifts, Portraits & Santa Messages");
     expect(origin).toContain('".webm": "video/webm"');
+  });
+});
+
+describe("christmas landing countdown", () => {
+  it("computes remaining parts from a live now", () => {
+    const now = new Date(CHRISTMAS_COUNTDOWN_YEAR, 11, 1, 1, 2, 3, 0);
+    const remaining = remainingUntilChristmas(now);
+    expect(remaining.expired).toBe(false);
+    expect(remaining.days).toBe(23);
+    expect(remaining.hours).toBe(22);
+    expect(remaining.minutes).toBe(57);
+    expect(remaining.seconds).toBe(57);
+  });
+
+  it("transitions to Christmas state instead of negative numbers", () => {
+    const christmas = new Date(CHRISTMAS_COUNTDOWN_YEAR, 11, 25, 0, 0, 0, 0);
+    expect(remainingUntilChristmas(christmas).expired).toBe(true);
+    expect(remainingUntilChristmas(new Date(christmas.getTime() - 1000)).seconds).toBe(1);
+  });
+
+  it("pads compact countdown units", () => {
+    expect(padCountdownValue(4)).toBe("04");
+    expect(padCountdownValue(24)).toBe("24");
+    expect(padCountdownValue(108)).toBe("108");
   });
 });
