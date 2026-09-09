@@ -18,6 +18,12 @@ import {
 import { useChristmasPortraitFunnel } from "./useChristmasPortraitFunnel";
 import { STYLE_PREVIEW_BY_KEY, PHOTO_GEN_ASSETS } from "./photoGenerator/assets";
 import "./photoGenerator/PhotoGenerator.css";
+import { trackChristmasEvent } from "./analytics";
+import {
+  cardsUrlFromPortrait,
+  writeLastPortraitResult,
+  writePortraitToCardHandoff,
+} from "./cards/portraitHandoff";
 
 function ensureFonts() {
   if (document.querySelector(`link[data-xmas-fonts="1"]`)) return;
@@ -47,6 +53,22 @@ export default function ChristmasPortraitFunnelPage() {
   useEffect(() => {
     ensureFonts();
   }, []);
+
+  useEffect(() => {
+    if (funnel.draft.step !== "result" || !funnel.resultUrl) return;
+    writeLastPortraitResult({
+      imageUrl: funnel.resultUrl,
+      verticalId: vertical.id,
+      productKey: vertical.productKey,
+      orderId: funnel.draft.orderId,
+    });
+  }, [
+    funnel.draft.step,
+    funnel.resultUrl,
+    funnel.draft.orderId,
+    vertical.id,
+    vertical.productKey,
+  ]);
 
   return (
     <>
@@ -169,7 +191,12 @@ export default function ChristmasPortraitFunnelPage() {
                   Your Christmas transformation is ready to create. This preview is your original
                   photo, heavily blurred — the finished AI portrait unlocks after payment.
                 </p>
-                <button type="button" className="xmas-btn xmas-btn--gold" style={{ width: "100%" }} onClick={funnel.goOffer}>
+                <button
+                  type="button"
+                  className="xmas-btn xmas-btn--gold"
+                  style={{ width: "100%" }}
+                  onClick={funnel.goOffer}
+                >
                   Continue to offer
                 </button>
               </section>
@@ -255,6 +282,34 @@ export default function ChristmasPortraitFunnelPage() {
                   >
                     Share
                   </button>
+                  <Link
+                    to={cardsUrlFromPortrait()}
+                    className="xmas-btn xmas-btn--ghost"
+                    style={{ textAlign: "center" }}
+                    onClick={() => {
+                      if (!funnel.resultUrl) return;
+                      writePortraitToCardHandoff({
+                        imageUrl: funnel.resultUrl,
+                        source: "portrait_result",
+                        verticalId: vertical.id,
+                        productKey: vertical.productKey,
+                        orderId: funnel.draft.orderId,
+                      });
+                      writeLastPortraitResult({
+                        imageUrl: funnel.resultUrl,
+                        verticalId: vertical.id,
+                        productKey: vertical.productKey,
+                        orderId: funnel.draft.orderId,
+                      });
+                      void trackChristmasEvent("card_portrait_cross_sell_clicked", {
+                        productKey: vertical.productKey,
+                        pathname: vertical.routePath,
+                        metadata: { placement: "portrait_result" },
+                      });
+                    }}
+                  >
+                    Turn This Into a Christmas Card
+                  </Link>
                   <button
                     type="button"
                     className="xmas-btn xmas-btn--ghost"

@@ -52,6 +52,7 @@ const PHOTO_CROSS = [
   { label: "Family Christmas", to: "/christmas/family" },
   { label: "Couples Christmas", to: "/christmas/couples" },
   { label: "Pet Christmas", to: "/christmas/pets" },
+  { label: "Christmas Cards", to: "/christmas/cards" },
 ];
 
 export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
@@ -100,6 +101,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     crossLinks: [
       { label: "Couples", to: "/christmas/couples" },
       { label: "Classic portrait", to: "/christmas/photo-generator" },
+      { label: "Christmas Cards", to: "/christmas/cards" },
     ],
     styles: CHRISTMAS_FAMILY_STYLES,
     allowMultiplePeople: true,
@@ -124,6 +126,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     crossLinks: [
       { label: "Family", to: "/christmas/family" },
       { label: "Classic portrait", to: "/christmas/photo-generator" },
+      { label: "Christmas Cards", to: "/christmas/cards" },
     ],
     styles: CHRISTMAS_COUPLE_STYLES,
     allowMultiplePeople: true,
@@ -148,6 +151,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     crossLinks: [
       { label: "Christmas Dogs", to: "/christmas/dogs" },
       { label: "Christmas Cats", to: "/christmas/cats" },
+      { label: "Christmas Cards", to: "/christmas/cards" },
     ],
     styles: CHRISTMAS_PET_STYLES,
     allowMultiplePeople: false,
@@ -171,6 +175,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     crossLinks: [
       { label: "Christmas Cats", to: "/christmas/cats" },
       { label: "All pets", to: "/christmas/pets" },
+      { label: "Christmas Cards", to: "/christmas/cards" },
     ],
     styles: CHRISTMAS_PET_STYLES,
     allowMultiplePeople: false,
@@ -194,6 +199,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     crossLinks: [
       { label: "Christmas Dogs", to: "/christmas/dogs" },
       { label: "All pets", to: "/christmas/pets" },
+      { label: "Christmas Cards", to: "/christmas/cards" },
     ],
     styles: CHRISTMAS_PET_STYLES,
     allowMultiplePeople: false,

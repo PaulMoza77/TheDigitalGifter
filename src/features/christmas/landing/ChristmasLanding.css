@@ -511,6 +511,21 @@
   font-size: 0.9rem;
 }
 
+.xmas-hint {
+  margin: 0.45rem 0 0;
+  color: rgba(246, 239, 227, 0.62);
+  font-size: 0.88rem;
+}
+
+.xmas-santa__asset--ack {
+  transform: translateX(0.35rem) rotate(-1.5deg);
+  transition: transform 0.7s ease;
+}
+
+.xmas-santa__asset {
+  transition: transform 0.7s ease;
+}
+
 .xmas-letter,
 .xmas-card-stage,
 .xmas-advent,

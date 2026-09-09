@@ -25,6 +25,12 @@ import {
 } from "./copy";
 import "./PhotoGenerator.css";
 import { photoGeneratorJsonLd, photoGeneratorSeo, upsertJsonLd } from "./seo";
+import {
+  cardsUrlFromPortrait,
+  writeLastPortraitResult,
+  writePortraitToCardHandoff,
+} from "../cards/portraitHandoff";
+import { trackChristmasEvent } from "../analytics";
 
 const LOCALE = PHOTO_GEN_DEFAULT_LOCALE;
 const VERTICAL = CHRISTMAS_PORTRAIT_VERTICALS.photo;
@@ -121,6 +127,21 @@ export default function ChristmasPhotoGeneratorExperience() {
     if (showLanding) return;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [funnel.draft.step, showLanding]);
+
+  useEffect(() => {
+    if (funnel.draft.step !== "result" || !funnel.resultUrl) return;
+    writeLastPortraitResult({
+      imageUrl: funnel.resultUrl,
+      verticalId: "photo",
+      productKey: funnel.activeProductKey,
+      orderId: funnel.draft.orderId,
+    });
+  }, [
+    funnel.draft.step,
+    funnel.resultUrl,
+    funnel.draft.orderId,
+    funnel.activeProductKey,
+  ]);
 
   const friendlyError = (raw: string | null) => {
     if (!raw) return null;
@@ -693,12 +714,31 @@ export default function ChristmasPhotoGeneratorExperience() {
                 </div>
                 <div className="pg-result__secondary">
                   <Link
-                    to="/christmas/cards"
-                    onClick={() =>
+                    to={cardsUrlFromPortrait()}
+                    onClick={() => {
+                      if (!funnel.resultUrl) return;
+                      writePortraitToCardHandoff({
+                        imageUrl: funnel.resultUrl,
+                        source: "portrait_result",
+                        verticalId: "photo",
+                        productKey: funnel.activeProductKey,
+                        orderId: funnel.draft.orderId,
+                      });
+                      writeLastPortraitResult({
+                        imageUrl: funnel.resultUrl,
+                        verticalId: "photo",
+                        productKey: funnel.activeProductKey,
+                        orderId: funnel.draft.orderId,
+                      });
                       void trackPhotoGeneratorEvent("christmas_photo_card_cross_sell", {
                         orderId: funnel.draft.orderId,
-                      })
-                    }
+                      });
+                      void trackChristmasEvent("card_portrait_cross_sell_clicked", {
+                        productKey: funnel.activeProductKey,
+                        pathname: VERTICAL.routePath,
+                        metadata: { placement: "photo_generator_result" },
+                      });
+                    }}
                   >
                     {t("result.card")}
                   </Link>
