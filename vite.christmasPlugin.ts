@@ -1,5 +1,6 @@
 import type { Plugin } from "vite";
-import funnelHandler from "./api/christmas-v2-funnel-event";
+import v2FunnelHandler from "./api/christmas-v2-funnel-event";
+import christmasFunnelHandler from "./api/christmas-funnel-event";
 
 function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) => void }): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -48,7 +49,12 @@ export function christmasV2DevPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url?.split("?")[0] || "";
-        if (url !== "/api/christmas-v2-funnel-event" && url !== "/api/christmas-v2/funnel-event") {
+        if (
+          url !== "/api/christmas-v2-funnel-event" &&
+          url !== "/api/christmas-v2/funnel-event" &&
+          url !== "/api/christmas/funnel-event" &&
+          url !== "/api/christmas-funnel-event"
+        ) {
           return next();
         }
         const raw = req.method === "POST" ? await readRawBody(req as never) : "";
@@ -65,7 +71,11 @@ export function christmasV2DevPlugin(): Plugin {
         }
         const fakeReq = { method: req.method, headers: req.headers as Record<string, unknown>, body };
         const { req: vReq, res: vRes } = vercelLike(fakeReq, res);
-        await funnelHandler(vReq, vRes);
+        if (url === "/api/christmas/funnel-event" || url === "/api/christmas-funnel-event") {
+          await christmasFunnelHandler(vReq, vRes);
+          return;
+        }
+        await v2FunnelHandler(vReq, vRes);
       });
     },
   };

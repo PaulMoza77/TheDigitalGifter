@@ -8,6 +8,11 @@ import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
 import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
 import { startChristmasCheckout } from "./photoApi";
 import {
+  consumeSantaNameHandoff,
+  isLikelyKidName,
+  sanitizeKidName,
+} from "./landing/handoff";
+import {
   SANTA_CONSENT_LABEL,
   SANTA_CONSENT_VERSION,
   SANTA_DEFAULT_PACKAGE,
@@ -187,6 +192,28 @@ export default function ChristmasSantaVideoPage() {
       step: nextStep,
     });
   }, [params, patch]);
+
+  useEffect(() => {
+    if (nameHandoffApplied.current) return;
+    if (params.get("token")) return;
+    const fromQuery = params.get("name") || params.get("child") || params.get("kid");
+    const name = sanitizeKidName(fromQuery || consumeSantaNameHandoff());
+    if (!name || !isLikelyKidName(name)) return;
+    nameHandoffApplied.current = true;
+    setDraft((prev) => {
+      if (prev.orderId || prev.step === "progress" || prev.step === "result" || prev.step === "checkout") {
+        return prev;
+      }
+      const merged = {
+        ...prev,
+        childFirstName: name,
+        step: "form" as Step,
+        lastError: null,
+      };
+      writeDraft(merged);
+      return merged;
+    });
+  }, [params]);
 
   useEffect(() => {
     const token = params.get("token");

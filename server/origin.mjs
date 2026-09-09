@@ -4,7 +4,7 @@
  * /api/* never returns index.html.
  */
 import { createServer } from "node:http";
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { APPLE_PAY_PATH, classifyPath } from "./routes.mjs";
@@ -31,6 +31,7 @@ const MIME = {
   ".ico": "image/x-icon",
   ".xml": "application/xml; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
+  ".webm": "video/webm",
   ".woff2": "font/woff2",
   ".map": "application/json; charset=utf-8",
 };
@@ -76,6 +77,32 @@ async function loadHandler(moduleName) {
   return imported.default;
 }
 
+const CHRISTMAS_LANDING_TITLE =
+  "Christmas Gifts, Portraits & Santa Messages | TheDigitalGifter";
+const CHRISTMAS_LANDING_DESCRIPTION =
+  "Create an unforgettable Christmas: find the perfect gift, turn a photo into a Christmas portrait, send a Santa video that says their name, share a wishlist, decorate a tree, open Advent, and write a card that feels personal.";
+
+function applyRouteMeta(html, pathname) {
+  if (pathname !== "/christmas" && pathname !== "/christmas/") return html;
+  let next = html.replace(/<title>[^<]*<\/title>/, `<title>${CHRISTMAS_LANDING_TITLE}</title>`);
+  next = next.replace(
+    /<meta(\s+)name="description"(\s+)content="[^"]*"/,
+    `<meta$1name="description"$2content="${CHRISTMAS_LANDING_DESCRIPTION}"`,
+  );
+  next = next.replace(
+    /<meta(\s+)property="og:title"(\s+)content="[^"]*"/,
+    `<meta$1property="og:title"$2content="${CHRISTMAS_LANDING_TITLE}"`,
+  );
+  next = next.replace(
+    /<meta(\s+)property="og:description"(\s+)content="[^"]*"/,
+    `<meta$1property="og:description"$2content="${CHRISTMAS_LANDING_DESCRIPTION}"`,
+  );
+  next = next.replace(
+    /<link(\s+)rel="canonical"(\s+)href="[^"]*"/,
+    `<link$1rel="canonical"$2href="https://www.thedigitalgifter.com/christmas"`,
+  );
+  return next;
+}
 function applePayCandidates() {
   return [
     join(distDir, ".well-known", "apple-developer-merchantid-domain-association"),
@@ -148,7 +175,13 @@ async function handle(req, res) {
     }
     const index = join(distDir, "index.html");
     if (existsSync(index)) {
-      sendFile(res, index, { "Cache-Control": "no-cache" });
+      const html = applyRouteMeta(readFileSync(index, "utf8"), url.pathname);
+      const body = Buffer.from(html);
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Content-Length", String(body.length));
+      res.end(body);
       return;
     }
   }

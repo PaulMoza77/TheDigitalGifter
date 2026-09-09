@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
@@ -30,9 +30,16 @@ async function authBearer() {
 
 export default function ChristmasMessagesPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [locale, setLocale] = useState<LocaleCode>("en");
-  const [recipient, setRecipient] = useState("mom");
-  const [tone, setTone] = useState("heartfelt");
+  const [recipient, setRecipient] = useState(() => {
+    const raw = params.get("for") || params.get("recipient") || "mom";
+    return MESSAGE_RECIPIENTS.some((r) => r.key === raw) ? raw : "mom";
+  });
+  const [tone, setTone] = useState(() => {
+    const mapped = params.get("tone") || "heartfelt";
+    return MESSAGE_TONES.some((item) => item.key === mapped) ? mapped : "heartfelt";
+  });
   const [length, setLength] = useState("medium");
   const [custom, setCustom] = useState("");
   const [busy, setBusy] = useState(false);

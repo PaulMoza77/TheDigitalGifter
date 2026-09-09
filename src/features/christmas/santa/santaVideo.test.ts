@@ -138,8 +138,10 @@ describe("santa pricing + routing", () => {
 
   it("hub supports santa name handoff", () => {
     const hub = readSrc("src/pages/website/ChristmasPage.tsx");
-    expect(hub).toContain("writeSantaNameHandoff");
-    expect(hub).toContain("/christmas/santa-video");
+    expect(hub).toContain("ChristmasLandingExperience");
+    const landing = readSrc("src/features/christmas/landing/ChristmasLandingExperience.tsx");
+    expect(landing).toContain("writeSantaNameHandoff");
+    expect(landing).toContain("santaExperienceUrl");
   });
 });
 

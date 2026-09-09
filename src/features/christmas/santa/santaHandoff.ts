@@ -1,7 +1,14 @@
 /**
  * Homepage → Santa Video name handoff.
  * Stores only first-name (session-scoped). Never send this value to analytics.
+ * Compatible with the Christmas landing handoff key + ?name= query.
  */
+
+import {
+  SANTA_HANDOFF_KEY as LANDING_SANTA_HANDOFF_KEY,
+  consumeSantaNameHandoff as consumeLandingSantaHandoff,
+  readSantaNameHandoff as readLandingSantaHandoff,
+} from "../landing/handoff";
 
 export const SANTA_NAME_HANDOFF_KEY = "tdg.christmas.santa.name.handoff.v1";
 
@@ -35,6 +42,11 @@ export function writeSantaNameHandoff(
   };
   try {
     sessionStorage.setItem(SANTA_NAME_HANDOFF_KEY, JSON.stringify(payload));
+    // Keep landing key in sync so either reader works during transition.
+    sessionStorage.setItem(
+      LANDING_SANTA_HANDOFF_KEY,
+      JSON.stringify({ childFirstName: normalized, ts: Date.now() }),
+    );
   } catch {
     /* ignore quota / private mode */
   }
@@ -44,23 +56,28 @@ export function writeSantaNameHandoff(
 export function readSantaNameHandoff(): SantaNameHandoff | null {
   try {
     const raw = sessionStorage.getItem(SANTA_NAME_HANDOFF_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<SantaNameHandoff>;
-    const firstName = normalizeSantaFirstName(parsed.firstName);
-    if (!firstName) return null;
-    const savedAt = Number(parsed.savedAt || 0);
-    if (savedAt && Date.now() - savedAt > MAX_AGE_MS) {
-      clearSantaNameHandoff();
-      return null;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<SantaNameHandoff>;
+      const firstName = normalizeSantaFirstName(parsed.firstName);
+      if (firstName) {
+        const savedAt = Number(parsed.savedAt || 0);
+        if (!savedAt || Date.now() - savedAt <= MAX_AGE_MS) {
+          return {
+            firstName,
+            source:
+              parsed.source === "query" || parsed.source === "manual" ? parsed.source : "christmas_hub",
+            savedAt: savedAt || Date.now(),
+          };
+        }
+      }
     }
-    return {
-      firstName,
-      source: parsed.source === "query" || parsed.source === "manual" ? parsed.source : "christmas_hub",
-      savedAt: savedAt || Date.now(),
-    };
   } catch {
-    return null;
+    /* fall through to landing key */
   }
+
+  const landingName = normalizeSantaFirstName(readLandingSantaHandoff());
+  if (!landingName) return null;
+  return { firstName: landingName, source: "christmas_hub", savedAt: Date.now() };
 }
 
 export function clearSantaNameHandoff() {
@@ -69,19 +86,33 @@ export function clearSantaNameHandoff() {
   } catch {
     /* ignore */
   }
+  consumeLandingSantaHandoff();
 }
 
-/** Prefer query ?name= then session handoff. Does not clear handoff. */
+/** Prefer query ?name= then session handoff. Clears consumed landing handoff. */
 export function resolveIncomingSantaName(searchParams: URLSearchParams): {
   firstName: string;
   source: SantaNameHandoff["source"];
 } | null {
-  const fromQuery = normalizeSantaFirstName(searchParams.get("name") || searchParams.get("for"));
+  const fromQuery = normalizeSantaFirstName(
+    searchParams.get("name") ||
+      searchParams.get("for") ||
+      searchParams.get("child") ||
+      searchParams.get("kid"),
+  );
   if (fromQuery) {
     writeSantaNameHandoff(fromQuery, "query");
     return { firstName: fromQuery, source: "query" };
   }
   const handoff = readSantaNameHandoff();
-  if (handoff) return { firstName: handoff.firstName, source: handoff.source };
+  if (handoff) {
+    // Prefer durable local key; drop landing-only payload after successful read.
+    try {
+      sessionStorage.removeItem(LANDING_SANTA_HANDOFF_KEY);
+    } catch {
+      /* ignore */
+    }
+    return { firstName: handoff.firstName, source: handoff.source };
+  }
   return null;
 }
