@@ -28,7 +28,7 @@ export function christmasLandingSeo(locale: ChristmasLandingLocale = "en") {
     title: landingT("seo.title", locale),
     description: landingT("seo.description", locale),
     url: `${CHRISTMAS_SITE_ORIGIN}${CHRISTMAS_LANDING_PATH}`,
-    image: `${CHRISTMAS_SITE_ORIGIN}/assets/christmas/christmas_hero_room.webp`,
+    image: `${CHRISTMAS_SITE_ORIGIN}/christmas/cabin-hero-1920.webp`,
   };
 }
 
