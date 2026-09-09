@@ -34,6 +34,7 @@ Personalized Christmas Cards must produce **actual downloadable image files**, w
 - **render_cost = $0** local composition
 - Visual fidelity depends on client fonts (Georgia/serif stack)
 - Safari/WebKit may lack `navigator.canShare({ files })` → download fallback
+- Funnel persist is best-effort. Harden 011 keeps client PNG creation available when the edge function is down — no unpaid public gallery or hosted share page is added to compensate.
 - Message Generator LLM remains separate; OpenAI quota → curated templates is expected and not a card-render blocker
 
 ## Related

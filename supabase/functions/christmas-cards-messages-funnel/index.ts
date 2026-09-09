@@ -1,5 +1,6 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { assertAdmin, getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
+import { assertRateLimit } from "../_shared/rateLimit.ts";
 import {
   generateOpaqueToken,
   sanitizeText,
@@ -12,6 +13,22 @@ import {
   type MessageInput,
 } from "../_shared/christmas/messageGenerator.ts";
 import { CARD_LAYOUT_KEYS, CARD_STYLE_KEYS } from "../_shared/christmas/cardStyles.ts";
+
+/** Hosted share / unpaid public gallery stay out of Cards V1 (011 harden). */
+const BLOCKED_PUBLIC_CARD_ACTIONS = new Set([
+  "listCards",
+  "listPublicCards",
+  "listCardGallery",
+  "listUnpaidGallery",
+  "getPublicCard",
+  "getHostedShare",
+  "createHostedShare",
+  "publishCard",
+  "publishCardGallery",
+]);
+
+const CARD_CREATE_RATE_LIMIT = 20;
+const CARD_CREATE_RATE_WINDOW_SECONDS = 3600;
 
 type Body = Record<string, unknown>;
 type Service = ReturnType<typeof getServiceClient>;
@@ -26,6 +43,12 @@ Deno.serve(async (req) => {
   try {
     const body = await readJson<Body>(req);
     const action = asString(body.action);
+    if (BLOCKED_PUBLIC_CARD_ACTIONS.has(action)) {
+      return jsonResponse(
+        { error: "not_supported_v1", reason: "no_public_gallery_or_hosted_share" },
+        404,
+      );
+    }
     const service = getServiceClient();
     const { user } = await getAuthUser(req);
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -261,6 +284,22 @@ Deno.serve(async (req) => {
     }
 
     if (action === "createCardProject") {
+      const guestToken = asString(body.guest_token);
+      const guestHash = guestToken ? await sha256Hex(guestToken) : null;
+      const createRateKey = user?.id
+        ? `christmas-card-create:user:${user.id}`
+        : guestHash
+          ? `christmas-card-create:guest:${guestHash}`
+          : `christmas-card-create:ip:${await sha256Hex(clientIp)}`;
+      const allowed = await assertRateLimit(
+        service,
+        createRateKey,
+        CARD_CREATE_RATE_LIMIT,
+        CARD_CREATE_RATE_WINDOW_SECONDS,
+      );
+      if (!allowed) {
+        return jsonResponse({ error: "rate_limited", retry_after_seconds: 3600 }, 429);
+      }
       const ownerToken = user?.id ? null : generateOpaqueToken();
       const ownerHash = ownerToken ? await sha256Hex(ownerToken) : null;
       const styleKey = asString(body.style_key) || "classic_christmas";
