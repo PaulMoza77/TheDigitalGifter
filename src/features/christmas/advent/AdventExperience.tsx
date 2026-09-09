@@ -677,8 +677,12 @@ export function AdventExperience() {
           }}
         >
           <div className="advent-reveal__card">
-            <h2>{reveal.kind === "revisit" ? reveal.title : adventT("reveal.found", locale)}</h2>
-            {reveal.kind !== "revisit" ? (
+            <h2>
+              {reveal.kind === "revisit"
+                ? reveal.title
+                : adventT("reveal.found", locale)}
+            </h2>
+            {reveal.kind !== "revisit" && reveal.title !== adventT("reveal.found", locale) ? (
               <p>
                 <strong>{reveal.title}</strong>
               </p>
