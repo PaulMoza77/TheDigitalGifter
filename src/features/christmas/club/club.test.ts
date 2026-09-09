@@ -19,6 +19,13 @@ describe("christmas club countdown products", () => {
   });
 });
 
+describe("christmas club gifts link", () => {
+  it("exposes a stable /christmas/gifts route for the bottom story CTA", async () => {
+    const { CHRISTMAS_CLUB_GIFTS_ROUTE } = await import("./config");
+    expect(CHRISTMAS_CLUB_GIFTS_ROUTE).toBe("/christmas/gifts");
+  });
+});
+
 describe("christmas club email validation", () => {
   it("accepts ordinary emails and normalizes case/space", () => {
     expect(normalizeClubEmail("  Ada@TheDigitalGifter.com ")).toBe("ada@thedigitalgifter.com");

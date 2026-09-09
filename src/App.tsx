@@ -479,6 +479,7 @@ function AppInner() {
             <Route path="/christmas/wishlist" element={<ChristmasWishlistPage />} />
             <Route path="/wishlist/:shareId" element={<ChristmasWishlistPage />} />
             <Route path="/christmas/gift-finder" element={<ChristmasGiftFinderPage />} />
+            <Route path="/christmas/gifts" element={<ChristmasGiftFinderPage />} />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
             <Route path="/birthday" element={<BirthdayPage />} />

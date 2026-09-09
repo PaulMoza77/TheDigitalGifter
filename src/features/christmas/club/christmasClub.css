@@ -446,6 +446,29 @@
   color: rgba(247, 240, 228, 0.76);
 }
 
+.cc-story-link-wrap {
+  margin-top: 1rem;
+}
+
+.cc-story-link {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--cc-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--cc-gold);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.45);
+  padding-bottom: 0.1rem;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.cc-story-link:hover {
+  color: var(--cc-cream);
+  border-bottom-color: rgba(247, 240, 228, 0.55);
+}
+
 .cc-finale {
   text-align: left;
 }

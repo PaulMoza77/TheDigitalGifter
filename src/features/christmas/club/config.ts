@@ -6,6 +6,7 @@
 
 export const CHRISTMAS_CLUB_ROUTE = "/christmas";
 export const CHRISTMAS_CLUB_SUITE_ROUTE = "/christmas/suite";
+export const CHRISTMAS_CLUB_GIFTS_ROUTE = "/christmas/gifts";
 export const CHRISTMAS_CLUB_SIGNUP_PATH = "/api/christmas/club-signup";
 export const CHRISTMAS_CLUB_MAX_BODY_BYTES = 4096;
 

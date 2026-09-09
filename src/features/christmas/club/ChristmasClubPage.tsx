@@ -12,6 +12,7 @@ import {
   CHRISTMAS_CLUB_ASSETS,
   CHRISTMAS_CLUB_AUTH_RETURN_PATH,
   CHRISTMAS_CLUB_CONFIG,
+  CHRISTMAS_CLUB_GIFTS_ROUTE,
   CHRISTMAS_CLUB_GOOGLE_PENDING_KEY,
   CHRISTMAS_CLUB_SEO,
   CHRISTMAS_CLUB_SUITE_ROUTE,
@@ -288,6 +289,19 @@ export function ChristmasClubPage() {
           </p>
         </section>
 
+        <section className="cc-panel">
+          <h2>Still looking for the right gift?</h2>
+          <p>
+            When the countdown isn’t enough, our Christmas gift finder helps you choose something
+            warm and personal — for family, friends, or someone hard to shop for.
+          </p>
+          <p className="cc-story-link-wrap">
+            <Link className="cc-story-link" to={CHRISTMAS_CLUB_GIFTS_ROUTE}>
+              Explore Christmas gifts
+            </Link>
+          </p>
+        </section>
+
         <section className="cc-panel cc-finale">
           <h2>Ready for Christmas?</h2>
           {showForm ? (
@@ -302,6 +316,8 @@ export function ChristmasClubPage() {
         <footer className="cc-foot">
           <p>
             <Link to={CHRISTMAS_CLUB_SUITE_ROUTE}>Explore Christmas experiences</Link>
+            {" · "}
+            <Link to={CHRISTMAS_CLUB_GIFTS_ROUTE}>Christmas gifts</Link>
             {" · "}
             <Link to="/generator?occasion=christmas">Christmas generator</Link>
             {" · "}
