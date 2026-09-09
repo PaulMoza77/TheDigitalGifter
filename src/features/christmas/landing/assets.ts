@@ -18,9 +18,9 @@ export const LANDING_ASSETS = {
   card: "/assets/christmas/christmas_card_open.webp",
   advent: "/assets/christmas/advent_calendar.webp",
   wishlist: "/assets/christmas/wishlist_letter.webp",
-  santaWebm: "/assets/christmas/santa-alpha.webm",
-  santaIdle: "/assets/christmas/santa-idle.webp",
-  santaSpeak: "/assets/christmas/santa-speak.webp",
+  santaWebm: "/assets/christmas/santa-alpha.webm?v=cutout2",
+  santaIdle: "/assets/christmas/santa-idle.webp?v=cutout2",
+  santaSpeak: "/assets/christmas/santa-speak.webp?v=cutout2",
 } as const;
 
 export const FONT_HREF =

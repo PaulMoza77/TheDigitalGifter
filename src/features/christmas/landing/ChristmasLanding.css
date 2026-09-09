@@ -582,12 +582,12 @@
   animation: xmas-sway 5.5s ease-in-out infinite;
 }
 
-.xmas-santa__asset video,
 .xmas-santa__asset img {
   display: block;
   width: 100%;
   height: auto;
   background: transparent;
+  /* Transparent WebP cutouts — never a black plate behind Santa. */
   mix-blend-mode: normal;
 }
 
