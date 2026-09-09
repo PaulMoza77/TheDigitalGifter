@@ -47,6 +47,14 @@ export default function Footer() {
                 <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Templates
               </Link>
+
+              <Link
+                to="/christmas"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
+              >
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
+                Christmas
+              </Link>
             </nav>
           </div>
 

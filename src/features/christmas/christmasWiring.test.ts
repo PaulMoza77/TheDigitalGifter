@@ -21,6 +21,9 @@ describe("christmas foundation wiring", () => {
     expect(readSrc("src/App.tsx")).toContain('path="/christmas"');
     expect(readSrc("src/pages/website/ChristmasPage.tsx")).toContain("ChristmasLandingExperience");
     expect(readSrc("src/features/christmas/landing/ChristmasLandingExperience.tsx")).toContain(
+      "CLASSIC_GENERATOR_HREF",
+    );
+    expect(readSrc("src/features/christmas/landing/hubIa.ts")).toContain(
       "/generator?occasion=christmas",
     );
   });

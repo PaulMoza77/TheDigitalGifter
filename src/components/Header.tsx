@@ -7,6 +7,7 @@ import {
   Menu,
   Plus,
   Shield,
+  Snowflake,
   Users,
   Wand2,
   X,
@@ -36,6 +37,7 @@ interface HeaderProps {
 
 const desktopNavItems = [
   { label: "Home", to: "/" },
+  { label: "Christmas", to: "/christmas" },
   { label: "Templates", to: "/templates" },
   { label: "Generator", to: "/generator" },
 ];
@@ -237,6 +239,15 @@ export default function Header({ onBuyCredits }: HeaderProps) {
 
                       <button
                         type="button"
+                        onClick={() => goTo("/christmas")}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
+                      >
+                        <Snowflake className="h-5 w-5 shrink-0" />
+                        Christmas
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => goTo("/generator")}
                         className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
                       >
@@ -261,8 +272,16 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                     <nav className="space-y-2">
                       <button
                         type="button"
-                        onClick={() => goTo("/generator")}
+                        onClick={() => goTo("/christmas")}
                         className="flex w-full items-center gap-3 rounded-2xl bg-white/10 px-4 py-4 text-base font-semibold text-white"
+                      >
+                        <Snowflake className="h-5 w-5 shrink-0" />
+                        Christmas
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => goTo("/generator")}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
                       >
                         <Wand2 className="h-5 w-5 shrink-0" />
                         Generator
