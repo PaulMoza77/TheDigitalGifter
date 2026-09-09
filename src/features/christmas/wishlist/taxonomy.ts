@@ -80,10 +80,25 @@ export const VIBES: Taxon[] = [
 ];
 
 export const WISHLIST_PRIORITIES: Taxon[] = [
-  { key: "would_love", labelEn: "Would love", labelRo: "Mi-ar plăcea mult" },
+  { key: "really_want", labelEn: "Really want this", labelRo: "Chiar îmi doresc" },
+  { key: "would_love", labelEn: "Would love this", labelRo: "Mi-ar plăcea mult" },
   { key: "nice_to_have", labelEn: "Nice to have", labelRo: "Ar fi drăguț" },
   { key: "surprise_me", labelEn: "Surprise me", labelRo: "Surprinde-mă" },
 ];
+
+export const WISHLIST_AUDIENCES: Taxon[] = [
+  { key: "me", labelEn: "Me", labelRo: "Pentru mine" },
+  { key: "child", labelEn: "My child", labelRo: "Copilul meu" },
+  { key: "family", labelEn: "My family", labelRo: "Familia mea" },
+  { key: "someone_else", labelEn: "Someone else", labelRo: "Altcineva" },
+];
+
+export const PRIORITY_EMOJI: Record<string, string> = {
+  really_want: "❤️",
+  would_love: "⭐",
+  nice_to_have: "🎁",
+  surprise_me: "✨",
+};
 
 const keySet = (items: Taxon[]) => new Set(items.map((i) => i.key));
 
@@ -95,6 +110,7 @@ export const BUDGET_KEYS = keySet(BUDGETS);
 export const GIFT_TYPE_KEYS = keySet(GIFT_TYPES);
 export const VIBE_KEYS = keySet(VIBES);
 export const PRIORITY_KEYS = keySet(WISHLIST_PRIORITIES);
+export const AUDIENCE_KEYS = keySet(WISHLIST_AUDIENCES);
 
 export function labelFor(items: Taxon[], key: string, locale: LocaleCode): string {
   const hit = items.find((i) => i.key === key);
