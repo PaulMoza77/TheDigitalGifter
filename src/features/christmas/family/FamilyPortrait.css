@@ -192,7 +192,18 @@
     inset 0 0 0 1px rgba(212, 179, 106, 0.35);
   transform: rotate(4deg);
   z-index: 3;
-  transition: opacity 0.45s ease;
+  animation: ff-card-swap 0.45s ease;
+}
+
+@keyframes ff-card-swap {
+  from {
+    opacity: 0.35;
+    transform: rotate(4deg) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(4deg) translateY(0);
+  }
 }
 
 .ff-card img {
@@ -290,9 +301,21 @@
 
 .ff-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.45rem;
   margin-top: 1.25rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 960px) {
+  .ff-chips {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 0;
+  }
 }
 
 .ff-chip {
@@ -381,6 +404,21 @@
   padding: clamp(3.2rem, 7vw, 5.8rem) 1.25rem;
 }
 
+.ff-section--atmosphere {
+  max-width: none;
+  padding-inline: 0;
+  background:
+    radial-gradient(900px 380px at 18% 20%, rgba(212, 179, 106, 0.1), transparent 55%),
+    radial-gradient(700px 320px at 88% 70%, rgba(107, 20, 32, 0.18), transparent 50%),
+    linear-gradient(180deg, rgba(18, 8, 12, 0.2), rgba(14, 23, 19, 0.55));
+}
+
+.ff-section--atmosphere > .ff-section__inner {
+  max-width: var(--ff-max);
+  margin: 0 auto;
+  padding-inline: 1.25rem;
+}
+
 .ff-section h2 {
   margin: 0.55rem 0 0;
   font-size: clamp(1.9rem, 4.2vw, 3.1rem);
@@ -429,7 +467,7 @@
 
 .ff-gallery {
   display: grid;
-  gap: clamp(1.5rem, 4vw, 2.4rem);
+  gap: clamp(1.25rem, 3vw, 1.75rem);
   margin-top: 1.75rem;
 }
 
@@ -442,10 +480,6 @@
 @media (min-width: 1100px) {
   .ff-gallery {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .ff-gallery__item:first-child {
-    grid-column: span 2;
   }
 }
 
@@ -461,6 +495,13 @@
   display: block;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
   transition: transform 0.35s ease, filter 0.35s ease;
+}
+
+@media (min-width: 1100px) {
+  .ff-gallery__item:nth-child(1) img,
+  .ff-gallery__item:nth-child(2) img {
+    aspect-ratio: 5 / 4;
+  }
 }
 
 .ff-gallery__item:hover img {
@@ -743,7 +784,8 @@
   .ff-moment__glow,
   .ff-prop--candle::before,
   .ff-gallery__item img,
-  .ff-scene img {
+  .ff-scene img,
+  .ff-card {
     animation: none;
     transition: none;
   }

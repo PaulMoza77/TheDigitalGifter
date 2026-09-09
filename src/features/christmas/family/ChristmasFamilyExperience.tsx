@@ -377,51 +377,61 @@ export default function ChristmasFamilyExperience() {
               </div>
             </section>
 
-            <section className="ff-section" aria-labelledby="family-examples-heading">
-              <p className="xmas-kicker">{t("moment.kicker")}</p>
-              <h2 id="family-examples-heading">{t("examples.h2")}</h2>
-              <p className="xmas-lede">{t("examples.lede")}</p>
-              <p className="xmas-lede" style={{ fontSize: "0.85rem" }}>
-                {t("examples.demoNote")}
-              </p>
-              <div className="ff-gallery">
-                {FAMILY_GALLERY.map((item) => (
-                  <figure key={item.id} className="ff-gallery__item">
-                    <img
-                      src={item.after}
-                      alt={`${t(item.labelKey)} — ${t("examples.after")}`}
-                      loading="lazy"
-                    />
-                    <div className="ff-gallery__meta">
-                      <strong>{t(item.labelKey)}</strong>
-                      <span>{t("examples.after")}</span>
-                    </div>
-                  </figure>
-                ))}
+            <section
+              className="ff-section ff-section--atmosphere"
+              aria-labelledby="family-examples-heading"
+            >
+              <div className="ff-section__inner">
+                <p className="xmas-kicker">{t("moment.kicker")}</p>
+                <h2 id="family-examples-heading">{t("examples.h2")}</h2>
+                <p className="xmas-lede">{t("examples.lede")}</p>
+                <p className="xmas-lede" style={{ fontSize: "0.85rem" }}>
+                  {t("examples.demoNote")}
+                </p>
+                <div className="ff-gallery">
+                  {FAMILY_GALLERY.map((item) => (
+                    <figure key={item.id} className="ff-gallery__item">
+                      <img
+                        src={item.after}
+                        alt={`${t(item.labelKey)} — ${t("examples.after")}`}
+                        loading="lazy"
+                      />
+                      <div className="ff-gallery__meta">
+                        <strong>{t(item.labelKey)}</strong>
+                        <span>{t("examples.after")}</span>
+                      </div>
+                    </figure>
+                  ))}
+                </div>
               </div>
             </section>
 
-            <section className="ff-section" aria-labelledby="family-styles-heading">
-              <h2 id="family-styles-heading">{t("styles.h2")}</h2>
-              <p className="xmas-lede">{t("styles.lede")}</p>
-              <div className="ff-scenes">
-                {FAMILY_SCENE_CARDS.map((scene) => (
-                  <button
-                    key={scene.id}
-                    type="button"
-                    className="ff-scene"
-                    onClick={() => {
-                      setActiveChip(scene.styleKey);
-                      openUpload();
-                    }}
-                  >
-                    <img src={scene.image} alt="" loading="lazy" />
-                    <span className="ff-scene__body">
-                      <strong>{t(scene.titleKey)}</strong>
-                      <span>{t(scene.descKey)}</span>
-                    </span>
-                  </button>
-                ))}
+            <section
+              className="ff-section ff-section--atmosphere"
+              aria-labelledby="family-styles-heading"
+            >
+              <div className="ff-section__inner">
+                <h2 id="family-styles-heading">{t("styles.h2")}</h2>
+                <p className="xmas-lede">{t("styles.lede")}</p>
+                <div className="ff-scenes">
+                  {FAMILY_SCENE_CARDS.map((scene) => (
+                    <button
+                      key={scene.id}
+                      type="button"
+                      className="ff-scene"
+                      onClick={() => {
+                        setActiveChip(scene.styleKey);
+                        openUpload();
+                      }}
+                    >
+                      <img src={scene.image} alt="" loading="lazy" />
+                      <span className="ff-scene__body">
+                        <strong>{t(scene.titleKey)}</strong>
+                        <span>{t(scene.descKey)}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </section>
 

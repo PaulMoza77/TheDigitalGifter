@@ -56,7 +56,7 @@ export const FAMILY_STYLE_CHIPS: FamilyStyleChip[] = [
   {
     styleKey: "family_luxury_christmas",
     labelKey: "styles.cabin",
-    preview: FAMILY_ASSETS.finale,
+    preview: FAMILY_ASSETS.funnelEx3After,
   },
 ];
 
@@ -66,9 +66,9 @@ export const STYLE_PREVIEW_BY_KEY: Record<string, string> = {
   family_winter_wonderland: FAMILY_ASSETS.finale,
   family_elegant_christmas: FAMILY_ASSETS.coupleAfter,
   family_christmas_morning: FAMILY_ASSETS.funnelEx2After,
-  family_luxury_christmas: FAMILY_ASSETS.finale,
-  family_christmas_movie: FAMILY_ASSETS.funnelEx3After,
-  family_vintage_christmas: FAMILY_ASSETS.familyStill,
+  family_luxury_christmas: FAMILY_ASSETS.funnelEx3After,
+  family_christmas_movie: FAMILY_ASSETS.familyStill,
+  family_vintage_christmas: FAMILY_ASSETS.funnelAfter,
 };
 
 export type FamilyGalleryItem = {
@@ -143,7 +143,7 @@ export const FAMILY_SCENE_CARDS = [
     id: "cabin",
     titleKey: "styles.cabin",
     descKey: "styles.cabinDesc",
-    image: FAMILY_ASSETS.finale,
+    image: FAMILY_ASSETS.funnelEx3After,
     styleKey: "family_luxury_christmas",
   },
   {
