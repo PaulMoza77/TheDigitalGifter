@@ -9,7 +9,9 @@ export type SantaUiStep =
   | "name"
   | "age"
   | "achievement"
+  | "interest"
   | "wish"
+  | "sender"
   | "detail"
   | "language"
   | "preview"
@@ -69,11 +71,14 @@ export function readSantaDraft(): SantaDraft {
     const raw = sessionStorage.getItem(SANTA_DRAFT_KEY);
     if (!raw) return emptySantaDraft();
     const parsed = JSON.parse(raw) as Partial<SantaDraft>;
-    // Migrate legacy step names from the previous form UI
-    let step = parsed.step || "landing";
-    if (step === ("intro" as SantaUiStep)) step = "landing";
-    if (step === ("form" as SantaUiStep)) step = "name";
-    if (step === ("review" as SantaUiStep)) step = "preview";
+    // Migrate legacy step names from previous UIs
+    let step = (parsed.step || "landing") as SantaUiStep;
+    if ((step as string) === "intro") step = "landing";
+    if ((step as string) === "form") step = "name";
+    if ((step as string) === "review") step = "preview";
+    if (step === "detail") step = "interest";
+    if (step === "language") step = "preview";
+    if (step === "recipient") step = "name";
     return { ...emptySantaDraft(), ...parsed, step };
   } catch {
     return emptySantaDraft();
@@ -88,15 +93,27 @@ export function writeSantaDraft(draft: SantaDraft) {
   }
 }
 
-/** Funnel progress for guided personalization only (excludes landing/checkout/result). */
-export function santaFunnelProgress(step: SantaUiStep, nameKnown: boolean): {
-  current: number;
-  total: number;
-} | null {
-  const sequence: SantaUiStep[] = nameKnown
-    ? ["age", "achievement", "wish", "detail", "language", "preview", "confirm"]
-    : ["recipient", "name", "age", "achievement", "wish", "detail", "language", "preview", "confirm"];
-  const idx = sequence.indexOf(step);
-  if (idx < 0) return null;
-  return { current: idx + 1, total: sequence.length };
+/** Core personalization questions shown as progress dots (excludes preview/checkout). */
+export function santaQuestionSteps(nameKnown: boolean): SantaUiStep[] {
+  return nameKnown
+    ? ["age", "achievement", "interest", "wish", "sender"]
+    : ["name", "age", "achievement", "interest", "wish", "sender"];
+}
+
+/** Funnel progress for guided personalization only. */
+export function santaFunnelProgress(
+  step: SantaUiStep,
+  nameKnown: boolean,
+): { current: number; total: number } | null {
+  const questions = santaQuestionSteps(nameKnown);
+  const qIdx = questions.indexOf(step);
+  if (qIdx >= 0) {
+    return { current: qIdx + 1, total: questions.length };
+  }
+
+  // Preview / confirm still report completion of question phase
+  if (step === "preview" || step === "confirm" || step === "offer") {
+    return { current: questions.length, total: questions.length };
+  }
+  return null;
 }

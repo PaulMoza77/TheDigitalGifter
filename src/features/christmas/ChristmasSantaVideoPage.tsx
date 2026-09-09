@@ -8,11 +8,6 @@ import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
 import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
 import { startChristmasCheckout } from "./photoApi";
 import {
-  consumeSantaNameHandoff,
-  isLikelyKidName,
-  sanitizeKidName,
-} from "./landing/handoff";
-import {
   SANTA_CONSENT_LABEL,
   SANTA_CONSENT_VERSION,
   SANTA_DEFAULT_PACKAGE,
@@ -23,9 +18,10 @@ import {
   santaProgressCopy,
   validateSantaPersonalization,
   type SantaJobStatus,
+  type SantaLanguage,
   type SantaPersonalization,
 } from "./santa/santaTypes";
-import { SANTA_COPY, progressLabel, type SantaRecipientType } from "./santa/santaCopy";
+import { SANTA_COPY, progressLabel } from "./santa/santaCopy";
 import {
   emptySantaDraft,
   readSantaDraft,
@@ -36,10 +32,10 @@ import {
 } from "./santa/santaDraft";
 import { resolveIncomingSantaName } from "./santa/santaHandoff";
 import { buildSantaMessagePreview, santaMentionChecklist } from "./santa/santaPreview";
-import { SANTA_DEMO_EXAMPLES } from "./santa/santaExamples";
-import { SantaWorkshopScene } from "./santa/SantaWorkshopScene";
-import { SantaDemoPlayer } from "./santa/SantaDemoPlayer";
+import { santaGreetingCaption, santaReactionForDraft } from "./santa/santaReactions";
+import { SantaWorkshopHero } from "./santa/SantaWorkshopHero";
 import { SantaLandingSections } from "./santa/SantaLandingSections";
+import "./santa/SantaVideo.css";
 
 const FUNNEL_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-santa-funnel`;
 
@@ -59,7 +55,7 @@ function ensureFonts() {
   link.id = id;
   link.rel = "stylesheet";
   link.href =
-    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap";
+    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Source+Sans+3:wght@400;500;600;700&display=swap";
   document.head.appendChild(link);
 }
 
@@ -99,6 +95,8 @@ function trackSanta(
   });
 }
 
+const QUESTION_STEPS: SantaUiStep[] = ["name", "age", "achievement", "interest", "wish", "sender"];
+
 export default function ChristmasSantaVideoPage() {
   const [params] = useSearchParams();
   const [draft, setDraft] = useState<SantaDraft>(() => readSantaDraft());
@@ -106,6 +104,9 @@ export default function ChristmasSantaVideoPage() {
   const [jobStatus, setJobStatus] = useState<SantaJobStatus | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [progressTick, setProgressTick] = useState(0);
+  const [showCustomAchievement, setShowCustomAchievement] = useState(false);
+  const [showCustomInterest, setShowCustomInterest] = useState(false);
+  const [showCustomSender, setShowCustomSender] = useState(false);
   const [checkout, setCheckout] = useState<{
     clientSecret: string;
     publishableKey: string;
@@ -113,6 +114,7 @@ export default function ChristmasSantaVideoPage() {
   } | null>(null);
   const pageViewed = useRef(false);
   const handoffApplied = useRef(false);
+  const startedTracked = useRef(false);
   const previewTracked = useRef(false);
   const product = findProduct(CHRISTMAS_CATALOG_SEED, SANTA_PRODUCT_KEY);
   const pkg = product?.packages.find((p) => p.packageKey === SANTA_DEFAULT_PACKAGE);
@@ -161,13 +163,21 @@ export default function ChristmasSantaVideoPage() {
     trackSanta("christmas_santa_page_view");
   }, []);
 
-  // Homepage / query name handoff — skip asking for the name again
+  // Homepage / query name handoff — skip asking for the name again; jump to age
   useEffect(() => {
     if (handoffApplied.current) return;
     if (params.get("token")) return;
     const incoming = resolveIncomingSantaName(params);
     if (!incoming) {
       handoffApplied.current = true;
+      // Direct visitors without a name start on the name question inside the immersive shell
+      const current = readSantaDraft();
+      if (
+        !current.childFirstName &&
+        (current.step === "landing" || current.step === "recipient")
+      ) {
+        patch({ step: "name" });
+      }
       return;
     }
     handoffApplied.current = true;
@@ -175,45 +185,26 @@ export default function ChristmasSantaVideoPage() {
     if (current.orderId || current.step === "progress" || current.step === "result" || current.step === "checkout") {
       return;
     }
-    if (current.childFirstName && current.step !== "landing" && current.step !== "name" && current.step !== "recipient") {
+    if (
+      current.childFirstName &&
+      current.step !== "landing" &&
+      current.step !== "name" &&
+      current.step !== "recipient"
+    ) {
       return;
     }
-    // Keep landing for the personalized hero; skip recipient + name questions.
-    const nextStep: SantaUiStep =
-      current.step === "name" || current.step === "recipient"
-        ? "age"
-        : current.step === "landing"
-          ? "landing"
-          : current.step;
     patch({
       childFirstName: incoming.firstName,
       nameFromHandoff: true,
       recipientType: "child",
-      step: nextStep,
+      step: "age",
     });
+    if (!startedTracked.current) {
+      startedTracked.current = true;
+      trackSanta("christmas_santa_started");
+      trackSanta("santa_form_started");
+    }
   }, [params, patch]);
-
-  useEffect(() => {
-    if (nameHandoffApplied.current) return;
-    if (params.get("token")) return;
-    const fromQuery = params.get("name") || params.get("child") || params.get("kid");
-    const name = sanitizeKidName(fromQuery || consumeSantaNameHandoff());
-    if (!name || !isLikelyKidName(name)) return;
-    nameHandoffApplied.current = true;
-    setDraft((prev) => {
-      if (prev.orderId || prev.step === "progress" || prev.step === "result" || prev.step === "checkout") {
-        return prev;
-      }
-      const merged = {
-        ...prev,
-        childFirstName: name,
-        step: "form" as Step,
-        lastError: null,
-      };
-      writeDraft(merged);
-      return merged;
-    });
-  }, [params]);
 
   useEffect(() => {
     const token = params.get("token");
@@ -275,10 +266,14 @@ export default function ChristmasSantaVideoPage() {
         if (data.order?.fulfillment_status === "completed" && data.order.resultUrl) {
           setResultUrl(data.order.resultUrl);
           patch({ step: "result" });
-          trackSanta("generation_success", santaAnalyticsDimensions({
-            language: draft.language,
-            templateKey: draft.templateKey,
-          }), { orderId: draft.orderId });
+          trackSanta(
+            "generation_success",
+            santaAnalyticsDimensions({
+              language: draft.language,
+              templateKey: draft.templateKey,
+            }),
+            { orderId: draft.orderId },
+          );
           trackSanta("christmas_santa_generation_completed", undefined, { orderId: draft.orderId });
           return;
         }
@@ -310,14 +305,25 @@ export default function ChristmasSantaVideoPage() {
   useEffect(() => {
     if (draft.step !== "preview" || previewTracked.current) return;
     previewTracked.current = true;
-    trackSanta("christmas_santa_preview_viewed", santaAnalyticsDimensions({
-      language: draft.language,
-      templateKey: draft.templateKey,
-      hasAge: Boolean(draft.age),
-      hasWish: Boolean(draft.christmasWish),
-      hasHobby: Boolean(draft.hobbyOrInterest) || Boolean(draft.customFact),
-    }));
-  }, [draft.step, draft.language, draft.templateKey, draft.age, draft.christmasWish, draft.hobbyOrInterest, draft.customFact]);
+    trackSanta(
+      "christmas_santa_preview_viewed",
+      santaAnalyticsDimensions({
+        language: draft.language,
+        templateKey: draft.templateKey,
+        hasAge: Boolean(draft.age),
+        hasWish: Boolean(draft.christmasWish),
+        hasHobby: Boolean(draft.hobbyOrInterest) || Boolean(draft.customFact),
+      }),
+    );
+  }, [
+    draft.step,
+    draft.language,
+    draft.templateKey,
+    draft.age,
+    draft.christmasWish,
+    draft.hobbyOrInterest,
+    draft.customFact,
+  ]);
 
   const previewScript = useMemo(
     () =>
@@ -344,13 +350,34 @@ export default function ChristmasSantaVideoPage() {
         hobbyOrInterest: draft.hobbyOrInterest || null,
         christmasWish: draft.christmasWish || null,
         customFact: draft.customFact || null,
+        senderName: draft.senderName || null,
       }),
     [draft],
   );
 
-  const progress = santaFunnelProgress(draft.step, draft.nameFromHandoff || Boolean(draft.childFirstName && draft.step !== "name" && draft.step !== "recipient"));
-  const nameKnown = Boolean(draft.childFirstName);
+  const nameKnown = Boolean(draft.childFirstName) || draft.nameFromHandoff;
+  const progress = santaFunnelProgress(draft.step, nameKnown && draft.step !== "name");
   const displayName = draft.childFirstName || "them";
+
+  const caption = useMemo(() => {
+    if (!draft.childFirstName) return santaGreetingCaption(null);
+    return santaReactionForDraft({
+      step: draft.step,
+      childFirstName: draft.childFirstName,
+      age: draft.age,
+      somethingGood: draft.somethingGood,
+      hobbyOrInterest: draft.hobbyOrInterest,
+      christmasWish: draft.christmasWish,
+      senderName: draft.senderName,
+    });
+  }, [draft]);
+
+  function markStarted() {
+    if (startedTracked.current) return;
+    startedTracked.current = true;
+    trackSanta("christmas_santa_started");
+    trackSanta("santa_form_started");
+  }
 
   function validated(requireConsent = true): SantaPersonalization | null {
     const result = validateSantaPersonalization({
@@ -372,23 +399,8 @@ export default function ChristmasSantaVideoPage() {
     return result.value;
   }
 
-  function startJourney() {
-    trackSanta("christmas_santa_started");
-    trackSanta("santa_form_started");
-    if (draft.nameFromHandoff && draft.childFirstName) {
-      patch({ step: "age", lastError: null });
-      return;
-    }
-    if (draft.childFirstName) {
-      patch({ step: "age", lastError: null });
-      return;
-    }
-    patch({ step: "recipient", lastError: null });
-  }
-
-  function selectRecipient(type: SantaRecipientType) {
-    patch({ recipientType: type, step: "name", lastError: null });
-    trackSanta("christmas_santa_recipient_selected", { recipient_type: type });
+  function go(step: SantaUiStep) {
+    patch({ step, lastError: null });
   }
 
   function completeName() {
@@ -406,12 +418,9 @@ export default function ChristmasSantaVideoPage() {
       patch({ lastError: "Please enter a first name." });
       return;
     }
+    markStarted();
     patch({ childFirstName: name, step: "age", lastError: null });
     trackSanta("christmas_santa_name_completed");
-  }
-
-  function go(step: SantaUiStep) {
-    patch({ step, lastError: null });
   }
 
   function completeAge() {
@@ -430,24 +439,31 @@ export default function ChristmasSantaVideoPage() {
     trackSanta("christmas_santa_achievement_completed", {
       has_achievement: Boolean(draft.somethingGood.trim()),
     });
+    go("interest");
+  }
+
+  function completeInterest() {
     go("wish");
   }
 
   function completeWish() {
     trackSanta("christmas_santa_wish_completed", { has_wish: Boolean(draft.christmasWish.trim()) });
-    go("detail");
+    go("sender");
   }
 
   function goPreview() {
     const v = validated(false);
     if (!v) return;
-    trackSanta("santa_form_completed", santaAnalyticsDimensions({
-      language: v.language,
-      templateKey: v.templateKey,
-      hasAge: v.age != null,
-      hasWish: Boolean(v.christmasWish),
-      hasHobby: Boolean(v.hobbyOrInterest) || Boolean(v.customFact),
-    }));
+    trackSanta(
+      "santa_form_completed",
+      santaAnalyticsDimensions({
+        language: v.language,
+        templateKey: v.templateKey,
+        hasAge: v.age != null,
+        hasWish: Boolean(v.christmasWish),
+        hasHobby: Boolean(v.hobbyOrInterest) || Boolean(v.customFact),
+      }),
+    );
     previewTracked.current = false;
     go("preview");
   }
@@ -572,15 +588,14 @@ export default function ChristmasSantaVideoPage() {
     setCheckout(null);
     setJobStatus(null);
     previewTracked.current = false;
+    startedTracked.current = false;
+    setShowCustomAchievement(false);
+    setShowCustomInterest(false);
+    setShowCustomSender(false);
   }
 
-  const showMarketing = draft.step === "landing";
-  const inGuided =
-    draft.step !== "landing" &&
-    draft.step !== "checkout" &&
-    draft.step !== "progress" &&
-    draft.step !== "result" &&
-    draft.step !== "error";
+  const inCreator = QUESTION_STEPS.includes(draft.step) || draft.step === "preview" || draft.step === "confirm" || draft.step === "offer";
+  const showMarketingBelow = true;
 
   const progressStageCopy = (() => {
     const stages = SANTA_COPY.steps.progress.stages;
@@ -588,6 +603,13 @@ export default function ChristmasSantaVideoPage() {
     const stage = stages[idx];
     return typeof stage === "function" ? stage(displayName) : stage;
   })();
+
+  const headline = draft.childFirstName
+    ? SANTA_COPY.hero.handoffHeadline(draft.childFirstName)
+    : SANTA_COPY.hero.h1Alt;
+  const support = draft.childFirstName
+    ? SANTA_COPY.hero.handoffSupport(draft.childFirstName)
+    : SANTA_COPY.hero.support;
 
   return (
     <>
@@ -599,475 +621,504 @@ export default function ChristmasSantaVideoPage() {
         image="https://www.thedigitalgifter.com/images/occasions/christmas.png"
       />
 
-      <div className="santa-video-page relative min-h-screen overflow-x-hidden text-[#F5EDE0]">
-        <ChristmasSnowfall />
-        <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_top,_rgba(212,175,55,0.14),_transparent_55%),linear-gradient(165deg,#0c1f18_0%,#132a22_40%,#1a0a10_100%)]" />
+      <div className="santa-video-page sv-page">
+        <div className="sv-page__bg" aria-hidden="true" />
+        <div className="sv-page__snow" aria-hidden="true">
+          <ChristmasSnowfall />
+        </div>
 
-        <div className="relative z-[3]">
-          <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link to="/christmas" className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]">
-              <img
-                src="/TheDigitalGifter.png"
-                alt="The Digital Gifter"
-                width={36}
-                height={36}
-                className="h-9 w-9 rounded-full object-cover ring-1 ring-[#d4af37]/40"
-              />
-              <span className="santa-display text-lg font-semibold tracking-tight">{SANTA_COPY.brand}</span>
+        <div className="sv-shell">
+          <header className="sv-header">
+            <Link to="/christmas" className="sv-brand">
+              <img src="/TheDigitalGifter.png" alt="" width={36} height={36} />
+              <span className="sv-brand__name">{SANTA_COPY.brand}</span>
             </Link>
-            <nav aria-label="Breadcrumb" className="text-xs text-[#F5EDE0]/55">
-              <ol className="flex items-center gap-2">
-                <li>
-                  <Link className="hover:text-[#F5EDE0]" to="/christmas">
-                    Christmas
-                  </Link>
-                </li>
-                <li aria-hidden="true">/</li>
-                <li className="text-[#F5EDE0]/80">Santa Video</li>
-              </ol>
+            <nav className="sv-nav" aria-label="Primary">
+              <Link to="/">Home</Link>
+              <Link to="/christmas">Christmas</Link>
+              <Link to="/christmas/gift-finder">Gift Finder</Link>
+              <Link to="/templates">Templates</Link>
             </nav>
+            <div className="sv-header__right">
+              <label className="sv-lang">
+                <span>{SANTA_COPY.language.label}</span>
+                <select
+                  aria-label="Santa speaks"
+                  value={draft.language}
+                  onChange={(e) => patch({ language: e.target.value as SantaLanguage })}
+                >
+                  <option value="en">{SANTA_COPY.language.en}</option>
+                  <option value="ro">{SANTA_COPY.language.ro}</option>
+                </select>
+              </label>
+            </div>
           </header>
 
           <main>
             {draft.lastError ? (
-              <p
-                role="alert"
-                className="mx-auto mb-4 max-w-5xl rounded-lg border border-red-400/40 bg-red-950/40 px-4 py-3 text-sm text-red-100"
-              >
+              <p role="alert" className="sv-alert">
                 {draft.lastError}
               </p>
             ) : null}
 
-            {draft.step === "landing" && (
-              <section className="mx-auto grid max-w-5xl gap-8 px-4 pb-10 pt-2 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
-                    Christmas · Santa Video
-                  </p>
-                  <h1 className="santa-display mt-3 text-[2.35rem] font-semibold leading-[1.05] tracking-tight text-[#F5EDE0] sm:text-5xl">
-                    {draft.nameFromHandoff && draft.childFirstName
-                      ? SANTA_COPY.hero.handoffHeadline(draft.childFirstName)
-                      : SANTA_COPY.hero.h1}
-                  </h1>
-                  <p className="mt-4 max-w-xl text-base leading-relaxed text-[#F5EDE0]/75 sm:text-lg">
-                    {draft.nameFromHandoff && draft.childFirstName
-                      ? SANTA_COPY.hero.handoffSupport(draft.childFirstName)
-                      : SANTA_COPY.hero.support}
-                  </p>
-                  <div className="mt-7 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#d4af37] px-6 text-sm font-semibold text-[#1a1208] transition hover:bg-[#e0c05a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5EDE0]"
-                      onClick={startJourney}
-                    >
-                      {draft.nameFromHandoff && draft.childFirstName
-                        ? SANTA_COPY.hero.ctaPrefill(draft.childFirstName)
-                        : SANTA_COPY.hero.ctaDirect}
-                    </button>
-                    <a
-                      href="#santa-examples-heading"
-                      className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#F5EDE0]/25 px-5 text-sm font-medium text-[#F5EDE0]/85 hover:border-[#F5EDE0]/50"
-                    >
-                      See examples
-                    </a>
-                  </div>
-                  <p className="mt-4 text-sm text-[#F5EDE0]/55">
-                    About one minute to personalize · English & Romanian
-                  </p>
-                </div>
-                <div className="overflow-hidden rounded-3xl border border-[#d4af37]/20 shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
-                  <SantaWorkshopScene accentName={draft.childFirstName || undefined} />
-                  <div className="border-t border-[#d4af37]/15 bg-[#0c1814]/80 p-4">
-                    <p className="text-xs uppercase tracking-wide text-[#d4af37]">Example</p>
-                    <p className="mt-2 text-sm leading-relaxed text-[#F5EDE0]/85">
-                      “Ho ho ho, Emma! I heard you’ve been doing an amazing job at school this year…”
+            {/* Static SEO H1 — personalized headline is visual when name is known */}
+            <h1 className="sr-only">{SANTA_COPY.hero.h1}</h1>
+
+            {inCreator && (
+              <section className="sv-creator" aria-label="Create a Santa video">
+                <div className="sv-creator__grid">
+                  <SantaWorkshopHero
+                    childName={draft.childFirstName || undefined}
+                    caption={caption}
+                  />
+
+                  <div className="sv-panel">
+                    <p className="sv-kicker">{SANTA_COPY.hero.kicker}</p>
+                    <p className="sv-headline" aria-live="polite">
+                      {draft.childFirstName ? (
+                        <>
+                          Santa already knows <em>{draft.childFirstName}</em>.
+                        </>
+                      ) : (
+                        headline
+                      )}
                     </p>
-                  </div>
-                </div>
-              </section>
-            )}
+                    <p className="sv-support">{support}</p>
 
-            {inGuided && (
-              <section className="mx-auto max-w-xl px-4 pb-12 pt-2 sm:px-6">
-                {progress ? (
-                  <p className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-[#d4af37]/90">
-                    {progressLabel(progress.current, progress.total)}
-                  </p>
-                ) : null}
+                    <div className="sv-parchment">
+                      {progress ? (
+                        <div className="sv-progress">
+                          <span className="sv-progress__label">
+                            {progressLabel(progress.current, progress.total)}
+                          </span>
+                          <div className="sv-dots" aria-hidden="true">
+                            {Array.from({ length: progress.total }).map((_, i) => (
+                              <span
+                                key={i}
+                                className={`sv-dot${i < progress.current ? " sv-dot--on" : ""}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
 
-                <div className="mb-6 overflow-hidden rounded-2xl border border-[#d4af37]/15">
-                  <SantaWorkshopScene compact accentName={nameKnown ? draft.childFirstName : undefined} />
-                </div>
-
-                {draft.step === "recipient" && (
-                  <StepShell title={SANTA_COPY.steps.recipient.title}>
-                    <div className="grid gap-3">
-                      {SANTA_COPY.steps.recipient.options.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          className="min-h-12 rounded-xl border border-[#F5EDE0]/20 bg-[#0c1814]/50 px-4 text-left text-sm font-medium hover:border-[#d4af37]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
-                          onClick={() => selectRecipient(opt.id)}
+                      {draft.step === "name" && (
+                        <StepBody
+                          title={SANTA_COPY.steps.name.title}
+                          helper={SANTA_COPY.steps.name.helper}
                         >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </StepShell>
-                )}
-
-                {draft.step === "name" && (
-                  <StepShell title={SANTA_COPY.steps.name.title} helper={SANTA_COPY.steps.name.helper}>
-                    <label className="block text-sm">
-                      <span className="sr-only">First name</span>
-                      <input
-                        className="santa-input mt-1 w-full"
-                        value={draft.childFirstName}
-                        onChange={(e) => patch({ childFirstName: e.target.value })}
-                        placeholder={SANTA_COPY.steps.name.placeholder}
-                        maxLength={40}
-                        autoComplete="off"
-                        autoCapitalize="words"
-                        enterKeyHint="done"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") completeName();
-                        }}
-                      />
-                    </label>
-                    <PrimaryButton onClick={completeName}>{SANTA_COPY.steps.name.cta}</PrimaryButton>
-                    <BackButton onClick={() => go("recipient")} />
-                  </StepShell>
-                )}
-
-                {draft.step === "age" && (
-                  <StepShell
-                    title={SANTA_COPY.steps.age.title(displayName)}
-                    helper={SANTA_COPY.steps.age.helper}
-                  >
-                    <label className="block text-sm">
-                      <span className="sr-only">Age</span>
-                      <input
-                        className="santa-input mt-1 w-full"
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        max={17}
-                        value={draft.age}
-                        onChange={(e) => patch({ age: e.target.value })}
-                      />
-                    </label>
-                    <PrimaryButton onClick={completeAge}>{SANTA_COPY.steps.age.cta}</PrimaryButton>
-                    <SecondaryButton
-                      onClick={() => {
-                        patch({ age: "" });
-                        trackSanta("christmas_santa_age_completed", { has_age: false });
-                        go("achievement");
-                      }}
-                    >
-                      {SANTA_COPY.steps.age.skip}
-                    </SecondaryButton>
-                    <BackButton
-                      onClick={() => go(draft.nameFromHandoff ? "landing" : "name")}
-                    />
-                  </StepShell>
-                )}
-
-                {draft.step === "achievement" && (
-                  <StepShell title={SANTA_COPY.steps.achievement.title(displayName)}>
-                    <div className="flex flex-wrap gap-2">
-                      {SANTA_COPY.steps.achievement.chips.map((chip) => (
-                        <button
-                          key={chip}
-                          type="button"
-                          className="rounded-full border border-[#F5EDE0]/20 px-3 py-1.5 text-xs text-[#F5EDE0]/85 hover:border-[#d4af37]/50"
-                          onClick={() => patch({ somethingGood: chip })}
-                        >
-                          {chip}
-                        </button>
-                      ))}
-                    </div>
-                    <label className="mt-4 block text-sm">
-                      <span className="sr-only">Something they did well</span>
-                      <textarea
-                        className="santa-input mt-1 min-h-[96px] w-full resize-y"
-                        value={draft.somethingGood}
-                        onChange={(e) => patch({ somethingGood: e.target.value })}
-                        placeholder={SANTA_COPY.steps.achievement.placeholder}
-                        maxLength={120}
-                      />
-                    </label>
-                    <PrimaryButton onClick={completeAchievement}>
-                      {SANTA_COPY.steps.achievement.cta}
-                    </PrimaryButton>
-                    <BackButton onClick={() => go("age")} />
-                  </StepShell>
-                )}
-
-                {draft.step === "wish" && (
-                  <StepShell
-                    title={SANTA_COPY.steps.wish.title(displayName)}
-                    helper={SANTA_COPY.steps.wish.helper}
-                  >
-                    <label className="block text-sm">
-                      <span className="sr-only">Christmas wish</span>
-                      <input
-                        className="santa-input mt-1 w-full"
-                        value={draft.christmasWish}
-                        onChange={(e) => patch({ christmasWish: e.target.value })}
-                        placeholder={SANTA_COPY.steps.wish.placeholder}
-                        maxLength={120}
-                      />
-                    </label>
-                    <PrimaryButton onClick={completeWish}>{SANTA_COPY.steps.wish.cta}</PrimaryButton>
-                    <SecondaryButton
-                      onClick={() => {
-                        patch({ christmasWish: "" });
-                        trackSanta("christmas_santa_wish_completed", { has_wish: false });
-                        go("detail");
-                      }}
-                    >
-                      {SANTA_COPY.steps.wish.skip}
-                    </SecondaryButton>
-                    <BackButton onClick={() => go("achievement")} />
-                  </StepShell>
-                )}
-
-                {draft.step === "detail" && (
-                  <StepShell title={SANTA_COPY.steps.detail.title} helper={SANTA_COPY.steps.detail.helper}>
-                    <label className="block text-sm">
-                      <span className="sr-only">Special detail</span>
-                      <input
-                        className="santa-input mt-1 w-full"
-                        value={draft.customFact}
-                        onChange={(e) => patch({ customFact: e.target.value })}
-                        placeholder={SANTA_COPY.steps.detail.placeholder}
-                        maxLength={120}
-                      />
-                    </label>
-                    <PrimaryButton onClick={() => go("language")}>{SANTA_COPY.steps.detail.cta}</PrimaryButton>
-                    <SecondaryButton
-                      onClick={() => {
-                        patch({ customFact: "" });
-                        go("language");
-                      }}
-                    >
-                      {SANTA_COPY.steps.detail.skip}
-                    </SecondaryButton>
-                    <BackButton onClick={() => go("wish")} />
-                  </StepShell>
-                )}
-
-                {draft.step === "language" && (
-                  <StepShell title={SANTA_COPY.steps.language.title} helper={SANTA_COPY.steps.language.helper}>
-                    <fieldset className="space-y-3">
-                      <legend className="sr-only">Language</legend>
-                      {(
-                        [
-                          { id: "en", label: "English", available: true },
-                          { id: "ro", label: "Romanian", available: true },
-                          { id: "de", label: "German", available: false },
-                          { id: "fr", label: "French", available: false },
-                          { id: "es", label: "Spanish", available: false },
-                        ] as const
-                      ).map((lang) => (
-                        <label
-                          key={lang.id}
-                          className={`flex min-h-12 items-center justify-between rounded-xl border px-4 ${
-                            lang.available
-                              ? "cursor-pointer border-[#F5EDE0]/20 hover:border-[#d4af37]/50"
-                              : "cursor-not-allowed border-[#F5EDE0]/10 opacity-45"
-                          }`}
-                        >
-                          <span className="flex items-center gap-3 text-sm">
+                          <label className="sv-field">
+                            <span className="sr-only">First name</span>
                             <input
-                              type="radio"
-                              name="santa-language"
-                              disabled={!lang.available}
-                              checked={draft.language === lang.id}
-                              onChange={() => {
-                                if (lang.id === "en" || lang.id === "ro") {
-                                  patch({ language: lang.id });
-                                }
+                              className="sv-input"
+                              value={draft.childFirstName}
+                              onChange={(e) => patch({ childFirstName: e.target.value })}
+                              placeholder={SANTA_COPY.steps.name.placeholder}
+                              maxLength={40}
+                              autoComplete="off"
+                              autoCapitalize="words"
+                              enterKeyHint="done"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") completeName();
                               }}
                             />
-                            {lang.label}
-                          </span>
-                          {!lang.available ? (
-                            <span className="text-[11px] uppercase tracking-wide text-[#F5EDE0]/45">
-                              Coming soon
-                            </span>
+                          </label>
+                          <div className="sv-actions">
+                            <PrimaryButton onClick={completeName}>
+                              {SANTA_COPY.steps.name.cta}
+                            </PrimaryButton>
+                          </div>
+                        </StepBody>
+                      )}
+
+                      {draft.step === "age" && (
+                        <StepBody
+                          title={SANTA_COPY.steps.age.title(displayName)}
+                          helper={SANTA_COPY.steps.age.helper}
+                        >
+                          <div className="sv-field sv-age-row">
+                            <input
+                              className="sv-input"
+                              type="number"
+                              inputMode="numeric"
+                              min={1}
+                              max={17}
+                              value={draft.age}
+                              onChange={(e) => patch({ age: e.target.value })}
+                              aria-label="Age"
+                            />
+                            <span className="sv-age-unit">{SANTA_COPY.steps.age.unit}</span>
+                          </div>
+                          <div className="sv-actions">
+                            <PrimaryButton onClick={completeAge}>
+                              {SANTA_COPY.steps.age.cta} →
+                            </PrimaryButton>
+                            <GhostButton
+                              onClick={() => {
+                                patch({ age: "" });
+                                trackSanta("christmas_santa_age_completed", { has_age: false });
+                                go("achievement");
+                              }}
+                            >
+                              {SANTA_COPY.steps.age.skip}
+                            </GhostButton>
+                            {!draft.nameFromHandoff ? (
+                              <BackButton onClick={() => go("name")} />
+                            ) : null}
+                          </div>
+                        </StepBody>
+                      )}
+
+                      {draft.step === "achievement" && (
+                        <StepBody title={SANTA_COPY.steps.achievement.title(displayName)}>
+                          <div className="sv-chips">
+                            {SANTA_COPY.steps.achievement.chips.map((chip) => (
+                              <button
+                                key={chip}
+                                type="button"
+                                className={`sv-chip${draft.somethingGood === chip ? " sv-chip--on" : ""}`}
+                                onClick={() => {
+                                  setShowCustomAchievement(false);
+                                  patch({ somethingGood: chip });
+                                }}
+                              >
+                                {chip}
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              className={`sv-chip${showCustomAchievement ? " sv-chip--on" : ""}`}
+                              onClick={() => setShowCustomAchievement(true)}
+                            >
+                              {SANTA_COPY.steps.achievement.somethingElse}
+                            </button>
+                          </div>
+                          {showCustomAchievement ||
+                          (draft.somethingGood &&
+                            !(SANTA_COPY.steps.achievement.chips as readonly string[]).includes(
+                              draft.somethingGood,
+                            )) ? (
+                            <label className="sv-field">
+                              <span className="sr-only">Something they did well</span>
+                              <textarea
+                                className="sv-textarea"
+                                value={draft.somethingGood}
+                                onChange={(e) => patch({ somethingGood: e.target.value })}
+                                placeholder={SANTA_COPY.steps.achievement.placeholder}
+                                maxLength={120}
+                                rows={3}
+                              />
+                            </label>
                           ) : null}
-                        </label>
-                      ))}
-                    </fieldset>
-                    <p className="mt-4 text-xs text-[#F5EDE0]/55">
-                      Santa style: Classic Santa · Voice: Warm
-                    </p>
-                    <PrimaryButton onClick={goPreview}>{SANTA_COPY.steps.language.cta}</PrimaryButton>
-                    <BackButton onClick={() => go("detail")} />
-                  </StepShell>
-                )}
+                          <div className="sv-actions">
+                            <PrimaryButton onClick={completeAchievement}>
+                              {SANTA_COPY.steps.achievement.cta} →
+                            </PrimaryButton>
+                            <BackButton onClick={() => go("age")} />
+                          </div>
+                        </StepBody>
+                      )}
 
-                {draft.step === "preview" && (
-                  <StepShell
-                    eyebrow={SANTA_COPY.steps.preview.eyebrow}
-                    title={SANTA_COPY.steps.preview.title(displayName)}
-                  >
-                    <blockquote className="whitespace-pre-wrap rounded-2xl border border-[#d4af37]/25 bg-[#0c1814]/55 p-4 text-sm leading-relaxed text-[#F5EDE0]/9">
-                      {previewScript}
-                    </blockquote>
-                    <p className="mt-2 text-xs text-[#F5EDE0]/45">
-                      Preview only — the final spoken video may vary slightly.
-                    </p>
-                    <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                      <SecondaryButton onClick={() => go("achievement")}>
-                        {SANTA_COPY.steps.preview.change}
-                      </SecondaryButton>
-                      <PrimaryButton onClick={() => go("confirm")}>
-                        {SANTA_COPY.steps.preview.perfect}
-                      </PrimaryButton>
-                    </div>
-                    <BackButton onClick={() => go("language")} />
-                  </StepShell>
-                )}
+                      {draft.step === "interest" && (
+                        <StepBody title={SANTA_COPY.steps.interest.title(displayName)}>
+                          <div className="sv-chips">
+                            {SANTA_COPY.steps.interest.chips.map((chip) => (
+                              <button
+                                key={chip}
+                                type="button"
+                                className={`sv-chip${draft.hobbyOrInterest === chip ? " sv-chip--on" : ""}`}
+                                onClick={() => {
+                                  setShowCustomInterest(false);
+                                  patch({ hobbyOrInterest: chip });
+                                }}
+                              >
+                                {chip}
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              className={`sv-chip${showCustomInterest ? " sv-chip--on" : ""}`}
+                              onClick={() => setShowCustomInterest(true)}
+                            >
+                              {SANTA_COPY.steps.interest.somethingElse}
+                            </button>
+                          </div>
+                          {showCustomInterest ||
+                          (draft.hobbyOrInterest &&
+                            !(SANTA_COPY.steps.interest.chips as readonly string[]).includes(
+                              draft.hobbyOrInterest,
+                            )) ? (
+                            <label className="sv-field">
+                              <span className="sr-only">Hobby or interest</span>
+                              <input
+                                className="sv-input"
+                                value={draft.hobbyOrInterest}
+                                onChange={(e) => patch({ hobbyOrInterest: e.target.value })}
+                                placeholder={SANTA_COPY.steps.interest.placeholder}
+                                maxLength={80}
+                              />
+                            </label>
+                          ) : null}
+                          <div className="sv-actions">
+                            <PrimaryButton onClick={completeInterest}>
+                              {SANTA_COPY.steps.interest.cta} →
+                            </PrimaryButton>
+                            <GhostButton
+                              onClick={() => {
+                                patch({ hobbyOrInterest: "" });
+                                go("wish");
+                              }}
+                            >
+                              {SANTA_COPY.steps.interest.skip}
+                            </GhostButton>
+                            <BackButton onClick={() => go("achievement")} />
+                          </div>
+                        </StepBody>
+                      )}
 
-                {draft.step === "confirm" && (
-                  <StepShell title={SANTA_COPY.steps.preview.title(displayName)}>
-                    <p className="text-sm font-medium text-[#d4af37]">
-                      {SANTA_COPY.steps.preview.mentionsTitle}
-                    </p>
-                    <ul className="mt-3 space-y-2 text-sm text-[#F5EDE0]/85">
-                      {mentions.map((item) => (
-                        <li key={item} className="flex gap-2">
-                          <span aria-hidden="true" className="text-[#d4af37]">
-                            ✓
-                          </span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="mt-4 text-sm text-[#F5EDE0]/65">
-                      Language: {draft.language === "ro" ? "Romanian" : "English"} · Classic Santa · Warm voice
-                    </p>
-                    <label className="mt-5 flex items-start gap-3 text-sm text-[#F5EDE0]/85">
-                      <input
-                        type="checkbox"
-                        className="mt-1"
-                        checked={draft.guardianConsent}
-                        onChange={(e) => patch({ guardianConsent: e.target.checked })}
-                      />
-                      <span>{SANTA_CONSENT_LABEL}</span>
-                    </label>
-                    <PrimaryButton onClick={goOffer}>
-                      {SANTA_COPY.steps.preview.cta(displayName)}
-                    </PrimaryButton>
-                    <BackButton onClick={() => go("preview")} />
-                  </StepShell>
-                )}
+                      {draft.step === "wish" && (
+                        <StepBody
+                          title={SANTA_COPY.steps.wish.title(displayName)}
+                          helper={SANTA_COPY.steps.wish.helper}
+                        >
+                          <label className="sv-field">
+                            <span className="sr-only">Christmas wish</span>
+                            <input
+                              className="sv-input"
+                              value={draft.christmasWish}
+                              onChange={(e) => patch({ christmasWish: e.target.value })}
+                              placeholder={SANTA_COPY.steps.wish.placeholder}
+                              maxLength={120}
+                            />
+                          </label>
+                          <div className="sv-actions">
+                            <PrimaryButton onClick={completeWish}>
+                              {SANTA_COPY.steps.wish.cta} →
+                            </PrimaryButton>
+                            <GhostButton
+                              onClick={() => {
+                                patch({ christmasWish: "" });
+                                trackSanta("christmas_santa_wish_completed", { has_wish: false });
+                                go("sender");
+                              }}
+                            >
+                              {SANTA_COPY.steps.wish.skip}
+                            </GhostButton>
+                            <BackButton onClick={() => go("interest")} />
+                          </div>
+                        </StepBody>
+                      )}
 
-                {draft.step === "offer" && (
-                  <StepShell title={SANTA_COPY.steps.offer.title}>
-                    <ul className="space-y-2 text-sm text-[#F5EDE0]/8">
-                      {SANTA_COPY.steps.offer.included.map((item) => (
-                        <li key={item} className="flex gap-2">
-                          <span className="text-[#d4af37]" aria-hidden="true">
-                            ✓
-                          </span>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                    <label className="mt-5 block text-sm">
-                      {SANTA_COPY.steps.offer.emailLabel}
-                      <input
-                        className="santa-input mt-1 w-full"
-                        type="email"
-                        value={draft.email}
-                        onChange={(e) => patch({ email: e.target.value })}
-                        autoComplete="email"
-                      />
-                    </label>
-                    <p className="mt-3 text-xs leading-relaxed text-[#F5EDE0]/5">
-                      {SANTA_COPY.steps.offer.consentNote}
-                    </p>
-                    {purchasable && pkg ? (
-                      <PrimaryButton disabled={busy} onClick={() => void startCheckout()}>
-                        {busy ? "Preparing checkout…" : SANTA_COPY.steps.offer.ctaPay}
-                      </PrimaryButton>
-                    ) : (
-                      <p className="mt-4 rounded-xl border border-amber-400/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-100">
-                        {SANTA_COPY.steps.offer.checkoutSoon}
-                        {product ? ` · Status: ${ctaStateForProduct(product)}` : null}
+                      {draft.step === "sender" && (
+                        <StepBody title={SANTA_COPY.steps.sender.title}>
+                          <div className="sv-chips">
+                            {SANTA_COPY.steps.sender.chips.map((chip) => (
+                              <button
+                                key={chip}
+                                type="button"
+                                className={`sv-chip${draft.senderName === chip ? " sv-chip--on" : ""}`}
+                                onClick={() => {
+                                  setShowCustomSender(false);
+                                  patch({ senderName: chip });
+                                }}
+                              >
+                                {chip}
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              className={`sv-chip${showCustomSender ? " sv-chip--on" : ""}`}
+                              onClick={() => setShowCustomSender(true)}
+                            >
+                              {SANTA_COPY.steps.sender.somethingElse}
+                            </button>
+                          </div>
+                          {showCustomSender ||
+                          (draft.senderName &&
+                            !(SANTA_COPY.steps.sender.chips as readonly string[]).includes(
+                              draft.senderName,
+                            )) ? (
+                            <label className="sv-field">
+                              <span className="sr-only">From whom</span>
+                              <input
+                                className="sv-input"
+                                value={draft.senderName}
+                                onChange={(e) => patch({ senderName: e.target.value })}
+                                placeholder={SANTA_COPY.steps.sender.placeholder}
+                                maxLength={60}
+                              />
+                            </label>
+                          ) : null}
+                          <p className="sv-helper" style={{ marginTop: "0.75rem" }}>
+                            Santa style: Classic Santa
+                          </p>
+                          <div className="sv-actions">
+                            <PrimaryButton onClick={goPreview}>
+                              {SANTA_COPY.steps.sender.cta} →
+                            </PrimaryButton>
+                            <GhostButton
+                              onClick={() => {
+                                patch({ senderName: "" });
+                                goPreview();
+                              }}
+                            >
+                              {SANTA_COPY.steps.sender.skip}
+                            </GhostButton>
+                            <BackButton onClick={() => go("wish")} />
+                          </div>
+                        </StepBody>
+                      )}
+
+                      {draft.step === "preview" && (
+                        <StepBody
+                          eyebrow={SANTA_COPY.steps.preview.eyebrow}
+                          title={SANTA_COPY.steps.preview.title(displayName)}
+                        >
+                          <blockquote className="sv-preview">{previewScript}</blockquote>
+                          <p className="sv-helper">{SANTA_COPY.steps.preview.note}</p>
+                          <div className="sv-actions">
+                            <PrimaryButton onClick={() => go("confirm")}>
+                              {SANTA_COPY.steps.preview.perfect} →
+                            </PrimaryButton>
+                            <GhostButton onClick={() => go("achievement")}>
+                              {SANTA_COPY.steps.preview.change}
+                            </GhostButton>
+                            <BackButton onClick={() => go("sender")} />
+                          </div>
+                        </StepBody>
+                      )}
+
+                      {draft.step === "confirm" && (
+                        <StepBody title={SANTA_COPY.steps.preview.title(displayName)}>
+                          <p className="sv-helper" style={{ fontWeight: 700, color: "rgba(42,24,16,0.75)" }}>
+                            {SANTA_COPY.steps.preview.mentionsTitle}
+                          </p>
+                          <ul className="sv-mentions">
+                            {mentions.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                          <p className="sv-helper" style={{ marginTop: "0.75rem" }}>
+                            Language: {draft.language === "ro" ? "Romanian" : "English"} · Classic Santa
+                          </p>
+                          <label className="sv-consent">
+                            <input
+                              type="checkbox"
+                              checked={draft.guardianConsent}
+                              onChange={(e) => patch({ guardianConsent: e.target.checked })}
+                            />
+                            <span>{SANTA_CONSENT_LABEL}</span>
+                          </label>
+                          <div className="sv-actions">
+                            <PrimaryButton onClick={goOffer}>
+                              {SANTA_COPY.steps.preview.cta(displayName)}
+                            </PrimaryButton>
+                            <BackButton onClick={() => go("preview")} />
+                          </div>
+                        </StepBody>
+                      )}
+
+                      {draft.step === "offer" && (
+                        <StepBody title={SANTA_COPY.steps.offer.title}>
+                          <ul className="sv-mentions">
+                            {SANTA_COPY.steps.offer.included.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                          <label className="sv-field">
+                            {SANTA_COPY.steps.offer.emailLabel}
+                            <input
+                              className="sv-input"
+                              style={{ marginTop: "0.35rem" }}
+                              type="email"
+                              value={draft.email}
+                              onChange={(e) => patch({ email: e.target.value })}
+                              autoComplete="email"
+                            />
+                          </label>
+                          <p className="sv-helper">{SANTA_COPY.steps.offer.consentNote}</p>
+                          {purchasable && pkg ? (
+                            <div className="sv-actions">
+                              <PrimaryButton disabled={busy} onClick={() => void startCheckout()}>
+                                {busy ? "Preparing checkout…" : SANTA_COPY.steps.offer.ctaPay}
+                              </PrimaryButton>
+                            </div>
+                          ) : (
+                            <p className="sv-soon">
+                              {SANTA_COPY.steps.offer.checkoutSoon}
+                              {product ? ` · Status: ${ctaStateForProduct(product)}` : null}
+                            </p>
+                          )}
+                          <div className="sv-actions">
+                            <BackButton onClick={() => go("confirm")} />
+                          </div>
+                        </StepBody>
+                      )}
+
+                      <p className="sv-privacy">
+                        <LockIcon />
+                        {SANTA_COPY.hero.privacy}
                       </p>
-                    )}
-                    <BackButton onClick={() => go("confirm")} />
-                  </StepShell>
-                )}
+                    </div>
+                  </div>
+                </div>
               </section>
             )}
 
             {draft.step === "checkout" && checkout && (
-              <section className="mx-auto max-w-xl px-4 py-8 sm:px-6">
-                <h2 className="santa-display text-3xl">Secure payment</h2>
-                <div className="mt-6 rounded-2xl border border-[#F5EDE0]/15 bg-[#F5EDE0] p-4 text-slate-900">
+              <section className="sv-state">
+                <h2 className="santa-display">Secure payment</h2>
+                <div className="sv-checkout-wrap">
                   <CustomStripeCheckout
                     clientSecret={checkout.clientSecret}
                     publishableKey={checkout.publishableKey}
                     dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
-                    returnUrl={`${window.location.origin}${SANTA_ROUTE}?checkout=success&token=${encodeURIComponent(draft.publicToken || "")}`}
                     email={draft.email}
+                    onReady={() => undefined}
                   />
                 </div>
               </section>
             )}
 
             {draft.step === "progress" && (
-              <section className="mx-auto max-w-xl px-4 py-10 text-center sm:px-6">
-                <div className="overflow-hidden rounded-2xl border border-[#d4af37]/20">
-                  <SantaWorkshopScene compact accentName={displayName} />
-                </div>
-                <h2 className="santa-display mt-6 text-3xl">
-                  {SANTA_COPY.steps.progress.title(displayName)}
-                </h2>
-                <p className="mt-4 text-base text-[#F5EDE0]/8" aria-live="polite">
+              <section className="sv-state">
+                <SantaWorkshopHero compact childName={displayName} caption={progressStageCopy} />
+                <h2 className="santa-display">{SANTA_COPY.steps.progress.title(displayName)}</h2>
+                <p className="sv-state__copy" aria-live="polite">
                   {progressStageCopy}
                 </p>
-                <p className="mt-2 text-sm text-[#F5EDE0]/55">{santaProgressCopy(jobStatus || "queued")}</p>
-                <p className="mt-6 text-xs text-[#F5EDE0]/45">
+                <p className="sv-state__meta">{santaProgressCopy(jobStatus || "queued")}</p>
+                <p className="sv-state__meta">
                   This can take several minutes. You can close this page and reopen your order link later.
                 </p>
               </section>
             )}
 
             {draft.step === "result" && resultUrl && (
-              <section className="mx-auto max-w-xl px-4 py-8 sm:px-6">
-                <h2 className="santa-display text-3xl">
+              <section className="sv-state" style={{ textAlign: "left" }}>
+                <h2 className="santa-display" style={{ textAlign: "center" }}>
                   {SANTA_COPY.steps.result.title(displayName)}
                 </h2>
                 <video
                   src={resultUrl}
                   controls
                   playsInline
-                  className="mt-6 aspect-video w-full rounded-2xl bg-black"
+                  className="sv-result-video"
                 />
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="sv-actions" style={{ marginTop: "1.1rem" }}>
                   <PrimaryButton onClick={() => void onDownload()}>
                     {SANTA_COPY.steps.result.download}
                   </PrimaryButton>
-                  <SecondaryButton onClick={() => void onShare()}>
+                  <GhostButton onClick={() => void onShare()}>
                     {SANTA_COPY.steps.result.share}
-                  </SecondaryButton>
+                  </GhostButton>
+                  <GhostButton onClick={resetAll}>{SANTA_COPY.steps.result.another}</GhostButton>
                 </div>
-                <SecondaryButton onClick={resetAll}>{SANTA_COPY.steps.result.another}</SecondaryButton>
-                <div className="mt-8 space-y-2 border-t border-[#F5EDE0]/10 pt-6 text-sm">
-                  <p className="text-[#F5EDE0]/55">More Christmas magic</p>
-                  <Link className="block text-[#d4af37] hover:underline" to="/christmas/cards">
-                    {SANTA_COPY.steps.result.crossSellCard}
-                  </Link>
-                  <Link className="block text-[#d4af37] hover:underline" to="/christmas/tree">
-                    {SANTA_COPY.steps.result.crossSellTree}
-                  </Link>
-                  <Link className="block text-[#d4af37] hover:underline" to="/christmas/photo-generator">
+                <div className="sv-cross">
+                  <p className="sv-state__meta">More Christmas magic</p>
+                  <Link to="/christmas/tree">{SANTA_COPY.steps.result.crossSellTree}</Link>
+                  <Link to="/christmas/cards">{SANTA_COPY.steps.result.crossSellCard}</Link>
+                  <Link to="/christmas/photo-generator">
                     {SANTA_COPY.steps.result.crossSellPortrait}
                   </Link>
                 </div>
@@ -1075,63 +1126,44 @@ export default function ChristmasSantaVideoPage() {
             )}
 
             {draft.step === "error" && (
-              <section className="mx-auto max-w-xl px-4 py-10 sm:px-6">
-                <h2 className="santa-display text-3xl">Something went wrong</h2>
-                <p className="mt-3 text-sm text-[#F5EDE0]/7">
+              <section className="sv-state">
+                <h2 className="santa-display">Something went wrong</h2>
+                <p className="sv-state__copy">
                   If you already paid, keep your order link — support can retry without charging again.
                 </p>
-                <Link className="mt-6 inline-block text-[#d4af37] hover:underline" to="/christmas">
+                <Link className="sv-state__meta" to="/christmas" style={{ color: "var(--sv-gold)" }}>
                   Christmas hub
                 </Link>
               </section>
             )}
 
-            {showMarketing ? (
-              <>
-                <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:hidden">
-                  <SantaDemoPlayer example={SANTA_DEMO_EXAMPLES[0]} featured />
-                </div>
-                <SantaLandingSections />
-              </>
-            ) : (
-              <div className="border-t border-[#F5EDE0]/10">
-                <SantaLandingSections />
+            {(inCreator || draft.step === "landing") && (
+              <div className="sv-trust" aria-label="Why families love Santa Video">
+                {SANTA_COPY.trust.map((item, i) => (
+                  <div key={item.title} className="sv-trust__item">
+                    <TrustIcon index={i} />
+                    <div>
+                      <p className="sv-trust__title">{item.title}</p>
+                      <p className="sv-trust__body">{item.body}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
+
+            {showMarketingBelow ? (
+              <div className="sv-below">
+                <SantaLandingSections />
+              </div>
+            ) : null}
           </main>
         </div>
-
-        <style>{`
-          .santa-video-page {
-            --santa-display: "Cormorant Garamond", "Times New Roman", serif;
-            --santa-body: "Source Sans 3", "Segoe UI", sans-serif;
-            font-family: var(--santa-body);
-          }
-          .santa-display, .santa-video-page h1, .santa-video-page h2, .santa-video-page h3 {
-            font-family: var(--santa-display);
-          }
-          .santa-input {
-            border-radius: 0.75rem;
-            border: 1px solid rgba(245, 237, 224, 0.22);
-            background: rgba(12, 24, 20, 0.65);
-            color: #F5EDE0;
-            padding: 0.75rem 0.9rem;
-          }
-          .santa-input:focus {
-            outline: none;
-            border-color: #d4af37;
-            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25);
-          }
-          .santa-input::placeholder {
-            color: rgba(245, 237, 224, 0.4);
-          }
-        `}</style>
       </div>
     </>
   );
 }
 
-function StepShell({
+function StepBody({
   title,
   helper,
   eyebrow,
@@ -1145,11 +1177,13 @@ function StepShell({
   return (
     <div>
       {eyebrow ? (
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#d4af37]">{eyebrow}</p>
+        <p className="sv-progress__label" style={{ marginBottom: "0.35rem" }}>
+          {eyebrow}
+        </p>
       ) : null}
-      <h2 className="santa-display text-2xl text-[#F5EDE0] sm:text-3xl">{title}</h2>
-      {helper ? <p className="mt-2 text-sm text-[#F5EDE0]/65">{helper}</p> : null}
-      <div className="mt-5 space-y-3">{children}</div>
+      <h2 className="sv-q">{title}</h2>
+      {helper ? <p className="sv-helper">{helper}</p> : null}
+      {children}
     </div>
   );
 }
@@ -1164,43 +1198,82 @@ function PrimaryButton({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#d4af37] px-5 text-sm font-semibold text-[#1a1208] transition hover:bg-[#e0c05a] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5EDE0]"
-    >
+    <button type="button" disabled={disabled} onClick={onClick} className="sv-btn sv-btn--primary">
       {children}
     </button>
   );
 }
 
-function SecondaryButton({
-  children,
-  onClick,
-}: {
-  children: ReactNode;
-  onClick?: () => void;
-}) {
+function GhostButton({ children, onClick }: { children: ReactNode; onClick?: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#F5EDE0]/25 px-5 text-sm font-medium text-[#F5EDE0]/9 hover:border-[#F5EDE0]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
-    >
+    <button type="button" onClick={onClick} className="sv-btn sv-btn--ghost">
       {children}
     </button>
   );
 }
 
-function BackButton({ onClick }: { onClick: () => void }) {
+function BackButton({ onClick }: { onClick?: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="text-sm text-[#F5EDE0]/55 underline-offset-2 hover:text-[#F5EDE0] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
-    >
-      Back
+    <button type="button" onClick={onClick} className="sv-btn sv-btn--back">
+      ← Back
     </button>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M7 11V8a5 5 0 0 1 10 0v3"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function TrustIcon({ index }: { index: number }) {
+  if (index === 0) {
+    return (
+      <svg className="sv-trust__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M7 11V8a5 5 0 0 1 10 0v3"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+    );
+  }
+  if (index === 1) {
+    return (
+      <svg className="sv-trust__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg className="sv-trust__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M12 9V21" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M8 9a4 4 0 0 1 8 0"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
