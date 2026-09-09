@@ -6,6 +6,7 @@
 
 export const CHRISTMAS_CLUB_ROUTE = "/christmas";
 export const CHRISTMAS_CLUB_SUITE_ROUTE = "/christmas/suite";
+export const CHRISTMAS_CLUB_GIFTS_ROUTE = "/christmas/tree-gifts";
 export const CHRISTMAS_CLUB_SIGNUP_PATH = "/api/christmas/club-signup";
 export const CHRISTMAS_CLUB_MAX_BODY_BYTES = 4096;
 
@@ -52,16 +53,63 @@ export type ChristmasClubConfig = {
 };
 
 export const CHRISTMAS_CLUB_ASSETS = {
-  hero: "/christmas/hero-living-room.png",
-  tree: "/christmas/tree-portrait.png",
+  hero: "/christmas/cabin-hero-1920.webp",
+  hero1280: "/christmas/cabin-hero-1280.webp",
+  hero1920: "/christmas/cabin-hero-1920.webp",
+  hero2560: "/christmas/cabin-hero-2560.webp",
+  hero1280Jpg: "/christmas/cabin-hero-1280.jpg",
+  hero1920Jpg: "/christmas/cabin-hero-1920.jpg",
+  hero2560Jpg: "/christmas/cabin-hero-2560.jpg",
+  // Cache-bust when the Seedance living loop is replaced.
+  heroLoop: "/christmas/cabin-hero-loop.mp4?v=seedance1",
+  heroLoop720: "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+  tree: "/christmas/cabin-hero-1280.webp",
   gifts: "/christmas/gifts-still-life.png",
-  og: "/christmas/og-countdown.png",
+  og: "/christmas/og-countdown.jpg",
 } as const;
+
+export type ChristmasClubCountdownUnit = "days" | "hours" | "minutes" | "seconds";
+
+/** One Christmas product sits inside each countdown unit — display-sized WebP thumbs. */
+export const CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS = [
+  {
+    unit: "days" as const,
+    productKey: "christmas_family",
+    name: "Family",
+    href: "/christmas/family",
+    image: "/christmas/prints/family-480.webp",
+    imageSrcSet: "/christmas/prints/family-240.webp 240w, /christmas/prints/family-480.webp 480w",
+  },
+  {
+    unit: "hours" as const,
+    productKey: "christmas_photo",
+    name: "Portraits",
+    href: "/christmas/photo-generator",
+    image: "/christmas/prints/portraits-480.webp",
+    imageSrcSet: "/christmas/prints/portraits-240.webp 240w, /christmas/prints/portraits-480.webp 480w",
+  },
+  {
+    unit: "minutes" as const,
+    productKey: "christmas_pet",
+    name: "Pets",
+    href: "/christmas/pets",
+    image: "/christmas/prints/pets-480.webp",
+    imageSrcSet: "/christmas/prints/pets-240.webp 240w, /christmas/prints/pets-480.webp 480w",
+  },
+  {
+    unit: "seconds" as const,
+    productKey: "christmas_card",
+    name: "Cards",
+    href: "/christmas/cards",
+    image: "/christmas/prints/cards-480.webp",
+    imageSrcSet: "/christmas/prints/cards-240.webp 240w, /christmas/prints/cards-480.webp 480w",
+  },
+] as const;
 
 export const CHRISTMAS_CLUB_SEO = {
   title: "Christmas Countdown | The Digital Gifter",
   description:
     "Count down to Christmas with The Digital Gifter and join us for a little extra magic along the way.",
   canonical: "https://www.thedigitalgifter.com/christmas",
-  ogImage: "https://www.thedigitalgifter.com/christmas/og-countdown.png",
+  ogImage: "https://www.thedigitalgifter.com/christmas/og-countdown.jpg",
 } as const;

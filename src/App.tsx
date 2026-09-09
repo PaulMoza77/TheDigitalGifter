@@ -139,6 +139,9 @@ const ChristmasWishlistPage = lazy(
 const ChristmasGiftFinderPage = lazy(
   () => import("@/features/christmas/ChristmasGiftFinderPage"),
 );
+const ChristmasGiftsPage = lazy(
+  () => import("@/features/christmas/gifts/ChristmasGiftsPage"),
+);
 const ChristmasCardsPage = lazy(
   () => import("@/features/christmas/ChristmasCardsPage"),
 );
@@ -257,12 +260,18 @@ function FunnelAttributionCapture() {
 
 function WebsiteLayout() {
   const [showPricing, setShowPricing] = useState(false);
+  const location = useLocation();
+  const hideChromeExtras =
+    location.pathname === "/christmas/tree-gifts" ||
+    location.pathname.startsWith("/christmas/tree-gifts/") ||
+    location.pathname === "/christmas/gifts" ||
+    location.pathname.startsWith("/christmas/gifts/");
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
       <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
 
-      <main className="flex-1">
+      <main className={`flex-1 ${hideChromeExtras ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
@@ -271,7 +280,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      <WebsiteFooter />
+      {hideChromeExtras ? null : <WebsiteFooter />}
     </div>
   );
 }
@@ -280,6 +289,20 @@ function FunnelLayout() {
   return (
     <div className="min-h-screen w-full bg-black text-white">
       <Outlet />
+    </div>
+  );
+}
+
+function ChristmasRouteFallback() {
+  const christmasBoot =
+    typeof window !== "undefined" &&
+    Boolean((window as Window & { __TDG_CHRISTMAS_BOOT__?: boolean }).__TDG_CHRISTMAS_BOOT__);
+  if (christmasBoot) {
+    return <div className="min-h-screen bg-transparent" aria-hidden="true" />;
+  }
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#0b0504] text-white/70">
+      Loading...
     </div>
   );
 }
@@ -426,13 +449,8 @@ function AppInner() {
       <FunnelAttributionCapture />
       <ScrollToTop />
 
-      <Suspense
-        fallback={
-          <div className="flex min-h-screen items-center justify-center bg-black text-white/80">
-            Loading...
-          </div>
-        }
-      >
+      <Suspense fallback={<ChristmasRouteFallback />}>
+
         <Routes>
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
@@ -466,6 +484,8 @@ function AppInner() {
             <Route path="/christmas/santa-video" element={<ChristmasSantaVideoPage />} />
             <Route path="/christmas/tree" element={<ChristmasTreePage />} />
             <Route path="/christmas/tree/:shareId" element={<ChristmasTreePage />} />
+            <Route path="/christmas/tree-gifts" element={<ChristmasGiftsPage />} />
+            <Route path="/christmas/gifts" element={<Navigate to="/christmas/tree-gifts" replace />} />
             <Route path="/christmas/advent" element={<ChristmasAdventPage />} />
             <Route path="/christmas/wishlist" element={<ChristmasWishlistPage />} />
             <Route path="/wishlist/:shareId" element={<ChristmasWishlistPage />} />

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS } from "./config";
+import { productForCountdownUnit } from "./ChristmasCountdown";
 import { clubEmailValidationMessage, isValidClubEmail, normalizeClubEmail } from "./email";
 import {
   ChristmasClubSignupError,
@@ -6,6 +8,23 @@ import {
   isUniqueViolationStatus,
   validateChristmasClubSignupPayload,
 } from "./signupContract";
+
+describe("christmas club countdown products", () => {
+  it("places one product inside each countdown unit", () => {
+    expect(CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS).toHaveLength(4);
+    expect(productForCountdownUnit("days")?.productKey).toBe("christmas_family");
+    expect(productForCountdownUnit("hours")?.href).toBe("/christmas/photo-generator");
+    expect(productForCountdownUnit("minutes")?.image).toContain("/christmas/prints/pets");
+    expect(productForCountdownUnit("seconds")?.name).toBe("Cards");
+  });
+});
+
+describe("christmas club gifts link", () => {
+  it("exposes a stable /christmas/tree-gifts route for the bottom story CTA", async () => {
+    const { CHRISTMAS_CLUB_GIFTS_ROUTE } = await import("./config");
+    expect(CHRISTMAS_CLUB_GIFTS_ROUTE).toBe("/christmas/tree-gifts");
+  });
+});
 
 describe("christmas club email validation", () => {
   it("accepts ordinary emails and normalizes case/space", () => {

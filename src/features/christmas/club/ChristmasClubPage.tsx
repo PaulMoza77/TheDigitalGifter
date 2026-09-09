@@ -12,6 +12,7 @@ import {
   CHRISTMAS_CLUB_ASSETS,
   CHRISTMAS_CLUB_AUTH_RETURN_PATH,
   CHRISTMAS_CLUB_CONFIG,
+  CHRISTMAS_CLUB_GIFTS_ROUTE,
   CHRISTMAS_CLUB_GOOGLE_PENDING_KEY,
   CHRISTMAS_CLUB_SEO,
   CHRISTMAS_CLUB_SUITE_ROUTE,
@@ -32,6 +33,33 @@ function loadClubFonts() {
   link.href =
     "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap";
   document.head.appendChild(link);
+}
+
+function preloadHeroAssets() {
+  if (document.querySelector('link[data-cc-preload="hero"]')) return;
+  const preload = document.createElement("link");
+  preload.rel = "preload";
+  preload.as = "image";
+  preload.type = "image/webp";
+  preload.href = CHRISTMAS_CLUB_ASSETS.hero1920;
+  preload.setAttribute(
+    "imagesrcset",
+    `${CHRISTMAS_CLUB_ASSETS.hero1280} 1280w, ${CHRISTMAS_CLUB_ASSETS.hero1920} 1920w, ${CHRISTMAS_CLUB_ASSETS.hero2560} 2560w`,
+  );
+  preload.setAttribute("imagesizes", "100vw");
+  preload.setAttribute("fetchpriority", "high");
+  preload.setAttribute("data-cc-preload", "hero");
+  document.head.appendChild(preload);
+
+  if (!document.querySelector('link[data-cc-preload="loop"]')) {
+    const wide = window.matchMedia("(min-width: 901px)").matches;
+    const loop = document.createElement("link");
+    loop.rel = "preload";
+    loop.as = "video";
+    loop.href = wide ? CHRISTMAS_CLUB_ASSETS.heroLoop : CHRISTMAS_CLUB_ASSETS.heroLoop720;
+    loop.setAttribute("data-cc-preload", "loop");
+    document.head.appendChild(loop);
+  }
 }
 
 function setThemeColor(color: string) {
@@ -65,15 +93,8 @@ export function ChristmasClubPage() {
 
   useEffect(() => {
     loadClubFonts();
+    preloadHeroAssets();
     setThemeColor("#140409");
-    if (!document.querySelector('link[data-cc-preload="hero"]')) {
-      const preload = document.createElement("link");
-      preload.rel = "preload";
-      preload.as = "image";
-      preload.href = CHRISTMAS_CLUB_ASSETS.hero;
-      preload.setAttribute("data-cc-preload", "hero");
-      document.head.appendChild(preload);
-    }
     void trackChristmasEvent("christmas_page_view", {
       productKey: CHRISTMAS_CLUB_CONFIG.productKey,
       pathname: "/christmas",
@@ -216,28 +237,39 @@ export function ChristmasClubPage() {
       </a>
 
       <section className="cc-hero">
-        <p className="cc-eyebrow">The Digital Gifter presents</p>
-        <h1>Something magical is coming this Christmas.</h1>
-        <p className="cc-lede">
-          Join our Christmas countdown and discover little surprises along the way.
-        </p>
-        <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} />
-        {showForm ? (
-          <>
-            <h2 className="sr-only">Join the Christmas Countdown</h2>
-            <ChristmasJoinForm
-              submitting={submitting}
-              googleBusy={googleBusy || authLoading}
-              googleAvailable
-              error={error}
-              onEmailJoin={(email) => void handleEmailJoin(email)}
-              onGoogleJoin={() => void handleGoogleJoin()}
-              onStarted={markJoinStarted}
-            />
-          </>
-        ) : (
-          <ChristmasClubSuccess />
-        )}
+        <div className="cc-hero__copy">
+          <p className="cc-eyebrow">The Digital Gifter presents</p>
+          <h1>Something magical is coming this Christmas.</h1>
+          <p className="cc-lede">
+            Join our Christmas countdown and discover little surprises along the way.
+          </p>
+        </div>
+
+        <div className="cc-dock">
+          <div className="cc-dock__countdown">
+            <p className="cc-countdown-note">A few gifts already waiting inside the countdown.</p>
+            <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} />
+          </div>
+
+          <div className="cc-dock__join" id="join">
+            {showForm ? (
+              <>
+                <h2 className="sr-only">Join the Christmas Countdown</h2>
+                <ChristmasJoinForm
+                  submitting={submitting}
+                  googleBusy={googleBusy || authLoading}
+                  googleAvailable
+                  error={error}
+                  onEmailJoin={(email) => void handleEmailJoin(email)}
+                  onGoogleJoin={() => void handleGoogleJoin()}
+                  onStarted={markJoinStarted}
+                />
+              </>
+            ) : (
+              <ChristmasClubSuccess />
+            )}
+          </div>
+        </div>
       </section>
 
       <div className="cc-story">
@@ -255,39 +287,27 @@ export function ChristmasClubPage() {
             Join once. Come back as Christmas gets closer. New surprises may be waiting for you
             beneath the tree.
           </p>
-          <img
-            className="cc-gifts"
-            src={CHRISTMAS_CLUB_ASSETS.gifts}
-            alt="Elegant wrapped Christmas gifts beneath warm fairy lights"
-            width={1024}
-            height={768}
-            loading="lazy"
-          />
-          <div className="cc-moments">
-            <div className="cc-moment">
-              <strong>Wrapped and waiting</strong>
-              <span>Quiet gifts of atmosphere, messages, and little digital treasures.</span>
-            </div>
-            <div className="cc-moment">
-              <strong>Unlocks, later</strong>
-              <span>Some things stay hidden until the season is ready to show them.</span>
-            </div>
-            <div className="cc-moment">
-              <strong>Come back closer to Christmas</strong>
-              <span>The page will keep the fire going until the morning itself arrives.</span>
-            </div>
-          </div>
+        </section>
+
+        <section className="cc-panel">
+          <h2>Still looking for the right gift?</h2>
+          <p>
+            When the countdown isn’t enough, open a present under our Christmas gift tree —
+            a small surprise waiting for you beneath the lights.
+          </p>
+          <p className="cc-story-link-wrap">
+            <Link className="cc-story-link" to={CHRISTMAS_CLUB_GIFTS_ROUTE}>
+              Open gifts under the tree
+            </Link>
+          </p>
         </section>
 
         <section className="cc-panel cc-finale">
           <h2>Ready for Christmas?</h2>
           {showForm ? (
-            <>
-              <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} compact />
-              <a className="cc-cta" href="#join" style={{ display: "inline-block", textDecoration: "none" }}>
-                Join the Countdown
-              </a>
-            </>
+            <a className="cc-cta" href="#join" style={{ display: "inline-block", textDecoration: "none" }}>
+              Join the Countdown
+            </a>
           ) : (
             <ChristmasClubSuccess />
           )}
@@ -296,6 +316,8 @@ export function ChristmasClubPage() {
         <footer className="cc-foot">
           <p>
             <Link to={CHRISTMAS_CLUB_SUITE_ROUTE}>Explore Christmas experiences</Link>
+            {" · "}
+            <Link to={CHRISTMAS_CLUB_GIFTS_ROUTE}>Christmas tree gifts</Link>
             {" · "}
             <Link to="/generator?occasion=christmas">Christmas generator</Link>
             {" · "}
