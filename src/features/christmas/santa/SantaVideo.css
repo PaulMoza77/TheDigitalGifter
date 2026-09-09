@@ -18,6 +18,16 @@
   background: #0c1410;
 }
 
+/* Hide global website chrome while the immersive Santa funnel is open */
+body.sv-immersive header.sticky.top-0 {
+  display: none !important;
+}
+
+body.sv-immersive > div > footer,
+body.sv-immersive footer {
+  display: none !important;
+}
+
 .santa-video-page .santa-display,
 .santa-video-page h1,
 .santa-video-page h2,
@@ -823,18 +833,29 @@
   text-decoration: underline;
 }
 
-/* Mobile keyboard stability */
+/* Mobile keyboard stability + Santa framing */
 @media (max-width: 959px) {
   .sv-creator__grid {
     gap: 0.85rem;
   }
 
   .sv-hero {
-    min-height: 240px;
+    min-height: 320px;
+  }
+
+  .sv-hero__stage {
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 8% 18%;
+  }
+
+  .sv-hero__stage .xmas-santa__asset {
+    width: min(72%, 15.5rem);
   }
 
   .sv-hero__letter {
-    max-width: min(62%, 12.5rem);
+    max-width: min(70%, 13.5rem);
+    bottom: 5%;
     font-size: 0.9rem;
   }
 

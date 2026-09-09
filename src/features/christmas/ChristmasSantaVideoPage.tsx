@@ -132,6 +132,11 @@ export default function ChristmasSantaVideoPage() {
   }, []);
 
   useEffect(() => {
+    document.body.classList.add("sv-immersive");
+    return () => document.body.classList.remove("sv-immersive");
+  }, []);
+
+  useEffect(() => {
     ensureFonts();
     const id = "santa-video-faq-jsonld";
     let el = document.getElementById(id) as HTMLScriptElement | null;
@@ -633,11 +638,10 @@ export default function ChristmasSantaVideoPage() {
               <img src="/TheDigitalGifter.png" alt="" width={36} height={36} />
               <span className="sv-brand__name">{SANTA_COPY.brand}</span>
             </Link>
-            <nav className="sv-nav" aria-label="Primary">
-              <Link to="/">Home</Link>
+            <nav className="sv-nav" aria-label="Christmas">
               <Link to="/christmas">Christmas</Link>
               <Link to="/christmas/gift-finder">Gift Finder</Link>
-              <Link to="/templates">Templates</Link>
+              <Link to="/christmas/cards">Cards</Link>
             </nav>
             <div className="sv-header__right">
               <label className="sv-lang">
@@ -774,15 +778,15 @@ export default function ChristmasSantaVideoPage() {
                           <div className="sv-chips">
                             {SANTA_COPY.steps.achievement.chips.map((chip) => (
                               <button
-                                key={chip}
+                                key={chip.value}
                                 type="button"
-                                className={`sv-chip${draft.somethingGood === chip ? " sv-chip--on" : ""}`}
+                                className={`sv-chip${draft.somethingGood === chip.value ? " sv-chip--on" : ""}`}
                                 onClick={() => {
                                   setShowCustomAchievement(false);
-                                  patch({ somethingGood: chip });
+                                  patch({ somethingGood: chip.value });
                                 }}
                               >
-                                {chip}
+                                {chip.label}
                               </button>
                             ))}
                             <button
@@ -795,9 +799,7 @@ export default function ChristmasSantaVideoPage() {
                           </div>
                           {showCustomAchievement ||
                           (draft.somethingGood &&
-                            !(SANTA_COPY.steps.achievement.chips as readonly string[]).includes(
-                              draft.somethingGood,
-                            )) ? (
+                            !SANTA_COPY.steps.achievement.chips.some((c) => c.value === draft.somethingGood)) ? (
                             <label className="sv-field">
                               <span className="sr-only">Something they did well</span>
                               <textarea
