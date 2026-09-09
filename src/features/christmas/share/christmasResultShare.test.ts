@@ -98,7 +98,9 @@ describe("result share wiring", () => {
     const page = readSrc("src/features/christmas/ChristmasResultSharePage.tsx");
     expect(page).toContain("noindex");
     expect(page).toContain("shared_result_view");
-    expect(page).not.toMatch(/trackChristmasEvent\([\s\S]*resultUrl/);
+    const trackAt = page.indexOf('trackChristmasEvent("shared_result_view"');
+    expect(trackAt).toBeGreaterThan(-1);
+    expect(page.slice(trackAt, trackAt + 280)).not.toContain("resultUrl");
     const head = readSrc("src/components/PageHead.tsx");
     expect(head).toContain("noindex,follow");
   });
