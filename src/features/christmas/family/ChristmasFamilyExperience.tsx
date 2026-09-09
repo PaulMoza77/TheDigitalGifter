@@ -217,7 +217,7 @@ export default function ChristmasFamilyExperience() {
                     <span className="ff-prop ff-prop--gift" aria-hidden="true" />
                   </div>
 
-                  <div className="ff-ba-wrap">
+                  <div className="ff-ba-wrap ff-ba-wrap--desktop">
                     <BeforeAfterSlider
                       key={chip.styleKey}
                       beforeSrc={FAMILY_ASSETS.familyBefore}
@@ -274,6 +274,19 @@ export default function ChristmasFamilyExperience() {
                         {t(item.labelKey)}
                       </button>
                     ))}
+                  </div>
+
+                  <div className="ff-ba-wrap ff-ba-wrap--mobile">
+                    <BeforeAfterSlider
+                      key={`m-${chip.styleKey}`}
+                      beforeSrc={FAMILY_ASSETS.familyBefore}
+                      afterSrc={afterPreview}
+                      beforeAlt="Everyday family photo"
+                      afterAlt="Christmas family portrait"
+                      beforeLabel={t("hero.beforeLabel")}
+                      afterLabel={t("hero.afterLabel")}
+                      ariaLabel={t("hero.sliderAria")}
+                    />
                   </div>
 
                   <div className="ff-trust-inline" aria-label="Trust">

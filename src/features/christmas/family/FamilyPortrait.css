@@ -370,6 +370,38 @@
     0 24px 48px rgba(0, 0, 0, 0.42);
 }
 
+.ff-ba-wrap--mobile {
+  display: none;
+}
+
+@media (max-width: 959px) {
+  .ff-ba-wrap--desktop {
+    display: none;
+  }
+
+  .ff-ba-wrap--mobile {
+    display: block;
+    max-width: none;
+    margin-top: 1.5rem;
+  }
+
+  .ff-hero__veil {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(10, 5, 6, 0.28) 0%,
+        rgba(10, 5, 6, 0.18) 42%,
+        rgba(12, 6, 8, 0.72) 100%
+      ),
+      radial-gradient(ellipse at 50% 100%, rgba(107, 20, 32, 0.3), transparent 50%);
+  }
+
+  .ff-table {
+    min-height: 15rem;
+    aspect-ratio: 5 / 4;
+  }
+}
+
 .ff-trust-inline {
   display: grid;
   gap: 0.85rem;
