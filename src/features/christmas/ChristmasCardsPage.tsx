@@ -189,9 +189,12 @@ export default function ChristmasCardsPage() {
       setOwnerToken(owner.ownerToken);
     }
 
-    if (!creationTracked.current) {
-      creationTracked.current = true;
-      void trackChristmasEvent("card_creation_started", { productKey: PRODUCT, pathname: PATH });
+    const fromPortrait = params.get("from_portrait") === "1";
+    const fromMessage = params.get("from_message") === "1";
+    const startCreator =
+      params.get("create") === "1" || fromPortrait || fromMessage;
+    if (startCreator) {
+      markCreationStarted();
     }
   }, [params]);
 
@@ -294,11 +297,17 @@ export default function ChristmasCardsPage() {
     year,
   ]);
 
-  useEffect(() => {
+  function markCreationStarted() {
+    if (creationTracked.current) return;
+    creationTracked.current = true;
+    void trackChristmasEvent("card_creation_started", { productKey: PRODUCT, pathname: PATH });
+  }
+
+  function markPreviewSeen() {
     if (previewTracked.current) return;
     previewTracked.current = true;
     void trackChristmasEvent("card_preview_seen", { productKey: PRODUCT, pathname: PATH });
-  }, []);
+  }
 
   useEffect(() => {
     if (locale === "ro" && message === DEMO_MESSAGES.heartfeltFamily.en) {
@@ -314,6 +323,7 @@ export default function ChristmasCardsPage() {
 
   async function onPhotoFile(file: File | null) {
     setError(null);
+    markCreationStarted();
     if (!file) {
       setPhotoEl(null);
       setPhotoPreviewUrl(null);
@@ -345,6 +355,7 @@ export default function ChristmasCardsPage() {
 
   async function useExistingPortrait() {
     setError(null);
+    markCreationStarted();
     const last = readLastPortraitResult();
     const handoff = readPortraitToCardHandoff();
     const source = handoff || last;
@@ -369,6 +380,8 @@ export default function ChristmasCardsPage() {
   }
 
   function selectStyle(key: string) {
+    markCreationStarted();
+    markPreviewSeen();
     setStyleKey(key);
     const match = CARD_TYPES.find((c) => c.defaultStyle === key);
     if (match) setCardType(match.key);
@@ -379,6 +392,8 @@ export default function ChristmasCardsPage() {
   }
 
   function selectLayout(key: CardLayoutKey) {
+    markCreationStarted();
+    markPreviewSeen();
     setLayoutKey(key);
     void trackChristmasEvent("card_layout_selected", {
       productKey: PRODUCT,
@@ -387,6 +402,7 @@ export default function ChristmasCardsPage() {
   }
 
   function onMessageChange(value: string) {
+    markCreationStarted();
     setMessage(value);
     setMessageSource("manual");
     if (!messageStartedTracked.current && value.trim()) {
@@ -527,7 +543,8 @@ export default function ChristmasCardsPage() {
     setShareError(null);
     try {
       if (!message.trim()) throw new Error(t("message.ask"));
-      void trackChristmasEvent("card_preview_seen", { productKey: PRODUCT });
+      markCreationStarted();
+      markPreviewSeen();
       const project = await ensureProject();
       if (project.token) {
         try {
@@ -675,6 +692,8 @@ export default function ChristmasCardsPage() {
   function applyInspiration(key: string) {
     const ex = EXAMPLES_GALLERY.find((e) => e.key === key);
     if (!ex) return;
+    markCreationStarted();
+    markPreviewSeen();
     setStyleKey(ex.styleKey);
     setMessage(locale === "ro" ? ex.messageRo : ex.messageEn);
     setRecipientName(locale === "ro" ? ex.toRo : ex.toEn);
