@@ -222,6 +222,29 @@ describe("christmas analytics contract", () => {
       }),
     ).toThrow(ChristmasFunnelIngestError);
   });
+
+  it("strips message text from message-generator ingest metadata", () => {
+    const validated = validateChristmasFunnelIngestPayload({
+      event_name: "message_generator_completed",
+      funnel_session_id: "22222222-2222-4222-8222-222222222222",
+      product_key: "christmas_messages",
+      locale: "en",
+      pathname: "/christmas/messages",
+      landing_path: "/christmas/messages?for=mom&text=Merry%20Christmas%20secret",
+      metadata: {
+        recipient_key: "mom",
+        tone_key: "heartfelt",
+        text: "Merry Christmas secret body",
+        custom_detail: "first Christmas together",
+      },
+    });
+    expect(validated.landingPath).toBe("/christmas/messages");
+    expect(validated.metadata).toEqual({
+      recipient_key: "mom",
+      tone_key: "heartfelt",
+    });
+    expect(JSON.stringify(validated.metadata)).not.toMatch(/Merry Christmas|secret|together/i);
+  });
 });
 
 describe("christmas routes / activation", () => {

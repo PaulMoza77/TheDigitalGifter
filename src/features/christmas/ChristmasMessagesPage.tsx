@@ -5,6 +5,7 @@ import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
 import {
+  CUSTOM_DETAIL_MAX,
   MESSAGE_LENGTHS,
   MESSAGE_RECIPIENTS,
   MESSAGE_TONES,
@@ -12,8 +13,11 @@ import {
   labelFor,
   type LocaleCode,
 } from "./cards/taxonomy";
+import { validateMessageInputClient } from "./cards/messageEngine";
+import { messageAnalyticsMeta } from "./cards/messageAnalytics";
 import {
   MESSAGE_SESSION_KEY,
+  MESSAGE_TO_CARD_PATH,
   cardsMessagesFunnel,
   getOrCreateMessageGuestToken,
   writeMessageToCardHandoff,
@@ -28,10 +32,27 @@ async function authBearer() {
   return data.session?.access_token || null;
 }
 
+function userFacingGenerateError(raw: string, locale: LocaleCode): string {
+  if (raw.includes("rate_limited")) {
+    return locale === "ro"
+      ? "Ai generat destule mesaje. Te rugăm să aștepți puțin înainte să încerci din nou."
+      : "You've generated quite a few messages. Please wait a bit before trying again.";
+  }
+  if (raw.includes("unsafe_input")) {
+    return locale === "ro"
+      ? "Detaliul nu poate fi folosit. Încearcă o amintire scurtă și caldă de Crăciun."
+      : "That detail can't be used. Try a short, kind Christmas memory instead.";
+  }
+  return locale === "ro" ? "Nu am putut genera mesajele." : raw || "Could not generate messages";
+}
+
 export default function ChristmasMessagesPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [locale, setLocale] = useState<LocaleCode>("en");
+  const [locale, setLocale] = useState<LocaleCode>(() => {
+    const lang = params.get("lang") || params.get("locale") || "";
+    return lang === "ro" ? "ro" : "en";
+  });
   const [recipient, setRecipient] = useState(() => {
     const raw = params.get("for") || params.get("recipient") || "mom";
     return MESSAGE_RECIPIENTS.some((r) => r.key === raw) ? raw : "mom";
@@ -86,10 +107,41 @@ export default function ChristmasMessagesPage() {
     setBusy(true);
     setError(null);
     setCopied(null);
+    const dims = messageAnalyticsMeta({
+      recipientKey: recipient,
+      toneKey: tone,
+      lengthKey: length,
+      language: locale,
+    });
+    const check = validateMessageInputClient({
+      locale,
+      recipientKey: recipient,
+      toneKey: tone,
+      lengthKey: length,
+      customDetail: custom,
+    });
+    if (!check.ok) {
+      setError(userFacingGenerateError(check.error, locale));
+      void trackChristmasEvent("message_generator_failed", {
+        productKey: PRODUCT,
+        pathname: PAGE_PATH,
+        locale,
+        metadata: messageAnalyticsMeta({
+          recipientKey: recipient,
+          toneKey: tone,
+          lengthKey: length,
+          language: locale,
+          errorCode: check.error,
+        }),
+      });
+      setBusy(false);
+      return;
+    }
     void trackChristmasEvent("message_generator_started", {
       productKey: PRODUCT,
       pathname: PAGE_PATH,
       locale,
+      metadata: dims,
     });
     try {
       const data = await cardsMessagesFunnel<{
@@ -97,6 +149,7 @@ export default function ChristmasMessagesPage() {
         session_id: string;
         messages: GeneratedMessage[];
         used_fallback?: boolean;
+        provider?: string;
       }>(
         {
           action: "runMessageGenerator",
@@ -123,13 +176,29 @@ export default function ChristmasMessagesPage() {
         productKey: PRODUCT,
         pathname: PAGE_PATH,
         locale,
+        metadata: messageAnalyticsMeta({
+          recipientKey: recipient,
+          toneKey: tone,
+          lengthKey: length,
+          language: locale,
+          provider: data.provider,
+          usedFallback: data.used_fallback,
+        }),
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not generate messages");
+      const raw = e instanceof Error ? e.message : "Could not generate messages";
+      setError(userFacingGenerateError(raw, locale));
       void trackChristmasEvent("message_generator_failed", {
         productKey: PRODUCT,
         pathname: PAGE_PATH,
         locale,
+        metadata: messageAnalyticsMeta({
+          recipientKey: recipient,
+          toneKey: tone,
+          lengthKey: length,
+          language: locale,
+          errorCode: raw.includes("rate_limited") ? "rate_limited" : "generate_failed",
+        }),
       });
     } finally {
       setBusy(false);
@@ -140,7 +209,17 @@ export default function ChristmasMessagesPage() {
     try {
       await navigator.clipboard.writeText(m.text);
       setCopied(m.id || m.result_key);
-      void trackChristmasEvent("message_copied", { productKey: PRODUCT, pathname: PAGE_PATH, locale });
+      void trackChristmasEvent("message_copied", {
+        productKey: PRODUCT,
+        pathname: PAGE_PATH,
+        locale,
+        metadata: messageAnalyticsMeta({
+          recipientKey: recipient,
+          toneKey: tone,
+          lengthKey: length,
+          language: locale,
+        }),
+      });
     } catch {
       setError(locale === "ro" ? "Nu s-a putut copia." : "Could not copy — select the text manually.");
     }
@@ -157,8 +236,18 @@ export default function ChristmasMessagesPage() {
       sessionId,
       guestToken: getOrCreateMessageGuestToken(),
     });
-    void trackChristmasEvent("message_to_card", { productKey: PRODUCT, pathname: PAGE_PATH, locale });
-    void navigate("/christmas/cards?from_message=1");
+    void trackChristmasEvent("message_to_card", {
+      productKey: PRODUCT,
+      pathname: PAGE_PATH,
+      locale,
+      metadata: messageAnalyticsMeta({
+        recipientKey: recipient,
+        toneKey: tone,
+        lengthKey: length,
+        language: locale,
+      }),
+    });
+    void navigate(MESSAGE_TO_CARD_PATH);
   }
 
   const chip =
@@ -260,7 +349,7 @@ export default function ChristmasMessagesPage() {
           <span className="font-medium">{locale === "ro" ? "Detaliu opțional" : "Optional detail"}</span>
           <input
             className="mt-1 w-full max-w-full rounded-md border border-slate-300 px-3 py-2"
-            maxLength={200}
+            maxLength={CUSTOM_DETAIL_MAX}
             value={custom}
             onChange={(e) => setCustom(e.target.value)}
             placeholder={
@@ -312,10 +401,13 @@ export default function ChristmasMessagesPage() {
             {locale === "ro" ? "Mesajele tale de Crăciun" : "Your Christmas messages"}
           </h2>
           <ul className="space-y-4">
-            {messages.slice(0, 3).map((m) => {
+            {messages.slice(0, 3).map((m, idx) => {
               const key = m.id || m.result_key;
               return (
                 <li key={key} className="rounded-lg border border-slate-200 p-4">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+                    {locale === "ro" ? `Varianta ${idx + 1}` : `Option ${idx + 1}`}
+                  </p>
                   <p className="break-words whitespace-pre-wrap text-slate-800">{m.text}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button

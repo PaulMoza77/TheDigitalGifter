@@ -1,3 +1,5 @@
+import { isMessageFunnelEvent, sanitizeMessageAnalyticsMeta } from "./cards/messageAnalytics";
+
 export const CHRISTMAS_FUNNEL_EVENT_PATH = "/api/christmas/funnel-event";
 
 export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
@@ -260,7 +262,9 @@ export function validateChristmasFunnelIngestPayload(
     userId,
     locale: sanitizeFunnelText(body.locale, 16),
     pathname: sanitizeFunnelText(body.pathname, 120),
-    landingPath: sanitizeFunnelText(body.landing_path, 120),
+    landingPath: isMessageFunnelEvent(eventName)
+      ? sanitizeFunnelText(String(body.landing_path || "").split("?")[0], 120)
+      : sanitizeFunnelText(body.landing_path, 120),
     deviceType: sanitizeDevice(body.device_type),
     amountCents,
     utmSource: sanitizeFunnelText(body.utm_source, 120),
@@ -274,10 +278,12 @@ export function validateChristmasFunnelIngestPayload(
     adId: sanitizeFunnelText(body.ad_id, 120),
     hasFbclid: Boolean(body.has_fbclid),
     referrerHost: sanitizeFunnelText(body.referrer_host, 120),
-    metadata:
+    metadata: sanitizeMessageAnalyticsMeta(
+      eventName,
       body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata)
         ? body.metadata
         : {},
+    ),
   };
 }
 
