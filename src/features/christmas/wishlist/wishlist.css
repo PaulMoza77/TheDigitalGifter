@@ -1319,6 +1319,10 @@
   }
   .wl-wish-line__details,
   .wl-wish-line__reorder {
-    opacity: 0.7;
+    opacity: 0;
+  }
+  .wl-wish-line:focus-within .wl-wish-line__details,
+  .wl-wish-line:focus-within .wl-wish-line__reorder {
+    opacity: 0.85;
   }
 }

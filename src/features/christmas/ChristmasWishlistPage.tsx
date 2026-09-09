@@ -436,6 +436,21 @@ export default function ChristmasWishlistPage() {
     import.meta.env.DEV ? new URLSearchParams(window.location.search).get("demo") : null;
   const letterMode = isShare || Boolean(owner) || demoMode === "viewer";
   const showViewer = Boolean(isShare || (demoMode === "viewer" && shared));
+
+  useEffect(() => {
+    if (!letterMode) {
+      delete document.documentElement.dataset.wlImmersive;
+      window.dispatchEvent(new Event("wl-immersive-change"));
+      return;
+    }
+    document.documentElement.dataset.wlImmersive = "1";
+    window.dispatchEvent(new Event("wl-immersive-change"));
+    return () => {
+      delete document.documentElement.dataset.wlImmersive;
+      window.dispatchEvent(new Event("wl-immersive-change"));
+    };
+  }, [letterMode]);
+
   const pageTitle = isShare
     ? copy.shareSeoTitle(shared?.title || "Christmas Wishlist")
     : copy.seoTitle;

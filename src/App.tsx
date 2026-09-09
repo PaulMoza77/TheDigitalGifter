@@ -259,10 +259,21 @@ function FunnelAttributionCapture() {
 
 function WebsiteLayout() {
   const [showPricing, setShowPricing] = useState(false);
+  const location = useLocation();
+  const [immersiveLetter, setImmersiveLetter] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setImmersiveLetter(document.documentElement.dataset.wlImmersive === "1");
+    sync();
+    window.addEventListener("wl-immersive-change", sync);
+    return () => window.removeEventListener("wl-immersive-change", sync);
+  }, [location.pathname]);
+
+  const hideChrome = immersiveLetter || location.pathname.startsWith("/wishlist/");
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
-      <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
+      {hideChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
 
       <main className="flex-1">
         <Outlet />
@@ -273,7 +284,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      <WebsiteFooter />
+      {hideChrome ? null : <WebsiteFooter />}
     </div>
   );
 }
