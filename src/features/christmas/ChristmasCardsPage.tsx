@@ -310,12 +310,12 @@ export default function ChristmasCardsPage() {
     setMobilePane("edit");
     void trackChristmasEvent("card_creation_started", { productKey: PRODUCT, pathname: PATH });
     requestAnimationFrame(() => {
-      document.getElementById(makerId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("ccm-maker")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
   function scrollToExamples() {
-    document.getElementById(examplesId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("ccm-examples")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function onPhotoFile(file: File | null) {
@@ -446,12 +446,39 @@ export default function ChristmasCardsPage() {
         metadata: { count: Math.min(3, (data.messages || []).length) },
       });
     } catch {
-      setMsgError(t("message.failed"));
-      void trackChristmasEvent("message_generator_failed", {
-        productKey: PRODUCT,
-        pathname: PATH,
+      const { curatedMessagesClient } = await import("./cards/messageEngine");
+      const curated = curatedMessagesClient({
         locale,
+        recipientKey: helpRecipient,
+        toneKey: helpTone === "short_and_sweet" ? "short_and_sweet" : helpTone,
+        lengthKey: helpTone === "short_and_sweet" ? "short" : "medium",
       });
+      if (curated.length) {
+        setSuggestions(
+          curated.slice(0, 3).map((m) => ({
+            id: m.result_key,
+            result_key: m.result_key,
+            text: m.text,
+            tone_key: m.tone_key,
+            length_key: m.length_key,
+            recipient_key: m.recipient_key,
+            language: m.language,
+          })),
+        );
+        void trackChristmasEvent("card_message_generated", {
+          productKey: PRODUCT,
+          pathname: PATH,
+          locale,
+          metadata: { count: curated.length, source: "curated_fallback" },
+        });
+      } else {
+        setMsgError(t("message.failed"));
+        void trackChristmasEvent("message_generator_failed", {
+          productKey: PRODUCT,
+          pathname: PATH,
+          locale,
+        });
+      }
     } finally {
       setMsgBusy(false);
     }
@@ -469,30 +496,37 @@ export default function ChristmasCardsPage() {
 
   async function ensureProject(): Promise<{ id: string; token: string | null }> {
     if (projectId) return { id: projectId, token: ownerToken };
-    const data = await cardsMessagesFunnel<{
-      ok: boolean;
-      project_id: string;
-      owner_token: string | null;
-    }>(
-      {
-        action: "createCardProject",
-        style_key: styleKey,
-        layout_key: layoutKey,
-        message,
-        recipient_name: recipientName,
-        from_name: fromName,
-        message_source: messageSource,
-        message_result_id: messageResultId,
-        guest_token: getOrCreateMessageGuestToken(),
-      },
-      await authBearer(),
-    );
-    setProjectId(data.project_id);
-    if (data.owner_token) {
-      setOwnerToken(data.owner_token);
-      writeCardOwner({ projectId: data.project_id, ownerToken: data.owner_token });
+    try {
+      const data = await cardsMessagesFunnel<{
+        ok: boolean;
+        project_id: string;
+        owner_token: string | null;
+      }>(
+        {
+          action: "createCardProject",
+          style_key: styleKey,
+          layout_key: layoutKey,
+          message,
+          recipient_name: recipientName,
+          from_name: fromName,
+          message_source: messageSource,
+          message_result_id: messageResultId,
+          guest_token: getOrCreateMessageGuestToken(),
+        },
+        await authBearer(),
+      );
+      setProjectId(data.project_id);
+      if (data.owner_token) {
+        setOwnerToken(data.owner_token);
+        writeCardOwner({ projectId: data.project_id, ownerToken: data.owner_token });
+      }
+      return { id: data.project_id, token: data.owner_token };
+    } catch {
+      // Local draft id — canvas render still works offline / when funnel is unavailable.
+      const localId = `local-${crypto.randomUUID().slice(0, 8)}`;
+      setProjectId(localId);
+      return { id: localId, token: null };
     }
-    return { id: data.project_id, token: data.owner_token };
   }
 
   async function createCard() {
@@ -503,21 +537,27 @@ export default function ChristmasCardsPage() {
       if (!message.trim()) throw new Error(t("message.ask"));
       void trackChristmasEvent("card_preview_seen", { productKey: PRODUCT });
       const project = await ensureProject();
-      await cardsMessagesFunnel(
-        {
-          action: "updateCardProject",
-          project_id: project.id,
-          owner_token: project.token,
-          style_key: styleKey,
-          layout_key: layoutKey,
-          message,
-          recipient_name: recipientName,
-          from_name: fromName,
-          message_source: messageSource,
-          photo_present: Boolean(photoEl),
-        },
-        await authBearer(),
-      );
+      if (project.token) {
+        try {
+          await cardsMessagesFunnel(
+            {
+              action: "updateCardProject",
+              project_id: project.id,
+              owner_token: project.token,
+              style_key: styleKey,
+              layout_key: layoutKey,
+              message,
+              recipient_name: recipientName,
+              from_name: fromName,
+              message_source: messageSource,
+              photo_present: Boolean(photoEl),
+            },
+            await authBearer(),
+          );
+        } catch {
+          /* keep going — local render is the source of truth for V1 */
+        }
+      }
       const rendered = await renderChristmasCard({
         message,
         styleKey,
@@ -527,18 +567,24 @@ export default function ChristmasCardsPage() {
         photo: photoEl,
         projectRef: project.id.slice(0, 8),
       });
-      await cardsMessagesFunnel(
-        {
-          action: "recordCardRender",
-          project_id: project.id,
-          owner_token: project.token,
-          layout_key: layoutKey,
-          width: rendered.width,
-          height: rendered.height,
-          byte_size: rendered.byteSize,
-        },
-        await authBearer(),
-      );
+      if (project.token) {
+        try {
+          await cardsMessagesFunnel(
+            {
+              action: "recordCardRender",
+              project_id: project.id,
+              owner_token: project.token,
+              layout_key: layoutKey,
+              width: rendered.width,
+              height: rendered.height,
+              byte_size: rendered.byteSize,
+            },
+            await authBearer(),
+          );
+        } catch {
+          /* ignore persistence failure */
+        }
+      }
       setResult({
         dataUrl: rendered.dataUrl,
         blob: rendered.blob,
@@ -558,19 +604,11 @@ export default function ChristmasCardsPage() {
           photo_source: photoSource,
           message_source: messageSource,
           card_type: cardType,
+          local_only: !project.token,
         },
       });
-    } catch (e) {
+    } catch {
       setError(t("preview.failed"));
-      if (projectId) {
-        void cardsMessagesFunnel({
-          action: "recordCardRender",
-          project_id: projectId,
-          owner_token: ownerToken,
-          failed: true,
-          error_code: e instanceof Error ? e.message.slice(0, 80) : "render_failed",
-        }).catch(() => undefined);
-      }
     } finally {
       setBusy(false);
     }
@@ -780,7 +818,7 @@ export default function ChristmasCardsPage() {
           </div>
         </section>
 
-        <section className="ccm-section" id={examplesId} aria-labelledby={`${examplesId}-title`}>
+        <section className="ccm-section" id="ccm-examples" aria-labelledby={`${examplesId}-title`}>
           <h2 id={`${examplesId}-title`}>{t("examples.h2")}</h2>
           <p className="ccm-lede">{t("examples.lede")}</p>
           <div className="ccm-gallery">
@@ -803,7 +841,7 @@ export default function ChristmasCardsPage() {
           </div>
         </section>
 
-        <section className="ccm-section" id={makerId} aria-labelledby={`${makerId}-title`}>
+        <section className="ccm-section" id="ccm-maker" aria-labelledby={`${makerId}-title`}>
           <h2 id={`${makerId}-title`}>{t("create.h2")}</h2>
           <p className="ccm-lede">{t("create.lede")}</p>
 
@@ -865,28 +903,28 @@ export default function ChristmasCardsPage() {
             </div>
           ) : (
             <div className={`ccm-maker ${mobilePane === "preview" ? "is-preview" : "is-edit"}`}>
-              <div className="ccm-editor-pane ccm-panel">
-                <div className="ccm-mobile-tabs" role="tablist" aria-label="Editor">
-                  <button
-                    type="button"
-                    className="ccm-chip"
-                    role="tab"
-                    aria-selected={mobilePane === "edit"}
-                    onClick={() => setMobilePane("edit")}
-                  >
-                    {t("preview.mobileEdit")}
-                  </button>
-                  <button
-                    type="button"
-                    className="ccm-chip"
-                    role="tab"
-                    aria-selected={mobilePane === "preview"}
-                    onClick={() => setMobilePane("preview")}
-                  >
-                    {t("preview.mobilePreview")}
-                  </button>
-                </div>
+              <div className="ccm-mobile-tabs" role="tablist" aria-label="Editor">
+                <button
+                  type="button"
+                  className="ccm-chip"
+                  role="tab"
+                  aria-selected={mobilePane === "edit"}
+                  onClick={() => setMobilePane("edit")}
+                >
+                  {t("preview.mobileEdit")}
+                </button>
+                <button
+                  type="button"
+                  className="ccm-chip"
+                  role="tab"
+                  aria-selected={mobilePane === "preview"}
+                  onClick={() => setMobilePane("preview")}
+                >
+                  {t("preview.mobilePreview")}
+                </button>
+              </div>
 
+              <div className="ccm-editor-pane ccm-panel">
                 <div className="ccm-progress" aria-label={t("a11y.progress")}>
                   {EDITOR_STEPS.map((s) => (
                     <span
@@ -1256,6 +1294,18 @@ export default function ChristmasCardsPage() {
                     label={t("a11y.livePreview")}
                     emptyLabel={locale === "ro" ? hero.greetingRo : hero.greetingEn}
                   />
+                  {step === "preview" ? (
+                    <div className="ccm-nav">
+                      <button
+                        type="button"
+                        className="ccm-btn ccm-btn--gold"
+                        disabled={busy || !message.trim()}
+                        onClick={() => void createCard()}
+                      >
+                        {busy ? t("preview.creating") : t("preview.create")}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               </aside>
             </div>

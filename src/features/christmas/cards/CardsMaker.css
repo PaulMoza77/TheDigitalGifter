@@ -633,7 +633,8 @@
 .ccm-mobile-tabs {
   display: none;
   gap: 0.45rem;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.15rem;
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 959px) {
