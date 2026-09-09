@@ -312,10 +312,25 @@
   background: rgba(246, 239, 227, 0.14);
 }
 
-.xmas-scene {
-  position: relative;
-  z-index: 1;
-  padding: clamp(4.2rem, 9vw, 7.5rem) 1.25rem;
+.xmas-gift-tree-landing {
+  padding-block: clamp(3.2rem, 7vw, 5.5rem);
+}
+
+.xmas-gift-tree-landing__intro {
+  max-width: 40rem;
+  margin: 0 auto 1.6rem;
+  padding-inline: 1.25rem;
+  text-align: center;
+}
+
+.xmas-gift-tree-landing__intro .xmas-lede {
+  margin-inline: auto;
+}
+
+.xmas-gift-tree-landing__frame {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-inline: 1.1rem;
 }
 
 .xmas-scene__inner {

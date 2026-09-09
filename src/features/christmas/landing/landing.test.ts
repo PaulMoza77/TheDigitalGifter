@@ -32,6 +32,7 @@ describe("christmas landing copy + seo", () => {
     expect(landingT("hero.countdown.eyebrow")).toMatch(/coming/i);
     expect(landingT("santa.bubble")).toMatch(/Ho ho ho/i);
     expect(landingT("gifts.cta")).toBe("Find the Perfect Gift");
+    expect(landingT("gifts.h2")).toMatch(/tree/i);
     expect(LANDING_COPY_KEYS).toContain("seo.title");
     expect(LANDING_FAQS).toHaveLength(5);
   });
@@ -79,10 +80,14 @@ describe("christmas landing wiring", () => {
     expect(page).not.toContain("Christmas product suite");
     expect(page).not.toContain("hubProducts");
     expect(experience).toContain("SantaScene");
+    expect(experience).toContain("GiftTreeLandingScene");
+    expect(experience).not.toContain("GiftFinderScene");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("santa-alpha.webm");
     expect(experience).toContain("/generator?occasion=christmas");
     expect(readSrc("src/features/christmas/ChristmasSantaVideoPage.tsx")).toContain("consumeSantaNameHandoff");
     expect(readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx")).toContain("parseGiftRecipient");
+    expect(readSrc("src/App.tsx")).toContain("/christmas/tree-gifts");
+    expect(readSrc("src/features/christmas/gifts/ChristmasGiftsPage.tsx")).toContain("ChristmasGiftsExperience");
   });
 
   it("keeps an alive cabin hero with editorial countdown wiring", () => {

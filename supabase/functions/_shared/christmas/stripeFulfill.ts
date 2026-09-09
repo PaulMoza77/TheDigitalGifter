@@ -7,6 +7,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
+import { GIFT_TREE_PAID_OFFERS } from "./giftTreeRewards.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -156,18 +157,81 @@ export async function handleChristmasStripeEvent(input: {
 
     if (result.ok === true && result.status === "paid") {
       const productKey = asString(input.metadata.product_key);
-      let mode: "commerce" | "santa" = "commerce";
-      if (productKey === "christmas_santa_video") {
-        mode = "santa";
-      } else if (!productKey) {
-        const { data: ord } = await input.service
-          .from("christmas_orders")
-          .select("product_key")
-          .eq("id", orderId)
-          .maybeSingle();
-        if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+      const packageKey = asString(input.metadata.package_key);
+
+      // Gift Tree packs buy additional opens — never enqueue photo/video generation.
+      if (productKey === "christmas_gift_tree") {
+        // Server-authoritative entitlement: never trust client quantity.
+        const paid = GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey)
+          || (packageKey === "open_5"
+            ? GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === "open_five")
+            : undefined);
+        const opens = paid?.opens_granted ?? 0;
+        if (opens > 0) {
+          const { data: ord } = await input.service
+            .from("christmas_orders")
+            .select("user_id,email,metadata")
+            .eq("id", orderId)
+            .maybeSingle();
+          const meta = (ord?.metadata || {}) as Record<string, unknown>;
+          const guestHash = asString(meta.guest_token_hash) || asString(input.metadata.guest_token_hash);
+          const email = asString(ord?.email) || asString(input.metadata.email);
+          await input.service.rpc("christmas_gift_tree_grant_opens", {
+            p_season_year: 2026,
+            p_opens: opens,
+            p_source: "purchase",
+            p_source_ref: `stripe_order:${orderId}`,
+            p_user_id: ord?.user_id || null,
+            p_guest_token_hash: guestHash || null,
+            p_email_normalized: email ? email.trim().toLowerCase() : null,
+            p_metadata: {
+              package_key: packageKey,
+              stripe_session_id: sessionId,
+              christmas_order_id: orderId,
+            },
+          });
+        }
+      } else {
+        // Consume Gift Tree percent-off entitlement after successful payment (not on checkout open).
+        {
+          const { data: ordMeta } = await input.service
+            .from("christmas_orders")
+            .select("metadata")
+            .eq("id", orderId)
+            .maybeSingle();
+          const meta = (ordMeta?.metadata || {}) as Record<string, unknown>;
+          const entId =
+            asString(input.metadata.gift_tree_entitlement_id) ||
+            asString(meta.gift_tree_entitlement_id);
+          if (entId) {
+            await input.service
+              .from("christmas_reward_entitlements")
+              .update({
+                redeemed_at: new Date().toISOString(),
+                status: "redeemed",
+                metadata: {
+                  redeemed_via: "stripe_webhook",
+                  christmas_order_id: orderId,
+                  stripe_session_id: sessionId,
+                },
+              })
+              .eq("id", entId)
+              .is("redeemed_at", null);
+          }
+        }
+        let mode: "commerce" | "santa" = "commerce";
+        if (productKey === "christmas_santa_video") {
+          mode = "santa";
+        } else if (!productKey) {
+          const { data: ord } = await input.service
+            .from("christmas_orders")
+            .select("product_key")
+            .eq("id", orderId)
+            .maybeSingle();
+          if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+        }
+        enqueueChristmasGenerate(orderId, mode);
       }
-      enqueueChristmasGenerate(orderId, mode);
     }
 
     return new Response(JSON.stringify({ ok: true, christmas: result }), {

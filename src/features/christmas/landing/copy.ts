@@ -41,9 +41,10 @@ const EN: CopyBag = {
   "transition.kicker": "Christmas is more than one gift.",
   "transition.h2": "Turn this season into something magical.",
   "transition.lede": "Keep scrolling. The same room opens into every Christmas moment you might need.",
-  "gifts.kicker": "Gift finder",
-  "gifts.h2": "Who are you shopping for?",
-  "gifts.lede": "A tag on the wrapping. A name in mind. We’ll help you find something they’ll actually love.",
+  "gifts.kicker": "Christmas gifts",
+  "gifts.h2": "Open a gift under the tree.",
+  "gifts.lede":
+    "Tap a glowing present. Reveal a free Christmas surprise — portraits, cards, credits, and more.",
   "gifts.cta": "Find the Perfect Gift",
   "gifts.mom": "Mom",
   "gifts.dad": "Dad",
@@ -130,7 +131,7 @@ const EN: CopyBag = {
   "faq.5.q": "Will this work on my phone?",
   "faq.5.a":
     "Yes. The Christmas landing and every experience are designed to feel magical on a phone first, with large tap targets and a simple vertical story.",
-  "nav.gifts": "Gift finder",
+  "nav.gifts": "Gifts under the tree",
   "nav.portraits": "Portraits",
   "nav.santa": "Santa",
   "nav.wishlist": "Wishlist",
