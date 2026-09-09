@@ -103,10 +103,10 @@ describe("christmas portrait style registry", () => {
 describe("christmas portrait preview contract", () => {
   it("shared funnel uses original blur only; zero Replicate pre-payment", () => {
     expect(christmasPreviewUsesReplicate()).toBe(false);
-    const page = readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx");
-    expect(page).toContain("createBlurredOriginalPreview");
-    expect(page).not.toContain("pet-v2-preview");
-    expect(page).not.toContain("replicate.com");
+    const hook = readSrc("src/features/christmas/useChristmasPortraitFunnel.ts");
+    expect(hook).toContain("createBlurredOriginalPreview");
+    expect(hook).not.toContain("pet-v2-preview");
+    expect(hook).not.toContain("replicate.com");
     expect(readSrc("src/features/christmas/photoPreview.ts")).not.toContain("replicate.com");
   });
 });
@@ -135,8 +135,9 @@ describe("christmas portrait payment gates", () => {
 });
 
 describe("christmas portrait wiring", () => {
-  it("App routes five verticals to shared funnel", () => {
+  it("App routes hub to photo generator + verticals to shared funnel", () => {
     const app = readSrc("src/App.tsx");
+    expect(app).toContain("ChristmasPhotoGeneratorPage");
     expect(app).toContain("ChristmasPortraitFunnelPage");
     for (const path of [
       "/christmas/photo-generator",
@@ -148,7 +149,6 @@ describe("christmas portrait wiring", () => {
     ]) {
       expect(app).toContain(`path="${path}"`);
     }
-    // shells remain for unfinished products
     expect(app).toContain("ChristmasSantaVideoPage");
     expect(app).toContain('path="/christmas/santa-video"');
     expect(app).toContain("ChristmasShellRoute");
@@ -190,11 +190,13 @@ describe("christmas portrait funnel e2e contract (component)", () => {
     const page = readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx");
     expect(page).toContain("Upload your photo");
     expect(page).toContain("Choose a Christmas style");
-    expect(page).toContain("createBlurredOriginalPreview");
     expect(page).toContain("Continue to offer");
     expect(page).toContain("Production checkout is not enabled yet");
     expect(page).toContain("Switch to");
     expect(page).toContain("/christmas/cats");
     expect(page).toContain("/christmas/dogs");
+    expect(readSrc("src/features/christmas/useChristmasPortraitFunnel.ts")).toContain(
+      "createBlurredOriginalPreview",
+    );
   });
 });

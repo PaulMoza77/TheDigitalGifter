@@ -49,10 +49,10 @@ describe("christmas photo preview contract", () => {
   it("preview path never uses Replicate", () => {
     expect(christmasPreviewUsesReplicate()).toBe(false);
     expect(readSrc("src/features/christmas/photoPreview.ts")).not.toContain("replicate.com");
-    expect(readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx")).toContain(
+    expect(readSrc("src/features/christmas/useChristmasPortraitFunnel.ts")).toContain(
       "createBlurredOriginalPreview",
     );
-    expect(readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx")).not.toContain(
+    expect(readSrc("src/features/christmas/useChristmasPortraitFunnel.ts")).not.toContain(
       "pet-v2-preview",
     );
   });
@@ -111,11 +111,24 @@ describe("christmas photo pricing + wiring", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("routes photo-generator to real page not shell", () => {
+  it("routes photo-generator to premium hub page not shell", () => {
     const app = readSrc("src/App.tsx");
+    expect(app).toContain("ChristmasPhotoGeneratorPage");
     expect(app).toContain("ChristmasPortraitFunnelPage");
-    expect(app.indexOf("ChristmasPortraitFunnelPage")).toBeLessThan(
+    expect(app.indexOf("ChristmasPhotoGeneratorPage")).toBeLessThan(
       app.indexOf('path="/christmas/kids"'),
+    );
+    expect(readSrc("src/features/christmas/ChristmasPhotoGeneratorPage.tsx")).toContain(
+      "ChristmasPhotoGeneratorExperience",
+    );
+  });
+
+  it("hub uses blur preview contract via shared funnel hook", () => {
+    expect(readSrc("src/features/christmas/useChristmasPortraitFunnel.ts")).toContain(
+      "createBlurredOriginalPreview",
+    );
+    expect(readSrc("src/features/christmas/useChristmasPortraitFunnel.ts")).not.toContain(
+      "pet-v2-preview",
     );
   });
 

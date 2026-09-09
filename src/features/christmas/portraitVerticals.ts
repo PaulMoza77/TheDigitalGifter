@@ -67,15 +67,16 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     portraitType: "person",
     expectedSpecies: null,
     draftStorageKey: "tdg.christmas.portrait.photo.v1",
-    pageTitle: "Christmas AI Photo Generator | The Digital Gifter",
+    pageTitle:
+      "AI Christmas Photo Generator | Create Christmas Portraits | TheDigitalGifter",
     metaDescription:
-      "Turn your photo into a personalized Christmas portrait. Private by default. Preview uses your original photo — finished AI art after purchase.",
-    heroHeadline: "Turn your photo into a personalized Christmas portrait.",
+      "Turn your favorite photo into a magical Christmas portrait. Create realistic Christmas photos for families, couples and pets in minutes.",
+    heroHeadline: "Turn Your Photo Into Christmas Magic",
     heroSupport:
-      "Upload a photo, pick a Christmas style, see a blurred preview of your own image, then create the finished portrait after checkout.",
-    uploadHint: "Clear face photo works best. Family and couple photos are welcome.",
+      "Upload a favorite photo and create a magical Christmas portrait for your family, partner or pet.",
+    uploadHint: "Choose a clear photo — faces should be visible. Family, couple, and pet photos are welcome.",
     deliverableLine: "One high-quality Christmas portrait you can download and share privately.",
-    privacyLine: "Your upload and result stay private by default.",
+    privacyLine: "Your upload and result stay private by default. No public gallery.",
     crossLinks: PHOTO_CROSS,
     styles: CHRISTMAS_PHOTO_STYLES,
     allowMultiplePeople: true,

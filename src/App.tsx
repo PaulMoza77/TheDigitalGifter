@@ -138,6 +138,9 @@ const ChristmasGiftFinderPage = lazy(
 const ChristmasPortraitFunnelPage = lazy(
   () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
 );
+const ChristmasPhotoGeneratorPage = lazy(
+  () => import("@/features/christmas/ChristmasPhotoGeneratorPage"),
+);
 const ChristmasCardsPage = lazy(
   () => import("@/features/christmas/ChristmasCardsPage"),
 );
@@ -455,7 +458,7 @@ function AppInner() {
             <Route path="/categories/pets" element={<PetsCategoryPage />} />
 
             <Route path="/christmas" element={<ChristmasPage />} />
-            <Route path="/christmas/photo-generator" element={<ChristmasPortraitFunnelPage />} />
+            <Route path="/christmas/photo-generator" element={<ChristmasPhotoGeneratorPage />} />
             <Route path="/christmas/family" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/couples" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/kids" element={<ChristmasShellRoute />} />

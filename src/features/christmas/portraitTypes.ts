@@ -1,6 +1,7 @@
 export const CHRISTMAS_PORTRAIT_STEPS = [
   "intro",
   "upload",
+  "subject",
   "style",
   "preview",
   "offer",
@@ -11,6 +12,14 @@ export const CHRISTMAS_PORTRAIT_STEPS = [
 ] as const;
 
 export type ChristmasPortraitStep = (typeof CHRISTMAS_PORTRAIT_STEPS)[number];
+
+/** Hub subject choice after upload (photo-generator). */
+export type ChristmasPortraitSubjectChoice =
+  | "family"
+  | "couple"
+  | "person"
+  | "pet"
+  | "person_pet";
 
 export type ChristmasPortraitDraft = {
   step: ChristmasPortraitStep;
@@ -26,8 +35,11 @@ export type ChristmasPortraitDraft = {
   publicToken: string | null;
   email: string;
   portraitType: string | null;
+  /** Hub-only: who the user says is in the photo */
+  subjectChoice: ChristmasPortraitSubjectChoice | null;
   species: string | null;
   lastError: string | null;
+  softWarning: string | null;
   updatedAt: string;
 };
 
@@ -46,8 +58,10 @@ export function emptyPortraitDraft(): ChristmasPortraitDraft {
     publicToken: null,
     email: "",
     portraitType: null,
+    subjectChoice: null,
     species: null,
     lastError: null,
+    softWarning: null,
     updatedAt: new Date().toISOString(),
   };
 }

@@ -4,8 +4,16 @@
 **Route:** `/christmas/photo-generator`
 
 > Portrait verticals (family / couples / pets / dogs / cats) reuse this engine — see `docs/TDG_CHRISTMAS_PORTRAIT_VERTICALS.md`.
+>
+> Hub UI rebuild: `src/features/christmas/photoGenerator/` (premium landing + creation). Shared logic: `useChristmasPortraitFunnel.ts`.
 
 ## User flow
+
+### Hub (`/christmas/photo-generator`)
+
+Landing (hero before/after + examples) → Upload → **Who’s in the photo?** → Style → **Blurred ORIGINAL preview** → Offer → Embedded checkout (when purchasable) → Paid webhook → Replicate generation → Result → Download / Share / Try another style
+
+### Verticals
 
 Intro → Upload → Style → **Blurred ORIGINAL preview** → Offer → Embedded checkout (when purchasable) → Paid webhook → Replicate generation → Result → Download / Share → Token recovery (+ email when configured)
 
@@ -41,8 +49,20 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 ## Storage / privacy
 
 - Buckets: `christmas-source`, `christmas-generated` (private)
-- Results via short-lived signed URLs
+- Results via short-lived signed URLs (**~15 min**)
 - Default private; share uses Web Share API / file share (no public result page in V1)
+- Generation provider (Replicate / Flux Kontext Pro) receives the source image only after paid generation
+- **Retention:** paid sources kept for order recovery; unpaid `uploads/` purge is a documented ops seam (**not implemented yet**) — privacy copy must not claim automatic deletion after generation
+- Analytics never send image bytes, emails, or source paths
+
+## Hub rebuild notes (structure / conversion)
+
+- Visual system aligned with `/christmas` (Cormorant + Source Sans 3, evergreen / burgundy / gold)
+- Before/after slider + Family | Couples | Pets example switcher
+- Curated 8 classic styles with preview imagery; subject choice routes to family/couple/pet style catalogs
+- SEO: PageHead + JSON-LD (WebPage, FAQ, breadcrumb) + sitemap entry
+- i18n-ready keyed copy (`photoGenerator/copy.ts`); EN pack ships now; RTL dir map prepared
+- Distinct from paid funnel `/christmas-ai-photos` (V2 packs)
 
 ## Recovery
 
