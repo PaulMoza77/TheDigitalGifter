@@ -340,6 +340,76 @@
   padding-inline: 1.1rem;
 }
 
+.xmas-advent-landing {
+  padding-block: clamp(1.8rem, 4vw, 3rem);
+}
+
+.xmas-advent-landing__intro {
+  max-width: 40rem;
+  margin: 0 auto 1.15rem;
+  padding-inline: 1.25rem;
+  text-align: center;
+}
+
+.xmas-advent-landing__intro .xmas-lede {
+  margin-inline: auto;
+}
+
+.xmas-advent-landing__intro .xmas-actions {
+  margin-top: 1.15rem;
+}
+
+.xmas-advent-landing__frame {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-inline: 1.1rem;
+}
+
+.xmas-advent-stage {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: min(78svh, 640px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(246, 239, 227, 0.12);
+  border-radius: 1.25rem;
+  background: #0b0504;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.xmas-advent-stage:focus-visible {
+  outline: 2px solid var(--xmas-gold-bright);
+  outline-offset: 4px;
+}
+
+.xmas-advent-stage__poster,
+.xmas-advent-stage__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.xmas-advent-stage__poster img,
+.xmas-advent-stage__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 58%;
+}
+
+.xmas-advent-stage__video {
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+
+.xmas-advent-stage__video.is-ready {
+  opacity: 1;
+}
+
 .xmas-scene {
   position: relative;
   z-index: 1;
@@ -1447,7 +1517,8 @@
     display: none !important;
   }
 
-  .xmas-cabin__video {
+  .xmas-cabin__video,
+  .xmas-advent-stage__video {
     display: none !important;
   }
 

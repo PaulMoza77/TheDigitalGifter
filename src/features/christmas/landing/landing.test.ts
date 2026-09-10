@@ -107,6 +107,11 @@ describe("christmas landing wiring", () => {
     expect(existsSync(resolve(process.cwd(), "public/assets/christmas/messages/message-letter.webp"))).toBe(
       true,
     );
+    expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("advent-loop.mp4");
+    expect(readSrc("src/features/christmas/landing/scenes/AdventScene.tsx")).toContain("xmas-advent-stage");
+    expect(readSrc("src/features/christmas/landing/scenes/AdventScene.tsx")).toContain("adventLoop");
+    expect(existsSync(resolve(process.cwd(), "public/christmas/advent/advent-loop.mp4"))).toBe(true);
+    expect(existsSync(resolve(process.cwd(), "public/christmas/advent/advent-loop.poster.webp"))).toBe(true);
     expect(readSrc("src/features/christmas/landing/scenes/CardsScene.tsx")).toContain("useState(false)");
     expect(existsSync(resolve(process.cwd(), "public/assets/christmas/cards/cover-elegant.webp"))).toBe(
       true,
