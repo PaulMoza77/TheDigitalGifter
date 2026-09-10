@@ -640,7 +640,7 @@ export default function ChristmasPhotoGeneratorExperience() {
                 <h2>{t("offer.h2")}</h2>
                 <ul className="pg-guide">
                   <li>{funnel.styleName || funnel.draft.styleKey}</li>
-                  <li>{VERTICAL.deliverableLine}</li>
+                  <li>{t("vertical.photo.deliverable")}</li>
                   <li>{t("offer.ready")}</li>
                   <li>{t("offer.private")}</li>
                 </ul>

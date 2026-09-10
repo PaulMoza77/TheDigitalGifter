@@ -9,7 +9,11 @@ import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
-import { parseChristmasLocalePath } from "@/features/christmas/seo/localeRouting";
+import {
+  christmasPathForLocale,
+  parseChristmasLocalePath,
+  type ChristmasLocaleCode,
+} from "@/features/christmas/seo/localeRouting";
 import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import { AmbientSnow } from "./landing/AmbientSnow";
 import { FONT_HREF } from "./landing/assets";
@@ -17,6 +21,7 @@ import "./landing/ChristmasLanding.css";
 import {
   verticalFromPathname,
   type ChristmasPortraitVertical,
+  type ChristmasPortraitVerticalId,
 } from "./portraitVerticals";
 import { useChristmasPortraitFunnel } from "./useChristmasPortraitFunnel";
 import { STYLE_PREVIEW_BY_KEY, PHOTO_GEN_ASSETS } from "./photoGenerator/assets";
@@ -35,6 +40,37 @@ import {
   writePortraitToCardHandoff,
 } from "./cards/portraitHandoff";
 import { PortraitVerticalSeoSections } from "./seo/PortraitVerticalSeoSections";
+
+const CROSS_LABEL_KEY: Record<string, string> = {
+  "Family Christmas": "cross.familyChristmas",
+  "Couples Christmas": "cross.couplesChristmas",
+  "Pet Christmas": "cross.petChristmas",
+  "Christmas Cards": "cross.christmasCards",
+  "Christmas Dogs": "cross.christmasDogs",
+  "Christmas Cats": "cross.christmasCats",
+  "Classic portrait": "cross.classicPortrait",
+  "All pets": "cross.allPets",
+  Family: "cross.family",
+  Couples: "cross.couples",
+};
+
+function verticalUi(
+  id: ChristmasPortraitVerticalId,
+  field: "heroHeadline" | "heroSupport" | "privacy" | "uploadHint" | "deliverable",
+  locale: PhotoGenLocale,
+  fallback: string,
+): string {
+  const key = `vertical.${id}.${field}`;
+  const text = photoGenT(key, locale);
+  return text === key ? fallback : text;
+}
+
+function crossLinkLabel(label: string, locale: PhotoGenLocale): string {
+  const key = CROSS_LABEL_KEY[label];
+  if (!key) return label;
+  const text = photoGenT(key, locale);
+  return text === key ? label : text;
+}
 
 function ensureFonts() {
   if (document.querySelector(`link[data-xmas-fonts="1"]`)) return;
@@ -61,10 +97,32 @@ export default function ChristmasPortraitFunnelPage() {
     parseChristmasLocalePath(pathname).locale,
   ) as PhotoGenLocale;
   const t = (key: string) => photoGenT(key, locale);
+  const pathFor = (to: string) =>
+    christmasPathForLocale(to, locale as ChristmasLocaleCode);
   const funnel = useChristmasPortraitFunnel({
     vertical,
     mode: "vertical",
   });
+  const heroHeadline = verticalUi(
+    vertical.id,
+    "heroHeadline",
+    locale,
+    vertical.heroHeadline,
+  );
+  const heroSupport = verticalUi(
+    vertical.id,
+    "heroSupport",
+    locale,
+    vertical.heroSupport,
+  );
+  const privacyLine = verticalUi(vertical.id, "privacy", locale, vertical.privacyLine);
+  const uploadHint = verticalUi(vertical.id, "uploadHint", locale, vertical.uploadHint);
+  const deliverableLine = verticalUi(
+    vertical.id,
+    "deliverable",
+    locale,
+    vertical.deliverableLine,
+  );
 
   useEffect(() => {
     ensureFonts();
@@ -94,11 +152,11 @@ export default function ChristmasPortraitFunnelPage() {
         <div className="pg-studio" style={{ paddingTop: "2.5rem", paddingBottom: "3rem" }}>
           <p className="xmas-kicker">The Digital Gifter · Christmas</p>
           <h1 style={{ marginTop: "0.5rem", fontSize: "clamp(2rem, 5vw, 3rem)", color: "#fffaf1" }}>
-            {vertical.heroHeadline}
+            {heroHeadline}
           </h1>
-          <p className="xmas-lede">{vertical.heroSupport}</p>
+          <p className="xmas-lede">{heroSupport}</p>
           <p className="xmas-lede" style={{ fontSize: "0.88rem" }}>
-            {vertical.privacyLine}
+            {privacyLine}
           </p>
 
           {funnel.draft.lastError ? (
@@ -121,10 +179,10 @@ export default function ChristmasPortraitFunnelPage() {
               <section className="space-y-4">
                 {vertical.id === "pets" ? (
                   <div style={{ display: "flex", gap: "0.65rem" }}>
-                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to="/christmas/dogs">
+                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to={pathFor("/christmas/dogs")}>
                       {t("funnel.dogs")}
                     </Link>
-                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to="/christmas/cats">
+                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to={pathFor("/christmas/cats")}>
                       {t("funnel.cats")}
                     </Link>
                   </div>
@@ -147,7 +205,7 @@ export default function ChristmasPortraitFunnelPage() {
                   onChange={(e) => void funnel.onFileChosen(e.target.files?.[0] || null)}
                 />
                 <p className="xmas-lede" style={{ fontSize: "0.88rem" }}>
-                  {vertical.uploadHint}
+                  {uploadHint}
                 </p>
                 <p className="xmas-lede" style={{ fontSize: "0.8rem" }}>
                   {t("funnel.fileHint")}
@@ -214,7 +272,7 @@ export default function ChristmasPortraitFunnelPage() {
                 <h2>{t("funnel.unlock")}</h2>
                 <ul className="pg-guide">
                   <li>{t("funnel.styleLabel")}: {photoStyleLabel(funnel.draft.styleKey || "", locale, funnel.styleName || undefined)}</li>
-                  <li>{vertical.deliverableLine}</li>
+                  <li>{deliverableLine}</li>
                   <li>{t("funnel.readyMinutes")}</li>
                   <li>{t("funnel.privateDownload")}</li>
                 </ul>
@@ -324,8 +382,8 @@ export default function ChristmasPortraitFunnelPage() {
                 <div className="pg-nav" style={{ border: 0, marginTop: "0.5rem", paddingTop: 0 }}>
 <span>{t("funnel.tryAnother")}</span>
                   {vertical.crossLinks.map((link) => (
-                    <Link key={link.to} to={link.to}>
-                      {link.label}
+                    <Link key={link.to} to={pathFor(link.to)}>
+                      {crossLinkLabel(link.label, locale)}
                     </Link>
                   ))}
                 </div>
@@ -336,7 +394,7 @@ export default function ChristmasPortraitFunnelPage() {
               <section className="space-y-3">
                 <h2>{t("funnel.errorTitle")}</h2>
                 <p className="xmas-lede">{t("funnel.errorPaid")}</p>
-                <Link to="/christmas" className="xmas-btn xmas-btn--ghost">
+                <Link to={pathFor("/christmas")} className="xmas-btn xmas-btn--ghost">
                   {t("funnel.hub")}
                 </Link>
               </section>
@@ -345,12 +403,12 @@ export default function ChristmasPortraitFunnelPage() {
 
           <nav className="pg-nav">
             {vertical.crossLinks.map((link) => (
-              <Link key={link.to} to={link.to}>
-                {link.label}
+              <Link key={link.to} to={pathFor(link.to)}>
+                {crossLinkLabel(link.label, locale)}
               </Link>
             ))}
-            <Link to="/christmas">{t("funnel.hub")}</Link>
-            <Link to="/christmas/photo-generator">{t("funnel.photoGen")}</Link>
+            <Link to={pathFor("/christmas")}>{t("funnel.hub")}</Link>
+            <Link to={pathFor("/christmas/photo-generator")}>{t("funnel.photoGen")}</Link>
           </nav>
 
           <PortraitVerticalSeoSections verticalId={vertical.id} />
