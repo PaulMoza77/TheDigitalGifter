@@ -111,6 +111,7 @@ const EN: CopyBag = {
   "messages.h2": "Sometimes you know what you feel.",
   "messages.lede": "You just don’t know how to say it. We’ll help you find the words — then you make them yours.",
   "messages.cta": "Write My Christmas Message",
+  "messages.alt": "A cream Christmas letter on a wooden desk, with the words writing themselves",
   "messages.for": "For",
   "messages.tone": "Tone",
   "messages.heartfelt": "Heartfelt",

@@ -1081,6 +1081,70 @@
   }
 }
 
+.xmas-messages-scene {
+  background:
+    radial-gradient(640px 320px at 18% 48%, rgba(212, 179, 106, 0.12), transparent 58%),
+    linear-gradient(180deg, rgba(18, 8, 12, 0.08), rgba(18, 8, 12, 0.28));
+}
+
+.xmas-message-letter {
+  position: relative;
+  isolation: isolate;
+  max-width: 26rem;
+  margin: 0 auto;
+  filter: drop-shadow(0 28px 40px rgba(0, 0, 0, 0.45));
+}
+
+.xmas-message-letter img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.xmas-message-ink {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  top: 13%;
+  height: 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.xmas-message-ink__to {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #8a5a22;
+}
+
+.xmas-message-ink .xmas-type {
+  min-height: 0;
+  margin: 0;
+  color: #3b140e;
+  font-size: clamp(1.12rem, 2.5vw, 1.42rem);
+  line-height: 1.4;
+}
+
+.xmas-message-letter--funny .xmas-message-ink .xmas-type {
+  color: #5a2418;
+}
+
+.xmas-message-caret {
+  display: inline-block;
+  width: 0.08em;
+  height: 0.9em;
+  margin-left: 0.12em;
+  background: #3b140e;
+  vertical-align: -0.08em;
+  animation: xmas-message-caret 1s steps(1, end) infinite;
+}
+
 .xmas-type {
   min-height: 4.5rem;
   margin-top: 1rem;
@@ -1088,6 +1152,17 @@
   font-size: 1.35rem;
   font-style: italic;
   color: var(--xmas-ivory);
+}
+
+@keyframes xmas-message-caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .xmas-finale {
@@ -1365,6 +1440,10 @@
 
   .xmas-card-shine,
   .xmas-card-spark {
+    display: none !important;
+  }
+
+  .xmas-message-caret {
     display: none !important;
   }
 

@@ -22,6 +22,8 @@ export const LANDING_ASSETS = {
   cardCoverFunny: "/assets/christmas/cards/cover-funny.webp",
   advent: "/assets/christmas/advent_calendar.webp",
   wishlist: "/assets/christmas/wishlist_letter.webp",
+  messageLetter: "/assets/christmas/messages/message-letter.webp",
+  messageLetterJpg: "/assets/christmas/messages/message-letter.jpg",
   santaWebm: "/assets/christmas/santa-alpha.webm",
   santaIdle: "/assets/christmas/santa-idle.webp",
   santaSpeak: "/assets/christmas/santa-speak.webp",
