@@ -413,7 +413,7 @@ export default function ChristmasTreePage() {
             ? shared?.from_name
               ? `From ${shared.from_name}`
               : "Tap a gift to open it"
-            : "I've made you a Christmas tree — tap a gift."}
+            : "Free to decorate and share. Private until you enable a link — not the paid Gift Tree game."}
         </p>
 
         <div className="mt-6">

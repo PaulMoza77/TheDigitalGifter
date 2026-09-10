@@ -7,7 +7,11 @@ import { CHRISTMAS_FUNNEL_ALLOWED_EVENTS } from "../funnelEventContract";
 import {
   adventDayParts,
   adventDoorState,
+  generateOpaqueOwnerToken,
+  generatePublicShareId,
   giftCountBucket,
+  isOpaqueOwnerToken,
+  isPublicShareId,
   isValidTreeStyle,
   reorderIds,
   sanitizeTreeAnalyticsMeta,
@@ -114,6 +118,18 @@ describe("advent timezone policy (Europe/Bucharest)", () => {
   });
 });
 
+describe("christmas tree owner token ≠ shareId", () => {
+  it("generates distinct write tokens and public share ids", () => {
+    const ownerToken = generateOpaqueOwnerToken();
+    const shareId = generatePublicShareId();
+    expect(isOpaqueOwnerToken(ownerToken)).toBe(true);
+    expect(isPublicShareId(shareId)).toBe(true);
+    expect(ownerToken).not.toBe(shareId);
+    expect(isOpaqueOwnerToken(shareId)).toBe(false);
+    expect(isPublicShareId(ownerToken)).toBe(false);
+  });
+});
+
 describe("christmas tree / advent product wiring", () => {
   it("tree and advent are open experiences, not shells", () => {
     expect(shellForPath("/christmas/tree")).toBeNull();
@@ -129,6 +145,8 @@ describe("christmas tree / advent product wiring", () => {
     expect(app).toContain('path="/christmas/advent"');
     expect(app).toContain("ChristmasTreePage");
     expect(app).toContain("ChristmasAdventPage");
+    expect(app).toMatch(/const ChristmasPortraitFunnelPage = lazy\(/);
+    expect(app).toContain('import("@/features/christmas/ChristmasPortraitFunnelPage")');
   });
 
   it("migration defines share/owner separation and advent uniqueness", () => {
@@ -152,6 +170,41 @@ describe("christmas tree / advent product wiring", () => {
     expect(fn).toContain("idempotency_key");
     expect(fn).toContain("Europe/Bucharest");
     expect(fn).not.toMatch(/share_id.*updateTree|updateTree.*share_id/);
+    expect(fn).toContain("share_enabled: false");
+    expect(fn).toContain("const ownerToken = generateOpaqueToken()");
+    expect(fn).toContain("const shareId = generateShareId()");
+    expect(fn).toContain("owner_token_hash: user?.id ? null : ownerHash");
+    expect(fn).toContain(
+      '"id,share_id,share_enabled,moderation_status,title,message,from_name,tree_style,decoration_config,locale,view_count"',
+    );
+    const sharedBlock = fn.slice(
+      fn.indexOf('action === "getSharedTree"'),
+      fn.indexOf('if (action === "addGift"'),
+    );
+    expect(sharedBlock).toContain("share_enabled");
+    expect(sharedBlock).not.toContain("owner_token");
+    expect(sharedBlock).not.toContain("user_id");
+  });
+
+  it("share pages are noindex and stay off paid Gift Tree / send-a-gift routes", () => {
+    const page = readSrc("src/features/christmas/ChristmasTreePage.tsx");
+    expect(page).toContain("noindex={isShareRoute}");
+    expect(page).toContain("/christmas/tree/${owner.share_id}");
+    expect(page).not.toContain("/christmas/gifts");
+    expect(page).not.toContain("/send-a-gift");
+    expect(page).toContain("treeFunnel");
+    expect(page).not.toMatch(/mockTree|MOCK_TREE|demoTree|fakeTree/);
+
+    const robots = readSrc("public/robots.txt");
+    expect(robots).toContain("Disallow: /christmas/tree/");
+
+    const vercel = readSrc("vercel.json");
+    expect(vercel).toContain("/christmas/tree/:shareId");
+    expect(vercel).toContain("X-Robots-Tag");
+    expect(vercel).toContain("noindex, nofollow");
+
+    const sitemap = readSrc("api/sitemap.xml.ts");
+    expect(sitemap).not.toContain("/christmas/tree/");
   });
 
   it("registers virality analytics events without private content keys in allowlist usage", () => {

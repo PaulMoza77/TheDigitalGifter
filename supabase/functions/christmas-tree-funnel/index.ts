@@ -122,7 +122,9 @@ Deno.serve(async (req) => {
       if (shareId.length < 22) return jsonResponse({ error: "invalid_share" }, 400);
       const { data: tree } = await service
         .from("christmas_trees")
-        .select("*")
+        .select(
+          "id,share_id,share_enabled,moderation_status,title,message,from_name,tree_style,decoration_config,locale,view_count",
+        )
         .eq("share_id", shareId)
         .maybeSingle();
       if (!tree || !tree.share_enabled || tree.moderation_status !== "active") {
@@ -137,7 +139,7 @@ Deno.serve(async (req) => {
         .eq("id", tree.id);
       const { data: gifts } = await service
         .from("christmas_tree_gifts")
-        .select("*")
+        .select("id,sort_order,gift_type,box_style,display_name,message,unlock_mode,unlock_at,opened_at")
         .eq("tree_id", tree.id)
         .order("sort_order", { ascending: true });
       const now = Date.now();
