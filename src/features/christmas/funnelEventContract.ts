@@ -119,6 +119,17 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "christmas_photo_downloaded",
   "christmas_photo_shared",
   "christmas_photo_card_cross_sell",
+  // Family Christmas portrait hub — privacy-safe; never include image bytes
+  "christmas_family_page_view",
+  "christmas_family_upload_started",
+  "christmas_family_upload_completed",
+  "christmas_family_style_selected",
+  "christmas_family_generation_started",
+  "christmas_family_generation_completed",
+  "christmas_family_style_retry",
+  "christmas_family_downloaded",
+  "christmas_family_shared",
+  "christmas_family_card_cross_sell",
 ] as const;
 
 export type ChristmasFunnelEventName = (typeof CHRISTMAS_FUNNEL_ALLOWED_EVENTS)[number];

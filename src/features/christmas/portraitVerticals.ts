@@ -89,12 +89,13 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     portraitType: "family",
     expectedSpecies: null,
     draftStorageKey: "tdg.christmas.portrait.family.v1",
-    pageTitle: "Family Christmas Portrait | The Digital Gifter",
+    pageTitle:
+      "Christmas Family Photo Generator | Magical Family Christmas Portraits | TheDigitalGifter",
     metaDescription:
-      "Turn your family photo into a magical Christmas portrait. Built for groups. Private by default.",
+      "Turn your family photo into a magical Christmas portrait. Create a warm, realistic family Christmas picture in minutes — private by default.",
     heroHeadline: "Turn your family photo into a magical Christmas portrait.",
     heroSupport:
-      "Upload a family photo, choose a festive style, preview a blurred version of your original, then create the finished portrait after payment.",
+      "Upload a family photo, choose a Christmas style, and create a beautiful portrait made for the people you love most.",
     uploadHint: "Group photos welcome — we aim to keep everyone in the frame.",
     deliverableLine: "One Christmas family portrait optimized for multiple people.",
     privacyLine: "Family photos stay private by default. No public gallery.",

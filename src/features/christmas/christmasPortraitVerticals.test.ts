@@ -135,13 +135,14 @@ describe("christmas portrait payment gates", () => {
 });
 
 describe("christmas portrait wiring", () => {
-  it("App routes hub to photo generator + verticals to shared funnel", () => {
+  it("App routes hubs to premium pages + remaining verticals to shared funnel", () => {
     const app = readSrc("src/App.tsx");
     expect(app).toContain("ChristmasPhotoGeneratorPage");
+    expect(app).toContain("ChristmasFamilyPage");
     expect(app).toContain("ChristmasPortraitFunnelPage");
+    expect(app).toContain('path="/christmas/photo-generator"');
+    expect(app).toContain('path="/christmas/family"');
     for (const path of [
-      "/christmas/photo-generator",
-      "/christmas/family",
       "/christmas/couples",
       "/christmas/pets",
       "/christmas/dogs",
