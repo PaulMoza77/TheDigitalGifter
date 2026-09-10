@@ -42,21 +42,35 @@ describe("christmas club live cabin + gift tree", () => {
     expect(boot).toContain("cabin-hero-loop-720.mp4?v=seedance1");
   });
 
-  it("embeds the live gift tree under the cabin, with desktop and mobile scene loops", async () => {
+  it("embeds the framed live gift tree, then the original story scenes", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
     const page = readFileSync(resolve(process.cwd(), "src/features/christmas/club/ChristmasClubPage.tsx"), "utf8");
+    const landing = readFileSync(
+      resolve(process.cwd(), "src/features/christmas/landing/ChristmasLandingExperience.tsx"),
+      "utf8",
+    );
     const gifts = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/ChristmasGiftsPage.tsx"), "utf8");
     const tree = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/ChristmasTreeScene.tsx"), "utf8");
     const media = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/giftTreeMedia.ts"), "utf8");
-    expect(page).toContain("ChristmasGiftsExperience");
-    expect(page).toContain("fillViewport");
-    expect(page).toContain('id="gift-tree"');
-    expect(gifts).toContain("fillViewport");
+    const santa = readFileSync(resolve(process.cwd(), "src/features/christmas/landing/assets.ts"), "utf8");
+    expect(page).toContain("ChristmasLandingExperience");
+    expect(page).toContain("includeHero={false}");
+    expect(page).not.toContain("fillViewport");
+    expect(landing).toContain("GiftTreeLandingScene");
+    expect(landing).toContain("PortraitScene");
+    expect(landing).toContain("SantaScene");
+    expect(landing).toContain("TreeScene");
+    expect(landing).toContain("AdventScene");
+    expect(landing).toContain("WishlistScene");
+    expect(landing).toContain("CardsScene");
+    expect(gifts).toContain("h-[min(78svh,640px)]");
     expect(tree).toContain("mobileMp4");
     expect(tree).toContain("desktopMp4");
     expect(media).toContain("scene-desktop.mp4");
     expect(media).toContain("scene-mobile.mp4");
+    expect(santa).toContain("santa-static.png");
+    expect(santa).toContain("santa-alpha.webm");
   });
 });
 

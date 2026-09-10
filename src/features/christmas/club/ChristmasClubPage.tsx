@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -13,12 +12,10 @@ import {
   CHRISTMAS_CLUB_AUTH_RETURN_PATH,
   CHRISTMAS_CLUB_CONFIG,
   CHRISTMAS_CLUB_DESKTOP_MEDIA,
-  CHRISTMAS_CLUB_GIFTS_ROUTE,
   CHRISTMAS_CLUB_GOOGLE_PENDING_KEY,
   CHRISTMAS_CLUB_SEO,
-  CHRISTMAS_CLUB_SUITE_ROUTE,
 } from "./config";
-import { ChristmasGiftsExperience } from "@/features/christmas/gifts/ChristmasGiftsPage";
+import { ChristmasLandingExperience } from "@/features/christmas/landing/ChristmasLandingExperience";
 import { ChristmasClubScene } from "./ChristmasClubScene";
 import { ChristmasCountdown } from "./ChristmasCountdown";
 import { ChristmasClubSuccess, ChristmasJoinForm } from "./ChristmasJoinForm";
@@ -276,21 +273,7 @@ export function ChristmasClubPage() {
         </section>
       </div>
 
-      <section id="gift-tree" className="cc-tree" aria-label="Christmas gift tree">
-        <ChristmasGiftsExperience embedded fillViewport />
-      </section>
-
-      <footer className="cc-foot">
-        <p>
-          <Link to={CHRISTMAS_CLUB_SUITE_ROUTE}>Explore Christmas experiences</Link>
-          {" · "}
-          <Link to={CHRISTMAS_CLUB_GIFTS_ROUTE}>Open the gift tree</Link>
-          {" · "}
-          <Link to="/generator?occasion=christmas">Christmas generator</Link>
-          {" · "}
-          <Link to="/">The Digital Gifter</Link>
-        </p>
-      </footer>
+      <ChristmasLandingExperience includeHero={false} />
     </div>
   );
 }

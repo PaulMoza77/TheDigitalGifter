@@ -14,7 +14,8 @@ export function isSupportWidgetHidden(pathname: string) {
     return pathname !== "/pet/order" && !pathname.startsWith("/pet/order/");
   }
 
-  if (pathname === "/christmas") {
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  if (normalized === "/christmas") {
     return true;
   }
 
