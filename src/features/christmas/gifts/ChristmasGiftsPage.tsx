@@ -348,14 +348,18 @@ export function ChristmasGiftsExperience({
   const warmGiftOpenClip = useCallback(() => {
     if (giftOpenWarmed.current || typeof document === "undefined") return;
     giftOpenWarmed.current = true;
-    if (document.querySelector('link[data-gt-open-clip="1"]')) return;
-    const warm = document.createElement("link");
-    warm.rel = "preload";
-    warm.as = "video";
-    warm.href = GIFT_TREE_SCENE.giftOpenMp4;
-    warm.type = "video/mp4";
+    if (document.querySelector('[data-gt-open-clip="1"]')) return;
+    // Chrome does not support <link rel="preload" as="video">. Warm the clip
+    // with a hidden video element instead so the open ceremony starts instantly.
+    const warm = document.createElement("video");
+    warm.muted = true;
+    warm.playsInline = true;
+    warm.preload = "auto";
+    warm.src = GIFT_TREE_SCENE.giftOpenMp4;
     warm.setAttribute("data-gt-open-clip", "1");
-    document.head.appendChild(warm);
+    warm.setAttribute("aria-hidden", "true");
+    warm.style.display = "none";
+    document.body.appendChild(warm);
   }, []);
 
   const onHeroReady = useCallback(() => {
