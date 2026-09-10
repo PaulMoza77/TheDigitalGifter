@@ -30,6 +30,10 @@ import {
   should404UnknownChristmasPath,
   shouldNoindexChristmasPath,
 } from "../server/christmasIndexing.mjs";
+import {
+  CONTENT_DEPTH_PATHS,
+  getChristmasContentDepth,
+} from "../server/christmasContentDepth.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
@@ -283,6 +287,60 @@ for (const href of [
   assert(hasLink(photo, href), `photo-generator hierarchy link ${href}`);
 }
 
+// —— P2A content depth / GEO ——
+assert(CONTENT_DEPTH_PATHS.length === 6, `P2A covers 6 money pages, got ${CONTENT_DEPTH_PATHS.length}`);
+const geoQuestions = {
+  "/christmas": "What can you create with TheDigitalGifter for Christmas?",
+  "/christmas/gift-finder": "What is a Christmas Gift Finder?",
+  "/christmas/photo-generator": "What is an AI Christmas photo generator?",
+  "/christmas/santa-video": "What is a personalized Santa video?",
+  "/christmas/wishlist": "What is an online Christmas wishlist?",
+  "/christmas/cards": "What is an online Christmas card maker?",
+};
+for (const [path, question] of Object.entries(geoQuestions)) {
+  const depth = getChristmasContentDepth(path);
+  assert(Boolean(depth), `depth module has ${path}`);
+  const html = applyChristmasSeo(template, path);
+  assert(html.includes(question), `GEO H2 in SSR for ${path}`);
+  assert(html.includes('data-tdg-depth="p2a"'), `depth marker for ${path}`);
+  assert(html.includes("Frequently Asked Questions"), `FAQ section for ${path}`);
+  assert(html.includes('"@type":"FAQPage"') || html.includes('"@type": "FAQPage"'), `FAQPage JSON-LD for ${path}`);
+  for (const marker of depth.markers) {
+    assert(html.includes(marker), `${path} marker: ${marker}`);
+  }
+  assert(depth.faqs.length >= 5, `${path} has at least 5 FAQs`);
+  // Distinct intros — avoid cannibalization copies
+  assert(depth.geo.body.length > 80, `${path} GEO body has useful length`);
+}
+assert(
+  !applyChristmasSeo(template, "/christmas").includes("What is a Christmas Gift Finder?"),
+  "hub does not steal gift-finder GEO question",
+);
+assert(
+  hasLink(applyChristmasSeo(template, "/christmas/wishlist"), "/christmas/gift-finder"),
+  "wishlist links to gift-finder",
+);
+assert(
+  hasLink(applyChristmasSeo(template, "/christmas/cards"), "/christmas/photo-generator"),
+  "cards links to photo-generator",
+);
+assert(
+  hasLink(applyChristmasSeo(template, "/christmas/cards"), "/christmas/messages"),
+  "cards links to messages",
+);
+assert(
+  applyChristmasSeo(template, "/christmas/santa-video").includes("What Can Santa Mention?"),
+  "santa SSR includes personalization fields section",
+);
+assert(
+  applyChristmasSeo(template, "/christmas/gift-finder").includes("not connected yet") ||
+    applyChristmasSeo(template, "/christmas/gift-finder").includes("Live retailer"),
+  "gift-finder honesty about non-live inventory",
+);
+assert(
+  !applyChristmasSeo(template, "/christmas").includes('"@type":"AggregateRating"'),
+  "no fake AggregateRating on hub",
+);
 // —— 3) Optional live / origin fetch ——
 const liveBase = String(process.env.CHRISTMAS_SEO_BASE || "").replace(/\/$/, "");
 const originBase = String(process.env.CHRISTMAS_SEO_ORIGIN || "").replace(/\/$/, "");

@@ -185,22 +185,22 @@ export const WISHLIST_COPY_EN: WishlistCopy = {
   seoCreateTitle: "Create a Christmas Wishlist Online",
   seoCreateBody:
     "Build a shareable Christmas wishlist in minutes. Keep every gift idea in one place instead of scattering links across chats.",
-  seoAnywhereTitle: "Add Gifts From Anywhere",
+  seoAnywhereTitle: "Add Anything You Wish For",
   seoAnywhereBody:
-    "Paste a product URL from any store, or write a wish for experiences and handmade gifts — your list isn’t limited to one shop.",
+    "Paste a product URL from almost any store, write a manual wish, add notes, and include experiences or handmade ideas. If a link can’t be read automatically, you can still save the wish by hand.",
   seoShareTitle: "Share One Simple Link",
   seoShareBody:
-    "Send one wishlist link to family and friends so everyone shops from the same list.",
+    "Turn sharing on and send one wishlist link via copy, WhatsApp, email, or your device’s share sheet. Shared lists are reachable by people with the link and are not meant for search engines.",
   seoDuplicateTitle: "Avoid Duplicate Christmas Gifts",
   seoDuplicateBody:
-    "Viewers can reserve a gift so others know it’s covered — without telling you who bought it.",
+    "Viewers can tap “I’m getting this” to reserve a gift. Reservations stay anonymous to the wishlist owner, so the surprise stays intact while family avoids buying the same thing twice.",
   seoKidsTitle: "Christmas Wishlists for Kids and Families",
   seoKidsBody:
-    "Create a list for yourself, your child, or the whole family, then share it with grandparents and friends.",
+    "Create a list for yourself, your child, or someone else, then share it with grandparents and friends. Pair it with the Gift Finder when you’re not sure what to ask for.",
   geoWhatTitle: "What is an online Christmas wishlist?",
   geoWhatBody:
-    "An online Christmas wishlist is a shareable list of gifts or experiences someone would like to receive. Friends and family can use the list to choose gifts and coordinate purchases.",
-  faqTitle: "Christmas Wishlist FAQ",
+    "An online Christmas wishlist is a shareable list of gifts or experiences someone would like to receive. On TheDigitalGifter, you create a list, add wishes from product links or free text, share one link with family and friends, and let people reserve gifts so shopping stays coordinated without spoiling the surprise.",
+  faqTitle: "Frequently Asked Questions",
   reservationFail: "Couldn’t reserve that gift. Please try again.",
   loading: "Loading…",
   saveListHint: "Your wishlist is saved on this device. Sign in later to keep it across browsers.",

@@ -76,13 +76,22 @@ const EN: Record<string, string> = {
   "error.rate": "Please wait a bit before searching again.",
   "error.retry": "Try again",
 
-  "seo.section.recipient": "Christmas Gift Ideas by Recipient",
-  "seo.section.budget": "Christmas Gifts by Budget",
+  "seo.section.recipient": "Find Gifts by Recipient",
+  "seo.section.budget": "Find Christmas Gifts by Budget",
   "seo.section.personality": "Christmas Gifts by Personality",
+  "seo.section.how": "How the Christmas Gift Finder Works",
+  "seo.section.howBody":
+    "Choose the recipient, share their interests and personality, set a budget, and optionally add one personal detail. You’ll get ranked gift ideas with short explanations — then refine, restart, or save ideas to your Christmas Wishlist.",
+  "seo.section.hasEverything": "Gifts for Someone Who Has Everything",
+  "seo.section.hasEverythingBody":
+    "When someone already owns “all the things,” useful Christmas gifts usually lean toward experiences, personalized keepsakes, hobby upgrades, sentimental moments, or practical premium items. Choosing a “has everything” personality steers the finder that way instead of generic clutter.",
   "seo.geo.title": "What is a Christmas Gift Finder?",
   "seo.geo.body":
-    "A Christmas Gift Finder helps you discover gift ideas based on who you are shopping for, their interests, personality and your budget.",
-  "seo.faq.title": "Christmas Gift Finder FAQ",
+    "A Christmas Gift Finder is a guided tool that recommends Christmas gift ideas based on who you’re shopping for, their interests and personality, and your budget. On TheDigitalGifter, you answer a short set of questions and receive curated ideas with clear reasons they may fit — then you can refine or save ideas to a wishlist.",
+  "seo.faq.title": "Frequently Asked Questions",
+  "seo.section.wishlist": "Save ideas to your wishlist",
+  "seo.section.wishlistBody":
+    "Like an idea? Save it to your Christmas Wishlist and share one list with family so shopping stays coordinated.",
 
   "breadcrumb.christmas": "Christmas",
   "breadcrumb.finder": "Gift Finder",

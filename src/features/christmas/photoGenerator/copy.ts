@@ -105,17 +105,17 @@ const EN: CopyBag = {
 
   "examples.h2": "Christmas Photo Examples",
   "examples.lede":
-    "Realistic Christmas portraits for families, couples, dogs, cats — and the ones you love most.",
+    "Demo examples for inspiration — not customer photos. Each pair shows an everyday photo beside a Christmas portrait direction.",
   "examples.demoNote": "Demo examples for inspiration — not customer photos.",
-  "examples.family": "Family",
-  "examples.couple": "Couple",
-  "examples.dog": "Dog",
-  "examples.cat": "Cat",
-  "examples.familyPet": "Family + pet",
-  "examples.before": "Original",
-  "examples.after": "Christmas result",
+  "examples.family": "Family Christmas Photo",
+  "examples.couple": "Couple Christmas Portrait",
+  "examples.dog": "Dog Christmas Portrait",
+  "examples.cat": "Cat Christmas Portrait",
+  "examples.familyPet": "Family + Pet Christmas Portrait",
+  "examples.before": "Original photo",
+  "examples.after": "Christmas portrait result",
 
-  "ecosystem.h2": "Create Christmas Photos for Family, Couples and Pets",
+  "ecosystem.h2": "Christmas Photos for Families, Couples and Pets",
   "ecosystem.lede":
     "Start here for any Christmas portrait — or go straight to a specialized experience.",
 
@@ -145,52 +145,54 @@ const EN: CopyBag = {
   "how.3.title": "Create your portrait",
   "how.3.body": "We transform the photo into your Christmas image.",
 
+  "portraitExplain.h2": "Turn Your Photo Into a Christmas Portrait",
+  "portraitExplain.body":
+    "Upload a favorite photo, choose the subject type, pick a Christmas look, and create a festive portrait you can download. The goal is a holiday image that still feels like the people or pets you love.",
+
+  "best.h2": "What Photos Work Best?",
+  "best.body":
+    "Use a clear photo with visible faces (or a clear pet), decent lighting, and enough sharpness that everyone you want in the portrait is recognizable. Avoid extreme blur, heavy crop-outs, or photos where key people are hidden.",
+
   "geo.h2": "What is an AI Christmas photo generator?",
   "geo.body":
-    "An AI Christmas photo generator transforms an uploaded photo into a Christmas-themed portrait while keeping the people or pets from the original image recognizable.",
+    "An AI Christmas photo generator turns a real photo you upload into a festive Christmas portrait. On TheDigitalGifter, you choose who is in the photo, pick a Christmas style, and create a downloadable portrait for family, couples, people, or pets — private by default.",
   "geo.best": "What photos work best?",
   "geo.bestBody":
     "Clear photos where faces (or pet faces) are visible work best. Include everyone you want in the final portrait.",
   "geo.support": "Who can be in the photo?",
   "geo.supportBody":
     "Families, couples, one person, pets, and person-plus-pet photos are supported. Multi-person results depend on how clearly each person appears in the upload.",
-  "geo.time": "How long does it take?",
-  "geo.timeBody":
-    "After payment, portraits are usually ready within a few minutes. You can reopen your private order link anytime.",
   "geo.privacy": "What happens to my photo?",
   "geo.privacyBody":
-    "Uploads and results are stored privately and served through short-lived links. We do not publish a public gallery of your portrait.",
+    "Uploads and results are private by default. There is no public gallery. Access is through your order/result flow.",
 
   "faq.h2": "Frequently Asked Questions",
   "faq.1.q": "How does the Christmas photo generator work?",
   "faq.1.a":
-    "Upload a photo, tell us who’s in it, choose a Christmas style, then create your portrait. After checkout, we generate a finished Christmas image you can download.",
-  "faq.2.q": "What kind of photo should I upload?",
+    "Upload a photo, choose who is in it, pick a Christmas style, then create your portrait after checkout when required by the product flow.",
+  "faq.2.q": "What photo should I upload?",
   "faq.2.a":
-    "A clear JPEG, PNG, or WebP under 15 MB works best. Faces should be visible, and the image shouldn’t be extremely blurry.",
-  "faq.3.q": "Can I create a Christmas family photo?",
+    "A clear photo with visible faces or a clear pet works best. Good lighting helps. Avoid extreme blur.",
+  "faq.3.q": "Can I create a family Christmas photo?",
   "faq.3.a":
-    "Yes. Choose Family after upload, or visit the dedicated Christmas family photo experience.",
-  "faq.4.q": "Can I create Christmas photos of my dog or cat?",
+    "Yes. Choose family as the subject, or start from the Family Christmas route.",
+  "faq.4.q": "Can I create a Christmas portrait of my dog or cat?",
   "faq.4.a":
-    "Yes. Choose Pet after upload, or use the Christmas pets, dogs, or cats experiences.",
-  "faq.5.q": "Can I include multiple people?",
+    "Yes. Pet subjects are supported, with dedicated dog and cat routes for a clearer start.",
+  "faq.5.q": "Can multiple people be included?",
   "faq.5.a":
-    "Yes for family and group photos. Keep everyone clearly visible in the original image for the best result.",
-  "faq.6.q": "Can I try different Christmas styles?",
+    "Yes for family and couple flows. Upload a photo that includes everyone who should appear.",
+  "faq.6.q": "Can I try different styles?",
   "faq.6.a":
-    "Yes. You can choose from a curated set of Christmas styles, and try another style after you create a portrait.",
-  "faq.7.q": "How long does generation take?",
-  "faq.7.a":
-    "Finished portraits are usually ready a few minutes after payment. You can leave the page and return with your order link.",
-  "faq.8.q": "Can I download the finished image?",
-  "faq.8.a": "Yes. When your portrait is ready, download it privately from the result screen.",
-  "faq.9.q": "Can I turn my portrait into a Christmas card?",
-  "faq.9.a":
+    "Yes. Pick from the enabled Christmas styles listed on the page before you create.",
+  "faq.7.q": "Can I download the result?",
+  "faq.7.a": "Yes. When your portrait is ready, download it from the result screen.",
+  "faq.8.q": "Can I turn my portrait into a Christmas card?",
+  "faq.8.a":
     "Yes. After you create a portrait, you can continue to the Christmas card experience.",
-  "faq.10.q": "What happens to my uploaded photo?",
-  "faq.10.a":
-    "Your upload and result stay private by default. They are stored for order recovery and served through private links — not a public gallery.",
+  "faq.9.q": "What happens to my uploaded photo?",
+  "faq.9.a":
+    "Uploads and results are private by default. There is no public gallery. Access is through your order/result flow.",
 
   "error.unsupported":
     "We couldn’t use this photo. Try a clearer image with visible faces.",
@@ -243,5 +245,4 @@ export const PHOTO_GEN_FAQS = [
   { qKey: "faq.7.q", aKey: "faq.7.a" },
   { qKey: "faq.8.q", aKey: "faq.8.a" },
   { qKey: "faq.9.q", aKey: "faq.9.a" },
-  { qKey: "faq.10.q", aKey: "faq.10.a" },
 ] as const;
