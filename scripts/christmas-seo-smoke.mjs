@@ -288,7 +288,19 @@ for (const href of [
 }
 
 // —— P2A content depth / GEO ——
-assert(CONTENT_DEPTH_PATHS.length === 6, `P2A covers 6 money pages, got ${CONTENT_DEPTH_PATHS.length}`);
+const moneyPaths = [
+  "/christmas",
+  "/christmas/gift-finder",
+  "/christmas/photo-generator",
+  "/christmas/santa-video",
+  "/christmas/wishlist",
+  "/christmas/cards",
+];
+assert(
+  moneyPaths.every((p) => getChristmasContentDepth(p)?.wave === "p2a"),
+  "P2A money pages keep wave p2a",
+);
+assert(CONTENT_DEPTH_PATHS.length >= 14, `depth covers money+adjacent, got ${CONTENT_DEPTH_PATHS.length}`);
 const geoQuestions = {
   "/christmas": "What can you create with TheDigitalGifter for Christmas?",
   "/christmas/gift-finder": "What is a Christmas Gift Finder?",
@@ -340,6 +352,63 @@ assert(
 assert(
   !applyChristmasSeo(template, "/christmas").includes('"@type":"AggregateRating"'),
   "no fake AggregateRating on hub",
+);
+
+// —— P2B adjacent content depth / GEO ——
+const adjacentGeo = {
+  "/christmas/family": "What is a family Christmas photo generator?",
+  "/christmas/couples": "What is a couple Christmas photo generator?",
+  "/christmas/pets": "What is a Christmas pet photo generator?",
+  "/christmas/dogs": "What is a Christmas dog photo generator?",
+  "/christmas/cats": "What is a Christmas cat photo generator?",
+  "/christmas/tree": "What is a digital Christmas tree?",
+  "/christmas/advent": "What is an online Advent calendar?",
+  "/christmas/messages": "What is a Christmas message generator?",
+};
+for (const [path, question] of Object.entries(adjacentGeo)) {
+  const depth = getChristmasContentDepth(path);
+  assert(Boolean(depth), `P2B depth module has ${path}`);
+  assert(depth.wave === "p2b", `${path} wave p2b`);
+  const html = applyChristmasSeo(template, path);
+  assert(html.includes(question), `P2B GEO H2 in SSR for ${path}`);
+  assert(html.includes('data-tdg-depth="p2b"'), `P2B depth marker for ${path}`);
+  assert(html.includes("Frequently Asked Questions"), `P2B FAQ section for ${path}`);
+  assert(html.includes('"@type":"FAQPage"') || html.includes('"@type": "FAQPage"'), `P2B FAQPage for ${path}`);
+  for (const marker of depth.markers) {
+    assert(html.includes(marker), `P2B ${path} marker: ${marker}`);
+  }
+  assert(depth.faqs.length >= 5, `P2B ${path} has at least 5 FAQs`);
+  assert(depth.geo.body.length > 80, `P2B ${path} GEO body useful`);
+}
+assert(
+  getChristmasContentDepth("/christmas/family").geo.h2 !==
+    getChristmasContentDepth("/christmas/photo-generator").geo.h2,
+  "family GEO distinct from photo-generator",
+);
+assert(
+  getChristmasContentDepth("/christmas/dogs").geo.body !==
+    getChristmasContentDepth("/christmas/cats").geo.body,
+  "dogs GEO body distinct from cats",
+);
+assert(
+  hasLink(applyChristmasSeo(template, "/christmas/pets"), "/christmas/dogs"),
+  "pets links to dogs",
+);
+assert(
+  hasLink(applyChristmasSeo(template, "/christmas/pets"), "/christmas/cats"),
+  "pets links to cats",
+);
+assert(
+  hasLink(applyChristmasSeo(template, "/christmas/family"), "/christmas/cards"),
+  "family links to cards",
+);
+assert(
+  hasLink(applyChristmasSeo(template, "/christmas/messages"), "/christmas/cards"),
+  "messages links to cards",
+);
+assert(
+  !getChristmasContentDepth("/christmas/kids"),
+  "kids remains without P2B depth (still noindex product)",
 );
 // —— 3) Optional live / origin fetch ——
 const liveBase = String(process.env.CHRISTMAS_SEO_BASE || "").replace(/\/$/, "");

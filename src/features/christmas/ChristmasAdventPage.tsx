@@ -9,6 +9,10 @@ import {
   treeFunnel,
 } from "./tree/treeApi";
 import { adventDoorState, adventDayParts } from "./tree/treeLogic";
+import {
+  ADVENT_SEO_DEPTH,
+  ChristmasProductSeoDepth,
+} from "./seo/ChristmasProductSeoDepth";
 
 type RewardRow = {
   day: number;
@@ -296,6 +300,8 @@ export default function ChristmasAdventPage() {
             Christmas hub
           </Link>
         </p>
+
+        <ChristmasProductSeoDepth content={ADVENT_SEO_DEPTH} tone="dark" />
       </div>
 
       {claimResult ? (

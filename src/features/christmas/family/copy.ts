@@ -45,13 +45,13 @@ const EN: CopyBag = {
   "trust.stylesBody": "Choose the atmosphere that feels like your family.",
 
   "moment.kicker": "Family Christmas",
-  "moment.h2": "Create a Family Christmas Photo in Minutes",
+  "moment.h2": "Create a Family Christmas Portrait",
   "moment.title": "Create the family Christmas photo you wish you’d taken.",
   "moment.lede":
-    "No studio booking. No matching schedules. No trying to get everyone looking at the camera — just upload a photo and create the moment.",
+    "Upload a group photo, pick a Christmas atmosphere, and create a portrait that aims to keep everyone in the frame. No studio booking. No matching schedules — just upload a photo and create the moment.",
   "moment.cta": "Create Our Christmas Portrait",
 
-  "examples.h2": "Christmas Family Photo Examples",
+  "examples.h2": "Family Christmas Photo Examples",
   "examples.lede":
     "Warm, realistic Christmas portraits for every kind of family — from three to five-plus, babies, grandparents, and the pets who belong in the picture.",
   "examples.demoNote": "Demo examples for inspiration — not customer photos.",
@@ -65,7 +65,7 @@ const EN: CopyBag = {
   "examples.before": "Everyday photo",
   "examples.after": "Christmas portrait",
 
-  "styles.h2": "Choose Your Christmas Style",
+  "styles.h2": "Christmas Styles for Families",
   "styles.lede": "Pick the Christmas world that feels like home.",
   "styles.cozy": "Cozy Fireplace",
   "styles.cozyDesc": "Warm living room, tree, and firelight.",
@@ -73,7 +73,7 @@ const EN: CopyBag = {
   "styles.snowyDesc": "Soft snow and cool winter light.",
   "styles.classic": "Classic Christmas",
   "styles.classicDesc": "Red, green, and traditional warmth.",
-  "styles.elegant": "Elegant Gold",
+  "styles.elegant": "Elegant Christmas",
   "styles.elegantDesc": "Luxury interiors with gold details.",
   "styles.morning": "Christmas Morning",
   "styles.morningDesc": "Pajamas, gifts, soft morning light.",
@@ -81,6 +81,10 @@ const EN: CopyBag = {
   "styles.cabinDesc": "Wood cabin and snowy windows.",
   "styles.wonderland": "Winter Wonderland",
   "styles.wonderlandDesc": "Cinematic snowy landscape.",
+
+  "best.h2": "What Family Photos Work Best?",
+  "best.body":
+    "Use a clear group photo where faces are visible, lighting is decent, and everyone you want in the portrait is recognizable. Avoid extreme blur, heavy crop-outs, or photos where key people are hidden.",
 
   "how.h2": "How It Works",
   "how.1.title": "Upload your family photo",
@@ -90,53 +94,45 @@ const EN: CopyBag = {
   "how.3.title": "Create your portrait",
   "how.3.body": "Turn your family into a Christmas memory worth keeping.",
 
-  "geo.h2": "What is a Christmas family photo generator?",
+  "geo.h2": "What is a family Christmas photo generator?",
   "geo.body":
-    "A Christmas family photo generator turns an everyday family picture into a personalized Christmas family portrait — the holiday photo you wish you’d taken together.",
+    "A family Christmas photo generator turns one uploaded family photo into a festive group Christmas portrait. On TheDigitalGifter, you upload a clear photo of your family, choose a Christmas style made for multiple people, and create a downloadable portrait — private by default, with an option to continue into a Christmas card.",
   "geo.best": "What photos work best?",
   "geo.bestBody":
     "Clear group photos where faces are visible work best. Include everyone you want in the finished Christmas family picture.",
   "geo.support": "Who can be in the portrait?",
   "geo.supportBody":
     "Families of any size, parents with a baby, grandparents, and family-plus-pet photos. Keep everyone clearly visible in the original image.",
-  "geo.time": "How long does it take?",
-  "geo.timeBody":
-    "After payment, portraits are usually ready within a few minutes. You can reopen your private order link anytime.",
   "geo.privacy": "What happens to my family photo?",
   "geo.privacyBody":
-    "Uploads and results stay private by default and are served through short-lived links — not a public gallery.",
+    "Uploads and results stay private by default. There is no public gallery.",
 
   "faq.h2": "Frequently Asked Questions",
-  "faq.1.q": "How does the Christmas family portrait work?",
+  "faq.1.q": "Can I create a Christmas portrait from one family photo?",
   "faq.1.a":
-    "Upload a family photo, choose a Christmas style, then create your portrait. After checkout, you receive a finished Christmas family picture you can download privately.",
-  "faq.2.q": "What kind of photo should I upload?",
+    "Yes. Upload one clear family photo, choose a Christmas style, and create your family portrait.",
+  "faq.2.q": "Can multiple people be included?",
   "faq.2.a":
-    "A clear JPEG, PNG, or WebP under 15 MB works best. Faces should be visible, and the image shouldn’t be extremely blurry.",
-  "faq.3.q": "Can I include the whole family?",
+    "Yes. This route is designed for groups. Keep everyone clearly visible in the original photo.",
+  "faq.3.q": "Can grandparents be included?",
   "faq.3.a":
-    "Yes. This experience is built for groups. Keep everyone clearly visible in the original photo for the best result.",
-  "faq.4.q": "Can I include grandparents or a baby?",
+    "Yes. Multi-generation photos — including grandparents and babies — are welcome when faces are visible.",
+  "faq.4.q": "Can I include a family pet?",
   "faq.4.a":
-    "Yes. Parents with a baby, grandparents with the family, and multi-generation photos are welcome.",
-  "faq.5.q": "Can I include our dog or cat?",
+    "Yes when the pet is clearly visible in the family photo. For pet-only portraits, use the Pets, Dogs, or Cats experiences.",
+  "faq.5.q": "Which photos work best?",
   "faq.5.a":
-    "Yes when the pet is clearly visible in the family photo. For pet-only portraits, try the Christmas pets experience.",
-  "faq.6.q": "Can I try different Christmas styles?",
+    "Clear photos with visible faces, decent lighting, and everyone you want included. Avoid extreme blur.",
+  "faq.6.q": "Can I try multiple Christmas styles?",
   "faq.6.a":
-    "Yes. Choose from cozy fireplace, snowy scenes, classic Christmas, elegant gold, Christmas morning, and more.",
-  "faq.7.q": "How long does it take?",
-  "faq.7.a":
-    "Finished portraits are usually ready a few minutes after payment. You can leave the page and return with your order link.",
-  "faq.8.q": "Is my family photo private?",
-  "faq.8.a":
-    "Yes. Family photos stay private by default. We do not publish a public gallery of your portrait.",
-  "faq.9.q": "Can I turn the portrait into a Christmas card?",
+    "Yes. Choose from the family Christmas styles listed on the page, and you can try another style after creating a portrait.",
+  "faq.7.q": "Can I download the finished portrait?",
+  "faq.7.a": "Yes. When your portrait is ready, download it from the result screen.",
+  "faq.8.q": "Can I use it in a Christmas card?",
+  "faq.8.a": "Yes. Portrait handoff into the Christmas Card Maker is supported.",
+  "faq.9.q": "Is my family photo private?",
   "faq.9.a":
-    "Yes. After you create a portrait, you can continue to the Christmas card experience.",
-  "faq.10.q": "Is this an AI Christmas family photo maker?",
-  "faq.10.a":
-    "We use AI behind the scenes to create your Christmas family portrait — the product is the warm holiday photo, not a technical tool.",
+    "Yes. Family photos stay private by default. We do not publish a public gallery of your portrait.",
 
   "upload.kicker": "Start here",
   "upload.h2": "Upload your family photo",
@@ -231,5 +227,4 @@ export const FAMILY_FAQS = [
   { qKey: "faq.7.q", aKey: "faq.7.a" },
   { qKey: "faq.8.q", aKey: "faq.8.a" },
   { qKey: "faq.9.q", aKey: "faq.9.a" },
-  { qKey: "faq.10.q", aKey: "faq.10.a" },
 ] as const;
