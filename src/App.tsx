@@ -20,6 +20,8 @@ import {
 } from "@/features/pet/PetRoutes";
 import { PetV2Route } from "@/features/pet-v2/PetV2Routes";
 import { PetV3Route } from "@/features/pet-v3/PetV3Routes";
+import { PetV4Route } from "@/features/pet-v4/PetV4Routes";
+import { PetV4CampaignRedirect } from "@/features/pet-v4/V4CampaignRedirect";
 import {
   ChristmasV2OrderRoute,
   ChristmasV2Route,
@@ -592,16 +594,61 @@ function AppInner() {
             <Route path="/funnel/payment" element={<FunnelPayment />} />
             <Route path="/funnel/result" element={<FunnelResultPage />} />
             <Route path="/pet" element={<Navigate to="/pet/dog" replace />} />
-            <Route path="/pet/dog" element={<PetLandingRoute />} />
-            <Route path="/pet/cat" element={<PetLandingRoute />} />
-            <Route path="/pet/other" element={<PetLandingRoute />} />
+            <Route
+              path="/pet/dog"
+              element={
+                <PetV4CampaignRedirect>
+                  <PetLandingRoute />
+                </PetV4CampaignRedirect>
+              }
+            />
+            <Route
+              path="/pet/cat"
+              element={
+                <PetV4CampaignRedirect>
+                  <PetLandingRoute />
+                </PetV4CampaignRedirect>
+              }
+            />
+            <Route
+              path="/pet/other"
+              element={
+                <PetV4CampaignRedirect>
+                  <PetLandingRoute />
+                </PetV4CampaignRedirect>
+              }
+            />
             <Route path="/pet/create" element={<PetCreateRoute />} />
             <Route path="/pet/checkout" element={<PetCheckoutRoute />} />
             <Route path="/pet/order" element={<PetOrderRoute />} />
-            <Route path="/pet/dog-v2" element={<PetV2Route />} />
-            <Route path="/pet/cat-v2" element={<PetV2Route />} />
-            <Route path="/pet/other-v2" element={<PetV2Route />} />
+            <Route
+              path="/pet/dog-v2"
+              element={
+                <PetV4CampaignRedirect>
+                  <PetV2Route />
+                </PetV4CampaignRedirect>
+              }
+            />
+            <Route
+              path="/pet/cat-v2"
+              element={
+                <PetV4CampaignRedirect>
+                  <PetV2Route />
+                </PetV4CampaignRedirect>
+              }
+            />
+            <Route
+              path="/pet/other-v2"
+              element={
+                <PetV4CampaignRedirect>
+                  <PetV2Route />
+                </PetV4CampaignRedirect>
+              }
+            />
             <Route path="/pet/cat-v3" element={<PetV3Route />} />
+            <Route path="/pet/dog-v4" element={<PetV4Route />} />
+            <Route path="/pet/cat-v4" element={<PetV4Route />} />
+            <Route path="/pet/other-v4" element={<PetV4Route />} />
             <Route path="/christmas-ai-photos" element={<ChristmasV2Route />} />
             <Route
               path="/christmas-ai-photos/order"

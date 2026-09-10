@@ -67,6 +67,7 @@ import {
 } from "../_shared/pet/v3InitiateCheckout.ts";
 import { recordV3CheckoutSessionCreated } from "../_shared/pet/v3FunnelEvents.ts";
 import { recordV2CheckoutSessionCreated } from "../_shared/pet/v2FunnelEvents.ts";
+import { recordV4CheckoutSessionCreated } from "../_shared/pet/v4FunnelEvents.ts";
 import {
   decideCheckoutSessionAction,
   isValidEmbeddedClientSecret,
@@ -282,6 +283,10 @@ function isV3Funnel(value: unknown): boolean {
   return asString(value) === "v3";
 }
 
+function isV4Funnel(value: unknown): boolean {
+  return asString(value) === "v4";
+}
+
 type CheckoutCtx = {
   funnelSessionId: string | null;
   deviceType: string | null;
@@ -321,6 +326,9 @@ function applyCheckoutAttributionMetadata(
   }
   if (isV3Funnel(funnelVariant)) {
     params.set("metadata[funnel_version]", "v3");
+  }
+  if (isV4Funnel(funnelVariant)) {
+    params.set("metadata[funnel_version]", "v4");
   }
 }
 
@@ -411,6 +419,38 @@ async function maybeRecordV2CheckoutSessionCreated(
   });
 }
 
+async function maybeRecordV4CheckoutSessionCreated(
+  service: ReturnType<typeof getServiceClient>,
+  order: PetOrderRow,
+  stripeSessionId: string,
+  meta: ReturnType<typeof petMetaCheckoutFields>,
+  checkoutCtx: CheckoutCtx,
+) {
+  if (!isV4Funnel(order.funnel_variant)) return;
+  const attr = checkoutCtx.attribution;
+  await recordV4CheckoutSessionCreated(service, {
+    orderId: order.id,
+    stripeSessionId,
+    amountCents: meta.chargedAmountCents,
+    attribution: {
+      funnelSessionId: checkoutCtx.funnelSessionId,
+      utmSource: attr.utm_source,
+      utmMedium: attr.utm_medium,
+      utmCampaign: attr.utm_campaign,
+      utmContent: attr.utm_content,
+      utmTerm: attr.utm_term,
+      campaignId: attr.campaign_id,
+      adsetId: attr.adset_id,
+      adId: attr.ad_id,
+      deviceType: checkoutCtx.deviceType,
+      species: asString(order.species),
+      isTest: false,
+      fbc: checkoutCtx.metaClick.fbc,
+      fbp: checkoutCtx.metaClick.fbp,
+    },
+  });
+}
+
 async function finalizeOpenCheckoutSession(
   service: ReturnType<typeof getServiceClient>,
   order: PetOrderRow,
@@ -421,10 +461,12 @@ async function finalizeOpenCheckoutSession(
   await maybeRecordInitiateCheckoutOnSessionCreate(service, order, meta, checkoutCtx);
   await maybeRecordV3CheckoutSessionCreated(service, order, stripeSessionId, meta, checkoutCtx);
   await maybeRecordV2CheckoutSessionCreated(service, order, stripeSessionId, meta, checkoutCtx);
+  await maybeRecordV4CheckoutSessionCreated(service, order, stripeSessionId, meta, checkoutCtx);
 }
 
-function resolveFunnelVariant(value: unknown): "v1" | "v2" | "v3" {
+function resolveFunnelVariant(value: unknown): "v1" | "v2" | "v3" | "v4" {
   const raw = asString(value);
+  if (raw === "v4") return "v4";
   if (raw === "v3") return "v3";
   if (raw === "v2") return "v2";
   return "v1";
@@ -674,7 +716,7 @@ Deno.serve(async (req) => {
       const amountCents =
         funnelVariant === "v3"
           ? applyV3SaleAmount()
-          : funnelVariant === "v2"
+          : funnelVariant === "v2" || funnelVariant === "v4"
             ? applyV2SaleAmount()
             : offer.amountCents;
       const priceCheck = rejectAgainstOffer(
@@ -1092,7 +1134,7 @@ Deno.serve(async (req) => {
       if (!order) return apiError("ORDER_NOT_FOUND", "We could not find that order.", 404);
 
       // Do not accept new V2 payments when fulfillment capacity is known unavailable.
-      if (isV2Funnel(order.funnel_variant)) {
+      if (isV2Funnel(order.funnel_variant) || isV4Funnel(order.funnel_variant)) {
         const kill = String(Deno.env.get("PET_FULFILLMENT_ENABLED") || "true").trim().toLowerCase();
         if (kill === "0" || kill === "false" || kill === "off" || kill === "disabled") {
           return apiError(
@@ -1194,7 +1236,7 @@ Deno.serve(async (req) => {
         : false;
       const liveAmount = isV3Funnel(order.funnel_variant)
         ? applyV3SaleAmount()
-        : isV2Funnel(order.funnel_variant)
+        : isV2Funnel(order.funnel_variant) || isV4Funnel(order.funnel_variant)
           ? applyV2SaleAmount()
           : liveOffer.ok
             ? liveOffer.amountCents
@@ -1362,10 +1404,19 @@ Deno.serve(async (req) => {
       params.set("metadata[sku]", PET_SKU);
       params.set("metadata[product_type]", "pet_secret_life");
       params.set("metadata[pet_order_id]", order.id);
-      params.set("metadata[funnel_variant]", isV3Funnel(order.funnel_variant) ? "v3" : isV2Funnel(order.funnel_variant) ? "v2" : "v1");
+      params.set(
+        "metadata[funnel_variant]",
+        isV4Funnel(order.funnel_variant)
+          ? "v4"
+          : isV3Funnel(order.funnel_variant)
+            ? "v3"
+            : isV2Funnel(order.funnel_variant)
+              ? "v2"
+              : "v1",
+      );
       if (isV3Funnel(order.funnel_variant)) {
         params.set("metadata[species]", asString(order.species) || "cat");
-      } else if (isV2Funnel(order.funnel_variant)) {
+      } else if (isV2Funnel(order.funnel_variant) || isV4Funnel(order.funnel_variant)) {
         params.set("metadata[species]", asString(order.species) || "dog");
       }
       // Persist UTMs + Meta click cookies on every variant so webhook CAPI can attribute.

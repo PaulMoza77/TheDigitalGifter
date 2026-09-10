@@ -308,19 +308,12 @@ export function PetV4AnalyticsPanels({
               <p className="text-sm text-slate-500">No scroll data.</p>
             ) : (
               <ul className="space-y-1.5 text-sm text-slate-300">
-                {scrollEntries.map(([bucket, count]) => {
-                  const denom = fp.landing_sessions || 0;
-                  const pct = denom > 0 ? (count / denom) * 100 : null;
-                  return (
-                    <li key={bucket} className="flex justify-between gap-3">
-                      <span className="text-slate-400">{bucket}</span>
-                      <span className="font-mono">
-                        {count}
-                        {pct != null ? ` · ${pct.toFixed(0)}%` : ""}
-                      </span>
-                    </li>
-                  );
-                })}
+                {scrollEntries.map(([bucket, pct]) => (
+                  <li key={bucket} className="flex justify-between gap-3">
+                    <span className="text-slate-400">{bucket}</span>
+                    <span className="font-mono">{Number(pct).toFixed(1)}%</span>
+                  </li>
+                ))}
               </ul>
             )}
           </div>
