@@ -239,6 +239,12 @@ const SidebarNavigation: React.FC<{
             icon: Gift,
           },
           {
+            label: "Funnel Analytics",
+            path: "/admin/funnel-analytics",
+            icon: BarChart3,
+            badge: "New",
+          },
+          {
             label: "Pet Funnel Analytics",
             path: "/admin/pet-funnel-analytics",
             icon: BarChart3,

@@ -9,6 +9,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 describe("admin return path", () => {
   it("accepts only admin paths", () => {
     expect(isSafeAdminReturnPath("/admin/pet-funnel-analytics")).toBe(true);
+    expect(isSafeAdminReturnPath("/admin/funnel-analytics")).toBe(true);
     expect(isSafeAdminReturnPath("/admin")).toBe(true);
     expect(isSafeAdminReturnPath("/")).toBe(false);
     expect(isSafeAdminReturnPath("//evil.com")).toBe(false);
