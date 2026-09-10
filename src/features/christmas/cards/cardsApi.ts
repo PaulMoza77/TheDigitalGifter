@@ -7,6 +7,8 @@ export const MESSAGE_GUEST_KEY = "tdg.christmas.message.guest.v1";
 export const MESSAGE_SESSION_KEY = "tdg.christmas.message.session.v1";
 export const MESSAGE_TO_CARD_KEY = "tdg.christmas.message.handoff.v1";
 export const MESSAGE_HANDOFF_KEY = MESSAGE_TO_CARD_KEY;
+/** Cards handoff uses a flag only — message body stays in sessionStorage. */
+export const MESSAGE_TO_CARD_PATH = "/christmas/cards?from_message=1";
 export const CARD_OWNER_KEY = "tdg.christmas.card.owner.v1";
 export const CARD_DRAFT_KEY = "tdg.christmas.card.draft.v1";
 

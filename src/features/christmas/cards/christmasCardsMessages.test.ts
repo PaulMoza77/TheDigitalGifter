@@ -10,10 +10,15 @@ import {
   wrapTextLines,
 } from "./cardRenderer";
 import {
+  messageAnalyticsMeta,
+  sanitizeMessageAnalyticsMeta,
+} from "./messageAnalytics";
+import {
   curatedMessagesClient,
   hasRomanianDiacritics,
   validateMessageInputClient,
 } from "./messageEngine";
+import { MESSAGE_TO_CARD_KEY, MESSAGE_TO_CARD_PATH, writeMessageToCardHandoff } from "./cardsApi";
 import {
   CARD_LAYOUTS,
   CARD_STYLES,
@@ -201,6 +206,77 @@ describe("product wiring", () => {
     for (const p of CHRISTMAS_CATALOG_SEED) {
       expect(p.packages.every((pkg) => !pkg.purchasable)).toBe(true);
     }
+  });
+
+  it("hands off to cards via sessionStorage without a query-string body", () => {
+    expect(MESSAGE_TO_CARD_PATH).toBe("/christmas/cards?from_message=1");
+    expect(MESSAGE_TO_CARD_PATH).not.toMatch(/[?&](text|body|message_text)=/i);
+    const page = readSrc("src/features/christmas/ChristmasMessagesPage.tsx");
+    expect(page).toContain("writeMessageToCardHandoff");
+    expect(page).toContain("MESSAGE_TO_CARD_PATH");
+    expect(page).not.toMatch(/navigate\(`\/christmas\/cards\?[^`]*text=/);
+    const store = new Map<string, string>();
+    const original = globalThis.sessionStorage;
+    Object.defineProperty(globalThis, "sessionStorage", {
+      configurable: true,
+      value: {
+        setItem: (k: string, v: string) => store.set(k, v),
+        getItem: (k: string) => store.get(k) ?? null,
+        removeItem: (k: string) => store.delete(k),
+      },
+    });
+    writeMessageToCardHandoff({
+      resultId: "res-1",
+      text: "Merry Christmas, love.",
+      language: "en",
+      sessionId: "sess-1",
+    });
+    const raw = store.get(MESSAGE_TO_CARD_KEY);
+    expect(raw).toContain("Merry Christmas, love.");
+    expect(MESSAGE_TO_CARD_PATH).not.toContain("Merry Christmas");
+    Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: original });
+  });
+
+  it("rate-limits message sessions and never persists custom_detail text", () => {
+    const funnel = readSrc("supabase/functions/christmas-cards-messages-funnel/index.ts");
+    expect(funnel).toContain("RATE_MAX = 10");
+    expect(funnel).toContain("rate_limited");
+    expect(funnel).toContain("custom_detail_len");
+    expect(funnel).not.toMatch(/custom_detail:/);
+    const page = readSrc("src/features/christmas/ChristmasMessagesPage.tsx");
+    expect(page).toContain("rate_limited");
+    expect(page).toContain("userFacingGenerateError");
+  });
+
+  it("strips message bodies from analytics metadata", () => {
+    const meta = messageAnalyticsMeta({
+      recipientKey: "mom",
+      toneKey: "heartfelt",
+      lengthKey: "medium",
+      language: "ro",
+      provider: "server_curated",
+      usedFallback: true,
+    });
+    expect(meta).toEqual({
+      recipient_key: "mom",
+      tone_key: "heartfelt",
+      length_key: "medium",
+      language: "ro",
+      provider: "server_curated",
+      used_fallback: true,
+    });
+    const leaked = sanitizeMessageAnalyticsMeta("message_generator_completed", {
+      recipient_key: "mom",
+      text: "Merry Christmas secret body",
+      message_text: "do not store",
+      custom_detail: "first Christmas in the new home",
+      used_fallback: true,
+    });
+    expect(leaked).toEqual({ recipient_key: "mom", used_fallback: true });
+    expect(JSON.stringify(leaked)).not.toMatch(/Merry Christmas|secret|new home/i);
+    const page = readSrc("src/features/christmas/ChristmasMessagesPage.tsx");
+    expect(page).toContain("messageAnalyticsMeta");
+    expect(page).not.toMatch(/metadata:\s*\{[^}]*text:/);
   });
 
   it("ships migration + edge funnel + docs", () => {
