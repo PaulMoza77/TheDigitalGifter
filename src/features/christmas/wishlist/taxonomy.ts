@@ -883,17 +883,121 @@ export const REFINEMENT_OPTIONS: Taxon[] = [
 ];
 
 export const WISHLIST_PRIORITIES: Taxon[] = [
-  { key: "really_want", labelEn: "Really want this", labelRo: "Chiar îmi doresc" },
-  { key: "would_love", labelEn: "Would love this", labelRo: "Mi-ar plăcea mult" },
-  { key: "nice_to_have", labelEn: "Nice to have", labelRo: "Ar fi drăguț" },
-  { key: "surprise_me", labelEn: "Surprise me", labelRo: "Surprinde-mă" },
+  {
+    key: "really_want",
+    labelEn: "Really want this",
+    labelRo: "Chiar îmi doresc",
+    labels: {
+      de: "Will ich wirklich",
+      fr: "Je le veux vraiment",
+      es: "Lo deseo de verdad",
+      it: "Lo desidero davvero",
+      pt: "Quero mesmo isto",
+      nl: "Wil ik echt",
+      pl: "Bardzo tego chcę",
+    },
+  },
+  {
+    key: "would_love",
+    labelEn: "Would love this",
+    labelRo: "Mi-ar plăcea mult",
+    labels: {
+      de: "Würde ich lieben",
+      fr: "J’aimerais beaucoup",
+      es: "Me encantaría",
+      it: "Mi piacerebbe molto",
+      pt: "Adoraria isto",
+      nl: "Zou ik geweldig vinden",
+      pl: "Bardzo bym chciał(a)",
+    },
+  },
+  {
+    key: "nice_to_have",
+    labelEn: "Nice to have",
+    labelRo: "Ar fi drăguț",
+    labels: {
+      de: "Wäre schön",
+      fr: "Ce serait sympa",
+      es: "Estaría bien",
+      it: "Sarebbe carino",
+      pt: "Seria bom ter",
+      nl: "Leuk om te hebben",
+      pl: "Miło mieć",
+    },
+  },
+  {
+    key: "surprise_me",
+    labelEn: "Surprise me",
+    labelRo: "Surprinde-mă",
+    labels: {
+      de: "Überrasch mich",
+      fr: "Surprenez-moi",
+      es: "Sorpréndeme",
+      it: "Sorprendimi",
+      pt: "Surpreenda-me",
+      nl: "Verras me",
+      pl: "Zaskocz mnie",
+    },
+  },
 ];
 
 export const WISHLIST_AUDIENCES: Taxon[] = [
-  { key: "me", labelEn: "Me", labelRo: "Pentru mine" },
-  { key: "child", labelEn: "My child", labelRo: "Copilul meu" },
-  { key: "family", labelEn: "My family", labelRo: "Familia mea" },
-  { key: "someone_else", labelEn: "Someone else", labelRo: "Altcineva" },
+  {
+    key: "me",
+    labelEn: "Me",
+    labelRo: "Pentru mine",
+    labels: {
+      de: "Für mich",
+      fr: "Pour moi",
+      es: "Para mí",
+      it: "Per me",
+      pt: "Para mim",
+      nl: "Voor mij",
+      pl: "Dla mnie",
+    },
+  },
+  {
+    key: "child",
+    labelEn: "My child",
+    labelRo: "Copilul meu",
+    labels: {
+      de: "Mein Kind",
+      fr: "Mon enfant",
+      es: "Mi hijo",
+      it: "Mio figlio",
+      pt: "O meu filho",
+      nl: "Mijn kind",
+      pl: "Moje dziecko",
+    },
+  },
+  {
+    key: "family",
+    labelEn: "My family",
+    labelRo: "Familia mea",
+    labels: {
+      de: "Meine Familie",
+      fr: "Ma famille",
+      es: "Mi familia",
+      it: "La mia famiglia",
+      pt: "A minha família",
+      nl: "Mijn gezin",
+      pl: "Moja rodzina",
+    },
+  },
+  {
+    key: "someone_else",
+    labelEn: "Someone else",
+    labelRo: "Altcineva",
+    labels: {
+      de: "Jemand anderes",
+      fr: "Quelqu’un d’autre",
+      es: "Alguien más",
+      it: "Qualcun altro",
+      pt: "Outra pessoa",
+      nl: "Iemand anders",
+      pl: "Ktoś inny",
+    },
+  },
 ];
 
 export const PRIORITY_EMOJI: Record<string, string> = {
