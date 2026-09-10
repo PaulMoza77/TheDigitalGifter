@@ -862,15 +862,17 @@ export default function ChristmasSantaVideoPage() {
                   <StepShell title={SANTA_COPY.steps.language.title} helper={SANTA_COPY.steps.language.helper}>
                     <fieldset className="space-y-3">
                       <legend className="sr-only">Language</legend>
-                      {(
-                        [
+                      {([
                           { id: "en", label: "English", available: true },
-                          { id: "ro", label: "Romanian", available: true },
-                          { id: "de", label: "German", available: false },
-                          { id: "fr", label: "French", available: false },
-                          { id: "es", label: "Spanish", available: false },
-                        ] as const
-                      ).map((lang) => (
+                          { id: "ro", label: "Română", available: true },
+                          { id: "de", label: "Deutsch", available: true },
+                          { id: "fr", label: "Français", available: true },
+                          { id: "es", label: "Español", available: true },
+                          { id: "it", label: "Italiano", available: true },
+                          { id: "pt", label: "Português", available: true },
+                          { id: "nl", label: "Nederlands", available: true },
+                          { id: "pl", label: "Polski", available: true },
+                        ] as const).map((lang) => (
                         <label
                           key={lang.id}
                           className={`flex min-h-12 items-center justify-between rounded-xl border px-4 ${
@@ -886,9 +888,7 @@ export default function ChristmasSantaVideoPage() {
                               disabled={!lang.available}
                               checked={draft.language === lang.id}
                               onChange={() => {
-                                if (lang.id === "en" || lang.id === "ro") {
-                                  patch({ language: lang.id });
-                                }
+                                patch({ language: lang.id });
                               }}
                             />
                             {lang.label}

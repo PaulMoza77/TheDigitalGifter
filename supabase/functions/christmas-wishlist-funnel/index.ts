@@ -9,6 +9,7 @@ import {
 } from "../_shared/christmas/treeAdvent.ts";
 import { generateGiftIdeas, validateFinderInput, type FinderInput } from "../_shared/christmas/giftFinder.ts";
 import { PRIORITY_KEYS } from "../_shared/christmas/giftTaxonomy.ts";
+import { normalizeWave1GenerationLocale } from "../_shared/christmas/wave1Locale.ts";
 
 type Body = Record<string, unknown>;
 type Service = ReturnType<typeof getServiceClient>;
@@ -43,7 +44,7 @@ Deno.serve(async (req) => {
         share_enabled: false,
         title: sanitizeText(body.title || "My Christmas Wishlist", 80) || "My Christmas Wishlist",
         description: sanitizeText(body.description, 500),
-        locale: asString(body.locale) === "ro" ? "ro" : "en",
+        locale: normalizeWave1GenerationLocale(asString(body.locale) || asString(body.language)),
         currency: sanitizeText(body.currency, 8) || null,
         show_budgets_public: body.show_budgets_public === false ? false : true,
       };
@@ -639,7 +640,7 @@ Deno.serve(async (req) => {
       }
 
       const input: FinderInput = {
-        locale: asString(body.locale) === "ro" ? "ro" : "en",
+        locale: normalizeWave1GenerationLocale(asString(body.locale) || asString(body.language)),
         countryCode: sanitizeText(body.country_code, 2).toUpperCase() || null,
         recipientKey: asString(body.recipient_key),
         relationshipKey: asString(body.relationship_key) || null,

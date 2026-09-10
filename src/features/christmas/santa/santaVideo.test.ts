@@ -31,10 +31,17 @@ describe("santa form validation", () => {
     expect(
       validateSantaPersonalization({
         childFirstName: "Alex",
-        language: "de",
+        language: "xx",
         guardianConsent: true,
       }).ok,
     ).toBe(false);
+    expect(
+      validateSantaPersonalization({
+        childFirstName: "Alex",
+        language: "de",
+        guardianConsent: true,
+      }).ok,
+    ).toBe(true);
     expect(
       validateSantaPersonalization({
         childFirstName: "Alex",
@@ -132,8 +139,9 @@ describe("santa pricing + routing", () => {
     expect(readSrc("src/App.tsx")).toContain("ChristmasSantaVideoPage");
   });
 
-  it("includes santa-video in sitemap", () => {
-    expect(readSrc("api/sitemap.xml.ts")).toContain("/christmas/santa-video");
+  it("includes santa-video in sitemap", async () => {
+    const { christmasSitemapPaths } = await import("../../../../server/christmasIndexing.mjs");
+    expect(christmasSitemapPaths()).toContain("/christmas/santa-video");
   });
 
   it("hub supports santa name handoff", () => {

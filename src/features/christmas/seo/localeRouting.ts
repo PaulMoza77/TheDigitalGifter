@@ -31,10 +31,12 @@ export const CHRISTMAS_UI_LOCALES: Array<{
   { code: "pl", label: "Polish", nativeName: "Polski", prefix: "pl" },
 ];
 
-/** Product-gated routes: only these locales have real generation support. */
+/** Product-gated routes: only these locales have real generation support for SEO switcher. */
 const PRODUCT_GATED_ROUTE_LOCALES: Record<string, ChristmasLocaleCode[]> = {
   "/christmas/santa-video": ["en", "ro"],
-  "/christmas/messages": ["en", "ro"],
+  // Messages + Gift Finder: all Wave 1 after P3C product-language enablement
+  "/christmas/messages": ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"],
+  "/christmas/gift-finder": ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"],
 };
 
 const LOCALE_PREFIX_RE = /^\/([a-z]{2})(\/|$)/i;

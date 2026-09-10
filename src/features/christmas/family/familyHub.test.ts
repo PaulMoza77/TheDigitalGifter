@@ -17,6 +17,7 @@ import {
 import { familyPortraitJsonLd, familyPortraitSeo } from "./seo";
 import { CHRISTMAS_PORTRAIT_VERTICALS } from "../portraitVerticals";
 import { CHRISTMAS_FUNNEL_ALLOWED_EVENTS } from "../funnelEventContract";
+import { christmasSitemapPaths } from "../../../../server/christmasIndexing.mjs";
 
 function readSrc(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
@@ -45,7 +46,7 @@ describe("christmas family hub", () => {
     expect(graph.some((n) => n["@type"] === "FAQPage")).toBe(true);
     expect(graph.some((n) => n["@type"] === "FAQPage")).toBe(true);
     expect(graph.some((n) => n["@type"] === "SoftwareApplication")).toBe(false);
-    expect(JSON.stringify(ld)).not.toContain('"@type":"Offer"');
+    expect(JSON.stringify(graph)).not.toContain('"@type":"Offer"');
     expect(FAMILY_FAQS.length).toBeGreaterThanOrEqual(8);
   });
 
@@ -94,6 +95,6 @@ describe("christmas family hub", () => {
   });
 
   it("sitemap still lists family route", () => {
-    expect(readSrc("api/sitemap.xml.ts")).toContain("/christmas/family");
+    expect(christmasSitemapPaths()).toContain("/christmas/family");
   });
 });

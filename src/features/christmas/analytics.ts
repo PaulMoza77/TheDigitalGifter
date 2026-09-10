@@ -4,6 +4,7 @@ import {
   getFunnelFirstTouchContext,
 } from "@/features/pet/funnelAttribution";
 import { inferDeviceType } from "@/features/pet/funnelSession";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import {
   CHRISTMAS_FUNNEL_EVENT_PATH,
   newFunnelUuid,
@@ -51,7 +52,7 @@ export async function trackChristmasEvent(
     product_key: extra?.productKey ?? "christmas_photo",
     package_key: extra?.packageKey ?? null,
     order_id: extra?.orderId ?? null,
-    locale: extra?.locale === "ro" ? "ro" : "en",
+    locale: normalizeWave1GenerationLocale(extra?.locale),
     pathname: extra?.pathname ?? window.location.pathname,
     landing_path: `${window.location.pathname}${window.location.search}`.slice(0, 120),
     device_type: inferDeviceType(),

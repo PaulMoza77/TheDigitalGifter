@@ -1,4 +1,5 @@
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
+import { isWave1GenerationLocale, normalizeWave1GenerationLocale } from "../_shared/christmas/wave1Locale.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
 import {
   buildChristmasPortraitPrompt,
@@ -166,7 +167,7 @@ Deno.serve(async (req) => {
     let santaPerso: Record<string, unknown> | null = null;
     if (product.product_key === "christmas_santa_video") {
       const name = asString(body.child_first_name);
-      const language = asString(body.language).toLowerCase();
+      const language = normalizeWave1GenerationLocale(asString(body.language));
       const templateKey = asString(body.template_key) || "classic_santa";
       if (!body.guardian_consent) {
         return jsonResponse({ error: "Parent/guardian consent required", code: "consent_required" }, 400);
@@ -174,8 +175,8 @@ Deno.serve(async (req) => {
       if (!name || name.length > 40) {
         return jsonResponse({ error: "child_first_name required", code: "name_required" }, 400);
       }
-      if (language !== "en" && language !== "ro") {
-        return jsonResponse({ error: "language must be en or ro", code: "invalid_language" }, 400);
+      if (!isWave1GenerationLocale(language)) {
+        return jsonResponse({ error: "unsupported Wave 1 language", code: "invalid_language" }, 400);
       }
       if (templateKey !== "classic_santa") {
         return jsonResponse({ error: "template unavailable", code: "template_unavailable" }, 400);
