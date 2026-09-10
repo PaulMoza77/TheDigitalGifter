@@ -16,8 +16,9 @@ Feature flags (Edge / Deno env):
 - `CHRISTMAS_ADVENT_ENABLED` — must be `true` for production claims
 - `CHRISTMAS_ADVENT_CREDITS_ENABLED` — monetary ledger grants (default off)
 - `CHRISTMAS_FREE_GIFT_ENABLED` — free gift claims (default off)
+- `CHRISTMAS_ADVENT_TEST_HOOKS` — allows `__test_date` / `__test_force` body fields (default off)
 
-Defaults do **not** enable Advent monetary promotions.
+Defaults do **not** enable Advent monetary promotions. Production must never set `CHRISTMAS_ADVENT_TEST_HOOKS`.
 
 ## Architecture
 

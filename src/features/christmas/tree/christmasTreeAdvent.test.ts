@@ -5,6 +5,10 @@ import { CHRISTMAS_CATALOG_SEED, ctaStateForProduct, findProduct } from "../cata
 import { shellForPath } from "../routes";
 import { CHRISTMAS_FUNNEL_ALLOWED_EVENTS } from "../funnelEventContract";
 import {
+  evaluateAdventClaimRequest,
+  parseAdventNow,
+} from "../../../../supabase/functions/_shared/christmas/adventClaimPolicy";
+import {
   adventDayParts,
   adventDoorState,
   giftCountBucket,
@@ -74,6 +78,26 @@ describe("advent timezone policy (Europe/Bucharest)", () => {
     expect(after.afterSeason).toBe(true);
   });
 
+  it("uses Europe/Bucharest midnight, not UTC, for Dec 1 and Dec 25", () => {
+    // 2026-12-01 00:00 EET = 2026-11-30 22:00 UTC
+    const open = adventDayParts(new Date("2026-11-30T22:00:00.000Z"), 2026);
+    expect(open.eligibleDay).toBe(1);
+    expect(open.beforeSeason).toBe(false);
+
+    const stillNov = adventDayParts(new Date("2026-11-30T21:59:00.000Z"), 2026);
+    expect(stillNov.eligibleDay).toBeNull();
+    expect(stillNov.beforeSeason).toBe(true);
+
+    // 2026-12-24 23:59 EET = 2026-12-24 21:59 UTC
+    const lastDoor = adventDayParts(new Date("2026-12-24T21:59:00.000Z"), 2026);
+    expect(lastDoor.eligibleDay).toBe(24);
+
+    // 2026-12-25 00:00 EET = 2026-12-24 22:00 UTC
+    const christmas = adventDayParts(new Date("2026-12-24T22:00:00.000Z"), 2026);
+    expect(christmas.eligibleDay).toBeNull();
+    expect(christmas.afterSeason).toBe(true);
+  });
+
   it("door states reflect claimed/today/future/missed", () => {
     expect(
       adventDoorState({
@@ -138,19 +162,23 @@ describe("christmas tree / advent product wiring", () => {
     expect(sql).toContain("share_id");
     expect(sql).toContain("share_enabled boolean not null default false");
     expect(sql).toContain("christmas_advent_claims_idem_uidx");
+    expect(sql).toContain("christmas_advent_claims_user_day_uidx");
+    expect(sql).toMatch(/christmas_advent_claims_user_day_uidx[\s\S]*\(user_id, season_year, day\)/);
     expect(sql).toContain("christmas_reward_entitlements");
     expect(sql).toContain("credits_ledger_christmas_advent_note_uidx");
   });
 
   it("edge funnel enforces shareId read vs owner write", () => {
     const fn = readSrc("supabase/functions/christmas-tree-funnel/index.ts");
+    const policy = readSrc("supabase/functions/_shared/christmas/adventClaimPolicy.ts");
     expect(fn).toContain('action === "getSharedTree"');
     expect(fn).toContain("loadOwnerTree");
     expect(fn).toContain("owner_token_hash");
-    expect(fn).toContain("not_eligible");
+    expect(fn).toContain("evaluateAdventClaimRequest");
     expect(fn).toContain("auth_required");
     expect(fn).toContain("idempotency_key");
     expect(fn).toContain("Europe/Bucharest");
+    expect(policy).toContain("not_eligible");
     expect(fn).not.toMatch(/share_id.*updateTree|updateTree.*share_id/);
   });
 
@@ -182,5 +210,80 @@ describe("christmas tree security invariants (source)", () => {
     const fn = readSrc("supabase/functions/christmas-tree-funnel/index.ts");
     expect(fn).toContain('if (g.reward_type === "credits") return false');
     expect(fn).toContain("auth_required_for_credits");
+  });
+});
+
+describe("advent claim engine acceptance", () => {
+  it("rejects claims when CHRISTMAS_ADVENT_ENABLED is off, even with client __test_force", () => {
+    expect(
+      evaluateAdventClaimRequest({
+        adventEnabled: false,
+        testHooksEnabled: false,
+        testForce: true,
+        requestedDay: 1,
+        eligibleDay: 1,
+      }),
+    ).toEqual({ ok: false, error: "advent_disabled", status: 403 });
+  });
+
+  it("allows only the Bucharest-eligible day in Dec 1–24 when the season flag is on", () => {
+    expect(
+      evaluateAdventClaimRequest({
+        adventEnabled: true,
+        testHooksEnabled: false,
+        testForce: false,
+        requestedDay: 12,
+        eligibleDay: 12,
+      }),
+    ).toEqual({ ok: true, day: 12 });
+    expect(
+      evaluateAdventClaimRequest({
+        adventEnabled: true,
+        testHooksEnabled: false,
+        testForce: false,
+        requestedDay: 11,
+        eligibleDay: 12,
+      }).error,
+    ).toBe("not_eligible");
+    expect(
+      evaluateAdventClaimRequest({
+        adventEnabled: true,
+        testHooksEnabled: false,
+        testForce: false,
+        requestedDay: 25,
+        eligibleDay: 25,
+      }).error,
+    ).toBe("invalid_day");
+  });
+
+  it("ignores injected test dates unless CHRISTMAS_ADVENT_TEST_HOOKS is on", () => {
+    const frozen = new Date("2026-06-01T12:00:00.000Z");
+    expect(parseAdventNow("2026-12-01", false, frozen)).toBe(frozen);
+    expect(parseAdventNow("2026-12-01", true, frozen).toISOString()).toBe(
+      new Date("2026-12-01T12:00:00+02:00").toISOString(),
+    );
+  });
+
+  it("wires unique (user, season, day) + default-off flags + gated test hooks", () => {
+    const sql = readSrc("supabase/migrations/20260903180000_christmas_tree_advent.sql");
+    expect(sql).toContain("christmas_advent_claims_user_day_uidx");
+    expect(sql).toContain("(user_id, season_year, day)");
+    expect(sql).toMatch(/active boolean not null default false/);
+    expect(sql).toContain('"live_offer":false');
+
+    const flags = readSrc("supabase/functions/_shared/christmas/treeAdvent.ts");
+    expect(flags).toContain('envFlagEnabled("CHRISTMAS_ADVENT_ENABLED")');
+    expect(flags).toContain("CHRISTMAS_ADVENT_TEST_HOOKS");
+    expect(flags).toMatch(/Deno\.env\.get\(name\) \|\| "false"/);
+
+    const fn = readSrc("supabase/functions/christmas-tree-funnel/index.ts");
+    expect(fn).toContain("evaluateAdventClaimRequest");
+    expect(fn).toContain("adventTestHooksEnabled");
+    expect(fn).not.toMatch(/!adventEnabled\(\) && !body\.__test_force/);
+    expect(fn).not.toContain("parseInjectedDate");
+
+    const advent = findProduct(CHRISTMAS_CATALOG_SEED, "christmas_advent")!;
+    expect(advent.routePath).toBe("/christmas/advent");
+    expect(advent.metadata.live_offer).toBe(false);
   });
 });

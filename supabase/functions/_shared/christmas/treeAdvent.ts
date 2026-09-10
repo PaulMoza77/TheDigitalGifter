@@ -88,17 +88,24 @@ export function adventDayParts(now = new Date(), seasonYear = 2026): {
   return { year, month, day, seasonYear, eligibleDay, beforeSeason, afterSeason };
 }
 
-export function adventEnabled(): boolean {
-  const raw = asString(Deno.env.get("CHRISTMAS_ADVENT_ENABLED") || "false").toLowerCase();
+function envFlagEnabled(name: string): boolean {
+  const raw = asString(Deno.env.get(name) || "false").toLowerCase();
   return raw === "true" || raw === "1" || raw === "on";
+}
+
+export function adventEnabled(): boolean {
+  return envFlagEnabled("CHRISTMAS_ADVENT_ENABLED");
 }
 
 export function freeGiftEnabled(): boolean {
-  const raw = asString(Deno.env.get("CHRISTMAS_FREE_GIFT_ENABLED") || "false").toLowerCase();
-  return raw === "true" || raw === "1" || raw === "on";
+  return envFlagEnabled("CHRISTMAS_FREE_GIFT_ENABLED");
 }
 
 export function adventCreditsEnabled(): boolean {
-  const raw = asString(Deno.env.get("CHRISTMAS_ADVENT_CREDITS_ENABLED") || "false").toLowerCase();
-  return raw === "true" || raw === "1" || raw === "on";
+  return envFlagEnabled("CHRISTMAS_ADVENT_CREDITS_ENABLED");
+}
+
+/** Explicit test-only bypass. Defaults off — never honor body __test_* in production. */
+export function adventTestHooksEnabled(): boolean {
+  return envFlagEnabled("CHRISTMAS_ADVENT_TEST_HOOKS");
 }
