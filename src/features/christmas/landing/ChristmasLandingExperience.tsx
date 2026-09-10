@@ -43,18 +43,25 @@ function ensureLandingFonts() {
   document.head.appendChild(link);
 }
 
-export function ChristmasLandingExperience() {
+export function ChristmasLandingExperience({
+  includeHero = true,
+}: {
+  /** When false, the cabin club hero is rendered by ChristmasClubPage instead. */
+  includeHero?: boolean;
+}) {
   const navigate = useNavigate();
 
   useEffect(() => {
     ensureLandingFonts();
     captureFunnelAttribution(window.location.search);
-    trackHubEvent("christmas_page_view");
+    if (includeHero) {
+      trackHubEvent("christmas_page_view");
+    }
     upsertJsonLd("christmas-landing-jsonld", christmasLandingJsonLd(LOCALE));
     return () => {
       document.getElementById("christmas-landing-jsonld")?.remove();
     };
-  }, []);
+  }, [includeHero]);
 
   const goCreate = useCallback(
     (surface: string) => {
@@ -78,13 +85,15 @@ export function ChristmasLandingExperience() {
         Skip to Christmas gifts
       </a>
       <AmbientSnow />
-      <ImmersiveHero
-        locale={LOCALE}
-        onPrimary={() => goCreate("hero")}
-        onExplore={() => {
-          document.getElementById("gift-tree")?.scrollIntoView({ behavior: "smooth" });
-        }}
-      />
+      {includeHero ? (
+        <ImmersiveHero
+          locale={LOCALE}
+          onPrimary={() => goCreate("hero")}
+          onExplore={() => {
+            document.getElementById("gift-tree")?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      ) : null}
       <GiftTreeLandingScene
         locale={LOCALE}
         onViewed={() => {

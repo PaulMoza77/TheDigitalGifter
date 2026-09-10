@@ -20,6 +20,7 @@ describe("isSupportWidgetHidden", () => {
 
   it("hides Help on the full-bleed Christmas countdown club", () => {
     expect(isSupportWidgetHidden("/christmas")).toBe(true);
+    expect(isSupportWidgetHidden("/christmas/")).toBe(true);
     expect(isSupportWidgetHidden("/christmas/suite")).toBe(false);
   });
 
