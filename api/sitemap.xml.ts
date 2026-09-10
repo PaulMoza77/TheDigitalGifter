@@ -1,25 +1,15 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import { christmasSitemapPaths } from "../server/christmasIndexing.mjs";
+import {
+  buildChristmasHreflangAlternates,
+  parseChristmasLocalePath,
+} from "../server/christmasI18n.mjs";
 
-/** Keep in sync with server/christmasIndexing.mjs CHRISTMAS_INDEXABLE_PATHS. */
+/** Keep primary EN list in sync with server/christmasIndexing.mjs CHRISTMAS_INDEXABLE_PATHS. */
 const SITE_URL = "https://www.thedigitalgifter.com";
 
-const CHRISTMAS_SITEMAP_PATHS = [
-  "/christmas",
-  "/christmas/gift-finder",
-  "/christmas/wishlist",
-  "/christmas/photo-generator",
-  "/christmas/family",
-  "/christmas/couples",
-  "/christmas/pets",
-  "/christmas/dogs",
-  "/christmas/cats",
-  "/christmas/santa-video",
-  "/christmas/tree",
-  "/christmas/advent",
-  "/christmas/cards",
-  "/christmas/messages",
-] as const;
+const CHRISTMAS_SITEMAP_PATHS = christmasSitemapPaths();
 
 type SeoPageRow = {
   page_type: string;
@@ -54,18 +44,30 @@ function createUrlXml({
   lastmod,
   changefreq,
   priority,
+  alternates,
 }: {
   loc: string;
   lastmod?: string;
   changefreq: "daily" | "weekly" | "monthly";
   priority: string;
+  alternates?: Array<{ hreflang: string; href: string }>;
 }) {
+  const altXml =
+    alternates && alternates.length
+      ? alternates
+          .map(
+            (a) =>
+              `    <xhtml:link rel="alternate" hreflang="${escapeXml(a.hreflang)}" href="${escapeXml(a.href)}" />`,
+          )
+          .join("\n")
+      : "";
   return `
   <url>
     <loc>${escapeXml(loc)}</loc>
     ${lastmod ? `<lastmod>${escapeXml(lastmod)}</lastmod>` : ""}
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
+${altXml}
   </url>`;
 }
 
@@ -88,13 +90,16 @@ const NON_CHRISTMAS_STATIC_PATHS = [
 ];
 
 function staticUrlXml() {
-  const christmas = CHRISTMAS_SITEMAP_PATHS.map((path) =>
-    createUrlXml({
+  const christmas = CHRISTMAS_SITEMAP_PATHS.map((path) => {
+    const { basePath } = parseChristmasLocalePath(path);
+    const alternates = buildChristmasHreflangAlternates(basePath);
+    return createUrlXml({
       loc: `${SITE_URL}${path}`,
       changefreq: "weekly",
-      priority: path === "/christmas" ? "0.9" : "0.8",
-    }),
-  );
+      priority: basePath === "/christmas" ? "0.9" : "0.8",
+      alternates: alternates.length ? alternates : undefined,
+    });
+  });
   const other = NON_CHRISTMAS_STATIC_PATHS.map((path) =>
     createUrlXml({
       loc: `${SITE_URL}${path}`,
@@ -107,7 +112,8 @@ function staticUrlXml() {
 
 function sendSitemap(res: VercelResponse, urls: string[]) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls.join("\n")}
 </urlset>`;
   res.setHeader("Content-Type", "application/xml; charset=utf-8");

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { ChristmasLanguageSwitcher } from "@/features/christmas/seo/ChristmasLanguageSwitcher";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
@@ -701,6 +702,9 @@ export default function ChristmasCardsPage() {
   return (
     <div className={`ccm-page ${fontsReady ? "ccm-page--fonts" : ""}`} lang={locale} dir="ltr">
       <ChristmasPageHead path="/christmas/cards" image={seo.image} />
+      <div style={{ position: "relative", zIndex: 5, padding: "0.75rem 1rem 0", display: "flex", justifyContent: "flex-end" }}>
+        <ChristmasLanguageSwitcher />
+      </div>
       <div className="ccm-ambient" aria-hidden="true">
         <div className="ccm-ambient__glow" />
       </div>

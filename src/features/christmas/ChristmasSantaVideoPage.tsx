@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { ChristmasLanguageSwitcher } from "@/features/christmas/seo/ChristmasLanguageSwitcher";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
@@ -597,6 +598,9 @@ export default function ChristmasSantaVideoPage() {
       />
 
       <div className="santa-video-page relative min-h-screen overflow-x-hidden text-[#F5EDE0]">
+        <div className="relative z-20 flex justify-end px-4 pt-3 sm:px-6">
+          <ChristmasLanguageSwitcher />
+        </div>
         <ChristmasSnowfall />
         <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_top,_rgba(212,175,55,0.14),_transparent_55%),linear-gradient(165deg,#0c1f18_0%,#132a22_40%,#1a0a10_100%)]" />
 

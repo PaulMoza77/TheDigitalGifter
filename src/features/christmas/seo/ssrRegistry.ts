@@ -8,4 +8,5 @@ export {
   getChristmasSeo,
   listChristmasSeoPaths,
   normalizeSeoPath,
+  resolveChristmasSeoRequest,
 } from "../../../../server/christmasSeo.mjs";

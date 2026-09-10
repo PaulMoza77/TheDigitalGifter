@@ -31,7 +31,12 @@ describe("christmas P1 indexing policy", () => {
 
   it("aligns sitemap list with indexable paths on www", () => {
     expect(SITE_URL).toBe("https://www.thedigitalgifter.com");
-    expect([...CHRISTMAS_SITEMAP_PATHS]).toEqual([...CHRISTMAS_INDEXABLE_PATHS]);
+    // EN indexable paths remain; P3A may append complete localized pilots (e.g. /ro/...)
+    for (const path of CHRISTMAS_INDEXABLE_PATHS) {
+      expect(CHRISTMAS_SITEMAP_PATHS).toContain(path);
+    }
+    expect(CHRISTMAS_SITEMAP_PATHS).toContain("/ro/christmas/cards");
+    expect(CHRISTMAS_SITEMAP_PATHS).not.toContain("/en/christmas");
   });
 
   it("normalizes apex host and trailing slash", () => {
@@ -44,6 +49,8 @@ describe("christmas P1 indexing policy", () => {
   it("404s unknown christmas product URLs", () => {
     expect(should404UnknownChristmasPath("/christmas/not-a-real-product")).toBe(true);
     expect(should404UnknownChristmasPath("/christmas/photo-generator")).toBe(false);
+    expect(should404UnknownChristmasPath("/ro/christmas/cards")).toBe(false);
+    expect(should404UnknownChristmasPath("/ro/christmas/not-a-real-product")).toBe(true);
   });
 
   it("wires origin + vercel + robots for P1", () => {
