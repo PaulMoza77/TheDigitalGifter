@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { CHRISTMAS_FUNNEL_ALLOWED_EVENTS } from "../funnelEventContract";
 import { LANDING_COPY_KEYS, landingT } from "./copy";
@@ -99,6 +99,14 @@ describe("christmas landing wiring", () => {
     expect(readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx")).toContain("parseGiftRecipient");
     expect(readSrc("src/App.tsx")).toContain("/christmas/tree-gifts");
     expect(readSrc("src/features/christmas/gifts/ChristmasGiftsPage.tsx")).toContain("ChristmasGiftsExperience");
+    expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("cover-elegant.webp");
+    expect(readSrc("src/features/christmas/landing/scenes/CardsScene.tsx")).toContain("xmas-card-desk");
+    expect(readSrc("src/features/christmas/landing/scenes/CardsScene.tsx")).toContain("cardCoverFunny");
+    expect(readSrc("src/features/christmas/landing/scenes/CardsScene.tsx")).toContain("useState(false)");
+    expect(existsSync(resolve(process.cwd(), "public/assets/christmas/cards/cover-elegant.webp"))).toBe(
+      true,
+    );
+    expect(existsSync(resolve(process.cwd(), "public/assets/christmas/cards/cover-funny.jpg"))).toBe(true);
   });
 
   it("keeps an alive cabin hero with editorial countdown wiring", () => {
