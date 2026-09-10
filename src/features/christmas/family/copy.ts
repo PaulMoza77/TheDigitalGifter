@@ -3,12 +3,20 @@
  * Warm, emotional, Christmas-first — AI is secondary.
  */
 
-export const FAMILY_LOCALES = ["en"] as const;
+export const FAMILY_LOCALES = ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"] as const;
 export type FamilyLocale = (typeof FAMILY_LOCALES)[number];
 export const FAMILY_DEFAULT_LOCALE: FamilyLocale = "en";
 
 export const FAMILY_LOCALE_DIR: Record<string, "ltr" | "rtl"> = {
   en: "ltr",
+  ro: "ltr",
+  de: "ltr",
+  fr: "ltr",
+  es: "ltr",
+  it: "ltr",
+  pt: "ltr",
+  nl: "ltr",
+  pl: "ltr",
   ar: "rtl",
   he: "rtl",
   fa: "rtl",
@@ -202,7 +210,8 @@ const EN: CopyBag = {
   "cross.pets": "Pet Christmas",
 };
 
-const PACKS: Record<FamilyLocale, CopyBag> = { en: EN };
+const PACKS: Partial<Record<FamilyLocale, CopyBag>> = { en: EN };
+// Wave 1 interactive keys fall back to EN until full family packs land (P3D photo/funnel covers shared controls).
 
 export function familyT(
   key: string,

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
+import { parseChristmasLocalePath } from "@/features/christmas/seo/localeRouting";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import { AmbientSnow } from "../landing/AmbientSnow";
 import { FONT_HREF } from "../landing/assets";
 import "../landing/ChristmasLanding.css";
@@ -18,10 +20,12 @@ import {
 import { trackPhotoGeneratorEvent } from "./analytics";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
 import {
-  PHOTO_GEN_DEFAULT_LOCALE,
   PHOTO_GEN_FAQS,
   photoGenDir,
   photoGenT,
+  photoStyleDescription,
+  photoStyleLabel,
+  type PhotoGenLocale,
 } from "./copy";
 import "./PhotoGenerator.css";
 import { photoGeneratorJsonLd, photoGeneratorSeo, upsertJsonLd } from "./seo";
@@ -32,7 +36,6 @@ import {
 } from "../cards/portraitHandoff";
 import { trackChristmasEvent } from "../analytics";
 
-const LOCALE = PHOTO_GEN_DEFAULT_LOCALE;
 const VERTICAL = CHRISTMAS_PORTRAIT_VERTICALS.photo;
 
 const SUBJECTS: ChristmasPortraitSubjectChoice[] = [
@@ -52,7 +55,13 @@ function ensureFonts() {
   document.head.appendChild(link);
 }
 
-function GenerationMessages({ active }: { active: boolean }) {
+function GenerationMessages({
+  active,
+  locale,
+}: {
+  active: boolean;
+  locale: PhotoGenLocale;
+}) {
   const keys = ["gen.step1", "gen.step2", "gen.step3", "gen.step4"] as const;
   const [idx, setIdx] = useState(0);
   useEffect(() => {
@@ -63,12 +72,16 @@ function GenerationMessages({ active }: { active: boolean }) {
     }, 4200);
     return () => window.clearInterval(id);
   }, [active, keys.length]);
-  return <p className="pg-gen__msg">{photoGenT(keys[idx], LOCALE)}</p>;
+  return <p className="pg-gen__msg">{photoGenT(keys[idx], locale)}</p>;
 }
 
 export default function ChristmasPhotoGeneratorExperience() {
-  const t = useCallback((key: string) => photoGenT(key, LOCALE), []);
-  const seo = useMemo(() => photoGeneratorSeo(LOCALE), []);
+  const location = useLocation();
+  const locale = normalizeWave1GenerationLocale(
+    parseChristmasLocalePath(location.pathname).locale,
+  ) as PhotoGenLocale;
+  const t = useCallback((key: string) => photoGenT(key, locale), [locale]);
+  const seo = useMemo(() => photoGeneratorSeo(locale), [locale]);
   const [category, setCategory] = useState<ExampleCategory>("family");
   const [dragOver, setDragOver] = useState(false);
   const [resultMode, setResultMode] = useState<"christmas" | "original">("christmas");
@@ -113,11 +126,11 @@ export default function ChristmasPhotoGeneratorExperience() {
 
   useEffect(() => {
     ensureFonts();
-    upsertJsonLd("christmas-photo-generator-jsonld", photoGeneratorJsonLd(LOCALE));
+    upsertJsonLd("christmas-photo-generator-jsonld", photoGeneratorJsonLd(locale));
     return () => {
       document.getElementById("christmas-photo-generator-jsonld")?.remove();
     };
-  }, []);
+  }, [locale]);
 
   const showLanding =
     funnel.draft.step === "intro" ||
@@ -166,7 +179,7 @@ export default function ChristmasPhotoGeneratorExperience() {
   return (
     <>
       <ChristmasPageHead path="/christmas/photo-generator" image={seo.image} />
-      <article className="xmas-landing pg-page" dir={photoGenDir(LOCALE)} lang={LOCALE}>
+      <article className="xmas-landing pg-page" dir={photoGenDir(locale)} lang={locale}>
         <a className="xmas-skip" href="#christmas-photo-create">
           {t("hero.cta")}
         </a>
@@ -373,12 +386,16 @@ export default function ChristmasPhotoGeneratorExperience() {
                     <img
                       className="pg-style__img"
                       src={STYLE_PREVIEW_BY_KEY[style.styleKey] || PHOTO_GEN_ASSETS.styleClassic}
-                      alt={`${style.displayName} Christmas portrait style preview`}
+                      alt={`${photoStyleLabel(style.styleKey, locale, style.displayName)} Christmas portrait style preview`}
                       loading="lazy"
                     />
                     <div className="pg-style__body">
-                      <div className="pg-style__name">{style.displayName}</div>
-                      <p className="pg-style__desc">{style.description}</p>
+                      <div className="pg-style__name">
+                        {photoStyleLabel(style.styleKey, locale, style.displayName)}
+                      </div>
+                      <p className="pg-style__desc">
+                        {photoStyleDescription(style.styleKey, locale, style.description)}
+                      </p>
                     </div>
                   </button>
                 ))}
@@ -539,6 +556,14 @@ export default function ChristmasPhotoGeneratorExperience() {
                     </button>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  className="xmas-btn xmas-btn--ghost"
+                  style={{ marginTop: "1rem" }}
+                  onClick={() => funnel.openFilePicker()}
+                >
+                  {t("upload.replace")}
+                </button>
               </section>
             )}
 
@@ -569,8 +594,12 @@ export default function ChristmasPhotoGeneratorExperience() {
                         loading="lazy"
                       />
                       <div className="pg-style__body">
-                        <div className="pg-style__name">{style.displayName}</div>
-                        <p className="pg-style__desc">{style.description}</p>
+                        <div className="pg-style__name">
+                          {photoStyleLabel(style.styleKey, locale, style.displayName)}
+                        </div>
+                        <p className="pg-style__desc">
+                          {photoStyleDescription(style.styleKey, locale, style.description)}
+                        </p>
                       </div>
                     </button>
                   ))}
@@ -659,7 +688,7 @@ export default function ChristmasPhotoGeneratorExperience() {
               <section className="pg-gen" aria-live="polite">
                 <div className="pg-gen__pulse" aria-hidden="true" />
                 <h2 className="visually-hidden">{t("gen.h2")}</h2>
-                <GenerationMessages active />
+                <GenerationMessages active locale={locale} />
                 <p className="xmas-lede" style={{ marginTop: "1rem" }}>
                   {t("gen.note")}
                 </p>
