@@ -459,6 +459,23 @@ export const PACKS: Record<MessagesLocale, Record<string, string>> = {
   pl: PL,
 };
 
+/** Product UI keys that must be localized for Wave 1 (P3D coverage). */
+export const REQUIRED_UI_KEYS = [
+  "hero.h1",
+  "hero.lede",
+  "legend.recipient",
+  "legend.tone",
+  "cta.generate",
+  "cta.generating",
+  "cta.regenerate",
+  "cta.copy",
+  "cta.useInCard",
+  "results.title",
+  "empty.hint",
+  "error.generate",
+  "crossSell.cardCta",
+] as const;
+
 // Assert key parity: every locale pack must match EN key set.
 const _enKeySet = Object.keys(PACKS.en).sort().join("\0");
 for (const loc of MESSAGES_UI_LOCALES) {

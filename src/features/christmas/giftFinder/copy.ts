@@ -882,6 +882,25 @@ export const PACKS: Record<GiftFinderLocale, Record<string, string>> = {
   pl: PL,
 };
 
+/** Product UI keys that must be localized for Wave 1 (P3D coverage). */
+export const REQUIRED_UI_KEYS = [
+  "hero.h1",
+  "hero.cta",
+  "nav.back",
+  "nav.continue",
+  "nav.find",
+  "nav.openWishlist",
+  "nav.refine",
+  "nav.restart",
+  "step.recipient.title",
+  "step.budget.title",
+  "results.save",
+  "results.seeGift",
+  "error.generic",
+  "error.retry",
+  "crossSell.portrait",
+] as const;
+
 // Assert key parity: every locale pack must match EN key set (74 keys).
 const _enKeySet = Object.keys(PACKS.en).sort().join("\0");
 for (const loc of GIFT_FINDER_UI_LOCALES) {

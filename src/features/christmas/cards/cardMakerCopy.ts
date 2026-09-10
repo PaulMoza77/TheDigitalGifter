@@ -1251,7 +1251,7 @@ const PL: Dict = {
   "a11y.progress": "Postęp tworzenia kartki",
 };
 
-const TABLES: Partial<Record<LocaleCode, Dict>> = {
+export const TABLES: Partial<Record<LocaleCode, Dict>> = {
   en: EN,
   ro: RO,
   de: DE,
@@ -1264,6 +1264,22 @@ const TABLES: Partial<Record<LocaleCode, Dict>> = {
 };
 
 const WAVE1_LOCALES: LocaleCode[] = ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"];
+
+/** Product UI keys that must be localized for Wave 1 (P3D coverage). */
+export const REQUIRED_UI_KEYS = [
+  "hero.h1",
+  "hero.cta",
+  "photo.upload",
+  "message.generate",
+  "message.who",
+  "preview.create",
+  "result.download",
+  "result.share",
+  "nav.continue",
+  "nav.back",
+  "personalize.to",
+  "preview.failed",
+] as const;
 
 // Assert key parity: every Wave 1 pack must match EN key set.
 const _enKeySet = Object.keys(TABLES.en!).sort().join("\0");

@@ -1199,6 +1199,22 @@ export const PACKS: Record<ChristmasLandingLocale, CopyBag> = {
   pl: PL,
 };
 
+/** Hub CTA / hero keys that must be localized for Wave 1 (P3D coverage). */
+export const REQUIRED_UI_KEYS = [
+  "hero.h1",
+  "hero.cta",
+  "hero.secondary",
+  "finder.cta",
+  "portraits.cta",
+  "santa.cta",
+  "wishlist.cta",
+  "tree.cta",
+  "advent.cta",
+  "cards.cta",
+  "messages.cta",
+  "finale.cta",
+] as const;
+
 // Assert key parity across Wave 1 packs.
 const _enKeySet = Object.keys(PACKS.en).sort().join("\0");
 for (const loc of CHRISTMAS_LANDING_LOCALES) {

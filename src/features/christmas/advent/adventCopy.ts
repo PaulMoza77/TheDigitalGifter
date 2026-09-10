@@ -495,6 +495,19 @@ export const TABLES: Record<AdventLocale, Dict> = {
   pl: PL,
 };
 
+/** Product UI keys that must be localized for Wave 1 (P3D coverage). */
+export const REQUIRED_UI_KEYS = [
+  "title",
+  "lede.openToday",
+  "countdown.days",
+  "cta.openToday",
+  "cta.comeBackTomorrow",
+  "door.locked",
+  "door.today",
+  "nav.hub",
+  "error.load",
+] as const;
+
 const _enKeySet = Object.keys(TABLES.en).sort().join("\0");
 for (const loc of ADVENT_UI_LOCALES) {
   const pack = TABLES[loc];

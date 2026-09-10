@@ -210,8 +210,32 @@ const EN: CopyBag = {
   "cross.pets": "Pet Christmas",
 };
 
-const PACKS: Partial<Record<FamilyLocale, CopyBag>> = { en: EN };
-// Wave 1 interactive keys fall back to EN until full family packs land (P3D photo/funnel covers shared controls).
+/**
+ * Wave 1 family packs — currently EN only.
+ * Sibling work expands PACKS; P3D coverage tests interactive keys when present.
+ */
+export const PACKS: Partial<Record<FamilyLocale, CopyBag>> = { en: EN };
+
+/**
+ * Interactive funnel / result controls — checked for EN-fallback once locale packs land.
+ * Marketing/SEO keys are out of scope until full family packs ship.
+ */
+export const REQUIRED_UI_KEYS = [
+  "hero.cta",
+  "upload.choose",
+  "upload.drop",
+  "upload.privacy",
+  "style.back",
+  "preview.continue",
+  "offer.pay",
+  "result.download",
+  "result.share",
+  "result.another",
+  "result.retryStyle",
+  "result.card",
+  "busy.uploading",
+  "error.generic",
+] as const;
 
 export function familyT(
   key: string,

@@ -841,6 +841,19 @@ export const TABLES: Record<TreeLocale, Dict> = {
   pl: PL,
 };
 
+/** Product UI keys that must be localized for Wave 1 (P3D coverage). */
+export const REQUIRED_UI_KEYS = [
+  "title.create",
+  "lede.create",
+  "gift.addCta",
+  "share.link",
+  "share.enable",
+  "editor.saveCreate",
+  "unavailable.cta",
+  "nav.makeOwn",
+  "error.load",
+] as const;
+
 const _enKeySet = Object.keys(TABLES.en).sort().join("\0");
 for (const loc of TREE_UI_LOCALES) {
   const pack = TABLES[loc];

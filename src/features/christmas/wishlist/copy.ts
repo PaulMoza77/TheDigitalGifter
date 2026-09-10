@@ -1511,6 +1511,21 @@ export const PACKS: Record<WishlistLocale, Record<string, string>> = {
   pl: PL,
 };
 
+/** Product UI keys that must be localized for Wave 1 (P3D coverage). */
+export const REQUIRED_UI_KEYS = [
+  "hero.h1",
+  "hero.ctaCreate",
+  "create.submit",
+  "empty.cta",
+  "add.saveWish",
+  "share.cta",
+  "share.copyLink",
+  "share.native",
+  "reserve.cta",
+  "crossSell.tryGiftFinder",
+  "error.load",
+] as const;
+
 // Assert key parity: every locale pack must match EN key set.
 const _enKeySet = Object.keys(PACKS.en).sort().join("\0");
 for (const loc of WISHLIST_UI_LOCALES) {
