@@ -35,6 +35,15 @@ describe("christmas SEO SSR registry", () => {
     expect(html).not.toContain(`<title>${GENERIC}</title>`);
   });
 
+  it("marks paid photo funnel noindex while organic generator stays indexable", () => {
+    const template = readFileSync(join(process.cwd(), "index.html"), "utf8");
+    const organic = applyChristmasSeo(template, "/christmas/photo-generator");
+    const paid = applyChristmasSeo(template, "/christmas-ai-photos");
+    expect(organic).toMatch(/name="robots"[^>]+content="index,follow"/);
+    expect(paid).toMatch(/name="robots"[^>]+content="noindex,follow"/);
+    expect(getChristmasSeo("/christmas/gifts")).toBeNull();
+  });
+
   it("keeps kids noindex while still unique", () => {
     const kids = getChristmasSeo("/christmas/kids");
     expect(kids?.noindex).toBe(true);

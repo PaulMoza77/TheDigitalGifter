@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Gift, Heart, Search, Sparkles } from "lucide-react";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
-import { normalizeSeoPath } from "@/features/christmas/seo/ssrRegistry";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { supabase } from "@/lib/supabase";
@@ -146,8 +145,6 @@ function shouldShowCrossSell(personalities: string[], interests: string[], recip
 
 export default function ChristmasGiftFinderPage() {
   const [params] = useSearchParams();
-  const location = useLocation();
-  const seoPath = normalizeSeoPath(location.pathname);
   const locale: LocaleCode = "en";
   const seo = giftFinderSeo(locale);
   const saved = readFinderAnswers();
@@ -517,7 +514,7 @@ export default function ChristmasGiftFinderPage() {
 
   return (
     <div className="gf-page">
-      <ChristmasPageHead path={seoPath === "/christmas/gifts" ? "/christmas/gifts" : "/christmas/gift-finder"} image={seo.image} />
+      <ChristmasPageHead path="/christmas/gift-finder" image={seo.image} />
       <ChristmasSnowfall />
       <div className="gf-glow gf-glow--left" aria-hidden="true" />
       <div className="gf-glow gf-glow--right" aria-hidden="true" />

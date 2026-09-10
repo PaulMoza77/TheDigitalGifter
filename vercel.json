@@ -9,6 +9,18 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/christmas/gifts",
+      "destination": "/christmas/gift-finder",
+      "permanent": true
+    },
+    {
+      "source": "/christmas/gifts/",
+      "destination": "/christmas/gift-finder",
+      "permanent": true
+    }
+  ],
   "functions": {
     "api/pet-v2/preview.ts": {
       "maxDuration": 60

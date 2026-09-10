@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useSearchParams,
   Outlet,
 } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -300,6 +301,17 @@ function FunnelLayout() {
   );
 }
 
+function ChristmasGiftsAliasRedirect() {
+  const [params] = useSearchParams();
+  const qs = params.toString();
+  return (
+    <Navigate
+      to={`/christmas/gift-finder${qs ? `?${qs}` : ""}`}
+      replace
+    />
+  );
+}
+
 function ChristmasRouteFallback() {
   const christmasBoot =
     typeof window !== "undefined" &&
@@ -495,7 +507,10 @@ function AppInner() {
             <Route path="/wishlist/:shareId" element={<ChristmasWishlistPage />} />
             <Route path="/christmas/gift-finder" element={<ChristmasGiftFinderPage />} />
             <Route path="/christmas/tree-gifts" element={<ChristmasGiftsPage />} />
-            <Route path="/christmas/gifts" element={<ChristmasGiftFinderPage />} />
+            <Route
+              path="/christmas/gifts"
+              element={<ChristmasGiftsAliasRedirect />}
+            />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
             <Route path="/birthday" element={<BirthdayPage />} />

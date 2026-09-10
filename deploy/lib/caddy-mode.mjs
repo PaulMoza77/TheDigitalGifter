@@ -3,6 +3,17 @@
  * Never downgrades an active HTTPS TDG site to the HTTP-only file.
  */
 
+function hasNamedTdgHttpsSite(text) {
+  const src = String(text || "");
+  // Legacy combined block, or split apex→www + www upstream (P1 canonical host).
+  return (
+    /^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{/m.test(src) ||
+    /^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{/m.test(src) ||
+    (/^\s*www\.thedigitalgifter\.com\s*\{/m.test(src) &&
+      /^\s*thedigitalgifter\.com\s*\{/m.test(src))
+  );
+}
+
 /**
  * @param {string} activeCaddyfile
  * @param {string | null | undefined} modeMarker  "http" | "https" | empty
@@ -14,9 +25,7 @@ export function detectTdgCaddyMode(activeCaddyfile, modeMarker) {
   if (marker === "https" || marker === "http") return marker;
 
   // Named site block (HTTPS-capable) — not only Host matchers inside :80.
-  const namedTdgSite =
-    /^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{/m.test(text) ||
-    /^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{/m.test(text);
+  const namedTdgSite = hasNamedTdgHttpsSite(text);
   const hasHsts = /Strict-Transport-Security/i.test(text);
   if (namedTdgSite && hasHsts) return "https";
   if (namedTdgSite) return "https";
@@ -47,10 +56,7 @@ export function assertCaddyContentMatchesMode(candidateContent, mode) {
     throw new Error("Caddyfile must include thedigitalgifter.com");
   }
   if (mode === "https") {
-    const named =
-      /^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{/m.test(text) ||
-      /^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{/m.test(text);
-    if (!named) {
+    if (!hasNamedTdgHttpsSite(text)) {
       throw new Error("HTTPS Caddyfile must use a named site block for TDG");
     }
     if (!/Strict-Transport-Security/i.test(text)) {
@@ -58,10 +64,7 @@ export function assertCaddyContentMatchesMode(candidateContent, mode) {
     }
   }
   if (mode === "http") {
-    const named =
-      /^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{/m.test(text) ||
-      /^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{/m.test(text);
-    if (named) {
+    if (hasNamedTdgHttpsSite(text)) {
       throw new Error("HTTP Caddyfile must not enable named HTTPS site blocks");
     }
   }

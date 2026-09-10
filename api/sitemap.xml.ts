@@ -1,7 +1,25 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 
-const SITE_URL = "https://thedigitalgifter.com";
+/** Keep in sync with server/christmasIndexing.mjs CHRISTMAS_INDEXABLE_PATHS. */
+const SITE_URL = "https://www.thedigitalgifter.com";
+
+const CHRISTMAS_SITEMAP_PATHS = [
+  "/christmas",
+  "/christmas/gift-finder",
+  "/christmas/wishlist",
+  "/christmas/photo-generator",
+  "/christmas/family",
+  "/christmas/couples",
+  "/christmas/pets",
+  "/christmas/dogs",
+  "/christmas/cats",
+  "/christmas/santa-video",
+  "/christmas/tree",
+  "/christmas/advent",
+  "/christmas/cards",
+  "/christmas/messages",
+] as const;
 
 type SeoPageRow = {
   page_type: string;
@@ -51,7 +69,7 @@ function createUrlXml({
   </url>`;
 }
 
-const STATIC_PATHS = [
+const NON_CHRISTMAS_STATIC_PATHS = [
   "/",
   "/templates",
   "/generator",
@@ -63,23 +81,6 @@ const STATIC_PATHS = [
   "/pet/dog",
   "/pet/cat",
   "/pet/other",
-  "/christmas",
-  "/christmas/suite",
-  "/christmas/photo-generator",
-  "/christmas/gift-finder",
-  "/christmas/tree-gifts",
-  "/christmas/family",
-  "/christmas/couples",
-  "/christmas/pets",
-  "/christmas/dogs",
-  "/christmas/cats",
-  "/christmas/santa-video",
-  "/christmas/wishlist",
-  "/christmas/tree",
-  "/christmas/advent",
-  "/christmas/cards",
-  "/christmas/messages",
-  "/christmas-ai-photos",
   "/blog",
   "/privacy",
   "/terms",
@@ -87,13 +88,21 @@ const STATIC_PATHS = [
 ];
 
 function staticUrlXml() {
-  return STATIC_PATHS.map((path) =>
+  const christmas = CHRISTMAS_SITEMAP_PATHS.map((path) =>
+    createUrlXml({
+      loc: `${SITE_URL}${path}`,
+      changefreq: "weekly",
+      priority: path === "/christmas" ? "0.9" : "0.8",
+    }),
+  );
+  const other = NON_CHRISTMAS_STATIC_PATHS.map((path) =>
     createUrlXml({
       loc: `${SITE_URL}${path}`,
       changefreq: "weekly",
       priority: path === "/" ? "1.0" : "0.7",
     }),
   );
+  return [...other.slice(0, 1), ...christmas, ...other.slice(1)];
 }
 
 function sendSitemap(res: VercelResponse, urls: string[]) {
@@ -173,3 +182,5 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     sendSitemap(res, fallback);
   }
 }
+
+export { CHRISTMAS_SITEMAP_PATHS, SITE_URL };
