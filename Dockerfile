@@ -27,7 +27,7 @@ COPY api ./api
 COPY server ./server
 COPY public/.well-known ./public/.well-known
 ENV NODE_ENV=production \
-    VERCEL_ENV=production \
+    TDG_ENV=production \
     PORT=8080
 EXPOSE 8080
 USER tdg

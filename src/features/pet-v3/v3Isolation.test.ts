@@ -69,7 +69,7 @@ describe("pet funnel V3 cat isolation", () => {
       expect(isPetV3EventName(name)).toBe(true);
     }
     expect(readSrc("src/features/pet-v2/analytics.ts")).not.toContain("v3_");
-    expect(readSrc("vercel.json")).toContain("/api/pet-v3/funnel-event");
+    expect(readSrc("server/routes.mjs")).toContain("pet-v3");
   });
 
   it("uses cat royal preview configuration and rejects non-cat V3 requests", () => {

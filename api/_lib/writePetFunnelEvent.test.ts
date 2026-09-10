@@ -45,10 +45,10 @@ describe("pet funnel ingest writer helpers", () => {
   });
 
   it("treats missing Vercel env as development", () => {
-    const previous = process.env.VERCEL_ENV;
-    delete process.env.VERCEL_ENV;
+    const previous = process.env.TDG_ENV;
+    delete process.env.TDG_ENV;
     expect(resolveWriteEnvironment()).toBe("development");
-    if (previous == null) delete process.env.VERCEL_ENV;
-    else process.env.VERCEL_ENV = previous;
+    if (previous == null) delete process.env.TDG_ENV;
+    else process.env.TDG_ENV = previous;
   });
 });

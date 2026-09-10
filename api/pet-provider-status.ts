@@ -8,7 +8,7 @@
  * Missing REPLICATE_API_TOKEN on Vercel is a probe misconfiguration: paid generation
  * runs on Supabase Edge (where the token normally lives), so do not block checkout.
  */
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "./_lib/httpTypes";
 import { createClient } from "@supabase/supabase-js";
 
 const UNAVAILABLE =

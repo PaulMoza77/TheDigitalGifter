@@ -400,8 +400,9 @@ Deno.serve(async (req) => {
       if (!Number.isInteger(requestedDay) || requestedDay < 1 || requestedDay > 24) {
         return jsonResponse({ error: "invalid_day" }, 400);
       }
-      // Production: only eligibleDay. Test inject allows matching injected date.
-      if (parts.eligibleDay !== requestedDay) {
+      // Production: today + catch-up (day <= eligibleDay). Future doors stay locked.
+      // After season / preseason: eligibleDay is null → not eligible.
+      if (parts.eligibleDay == null || requestedDay > parts.eligibleDay) {
         return jsonResponse({ error: "not_eligible", code: "not_eligible" }, 403);
       }
       const { data: reward } = await service

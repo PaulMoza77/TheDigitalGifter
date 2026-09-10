@@ -8,9 +8,12 @@ import {
 export type WriteEnvironment = "production" | "preview" | "development";
 
 export function resolveWriteEnvironment(): WriteEnvironment {
-  const vercel = String(process.env.VERCEL_ENV || "").toLowerCase();
-  if (vercel === "production") return "production";
-  if (vercel === "preview") return "preview";
+  // Mozas VPS sets TDG_ENV=production. VERCEL_ENV is a legacy fallback only.
+  const env = String(
+    process.env.TDG_ENV || process.env.NODE_ENV || process.env.VERCEL_ENV || "",
+  ).toLowerCase();
+  if (env === "production") return "production";
+  if (env === "preview" || env === "staging") return "preview";
   return "development";
 }
 

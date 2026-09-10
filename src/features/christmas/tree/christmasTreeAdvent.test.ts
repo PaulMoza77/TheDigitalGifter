@@ -74,7 +74,7 @@ describe("advent timezone policy (Europe/Bucharest)", () => {
     expect(after.afterSeason).toBe(true);
   });
 
-  it("door states reflect claimed/today/future/missed", () => {
+  it("door states reflect claimed/today/future/openable catch-up", () => {
     expect(
       adventDoorState({
         day: 5,
@@ -110,7 +110,16 @@ describe("advent timezone policy (Europe/Bucharest)", () => {
         beforeSeason: false,
         afterSeason: false,
       }),
-    ).toBe("missed");
+    ).toBe("openable");
+    expect(
+      adventDoorState({
+        day: 10,
+        eligibleDay: null,
+        claimed: false,
+        beforeSeason: false,
+        afterSeason: true,
+      }),
+    ).toBe("ended");
   });
 });
 
@@ -151,6 +160,7 @@ describe("christmas tree / advent product wiring", () => {
     expect(fn).toContain("auth_required");
     expect(fn).toContain("idempotency_key");
     expect(fn).toContain("Europe/Bucharest");
+    expect(fn).toContain("requestedDay > parts.eligibleDay");
     expect(fn).not.toMatch(/share_id.*updateTree|updateTree.*share_id/);
   });
 
@@ -164,6 +174,14 @@ describe("christmas tree / advent product wiring", () => {
       "gift_opened",
       "reward_claimed",
       "free_gift_claimed",
+      "christmas_advent_page_view",
+      "christmas_advent_door_clicked",
+      "christmas_advent_locked_door_clicked",
+      "christmas_advent_door_opened",
+      "christmas_advent_reward_viewed",
+      "christmas_advent_reward_claimed",
+      "christmas_advent_share_clicked",
+      "christmas_advent_tree_cross_sell_clicked",
     ]) {
       expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain(ev);
     }

@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "./_lib/httpTypes";
 
 /** Self-contained Christmas V2 ingest. Do not import ./_lib here — match pet-v2 pattern. */
 

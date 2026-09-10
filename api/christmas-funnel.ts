@@ -1,26 +1,17 @@
 /**
- * Node/Vercel port of supabase/functions/christmas-funnel/index.ts.
+ * Node port of supabase/functions/christmas-funnel/index.ts.
  *
  * Production checkout/generation must work even when the Supabase Edge deploy
  * is blocked (missing SUPABASE_ACCESS_TOKEN). This file re-implements every
  * christmas-funnel action against @supabase/supabase-js + process.env so it
- * can run as a normal Vercel serverless function. Keep the two copies in sync
- * whenever the funnel's request/response contract changes — the Deno source
- * stays live so the Edge function can be redeployed once the token is
- * available again.
+ * can run on the Mozas Node origin. Keep the two copies in sync whenever the
+ * funnel's request/response contract changes — the Deno source stays live so
+ * the Edge function can be redeployed once the token is available again.
  */
 import { randomUUID } from "node:crypto";
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "./_lib/httpTypes";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { waitUntil as vercelWaitUntil } from "@vercel/functions";
-
-function waitUntil(task: Promise<unknown>) {
-  try {
-    vercelWaitUntil(task);
-  } catch {
-    void task;
-  }
-}
+import { waitUntil } from "./_lib/waitUntil";
 import {
   CHRISTMAS_PACKS,
   CHRISTMAS_PRODUCT_TYPE,

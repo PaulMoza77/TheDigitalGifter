@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "./_lib/httpTypes";
 import { createClient } from "@supabase/supabase-js";
 
 const SITE_URL = "https://thedigitalgifter.com";
