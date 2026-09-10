@@ -1,5 +1,7 @@
 import { LANDING_ASSETS } from "../assets";
 import { landingT, type ChristmasLandingLocale } from "../copy";
+import { HeroAtmosphere } from "../HeroAtmosphere";
+import { HeroCountdown } from "../HeroCountdown";
 
 export function ImmersiveHero({
   locale,
@@ -25,10 +27,11 @@ export function ImmersiveHero({
           decoding="async"
         />
         <div className="xmas-hero__veil" />
-        <div className="xmas-hero__flicker" aria-hidden="true" />
+        <HeroAtmosphere />
       </div>
       <div className="xmas-hero__content">
         <p className="xmas-kicker">{t("hero.eyebrow")}</p>
+        <HeroCountdown locale={locale} />
         <h1 id="christmas-hero-title">{t("hero.h1")}</h1>
         <p className="xmas-lede">{t("hero.lede")}</p>
         <div className="xmas-actions">
