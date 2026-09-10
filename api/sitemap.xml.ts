@@ -66,6 +66,7 @@ const STATIC_PATHS = [
   "/christmas",
   "/christmas/photo-generator",
   "/christmas/gift-finder",
+  "/christmas/tree-gifts",
   "/christmas/family",
   "/christmas/couples",
   "/christmas/pets",

@@ -1,4 +1,14 @@
 export const LANDING_ASSETS = {
+  /** Luxury mountain-cabin hero (poster + living loop). */
+  cabin1280: "/christmas/cabin-hero-1280.webp",
+  cabin1920: "/christmas/cabin-hero-1920.webp",
+  cabin2560: "/christmas/cabin-hero-2560.webp",
+  cabin1280Jpg: "/christmas/cabin-hero-1280.jpg",
+  cabin1920Jpg: "/christmas/cabin-hero-1920.jpg",
+  cabin2560Jpg: "/christmas/cabin-hero-2560.jpg",
+  cabinLoop: "/christmas/cabin-hero-loop.mp4?v=seedance1",
+  cabinLoop720: "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+  /** Kept for OG / finale continuity with the storytelling rooms. */
   hero: "/assets/christmas/christmas_hero_room.webp",
   finale: "/assets/christmas/christmas_finale_room.webp",
   portraitFamily: "/assets/christmas/portrait_family.webp",
@@ -8,10 +18,10 @@ export const LANDING_ASSETS = {
   card: "/assets/christmas/christmas_card_open.webp",
   advent: "/assets/christmas/advent_calendar.webp",
   wishlist: "/assets/christmas/wishlist_letter.webp",
-  santaWebm: "/assets/christmas/santa-alpha.webm",
-  santaIdle: "/assets/christmas/santa-idle.webp",
-  santaSpeak: "/assets/christmas/santa-speak.webp",
-  /** Higher-quality transparent PNG fallbacks (reduced-motion / no WebM). */
+  santaWebm: "/assets/christmas/santa-alpha.webm?v=cutout2",
+  santaIdle: "/assets/christmas/santa-idle.webp?v=cutout2",
+  santaSpeak: "/assets/christmas/santa-speak.webp?v=cutout2",
+  /** Higher-quality transparent PNG fallbacks (reduced-motion). */
   santaStatic: "/assets/christmas/santa/santa-static.png",
   santaStaticMobile: "/assets/christmas/santa/santa-static-480.png",
 } as const;
