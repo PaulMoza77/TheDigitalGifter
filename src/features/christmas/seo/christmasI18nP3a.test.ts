@@ -44,12 +44,12 @@ describe("christmas P3A i18n foundation", () => {
     expect(clientPathForLocale("/ro/christmas/cards", "en")).toBe("/christmas/cards");
   });
 
-  it("only marks complete RO pilot routes indexable", () => {
+  it("marks complete RO routes indexable including P3B expansions", () => {
     expect(isChristmasLocaleSeoIndexable("ro", "/christmas")).toBe(true);
     expect(isChristmasLocaleSeoIndexable("ro", "/christmas/cards")).toBe(true);
     expect(isChristmasLocaleSeoIndexable("ro", "/christmas/santa-video")).toBe(true);
-    expect(isChristmasLocaleSeoIndexable("ro", "/christmas/gift-finder")).toBe(false);
-    expect(shouldNoindexChristmasPath("/ro/christmas/gift-finder")).toBe(true);
+    expect(isChristmasLocaleSeoIndexable("ro", "/christmas/gift-finder")).toBe(true);
+    expect(shouldNoindexChristmasPath("/ro/christmas/gift-finder")).toBe(false);
     expect(shouldNoindexChristmasPath("/ro/christmas/cards")).toBe(false);
   });
 
@@ -66,7 +66,7 @@ describe("christmas P3A i18n foundation", () => {
     const html = applyChristmasSeo(template(), "/ro/christmas/santa-video");
     expect(html).toMatch(/lang="ro"/);
     expect(html).toContain('rel="canonical" href="https://www.thedigitalgifter.com/ro/christmas/santa-video"');
-    expect(html).toContain("Video personalizat de la Moș Crăciun");
+    expect(html).toMatch(/Video [Pp]ersonalizat de la Moș Crăciun/);
     expect(html).toContain("Ce este un video personalizat de la Moș Crăciun?");
     expect(html).toContain('hreflang="en"');
     expect(html).toContain('hreflang="ro"');
@@ -74,12 +74,11 @@ describe("christmas P3A i18n foundation", () => {
     expect(html).toMatch(/name="robots"[^>]*content="index,follow"/);
   });
 
-  it("does not emit hreflang for incomplete locale pages", () => {
-    const html = applyChristmasSeo(template(), "/ro/christmas/gift-finder");
+  it("does not emit hreflang for product-gated incomplete locale pages", () => {
+    const html = applyChristmasSeo(template(), "/de/christmas/santa-video");
     expect(html).toMatch(/name="robots"[^>]*content="noindex,follow"/);
     expect(html).not.toMatch(/hreflang=/);
   });
-
   it("keeps English SSR cluster intact with RO alternate", () => {
     const html = applyChristmasSeo(template(), "/christmas/cards");
     expect(html).toContain('hreflang="ro"');
@@ -92,13 +91,13 @@ describe("christmas P3A i18n foundation", () => {
     expect(paths).toContain("/christmas");
     expect(paths).toContain("/ro/christmas");
     expect(paths).toContain("/ro/christmas/cards");
-    expect(paths).not.toContain("/ro/christmas/gift-finder");
+    expect(paths).toContain("/ro/christmas/gift-finder");
     expect(paths).not.toContain("/en/christmas");
   });
 
-  it("registers wave-1 locales without enabling unfinished SEO locales", () => {
+  it("registers Wave 1 locales as enabled after P3B", () => {
     const enabled = listEnabledChristmasLocales().map((l) => l.code).sort();
-    expect(enabled).toEqual(["en", "ro"]);
+    expect(enabled).toEqual(["de", "en", "es", "fr", "it", "nl", "pl", "pt", "ro"]);
   });
 
   it("language switcher mapping preserves conceptual Christmas routes", () => {

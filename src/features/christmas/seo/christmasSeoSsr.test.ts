@@ -17,7 +17,10 @@ describe("christmas SEO SSR registry", () => {
     expect(paths).toContain("/christmas");
     expect(paths).toContain("/christmas/family");
     expect(paths).toContain("/christmas-ai-photos");
-    expect(paths.length).toBe(CHRISTMAS_SEO_ROUTES.length);
+    // P3B: includes EN registry paths + indexable localized prerender paths
+    expect(paths.length).toBeGreaterThanOrEqual(CHRISTMAS_SEO_ROUTES.length);
+    expect(paths).toContain("/de/christmas/cards");
+    expect(paths).toContain("/ro/christmas");
 
     const titles = CHRISTMAS_SEO_ROUTES.map((r) => r.title);
     expect(new Set(titles).size).toBe(titles.length);

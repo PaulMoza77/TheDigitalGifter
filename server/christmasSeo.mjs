@@ -17,7 +17,11 @@ import {
   getChristmasLocale,
   isChristmasLocaleSeoIndexable,
 } from "./christmasLocale.mjs";
-import { getChristmasSeoContentRo } from "./christmasSeoRo.mjs";
+import {
+  faqHeadingForLocale,
+  getChristmasLocalizedSeoContent,
+  homeLabelForLocale,
+} from "./i18n/seo/index.mjs";
 
 export const SITE_ORIGIN = "https://www.thedigitalgifter.com";
 
@@ -492,12 +496,12 @@ export function resolveChristmasSeoRequest(pathname) {
 
   if (!locale?.enabled) return null;
 
-  const complete = isChristmasLocaleSeoIndexable(localeCode, parsed.basePath);
-  const localized =
-    localeCode === "ro" ? getChristmasSeoContentRo(parsed.basePath) : null;
+  const localized = getChristmasLocalizedSeoContent(localeCode, parsed.basePath);
+  const indexable = isChristmasLocaleSeoIndexable(localeCode, parsed.basePath);
+  const publicPath = christmasPathForLocale(parsed.basePath, localeCode);
 
-  if (complete && localized) {
-    const publicPath = christmasPathForLocale(parsed.basePath, localeCode);
+  // Content-complete + product-ready → indexable localized shell
+  if (indexable && localized) {
     return {
       locale: localeCode,
       basePath: parsed.basePath,
@@ -512,7 +516,10 @@ export function resolveChristmasSeoRequest(pathname) {
         h2: localized.h2,
         h2Body: localized.h2Body,
         links: localized.links || [],
-        breadcrumbs: [{ href: "/", label: "Home" }, ...(localized.breadcrumbs || [])],
+        breadcrumbs: [
+          { href: "/", label: homeLabelForLocale(localeCode) },
+          ...(localized.breadcrumbs || []),
+        ],
         noindex: false,
         ogImage: baseEntry.ogImage,
       },
@@ -520,7 +527,7 @@ export function resolveChristmasSeoRequest(pathname) {
         geo: localized.geo,
         sections: localized.sections || [],
         faqs: localized.faqs || [],
-        wave: "p3a",
+        wave: "p3b",
       },
       indexable: true,
       incomplete: false,
@@ -529,8 +536,44 @@ export function resolveChristmasSeoRequest(pathname) {
     };
   }
 
-  // Incomplete translation: allow soft shell for SPA, but never index.
-  const publicPath = christmasPathForLocale(parsed.basePath, localeCode);
+  // Localized content exists but product/SEO gate says noindex (e.g. Santa DE).
+  // Still emit localized SSR shell so UX matches language switcher, never index.
+  if (localized) {
+    return {
+      locale: localeCode,
+      basePath: parsed.basePath,
+      publicPath,
+      entry: {
+        path: publicPath,
+        title: localized.title,
+        description: localized.description,
+        canonicalPath: publicPath,
+        h1: localized.h1,
+        lede: localized.lede,
+        h2: localized.h2,
+        h2Body: localized.h2Body,
+        links: localized.links || [],
+        breadcrumbs: [
+          { href: "/", label: homeLabelForLocale(localeCode) },
+          ...(localized.breadcrumbs || []),
+        ],
+        noindex: true,
+        ogImage: baseEntry.ogImage,
+      },
+      depthOverride: {
+        geo: localized.geo,
+        sections: localized.sections || [],
+        faqs: localized.faqs || [],
+        wave: "p3b",
+      },
+      indexable: false,
+      incomplete: true,
+      htmlLang: locale.htmlLang,
+      dir: locale.dir,
+    };
+  }
+
+  // No translation pack: soft EN shell, never index.
   return {
     locale: localeCode,
     basePath: parsed.basePath,
@@ -730,7 +773,7 @@ function buildSeoShell(entry, options = {}) {
     getChristmasContentDepth(basePath) ||
     null;
   const faqHeading =
-    locale === "ro" ? "Întrebări frecvente" : "Frequently Asked Questions";
+    faqHeadingForLocale(locale);
   const depthHtml = buildDepthHtmlFromDepth(depth, faqHeading);
   const depthWave = depth?.wave || (depthHtml ? "content" : "");
   const depthAttr = depthWave ? ` data-tdg-depth="${escapeAttr(depthWave)}"` : "";

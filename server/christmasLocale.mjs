@@ -1,9 +1,12 @@
 /**
- * Christmas international SEO locale registry (P3A).
+ * Christmas international SEO locale registry (P3A/P3B).
  * Strategy A: English stays unprefixed; other locales use /{locale}/christmas/...
  *
- * Do NOT mark a locale/route indexable unless translation is genuinely complete.
+ * Do NOT mark a locale/route indexable unless translation is genuinely complete
+ * AND product-language readiness allows it (see christmasProductReadiness.mjs).
  */
+
+import { isChristmasProductReadyForLocale } from "./christmasProductReadiness.mjs";
 
 /** @typedef {{
  *   code: string,
@@ -16,6 +19,7 @@
  *   isDefault: boolean,
  *   urlPrefix: string | null,
  *   wave: 1 | 2 | 3 | 4,
+ *   variant?: string,
  * }} ChristmasLocaleDef */
 
 /** @type {Record<string, ChristmasLocaleDef>} */
@@ -44,7 +48,6 @@ export const CHRISTMAS_LOCALE_REGISTRY = {
     urlPrefix: "ro",
     wave: 1,
   },
-  // Wave 1 — registered, not enabled for SEO until P3B translations land
   de: {
     code: "de",
     hreflang: "de",
@@ -52,7 +55,7 @@ export const CHRISTMAS_LOCALE_REGISTRY = {
     dir: "ltr",
     nameEn: "German",
     nativeName: "Deutsch",
-    enabled: false,
+    enabled: true,
     isDefault: false,
     urlPrefix: "de",
     wave: 1,
@@ -64,7 +67,7 @@ export const CHRISTMAS_LOCALE_REGISTRY = {
     dir: "ltr",
     nameEn: "French",
     nativeName: "Français",
-    enabled: false,
+    enabled: true,
     isDefault: false,
     urlPrefix: "fr",
     wave: 1,
@@ -76,10 +79,11 @@ export const CHRISTMAS_LOCALE_REGISTRY = {
     dir: "ltr",
     nameEn: "Spanish",
     nativeName: "Español",
-    enabled: false,
+    enabled: true,
     isDefault: false,
     urlPrefix: "es",
     wave: 1,
+    variant: "neutral-international",
   },
   it: {
     code: "it",
@@ -88,22 +92,24 @@ export const CHRISTMAS_LOCALE_REGISTRY = {
     dir: "ltr",
     nameEn: "Italian",
     nativeName: "Italiano",
-    enabled: false,
+    enabled: true,
     isDefault: false,
     urlPrefix: "it",
     wave: 1,
   },
   pt: {
     code: "pt",
-    hreflang: "pt",
-    htmlLang: "pt",
+    // Wave 1 European Portuguese (Portugal). Expandable to pt-BR later.
+    hreflang: "pt-PT",
+    htmlLang: "pt-PT",
     dir: "ltr",
-    nameEn: "Portuguese",
-    nativeName: "Português",
-    enabled: false,
+    nameEn: "Portuguese (Portugal)",
+    nativeName: "Português (Portugal)",
+    enabled: true,
     isDefault: false,
     urlPrefix: "pt",
     wave: 1,
+    variant: "pt-PT",
   },
   nl: {
     code: "nl",
@@ -112,7 +118,7 @@ export const CHRISTMAS_LOCALE_REGISTRY = {
     dir: "ltr",
     nameEn: "Dutch",
     nativeName: "Nederlands",
-    enabled: false,
+    enabled: true,
     isDefault: false,
     urlPrefix: "nl",
     wave: 1,
@@ -124,7 +130,7 @@ export const CHRISTMAS_LOCALE_REGISTRY = {
     dir: "ltr",
     nameEn: "Polish",
     nativeName: "Polski",
-    enabled: false,
+    enabled: true,
     isDefault: false,
     urlPrefix: "pl",
     wave: 1,
@@ -177,10 +183,11 @@ export const CHRISTMAS_I18N_ROUTE_BASES = [
   "/christmas/messages",
 ];
 
+const WAVE1_SEO_LOCALES = ["ro", "de", "fr", "es", "it", "pt", "nl", "pl"];
+
 /**
- * Per-locale route translation completeness.
- * Only routes listed as complete may be indexable + appear in hreflang/sitemap.
- * EN is always complete for all i18n bases (source language).
+ * Per-locale route translation completeness (content packs).
+ * Indexability also requires product readiness for gated routes.
  *
  * @type {Record<string, Partial<Record<string, { complete: boolean, notes?: string }>>>}
  */
@@ -188,13 +195,23 @@ export const CHRISTMAS_TRANSLATION_COMPLETENESS = {
   en: Object.fromEntries(
     CHRISTMAS_I18N_ROUTE_BASES.map((p) => [p, { complete: true }]),
   ),
-  ro: {
-    // P3A pilot — genuine RO SEO shells for these three only
-    "/christmas": { complete: true, notes: "P3A pilot hub" },
-    "/christmas/santa-video": { complete: true, notes: "P3A pilot santa" },
-    "/christmas/cards": { complete: true, notes: "P3A pilot cards" },
-    // Remaining RO Christmas surfaces: UI may fallback; SEO must stay noindex
-  },
+  ...Object.fromEntries(
+    WAVE1_SEO_LOCALES.map((code) => [
+      code,
+      Object.fromEntries(
+        CHRISTMAS_I18N_ROUTE_BASES.map((p) => [
+          p,
+          {
+            complete: true,
+            notes:
+              p === "/christmas/santa-video" || p === "/christmas/messages"
+                ? "Content complete; indexability gated by product-language readiness"
+                : "P3B Wave 1 SEO content",
+          },
+        ]),
+      ),
+    ]),
+  ),
 };
 
 export function getChristmasLocale(code) {
@@ -215,9 +232,14 @@ export function isChristmasTranslationComplete(localeCode, basePath) {
   return Boolean(row?.complete);
 }
 
+/**
+ * Indexable only when locale enabled, translation complete, AND product-ready.
+ */
 export function isChristmasLocaleSeoIndexable(localeCode, basePath) {
   const locale = getChristmasLocale(localeCode);
   if (!locale?.enabled) return false;
   if (!CHRISTMAS_I18N_ROUTE_BASES.includes(basePath)) return false;
-  return isChristmasTranslationComplete(localeCode, basePath);
+  if (!isChristmasTranslationComplete(localeCode, basePath)) return false;
+  if (!isChristmasProductReadyForLocale(localeCode, basePath)) return false;
+  return true;
 }
