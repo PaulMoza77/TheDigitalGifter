@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
     <!-- Google tag (gtag.js) -->
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -20,33 +28,48 @@
         ad_personalization: "granted",
         wait_for_update: 500
       });
-    </script>
 
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4"
-    ></script>
-
-    <script>
-      gtag("js", new Date());
-      gtag("config", "G-YF2GRM2TL4", {
-        send_page_view: true
-      });
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
     </script>
 
     <!-- Microsoft Clarity -->
     <script type="text/javascript">
       (function (c, l, a, r, i, t, y) {
-        c[a] =
-          c[a] ||
-          function () {
-            (c[a].q = c[a].q || []).push(arguments);
-          };
-        t = l.createElement(r);
-        t.async = 1;
-        t.src = "https://www.clarity.ms/tag/" + i;
-        y = l.getElementsByTagName(r)[0];
-        y.parentNode.insertBefore(t, y);
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
       })(window, document, "clarity", "script", "y3y98n4wks");
     </script>
 
@@ -111,6 +134,85 @@
     <link rel="preconnect" href="https://api.stripe.com" />
     <link rel="dns-prefetch" href="https://connect.facebook.net" />
     <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
     <link
       rel="preload"
       as="style"
@@ -217,32 +319,43 @@
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
 
     <script>
-      !(function (f, b, e, v, n, t, s) {
-        if (f.fbq) return;
-        n = f.fbq = function () {
-          n.callMethod
-            ? n.callMethod.apply(n, arguments)
-            : n.queue.push(arguments);
-        };
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = true;
-        n.version = "2.0";
-        n.queue = [];
-        t = b.createElement(e);
-        t.async = true;
-        t.src = v;
-        s = b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t, s);
-      })(
-        window,
-        document,
-        "script",
-        "https://connect.facebook.net/en_US/fbevents.js"
-      );
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
 
-      fbq("init", "1581639566935542");
-      fbq("track", "PageView");
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
     </script>
 
     <link rel="stylesheet" href="/src/index.css" />

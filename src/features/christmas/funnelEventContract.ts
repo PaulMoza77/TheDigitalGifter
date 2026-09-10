@@ -107,6 +107,10 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "card_portrait_cross_sell_clicked",
   "christmas_hub_cta",
   "christmas_hub_interact",
+  "christmas_join_started",
+  "christmas_join_completed",
+  "christmas_google_auth_started",
+  "christmas_google_auth_completed",
   // Photo generator hub (SEO/money page) — privacy-safe; never include image bytes
   "christmas_photo_generator_page_view",
   "christmas_photo_upload_started",

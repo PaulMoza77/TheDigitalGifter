@@ -64,6 +64,7 @@ const STATIC_PATHS = [
   "/pet/cat",
   "/pet/other",
   "/christmas",
+  "/christmas/suite",
   "/christmas/photo-generator",
   "/christmas/gift-finder",
   "/christmas/tree-gifts",

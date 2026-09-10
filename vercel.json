@@ -49,6 +49,10 @@
       "destination": "/api/christmas-gift-tree"
     },
     {
+      "source": "/api/christmas/club-signup",
+      "destination": "/api/christmas-club-signup"
+    },
+    {
       "source": "/api/pet-v3/internal-test-status",
       "destination": "/api/pet-v3-internal-test-status"
     },

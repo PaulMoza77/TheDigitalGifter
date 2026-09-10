@@ -18,6 +18,11 @@ describe("isSupportWidgetHidden", () => {
     expect(isSupportWidgetHidden("/christmas-ai-photos/order")).toBe(false);
   });
 
+  it("hides Help on the full-bleed Christmas countdown club", () => {
+    expect(isSupportWidgetHidden("/christmas")).toBe(true);
+    expect(isSupportWidgetHidden("/christmas/suite")).toBe(false);
+  });
+
   it("keeps Help on the post-purchase order page and the rest of the site", () => {
     expect(isSupportWidgetHidden("/pet/order")).toBe(false);
     expect(isSupportWidgetHidden("/")).toBe(false);

@@ -59,7 +59,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     slug: "hub",
     productType: "hub",
     name: "Christmas Hub",
-    description: "Unified Christmas product suite entry.",
+    description: "Christmas countdown club and product suite entry.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 0,

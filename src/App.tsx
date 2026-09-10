@@ -115,6 +115,7 @@ const SpiritualCategoryPage = lazy(
 const PetsCategoryPage = lazy(() => import("@/pages/website/PetsCategoryPage"));
 
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
+const ChristmasSuitePage = lazy(() => import("@/pages/website/ChristmasSuitePage"));
 const ChristmasShellRoute = lazy(() =>
   import("@/features/christmas/ChristmasShellRoute").then((m) => ({
     default: m.ChristmasShellRoute,
@@ -296,6 +297,20 @@ function FunnelLayout() {
   );
 }
 
+function ChristmasRouteFallback() {
+  const christmasBoot =
+    typeof window !== "undefined" &&
+    Boolean((window as Window & { __TDG_CHRISTMAS_BOOT__?: boolean }).__TDG_CHRISTMAS_BOOT__);
+  if (christmasBoot) {
+    return <div className="min-h-screen bg-transparent" aria-hidden="true" />;
+  }
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#0b0504] text-white/70">
+      Loading...
+    </div>
+  );
+}
+
 function AppInner() {
   useAuthStateMonitor();
 
@@ -438,13 +453,7 @@ function AppInner() {
       <FunnelAttributionCapture />
       <ScrollToTop />
 
-      <Suspense
-        fallback={
-          <div className="flex min-h-screen items-center justify-center bg-black text-white/80">
-            Loading...
-          </div>
-        }
-      >
+      <Suspense fallback={<ChristmasRouteFallback />}>
         <Routes>
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
@@ -467,7 +476,7 @@ function AppInner() {
             />
             <Route path="/categories/pets" element={<PetsCategoryPage />} />
 
-            <Route path="/christmas" element={<ChristmasPage />} />
+            <Route path="/christmas/suite" element={<ChristmasSuitePage />} />
             <Route path="/christmas/photo-generator" element={<ChristmasPhotoGeneratorPage />} />
             <Route path="/christmas/family" element={<ChristmasFamilyPage />} />
             <Route path="/christmas/couples" element={<ChristmasPortraitFunnelPage />} />
@@ -610,6 +619,7 @@ function AppInner() {
             <Route path="/pet/cat-v2" element={<PetV2Route />} />
             <Route path="/pet/other-v2" element={<PetV2Route />} />
             <Route path="/pet/cat-v3" element={<PetV3Route />} />
+            <Route path="/christmas" element={<ChristmasPage />} />
             <Route path="/christmas-ai-photos" element={<ChristmasV2Route />} />
             <Route
               path="/christmas-ai-photos/order"

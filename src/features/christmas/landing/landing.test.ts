@@ -114,7 +114,7 @@ describe("christmas landing wiring", () => {
   it("origin injects /christmas meta for crawlers", () => {
     const origin = readSrc("server/origin.mjs");
     expect(origin).toContain("applyRouteMeta");
-    expect(origin).toContain("Christmas Gifts, Portraits & Santa Messages");
+    expect(origin).toContain("Christmas Countdown | The Digital Gifter");
     expect(origin).toContain("Christmas Gift Finder");
     expect(origin).toContain('".webm": "video/webm"');
     expect(origin).toContain('".mp4": "video/mp4"');

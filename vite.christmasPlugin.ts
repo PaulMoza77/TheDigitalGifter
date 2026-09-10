@@ -2,6 +2,7 @@ import type { Plugin } from "vite";
 import v2FunnelHandler from "./api/christmas-v2-funnel-event";
 import christmasFunnelHandler from "./api/christmas-funnel-event";
 import giftTreeHandler from "./api/christmas-gift-tree";
+import clubSignupHandler from "./api/christmas-club-signup";
 
 function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) => void }): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -43,7 +44,7 @@ function vercelLike(
   };
 }
 
-/** Local same-origin handlers for Christmas analytics + gift tree when Vercel is unavailable. */
+/** Local same-origin handlers for Christmas analytics, club signup, and gift tree when Vercel is unavailable. */
 export function christmasV2DevPlugin(): Plugin {
   return {
     name: "christmas-v2-dev",
@@ -56,7 +57,9 @@ export function christmasV2DevPlugin(): Plugin {
           url === "/api/christmas/funnel-event" ||
           url === "/api/christmas-funnel-event";
         const isGiftTree = url === "/api/christmas/gift-tree" || url === "/api/christmas-gift-tree";
-        if (!isFunnel && !isGiftTree) {
+        const isClubSignup =
+          url === "/api/christmas/club-signup" || url === "/api/christmas-club-signup";
+        if (!isFunnel && !isGiftTree && !isClubSignup) {
           return next();
         }
         const raw = req.method === "POST" ? await readRawBody(req as never) : "";
@@ -73,6 +76,10 @@ export function christmasV2DevPlugin(): Plugin {
         }
         const fakeReq = { method: req.method, headers: req.headers as Record<string, unknown>, body };
         const { req: vReq, res: vRes } = vercelLike(fakeReq, res);
+        if (isClubSignup) {
+          await clubSignupHandler(vReq, vRes);
+          return;
+        }
         if (isGiftTree) {
           await giftTreeHandler(vReq, vRes);
           return;
