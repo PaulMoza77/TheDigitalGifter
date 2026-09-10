@@ -80,6 +80,7 @@ const PricingPage = lazy(() => import("@/pages/admin/PricingPage"));
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const PetOrdersPage = lazy(() => import("@/pages/admin/PetOrders"));
 const ChristmasOrdersPage = lazy(() => import("@/pages/admin/ChristmasOrders"));
+const ChristmasKpisPage = lazy(() => import("@/pages/admin/ChristmasKpisPage"));
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
@@ -118,6 +119,9 @@ const SpiritualCategoryPage = lazy(
 const PetsCategoryPage = lazy(() => import("@/pages/website/PetsCategoryPage"));
 
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
+const ChristmasPortraitFunnelPage = lazy(
+  () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
+);
 const ChristmasShellRoute = lazy(() =>
   import("@/features/christmas/ChristmasShellRoute").then((m) => ({
     default: m.ChristmasShellRoute,
@@ -636,6 +640,7 @@ function AppInner() {
             <Route path="orders" element={<OrdersPage />} />
             <Route path="pet-orders" element={<PetOrdersPage />} />
             <Route path="christmas-orders" element={<ChristmasOrdersPage />} />
+            <Route path="christmas-kpis" element={<ChristmasKpisPage />} />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
