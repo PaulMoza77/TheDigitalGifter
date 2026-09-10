@@ -32,6 +32,7 @@ import {
   photoStyleLabel,
   type PhotoGenLocale,
 } from "./photoGenerator/copy";
+import { formatMoney } from "./wishlist/wishlistApi";
 import "./photoGenerator/PhotoGenerator.css";
 import { trackChristmasEvent } from "./analytics";
 import {
@@ -167,9 +168,11 @@ export default function ChristmasPortraitFunnelPage() {
 
           {funnel.speciesHint ? (
             <p className="pg-warn">
-              {funnel.speciesHint.message}{" "}
-              <Link className="underline" to={funnel.speciesHint.switchTo}>
-                Switch to {funnel.speciesHint.label}
+              {t(funnel.speciesHint.messageKey || "funnel.speciesMismatch")}{" "}
+              <Link className="underline" to={pathFor(funnel.speciesHint.switchTo)}>
+                {photoGenT("funnel.switchTo", locale, {
+                  label: t(funnel.speciesHint.labelKey || "funnel.christmasCats"),
+                })}
               </Link>
             </p>
           ) : null}
@@ -294,7 +297,14 @@ export default function ChristmasPortraitFunnelPage() {
                   >
                     {funnel.busy
                       ? t("funnel.preparing")
-                      : `Pay ${(funnel.catalogAmount / 100).toFixed(2)} ${funnel.product?.packages[0]?.currency?.toUpperCase() || "USD"}`}
+                      : photoGenT("funnel.pay", locale, {
+                          amount:
+                            formatMoney(
+                              funnel.catalogAmount / 100,
+                              funnel.product?.packages[0]?.currency || "usd",
+                              locale,
+                            ) || `${(funnel.catalogAmount / 100).toFixed(2)} USD`,
+                        })}
                   </button>
                 ) : (
                   <p className="pg-warn">{t("funnel.checkoutDisabled")}</p>
@@ -308,7 +318,13 @@ export default function ChristmasPortraitFunnelPage() {
                 <CustomStripeCheckout
                   clientSecret={funnel.checkout.clientSecret}
                   publishableKey={funnel.checkout.publishableKey}
-                  dueDisplay={`$${(funnel.checkout.amountCents / 100).toFixed(2)}`}
+                  dueDisplay={
+                    formatMoney(
+                      funnel.checkout.amountCents / 100,
+                      funnel.checkout.currency || "usd",
+                      locale,
+                    ) || `$${(funnel.checkout.amountCents / 100).toFixed(2)}`
+                  }
                   email={funnel.draft.email}
                   onReady={() => undefined}
                 />

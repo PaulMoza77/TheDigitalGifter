@@ -190,7 +190,7 @@ describe("product wiring", () => {
     expect(handoff).toContain("tdg.christmas.portrait.card.handoff.v1");
     expect(handoff).toContain("cardsUrlFromPortrait");
     const portrait = readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx");
-    expect(portrait).toContain("Turn This Into a Christmas Card");
+    expect(portrait).toContain('t("funnel.card")');
     expect(portrait).toContain("writePortraitToCardHandoff");
     const copy = readSrc("src/features/christmas/cards/cardMakerCopy.ts");
     expect(copy).toContain("Christmas Card Maker");

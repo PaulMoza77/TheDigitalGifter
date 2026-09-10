@@ -257,6 +257,13 @@ const EN: CopyBag = {
   "funnel.photoGen": "AI Christmas Photo Generator",
   "funnel.fileHint": "JPEG, PNG, or WebP · under 15 MB",
   "funnel.portraitAlt": "Your Christmas portrait",
+  "funnel.switchTo": "Switch to {label}",
+  "funnel.speciesMismatch": "This photo looks like a different species.",
+  "funnel.softSmall": "This photo is a little small. You can still continue or choose a clearer one.",
+  "funnel.christmasDogs": "Christmas Dogs",
+  "funnel.christmasCats": "Christmas Cats",
+  "funnel.pay": "Pay {amount}",
+  "error.uploadFirst": "Please upload a photo first.",
   "vertical.photo.heroHeadline": "Turn Your Photo Into Christmas Magic",
   "vertical.photo.heroSupport": "Upload a favorite photo and create a magical Christmas portrait for your family, partner or pet.",
   "vertical.photo.privacy": "Your upload and result stay private by default. No public gallery.",
@@ -397,6 +404,13 @@ const RO: CopyBag = {
   "funnel.photoGen": "Generator foto de Crăciun AI",
   "funnel.fileHint": "JPEG, PNG sau WebP · sub 15 MB",
   "funnel.portraitAlt": "Portretul tău de Crăciun",
+  "funnel.switchTo": "Treci la {label}",
+  "funnel.speciesMismatch": "Această fotografie pare a fi o altă specie.",
+  "funnel.softSmall": "Această fotografie e puțin mică. Poți continua sau alege una mai clară.",
+  "funnel.christmasDogs": "Câini de Crăciun",
+  "funnel.christmasCats": "Pisici de Crăciun",
+  "funnel.pay": "Plătește {amount}",
+  "error.uploadFirst": "Te rugăm să încarci mai întâi o fotografie.",
   "vertical.photo.heroHeadline": "Transformă fotografia ta în magie de Crăciun",
   "vertical.photo.heroSupport": "Încarcă o fotografie preferată și creează un portret magic de Crăciun pentru familie, partener sau animalul de companie.",
   "vertical.photo.privacy": "Încărcarea și rezultatul rămân private implicit. Fără galerie publică.",
@@ -601,6 +615,13 @@ const DE: CopyBag = {
   "funnel.photoGen": "KI-Weihnachtsfoto-Generator",
   "funnel.fileHint": "JPEG, PNG oder WebP · unter 15 MB",
   "funnel.portraitAlt": "Dein Weihnachtsporträt",
+  "funnel.switchTo": "Zu {label} wechseln",
+  "funnel.speciesMismatch": "Dieses Foto scheint eine andere Tierart zu zeigen.",
+  "funnel.softSmall": "Dieses Foto ist etwas klein. Du kannst trotzdem weitermachen oder ein klareres wählen.",
+  "funnel.christmasDogs": "Weihnachts-Hunde",
+  "funnel.christmasCats": "Weihnachts-Katzen",
+  "funnel.pay": "{amount} bezahlen",
+  "error.uploadFirst": "Bitte lade zuerst ein Foto hoch.",
   "vertical.photo.heroHeadline": "Verwandle dein Foto in Weihnachtsmagie",
   "vertical.photo.heroSupport": "Lade ein Lieblingsfoto hoch und erstelle ein magisches Weihnachtsporträt für Familie, Partner oder Haustier.",
   "vertical.photo.privacy": "Upload und Ergebnis bleiben standardmäßig privat. Keine öffentliche Galerie.",
@@ -805,6 +826,13 @@ const FR: CopyBag = {
   "funnel.photoGen": "Générateur de photos de Noël IA",
   "funnel.fileHint": "JPEG, PNG ou WebP · moins de 15 Mo",
   "funnel.portraitAlt": "Votre portrait de Noël",
+  "funnel.switchTo": "Passer à {label}",
+  "funnel.speciesMismatch": "Cette photo semble montrer une autre espèce.",
+  "funnel.softSmall": "Cette photo est un peu petite. Vous pouvez continuer ou en choisir une plus nette.",
+  "funnel.christmasDogs": "Chiens de Noël",
+  "funnel.christmasCats": "Chats de Noël",
+  "funnel.pay": "Payer {amount}",
+  "error.uploadFirst": "Veuillez d’abord téléverser une photo.",
   "vertical.photo.heroHeadline": "Transformez votre photo en magie de Noël",
   "vertical.photo.heroSupport": "Téléversez une photo préférée et créez un portrait de Noël magique pour votre famille, votre partenaire ou votre animal.",
   "vertical.photo.privacy": "Votre téléversement et le résultat restent privés par défaut. Pas de galerie publique.",
@@ -1009,6 +1037,13 @@ const ES: CopyBag = {
   "funnel.photoGen": "Generador de fotos de Navidad con IA",
   "funnel.fileHint": "JPEG, PNG o WebP · menos de 15 MB",
   "funnel.portraitAlt": "Tu retrato de Navidad",
+  "funnel.switchTo": "Cambiar a {label}",
+  "funnel.speciesMismatch": "Esta foto parece de otra especie.",
+  "funnel.softSmall": "Esta foto es un poco pequeña. Puedes continuar o elegir una más nítida.",
+  "funnel.christmasDogs": "Perros de Navidad",
+  "funnel.christmasCats": "Gatos de Navidad",
+  "funnel.pay": "Pagar {amount}",
+  "error.uploadFirst": "Sube una foto primero.",
   "vertical.photo.heroHeadline": "Convierte tu foto en magia de Navidad",
   "vertical.photo.heroSupport": "Sube una foto favorita y crea un retrato mágico de Navidad para tu familia, pareja o mascota.",
   "vertical.photo.privacy": "Tu subida y el resultado se mantienen privados por defecto. Sin galería pública.",
@@ -1213,6 +1248,13 @@ const IT: CopyBag = {
   "funnel.photoGen": "Generatore di foto di Natale IA",
   "funnel.fileHint": "JPEG, PNG o WebP · sotto i 15 MB",
   "funnel.portraitAlt": "Il tuo ritratto di Natale",
+  "funnel.switchTo": "Passa a {label}",
+  "funnel.speciesMismatch": "Questa foto sembra di un’altra specie.",
+  "funnel.softSmall": "Questa foto è un po’ piccola. Puoi continuare o sceglierne una più nitida.",
+  "funnel.christmasDogs": "Cani di Natale",
+  "funnel.christmasCats": "Gatti di Natale",
+  "funnel.pay": "Paga {amount}",
+  "error.uploadFirst": "Carica prima una foto.",
   "vertical.photo.heroHeadline": "Trasforma la tua foto in magia di Natale",
   "vertical.photo.heroSupport": "Carica una foto preferita e crea un ritratto magico di Natale per la famiglia, il partner o l’animale.",
   "vertical.photo.privacy": "Il caricamento e il risultato restano privati di default. Niente galleria pubblica.",
@@ -1417,6 +1459,13 @@ const PT: CopyBag = {
   "funnel.photoGen": "Gerador de fotos de Natal com IA",
   "funnel.fileHint": "JPEG, PNG ou WebP · menos de 15 MB",
   "funnel.portraitAlt": "O seu retrato de Natal",
+  "funnel.switchTo": "Mudar para {label}",
+  "funnel.speciesMismatch": "Esta foto parece ser de outra espécie.",
+  "funnel.softSmall": "Esta foto é um pouco pequena. Pode continuar ou escolher uma mais nítida.",
+  "funnel.christmasDogs": "Cães de Natal",
+  "funnel.christmasCats": "Gatos de Natal",
+  "funnel.pay": "Pagar {amount}",
+  "error.uploadFirst": "Carregue primeiro uma foto.",
   "vertical.photo.heroHeadline": "Transforme a sua foto em magia de Natal",
   "vertical.photo.heroSupport": "Carregue uma foto favorita e crie um retrato mágico de Natal para a família, o parceiro ou o animal de estimação.",
   "vertical.photo.privacy": "O carregamento e o resultado ficam privados por predefinição. Sem galeria pública.",
@@ -1621,6 +1670,13 @@ const NL: CopyBag = {
   "funnel.photoGen": "AI-kerstfotogenerator",
   "funnel.fileHint": "JPEG, PNG of WebP · onder 15 MB",
   "funnel.portraitAlt": "Jouw kerstportret",
+  "funnel.switchTo": "Ga naar {label}",
+  "funnel.speciesMismatch": "Deze foto lijkt een andere diersoort te tonen.",
+  "funnel.softSmall": "Deze foto is wat klein. Je kunt doorgaan of een scherpere kiezen.",
+  "funnel.christmasDogs": "Kersthonden",
+  "funnel.christmasCats": "Kerstkatten",
+  "funnel.pay": "Betaal {amount}",
+  "error.uploadFirst": "Upload eerst een foto.",
   "vertical.photo.heroHeadline": "Maak van je foto kerstmagie",
   "vertical.photo.heroSupport": "Upload een favoriete foto en maak een magisch kerstportret voor je gezin, partner of huisdier.",
   "vertical.photo.privacy": "Je upload en resultaat blijven standaard privé. Geen openbare galerij.",
@@ -1825,6 +1881,13 @@ const PL: CopyBag = {
   "funnel.photoGen": "Generator świątecznych zdjęć AI",
   "funnel.fileHint": "JPEG, PNG lub WebP · poniżej 15 MB",
   "funnel.portraitAlt": "Twój świąteczny portret",
+  "funnel.switchTo": "Przejdź do {label}",
+  "funnel.speciesMismatch": "To zdjęcie wygląda na inny gatunek.",
+  "funnel.softSmall": "To zdjęcie jest trochę małe. Możesz kontynuować lub wybrać ostrzejsze.",
+  "funnel.christmasDogs": "Świąteczne psy",
+  "funnel.christmasCats": "Świąteczne koty",
+  "funnel.pay": "Zapłać {amount}",
+  "error.uploadFirst": "Najpierw prześlij zdjęcie.",
   "vertical.photo.heroHeadline": "Zamień swoje zdjęcie w świąteczną magię",
   "vertical.photo.heroSupport": "Prześlij ulubione zdjęcie i stwórz magiczny świąteczny portret dla rodziny, partnera lub pupila.",
   "vertical.photo.privacy": "Przesłanie i wynik pozostają prywatne domyślnie. Bez publicznej galerii.",
@@ -1931,7 +1994,7 @@ export const PACKS: Record<PhotoGenLocale, CopyBag> = {
   en: EN, ro: RO, de: DE, fr: FR, es: ES, it: IT, pt: PT, nl: NL, pl: PL,
 };
 
-export const PHOTO_GEN_UI_KEYS = ["upload.kicker","upload.h2","upload.lede","upload.choose","upload.drop","upload.hint","upload.guidanceTitle","upload.g1","upload.g2","upload.g3","upload.g4","upload.privacy","subject.h2","subject.lede","subject.family","subject.couple","subject.person","subject.pet","subject.person_pet","subject.continue","style.h2","style.lede","style.back","preview.h2","preview.lede","preview.continue","offer.h2","offer.ready","offer.private","offer.email","offer.pay","offer.disabled","offer.busy","checkout.h2","gen.h2","gen.step1","gen.step2","gen.step3","gen.step4","gen.note","result.h2","result.download","result.share","result.another","result.retryStyle","result.card","result.tree","result.toggleOriginal","result.toggleChristmas","error.unsupported","error.generation","error.network","error.generic","error.paidKeepLink","busy.working","busy.uploading","hero.cta","nav.hub","nav.family","nav.couples","nav.pets","nav.dogs","nav.cats","nav.cards","nav.tree","category.family","category.couples","category.pets","category.aria","upload.replace","funnel.upload","funnel.style","funnel.continueOffer","funnel.unlock","funnel.readyMinutes","funnel.privateDownload","funnel.email","funnel.preparing","funnel.checkoutDisabled","funnel.securePayment","funnel.creating","funnel.magic","funnel.leaveNote","funnel.download","funnel.share","funnel.card","funnel.another","funnel.tryAnother","funnel.errorTitle","funnel.errorPaid","funnel.working","funnel.yourUpload","funnel.blurredPreview","funnel.previewLede","funnel.styleLabel","funnel.dogs","funnel.cats","funnel.hub","funnel.photoGen","funnel.fileHint","funnel.portraitAlt","styleName.cozy_fireplace","styleDesc.cozy_fireplace","styleName.winter_wonderland","styleDesc.winter_wonderland","styleName.vintage_christmas","styleDesc.vintage_christmas","styleName.christmas_movie","styleDesc.christmas_movie","styleName.north_pole","styleDesc.north_pole","styleName.classic_christmas","styleDesc.classic_christmas","styleName.elegant_christmas","styleDesc.elegant_christmas","styleName.santas_workshop","styleDesc.santas_workshop","styleName.classic_family_christmas","styleDesc.classic_family_christmas","styleName.family_cozy_fireplace","styleDesc.family_cozy_fireplace","styleName.family_winter_wonderland","styleDesc.family_winter_wonderland","styleName.family_elegant_christmas","styleDesc.family_elegant_christmas","styleName.family_christmas_morning","styleDesc.family_christmas_morning","styleName.family_luxury_christmas","styleDesc.family_luxury_christmas","styleName.family_christmas_movie","styleDesc.family_christmas_movie","styleName.family_vintage_christmas","styleDesc.family_vintage_christmas","styleName.romantic_snowfall","styleDesc.romantic_snowfall","styleName.couple_cozy_fireplace","styleDesc.couple_cozy_fireplace","styleName.couple_christmas_movie","styleDesc.couple_christmas_movie","styleName.couple_elegant_christmas","styleDesc.couple_elegant_christmas","styleName.couple_winter_city","styleDesc.couple_winter_city","styleName.couple_christmas_market","styleDesc.couple_christmas_market","styleName.couple_classic_portrait","styleDesc.couple_classic_portrait","styleName.couple_vintage_christmas","styleDesc.couple_vintage_christmas","styleName.santa_pet","styleDesc.santa_pet","styleName.pet_cozy_christmas","styleDesc.pet_cozy_christmas","styleName.pet_north_pole","styleDesc.pet_north_pole","styleName.pet_christmas_sweater","styleDesc.pet_christmas_sweater","styleName.pet_snow_portrait","styleDesc.pet_snow_portrait","styleName.pet_christmas_card","styleDesc.pet_christmas_card","styleName.pet_royal_christmas","styleDesc.pet_royal_christmas","styleName.pet_vintage_christmas","styleDesc.pet_vintage_christmas","vertical.photo.heroHeadline","vertical.photo.heroSupport","vertical.photo.privacy","vertical.photo.uploadHint","vertical.photo.deliverable","vertical.couples.heroHeadline","vertical.couples.heroSupport","vertical.couples.privacy","vertical.couples.uploadHint","vertical.couples.deliverable","vertical.pets.heroHeadline","vertical.pets.heroSupport","vertical.pets.privacy","vertical.pets.uploadHint","vertical.pets.deliverable","vertical.dogs.heroHeadline","vertical.dogs.heroSupport","vertical.dogs.privacy","vertical.dogs.uploadHint","vertical.dogs.deliverable","vertical.cats.heroHeadline","vertical.cats.heroSupport","vertical.cats.privacy","vertical.cats.uploadHint","vertical.cats.deliverable","vertical.family.deliverable","cross.familyChristmas","cross.couplesChristmas","cross.petChristmas","cross.christmasDogs","cross.christmasCats","cross.christmasCards","cross.classicPortrait","cross.allPets","cross.family","cross.couples"] as const;
+export const PHOTO_GEN_UI_KEYS = ["upload.kicker","upload.h2","upload.lede","upload.choose","upload.drop","upload.hint","upload.guidanceTitle","upload.g1","upload.g2","upload.g3","upload.g4","upload.privacy","subject.h2","subject.lede","subject.family","subject.couple","subject.person","subject.pet","subject.person_pet","subject.continue","style.h2","style.lede","style.back","preview.h2","preview.lede","preview.continue","offer.h2","offer.ready","offer.private","offer.email","offer.pay","offer.disabled","offer.busy","checkout.h2","gen.h2","gen.step1","gen.step2","gen.step3","gen.step4","gen.note","result.h2","result.download","result.share","result.another","result.retryStyle","result.card","result.tree","result.toggleOriginal","result.toggleChristmas","error.unsupported","error.generation","error.network","error.generic","error.paidKeepLink","busy.working","busy.uploading","hero.cta","nav.hub","nav.family","nav.couples","nav.pets","nav.dogs","nav.cats","nav.cards","nav.tree","category.family","category.couples","category.pets","category.aria","upload.replace","funnel.upload","funnel.style","funnel.continueOffer","funnel.unlock","funnel.readyMinutes","funnel.privateDownload","funnel.email","funnel.preparing","funnel.checkoutDisabled","funnel.securePayment","funnel.creating","funnel.magic","funnel.leaveNote","funnel.download","funnel.share","funnel.card","funnel.another","funnel.tryAnother","funnel.errorTitle","funnel.errorPaid","funnel.working","funnel.yourUpload","funnel.blurredPreview","funnel.previewLede","funnel.styleLabel","funnel.dogs","funnel.cats","funnel.hub","funnel.photoGen","funnel.fileHint","funnel.portraitAlt","styleName.cozy_fireplace","styleDesc.cozy_fireplace","styleName.winter_wonderland","styleDesc.winter_wonderland","styleName.vintage_christmas","styleDesc.vintage_christmas","styleName.christmas_movie","styleDesc.christmas_movie","styleName.north_pole","styleDesc.north_pole","styleName.classic_christmas","styleDesc.classic_christmas","styleName.elegant_christmas","styleDesc.elegant_christmas","styleName.santas_workshop","styleDesc.santas_workshop","styleName.classic_family_christmas","styleDesc.classic_family_christmas","styleName.family_cozy_fireplace","styleDesc.family_cozy_fireplace","styleName.family_winter_wonderland","styleDesc.family_winter_wonderland","styleName.family_elegant_christmas","styleDesc.family_elegant_christmas","styleName.family_christmas_morning","styleDesc.family_christmas_morning","styleName.family_luxury_christmas","styleDesc.family_luxury_christmas","styleName.family_christmas_movie","styleDesc.family_christmas_movie","styleName.family_vintage_christmas","styleDesc.family_vintage_christmas","styleName.romantic_snowfall","styleDesc.romantic_snowfall","styleName.couple_cozy_fireplace","styleDesc.couple_cozy_fireplace","styleName.couple_christmas_movie","styleDesc.couple_christmas_movie","styleName.couple_elegant_christmas","styleDesc.couple_elegant_christmas","styleName.couple_winter_city","styleDesc.couple_winter_city","styleName.couple_christmas_market","styleDesc.couple_christmas_market","styleName.couple_classic_portrait","styleDesc.couple_classic_portrait","styleName.couple_vintage_christmas","styleDesc.couple_vintage_christmas","styleName.santa_pet","styleDesc.santa_pet","styleName.pet_cozy_christmas","styleDesc.pet_cozy_christmas","styleName.pet_north_pole","styleDesc.pet_north_pole","styleName.pet_christmas_sweater","styleDesc.pet_christmas_sweater","styleName.pet_snow_portrait","styleDesc.pet_snow_portrait","styleName.pet_christmas_card","styleDesc.pet_christmas_card","styleName.pet_royal_christmas","styleDesc.pet_royal_christmas","styleName.pet_vintage_christmas","styleDesc.pet_vintage_christmas","vertical.photo.heroHeadline","vertical.photo.heroSupport","vertical.photo.privacy","vertical.photo.uploadHint","vertical.photo.deliverable","vertical.couples.heroHeadline","vertical.couples.heroSupport","vertical.couples.privacy","vertical.couples.uploadHint","vertical.couples.deliverable","vertical.pets.heroHeadline","vertical.pets.heroSupport","vertical.pets.privacy","vertical.pets.uploadHint","vertical.pets.deliverable","vertical.dogs.heroHeadline","vertical.dogs.heroSupport","vertical.dogs.privacy","vertical.dogs.uploadHint","vertical.dogs.deliverable","vertical.cats.heroHeadline","vertical.cats.heroSupport","vertical.cats.privacy","vertical.cats.uploadHint","vertical.cats.deliverable","vertical.family.deliverable","cross.familyChristmas","cross.couplesChristmas","cross.petChristmas","cross.christmasDogs","cross.christmasCats","cross.christmasCards","cross.classicPortrait","cross.allPets","cross.family","cross.couples","funnel.switchTo"] as const;
 
 /** Interactive photo / funnel UI keys — alias for P3D Wave 1 coverage. */
 export const REQUIRED_UI_KEYS = PHOTO_GEN_UI_KEYS;
@@ -1945,8 +2008,15 @@ for (const loc of PHOTO_GEN_LOCALES) {
 export function photoGenT(
   key: string,
   locale: PhotoGenLocale = PHOTO_GEN_DEFAULT_LOCALE,
+  vars?: Record<string, string>,
 ): string {
-  return PACKS[locale]?.[key] ?? EN[key] ?? key;
+  let text = PACKS[locale]?.[key] ?? EN[key] ?? key;
+  if (vars) {
+    for (const [name, value] of Object.entries(vars)) {
+      text = text.replaceAll(`{${name}}`, value);
+    }
+  }
+  return text;
 }
 
 export function photoStyleLabel(

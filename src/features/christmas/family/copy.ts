@@ -1364,6 +1364,28 @@ export function familyDir(locale: string): "ltr" | "rtl" {
 
 export const FAMILY_COPY_KEYS = Object.keys(EN);
 
+/** Interactive product UI keys that must be localized for Wave 1 (P3D coverage). */
+export const REQUIRED_UI_KEYS = [
+  "hero.cta",
+  "upload.choose",
+  "upload.drop",
+  "preview.continue",
+  "offer.pay",
+  "result.download",
+  "result.share",
+  "result.another",
+  "result.retryStyle",
+  "result.card",
+  "busy.uploading",
+  "busy.working",
+  "error.unsupported",
+  "error.generation",
+  "error.network",
+  "error.generic",
+  "nav.hub",
+  "nav.photo",
+] as const;
+
 export const FAMILY_FAQS = [
   { qKey: "faq.1.q", aKey: "faq.1.a" },
   { qKey: "faq.2.q", aKey: "faq.2.a" },

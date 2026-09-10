@@ -92,12 +92,7 @@ const PACK_CASES: PackCase[] = [
   { name: "photo", packs: PHOTO_PACKS, requiredKeys: PHOTO_KEYS },
   { name: "tree", packs: TREE_TABLES, requiredKeys: TREE_KEYS },
   { name: "advent", packs: ADVENT_TABLES, requiredKeys: ADVENT_KEYS },
-  {
-    name: "family",
-    packs: FAMILY_PACKS,
-    requiredKeys: FAMILY_KEYS,
-    onlyPresentLocales: true,
-  },
+  { name: "family", packs: FAMILY_PACKS, requiredKeys: FAMILY_KEYS },
 ];
 
 describe("christmas P3D Wave 1 UI missing-key coverage", () => {
@@ -130,14 +125,11 @@ describe("christmas P3D Wave 1 UI missing-key coverage", () => {
     },
   );
 
-  it("family interactive key list is wired for sibling pack expansion", () => {
+  it("family Wave 1 packs exist for every non-EN locale", () => {
     expect(FAMILY_KEYS.length).toBeGreaterThan(5);
-    for (const key of FAMILY_KEYS) {
-      expect(FAMILY_PACKS.en?.[key], `family EN missing interactive key ${key}`).toBeTruthy();
+    for (const locale of WAVE1_NON_EN_LOCALES) {
+      expect(FAMILY_PACKS[locale], `family missing pack ${locale}`).toBeTruthy();
     }
-    // When sibling lands non-EN packs, the it.each coverage case above covers them automatically.
-    const present = WAVE1_NON_EN_LOCALES.filter((locale) => Boolean(FAMILY_PACKS[locale]));
-    expect(Array.isArray(present)).toBe(true);
   });
 });
 

@@ -107,6 +107,10 @@ const EN: Record<string, string> = {
 
   "breadcrumb.christmas": "Christmas",
   "breadcrumb.finder": "Gift Finder",
+  "wishlist.defaultTitle": "My Christmas Wishlist",
+  "wishlist.fromFinder": "Ideas from Gift Finder",
+  "error.wishlistSave": "Could not save to wishlist",
+  "error.wishlistNetwork": "We couldn’t reach your wishlist just now. Please try again in a moment.",
 };
 
 const RO: Record<string, string> = {
@@ -202,6 +206,10 @@ const RO: Record<string, string> = {
 
   "breadcrumb.christmas": "Crăciun",
   "breadcrumb.finder": "Găsitor de Cadouri",
+  "wishlist.defaultTitle": "Lista mea de Dorințe de Crăciun",
+  "wishlist.fromFinder": "Idei din Găsitorul de Cadouri",
+  "error.wishlistSave": "Nu am putut salva în lista de dorințe",
+  "error.wishlistNetwork": "Nu am putut ajunge acum la lista ta de dorințe. Te rugăm să încerci din nou în curând.",
 };
 
 const DE: Record<string, string> = {
@@ -297,6 +305,10 @@ const DE: Record<string, string> = {
 
   "breadcrumb.christmas": "Weihnachten",
   "breadcrumb.finder": "Geschenke-Finder",
+  "wishlist.defaultTitle": "Mein Weihnachts-Wunschzettel",
+  "wishlist.fromFinder": "Ideen vom Geschenkefinder",
+  "error.wishlistSave": "Konnte nicht auf dem Wunschzettel speichern",
+  "error.wishlistNetwork": "Dein Wunschzettel war gerade nicht erreichbar. Bitte versuche es gleich noch einmal.",
 };
 
 const FR: Record<string, string> = {
@@ -392,6 +404,10 @@ const FR: Record<string, string> = {
 
   "breadcrumb.christmas": "Noël",
   "breadcrumb.finder": "Trouveur de cadeaux",
+  "wishlist.defaultTitle": "Ma liste de souhaits de Noël",
+  "wishlist.fromFinder": "Idées du Trouveur de cadeaux",
+  "error.wishlistSave": "Impossible d’enregistrer dans la liste de souhaits",
+  "error.wishlistNetwork": "Nous n’avons pas pu joindre votre liste de souhaits. Réessayez dans un instant.",
 };
 
 const ES: Record<string, string> = {
@@ -487,6 +503,10 @@ const ES: Record<string, string> = {
 
   "breadcrumb.christmas": "Navidad",
   "breadcrumb.finder": "Buscador de regalos",
+  "wishlist.defaultTitle": "Mi lista de deseos de Navidad",
+  "wishlist.fromFinder": "Ideas del Buscador de regalos",
+  "error.wishlistSave": "No se pudo guardar en la lista de deseos",
+  "error.wishlistNetwork": "No pudimos llegar a tu lista de deseos ahora. Inténtalo de nuevo en un momento.",
 };
 
 const IT: Record<string, string> = {
@@ -582,6 +602,10 @@ const IT: Record<string, string> = {
 
   "breadcrumb.christmas": "Natale",
   "breadcrumb.finder": "Ricercatore di regali",
+  "wishlist.defaultTitle": "La mia lista dei desideri di Natale",
+  "wishlist.fromFinder": "Idee dal Cercatore di regali",
+  "error.wishlistSave": "Impossibile salvare nella lista dei desideri",
+  "error.wishlistNetwork": "Non siamo riusciti a raggiungere la tua lista dei desideri. Riprova tra un momento.",
 };
 
 /** European Portuguese (Portugal) — not Brazilian. */
@@ -678,6 +702,10 @@ const PT: Record<string, string> = {
 
   "breadcrumb.christmas": "Natal",
   "breadcrumb.finder": "Encontrador de Presentes",
+  "wishlist.defaultTitle": "A minha lista de desejos de Natal",
+  "wishlist.fromFinder": "Ideias do Localizador de prendas",
+  "error.wishlistSave": "Não foi possível guardar na lista de desejos",
+  "error.wishlistNetwork": "Não conseguimos chegar à sua lista de desejos agora. Tente novamente dentro de momentos.",
 };
 
 const NL: Record<string, string> = {
@@ -773,6 +801,10 @@ const NL: Record<string, string> = {
 
   "breadcrumb.christmas": "Kerst",
   "breadcrumb.finder": "Gift Finder",
+  "wishlist.defaultTitle": "Mijn kerstverlanglijst",
+  "wishlist.fromFinder": "Ideeën van de Cadeauvinder",
+  "error.wishlistSave": "Kon niet opslaan op het verlanglijstje",
+  "error.wishlistNetwork": "Je verlanglijstje was even niet bereikbaar. Probeer het zo opnieuw.",
 };
 
 const PL: Record<string, string> = {
@@ -868,6 +900,10 @@ const PL: Record<string, string> = {
 
   "breadcrumb.christmas": "Boże Narodzenie",
   "breadcrumb.finder": "Wyszukiwarka Prezentów",
+  "wishlist.defaultTitle": "Moja świąteczna lista życzeń",
+  "wishlist.fromFinder": "Pomysły z Wyszukiwarki prezentów",
+  "error.wishlistSave": "Nie udało się zapisać na liście życzeń",
+  "error.wishlistNetwork": "Nie udało się teraz połączyć z listą życzeń. Spróbuj ponownie za chwilę.",
 };
 
 export const PACKS: Record<GiftFinderLocale, Record<string, string>> = {
@@ -898,6 +934,9 @@ export const REQUIRED_UI_KEYS = [
   "results.seeGift",
   "error.generic",
   "error.retry",
+  "error.wishlistNetwork",
+  "error.wishlistSave",
+  "wishlist.defaultTitle",
   "crossSell.portrait",
 ] as const;
 

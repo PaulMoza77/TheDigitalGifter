@@ -84,9 +84,9 @@ export function useChristmasPortraitFunnel({
   );
   const [busy, setBusy] = useState(false);
   const [speciesHint, setSpeciesHint] = useState<{
-    message: string;
+    messageKey: string;
     switchTo: string;
-    label: string;
+    labelKey: string;
   } | null>(null);
   const [checkout, setCheckout] = useState<{
     clientSecret: string;
@@ -284,8 +284,7 @@ export function useChristmasPortraitFunnel({
 
       let softWarning: string | null = null;
       if (validation.width < 400 || validation.height < 400) {
-        softWarning =
-          "This photo is a little small. You can still continue or choose a clearer one.";
+        softWarning = "funnel.softSmall";
       }
 
       if (vertical.expectedSpecies === "dog" || vertical.expectedSpecies === "cat") {
@@ -297,12 +296,12 @@ export function useChristmasPortraitFunnel({
         if (!species.ok && species.errorCode === "wrong_species") {
           const switchTo =
             vertical.expectedSpecies === "dog" ? "/christmas/cats" : "/christmas/dogs";
-          const label =
-            vertical.expectedSpecies === "dog" ? "Christmas Cats" : "Christmas Dogs";
+          const labelKey =
+            vertical.expectedSpecies === "dog" ? "funnel.christmasCats" : "funnel.christmasDogs";
           setSpeciesHint({
-            message: species.error || "This photo looks like a different species.",
+            messageKey: "funnel.speciesMismatch",
             switchTo,
-            label,
+            labelKey,
           });
           setStep("upload", { lastError: species.error });
           return;

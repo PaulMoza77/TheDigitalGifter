@@ -531,7 +531,7 @@ export default function ChristmasPhotoGeneratorExperience() {
                 {friendlyError(funnel.draft.lastError)}
               </p>
             ) : null}
-            {funnel.draft.softWarning ? <p className="pg-warn">{funnel.draft.softWarning}</p> : null}
+            {funnel.draft.softWarning ? <p className="pg-warn">{t(funnel.draft.softWarning)}</p> : null}
 
             {funnel.draft.step === "subject" && (
               <section>
