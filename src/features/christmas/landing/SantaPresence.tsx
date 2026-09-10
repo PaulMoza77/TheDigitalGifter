@@ -13,7 +13,6 @@ export function SantaPresence({
   const reduced = usePrefersReducedMotion();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [useVideo, setUseVideo] = useState(!reduced);
-  const [speaking, setSpeaking] = useState(false);
   const [inView, setInView] = useState(true);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -46,20 +45,22 @@ export function SantaPresence({
     video.play().catch(() => setUseVideo(false));
   }, [reduced, useVideo, inView]);
 
-  useEffect(() => {
-    if (reduced || useVideo) return;
-    const id = window.setInterval(() => {
-      setSpeaking((prev) => !prev);
-    }, 2400);
-    return () => window.clearInterval(id);
-  }, [reduced, useVideo]);
-
   return (
     <div
       ref={rootRef}
       className={`xmas-santa__asset${acknowledge ? " xmas-santa__asset--ack" : ""}`}
       data-santa-state={acknowledge ? "acknowledge" : "idle"}
     >
+      <picture>
+        <source media="(max-width: 640px)" srcSet={LANDING_ASSETS.santaStaticMobile} />
+        <img
+          src={LANDING_ASSETS.santaStatic}
+          alt={useVideo ? "" : alt}
+          width={540}
+          height={720}
+          decoding="async"
+        />
+      </picture>
       {useVideo ? (
         <video
           ref={videoRef}
@@ -68,30 +69,13 @@ export function SantaPresence({
           loop
           playsInline
           preload="metadata"
-          poster={LANDING_ASSETS.santaIdle}
+          poster={LANDING_ASSETS.santaStatic}
           aria-label={alt}
           onError={() => setUseVideo(false)}
         >
           <source src={LANDING_ASSETS.santaWebm} type="video/webm" />
         </video>
-      ) : (
-        <picture>
-          <source media="(max-width: 640px)" srcSet={LANDING_ASSETS.santaStaticMobile} />
-          <img
-            src={
-              reduced
-                ? LANDING_ASSETS.santaStatic
-                : speaking
-                  ? LANDING_ASSETS.santaSpeak
-                  : LANDING_ASSETS.santaIdle
-            }
-            alt={alt}
-            width={540}
-            height={720}
-            decoding="async"
-          />
-        </picture>
-      )}
+      ) : null}
     </div>
   );
 }

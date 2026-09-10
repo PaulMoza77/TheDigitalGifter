@@ -22,6 +22,7 @@ export function ChristmasClubScene() {
   useEffect(() => {
     // Remove HTML boot poster once React scene owns the viewport.
     document.getElementById("cc-boot")?.remove();
+    document.getElementById("cc-boot-css")?.remove();
   }, []);
 
   useEffect(() => {

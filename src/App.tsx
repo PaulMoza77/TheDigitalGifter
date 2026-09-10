@@ -294,7 +294,7 @@ function WebsiteLayout() {
 
 function FunnelLayout() {
   return (
-    <div className="min-h-screen w-full bg-black text-white">
+    <div className="min-h-screen w-full overflow-visible bg-black text-white">
       <Outlet />
     </div>
   );

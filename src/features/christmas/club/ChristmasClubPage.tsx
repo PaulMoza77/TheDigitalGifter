@@ -91,6 +91,10 @@ export function ChristmasClubPage() {
   const utm = useMemo(() => attributionParamsForInternal(), []);
 
   useEffect(() => {
+    const html = document.documentElement;
+    html.classList.add("cc-page-scroll");
+    document.getElementById("cc-boot")?.remove();
+    document.getElementById("cc-boot-css")?.remove();
     loadClubFonts();
     preloadHeroAssets();
     setThemeColor("#140409");
@@ -99,6 +103,9 @@ export function ChristmasClubPage() {
       pathname: "/christmas",
       metadata: { surface: "christmas_club" },
     });
+    return () => {
+      html.classList.remove("cc-page-scroll");
+    };
   }, []);
 
   useEffect(() => {
@@ -243,6 +250,7 @@ export function ChristmasClubPage() {
             <p className="cc-lede">
               Join our Christmas countdown and discover little surprises along the way.
             </p>
+            <p className="cc-scroll-cue">Scroll for Santa, portraits, advent, and the tree</p>
           </div>
 
           <div className="cc-dock">

@@ -1,3 +1,18 @@
+/* SPA global CSS sets html/body/#root { height: 100% }, which traps /christmas
+   at one viewport and hides Mos Craciun / portraits / advent / tree on scroll. */
+html.cc-page-scroll,
+html.cc-page-scroll body,
+html.cc-page-scroll #root {
+  height: auto !important;
+  min-height: 100%;
+  overflow: visible !important;
+}
+
+html.cc-page-scroll {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
 .christmas-club {
   --cc-cream: #f7f0e4;
   --cc-gold: #e8d5a3;
@@ -7,11 +22,12 @@
   --cc-display: "Cormorant Garamond", "Palatino Linotype", "Times New Roman", serif;
   --cc-body: "Source Sans 3", "Segoe UI", sans-serif;
   position: relative;
+  height: auto;
   min-height: 100svh;
   color: var(--cc-cream);
   background: #0b0504;
   font-family: var(--cc-body);
-  overflow-x: hidden;
+  overflow: visible;
 }
 
 .christmas-club h1,
@@ -28,6 +44,7 @@
   position: relative;
   isolation: isolate;
   min-height: 100svh;
+  overflow: hidden;
 }
 
 .cc-scene {
@@ -158,6 +175,15 @@
   font-size: 1rem;
   line-height: 1.5;
   color: rgba(247, 240, 228, 0.84);
+}
+
+.cc-scroll-cue {
+  margin: 0.85rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(232, 213, 163, 0.88);
 }
 
 .cc-dock {
