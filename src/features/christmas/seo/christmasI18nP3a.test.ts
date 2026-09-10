@@ -66,7 +66,7 @@ describe("christmas P3A i18n foundation", () => {
     const html = applyChristmasSeo(template(), "/ro/christmas/santa-video");
     expect(html).toMatch(/lang="ro"/);
     expect(html).toContain('rel="canonical" href="https://www.thedigitalgifter.com/ro/christmas/santa-video"');
-    expect(html).toContain("Video personalizat de la Moș Crăciun");
+    expect(html).toContain("Video Personalizat de la Moș Crăciun");
     expect(html).toContain("Ce este un video personalizat de la Moș Crăciun?");
     expect(html).toContain('hreflang="en"');
     expect(html).toContain('hreflang="ro"');
