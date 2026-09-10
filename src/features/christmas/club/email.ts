@@ -1,3 +1,5 @@
+import { clubT, type ClubLocale } from "./copy";
+
 const EMAIL_RE = /^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/i;
 
 export function normalizeClubEmail(value: unknown): string {
@@ -19,9 +21,12 @@ export function isValidClubEmail(value: unknown): boolean {
   return EMAIL_RE.test(email);
 }
 
-export function clubEmailValidationMessage(value: unknown): string | null {
+export function clubEmailValidationMessage(
+  value: unknown,
+  locale: ClubLocale = "en",
+): string | null {
   const raw = typeof value === "string" ? value.trim() : "";
-  if (!raw) return "Please enter your email.";
-  if (!isValidClubEmail(raw)) return "Please enter a valid email.";
+  if (!raw) return clubT("email.empty", locale);
+  if (!isValidClubEmail(raw)) return clubT("email.invalid", locale);
   return null;
 }

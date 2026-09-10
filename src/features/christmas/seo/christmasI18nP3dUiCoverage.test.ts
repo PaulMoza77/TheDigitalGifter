@@ -46,6 +46,10 @@ import {
   TABLES as ADVENT_TABLES,
   REQUIRED_UI_KEYS as ADVENT_KEYS,
 } from "../advent/adventCopy";
+import {
+  PACKS as CLUB_PACKS,
+  REQUIRED_UI_KEYS as CLUB_KEYS,
+} from "../club/copy";
 
 /** High-risk interactive keys for English-leak detection (generate/download/share/upload/recipient…). */
 const HIGH_RISK_BY_PACK: Record<string, readonly string[]> = {
@@ -73,6 +77,7 @@ const HIGH_RISK_BY_PACK: Record<string, readonly string[]> = {
   tree: ["share.link", "gift.addCta", "editor.saveCreate", "share.enable"],
   advent: ["cta.openToday", "cta.comeBackTomorrow", "door.locked"],
   family: ["upload.choose", "result.download", "result.share", "preview.continue", "offer.pay"],
+  club: ["join.cta", "join.google", "join.emailPlaceholder", "hero.h1", "countdown.days"],
 };
 
 type PackCase = {
@@ -93,6 +98,7 @@ const PACK_CASES: PackCase[] = [
   { name: "tree", packs: TREE_TABLES, requiredKeys: TREE_KEYS },
   { name: "advent", packs: ADVENT_TABLES, requiredKeys: ADVENT_KEYS },
   { name: "family", packs: FAMILY_PACKS, requiredKeys: FAMILY_KEYS },
+  { name: "club", packs: CLUB_PACKS, requiredKeys: CLUB_KEYS },
 ];
 
 describe("christmas P3D Wave 1 UI missing-key coverage", () => {

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { ChristmasLanguageSwitcher } from "@/features/christmas/seo/ChristmasLanguageSwitcher";
+import { parseChristmasLocalePath } from "@/features/christmas/seo/localeRouting";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
@@ -16,6 +18,7 @@ import {
   CHRISTMAS_CLUB_GOOGLE_PENDING_KEY,
   CHRISTMAS_CLUB_SEO,
 } from "./config";
+import { clubT, resolveClubLocale } from "./copy";
 import { ChristmasLandingExperience } from "@/features/christmas/landing/ChristmasLandingExperience";
 import { ChristmasClubScene } from "./ChristmasClubScene";
 import { ChristmasCountdown } from "./ChristmasCountdown";
@@ -81,6 +84,13 @@ function googleRedirectBase() {
 }
 
 export function ChristmasClubPage() {
+  const location = useLocation();
+  const locale = useMemo(
+    () => resolveClubLocale(parseChristmasLocalePath(location.pathname).locale),
+    [location.pathname],
+  );
+  const t = (key: string) => clubT(key, locale);
+
   const { user, loading: authLoading } = useAuth();
   const [joined, setJoined] = useState(() => Boolean(readClubJoinedState()));
   const [submitting, setSubmitting] = useState(false);
@@ -133,7 +143,7 @@ export function ChristmasClubPage() {
       },
     });
     if (!result.ok) {
-      throw new Error(result.error || "Could not join just now.");
+      throw new Error(result.error || t("error.join"));
     }
     markClubJoined(signupMethod);
     setJoined(true);
@@ -157,7 +167,7 @@ export function ChristmasClubPage() {
       setGoogleBusy(true);
       await persistJoin("google", user?.email ?? undefined);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-in finished, but we couldn’t save your place.");
+      setError(err instanceof Error ? err.message : t("error.googleSave"));
     } finally {
       setGoogleBusy(false);
     }
@@ -180,7 +190,7 @@ export function ChristmasClubPage() {
     try {
       await persistJoin("email", email);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "We couldn’t save your place just now.");
+      setError(err instanceof Error ? err.message : t("error.save"));
     } finally {
       setSubmitting(false);
     }
@@ -210,11 +220,7 @@ export function ChristmasClubPage() {
     } catch (err) {
       window.sessionStorage.removeItem(CHRISTMAS_CLUB_GOOGLE_PENDING_KEY);
       setGoogleBusy(false);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Google sign-in isn’t available right now. You can still join with email.",
-      );
+      setError(err instanceof Error ? err.message : t("error.googleUnavailable"));
     }
   }
 
@@ -228,7 +234,7 @@ export function ChristmasClubPage() {
 
         <a className="cc-brand" href="/">
           <img src="/TheDigitalGifter.png" alt="" width={36} height={36} />
-          <span>The Digital Gifter</span>
+          <span>{t("brand")}</span>
         </a>
         <div className="cc-lang" style={{ position: "absolute", top: "1rem", insetInlineEnd: "1rem", zIndex: 5 }}>
           <ChristmasLanguageSwitcher />
@@ -236,24 +242,23 @@ export function ChristmasClubPage() {
 
         <section className="cc-hero">
           <div className="cc-hero__copy">
-            <p className="cc-eyebrow">The Digital Gifter presents</p>
-            <h1>Something magical is coming this Christmas.</h1>
-            <p className="cc-lede">
-              Join our Christmas countdown and discover little surprises along the way.
-            </p>
+            <p className="cc-eyebrow">{t("hero.eyebrow")}</p>
+            <h1>{t("hero.h1")}</h1>
+            <p className="cc-lede">{t("hero.lede")}</p>
           </div>
 
           <div className="cc-dock">
             <div className="cc-dock__countdown">
-              <p className="cc-countdown-note">A few gifts already waiting inside the countdown.</p>
-              <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} />
+              <p className="cc-countdown-note">{t("countdown.note")}</p>
+              <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} locale={locale} />
             </div>
 
             <div className="cc-dock__join" id="join">
               {showForm ? (
                 <>
-                  <h2 className="sr-only">Join the Christmas Countdown</h2>
+                  <h2 className="sr-only">{t("join.srHeading")}</h2>
                   <ChristmasJoinForm
+                    locale={locale}
                     submitting={submitting}
                     googleBusy={googleBusy || authLoading}
                     googleAvailable
@@ -264,7 +269,7 @@ export function ChristmasClubPage() {
                   />
                 </>
               ) : (
-                <ChristmasClubSuccess />
+                <ChristmasClubSuccess locale={locale} />
               )}
             </div>
           </div>
