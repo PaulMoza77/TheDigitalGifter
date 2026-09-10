@@ -1,0 +1,13 @@
+---
+description: TDG production deploy must use Cloud Agent SSH script only
+alwaysApply: true
+---
+
+# TDG production deployment
+
+Production deployment for TDG MUST use `scripts/deploy-production.sh`. Vercel and GitHub Actions are forbidden deployment paths. If deployment fails, debug the SSH/VPS deployment. Do not switch deployment providers.
+
+- Path: Cursor Cloud Agent → direct SSH → Mozas VPS → build/restart → healthcheck
+- Secrets: Cloud Agent `MOZAS_SSH_HOST`, `MOZAS_SSH_PRIVATE_KEY`, `MOZAS_SSH_USER`
+- Do not use Vercel, GitHub Actions, GitHub Pages, or any alternate host for TDG production
+- GitHub is source control only for the production origin

@@ -3,7 +3,7 @@
  * Vercel Ignore Command for this repository only.
  * Exit 0 = skip this deployment. Exit 1 = continue building.
  *
- * Production is Mozas VPS. Skip all Vercel builds for
+ * Production is Mozas VPS via scripts/deploy-production.sh (Cloud Agent SSH). Skip all Vercel builds for
  * the-digital-gifter and the-digital-gifter-d5vu so GitHub pushes
  * do not republish those two projects. Existing Vercel deployments
  * stay as rollback until the founder confirms a live payment.
