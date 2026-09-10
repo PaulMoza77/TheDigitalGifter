@@ -40,6 +40,25 @@ for name in MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY; do
   fi
 done
 
+if ! command -v rsync >/dev/null 2>&1; then
+  echo "rsync missing — installing for Cloud Agent → VPS sync (not switching providers)"
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq rsync
+  fi
+  if ! command -v rsync >/dev/null 2>&1; then
+    echo "BLOCKED: rsync is required for SSH/VPS deploy and could not be installed."
+    echo "Debug the Cloud Agent environment / VPS path. Do not switch deployment providers."
+    exit 2
+  fi
+fi
+
+if ! command -v ssh >/dev/null 2>&1 || ! command -v ssh-keyscan >/dev/null 2>&1; then
+  echo "BLOCKED: OpenSSH client (ssh/ssh-keyscan) is required for VPS deploy."
+  echo "Debug the Cloud Agent environment / VPS path. Do not switch deployment providers."
+  exit 2
+fi
+
 COMMIT="$(git -C "${ROOT}" rev-parse HEAD)"
 SHORT="$(git -C "${ROOT}" rev-parse --short HEAD)"
 
