@@ -12,14 +12,60 @@ const STYLE_PALETTE: Record<
   magical: { foliage: "#1a4d6b", foliageDark: "#0d2a3d", trunk: "#3d2a4a", glow: "#c9a0ff" },
 };
 
+export type TreeVisualGift = {
+  id: string;
+  box_style?: string;
+  gift_type?: string;
+  opened?: boolean;
+  can_open?: boolean;
+};
+
 type Props = {
   style: TreeStyle;
   decorations: Decoration;
   className?: string;
+  hangingGifts?: TreeVisualGift[];
+  onOpenGift?: (giftId: string) => void;
 };
 
+const HANG_SLOTS: Array<[number, number]> = [
+  [70, 80],
+  [130, 88],
+  [55, 130],
+  [145, 135],
+  [80, 165],
+  [120, 170],
+  [100, 110],
+  [40, 175],
+  [160, 180],
+  [90, 200],
+  [110, 95],
+  [75, 145],
+];
+
+function boxFill(style: string | undefined): string {
+  switch (style) {
+    case "gold":
+      return "#d4af37";
+    case "green":
+      return "#2ecc71";
+    case "blue":
+      return "#5dade2";
+    case "snow":
+      return "#f8f9f9";
+    default:
+      return "#e74c3c";
+  }
+}
+
 /** CSS/SVG Christmas tree — semantic styles, no WebGL. */
-export function ChristmasTreeVisual({ style, decorations, className }: Props) {
+export function ChristmasTreeVisual({
+  style,
+  decorations,
+  className,
+  hangingGifts = [],
+  onOpenGift,
+}: Props) {
   const p = STYLE_PALETTE[style] || STYLE_PALETTE.classic;
   const reduceMotion =
     typeof window !== "undefined" &&
@@ -126,6 +172,37 @@ export function ChristmasTreeVisual({ style, decorations, className }: Props) {
             strokeWidth="1"
           />
         )}
+
+        {hangingGifts.slice(0, HANG_SLOTS.length).map((gift, i) => {
+          const [x, y] = HANG_SLOTS[i];
+          const locked = gift.can_open === false;
+          return (
+            <g
+              key={gift.id}
+              role={onOpenGift ? "button" : undefined}
+              tabIndex={onOpenGift && !locked ? 0 : undefined}
+              onClick={
+                onOpenGift && !locked
+                  ? () => onOpenGift(gift.id)
+                  : undefined
+              }
+              style={{ cursor: onOpenGift && !locked ? "pointer" : "default" }}
+              opacity={locked ? 0.45 : gift.opened ? 0.7 : 1}
+            >
+              <rect
+                x={x - 7}
+                y={y - 6}
+                width={14}
+                height={12}
+                rx={2}
+                fill={boxFill(gift.box_style)}
+                stroke={gift.gift_type === "cosmetic" ? "#d4af37" : "rgba(255,255,255,0.35)"}
+                strokeWidth={gift.gift_type === "cosmetic" ? 1.4 : 0.6}
+              />
+              <rect x={x - 1} y={y - 6} width={2} height={12} fill="rgba(0,0,0,0.18)" />
+            </g>
+          );
+        })}
 
         {(decorations.snow || style === "snowy") &&
           [

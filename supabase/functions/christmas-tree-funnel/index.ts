@@ -5,12 +5,15 @@ import {
   adventDayParts,
   adventEnabled,
   asString,
-  BOX_STYLES,
   freeGiftEnabled,
   generateOpaqueToken,
   generateShareId,
-  GIFT_TYPES,
+  isGiftUnlocked,
   isTreeStyle,
+  MAX_TREE_GIFTS,
+  normalizeTreeGiftInput,
+  productPathForKey,
+  projectSharedGift,
   sanitizeText,
   sha256Hex,
 } from "../_shared/christmas/treeAdvent.ts";
@@ -137,28 +140,11 @@ Deno.serve(async (req) => {
         .eq("id", tree.id);
       const { data: gifts } = await service
         .from("christmas_tree_gifts")
-        .select("*")
+        .select("id,sort_order,gift_type,box_style,display_name,unlock_mode,unlock_at,opened_at,message,linked_product_key")
         .eq("tree_id", tree.id)
         .order("sort_order", { ascending: true });
       const now = Date.now();
-      const safeGifts = (gifts || []).map((g: Record<string, unknown>) => {
-        const unlocked =
-          g.unlock_mode === "immediate" ||
-          (g.unlock_at && new Date(String(g.unlock_at)).getTime() <= now);
-        const opened = Boolean(g.opened_at);
-        return {
-          id: g.id,
-          sort_order: g.sort_order,
-          gift_type: g.gift_type,
-          box_style: g.box_style,
-          display_name: g.display_name,
-          unlock_mode: g.unlock_mode,
-          unlock_at: g.unlock_at,
-          can_open: unlocked,
-          opened,
-          message: opened && unlocked ? g.message : null,
-        };
-      });
+      const safeGifts = (gifts || []).map((g: Record<string, unknown>) => projectSharedGift(g, now));
       return jsonResponse({
         ok: true,
         tree: {
@@ -177,13 +163,14 @@ Deno.serve(async (req) => {
     if (action === "addGift") {
       const tree = await loadOwnerTree(service, body, user?.id);
       if (!tree) return jsonResponse({ error: "forbidden" }, 403);
-      const giftType = asString(body.gift_type) || "message";
-      if (!(GIFT_TYPES as readonly string[]).includes(giftType)) {
-        return jsonResponse({ error: "invalid_gift_type" }, 400);
-      }
-      const box = asString(body.box_style) || "red";
-      if (!(BOX_STYLES as readonly string[]).includes(box)) {
-        return jsonResponse({ error: "invalid_box" }, 400);
+      const normalized = normalizeTreeGiftInput(body);
+      if (!normalized.ok) return jsonResponse({ error: normalized.error }, 400);
+      const { count } = await service
+        .from("christmas_tree_gifts")
+        .select("id", { count: "exact", head: true })
+        .eq("tree_id", tree.id);
+      if ((count || 0) >= MAX_TREE_GIFTS) {
+        return jsonResponse({ error: "gift_limit", max: MAX_TREE_GIFTS }, 400);
       }
       const { data: existing } = await service
         .from("christmas_tree_gifts")
@@ -192,21 +179,20 @@ Deno.serve(async (req) => {
         .order("sort_order", { ascending: false })
         .limit(1);
       const nextSort = existing?.[0] ? Number(existing[0].sort_order) + 1 : 0;
-      const unlockMode = asString(body.unlock_mode) === "on_date" ? "on_date" : "immediate";
       const { data, error } = await service
         .from("christmas_tree_gifts")
         .insert({
           tree_id: tree.id,
           sort_order: nextSort,
-          gift_type: giftType,
-          box_style: box,
-          display_name: sanitizeText(body.display_name, 80),
-          message: sanitizeText(body.message, 800),
-          unlock_mode: unlockMode,
-          unlock_at: unlockMode === "on_date" ? asString(body.unlock_at) || null : null,
-          linked_product_key: sanitizeText(body.linked_product_key, 80) || null,
+          gift_type: normalized.gift.gift_type,
+          box_style: normalized.gift.box_style,
+          display_name: normalized.gift.display_name,
+          message: normalized.gift.message,
+          unlock_mode: normalized.gift.unlock_mode,
+          unlock_at: normalized.gift.unlock_at,
+          linked_product_key: normalized.gift.linked_product_key,
         })
-        .select("id,sort_order")
+        .select("id,sort_order,gift_type,unlock_mode")
         .single();
       if (error) throw error;
       return jsonResponse({ ok: true, gift: data });
@@ -247,10 +233,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (!gift) return jsonResponse({ error: "gift_not_found" }, 404);
       const now = Date.now();
-      const unlocked =
-        gift.unlock_mode === "immediate" ||
-        (gift.unlock_at && new Date(String(gift.unlock_at)).getTime() <= now);
-      if (!unlocked) return jsonResponse({ error: "locked", code: "locked" }, 403);
+      if (!isGiftUnlocked(gift, now)) return jsonResponse({ error: "locked", code: "locked" }, 403);
       if (!gift.opened_at) {
         await service
           .from("christmas_tree_gifts")
@@ -261,14 +244,22 @@ Deno.serve(async (req) => {
           .update({ open_count: Number(tree.open_count || 0) + 1 })
           .eq("id", tree.id);
       }
+      const giftType = asString(gift.gift_type) || "message";
       return jsonResponse({
         ok: true,
         gift: {
           id: gift.id,
           display_name: gift.display_name,
-          message: gift.message,
-          gift_type: gift.gift_type,
+          gift_type: giftType,
           box_style: gift.box_style,
+          message: giftType === "message" ? gift.message : null,
+          linked_product_key:
+            giftType === "product_link" || giftType === "tdg_reward" ? gift.linked_product_key : null,
+          product_path:
+            giftType === "product_link" || giftType === "tdg_reward"
+              ? productPathForKey(gift.linked_product_key)
+              : null,
+          cosmetic_key: giftType === "cosmetic" ? gift.linked_product_key : null,
         },
       });
     }

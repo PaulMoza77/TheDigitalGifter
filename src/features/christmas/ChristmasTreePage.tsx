@@ -13,16 +13,53 @@ import {
   TREE_STYLES,
   writeOwnerRecovery,
   type BoxStyle,
-  type Decorations,
+  type Decoration,
   type OwnerTree,
   type SharedTree,
+  type TreeGiftType,
   type TreeStyle,
 } from "./tree/treeApi";
-import { giftCountBucket, reorderIds } from "./tree/treeLogic";
+import {
+  cosmeticLabelForKey,
+  giftCountBucket,
+  reorderIds,
+  sanitizeTreeAnalyticsMeta,
+  TREE_COSMETICS,
+  TREE_GIFT_TYPES,
+  TREE_PRODUCT_LINKS,
+} from "./tree/treeLogic";
 
 type Mode = "create" | "owner" | "shared" | "unavailable";
 
 const PRODUCT_KEY = "christmas_tree";
+
+function giftTypeLabel(type: string): string {
+  switch (type) {
+    case "tdg_reward":
+      return "TDG reward";
+    case "product_link":
+      return "Product";
+    case "cosmetic":
+      return "Ornament";
+    default:
+      return "Message";
+  }
+}
+
+function boxGradient(style: string | undefined): string {
+  switch (style) {
+    case "gold":
+      return "linear-gradient(145deg,#d4af37,#8a6d1a)";
+    case "green":
+      return "linear-gradient(145deg,#2ecc71,#1a6b3a)";
+    case "blue":
+      return "linear-gradient(145deg,#5dade2,#1a5276)";
+    case "snow":
+      return "linear-gradient(145deg,#f8f9f9,#aeb6bf)";
+    default:
+      return "linear-gradient(145deg,#e74c3c,#922b21)";
+  }
+}
 
 async function authBearer(): Promise<string | null> {
   const { data } = await supabase.auth.getSession();
@@ -42,11 +79,26 @@ export default function ChristmasTreePage() {
   const [message, setMessage] = useState("I've made you a Christmas tree — tap a gift.");
   const [fromName, setFromName] = useState("");
   const [style, setStyle] = useState<TreeStyle>("classic");
-  const [decor, setDecor] = useState<Decorations>(defaultDecorations());
+  const [decor, setDecor] = useState<Decoration>(defaultDecorations());
   const [giftName, setGiftName] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
   const [giftBox, setGiftBox] = useState<BoxStyle>("red");
-  const [reveal, setReveal] = useState<{ name: string; message: string } | null>(null);
+  const [giftType, setGiftType] = useState<TreeGiftType>("message");
+  const [unlockMode, setUnlockMode] = useState<"immediate" | "on_date">("immediate");
+  const [unlockDate, setUnlockDate] = useState("");
+  const [giftProductKey, setGiftProductKey] = useState<(typeof TREE_PRODUCT_LINKS)[number]["key"]>(
+    "christmas_photo",
+  );
+  const [giftCosmetic, setGiftCosmetic] = useState<(typeof TREE_COSMETICS)[number]["key"]>(
+    "snow_globe_ornament",
+  );
+  const [reveal, setReveal] = useState<{
+    name: string;
+    message: string;
+    giftType: string;
+    productPath: string | null;
+    cosmeticLabel: string | null;
+  } | null>(null);
   const [shareHint, setShareHint] = useState<string | null>(null);
   const pageViewed = useRef(false);
 
@@ -220,9 +272,17 @@ export default function ChristmasTreePage() {
           tree_id: owner.id,
           owner_token: ownerToken || undefined,
           display_name: giftName,
-          message: giftMessage,
+          message: giftType === "message" ? giftMessage : "",
           box_style: giftBox,
-          gift_type: "message",
+          gift_type: giftType,
+          unlock_mode: unlockMode,
+          unlock_at: unlockMode === "on_date" ? unlockDate : undefined,
+          linked_product_key:
+            giftType === "cosmetic"
+              ? giftCosmetic
+              : giftType === "product_link" || giftType === "tdg_reward"
+                ? giftProductKey
+                : undefined,
         },
         await authBearer(),
       );
@@ -231,6 +291,11 @@ export default function ChristmasTreePage() {
       void trackChristmasEvent("gift_added", {
         productKey: PRODUCT_KEY,
         pathname: "/christmas/tree",
+        metadata: sanitizeTreeAnalyticsMeta({
+          gift_type: giftType,
+          unlock_mode: unlockMode,
+          gift_count_bucket: giftCountBucket(owner.gifts.length + 1),
+        }),
       });
       await loadOwner(owner.id, ownerToken);
     } catch (e) {
@@ -324,16 +389,31 @@ export default function ChristmasTreePage() {
     try {
       const data = await treeFunnel<{
         ok: boolean;
-        gift: { display_name: string; message: string };
+        gift: {
+          display_name: string;
+          message: string | null;
+          gift_type: string;
+          product_path: string | null;
+          cosmetic_key: string | null;
+        };
       }>({
         action: "openGift",
         share_id: shareId,
         gift_id: giftId,
       });
-      setReveal({ name: data.gift.display_name || "Gift", message: data.gift.message || "" });
+      setReveal({
+        name: data.gift.display_name || "Gift",
+        message: data.gift.message || "",
+        giftType: data.gift.gift_type,
+        productPath: data.gift.product_path,
+        cosmeticLabel: cosmeticLabelForKey(data.gift.cosmetic_key),
+      });
       void trackChristmasEvent("gift_opened", {
         productKey: PRODUCT_KEY,
         pathname: window.location.pathname,
+        metadata: sanitizeTreeAnalyticsMeta({
+          gift_type: data.gift.gift_type,
+        }),
       });
       if (shared) {
         const refreshed = await treeFunnel<{ ok: boolean; tree: SharedTree }>({
@@ -417,7 +497,16 @@ export default function ChristmasTreePage() {
         </p>
 
         <div className="mt-6">
-          <ChristmasTreeVisual style={viewStyle} decorations={viewDecor} />
+          <ChristmasTreeVisual
+            style={viewStyle}
+            decorations={viewDecor}
+            hangingGifts={gifts}
+            onOpenGift={
+              mode === "shared" && shared
+                ? (id) => void openGift(id, shared.share_id)
+                : undefined
+            }
+          />
         </div>
 
         {error ? (
@@ -439,36 +528,32 @@ export default function ChristmasTreePage() {
                     <button
                       type="button"
                       disabled={busy || g.can_open === false}
-                      aria-label={`Open gift ${g.display_name || idx + 1}`}
+                      aria-label={
+                        g.can_open === false
+                          ? `Locked gift ${g.display_name || idx + 1}`
+                          : `Open gift ${g.display_name || idx + 1}`
+                      }
                       onClick={() => void openGift(g.id, shared!.share_id)}
                       className="h-14 w-14 rounded-md border border-amber-200/30 shadow-md transition hover:scale-105 disabled:opacity-40"
-                      style={{
-                        background:
-                          g.box_style === "gold"
-                            ? "linear-gradient(145deg,#d4af37,#8a6d1a)"
-                            : g.box_style === "green"
-                              ? "linear-gradient(145deg,#2ecc71,#1a6b3a)"
-                              : g.box_style === "blue"
-                                ? "linear-gradient(145deg,#5dade2,#1a5276)"
-                                : g.box_style === "snow"
-                                  ? "linear-gradient(145deg,#f8f9f9,#aeb6bf)"
-                                  : "linear-gradient(145deg,#e74c3c,#922b21)",
-                      }}
+                      style={{ background: boxGradient(g.box_style) }}
                     />
                   ) : (
                     <div
                       className="h-14 w-14 rounded-md border border-amber-200/30"
-                      style={{
-                        background:
-                          g.box_style === "gold"
-                            ? "linear-gradient(145deg,#d4af37,#8a6d1a)"
-                            : "linear-gradient(145deg,#e74c3c,#922b21)",
-                      }}
+                      style={{ background: boxGradient(g.box_style) }}
                       aria-hidden
                     />
                   )}
                   <span className="max-w-[4.5rem] truncate text-center text-[11px] text-amber-100/80">
                     {g.display_name || `Gift ${idx + 1}`}
+                  </span>
+                  <span className="max-w-[5rem] text-center text-[10px] text-amber-100/55">
+                    {giftTypeLabel(g.gift_type)}
+                    {g.unlock_mode === "on_date" && g.can_open === false
+                      ? " · locked"
+                      : g.opened
+                        ? " · opened"
+                        : ""}
                   </span>
                   {mode === "owner" ? (
                     <div className="flex gap-1">
@@ -551,7 +636,7 @@ export default function ChristmasTreePage() {
                   onChange={(e) =>
                     setDecor((d) => ({
                       ...d,
-                      topper: e.target.value as Decorations["topper"],
+                      topper: e.target.value as Decoration["topper"],
                     }))
                   }
                 >
@@ -569,7 +654,7 @@ export default function ChristmasTreePage() {
                   onChange={(e) =>
                     setDecor((d) => ({
                       ...d,
-                      ornaments: e.target.value as Decorations["ornaments"],
+                      ornaments: e.target.value as Decoration["ornaments"],
                     }))
                   }
                 >
@@ -633,6 +718,20 @@ export default function ChristmasTreePage() {
                 <div className="rounded-md border border-white/15 p-4">
                   <h3 className="text-sm font-medium">Add a gift</h3>
                   <label className="mt-3 block text-xs text-amber-100/70">
+                    Gift type
+                    <select
+                      className="mt-1 w-full rounded-md bg-white/10 px-2 py-2 text-sm"
+                      value={giftType}
+                      onChange={(e) => setGiftType(e.target.value as TreeGiftType)}
+                    >
+                      {TREE_GIFT_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {giftTypeLabel(t)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="mt-3 block text-xs text-amber-100/70">
                     For
                     <input
                       className="mt-1 w-full rounded-md bg-white/10 px-3 py-2 text-sm"
@@ -641,16 +740,78 @@ export default function ChristmasTreePage() {
                       onChange={(e) => setGiftName(e.target.value)}
                     />
                   </label>
+                  {giftType === "message" ? (
+                    <label className="mt-2 block text-xs text-amber-100/70">
+                      Message
+                      <textarea
+                        className="mt-1 w-full rounded-md bg-white/10 px-3 py-2 text-sm"
+                        value={giftMessage}
+                        maxLength={800}
+                        rows={2}
+                        onChange={(e) => setGiftMessage(e.target.value)}
+                      />
+                    </label>
+                  ) : null}
+                  {giftType === "product_link" || giftType === "tdg_reward" ? (
+                    <label className="mt-2 block text-xs text-amber-100/70">
+                      {giftType === "tdg_reward" ? "TDG reward" : "TDG product"}
+                      <select
+                        className="mt-1 w-full rounded-md bg-white/10 px-2 py-2 text-sm"
+                        value={giftProductKey}
+                        onChange={(e) =>
+                          setGiftProductKey(e.target.value as (typeof TREE_PRODUCT_LINKS)[number]["key"])
+                        }
+                      >
+                        {TREE_PRODUCT_LINKS.map((p) => (
+                          <option key={p.key} value={p.key}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                  {giftType === "cosmetic" ? (
+                    <label className="mt-2 block text-xs text-amber-100/70">
+                      Ornament
+                      <select
+                        className="mt-1 w-full rounded-md bg-white/10 px-2 py-2 text-sm"
+                        value={giftCosmetic}
+                        onChange={(e) =>
+                          setGiftCosmetic(e.target.value as (typeof TREE_COSMETICS)[number]["key"])
+                        }
+                      >
+                        {TREE_COSMETICS.map((c) => (
+                          <option key={c.key} value={c.key}>
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                   <label className="mt-2 block text-xs text-amber-100/70">
-                    Message
-                    <textarea
-                      className="mt-1 w-full rounded-md bg-white/10 px-3 py-2 text-sm"
-                      value={giftMessage}
-                      maxLength={800}
-                      rows={2}
-                      onChange={(e) => setGiftMessage(e.target.value)}
-                    />
+                    Unlock
+                    <select
+                      className="mt-1 w-full rounded-md bg-white/10 px-2 py-2 text-sm"
+                      value={unlockMode}
+                      onChange={(e) =>
+                        setUnlockMode(e.target.value === "on_date" ? "on_date" : "immediate")
+                      }
+                    >
+                      <option value="immediate">Immediately</option>
+                      <option value="on_date">On a date</option>
+                    </select>
                   </label>
+                  {unlockMode === "on_date" ? (
+                    <label className="mt-2 block text-xs text-amber-100/70">
+                      Unlock date
+                      <input
+                        type="date"
+                        className="mt-1 w-full rounded-md bg-white/10 px-3 py-2 text-sm"
+                        value={unlockDate}
+                        onChange={(e) => setUnlockDate(e.target.value)}
+                      />
+                    </label>
+                  ) : null}
                   <label className="mt-2 block text-xs text-amber-100/70">
                     Box
                     <select
@@ -759,7 +920,22 @@ export default function ChristmasTreePage() {
         >
           <div className="w-full max-w-md rounded-lg bg-[#1a2430] p-6 text-amber-50 shadow-xl">
             <h2 className="font-serif text-xl">{reveal.name}</h2>
-            <p className="mt-3 whitespace-pre-wrap text-sm text-amber-100/90">{reveal.message}</p>
+            {reveal.giftType === "message" && reveal.message ? (
+              <p className="mt-3 whitespace-pre-wrap text-sm text-amber-100/90">{reveal.message}</p>
+            ) : null}
+            {reveal.productPath ? (
+              <p className="mt-3 text-sm text-amber-100/90">
+                A Digital Gifter surprise is waiting.{" "}
+                <Link className="underline" to={reveal.productPath}>
+                  Open it
+                </Link>
+              </p>
+            ) : null}
+            {reveal.cosmeticLabel ? (
+              <p className="mt-3 text-sm text-amber-100/90">
+                You found a {reveal.cosmeticLabel} for this tree.
+              </p>
+            ) : null}
             <button
               type="button"
               className="mt-6 w-full rounded-md bg-amber-200 py-2.5 text-sm font-semibold text-slate-900"

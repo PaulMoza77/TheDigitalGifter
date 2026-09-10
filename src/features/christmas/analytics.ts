@@ -9,6 +9,7 @@ import {
   newFunnelUuid,
   type ChristmasFunnelEventName,
 } from "./funnelEventContract";
+import { sanitizeTreeAnalyticsMeta } from "./tree/treeLogic";
 
 const SESSION_KEY = "tdg.christmas.funnel.session.v1";
 
@@ -65,10 +66,10 @@ export async function trackChristmasEvent(
     adset_id: attr.adset_id ?? null,
     ad_id: attr.ad_id ?? null,
     has_fbclid: firstTouch.hasFbclid,
-    metadata: {
+    metadata: sanitizeTreeAnalyticsMeta({
       ...(extra?.styleKey ? { style_key: extra.styleKey } : {}),
       ...(extra?.metadata || {}),
-    },
+    }),
   };
 
   try {
