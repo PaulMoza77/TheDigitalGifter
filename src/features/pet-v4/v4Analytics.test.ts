@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   buildV4SequentialCohort,
@@ -8,8 +11,14 @@ import {
 } from "./sequentialFunnel";
 import { v4IdempotencyKey, resetV4ScrollOnceForTests, trackV4ScrollDepth } from "./analytics";
 import { isV4MetaCampaignId, isV4AcquisitionCohort, v4RedirectTarget, petV4LandingPath } from "./campaign";
-import { PET_V4_META_CAMPAIGN_ID } from "./types";
+import { PET_V4_EVENT_PATH, PET_V4_META_CAMPAIGN_ID } from "./types";
 import { parseV4AnalyticsPayload } from "./v4Dashboard";
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+
+function readSrc(relative: string) {
+  return readFileSync(resolve(root, relative), "utf8");
+}
 
 describe("pet-v4 campaign isolation", () => {
   it("maps the New Sales Campaign id", () => {
@@ -26,6 +35,21 @@ describe("pet-v4 campaign isolation", () => {
   it("soft-redirects V2 URLs when campaign_id is V4", () => {
     const target = v4RedirectTarget("/pet/dog-v2", `?campaign_id=${PET_V4_META_CAMPAIGN_ID}&utm_source=fb`);
     expect(target).toBe(`/pet/dog-v4?campaign_id=${PET_V4_META_CAMPAIGN_ID}&utm_source=fb`);
+  });
+
+  it("wires V4 ingest on the VPS origin and re-enables campaign soft-redirect", () => {
+    expect(PET_V4_EVENT_PATH).toBe("/api/pet-v4/funnel-event");
+    const routes = readSrc("server/routes.mjs");
+    expect(routes).toContain('"/api/pet-v4/funnel-event": "pet-v4-funnel-event.ts"');
+    expect(routes).toContain('"/api/pet-v4-funnel-event": "pet-v4-funnel-event.ts"');
+    expect(readSrc("vercel.json")).toContain("/api/pet-v4/funnel-event");
+    expect(readSrc("vite.petV2Plugin.ts")).toContain("/api/pet-v4/funnel-event");
+    const app = readSrc("src/App.tsx");
+    expect(app).toContain("PetV4CampaignRedirect");
+    expect(app).toMatch(/path="\/pet\/dog-v2"[\s\S]*PetV4CampaignRedirect[\s\S]*PetV2Route/);
+    expect(app).not.toContain("enable only after");
+    expect(readSrc("src/pages/admin/PetV4AnalyticsPanels.tsx")).toContain("Sync historical data");
+    expect(readSrc("src/pages/admin/PetV4AnalyticsPanels.tsx")).toContain("Romania and Italy");
   });
 });
 
