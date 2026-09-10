@@ -416,8 +416,8 @@ Do **not** mass-create pages in this task.
 - `delete-my-account` does not evidence wiping `pet_orders` media / generations comprehensively.  
 - No dedicated child-consent / parental gate found.  
 - Moderation: content policy for intimate templates (`contentPolicy.ts`); not child-safety classifier.  
-- Retention policies for uploads/results: operational defaults unclear in code — **NOT VERIFIED IN PRODUCTION**.  
-- Santa/Kids need: private-by-default ACL, explicit share tokens, retention TTL, deletion covering media, minimized PII, admin access controls.
+- Retention policies for uploads/results: ops defaults documented in `docs/TDG_CHRISTMAS_RETENTION.md` (unpaid `uploads/` 7d purge; paid sources retained). Legal TTL still **`policy_pending_founder_legal`**. Production apply is founder-gated (`CHRISTMAS_RETENTION_PURGE_APPLY`).  
+- Santa/Kids need: private-by-default ACL, explicit share tokens, **founder legal TTL**, deletion covering media, minimized PII, admin access controls.
 
 ---
 

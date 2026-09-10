@@ -118,5 +118,5 @@ Allowlisted events via `/api/christmas/funnel-event` including upload/style/prev
 
 - Stripe Custom Checkout Elements UI not exercised end-to-end (checkout kill-switched; no live/test charge). Payment entitlement proven via fulfill RPC + webhook code path deployed.
 - Multi-person identity quality depends on Kontext limits
-- Abandoned upload TTL cleanup is configurable seam (manual/ops) — default: keep paid sources; unpaid uploads under `uploads/` should be purged by a later retention job
+- Abandoned upload TTL: scheduled ops job `christmas-retention-purge` — keep paid sources; purge unpaid objects under `uploads/` after 7d (`CHRISTMAS_UNPAID_UPLOAD_TTL_DAYS`). Paid results / legal TTL remain founder-pending. See `docs/TDG_CHRISTMAS_RETENTION.md`.
 - Legacy V2 tables remain as `christmas_v2_*` quarantine (not used by Photo Generator V1)

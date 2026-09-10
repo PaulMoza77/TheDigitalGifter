@@ -40,7 +40,7 @@ Filter `christmas_santa_video` on `/admin/christmas-orders`. Detail shows job st
 
 ## Retention
 
-Defaults: final video ~365d (`CHRISTMAS_SANTA_RETENTION_DAYS`); personalization/intermediates shorter policy documented on job table comments. Cleanup cron can be layered later.
+Defaults: final video ~365d (`CHRISTMAS_SANTA_RETENTION_DAYS`); personalization 90d; intermediates 14d (job table comments + `retention_delete_after`). **Legal TTL is `policy_pending_founder_legal`** — the ops job `christmas-retention-purge` does **not** auto-delete paid Santa media. Unpaid portrait `uploads/` cleanup is documented in `docs/TDG_CHRISTMAS_RETENTION.md`.
 
 ## Analytics
 

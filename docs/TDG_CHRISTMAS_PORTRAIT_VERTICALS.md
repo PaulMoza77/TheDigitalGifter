@@ -67,7 +67,7 @@ Each vertical sets unique `PageHead` title, description, canonical, OG via exist
 
 ## Privacy
 
-Source + generated buckets remain private. No public galleries. Kids Christmas is out of scope.
+Source + generated buckets remain private. No public galleries. Kids Christmas is out of scope for the commercial funnel; unpaid `uploads/` follow the same ops TTL as portrait (`docs/TDG_CHRISTMAS_RETENTION.md`). Paid kids/Santa media are not auto-deleted until founder legal TTL.
 
 ## Email / recovery
 

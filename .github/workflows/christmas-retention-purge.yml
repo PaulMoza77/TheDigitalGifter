@@ -1,0 +1,76 @@
+name: christmas-retention-purge
+
+# Daily ops TTL job. Default is dry-run. Live deletes require
+# CHRISTMAS_RETENTION_PURGE_APPLY=true on the Edge function (founder gate).
+# This workflow does not apply migrations or deploy functions.
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Request apply (still no-ops unless CHRISTMAS_RETENTION_PURGE_APPLY is set on Edge)"
+        type: boolean
+        default: false
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Invoke christmas-retention-purge
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CHRISTMAS_RETENTION_CRON_SECRET: ${{ secrets.CHRISTMAS_RETENTION_CRON_SECRET || secrets.CRON_SECRET }}
+          APPLY: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || 'false' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "Supabase secrets not present — skipping invoke (job is scheduled; founder wires secrets)."
+            exit 0
+          fi
+          URL="${SUPABASE_URL%/}/functions/v1/christmas-retention-purge"
+          AUTH="${CHRISTMAS_RETENTION_CRON_SECRET:-$SUPABASE_SERVICE_ROLE_KEY}"
+          BODY='{"action":"purge","dry_run":true}'
+          if [ "${APPLY}" = "true" ]; then
+            BODY='{"action":"purge","apply":true}'
+          fi
+          echo "POST ${URL} apply=${APPLY} (response body redacted of URLs)"
+          CODE=$(curl -sS -o /tmp/retention-purge.json -w "%{http_code}" \
+            -X POST "$URL" \
+            -H "Authorization: Bearer ${AUTH}" \
+            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${CHRISTMAS_RETENTION_CRON_SECRET:-}" \
+            -d "$BODY")
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          raw = Path("/tmp/retention-purge.json").read_text()
+          try:
+              data = json.loads(raw)
+          except json.JSONDecodeError:
+              print(raw[:400])
+              raise SystemExit("non-json response")
+          safe = {
+              "ok": data.get("ok"),
+              "dry_run": data.get("dry_run"),
+              "apply_enabled": data.get("apply_enabled"),
+              "legal_ttl": data.get("legal_ttl"),
+              "unpaid_ttl_days": data.get("unpaid_ttl_days"),
+              "scanned": data.get("scanned"),
+              "paid_sources": data.get("paid_sources"),
+              "keep": data.get("keep"),
+              "purge_candidate_count": len(data.get("purge_candidates") or []),
+              "deleted_count": len(data.get("deleted") or []),
+              "delete_error_count": len(data.get("delete_errors") or []),
+              "error": data.get("error"),
+          }
+          print(json.dumps(safe, indent=2))
+          PY
+          if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 300 ]; then
+            echo "Edge function HTTP ${CODE}"
+            exit 1
+          fi
