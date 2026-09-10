@@ -6,6 +6,7 @@ import {
   isServiceRoleRequest,
   readJson,
 } from "../_shared/supabase.ts";
+import { planSantaRetryReset, santaRetryEligibility } from "../_shared/christmas/santaOps.ts";
 
 /**
  * Santa Video funnel: order lookup / admin retry.
@@ -123,25 +124,21 @@ Deno.serve(async (req) => {
         .select("id,payment_status,product_key")
         .eq("id", orderId)
         .maybeSingle();
-      if (!order || order.payment_status !== "paid" || order.product_key !== "christmas_santa_video") {
-        return jsonResponse({ error: "payment_required" }, 402);
+      const eligible = santaRetryEligibility(order || {});
+      if (!eligible.ok) {
+        return jsonResponse({ error: eligible.code }, eligible.code === "payment_required" ? 402 : 400);
       }
-      // Reset failed stage flags but keep successful script/audio when present
+      // Reset failed stage flags but keep successful script/audio when present.
+      // Never creates a Stripe charge / never invents a price.
       const { data: job } = await service
         .from("christmas_santa_video_jobs")
         .select("*")
         .eq("order_id", orderId)
         .maybeSingle();
+      const reset = planSantaRetryReset(job || {});
       if (job) {
-        const patch: Record<string, unknown> = {
-          job_status: "queued",
-          error_code: null,
-          error_message_safe: null,
-        };
-        if (job.script_status === "failed") patch.script_status = "pending";
-        if (job.audio_status === "failed") patch.audio_status = "pending";
-        if (job.video_status === "failed") patch.video_status = "pending";
-        await service.from("christmas_santa_video_jobs").update(patch).eq("order_id", orderId);
+        const { reset_stages: _stages, recharge: _recharge, ...jobPatch } = reset;
+        await service.from("christmas_santa_video_jobs").update(jobPatch).eq("order_id", orderId);
       }
       await service
         .from("christmas_orders")
@@ -161,7 +158,12 @@ Deno.serve(async (req) => {
           body: JSON.stringify({ order_id: orderId, resume: true }),
         });
       }
-      return jsonResponse({ ok: true, queued: true });
+      return jsonResponse({
+        ok: true,
+        queued: true,
+        recharge: false,
+        reset_stages: reset.reset_stages,
+      });
     }
 
     return jsonResponse({ error: "Unknown action" }, 400);

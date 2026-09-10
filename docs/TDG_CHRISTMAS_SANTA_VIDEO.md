@@ -28,19 +28,30 @@ paid → `christmas-santa-generate` (async, service role)
 → script (OpenAI or server templates)  
 → TTS (OpenAI or Replicate MiniMax)  
 → Santa still (Flux cache)  
-→ lipsync (Replicate, if model available) **or** ffmpeg still+audio mux via `/api/christmas-santa-compose`  
+→ **lipsync only when `CHRISTMAS_SANTA_VIDEO_MODEL` is set**; otherwise **mux-as-prod**  
+→ ffmpeg still+audio mux via `/api/christmas-santa-compose` (production video provider)  
 → private MP4 on `christmas-generated`  
 → result email (when configured; no customer emails in testing)
 
 Browser may close; recovery via `?token=` on the product route.
 
+**Production video provider:** mux-as-prod (`ffmpeg_still_audio_mux`). This is the accepted live path, not a temporary stub. Lip-sync is an upgrade that runs when a working Replicate model slug is configured. Known-dead default slugs are not probed.
+
 ## Admin
 
-Filter `christmas_santa_video` on `/admin/christmas-orders`. Detail shows job stage/cost fields (no child free-text by default). Retry via `christmas-santa-funnel` `retryGeneration` (service role) — no re-charge.
+Filter `christmas_santa_video` on `/admin/christmas-orders`. Detail shows job stage/cost fields (no child free-text by default). Retry via `christmas-santa-funnel` `retryGeneration` (admin or service role) — **no re-charge**, resets only failed stages, resumes generate.
 
 ## Retention
 
-Defaults: final video ~365d (`CHRISTMAS_SANTA_RETENTION_DAYS`); personalization/intermediates shorter policy documented on job table comments. Cleanup cron can be layered later.
+Policy (from completion):
+
+| Class | Default | Env override | Action |
+|-------|---------|--------------|--------|
+| Intermediates (speech audio, order-scoped still, compose temp) | 14d | `CHRISTMAS_SANTA_INTERMEDIATE_RETENTION_DAYS` | Delete storage; keep shared `santa/templates/*` cache |
+| Personalization free-text | 90d | `CHRISTMAS_SANTA_PERSONALIZATION_RETENTION_DAYS` | Redact in place (`child_first_name=redacted`) |
+| Final MP4 | 365d | `CHRISTMAS_SANTA_RETENTION_DAYS` | Delete result + asset row |
+
+Cron: Edge `christmas-santa-retention` (service role or `CHRISTMAS_SANTA_CRON_SECRET`). Origin shim `POST /api/christmas-santa-retention-cron` for VPS. Schedule daily, e.g. `0 5 * * *`. Supports `dry_run=1`.
 
 ## Analytics
 
@@ -61,4 +72,4 @@ Service secrets server-side; paid entitlement gate; order token recovery; privat
 
 ## Known limitations
 
-See `docs/architecture/TDG_SANTA_VIDEO_PROVIDER_ADR.md`. Lip-sync upgrade when a working model is confirmed.
+See `docs/architecture/TDG_SANTA_VIDEO_PROVIDER_ADR.md`. Mux-as-prod is the live video provider. Lip-sync upgrade when `CHRISTMAS_SANTA_VIDEO_MODEL` is set to a working slug. Live purchase remains founder-gated (`purchasable=false`, `price_cents=0`).

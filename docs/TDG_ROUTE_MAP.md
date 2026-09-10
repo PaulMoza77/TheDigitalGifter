@@ -18,6 +18,8 @@ Prices, providers, and product design are unchanged.
 | `/api/pet-v2/preview` | **Supabase Edge** `pet-v2-preview` | Vercel handler is live-disabled / unused. |
 | `/api/christmas-generate*` | **Supabase Edge** | Server-side only. |
 | `/api/pet-analytics-cron` | **Supabase Edge** `pet-analytics-sync` | Cron Vercel shim is unused. Schedule Edge directly. |
+| `/api/christmas-santa-compose` | Mozas Node origin | Service-role ffmpeg mux-as-prod for Santa. |
+| `/api/christmas-santa-retention-cron` | Mozas Node origin → Edge `christmas-santa-retention` | Daily retention sweep. Protect with `CHRISTMAS_SANTA_CRON_SECRET`. |
 | `/sitemap.xml` | Mozas Node origin | Static URLs always; SEO/blog URLs when service role is present. |
 | `/robots.txt` | Mozas static `dist` | |
 | `/.well-known/apple-developer-merchantid-domain-association` | Mozas static / env | Must not be HTML. |

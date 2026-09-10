@@ -1,10 +1,15 @@
 /**
  * Compose Santa still + TTS audio into one MP4.
- * Prefers talking-head models; falls back to Replicate Seedance is insufficient for speech length.
- * Primary V1 path: server compose endpoint (ffmpeg) when configured, else inline note.
+ * Production path is mux-as-prod (ffmpeg still + full TTS).
+ * Lip-sync is attempted only when CHRISTMAS_SANTA_VIDEO_MODEL is set.
  */
 
 import { replicateOutputUrl } from "../pet/replicate.ts";
+import {
+  isLipsyncModelMissing,
+  santaLipsyncModelCandidates,
+  SANTA_VIDEO_PROD_MODE,
+} from "./santaOps.ts";
 
 export type SantaVideoResult = {
   outputUrl: string;
@@ -13,6 +18,8 @@ export type SantaVideoResult = {
   estimatedCostUsd: number;
   latencyMs: number;
   mode: "lipsync" | "still_audio_mux";
+  lipsyncSkipReason?: "no_model_configured" | "model_unavailable";
+  prodMode?: typeof SANTA_VIDEO_PROD_MODE;
 };
 
 function asString(value: unknown): string {
@@ -20,7 +27,7 @@ function asString(value: unknown): string {
 }
 
 export function santaVideoModel(): string {
-  return asString(Deno.env.get("CHRISTMAS_SANTA_VIDEO_MODEL")) || "cjwbw/sadtalker";
+  return asString(Deno.env.get("CHRISTMAS_SANTA_VIDEO_MODEL"));
 }
 
 export function santaStillPrompt(templateKey: string): string {
@@ -105,17 +112,12 @@ export async function generateSantaStill(input: {
 async function tryLipsync(input: {
   imageUrl: string;
   audioUrl: string;
+  models: string[];
 }): Promise<SantaVideoResult | null> {
   const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
-  if (!token) return null;
-  const models = [
-    asString(Deno.env.get("CHRISTMAS_SANTA_VIDEO_MODEL")),
-    "cjwbw/sadtalker",
-    "camenduru/sadtalker",
-    "pixverse/lipsync",
-  ].filter(Boolean);
+  if (!token || input.models.length === 0) return null;
   const started = Date.now();
-  for (const model of models) {
+  for (const model of input.models) {
     try {
       const bodyInput: Record<string, unknown> = {
         source_image: input.imageUrl,
@@ -135,7 +137,10 @@ async function tryLipsync(input: {
         body: JSON.stringify({ input: bodyInput }),
       });
       let prediction = await createRes.json();
-      if (!createRes.ok) continue;
+      if (!createRes.ok) {
+        if (isLipsyncModelMissing(createRes.status, prediction)) continue;
+        continue;
+      }
       prediction = await pollPrediction(token, String(prediction.id));
       if (String(prediction.status) !== "succeeded") continue;
       const outputUrl = replicateOutputUrl(prediction.output);
@@ -223,6 +228,7 @@ export async function composeStillAudioViaOrigin(input: {
     estimatedCostUsd: 0,
     latencyMs: Date.now() - started,
     mode: "still_audio_mux",
+    prodMode: SANTA_VIDEO_PROD_MODE,
   };
 }
 
@@ -231,7 +237,16 @@ export async function generateSantaTalkingVideo(input: {
   audioUrl: string;
   orderId: string;
 }): Promise<SantaVideoResult> {
-  const lipsync = await tryLipsync(input);
-  if (lipsync) return lipsync;
-  return await composeStillAudioViaOrigin(input);
+  const models = santaLipsyncModelCandidates({
+    primaryModel: Deno.env.get("CHRISTMAS_SANTA_VIDEO_MODEL"),
+    extraModels: Deno.env.get("CHRISTMAS_SANTA_VIDEO_MODELS"),
+  });
+  if (models.length > 0) {
+    const lipsync = await tryLipsync({ ...input, models });
+    if (lipsync) return lipsync;
+    const mux = await composeStillAudioViaOrigin(input);
+    return { ...mux, lipsyncSkipReason: "model_unavailable" };
+  }
+  const mux = await composeStillAudioViaOrigin(input);
+  return { ...mux, lipsyncSkipReason: "no_model_configured" };
 }
