@@ -43,6 +43,7 @@ describe("christmas foundation wiring", () => {
     );
     expect(readSrc("index.html")).toContain("__TDG_CHRISTMAS_BOOT__");
     expect(readSrc("index.html")).toContain("cabin-hero-loop.mp4");
+    expect(readSrc("index.html")).toContain("cc-page-scroll");
   });
 
   it("leaves pet SKU constraint and prices alone", () => {

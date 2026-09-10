@@ -14,7 +14,7 @@ export function useInViewOnce<T extends HTMLElement>(options?: IntersectionObser
           observer.disconnect();
         }
       },
-      { threshold: 0.35, rootMargin: "0px 0px -8% 0px", ...options },
+      { threshold: 0.05, rootMargin: "80px 0px", ...options },
     );
     observer.observe(el);
     return () => observer.disconnect();

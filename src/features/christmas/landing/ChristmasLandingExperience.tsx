@@ -30,6 +30,7 @@ import { SantaScene } from "./scenes/SantaScene";
 import { TreeScene } from "./scenes/TreeScene";
 import { WishlistScene } from "./scenes/WishlistScene";
 import { christmasLandingJsonLd, upsertJsonLd } from "./seo";
+import { StoryErrorBoundary } from "./StoryErrorBoundary";
 
 const LOCALE = CHRISTMAS_LANDING_DEFAULT_LOCALE;
 const CREATE_HREF = "/generator?occasion=christmas";
@@ -94,12 +95,15 @@ export function ChristmasLandingExperience({
           }}
         />
       ) : null}
-      <GiftTreeLandingScene
-        locale={LOCALE}
-        onViewed={() => {
-          trackHubEvent("christmas_hub_interact", { surface: "hub_gifts", action: "section_viewed" }, "christmas_gift_tree");
-        }}
-      />
+      <StoryErrorBoundary>
+        <GiftTreeLandingScene
+          locale={LOCALE}
+          onViewed={() => {
+            trackHubEvent("christmas_hub_interact", { surface: "hub_gifts", action: "section_viewed" }, "christmas_gift_tree");
+          }}
+        />
+      </StoryErrorBoundary>
+      <StoryErrorBoundary>
       <PortraitScene
         locale={LOCALE}
         onToggle={(vertical: PortraitVertical) => {
@@ -116,6 +120,8 @@ export function ChristmasLandingExperience({
           void navigate(portraitUrl(vertical));
         }}
       />
+      </StoryErrorBoundary>
+      <StoryErrorBoundary>
       <SantaScene
         locale={LOCALE}
         onViewed={onSantaViewed}
@@ -130,6 +136,8 @@ export function ChristmasLandingExperience({
           void navigate(santaExperienceUrl(name));
         }}
       />
+      </StoryErrorBoundary>
+      <StoryErrorBoundary>
       <WishlistScene
         locale={LOCALE}
         onCta={() => {
@@ -137,6 +145,8 @@ export function ChristmasLandingExperience({
           void navigate("/christmas/wishlist");
         }}
       />
+      </StoryErrorBoundary>
+      <StoryErrorBoundary>
       <TreeScene
         locale={LOCALE}
         onCta={() => {
@@ -144,6 +154,8 @@ export function ChristmasLandingExperience({
           void navigate("/christmas/tree");
         }}
       />
+      </StoryErrorBoundary>
+      <StoryErrorBoundary>
       <AdventScene
         locale={LOCALE}
         onInteract={(day) => {
@@ -154,6 +166,8 @@ export function ChristmasLandingExperience({
           void navigate("/christmas/advent");
         }}
       />
+      </StoryErrorBoundary>
+      <StoryErrorBoundary>
       <CardsScene
         locale={LOCALE}
         onCta={(theme: CardTheme) => {
@@ -161,6 +175,8 @@ export function ChristmasLandingExperience({
           void navigate(cardsUrl(theme));
         }}
       />
+      </StoryErrorBoundary>
+      <StoryErrorBoundary>
       <MessagesScene
         locale={LOCALE}
         onCta={(recipient, tone) => {
@@ -172,6 +188,7 @@ export function ChristmasLandingExperience({
           void navigate(messagesUrl(recipient, tone));
         }}
       />
+      </StoryErrorBoundary>
       <FinalCtaScene locale={LOCALE} onCta={() => goCreate("finale")} />
       <FaqScene locale={LOCALE} />
     </article>

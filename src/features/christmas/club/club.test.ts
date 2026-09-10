@@ -56,6 +56,8 @@ describe("christmas club live cabin + gift tree", () => {
     const santa = readFileSync(resolve(process.cwd(), "src/features/christmas/landing/assets.ts"), "utf8");
     expect(page).toContain("ChristmasLandingExperience");
     expect(page).toContain("includeHero={false}");
+    expect(page).toContain("cc-page-scroll");
+    expect(page).toContain("Scroll for Santa, portraits, advent, and the tree");
     expect(page).not.toContain("fillViewport");
     expect(landing).toContain("GiftTreeLandingScene");
     expect(landing).toContain("PortraitScene");
@@ -64,6 +66,20 @@ describe("christmas club live cabin + gift tree", () => {
     expect(landing).toContain("AdventScene");
     expect(landing).toContain("WishlistScene");
     expect(landing).toContain("CardsScene");
+    expect(landing).toContain("StoryErrorBoundary");
+    const clubCss = readFileSync(resolve(process.cwd(), "src/features/christmas/club/christmasClub.css"), "utf8");
+    const landingCss = readFileSync(resolve(process.cwd(), "src/features/christmas/landing/ChristmasLanding.css"), "utf8");
+    const santaPresence = readFileSync(
+      resolve(process.cwd(), "src/features/christmas/landing/SantaPresence.tsx"),
+      "utf8",
+    );
+    const boot = readFileSync(resolve(process.cwd(), "index.html"), "utf8");
+    expect(clubCss).toContain("html.cc-page-scroll");
+    expect(clubCss).toContain("overflow: visible");
+    expect(landingCss).toContain(".xmas-reveal {\n  opacity: 1;");
+    expect(santaPresence).toContain("santaStatic");
+    expect(santaPresence).toContain("santaWebm");
+    expect(boot).toContain('classList.add("cc-page-scroll")');
     expect(gifts).toContain("h-[min(78svh,640px)]");
     expect(tree).toContain("mobileMp4");
     expect(tree).toContain("desktopMp4");

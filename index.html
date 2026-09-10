@@ -141,6 +141,7 @@
         var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
         if (path !== "/christmas") return;
         window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.classList.add("cc-page-scroll");
         document.documentElement.style.background = "#0b0504";
         document.documentElement.style.colorScheme = "dark";
 
@@ -189,8 +190,10 @@
         var bootCss = document.createElement("style");
         bootCss.id = "cc-boot-css";
         bootCss.textContent =
+          "html.cc-page-scroll,html.cc-page-scroll body,html.cc-page-scroll #root{height:auto!important;min-height:100%;overflow:visible!important}" +
+          "html.cc-page-scroll{overflow-x:hidden!important;overflow-y:auto!important}" +
           "html,body{margin:0;background:#0b0504}" +
-          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "#cc-boot{position:fixed;inset:0;z-index:-1;pointer-events:none;" +
           "background:#0b0504 url(" +
           heroStill +
           ") " +
