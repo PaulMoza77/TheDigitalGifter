@@ -2,8 +2,8 @@
  * Node/Vercel port of supabase/functions/christmas-generate/index.ts.
  * Keep in sync with the Deno source — see api/christmas-funnel.ts for context.
  */
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { waitUntil } from "@vercel/functions";
+import type { VercelRequest, VercelResponse } from "./_lib/httpTypes";
+import { waitUntil } from "./_lib/waitUntil";
 import {
   CHRISTMAS_RESULT_BUCKET,
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,

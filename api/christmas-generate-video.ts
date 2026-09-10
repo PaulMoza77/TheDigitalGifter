@@ -2,7 +2,7 @@
  * Node/Vercel port of supabase/functions/christmas-generate-video/index.ts.
  * Keep in sync with the Deno source — see api/christmas-funnel.ts for context.
  */
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "./_lib/httpTypes";
 import {
   CHRISTMAS_RESULT_BUCKET,
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,

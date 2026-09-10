@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "./_lib/httpTypes";
 
 /**
  * Cron entrypoint: sync Meta + GA4 for yesterday and today.

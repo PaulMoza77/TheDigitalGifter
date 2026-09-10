@@ -97,15 +97,18 @@ describe("V2 teaser conversion rebuild", () => {
   });
 
   it("wires Apple Pay association outside the SPA catch-all", () => {
-    const vercel = readSrc("vercel.json");
-    expect(vercel).toContain("apple-developer-merchantid-domain-association");
-    expect(vercel).toContain("\\.well-known/");
+    const routes = readSrc("server/routes.mjs");
+    expect(routes).toContain("apple-developer-merchantid-domain-association");
+    expect(routes).toContain(".well-known");
+    const origin = readSrc("server/origin.mjs");
+    expect(origin).toContain("apple-developer-merchantid-domain-association");
+    expect(origin).toContain(".well-known");
     const api = readSrc("api/apple-developer-merchantid-domain-association.ts");
     expect(api).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION");
     expect(api).toContain("application/octet-stream");
     expect(api).toContain("Must never return SPA HTML");
     expect(api).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION_FALLBACK");
-    // Stripe's universal association file — served statically from public/ (Vercel + VPS).
+    // Stripe's universal association file — served statically from public/ on Mozas VPS.
     const association = readSrc("public/.well-known/apple-developer-merchantid-domain-association");
     expect(association).not.toContain("PLACEHOLDER_CONFIGURE");
     expect(association.length).toBeGreaterThan(1000);

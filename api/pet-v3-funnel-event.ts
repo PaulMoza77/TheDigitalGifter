@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "./_lib/httpTypes";
 import {
   clientIpFromHeaders,
   countryCodeFromHeaders,
@@ -48,9 +48,9 @@ function originAllowed(origin: string | undefined, host: string | undefined): bo
 }
 
 function resolveWriteEnvironment(): "production" | "preview" | "development" {
-  const vercel = String(process.env.VERCEL_ENV || "").toLowerCase();
-  if (vercel === "production") return "production";
-  if (vercel === "preview") return "preview";
+  const env = String(process.env.TDG_ENV || process.env.NODE_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  if (env === "production") return "production";
+  if (env === "preview" || env === "staging") return "preview";
   return "development";
 }
 
