@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { RefreshCcw, Database } from "lucide-react";
 import { SectionCard, StatCard } from "@/components/admin/overview/AdminOverviewCards";
 import { supabase } from "@/lib/supabase";
@@ -21,6 +21,7 @@ import {
 import { EMPTY_V3_ANALYTICS_FILTERS } from "@/features/pet-v3/v3AnalyticsFilters";
 import { v3TrafficClassLabel, type V3TrafficClass } from "@/features/pet-v3/v3TrafficClassification";
 import { usePetFunnelAnalytics } from "@/hooks/usePetFunnelAnalytics";
+import { PetV4AnalyticsPanels } from "@/pages/admin/PetV4AnalyticsPanels";
 
 const PRESETS: Array<{ id: DatePreset; label: string }> = [
   { id: "today", label: "Today" },
@@ -28,6 +29,7 @@ const PRESETS: Array<{ id: DatePreset; label: string }> = [
   { id: "7d", label: "Last 7 days" },
   { id: "14d", label: "Last 14 days" },
   { id: "30d", label: "Last 30 days" },
+  { id: "since_v4_launch", label: "Since V4 launch" },
   { id: "custom", label: "Custom" },
 ];
 
@@ -75,6 +77,27 @@ const EVENT_COPY: Record<string, string> = {
   v3_offer_viewed: "offer viewed",
   v3_begin_checkout: "begin checkout",
   v3_purchase: "v3 purchase",
+  v4_landing_view: "v4 landing",
+  v4_scroll_depth: "scroll depth",
+  v4_first_interaction: "first interaction",
+  v4_upload_opened: "upload opened",
+  v4_upload_started: "upload started",
+  v4_upload_completed: "upload completed",
+  v4_upload_failed: "upload failed",
+  v4_upload_abandoned: "upload abandoned",
+  v4_generation_started: "generation started",
+  v4_generation_completed: "generation completed",
+  v4_generation_failed: "generation failed",
+  v4_generation_left: "left during generation",
+  v4_teaser_viewed: "teaser viewed",
+  v4_offer_viewed: "offer viewed",
+  v4_cta_clicked: "cta clicked",
+  v4_cta_exposed: "cta exposed",
+  v4_checkout_clicked: "checkout clicked",
+  v4_checkout_session_created: "checkout session created",
+  v4_checkout_opened: "checkout opened",
+  v4_checkout_abandoned: "checkout abandoned",
+  v4_purchase: "v4 purchase",
 };
 
 function comparisonHelper(current: number, previous: number): string | undefined {
@@ -170,6 +193,13 @@ export default function PetFunnelAnalyticsPage() {
   );
   const dataset = FUNNEL_DATASETS[datasetId];
   const labels = dataset.kpiLabels;
+  const isV4 = datasetId === "v4";
+  const showV4Panels = isV4 && Boolean(report?.v4Dashboard);
+
+  useEffect(() => {
+    if (datasetId !== "v4") return;
+    setPreset((current) => (current === "7d" ? "since_v4_launch" : current));
+  }, [datasetId]);
 
   const speciesRows = useMemo(() => {
     const bySpecies = new Map(report?.species.map((row) => [row.species, row]) ?? []);
@@ -259,7 +289,7 @@ export default function PetFunnelAnalyticsPage() {
         </div>
 
         <div className="inline-flex max-w-full flex-wrap rounded-xl border border-slate-700 bg-slate-900 p-0.5">
-          {(["v1", "v2", "v3"] as const).map((id) => {
+          {(["v1", "v2", "v3", "v4"] as const).map((id) => {
             const item = FUNNEL_DATASETS[id];
             const selected = datasetId === id;
             const title =
@@ -270,7 +300,10 @@ export default function PetFunnelAnalyticsPage() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setDatasetId(id)}
+                onClick={() => {
+                  setDatasetId(id);
+                  if (id === "v4") setPreset("since_v4_launch");
+                }}
                 title={title}
                 className={[
                   "max-w-[16rem] truncate rounded-lg px-2.5 py-1 text-[11px] font-medium transition sm:max-w-xs sm:px-3 sm:text-xs",
@@ -521,7 +554,20 @@ export default function PetFunnelAnalyticsPage() {
           <p className="text-sm text-slate-400">Loading funnel analytics…</p>
         ) : null}
 
-        {report && kpis ? (
+        {report && showV4Panels && report.v4Dashboard ? (
+          <PetV4AnalyticsPanels
+            dashboard={report.v4Dashboard}
+            metaLastSyncedAt={report.sync.metaLastSyncedAt}
+          />
+        ) : null}
+
+        {isV4 && report && !report.v4Dashboard && !loading ? (
+          <p className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            V4 dashboard payload unavailable for this range. Sync Meta and confirm first-party V4 events are flowing.
+          </p>
+        ) : null}
+
+        {report && kpis && !isV4 ? (
           <>
             <SectionCard title="Meta acquisition" subtitle="Ads Insights only. Meta LPV is not the first-party funnel denominator.">
               <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">

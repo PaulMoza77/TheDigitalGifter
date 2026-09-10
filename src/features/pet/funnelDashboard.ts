@@ -141,7 +141,7 @@ export type PetFunnelAnalyticsReport = {
   warnings: string[];
   biggestDrop: { from: string; to: string; dropPct: number } | null;
   spendAvailable: boolean;
-  datasetId?: "v1" | "v2" | "v3";
+  datasetId?: "v1" | "v2" | "v3" | "v4";
   datasetConfigured?: boolean;
   metaCampaignConfigured?: boolean;
   campaignLabel?: string;
@@ -203,6 +203,7 @@ export type PetFunnelAnalyticsReport = {
     paid_purchase: boolean;
     events: Array<{ event_name: string; created_at: string }>;
   }>;
+  v4Dashboard?: import("../pet-v4/v4Dashboard").V4DashboardReport | null;
 };
 
 export function emptyStepCounts(): FunnelStepCounts {
@@ -396,7 +397,7 @@ export function buildKpis(
   };
 }
 
-export type DatePreset = "today" | "yesterday" | "7d" | "14d" | "30d" | "custom";
+export type DatePreset = "today" | "yesterday" | "7d" | "14d" | "30d" | "custom" | "since_v4_launch";
 
 function utcDayStart(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -406,6 +407,7 @@ export function rangeForPreset(
   preset: DatePreset,
   now = new Date(),
   custom?: { from: string; to: string },
+  options?: { v4LaunchDate?: string },
 ): { from: Date; to: Date; previousFrom: Date; previousTo: Date } {
   const today = utcDayStart(now);
   const tomorrow = new Date(today.getTime() + 86400000);
@@ -415,6 +417,17 @@ export function rangeForPreset(
   if (preset === "yesterday") {
     const from = new Date(today.getTime() - 86400000);
     return { from, to: today, previousFrom: new Date(from.getTime() - 86400000), previousTo: from };
+  }
+  if (preset === "since_v4_launch") {
+    const launch = utcDayStart(new Date(`${options?.v4LaunchDate || "2026-09-09"}T00:00:00.000Z`));
+    const from = launch.getTime() > tomorrow.getTime() ? today : launch;
+    const duration = Math.max(tomorrow.getTime() - from.getTime(), 86400000);
+    return {
+      from,
+      to: tomorrow,
+      previousFrom: new Date(from.getTime() - duration),
+      previousTo: from,
+    };
   }
   if (preset === "custom" && custom?.from && custom.to) {
     const from = utcDayStart(new Date(`${custom.from}T00:00:00.000Z`));
