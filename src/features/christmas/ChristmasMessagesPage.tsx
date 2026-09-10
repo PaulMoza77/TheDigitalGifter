@@ -27,6 +27,7 @@ import {
   ChristmasProductSeoDepth,
   MESSAGES_SEO_DEPTH,
 } from "./seo/ChristmasProductSeoDepth";
+import { messagesT, type MessagesLocale } from "./messages/messagesCopy";
 
 const PRODUCT = "christmas_messages";
 const PAGE_PATH = "/christmas/messages";
@@ -47,6 +48,7 @@ export default function ChristmasMessagesPage() {
   useEffect(() => {
     setLocale(pathLocale);
   }, [pathLocale]);
+  const uiLocale = locale as MessagesLocale;
   const [recipient, setRecipient] = useState(() => {
     const raw = params.get("for") || params.get("recipient") || "mom";
     return MESSAGE_RECIPIENTS.some((r) => r.key === raw) ? raw : "mom";
@@ -140,7 +142,7 @@ export default function ChristmasMessagesPage() {
         locale,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not generate messages");
+      setError(e instanceof Error ? e.message : messagesT("error.generate", uiLocale));
       void trackChristmasEvent("message_generator_failed", {
         productKey: PRODUCT,
         pathname: PAGE_PATH,
@@ -157,7 +159,7 @@ export default function ChristmasMessagesPage() {
       setCopied(m.id || m.result_key);
       void trackChristmasEvent("message_copied", { productKey: PRODUCT, pathname: PAGE_PATH, locale });
     } catch {
-      setError(locale === "ro" ? "Nu s-a putut copia." : "Could not copy — select the text manually.");
+      setError(messagesT("error.copy", uiLocale));
     }
   }
 
@@ -184,20 +186,16 @@ export default function ChristmasMessagesPage() {
       <ChristmasPageHead path="/christmas/messages" />
       <p className="text-sm text-slate-500">
         <Link to="/christmas" className="underline-offset-2 hover:underline">
-          Christmas
+          {messagesT("breadcrumb.christmas", uiLocale)}
         </Link>{" "}
-        / Messages
+        / {messagesT("breadcrumb.messages", uiLocale)}
       </p>
       <h1 className="mt-3 font-serif text-3xl tracking-tight sm:text-4xl">
-        {locale === "ro" ? "Găsește cuvintele potrivite de Crăciun" : "Find the right Christmas words in seconds"}
+        {messagesT("hero.h1", uiLocale)}
       </h1>
-      <p className="mt-2 max-w-2xl text-slate-600">
-        {locale === "ro"
-          ? "Mesaje ghidate pentru familie, prieteni și colegi — apoi folosește favoritul într-un card personalizat."
-          : "Guided Christmas messages for family, friends, and coworkers — then drop your favorite into a personalized card."}
-      </p>
+      <p className="mt-2 max-w-2xl text-slate-600">{messagesT("hero.lede", uiLocale)}</p>
 
-      <div className="mt-8 flex flex-wrap gap-2" role="group" aria-label="Language">
+      <div className="mt-8 flex flex-wrap gap-2" role="group" aria-label={messagesT("a11y.language", uiLocale)}>
         {CHRISTMAS_UI_LOCALES.map((item) => (
           <button
             key={item.code}
@@ -210,11 +208,9 @@ export default function ChristmasMessagesPage() {
         ))}
       </div>
 
-      <section className="mt-8 space-y-6" aria-label="Message options">
+      <section className="mt-8 space-y-6" aria-label={messagesT("a11y.options", uiLocale)}>
         <fieldset>
-          <legend className="text-sm font-medium">
-            {locale === "ro" ? "Pentru cine este?" : "Who is it for?"}
-          </legend>
+          <legend className="text-sm font-medium">{messagesT("legend.recipient", uiLocale)}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {MESSAGE_RECIPIENTS.map((r) => (
               <button
@@ -232,7 +228,7 @@ export default function ChristmasMessagesPage() {
         </fieldset>
 
         <fieldset>
-          <legend className="text-sm font-medium">{locale === "ro" ? "Ton" : "Tone"}</legend>
+          <legend className="text-sm font-medium">{messagesT("legend.tone", uiLocale)}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {MESSAGE_TONES.map((t) => (
               <button
@@ -250,7 +246,7 @@ export default function ChristmasMessagesPage() {
         </fieldset>
 
         <fieldset>
-          <legend className="text-sm font-medium">{locale === "ro" ? "Lungime" : "Length"}</legend>
+          <legend className="text-sm font-medium">{messagesT("legend.length", uiLocale)}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {MESSAGE_LENGTHS.map((l) => (
               <button
@@ -268,15 +264,13 @@ export default function ChristmasMessagesPage() {
         </fieldset>
 
         <label className="block text-sm">
-          <span className="font-medium">{locale === "ro" ? "Detaliu opțional" : "Optional detail"}</span>
+          <span className="font-medium">{messagesT("detail.label", uiLocale)}</span>
           <input
             className="mt-1 w-full max-w-full rounded-md border border-slate-300 px-3 py-2"
             maxLength={200}
             value={custom}
             onChange={(e) => setCustom(e.target.value)}
-            placeholder={
-              locale === "ro" ? "ex: primul Crăciun în casa nouă" : "e.g. our first Christmas in the new home"
-            }
+            placeholder={messagesT("detail.placeholder", uiLocale)}
           />
         </label>
 
@@ -287,13 +281,7 @@ export default function ChristmasMessagesPage() {
             onClick={() => void generate(false)}
             className="rounded-md bg-emerald-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
           >
-            {busy
-              ? locale === "ro"
-                ? "Căutăm cuvintele potrivite…"
-                : "Finding the right words…"
-              : locale === "ro"
-                ? "Generează mesaje"
-                : "Generate messages"}
+            {busy ? messagesT("cta.generating", uiLocale) : messagesT("cta.generate", uiLocale)}
           </button>
           {messages.length > 0 ? (
             <button
@@ -302,26 +290,20 @@ export default function ChristmasMessagesPage() {
               onClick={() => void generate(true)}
               className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm"
             >
-              {locale === "ro" ? "Alte idei" : "Generate different ideas"}
+              {messagesT("cta.regenerate", uiLocale)}
             </button>
           ) : null}
         </div>
 
         {error ? <p className="text-sm text-red-700">{error}</p> : null}
         {usedFallback ? (
-          <p className="text-xs text-amber-800">
-            {locale === "ro"
-              ? "Folosim formulări de Crăciun din catalog. Gata de copiat sau folosit într-un card."
-              : "Using curated Christmas wording (provider unavailable). Still ready to copy or use in a card."}
-          </p>
+          <p className="text-xs text-amber-800">{messagesT("fallback.notice", uiLocale)}</p>
         ) : null}
       </section>
 
       {messages.length > 0 ? (
-        <section className="mt-10 space-y-4" aria-label="Generated messages">
-          <h2 className="text-lg font-semibold">
-            {locale === "ro" ? "Mesajele tale de Crăciun" : "Your Christmas messages"}
-          </h2>
+        <section className="mt-10 space-y-4" aria-label={messagesT("a11y.results", uiLocale)}>
+          <h2 className="text-lg font-semibold">{messagesT("results.title", uiLocale)}</h2>
           <ul className="space-y-4">
             {messages.slice(0, 3).map((m) => {
               const key = m.id || m.result_key;
@@ -334,14 +316,14 @@ export default function ChristmasMessagesPage() {
                       className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
                       onClick={() => void copyMessage(m)}
                     >
-                      {copied === key ? (locale === "ro" ? "Copiat" : "Copied") : locale === "ro" ? "Copiază" : "Copy"}
+                      {copied === key ? messagesT("cta.copied", uiLocale) : messagesT("cta.copy", uiLocale)}
                     </button>
                     <button
                       type="button"
                       className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white"
                       onClick={() => useInCard(m)}
                     >
-                      {locale === "ro" ? "Folosește în card" : "Use in Christmas Card"}
+                      {messagesT("cta.useInCard", uiLocale)}
                     </button>
                   </div>
                 </li>
@@ -352,24 +334,22 @@ export default function ChristmasMessagesPage() {
       ) : null}
 
       <section className="mt-12 border-t border-slate-200 pt-8 text-sm text-slate-600">
-        <h2 className="font-semibold text-slate-900">
-          {locale === "ro" ? "Idei de mesaje de Crăciun" : "Christmas message ideas"}
-        </h2>
+        <h2 className="font-semibold text-slate-900">{messagesT("seo.ideasTitle", uiLocale)}</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>{locale === "ro" ? "Mesaje de Crăciun pentru familie" : "Christmas messages for family"}</li>
-          <li>{locale === "ro" ? "Mesaje romantice de Crăciun" : "Romantic Christmas messages"}</li>
-          <li>{locale === "ro" ? "Mesaje amuzante de Crăciun" : "Funny Christmas messages"}</li>
-          <li>{locale === "ro" ? "Mesaje profesionale de Crăciun" : "Professional Christmas messages"}</li>
-          <li>{locale === "ro" ? "Urări scurte de Crăciun" : "Short Christmas wishes"}</li>
+          <li>{messagesT("seo.idea.family", uiLocale)}</li>
+          <li>{messagesT("seo.idea.romantic", uiLocale)}</li>
+          <li>{messagesT("seo.idea.funny", uiLocale)}</li>
+          <li>{messagesT("seo.idea.professional", uiLocale)}</li>
+          <li>{messagesT("seo.idea.short", uiLocale)}</li>
         </ul>
         <p className="mt-4">
-          {locale === "ro" ? "Vrei un card vizual?" : "Ready for a visual card?"}{" "}
+          {messagesT("crossSell.prompt", uiLocale)}{" "}
           <Link className="underline" to="/christmas/cards">
-            {locale === "ro" ? "Creează un card de Crăciun" : "Create a Christmas Card"}
+            {messagesT("crossSell.cardCta", uiLocale)}
           </Link>{" "}
           ·{" "}
           <Link className="underline" to="/christmas">
-            Christmas
+            {messagesT("breadcrumb.christmas", uiLocale)}
           </Link>
         </p>
       </section>
