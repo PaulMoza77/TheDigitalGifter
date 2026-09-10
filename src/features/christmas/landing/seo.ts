@@ -12,7 +12,8 @@ export const LANDING_FAQS = [
 ] as const;
 
 export const LANDING_INTERNAL_LINKS = [
-  { href: "/christmas/gift-finder", labelKey: "nav.gifts" },
+  { href: "/christmas/tree-gifts", labelKey: "nav.gifts" },
+  { href: "/christmas/gift-finder", labelKey: "nav.finder" },
   { href: "/christmas/family", labelKey: "nav.portraits" },
   { href: "/christmas/santa-video", labelKey: "nav.santa" },
   { href: "/christmas/wishlist", labelKey: "nav.wishlist" },
@@ -28,7 +29,7 @@ export function christmasLandingSeo(locale: ChristmasLandingLocale = "en") {
     title: landingT("seo.title", locale),
     description: landingT("seo.description", locale),
     url: `${CHRISTMAS_SITE_ORIGIN}${CHRISTMAS_LANDING_PATH}`,
-    image: `${CHRISTMAS_SITE_ORIGIN}/assets/christmas/christmas_hero_room.webp`,
+    image: `${CHRISTMAS_SITE_ORIGIN}/christmas/cabin-hero-1920.webp`,
   };
 }
 

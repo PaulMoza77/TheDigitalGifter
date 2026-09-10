@@ -32,6 +32,7 @@ const MIME = {
   ".xml": "application/xml; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
   ".webm": "video/webm",
+  ".mp4": "video/mp4",
   ".woff2": "font/woff2",
   ".map": "application/json; charset=utf-8",
 };
@@ -45,13 +46,57 @@ function safeJoin(base, requestPath) {
   return abs;
 }
 
-function sendFile(res, filePath, extraHeaders = {}) {
+function cacheHeadersFor(pathname) {
+  if (pathname.startsWith("/assets/")) {
+    return { "Cache-Control": "public, max-age=31536000, immutable" };
+  }
+  // Christmas cabin media uses ?v= cache-bust; cache aggressively once fetched.
+  if (
+    pathname.startsWith("/christmas/") &&
+    /\.(webp|jpg|jpeg|png|mp4|webm|gif)$/i.test(pathname)
+  ) {
+    return { "Cache-Control": "public, max-age=31536000, immutable" };
+  }
+  if (pathname.startsWith("/pet/") && /\.(webp|jpg|jpeg|png|mp4)$/i.test(pathname)) {
+    return { "Cache-Control": "public, max-age=604800" };
+  }
+  return {};
+}
+
+function sendFile(res, filePath, extraHeaders = {}, req = null) {
   const stat = statSync(filePath);
   if (!stat.isFile()) return false;
   const type = MIME[extname(filePath).toLowerCase()] || "application/octet-stream";
+  const size = stat.size;
+  const isMedia = type.startsWith("video/") || type.startsWith("audio/");
+
+  // Progressive media: honor Range so the cabin loop can start without waiting for the full file.
+  if (isMedia && req) {
+    const range = String(req.headers.range || "");
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+    if (match) {
+      const start = match[1] ? Number(match[1]) : 0;
+      const end = match[2] ? Number(match[2]) : size - 1;
+      if (Number.isFinite(start) && Number.isFinite(end) && start <= end && start < size) {
+        const safeEnd = Math.min(end, size - 1);
+        res.statusCode = 206;
+        res.setHeader("Content-Type", type);
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader("Content-Range", `bytes ${start}-${safeEnd}/${size}`);
+        res.setHeader("Content-Length", String(safeEnd - start + 1));
+        for (const [key, value] of Object.entries(extraHeaders)) {
+          res.setHeader(key, value);
+        }
+        createReadStream(filePath, { start, end: safeEnd }).pipe(res);
+        return true;
+      }
+    }
+  }
+
   res.statusCode = 200;
   res.setHeader("Content-Type", type);
-  res.setHeader("Content-Length", String(stat.size));
+  res.setHeader("Content-Length", String(size));
+  if (isMedia) res.setHeader("Accept-Ranges", "bytes");
   for (const [key, value] of Object.entries(extraHeaders)) {
     res.setHeader(key, value);
   }
@@ -78,9 +123,9 @@ async function loadHandler(moduleName) {
 }
 
 const CHRISTMAS_LANDING_TITLE =
-  "Christmas Gifts, Portraits & Santa Messages | TheDigitalGifter";
+  "Christmas Countdown | The Digital Gifter";
 const CHRISTMAS_LANDING_DESCRIPTION =
-  "Create an unforgettable Christmas: find the perfect gift, turn a photo into a Christmas portrait, send a Santa video that says their name, share a wishlist, decorate a tree, open Advent, and write a card that feels personal.";
+  "Count down to Christmas with The Digital Gifter and join us for a little extra magic along the way.";
 
 const GIFT_FINDER_TITLE =
   "Christmas Gift Finder | Find the Perfect Gift | TheDigitalGifter";
@@ -152,7 +197,14 @@ async function handle(req, res) {
       const handler = await loadHandler(classified.module);
       await invokeVercelHandler(handler, req, res, url);
     } catch (error) {
-      console.error(JSON.stringify({ source: "tdg-origin", kind: "api_error", path: url.pathname }));
+      console.error(
+        JSON.stringify({
+          source: "tdg-origin",
+          kind: "api_error",
+          path: url.pathname,
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      );
       if (!res.headersSent) {
         sendJson(res, 500, { error: "handler_failed" });
       }
@@ -186,10 +238,8 @@ async function handle(req, res) {
   if (String(req.method || "GET").toUpperCase() === "HEAD" || String(req.method || "GET").toUpperCase() === "GET") {
     const asset = safeJoin(distDir, url.pathname);
     if (asset && existsSync(asset) && statSync(asset).isFile()) {
-      const extra = url.pathname.startsWith("/assets/")
-        ? { "Cache-Control": "public, max-age=31536000, immutable" }
-        : {};
-      sendFile(res, asset, extra);
+      const extra = cacheHeadersFor(url.pathname);
+      sendFile(res, asset, extra, req);
       return;
     }
     const index = join(distDir, "index.html");
