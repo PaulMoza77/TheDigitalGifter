@@ -46,7 +46,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
         linkLabel: "Create a personalized Santa video",
       },
       {
-        h2: "Create & Share a Christmas Wishlist",
+        h2: "Create and Share a Christmas Wishlist",
         body:
           "Build a Christmas wishlist with product links or free-written wishes. Share one simple link with family and friends. Viewers can reserve a gift so others don’t buy the same thing — without spoiling who bought it for the wishlist owner.",
         linkHref: "/christmas/wishlist",
@@ -97,7 +97,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       "Find the Perfect Christmas Gift",
       "Create Magical Christmas Photos",
       "Get a Personalized Message From Santa",
-      "Create & Share a Christmas Wishlist",
+      "Create and Share a Christmas Wishlist",
       "Create a Personalized Christmas Card",
     ],
   },

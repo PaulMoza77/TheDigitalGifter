@@ -91,7 +91,7 @@ const EN: CopyBag = {
   "santa.alt": "Santa standing in the Christmas room, speaking a personal greeting",
   "santa.error": "Please enter a first name using letters, spaces, hyphens, or apostrophes.",
   "wishlist.kicker": "Wishlist",
-  "wishlist.h2": "Create & Share a Christmas Wishlist",
+  "wishlist.h2": "Create and Share a Christmas Wishlist",
   "wishlist.lede":
     "Add wishes from product links or free text, share one simple link with family, and let people reserve gifts so Christmas shopping stays coordinated without spoiling the surprise.",
   "wishlist.cta": "Create a Christmas wishlist",
