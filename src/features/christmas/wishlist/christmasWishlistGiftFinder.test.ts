@@ -158,7 +158,7 @@ describe("wishlist / gift finder wiring", () => {
     const copyFile = readSrc("src/features/christmas/wishlist/copy.ts");
     expect(copyFile).toContain("Create Mine Free");
     expect(copyFile).toContain("I’m getting this");
-    expect(copyFile).toContain("Make a Christmas Wishlist Everyone Can Actually Use");
+    expect(copyFile).toContain("Create a Christmas Wishlist and Share One Simple Link");
     expect(page).toContain("copy.viralCta");
     expect(page).toContain("copy.heroH1");
     expect(page).toContain("wishlist_create_from_shared_clicked");

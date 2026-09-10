@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
@@ -181,10 +181,7 @@ export default function ChristmasAdventPage() {
         color: "#f6f0e6",
       }}
     >
-      <PageHead
-        title="Christmas Advent Calendar"
-        description="Open a daily Christmas door from December 1. Sign in to claim rewards when the season is live."
-      />
+      <ChristmasPageHead path="/christmas/advent" />
 
       <div className="mx-auto max-w-lg px-4 pb-20 pt-8">
         <p className="text-center text-xs uppercase tracking-[0.2em] text-rose-200/70">

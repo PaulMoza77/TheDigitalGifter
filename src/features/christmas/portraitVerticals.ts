@@ -68,9 +68,9 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     expectedSpecies: null,
     draftStorageKey: "tdg.christmas.portrait.photo.v1",
     pageTitle:
-      "AI Christmas Photo Generator | Create Christmas Portraits | TheDigitalGifter",
+      "AI Christmas Photo Generator | Family, Couples & Pets",
     metaDescription:
-      "Turn your favorite photo into a magical Christmas portrait. Create realistic Christmas photos for families, couples and pets in minutes.",
+      "Turn your favorite photo into a magical Christmas portrait. Create festive photos for family, couples, and pets in minutes.",
     heroHeadline: "Turn Your Photo Into Christmas Magic",
     heroSupport:
       "Upload a favorite photo and create a magical Christmas portrait for your family, partner or pet.",
@@ -90,10 +90,10 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     expectedSpecies: null,
     draftStorageKey: "tdg.christmas.portrait.family.v1",
     pageTitle:
-      "Christmas Family Photo Generator | Magical Family Christmas Portraits | TheDigitalGifter",
+      "Family Christmas Photo Generator | Christmas Family Portraits",
     metaDescription:
-      "Turn your family photo into a magical Christmas portrait. Create a warm, realistic family Christmas picture in minutes — private by default.",
-    heroHeadline: "Turn your family photo into a magical Christmas portrait.",
+      "Create a personalized family Christmas portrait from your favorite family photo. Choose a festive Christmas scene and turn your photo into a holiday memory.",
+    heroHeadline: "Turn Your Family Photo Into a Magical Christmas Portrait",
     heroSupport:
       "Upload a family photo, choose a Christmas style, and create a beautiful portrait made for the people you love most.",
     uploadHint: "Group photos welcome — we aim to keep everyone in the frame.",
@@ -115,10 +115,10 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     portraitType: "couple",
     expectedSpecies: null,
     draftStorageKey: "tdg.christmas.portrait.couples.v1",
-    pageTitle: "Couples Christmas Portrait | The Digital Gifter",
+    pageTitle: "Couple Christmas Photo Generator | Romantic Christmas Portraits",
     metaDescription:
-      "Create a romantic Christmas couple portrait from your photo. Private by default.",
-    heroHeadline: "A romantic Christmas portrait of the two of you.",
+      "Create a romantic Christmas couple portrait from your photo. Perfect for a first Christmas together or a personalized couple gift.",
+    heroHeadline: "Create a Magical Christmas Portrait Together",
     heroSupport:
       "Perfect for first Christmas together or a personalized couple gift — upload one photo with both of you.",
     uploadHint: "One photo with both people visible works best for V1.",
@@ -140,10 +140,10 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     portraitType: "pet",
     expectedSpecies: "any",
     draftStorageKey: "tdg.christmas.portrait.pets.v1",
-    pageTitle: "Pet Christmas Portrait | The Digital Gifter",
+    pageTitle: "Christmas Pet Photo Generator | Festive Pet Portraits",
     metaDescription:
-      "Turn your pet photo into a Christmas portrait. Dogs and cats welcome. Private by default.",
-    heroHeadline: "Turn your pet into a Christmas portrait.",
+      "Turn your pet photo into a festive Christmas portrait. Dogs and cats welcome — private by default.",
+    heroHeadline: "Turn Your Pet Into Christmas Magic",
     heroSupport:
       "A Christmas-specific pet portrait — separate from Secret Life packs. Choose dog or cat for a tailored start.",
     uploadHint: "Clear pet face/body photo. Prefer Dog or Cat routes for best species matching.",
@@ -165,9 +165,9 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     portraitType: "pet",
     expectedSpecies: "dog",
     draftStorageKey: "tdg.christmas.portrait.dogs.v1",
-    pageTitle: "Dog Christmas Portrait | The Digital Gifter",
-    metaDescription: "Create a Christmas portrait of your dog. Species-checked. Private by default.",
-    heroHeadline: "A Christmas portrait made for your dog.",
+    pageTitle: "Christmas Dog Photo Generator | Festive Dog Portraits",
+    metaDescription: "Create a magical Christmas portrait of your dog from a clear photo. Species-checked and private by default.",
+    heroHeadline: "Create a Magical Christmas Portrait of Your Dog",
     heroSupport:
       "Upload a clear dog photo, pick a holiday style, preview a blur of your original, then create after checkout.",
     uploadHint: "Dog photos only on this route — cats will be offered the Cat Christmas path.",
@@ -189,9 +189,9 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     portraitType: "pet",
     expectedSpecies: "cat",
     draftStorageKey: "tdg.christmas.portrait.cats.v1",
-    pageTitle: "Cat Christmas Portrait | The Digital Gifter",
-    metaDescription: "Create a Christmas portrait of your cat. Species-checked. Private by default.",
-    heroHeadline: "A Christmas portrait made for your cat.",
+    pageTitle: "Christmas Cat Photo Generator | Festive Cat Portraits",
+    metaDescription: "Create a magical Christmas portrait of your cat from a clear photo. Species-checked and private by default.",
+    heroHeadline: "Create a Magical Christmas Portrait of Your Cat",
     heroSupport:
       "Upload a clear cat photo, pick a holiday style, preview a blur of your original, then create after checkout.",
     uploadHint: "Cat photos only on this route — dogs will be offered the Dog Christmas path.",

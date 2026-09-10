@@ -110,9 +110,9 @@ export const CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS = [
 ] as const;
 
 export const CHRISTMAS_CLUB_SEO = {
-  title: "Christmas Countdown | The Digital Gifter",
+  title: "Christmas at TheDigitalGifter | Gifts, Photos, Santa & More",
   description:
-    "Count down to Christmas with The Digital Gifter and join us for a little extra magic along the way.",
+    "Create Christmas gifts, AI portraits, Santa videos, wishlists, cards, and advent surprises — personalized digital Christmas experiences from TheDigitalGifter.",
   canonical: "https://www.thedigitalgifter.com/christmas",
   ogImage: "https://www.thedigitalgifter.com/christmas/og-countdown.jpg",
 } as const;

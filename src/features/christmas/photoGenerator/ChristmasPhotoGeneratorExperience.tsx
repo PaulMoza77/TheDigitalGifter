@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { AmbientSnow } from "../landing/AmbientSnow";
 import { FONT_HREF } from "../landing/assets";
@@ -165,13 +165,7 @@ export default function ChristmasPhotoGeneratorExperience() {
 
   return (
     <>
-      <PageHead
-        title={seo.title}
-        description={seo.description}
-        exactTitle
-        url={seo.url}
-        image={seo.image}
-      />
+      <ChristmasPageHead path="/christmas/photo-generator" image={seo.image} />
       <article className="xmas-landing pg-page" dir={photoGenDir(LOCALE)} lang={LOCALE}>
         <a className="xmas-skip" href="#christmas-photo-create">
           {t("hero.cta")}

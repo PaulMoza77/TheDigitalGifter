@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
@@ -591,11 +591,8 @@ export default function ChristmasSantaVideoPage() {
 
   return (
     <>
-      <PageHead
-        title={SANTA_COPY.seo.title}
-        description={SANTA_COPY.seo.description}
-        exactTitle
-        url={SANTA_COPY.seo.canonical}
+      <ChristmasPageHead
+        path="/christmas/santa-video"
         image="https://www.thedigitalgifter.com/images/occasions/christmas.png"
       />
 

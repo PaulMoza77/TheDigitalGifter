@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
@@ -221,13 +221,7 @@ export function ChristmasClubPage() {
 
   return (
     <div className="christmas-club">
-      <PageHead
-        exactTitle
-        title={CHRISTMAS_CLUB_SEO.title}
-        description={CHRISTMAS_CLUB_SEO.description}
-        url={CHRISTMAS_CLUB_SEO.canonical}
-        image={CHRISTMAS_CLUB_SEO.ogImage}
-      />
+      <ChristmasPageHead path="/christmas" image={CHRISTMAS_CLUB_SEO.ogImage} />
       <div className="cc-stage">
         <ChristmasClubScene />
 

@@ -9,6 +9,7 @@ import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { APPLE_PAY_PATH, classifyPath } from "./routes.mjs";
 import { invokeVercelHandler } from "./vercel-compat.mjs";
+import { applyChristmasSeo } from "./christmasSeo.mjs";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const root = resolve(here, "..");
@@ -122,50 +123,9 @@ async function loadHandler(moduleName) {
   return imported.default;
 }
 
-const CHRISTMAS_LANDING_TITLE =
-  "Christmas Countdown | The Digital Gifter";
-const CHRISTMAS_LANDING_DESCRIPTION =
-  "Count down to Christmas with The Digital Gifter and join us for a little extra magic along the way.";
-
-const GIFT_FINDER_TITLE =
-  "Christmas Gift Finder | Find the Perfect Gift | TheDigitalGifter";
-const GIFT_FINDER_DESCRIPTION =
-  "Find thoughtful Christmas gift ideas based on who you’re shopping for, their interests, personality and your budget.";
-
+/** Route-aware Christmas SEO head + semantic body shell for crawlers. */
 function applyRouteMeta(html, pathname) {
-  const normalized = pathname.replace(/\/$/, "") || "/";
-  let title = null;
-  let description = null;
-  let canonical = null;
-  if (normalized === "/christmas") {
-    title = CHRISTMAS_LANDING_TITLE;
-    description = CHRISTMAS_LANDING_DESCRIPTION;
-    canonical = "https://www.thedigitalgifter.com/christmas";
-  } else if (normalized === "/christmas/gift-finder" || normalized === "/christmas/gifts") {
-    title = GIFT_FINDER_TITLE;
-    description = GIFT_FINDER_DESCRIPTION;
-    canonical = "https://www.thedigitalgifter.com/christmas/gift-finder";
-  }
-  if (!title || !description || !canonical) return html;
-
-  let next = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
-  next = next.replace(
-    /<meta(\s+)name="description"(\s+)content="[^"]*"/,
-    `<meta$1name="description"$2content="${description}"`,
-  );
-  next = next.replace(
-    /<meta(\s+)property="og:title"(\s+)content="[^"]*"/,
-    `<meta$1property="og:title"$2content="${title}"`,
-  );
-  next = next.replace(
-    /<meta(\s+)property="og:description"(\s+)content="[^"]*"/,
-    `<meta$1property="og:description"$2content="${description}"`,
-  );
-  next = next.replace(
-    /<link(\s+)rel="canonical"(\s+)href="[^"]*"/,
-    `<link$1rel="canonical"$2href="${canonical}"`,
-  );
-  return next;
+  return applyChristmasSeo(html, pathname);
 }
 function applePayCandidates() {
   return [
@@ -241,6 +201,21 @@ async function handle(req, res) {
       const extra = cacheHeadersFor(url.pathname);
       sendFile(res, asset, extra, req);
       return;
+    }
+    // Prefer prerendered Christmas SEO shells: /christmas/family → dist/christmas/family/index.html
+    const normalizedPath = url.pathname.replace(/\/+$/, "") || "/";
+    if (normalizedPath !== "/") {
+      const nestedIndex = safeJoin(distDir, `${normalizedPath}/index.html`);
+      if (nestedIndex && existsSync(nestedIndex) && statSync(nestedIndex).isFile()) {
+        const html = readFileSync(nestedIndex, "utf8");
+        const body = Buffer.from(html);
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Content-Length", String(body.length));
+        res.end(body);
+        return;
+      }
     }
     const index = join(distDir, "index.html");
     if (existsSync(index)) {

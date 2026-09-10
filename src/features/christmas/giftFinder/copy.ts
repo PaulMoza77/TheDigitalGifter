@@ -5,7 +5,7 @@ export type GiftFinderLocale = "en" | "ro";
 const EN: Record<string, string> = {
   "seo.title": "Christmas Gift Finder | Find the Perfect Gift | TheDigitalGifter",
   "seo.description":
-    "Find thoughtful Christmas gift ideas based on who you’re shopping for, their interests, personality and your budget.",
+    "Find thoughtful Christmas gift ideas based on who you’re shopping for, their interests, personality, and your budget.",
 
   "brand.name": "The Digital Gifter",
   "hero.kicker": "Christmas Gift Finder",

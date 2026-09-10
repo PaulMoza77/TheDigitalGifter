@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
@@ -700,13 +700,7 @@ export default function ChristmasCardsPage() {
 
   return (
     <div className={`ccm-page ${fontsReady ? "ccm-page--fonts" : ""}`} lang={locale} dir="ltr">
-      <PageHead
-        title={seo.title}
-        description={seo.description}
-        url={seo.url}
-        image={seo.image}
-        exactTitle
-      />
+      <ChristmasPageHead path="/christmas/cards" image={seo.image} />
       <div className="ccm-ambient" aria-hidden="true">
         <div className="ccm-ambient__glow" />
       </div>

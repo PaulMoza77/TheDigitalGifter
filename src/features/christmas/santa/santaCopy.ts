@@ -9,13 +9,13 @@ export const SANTA_COPY = {
   brand: "The Digital Gifter",
   productName: "Personalized Santa Video",
   seo: {
-    title: "Personalized Santa Video for Kids | TheDigitalGifter",
+    title: "Personalized Santa Video | Santa Says Your Child’s Name",
     description:
-      "Create a personalized Christmas video from Santa with your child’s name, Christmas wishes and special moments. Make a magical Santa message in minutes.",
+      "Create a personalized Christmas video from Santa that can include the recipient’s name and other supported personal details.",
     canonical: "https://www.thedigitalgifter.com/christmas/santa-video",
   },
   hero: {
-    h1: "Personalized Santa Video",
+    h1: "Create a Personalized Video From Santa",
     h1Alt: "A Personal Christmas Message From Santa",
     support:
       "Create a personalized Santa video with their name, Christmas wishes and special moments from the year.",
