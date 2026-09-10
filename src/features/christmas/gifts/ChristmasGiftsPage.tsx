@@ -43,9 +43,12 @@ function prefersReducedMotion(): boolean {
 
 export function ChristmasGiftsExperience({
   embedded = false,
+  fillViewport = false,
 }: {
   /** Compact framed tree for embedding on the /christmas landing. */
   embedded?: boolean;
+  /** Full next-screen tree under the cabin club hero (desktop + mobile live loops). */
+  fillViewport?: boolean;
 }) {
   const navigate = useNavigate();
   const [state, setState] = useState<GiftTreePersistedState>(() => readGiftTreeState());
@@ -538,7 +541,9 @@ export function ChristmasGiftsExperience({
   const waitingOpens = remainingOpens || state.extraOpens;
 
   const shellClass = embedded
-    ? "relative h-[min(78svh,640px)] overflow-hidden rounded-[1.25rem] border border-[rgba(246,239,227,0.12)] bg-[#0b0504] text-rose-50 shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
+    ? fillViewport
+      ? "relative h-[100svh] min-h-[32rem] overflow-hidden bg-[#0b0504] text-rose-50"
+      : "relative h-[min(78svh,640px)] overflow-hidden rounded-[1.25rem] border border-[rgba(246,239,227,0.12)] bg-[#0b0504] text-rose-50 shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
     : "relative h-[calc(100dvh-4.05rem)] max-h-[calc(100dvh-4.05rem)] overflow-hidden text-rose-50";
 
   return (

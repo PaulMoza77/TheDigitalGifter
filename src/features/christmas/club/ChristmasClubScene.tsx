@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { CHRISTMAS_CLUB_ASSETS } from "./config";
+import { CHRISTMAS_CLUB_ASSETS, CHRISTMAS_CLUB_DESKTOP_MEDIA } from "./config";
 
 function pickHeroLoop(): string {
   if (typeof window === "undefined") return CHRISTMAS_CLUB_ASSETS.heroLoop720;
-  // Prefer high-quality Seedance on desktop; never start on 720 then upgrade.
-  return window.matchMedia("(min-width: 901px)").matches
+  // Desktop = full Seedance cabin loop. Mobile = dedicated 720p loop (never start HD then swap).
+  return window.matchMedia(CHRISTMAS_CLUB_DESKTOP_MEDIA).matches
     ? CHRISTMAS_CLUB_ASSETS.heroLoop
     : CHRISTMAS_CLUB_ASSETS.heroLoop720;
 }
 
 /**
  * Full-bleed cabin scene: sharp WebP poster is LCP, then the muted Seedance
- * 5s photoreal loop fades in once buffered. Quality is never downgraded.
+ * photoreal loop fades in once buffered. Quality is never downgraded.
  */
 export function ChristmasClubScene() {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [loopSrc] = useState(pickHeroLoop);
@@ -40,8 +41,27 @@ export function ChristmasClubScene() {
     };
   }, [loopSrc]);
 
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const video = videoRef.current;
+    if (!wrap || !video) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        if (entry.isIntersecting) {
+          void video.play().catch(() => undefined);
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.12 },
+    );
+    io.observe(wrap);
+    return () => io.disconnect();
+  }, [loopSrc]);
+
   return (
-    <div className="cc-scene" aria-hidden="true">
+    <div ref={wrapRef} className="cc-scene" aria-hidden="true">
       <picture className="cc-scene__poster">
         <source
           type="image/webp"

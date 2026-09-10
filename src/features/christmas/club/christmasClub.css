@@ -24,8 +24,14 @@
   color: var(--cc-gold);
 }
 
+.cc-stage {
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+}
+
 .cc-scene {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
@@ -421,6 +427,13 @@
   color: rgba(232, 213, 163, 0.85);
 }
 
+.cc-tree {
+  position: relative;
+  z-index: 4;
+  min-height: 100svh;
+  background: #0b0504;
+}
+
 .cc-story {
   position: relative;
   z-index: 3;
@@ -477,11 +490,14 @@
 }
 
 .cc-foot {
-  margin-top: 2.4rem;
-  padding-top: 1.2rem;
+  position: relative;
+  z-index: 4;
+  margin: 0;
+  padding: 1.2rem 1.25rem 2rem;
   border-top: 1px solid rgba(247, 240, 228, 0.12);
   color: rgba(247, 240, 228, 0.48);
   font-size: 0.82rem;
+  background: #0b0504;
 }
 
 .cc-foot a {

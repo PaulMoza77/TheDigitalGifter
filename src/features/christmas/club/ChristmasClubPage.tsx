@@ -12,11 +12,13 @@ import {
   CHRISTMAS_CLUB_ASSETS,
   CHRISTMAS_CLUB_AUTH_RETURN_PATH,
   CHRISTMAS_CLUB_CONFIG,
+  CHRISTMAS_CLUB_DESKTOP_MEDIA,
   CHRISTMAS_CLUB_GIFTS_ROUTE,
   CHRISTMAS_CLUB_GOOGLE_PENDING_KEY,
   CHRISTMAS_CLUB_SEO,
   CHRISTMAS_CLUB_SUITE_ROUTE,
 } from "./config";
+import { ChristmasGiftsExperience } from "@/features/christmas/gifts/ChristmasGiftsPage";
 import { ChristmasClubScene } from "./ChristmasClubScene";
 import { ChristmasCountdown } from "./ChristmasCountdown";
 import { ChristmasClubSuccess, ChristmasJoinForm } from "./ChristmasJoinForm";
@@ -52,7 +54,7 @@ function preloadHeroAssets() {
   document.head.appendChild(preload);
 
   if (!document.querySelector('link[data-cc-preload="loop"]')) {
-    const wide = window.matchMedia("(min-width: 901px)").matches;
+    const wide = window.matchMedia(CHRISTMAS_CLUB_DESKTOP_MEDIA).matches;
     const loop = document.createElement("link");
     loop.rel = "preload";
     loop.as = "video";
@@ -229,102 +231,66 @@ export function ChristmasClubPage() {
         url={CHRISTMAS_CLUB_SEO.canonical}
         image={CHRISTMAS_CLUB_SEO.ogImage}
       />
-      <ChristmasClubScene />
+      <div className="cc-stage">
+        <ChristmasClubScene />
 
-      <a className="cc-brand" href="/">
-        <img src="/TheDigitalGifter.png" alt="" width={36} height={36} />
-        <span>The Digital Gifter</span>
-      </a>
+        <a className="cc-brand" href="/">
+          <img src="/TheDigitalGifter.png" alt="" width={36} height={36} />
+          <span>The Digital Gifter</span>
+        </a>
 
-      <section className="cc-hero">
-        <div className="cc-hero__copy">
-          <p className="cc-eyebrow">The Digital Gifter presents</p>
-          <h1>Something magical is coming this Christmas.</h1>
-          <p className="cc-lede">
-            Join our Christmas countdown and discover little surprises along the way.
-          </p>
-        </div>
-
-        <div className="cc-dock">
-          <div className="cc-dock__countdown">
-            <p className="cc-countdown-note">A few gifts already waiting inside the countdown.</p>
-            <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} />
+        <section className="cc-hero">
+          <div className="cc-hero__copy">
+            <p className="cc-eyebrow">The Digital Gifter presents</p>
+            <h1>Something magical is coming this Christmas.</h1>
+            <p className="cc-lede">
+              Join our Christmas countdown and discover little surprises along the way.
+            </p>
           </div>
 
-          <div className="cc-dock__join" id="join">
-            {showForm ? (
-              <>
-                <h2 className="sr-only">Join the Christmas Countdown</h2>
-                <ChristmasJoinForm
-                  submitting={submitting}
-                  googleBusy={googleBusy || authLoading}
-                  googleAvailable
-                  error={error}
-                  onEmailJoin={(email) => void handleEmailJoin(email)}
-                  onGoogleJoin={() => void handleGoogleJoin()}
-                  onStarted={markJoinStarted}
-                />
-              </>
-            ) : (
-              <ChristmasClubSuccess />
-            )}
+          <div className="cc-dock">
+            <div className="cc-dock__countdown">
+              <p className="cc-countdown-note">A few gifts already waiting inside the countdown.</p>
+              <ChristmasCountdown config={CHRISTMAS_CLUB_CONFIG} />
+            </div>
+
+            <div className="cc-dock__join" id="join">
+              {showForm ? (
+                <>
+                  <h2 className="sr-only">Join the Christmas Countdown</h2>
+                  <ChristmasJoinForm
+                    submitting={submitting}
+                    googleBusy={googleBusy || authLoading}
+                    googleAvailable
+                    error={error}
+                    onEmailJoin={(email) => void handleEmailJoin(email)}
+                    onGoogleJoin={() => void handleGoogleJoin()}
+                    onStarted={markJoinStarted}
+                  />
+                </>
+              ) : (
+                <ChristmasClubSuccess />
+              )}
+            </div>
           </div>
-        </div>
+        </section>
+      </div>
+
+      <section id="gift-tree" className="cc-tree" aria-label="Christmas gift tree">
+        <ChristmasGiftsExperience embedded fillViewport />
       </section>
 
-      <div className="cc-story">
-        <section className="cc-panel">
-          <h2>Christmas is better with surprises.</h2>
-          <p>
-            This year, The Digital Gifter is preparing a quieter kind of magic — little moments
-            waiting for you as the lights grow warmer and the days grow shorter.
-          </p>
-        </section>
-
-        <section className="cc-panel">
-          <h2>A little magic, day by day.</h2>
-          <p>
-            Join once. Come back as Christmas gets closer. New surprises may be waiting for you
-            beneath the tree.
-          </p>
-        </section>
-
-        <section className="cc-panel">
-          <h2>Still looking for the right gift?</h2>
-          <p>
-            When the countdown isn’t enough, open a present under our Christmas gift tree —
-            a small surprise waiting for you beneath the lights.
-          </p>
-          <p className="cc-story-link-wrap">
-            <Link className="cc-story-link" to={CHRISTMAS_CLUB_GIFTS_ROUTE}>
-              Open gifts under the tree
-            </Link>
-          </p>
-        </section>
-
-        <section className="cc-panel cc-finale">
-          <h2>Ready for Christmas?</h2>
-          {showForm ? (
-            <a className="cc-cta" href="#join" style={{ display: "inline-block", textDecoration: "none" }}>
-              Join the Countdown
-            </a>
-          ) : (
-            <ChristmasClubSuccess />
-          )}
-        </section>
-
-        <footer className="cc-foot">
-          <p>
-            <Link to={CHRISTMAS_CLUB_SUITE_ROUTE}>Explore Christmas experiences</Link>
-            {" · "}
-            <Link to={CHRISTMAS_CLUB_GIFTS_ROUTE}>Christmas tree gifts</Link>
-            {" · "}
-            <Link to="/generator?occasion=christmas">Christmas generator</Link>
-            {" · "}
-            <Link to="/">The Digital Gifter</Link>
-          </p>
-        </footer>
-      </div>
+      <footer className="cc-foot">
+        <p>
+          <Link to={CHRISTMAS_CLUB_SUITE_ROUTE}>Explore Christmas experiences</Link>
+          {" · "}
+          <Link to={CHRISTMAS_CLUB_GIFTS_ROUTE}>Open the gift tree</Link>
+          {" · "}
+          <Link to="/generator?occasion=christmas">Christmas generator</Link>
+          {" · "}
+          <Link to="/">The Digital Gifter</Link>
+        </p>
+      </footer>
     </div>
   );
 }

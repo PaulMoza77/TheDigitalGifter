@@ -52,6 +52,9 @@ export type ChristmasClubConfig = {
   productKey: string;
 };
 
+/** Desktop cabin loop vs dedicated 720p mobile loop. Keep in sync with index.html boot. */
+export const CHRISTMAS_CLUB_DESKTOP_MEDIA = "(min-width: 901px)";
+
 export const CHRISTMAS_CLUB_ASSETS = {
   hero: "/christmas/cabin-hero-1920.webp",
   hero1280: "/christmas/cabin-hero-1280.webp",

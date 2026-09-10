@@ -26,6 +26,40 @@ describe("christmas club gifts link", () => {
   });
 });
 
+describe("christmas club live cabin + gift tree", () => {
+  it("plays a desktop cabin loop and a dedicated mobile cabin loop", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const scene = readFileSync(resolve(process.cwd(), "src/features/christmas/club/ChristmasClubScene.tsx"), "utf8");
+    const config = readFileSync(resolve(process.cwd(), "src/features/christmas/club/config.ts"), "utf8");
+    const boot = readFileSync(resolve(process.cwd(), "index.html"), "utf8");
+    expect(config).toContain("cabin-hero-loop.mp4");
+    expect(config).toContain("cabin-hero-loop-720.mp4");
+    expect(config).toContain('CHRISTMAS_CLUB_DESKTOP_MEDIA = "(min-width: 901px)"');
+    expect(scene).toContain("CHRISTMAS_CLUB_DESKTOP_MEDIA");
+    expect(scene).toContain("heroLoop720");
+    expect(boot).toContain("cabin-hero-loop.mp4?v=seedance1");
+    expect(boot).toContain("cabin-hero-loop-720.mp4?v=seedance1");
+  });
+
+  it("embeds the live gift tree under the cabin, with desktop and mobile scene loops", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const page = readFileSync(resolve(process.cwd(), "src/features/christmas/club/ChristmasClubPage.tsx"), "utf8");
+    const gifts = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/ChristmasGiftsPage.tsx"), "utf8");
+    const tree = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/ChristmasTreeScene.tsx"), "utf8");
+    const media = readFileSync(resolve(process.cwd(), "src/features/christmas/gifts/giftTreeMedia.ts"), "utf8");
+    expect(page).toContain("ChristmasGiftsExperience");
+    expect(page).toContain("fillViewport");
+    expect(page).toContain('id="gift-tree"');
+    expect(gifts).toContain("fillViewport");
+    expect(tree).toContain("mobileMp4");
+    expect(tree).toContain("desktopMp4");
+    expect(media).toContain("scene-desktop.mp4");
+    expect(media).toContain("scene-mobile.mp4");
+  });
+});
+
 describe("christmas club email validation", () => {
   it("accepts ordinary emails and normalizes case/space", () => {
     expect(normalizeClubEmail("  Ada@TheDigitalGifter.com ")).toBe("ada@thedigitalgifter.com");
