@@ -20,6 +20,9 @@ import {
 } from "@/features/pet/PetRoutes";
 import { PetV2Route } from "@/features/pet-v2/PetV2Routes";
 import { PetV3Route } from "@/features/pet-v3/PetV3Routes";
+import { PetV4Route } from "@/features/pet-v4/PetV4Routes";
+// Soft-redirect helper is available at PetV4CampaignRedirect — enable only after
+// migration 20260910120000_pet_v4_sales_campaign_analytics.sql is applied in prod.
 import {
   ChristmasV2OrderRoute,
   ChristmasV2Route,
@@ -602,6 +605,9 @@ function AppInner() {
             <Route path="/pet/cat-v2" element={<PetV2Route />} />
             <Route path="/pet/other-v2" element={<PetV2Route />} />
             <Route path="/pet/cat-v3" element={<PetV3Route />} />
+            <Route path="/pet/dog-v4" element={<PetV4Route />} />
+            <Route path="/pet/cat-v4" element={<PetV4Route />} />
+            <Route path="/pet/other-v4" element={<PetV4Route />} />
             <Route path="/christmas-ai-photos" element={<ChristmasV2Route />} />
             <Route
               path="/christmas-ai-photos/order"

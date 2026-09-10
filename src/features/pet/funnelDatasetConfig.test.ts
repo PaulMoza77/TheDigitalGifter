@@ -86,4 +86,14 @@ describe("funnelDatasetConfig", () => {
     expect(counts.initiate_checkout).toBe(1);
     expect(counts.purchase).toBe(1);
   });
+
+  it("keeps V4 New Sales Campaign isolated by Meta campaign_id", () => {
+    expect(FUNNEL_DATASETS.v4.campaignId).toBe("120253729468900170");
+    expect(FUNNEL_DATASETS.v4.funnelVariant).toBe("v4_sales");
+    expect(FUNNEL_DATASETS.v4.eventSource).toBe("pet_v4_funnel_events");
+    expect(FUNNEL_DATASETS.v4.displayName).toBe("New Sales Campaign");
+    expect(isDatasetConfigured("v4")).toBe(true);
+    expect(isMetaCampaignConfigured("v4")).toBe(true);
+    expect(rpcCampaignIdForDataset("v4")).toBe("120253729468900170");
+  });
 });

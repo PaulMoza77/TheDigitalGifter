@@ -48,6 +48,8 @@ import {
 import { v3IncludeInternalTests } from "@/features/pet-v3/v3Measurement";
 import { sequentialConversionPct } from "@/features/pet/funnelEventContract";
 import { V1_PHOTO_PATH_STAGES } from "@/features/pet/funnelCohort";
+import { PET_V4_LAUNCH_DATE, PET_V4_META_CAMPAIGN_ID } from "@/features/pet-v4/types";
+import { parseV4AnalyticsPayload } from "@/features/pet-v4/v4Dashboard";
 
 type RpcRow = Record<string, unknown>;
 
@@ -204,7 +206,9 @@ export function usePetFunnelAnalytics(
   const refresh = React.useCallback(async () => {
     setLoading(true);
     setError("");
-    const range = rangeForPreset(preset, new Date(), custom);
+    const range = rangeForPreset(preset, new Date(), custom, {
+      v4LaunchDate: PET_V4_LAUNCH_DATE,
+    });
     let v3AllowlistCampaignId: string | null = null;
     let v3AllowlistLabel: string | null = null;
     if (datasetId === "v3") {
@@ -267,6 +271,16 @@ export function usePetFunnelAnalytics(
       let v3Meta: RpcRow | null = null;
       let v3Trusted: RpcRow | null = null;
       let v3Drilldown: RpcRow[] = [];
+      let v4DashboardRaw: RpcRow | null = null;
+      if (datasetId === "v4") {
+        const { data: v4Data, error: v4Error } = await supabase.rpc("admin_pet_v4_analytics", {
+          p_from: range.from.toISOString(),
+          p_to: range.to.toISOString(),
+          p_campaign_id: PET_V4_META_CAMPAIGN_ID,
+        });
+        if (v4Error) throw new Error(v4Error.message);
+        v4DashboardRaw = parseRpcJsonObject(v4Data);
+      }
       if (datasetId === "v3") {
         const legacyFilterArgs = v3LegacyRpcFilterArgs(v3Filters);
         const trustedFilterArgs = v3TrustedRpcFilterArgs(v3Filters);
@@ -323,6 +337,17 @@ export function usePetFunnelAnalytics(
       const v2Counts = mapV2CountsToPrimarySteps(namedEventCounts((payload.v2_steps as RpcRow[]) || []));
       const v3RawCounts = namedEventCounts(v3StepRows);
       let v3Counts = mapV3CountsToPrimarySteps(v3RawCounts);
+      const v4Parsed = datasetId === "v4" && v4DashboardRaw ? parseV4AnalyticsPayload(v4DashboardRaw) : null;
+      const v4Counts = v4Parsed
+        ? {
+            landing_view: v4Parsed.sequentialSteps.find((s) => s.stage === "landing")?.users || 0,
+            pet_name_submitted: v4Parsed.sequentialSteps.find((s) => s.stage === "upload_completed")?.users || 0,
+            photo_upload_completed: v4Parsed.sequentialSteps.find((s) => s.stage === "teaser_viewed")?.users || 0,
+            order_review_viewed: v4Parsed.sequentialSteps.find((s) => s.stage === "offer_viewed")?.users || 0,
+            initiate_checkout: v4Parsed.sequentialSteps.find((s) => s.stage === "checkout_clicked")?.users || 0,
+            purchase: v4Parsed.sequentialSteps.find((s) => s.stage === "purchase")?.users || 0,
+          }
+        : emptyStepCounts();
       const v3TrustedSeq = (v3Trusted?.production_sequential || null) as RpcRow | null;
       const v3ViewMode = v3Filters.viewMode || "production";
       if (datasetId === "v3" && v3TrustedSeq && v3ViewMode !== "raw") {
@@ -338,8 +363,15 @@ export function usePetFunnelAnalytics(
       const v3ExtendedCounts = mapV3CountsToExtendedSteps(v3RawCounts);
       const v3ExtendedSteps = datasetId === "v3" ? buildV3ExtendedFunnelSteps(v3ExtendedCounts) : undefined;
       const counts =
-        datasetId === "v3" ? v3Counts : datasetId === "v2" ? v2Counts : v1CohortCounts || v1RawCounts;
-      const previousCounts = datasetId === "v2" || datasetId === "v3" ? emptyStepCounts() : v1PreviousCounts;
+        datasetId === "v4"
+          ? v4Counts
+          : datasetId === "v3"
+            ? v3Counts
+            : datasetId === "v2"
+              ? v2Counts
+              : v1CohortCounts || v1RawCounts;
+      const previousCounts =
+        datasetId === "v2" || datasetId === "v3" || datasetId === "v4" ? emptyStepCounts() : v1PreviousCounts;
       const steps = buildFunnelSteps(counts);
       const previousSteps = buildFunnelSteps(previousCounts);
       const rawSteps = datasetId === "v1" ? buildFunnelSteps(v1RawCounts) : previousSteps;
@@ -357,7 +389,9 @@ export function usePetFunnelAnalytics(
         };
       });
       const firstEventAt =
-        datasetId === "v3"
+        datasetId === "v4"
+          ? v4Parsed?.firstEventAt || null
+          : datasetId === "v3"
           ? v3Context?.latest_event_at
             ? String(v3Context.latest_event_at)
             : null
@@ -377,18 +411,47 @@ export function usePetFunnelAnalytics(
       const backend = (payload.backend || {}) as RpcRow;
       const v3Backend = (v3Context?.backend || {}) as RpcRow;
       const meta = (
-        datasetId === "v3" && !metaCampaignConfigured ? v3Meta || {} : payload.meta || {}
+        datasetId === "v4" && v4Parsed
+          ? {
+              totals: {
+                spend_cents: v4Parsed.meta.spend_cents,
+                impressions: v4Parsed.meta.impressions,
+                reach: v4Parsed.meta.reach,
+                link_clicks: v4Parsed.meta.link_clicks,
+                landing_page_views: v4Parsed.meta.landing_page_views,
+                purchases: v4Parsed.meta.purchases,
+                purchase_value_cents: v4Parsed.meta.purchase_value_cents,
+                initiate_checkouts: v4Parsed.firstParty.checkout_cta_clicks,
+              },
+              row_count: (v4Parsed.meta.spend_cents || 0) > 0 || (v4Parsed.meta.impressions || 0) > 0 ? 1 : 0,
+              last_synced_at: null,
+              ads: [],
+              campaigns: [],
+            }
+          : datasetId === "v3" && !metaCampaignConfigured
+            ? v3Meta || {}
+            : payload.meta || {}
       ) as RpcRow;
       const ga4 = (payload.ga4 || {}) as RpcRow;
       const metaTotals = (meta.totals || {}) as RpcRow;
       const ga4Totals = (ga4.totals || {}) as RpcRow;
 
       const backendPurchases =
-        datasetId === "v3" ? asNumber(v3Backend.purchases) : asNumber(backend.purchases);
+        datasetId === "v4"
+          ? v4Parsed?.firstParty.purchases || 0
+          : datasetId === "v3"
+            ? asNumber(v3Backend.purchases)
+            : asNumber(backend.purchases);
       const backendRevenue =
-        datasetId === "v3" ? asNumber(v3Backend.revenue_cents) : asNumber(backend.revenue_cents);
+        datasetId === "v4"
+          ? v4Parsed?.firstParty.revenue_cents || 0
+          : datasetId === "v3"
+            ? asNumber(v3Backend.revenue_cents)
+            : asNumber(backend.revenue_cents);
       const backendCheckouts =
-        datasetId === "v3"
+        datasetId === "v4"
+          ? v4Parsed?.firstParty.checkout_cta_clicks || 0
+          : datasetId === "v3"
           ? v3TrustedSeq && v3ViewMode !== "raw"
             ? asNumber(v3TrustedSeq.checkout_sessions)
             : asNumber(v3Backend.checkouts)
@@ -794,6 +857,7 @@ export function usePetFunnelAnalytics(
                   : [],
               }))
             : undefined,
+        v4Dashboard: v4Parsed,
         rawSteps: datasetId === "v1" ? rawSteps : undefined,
         photoPathSteps: datasetId === "v1" && photoPathSteps.some((s) => s.sessions > 0) ? photoPathSteps : undefined,
         v3ExtendedSteps,
