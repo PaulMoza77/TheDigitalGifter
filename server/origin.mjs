@@ -32,6 +32,7 @@ const MIME = {
   ".xml": "application/xml; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
   ".webm": "video/webm",
+  ".mp4": "video/mp4",
   ".woff2": "font/woff2",
   ".map": "application/json; charset=utf-8",
 };
@@ -152,7 +153,14 @@ async function handle(req, res) {
       const handler = await loadHandler(classified.module);
       await invokeVercelHandler(handler, req, res, url);
     } catch (error) {
-      console.error(JSON.stringify({ source: "tdg-origin", kind: "api_error", path: url.pathname }));
+      console.error(
+        JSON.stringify({
+          source: "tdg-origin",
+          kind: "api_error",
+          path: url.pathname,
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      );
       if (!res.headersSent) {
         sendJson(res, 500, { error: "handler_failed" });
       }
