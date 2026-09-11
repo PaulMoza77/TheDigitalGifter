@@ -20,6 +20,10 @@ import {
   type TreeStyle,
 } from "./tree/treeApi";
 import { giftCountBucket, reorderIds } from "./tree/treeLogic";
+import {
+  ChristmasProductSeoDepth,
+  TREE_SEO_DEPTH,
+} from "./seo/ChristmasProductSeoDepth";
 
 type Mode = "create" | "owner" | "shared" | "unavailable";
 
@@ -744,7 +748,9 @@ export default function ChristmasTreePage() {
               Advent
             </Link>
           </p>
-        ) : null}
+        ) : (
+          <ChristmasProductSeoDepth content={TREE_SEO_DEPTH} tone="dark" />
+        )}
       </div>
 
       {reveal ? (

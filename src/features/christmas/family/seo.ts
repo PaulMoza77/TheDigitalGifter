@@ -58,20 +58,6 @@ export function familyPortraitJsonLd(locale: FamilyLocale = "en") {
         },
       },
       {
-        "@type": "SoftwareApplication",
-        name: "Christmas Family Photo Generator",
-        applicationCategory: "MultimediaApplication",
-        operatingSystem: "Web",
-        description: seo.description,
-        url: seo.url,
-        offers: {
-          "@type": "Offer",
-          availability: "https://schema.org/PreOrder",
-          priceCurrency: "EUR",
-          price: "0",
-        },
-      },
-      {
         "@type": "FAQPage",
         mainEntity: faqs,
       },
