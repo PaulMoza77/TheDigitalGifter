@@ -46,16 +46,22 @@
 }
 
 .xco-hero__stage img,
+.xco-hero__stage picture,
 .xco-hero__stage .xmas-cabin {
   width: 100%;
   height: 100%;
 }
 
-.xco-hero__stage > img {
+.xco-hero__stage > img,
+.xco-hero__stage > picture img {
   object-fit: cover;
   object-position: center 45%;
   transform: scale(1.04);
   filter: saturate(1.08) contrast(1.04);
+}
+
+.xco-hero__stage > picture {
+  display: block;
 }
 
 .xco-hero__veil {
@@ -409,6 +415,10 @@
   margin: 0.75rem 0 0;
   color: rgba(246, 239, 227, 0.86);
   line-height: 1.55;
+}
+
+#gift-composer {
+  scroll-margin-top: 5rem;
 }
 
 .xco-composer {
