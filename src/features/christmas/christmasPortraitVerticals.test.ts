@@ -217,7 +217,8 @@ describe("christmas portrait funnel e2e contract (component)", () => {
     expect(page).toContain('t("funnel.style")');
     expect(page).toContain('t("funnel.continueOffer")');
     expect(page).toContain('t("funnel.checkoutDisabled")');
-    expect(page).toContain("Switch to");
+    expect(page).toContain('t("funnel.dogs")');
+    expect(page).toContain('t("funnel.cats")');
     expect(page).toContain("/christmas/cats");
     expect(page).toContain("/christmas/dogs");
     expect(page).toContain("verticalUi");
