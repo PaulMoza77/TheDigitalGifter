@@ -7,6 +7,7 @@ import { replicateOutputUrl } from "../pet/replicate.ts";
 import {
   minimaxLanguageBoost,
   normalizeWave1GenerationLocale,
+  preferredSantaTtsProvider,
   type Wave1GenerationLocale,
 } from "./wave1Locale.ts";
 
@@ -148,17 +149,31 @@ export async function synthesizeSantaSpeech(
   language: string = "en",
 ): Promise<SantaTtsResult> {
   const locale = normalizeWave1GenerationLocale(language);
-  const prefer =
+  const envPrefer =
     String(Deno.env.get("CHRISTMAS_SANTA_TTS_PROVIDER") || "auto").trim().toLowerCase() || "auto";
-  if (prefer === "replicate" || (prefer === "auto" && locale !== "en")) {
+  const prefer =
+    envPrefer === "auto" ? preferredSantaTtsProvider(locale) : envPrefer;
+  if (prefer === "replicate") {
     try {
       return await synthesizeViaReplicate(script, locale);
     } catch (err) {
-      if (prefer === "replicate") throw err;
+      if (envPrefer === "replicate") throw err;
       return await synthesizeViaOpenAi(script);
     }
   }
-  if (prefer === "openai") return synthesizeViaOpenAi(script);
+  if (prefer === "openai") {
+    try {
+      return await synthesizeViaOpenAi(script);
+    } catch (err) {
+      if (envPrefer === "openai") throw err;
+      const message = err instanceof Error ? err.message : String(err);
+      if (/credit|billing|quota|openai_tts_failed|not configured/i.test(message)) {
+        return await synthesizeViaReplicate(script, locale);
+      }
+      throw err;
+    }
+  }
+  // Unknown override → previous auto fallback chain
   try {
     return await synthesizeViaOpenAi(script);
   } catch (err) {

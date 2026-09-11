@@ -191,7 +191,6 @@ for (const excluded of [
   "/christmas-ai-photos/order",
   "/christmas/suite",
   "/christmas/tree-gifts",
-  "/de/christmas/santa-video",
   "/en/christmas",
   "/en/christmas/cards",
 ]) {
@@ -199,6 +198,9 @@ for (const excluded of [
 }
 assert(sitemapPaths.includes("/de/christmas/messages"), "sitemap includes DE messages after P3C");
 assert(sitemapPaths.includes("/fr/christmas/gift-finder"), "sitemap includes FR gift-finder after P3C");
+assert(sitemapPaths.includes("/de/christmas/santa-video"), "sitemap includes DE santa after P3E");
+assert(sitemapPaths.includes("/pt/christmas/santa-video"), "sitemap includes PT santa after P3E");
+assert(sitemapPaths.includes("/pl/christmas/santa-video"), "sitemap includes PL santa after P3E");
 
 
 const robotsTxt = readFileSync(join(root, "public/robots.txt"), "utf8");
@@ -472,9 +474,12 @@ assert(
   "P3A RO santa self-canonical",
 );
 
-const roIncompleteHtml = applyChristmasSeo(template, "/de/christmas/santa-video");
-assert(robotsIsNoindex(roIncompleteHtml), "P3A/P3B product-gated DE santa noindex");
-assert(!/hreflang=/i.test(roIncompleteHtml), "P3A/P3B product-gated DE santa must not emit hreflang");
+const deSantaHtml = applyChristmasSeo(template, "/de/christmas/santa-video");
+assert(robotsIsIndex(deSantaHtml), "P3E DE santa indexable after live TTS QA");
+assert(deSantaHtml.includes('hreflang="de"'), "P3E DE santa emits self hreflang");
+assert(deSantaHtml.includes('hreflang="en"'), "P3E DE santa reciprocal EN");
+assert(deSantaHtml.includes('hreflang="pt-PT"'), "P3E DE santa reciprocal pt-PT");
+assert(deSantaHtml.includes('hreflang="x-default"'), "P3E DE santa x-default");
 
 // —— P3B Wave 1 spot checks ——
 const deCards = applyChristmasSeo(template, "/de/christmas/cards");
@@ -496,7 +501,8 @@ assert(/[ąćęłńóśźż]/i.test(plWish), "P3B PL diacritics present");
 
 const ptSanta = applyChristmasSeo(template, "/pt/christmas/santa-video");
 assert(/lang="pt-PT"/.test(ptSanta), "P3B PT santa lang=pt-PT");
-assert(robotsIsNoindex(ptSanta), "P3B PT santa product-gated noindex");
+assert(robotsIsIndex(ptSanta), "P3E PT santa indexable after live TTS QA");
+assert(ptSanta.includes("Pai Natal"), "P3B PT santa Portugal terminology");
 
 const deMessages = applyChristmasSeo(template, "/de/christmas/messages");
 assert(/lang="de"/.test(deMessages), "P3C DE messages lang=de");

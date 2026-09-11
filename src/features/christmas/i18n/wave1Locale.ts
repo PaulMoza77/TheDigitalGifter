@@ -52,3 +52,25 @@ export function normalizeWave1GenerationLocale(value: unknown): Wave1GenerationL
 export function generationLanguageName(locale: Wave1GenerationLocale): string {
   return GENERATION_LANGUAGE_NAME[locale];
 }
+
+/**
+ * Preferred Santa TTS provider per locale (P3E QA).
+ * Keep in sync with supabase/functions/_shared/christmas/wave1Locale.ts
+ */
+export const SANTA_PREFERRED_TTS: Record<Wave1GenerationLocale, "openai" | "replicate"> = {
+  en: "openai",
+  ro: "replicate",
+  de: "replicate",
+  fr: "replicate",
+  es: "replicate",
+  it: "replicate",
+  pt: "replicate",
+  nl: "replicate",
+  pl: "replicate",
+};
+
+export function preferredSantaTtsProvider(
+  locale: Wave1GenerationLocale,
+): "openai" | "replicate" {
+  return SANTA_PREFERRED_TTS[locale];
+}
