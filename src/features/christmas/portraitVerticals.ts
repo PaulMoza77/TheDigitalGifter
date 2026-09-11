@@ -10,6 +10,7 @@ import {
   CHRISTMAS_PET_STYLES,
   CHRISTMAS_PHOTO_STYLES,
 } from "./portraitStyles";
+import { parseChristmasLocalePath } from "./seo/localeRouting";
 
 export type PortraitSubject =
   | "person"
@@ -208,8 +209,8 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
 };
 
 export function verticalFromPathname(pathname: string): ChristmasPortraitVertical | null {
-  const path = pathname.split("?")[0].replace(/\/$/, "") || "/";
-  const match = Object.values(CHRISTMAS_PORTRAIT_VERTICALS).find((v) => v.routePath === path);
+  const { basePath } = parseChristmasLocalePath(pathname);
+  const match = Object.values(CHRISTMAS_PORTRAIT_VERTICALS).find((v) => v.routePath === basePath);
   return match ?? null;
 }
 

@@ -7,6 +7,17 @@
  */
 
 import { getChristmasContentDepth } from "./christmasContentDepth.mjs";
+import {
+  buildChristmasHreflangHtml,
+  christmasPathForLocale,
+  listChristmasPrerenderPaths,
+  parseChristmasLocalePath,
+} from "./christmasI18n.mjs";
+import {
+  getChristmasLocale,
+  isChristmasLocaleSeoIndexable,
+} from "./christmasLocale.mjs";
+import { getChristmasSeoContentRo } from "./christmasSeoRo.mjs";
 
 export const SITE_ORIGIN = "https://www.thedigitalgifter.com";
 
@@ -433,7 +444,109 @@ export function getChristmasSeo(pathname) {
 }
 
 export function listChristmasSeoPaths() {
-  return CHRISTMAS_SEO_ROUTES.map((r) => r.path);
+  const base = CHRISTMAS_SEO_ROUTES.map((r) => r.path);
+  const localized = listChristmasPrerenderPaths();
+  return [...base, ...localized];
+}
+
+/**
+ * Resolve SEO entry for a public pathname (EN unprefixed or /{locale}/...).
+ * Incomplete localized routes return an EN-content shell with noindex.
+ */
+export function resolveChristmasSeoRequest(pathname) {
+  const parsed = parseChristmasLocalePath(pathname);
+  const baseEntry = BY_PATH.get(normalizeSeoPath(parsed.basePath)) ?? null;
+  if (!baseEntry) return null;
+
+  const localeCode = parsed.locale;
+  const locale = getChristmasLocale(localeCode);
+
+  // Prefixed English aliases are redirected by origin; if applied, use unprefixed EN entry.
+  if (parsed.urlPrefix === "en") {
+    return {
+      locale: "en",
+      basePath: parsed.basePath,
+      publicPath: parsed.basePath,
+      entry: { ...baseEntry, canonicalPath: baseEntry.canonicalPath || parsed.basePath },
+      depthOverride: null,
+      indexable: !baseEntry.noindex && isChristmasLocaleSeoIndexable("en", parsed.basePath),
+      incomplete: false,
+      htmlLang: "en",
+      dir: "ltr",
+    };
+  }
+
+  if (localeCode === "en" || !parsed.isPrefixed) {
+    return {
+      locale: "en",
+      basePath: parsed.basePath,
+      publicPath: parsed.basePath,
+      entry: baseEntry,
+      depthOverride: null,
+      indexable: !baseEntry.noindex && isChristmasLocaleSeoIndexable("en", parsed.basePath),
+      incomplete: false,
+      htmlLang: "en",
+      dir: "ltr",
+    };
+  }
+
+  if (!locale?.enabled) return null;
+
+  const complete = isChristmasLocaleSeoIndexable(localeCode, parsed.basePath);
+  const localized =
+    localeCode === "ro" ? getChristmasSeoContentRo(parsed.basePath) : null;
+
+  if (complete && localized) {
+    const publicPath = christmasPathForLocale(parsed.basePath, localeCode);
+    return {
+      locale: localeCode,
+      basePath: parsed.basePath,
+      publicPath,
+      entry: {
+        path: publicPath,
+        title: localized.title,
+        description: localized.description,
+        canonicalPath: publicPath,
+        h1: localized.h1,
+        lede: localized.lede,
+        h2: localized.h2,
+        h2Body: localized.h2Body,
+        links: localized.links || [],
+        breadcrumbs: [{ href: "/", label: "Home" }, ...(localized.breadcrumbs || [])],
+        noindex: false,
+        ogImage: baseEntry.ogImage,
+      },
+      depthOverride: {
+        geo: localized.geo,
+        sections: localized.sections || [],
+        faqs: localized.faqs || [],
+        wave: "p3a",
+      },
+      indexable: true,
+      incomplete: false,
+      htmlLang: locale.htmlLang,
+      dir: locale.dir,
+    };
+  }
+
+  // Incomplete translation: allow soft shell for SPA, but never index.
+  const publicPath = christmasPathForLocale(parsed.basePath, localeCode);
+  return {
+    locale: localeCode,
+    basePath: parsed.basePath,
+    publicPath,
+    entry: {
+      ...baseEntry,
+      path: publicPath,
+      canonicalPath: publicPath,
+      noindex: true,
+    },
+    depthOverride: null,
+    indexable: false,
+    incomplete: true,
+    htmlLang: "en",
+    dir: "ltr",
+  };
 }
 
 function escapeHtml(value) {
@@ -518,11 +631,10 @@ function buildWebPageJsonLd(entry, canonical) {
   };
 }
 
-function buildDepthHtml(pathname) {
-  const depth = getChristmasContentDepth(pathname);
+function buildDepthHtmlFromDepth(depth, faqHeading = "Frequently Asked Questions") {
   if (!depth) return "";
 
-  const sections = depth.sections
+  const sections = (depth.sections || [])
     .map((section) => {
       const list = section.list
         ? `<ul>${section.list
@@ -550,14 +662,15 @@ function buildDepthHtml(pathname) {
     })
     .join("");
 
-  const geo =
-    `<section data-tdg-geo="true">` +
-    `<h2>${escapeHtml(depth.geo.h2)}</h2>` +
-    `<p>${escapeHtml(depth.geo.body)}</p>` +
-    `</section>`;
+  const geo = depth.geo
+    ? `<section data-tdg-geo="true">` +
+      `<h2>${escapeHtml(depth.geo.h2)}</h2>` +
+      `<p>${escapeHtml(depth.geo.body)}</p>` +
+      `</section>`
+    : "";
 
-  const faqs = depth.faqs.length
-    ? `<section data-tdg-faq="true"><h2>Frequently Asked Questions</h2>${depth.faqs
+  const faqs = depth.faqs?.length
+    ? `<section data-tdg-faq="true"><h2>${escapeHtml(faqHeading)}</h2>${depth.faqs
         .map(
           (item) =>
             `<div><h3>${escapeHtml(item.q)}</h3><p>${escapeHtml(item.a)}</p></div>`,
@@ -568,13 +681,16 @@ function buildDepthHtml(pathname) {
   return geo + sections + faqs;
 }
 
-function buildFaqJsonLd(pathname) {
-  const depth = getChristmasContentDepth(pathname);
-  if (!depth?.faqs?.length) return null;
+function buildDepthHtml(pathname) {
+  return buildDepthHtmlFromDepth(getChristmasContentDepth(pathname));
+}
+
+function buildFaqJsonLdFromFaqs(faqs) {
+  if (!faqs?.length) return null;
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: depth.faqs.map((item) => ({
+    mainEntity: faqs.map((item) => ({
       "@type": "Question",
       name: item.q,
       acceptedAnswer: {
@@ -585,7 +701,13 @@ function buildFaqJsonLd(pathname) {
   };
 }
 
-function buildSeoShell(entry) {
+function buildFaqJsonLd(pathname) {
+  const depth = getChristmasContentDepth(pathname);
+  return buildFaqJsonLdFromFaqs(depth?.faqs);
+}
+
+function buildSeoShell(entry, options = {}) {
+  const { depthOverride = null, locale = "en", basePath = entry.path } = options;
   const links = entry.links
     .map(
       (link) =>
@@ -603,13 +725,18 @@ function buildSeoShell(entry) {
         entry.h2Body ? `<p>${escapeHtml(entry.h2Body)}</p>` : ""
       }`
     : "";
-  const depthHtml = buildDepthHtml(entry.path);
-  const depth = getChristmasContentDepth(entry.path);
+  const depth =
+    depthOverride ||
+    getChristmasContentDepth(basePath) ||
+    null;
+  const faqHeading =
+    locale === "ro" ? "Întrebări frecvente" : "Frequently Asked Questions";
+  const depthHtml = buildDepthHtmlFromDepth(depth, faqHeading);
   const depthWave = depth?.wave || (depthHtml ? "content" : "");
   const depthAttr = depthWave ? ` data-tdg-depth="${escapeAttr(depthWave)}"` : "";
 
   return (
-    `<div id="tdg-christmas-seo" data-tdg-seo="christmas"${depthAttr} data-path="${escapeAttr(entry.path)}">` +
+    `<div id="tdg-christmas-seo" data-tdg-seo="christmas"${depthAttr} data-path="${escapeAttr(entry.path)}" data-locale="${escapeAttr(locale)}">` +
     `<nav aria-label="Breadcrumb">${crumbs}</nav>` +
     `<h1>${escapeHtml(entry.h1)}</h1>` +
     `<p>${escapeHtml(entry.lede)}</p>` +
@@ -620,6 +747,34 @@ function buildSeoShell(entry) {
   );
 }
 
+function replaceHtmlLangDir(html, lang, dir) {
+  let next = html.replace(/<html\b[^>]*>/i, (tag) => {
+    let out = tag;
+    if (/\blang=/.test(out)) {
+      out = out.replace(/\blang="[^"]*"/i, `lang="${escapeAttr(lang)}"`);
+    } else {
+      out = out.replace(/<html/i, `<html lang="${escapeAttr(lang)}"`);
+    }
+    if (/\bdir=/.test(out)) {
+      out = out.replace(/\bdir="[^"]*"/i, `dir="${escapeAttr(dir)}"`);
+    } else {
+      out = out.replace(/<html/i, `<html dir="${escapeAttr(dir)}"`);
+    }
+    return out;
+  });
+  return next;
+}
+
+function replaceHreflangBlock(html, basePath) {
+  const block = buildChristmasHreflangHtml(basePath);
+  let next = html.replace(
+    /\n?\s*<link\s+rel="alternate"\s+hreflang="[^"]*"\s+href="[^"]*"\s*\/>/gi,
+    "",
+  );
+  if (!block) return next;
+  return next.replace(/<\/head>/i, `    ${block}\n  </head>`);
+}
+
 /**
  * Rewrite SPA index.html with route-specific SEO head + body shell.
  * @param {string} html
@@ -627,13 +782,16 @@ function buildSeoShell(entry) {
  * @returns {string}
  */
 export function applyChristmasSeo(html, pathname) {
-  const entry = getChristmasSeo(pathname);
-  if (!entry) return html;
+  const resolved = resolveChristmasSeoRequest(pathname);
+  if (!resolved) return html;
 
+  const { entry, locale, basePath, depthOverride, indexable, htmlLang, dir } =
+    resolved;
   const canonical = `${SITE_ORIGIN}${entry.canonicalPath}`;
   const ogImage = entry.ogImage || `${SITE_ORIGIN}/og-preview.png`;
   let next = html;
 
+  next = replaceHtmlLangDir(next, htmlLang || "en", dir || "ltr");
   next = next.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(entry.title)}</title>`);
   next = replaceMetaName(next, "description", entry.description);
   next = replaceMetaProperty(next, "og:title", entry.title);
@@ -644,11 +802,24 @@ export function applyChristmasSeo(html, pathname) {
   next = replaceMetaName(next, "twitter:description", entry.description);
   next = replaceMetaName(next, "twitter:image", ogImage);
   next = replaceCanonical(next, canonical);
-  next = replaceMetaName(next, "robots", entry.noindex ? "noindex,follow" : "index,follow");
+
+  const robots = !indexable || entry.noindex ? "noindex,follow" : "index,follow";
+  next = replaceMetaName(next, "robots", robots);
+
+  // Hreflang only for complete/indexable clusters (incomplete pages still get English cluster if EN base is indexable — but only when this page itself is indexable)
+  if (indexable && !entry.noindex) {
+    next = replaceHreflangBlock(next, basePath);
+  } else {
+    next = replaceHreflangBlock(next, ""); // strip any prior
+  }
 
   const breadcrumbLd = JSON.stringify(buildBreadcrumbJsonLd(entry));
-  const webPageLd = JSON.stringify(buildWebPageJsonLd(entry, canonical));
-  const faqLd = buildFaqJsonLd(entry.path);
+  const webPageLd = JSON.stringify({
+    ...buildWebPageJsonLd(entry, canonical),
+    inLanguage: htmlLang || "en",
+  });
+  const faqSource = depthOverride?.faqs || getChristmasContentDepth(basePath)?.faqs;
+  const faqLd = buildFaqJsonLdFromFaqs(faqSource);
   const ldBlock =
     `\n    <script type="application/ld+json" data-tdg-seo="breadcrumb">${breadcrumbLd}</script>` +
     `\n    <script type="application/ld+json" data-tdg-seo="webpage">${webPageLd}</script>` +
@@ -657,14 +828,13 @@ export function applyChristmasSeo(html, pathname) {
       : "") +
     `\n`;
 
-  // Remove prior injected Christmas route LD if re-applying
   next = next.replace(
     /\n?\s*<script type="application\/ld\+json" data-tdg-seo="(?:breadcrumb|webpage|faq)">[\s\S]*?<\/script>/g,
     "",
   );
   next = next.replace(/<\/head>/i, `${ldBlock}  </head>`);
 
-  const shell = buildSeoShell(entry);
+  const shell = buildSeoShell(entry, { depthOverride, locale, basePath });
   if (/id="tdg-christmas-seo"/.test(next)) {
     next = next.replace(
       /<div id="tdg-christmas-seo"[\s\S]*?<\/div>/,

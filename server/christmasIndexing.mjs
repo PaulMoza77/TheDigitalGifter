@@ -7,6 +7,17 @@
  */
 
 import { SITE_ORIGIN, getChristmasSeo, normalizeSeoPath } from "./christmasSeo.mjs";
+import {
+  christmasPathForLocale,
+  englishPrefixRedirectTarget,
+  isKnownChristmasBasePath,
+  parseChristmasLocalePath,
+} from "./christmasI18n.mjs";
+import {
+  CHRISTMAS_I18N_ROUTE_BASES,
+  isChristmasLocaleSeoIndexable,
+  listEnabledChristmasLocales,
+} from "./christmasLocale.mjs";
 
 export { SITE_ORIGIN };
 
@@ -83,24 +94,40 @@ export function isChristmasSharePath(pathname) {
 
 /** @returns {boolean} */
 export function shouldNoindexChristmasPath(pathname) {
-  const path = normalizeSeoPath(pathname);
-  if (NOINDEX_SET.has(path)) return true;
-  if (isChristmasSharePath(path)) return true;
-  const seo = getChristmasSeo(path);
+  const parsed = parseChristmasLocalePath(pathname);
+  const path = normalizeSeoPath(parsed.publicPath);
+  const base = parsed.basePath;
+
+  if (NOINDEX_SET.has(base) || NOINDEX_SET.has(path)) return true;
+  if (isChristmasSharePath(path) || isChristmasSharePath(base)) return true;
+
+  // Prefixed locales incomplete for this route → noindex
+  if (parsed.isPrefixed && parsed.locale !== "en") {
+    if (!isChristmasLocaleSeoIndexable(parsed.locale, base)) return true;
+  }
+
+  const seo = getChristmasSeo(base);
   if (seo?.noindex) return true;
   return false;
 }
 
 /** @returns {boolean} */
 export function isChristmasIndexablePath(pathname) {
-  const path = normalizeSeoPath(pathname);
-  return INDEXABLE_SET.has(path) && !shouldNoindexChristmasPath(path);
+  const parsed = parseChristmasLocalePath(pathname);
+  if (parsed.isPrefixed && parsed.urlPrefix === "en") return false;
+  if (!isChristmasLocaleSeoIndexable(parsed.locale, parsed.basePath)) return false;
+  return !shouldNoindexChristmasPath(pathname);
 }
 
 /** @returns {string | null} target path without query */
 export function getChristmasPermanentRedirectTarget(pathname) {
   const path = normalizeSeoPath(pathname);
-  return CHRISTMAS_PERMANENT_REDIRECTS[path] || null;
+  if (CHRISTMAS_PERMANENT_REDIRECTS[path]) return CHRISTMAS_PERMANENT_REDIRECTS[path];
+
+  const enTarget = englishPrefixRedirectTarget(path);
+  if (enTarget) return enTarget;
+
+  return null;
 }
 
 /**
@@ -148,24 +175,49 @@ export function buildTrailingSlashRedirect(pathname, search = "") {
 }
 
 /**
- * True when a /christmas* request should 404 (unknown product URL).
- * Allows known SPA paths, shares, and static assets under /christmas/.
+ * True when a /christmas* (or /{locale}/christmas*) request should 404.
  */
 export function should404UnknownChristmasPath(pathname) {
+  const parsed = parseChristmasLocalePath(pathname);
   const path = normalizeSeoPath(pathname);
-  if (!path.startsWith("/christmas") && path !== "/christmas-ai-photos" && !path.startsWith("/christmas-ai-photos/")) {
+  const base = parsed.basePath;
+
+  const looksChristmas =
+    base.startsWith("/christmas") ||
+    base === "/christmas-ai-photos" ||
+    base.startsWith("/christmas-ai-photos/") ||
+    path.startsWith("/christmas") ||
+    path === "/christmas-ai-photos" ||
+    path.startsWith("/christmas-ai-photos/");
+
+  // Locale-prefixed non-christmas paths are not handled here
+  if (parsed.isPrefixed && parsed.locale !== "en") {
+    if (!base.startsWith("/christmas") && base !== "/christmas-ai-photos" && !base.startsWith("/christmas-ai-photos/")) {
+      return false;
+    }
+  } else if (!looksChristmas) {
     return false;
   }
-  if (isChristmasAssetPath(path)) return false;
-  if (KNOWN_SET.has(path)) return false;
-  if (isTreeSharePath(path)) return false;
-  // Nested unknown: /christmas/foo, /christmas/family/extra, etc.
+
+  if (isChristmasAssetPath(path) || isChristmasAssetPath(base)) return false;
+  if (KNOWN_SET.has(base) || KNOWN_SET.has(path)) return false;
+  if (isKnownChristmasBasePath(base)) return false;
+  if (isTreeSharePath(base) || isTreeSharePath(path)) return false;
   return true;
 }
 
-/** Sitemap Christmas locs (www, no trailing slash). */
+/** Sitemap Christmas locs (www, no trailing slash) including complete locale pilots. */
 export function christmasSitemapPaths() {
-  return [...CHRISTMAS_INDEXABLE_PATHS];
+  /** @type {string[]} */
+  const paths = [...CHRISTMAS_INDEXABLE_PATHS];
+  for (const locale of listEnabledChristmasLocales()) {
+    if (locale.isDefault) continue;
+    for (const base of CHRISTMAS_I18N_ROUTE_BASES) {
+      if (!isChristmasLocaleSeoIndexable(locale.code, base)) continue;
+      paths.push(christmasPathForLocale(base, locale.code));
+    }
+  }
+  return paths;
 }
 
 export function christmasSitemapLocs() {
