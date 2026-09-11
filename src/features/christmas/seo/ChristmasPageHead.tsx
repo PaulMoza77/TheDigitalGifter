@@ -1,9 +1,12 @@
+import { useLocation } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
-import { getChristmasSeo, SITE_ORIGIN } from "./ssrRegistry";
+import { resolveChristmasSeoRequest, SITE_ORIGIN } from "./ssrRegistry";
+import { normalizeChristmasPath, parseChristmasLocalePath } from "./localeRouting";
 
 /**
  * Route-specific SEO head that matches the server-injected Christmas HTML shell.
- * Use for primary Christmas product routes (not dynamic share URLs).
+ * Locale-aware (Strategy A): when the live URL is /ro/... for the same product
+ * base as `path`, localized metadata is used.
  */
 export function ChristmasPageHead({
   path,
@@ -15,16 +18,24 @@ export function ChristmasPageHead({
   noindex?: boolean;
   image?: string;
 }) {
-  const seo = getChristmasSeo(path);
-  if (!seo) return null;
+  const location = useLocation();
+  const live = parseChristmasLocalePath(location.pathname);
+  const base = normalizeChristmasPath(path);
+  const seoPath =
+    live.basePath === base ? normalizeChristmasPath(location.pathname) : base;
+
+  const resolved = resolveChristmasSeoRequest(seoPath);
+  if (!resolved) return null;
+  const { entry, indexable } = resolved;
+  const forceNoindex = noindex ?? (!indexable || Boolean(entry.noindex));
   return (
     <PageHead
-      title={seo.title}
-      description={seo.description}
-      url={`${SITE_ORIGIN}${seo.canonicalPath}`}
+      title={entry.title}
+      description={entry.description}
+      url={`${SITE_ORIGIN}${entry.canonicalPath}`}
       exactTitle
-      noindex={noindex ?? Boolean(seo.noindex)}
-      image={image || seo.ogImage}
+      noindex={forceNoindex}
+      image={image || entry.ogImage}
     />
   );
 }

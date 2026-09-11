@@ -25,6 +25,7 @@ import {
   buildTrailingSlashRedirect,
   CHRISTMAS_INDEXABLE_PATHS,
   CHRISTMAS_NOINDEX_PATHS,
+  christmasSitemapPaths,
   getChristmasPermanentRedirectTarget,
   isChristmasIndexablePath,
   should404UnknownChristmasPath,
@@ -34,6 +35,10 @@ import {
   CONTENT_DEPTH_PATHS,
   getChristmasContentDepth,
 } from "../server/christmasContentDepth.mjs";
+import {
+  buildChristmasHreflangAlternates,
+  englishPrefixRedirectTarget,
+} from "../server/christmasI18n.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
@@ -167,11 +172,17 @@ assert(should404UnknownChristmasPath("/christmas/not-a-real-product"), "unknown 
 assert(!should404UnknownChristmasPath("/christmas/family"), "known christmas not 404");
 assert(!should404UnknownChristmasPath("/christmas/tree/share-id"), "tree share not 404");
 
-// Sitemap source alignment
+// Sitemap source alignment (P3A: dynamic christmasSitemapPaths + hreflang)
 const sitemapSrc = readFileSync(join(root, "api/sitemap.xml.ts"), "utf8");
 assert(sitemapSrc.includes('SITE_URL = "https://www.thedigitalgifter.com"'), "sitemap uses www");
+assert(sitemapSrc.includes("christmasSitemapPaths"), "sitemap uses christmasSitemapPaths()");
+assert(sitemapSrc.includes("buildChristmasHreflangAlternates"), "sitemap emits xhtml hreflang");
+const sitemapPaths = christmasSitemapPaths();
 for (const path of CHRISTMAS_INDEXABLE_PATHS) {
-  assert(sitemapSrc.includes(`"${path}"`), `sitemap includes ${path}`);
+  assert(sitemapPaths.includes(path), `sitemap includes ${path}`);
+}
+for (const includedRo of ["/ro/christmas", "/ro/christmas/cards", "/ro/christmas/santa-video"]) {
+  assert(sitemapPaths.includes(includedRo), `sitemap includes complete RO ${includedRo}`);
 }
 for (const excluded of [
   "/christmas/gifts",
@@ -180,8 +191,11 @@ for (const excluded of [
   "/christmas-ai-photos/order",
   "/christmas/suite",
   "/christmas/tree-gifts",
+  "/ro/christmas/gift-finder",
+  "/en/christmas",
+  "/en/christmas/cards",
 ]) {
-  assert(!sitemapSrc.includes(`"${excluded}"`), `sitemap excludes ${excluded}`);
+  assert(!sitemapPaths.includes(excluded), `sitemap excludes ${excluded}`);
 }
 
 const robotsTxt = readFileSync(join(root, "public/robots.txt"), "utf8");
@@ -410,6 +424,68 @@ assert(
   !getChristmasContentDepth("/christmas/kids"),
   "kids remains without P2B depth (still noindex product)",
 );
+
+// —— P3A international SEO foundation ——
+assert(
+  englishPrefixRedirectTarget("/en/christmas/cards") === "/christmas/cards",
+  "P3A /en/* redirects to unprefixed English",
+);
+assert(
+  getChristmasPermanentRedirectTarget("/en/christmas") === "/christmas",
+  "P3A permanent redirect /en/christmas → /christmas",
+);
+
+const enCardsAlts = buildChristmasHreflangAlternates("/christmas/cards");
+const enCardsByLang = Object.fromEntries(enCardsAlts.map((a) => [a.hreflang, a.href]));
+assert(enCardsByLang.en === `${SITE_ORIGIN}/christmas/cards`, "P3A hreflang en self");
+assert(enCardsByLang.ro === `${SITE_ORIGIN}/ro/christmas/cards`, "P3A hreflang ro reciprocal");
+assert(enCardsByLang["x-default"] === enCardsByLang.en, "P3A x-default → English");
+
+const enCardsHtml = applyChristmasSeo(template, "/christmas/cards");
+assert(enCardsHtml.includes('hreflang="en"'), "P3A EN cards emit hreflang en");
+assert(enCardsHtml.includes('hreflang="ro"'), "P3A EN cards emit hreflang ro");
+assert(enCardsHtml.includes('hreflang="x-default"'), "P3A EN cards emit x-default");
+assert(
+  extractCanonical(enCardsHtml) === `${SITE_ORIGIN}/christmas/cards`,
+  "P3A EN cards keep unprefixed canonical",
+);
+
+const roCardsHtml = applyChristmasSeo(template, "/ro/christmas/cards");
+assert(/lang="ro"/.test(roCardsHtml), "P3A RO cards html lang=ro");
+assert(roCardsHtml.includes("Crăciun"), "P3A RO cards Romanian copy in raw HTML");
+assert(
+  extractCanonical(roCardsHtml) === `${SITE_ORIGIN}/ro/christmas/cards`,
+  "P3A RO cards self-canonical under /ro",
+);
+assert(roCardsHtml.includes('hreflang="en"'), "P3A RO→EN reciprocal hreflang");
+assert(roCardsHtml.includes('hreflang="ro"'), "P3A RO self hreflang");
+assert(roCardsHtml.includes('hreflang="x-default"'), "P3A RO x-default");
+assert(robotsIsIndex(roCardsHtml), "P3A complete RO cards remain indexable");
+
+const roSantaHtml = applyChristmasSeo(template, "/ro/christmas/santa-video");
+assert(roSantaHtml.includes("Moș Crăciun"), "P3A RO santa raw HTML localized");
+assert(
+  extractCanonical(roSantaHtml) === `${SITE_ORIGIN}/ro/christmas/santa-video`,
+  "P3A RO santa self-canonical",
+);
+
+const roIncompleteHtml = applyChristmasSeo(template, "/ro/christmas/gift-finder");
+assert(robotsIsNoindex(roIncompleteHtml), "P3A incomplete RO gift-finder noindex");
+assert(!/hreflang=/i.test(roIncompleteHtml), "P3A incomplete RO must not emit hreflang");
+
+const distRoCards = join(root, "dist", "ro", "christmas", "cards", "index.html");
+if (existsSync(distRoCards)) {
+  const prerenderRo = readFileSync(distRoCards, "utf8");
+  assert(/lang="ro"/.test(prerenderRo), "P3A prerender RO cards lang=ro");
+  assert(
+    extractCanonical(prerenderRo) === `${SITE_ORIGIN}/ro/christmas/cards`,
+    "P3A prerender RO cards canonical",
+  );
+  assert(prerenderRo.includes('hreflang="en"'), "P3A prerender reciprocal hreflang");
+} else {
+  ok("P3A prerender RO cards not in dist yet (run build first)");
+}
+
 // —— 3) Optional live / origin fetch ——
 const liveBase = String(process.env.CHRISTMAS_SEO_BASE || "").replace(/\/$/, "");
 const originBase = String(process.env.CHRISTMAS_SEO_ORIGIN || "").replace(/\/$/, "");

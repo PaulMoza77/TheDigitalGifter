@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { ChristmasLanguageSwitcher } from "@/features/christmas/seo/ChristmasLanguageSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
@@ -229,6 +230,9 @@ export function ChristmasClubPage() {
           <img src="/TheDigitalGifter.png" alt="" width={36} height={36} />
           <span>The Digital Gifter</span>
         </a>
+        <div className="cc-lang" style={{ position: "absolute", top: "1rem", insetInlineEnd: "1rem", zIndex: 5 }}>
+          <ChristmasLanguageSwitcher />
+        </div>
 
         <section className="cc-hero">
           <div className="cc-hero__copy">
