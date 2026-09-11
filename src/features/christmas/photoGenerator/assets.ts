@@ -1,5 +1,17 @@
 import { LANDING_ASSETS } from "../landing/assets";
 
+/** Distinct optimized style-card previews (one image per family style). */
+export const FAMILY_STYLE_PREVIEWS = {
+  classic_family_christmas: "/assets/christmas/style-previews/classic-family-christmas.webp",
+  family_cozy_fireplace: "/assets/christmas/style-previews/cozy-fireplace.webp",
+  family_winter_wonderland: "/assets/christmas/style-previews/winter-wonderland.webp",
+  family_elegant_christmas: "/assets/christmas/style-previews/elegant-christmas.webp",
+  family_christmas_morning: "/assets/christmas/style-previews/christmas-morning.webp",
+  family_luxury_christmas: "/assets/christmas/style-previews/luxury-christmas.webp",
+  family_christmas_movie: "/assets/christmas/style-previews/christmas-movie.webp",
+  family_vintage_christmas: "/assets/christmas/style-previews/vintage-family-christmas.webp",
+} as const;
+
 export const PHOTO_GEN_ASSETS = {
   heroRoom: LANDING_ASSETS.hero,
   familyBefore: LANDING_ASSETS.portraitFamilyBefore,
@@ -12,14 +24,16 @@ export const PHOTO_GEN_ASSETS = {
   catBefore: "/pet/cat/source.webp",
   catAfter: "/pet/cat/scenes/christmas-portrait.webp",
   familyPetAfter: LANDING_ASSETS.portraitPet,
-  styleCozy: LANDING_ASSETS.portraitFamily,
-  styleWinter: LANDING_ASSETS.finale,
-  styleLuxury: LANDING_ASSETS.portraitCouple,
-  styleMorning: LANDING_ASSETS.portraitFamily,
-  styleCabin: LANDING_ASSETS.finale,
-  styleClassic: LANDING_ASSETS.portraitFamily,
-  styleElegant: LANDING_ASSETS.portraitCouple,
+  styleCozy: FAMILY_STYLE_PREVIEWS.family_cozy_fireplace,
+  styleWinter: FAMILY_STYLE_PREVIEWS.family_winter_wonderland,
+  styleLuxury: FAMILY_STYLE_PREVIEWS.family_luxury_christmas,
+  styleMorning: FAMILY_STYLE_PREVIEWS.family_christmas_morning,
+  styleCabin: FAMILY_STYLE_PREVIEWS.family_luxury_christmas,
+  styleClassic: FAMILY_STYLE_PREVIEWS.classic_family_christmas,
+  styleElegant: FAMILY_STYLE_PREVIEWS.family_elegant_christmas,
   styleMarket: LANDING_ASSETS.card,
+  styleMovie: FAMILY_STYLE_PREVIEWS.family_christmas_movie,
+  styleVintage: FAMILY_STYLE_PREVIEWS.family_vintage_christmas,
 } as const;
 
 export type ExampleCategory = "family" | "couples" | "pets";
@@ -106,7 +120,7 @@ export const GALLERY_EXAMPLES: ExamplePair[] = [
   },
 ];
 
-/** Map classic style keys to demo preview images (curated for first iteration). */
+/** Map classic style keys to demo preview images (one distinct asset per family style). */
 export const STYLE_PREVIEW_BY_KEY: Record<string, string> = {
   classic_christmas: PHOTO_GEN_ASSETS.styleClassic,
   winter_wonderland: PHOTO_GEN_ASSETS.styleWinter,
@@ -114,16 +128,9 @@ export const STYLE_PREVIEW_BY_KEY: Record<string, string> = {
   cozy_fireplace: PHOTO_GEN_ASSETS.styleCozy,
   elegant_christmas: PHOTO_GEN_ASSETS.styleElegant,
   north_pole: PHOTO_GEN_ASSETS.styleCabin,
-  christmas_movie: PHOTO_GEN_ASSETS.styleMorning,
-  vintage_christmas: PHOTO_GEN_ASSETS.styleLuxury,
-  classic_family_christmas: PHOTO_GEN_ASSETS.styleClassic,
-  family_cozy_fireplace: PHOTO_GEN_ASSETS.styleCozy,
-  family_winter_wonderland: PHOTO_GEN_ASSETS.styleWinter,
-  family_elegant_christmas: PHOTO_GEN_ASSETS.styleElegant,
-  family_christmas_morning: PHOTO_GEN_ASSETS.styleMorning,
-  family_luxury_christmas: PHOTO_GEN_ASSETS.styleLuxury,
-  family_christmas_movie: PHOTO_GEN_ASSETS.styleMorning,
-  family_vintage_christmas: PHOTO_GEN_ASSETS.styleClassic,
+  christmas_movie: PHOTO_GEN_ASSETS.styleMovie,
+  vintage_christmas: PHOTO_GEN_ASSETS.styleVintage,
+  ...FAMILY_STYLE_PREVIEWS,
   romantic_snowfall: PHOTO_GEN_ASSETS.styleWinter,
   couple_cozy_fireplace: PHOTO_GEN_ASSETS.styleCozy,
   santa_pet: PHOTO_GEN_ASSETS.dogAfter,
