@@ -43,8 +43,8 @@ export const GIFT_FINDER_FAQS = [
     a: "Yes. You can go back through the steps, refine results with quick feedback chips, or start over without losing your wishlist.",
   },
   {
-    q: "Are prices and availability live?",
-    a: "Not yet. We show typical price ranges for gift ideas. Live retailer prices, availability and affiliate shop links will be added when product feeds are connected — we do not invent exact stock or merchant prices.",
+    q: "Does it show real products?",
+    a: "Today the finder shows curated gift ideas with typical price ranges. Live retailer prices, availability, and shop feeds are not connected yet — we do not invent exact stock or merchant prices.",
   },
 ] as const;
 
@@ -135,7 +135,7 @@ export function giftFinderJsonLd(locale: GiftFinderLocale = "en") {
           "@type": "ListItem",
           position: index + 1,
           name: loc === "ro" ? link.labelRo : link.labelEn,
-          url: `${GIFT_FINDER_ORIGIN}${seoGiftPath(link.slug)}`,
+          url: `${GIFT_FINDER_ORIGIN}${taxonomyHref(link.slug)}`,
         })),
       },
     ],

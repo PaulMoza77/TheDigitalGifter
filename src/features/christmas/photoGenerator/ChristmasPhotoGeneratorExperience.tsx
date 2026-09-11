@@ -351,6 +351,11 @@ export default function ChristmasPhotoGeneratorExperience() {
               </div>
             </section>
 
+            <section className="pg-section" aria-labelledby="portrait-explain-heading">
+              <h2 id="portrait-explain-heading">{t("portraitExplain.h2")}</h2>
+              <p className="xmas-lede">{t("portraitExplain.body")}</p>
+            </section>
+
             <section className="pg-section" aria-labelledby="styles-heading">
               <h2 id="styles-heading">{t("style.h2")}</h2>
               <p className="xmas-lede">{t("style.lede")}</p>
@@ -368,7 +373,7 @@ export default function ChristmasPhotoGeneratorExperience() {
                     <img
                       className="pg-style__img"
                       src={STYLE_PREVIEW_BY_KEY[style.styleKey] || PHOTO_GEN_ASSETS.styleClassic}
-                      alt=""
+                      alt={`${style.displayName} Christmas portrait style preview`}
                       loading="lazy"
                     />
                     <div className="pg-style__body">
@@ -378,6 +383,11 @@ export default function ChristmasPhotoGeneratorExperience() {
                   </button>
                 ))}
               </div>
+            </section>
+
+            <section className="pg-section" aria-labelledby="best-heading">
+              <h2 id="best-heading">{t("best.h2")}</h2>
+              <p className="xmas-lede">{t("best.body")}</p>
             </section>
 
             <section className="pg-section" aria-labelledby="ecosystem-heading">
@@ -429,6 +439,15 @@ export default function ChristmasPhotoGeneratorExperience() {
                       <Link className="xmas-btn xmas-btn--gold" to="/christmas/pets">
                         {t("pets.cta")}
                       </Link>
+                      <Link className="xmas-btn xmas-btn--ghost" to="/christmas/dogs">
+                        {t("nav.dogs")}
+                      </Link>
+                      <Link className="xmas-btn xmas-btn--ghost" to="/christmas/cats">
+                        {t("nav.cats")}
+                      </Link>
+                      <Link className="xmas-btn xmas-btn--ghost" to="/christmas/cards">
+                        {t("nav.cards")}
+                      </Link>
                     </div>
                   </div>
                   <img
@@ -470,8 +489,6 @@ export default function ChristmasPhotoGeneratorExperience() {
                 <dd>{t("geo.bestBody")}</dd>
                 <dt>{t("geo.support")}</dt>
                 <dd>{t("geo.supportBody")}</dd>
-                <dt>{t("geo.time")}</dt>
-                <dd>{t("geo.timeBody")}</dd>
                 <dt>{t("geo.privacy")}</dt>
                 <dd>{t("geo.privacyBody")}</dd>
               </dl>

@@ -1360,6 +1360,11 @@ export default function ChristmasCardsPage() {
           </div>
         </section>
 
+        <section className="ccm-section" aria-labelledby="ccm-geo-title">
+          <h2 id="ccm-geo-title">{t("geo.h2")}</h2>
+          <p className="ccm-lede">{t("geo.body")}</p>
+        </section>
+
         <section className="ccm-section" aria-labelledby="ccm-how-title">
           <h2 id="ccm-how-title">{t("how.h2")}</h2>
           <div className="ccm-how">

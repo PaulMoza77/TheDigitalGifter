@@ -10,11 +10,13 @@ import {
 import "./ChristmasLanding.css";
 import {
   cardsUrl,
+  giftFinderUrl,
   messagesUrl,
   portraitUrl,
   santaExperienceUrl,
   writeSantaNameHandoff,
   type CardTheme,
+  type GiftFinderRecipient,
   type PortraitVertical,
 } from "./handoff";
 import { trackHubEvent } from "./hubAnalytics";
@@ -22,6 +24,8 @@ import { AdventScene } from "./scenes/AdventScene";
 import { CardsScene } from "./scenes/CardsScene";
 import { FaqScene } from "./scenes/FaqScene";
 import { FinalCtaScene } from "./scenes/FinalCtaScene";
+import { GeoScene } from "./scenes/GeoScene";
+import { GiftFinderScene } from "./scenes/GiftFinderScene";
 import { GiftTreeLandingScene } from "./scenes/GiftTreeLandingScene";
 import { ImmersiveHero } from "./scenes/ImmersiveHero";
 import { MessagesScene } from "./scenes/MessagesScene";
@@ -100,6 +104,24 @@ export function ChristmasLandingExperience({
           trackHubEvent("christmas_hub_interact", { surface: "hub_gifts", action: "section_viewed" }, "christmas_gift_tree");
         }}
       />
+      <GiftFinderScene
+        locale={LOCALE}
+        onSelect={(recipient: GiftFinderRecipient) => {
+          trackHubEvent(
+            "christmas_hub_interact",
+            { surface: "hub_gift_finder", action: "recipient", recipient_key: recipient },
+            "christmas_gift_finder",
+          );
+        }}
+        onCta={(recipient: GiftFinderRecipient) => {
+          trackHubEvent(
+            "christmas_hub_cta",
+            { surface: "hub_gift_finder", recipient_key: recipient },
+            "christmas_gift_finder",
+          );
+          void navigate(giftFinderUrl(recipient));
+        }}
+      />
       <PortraitScene
         locale={LOCALE}
         onToggle={(vertical: PortraitVertical) => {
@@ -173,6 +195,7 @@ export function ChristmasLandingExperience({
         }}
       />
       <FinalCtaScene locale={LOCALE} onCta={() => goCreate("finale")} />
+      <GeoScene locale={LOCALE} />
       <FaqScene locale={LOCALE} />
     </article>
   );

@@ -18,7 +18,6 @@ import { HERO_DEMO, EXAMPLE_SETS, findExampleForProfile, type ExampleGiftIdea } 
 import {
   applyGiftFinderJsonLd,
   GIFT_FINDER_FAQS,
-  GIFT_FINDER_GEO,
   giftFinderSeo,
   taxonomyHref,
   SEO_TAXONOMY_LINKS,
@@ -1035,16 +1034,26 @@ export default function ChristmasGiftFinderPage() {
           <section>
             <h2 className="gf-display">{gfT("seo.geo.title", locale)}</h2>
             <p>{gfT("seo.geo.body", locale)}</p>
-            {GIFT_FINDER_GEO.map((item) => (
-              <div key={item.q}>
-                <h3 className="gf-display">{item.q}</h3>
-                <p>{item.a}</p>
-              </div>
-            ))}
+          </section>
+
+          <section>
+            <h2 className="gf-display">{gfT("seo.section.how", locale)}</h2>
+            <p>{gfT("seo.section.howBody", locale)}</p>
+            <ol>
+              <li>Who you’re shopping for</li>
+              <li>Interests and personality</li>
+              <li>Budget range</li>
+              <li>Personalized gift ideas with reasons</li>
+            </ol>
           </section>
 
           <section>
             <h2 className="gf-display">{gfT("seo.section.recipient", locale)}</h2>
+            <p>
+              Recipient-specific landing pages are not live yet. Start the finder and choose Mom,
+              Dad, wife, husband, girlfriend, boyfriend, kids, teens, grandparents, friends,
+              coworkers, and more inside the tool.
+            </p>
             <ul>
               {SEO_TAXONOMY_LINKS.byRecipient.map((link) => (
                 <li key={link.slug}>
@@ -1056,6 +1065,10 @@ export default function ChristmasGiftFinderPage() {
 
           <section>
             <h2 className="gf-display">{gfT("seo.section.budget", locale)}</h2>
+            <p>
+              Recommendations use typical price ranges for gift ideas — not live retailer inventory
+              or guaranteed stock.
+            </p>
             <ul>
               {SEO_TAXONOMY_LINKS.byBudget.map((link) => (
                 <li key={link.slug}>
@@ -1063,6 +1076,24 @@ export default function ChristmasGiftFinderPage() {
                 </li>
               ))}
             </ul>
+          </section>
+
+          <section>
+            <h2 className="gf-display">{gfT("seo.section.hasEverything", locale)}</h2>
+            <p>{gfT("seo.section.hasEverythingBody", locale)}</p>
+            <p>
+              <Link to={taxonomyHref("for-someone-who-has-everything")}>
+                Start with “someone who has everything”
+              </Link>
+            </p>
+          </section>
+
+          <section>
+            <h2 className="gf-display">{gfT("seo.section.wishlist", locale)}</h2>
+            <p>{gfT("seo.section.wishlistBody", locale)}</p>
+            <p>
+              <Link to="/christmas/wishlist">Open the Christmas Wishlist Maker</Link>
+            </p>
           </section>
 
           <section>

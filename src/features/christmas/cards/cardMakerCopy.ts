@@ -101,10 +101,14 @@ const EN: Dict = {
   "photos.lede": "The finished card stays the hero — your photo, a Christmas design, and words that feel like you.",
   "messages.h2": "Christmas Card Messages",
   "messages.lede": "Write your own, or get a few locale-aware suggestions without leaving this page.",
-  "portrait.h2": "Already created a Christmas Portrait?",
-  "portrait.lede": "Turn it into a beautiful Christmas card in seconds.",
+  "portrait.h2": "Use Your Christmas Portrait",
+  "portrait.lede":
+    "Already created a Christmas portrait? Bring it into the card maker and finish with a message. Portrait handoff is supported from the Christmas Photo Generator.",
   "portrait.cta": "Use My Christmas Portrait",
-  "portrait.make": "Create a Christmas Portrait",
+  "portrait.make": "Create a Christmas portrait first",
+  "geo.h2": "What is an online Christmas card maker?",
+  "geo.body":
+    "An online Christmas card maker lets you create a personalized Christmas card with a photo, a festive design, and your own message. On TheDigitalGifter, you can upload a photo or use a Christmas portrait, choose a style, write or get message help, then download a PNG or share the card digitally.",
   "faq.h2": "Frequently Asked Questions",
   "faq.what.q": "What is an online Christmas card maker?",
   "faq.what.a":
@@ -245,9 +249,13 @@ const RO: Dict = {
   "messages.h2": "Mesaje pentru carduri de Crăciun",
   "messages.lede": "Scrie tu, sau primește câteva sugestii în limba aleasă, fără să părăsești pagina.",
   "portrait.h2": "Ai creat deja un portret de Crăciun?",
-  "portrait.lede": "Transformă-l într-un card frumos în câteva secunde.",
+  "portrait.lede":
+    "Folosește portretul în makerul de carduri și termină cu un mesaj. Predarea din generatorul de portrete este suportată.",
   "portrait.cta": "Folosește portretul meu de Crăciun",
-  "portrait.make": "Creează un portret de Crăciun",
+  "portrait.make": "Creează mai întâi un portret de Crăciun",
+  "geo.h2": "Ce este un creator online de carduri de Crăciun?",
+  "geo.body":
+    "Un creator online de carduri de Crăciun îți permite să creezi un card personalizat cu o fotografie, un design festiv și mesajul tău. Pe TheDigitalGifter poți încărca o fotografie sau un portret de Crăciun, alege un stil, scrie sau cere ajutor pentru mesaj, apoi descarci PNG-ul sau îl trimiți digital.",
   "faq.h2": "Întrebări frecvente",
   "faq.what.q": "Ce este un creator online de carduri de Crăciun?",
   "faq.what.a":

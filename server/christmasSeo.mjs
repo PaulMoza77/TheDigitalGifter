@@ -6,6 +6,8 @@
  * and a semantic body shell inside #root (replaced by createRoot on hydrate).
  */
 
+import { getChristmasContentDepth } from "./christmasContentDepth.mjs";
+
 export const SITE_ORIGIN = "https://www.thedigitalgifter.com";
 
 /** @typedef {{ href: string, label: string }} SeoLink */
@@ -516,6 +518,73 @@ function buildWebPageJsonLd(entry, canonical) {
   };
 }
 
+function buildDepthHtml(pathname) {
+  const depth = getChristmasContentDepth(pathname);
+  if (!depth) return "";
+
+  const sections = depth.sections
+    .map((section) => {
+      const list = section.list
+        ? `<ul>${section.list
+            .map((item) => {
+              const arrow = item.includes(" → ") ? item.split(" → ") : null;
+              if (arrow && arrow[1]?.startsWith("/")) {
+                return `<li><a href="${escapeAttr(arrow[1])}">${escapeHtml(arrow[0])}</a></li>`;
+              }
+              return `<li>${escapeHtml(item)}</li>`;
+            })
+            .join("")}</ul>`
+        : "";
+      const link =
+        section.linkHref && section.linkLabel
+          ? `<p><a href="${escapeAttr(section.linkHref)}">${escapeHtml(section.linkLabel)}</a></p>`
+          : "";
+      return (
+        `<section data-tdg-depth-section="${escapeAttr(section.h2)}">` +
+        `<h2>${escapeHtml(section.h2)}</h2>` +
+        `<p>${escapeHtml(section.body)}</p>` +
+        list +
+        link +
+        `</section>`
+      );
+    })
+    .join("");
+
+  const geo =
+    `<section data-tdg-geo="true">` +
+    `<h2>${escapeHtml(depth.geo.h2)}</h2>` +
+    `<p>${escapeHtml(depth.geo.body)}</p>` +
+    `</section>`;
+
+  const faqs = depth.faqs.length
+    ? `<section data-tdg-faq="true"><h2>Frequently Asked Questions</h2>${depth.faqs
+        .map(
+          (item) =>
+            `<div><h3>${escapeHtml(item.q)}</h3><p>${escapeHtml(item.a)}</p></div>`,
+        )
+        .join("")}</section>`
+    : "";
+
+  return geo + sections + faqs;
+}
+
+function buildFaqJsonLd(pathname) {
+  const depth = getChristmasContentDepth(pathname);
+  if (!depth?.faqs?.length) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: depth.faqs.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
+}
+
 function buildSeoShell(entry) {
   const links = entry.links
     .map(
@@ -534,14 +603,16 @@ function buildSeoShell(entry) {
         entry.h2Body ? `<p>${escapeHtml(entry.h2Body)}</p>` : ""
       }`
     : "";
+  const depthHtml = buildDepthHtml(entry.path);
 
   return (
-    `<div id="tdg-christmas-seo" data-tdg-seo="christmas" data-path="${escapeAttr(entry.path)}">` +
+    `<div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p2a" data-path="${escapeAttr(entry.path)}">` +
     `<nav aria-label="Breadcrumb">${crumbs}</nav>` +
     `<h1>${escapeHtml(entry.h1)}</h1>` +
     `<p>${escapeHtml(entry.lede)}</p>` +
     h2 +
     `<ul>${links}</ul>` +
+    depthHtml +
     `</div>`
   );
 }
@@ -574,13 +645,18 @@ export function applyChristmasSeo(html, pathname) {
 
   const breadcrumbLd = JSON.stringify(buildBreadcrumbJsonLd(entry));
   const webPageLd = JSON.stringify(buildWebPageJsonLd(entry, canonical));
+  const faqLd = buildFaqJsonLd(entry.path);
   const ldBlock =
     `\n    <script type="application/ld+json" data-tdg-seo="breadcrumb">${breadcrumbLd}</script>` +
-    `\n    <script type="application/ld+json" data-tdg-seo="webpage">${webPageLd}</script>\n`;
+    `\n    <script type="application/ld+json" data-tdg-seo="webpage">${webPageLd}</script>` +
+    (faqLd
+      ? `\n    <script type="application/ld+json" data-tdg-seo="faq">${JSON.stringify(faqLd)}</script>`
+      : "") +
+    `\n`;
 
   // Remove prior injected Christmas route LD if re-applying
   next = next.replace(
-    /\n?\s*<script type="application\/ld\+json" data-tdg-seo="(?:breadcrumb|webpage)">[\s\S]*?<\/script>/g,
+    /\n?\s*<script type="application\/ld\+json" data-tdg-seo="(?:breadcrumb|webpage|faq)">[\s\S]*?<\/script>/g,
     "",
   );
   next = next.replace(/<\/head>/i, `${ldBlock}  </head>`);

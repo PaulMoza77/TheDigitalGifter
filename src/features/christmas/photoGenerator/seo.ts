@@ -62,20 +62,6 @@ export function photoGeneratorJsonLd(locale: PhotoGenLocale = "en") {
         },
       },
       {
-        "@type": "SoftwareApplication",
-        name: photoGenT("seo.h1", locale),
-        applicationCategory: "MultimediaApplication",
-        operatingSystem: "Web",
-        description: seo.description,
-        url: seo.url,
-        offers: {
-          "@type": "Offer",
-          availability: "https://schema.org/PreOrder",
-          priceCurrency: "EUR",
-          price: "0",
-        },
-      },
-      {
         "@type": "FAQPage",
         mainEntity: faqs,
       },
