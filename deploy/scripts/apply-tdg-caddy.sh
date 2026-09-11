@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
-# Install TDG HTTP host routing on the shared Caddy proxy without removing TheMozas routes.
+# Install TDG HTTP host routing on the shared Caddy proxy without removing TheMozas/CasaHub routes.
 # Refuses to downgrade an active HTTPS TDG configuration unless FORCE_TDG_CADDY_HTTP=yes.
 set -euo pipefail
 
 PROXY_DIR="${MOZAS_PROXY_DIR:-/opt/mozas/proxy}"
 MODE_FILE="${PROXY_DIR}/tdg-caddy.mode"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ASSERT_LIB="${SCRIPT_DIR}/assert-shared-edge-caddy.sh"
+if [[ ! -f "${ASSERT_LIB}" ]]; then
+  ASSERT_LIB=/opt/mozas/bin/assert-shared-edge-caddy.sh
+fi
+source "${ASSERT_LIB}"
+
 SRC_HTTP="${1:-}"
 if [[ -z "${SRC_HTTP}" ]]; then
   if [[ -f /opt/mozas/projects/thedigitalgifter/repo/deploy/caddy/Caddyfile.http ]]; then
@@ -29,31 +36,21 @@ if [[ "${FORCE_TDG_CADDY_HTTP:-}" != "yes" ]]; then
   fi
 fi
 
-if ! grep -q 'themozas:8080' "${SRC_HTTP}"; then
-  echo "refusing Caddyfile that does not keep TheMozas upstream" >&2
-  exit 1
-fi
-if ! grep -q 'tdg-verify.mozas-prod-01' "${SRC_HTTP}"; then
-  echo "refusing Caddyfile without TDG verify host" >&2
-  exit 1
-fi
-if ! grep -q 'thedigitalgifter.com' "${SRC_HTTP}"; then
-  echo "refusing Caddyfile without thedigitalgifter.com host" >&2
-  exit 1
-fi
-if ! grep -q 'www.thedigitalgifter.com' "${SRC_HTTP}"; then
-  echo "refusing Caddyfile without www.thedigitalgifter.com host" >&2
-  exit 1
-fi
+assert_shared_edge_caddy_hosts "${SRC_HTTP}" "http"
 
-cp -a "${PROXY_DIR}/Caddyfile" "${PROXY_DIR}/Caddyfile.bak-tdg"
-cp "${SRC_HTTP}" "${PROXY_DIR}/Caddyfile"
+TS="$(date -u +%Y%m%dT%H%M%SZ)"
+BACKUP="${PROXY_DIR}/Caddyfile.bak-tdg-${TS}"
+install_caddyfile_atomic "${SRC_HTTP}" "${PROXY_DIR}/Caddyfile" "${BACKUP}"
+ln -sfn "$(basename "${BACKUP}")" "${PROXY_DIR}/Caddyfile.bak-tdg"
 
 if ! docker exec mozas-caddy caddy validate --config /etc/caddy/Caddyfile >/dev/null; then
   echo "Caddyfile failed validation — restoring previous file" >&2
-  cp -a "${PROXY_DIR}/Caddyfile.bak-tdg" "${PROXY_DIR}/Caddyfile"
+  cp -a "${BACKUP}" "${PROXY_DIR}/Caddyfile"
   exit 1
 fi
+
+assert_shared_edge_caddy_hosts "${PROXY_DIR}/Caddyfile" "http"
+
 docker restart mozas-caddy >/dev/null
 for _ in 1 2 3 4 5 6 7 8 9 10; do
   if curl -fsS http://127.0.0.1/healthz >/dev/null 2>&1; then
@@ -65,5 +62,7 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
   fi
   sleep 1
 done
-echo "Caddy restarted but :80 healthz did not recover" >&2
+echo "Caddy restarted but :80 healthz did not recover — restoring previous file" >&2
+cp -a "${BACKUP}" "${PROXY_DIR}/Caddyfile"
+docker restart mozas-caddy >/dev/null || true
 exit 1
