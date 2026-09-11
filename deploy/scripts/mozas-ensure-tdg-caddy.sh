@@ -22,7 +22,6 @@ marker = marker_path.read_text().strip().lower() if marker_path.exists() else ""
 if marker in ("http", "https"):
     print(marker)
     raise SystemExit(0)
-# HTTPS may be a combined host block OR split apex-redirect + www blocks.
 named = bool(re.search(r"(?m)^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{", active)) \
     or bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{", active)) \
     or bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com\s*\{", active))
@@ -57,6 +56,10 @@ if "tdg-verify.mozas-prod-01" not in text:
     sys.exit("Caddyfile must keep TDG verify host")
 if "thedigitalgifter.com" not in text:
     sys.exit("Caddyfile must include thedigitalgifter.com")
+if "casahub.eu" not in text or "www.casahub.eu" not in text:
+    sys.exit("Caddyfile must include CasaHub hosts casahub.eu / www.casahub.eu")
+if "casahub-web:3000" not in text:
+    sys.exit("Caddyfile must keep CasaHub upstream casahub-web:3000")
 combined = bool(re.search(r"(?m)^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{", text)) \
     or bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{", text))
 split_www = bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com\s*\{", text))
@@ -67,6 +70,10 @@ if mode == "https":
         sys.exit("HTTPS Caddyfile must use a named TDG site block (combined or apex+www split)")
     if "Strict-Transport-Security" not in text:
         sys.exit("HTTPS Caddyfile must set HSTS")
+    if "mcp.themozas.com" not in text or "mozas-mcp-bridge:8787" not in text:
+        sys.exit("HTTPS Caddyfile must keep MCP site mcp.themozas.com → mozas-mcp-bridge:8787")
+    if "casahub.eu, www.casahub.eu" not in text and "www.casahub.eu, casahub.eu" not in text:
+        sys.exit("HTTPS Caddyfile must keep named CasaHub site block")
 if mode == "http" and https_layout:
     sys.exit("HTTP Caddyfile must not enable named HTTPS site blocks")
 print("tdg_caddy_source_ok=yes")
@@ -76,7 +83,6 @@ echo "tdg_caddy_mode=${mode}"
 echo "tdg_caddy_source=${SRC}"
 
 if [[ "${mode}" == "https" ]]; then
-  # Re-applying an already-HTTPS site: allow proxied DNS and skip public DNS gate.
   TDG_HTTPS_APPLY=yes TDG_HTTPS_ALLOW_PROXIED="${TDG_HTTPS_ALLOW_PROXIED:-yes}" \
     TDG_HTTPS_SKIP_PUBLIC_VERIFY="${TDG_HTTPS_SKIP_PUBLIC_VERIFY:-yes}" \
     MOZAS_ORIGIN_IP="${MOZAS_ORIGIN_IP:-}" \
