@@ -65,36 +65,14 @@ export const CHRISTMAS_SEO_ROUTES = [
     h2: "Related Christmas tools",
     links: [
       { href: "/christmas/wishlist", label: "Create a Christmas Wishlist" },
-      { href: "/christmas/gifts", label: "Browse Christmas Gift Ideas" },
       { href: "/christmas/photo-generator", label: "Christmas Photo Generator" },
+      { href: "/christmas/tree", label: "Digital Christmas Tree" },
       { href: "/christmas", label: "All Christmas experiences" },
     ],
     breadcrumbs: [
       { href: "/", label: "Home" },
       { href: "/christmas", label: "Christmas" },
       { href: "/christmas/gift-finder", label: "Gift Finder" },
-    ],
-  },
-  {
-    path: "/christmas/gifts",
-    title: "Christmas Gift Ideas | Gifts for Everyone | TheDigitalGifter",
-    description:
-      "Browse Christmas gift ideas for everyone you love — family, partners, friends, and pets — plus personalized digital gifts from TheDigitalGifter.",
-    canonicalPath: "/christmas/gifts",
-    h1: "Christmas Gift Ideas for Everyone You Love",
-    lede:
-      "Discover Christmas gift ideas and personalized digital presents, or use the Gift Finder for tailored recommendations.",
-    h2: "Find the right gift",
-    links: [
-      { href: "/christmas/gift-finder", label: "Use the Christmas Gift Finder" },
-      { href: "/christmas/wishlist", label: "Create a Christmas Wishlist" },
-      { href: "/christmas/photo-generator", label: "Christmas Photo Generator" },
-      { href: "/christmas", label: "Christmas at TheDigitalGifter" },
-    ],
-    breadcrumbs: [
-      { href: "/", label: "Home" },
-      { href: "/christmas", label: "Christmas" },
-      { href: "/christmas/gifts", label: "Gift Ideas" },
     ],
   },
   {
@@ -417,6 +395,25 @@ export const CHRISTMAS_SEO_ROUTES = [
       { href: "/", label: "Home" },
       { href: "/christmas-ai-photos", label: "Christmas AI Photos" },
     ],
+    // Paid acquisition funnel — same organic intent as /christmas/photo-generator.
+    noindex: true,
+  },
+  {
+    path: "/christmas-ai-photos/order",
+    title: "Your Christmas AI Photos | TheDigitalGifter",
+    description: "View your AI Christmas portraits after checkout.",
+    canonicalPath: "/christmas-ai-photos",
+    h1: "Your Christmas Photos",
+    lede: "Transactional order results for Christmas AI photos.",
+    links: [
+      { href: "/christmas/photo-generator", label: "AI Christmas Photo Generator" },
+      { href: "/christmas", label: "Christmas home" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas-ai-photos", label: "Christmas AI Photos" },
+    ],
+    noindex: true,
   },
 ];
 
