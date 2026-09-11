@@ -168,10 +168,12 @@ export const DEFAULT_CHRISTMAS_LOCALE = "en";
 /** English slug paths that participate in international organic SEO. */
 export const CHRISTMAS_I18N_ROUTE_BASES = [
   "/christmas",
+  "/christmas/send-a-gift",
   "/christmas/gift-finder",
   "/christmas/wishlist",
   "/christmas/photo-generator",
   "/christmas/family",
+  "/christmas/kids",
   "/christmas/couples",
   "/christmas/pets",
   "/christmas/dogs",
@@ -206,7 +208,11 @@ export const CHRISTMAS_TRANSLATION_COMPLETENESS = {
             notes:
               p === "/christmas/santa-video" || p === "/christmas/messages"
                 ? "Content complete; indexability gated by product-language readiness"
-                : "P3B Wave 1 SEO content",
+                : p === "/christmas/kids"
+                  ? "Localized guardian-consent gate + shared portrait controls"
+                  : p === "/christmas/send-a-gift"
+                    ? "Localized privacy-safe remote gifting flow"
+                    : "P3B Wave 1 SEO content",
           },
         ]),
       ),
