@@ -161,12 +161,17 @@ describe("wishlist / gift finder wiring", () => {
     expect(copyFile).toContain("Create Mine Free");
     expect(copyFile).toContain("I’m getting this");
     expect(copyFile).toContain("Create a Christmas Wishlist and Share One Simple Link");
-    expect(page).toContain("copy.viralCta");
-    expect(page).toContain("copy.heroH1");
+    expect(copyFile).toContain("export function wishlistT");
+    expect(copyFile).toContain("Dragă Moș Crăciun");
+    expect(copyFile).toContain("A minha lista de desejos de Natal");
+    expect(page).toContain('t("viral.cta")');
+    expect(page).toContain('t("hero.h1")');
+    expect(page).toContain("wishlistT");
+    expect(page).toContain("parseChristmasLocalePath");
     expect(page).toContain("wishlist_create_from_shared_clicked");
     expect(page).toContain("noindex");
     expect(page).toContain("/christmas/gift-finder");
-    expect(page).toContain("WISHLIST_FAQ_EN");
+    expect(page).toContain("wishlistFaq");
     expect(page).toContain("reserveWishlistItem");
   });
 

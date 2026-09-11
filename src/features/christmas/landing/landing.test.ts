@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { CHRISTMAS_FUNNEL_ALLOWED_EVENTS } from "../funnelEventContract";
-import { LANDING_COPY_KEYS, landingT } from "./copy";
+import {
+  CHRISTMAS_LANDING_LOCALES,
+  LANDING_COPY_KEYS,
+  landingHasSpokenSanta,
+  landingT,
+  PACKS,
+  resolveChristmasLandingLocale,
+} from "./copy";
 import {
   CARD_THEME_TO_STYLE,
   cardsUrl,
@@ -41,11 +48,68 @@ describe("christmas landing copy + seo", () => {
     expect(LANDING_FAQS).toHaveLength(5);
   });
 
+  it("ships Wave 1 UI packs with CTA coverage and soft Santa for non-en/ro", () => {
+    expect([...CHRISTMAS_LANDING_LOCALES]).toEqual([
+      "en",
+      "ro",
+      "de",
+      "fr",
+      "es",
+      "it",
+      "pt",
+      "nl",
+      "pl",
+    ]);
+    expect(resolveChristmasLandingLocale("pt-PT")).toBe("pt");
+    expect(landingHasSpokenSanta("en")).toBe(true);
+    expect(landingHasSpokenSanta("ro")).toBe(true);
+    expect(landingHasSpokenSanta("de")).toBe(false);
+
+    const ctaKeys = [
+      "hero.cta",
+      "finder.cta",
+      "portraits.cta",
+      "santa.cta",
+      "wishlist.cta",
+      "tree.cta",
+      "advent.cta",
+      "cards.cta",
+      "messages.cta",
+      "finale.cta",
+      "hero.countdown.days",
+      "hero.countdown.hours",
+      "hero.countdown.minutes",
+      "hero.countdown.seconds",
+    ];
+
+    for (const locale of CHRISTMAS_LANDING_LOCALES) {
+      expect(PACKS[locale]).toBeTruthy();
+      for (const key of ctaKeys) {
+        expect(landingT(key, locale).length).toBeGreaterThan(1);
+        expect(landingT(key, locale)).not.toBe(key);
+      }
+    }
+
+    expect(landingT("hero.h1", "de")).not.toBe(landingT("hero.h1", "en"));
+    expect(landingT("finder.cta", "fr")).not.toBe(landingT("finder.cta", "en"));
+    expect(landingT("santa.cta", "en")).toMatch(/personalized Santa video/i);
+    expect(landingT("santa.cta", "ro")).toMatch(/video|Moș/i);
+    for (const locale of ["de", "fr", "es", "it", "pt", "nl", "pl"] as const) {
+      const cta = landingT("santa.cta", locale);
+      const lede = landingT("santa.lede", locale);
+      expect(cta.toLowerCase()).not.toMatch(/personalized santa video|vídeo personalizado de santa que dice/i);
+      expect(cta).not.toMatch(/Create a personalized/i);
+      expect(lede.toLowerCase()).not.toMatch(/says their name|diga o nome|sage ihren namen im video/i);
+      expect(landingT("faq.2.a", locale)).not.toMatch(/^Yes\./);
+    }
+  });
+
   it("has unique title and description for GEO/SEO", () => {
     const seo = christmasLandingSeo("en");
     expect(seo.title).toContain("Christmas");
     expect(seo.description.length).toBeGreaterThan(80);
     expect(seo.url).toContain("/christmas");
+    expect(christmasLandingSeo("de").url).toContain("/de/christmas");
   });
 });
 
@@ -92,7 +156,11 @@ describe("christmas landing wiring", () => {
     expect(experience).toContain("GiftFinderScene");
     expect(experience).toContain("GeoScene");
     expect(experience).toContain("giftFinderUrl");
+    expect(experience).toContain("parseChristmasLocalePath");
+    expect(experience).toContain("resolveChristmasLandingLocale");
+    expect(experience).toContain("christmasPathForLocale");
     expect(experience).not.toContain("WorldTransition");
+    expect(experience).not.toContain('const LOCALE = CHRISTMAS_LANDING_DEFAULT_LOCALE');
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("santa-alpha.webm");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("santa-static.png");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("cabin-hero-loop.mp4");

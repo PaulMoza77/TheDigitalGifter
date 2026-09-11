@@ -190,7 +190,7 @@ describe("product wiring", () => {
     expect(handoff).toContain("tdg.christmas.portrait.card.handoff.v1");
     expect(handoff).toContain("cardsUrlFromPortrait");
     const portrait = readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx");
-    expect(portrait).toContain("Turn This Into a Christmas Card");
+    expect(portrait).toContain('t("funnel.card")');
     expect(portrait).toContain("writePortraitToCardHandoff");
     const copy = readSrc("src/features/christmas/cards/cardMakerCopy.ts");
     expect(copy).toContain("Christmas Card Maker");
@@ -238,6 +238,17 @@ describe("card maker taxonomy", () => {
     const { cardsT, cardsMakerSeo } = await import("./cardMakerCopy");
     expect(cardsT("hero.cta", "en")).toMatch(/Create/i);
     expect(cardsT("hero.cta", "ro")).toMatch(/Creează/i);
+    expect(cardsT("hero.cta", "de")).toMatch(/Karte/i);
+    expect(cardsT("hero.cta", "pt")).toMatch(/cartão/i);
+    expect(cardsT("brand", "pl")).toBe("TheDigitalGifter");
     expect(cardsMakerSeo("en").title).toContain("Christmas Card Maker");
+    expect(cardsMakerSeo("fr").title).toMatch(/Noël/i);
+  });
+
+  it("localizes taxonomy chips for Wave 1 locales", async () => {
+    const { labelFor, MESSAGE_RECIPIENTS, MESSAGE_TONES, MESSAGE_LENGTHS } = await import("./taxonomy");
+    expect(labelFor(MESSAGE_RECIPIENTS, "mom", "de")).toBe("Mama");
+    expect(labelFor(MESSAGE_TONES, "funny", "pl")).toBe("Zabawny");
+    expect(labelFor(MESSAGE_LENGTHS, "short", "pt")).toBe("Curto");
   });
 });

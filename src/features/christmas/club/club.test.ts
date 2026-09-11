@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS } from "./config";
 import { productForCountdownUnit } from "./ChristmasCountdown";
+import { clubT, PACKS, REQUIRED_UI_KEYS, resolveClubLocale } from "./copy";
 import { clubEmailValidationMessage, isValidClubEmail, normalizeClubEmail } from "./email";
 import {
   ChristmasClubSignupError,
@@ -74,6 +77,37 @@ describe("christmas club live cabin + gift tree", () => {
   });
 });
 
+describe("christmas club Wave 1 UI copy", () => {
+  it("localizes DE club hero differently from EN", () => {
+    expect(clubT("hero.h1", "de")).not.toBe(clubT("hero.h1", "en"));
+    expect(clubT("hero.eyebrow", "de")).toMatch(/präsentiert/i);
+    expect(clubT("join.cta", "de")).not.toBe(clubT("join.cta", "en"));
+    expect(clubT("hero.h1", "fr")).not.toBe(clubT("hero.h1", "en"));
+    expect(clubT("join.cta", "pt")).toMatch(/contagem/i);
+    expect(clubT("hero.h1", "ro")).toMatch(/Crăciun/i);
+    expect(resolveClubLocale("pt-PT")).toBe("pt");
+  });
+
+  it("covers required UI keys across Wave 1 packs", () => {
+    for (const key of REQUIRED_UI_KEYS) {
+      expect(PACKS.en[key]).toBeTruthy();
+      expect(clubT(key, "de")).not.toBe(key);
+      expect(clubT(key, "de")).not.toBe(clubT(key, "en"));
+    }
+  });
+
+  it("wires path locale into the club hub page", () => {
+    const page = readFileSync(
+      resolve(process.cwd(), "src/features/christmas/club/ChristmasClubPage.tsx"),
+      "utf8",
+    );
+    expect(page).toContain("parseChristmasLocalePath");
+    expect(page).toContain("resolveClubLocale");
+    expect(page).toContain('t("hero.h1")');
+    expect(page).not.toContain("Something magical is coming this Christmas.");
+  });
+});
+
 describe("christmas club email validation", () => {
   it("accepts ordinary emails and normalizes case/space", () => {
     expect(normalizeClubEmail("  Ada@TheDigitalGifter.com ")).toBe("ada@thedigitalgifter.com");
@@ -88,6 +122,8 @@ describe("christmas club email validation", () => {
     expect(isValidClubEmail("ada@local")).toBe(false);
     expect(clubEmailValidationMessage("")).toBe("Please enter your email.");
     expect(clubEmailValidationMessage("nope")).toBe("Please enter a valid email.");
+    expect(clubEmailValidationMessage("", "de")).toBe(clubT("email.empty", "de"));
+    expect(clubEmailValidationMessage("nope", "fr")).toBe(clubT("email.invalid", "fr"));
   });
 });
 

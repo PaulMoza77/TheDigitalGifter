@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { parseChristmasLocalePath } from "@/features/christmas/seo/localeRouting";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { AmbientSnow } from "../landing/AmbientSnow";
 import { FONT_HREF } from "../landing/assets";
@@ -24,15 +26,19 @@ import {
 } from "./assets";
 import { trackFamilyEvent } from "./analytics";
 import {
-  FAMILY_DEFAULT_LOCALE,
   FAMILY_FAQS,
   familyDir,
   familyT,
+  type FamilyLocale,
 } from "./copy";
+import {
+  photoStyleDescription,
+  photoStyleLabel,
+  type PhotoGenLocale,
+} from "../photoGenerator/copy";
 import "./FamilyPortrait.css";
 import { familyPortraitJsonLd, familyPortraitSeo, upsertJsonLd } from "./seo";
 
-const LOCALE = FAMILY_DEFAULT_LOCALE;
 const VERTICAL = CHRISTMAS_PORTRAIT_VERTICALS.family;
 
 function ensureFonts() {
@@ -44,7 +50,13 @@ function ensureFonts() {
   document.head.appendChild(link);
 }
 
-function GenerationMessages({ active }: { active: boolean }) {
+function GenerationMessages({
+  active,
+  locale,
+}: {
+  active: boolean;
+  locale: FamilyLocale;
+}) {
   const keys = ["gen.step1", "gen.step2", "gen.step3", "gen.step4"] as const;
   const [idx, setIdx] = useState(0);
   useEffect(() => {
@@ -55,12 +67,17 @@ function GenerationMessages({ active }: { active: boolean }) {
     }, 4200);
     return () => window.clearInterval(id);
   }, [active, keys.length]);
-  return <p className="pg-gen__msg">{familyT(keys[idx], LOCALE)}</p>;
+  return <p className="pg-gen__msg">{familyT(keys[idx], locale)}</p>;
 }
 
 export default function ChristmasFamilyExperience() {
-  const t = useCallback((key: string) => familyT(key, LOCALE), []);
-  const seo = useMemo(() => familyPortraitSeo(LOCALE), []);
+  const location = useLocation();
+  const locale = normalizeWave1GenerationLocale(
+    parseChristmasLocalePath(location.pathname).locale,
+  ) as FamilyLocale;
+  const photoLocale = locale as PhotoGenLocale;
+  const t = useCallback((key: string) => familyT(key, locale), [locale]);
+  const seo = useMemo(() => familyPortraitSeo(locale), [locale]);
   const [activeChip, setActiveChip] = useState(FAMILY_STYLE_CHIPS[0]!.styleKey);
   const [dragOver, setDragOver] = useState(false);
   const [resultMode, setResultMode] = useState<"christmas" | "original">("christmas");
@@ -104,7 +121,7 @@ export default function ChristmasFamilyExperience() {
 
   useEffect(() => {
     ensureFonts();
-    upsertJsonLd("christmas-family-jsonld", familyPortraitJsonLd(LOCALE));
+    upsertJsonLd("christmas-family-jsonld", familyPortraitJsonLd(locale));
     return () => {
       document.getElementById("christmas-family-jsonld")?.remove();
     };
@@ -158,7 +175,7 @@ export default function ChristmasFamilyExperience() {
   return (
     <>
       <ChristmasPageHead path="/christmas/family" image={seo.image} />
-      <article className="xmas-landing ff-page" dir={familyDir(LOCALE)} lang={LOCALE}>
+      <article className="xmas-landing ff-page" dir={familyDir(locale)} lang={locale}>
         <a className="xmas-skip" href="#christmas-family-create">
           {t("hero.cta")}
         </a>
@@ -545,8 +562,8 @@ export default function ChristmasFamilyExperience() {
                         loading="lazy"
                       />
                       <div className="pg-style__body">
-                        <div className="pg-style__name">{style.displayName}</div>
-                        <p className="pg-style__desc">{style.description}</p>
+                        <div className="pg-style__name">{photoStyleLabel(style.styleKey, photoLocale, style.displayName)}</div>
+                        <p className="pg-style__desc">{photoStyleDescription(style.styleKey, photoLocale, style.description)}</p>
                       </div>
                     </button>
                   ))}
@@ -577,7 +594,7 @@ export default function ChristmasFamilyExperience() {
                 <h2>{t("offer.h2")}</h2>
                 <ul className="pg-guide">
                   <li>{funnel.styleName || funnel.draft.styleKey}</li>
-                  <li>{VERTICAL.deliverableLine}</li>
+                  <li>{t("offer.deliverable")}</li>
                   <li>{t("offer.ready")}</li>
                   <li>{t("offer.private")}</li>
                 </ul>
@@ -625,7 +642,7 @@ export default function ChristmasFamilyExperience() {
               <section className="pg-gen" aria-live="polite">
                 <div className="pg-gen__pulse" aria-hidden="true" />
                 <h2 className="visually-hidden">{t("gen.h2")}</h2>
-                <GenerationMessages active />
+                <GenerationMessages active locale={locale} />
                 <p className="xmas-lede" style={{ marginTop: "1rem" }}>
                   {t("gen.note")}
                 </p>

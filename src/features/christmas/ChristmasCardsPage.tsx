@@ -95,6 +95,9 @@ export default function ChristmasCardsPage() {
   const location = useLocation();
   const pathLocale = normalizeWave1GenerationLocale(parseChristmasLocalePath(location.pathname).locale) as LocaleCode;
   const [locale, setLocale] = useState<LocaleCode>(pathLocale);
+  useEffect(() => {
+    setLocale(pathLocale);
+  }, [pathLocale]);
   const [fontsReady, setFontsReady] = useState(false);
   const [creatorOpen, setCreatorOpen] = useState(false);
   const [step, setStep] = useState<CardMakerStep>("type");
@@ -179,7 +182,7 @@ export default function ChristmasCardsPage() {
         setCardType(draft.cardType as CardTypeKey);
       }
       if (draft.year) setYear(draft.year);
-      if (draft.locale === "ro" || draft.locale === "en") setLocale(draft.locale);
+      if (draft.locale) setLocale(normalizeWave1GenerationLocale(draft.locale) as LocaleCode);
     }
 
     const theme = parseCardTheme(params.get("theme") || params.get("style"));
