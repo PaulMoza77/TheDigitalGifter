@@ -7,7 +7,11 @@ export function assertStyleAllowed(
   productKey?: string,
 ): { ok: true; style: ChristmasStyleDef } | { ok: false; code: "unknown_style" | "disabled_style" } {
   if (productKey) {
-    const style = resolveProductStyle(productKey, styleKey);
+    // Kids intentionally reuses the curated family-style whitelist. Keep the
+    // browser guard aligned with the server-owned registry without accepting
+    // any arbitrary client prompt text.
+    const registryProductKey = productKey === "christmas_kids" ? "christmas_family" : productKey;
+    const style = resolveProductStyle(registryProductKey, styleKey);
     if (!style) return { ok: false, code: "unknown_style" };
     return { ok: true, style };
   }
