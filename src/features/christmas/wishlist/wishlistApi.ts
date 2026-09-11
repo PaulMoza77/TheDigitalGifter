@@ -222,16 +222,22 @@ export function reorderIds(ids: string[], fromIndex: number, toIndex: number): s
   return next;
 }
 
-export function defaultWishlistTitle(firstName?: string | null): string {
+import { wishlistT } from "./copy";
+
+export function defaultWishlistTitle(firstName?: string | null, locale: string = "en"): string {
   const name = String(firstName || "").trim();
-  if (name) return `${name}’s Christmas Wishlist`.slice(0, 80);
-  return "My Christmas Wishlist";
+  if (name) return wishlistT(locale, "title.named", { name }).slice(0, 80);
+  return wishlistT(locale, "title.default");
 }
 
-export function shareMessage(title: string, url: string): { title: string; text: string; url: string } {
+export function shareMessage(
+  title: string,
+  url: string,
+  locale: string = "en",
+): { title: string; text: string; url: string } {
   return {
-    title: `${title} 🎄`,
-    text: `${title} shared a Christmas Wishlist with you 🎄\nSee what’s on the list →`,
+    title: wishlistT(locale, "share.seoTitle", { name: title }),
+    text: wishlistT(locale, "share.messageText", { title }),
     url,
   };
 }

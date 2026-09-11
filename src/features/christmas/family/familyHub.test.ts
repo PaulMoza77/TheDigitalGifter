@@ -60,6 +60,19 @@ describe("christmas family hub", () => {
     expect(familyDir("en")).toBe("ltr");
   });
 
+  it("ships Wave 1 family UI packs with key parity", () => {
+    for (const locale of ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"] as const) {
+      expect(familyT("hero.cta", locale)).toBeTruthy();
+      expect(familyT("hero.cta", locale)).not.toBe("hero.cta");
+      expect(familyT("offer.deliverable", locale)).toBeTruthy();
+      expect(familyT("upload.choose", locale)).not.toBe("upload.choose");
+    }
+    expect(familyT("hero.cta", "de")).not.toBe(familyT("hero.cta", "en"));
+    expect(familyT("hero.h1", "ro")).toMatch(/Crăciun|portret/i);
+    expect(familyT("hero.privacy", "pt")).toMatch(/predefinição|privada/i);
+    expect(FAMILY_COPY_KEYS).toContain("offer.deliverable");
+  });
+
   it("exposes Christmas style chips and gallery examples", () => {
     expect(FAMILY_STYLE_CHIPS.length).toBeGreaterThanOrEqual(6);
     expect(FAMILY_GALLERY.length).toBeGreaterThanOrEqual(6);

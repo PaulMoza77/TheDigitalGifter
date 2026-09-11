@@ -9,15 +9,30 @@ import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
+import {
+  christmasPathForLocale,
+  parseChristmasLocalePath,
+  type ChristmasLocaleCode,
+} from "@/features/christmas/seo/localeRouting";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import { AmbientSnow } from "./landing/AmbientSnow";
 import { FONT_HREF } from "./landing/assets";
 import "./landing/ChristmasLanding.css";
 import {
   verticalFromPathname,
   type ChristmasPortraitVertical,
+  type ChristmasPortraitVerticalId,
 } from "./portraitVerticals";
 import { useChristmasPortraitFunnel } from "./useChristmasPortraitFunnel";
 import { STYLE_PREVIEW_BY_KEY, PHOTO_GEN_ASSETS } from "./photoGenerator/assets";
+import {
+  photoGenDir,
+  photoGenT,
+  photoStyleDescription,
+  photoStyleLabel,
+  type PhotoGenLocale,
+} from "./photoGenerator/copy";
+import { formatMoney } from "./wishlist/wishlistApi";
 import "./photoGenerator/PhotoGenerator.css";
 import { trackChristmasEvent } from "./analytics";
 import {
@@ -26,6 +41,37 @@ import {
   writePortraitToCardHandoff,
 } from "./cards/portraitHandoff";
 import { PortraitVerticalSeoSections } from "./seo/PortraitVerticalSeoSections";
+
+const CROSS_LABEL_KEY: Record<string, string> = {
+  "Family Christmas": "cross.familyChristmas",
+  "Couples Christmas": "cross.couplesChristmas",
+  "Pet Christmas": "cross.petChristmas",
+  "Christmas Cards": "cross.christmasCards",
+  "Christmas Dogs": "cross.christmasDogs",
+  "Christmas Cats": "cross.christmasCats",
+  "Classic portrait": "cross.classicPortrait",
+  "All pets": "cross.allPets",
+  Family: "cross.family",
+  Couples: "cross.couples",
+};
+
+function verticalUi(
+  id: ChristmasPortraitVerticalId,
+  field: "heroHeadline" | "heroSupport" | "privacy" | "uploadHint" | "deliverable",
+  locale: PhotoGenLocale,
+  fallback: string,
+): string {
+  const key = `vertical.${id}.${field}`;
+  const text = photoGenT(key, locale);
+  return text === key ? fallback : text;
+}
+
+function crossLinkLabel(label: string, locale: PhotoGenLocale): string {
+  const key = CROSS_LABEL_KEY[label];
+  if (!key) return label;
+  const text = photoGenT(key, locale);
+  return text === key ? label : text;
+}
 
 function ensureFonts() {
   if (document.querySelector(`link[data-xmas-fonts="1"]`)) return;
@@ -47,10 +93,37 @@ function useVertical(): ChristmasPortraitVertical {
 
 export default function ChristmasPortraitFunnelPage() {
   const vertical = useVertical();
+  const { pathname } = useLocation();
+  const locale = normalizeWave1GenerationLocale(
+    parseChristmasLocalePath(pathname).locale,
+  ) as PhotoGenLocale;
+  const t = (key: string) => photoGenT(key, locale);
+  const pathFor = (to: string) =>
+    christmasPathForLocale(to, locale as ChristmasLocaleCode);
   const funnel = useChristmasPortraitFunnel({
     vertical,
     mode: "vertical",
   });
+  const heroHeadline = verticalUi(
+    vertical.id,
+    "heroHeadline",
+    locale,
+    vertical.heroHeadline,
+  );
+  const heroSupport = verticalUi(
+    vertical.id,
+    "heroSupport",
+    locale,
+    vertical.heroSupport,
+  );
+  const privacyLine = verticalUi(vertical.id, "privacy", locale, vertical.privacyLine);
+  const uploadHint = verticalUi(vertical.id, "uploadHint", locale, vertical.uploadHint);
+  const deliverableLine = verticalUi(
+    vertical.id,
+    "deliverable",
+    locale,
+    vertical.deliverableLine,
+  );
 
   useEffect(() => {
     ensureFonts();
@@ -75,16 +148,16 @@ export default function ChristmasPortraitFunnelPage() {
   return (
     <>
       <ChristmasPageHead path={vertical.routePath} />
-      <main className="xmas-landing pg-page" lang="en">
+      <main className="xmas-landing pg-page" lang={locale} dir={photoGenDir(locale)}>
         <AmbientSnow />
         <div className="pg-studio" style={{ paddingTop: "2.5rem", paddingBottom: "3rem" }}>
           <p className="xmas-kicker">The Digital Gifter · Christmas</p>
           <h1 style={{ marginTop: "0.5rem", fontSize: "clamp(2rem, 5vw, 3rem)", color: "#fffaf1" }}>
-            {vertical.heroHeadline}
+            {heroHeadline}
           </h1>
-          <p className="xmas-lede">{vertical.heroSupport}</p>
+          <p className="xmas-lede">{heroSupport}</p>
           <p className="xmas-lede" style={{ fontSize: "0.88rem" }}>
-            {vertical.privacyLine}
+            {privacyLine}
           </p>
 
           {funnel.draft.lastError ? (
@@ -95,9 +168,11 @@ export default function ChristmasPortraitFunnelPage() {
 
           {funnel.speciesHint ? (
             <p className="pg-warn">
-              {funnel.speciesHint.message}{" "}
-              <Link className="underline" to={funnel.speciesHint.switchTo}>
-                Switch to {funnel.speciesHint.label}
+              {t(funnel.speciesHint.messageKey || "funnel.speciesMismatch")}{" "}
+              <Link className="underline" to={pathFor(funnel.speciesHint.switchTo)}>
+                {photoGenT("funnel.switchTo", locale, {
+                  label: t(funnel.speciesHint.labelKey || "funnel.christmasCats"),
+                })}
               </Link>
             </p>
           ) : null}
@@ -107,11 +182,11 @@ export default function ChristmasPortraitFunnelPage() {
               <section className="space-y-4">
                 {vertical.id === "pets" ? (
                   <div style={{ display: "flex", gap: "0.65rem" }}>
-                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to="/christmas/dogs">
-                      Dogs
+                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to={pathFor("/christmas/dogs")}>
+                      {t("funnel.dogs")}
                     </Link>
-                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to="/christmas/cats">
-                      Cats
+                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to={pathFor("/christmas/cats")}>
+                      {t("funnel.cats")}
                     </Link>
                   </div>
                 ) : null}
@@ -122,7 +197,7 @@ export default function ChristmasPortraitFunnelPage() {
                   onClick={() => funnel.openFilePicker()}
                   disabled={funnel.busy}
                 >
-                  {funnel.busy ? "Working…" : "Upload your photo"}
+                  {funnel.busy ? t("funnel.working") : t("funnel.upload")}
                 </button>
                 <input
                   ref={funnel.fileRef}
@@ -133,10 +208,10 @@ export default function ChristmasPortraitFunnelPage() {
                   onChange={(e) => void funnel.onFileChosen(e.target.files?.[0] || null)}
                 />
                 <p className="xmas-lede" style={{ fontSize: "0.88rem" }}>
-                  {vertical.uploadHint}
+                  {uploadHint}
                 </p>
                 <p className="xmas-lede" style={{ fontSize: "0.8rem" }}>
-                  JPEG, PNG, or WebP · under 15 MB
+                  {t("funnel.fileHint")}
                 </p>
               </section>
             )}
@@ -147,10 +222,10 @@ export default function ChristmasPortraitFunnelPage() {
                   <img
                     className="pg-preview-thumb"
                     src={funnel.draft.localPreviewUrl}
-                    alt="Your upload"
+                    alt={t("funnel.yourUpload")}
                   />
                 ) : null}
-                <h2>Choose a Christmas style</h2>
+                <h2>{t("funnel.style")}</h2>
                 <div className="pg-style-grid">
                   {funnel.styles.map((style) => (
                     <button
@@ -167,8 +242,8 @@ export default function ChristmasPortraitFunnelPage() {
                         loading="lazy"
                       />
                       <div className="pg-style__body">
-                        <div className="pg-style__name">{style.displayName}</div>
-                        <div className="pg-style__desc">{style.description}</div>
+                        <div className="pg-style__name">{photoStyleLabel(style.styleKey, locale, style.displayName)}</div>
+                        <div className="pg-style__desc">{photoStyleDescription(style.styleKey, locale, style.description)}</div>
                       </div>
                     </button>
                   ))}
@@ -181,34 +256,31 @@ export default function ChristmasPortraitFunnelPage() {
                 <img
                   className="pg-preview-thumb"
                   src={funnel.draft.blurredPreviewUrl}
-                  alt="Blurred preview of your photo"
+                  alt={t("funnel.blurredPreview")}
                 />
-                <p className="xmas-lede">
-                  Your Christmas transformation is ready to create. This preview is your original
-                  photo, heavily blurred — the finished AI portrait unlocks after payment.
-                </p>
+                <p className="xmas-lede">{t("funnel.previewLede")}</p>
                 <button
                   type="button"
                   className="xmas-btn xmas-btn--gold"
                   style={{ width: "100%" }}
                   onClick={funnel.goOffer}
                 >
-                  Continue to offer
+                  {t("funnel.continueOffer")}
                 </button>
               </section>
             )}
 
             {funnel.draft.step === "offer" && (
               <section className="space-y-4">
-                <h2>Unlock your Christmas portrait</h2>
+                <h2>{t("funnel.unlock")}</h2>
                 <ul className="pg-guide">
-                  <li>Style: {funnel.styleName || funnel.draft.styleKey}</li>
-                  <li>{vertical.deliverableLine}</li>
-                  <li>Usually ready a few minutes after payment</li>
-                  <li>Private by default · download via your order link</li>
+                  <li>{t("funnel.styleLabel")}: {photoStyleLabel(funnel.draft.styleKey || "", locale, funnel.styleName || undefined)}</li>
+                  <li>{deliverableLine}</li>
+                  <li>{t("funnel.readyMinutes")}</li>
+                  <li>{t("funnel.privateDownload")}</li>
                 </ul>
                 <label className="pg-email">
-                  Email for receipt / recovery (optional)
+                  {t("funnel.email")}
                   <input
                     type="email"
                     value={funnel.draft.email}
@@ -224,26 +296,35 @@ export default function ChristmasPortraitFunnelPage() {
                     onClick={() => void funnel.startCheckout()}
                   >
                     {funnel.busy
-                      ? "Preparing checkout…"
-                      : `Pay ${(funnel.catalogAmount / 100).toFixed(2)} ${funnel.product?.packages[0]?.currency?.toUpperCase() || "USD"}`}
+                      ? t("funnel.preparing")
+                      : photoGenT("funnel.pay", locale, {
+                          amount:
+                            formatMoney(
+                              funnel.catalogAmount / 100,
+                              funnel.product?.packages[0]?.currency || "usd",
+                              locale,
+                            ) || `${(funnel.catalogAmount / 100).toFixed(2)} USD`,
+                        })}
                   </button>
                 ) : (
-                  <p className="pg-warn">
-                    Production checkout is not enabled yet (price not configured / not purchasable).
-                    The upload → blur preview flow works; payment stays disabled until launch
-                    configuration.
-                  </p>
+                  <p className="pg-warn">{t("funnel.checkoutDisabled")}</p>
                 )}
               </section>
             )}
 
             {funnel.draft.step === "checkout" && funnel.checkout && (
               <section className="space-y-4">
-                <h2>Secure payment</h2>
+                <h2>{t("funnel.securePayment")}</h2>
                 <CustomStripeCheckout
                   clientSecret={funnel.checkout.clientSecret}
                   publishableKey={funnel.checkout.publishableKey}
-                  dueDisplay={`$${(funnel.checkout.amountCents / 100).toFixed(2)}`}
+                  dueDisplay={
+                    formatMoney(
+                      funnel.checkout.amountCents / 100,
+                      funnel.checkout.currency || "usd",
+                      locale,
+                    ) || `$${(funnel.checkout.amountCents / 100).toFixed(2)}`
+                  }
                   email={funnel.draft.email}
                   onReady={() => undefined}
                 />
@@ -253,30 +334,30 @@ export default function ChristmasPortraitFunnelPage() {
             {funnel.draft.step === "generating" && (
               <section className="pg-gen" aria-live="polite">
                 <div className="pg-gen__pulse" aria-hidden="true" />
-                <h2>Creating your portrait</h2>
-                <p className="pg-gen__msg">Creating a little Christmas magic…</p>
-                <p className="xmas-lede">You can close this page — reopen your order link anytime.</p>
+                <h2>{t("funnel.creating")}</h2>
+                <p className="pg-gen__msg">{t("funnel.magic")}</p>
+                <p className="xmas-lede">{t("funnel.leaveNote")}</p>
               </section>
             )}
 
             {funnel.draft.step === "result" && funnel.resultUrl && (
               <section className="pg-result space-y-4">
-                <img src={funnel.resultUrl} alt="Your Christmas portrait" />
-                <p className="xmas-lede">Style: {funnel.styleName || funnel.draft.styleKey}</p>
+                <img src={funnel.resultUrl} alt={t("funnel.portraitAlt")} />
+                <p className="xmas-lede">{t("funnel.styleLabel")}: {photoStyleLabel(funnel.draft.styleKey || "", locale, funnel.styleName || undefined)}</p>
                 <div className="pg-result__actions">
                   <button
                     type="button"
                     className="xmas-btn xmas-btn--gold"
                     onClick={() => void funnel.downloadResult()}
                   >
-                    Download
+                    {t("funnel.download")}
                   </button>
                   <button
                     type="button"
                     className="xmas-btn xmas-btn--ghost"
                     onClick={() => void funnel.shareResult()}
                   >
-                    Share
+                    {t("funnel.share")}
                   </button>
                   <Link
                     to={cardsUrlFromPortrait()}
@@ -304,21 +385,21 @@ export default function ChristmasPortraitFunnelPage() {
                       });
                     }}
                   >
-                    Turn This Into a Christmas Card
+                    {t("funnel.card")}
                   </Link>
                   <button
                     type="button"
                     className="xmas-btn xmas-btn--ghost"
                     onClick={() => funnel.resetAnother()}
                   >
-                    Create another
+                    {t("funnel.another")}
                   </button>
                 </div>
                 <div className="pg-nav" style={{ border: 0, marginTop: "0.5rem", paddingTop: 0 }}>
-                  <span>Try another:</span>
+<span>{t("funnel.tryAnother")}</span>
                   {vertical.crossLinks.map((link) => (
-                    <Link key={link.to} to={link.to}>
-                      {link.label}
+                    <Link key={link.to} to={pathFor(link.to)}>
+                      {crossLinkLabel(link.label, locale)}
                     </Link>
                   ))}
                 </div>
@@ -327,13 +408,10 @@ export default function ChristmasPortraitFunnelPage() {
 
             {funnel.draft.step === "error" && (
               <section className="space-y-3">
-                <h2>Something went wrong</h2>
-                <p className="xmas-lede">
-                  If you already paid, keep your order link — support can retry fulfillment without
-                  charging again.
-                </p>
-                <Link to="/christmas" className="xmas-btn xmas-btn--ghost">
-                  Christmas hub
+                <h2>{t("funnel.errorTitle")}</h2>
+                <p className="xmas-lede">{t("funnel.errorPaid")}</p>
+                <Link to={pathFor("/christmas")} className="xmas-btn xmas-btn--ghost">
+                  {t("funnel.hub")}
                 </Link>
               </section>
             )}
@@ -341,12 +419,12 @@ export default function ChristmasPortraitFunnelPage() {
 
           <nav className="pg-nav">
             {vertical.crossLinks.map((link) => (
-              <Link key={link.to} to={link.to}>
-                {link.label}
+              <Link key={link.to} to={pathFor(link.to)}>
+                {crossLinkLabel(link.label, locale)}
               </Link>
             ))}
-            <Link to="/christmas">Christmas hub</Link>
-            <Link to="/christmas/photo-generator">AI Christmas Photo Generator</Link>
+            <Link to={pathFor("/christmas")}>{t("funnel.hub")}</Link>
+            <Link to={pathFor("/christmas/photo-generator")}>{t("funnel.photoGen")}</Link>
           </nav>
 
           <PortraitVerticalSeoSections verticalId={vertical.id} />

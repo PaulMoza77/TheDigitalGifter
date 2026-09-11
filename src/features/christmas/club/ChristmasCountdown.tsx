@@ -5,17 +5,18 @@ import {
   type ChristmasClubConfig,
   type ChristmasClubCountdownUnit,
 } from "./config";
+import { clubT, type ClubLocale } from "./copy";
 import {
   padCountdownValue,
   remainingUntilChristmas,
   type ChristmasCountdownParts,
 } from "./countdown";
 
-const UNITS: Array<{ key: ChristmasClubCountdownUnit; label: string }> = [
-  { key: "days", label: "Days" },
-  { key: "hours", label: "Hours" },
-  { key: "minutes", label: "Minutes" },
-  { key: "seconds", label: "Seconds" },
+const UNIT_KEYS: Array<{ key: ChristmasClubCountdownUnit; labelKey: string }> = [
+  { key: "days", labelKey: "countdown.days" },
+  { key: "hours", labelKey: "countdown.hours" },
+  { key: "minutes", labelKey: "countdown.minutes" },
+  { key: "seconds", labelKey: "countdown.seconds" },
 ];
 
 export function productForCountdownUnit(unit: ChristmasClubCountdownUnit) {
@@ -25,9 +26,11 @@ export function productForCountdownUnit(unit: ChristmasClubCountdownUnit) {
 export function ChristmasCountdown({
   config,
   compact = false,
+  locale = "en",
 }: {
   config: ChristmasClubConfig;
   compact?: boolean;
+  locale?: ClubLocale;
 }) {
   const [parts, setParts] = useState<ChristmasCountdownParts>(() =>
     remainingUntilChristmas(new Date(), config),
@@ -43,8 +46,8 @@ export function ChristmasCountdown({
   if (parts.expired) {
     return (
       <div className="cc-arrived" role="status">
-        <h2>Merry Christmas ✨</h2>
-        <p>Your Christmas surprise is ready.</p>
+        <h2>{clubT("countdown.merry", locale)}</h2>
+        <p>{clubT("countdown.ready", locale)}</p>
       </div>
     );
   }
@@ -54,15 +57,21 @@ export function ChristmasCountdown({
       className="cc-countdown"
       role="timer"
       aria-live="polite"
-      aria-label={`${parts.days} days, ${parts.hours} hours, ${parts.minutes} minutes, ${parts.seconds} seconds until Christmas`}
+      aria-label={clubT("countdown.aria", locale, {
+        days: String(parts.days),
+        hours: String(parts.hours),
+        minutes: String(parts.minutes),
+        seconds: String(parts.seconds),
+      })}
       data-compact={compact ? "true" : "false"}
     >
-      {UNITS.map((unit) => {
+      {UNIT_KEYS.map((unit) => {
         const product = productForCountdownUnit(unit.key);
+        const label = clubT(unit.labelKey, locale);
         const digit = (
           <>
             <span className="cc-digit">{padCountdownValue(parts[unit.key])}</span>
-            <span className="cc-label">{unit.label}</span>
+            <span className="cc-label">{label}</span>
             {product && !compact ? <span className="cc-product-name">{product.name}</span> : null}
           </>
         );
@@ -80,7 +89,11 @@ export function ChristmasCountdown({
             className="cc-unit cc-unit--product"
             key={unit.key}
             to={product.href}
-            aria-label={`${padCountdownValue(parts[unit.key])} ${unit.label} · ${product.name}`}
+            aria-label={clubT("countdown.unitAria", locale, {
+              value: padCountdownValue(parts[unit.key]),
+              label,
+              product: product.name,
+            })}
           >
             <span className="cc-print">
               <img

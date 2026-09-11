@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { clubT, type ClubLocale } from "./copy";
 import { clubEmailValidationMessage, isValidClubEmail, normalizeClubEmail } from "./email";
 
 function GoogleMark() {
@@ -25,6 +26,7 @@ function GoogleMark() {
 }
 
 export function ChristmasJoinForm({
+  locale = "en",
   submitting,
   googleBusy,
   googleAvailable,
@@ -33,6 +35,7 @@ export function ChristmasJoinForm({
   onGoogleJoin,
   onStarted,
 }: {
+  locale?: ClubLocale;
   submitting: boolean;
   googleBusy: boolean;
   googleAvailable: boolean;
@@ -43,7 +46,8 @@ export function ChristmasJoinForm({
 }) {
   const [email, setEmail] = useState("");
   const [touched, setTouched] = useState(false);
-  const validation = touched ? clubEmailValidationMessage(email) : null;
+  const t = (key: string) => clubT(key, locale);
+  const validation = touched ? clubEmailValidationMessage(email, locale) : null;
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -55,17 +59,17 @@ export function ChristmasJoinForm({
 
   return (
     <div className="cc-join">
-      <p>Be part of the magic. We’ll have little surprises waiting for you along the way.</p>
+      <p>{t("join.lede")}</p>
       <form className="cc-form" onSubmit={handleSubmit} noValidate>
         <label className="sr-only" htmlFor="christmas-club-email">
-          Email
+          {t("join.emailLabel")}
         </label>
         <input
           id="christmas-club-email"
           type="email"
           autoComplete="email"
           inputMode="email"
-          placeholder="Enter your email"
+          placeholder={t("join.emailPlaceholder")}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           onFocus={onStarted}
@@ -73,7 +77,7 @@ export function ChristmasJoinForm({
           aria-invalid={Boolean(validation)}
         />
         <button className="cc-cta" type="submit" disabled={submitting}>
-          {submitting ? "Joining…" : "Join the Countdown"}
+          {submitting ? t("join.ctaBusy") : t("join.cta")}
         </button>
       </form>
       {validation ? <p className="cc-error">{validation}</p> : null}
@@ -81,7 +85,7 @@ export function ChristmasJoinForm({
 
       {googleAvailable ? (
         <>
-          <div className="cc-divider">or</div>
+          <div className="cc-divider">{t("join.or")}</div>
           <button
             type="button"
             className="cc-google"
@@ -89,7 +93,7 @@ export function ChristmasJoinForm({
             disabled={googleBusy || submitting}
           >
             <GoogleMark />
-            Continue with Google
+            {t("join.google")}
           </button>
         </>
       ) : null}
@@ -97,14 +101,15 @@ export function ChristmasJoinForm({
   );
 }
 
-export function ChristmasClubSuccess() {
+export function ChristmasClubSuccess({ locale = "en" }: { locale?: ClubLocale }) {
+  const t = (key: string) => clubT(key, locale);
   return (
     <div className="cc-success" role="status">
-      <p className="cc-eyebrow">The Digital Gifter</p>
-      <h2>You’re on the list.</h2>
-      <p>The countdown has begun.</p>
-      <p>We’ll have something special waiting for you as Christmas gets closer.</p>
-      <p className="cc-whisper">Come back tomorrow. You never know what might appear beneath the tree.</p>
+      <p className="cc-eyebrow">{t("success.eyebrow")}</p>
+      <h2>{t("success.h2")}</h2>
+      <p>{t("success.lede")}</p>
+      <p>{t("success.body")}</p>
+      <p className="cc-whisper">{t("success.whisper")}</p>
     </div>
   );
 }

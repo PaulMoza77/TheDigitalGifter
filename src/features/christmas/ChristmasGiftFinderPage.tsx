@@ -417,8 +417,8 @@ export default function ChristmasGiftFinderPage() {
         }>(
           {
             action: "createWishlist",
-            title: "My Christmas Wishlist",
-            description: "Ideas from Gift Finder",
+            title: gfT("wishlist.defaultTitle", locale),
+            description: gfT("wishlist.fromFinder", locale),
           },
           bearer,
         );
@@ -459,11 +459,13 @@ export default function ChristmasGiftFinderPage() {
         locale,
       });
     } catch (e) {
-      const raw = e instanceof Error ? e.message : "Could not save to wishlist";
+      const raw = e instanceof Error ? e.message : gfT("error.wishlistSave", locale);
       setError(
         /failed to fetch|network|supabase/i.test(raw)
-          ? "We couldn’t reach your wishlist just now. Please try again in a moment."
-          : raw,
+          ? gfT("error.wishlistNetwork", locale)
+          : raw.includes(" ")
+            ? raw
+            : gfT("error.wishlistSave", locale),
       );
     } finally {
       setBusy(false);
