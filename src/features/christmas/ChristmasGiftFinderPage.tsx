@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Gift, Heart, Search, Sparkles } from "lucide-react";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { parseChristmasLocalePath } from "@/features/christmas/seo/localeRouting";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { supabase } from "@/lib/supabase";
@@ -144,8 +146,11 @@ function shouldShowCrossSell(personalities: string[], interests: string[], recip
 
 export default function ChristmasGiftFinderPage() {
   const [params] = useSearchParams();
-  const locale: LocaleCode = "en";
+  const location = useLocation();
+  const pathLocale = parseChristmasLocalePath(location.pathname).locale;
+  const locale = normalizeWave1GenerationLocale(pathLocale) as LocaleCode;
   const seo = giftFinderSeo(locale);
+  const pagePath = location.pathname.split("?")[0] || PATH;
   const saved = readFinderAnswers();
   const initialRecipient =
     parseGiftRecipient(params.get("recipient") || params.get("for")) || saved?.recipient || "mom";

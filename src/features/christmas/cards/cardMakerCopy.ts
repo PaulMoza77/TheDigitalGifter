@@ -298,10 +298,10 @@ const RO: Dict = {
   "a11y.progress": "Progres creare card",
 };
 
-const TABLES: Record<LocaleCode, Dict> = { en: EN, ro: RO };
+const TABLES: Partial<Record<LocaleCode, Dict>> = { en: EN, ro: RO };
 
 export function cardsT(key: string, locale: LocaleCode = "en"): string {
-  return TABLES[locale][key] || TABLES.en[key] || key;
+  return TABLES[locale]?.[key] || TABLES.en?.[key] || key;
 }
 
 export const CARD_MAKER_FAQ_KEYS = [

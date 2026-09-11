@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { parseChristmasLocalePath, CHRISTMAS_UI_LOCALES } from "@/features/christmas/seo/localeRouting";
+import {
+  normalizeWave1GenerationLocale,
+  type Wave1GenerationLocale,
+} from "@/features/christmas/i18n/wave1Locale";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
@@ -33,8 +38,15 @@ async function authBearer() {
 
 export default function ChristmasMessagesPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [params] = useSearchParams();
-  const [locale, setLocale] = useState<LocaleCode>("en");
+  const pathLocale = normalizeWave1GenerationLocale(
+    parseChristmasLocalePath(location.pathname).locale,
+  ) as LocaleCode;
+  const [locale, setLocale] = useState<LocaleCode>(pathLocale);
+  useEffect(() => {
+    setLocale(pathLocale);
+  }, [pathLocale]);
   const [recipient, setRecipient] = useState(() => {
     const raw = params.get("for") || params.get("recipient") || "mom";
     return MESSAGE_RECIPIENTS.some((r) => r.key === raw) ? raw : "mom";
@@ -186,14 +198,14 @@ export default function ChristmasMessagesPage() {
       </p>
 
       <div className="mt-8 flex flex-wrap gap-2" role="group" aria-label="Language">
-        {(["en", "ro"] as LocaleCode[]).map((code) => (
+        {CHRISTMAS_UI_LOCALES.map((item) => (
           <button
-            key={code}
+            key={item.code}
             type="button"
-            className={`${chip} ${locale === code ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 bg-white"}`}
-            onClick={() => setLocale(code)}
+            onClick={() => setLocale(item.code as LocaleCode)}
+            className={`${chip} ${locale === item.code ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 bg-white"}`}
           >
-            {code === "en" ? "English" : "Română"}
+            {item.nativeName}
           </button>
         ))}
       </div>
