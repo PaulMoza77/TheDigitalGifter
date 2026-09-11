@@ -192,12 +192,14 @@ for (const excluded of [
   "/christmas/suite",
   "/christmas/tree-gifts",
   "/de/christmas/santa-video",
-  "/fr/christmas/messages",
   "/en/christmas",
   "/en/christmas/cards",
 ]) {
   assert(!sitemapPaths.includes(excluded), `sitemap excludes ${excluded}`);
 }
+assert(sitemapPaths.includes("/de/christmas/messages"), "sitemap includes DE messages after P3C");
+assert(sitemapPaths.includes("/fr/christmas/gift-finder"), "sitemap includes FR gift-finder after P3C");
+
 
 const robotsTxt = readFileSync(join(root, "public/robots.txt"), "utf8");
 assert(
@@ -495,6 +497,15 @@ assert(/[ąćęłńóśźż]/i.test(plWish), "P3B PL diacritics present");
 const ptSanta = applyChristmasSeo(template, "/pt/christmas/santa-video");
 assert(/lang="pt-PT"/.test(ptSanta), "P3B PT santa lang=pt-PT");
 assert(robotsIsNoindex(ptSanta), "P3B PT santa product-gated noindex");
+
+const deMessages = applyChristmasSeo(template, "/de/christmas/messages");
+assert(/lang="de"/.test(deMessages), "P3C DE messages lang=de");
+assert(robotsIsIndex(deMessages), "P3C DE messages indexable after product enablement");
+assert(deMessages.includes('hreflang="fr"'), "P3C DE messages hreflang cluster");
+
+const deGf = applyChristmasSeo(template, "/de/christmas/gift-finder");
+assert(robotsIsIndex(deGf), "P3C DE gift-finder indexable");
+assert(/lang="de"/.test(deGf), "P3C DE gift-finder lang=de");
 
 assert(enCardsByLang.de === `${SITE_ORIGIN}/de/christmas/cards`, "P3B hreflang de reciprocal");
 assert(enCardsByLang["pt-PT"] === `${SITE_ORIGIN}/pt/christmas/cards`, "P3B hreflang pt-PT");

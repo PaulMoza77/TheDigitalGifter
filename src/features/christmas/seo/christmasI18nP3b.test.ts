@@ -77,11 +77,11 @@ describe("christmas P3B Wave 1 localization", () => {
     }
   });
 
-  it("keeps Santa/Messages non-indexable where product language is not ready", () => {
+  it("keeps Santa non-indexable where TTS product language is not ready; Messages ready in Wave 1", () => {
     expect(isChristmasProductReadyForLocale("ro", "/christmas/santa-video")).toBe(true);
     expect(isChristmasProductReadyForLocale("de", "/christmas/santa-video")).toBe(false);
     expect(isChristmasLocaleSeoIndexable("de", "/christmas/santa-video")).toBe(false);
-    expect(isChristmasLocaleSeoIndexable("fr", "/christmas/messages")).toBe(false);
+    expect(isChristmasLocaleSeoIndexable("fr", "/christmas/messages")).toBe(true);
     expect(isChristmasLocaleSeoIndexable("ro", "/christmas/messages")).toBe(true);
     expect(isChristmasLocaleSeoIndexable("de", "/christmas/cards")).toBe(true);
   });
@@ -147,7 +147,7 @@ describe("christmas P3B Wave 1 localization", () => {
     expect(paths).toContain("/ro/christmas/messages");
     expect(paths).toContain("/ro/christmas/santa-video");
     expect(paths).not.toContain("/de/christmas/santa-video");
-    expect(paths).not.toContain("/nl/christmas/messages");
+    expect(paths).toContain("/nl/christmas/messages");
     expect(paths).not.toContain("/en/christmas");
   });
 
@@ -174,7 +174,7 @@ describe("christmas P3B Wave 1 localization", () => {
   it("records product readiness matrix for Santa and Messages", () => {
     expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.santa_script_tts.de).toBe("not-ready");
     expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.messages_generator.ro).toBe("ready");
-    expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.cards_message_assistant.fr).toBe("not-ready");
+    expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.cards_message_assistant.fr).toBe("ready");
   });
 
   it("path helpers stay deterministic across locales", () => {

@@ -1,3 +1,4 @@
+import { christmasSitemapPaths } from "../../../../server/christmasIndexing.mjs";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -72,8 +73,8 @@ describe("christmas photo generator hub rebuild", () => {
     expect(page).toContain("/christmas/pets");
     expect(page).toContain("christmas_photo_generator_page_view");
     expect(photoGenT("hero.cta")).toBe("Create My Christmas Photo");
-    expect(readSrc("api/sitemap.xml.ts")).toContain("/christmas/photo-generator");
-    expect(readSrc("api/sitemap.xml.ts")).toContain("/christmas/dogs");
+    expect(christmasSitemapPaths()).toContain("/christmas/photo-generator");
+    expect(christmasSitemapPaths()).toContain("/christmas/dogs");
   });
 
   it("keeps pre-pay blur preview and never trusts client prompts in hub path", () => {

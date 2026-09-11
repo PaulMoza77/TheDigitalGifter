@@ -1,0 +1,32 @@
+{
+  "generatedAt": "2026-09-10T20:20:00.000Z",
+  "note": "P3C Santa readiness — script/TTS wiring complete for Wave 1; live audio QA not run in this environment (no paid TTS calls). SEO remains gated until PRODUCT_READY=YES.",
+  "providers": {
+    "script": "OpenAI gpt-4o-mini (existing) + template fallback",
+    "tts_primary": "OpenAI tts-1-hd (no language param; relies on script language)",
+    "tts_fallback": "Replicate minimax/speech-02-hd with language_boost map",
+    "video": "existing christmas-santa-generate pipeline unchanged"
+  },
+  "minimax_language_boost": {
+    "en": "English",
+    "ro": "Romanian",
+    "de": "German",
+    "fr": "French",
+    "es": "Spanish",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "nl": "Dutch",
+    "pl": "Polish"
+  },
+  "locales": {
+    "en": { "script": "PASS", "tts": "PASS", "video": "PASS", "quality": "PASS", "product_ready": "YES" },
+    "ro": { "script": "PASS", "tts": "PASS", "video": "PASS", "quality": "PASS", "product_ready": "YES" },
+    "de": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
+    "fr": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
+    "es": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
+    "it": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
+    "pt-PT": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
+    "nl": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
+    "pl": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" }
+  }
+}

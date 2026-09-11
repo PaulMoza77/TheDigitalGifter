@@ -1,6 +1,6 @@
 /** Server-owned Christmas Message Generator taxonomy (stable keys). */
 
-export type LocaleCode = "en" | "ro";
+export type LocaleCode = "en" | "ro" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "pl";
 
 export const MESSAGE_RECIPIENTS = [
   { key: "mom", en: "Mom", ro: "Mamă", seoSlug: "mom" },

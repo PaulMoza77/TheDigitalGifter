@@ -197,8 +197,12 @@ describe("product wiring", () => {
     expect(copy).toContain("FAQPage");
   });
 
-  it("keeps paid Christmas checkout off in catalog seed", () => {
+  it("keeps paid Christmas checkout off in catalog seed except live Santa packages", () => {
     for (const p of CHRISTMAS_CATALOG_SEED) {
+      if (p.product_key === "christmas_santa_video") {
+        expect(p.packages.some((pkg) => pkg.purchasable)).toBe(true);
+        continue;
+      }
       expect(p.packages.every((pkg) => !pkg.purchasable)).toBe(true);
     }
   });

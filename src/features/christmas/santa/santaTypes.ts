@@ -3,7 +3,7 @@
  * Shared by client tests and mirrored conceptually in Edge (Deno copies key logic).
  */
 
-export const SANTA_LANGUAGES = ["en", "ro"] as const;
+export const SANTA_LANGUAGES = ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"] as const;
 export type SantaLanguage = (typeof SANTA_LANGUAGES)[number];
 
 export const SANTA_TEMPLATE_KEYS = [

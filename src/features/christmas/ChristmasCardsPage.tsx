@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { parseChristmasLocalePath, CHRISTMAS_UI_LOCALES } from "@/features/christmas/seo/localeRouting";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import { ChristmasLanguageSwitcher } from "@/features/christmas/seo/ChristmasLanguageSwitcher";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
@@ -90,7 +92,9 @@ export default function ChristmasCardsPage() {
   const portraitHandoffApplied = useRef(false);
   const messageStartedTracked = useRef(false);
 
-  const [locale, setLocale] = useState<LocaleCode>("en");
+  const location = useLocation();
+  const pathLocale = normalizeWave1GenerationLocale(parseChristmasLocalePath(location.pathname).locale) as LocaleCode;
+  const [locale, setLocale] = useState<LocaleCode>(pathLocale);
   const [fontsReady, setFontsReady] = useState(false);
   const [creatorOpen, setCreatorOpen] = useState(false);
   const [step, setStep] = useState<CardMakerStep>("type");
@@ -715,16 +719,19 @@ export default function ChristmasCardsPage() {
           <span aria-hidden="true">/</span>
           <span>{t("breadcrumb.cards")}</span>
           <div className="ccm-lang" role="group" aria-label="Language">
-            {(["en", "ro"] as LocaleCode[]).map((code) => (
-              <button
-                key={code}
-                type="button"
-                aria-pressed={locale === code}
-                onClick={() => setLocale(code)}
-              >
-                {t(code === "en" ? "lang.en" : "lang.ro")}
-              </button>
-            ))}
+            {CHRISTMAS_UI_LOCALES.map((item) => {
+              const code = item.code as LocaleCode;
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  aria-pressed={locale === code}
+                  onClick={() => setLocale(code)}
+                >
+                  {item.nativeName}
+                </button>
+              );
+            })}
           </div>
         </div>
 

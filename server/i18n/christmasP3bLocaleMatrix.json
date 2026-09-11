@@ -1,5 +1,6 @@
 {
-  "generatedAt": "2026-09-10T19:45:30.681Z",
+  "generatedAt": "2026-09-10T20:18:21.764Z",
+  "note": "P3C product-language readiness drives SEO gates",
   "productReadiness": {
     "santa_script_tts": {
       "en": "ready",
@@ -15,35 +16,35 @@
     "messages_generator": {
       "en": "ready",
       "ro": "ready",
-      "de": "not-ready",
-      "fr": "not-ready",
-      "es": "not-ready",
-      "it": "not-ready",
-      "pt": "not-ready",
-      "nl": "not-ready",
-      "pl": "not-ready"
+      "de": "ready",
+      "fr": "ready",
+      "es": "ready",
+      "it": "ready",
+      "pt": "ready",
+      "nl": "ready",
+      "pl": "ready"
     },
     "cards_message_assistant": {
       "en": "ready",
       "ro": "ready",
-      "de": "not-ready",
-      "fr": "not-ready",
-      "es": "not-ready",
-      "it": "not-ready",
-      "pt": "not-ready",
-      "nl": "not-ready",
-      "pl": "not-ready"
+      "de": "ready",
+      "fr": "ready",
+      "es": "ready",
+      "it": "ready",
+      "pt": "ready",
+      "nl": "ready",
+      "pl": "ready"
     },
     "gift_finder_recommendations": {
       "en": "ready",
-      "ro": "partial",
-      "de": "not-ready",
-      "fr": "not-ready",
-      "es": "not-ready",
-      "it": "not-ready",
-      "pt": "not-ready",
-      "nl": "not-ready",
-      "pl": "not-ready"
+      "ro": "ready",
+      "de": "ready",
+      "fr": "ready",
+      "es": "ready",
+      "it": "ready",
+      "pt": "ready",
+      "nl": "ready",
+      "pl": "ready"
     }
   },
   "matrix": {
@@ -57,7 +58,7 @@
       },
       "/christmas/gift-finder": {
         "CONTENT": "complete",
-        "PRODUCT": "not-language-dependent",
+        "PRODUCT": "ready",
         "SEO": "index",
         "HREFLANG": "included",
         "SITEMAP": "included"
@@ -157,7 +158,7 @@
       },
       "/christmas/gift-finder": {
         "CONTENT": "complete",
-        "PRODUCT": "not-language-dependent",
+        "PRODUCT": "ready",
         "SEO": "index",
         "HREFLANG": "included",
         "SITEMAP": "included"
@@ -257,7 +258,7 @@
       },
       "/christmas/gift-finder": {
         "CONTENT": "complete",
-        "PRODUCT": "not-language-dependent",
+        "PRODUCT": "ready",
         "SEO": "index",
         "HREFLANG": "included",
         "SITEMAP": "included"
@@ -341,10 +342,10 @@
       },
       "/christmas/messages": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       }
     },
     "fr": {
@@ -357,7 +358,7 @@
       },
       "/christmas/gift-finder": {
         "CONTENT": "complete",
-        "PRODUCT": "not-language-dependent",
+        "PRODUCT": "ready",
         "SEO": "index",
         "HREFLANG": "included",
         "SITEMAP": "included"
@@ -441,10 +442,10 @@
       },
       "/christmas/messages": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       }
     },
     "es": {
@@ -457,7 +458,7 @@
       },
       "/christmas/gift-finder": {
         "CONTENT": "complete",
-        "PRODUCT": "not-language-dependent",
+        "PRODUCT": "ready",
         "SEO": "index",
         "HREFLANG": "included",
         "SITEMAP": "included"
@@ -541,10 +542,10 @@
       },
       "/christmas/messages": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       }
     },
     "it": {
@@ -557,7 +558,7 @@
       },
       "/christmas/gift-finder": {
         "CONTENT": "complete",
-        "PRODUCT": "not-language-dependent",
+        "PRODUCT": "ready",
         "SEO": "index",
         "HREFLANG": "included",
         "SITEMAP": "included"
@@ -641,10 +642,10 @@
       },
       "/christmas/messages": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       }
     },
     "pt": {
@@ -657,7 +658,7 @@
       },
       "/christmas/gift-finder": {
         "CONTENT": "complete",
-        "PRODUCT": "not-language-dependent",
+        "PRODUCT": "ready",
         "SEO": "index",
         "HREFLANG": "included",
         "SITEMAP": "included"
@@ -741,10 +742,10 @@
       },
       "/christmas/messages": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       }
     },
     "nl": {
@@ -757,7 +758,7 @@
       },
       "/christmas/gift-finder": {
         "CONTENT": "complete",
-        "PRODUCT": "not-language-dependent",
+        "PRODUCT": "ready",
         "SEO": "index",
         "HREFLANG": "included",
         "SITEMAP": "included"
@@ -841,10 +842,10 @@
       },
       "/christmas/messages": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       }
     },
     "pl": {
@@ -857,7 +858,7 @@
       },
       "/christmas/gift-finder": {
         "CONTENT": "complete",
-        "PRODUCT": "not-language-dependent",
+        "PRODUCT": "ready",
         "SEO": "index",
         "HREFLANG": "included",
         "SITEMAP": "included"
@@ -941,10 +942,10 @@
       },
       "/christmas/messages": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       }
     }
   }
