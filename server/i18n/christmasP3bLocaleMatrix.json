@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2026-09-10T20:18:21.764Z",
-  "note": "P3C product-language readiness drives SEO gates",
+  "generatedAt": "2026-09-11T05:45:00.000Z",
+  "note": "P3E: Santa TTS live QA PASS for all Wave 1; product readiness drives SEO gates",
   "productReadiness": {
     "santa_script_tts": {
       "en": "ready",
       "ro": "ready",
-      "de": "not-ready",
-      "fr": "not-ready",
-      "es": "not-ready",
-      "it": "not-ready",
-      "pt": "not-ready",
-      "nl": "not-ready",
-      "pl": "not-ready"
+      "de": "ready",
+      "fr": "ready",
+      "es": "ready",
+      "it": "ready",
+      "pt": "ready",
+      "nl": "ready",
+      "pl": "ready"
     },
     "messages_generator": {
       "en": "ready",
@@ -314,10 +314,10 @@
       },
       "/christmas/santa-video": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       },
       "/christmas/tree": {
         "CONTENT": "complete",
@@ -414,10 +414,10 @@
       },
       "/christmas/santa-video": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       },
       "/christmas/tree": {
         "CONTENT": "complete",
@@ -514,10 +514,10 @@
       },
       "/christmas/santa-video": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       },
       "/christmas/tree": {
         "CONTENT": "complete",
@@ -614,10 +614,10 @@
       },
       "/christmas/santa-video": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       },
       "/christmas/tree": {
         "CONTENT": "complete",
@@ -714,10 +714,10 @@
       },
       "/christmas/santa-video": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       },
       "/christmas/tree": {
         "CONTENT": "complete",
@@ -814,10 +814,10 @@
       },
       "/christmas/santa-video": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       },
       "/christmas/tree": {
         "CONTENT": "complete",
@@ -914,10 +914,10 @@
       },
       "/christmas/santa-video": {
         "CONTENT": "complete",
-        "PRODUCT": "not-ready",
-        "SEO": "noindex",
-        "HREFLANG": "excluded",
-        "SITEMAP": "excluded"
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
       },
       "/christmas/tree": {
         "CONTENT": "complete",

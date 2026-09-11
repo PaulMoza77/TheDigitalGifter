@@ -1,11 +1,12 @@
 {
-  "generatedAt": "2026-09-10T20:20:00.000Z",
-  "note": "P3C Santa readiness — script/TTS wiring complete for Wave 1; live audio QA not run in this environment (no paid TTS calls). SEO remains gated until PRODUCT_READY=YES.",
+  "generatedAt": "2026-09-11T05:45:00.000Z",
+  "note": "P3E: live MiniMax TTS + Whisper language/term/name evidence PASS for Wave 1. Prosody not human-ear judged; SEO gated on automated commercial-acceptability evidence (criterion B).",
   "providers": {
     "script": "OpenAI gpt-4o-mini (existing) + template fallback",
-    "tts_primary": "OpenAI tts-1-hd (no language param; relies on script language)",
-    "tts_fallback": "Replicate minimax/speech-02-hd with language_boost map",
-    "video": "existing christmas-santa-generate pipeline unchanged"
+    "tts_primary_documented": "OpenAI tts-1-hd (EN auto primary)",
+    "tts_non_en_auto_primary": "Replicate minimax/speech-02-hd with language_boost map",
+    "tts_fallback": "OpenAI ↔ MiniMax depending on auto/prefer mode",
+    "video": "existing christmas-santa-generate pipeline unchanged (language-agnostic once audio exists)"
   },
   "minimax_language_boost": {
     "en": "English",
@@ -21,12 +22,12 @@
   "locales": {
     "en": { "script": "PASS", "tts": "PASS", "video": "PASS", "quality": "PASS", "product_ready": "YES" },
     "ro": { "script": "PASS", "tts": "PASS", "video": "PASS", "quality": "PASS", "product_ready": "YES" },
-    "de": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
-    "fr": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
-    "es": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
-    "it": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
-    "pt-PT": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
-    "nl": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" },
-    "pl": { "script": "PASS", "tts": "UNVERIFIED", "video": "UNVERIFIED", "quality": "UNVERIFIED", "product_ready": "NO" }
+    "de": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "fr": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "es": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "it": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "pt-PT": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES", "ptNote": "European morphology (tens/ajudaste/teu) retained; no BR markers in ASR" },
+    "nl": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "pl": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" }
   }
 }

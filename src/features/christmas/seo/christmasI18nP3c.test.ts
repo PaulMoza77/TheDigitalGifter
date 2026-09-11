@@ -40,27 +40,27 @@ describe("christmas P3C product-language enablement", () => {
     expect(labelFor(RECIPIENTS, "mom", "pt")).toBeTruthy();
   });
 
-  it("marks Gift Finder + Messages ready for Wave 1; Santa gated except en/ro", () => {
+  it("marks Gift Finder + Messages + Santa ready for Wave 1 after P3E", () => {
     for (const locale of WAVE1_GENERATION_LOCALES) {
       expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.gift_finder_recommendations[locale]).toBe("ready");
       expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.messages_generator[locale]).toBe("ready");
       expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.cards_message_assistant[locale]).toBe("ready");
+      expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.santa_script_tts[locale]).toBe("ready");
       expect(isChristmasProductReadyForLocale(locale, "/christmas/gift-finder")).toBe(true);
       expect(isChristmasProductReadyForLocale(locale, "/christmas/messages")).toBe(true);
+      expect(isChristmasProductReadyForLocale(locale, "/christmas/santa-video")).toBe(true);
     }
-    expect(isChristmasProductReadyForLocale("de", "/christmas/santa-video")).toBe(false);
-    expect(isChristmasProductReadyForLocale("ro", "/christmas/santa-video")).toBe(true);
   });
 
   it("SEO indexability follows product readiness for gated routes", () => {
     expect(isChristmasLocaleSeoIndexable("de", "/christmas/gift-finder")).toBe(true);
     expect(isChristmasLocaleSeoIndexable("de", "/christmas/messages")).toBe(true);
-    expect(isChristmasLocaleSeoIndexable("de", "/christmas/santa-video")).toBe(false);
+    expect(isChristmasLocaleSeoIndexable("de", "/christmas/santa-video")).toBe(true);
     expect(isChristmasLocaleSeoIndexable("fr", "/christmas/messages")).toBe(true);
-    expect(isChristmasLocaleSeoIndexable("pl", "/christmas/santa-video")).toBe(false);
+    expect(isChristmasLocaleSeoIndexable("pl", "/christmas/santa-video")).toBe(true);
   });
 
-  it("hreflang/sitemap include Wave 1 messages but exclude unverified Santa locales", () => {
+  it("hreflang/sitemap include Wave 1 messages and Santa locales after P3E", () => {
     const msgAlts = buildChristmasHreflangAlternates("/christmas/messages");
     const langs = msgAlts.map((a) => a.hreflang);
     expect(langs).toContain("de");
@@ -71,20 +71,28 @@ describe("christmas P3C product-language enablement", () => {
     const santaLangs = santaAlts.map((a) => a.hreflang);
     expect(santaLangs).toContain("en");
     expect(santaLangs).toContain("ro");
-    expect(santaLangs).not.toContain("de");
+    expect(santaLangs).toContain("de");
+    expect(santaLangs).toContain("pt-PT");
 
     const paths = christmasSitemapPaths();
     expect(paths).toContain("/de/christmas/messages");
     expect(paths).toContain("/de/christmas/gift-finder");
-    expect(paths).not.toContain("/de/christmas/santa-video");
+    expect(paths).toContain("/de/christmas/santa-video");
   });
 
-  it("language switcher exposes Wave 1 for Gift Finder and Messages; Santa stays en/ro", () => {
+  it("language switcher exposes Wave 1 for Gift Finder, Messages, and Santa", () => {
     expect(switchableChristmasLocales("/christmas/gift-finder").map((l) => l.code)).toContain("de");
     expect(switchableChristmasLocales("/christmas/messages").map((l) => l.code)).toContain("pl");
     expect(switchableChristmasLocales("/christmas/santa-video").map((l) => l.code)).toEqual([
       "en",
       "ro",
+      "de",
+      "fr",
+      "es",
+      "it",
+      "pt",
+      "nl",
+      "pl",
     ]);
   });
 });
