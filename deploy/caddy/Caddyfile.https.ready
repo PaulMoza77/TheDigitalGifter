@@ -36,6 +36,11 @@
 	handle @tdg {
 		import tdg_upstream
 	}
+	@casahub host casahub.eu www.casahub.eu
+	handle @casahub {
+		import security_headers
+		reverse_proxy casahub-web:3000
+	}
 	handle {
 		import themozas_upstream
 	}
@@ -61,6 +66,38 @@ www.thedigitalgifter.com {
 	import tdg_upstream
 	log {
 		output file /var/log/caddy/thedigitalgifter.log {
+			roll_size 10mb
+			roll_keep 10
+		}
+	}
+}
+
+mcp.themozas.com {
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		-Server
+	}
+	reverse_proxy mozas-mcp-bridge:8787 {
+		header_up Host {host}
+		health_uri /healthz
+		health_interval 30s
+		flush_interval -1
+	}
+	log {
+		output file /var/log/caddy/mcp-bridge.log {
+			roll_size 10mb
+			roll_keep 10
+		}
+	}
+}
+
+casahub.eu, www.casahub.eu {
+	import security_headers
+	reverse_proxy casahub-web:3000
+	log {
+		output file /var/log/caddy/casahub.log {
 			roll_size 10mb
 			roll_keep 10
 		}
