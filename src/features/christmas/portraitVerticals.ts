@@ -23,6 +23,7 @@ export type PortraitSpecies = "dog" | "cat" | "any" | null;
 export type ChristmasPortraitVerticalId =
   | "photo"
   | "family"
+  | "kids"
   | "couples"
   | "pets"
   | "dogs"
@@ -30,7 +31,12 @@ export type ChristmasPortraitVerticalId =
 
 export type ChristmasPortraitVertical = {
   id: ChristmasPortraitVerticalId;
-  productKey: "christmas_photo" | "christmas_family" | "christmas_couple" | "christmas_pet";
+  productKey:
+    | "christmas_photo"
+    | "christmas_family"
+    | "christmas_kids"
+    | "christmas_couple"
+    | "christmas_pet";
   packageKey: "single";
   routePath: string;
   portraitType: PortraitSubject;
@@ -102,6 +108,33 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     privacyLine: "Family photos stay private by default. No public gallery.",
     crossLinks: [
       { label: "Couples", to: "/christmas/couples" },
+      { label: "Classic portrait", to: "/christmas/photo-generator" },
+      { label: "Christmas Cards", to: "/christmas/cards" },
+    ],
+    styles: CHRISTMAS_FAMILY_STYLES,
+    allowMultiplePeople: true,
+  },
+  kids: {
+    id: "kids",
+    productKey: "christmas_kids",
+    packageKey: "single",
+    routePath: "/christmas/kids",
+    portraitType: "family",
+    expectedSpecies: null,
+    draftStorageKey: "tdg.christmas.portrait.kids.v1",
+    pageTitle: "Christmas Photos for Kids | Magical Holiday Portraits",
+    metaDescription:
+      "Create a privacy-first Christmas portrait for a child or siblings from a photo you have permission to use.",
+    heroHeadline: "Create a Magical Christmas Portrait for Your Kids",
+    heroSupport:
+      "With parent or guardian permission, upload a clear photo and choose a family-safe Christmas style.",
+    uploadHint:
+      "Use a photo you have permission to use. Clear, visible faces and simple backgrounds work best.",
+    deliverableLine: "One private Christmas portrait for your child or children.",
+    privacyLine:
+      "Private by default. No public gallery, and we do not ask for school, address, phone, or social profile details.",
+    crossLinks: [
+      { label: "Family", to: "/christmas/family" },
       { label: "Classic portrait", to: "/christmas/photo-generator" },
       { label: "Christmas Cards", to: "/christmas/cards" },
     ],
@@ -226,6 +259,7 @@ export function resolvePortraitStyle(
 export const PORTRAIT_COMMERCE_PRODUCT_KEYS = [
   "christmas_photo",
   "christmas_family",
+  "christmas_kids",
   "christmas_couple",
   "christmas_pet",
 ] as const;

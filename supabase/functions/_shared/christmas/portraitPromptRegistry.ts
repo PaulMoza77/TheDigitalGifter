@@ -250,6 +250,7 @@ const REGISTRY: Record<string, ChristmasPromptStyle[]> = {
 export const PORTRAIT_PRODUCT_KEYS = [
   "christmas_photo",
   "christmas_family",
+  "christmas_kids",
   "christmas_couple",
   "christmas_pet",
 ] as const;
@@ -259,7 +260,8 @@ export function isPortraitProductKey(productKey: string): boolean {
 }
 
 export function stylesForProductKey(productKey: string): ChristmasPromptStyle[] {
-  return REGISTRY[productKey] || [];
+  const registryKey = productKey === "christmas_kids" ? "christmas_family" : productKey;
+  return REGISTRY[registryKey] || [];
 }
 
 export function resolveProductStyle(
@@ -291,6 +293,9 @@ export function buildChristmasPortraitPrompt(input: {
   if (input.productKey === "christmas_pet" && (species === "dog" || species === "cat")) {
     prompt += ` The subject is a ${species}. Preserve ${species} species, coat coloring, and facial characteristics. Do not change species or add extra animals.`;
   }
+  if (input.productKey === "christmas_kids") {
+    prompt += " Keep the portrayal strictly age-appropriate and family-safe. Preserve the child or children at their apparent age and identity. Do not sexualize, age-shift, add adult styling, or create suggestive clothing or poses.";
+  }
   return { ok: true, prompt, style };
 }
 
@@ -303,13 +308,14 @@ export function recoveryRouteForOrder(input: {
   const route = String(input.sourceRoute || "").trim();
   if (route.startsWith("/christmas/")) return route.split("?")[0];
   const landing = String(input.landingPath || "").split("?")[0];
-  if (landing.startsWith("/christmas/family") || landing.startsWith("/christmas/couples") ||
-      landing.startsWith("/christmas/pets") || landing.startsWith("/christmas/dogs") ||
-      landing.startsWith("/christmas/cats") || landing.startsWith("/christmas/photo-generator") ||
-      landing.startsWith("/christmas/santa-video")) {
+  if (landing.startsWith("/christmas/family") || landing.startsWith("/christmas/kids") ||
+      landing.startsWith("/christmas/couples") || landing.startsWith("/christmas/pets") ||
+      landing.startsWith("/christmas/dogs") || landing.startsWith("/christmas/cats") ||
+      landing.startsWith("/christmas/photo-generator") || landing.startsWith("/christmas/santa-video")) {
     return landing;
   }
   if (input.productKey === "christmas_santa_video") return "/christmas/santa-video";
+  if (input.productKey === "christmas_kids") return "/christmas/kids";
   if (input.productKey === "christmas_family") return "/christmas/family";
   if (input.productKey === "christmas_couple") return "/christmas/couples";
   if (input.productKey === "christmas_pet") {

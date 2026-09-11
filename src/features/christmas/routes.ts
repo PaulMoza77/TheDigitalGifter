@@ -1,10 +1,10 @@
 /**
  * Route shells for unfinished Christmas suite surfaces.
- * Hub `/christmas/photo-generator` uses ChristmasPhotoGeneratorExperience.
- * Hub `/christmas/family` uses ChristmasFamilyExperience.
- * Other portrait verticals (couples / pets / dogs / cats) use ChristmasPortraitFunnelPage.
- * No fake payment CTAs or AI results on shells.
+ * Live product routes are kept out of this registry unless a legacy wrapper
+ * still uses the shell contract for routing.
  */
+
+import { parseChristmasLocalePath } from "./seo/localeRouting";
 
 export type ChristmasRouteShellDef = {
   path: string;
@@ -15,21 +15,25 @@ export type ChristmasRouteShellDef = {
   noindex: boolean;
 };
 
-/** Unfinished suite surfaces only — portrait verticals + Santa Video are real funnel pages. */
+/**
+ * Kids keeps this routing record because ChristmasShellRoute is the legacy
+ * entry point, but the route now renders a real guardian-gated generator.
+ */
 export const CHRISTMAS_ROUTE_SHELLS: ChristmasRouteShellDef[] = [
   {
     path: "/christmas/kids",
     productKey: "christmas_kids",
     title: "Kids Christmas Generator",
-    status: "coming_soon",
-    description: "This product is not available yet. Privacy controls are required before launch.",
-    noindex: true,
+    status: "live_hub",
+    description:
+      "Privacy-first Christmas portraits for children, protected by a parent/guardian permission gate and private-by-default delivery.",
+    noindex: false,
   },
 ];
 
 export function shellForPath(pathname: string): ChristmasRouteShellDef | null {
-  const path = pathname.split("?")[0];
-  return CHRISTMAS_ROUTE_SHELLS.find((s) => s.path === path) ?? null;
+  const { basePath } = parseChristmasLocalePath(pathname.split("?")[0]);
+  return CHRISTMAS_ROUTE_SHELLS.find((s) => s.path === basePath) ?? null;
 }
 
 export function shellExposesCheckout(shell: ChristmasRouteShellDef): boolean {

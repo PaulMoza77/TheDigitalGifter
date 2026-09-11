@@ -33,6 +33,8 @@ describe("christmas portrait vertical config", () => {
   it("maps each route to the correct product config", () => {
     expect(verticalFromPathname("/christmas/photo-generator")?.productKey).toBe("christmas_photo");
     expect(verticalFromPathname("/christmas/family")?.productKey).toBe("christmas_family");
+    expect(verticalFromPathname("/christmas/kids")?.productKey).toBe("christmas_kids");
+    expect(verticalFromPathname("/ro/christmas/kids")?.productKey).toBe("christmas_kids");
     expect(verticalFromPathname("/christmas/couples")?.productKey).toBe("christmas_couple");
     expect(verticalFromPathname("/christmas/pets")?.productKey).toBe("christmas_pet");
     expect(verticalFromPathname("/christmas/dogs")?.productKey).toBe("christmas_pet");
@@ -48,11 +50,17 @@ describe("christmas portrait vertical config", () => {
     expect(isPortraitCommerceProduct("christmas_dog")).toBe(false);
   });
 
+  it("kids is a recognized portrait commerce product but still price-gated", () => {
+    expect(CHRISTMAS_PORTRAIT_VERTICALS.kids.productKey).toBe("christmas_kids");
+    expect(CHRISTMAS_PORTRAIT_VERTICALS.kids.allowMultiplePeople).toBe(true);
+    expect(isPortraitCommerceProduct("christmas_kids")).toBe(true);
+  });
+
   it("rejects invalid product keys for commerce portrait set", () => {
     expect(isPortraitCommerceProduct("not_a_product")).toBe(false);
   });
 
-  it("family/couples/pets are not shells anymore", () => {
+  it("family/couples/pets are not shells; kids shell now routes to a live guarded hub", () => {
     expect(shellForPath("/christmas/family")).toBeNull();
     expect(shellForPath("/christmas/couples")).toBeNull();
     expect(shellForPath("/christmas/pets")).toBeNull();
@@ -63,7 +71,9 @@ describe("christmas portrait vertical config", () => {
     expect(shellForPath("/christmas/advent")).toBeNull();
     expect(shellForPath("/christmas/wishlist")).toBeNull();
     expect(shellForPath("/christmas/gift-finder")).toBeNull();
-    expect(shellForPath("/christmas/kids")?.status).toBe("coming_soon");
+    expect(shellForPath("/christmas/kids")?.status).toBe("live_hub");
+    expect(shellForPath("/christmas/kids")?.noindex).toBe(false);
+    expect(shellForPath("/ro/christmas/kids")?.status).toBe("live_hub");
   });
 });
 
@@ -90,11 +100,15 @@ describe("christmas portrait style registry", () => {
     expect(rejectClientPrompt("hack the prompt").ok).toBe(false);
   });
 
-  it("deno registry mirrors client product style keys", () => {
+  it("deno registry mirrors client product style keys and aliases kids to family-safe styles", () => {
     const deno = readSrc("supabase/functions/_shared/christmas/portraitPromptRegistry.ts");
     for (const key of stylesForProductKey("christmas_family").map((s) => s.styleKey)) {
       expect(deno).toContain(`"styleKey": "${key}"`);
     }
+    expect(deno).toContain('"christmas_kids"');
+    expect(deno).toContain('productKey === "christmas_kids" ? "christmas_family"');
+    expect(deno).toContain("strictly age-appropriate and family-safe");
+    expect(deno).toContain("Do not sexualize, age-shift");
     expect(deno).toContain("buildChristmasPortraitPrompt");
     expect(deno).toContain("never trusted");
   });
@@ -142,6 +156,7 @@ describe("christmas portrait wiring", () => {
     expect(app).toContain("ChristmasPortraitFunnelPage");
     expect(app).toContain('path="/christmas/photo-generator"');
     expect(app).toContain('path="/christmas/family"');
+    expect(app).toContain('path="/christmas/kids"');
     for (const path of [
       "/christmas/couples",
       "/christmas/pets",
@@ -163,6 +178,14 @@ describe("christmas portrait wiring", () => {
     expect(readSrc("supabase/functions/christmas-photo-funnel/index.ts")).toContain("validatePetSpecies");
   });
 
+  it("kids route has explicit guardian consent and no public gallery", () => {
+    const kids = readSrc("src/features/christmas/ChristmasKidsPage.tsx");
+    expect(kids).toContain("parent/guardian");
+    expect(kids).toContain("No public gallery");
+    expect(kids).toContain("CONSENT_KEY");
+    expect(kids).toContain("ChristmasPortraitFunnelPage");
+  });
+
   it("migration seeds vertical packages purchasable false", () => {
     const sql = readSrc("supabase/migrations/20260903010000_christmas_portrait_verticals.sql");
     expect(sql).toContain("christmas_family");
@@ -172,8 +195,9 @@ describe("christmas portrait wiring", () => {
     expect(sql).toContain("species");
   });
 
-  it("family allows multiple people; couple V1 is single shared photo", () => {
+  it("family and kids allow multiple people; couple V1 is single shared photo", () => {
     expect(CHRISTMAS_PORTRAIT_VERTICALS.family.allowMultiplePeople).toBe(true);
+    expect(CHRISTMAS_PORTRAIT_VERTICALS.kids.allowMultiplePeople).toBe(true);
     expect(CHRISTMAS_PORTRAIT_VERTICALS.couples.uploadHint).toMatch(/both/i);
     expect(CHRISTMAS_PORTRAIT_VERTICALS.couples.heroSupport).not.toMatch(/two separate photos/i);
   });

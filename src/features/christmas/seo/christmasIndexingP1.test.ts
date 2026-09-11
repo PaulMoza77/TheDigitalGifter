@@ -18,11 +18,14 @@ describe("christmas P1 indexing policy", () => {
     expect(getChristmasSeo("/christmas/gifts")).toBeNull();
   });
 
-  it("keeps primary product pages indexable and kids/funnel noindex", () => {
+  it("keeps primary product pages including kids/send-a-gift indexable and funnels noindex", () => {
     for (const path of CHRISTMAS_INDEXABLE_PATHS) {
       expect(shouldNoindexChristmasPath(path)).toBe(false);
     }
-    expect(shouldNoindexChristmasPath("/christmas/kids")).toBe(true);
+    expect(CHRISTMAS_INDEXABLE_PATHS).toContain("/christmas/kids");
+    expect(CHRISTMAS_INDEXABLE_PATHS).toContain("/christmas/send-a-gift");
+    expect(shouldNoindexChristmasPath("/christmas/kids")).toBe(false);
+    expect(shouldNoindexChristmasPath("/christmas/send-a-gift")).toBe(false);
     expect(shouldNoindexChristmasPath("/christmas-ai-photos")).toBe(true);
     expect(shouldNoindexChristmasPath("/christmas-ai-photos/order")).toBe(true);
     expect(shouldNoindexChristmasPath("/wishlist/x")).toBe(true);
@@ -31,11 +34,12 @@ describe("christmas P1 indexing policy", () => {
 
   it("aligns sitemap list with indexable paths on www", () => {
     expect(SITE_URL).toBe("https://www.thedigitalgifter.com");
-    // EN indexable paths remain; P3A may append complete localized pilots (e.g. /ro/...)
     for (const path of CHRISTMAS_INDEXABLE_PATHS) {
       expect(CHRISTMAS_SITEMAP_PATHS).toContain(path);
     }
     expect(CHRISTMAS_SITEMAP_PATHS).toContain("/ro/christmas/cards");
+    expect(CHRISTMAS_SITEMAP_PATHS).toContain("/ro/christmas/kids");
+    expect(CHRISTMAS_SITEMAP_PATHS).toContain("/ro/christmas/send-a-gift");
     expect(CHRISTMAS_SITEMAP_PATHS).not.toContain("/en/christmas");
   });
 
@@ -49,7 +53,10 @@ describe("christmas P1 indexing policy", () => {
   it("404s unknown christmas product URLs", () => {
     expect(should404UnknownChristmasPath("/christmas/not-a-real-product")).toBe(true);
     expect(should404UnknownChristmasPath("/christmas/photo-generator")).toBe(false);
+    expect(should404UnknownChristmasPath("/christmas/kids")).toBe(false);
+    expect(should404UnknownChristmasPath("/christmas/send-a-gift")).toBe(false);
     expect(should404UnknownChristmasPath("/ro/christmas/cards")).toBe(false);
+    expect(should404UnknownChristmasPath("/ro/christmas/send-a-gift")).toBe(false);
     expect(should404UnknownChristmasPath("/ro/christmas/not-a-real-product")).toBe(true);
   });
 
