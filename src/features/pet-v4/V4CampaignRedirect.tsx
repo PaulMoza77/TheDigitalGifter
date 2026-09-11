@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import { v4RedirectTarget } from "./campaign";
 
 /**
- * Soft-redirect live Meta ads that still land on V1/V2 URLs with V4 campaign_id
- * into the isolated V4 cohort routes, preserving query attribution.
+ * Soft-redirect live Meta ads that still land on V1/V2 URLs with the V4
+ * campaign id (campaign_id or utm_campaign) into the isolated V4 cohort
+ * routes, preserving query attribution.
  *
  * Production migration `20260910120000_pet_v4_sales_campaign_analytics.sql`
  * is applied (orders CHECK + record_pet_v4_funnel_event).

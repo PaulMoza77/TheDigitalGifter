@@ -37,6 +37,16 @@ describe("pet-v4 campaign isolation", () => {
     expect(target).toBe(`/pet/dog-v4?campaign_id=${PET_V4_META_CAMPAIGN_ID}&utm_source=fb`);
   });
 
+  it("soft-redirects V2 URLs when Meta puts the campaign id in utm_campaign", () => {
+    const target = v4RedirectTarget(
+      "/pet/dog-v2",
+      `?utm_source=fb&utm_medium=paid&utm_campaign=${PET_V4_META_CAMPAIGN_ID}`,
+    );
+    expect(target).toBe(
+      `/pet/dog-v4?utm_source=fb&utm_medium=paid&utm_campaign=${PET_V4_META_CAMPAIGN_ID}`,
+    );
+  });
+
   it("wires V4 ingest on the VPS origin and re-enables campaign soft-redirect", () => {
     expect(PET_V4_EVENT_PATH).toBe("/api/pet-v4/funnel-event");
     const routes = readSrc("server/routes.mjs");

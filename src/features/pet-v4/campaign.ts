@@ -9,6 +9,14 @@ export function isV4MetaCampaignId(value: unknown): boolean {
   return String(value || "").trim() === PET_V4_META_CAMPAIGN_ID;
 }
 
+/** Live Meta ads often put the numeric campaign id in utm_campaign, not campaign_id. */
+export function isV4CampaignAttribution(attr: {
+  campaign_id?: string | null;
+  utm_campaign?: string | null;
+}): boolean {
+  return isV4MetaCampaignId(attr.campaign_id) || isV4MetaCampaignId(attr.utm_campaign);
+}
+
 /** True when pathname is a dedicated V4 sales route. */
 export function isPetV4Pathname(value: string): boolean {
   const path = String(value || "").split("?")[0];
@@ -38,7 +46,7 @@ export function v2PathToV4Path(pathname: string): string | null {
 }
 
 /**
- * First-touch V4 cohort: Meta campaign_id wins.
+ * First-touch V4 cohort: Meta campaign_id / utm_campaign wins.
  * Also true on dedicated /pet/*-v4 routes (always V4 mode).
  */
 export function isV4AcquisitionCohort(search?: string, pathname?: string): boolean {
@@ -48,22 +56,22 @@ export function isV4AcquisitionCohort(search?: string, pathname?: string): boole
 
   captureFunnelAttribution(search);
   const stored = getFunnelAttribution();
-  if (isV4MetaCampaignId(stored.campaign_id)) return true;
+  if (isV4CampaignAttribution(stored)) return true;
 
   const hrefSearch = search ?? (typeof window !== "undefined" ? window.location.search : "");
   const incoming = parseFunnelAttributionSearch(hrefSearch || "");
-  return isV4MetaCampaignId(incoming.campaign_id);
+  return isV4CampaignAttribution(incoming);
 }
 
 function hasV4CampaignInContext(search?: string): boolean {
   const hrefSearch = search ?? (typeof window !== "undefined" ? window.location.search : "");
   const fromUrl = parseFunnelAttributionSearch(hrefSearch || "");
-  if (isV4MetaCampaignId(fromUrl.campaign_id)) return true;
+  if (isV4CampaignAttribution(fromUrl)) return true;
   captureFunnelAttribution(hrefSearch);
-  return isV4MetaCampaignId(getFunnelAttribution().campaign_id);
+  return isV4CampaignAttribution(getFunnelAttribution());
 }
 
-/** Soft-redirect target when live ads still land on V1/V2 URLs with V4 campaign_id. */
+/** Soft-redirect target when live ads still land on V1/V2 URLs with V4 campaign signal. */
 export function v4RedirectTarget(pathname: string, search?: string): string | null {
   if (!hasV4CampaignInContext(search)) return null;
   if (isPetV4Pathname(pathname)) return null;
