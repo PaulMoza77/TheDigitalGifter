@@ -181,7 +181,7 @@ const sitemapPaths = christmasSitemapPaths();
 for (const path of CHRISTMAS_INDEXABLE_PATHS) {
   assert(sitemapPaths.includes(path), `sitemap includes ${path}`);
 }
-for (const includedRo of ["/ro/christmas", "/ro/christmas/cards", "/ro/christmas/santa-video"]) {
+for (const includedRo of ["/ro/christmas", "/ro/christmas/cards", "/ro/christmas/santa-video", "/ro/christmas/gift-finder"]) {
   assert(sitemapPaths.includes(includedRo), `sitemap includes complete RO ${includedRo}`);
 }
 for (const excluded of [
@@ -191,7 +191,8 @@ for (const excluded of [
   "/christmas-ai-photos/order",
   "/christmas/suite",
   "/christmas/tree-gifts",
-  "/ro/christmas/gift-finder",
+  "/de/christmas/santa-video",
+  "/fr/christmas/messages",
   "/en/christmas",
   "/en/christmas/cards",
 ]) {
@@ -469,9 +470,34 @@ assert(
   "P3A RO santa self-canonical",
 );
 
-const roIncompleteHtml = applyChristmasSeo(template, "/ro/christmas/gift-finder");
-assert(robotsIsNoindex(roIncompleteHtml), "P3A incomplete RO gift-finder noindex");
-assert(!/hreflang=/i.test(roIncompleteHtml), "P3A incomplete RO must not emit hreflang");
+const roIncompleteHtml = applyChristmasSeo(template, "/de/christmas/santa-video");
+assert(robotsIsNoindex(roIncompleteHtml), "P3A/P3B product-gated DE santa noindex");
+assert(!/hreflang=/i.test(roIncompleteHtml), "P3A/P3B product-gated DE santa must not emit hreflang");
+
+// —— P3B Wave 1 spot checks ——
+const deCards = applyChristmasSeo(template, "/de/christmas/cards");
+assert(/lang="de"/.test(deCards), "P3B DE cards lang=de");
+assert(robotsIsIndex(deCards), "P3B DE cards indexable");
+assert(deCards.includes('hreflang="fr"'), "P3B DE cards hreflang includes FR");
+assert(
+  extractCanonical(deCards) === `${SITE_ORIGIN}/de/christmas/cards`,
+  "P3B DE cards self-canonical",
+);
+
+const frHub = applyChristmasSeo(template, "/fr/christmas");
+assert(/lang="fr"/.test(frHub), "P3B FR hub lang=fr");
+assert(frHub.includes("/fr/christmas/cards"), "P3B FR hub locale-internal links");
+
+const plWish = applyChristmasSeo(template, "/pl/christmas/wishlist");
+assert(/lang="pl"/.test(plWish), "P3B PL wishlist lang=pl");
+assert(/[ąćęłńóśźż]/i.test(plWish), "P3B PL diacritics present");
+
+const ptSanta = applyChristmasSeo(template, "/pt/christmas/santa-video");
+assert(/lang="pt-PT"/.test(ptSanta), "P3B PT santa lang=pt-PT");
+assert(robotsIsNoindex(ptSanta), "P3B PT santa product-gated noindex");
+
+assert(enCardsByLang.de === `${SITE_ORIGIN}/de/christmas/cards`, "P3B hreflang de reciprocal");
+assert(enCardsByLang["pt-PT"] === `${SITE_ORIGIN}/pt/christmas/cards`, "P3B hreflang pt-PT");
 
 const distRoCards = join(root, "dist", "ro", "christmas", "cards", "index.html");
 if (existsSync(distRoCards)) {
@@ -484,6 +510,15 @@ if (existsSync(distRoCards)) {
   assert(prerenderRo.includes('hreflang="en"'), "P3A prerender reciprocal hreflang");
 } else {
   ok("P3A prerender RO cards not in dist yet (run build first)");
+}
+
+const distDeCards = join(root, "dist", "de", "christmas", "cards", "index.html");
+if (existsSync(distDeCards)) {
+  const prerenderDe = readFileSync(distDeCards, "utf8");
+  assert(/lang="de"/.test(prerenderDe), "P3B prerender DE cards lang=de");
+  assert(robotsIsIndex(prerenderDe), "P3B prerender DE cards indexable");
+} else {
+  ok("P3B prerender DE cards not in dist yet (run build first)");
 }
 
 // —— 3) Optional live / origin fetch ——
