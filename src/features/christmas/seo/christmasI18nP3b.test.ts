@@ -77,10 +77,10 @@ describe("christmas P3B Wave 1 localization", () => {
     }
   });
 
-  it("keeps Santa non-indexable where TTS product language is not ready; Messages ready in Wave 1", () => {
+  it("keeps Messages ready in Wave 1; Santa product-ready for Wave 1 after P3E", () => {
     expect(isChristmasProductReadyForLocale("ro", "/christmas/santa-video")).toBe(true);
-    expect(isChristmasProductReadyForLocale("de", "/christmas/santa-video")).toBe(false);
-    expect(isChristmasLocaleSeoIndexable("de", "/christmas/santa-video")).toBe(false);
+    expect(isChristmasProductReadyForLocale("de", "/christmas/santa-video")).toBe(true);
+    expect(isChristmasLocaleSeoIndexable("de", "/christmas/santa-video")).toBe(true);
     expect(isChristmasLocaleSeoIndexable("fr", "/christmas/messages")).toBe(true);
     expect(isChristmasLocaleSeoIndexable("ro", "/christmas/messages")).toBe(true);
     expect(isChristmasLocaleSeoIndexable("de", "/christmas/cards")).toBe(true);
@@ -99,16 +99,18 @@ describe("christmas P3B Wave 1 localization", () => {
     }
   });
 
-  it("SSR DE santa is localized but noindex and excluded from hreflang", () => {
+  it("SSR DE santa is localized, indexable, and included in reciprocal hreflang", () => {
     const html = applyChristmasSeo(template(), "/de/christmas/santa-video");
     expect(html).toMatch(/lang="de"/);
-    expect(html).toMatch(/name="robots"[^>]*content="noindex/);
-    expect(html).not.toMatch(/hreflang=/);
+    expect(html).toMatch(/name="robots"[^>]*content="index,follow"/);
+    expect(html).toContain('hreflang="de"');
+    expect(html).toContain('hreflang="en"');
+    expect(html).toContain('hreflang="ro"');
     const alts = buildChristmasHreflangAlternates("/christmas/santa-video");
     const langs = alts.map((a) => a.hreflang);
     expect(langs).toContain("en");
     expect(langs).toContain("ro");
-    expect(langs).not.toContain("de");
+    expect(langs).toContain("de");
   });
 
   it("SSR FR hub differs from English and includes localized internal links", () => {
@@ -119,11 +121,11 @@ describe("christmas P3B Wave 1 localization", () => {
     expect(html).not.toContain("Create Something They’ll Remember This Christmas");
   });
 
-  it("SSR PT uses pt-PT lang and Portugal terminology", () => {
+  it("SSR PT uses pt-PT lang and Portugal terminology and is indexable after P3E", () => {
     const html = applyChristmasSeo(template(), "/pt/christmas/santa-video");
     expect(html).toMatch(/lang="pt-PT"/);
     expect(html).toMatch(/Pai Natal/);
-    expect(html).toMatch(/name="robots"[^>]*content="noindex/);
+    expect(html).toMatch(/name="robots"[^>]*content="index,follow"/);
   });
 
   it("SSR PL includes Polish diacritics and self-canonical", () => {
@@ -146,7 +148,7 @@ describe("christmas P3B Wave 1 localization", () => {
     expect(paths).toContain("/fr/christmas");
     expect(paths).toContain("/ro/christmas/messages");
     expect(paths).toContain("/ro/christmas/santa-video");
-    expect(paths).not.toContain("/de/christmas/santa-video");
+    expect(paths).toContain("/de/christmas/santa-video");
     expect(paths).toContain("/nl/christmas/messages");
     expect(paths).not.toContain("/en/christmas");
   });
@@ -165,14 +167,14 @@ describe("christmas P3B Wave 1 localization", () => {
     expect(clientPath("/christmas/cards", "de")).toBe("/de/christmas/cards");
     expect(clientPath("/de/christmas/family", "pl")).toBe("/pl/christmas/family");
     const santaLocales = switchableChristmasLocales("/christmas/santa-video").map((l) => l.code);
-    expect(santaLocales).toEqual(["en", "ro"]);
+    expect(santaLocales).toEqual(["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"]);
     const cardsLocales = switchableChristmasLocales("/christmas/cards").map((l) => l.code);
     expect(cardsLocales).toContain("de");
     expect(cardsLocales).toContain("pl");
   });
 
   it("records product readiness matrix for Santa and Messages", () => {
-    expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.santa_script_tts.de).toBe("not-ready");
+    expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.santa_script_tts.de).toBe("ready");
     expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.messages_generator.ro).toBe("ready");
     expect(CHRISTMAS_PRODUCT_LANGUAGE_READY.cards_message_assistant.fr).toBe("ready");
   });

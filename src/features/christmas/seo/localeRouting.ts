@@ -33,7 +33,8 @@ export const CHRISTMAS_UI_LOCALES: Array<{
 
 /** Product-gated routes: only these locales have real generation support for SEO switcher. */
 const PRODUCT_GATED_ROUTE_LOCALES: Record<string, ChristmasLocaleCode[]> = {
-  "/christmas/santa-video": ["en", "ro"],
+  // Santa: P3E live TTS QA PASS for all Wave 1 locales
+  "/christmas/santa-video": ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"],
   // Messages + Gift Finder: all Wave 1 after P3C product-language enablement
   "/christmas/messages": ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"],
   "/christmas/gift-finder": ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"],

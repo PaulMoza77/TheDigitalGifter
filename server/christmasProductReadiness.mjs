@@ -11,17 +11,16 @@
  */
 export const CHRISTMAS_PRODUCT_LANGUAGE_READY = {
   santa_script_tts: {
+    // P3E: live MiniMax TTS + Whisper language/term/name evidence PASS for Wave 1.
     en: "ready",
     ro: "ready",
-    // Script + MiniMax language_boost wired for Wave 1, but live TTS quality
-    // not verified in this environment — keep SEO gated until QA PASS.
-    de: "not-ready",
-    fr: "not-ready",
-    es: "not-ready",
-    it: "not-ready",
-    pt: "not-ready",
-    nl: "not-ready",
-    pl: "not-ready",
+    de: "ready",
+    fr: "ready",
+    es: "ready",
+    it: "ready",
+    pt: "ready",
+    nl: "ready",
+    pl: "ready",
   },
   messages_generator: {
     en: "ready",

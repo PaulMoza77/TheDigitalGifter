@@ -74,10 +74,12 @@ describe("christmas P3A i18n foundation", () => {
     expect(html).toMatch(/name="robots"[^>]*content="index,follow"/);
   });
 
-  it("does not emit hreflang for product-gated incomplete locale pages", () => {
+  it("emits hreflang for product-ready Wave 1 Santa locales after P3E", () => {
     const html = applyChristmasSeo(template(), "/de/christmas/santa-video");
-    expect(html).toMatch(/name="robots"[^>]*content="noindex,follow"/);
-    expect(html).not.toMatch(/hreflang=/);
+    expect(html).toMatch(/name="robots"[^>]*content="index,follow"/);
+    expect(html).toContain('hreflang="de"');
+    expect(html).toContain('hreflang="en"');
+    expect(html).toContain('hreflang="ro"');
   });
   it("keeps English SSR cluster intact with RO alternate", () => {
     const html = applyChristmasSeo(template(), "/christmas/cards");

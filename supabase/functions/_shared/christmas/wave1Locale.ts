@@ -44,6 +44,22 @@ export const MINIMAX_LANGUAGE_BOOST: Record<Wave1GenerationLocale, string> = {
   pl: "Polish",
 };
 
+/**
+ * Preferred Santa TTS provider per locale (P3E QA).
+ * Matches production `auto` behavior: OpenAI for EN, MiniMax for Wave 1 non-EN.
+ */
+export const SANTA_PREFERRED_TTS: Record<Wave1GenerationLocale, "openai" | "replicate"> = {
+  en: "openai",
+  ro: "replicate",
+  de: "replicate",
+  fr: "replicate",
+  es: "replicate",
+  it: "replicate",
+  pt: "replicate",
+  nl: "replicate",
+  pl: "replicate",
+};
+
 export function isWave1GenerationLocale(value: unknown): value is Wave1GenerationLocale {
   return typeof value === "string" && SET.has(value);
 }
@@ -66,4 +82,10 @@ export function generationLanguageName(locale: Wave1GenerationLocale): string {
 
 export function minimaxLanguageBoost(locale: Wave1GenerationLocale): string {
   return MINIMAX_LANGUAGE_BOOST[locale];
+}
+
+export function preferredSantaTtsProvider(
+  locale: Wave1GenerationLocale,
+): "openai" | "replicate" {
+  return SANTA_PREFERRED_TTS[locale];
 }
