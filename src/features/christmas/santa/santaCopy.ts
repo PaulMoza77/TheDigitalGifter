@@ -98,7 +98,7 @@ export const SANTA_COPY = {
         "Shareable link",
       ],
       consentNote:
-        "Details you enter are used only to create this private personalized video. Founder review: confirm retention policy copy before launch.",
+        "Details you enter are used only to create this private personalized video.",
       emailLabel: "Email for receipt / recovery (optional)",
       checkoutSoon:
         "Personalization is ready. Purchase unlocks when production pricing is configured.",
@@ -124,24 +124,45 @@ export const SANTA_COPY = {
     },
   },
   sections: {
+    message: {
+      h2: "A Personalized Message From Santa",
+      body: "Create a Christmas video from Santa for a child, siblings, family, or someone special. Santa can say their name and weave in optional details you share — then you download or share the finished video.",
+    },
+    mention: {
+      h2: "What Can Santa Mention?",
+      body: "Personalization fields available today:",
+      items: [
+        "Recipient name",
+        "Optional age",
+        "Something they did well",
+        "Christmas wish",
+        "Extra personal detail (pet, hobby, sibling)",
+        "Language: English or Romanian",
+      ],
+    },
     examples: {
-      h2: "See Personalized Santa Video Examples",
-      intro: "Demo messages that show how Santa can personalize a greeting. These are examples — not customer reviews.",
+      h2: "Personalized Santa Video Examples",
+      intro:
+        "Demo messages that show how Santa can personalize a greeting. These are product demonstrations — not customer reviews.",
     },
     how: {
-      h2: "How Personalized Santa Videos Work",
+      h2: "How It Works",
       steps: [
         {
           title: "Tell Santa about them",
           body: "Name, Christmas wish and a few special details.",
         },
         {
-          title: "We create the message",
+          title: "Review the message",
+          body: "Check the personalized preview before you create the video.",
+        },
+        {
+          title: "Create the video",
           body: "Santa turns those details into a personalized Christmas greeting.",
         },
         {
-          title: "Share the magic",
-          body: "Download or send the finished video.",
+          title: "Download or share",
+          body: "Save the MP4 or send a private share link when it’s ready.",
         },
       ],
     },
@@ -172,13 +193,13 @@ export const SANTA_COPY = {
         "Entered details are used to create the personalized Santa experience.",
         "We do not publish child names in public galleries.",
         "Share links should be treated as private gifts — only send to people you trust.",
-        "Exact media retention policy: flag for founder review before launch claims.",
+        "Uploads and results stay private by default; they are not shown in a public gallery.",
       ],
     },
     geo: {
       whatIs: {
         q: "What is a personalized Santa video?",
-        a: "A personalized Santa video is a custom Christmas message in which Santa addresses the recipient by name and can mention personal details such as achievements, wishes or family moments.",
+        a: "A personalized Santa video is a Christmas message video from Santa that can include the recipient’s name and other details you provide. On TheDigitalGifter, you answer a short guided form, review the message, then create a video you can download and share.",
       },
     },
     faq: {
@@ -186,47 +207,35 @@ export const SANTA_COPY = {
       items: [
         {
           q: "Can Santa say my child’s name?",
-          a: "Yes. Santa addresses the recipient by first name throughout the message.",
+          a: "Yes. The recipient’s name is a core personalization field and Santa says it in the video.",
         },
         {
           q: "What can I personalize?",
-          a: "You can include their name, optional age, something they did well, a Christmas wish, and an extra detail like a pet or hobby.",
+          a: "Name, optional age, something they did well, Christmas wish, an extra detail, and language (English or Romanian).",
         },
         {
           q: "Can Santa mention a Christmas gift?",
-          a: "Yes — if you share a Christmas wish, Santa can mention it warmly in the message.",
+          a: "Yes — you can include a Christmas wish, and Santa can mention it when you provide one.",
         },
         {
-          q: "Can I make a video for more than one child?",
-          a: "You can start with siblings as the recipient type. For best results today, include both names in the name field (for example “Sofia & Luca”). Dedicated multi-child scripting will expand later.",
+          q: "Can I make a video for siblings?",
+          a: "Yes. Choose the siblings option and include their names in the name step. A dedicated multi-child flow may expand later.",
         },
         {
-          q: "Which languages are available?",
-          a: "English and Romanian are supported for generation today. More languages are planned.",
+          q: "Which languages are supported?",
+          a: "English and Romanian are supported today.",
         },
         {
           q: "Can I preview the message first?",
-          a: "Yes. You’ll see a personalized script-style preview before unlocking generation.",
+          a: "Yes. You can review the message before creating the video.",
         },
         {
-          q: "Can I download the video?",
-          a: "Yes. When your video is ready, you can download an MP4.",
-        },
-        {
-          q: "Can I share the video with family?",
-          a: "Yes. You can share a private link or download and send the file. Treat share links as personal gifts.",
-        },
-        {
-          q: "How long does it take?",
-          a: "Personalizing takes about a minute. After unlock, video preparation can take several minutes depending on demand.",
+          q: "Can I download or share the video?",
+          a: "Yes. When the video is ready, you can download the MP4 and share it.",
         },
         {
           q: "Is this only for children?",
           a: "The experience is optimized for parent → child, but you can also create warm messages for family or someone special.",
-        },
-        {
-          q: "How long is the video?",
-          a: "Typically about half a minute to about a minute, depending on the details you share.",
         },
       ],
     },

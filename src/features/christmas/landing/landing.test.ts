@@ -33,8 +33,11 @@ describe("christmas landing copy + seo", () => {
     expect(landingT("santa.bubble")).toMatch(/Ho ho ho/i);
     expect(landingT("gifts.cta")).toBe("Find the Perfect Gift");
     expect(landingT("gifts.h2")).toMatch(/tree/i);
+    expect(landingT("finder.h2")).toMatch(/Perfect Christmas Gift/i);
+    expect(landingT("geo.h2")).toMatch(/What can you create/i);
     expect(LANDING_COPY_KEYS).toContain("seo.title");
     expect(LANDING_COPY_KEYS).toContain("nav.finder");
+    expect(LANDING_COPY_KEYS).toContain("finder.cta");
     expect(LANDING_FAQS).toHaveLength(5);
   });
 
@@ -86,7 +89,9 @@ describe("christmas landing wiring", () => {
     expect(page).not.toContain("hubProducts");
     expect(experience).toContain("SantaScene");
     expect(experience).toContain("GiftTreeLandingScene");
-    expect(experience).not.toContain("GiftFinderScene");
+    expect(experience).toContain("GiftFinderScene");
+    expect(experience).toContain("GeoScene");
+    expect(experience).toContain("giftFinderUrl");
     expect(experience).not.toContain("WorldTransition");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("santa-alpha.webm");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("santa-static.png");

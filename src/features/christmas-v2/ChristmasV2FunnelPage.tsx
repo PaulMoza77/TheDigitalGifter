@@ -365,6 +365,8 @@ export function ChristmasV2OrderPage() {
         title="Your Christmas AI Photos | Digital Gifter"
         description="View your AI Christmas portraits and unlock more holiday scenarios."
         exactTitle
+        noindex
+        url="https://www.thedigitalgifter.com/christmas-ai-photos"
       />
       <ChristmasV2Shell>
         {status === "loading" || status === "generating" ? (

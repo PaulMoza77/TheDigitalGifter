@@ -51,15 +51,15 @@ export function GiftFinderScene({
   return (
     <SceneShell
       id="gift-finder"
-      kicker={t("gifts.kicker")}
-      title={t("gifts.h2")}
-      lede={t("gifts.lede")}
+      kicker={t("finder.kicker")}
+      title={t("finder.h2")}
+      lede={t("finder.lede")}
       visual={visual}
     >
       <p className="xmas-lede" style={{ marginTop: "0.8rem" }}>
-        {t("gifts.hint")}
+        {t("finder.hint")}
       </p>
-      <div className="xmas-tags" role="group" aria-label={t("gifts.h2")}>
+      <div className="xmas-tags" role="group" aria-label={t("finder.h2")}>
         {GIFT_FINDER_LANDING_RECIPIENTS.map((key) => (
           <button
             key={key}
@@ -78,13 +78,15 @@ export function GiftFinderScene({
       <p className="xmas-react" aria-live="polite">
         {who ? t(REACTIONS[who]) : "\u00a0"}
       </p>
-      {who ? (
-        <div className="xmas-actions">
-          <button type="button" className="xmas-btn xmas-btn--gold" onClick={() => onCta(who)}>
-            {t("gifts.cta")}
-          </button>
-        </div>
-      ) : null}
+      <div className="xmas-actions">
+        <button
+          type="button"
+          className="xmas-btn xmas-btn--gold"
+          onClick={() => onCta(who || "mom")}
+        >
+          {t("finder.cta")}
+        </button>
+      </div>
     </SceneShell>
   );
 }

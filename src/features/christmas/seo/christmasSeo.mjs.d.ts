@@ -1,5 +1,6 @@
 /**
- * Type declarations for the Node Christmas SEO registry imported by the client.
+ * Ambient types for importing the shared Christmas SEO registry from the client.
+ * Relative path must match imports from `src/features/christmas/seo/*`.
  */
 declare module "../../../../server/christmasSeo.mjs" {
   export const SITE_ORIGIN: string;
@@ -26,12 +27,4 @@ declare module "../../../../server/christmasSeo.mjs" {
   export function getChristmasSeo(pathname: string): ChristmasSeoEntry | null;
   export function listChristmasSeoPaths(): string[];
   export function applyChristmasSeo(html: string, pathname: string): string;
-}
-
-declare module "../../../server/christmasSeo.mjs" {
-  export * from "../../../../server/christmasSeo.mjs";
-}
-
-declare module "../../../../../../server/christmasSeo.mjs" {
-  export * from "../../../../server/christmasSeo.mjs";
 }

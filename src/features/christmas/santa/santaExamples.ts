@@ -13,8 +13,8 @@ export type SantaDemoExample = {
 export const SANTA_DEMO_EXAMPLES: SantaDemoExample[] = [
   {
     id: "emma",
-    title: "Emma, age 7",
-    subtitle: "Child message",
+    title: "Santa video for Emma, age 7",
+    subtitle: "Demo: Santa mentions school pride and a bicycle wish",
     recipientLabel: "Demo example",
     posterSrc: "/assets/funnel/christmas-after.png",
     posterAlt: "Warm Christmas scene representing Emma’s demo Santa message",
@@ -27,8 +27,8 @@ export const SANTA_DEMO_EXAMPLES: SantaDemoExample[] = [
   },
   {
     id: "noah",
-    title: "Noah, age 5",
-    subtitle: "Child message",
+    title: "Santa video for Noah, age 5",
+    subtitle: "Demo: Santa mentions swimming progress and a LEGO wish",
     recipientLabel: "Demo example",
     posterSrc: "/assets/funnel/christmas-ex2-after.png",
     posterAlt: "Cozy Christmas scene representing Noah’s demo Santa message",
@@ -41,8 +41,8 @@ export const SANTA_DEMO_EXAMPLES: SantaDemoExample[] = [
   },
   {
     id: "siblings",
-    title: "Sofia & Luca",
-    subtitle: "Siblings message",
+    title: "Santa video for Sofia & Luca",
+    subtitle: "Demo: siblings decorating the tree together",
     recipientLabel: "Demo example",
     posterSrc: "/assets/funnel/christmas-ex3-after.png",
     posterAlt: "Festive Christmas scene representing a siblings Santa demo",
@@ -55,8 +55,8 @@ export const SANTA_DEMO_EXAMPLES: SantaDemoExample[] = [
   },
   {
     id: "family",
-    title: "The Johnson Family",
-    subtitle: "Family greeting",
+    title: "Santa video for the Johnson Family",
+    subtitle: "Demo: a warm family Christmas greeting from Santa",
     recipientLabel: "Demo example",
     posterSrc: "/images/occasions/christmas.png",
     posterAlt: "Christmas occasion artwork for a family Santa greeting demo",
