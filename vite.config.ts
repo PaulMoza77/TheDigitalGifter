@@ -4,6 +4,7 @@ import path from "path";
 import { petFunnelEventDevPlugin } from "./vite.petFunnelEventPlugin";
 import { petV2DevPlugin } from "./vite.petV2Plugin";
 import { christmasV2DevPlugin } from "./vite.christmasPlugin";
+import { christmasSeoPrerenderPlugin } from "./vite.christmasSeoPlugin";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -13,7 +14,13 @@ export default defineConfig(({ mode }) => {
   process.env.REPLICATE_API_TOKEN ||= env.REPLICATE_API_TOKEN || "";
   process.env.PET_V2_PREVIEW_LIVE ||= env.PET_V2_PREVIEW_LIVE || "";
   return {
-    plugins: [react(), petFunnelEventDevPlugin(), petV2DevPlugin(), christmasV2DevPlugin()],
+    plugins: [
+      react(),
+      petFunnelEventDevPlugin(),
+      petV2DevPlugin(),
+      christmasV2DevPlugin(),
+      christmasSeoPrerenderPlugin(),
+    ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

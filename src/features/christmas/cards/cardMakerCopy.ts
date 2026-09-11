@@ -5,9 +5,9 @@ import type { LocaleCode } from "./taxonomy";
 type Dict = Record<string, string>;
 
 const EN: Dict = {
-  "seo.title": "Christmas Card Maker | Personalized Christmas Cards | TheDigitalGifter",
+  "seo.title": "Christmas Card Maker | Personalized Christmas Cards",
   "seo.description":
-    "Create a personalized Christmas card with your photo, a beautiful Christmas design and a heartfelt message. Download or share your card in minutes.",
+    "Create a personalized Christmas card they’ll want to keep — choose a design, add your message, and share or download.",
   "brand": "TheDigitalGifter",
   "breadcrumb.christmas": "Christmas",
   "breadcrumb.cards": "Cards",

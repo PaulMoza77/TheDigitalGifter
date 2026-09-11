@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
@@ -620,12 +621,16 @@ export default function ChristmasWishlistPage() {
 
   return (
     <div className="wl-page" data-fonts={fontsReady ? "ready" : "loading"}>
-      <PageHead
-        title={pageTitle}
-        description={pageDesc}
-        exactTitle={!isShare}
-        noindex={isShare}
-      />
+      {isShare ? (
+        <PageHead
+          title={pageTitle}
+          description={pageDesc}
+          exactTitle
+          noindex
+        />
+      ) : (
+        <ChristmasPageHead path="/christmas/wishlist" />
+      )}
       <ChristmasSnowfall />
       <div className="wl-glow wl-glow--ember" aria-hidden />
       <div className="wl-glow wl-glow--gold" aria-hidden />

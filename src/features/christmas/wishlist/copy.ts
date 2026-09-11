@@ -102,15 +102,15 @@ export type WishlistCopy = {
 export const WISHLIST_COPY_EN: WishlistCopy = {
   brand: "TheDigitalGifter",
   madeWith: "Made with TheDigitalGifter",
-  seoTitle: "Christmas Wishlist Maker | Create & Share Your Wishlist | TheDigitalGifter",
+  seoTitle: "Christmas Wishlist Maker | Create & Share Your Wish List",
   seoDescription:
-    "Create a Christmas wishlist, add gifts from anywhere and share one simple link with family and friends. Make Christmas shopping easier without spoiling the surprise.",
+    "Create a Christmas wishlist, add gifts from anywhere, and share one simple link with family and friends.",
   shareSeoTitle: (name) => `${name} 🎄`,
   shareSeoDescription: (name) => `See what ${name.replace(/'s Christmas Wishlist$/i, "").replace(/’s Christmas Wishlist$/i, "") || "they"} are wishing for this Christmas.`,
   unavailableTitle: "This Christmas Wishlist isn’t available anymore.",
   unavailableBody: "It may be private, or the owner turned sharing off.",
   createMine: "Create Your Own Wishlist",
-  heroH1: "Make a Christmas Wishlist Everyone Can Actually Use",
+  heroH1: "Create a Christmas Wishlist and Share One Simple Link",
   heroSupport:
     "Add gifts from anywhere, share your wishlist with one link, and make Christmas shopping easier for everyone.",
   ctaCreate: "Create My Wishlist",

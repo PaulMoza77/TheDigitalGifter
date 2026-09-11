@@ -113,9 +113,13 @@ describe("christmas landing wiring", () => {
 
   it("origin injects /christmas meta for crawlers", () => {
     const origin = readSrc("server/origin.mjs");
+    const seo = readSrc("server/christmasSeo.mjs");
     expect(origin).toContain("applyRouteMeta");
-    expect(origin).toContain("Christmas Countdown | The Digital Gifter");
-    expect(origin).toContain("Christmas Gift Finder");
+    expect(origin).toContain("applyChristmasSeo");
+    expect(seo).toContain("Christmas at TheDigitalGifter");
+    expect(seo).toContain("Christmas Gift Finder");
+    expect(seo).toContain("Family Christmas Photo Generator");
+    expect(seo).toContain("id=\"tdg-christmas-seo\"");
     expect(origin).toContain('".webm": "video/webm"');
     expect(origin).toContain('".mp4": "video/mp4"');
   });

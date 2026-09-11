@@ -21,10 +21,10 @@ type CopyBag = Record<string, string>;
 
 const EN: CopyBag = {
   "seo.title":
-    "AI Christmas Photo Generator | Create Christmas Portraits | TheDigitalGifter",
+    "AI Christmas Photo Generator | Family, Couples & Pets",
   "seo.description":
-    "Turn your favorite photo into a magical Christmas portrait. Create realistic Christmas photos for families, couples and pets in minutes.",
-  "seo.h1": "AI Christmas Photo Generator",
+    "Turn your favorite photo into a magical Christmas portrait. Create festive photos for family, couples, and pets in minutes.",
+  "seo.h1": "Turn Your Photo Into Christmas Magic",
   "seo.ogAlt": "Before and after Christmas portrait transformation",
 
   "hero.kicker": "Christmas portraits",

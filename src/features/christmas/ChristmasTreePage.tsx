@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
@@ -383,19 +384,15 @@ export default function ChristmasTreePage() {
         color: "#f4efe6",
       }}
     >
-      <PageHead
-        title={
-          isShareRoute
-            ? "A Christmas Tree is waiting for you"
-            : "Build Your Christmas Tree"
-        }
-        description={
-          isShareRoute
-            ? "Someone made you a Christmas tree — tap a gift."
-            : "Create, decorate, and securely share a personalized Christmas tree with gifts under it."
-        }
-        noindex={isShareRoute}
-      />
+      {isShareRoute ? (
+        <PageHead
+          title="A Christmas Tree is waiting for you"
+          description="Someone made you a Christmas tree — tap a gift."
+          noindex
+        />
+      ) : (
+        <ChristmasPageHead path="/christmas/tree" />
+      )}
 
       <div className="mx-auto max-w-lg px-4 pb-24 pt-8">
         <p className="text-center text-xs uppercase tracking-[0.2em] text-amber-200/80">

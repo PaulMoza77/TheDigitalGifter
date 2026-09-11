@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import type { ChristmasRouteShellDef } from "../routes";
 import { shellExposesCheckout } from "../routes";
 
@@ -14,11 +14,7 @@ export function ChristmasFeatureShell({ shell }: { shell: ChristmasRouteShellDef
 
   return (
     <>
-      <PageHead
-        title={shell.title}
-        description={shell.description}
-        exactTitle={false}
-      />
+      <ChristmasPageHead path={shell.path} />
       <main className="mx-auto flex min-h-[60vh] max-w-2xl flex-col justify-center px-6 py-16 text-slate-900">
         <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
           The Digital Gifter · Christmas

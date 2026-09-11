@@ -7,7 +7,7 @@
 
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { AmbientSnow } from "./landing/AmbientSnow";
 import { FONT_HREF } from "./landing/assets";
@@ -73,13 +73,7 @@ export default function ChristmasPortraitFunnelPage() {
 
   return (
     <>
-      <PageHead
-        title={vertical.pageTitle}
-        description={vertical.metaDescription}
-        exactTitle
-        url={`https://www.thedigitalgifter.com${vertical.routePath}`}
-        image="https://www.thedigitalgifter.com/assets/christmas/portrait_family.webp"
-      />
+      <ChristmasPageHead path={vertical.routePath} />
       <main className="xmas-landing pg-page" lang="en">
         <AmbientSnow />
         <div className="pg-studio" style={{ paddingTop: "2.5rem", paddingBottom: "3rem" }}>
