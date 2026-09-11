@@ -514,27 +514,29 @@ function AppInner() {
             />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
-            {/* P3A: Romanian locale-prefixed Christmas routes (Strategy A) */}
-            {christmasLocalePrefixedRoutes("ro", [
-              { path: "/christmas", element: <ChristmasPage /> },
-              { path: "/christmas/suite", element: <ChristmasSuitePage /> },
-              { path: "/christmas/photo-generator", element: <ChristmasPhotoGeneratorPage /> },
-              { path: "/christmas/family", element: <ChristmasFamilyPage /> },
-              { path: "/christmas/couples", element: <ChristmasPortraitFunnelPage /> },
-              { path: "/christmas/kids", element: <ChristmasShellRoute /> },
-              { path: "/christmas/pets", element: <ChristmasPortraitFunnelPage /> },
-              { path: "/christmas/dogs", element: <ChristmasPortraitFunnelPage /> },
-              { path: "/christmas/cats", element: <ChristmasPortraitFunnelPage /> },
-              { path: "/christmas/santa-video", element: <ChristmasSantaVideoPage /> },
-              { path: "/christmas/tree", element: <ChristmasTreePage /> },
-              { path: "/christmas/tree/:shareId", element: <ChristmasTreePage /> },
-              { path: "/christmas/advent", element: <ChristmasAdventPage /> },
-              { path: "/christmas/wishlist", element: <ChristmasWishlistPage /> },
-              { path: "/christmas/gift-finder", element: <ChristmasGiftFinderPage /> },
-              { path: "/christmas/tree-gifts", element: <ChristmasGiftsPage /> },
-              { path: "/christmas/cards", element: <ChristmasCardsPage /> },
-              { path: "/christmas/messages", element: <ChristmasMessagesPage /> },
-            ])}
+            {/* P3B: Wave 1 locale-prefixed Christmas routes (Strategy A) */}
+            {(["ro", "de", "fr", "es", "it", "pt", "nl", "pl"] as const).flatMap((prefix) =>
+              christmasLocalePrefixedRoutes(prefix, [
+                { path: "/christmas", element: <ChristmasPage /> },
+                { path: "/christmas/suite", element: <ChristmasSuitePage /> },
+                { path: "/christmas/photo-generator", element: <ChristmasPhotoGeneratorPage /> },
+                { path: "/christmas/family", element: <ChristmasFamilyPage /> },
+                { path: "/christmas/couples", element: <ChristmasPortraitFunnelPage /> },
+                { path: "/christmas/kids", element: <ChristmasShellRoute /> },
+                { path: "/christmas/pets", element: <ChristmasPortraitFunnelPage /> },
+                { path: "/christmas/dogs", element: <ChristmasPortraitFunnelPage /> },
+                { path: "/christmas/cats", element: <ChristmasPortraitFunnelPage /> },
+                { path: "/christmas/santa-video", element: <ChristmasSantaVideoPage /> },
+                { path: "/christmas/tree", element: <ChristmasTreePage /> },
+                { path: "/christmas/tree/:shareId", element: <ChristmasTreePage /> },
+                { path: "/christmas/advent", element: <ChristmasAdventPage /> },
+                { path: "/christmas/wishlist", element: <ChristmasWishlistPage /> },
+                { path: "/christmas/gift-finder", element: <ChristmasGiftFinderPage /> },
+                { path: "/christmas/tree-gifts", element: <ChristmasGiftsPage /> },
+                { path: "/christmas/cards", element: <ChristmasCardsPage /> },
+                { path: "/christmas/messages", element: <ChristmasMessagesPage /> },
+              ]),
+            )}
             <Route path="/birthday" element={<BirthdayPage />} />
             <Route path="/new-years-eve" element={<NewYearsEvePage />} />
             <Route path="/thanksgiving" element={<ThanksgivingPage />} />
