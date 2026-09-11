@@ -55,9 +55,11 @@ export const CHRISTMAS_SEO_ROUTES = [
     h2: "Christmas experiences",
     h2Body: "Pick a Christmas product below and create something personal in minutes.",
     links: [
+      { href: "/christmas/send-a-gift", label: "Send a Christmas Gift Online" },
       { href: "/christmas/gift-finder", label: "Find a Christmas Gift They’ll Love" },
       { href: "/christmas/wishlist", label: "Create a Christmas Wishlist" },
       { href: "/christmas/photo-generator", label: "AI Christmas Photo Generator" },
+      { href: "/christmas/kids", label: "Christmas Portraits for Kids" },
       { href: "/christmas/santa-video", label: "Create a Personalized Santa Video" },
       { href: "/christmas/tree", label: "Build a Digital Christmas Tree" },
       { href: "/christmas/advent", label: "Open the Advent Calendar" },
@@ -67,6 +69,32 @@ export const CHRISTMAS_SEO_ROUTES = [
     breadcrumbs: [
       { href: "/", label: "Home" },
       { href: "/christmas", label: "Christmas" },
+    ],
+    ogImage: `${SITE_ORIGIN}/christmas/og-countdown.jpg`,
+  },
+  {
+    path: "/christmas/send-a-gift",
+    title: "Send a Christmas Gift Online | Private Gift Link | TheDigitalGifter",
+    description:
+      "Create a private Christmas gift link with a personal message and send a digital Christmas experience in seconds.",
+    canonicalPath: "/christmas/send-a-gift",
+    h1: "Send a Little Christmas Magic",
+    lede:
+      "Choose a Christmas experience, add a personal message, and share one private gift link. Recipient details stay in the link fragment and are not stored by this page.",
+    h2: "Choose a Christmas experience to send",
+    h2Body:
+      "Send an interactive Christmas gift, portrait experience, personalized Santa video, or digital Christmas card from one privacy-first flow.",
+    links: [
+      { href: "/christmas/tree-gifts", label: "Open an Interactive Christmas Gift" },
+      { href: "/christmas/photo-generator", label: "Christmas Portrait Generator" },
+      { href: "/christmas/santa-video", label: "Personalized Santa Video" },
+      { href: "/christmas/cards", label: "Christmas Card Maker" },
+      { href: "/christmas", label: "All Christmas Experiences" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/send-a-gift", label: "Send a Gift" },
     ],
     ogImage: `${SITE_ORIGIN}/christmas/og-countdown.jpg`,
   },
@@ -81,6 +109,7 @@ export const CHRISTMAS_SEO_ROUTES = [
       "Answer a few questions about who you’re shopping for and get personalized Christmas gift ideas matched to interests, personality, and budget.",
     h2: "Related Christmas tools",
     links: [
+      { href: "/christmas/send-a-gift", label: "Send a Digital Christmas Gift" },
       { href: "/christmas/wishlist", label: "Create a Christmas Wishlist" },
       { href: "/christmas/photo-generator", label: "Christmas Photo Generator" },
       { href: "/christmas/tree", label: "Digital Christmas Tree" },
@@ -128,6 +157,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     h2Body: "Create portraits for family, couples, pets, dogs, and cats from one Christmas photo experience.",
     links: [
       { href: "/christmas/family", label: "Family Christmas Portraits" },
+      { href: "/christmas/kids", label: "Kids Christmas Portraits" },
       { href: "/christmas/couples", label: "Couple Christmas Portraits" },
       { href: "/christmas/pets", label: "Pet Christmas Portraits" },
       { href: "/christmas/dogs", label: "Christmas Dog Portraits" },
@@ -153,6 +183,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     h2: "More Christmas portraits",
     links: [
       { href: "/christmas/photo-generator", label: "AI Christmas Photo Generator" },
+      { href: "/christmas/kids", label: "Kids Christmas Portraits" },
       { href: "/christmas/couples", label: "Couple Christmas Portraits" },
       { href: "/christmas/pets", label: "Pet Christmas Portraits" },
       { href: "/christmas/cards", label: "Christmas Card Maker" },
@@ -263,16 +294,19 @@ export const CHRISTMAS_SEO_ROUTES = [
     path: "/christmas/kids",
     title: "Christmas Photos for Kids | Magical Holiday Portraits",
     description:
-      "Create magical Christmas portraits for kids. Privacy controls are required before this product launches.",
+      "Create a privacy-first Christmas portrait for a child or siblings from a photo you have permission to use.",
     canonicalPath: "/christmas/kids",
-    h1: "Create Magical Christmas Portraits for Kids",
+    h1: "Create a Magical Christmas Portrait for Your Kids",
     lede:
-      "Kids Christmas portraits are coming soon. Privacy-first controls are required before launch.",
-    h2: "Available now",
+      "With parent or guardian permission, upload a clear photo and create a private Christmas portrait for a child or siblings.",
+    h2: "Private by default, built for family-safe use",
+    h2Body:
+      "No public gallery, and the flow does not ask for school, address, phone, or social profile details.",
     links: [
       { href: "/christmas/family", label: "Family Christmas Portraits" },
       { href: "/christmas/santa-video", label: "Personalized Santa Video" },
       { href: "/christmas/photo-generator", label: "AI Christmas Photo Generator" },
+      { href: "/christmas/cards", label: "Christmas Card Maker" },
       { href: "/christmas", label: "Christmas home" },
     ],
     breadcrumbs: [
@@ -280,7 +314,6 @@ export const CHRISTMAS_SEO_ROUTES = [
       { href: "/christmas", label: "Christmas" },
       { href: "/christmas/kids", label: "Kids" },
     ],
-    noindex: true,
   },
   {
     path: "/christmas/santa-video",
