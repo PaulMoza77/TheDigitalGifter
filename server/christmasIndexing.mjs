@@ -24,10 +24,12 @@ export { SITE_ORIGIN };
 /** Primary organic Christmas URLs that should be index,follow + sitemap. */
 export const CHRISTMAS_INDEXABLE_PATHS = [
   "/christmas",
+  "/christmas/send-a-gift",
   "/christmas/gift-finder",
   "/christmas/wishlist",
   "/christmas/photo-generator",
   "/christmas/family",
+  "/christmas/kids",
   "/christmas/couples",
   "/christmas/pets",
   "/christmas/dogs",
@@ -45,7 +47,6 @@ export const CHRISTMAS_INDEXABLE_PATHS = [
  */
 export const CHRISTMAS_KNOWN_SPA_PATHS = [
   ...CHRISTMAS_INDEXABLE_PATHS,
-  "/christmas/kids",
   "/christmas/suite",
   "/christmas/tree-gifts",
   "/christmas-ai-photos",
@@ -62,7 +63,6 @@ export const CHRISTMAS_PERMANENT_REDIRECTS = Object.freeze({
  * Dynamic share patterns are handled separately.
  */
 export const CHRISTMAS_NOINDEX_PATHS = Object.freeze([
-  "/christmas/kids",
   "/christmas-ai-photos",
   "/christmas-ai-photos/order",
 ]);
