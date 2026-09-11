@@ -15,12 +15,16 @@ describe("christmas SEO SSR registry", () => {
   it("covers every scoped Christmas route with unique titles", () => {
     const paths = listChristmasSeoPaths();
     expect(paths).toContain("/christmas");
+    expect(paths).toContain("/christmas/send-a-gift");
     expect(paths).toContain("/christmas/family");
+    expect(paths).toContain("/christmas/kids");
     expect(paths).toContain("/christmas-ai-photos");
     // P3B: includes EN registry paths + indexable localized prerender paths
     expect(paths.length).toBeGreaterThanOrEqual(CHRISTMAS_SEO_ROUTES.length);
     expect(paths).toContain("/de/christmas/cards");
     expect(paths).toContain("/ro/christmas");
+    expect(paths).toContain("/ro/christmas/send-a-gift");
+    expect(paths).toContain("/de/christmas/kids");
 
     const titles = CHRISTMAS_SEO_ROUTES.map((r) => r.title);
     expect(new Set(titles).size).toBe(titles.length);
@@ -47,13 +51,27 @@ describe("christmas SEO SSR registry", () => {
     expect(getChristmasSeo("/christmas/gifts")).toBeNull();
   });
 
-  it("keeps kids noindex while still unique", () => {
+  it("ships kids as indexable privacy-first content", () => {
     const kids = getChristmasSeo("/christmas/kids");
-    expect(kids?.noindex).toBe(true);
+    expect(kids?.noindex).not.toBe(true);
     const html = applyChristmasSeo(
       readFileSync(join(process.cwd(), "index.html"), "utf8"),
       "/christmas/kids",
     );
-    expect(html).toMatch(/name="robots"[^>]+content="noindex,follow"/);
+    expect(html).toMatch(/name="robots"[^>]+content="index,follow"/);
+    expect(html).toContain("parent or guardian permission");
+  });
+
+  it("ships send-a-gift with its own canonical and localized SSR", () => {
+    const template = readFileSync(join(process.cwd(), "index.html"), "utf8");
+    const en = applyChristmasSeo(template, "/christmas/send-a-gift");
+    expect(en).toContain("Send a Little Christmas Magic");
+    expect(en).toContain(`${SITE_ORIGIN}/christmas/send-a-gift`);
+    expect(en).toMatch(/name="robots"[^>]+content="index,follow"/);
+
+    const ro = applyChristmasSeo(template, "/ro/christmas/send-a-gift");
+    expect(ro).toContain("Trimite Puțină Magie de Crăciun");
+    expect(ro).toContain(`${SITE_ORIGIN}/ro/christmas/send-a-gift`);
+    expect(ro).toMatch(/name="robots"[^>]+content="index,follow"/);
   });
 });
