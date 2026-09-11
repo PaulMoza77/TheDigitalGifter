@@ -8,7 +8,6 @@ import {
   MESSAGE_LENGTHS,
   MESSAGE_RECIPIENTS,
   MESSAGE_TONES,
-  SEO_MESSAGE_INTENT_SLUGS,
   labelFor,
   type LocaleCode,
 } from "./cards/taxonomy";
@@ -19,6 +18,10 @@ import {
   writeMessageToCardHandoff,
   type GeneratedMessage,
 } from "./cards/cardsApi";
+import {
+  ChristmasProductSeoDepth,
+  MESSAGES_SEO_DEPTH,
+} from "./seo/ChristmasProductSeoDepth";
 
 const PRODUCT = "christmas_messages";
 const PAGE_PATH = "/christmas/messages";
@@ -347,25 +350,21 @@ export default function ChristmasMessagesPage() {
           <li>{locale === "ro" ? "Mesaje profesionale de Crăciun" : "Professional Christmas messages"}</li>
           <li>{locale === "ro" ? "Urări scurte de Crăciun" : "Short Christmas wishes"}</li>
         </ul>
-        <p className="mt-3 text-xs text-slate-500">
-          {SEO_MESSAGE_INTENT_SLUGS.funny} · {SEO_MESSAGE_INTENT_SLUGS.romantic} ·{" "}
-          {SEO_MESSAGE_INTENT_SLUGS.professional}
-        </p>
         <p className="mt-4">
           {locale === "ro" ? "Vrei un card vizual?" : "Ready for a visual card?"}{" "}
           <Link className="underline" to="/christmas/cards">
             {locale === "ro" ? "Creează un card de Crăciun" : "Create a Christmas Card"}
           </Link>{" "}
           ·{" "}
-          <Link className="underline" to="/christmas/wishlist">
-            Wishlist
-          </Link>{" "}
-          ·{" "}
-          <Link className="underline" to="/christmas/tree">
-            {locale === "ro" ? "Brad de Crăciun" : "Christmas Tree"}
+          <Link className="underline" to="/christmas">
+            Christmas
           </Link>
         </p>
       </section>
+
+      {locale === "en" ? (
+        <ChristmasProductSeoDepth content={MESSAGES_SEO_DEPTH} tone="light" />
+      ) : null}
     </main>
   );
 }

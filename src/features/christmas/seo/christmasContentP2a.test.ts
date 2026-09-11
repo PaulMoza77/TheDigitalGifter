@@ -17,8 +17,12 @@ const MONEY = [
 ] as const;
 
 describe("christmas P2A content depth", () => {
-  it("covers exactly the six money pages", () => {
-    expect(CONTENT_DEPTH_PATHS.sort()).toEqual([...MONEY].sort());
+  it("keeps the six money pages as p2a depth entries", () => {
+    for (const path of MONEY) {
+      const depth = getChristmasContentDepth(path);
+      expect(depth?.wave).toBe("p2a");
+    }
+    expect(CONTENT_DEPTH_PATHS.length).toBeGreaterThanOrEqual(6);
   });
 
   it("injects GEO + FAQ into SSR HTML for each money page", () => {

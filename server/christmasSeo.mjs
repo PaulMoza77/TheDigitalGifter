@@ -604,9 +604,12 @@ function buildSeoShell(entry) {
       }`
     : "";
   const depthHtml = buildDepthHtml(entry.path);
+  const depth = getChristmasContentDepth(entry.path);
+  const depthWave = depth?.wave || (depthHtml ? "content" : "");
+  const depthAttr = depthWave ? ` data-tdg-depth="${escapeAttr(depthWave)}"` : "";
 
   return (
-    `<div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p2a" data-path="${escapeAttr(entry.path)}">` +
+    `<div id="tdg-christmas-seo" data-tdg-seo="christmas"${depthAttr} data-path="${escapeAttr(entry.path)}">` +
     `<nav aria-label="Breadcrumb">${crumbs}</nav>` +
     `<h1>${escapeHtml(entry.h1)}</h1>` +
     `<p>${escapeHtml(entry.lede)}</p>` +

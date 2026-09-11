@@ -25,6 +25,7 @@ import {
   writeLastPortraitResult,
   writePortraitToCardHandoff,
 } from "./cards/portraitHandoff";
+import { PortraitVerticalSeoSections } from "./seo/PortraitVerticalSeoSections";
 
 function ensureFonts() {
   if (document.querySelector(`link[data-xmas-fonts="1"]`)) return;
@@ -347,6 +348,8 @@ export default function ChristmasPortraitFunnelPage() {
             <Link to="/christmas">Christmas hub</Link>
             <Link to="/christmas/photo-generator">AI Christmas Photo Generator</Link>
           </nav>
+
+          <PortraitVerticalSeoSections verticalId={vertical.id} />
         </div>
         <style>{`
           .pg-file-input {

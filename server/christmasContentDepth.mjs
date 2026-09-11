@@ -1,13 +1,16 @@
 /**
- * Christmas P2A content depth for money pages.
+ * Christmas P2A/P2B content depth for Christmas product pages.
  * Node-safe (no React). Consumed by christmasSeo.mjs SSR shells.
  * Keep claims aligned with real product behavior — no fake inventory, ratings, or languages.
  */
+
+import { CHRISTMAS_CONTENT_DEPTH_P2B } from "./christmasContentDepthP2b.mjs";
 
 /** @typedef {{ h2: string, body: string, linkHref?: string, linkLabel?: string, list?: string[] }} DepthSection */
 /** @typedef {{ q: string, a: string }} DepthFaq */
 /** @typedef {{
  *   path: string,
+ *   wave?: "p2a" | "p2b",
  *   geo: { h2: string, body: string },
  *   sections: DepthSection[],
  *   faqs: DepthFaq[],
@@ -18,6 +21,7 @@
 export const CHRISTMAS_CONTENT_DEPTH = {
   "/christmas": {
     path: "/christmas",
+    wave: "p2a",
     geo: {
       h2: "What can you create with TheDigitalGifter for Christmas?",
       body:
@@ -104,6 +108,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
 
   "/christmas/gift-finder": {
     path: "/christmas/gift-finder",
+    wave: "p2a",
     geo: {
       h2: "What is a Christmas Gift Finder?",
       body:
@@ -198,6 +203,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
 
   "/christmas/photo-generator": {
     path: "/christmas/photo-generator",
+    wave: "p2a",
     geo: {
       h2: "What is an AI Christmas photo generator?",
       body:
@@ -290,6 +296,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
 
   "/christmas/santa-video": {
     path: "/christmas/santa-video",
+    wave: "p2a",
     geo: {
       h2: "What is a personalized Santa video?",
       body:
@@ -378,6 +385,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
 
   "/christmas/wishlist": {
     path: "/christmas/wishlist",
+    wave: "p2a",
     geo: {
       h2: "What is an online Christmas wishlist?",
       body:
@@ -457,6 +465,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
 
   "/christmas/cards": {
     path: "/christmas/cards",
+    wave: "p2a",
     geo: {
       h2: "What is an online Christmas card maker?",
       body:
@@ -541,6 +550,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       "How to Make a Christmas Card Online",
     ],
   },
+  ...CHRISTMAS_CONTENT_DEPTH_P2B,
 };
 
 export const CONTENT_DEPTH_PATHS = Object.keys(CHRISTMAS_CONTENT_DEPTH);

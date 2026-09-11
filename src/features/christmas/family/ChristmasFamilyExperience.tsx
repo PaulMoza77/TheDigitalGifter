@@ -431,13 +431,29 @@ export default function ChristmasFamilyExperience() {
                         openUpload();
                       }}
                     >
-                      <img src={scene.image} alt="" loading="lazy" />
+                      <img
+                        src={scene.image}
+                        alt={`${t(scene.titleKey)} family Christmas portrait style`}
+                        loading="lazy"
+                      />
                       <span className="ff-scene__body">
                         <strong>{t(scene.titleKey)}</strong>
                         <span>{t(scene.descKey)}</span>
                       </span>
                     </button>
                   ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="ff-section" aria-labelledby="family-best-heading">
+              <div className="ff-section__inner">
+                <h2 id="family-best-heading">{t("best.h2")}</h2>
+                <p className="xmas-lede">{t("best.body")}</p>
+                <div className="xmas-actions" style={{ marginTop: "1rem" }}>
+                  <Link className="xmas-btn xmas-btn--ghost" to="/christmas/cards">
+                    Turn your family portrait into a Christmas card
+                  </Link>
                 </div>
               </div>
             </section>
@@ -477,8 +493,6 @@ export default function ChristmasFamilyExperience() {
                 <dd>{t("geo.bestBody")}</dd>
                 <dt>{t("geo.support")}</dt>
                 <dd>{t("geo.supportBody")}</dd>
-                <dt>{t("geo.time")}</dt>
-                <dd>{t("geo.timeBody")}</dd>
                 <dt>{t("geo.privacy")}</dt>
                 <dd>{t("geo.privacyBody")}</dd>
               </dl>

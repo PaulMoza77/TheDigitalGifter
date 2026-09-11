@@ -43,7 +43,9 @@ describe("christmas family hub", () => {
     const jsonLd = familyPortraitJsonLd("en");
     const graph = (jsonLd as { "@graph": Array<Record<string, unknown>> })["@graph"];
     expect(graph.some((n) => n["@type"] === "FAQPage")).toBe(true);
-    expect(graph.some((n) => n["@type"] === "SoftwareApplication")).toBe(true);
+    expect(graph.some((n) => n["@type"] === "FAQPage")).toBe(true);
+    expect(graph.some((n) => n["@type"] === "SoftwareApplication")).toBe(false);
+    expect(JSON.stringify(ld)).not.toContain('"@type":"Offer"');
     expect(FAMILY_FAQS.length).toBeGreaterThanOrEqual(8);
   });
 
