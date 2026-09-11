@@ -2,6 +2,7 @@ import type { Plugin } from "vite";
 import previewHandler from "./api/pet-v2/preview";
 import funnelHandler from "./api/pet-v2-funnel-event";
 import funnelV3Handler from "./api/pet-v3-funnel-event";
+import funnelV4Handler from "./api/pet-v4-funnel-event";
 
 function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) => void }): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -53,7 +54,8 @@ export function petV2DevPlugin(): Plugin {
         if (
           url !== "/api/pet-v2/funnel-event" &&
           url !== "/api/pet-v2/preview" &&
-          url !== "/api/pet-v3/funnel-event"
+          url !== "/api/pet-v3/funnel-event" &&
+          url !== "/api/pet-v4/funnel-event"
         ) {
           return next();
         }
@@ -77,6 +79,10 @@ export function petV2DevPlugin(): Plugin {
         }
         if (url === "/api/pet-v3/funnel-event") {
           await funnelV3Handler(vReq, vRes);
+          return;
+        }
+        if (url === "/api/pet-v4/funnel-event") {
+          await funnelV4Handler(vReq, vRes);
           return;
         }
         await previewHandler(vReq, vRes);
