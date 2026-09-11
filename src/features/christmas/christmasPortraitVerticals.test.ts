@@ -78,6 +78,21 @@ describe("christmas portrait vertical config", () => {
 });
 
 describe("christmas portrait style registry", () => {
+  it("gives every family style card a distinct local preview image", async () => {
+    const { STYLE_PREVIEW_BY_KEY, FAMILY_STYLE_PREVIEWS } = await import("./photoGenerator/assets");
+    const { existsSync, statSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const urls = CHRISTMAS_FAMILY_STYLES.map((s) => STYLE_PREVIEW_BY_KEY[s.styleKey]);
+    expect(urls.every(Boolean)).toBe(true);
+    expect(new Set(urls).size).toBe(urls.length);
+    for (const url of Object.values(FAMILY_STYLE_PREVIEWS)) {
+      const file = resolve(process.cwd(), "public", url.replace(/^\//, ""));
+      expect(existsSync(file), file).toBe(true);
+      expect(statSync(file).size).toBeGreaterThan(8_000);
+      expect(url.endsWith(".webp")).toBe(true);
+    }
+  });
+
   it("resolves allowed styles per product", () => {
     expect(resolveProductStyle("christmas_family", "classic_family_christmas")?.promptTemplate.length).toBeGreaterThan(40);
     expect(resolveProductStyle("christmas_couple", "romantic_snowfall")).toBeTruthy();
