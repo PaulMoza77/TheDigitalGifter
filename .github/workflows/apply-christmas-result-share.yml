@@ -1,0 +1,41 @@
+name: apply-christmas-result-share
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/migrations/20260909190000_christmas_generation_result_share.sql"
+      - "supabase/functions/christmas-result-share/**"
+      - "supabase/functions/_shared/christmas/resultShare.ts"
+      - "scripts/apply-christmas-result-share.sh"
+      - ".github/workflows/apply-christmas-result-share.yml"
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: Production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require TDG Supabase production access
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "::error::Supabase access token missing"; exit 2; }
+          test -n "${SUPABASE_SERVICE_ROLE_KEY:-}" || { echo "::error::Supabase service-role key missing"; exit 2; }
+          echo "TDG Supabase production credentials present (values not printed)."
+
+      - name: Apply migration, deploy Edge Function, run synthetic smoke
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PROJECT_REF: kjlsocejpmnzhhduyumy
+        run: |
+          chmod +x scripts/apply-christmas-result-share.sh
+          bash scripts/apply-christmas-result-share.sh
