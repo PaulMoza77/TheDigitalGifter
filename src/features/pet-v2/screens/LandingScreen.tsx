@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BadgeCheck, Lock, ShieldCheck, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePetLocale, usePetT } from "../pet/i18n";
+import { usePetLocale, usePetT } from "../../pet/i18n";
 import { V2ExampleStrip, V2HeroProof } from "../V2ExampleStrip";
 import { V2ClosingCta, V2SaleLine, V2StickyCta, v2PackOfferCopy } from "../V2PackOffer";
 import type { PetV2Species } from "../types";
