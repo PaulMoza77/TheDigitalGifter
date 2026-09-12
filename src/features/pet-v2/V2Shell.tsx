@@ -8,9 +8,11 @@ import {
   PetLanguageSwitcher,
   petSpeciesWord,
   usePetBrowserLocaleRedirect,
+  usePetCurrency,
   usePetLocale,
   usePetT,
-  withPetLocale, usePetCurrency } from "../pet/i18n";
+  withPetLocale,
+} from "../pet/i18n";
 import { v2PackOfferCopy } from "./V2PackOffer";
 import { petV2LandingPath } from "./analytics";
 import type { PetV2Species } from "./types";
