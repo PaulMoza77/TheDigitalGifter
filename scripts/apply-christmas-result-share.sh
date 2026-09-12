@@ -15,7 +15,7 @@ FUNCTION_URL="${SUPABASE_URL%/}/functions/v1/christmas-result-share"
 
 mgmt_sql() {
   local sql="$1" out="$2" payload code
-  payload="$(node -e 'process.stdout.write(JSON.stringify({query:process.argv[1]}))' "$sql")"
+  payload="$(node -e 'process.stdout.write(JSON.stringify({query:process.argv[1]}))' -- "$sql")"
   code="$(curl -sS -o "$out" -w '%{http_code}' -X POST \
     "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
     -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
@@ -66,7 +66,7 @@ cleanup() {
   if [[ -n "$ORDER_ID" ]]; then
     local sql payload code
     sql="delete from public.christmas_orders where id='${ORDER_ID}'::uuid and metadata->>'source'='christmas-result-share-smoke';"
-    payload="$(node -e 'process.stdout.write(JSON.stringify({query:process.argv[1]}))' "$sql")"
+    payload="$(node -e 'process.stdout.write(JSON.stringify({query:process.argv[1]}))' -- "$sql")"
     code="$(curl -sS -o /tmp/result-share-cleanup.json -w '%{http_code}' -X POST \
       "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
       -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" -H "Content-Type: application/json" -d "$payload" || true)"
