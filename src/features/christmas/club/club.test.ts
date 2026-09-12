@@ -60,6 +60,9 @@ describe("christmas club live cabin + gift tree", () => {
     expect(page).toContain("ChristmasLandingExperience");
     expect(page).toContain("includeHero={false}");
     expect(page).not.toContain("fillViewport");
+    // Chrome rejects <link rel=preload as=video>; scene <video> owns the loop fetch.
+    expect(page).not.toMatch(/rel\s*=\s*[`'"]preload[`'"][\s\S]{0,80}as\s*=\s*[`'"]video[`'"]/);
+    expect(page).not.toMatch(/\.as\s*=\s*[`'"]video[`'"]/);
     expect(landing).toContain("GiftTreeLandingScene");
     expect(landing).toContain("PortraitScene");
     expect(landing).toContain("SantaScene");
