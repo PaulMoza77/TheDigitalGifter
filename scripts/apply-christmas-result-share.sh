@@ -45,6 +45,10 @@ if(!r || r.rls_enabled!==true || r.hash_column!==true || r.no_ciphertext!==true 
 NODE
 echo "Schema/RLS verification PASS."
 
+# Remove only fixtures from prior interrupted smoke runs.
+mgmt_sql "delete from public.christmas_orders where metadata->>'source'='christmas-result-share-smoke';" /tmp/result-share-precleanup.json
+echo "Prior synthetic fixtures cleaned."
+
 SAFE_ASSET_SQL="select a.storage_path
 from public.christmas_order_assets a
 join public.christmas_orders o on o.id=a.order_id
@@ -60,38 +64,42 @@ SAFE_PATH_SQL="$(printf '%s' "$SAFE_PATH" | sed "s/'/''/g")"
 SMOKE_TOKEN="$(openssl rand -hex 24)"
 SMOKE_HASH="$(node -e "const c=require('crypto');process.stdout.write(c.createHash('sha256').update(process.argv[1]).digest('hex'))" "$SMOKE_TOKEN")"
 SMOKE_B64="$(printf '%s' "$SMOKE_TOKEN" | base64 | tr -d '\n')"
-ORDER_ID=""
+ORDER_ID="$(node -e 'process.stdout.write(require("crypto").randomUUID())')"
+ASSET_ID="$(node -e 'process.stdout.write(require("crypto").randomUUID())')"
 
 cleanup() {
-  if [[ -n "$ORDER_ID" ]]; then
-    local sql payload code
-    sql="delete from public.christmas_orders where id='${ORDER_ID}'::uuid and metadata->>'source'='christmas-result-share-smoke';"
-    payload="$(node -e 'process.stdout.write(JSON.stringify({query:process.argv[1]}))' -- "$sql")"
-    code="$(curl -sS -o /tmp/result-share-cleanup.json -w '%{http_code}' -X POST \
-      "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
-      -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" -H "Content-Type: application/json" -d "$payload" || true)"
-    echo "Smoke cleanup HTTP $code"
-  fi
+  local sql payload code
+  sql="delete from public.christmas_orders where id='${ORDER_ID}'::uuid and metadata->>'source'='christmas-result-share-smoke';"
+  payload="$(node -e 'process.stdout.write(JSON.stringify({query:process.argv[1]}))' -- "$sql")"
+  code="$(curl -sS -o /tmp/result-share-cleanup.json -w '%{http_code}' -X POST \
+    "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
+    -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" -H "Content-Type: application/json" -d "$payload" || true)"
+  echo "Smoke cleanup HTTP $code"
 }
 trap cleanup EXIT
 
-FIXTURE_SQL="with o as (
-  insert into public.christmas_orders
-    (public_token_hash,public_token_ciphertext,product_key,package_key,sku,currency,amount_cents,payment_status,fulfillment_status,paid_at,fulfillment_completed_at,style_key,metadata)
-  values
-    ('${SMOKE_HASH}','${SMOKE_B64}','christmas_photo','smoke_result_share','smoke_result_share','usd',0,'paid','completed',now(),now(),'smoke','{\"is_test\":true,\"source\":\"christmas-result-share-smoke\"}'::jsonb)
-  returning id
-), a as (
-  insert into public.christmas_order_assets(order_id,asset_kind,storage_bucket,storage_path,metadata)
-  select id,'other','christmas-generated','${SAFE_PATH_SQL}','{\"style_key\":\"smoke\"}'::jsonb from o
-  returning id,order_id
-), u as (
-  update public.christmas_orders x set result_asset_id=a.id from a where x.id=a.order_id returning x.id
-)
-select u.id as order_id,a.id as asset_id from u join a on a.order_id=u.id;"
+FIXTURE_SQL="begin;
+insert into public.christmas_orders
+  (id,public_token_hash,public_token_ciphertext,product_key,package_key,sku,currency,amount_cents,payment_status,fulfillment_status,paid_at,fulfillment_completed_at,style_key,metadata)
+values
+  ('${ORDER_ID}'::uuid,'${SMOKE_HASH}','${SMOKE_B64}','christmas_photo','smoke_result_share','smoke_result_share','usd',0,'paid','completed',now(),now(),'smoke','{\"is_test\":true,\"source\":\"christmas-result-share-smoke\"}'::jsonb);
+insert into public.christmas_order_assets
+  (id,order_id,asset_kind,storage_bucket,storage_path,metadata)
+values
+  ('${ASSET_ID}'::uuid,'${ORDER_ID}'::uuid,'other','christmas-generated','${SAFE_PATH_SQL}','{\"style_key\":\"smoke\"}'::jsonb);
+update public.christmas_orders set result_asset_id='${ASSET_ID}'::uuid where id='${ORDER_ID}'::uuid;
+commit;"
 mgmt_sql "$FIXTURE_SQL" /tmp/result-share-fixture.json
-ORDER_ID="$(node -e "const x=require('/tmp/result-share-fixture.json'); const r=Array.isArray(x)?x[0]:x; process.stdout.write(r?.order_id||'')")"
-[[ -n "$ORDER_ID" ]] || { echo "Fixture creation failed"; cat /tmp/result-share-fixture.json; exit 2; }
+
+CHECK_SQL="select o.id as order_id,a.id as asset_id
+from public.christmas_orders o join public.christmas_order_assets a on a.order_id=o.id
+where o.id='${ORDER_ID}'::uuid and a.id='${ASSET_ID}'::uuid and o.result_asset_id=a.id
+  and o.metadata->>'source'='christmas-result-share-smoke';"
+mgmt_sql "$CHECK_SQL" /tmp/result-share-fixture-check.json
+node - <<'NODE'
+const x=require('/tmp/result-share-fixture-check.json'); if(!Array.isArray(x) || x.length!==1 || !x[0].order_id || !x[0].asset_id) process.exit(2);
+NODE
+echo "Synthetic fixture PASS."
 
 post_share() {
   local body="$1" out="$2" expected="$3" code
