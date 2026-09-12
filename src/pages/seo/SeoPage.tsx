@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import ChristmasSendGiftPage from "@/features/christmas/ChristmasSendGiftPage";
 
 type PageType = "occasion" | "recipient" | "style" | "generator";
 
@@ -191,9 +192,15 @@ export default function SeoPage() {
 
   const safePageType = isPageType(pageType) ? pageType : null;
   const safeSlug = slug?.trim().toLowerCase() || "";
+  const isChristmasSendGift = pageType === "christmas" && safeSlug === "send-a-gift";
 
   useEffect(() => {
     async function loadPage() {
+      if (isChristmasSendGift) {
+        setLoading(false);
+        setPage(null);
+        return;
+      }
       if (!safePageType || !safeSlug) {
         setLoading(false);
         setPage(null);
@@ -230,7 +237,7 @@ export default function SeoPage() {
     }
 
     void loadPage();
-  }, [safePageType, safeSlug]);
+  }, [safePageType, safeSlug, isChristmasSendGift]);
 
   const canonicalUrl = useMemo(() => {
     if (!page) return SITE_URL;
@@ -335,6 +342,10 @@ export default function SeoPage() {
     if (!page) return "/";
     return `${pageTypeToFunnelPrefix[page.page_type]}/${page.slug}`;
   }, [page]);
+
+  if (isChristmasSendGift) {
+    return <ChristmasSendGiftPage />;
+  }
 
   if (!safePageType) {
     return <Navigate to="/" replace />;

@@ -9,6 +9,7 @@ import {
 } from "../_shared/christmas/treeAdvent.ts";
 import { generateGiftIdeas, validateFinderInput, type FinderInput } from "../_shared/christmas/giftFinder.ts";
 import { PRIORITY_KEYS } from "../_shared/christmas/giftTaxonomy.ts";
+import { normalizeWave1GenerationLocale } from "../_shared/christmas/wave1Locale.ts";
 
 type Body = Record<string, unknown>;
 type Service = ReturnType<typeof getServiceClient>;
@@ -43,7 +44,7 @@ Deno.serve(async (req) => {
         share_enabled: false,
         title: sanitizeText(body.title || "My Christmas Wishlist", 80) || "My Christmas Wishlist",
         description: sanitizeText(body.description, 500),
-        locale: asString(body.locale) === "ro" ? "ro" : "en",
+        locale: normalizeWave1GenerationLocale(asString(body.locale) || asString(body.language)),
         currency: sanitizeText(body.currency, 8) || null,
         show_budgets_public: body.show_budgets_public === false ? false : true,
       };
@@ -639,7 +640,7 @@ Deno.serve(async (req) => {
       }
 
       const input: FinderInput = {
-        locale: asString(body.locale) === "ro" ? "ro" : "en",
+        locale: normalizeWave1GenerationLocale(asString(body.locale) || asString(body.language)),
         countryCode: sanitizeText(body.country_code, 2).toUpperCase() || null,
         recipientKey: asString(body.recipient_key),
         relationshipKey: asString(body.relationship_key) || null,
@@ -648,9 +649,15 @@ Deno.serve(async (req) => {
           ? body.interest_keys.map((x) => asString(x))
           : [],
         customInterest: asString(body.custom_interest),
+        // Used for generation only — never forwarded to analytics.
+        personalDetail: asString(body.personal_detail),
+        personalityKeys: Array.isArray(body.personality_keys)
+          ? body.personality_keys.map((x) => asString(x))
+          : [],
         budgetKey: asString(body.budget_key),
-        giftTypeKey: asString(body.gift_type_key),
+        giftTypeKey: asString(body.gift_type_key) || "either",
         vibeKey: asString(body.vibe_key) || null,
+        refinementKey: asString(body.refinement_key) || null,
       };
       const validated = validateFinderInput(input);
       if (!validated.ok) return jsonResponse({ error: validated.error }, 400);
@@ -662,7 +669,10 @@ Deno.serve(async (req) => {
         validated.value.budgetKey,
         validated.value.giftTypeKey,
         validated.value.interestKeys.join(","),
+        (validated.value.personalityKeys || []).join(","),
         validated.value.customInterest || "",
+        validated.value.personalDetail || "",
+        validated.value.refinementKey || "",
         validated.value.locale,
       ].join("|");
       if (!body.force_new) {
@@ -686,7 +696,10 @@ Deno.serve(async (req) => {
             full.budget_key,
             full.gift_type_key,
             (full.interest_keys || []).join(","),
+            (full.personality_keys || []).join(","),
             full.custom_interest || "",
+            full.personal_detail || "",
+            "",
             full.locale,
           ].join("|");
           if (fp === fingerprint) {
@@ -719,6 +732,8 @@ Deno.serve(async (req) => {
           age_range_key: validated.value.ageRangeKey,
           interest_keys: validated.value.interestKeys,
           custom_interest: validated.value.customInterest || "",
+          personality_keys: validated.value.personalityKeys || [],
+          personal_detail: validated.value.personalDetail || "",
           budget_key: validated.value.budgetKey,
           gift_type_key: validated.value.giftTypeKey,
           vibe_key: validated.value.vibeKey,
@@ -743,12 +758,16 @@ Deno.serve(async (req) => {
           category: idea.category,
           search_query: idea.search_query,
           tdg_product_key: idea.tdg_product_key,
+          ranking_role: idea.ranking_role || null,
+          gift_type: idea.gift_type || null,
         }));
         if (rows.length) {
           const { data: inserted, error: resErr } = await service
             .from("christmas_gift_finder_results")
             .insert(rows)
-            .select("id,sort_order,title,reason,budget_min,budget_max,currency,category,search_query,tdg_product_key");
+            .select(
+              "id,sort_order,title,reason,budget_min,budget_max,currency,category,search_query,tdg_product_key,ranking_role,gift_type",
+            );
           if (resErr) throw resErr;
           await service
             .from("christmas_gift_finder_sessions")
@@ -806,18 +825,7 @@ Deno.serve(async (req) => {
             cost_usd: gen.costUsd,
             cost_state: gen.costState,
             used_fallback: gen.usedFallback,
-            ideas: (inserted || []).map((r: Record<string, unknown>) => ({
-              id: r.id,
-              result_key: String(r.id),
-              title: r.title,
-              reason: r.reason,
-              budget_min: r.budget_min,
-              budget_max: r.budget_max,
-              currency: r.currency,
-              category: r.category,
-              search_query: r.search_query,
-              tdg_product_key: r.tdg_product_key,
-            })),
+            ideas: (inserted || []).map((r: Record<string, unknown>) => publicIdea(r)),
           });
         }
         throw new Error("no_ideas");
@@ -908,12 +916,15 @@ Deno.serve(async (req) => {
 function publicIdea(r: Record<string, unknown>) {
   return {
     id: r.id,
+    result_key: String(r.id || ""),
     title: r.title,
     reason: r.reason,
     budget_min: r.budget_min,
     budget_max: r.budget_max,
     currency: r.currency,
     category: r.category,
+    gift_type: r.gift_type || null,
+    ranking_role: r.ranking_role || null,
     search_query: r.search_query,
     tdg_product_key: r.tdg_product_key,
   };

@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
       try {
         const scriptInput = {
           childFirstName: perso.child_first_name,
-          language: perso.language as "en" | "ro",
+          language: perso.language,
           age: perso.age,
           somethingGood: perso.something_good,
           hobbyOrInterest: perso.hobby_or_interest,
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
       try {
         const tts = mock
           ? mockSantaSpeech()
-          : await synthesizeSantaSpeech(String(job.script_text), perso.language as "en" | "ro");
+          : await synthesizeSantaSpeech(String(job.script_text), perso.language);
         costs.tts = tts.estimatedCostUsd;
         latencies.tts = tts.latencyMs;
         const audioPath = `santa/${orderId}/speech.mp3`;

@@ -1,59 +1,91 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+/**
+ * Shared Christmas portrait funnel for specialized verticals:
+ * /christmas/couples | pets | dogs | cats
+ * Hub `/christmas/photo-generator` → ChristmasPhotoGeneratorExperience
+ * Hub `/christmas/family` → ChristmasFamilyExperience
+ */
+
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
-import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
-import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
-import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
 import {
-  createChristmasUpload,
-  getChristmasOrderByToken,
-  startChristmasCheckout,
-  uploadChristmasBlob,
-  validateChristmasSpecies,
-} from "./photoApi";
-import {
-  createBlurredOriginalPreview,
-  christmasPreviewUsesReplicate,
-  validateChristmasPhotoFile,
-} from "./photoPreview";
-import {
-  emptyPortraitDraft,
-  type ChristmasPortraitDraft,
-  type ChristmasPortraitStep,
-} from "./portraitTypes";
+  christmasPathForLocale,
+  parseChristmasLocalePath,
+  type ChristmasLocaleCode,
+} from "@/features/christmas/seo/localeRouting";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
+import { AmbientSnow } from "./landing/AmbientSnow";
+import { FONT_HREF } from "./landing/assets";
+import "./landing/ChristmasLanding.css";
 import {
   verticalFromPathname,
   type ChristmasPortraitVertical,
+  type ChristmasPortraitVerticalId,
 } from "./portraitVerticals";
-import { enabledChristmasStyles } from "./styles";
+import { useChristmasPortraitFunnel } from "./useChristmasPortraitFunnel";
+import { STYLE_PREVIEW_BY_KEY, PHOTO_GEN_ASSETS } from "./photoGenerator/assets";
+import {
+  photoGenDir,
+  photoGenT,
+  photoStyleDescription,
+  photoStyleLabel,
+  type PhotoGenLocale,
+} from "./photoGenerator/copy";
+import { formatMoney } from "./wishlist/wishlistApi";
+import "./photoGenerator/PhotoGenerator.css";
+import { trackChristmasEvent } from "./analytics";
+import {
+  cardsUrlFromPortrait,
+  writeLastPortraitResult,
+  writePortraitToCardHandoff,
+} from "./cards/portraitHandoff";
+import { PortraitVerticalSeoSections } from "./seo/PortraitVerticalSeoSections";
 
-function readDraft(key: string): ChristmasPortraitDraft {
-  try {
-    const raw = sessionStorage.getItem(key);
-    if (!raw) return emptyPortraitDraft();
-    return { ...emptyPortraitDraft(), ...JSON.parse(raw) };
-  } catch {
-    return emptyPortraitDraft();
-  }
+const CROSS_LABEL_KEY: Record<string, string> = {
+  "Family Christmas": "cross.familyChristmas",
+  "Couples Christmas": "cross.couplesChristmas",
+  "Pet Christmas": "cross.petChristmas",
+  "Christmas Cards": "cross.christmasCards",
+  "Christmas Dogs": "cross.christmasDogs",
+  "Christmas Cats": "cross.christmasCats",
+  "Classic portrait": "cross.classicPortrait",
+  "All pets": "cross.allPets",
+  Family: "cross.family",
+  Couples: "cross.couples",
+};
+
+function verticalUi(
+  id: ChristmasPortraitVerticalId,
+  field: "heroHeadline" | "heroSupport" | "privacy" | "uploadHint" | "deliverable",
+  locale: PhotoGenLocale,
+  fallback: string,
+): string {
+  const key = `vertical.${id}.${field}`;
+  const text = photoGenT(key, locale);
+  return text === key ? fallback : text;
 }
 
-function writeDraft(key: string, draft: ChristmasPortraitDraft) {
-  try {
-    sessionStorage.setItem(
-      key,
-      JSON.stringify({ ...draft, updatedAt: new Date().toISOString() }),
-    );
-  } catch {
-    /* ignore */
-  }
+function crossLinkLabel(label: string, locale: PhotoGenLocale): string {
+  const key = CROSS_LABEL_KEY[label];
+  if (!key) return label;
+  const text = photoGenT(key, locale);
+  return text === key ? label : text;
+}
+
+function ensureFonts() {
+  if (document.querySelector(`link[data-xmas-fonts="1"]`)) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = FONT_HREF;
+  link.setAttribute("data-xmas-fonts", "1");
+  document.head.appendChild(link);
 }
 
 function useVertical(): ChristmasPortraitVertical {
   const { pathname } = useLocation();
   const vertical = verticalFromPathname(pathname);
   if (!vertical) {
-    // Fallback for safety — photo generator
     return verticalFromPathname("/christmas/photo-generator")!;
   }
   return vertical;
@@ -61,679 +93,352 @@ function useVertical(): ChristmasPortraitVertical {
 
 export default function ChristmasPortraitFunnelPage() {
   const vertical = useVertical();
-  const [params] = useSearchParams();
-  const [draft, setDraft] = useState<ChristmasPortraitDraft>(() =>
-    readDraft(vertical.draftStorageKey),
+  const { pathname } = useLocation();
+  const locale = normalizeWave1GenerationLocale(
+    parseChristmasLocalePath(pathname).locale,
+  ) as PhotoGenLocale;
+  const t = (key: string) => photoGenT(key, locale);
+  const pathFor = (to: string) =>
+    christmasPathForLocale(to, locale as ChristmasLocaleCode);
+  const funnel = useChristmasPortraitFunnel({
+    vertical,
+    mode: "vertical",
+  });
+  const heroHeadline = verticalUi(
+    vertical.id,
+    "heroHeadline",
+    locale,
+    vertical.heroHeadline,
   );
-  const [busy, setBusy] = useState(false);
-  const [speciesHint, setSpeciesHint] = useState<{
-    message: string;
-    switchTo: string;
-    label: string;
-  } | null>(null);
-  const [checkout, setCheckout] = useState<{
-    clientSecret: string;
-    publishableKey: string;
-    amountCents: number;
-    currency: string;
-  } | null>(null);
-  const [resultUrl, setResultUrl] = useState<string | null>(null);
-  const [purchasable, setPurchasable] = useState(false);
-  const [catalogAmount, setCatalogAmount] = useState<number | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const fileBlobRef = useRef<Blob | null>(null);
-  const pageViewed = useRef(false);
-  const styles = useMemo(
-    () => enabledChristmasStyles(vertical.styles),
-    [vertical.styles],
+  const heroSupport = verticalUi(
+    vertical.id,
+    "heroSupport",
+    locale,
+    vertical.heroSupport,
   );
-  const product = findProduct(CHRISTMAS_CATALOG_SEED, vertical.productKey);
-
-  // Reset draft storage when switching vertical routes
-  useEffect(() => {
-    setDraft(readDraft(vertical.draftStorageKey));
-    setSpeciesHint(null);
-    setCheckout(null);
-    setResultUrl(null);
-    pageViewed.current = false;
-  }, [vertical.draftStorageKey, vertical.routePath]);
-
-  const setStep = useCallback(
-    (step: ChristmasPortraitStep, patch?: Partial<ChristmasPortraitDraft>) => {
-      setDraft((prev) => {
-        const next = { ...prev, ...patch, step, lastError: patch?.lastError ?? null };
-        writeDraft(vertical.draftStorageKey, next);
-        return next;
-      });
-    },
-    [vertical.draftStorageKey],
+  const privacyLine = verticalUi(vertical.id, "privacy", locale, vertical.privacyLine);
+  const uploadHint = verticalUi(vertical.id, "uploadHint", locale, vertical.uploadHint);
+  const deliverableLine = verticalUi(
+    vertical.id,
+    "deliverable",
+    locale,
+    vertical.deliverableLine,
   );
 
   useEffect(() => {
-    if (pageViewed.current) return;
-    pageViewed.current = true;
-    captureFunnelAttribution(window.location.search);
-    void trackChristmasEvent("christmas_page_view", {
-      productKey: vertical.productKey,
-      pathname: vertical.routePath,
-      portraitType: vertical.portraitType,
-      species: vertical.expectedSpecies,
-    });
-  }, [vertical]);
+    ensureFonts();
+  }, []);
 
   useEffect(() => {
-    const pkg = product?.packages.find((p) => p.packageKey === vertical.packageKey);
-    setPurchasable(Boolean(pkg?.purchasable && pkg.priceCents > 0));
-    setCatalogAmount(pkg?.purchasable && pkg.priceCents > 0 ? pkg.priceCents : null);
-  }, [product, vertical.packageKey]);
-
-  useEffect(() => {
-    const token = params.get("token");
-    if (!token) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        setBusy(true);
-        const { order } = await getChristmasOrderByToken(token);
-        if (cancelled) return;
-        setDraft((prev) => {
-          const next = {
-            ...prev,
-            orderId: order.id,
-            publicToken: token,
-            styleKey: order.style_key,
-            step:
-              order.fulfillment_status === "completed"
-                ? ("result" as const)
-                : order.payment_status === "paid"
-                  ? ("generating" as const)
-                  : prev.step,
-          };
-          writeDraft(vertical.draftStorageKey, next);
-          return next;
-        });
-        if (order.resultUrl) setResultUrl(order.resultUrl);
-        if (order.payment_status === "paid" && order.fulfillment_status !== "completed") {
-          setStep("generating", { orderId: order.id, publicToken: token });
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setStep("error", {
-            lastError: err instanceof Error ? err.message : "Could not recover order",
-          });
-        }
-      } finally {
-        if (!cancelled) setBusy(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [params, setStep, vertical.draftStorageKey]);
-
-  useEffect(() => {
-    if (draft.step !== "generating" || !draft.publicToken) return;
-    let stop = false;
-    const tick = async () => {
-      try {
-        const { order } = await getChristmasOrderByToken(draft.publicToken!);
-        if (stop) return;
-        if (order.fulfillment_status === "completed" && order.resultUrl) {
-          setResultUrl(order.resultUrl);
-          setStep("result");
-          void trackChristmasEvent("generation_success", {
-            productKey: vertical.productKey,
-            orderId: order.id,
-            styleKey: order.style_key,
-            portraitType: vertical.portraitType,
-            species: vertical.expectedSpecies,
-          });
-          return;
-        }
-        if (order.fulfillment_status === "failed") {
-          setStep("error", { lastError: order.last_error || "Generation failed" });
-          void trackChristmasEvent("generation_failed", {
-            productKey: vertical.productKey,
-            orderId: order.id,
-          });
-        }
-      } catch {
-        /* keep polling */
-      }
-    };
-    void tick();
-    const id = window.setInterval(() => void tick(), 4000);
-    return () => {
-      stop = true;
-      window.clearInterval(id);
-    };
-  }, [draft.step, draft.publicToken, setStep, vertical]);
-
-  async function blobToDataUrl(blob: Blob): Promise<string> {
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(new Error("Could not read photo"));
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  async function onFileChosen(file: File | null) {
-    if (!file) return;
-    setSpeciesHint(null);
-    void trackChristmasEvent("upload_started", {
+    if (funnel.draft.step !== "result" || !funnel.resultUrl) return;
+    writeLastPortraitResult({
+      imageUrl: funnel.resultUrl,
+      verticalId: vertical.id,
       productKey: vertical.productKey,
-      pathname: vertical.routePath,
-      portraitType: vertical.portraitType,
-      species: vertical.expectedSpecies,
+      orderId: funnel.draft.orderId,
     });
-    setBusy(true);
-    try {
-      const validation = await validateChristmasPhotoFile(file);
-      if (!validation.ok) {
-        setStep("upload", { lastError: validation.message });
-        return;
-      }
-
-      if (vertical.expectedSpecies === "dog" || vertical.expectedSpecies === "cat") {
-        const dataUrl = await blobToDataUrl(file);
-        const species = await validateChristmasSpecies({
-          imageDataUrl: dataUrl,
-          expected: vertical.expectedSpecies,
-        });
-        if (!species.ok && species.errorCode === "wrong_species") {
-          const switchTo =
-            vertical.expectedSpecies === "dog" ? "/christmas/cats" : "/christmas/dogs";
-          const label =
-            vertical.expectedSpecies === "dog" ? "Christmas Cats" : "Christmas Dogs";
-          setSpeciesHint({
-            message: species.error || "This photo looks like a different species.",
-            switchTo,
-            label,
-          });
-          setStep("upload", { lastError: species.error });
-          return;
-        }
-      }
-
-      const localUrl = URL.createObjectURL(file);
-      fileBlobRef.current = file;
-      const upload = await createChristmasUpload({
-        contentType: validation.contentType,
-        byteSize: file.size,
-        width: validation.width,
-        height: validation.height,
-      });
-      if (upload.replicate_preview !== false) {
-        throw new Error("Preview contract violated");
-      }
-      await uploadChristmasBlob(upload.signedUrl, upload.token, file, validation.contentType);
-      setStep("style", {
-        localPreviewUrl: localUrl,
-        uploadId: upload.uploadId,
-        sourcePath: upload.path,
-        sourceContentType: validation.contentType,
-        sourceWidth: validation.width,
-        sourceHeight: validation.height,
-        blurredPreviewUrl: null,
-        portraitType: vertical.portraitType,
-        species:
-          vertical.expectedSpecies === "dog" || vertical.expectedSpecies === "cat"
-            ? vertical.expectedSpecies
-            : null,
-      });
-      void trackChristmasEvent("upload_completed", {
-        productKey: vertical.productKey,
-        portraitType: vertical.portraitType,
-        species: vertical.expectedSpecies,
-      });
-    } catch (err) {
-      setStep("upload", {
-        lastError: err instanceof Error ? err.message : "Upload failed",
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onStyleSelected(styleKey: string) {
-    if (!draft.sourcePath || (!fileBlobRef.current && !draft.localPreviewUrl)) {
-      setStep("upload", { lastError: "Please upload a photo first." });
-      return;
-    }
-    setBusy(true);
-    void trackChristmasEvent("style_selected", {
-      productKey: vertical.productKey,
-      styleKey,
-      portraitType: vertical.portraitType,
-      species: vertical.expectedSpecies,
-    });
-    try {
-      const source =
-        fileBlobRef.current ||
-        (draft.localPreviewUrl ? await fetch(draft.localPreviewUrl).then((r) => r.blob()) : null);
-      if (!source) throw new Error("Missing photo");
-      const preview = await createBlurredOriginalPreview(source, { blurPx: 32 });
-      if (preview.replicateCalls !== 0 || christmasPreviewUsesReplicate()) {
-        throw new Error("Preview must not call Replicate");
-      }
-      setStep("preview", { styleKey, blurredPreviewUrl: preview.dataUrl });
-      void trackChristmasEvent("preview_seen", {
-        productKey: vertical.productKey,
-        styleKey,
-        portraitType: vertical.portraitType,
-      });
-    } catch (err) {
-      setStep("style", {
-        lastError: err instanceof Error ? err.message : "Could not create preview",
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function goOffer() {
-    setStep("offer");
-    void trackChristmasEvent("offer_seen", {
-      productKey: vertical.productKey,
-      styleKey: draft.styleKey,
-      packageKey: vertical.packageKey,
-      amountCents: catalogAmount,
-      portraitType: vertical.portraitType,
-      species: vertical.expectedSpecies,
-    });
-  }
-
-  async function startCheckout() {
-    if (!purchasable) {
-      setStep("offer", {
-        lastError: "Checkout is not enabled yet — production price is not configured.",
-      });
-      return;
-    }
-    if (!draft.styleKey || !draft.sourcePath) {
-      setStep("upload", { lastError: "Upload and style are required." });
-      return;
-    }
-    setBusy(true);
-    void trackChristmasEvent("checkout_started", {
-      productKey: vertical.productKey,
-      styleKey: draft.styleKey,
-      packageKey: vertical.packageKey,
-      portraitType: vertical.portraitType,
-      species: vertical.expectedSpecies,
-    });
-    try {
-      captureFunnelAttribution(window.location.search);
-      const attr = attributionParamsForInternal();
-      const result = await startChristmasCheckout({
-        product_key: vertical.productKey,
-        package_key: vertical.packageKey,
-        amount_cents: 1,
-        currency: "eur",
-        email: draft.email || undefined,
-        style_key: draft.styleKey,
-        source_path: draft.sourcePath,
-        source_bucket: "christmas-source",
-        source_content_type: draft.sourceContentType,
-        source_width: draft.sourceWidth,
-        source_height: draft.sourceHeight,
-        portrait_type: vertical.portraitType,
-        species:
-          draft.species ||
-          (vertical.expectedSpecies === "dog" || vertical.expectedSpecies === "cat"
-            ? vertical.expectedSpecies
-            : null),
-        source_route: vertical.routePath,
-        existing_order_id: draft.orderId,
-        funnel_session_id: getChristmasFunnelSessionId(),
-        landing_path: `${window.location.pathname}${window.location.search}`.slice(0, 120),
-        utm_source: attr.utm_source,
-        utm_medium: attr.utm_medium,
-        utm_campaign: attr.utm_campaign,
-        utm_content: attr.utm_content,
-        utm_term: attr.utm_term,
-        campaign_id: attr.campaign_id,
-        adset_id: attr.adset_id,
-        ad_id: attr.ad_id,
-        success_url: `${window.location.origin}${vertical.routePath}?checkout=success`,
-      });
-      setCheckout({
-        clientSecret: result.clientSecret,
-        publishableKey: result.publishableKey,
-        amountCents: result.amountCents,
-        currency: result.currency,
-      });
-      setStep("checkout", {
-        orderId: result.orderId,
-        publicToken: result.publicToken,
-      });
-      void trackChristmasEvent("payment_sheet_opened", {
-        productKey: vertical.productKey,
-        orderId: result.orderId,
-        amountCents: result.amountCents,
-      });
-    } catch (err) {
-      setStep("offer", {
-        lastError: err instanceof Error ? err.message : "Checkout failed",
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onDownload() {
-    if (!resultUrl || !draft.orderId) return;
-    void trackChristmasEvent("download", {
-      productKey: vertical.productKey,
-      orderId: draft.orderId,
-      portraitType: vertical.portraitType,
-    });
-    const res = await fetch(resultUrl);
-    const blob = await res.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = objectUrl;
-    a.download = `tdg-christmas-portrait-${draft.orderId.slice(0, 8)}.jpg`;
-    a.click();
-    URL.revokeObjectURL(objectUrl);
-  }
-
-  async function onShare() {
-    if (!resultUrl) return;
-    void trackChristmasEvent("share", {
-      productKey: vertical.productKey,
-      orderId: draft.orderId,
-      portraitType: vertical.portraitType,
-    });
-    try {
-      const res = await fetch(resultUrl);
-      const blob = await res.blob();
-      const file = new File([blob], `tdg-christmas-portrait.jpg`, {
-        type: blob.type || "image/jpeg",
-      });
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "My Christmas portrait",
-          text: "Made with The Digital Gifter",
-        });
-        return;
-      }
-    } catch {
-      /* fall through */
-    }
-    if (navigator.share) {
-      await navigator.share({ title: "My Christmas portrait", url: window.location.href });
-    }
-  }
-
-  const styleName = styles.find((s) => s.styleKey === draft.styleKey)?.displayName;
+  }, [
+    funnel.draft.step,
+    funnel.resultUrl,
+    funnel.draft.orderId,
+    vertical.id,
+    vertical.productKey,
+  ]);
 
   return (
     <>
-      <PageHead
-        title={vertical.pageTitle}
-        description={vertical.metaDescription}
-        exactTitle
-        url={`https://www.thedigitalgifter.com${vertical.routePath}`}
-      />
-      <main className="mx-auto min-h-[70vh] max-w-lg px-4 py-8 text-slate-900">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          The Digital Gifter · Christmas
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{vertical.heroHeadline}</h1>
-        <p className="mt-2 text-sm text-slate-600">{vertical.heroSupport}</p>
-        <p className="mt-2 text-xs text-slate-500">{vertical.privacyLine}</p>
-
-        {draft.lastError ? (
-          <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            {draft.lastError}
+      <ChristmasPageHead path={vertical.routePath} />
+      <main className="xmas-landing pg-page" lang={locale} dir={photoGenDir(locale)}>
+        <AmbientSnow />
+        <div className="pg-studio" style={{ paddingTop: "2.5rem", paddingBottom: "3rem" }}>
+          <p className="xmas-kicker">The Digital Gifter · Christmas</p>
+          <h1 style={{ marginTop: "0.5rem", fontSize: "clamp(2rem, 5vw, 3rem)", color: "#fffaf1" }}>
+            {heroHeadline}
+          </h1>
+          <p className="xmas-lede">{heroSupport}</p>
+          <p className="xmas-lede" style={{ fontSize: "0.88rem" }}>
+            {privacyLine}
           </p>
-        ) : null}
 
-        {speciesHint ? (
-          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-            {speciesHint.message}{" "}
-            <Link className="font-medium underline" to={speciesHint.switchTo}>
-              Switch to {speciesHint.label}
-            </Link>
-          </p>
-        ) : null}
+          {funnel.draft.lastError ? (
+            <p className="pg-alert" role="alert">
+              {funnel.draft.lastError}
+            </p>
+          ) : null}
 
-        {(draft.step === "intro" || draft.step === "upload") && (
-          <section className="mt-8 space-y-4">
-            {vertical.id === "pets" ? (
-              <div className="flex gap-2">
-                <Link
-                  to="/christmas/dogs"
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-medium"
-                >
-                  Dogs
-                </Link>
-                <Link
-                  to="/christmas/cats"
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-medium"
-                >
-                  Cats
-                </Link>
-              </div>
-            ) : null}
-            <button
-              type="button"
-              className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-              onClick={() => {
-                setStep("upload");
-                fileRef.current?.click();
-              }}
-              disabled={busy}
-            >
-              {busy ? "Working…" : "Upload your photo"}
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => void onFileChosen(e.target.files?.[0] || null)}
-            />
-            <p className="text-xs text-slate-500">{vertical.uploadHint}</p>
-            <p className="text-xs text-slate-500">JPEG, PNG, or WebP · under 15 MB</p>
-          </section>
-        )}
+          {funnel.speciesHint ? (
+            <p className="pg-warn">
+              {t(funnel.speciesHint.messageKey || "funnel.speciesMismatch")}{" "}
+              <Link className="underline" to={pathFor(funnel.speciesHint.switchTo)}>
+                {photoGenT("funnel.switchTo", locale, {
+                  label: t(funnel.speciesHint.labelKey || "funnel.christmasCats"),
+                })}
+              </Link>
+            </p>
+          ) : null}
 
-        {draft.step === "style" && (
-          <section className="mt-8">
-            {draft.localPreviewUrl ? (
-              <img
-                src={draft.localPreviewUrl}
-                alt="Your upload"
-                className="mb-4 max-h-48 w-full rounded-lg object-cover"
-              />
-            ) : null}
-            <h2 className="text-lg font-medium">Choose a Christmas style</h2>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              {styles.map((style) => (
+          <div className="pg-studio__card" style={{ marginTop: "1.25rem" }}>
+            {(funnel.draft.step === "intro" || funnel.draft.step === "upload") && (
+              <section className="space-y-4">
+                {vertical.id === "pets" ? (
+                  <div style={{ display: "flex", gap: "0.65rem" }}>
+                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to={pathFor("/christmas/dogs")}>
+                      {t("funnel.dogs")}
+                    </Link>
+                    <Link className="xmas-btn xmas-btn--ghost" style={{ flex: 1 }} to={pathFor("/christmas/cats")}>
+                      {t("funnel.cats")}
+                    </Link>
+                  </div>
+                ) : null}
                 <button
-                  key={style.styleKey}
                   type="button"
-                  className="rounded-lg border border-slate-200 p-3 text-left hover:border-slate-400"
-                  style={{ borderTopColor: style.accent, borderTopWidth: 3 }}
-                  disabled={busy}
-                  onClick={() => void onStyleSelected(style.styleKey)}
+                  className="xmas-btn xmas-btn--gold"
+                  style={{ width: "100%" }}
+                  onClick={() => funnel.openFilePicker()}
+                  disabled={funnel.busy}
                 >
-                  <div className="text-sm font-medium">{style.displayName}</div>
-                  <div className="mt-1 text-xs text-slate-500">{style.description}</div>
+                  {funnel.busy ? t("funnel.working") : t("funnel.upload")}
                 </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {draft.step === "preview" && draft.blurredPreviewUrl && (
-          <section className="mt-8 space-y-4">
-            <img
-              src={draft.blurredPreviewUrl}
-              alt="Blurred preview of your photo"
-              className="w-full rounded-lg"
-            />
-            <p className="text-sm text-slate-600">
-              Your Christmas transformation is ready to create. This preview is your original photo,
-              heavily blurred — the finished AI portrait unlocks after payment.
-            </p>
-            <button
-              type="button"
-              className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-              onClick={goOffer}
-            >
-              Continue to offer
-            </button>
-          </section>
-        )}
-
-        {draft.step === "offer" && (
-          <section className="mt-8 space-y-4">
-            <h2 className="text-lg font-medium">Unlock your Christmas portrait</h2>
-            <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600">
-              <li>Style: {styleName || draft.styleKey}</li>
-              <li>{vertical.deliverableLine}</li>
-              <li>Usually ready a few minutes after payment</li>
-              <li>Private by default · download via your order link</li>
-            </ul>
-            <label className="block text-sm">
-              Email for receipt / recovery (optional)
-              <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                type="email"
-                value={draft.email}
-                onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))}
-              />
-            </label>
-            {purchasable && catalogAmount != null ? (
-              <button
-                type="button"
-                className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-                disabled={busy}
-                onClick={() => void startCheckout()}
-              >
-                {busy
-                  ? "Preparing checkout…"
-                  : `Pay ${(catalogAmount / 100).toFixed(2)} ${product?.packages[0]?.currency?.toUpperCase() || "USD"}`}
-              </button>
-            ) : (
-              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                Production checkout is not enabled yet (price not configured / not purchasable). The
-                upload → blur preview flow works; payment stays disabled until launch configuration.
-              </p>
+                <input
+                  ref={funnel.fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  capture="environment"
+                  className="pg-file-input"
+                  onChange={(e) => void funnel.onFileChosen(e.target.files?.[0] || null)}
+                />
+                <p className="xmas-lede" style={{ fontSize: "0.88rem" }}>
+                  {uploadHint}
+                </p>
+                <p className="xmas-lede" style={{ fontSize: "0.8rem" }}>
+                  {t("funnel.fileHint")}
+                </p>
+              </section>
             )}
-            {product ? (
-              <p className="text-xs text-slate-500">
-                Product status: {ctaStateForProduct(product)} · Apple Pay / Google Pay / card when
-                checkout is enabled
-              </p>
-            ) : null}
-          </section>
-        )}
 
-        {draft.step === "checkout" && checkout && (
-          <section className="mt-8 space-y-4">
-            <h2 className="text-lg font-medium">Secure payment</h2>
-            <CustomStripeCheckout
-              clientSecret={checkout.clientSecret}
-              publishableKey={checkout.publishableKey}
-              dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
-              returnUrl={`${window.location.origin}${vertical.routePath}?checkout=success&token=${encodeURIComponent(draft.publicToken || "")}`}
-              email={draft.email}
-              onReady={() => {
-                void trackChristmasEvent("payment_sheet_opened", {
-                  productKey: vertical.productKey,
-                  orderId: draft.orderId,
-                  amountCents: checkout.amountCents,
-                });
-              }}
-            />
-          </section>
-        )}
+            {funnel.draft.step === "style" && (
+              <section>
+                {funnel.draft.localPreviewUrl ? (
+                  <img
+                    className="pg-preview-thumb"
+                    src={funnel.draft.localPreviewUrl}
+                    alt={t("funnel.yourUpload")}
+                  />
+                ) : null}
+                <h2>{t("funnel.style")}</h2>
+                <div className="pg-style-grid">
+                  {funnel.styles.map((style) => (
+                    <button
+                      key={style.styleKey}
+                      type="button"
+                      className="pg-style"
+                      disabled={funnel.busy}
+                      onClick={() => void funnel.onStylePick(style.styleKey)}
+                    >
+                      <img
+                        className="pg-style__img"
+                        src={STYLE_PREVIEW_BY_KEY[style.styleKey] || PHOTO_GEN_ASSETS.styleClassic}
+                        alt=""
+                        loading="lazy"
+                      />
+                      <div className="pg-style__body">
+                        <div className="pg-style__name">{photoStyleLabel(style.styleKey, locale, style.displayName)}</div>
+                        <div className="pg-style__desc">{photoStyleDescription(style.styleKey, locale, style.description)}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
-        {draft.step === "generating" && (
-          <section className="mt-8 space-y-3 text-sm text-slate-600">
-            <h2 className="text-lg font-medium text-slate-900">Creating your portrait</h2>
-            <p>Payment confirmed</p>
-            <p>Preparing photo</p>
-            <p>Creating Christmas portrait…</p>
-            <p className="text-xs">You can close this page — reopen your order link anytime.</p>
-          </section>
-        )}
+            {funnel.draft.step === "preview" && funnel.draft.blurredPreviewUrl && (
+              <section className="space-y-4">
+                <img
+                  className="pg-preview-thumb"
+                  src={funnel.draft.blurredPreviewUrl}
+                  alt={t("funnel.blurredPreview")}
+                />
+                <p className="xmas-lede">{t("funnel.previewLede")}</p>
+                <button
+                  type="button"
+                  className="xmas-btn xmas-btn--gold"
+                  style={{ width: "100%" }}
+                  onClick={funnel.goOffer}
+                >
+                  {t("funnel.continueOffer")}
+                </button>
+              </section>
+            )}
 
-        {draft.step === "result" && resultUrl && (
-          <section className="mt-8 space-y-4">
-            <img src={resultUrl} alt="Your Christmas portrait" className="w-full rounded-lg" />
-            <p className="text-sm text-slate-600">Style: {styleName || draft.styleKey}</p>
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                className="rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-                onClick={() => void onDownload()}
-              >
-                Download
-              </button>
-              <button
-                type="button"
-                className="rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"
-                onClick={() => void onShare()}
-              >
-                Share
-              </button>
-              <button
-                type="button"
-                className="rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"
-                onClick={() => {
-                  const next = emptyPortraitDraft();
-                  writeDraft(vertical.draftStorageKey, next);
-                  setDraft(next);
-                  setResultUrl(null);
-                  setCheckout(null);
-                  fileBlobRef.current = null;
-                }}
-              >
-                Create another
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-3 text-sm">
-              <span className="text-slate-500">Try another:</span>
-              {vertical.crossLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="underline underline-offset-4">
-                  {link.label}
+            {funnel.draft.step === "offer" && (
+              <section className="space-y-4">
+                <h2>{t("funnel.unlock")}</h2>
+                <ul className="pg-guide">
+                  <li>{t("funnel.styleLabel")}: {photoStyleLabel(funnel.draft.styleKey || "", locale, funnel.styleName || undefined)}</li>
+                  <li>{deliverableLine}</li>
+                  <li>{t("funnel.readyMinutes")}</li>
+                  <li>{t("funnel.privateDownload")}</li>
+                </ul>
+                <label className="pg-email">
+                  {t("funnel.email")}
+                  <input
+                    type="email"
+                    value={funnel.draft.email}
+                    onChange={(e) => funnel.setDraft((d) => ({ ...d, email: e.target.value }))}
+                  />
+                </label>
+                {funnel.purchasable && funnel.catalogAmount != null ? (
+                  <button
+                    type="button"
+                    className="xmas-btn xmas-btn--gold"
+                    style={{ width: "100%" }}
+                    disabled={funnel.busy}
+                    onClick={() => void funnel.startCheckout()}
+                  >
+                    {funnel.busy
+                      ? t("funnel.preparing")
+                      : photoGenT("funnel.pay", locale, {
+                          amount:
+                            formatMoney(
+                              funnel.catalogAmount / 100,
+                              funnel.product?.packages[0]?.currency || "usd",
+                              locale,
+                            ) || `${(funnel.catalogAmount / 100).toFixed(2)} USD`,
+                        })}
+                  </button>
+                ) : (
+                  <p className="pg-warn">{t("funnel.checkoutDisabled")}</p>
+                )}
+              </section>
+            )}
+
+            {funnel.draft.step === "checkout" && funnel.checkout && (
+              <section className="space-y-4">
+                <h2>{t("funnel.securePayment")}</h2>
+                <CustomStripeCheckout
+                  clientSecret={funnel.checkout.clientSecret}
+                  publishableKey={funnel.checkout.publishableKey}
+                  dueDisplay={
+                    formatMoney(
+                      funnel.checkout.amountCents / 100,
+                      funnel.checkout.currency || "usd",
+                      locale,
+                    ) || `$${(funnel.checkout.amountCents / 100).toFixed(2)}`
+                  }
+                  email={funnel.draft.email}
+                  onReady={() => undefined}
+                />
+              </section>
+            )}
+
+            {funnel.draft.step === "generating" && (
+              <section className="pg-gen" aria-live="polite">
+                <div className="pg-gen__pulse" aria-hidden="true" />
+                <h2>{t("funnel.creating")}</h2>
+                <p className="pg-gen__msg">{t("funnel.magic")}</p>
+                <p className="xmas-lede">{t("funnel.leaveNote")}</p>
+              </section>
+            )}
+
+            {funnel.draft.step === "result" && funnel.resultUrl && (
+              <section className="pg-result space-y-4">
+                <img src={funnel.resultUrl} alt={t("funnel.portraitAlt")} />
+                <p className="xmas-lede">{t("funnel.styleLabel")}: {photoStyleLabel(funnel.draft.styleKey || "", locale, funnel.styleName || undefined)}</p>
+                <div className="pg-result__actions">
+                  <button
+                    type="button"
+                    className="xmas-btn xmas-btn--gold"
+                    onClick={() => void funnel.downloadResult()}
+                  >
+                    {t("funnel.download")}
+                  </button>
+                  <button
+                    type="button"
+                    className="xmas-btn xmas-btn--ghost"
+                    onClick={() => void funnel.shareResult()}
+                  >
+                    {t("funnel.share")}
+                  </button>
+                  <Link
+                    to={cardsUrlFromPortrait()}
+                    className="xmas-btn xmas-btn--ghost"
+                    style={{ textAlign: "center" }}
+                    onClick={() => {
+                      if (!funnel.resultUrl) return;
+                      writePortraitToCardHandoff({
+                        imageUrl: funnel.resultUrl,
+                        source: "portrait_result",
+                        verticalId: vertical.id,
+                        productKey: vertical.productKey,
+                        orderId: funnel.draft.orderId,
+                      });
+                      writeLastPortraitResult({
+                        imageUrl: funnel.resultUrl,
+                        verticalId: vertical.id,
+                        productKey: vertical.productKey,
+                        orderId: funnel.draft.orderId,
+                      });
+                      void trackChristmasEvent("card_portrait_cross_sell_clicked", {
+                        productKey: vertical.productKey,
+                        pathname: vertical.routePath,
+                        metadata: { placement: "portrait_result" },
+                      });
+                    }}
+                  >
+                    {t("funnel.card")}
+                  </Link>
+                  <button
+                    type="button"
+                    className="xmas-btn xmas-btn--ghost"
+                    onClick={() => funnel.resetAnother()}
+                  >
+                    {t("funnel.another")}
+                  </button>
+                </div>
+                <div className="pg-nav" style={{ border: 0, marginTop: "0.5rem", paddingTop: 0 }}>
+<span>{t("funnel.tryAnother")}</span>
+                  {vertical.crossLinks.map((link) => (
+                    <Link key={link.to} to={pathFor(link.to)}>
+                      {crossLinkLabel(link.label, locale)}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {funnel.draft.step === "error" && (
+              <section className="space-y-3">
+                <h2>{t("funnel.errorTitle")}</h2>
+                <p className="xmas-lede">{t("funnel.errorPaid")}</p>
+                <Link to={pathFor("/christmas")} className="xmas-btn xmas-btn--ghost">
+                  {t("funnel.hub")}
                 </Link>
-              ))}
-            </div>
-          </section>
-        )}
+              </section>
+            )}
+          </div>
 
-        {draft.step === "error" && (
-          <section className="mt-8 space-y-3">
-            <h2 className="text-lg font-medium">Something went wrong</h2>
-            <p className="text-sm text-slate-600">
-              If you already paid, keep your order link — support can retry fulfillment without charging
-              again.
-            </p>
-            <Link to="/christmas" className="text-sm underline">
-              Christmas hub
-            </Link>
-          </section>
-        )}
+          <nav className="pg-nav">
+            {vertical.crossLinks.map((link) => (
+              <Link key={link.to} to={pathFor(link.to)}>
+                {crossLinkLabel(link.label, locale)}
+              </Link>
+            ))}
+            <Link to={pathFor("/christmas")}>{t("funnel.hub")}</Link>
+            <Link to={pathFor("/christmas/photo-generator")}>{t("funnel.photoGen")}</Link>
+          </nav>
 
-        <nav className="mt-10 flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-200 pt-4 text-xs text-slate-500">
-          {vertical.crossLinks.map((link) => (
-            <Link key={link.to} to={link.to} className="underline-offset-2 hover:underline">
-              {link.label}
-            </Link>
-          ))}
-          <Link to="/christmas" className="underline-offset-2 hover:underline">
-            Christmas hub
-          </Link>
-        </nav>
+          <PortraitVerticalSeoSections verticalId={vertical.id} />
+        </div>
+        <style>{`
+          .pg-file-input {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border: 0;
+            opacity: 0;
+          }
+        `}</style>
       </main>
     </>
   );

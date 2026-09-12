@@ -1,9 +1,10 @@
 /* Christmas Wishlist — letter-on-table framing with simple modern UX */
 
 .wl-page {
-  --wl-display: "Cormorant Garamond", "Times New Roman", Georgia, serif;
-  --wl-body: "Source Sans 3", "Segoe UI", sans-serif;
-  --wl-script: "Cormorant Garamond", Georgia, serif;
+  --wl-display: "Cormorant Garamond", "Times New Roman", "Liberation Serif", Georgia, serif;
+  --wl-body: "Source Sans 3", "Segoe UI", "Noto Sans", system-ui, sans-serif;
+  /* Latin Extended (RO/PL/DE/FR/…) — Cormorant + system serif fallbacks avoid tofu glyphs */
+  --wl-script: "Cormorant Garamond", "Times New Roman", "Liberation Serif", Georgia, serif;
   --wl-ivory: #f7f0e4;
   --wl-paper: #fbf6ec;
   --wl-ink: #1a120f;

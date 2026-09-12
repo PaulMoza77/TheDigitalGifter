@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import { trackChristmasV2Event } from "./analytics";
 import {
@@ -141,12 +142,9 @@ export function ChristmasV2FunnelPage() {
 
   return (
     <>
-      <PageHead
-        title="AI Christmas Photos – Turn Your Photo Into Christmas Magic | Digital Gifter"
-        description="Upload one portrait and get 3 premium AI Christmas photos for $3. Perfect for cards, gifts, and social posts. Secure checkout, no subscription."
-        url={`https://www.thedigitalgifter.com${CHRISTMAS_V2_ROUTE}`}
+      <ChristmasPageHead
+        path="/christmas-ai-photos"
         image="https://www.thedigitalgifter.com/assets/funnel/christmas-after.png"
-        exactTitle
       />
       <ChristmasV2Shell
         showBack={showBack}
@@ -367,6 +365,8 @@ export function ChristmasV2OrderPage() {
         title="Your Christmas AI Photos | Digital Gifter"
         description="View your AI Christmas portraits and unlock more holiday scenarios."
         exactTitle
+        noindex
+        url="https://www.thedigitalgifter.com/christmas-ai-photos"
       />
       <ChristmasV2Shell>
         {status === "loading" || status === "generating" ? (

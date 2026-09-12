@@ -3,7 +3,7 @@
  * Shared by client tests and mirrored conceptually in Edge (Deno copies key logic).
  */
 
-export const SANTA_LANGUAGES = ["en", "ro"] as const;
+export const SANTA_LANGUAGES = ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"] as const;
 export type SantaLanguage = (typeof SANTA_LANGUAGES)[number];
 
 export const SANTA_TEMPLATE_KEYS = [
@@ -113,11 +113,11 @@ export function validateSantaPersonalization(
   if (!name || name.length < 1) {
     return { ok: false, code: "name_required", message: "Child’s first name is required." };
   }
-  if (!/^[A-Za-zÀ-ÿăâîșțĂÂÎȘȚ' -]+$/u.test(name)) {
+  if (/[\u0000-\u001F\u007F]/.test(name) || !/^[\p{L}\p{M}][\p{L}\p{M}'’\-\s]*$/u.test(name)) {
     return {
       ok: false,
       code: "name_invalid",
-      message: "Use a simple first name (letters only).",
+      message: "Please use letters, spaces, hyphens, or apostrophes.",
     };
   }
   const language = String(input.language || "").trim().toLowerCase();

@@ -22,8 +22,10 @@ marker = marker_path.read_text().strip().lower() if marker_path.exists() else ""
 if marker in ("http", "https"):
     print(marker)
     raise SystemExit(0)
+# HTTPS may be a combined host block OR split apex-redirect + www blocks.
 named = bool(re.search(r"(?m)^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{", active)) \
-    or bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{", active))
+    or bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{", active)) \
+    or bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com\s*\{", active))
 print("https" if named else "http")
 PY
 )"
@@ -55,14 +57,17 @@ if "tdg-verify.mozas-prod-01" not in text:
     sys.exit("Caddyfile must keep TDG verify host")
 if "thedigitalgifter.com" not in text:
     sys.exit("Caddyfile must include thedigitalgifter.com")
-named = bool(re.search(r"(?m)^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{", text)) \
+combined = bool(re.search(r"(?m)^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{", text)) \
     or bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{", text))
+split_www = bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com\s*\{", text))
+split_apex = bool(re.search(r"(?m)^\s*thedigitalgifter\.com\s*\{", text))
+https_layout = combined or (split_www and split_apex)
 if mode == "https":
-    if not named:
-        sys.exit("HTTPS Caddyfile must use a named site block for TDG")
+    if not https_layout:
+        sys.exit("HTTPS Caddyfile must use a named TDG site block (combined or apex+www split)")
     if "Strict-Transport-Security" not in text:
         sys.exit("HTTPS Caddyfile must set HSTS")
-if mode == "http" and named:
+if mode == "http" and https_layout:
     sys.exit("HTTP Caddyfile must not enable named HTTPS site blocks")
 print("tdg_caddy_source_ok=yes")
 PY

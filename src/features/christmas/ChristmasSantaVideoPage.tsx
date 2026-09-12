@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { ChristmasLanguageSwitcher } from "@/features/christmas/seo/ChristmasLanguageSwitcher";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
@@ -591,15 +592,15 @@ export default function ChristmasSantaVideoPage() {
 
   return (
     <>
-      <PageHead
-        title={SANTA_COPY.seo.title}
-        description={SANTA_COPY.seo.description}
-        exactTitle
-        url={SANTA_COPY.seo.canonical}
+      <ChristmasPageHead
+        path="/christmas/santa-video"
         image="https://www.thedigitalgifter.com/images/occasions/christmas.png"
       />
 
       <div className="santa-video-page relative min-h-screen overflow-x-hidden text-[#F5EDE0]">
+        <div className="relative z-20 flex justify-end px-4 pt-3 sm:px-6">
+          <ChristmasLanguageSwitcher />
+        </div>
         <ChristmasSnowfall />
         <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_top,_rgba(212,175,55,0.14),_transparent_55%),linear-gradient(165deg,#0c1f18_0%,#132a22_40%,#1a0a10_100%)]" />
 
@@ -861,15 +862,17 @@ export default function ChristmasSantaVideoPage() {
                   <StepShell title={SANTA_COPY.steps.language.title} helper={SANTA_COPY.steps.language.helper}>
                     <fieldset className="space-y-3">
                       <legend className="sr-only">Language</legend>
-                      {(
-                        [
+                      {([
                           { id: "en", label: "English", available: true },
-                          { id: "ro", label: "Romanian", available: true },
-                          { id: "de", label: "German", available: false },
-                          { id: "fr", label: "French", available: false },
-                          { id: "es", label: "Spanish", available: false },
-                        ] as const
-                      ).map((lang) => (
+                          { id: "ro", label: "Română", available: true },
+                          { id: "de", label: "Deutsch", available: true },
+                          { id: "fr", label: "Français", available: true },
+                          { id: "es", label: "Español", available: true },
+                          { id: "it", label: "Italiano", available: true },
+                          { id: "pt", label: "Português", available: true },
+                          { id: "nl", label: "Nederlands", available: true },
+                          { id: "pl", label: "Polski", available: true },
+                        ] as const).map((lang) => (
                         <label
                           key={lang.id}
                           className={`flex min-h-12 items-center justify-between rounded-xl border px-4 ${
@@ -885,9 +888,7 @@ export default function ChristmasSantaVideoPage() {
                               disabled={!lang.available}
                               checked={draft.language === lang.id}
                               onChange={() => {
-                                if (lang.id === "en" || lang.id === "ro") {
-                                  patch({ language: lang.id });
-                                }
+                                patch({ language: lang.id });
                               }}
                             />
                             {lang.label}

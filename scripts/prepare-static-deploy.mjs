@@ -27,6 +27,7 @@ if (!existsSync(index)) {
 
 writeFileSync(join(dist, "404.html"), readFileSync(index));
 console.log("Wrote dist/404.html for SPA routing.");
+console.log("(Christmas SEO HTML shells are emitted by vite.christmasSeoPlugin during build.)");
 
 const applePayAssociation = String(process.env.STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION || "").trim();
 if (applePayAssociation && !applePayAssociation.includes("PLACEHOLDER_CONFIGURE")) {
