@@ -10,6 +10,8 @@ export const API_MODULES = {
   "/api/pet-v2/funnel-event": "pet-v2-funnel-event.ts",
   "/api/pet-v3/funnel-event": "pet-v3-funnel-event.ts",
   "/api/pet-v3-funnel-event": "pet-v3-funnel-event.ts",
+  "/api/pet-v4/funnel-event": "pet-v4-funnel-event.ts",
+  "/api/pet-v4-funnel-event": "pet-v4-funnel-event.ts",
   "/api/pet-v3/internal-test-status": "pet-v3-internal-test-status.ts",
   "/api/pet-v3-internal-test-status": "pet-v3-internal-test-status.ts",
   "/api/pet-provider-status": "pet-provider-status.ts",
