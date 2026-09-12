@@ -1,20 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SaleCountdown, useSaleCountdown } from "../pet/components/SaleOffer";
-import { usePetT } from "../pet/i18n";
-import { v2FlashSale } from "./v2FlashSale";
+import { usePetCurrency, usePetT } from "../pet/i18n";
+import type { PetCurrency } from "../pet/i18n/currency";
 import { cn } from "@/lib/utils";
+import { v2FlashSale } from "./v2FlashSale";
 
-export function v2PackOfferCopy(nowMs = Date.now()) {
-  const sale = v2FlashSale(nowMs);
+export function v2PackOfferCopy(nowMs = Date.now(), currency: PetCurrency | string = "usd") {
+  const sale = v2FlashSale(nowMs, currency);
   return {
     saleActive: sale.saleActive,
+    currency: sale.currency,
     headline: `Get 12 secret lives and 2 mini clips for only ${sale.priceDisplay}`,
     priceDisplay: sale.priceDisplay,
     compareAtDisplay: sale.compareAtDisplay,
     amountCents: sale.amountCents,
     expiresAt: sale.expiresAt,
   };
+}
+
+function useV2OfferState(onExpire?: () => void) {
+  const currency = usePetCurrency();
+  const [offer, setOffer] = useState(() => v2PackOfferCopy(Date.now(), currency));
+
+  useEffect(() => {
+    setOffer(v2PackOfferCopy(Date.now(), currency));
+  }, [currency]);
+
+  const refresh = () => {
+    setOffer(v2PackOfferCopy(Date.now(), currency));
+    onExpire?.();
+  };
+
+  return { offer, refresh, currency };
 }
 
 export function V2PackOffer({
@@ -27,11 +45,7 @@ export function V2PackOffer({
   onExpire?: () => void;
 }) {
   const t = usePetT();
-  const [offer, setOffer] = useState(() => v2PackOfferCopy());
-  const refresh = () => {
-    setOffer(v2PackOfferCopy());
-    onExpire?.();
-  };
+  const { offer, refresh } = useV2OfferState(onExpire);
   return (
     <div
       className={cn(
@@ -58,11 +72,8 @@ export function V2PackOffer({
 /** One-line urgency — no extra bordered box. Sticky CTA already repeats the timer. */
 export function V2SaleLine({ onExpire }: { onExpire?: () => void }) {
   const t = usePetT();
-  const [offer, setOffer] = useState(() => v2PackOfferCopy());
-  const countdown = useSaleCountdown(offer.expiresAt, () => {
-    setOffer(v2PackOfferCopy());
-    onExpire?.();
-  });
+  const { offer, refresh } = useV2OfferState(onExpire);
+  const countdown = useSaleCountdown(offer.expiresAt, () => refresh());
   if (!countdown) return null;
   return (
     <p className="mt-3 text-sm font-medium tabular-nums text-[#f3d48a]" role="timer">
@@ -85,11 +96,8 @@ export function V2StickyCta({
   onExpire?: () => void;
 }) {
   const t = usePetT();
-  const [offer, setOffer] = useState(() => v2PackOfferCopy());
-  const countdown = useSaleCountdown(offer.expiresAt, () => {
-    setOffer(v2PackOfferCopy());
-    onExpire?.();
-  });
+  const { offer, refresh } = useV2OfferState(onExpire);
+  const countdown = useSaleCountdown(offer.expiresAt, () => refresh());
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#f6efe4]/10 bg-[#140e0a]/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:px-6">
       <div className="mx-auto w-full max-w-3xl">
@@ -122,11 +130,8 @@ export function V2ClosingCta({
   onExpire?: () => void;
 }) {
   const t = usePetT();
-  const [offer, setOffer] = useState(() => v2PackOfferCopy());
-  const countdown = useSaleCountdown(offer.expiresAt, () => {
-    setOffer(v2PackOfferCopy());
-    onExpire?.();
-  });
+  const { offer, refresh } = useV2OfferState(onExpire);
+  const countdown = useSaleCountdown(offer.expiresAt, () => refresh());
   return (
     <section className="rounded-[28px] bg-[#d4a84b] px-6 py-9 text-center text-[#1a140e]">
       <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("v2.landing.closingH2")}</h2>

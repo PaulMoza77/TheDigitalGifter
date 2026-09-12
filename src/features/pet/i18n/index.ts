@@ -16,5 +16,25 @@ export {
 } from "./localeRouting";
 export { petT, petSpeciesWord, petPossessivePet, PET_COPY_PACKS } from "./copy";
 export { usePetLocale, usePetT, usePetBrowserLocaleRedirect } from "./usePetLocale";
+export {
+  usePetCurrency,
+  usePetMoney,
+  resolvePetCurrency,
+  readPetCurrencyPreference,
+  writePetCurrencyPreference,
+} from "./usePetCurrency";
+export {
+  PET_CURRENCIES,
+  PET_DEFAULT_CURRENCY,
+  PET_CURRENCY_META,
+  currencyForPetLocale,
+  detectBrowserPetCurrency,
+  formatPetMoney,
+  normalizePetCurrency,
+  petV1ListAmount,
+  petV2CompareAmount,
+  petV2SaleAmount,
+  type PetCurrency,
+} from "./currency";
 export { PetLanguageSwitcher } from "./PetLanguageSwitcher";
 export { petLocalePrefixedRoutes } from "./petLocaleRoutes";

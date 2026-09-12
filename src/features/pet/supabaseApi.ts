@@ -72,7 +72,8 @@ export function createPetFunnelApi(): PetFunnelApi {
     getOrderResults: (input) =>
       callPetFunnel("getOrderResults", input as unknown as Record<string, unknown>),
     listMyPetGalleries: () => callPetFunnel("listMyPetGalleries", {}),
-    getPublicOffer: () => callPetFunnel("getPublicOffer", {}),
+    getPublicOffer: (input) =>
+      callPetFunnel("getPublicOffer", (input || {}) as Record<string, unknown>),
   };
 }
 

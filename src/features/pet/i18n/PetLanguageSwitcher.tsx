@@ -1,6 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { currencyForPetLocale } from "./currency";
 import { PET_UI_LOCALES, type PetUiLocale, writePetLocalePreference } from "./locales";
 import { parsePetLocalePath, petPathForLocale } from "./localeRouting";
+import { writePetCurrencyPreference } from "./usePetCurrency";
 import { usePetLocale, usePetT } from "./usePetLocale";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,7 @@ export function PetLanguageSwitcher({
 
   function switchTo(next: PetUiLocale) {
     writePetLocalePreference(next);
+    writePetCurrencyPreference(currencyForPetLocale(next));
     const target = petPathForLocale(basePath, next);
     void navigate(`${target}${search}`);
     if (typeof document !== "undefined") {

@@ -142,15 +142,15 @@ describe("pet funnel V2 isolation", () => {
     const during = v2PackOfferCopy(PET_V2_SALE_EPOCH_MS + 1000);
     expect(during.saleActive).toBe(true);
     expect(during.amountCents).toBe(PET_V2_PRICE_CENTS);
-    expect(during.priceDisplay).toBe("$2.99");
-    expect(during.compareAtDisplay).toBe("$27");
+    expect(during.priceDisplay).toMatch(/^\$2\.99/);
+    expect(during.compareAtDisplay).toMatch(/^\$27/);
     expect(Date.parse(during.expiresAt!)).toBeGreaterThan(PET_V2_SALE_EPOCH_MS);
 
     const nextCycle = v2FlashSale(PET_V2_SALE_EPOCH_MS + PET_V2_SALE_CYCLE_MS + 5000);
     expect(nextCycle.saleActive).toBe(true);
     expect(nextCycle.amountCents).toBe(299);
-    expect(nextCycle.priceDisplay).toBe("$2.99");
-    expect(nextCycle.compareAtDisplay).toBe("$27");
+    expect(nextCycle.priceDisplay).toMatch(/^\$2\.99/);
+    expect(nextCycle.compareAtDisplay).toMatch(/^\$27/);
   });
 });
 

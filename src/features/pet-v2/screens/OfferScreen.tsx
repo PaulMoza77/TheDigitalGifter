@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "../../pet/components/FieldError";
 import { SubtypePicker } from "../../pet/components/SubtypePicker";
-import { usePetT } from "../../pet/i18n";
+import { usePetT, usePetCurrency } from "../../pet/i18n";
 import { V2PackOffer, v2PackOfferCopy } from "../V2PackOffer";
 import type { PetSubtype } from "../../pet/types";
 import type { PetV2Species } from "../types";
@@ -36,8 +36,12 @@ export function V2OfferScreen({
   onContinue: () => void;
 }) {
   const t = usePetT();
-  const [offer, setOffer] = useState(() => v2PackOfferCopy());
-  const refreshOffer = () => setOffer(v2PackOfferCopy());
+  const currency = usePetCurrency();
+  const [offer, setOffer] = useState(() => v2PackOfferCopy(Date.now(), currency));
+  useEffect(() => {
+    setOffer(v2PackOfferCopy(Date.now(), currency));
+  }, [currency]);
+  const refreshOffer = () => setOffer(v2PackOfferCopy(Date.now(), currency));
   return (
     <div className="space-y-6">
       <div>

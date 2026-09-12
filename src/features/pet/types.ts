@@ -335,6 +335,8 @@ export type CreatePetOrderRequest = {
   subtype?: PetSubtype | null;
   subtypeDetail?: string | null;
   funnelVariant?: "v1" | "v2" | "v3" | "v4";
+  /** Presentment currency (browser/locale detected). Server owns the amount. */
+  currency?: "usd" | "eur" | "ron" | "huf" | "pln" | "gbp";
 };
 
 export type CreatePetOrderResponse = {
@@ -342,7 +344,7 @@ export type CreatePetOrderResponse = {
   publicToken: string;
   status: Extract<PetOrderStatus, "awaiting_upload">;
   amountCents: number;
-  currency: typeof PET_CURRENCY;
+  currency: "usd" | "eur" | "ron" | "huf" | "pln" | "gbp";
   sku: typeof PET_PRODUCT_SKU;
 };
 
@@ -350,7 +352,7 @@ export type PublicPetOffer = {
   sku: typeof PET_PRODUCT_SKU;
   name: string;
   amountCents: number;
-  currency: typeof PET_CURRENCY;
+  currency: "usd" | "eur" | "ron" | "huf" | "pln" | "gbp";
   imageCount: typeof PET_SCENE_COUNT;
   videoCount: typeof PET_VIDEO_CLIP_COUNT;
   subscription: false;

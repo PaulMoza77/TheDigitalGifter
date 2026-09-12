@@ -10,8 +10,7 @@ import {
   usePetBrowserLocaleRedirect,
   usePetLocale,
   usePetT,
-  withPetLocale,
-} from "../pet/i18n";
+  withPetLocale,, usePetCurrency } from "../pet/i18n";
 import { v2PackOfferCopy } from "./V2PackOffer";
 import { petV2LandingPath } from "./analytics";
 import type { PetV2Species } from "./types";
@@ -36,8 +35,9 @@ export function V2Shell({
   usePetBrowserLocaleRedirect();
   const locale = usePetLocale();
   const t = usePetT(locale);
+  const currency = usePetCurrency();
   const landingHref = withPetLocale(petV2LandingPath(species), locale);
-  const offer = v2PackOfferCopy();
+  const offer = v2PackOfferCopy(Date.now(), currency);
   const footerText =
     footer ??
     t("v2.shell.footer", {

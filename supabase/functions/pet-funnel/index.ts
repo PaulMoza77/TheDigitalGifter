@@ -23,6 +23,13 @@ import {
   petFlashSale,
 } from "../_shared/pet/flashSale.ts";
 import {
+  formatPetMoneyServer,
+  isPetCurrency,
+  normalizePetCurrency,
+  petV1ListAmount,
+  type PetCurrency,
+} from "../_shared/pet/currency.ts";
+import {
   asString,
   decryptPublicToken,
   encryptPublicToken,
@@ -680,8 +687,29 @@ Deno.serve(async (req) => {
       const payload = typeof raw.data === "string" ? JSON.parse(raw.data) : raw.data;
       const offer = resolveServerOwnedOffer(payload);
       if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
+      const preferredCurrency = normalizePetCurrency(body.currency || body.preferredCurrency);
       const sale = petFlashSale();
-      const amountCents = applyPetFlashSaleAmount(offer.amountCents);
+      // V1 USD keeps the DB offer + flash overlay; other currencies use fixed presentment maps.
+      const amountCents =
+        preferredCurrency === "usd"
+          ? applyPetFlashSaleAmount(offer.amountCents)
+          : petV1ListAmount(preferredCurrency);
+      const compareAtCents =
+        preferredCurrency === "usd"
+          ? sale.active
+            ? sale.compareAtCents
+            : undefined
+          : petV1ListAmount(preferredCurrency);
+      const priceDisplay =
+        preferredCurrency === "usd"
+          ? formatOfferPrice(amountCents)
+          : formatPetMoneyServer(amountCents, preferredCurrency);
+      const compareAtDisplay =
+        preferredCurrency === "usd"
+          ? sale.active
+            ? sale.compareAtDisplay
+            : undefined
+          : undefined;
       const deliveryEstimate = publicDeliveryEstimate(
         String(payload?.deliveryEstimate || payload?.delivery_estimate_label || ""),
       );
@@ -689,18 +717,18 @@ Deno.serve(async (req) => {
         sku: offer.sku,
         name: "My Pet’s Secret Life",
         amountCents,
-        currency: offer.currency,
+        currency: preferredCurrency === "usd" ? offer.currency : preferredCurrency,
         imageCount: 12,
         videoCount: 2,
         subscription: false,
         active: true,
-        priceDisplay: formatOfferPrice(amountCents),
+        priceDisplay,
         version: Number(payload?.version || 1),
         deliveryEstimate,
-        compareAtCents: sale.active ? sale.compareAtCents : undefined,
-        compareAtDisplay: sale.active ? sale.compareAtDisplay : undefined,
-        saleExpiresAt: sale.expiresAt,
-        saleActive: sale.active,
+        compareAtCents,
+        compareAtDisplay,
+        saleExpiresAt: preferredCurrency === "usd" ? sale.expiresAt : null,
+        saleActive: preferredCurrency === "usd" ? sale.active : false,
       });
     }
 
@@ -713,12 +741,19 @@ Deno.serve(async (req) => {
       const offer = await loadActiveOffer(service);
       if (!offer.ok) return apiError("INVALID_REQUEST", offer.message, 503);
       const funnelVariant = resolveFunnelVariant(body.funnelVariant);
+      const preferredCurrency = normalizePetCurrency(body.currency || body.preferredCurrency);
       const amountCents =
         funnelVariant === "v3"
-          ? applyV3SaleAmount()
+          ? applyV3SaleAmount(preferredCurrency)
           : funnelVariant === "v2" || funnelVariant === "v4"
-            ? applyV2SaleAmount()
-            : offer.amountCents;
+            ? applyV2SaleAmount(Date.now(), preferredCurrency)
+            : preferredCurrency === "usd"
+              ? offer.amountCents
+              : petV1ListAmount(preferredCurrency);
+      const orderCurrency: PetCurrency =
+        funnelVariant === "v2" || funnelVariant === "v3" || funnelVariant === "v4" || preferredCurrency !== "usd"
+          ? preferredCurrency
+          : normalizePetCurrency(offer.currency);
       const priceCheck = rejectAgainstOffer(
         {
           amountCents: body.amountCents,
@@ -726,6 +761,7 @@ Deno.serve(async (req) => {
           sku: body.sku,
         },
         amountCents,
+        orderCurrency,
       );
       if (!priceCheck.ok) return apiError(priceCheck.code, priceCheck.message);
       if (!email || !email.includes("@")) return apiError("INVALID_REQUEST", "A valid email is required.");
@@ -771,7 +807,7 @@ Deno.serve(async (req) => {
         amount_cents: amountCents,
         charged_amount_cents: amountCents,
         funnel_variant: funnelVariant,
-        currency: offer.currency,
+        currency: orderCurrency,
         offer_id: offerRow?.id ?? null,
         offer_version: offerRow?.version ?? 1,
         image_count: 12,
@@ -807,7 +843,7 @@ Deno.serve(async (req) => {
         publicToken,
         status: "awaiting_upload",
         amountCents,
-        currency: offer.currency,
+        currency: orderCurrency,
         sku: offer.sku,
         funnelVariant,
       });
@@ -1042,7 +1078,7 @@ Deno.serve(async (req) => {
           eventName: "Purchase",
           pixelId: metaCapiPixelId(),
           amountCents,
-          currency: "USD",
+          currency: String(body.currency || "USD").toUpperCase(),
           sku: PET_SKU,
           hasFbc: Boolean(fbc),
           hasFbp: Boolean(fbp),
@@ -1235,11 +1271,13 @@ Deno.serve(async (req) => {
           existingView.payment_status === "no_payment_required"
         : false;
       const liveAmount = isV3Funnel(order.funnel_variant)
-        ? applyV3SaleAmount()
+        ? applyV3SaleAmount(normalizePetCurrency(order.currency))
         : isV2Funnel(order.funnel_variant) || isV4Funnel(order.funnel_variant)
-          ? applyV2SaleAmount()
+          ? applyV2SaleAmount(Date.now(), normalizePetCurrency(order.currency))
           : liveOffer.ok
-            ? liveOffer.amountCents
+            ? normalizePetCurrency(order.currency) !== "usd"
+              ? petV1ListAmount(normalizePetCurrency(order.currency))
+              : liveOffer.amountCents
             : null;
       let amountChanged = false;
       if (
@@ -1252,6 +1290,7 @@ Deno.serve(async (req) => {
           .update({
             amount_cents: liveAmount,
             charged_amount_cents: liveAmount,
+            currency: normalizePetCurrency(order.currency),
           })
           .eq("id", order.id);
         order.amount_cents = liveAmount;

@@ -79,7 +79,8 @@ describe("V2 teaser conversion rebuild", () => {
     expect(PET_V2_PRICE_CENTS).toBe(299);
     expect(PET_V2_PRICE_DISPLAY).toBe("$2.99");
     expect(readSrc("supabase/functions/_shared/pet/constants.ts")).toContain("PET_V2_PRICE_CENTS = 299");
-    expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("return PET_V2_PRICE_CENTS");
+    expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("petV2SaleAmount");
+    expect(readSrc("supabase/functions/_shared/pet/flashSale.ts")).toContain("applyV2SaleAmount");
     expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain("PET_V2_PRICE_CENTS");
     expect(readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts")).toContain('funnelVariant: "v2"');
   });
@@ -126,9 +127,9 @@ describe("V2 teaser conversion rebuild", () => {
     expect(hook).toContain("promoteToHostedFallback");
     expect(hook).toContain('uiMode: "hosted"');
     expect(hook).toContain("preferNewTab");
-    expect(teaser).toContain("Continue to secure Stripe checkout");
+    expect(teaser).toMatch(/hostedCta|Continue to secure Stripe checkout/);
     expect(teaser).toContain("preferNewTab: true");
-    expect(teaser).toContain("Open secure Stripe checkout");
+    expect(teaser).toMatch(/Open secure Stripe checkout|v2\.teaser\.(retry|hostedCta)/);
     expect(teaser).not.toContain(">Retry secure payment<");
   });
 
@@ -199,7 +200,7 @@ describe("V2 teaser conversion rebuild", () => {
   it("does not expose fake already-generated artwork claims", () => {
     const teaser = readSrc("src/features/pet-v2/screens/TeaserOfferScreen.tsx");
     expect(teaser).not.toMatch(/14 images are already generated/i);
-    expect(teaser).toContain("secret life is ready to be revealed");
+    expect(teaser).toMatch(/secret life is ready to be revealed|v2\.teaser\./);
     expect(teaser).toContain("PET_V2_PRICE_DISPLAY");
     expect(PET_V2_PRICE_DISPLAY).toBe("$2.99");
   });

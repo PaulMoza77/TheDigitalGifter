@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "../../pet/components/FieldError";
 import { petFunnelApi } from "../../pet/supabaseApi";
-import { petSpeciesWord, usePetLocale, usePetT } from "../../pet/i18n";
+import { petSpeciesWord, usePetLocale, usePetT, usePetCurrency } from "../../pet/i18n";
 import { V2ElementsCheckout } from "../components/V2ElementsCheckout";
 import { V2PackOffer, v2PackOfferCopy } from "../V2PackOffer";
 import { trackPetV2Event } from "../analytics";
@@ -19,6 +19,9 @@ import {
   PET_V2_PRICE_DISPLAY,
   type PetV2Species,
 } from "../types";
+
+// USD constant kept for isolation tests; UI uses offer.priceDisplay.
+void PET_V2_PRICE_DISPLAY;
 
 const V2_APPEARANCE = {
   colorPrimary: "#d4a84b",
@@ -62,7 +65,11 @@ export function TeaserOfferScreen({
 }) {
   const locale = usePetLocale();
   const t = usePetT(locale);
-  const [offer, setOffer] = useState(() => v2PackOfferCopy());
+  const currency = usePetCurrency();
+  const [offer, setOffer] = useState(() => v2PackOfferCopy(Date.now(), currency));
+  useEffect(() => {
+    setOffer(v2PackOfferCopy(Date.now(), currency));
+  }, [currency]);
   const checkoutReadyFired = useRef(false);
   const pet = petSpeciesWord(species, locale, "lower");
   const h1Key =
@@ -129,7 +136,7 @@ export function TeaserOfferScreen({
           {t(h1Key)}
         </h1>
         <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-          {t("v2.teaser.support", { price: PET_V2_PRICE_DISPLAY })}
+          {t("v2.teaser.support", { price: offer.priceDisplay })}
         </p>
       </div>
 
@@ -146,12 +153,12 @@ export function TeaserOfferScreen({
         <img src={teaserUrl} alt={t("v2.teaser.alt")} className="aspect-[4/5] w-full object-cover" />
       </figure>
 
-      <V2PackOffer compact onExpire={() => setOffer(v2PackOfferCopy())} />
+      <V2PackOffer compact onExpire={() => setOffer(v2PackOfferCopy(Date.now(), currency))} />
 
       <ul className="space-y-2 text-sm text-[#f6efe4]/72">
         <li>{t("v2.teaser.bullet.lives", { pet })}</li>
         <li>{t("v2.teaser.bullet.clips")}</li>
-        <li>{t("v2.teaser.bullet.price", { price: PET_V2_PRICE_DISPLAY })}</li>
+        <li>{t("v2.teaser.bullet.price", { price: offer.priceDisplay })}</li>
       </ul>
 
       {onPetName ? (

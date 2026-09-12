@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BadgeCheck, Lock, ShieldCheck, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePetLocale, usePetT } from "../../pet/i18n";
+import { usePetLocale, usePetT, usePetCurrency } from "../../pet/i18n";
 import { V2ExampleStrip, V2HeroProof } from "../V2ExampleStrip";
 import { V2ClosingCta, V2SaleLine, V2StickyCta, v2PackOfferCopy } from "../V2PackOffer";
 import type { PetV2Species } from "../types";
@@ -17,7 +17,11 @@ export function V2LandingScreen({
 }) {
   const locale = usePetLocale();
   const t = usePetT(locale);
-  const [offer, setOffer] = useState(() => v2PackOfferCopy());
+  const currency = usePetCurrency();
+  const [offer, setOffer] = useState(() => v2PackOfferCopy(Date.now(), currency));
+  useEffect(() => {
+    setOffer(v2PackOfferCopy(Date.now(), currency));
+  }, [currency]);
   const ledeKey =
     species === "cat"
       ? "v2.landing.lede.cat"
@@ -38,7 +42,7 @@ export function V2LandingScreen({
         <p className="mt-2 max-w-md text-sm leading-6 text-[#f6efe4]/72 sm:text-base sm:leading-7">
           {t(ledeKey)}
         </p>
-        <V2SaleLine onExpire={() => setOffer(v2PackOfferCopy())} />
+        <V2SaleLine onExpire={() => setOffer(v2PackOfferCopy(Date.now(), currency))} />
         <Button
           type="button"
           onClick={onUploadClick}
@@ -69,11 +73,11 @@ export function V2LandingScreen({
       </section>
 
       <V2ExampleStrip species={species} />
-      <V2ClosingCta onClick={onUploadClick} onExpire={() => setOffer(v2PackOfferCopy())} />
+      <V2ClosingCta onClick={onUploadClick} onExpire={() => setOffer(v2PackOfferCopy(Date.now(), currency))} />
       <V2StickyCta
         onClick={onUploadClick}
         label={t("v2.landing.cta")}
-        onExpire={() => setOffer(v2PackOfferCopy())}
+        onExpire={() => setOffer(v2PackOfferCopy(Date.now(), currency))}
       />
     </div>
   );

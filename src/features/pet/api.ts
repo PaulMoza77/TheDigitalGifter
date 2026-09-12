@@ -53,7 +53,7 @@ export interface PetFunnelApi {
   ): Promise<PetGenerationProgress>;
   getOrderResults(input: GetOrderResultsRequest): Promise<PetOrderResults>;
   listMyPetGalleries(): Promise<ListMyPetGalleriesResponse>;
-  getPublicOffer?(): Promise<PublicPetOffer>;
+  getPublicOffer?(input?: { currency?: string }): Promise<PublicPetOffer>;
 }
 
 export class PetApiError extends Error {
@@ -146,6 +146,7 @@ export type StartPetCheckoutInput = {
   funnelVariant?: "v1" | "v2" | "v3" | "v4";
   funnelSessionId?: string;
   uiMode?: "hosted" | "embedded" | "custom" | "elements";
+  currency?: CreatePetOrderRequest["currency"];
 };
 
 export type StartPetCheckoutResult = {
@@ -182,6 +183,7 @@ export async function startPetCheckout(
       subtype: input.subtype ?? null,
       subtypeDetail: input.subtypeDetail ?? null,
       funnelVariant: input.funnelVariant,
+      currency: input.currency,
     });
 
   const signed = await input.api.getSignedUploadUrl({
