@@ -1,5 +1,7 @@
 /** Shared Christmas Tree / Advent helpers (Deno). */
 
+import { parseFeatureFlag } from "./freeGiftClaim.ts";
+
 export const TREE_STYLES = ["classic", "snowy", "gold", "cozy", "minimal", "magical"] as const;
 export const BOX_STYLES = ["red", "gold", "green", "blue", "snow"] as const;
 export const GIFT_TYPES = ["message", "tdg_reward", "product_link", "cosmetic"] as const;
@@ -89,16 +91,18 @@ export function adventDayParts(now = new Date(), seasonYear = 2026): {
 }
 
 export function adventEnabled(): boolean {
-  const raw = asString(Deno.env.get("CHRISTMAS_ADVENT_ENABLED") || "false").toLowerCase();
-  return raw === "true" || raw === "1" || raw === "on";
+  return parseFeatureFlag(Deno.env.get("CHRISTMAS_ADVENT_ENABLED") || "false");
 }
 
 export function freeGiftEnabled(): boolean {
-  const raw = asString(Deno.env.get("CHRISTMAS_FREE_GIFT_ENABLED") || "false").toLowerCase();
-  return raw === "true" || raw === "1" || raw === "on";
+  return parseFeatureFlag(Deno.env.get("CHRISTMAS_FREE_GIFT_ENABLED") || "false");
 }
 
 export function adventCreditsEnabled(): boolean {
-  const raw = asString(Deno.env.get("CHRISTMAS_ADVENT_CREDITS_ENABLED") || "false").toLowerCase();
-  return raw === "true" || raw === "1" || raw === "on";
+  return parseFeatureFlag(Deno.env.get("CHRISTMAS_ADVENT_CREDITS_ENABLED") || "false");
+}
+
+/** Server-only lab bypass. Never honor client `__test_force` without this env. */
+export function christmasTestBypassEnabled(): boolean {
+  return parseFeatureFlag(Deno.env.get("CHRISTMAS_TEST_BYPASS") || "false");
 }

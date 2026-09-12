@@ -37,6 +37,13 @@ type RewardRow = {
   claimed: boolean;
 };
 
+type FreeGiftView = {
+  title?: string | null;
+  description?: string | null;
+  message?: string | null;
+  reward_type?: string | null;
+};
+
 type AdventStatus = {
   ok: boolean;
   season_year: number;
@@ -54,6 +61,9 @@ type AdventStatus = {
   };
   rewards: RewardRow[];
   auth_required_for_claim: boolean;
+  free_gift_enabled?: boolean;
+  production_free_gift_live?: boolean;
+  free_gift?: { already: boolean; gift: FreeGiftView | null } | null;
 };
 
 const COUNTDOWN_UNITS = [
@@ -92,8 +102,21 @@ export default function ChristmasAdventPage() {
     setBusy(true);
     setError(null);
     try {
-      const data = await treeFunnel<AdventStatus>({ action: "adventStatus" });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const data = await treeFunnel<AdventStatus>(
+        { action: "adventStatus", guest_token: getOrCreateFreeGiftGuestToken() },
+        token,
+      );
       setStatus(data);
+      if (data.free_gift?.already && data.free_gift.gift) {
+        setFreeGift({
+          title: data.free_gift.gift.title || "Christmas gift",
+          description: data.free_gift.gift.description || undefined,
+          message: data.free_gift.gift.message,
+          already: true,
+        });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.load"));
     } finally {
@@ -158,18 +181,23 @@ export default function ChristmasAdventPage() {
     setBusy(true);
     setError(null);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
       const guest = getOrCreateFreeGiftGuestToken();
       const data = await treeFunnel<{
         ok: boolean;
         already?: boolean;
         gift: { title: string; description?: string; message?: string | null };
-      }>({
-        action: "claimFreeGift",
-        guest_token: guest,
-      });
+      }>(
+        {
+          action: "claimFreeGift",
+          guest_token: guest,
+        },
+        token,
+      );
       setFreeGift({
-        title: data.gift.title,
-        description: data.gift.description,
+        title: data.gift.title || "Christmas gift",
+        description: data.gift.description || undefined,
         message: data.gift.message,
         already: data.already,
       });
@@ -366,13 +394,16 @@ export default function ChristmasAdventPage() {
         <section className="mt-10 rounded-md border border-white/15 p-4" aria-label={t("free.aria")}>
           <h2 className="font-serif text-lg">{t("free.heading")}</h2>
           <p className="mt-1 text-sm text-rose-100/70">{t("free.lede")}</p>
+          {!status?.free_gift_enabled ? (
+            <p className="mt-3 text-sm text-rose-100/60">{t("free.disabled")}</p>
+          ) : null}
           <button
             type="button"
-            className="mt-4 w-full rounded-md bg-rose-200 py-2.5 text-sm font-semibold text-slate-900 disabled:opacity-50"
-            disabled={busy}
+            className="mt-4 w-full rounded-md bg-rose-200 py-2.5 text-sm font-semibold text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={busy || !status?.free_gift_enabled || Boolean(freeGift)}
             onClick={() => void claimFreeGift()}
           >
-            {t("cta.openFree")}
+            {freeGift ? t("free.already") : t("cta.openFree")}
           </button>
           {freeGift ? (
             <div className="mt-3 text-sm text-rose-50">
