@@ -84,24 +84,36 @@ export const CHRISTMAS_SEO_CONTENT = {
     ],
     faqs: [
       {
-        q: "O que posso criar para o Natal com a TheDigitalGifter?",
-        a: "Ideias de presentes, retratos de Natal para famílias, casais e animais de estimação, um vídeo personalizado do Pai Natal, uma lista de desejos para partilhar, postais de Natal, mensagens de Natal, uma árvore digital e um calendário do Advento.",
+        q: "O que posso criar para o Natal com TheDigitalGifter?",
+        a: "Pode encontrar ideias de presentes, transformar fotos em retratos de Natal para famílias, casais e animais, iniciar a experiência do Pai Natal, criar uma lista de desejos partilhável, desenhar um cartão, escrever mensagens, decorar uma árvore digital e abrir surpresas do Advento. Escolha uma experiência nesta página e termine em minutos.",
       },
       {
         q: "O Pai Natal pode dizer o nome do meu filho?",
-        a: "Sim. Comece com o primeiro nome na página de Natal ou na experiência de Vídeo do Pai Natal e depois adicione detalhes opcionais antes de criar o vídeo. O vídeo é gerado em inglês ou romeno.",
+        a: "Pode começar pelo nome na página de Natal ou na experiência do Pai Natal e acrescentar detalhes opcionais. Os vídeos falados estão disponíveis hoje em inglês e romeno — outras línguas virão a seguir.",
       },
       {
-        q: "Preciso de saber design?",
-        a: "Não. Cada experiência de Natal é guiada — carregue uma fotografia, responda a algumas perguntas ou comece com um nome.",
+        q: "Preciso de competências de design?",
+        a: "Não. Cada experiência de Natal guia-o passo a passo — carregue uma foto, responda a algumas perguntas ou comece com um nome — e a página faz o resto.",
       },
       {
         q: "É para presentes digitais, físicos ou ambos?",
-        a: "Ambos. Use o Gift Finder e a lista de desejos para comprar em qualquer loja, e crie retratos digitais, postais e vídeos do Pai Natal para enviar.",
+        a: "Ambos. Use o Localizador e a lista de desejos para comprar em qualquer lado, e crie retratos e cartões digitais para descarregar ou partilhar de imediato.",
       },
       {
         q: "Funciona no meu telemóvel?",
-        a: "Sim. O centro de Natal e todas as experiências foram pensados para funcionar tanto em telemóveis como em computador.",
+        a: "Sim — o hub de Natal e as experiências de produto foram pensados primeiro para telemóvel e também funcionam no computador.",
+      },
+      {
+        q: "A foto da minha família é privada?",
+        a: "Os envios são usados para criar o seu retrato ou cartão. As experiências para crianças são privacy-first e esperam um pai ou tutor. Quando o resultado estiver pronto, descarrega-o em privado — não publicamos as suas fotos.",
+      },
+      {
+        q: "Quanto tempo demora a criar algo?",
+        a: "A maioria das experiências demora poucos minutos. O Localizador e as mensagens são quase instantâneos. Retratos, cartões e Pai Natal guiam-no passo a passo; as criações pagas continuam após o checkout.",
+      },
+      {
+        q: "Preciso de uma conta para começar?",
+        a: "Pode explorar e começar de imediato. Algumas experiências pedem um e-mail no registo ou no pagamento para guardar o progresso, receber o resultado ou juntar-se ao Christmas Club.",
       },
     ],
   },

@@ -62,6 +62,19 @@ describe("christmas SEO SSR registry", () => {
     expect(html).toContain("parent or guardian permission");
   });
 
+  it("re-applying SEO onto a prerendered shell does not duplicate FAQ answers", () => {
+    const template = readFileSync(join(process.cwd(), "index.html"), "utf8");
+    const once = applyChristmasSeo(template, "/christmas");
+    const twice = applyChristmasSeo(once, "/christmas");
+    const questions = [...twice.matchAll(/<h3>([^<]+)<\/h3>/g)].map((m) => m[1]);
+    expect(new Set(questions).size).toBe(questions.length);
+    expect(questions).toContain("Is my family’s photo private?");
+    expect(questions).toContain("How long does creating something take?");
+    expect(twice).toContain("<article><h3>");
+    expect(twice).not.toMatch(/<\/section><\/div><div><h3>/);
+    expect(twice).not.toMatch(/<\/section><\/div><article><h3>/);
+  });
+
   it("ships send-a-gift with its own canonical and localized SSR", () => {
     const template = readFileSync(join(process.cwd(), "index.html"), "utf8");
     const en = applyChristmasSeo(template, "/christmas/send-a-gift");

@@ -77,23 +77,35 @@ export const CHRISTMAS_CONTENT_DEPTH = {
     faqs: [
       {
         q: "What can I create for Christmas with TheDigitalGifter?",
-        a: "Gift ideas, Christmas portraits for families, couples and pets, a personalized Santa video, a shareable wishlist, Christmas cards, Christmas messages, a digital tree, and an Advent calendar.",
+        a: "You can find gift ideas, turn photos into Christmas portraits for families, couples, and pets, create a personalized Santa video, build a shareable wishlist, design a Christmas card, write Christmas messages, decorate a digital tree, and open Advent surprises. Pick one experience on this page and finish in minutes.",
       },
       {
         q: "Can Santa say my child’s name?",
-        a: "Yes. Start with their first name on the Christmas page or Santa Video experience, then add optional details before creating the video.",
+        a: "Enter their first name on this Christmas page or open Santa Video, add optional details like age, something they did well, a hobby, or a wish, then create the video. Spoken personalized Santa is available in English and Romanian today.",
       },
       {
         q: "Do I need design skills?",
-        a: "No. Each Christmas experience is guided — upload a photo, answer a few questions, or start with a name.",
+        a: "No design skills needed. Each Christmas experience walks you through the next step — upload a photo, answer a few questions, or start with a name — and the page handles the rest.",
       },
       {
         q: "Is this for digital gifts, physical gifts, or both?",
-        a: "Both. Use the Gift Finder and wishlist for shopping anywhere, and create digital portraits, cards, and Santa videos to send.",
+        a: "Both. Use the Gift Finder and wishlist for shopping anywhere, and create digital portraits, cards, and Santa videos you can download or share instantly.",
       },
       {
         q: "Will this work on my phone?",
-        a: "Yes. The Christmas hub and product experiences are designed to work on phones as well as desktops.",
+        a: "Yes. The Christmas hub and product experiences are built for phones first and also work on desktop, so you can create while you’re on the go.",
+      },
+      {
+        q: "Is my family’s photo private?",
+        a: "Uploads are used to create your portrait or card. Kids experiences are privacy-first and expect a parent or guardian. When a result is ready, you download it privately — we don’t post your photos publicly.",
+      },
+      {
+        q: "How long does creating something take?",
+        a: "Most experiences take a few minutes. Gift Finder and Christmas messages are nearly instant. Portraits, cards, and Santa videos guide you step by step; paid creations continue after checkout.",
+      },
+      {
+        q: "Do I need an account to start?",
+        a: "You can explore and start creating right away. Some experiences ask for email at join or checkout so you can save progress, receive your result, or join the Christmas Club.",
       },
     ],
     markers: [
@@ -103,6 +115,8 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       "Get a Personalized Message From Santa",
       "Create and Share a Christmas Wishlist",
       "Create a Personalized Christmas Card",
+      "Is my family’s photo private?",
+      "How long does creating something take?",
     ],
   },
 

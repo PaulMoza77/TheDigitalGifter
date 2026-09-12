@@ -10,8 +10,8 @@ export function FaqScene({ locale }: { locale: ChristmasLandingLocale }) {
       <div className="xmas-faq">
         <p className="xmas-kicker">Christmas</p>
         <h2 id="christmas-faq-title">{t("faq.h2")}</h2>
-        {LANDING_FAQS.map((item) => (
-          <details key={item.qKey}>
+        {LANDING_FAQS.map((item, index) => (
+          <details key={item.qKey} open={index === 0}>
             <summary>{t(item.qKey)}</summary>
             <p>{t(item.aKey)}</p>
           </details>

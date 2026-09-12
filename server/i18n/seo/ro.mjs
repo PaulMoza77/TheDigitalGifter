@@ -104,23 +104,35 @@ export const CHRISTMAS_SEO_CONTENT = {
     faqs: [
       {
         q: "Ce pot crea de Crăciun cu TheDigitalGifter?",
-        a: "Idei de cadouri, portrete de Crăciun pentru familii, cupluri și animale de companie, un video personalizat de la Moș Crăciun, o listă de dorințe care se poate partaja, felicitări, mesaje, un brad digital și un calendar de Advent.",
+        a: "Poți găsi idei de cadouri, transforma poze în portrete de Crăciun pentru familii, cupluri și animale, crea un video personalizat de la Moș Crăciun, construi o listă de dorințe de partajat, crea o felicitare, scrie mesaje, decora un brad digital și deschide surprize de Advent. Alege o experiență de pe această pagină și termină în câteva minute.",
       },
       {
         q: "Poate Moș Crăciun să spună numele copilului meu?",
-        a: "Da. Numele destinatarului este un câmp principal de personalizare pe pagina de Crăciun sau în experiența Santa Video, iar Moș Crăciun îl spune în video — inclusiv în limba română.",
-      },
-      {
-        q: "Este pentru cadouri digitale, fizice sau ambele?",
-        a: "Ambele. Folosește Găsitorul de cadouri și lista de dorințe pentru cumpărături din orice magazin, apoi creează portrete digitale, felicitări și videoclipuri de la Moș Crăciun pe care le poți trimite direct.",
+        a: "Introdu prenumele pe această pagină de Crăciun sau deschide Video cu Moș Crăciun, adaugă detalii opționale precum vârsta, ceva ce au făcut bine, un hobby sau o dorință, apoi creează videoul. Moș Crăciun vorbește personalizat în română și engleză.",
       },
       {
         q: "Am nevoie de cunoștințe de design?",
-        a: "Nu. Fiecare experiență de Crăciun este ghidată pas cu pas — încarci o fotografie, răspunzi la câteva întrebări sau începi cu un nume.",
+        a: "Nu ai nevoie de design. Fiecare experiență de Crăciun te ghidează pas cu pas — încarci o fotografie, răspunzi la câteva întrebări sau începi cu un nume — iar pagina face restul.",
+      },
+      {
+        q: "Este pentru cadouri digitale, fizice sau ambele?",
+        a: "Ambele. Folosește Găsitorul de cadouri și lista de dorințe pentru cumpărături din orice magazin, apoi creează portrete digitale, felicitări și videoclipuri de la Moș Crăciun pe care le poți descărca sau partaja imediat.",
       },
       {
         q: "Funcționează pe telefon?",
-        a: "Da. Hub-ul de Crăciun și toate experiențele de produs sunt gândite să funcționeze la fel de bine pe telefon și pe desktop.",
+        a: "Da — hub-ul de Crăciun și experiențele de produs sunt făcute întâi pentru telefon și funcționează la fel de bine pe desktop.",
+      },
+      {
+        q: "Poza familiei mele este privată?",
+        a: "Încărcările sunt folosite ca să creezi portretul sau felicitarea. Experiențele pentru copii sunt privacy-first și presupun un părinte sau tutore. Când rezultatul e gata, îl descarci privat — nu publicăm pozele tale.",
+      },
+      {
+        q: "Cât durează să creez ceva?",
+        a: "Majoritatea experiențelor durează câteva minute. Găsitorul de cadouri și mesajele sunt aproape instant. Portretele, felicitările și video-urile cu Moș te ghidează pas cu pas; creațiile plătite continuă după checkout.",
+      },
+      {
+        q: "Am nevoie de un cont ca să încep?",
+        a: "Poți explora și începe să creezi imediat. Unele experiențe cer email la înscriere sau checkout ca să salvezi progresul, să primești rezultatul sau să te alături Christmas Club.",
       },
     ],
   },
