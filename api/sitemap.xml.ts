@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import { listChristmasSeoSitemapRows } from "./_lib/christmas/seoPages";
+import { sitemapEntriesForRows } from "../src/features/christmas/seo/factory";
 import { christmasSitemapPaths } from "../server/christmasIndexing.mjs";
 import {
   buildChristmasHreflangAlternates,
@@ -155,6 +157,36 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     }
 
     const urls = [...fallback];
+
+    try {
+      const christmasRows = await listChristmasSeoSitemapRows();
+      const lastmodByPath = new Map<string, string>();
+      for (const row of christmasRows) {
+        lastmodByPath.set(
+          `${row.canonical_path}:${row.locale}`,
+          getLastMod(row.updated_at, row.created_at),
+        );
+      }
+      for (const entry of sitemapEntriesForRows(christmasRows)) {
+        urls.push(
+          createUrlXml({
+            loc: entry.loc,
+            lastmod: lastmodByPath.get(`${entry.canonicalPath}:${entry.locale}`),
+            changefreq: "weekly",
+            priority: entry.locale === "en" ? "0.8" : "0.7",
+            alternates: entry.alternates.map((alt) => ({
+              hreflang: alt.locale,
+              href: alt.href,
+            })),
+          }),
+        );
+      }
+    } catch (clusterError) {
+      console.error(
+        "[sitemap.xml] christmas cluster:",
+        clusterError instanceof Error ? clusterError.name : "unknown",
+      );
+    }
 
     for (const page of (seoPages ?? []) as SeoPageRow[]) {
       if (!page.page_type || !page.slug) continue;
