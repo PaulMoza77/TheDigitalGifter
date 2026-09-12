@@ -1,59 +1,19 @@
 name: deploy-static-github-pages
 
-# Free static hosting — works when Vercel Hobby blocks production (commercial / spend pause).
-# One-time: GitHub repo → Settings → Pages → Source: Deploy from branch → gh-pages / root
-# DNS: point www CNAME to paulmoza77.github.io (or keep Vercel until VPS cutover)
+# DISABLED: GitHub Pages is not a TDG production deployment path.
+# Canonical path: Cursor Cloud Agent → bash scripts/deploy-production.sh → SSH → VPS.
+# GitHub is source control only for TDG production origin.
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "supabase/**"
-      - "docs/**"
-      - "**/*.md"
-
-permissions:
-  contents: write
-
-concurrency:
-  group: gh-pages
-  cancel-in-progress: true
 
 jobs:
-  deploy:
+  disabled:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Install and build static bundle
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: GitHub Pages production deploy is forbidden
         run: |
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
-            echo "::error::VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in Production secrets for static build."
-            exit 2
-          fi
-          npm ci
-          node scripts/prepare-static-deploy.mjs
-
-      - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          publish_branch: gh-pages
-          force_orphan: true
-          user_name: github-actions[bot]
-          user_email: 41898282+github-actions[bot]@users.noreply.github.com
-          commit_message: "Deploy static site from ${{ github.sha }}"
+          echo "BLOCKED: TDG production must not deploy via GitHub Pages / Actions."
+          echo "Use Cursor Cloud Agent secrets and: bash scripts/deploy-production.sh"
+          exit 2

@@ -1,8 +1,8 @@
 name: deploy-vercel-production
 
-# DISABLED: TDG production origin is the Mozas VPS (thedigitalgifter.com / www).
-# Keep this file so existing Vercel deployments remain as rollback until the
-# founder confirms a live payment. Do not auto-publish to Vercel.
+# DISABLED: TDG production origin is the Mozas VPS.
+# NEVER deploy TDG through Vercel. Canonical path:
+#   Cursor Cloud Agent → bash scripts/deploy-production.sh → SSH → VPS
 
 on:
   workflow_dispatch:
@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Vercel production deploy is disabled
+      - name: Vercel production deploy is forbidden
         run: |
-          echo "TDG production is Mozas VPS. This workflow does not deploy."
-          echo "Existing Vercel deployments are rollback-only until live payment is confirmed."
+          echo "BLOCKED: TDG production deploy via Vercel is forbidden."
+          echo "Use Cursor Cloud Agent secrets and: bash scripts/deploy-production.sh"
+          exit 2

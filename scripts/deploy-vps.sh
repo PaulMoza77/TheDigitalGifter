@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Deploy TheDigitalGifter application source to the authorized Mozas VPS and
-# start the Docker origin. Never reports success on skip or failure.
+# Internal Mozas VPS sync/build/restart helper for TDG.
+#
+# Canonical production entrypoint for agents and humans:
+#   bash scripts/deploy-production.sh
 #
 # Required: MOZAS_SSH_HOST, MOZAS_SSH_PRIVATE_KEY
 # MOZAS_SSH_USER must be mozas on this host (other values are ignored).
 # VITE_* are read from the VPS secrets file, not from this machine.
-# Do not use VPS_* variables.
+# Do not use VPS_* variables. Do not deploy via Vercel or GitHub Actions.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
