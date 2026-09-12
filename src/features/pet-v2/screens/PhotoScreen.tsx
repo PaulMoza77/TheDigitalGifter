@@ -3,9 +3,9 @@ import { ImagePlus, Replace, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "../../pet/components/FieldError";
 import { SubtypePicker } from "../../pet/components/SubtypePicker";
+import { petSpeciesWord, usePetLocale, usePetT } from "../../pet/i18n";
 import type { PetSubtype } from "../../pet/types";
 import type { PetV2Species } from "../types";
-import { speciesConfirmLabel } from "../../pet-funnel-shared/speciesConfirm";
 
 export function V2PhotoScreen({
   species,
@@ -40,7 +40,9 @@ export function V2PhotoScreen({
   speciesConfirmed?: boolean;
   onSpeciesConfirmed?: (confirmed: boolean) => void;
 }) {
-  const pet = species === "cat" ? "cat" : species === "other" ? "pet" : "dog";
+  const locale = usePetLocale();
+  const t = usePetT(locale);
+  const pet = petSpeciesWord(species, locale, "lower");
   const confirmKind = species === "dog" || species === "cat" ? species : null;
   const confirmed = Boolean(speciesConfirmed);
   const canGenerate = Boolean(previewUrl) && !generating && (confirmKind ? confirmed : true);
@@ -48,9 +50,9 @@ export function V2PhotoScreen({
   return (
     <div className="space-y-6 pb-28">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-[#f6efe4]">One clear photo.</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-[#f6efe4]">{t("v2.photo.h1")}</h1>
         <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-          Face toward the camera, both eyes visible, even light. One {pet} only — no group shots or heavy filters.
+          {t("v2.photo.lede", { pet })}
         </p>
       </div>
 
@@ -58,7 +60,7 @@ export function V2PhotoScreen({
         <div className="overflow-hidden rounded-2xl border border-[#f6efe4]/12 bg-[#1a1410]">
           <img
             src={previewUrl}
-            alt={fileName ? `Selected ${fileName}` : "Selected pet photo"}
+            alt={fileName ? t("v2.photo.selectedNamed", { fileName }) : t("v2.photo.selectedAlt")}
             className="aspect-[4/5] w-full object-cover"
           />
           <div className="flex gap-2 p-3">
@@ -69,7 +71,7 @@ export function V2PhotoScreen({
               onClick={() => inputRef.current?.click()}
             >
               <Replace className="h-4 w-4" />
-              Replace
+              {t("v2.photo.replace")}
             </Button>
             <Button
               type="button"
@@ -78,7 +80,7 @@ export function V2PhotoScreen({
               onClick={onClear}
             >
               <Trash2 className="h-4 w-4" />
-              Remove
+              {t("v2.photo.remove")}
             </Button>
           </div>
         </div>
@@ -91,8 +93,8 @@ export function V2PhotoScreen({
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#d4a84b] text-[#1a140e]">
             <ImagePlus className="h-5 w-5" />
           </span>
-          <span className="mt-3 text-base font-semibold">Choose a photo</span>
-          <span className="mt-1 text-sm text-[#f6efe4]/65">JPEG, PNG, or WebP · 15 MB max</span>
+          <span className="mt-3 text-base font-semibold">{t("v2.photo.choose")}</span>
+          <span className="mt-1 text-sm text-[#f6efe4]/65">{t("v2.photo.formats")}</span>
         </button>
       )}
 
@@ -111,7 +113,7 @@ export function V2PhotoScreen({
             disabled={generating}
             onChange={(event) => onSpeciesConfirmed(event.target.checked)}
           />
-          <span>{speciesConfirmLabel(confirmKind)}</span>
+          <span>{t(confirmKind === "cat" ? "v2.photo.confirm.cat" : "v2.photo.confirm.dog")}</span>
         </label>
       ) : null}
 
@@ -121,7 +123,7 @@ export function V2PhotoScreen({
         onClick={onGenerate}
         className="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63] disabled:opacity-40"
       >
-        See my secret-life teaser
+        {t("v2.photo.cta")}
       </Button>
       {onViewPreview ? (
         <button
@@ -130,7 +132,7 @@ export function V2PhotoScreen({
           onClick={onViewPreview}
           className="block w-full text-center text-sm text-[#f6efe4]/60 underline-offset-4 hover:underline"
         >
-          View my teaser
+          {t("v2.photo.viewTeaser")}
         </button>
       ) : null}
     </div>

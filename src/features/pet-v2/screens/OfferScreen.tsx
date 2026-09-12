@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "../../pet/components/FieldError";
 import { SubtypePicker } from "../../pet/components/SubtypePicker";
+import { usePetT } from "../../pet/i18n";
 import { V2PackOffer, v2PackOfferCopy } from "../V2PackOffer";
 import type { PetSubtype } from "../../pet/types";
 import type { PetV2Species } from "../types";
@@ -34,33 +35,30 @@ export function V2OfferScreen({
   onSubtype: (subtype: PetSubtype, detail?: string) => void;
   onContinue: () => void;
 }) {
+  const t = usePetT();
   const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const refreshOffer = () => setOffer(v2PackOfferCopy());
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-[#f6efe4]">Unlock the collection</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-[#f6efe4]">{t("v2.offer.h1")}</h1>
         <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-          {offer.headline}. One-time. No subscription.
+          {t("v2.offer.lede", { headline: t("v2.pack.headline", { price: offer.priceDisplay }) })}
         </p>
       </div>
       <V2PackOffer onExpire={refreshOffer} />
       <ul className="space-y-2 text-sm text-[#f6efe4]/72">
-        <li>12 secret lives of the same pet</li>
-        <li>2 mini cinematic clips</li>
-        <li>Usually ready a few minutes after payment</li>
-        <li>If a paid result does not recognizably look like your pet, we remake it</li>
+        <li>{t("v2.offer.bullet.lives")}</li>
+        <li>{t("v2.offer.bullet.clips")}</li>
+        <li>{t("v2.offer.bullet.ready")}</li>
+        <li>{t("v2.offer.bullet.remake")}</li>
       </ul>
       {species === "other" ? (
-        <SubtypePicker
-          value={subtype}
-          detail={subtypeDetail}
-          onChange={onSubtype}
-        />
+        <SubtypePicker value={subtype} detail={subtypeDetail} onChange={onSubtype} />
       ) : null}
       <div>
         <Label htmlFor="v2-pet-name" className="text-sm font-medium text-[#f6efe4]">
-          Pet’s name
+          {t("v2.teaser.petName")}
         </Label>
         <Input
           id="v2-pet-name"
@@ -74,7 +72,7 @@ export function V2OfferScreen({
       </div>
       <div>
         <Label htmlFor="v2-email" className="text-sm font-medium text-[#f6efe4]">
-          Email for the gallery
+          {t("v2.teaser.email")}
         </Label>
         <Input
           id="v2-email"
@@ -95,11 +93,9 @@ export function V2OfferScreen({
         className="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63] disabled:opacity-40"
       >
         <Lock className="h-4 w-4" />
-        {busy ? "Opening secure checkout…" : `Get 12 lives + 2 clips for ${offer.priceDisplay}`}
+        {busy ? t("v2.offer.opening") : t("v2.offer.cta", { price: offer.priceDisplay })}
       </Button>
-      <p className="text-center text-xs text-[#f6efe4]/50">
-        Secure one-time Stripe checkout. No subscription.
-      </p>
+      <p className="text-center text-xs text-[#f6efe4]/50">{t("v2.offer.fine")}</p>
     </div>
   );
 }

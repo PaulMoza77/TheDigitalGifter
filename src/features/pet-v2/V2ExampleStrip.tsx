@@ -1,26 +1,27 @@
 import type { ReactNode } from "react";
 import {
   PET_DEMO_CLIP_IDS,
-  PET_OTHER_SUBJECTS,
   PET_SCENES,
   petSourceImage,
   sceneHasMotionClip,
 } from "../pet/catalog";
-import { mixedOtherGalleryLabel } from "../pet/croGuards";
 import { AutoSceneClip, SceneImage } from "../pet/components/SceneCard";
+import { petSpeciesWord, petT, usePetLocale, usePetT } from "../pet/i18n";
 import type { PetSceneId } from "../pet/types";
 import type { PetV2Species } from "./types";
 
 function ClipBadge() {
+  const t = usePetT();
   return (
     <span className="pointer-events-none absolute left-2 top-2 z-10 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-white">
-      5s clip
+      {t("chrome.clipBadge")}
     </span>
   );
 }
 
-function overlayTitle(species: PetV2Species, id: PetSceneId, sceneTitle: string) {
-  return species === "other" ? PET_OTHER_SUBJECTS[id] : sceneTitle;
+function overlayTitle(species: PetV2Species, id: PetSceneId, sceneTitle: string, locale: import("../pet/i18n").PetUiLocale) {
+  if (species === "other") return petT(`other.${id}`, locale);
+  return petT(`scene.${id}.title`, locale) || sceneTitle;
 }
 
 function HeroTile({ children }: { children: ReactNode }) {
@@ -29,14 +30,21 @@ function HeroTile({ children }: { children: ReactNode }) {
 
 /** Photos and autoplaying clips first — what you get, before the copy. */
 export function V2HeroProof({ species }: { species: PetV2Species }) {
-  const petLabel = species === "cat" ? "cat" : species === "other" ? "pet" : "Golden Retriever";
+  const locale = usePetLocale();
+  const t = usePetT(locale);
+  const petLabel =
+    species === "other"
+      ? petSpeciesWord("other", locale, "lower")
+      : species === "cat"
+        ? petSpeciesWord("cat", locale, "lower")
+        : t("species.golden");
   const sceneSpecies = species === "other" ? "other" : species;
 
   if (species === "other") {
     return (
-      <section aria-label="Example portraits and clips" className="space-y-2">
+      <section aria-label={t("v2.landing.proofAria")} className="space-y-2">
         <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#d4a84b]">
-          {mixedOtherGalleryLabel()}
+          {t("other.mixedGallery")}
         </p>
         <div className="grid grid-cols-2 gap-2">
           {(["formula-racer", "spa-bathtub", "royal-portrait", "astronaut"] as const).map((id, index) => (
@@ -45,7 +53,7 @@ export function V2HeroProof({ species }: { species: PetV2Species }) {
                 <AutoSceneClip
                   sceneId={id}
                   species={sceneSpecies}
-                  alt={`${overlayTitle(species, id, id)} mini clip`}
+                  alt={t("v2.landing.clipAlt", { title: overlayTitle(species, id, id, locale) })}
                   eager={index < 2}
                   className="aspect-[3/4] h-full w-full object-cover"
                 />
@@ -53,14 +61,14 @@ export function V2HeroProof({ species }: { species: PetV2Species }) {
                 <SceneImage
                   sceneId={id}
                   species={sceneSpecies}
-                  alt={`${overlayTitle(species, id, id)} example`}
+                  alt={t("v2.landing.exampleAlt", { title: overlayTitle(species, id, id, locale) })}
                   eager={index < 2}
                   className="aspect-[3/4] h-full w-full object-cover"
                 />
               )}
               {sceneHasMotionClip(id) ? <ClipBadge /> : null}
               <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2.5 pb-2.5 pt-8 text-sm font-semibold text-white">
-                {overlayTitle(species, id, PET_SCENES.find((scene) => scene.id === id)?.title ?? id)}
+                {overlayTitle(species, id, PET_SCENES.find((scene) => scene.id === id)?.title ?? id, locale)}
               </figcaption>
             </HeroTile>
           ))}
@@ -70,42 +78,42 @@ export function V2HeroProof({ species }: { species: PetV2Species }) {
   }
 
   return (
-    <section aria-label="Example portraits and clips" className="space-y-2">
+    <section aria-label={t("v2.landing.proofAria")} className="space-y-2">
       <div className="grid grid-cols-2 gap-2">
         <HeroTile>
           <img
             src={petSourceImage(species)}
-            alt={`Original photo of the demo ${petLabel}`}
+            alt={t("v2.landing.originalAlt", { pet: petLabel })}
             width={360}
             height={480}
             className="aspect-[3/4] h-full w-full object-cover"
             fetchPriority="high"
           />
           <figcaption className="absolute left-2 top-2 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-white">
-            Before
+            {t("chrome.before")}
           </figcaption>
         </HeroTile>
         <HeroTile>
           <SceneImage
             sceneId="formula-racer"
             species={species}
-            alt={`Formula 1 driver preview of the same demo ${petLabel}`}
+            alt={t("v2.landing.afterAlt", { pet: petLabel })}
             eager
             className="aspect-[3/4] h-full w-full object-cover"
           />
           <figcaption className="absolute left-2 top-2 z-10 rounded-full bg-[#d4a84b] px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-[#1a140e]">
-            After
+            {t("chrome.after")}
           </figcaption>
         </HeroTile>
         {PET_DEMO_CLIP_IDS.map((id) => {
           const scene = PET_SCENES.find((item) => item.id === id);
-          const title = overlayTitle(species, id, scene?.title ?? id);
+          const title = overlayTitle(species, id, scene?.title ?? id, locale);
           return (
             <HeroTile key={id}>
               <AutoSceneClip
                 sceneId={id}
                 species={sceneSpecies}
-                alt={`${title} mini clip`}
+                alt={t("v2.landing.clipAlt", { title })}
                 eager
                 className="aspect-[3/4] h-full w-full object-cover"
               />
@@ -122,19 +130,26 @@ export function V2HeroProof({ species }: { species: PetV2Species }) {
 }
 
 export function V2ExampleStrip({ species }: { species: PetV2Species }) {
-  const petLabel = species === "cat" ? "cat" : species === "other" ? "pet" : "Golden Retriever";
+  const locale = usePetLocale();
+  const t = usePetT(locale);
+  const petLabel =
+    species === "other"
+      ? petSpeciesWord("other", locale, "lower")
+      : species === "cat"
+        ? petSpeciesWord("cat", locale, "lower")
+        : t("species.golden");
   const sceneSpecies = species === "other" ? "other" : species;
 
   return (
     <section aria-labelledby="v2-lives" className="space-y-3">
       <div>
         <h2 id="v2-lives" className="text-lg font-semibold tracking-tight text-[#f6efe4]">
-          All 12 secret lives
+          {t("v2.landing.livesH2")}
         </h2>
         <p className="mt-1 text-sm text-[#f6efe4]/65">
           {species === "other"
-            ? "Twelve portraits. One photo. Many kinds of pets."
-            : `Twelve portraits of the same ${petLabel} — every world included. 2 mini clips included.`}
+            ? t("v2.landing.livesLede.other")
+            : t("v2.landing.livesLede.dog", { pet: petLabel })}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -143,13 +158,15 @@ export function V2ExampleStrip({ species }: { species: PetV2Species }) {
             <SceneImage
               sceneId={scene.id}
               species={sceneSpecies}
-              alt={`${overlayTitle(species, scene.id, scene.title)} example`}
+              alt={t("v2.landing.exampleAlt", {
+                title: overlayTitle(species, scene.id, scene.title, locale),
+              })}
               eager={index < 2}
               className="aspect-[3/4] h-full w-full object-cover"
             />
             {sceneHasMotionClip(scene.id) ? <ClipBadge /> : null}
             <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2.5 pb-2.5 pt-8 text-sm font-semibold text-white">
-              {overlayTitle(species, scene.id, scene.title)}
+              {overlayTitle(species, scene.id, scene.title, locale)}
             </figcaption>
           </figure>
         ))}

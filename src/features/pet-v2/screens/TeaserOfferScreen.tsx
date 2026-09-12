@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "../../pet/components/FieldError";
 import { petFunnelApi } from "../../pet/supabaseApi";
+import { petSpeciesWord, usePetLocale, usePetT } from "../../pet/i18n";
 import { V2ElementsCheckout } from "../components/V2ElementsCheckout";
 import { V2PackOffer, v2PackOfferCopy } from "../V2PackOffer";
 import { trackPetV2Event } from "../analytics";
@@ -13,11 +14,9 @@ import {
   validateAndUpdateV2OrderContact,
   v2CheckoutLoadingCopy,
 } from "../useV2EmbeddedCheckout";
-import { v2PayButtonLabel } from "../v2CheckoutHold";
 import { getPetV2SessionId } from "../session";
 import {
   PET_V2_PRICE_DISPLAY,
-  V2_TEASER_SUPPORT,
   type PetV2Species,
 } from "../types";
 
@@ -29,16 +28,6 @@ const V2_APPEARANCE = {
   borderRadius: "16px",
   fontFamily: "system-ui, sans-serif",
 };
-
-function teaserHeadline(species: PetV2Species): string {
-  const label = species === "cat" ? "cat" : species === "other" ? "pet" : "dog";
-  return `Your ${label}’s secret life is ready to be revealed.`;
-}
-
-function speciesPayButtonLabel(species: PetV2Species) {
-  const possessive = species === "cat" ? "Cat’s" : species === "other" ? "Pet’s" : "Dog’s";
-  return (payLabel: string) => v2PayButtonLabel(payLabel).replace("Dog’s", possessive);
-}
 
 export function TeaserOfferScreen({
   teaserUrl,
@@ -71,8 +60,15 @@ export function TeaserOfferScreen({
   onPaymentAttempt?: () => void;
   onPaymentFailed?: (detail?: { failureCode?: string | null }) => void;
 }) {
+  const locale = usePetLocale();
+  const t = usePetT(locale);
   const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const checkoutReadyFired = useRef(false);
+  const pet = petSpeciesWord(species, locale, "lower");
+  const h1Key =
+    species === "cat" ? "v2.teaser.h1.cat" : species === "other" ? "v2.teaser.h1.other" : "v2.teaser.h1.dog";
+  const payKey =
+    species === "cat" ? "v2.teaser.payCat" : species === "other" ? "v2.teaser.payPet" : "v2.teaser.payDog";
 
   useEffect(() => {
     if (!checkout.checkoutReady || !checkout.orderId || !checkout.publicToken) return;
@@ -114,7 +110,6 @@ export function TeaserOfferScreen({
     Boolean(checkout.orderId && checkout.publicToken) || checkout.showHostedFallback;
   const showHostedFallback =
     !showExpired && !providerBlocked && (checkout.showHostedFallback || (Boolean(checkout.initError) && canHosted));
-  // Retry only when there is no recoverable order for hosted Stripe.
   const showRetry =
     Boolean(checkout.initError) && !showExpired && !showHostedFallback && !providerBlocked;
   const showCheckout =
@@ -131,9 +126,11 @@ export function TeaserOfferScreen({
     <div className="space-y-6 overflow-x-hidden pb-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[#f6efe4] sm:text-3xl">
-          {teaserHeadline(species)}
+          {t(h1Key)}
         </h1>
-        <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">{V2_TEASER_SUPPORT}</p>
+        <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
+          {t("v2.teaser.support", { price: PET_V2_PRICE_DISPLAY })}
+        </p>
       </div>
 
       {providerBlocked ? (
@@ -146,25 +143,22 @@ export function TeaserOfferScreen({
       ) : null}
 
       <figure className="overflow-hidden rounded-[28px] border border-[#d4a84b]/30 bg-[#1a1410]">
-        <img
-          src={teaserUrl}
-          alt="Blurred preview of your pet’s secret life"
-          className="aspect-[4/5] w-full object-cover"
-        />
+        <img src={teaserUrl} alt={t("v2.teaser.alt")} className="aspect-[4/5] w-full object-cover" />
       </figure>
 
       <V2PackOffer compact onExpire={() => setOffer(v2PackOfferCopy())} />
 
       <ul className="space-y-2 text-sm text-[#f6efe4]/72">
-        <li>12 secret lives of the same {species === "cat" ? "cat" : species === "other" ? "pet" : "dog"}</li>
-        <li>2 mini cinematic clips</li>
-        <li>One-time {PET_V2_PRICE_DISPLAY} payment — no subscription</li>
+        <li>{t("v2.teaser.bullet.lives", { pet })}</li>
+        <li>{t("v2.teaser.bullet.clips")}</li>
+        <li>{t("v2.teaser.bullet.price", { price: PET_V2_PRICE_DISPLAY })}</li>
       </ul>
 
       {onPetName ? (
         <div>
           <Label htmlFor="v2-pet-name" className="text-sm font-medium text-[#f6efe4]">
-            Pet’s name <span className="font-normal text-[#f6efe4]/45">(optional)</span>
+            {t("v2.teaser.petName")}{" "}
+            <span className="font-normal text-[#f6efe4]/45">{t("chrome.optional")}</span>
           </Label>
           <Input
             id="v2-pet-name"
@@ -181,7 +175,8 @@ export function TeaserOfferScreen({
       {onEmail ? (
         <div>
           <Label htmlFor="v2-email" className="text-sm font-medium text-[#f6efe4]">
-            Email for the gallery <span className="font-normal text-[#f6efe4]/45">(optional)</span>
+            {t("v2.teaser.email")}{" "}
+            <span className="font-normal text-[#f6efe4]/45">{t("chrome.optional")}</span>
           </Label>
           <Input
             id="v2-email"
@@ -198,11 +193,11 @@ export function TeaserOfferScreen({
 
       <div
         className="min-h-[180px] overflow-hidden rounded-2xl border border-[#f6efe4]/10 bg-[#1a1410]/60 p-4"
-        aria-label="Secure payment"
+        aria-label={t("v2.teaser.payAria")}
       >
         {checkout.loading && !checkout.checkoutReady && !showExpired && !showHostedFallback && !providerBlocked ? (
           <p className="py-8 text-center text-sm text-[#f6efe4]/55" role="status">
-            {v2CheckoutLoadingCopy(checkout.loadingPhase)}
+            {v2CheckoutLoadingCopy(checkout.loadingPhase, locale)}
           </p>
         ) : null}
 
@@ -217,7 +212,7 @@ export function TeaserOfferScreen({
               className="h-11 w-full rounded-full border-[#f6efe4]/20 bg-transparent text-[#f6efe4]"
               onClick={checkout.restartExpiredCheckout}
             >
-              Upload your pet photo again
+              {t("v2.teaser.reupload")}
             </Button>
           </div>
         ) : null}
@@ -225,9 +220,7 @@ export function TeaserOfferScreen({
         {showHostedFallback ? (
           <div className="space-y-3 py-4">
             <p className="text-sm text-[#f6efe4]/70">
-              {checkout.hostedFallbackBusy
-                ? "Opening Stripe’s secure checkout…"
-                : "Continue on Stripe’s secure checkout page to finish your one-time payment."}
+              {checkout.hostedFallbackBusy ? t("v2.teaser.hostedOpening") : t("v2.teaser.hostedHint")}
             </p>
             {checkout.initError ? (
               <FieldError id="v2-checkout-hosted-error" message={checkout.initError} />
@@ -239,8 +232,8 @@ export function TeaserOfferScreen({
               disabled={checkout.hostedFallbackBusy}
             >
               {checkout.hostedFallbackBusy
-                ? "Opening secure Stripe checkout…"
-                : `Continue to secure Stripe checkout — ${offer.priceDisplay}`}
+                ? t("v2.teaser.hostedBusy")
+                : t("v2.teaser.hostedCta", { price: offer.priceDisplay })}
             </Button>
           </div>
         ) : null}
@@ -254,7 +247,9 @@ export function TeaserOfferScreen({
               onClick={checkout.retry}
               disabled={checkout.loading || checkout.hostedFallbackBusy}
             >
-              {checkout.loading ? "Retrying…" : `Open secure Stripe checkout — ${offer.priceDisplay}`}
+              {checkout.loading
+                ? t("v2.teaser.retrying")
+                : t("v2.teaser.retry", { price: offer.priceDisplay })}
             </Button>
           </div>
         ) : null}
@@ -269,9 +264,9 @@ export function TeaserOfferScreen({
             dueDisplay={offer.priceDisplay}
             appearanceVariables={V2_APPEARANCE}
             payButtonClassName="h-12 min-h-[48px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] disabled:opacity-40"
-            payButtonLabel={speciesPayButtonLabel(species)}
-            busyLabel="Processing secure payment…"
-            loadingLabel="Loading secure payment…"
+            payButtonLabel={(payLabel) => t(payKey, { price: payLabel })}
+            busyLabel={t("v2.teaser.busyPay")}
+            loadingLabel={t("v2.teaser.loadingPay")}
             onReady={markCheckoutReady}
             onPaymentInteraction={onPaymentInteraction}
             onPaymentAttempt={onPaymentAttempt}
@@ -283,7 +278,7 @@ export function TeaserOfferScreen({
             }}
             onBeforeConfirm={async () => {
               if (!checkout.orderId || !checkout.publicToken) {
-                return { ok: false, error: "Payment session expired. Retry secure payment." };
+                return { ok: false, error: t("v2.teaser.sessionExpiredContact") };
               }
               const updated = await validateAndUpdateV2OrderContact({
                 api: petFunnelApi,
@@ -302,7 +297,7 @@ export function TeaserOfferScreen({
 
         {providerBlocked ? (
           <p className="py-8 text-center text-sm text-[#f6efe4]/70" role="status">
-            Secure payment is paused until generation capacity is restored. You haven’t been charged.
+            {t("v2.teaser.paused")}
           </p>
         ) : null}
 
@@ -313,14 +308,14 @@ export function TeaserOfferScreen({
         !showHostedFallback &&
         !providerBlocked ? (
           <p className="py-8 text-center text-sm text-[#f6efe4]/55" role="status">
-            Preparing secure payment…
+            {t("v2.teaser.preparing")}
           </p>
         ) : null}
       </div>
 
       <p className="flex items-center justify-center gap-2 text-center text-xs text-[#f6efe4]/50">
         <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        Secure one-time {offer.priceDisplay} Stripe payment. No subscription.
+        {t("v2.teaser.secureLine", { price: offer.priceDisplay })}
       </p>
     </div>
   );

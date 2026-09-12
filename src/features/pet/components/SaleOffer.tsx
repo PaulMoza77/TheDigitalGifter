@@ -73,6 +73,7 @@ export function SaleCountdown({
   className?: string;
 }) {
   const label = useSaleCountdown(expiresAt, onExpire);
+  // Keep English fallback for non-pet surfaces; pet V2 pack uses its own sale line.
   if (!label) return null;
   return (
     <p className={cn("font-medium tabular-nums text-[#f3d48a]", className)} role="timer">

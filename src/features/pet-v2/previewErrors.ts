@@ -1,8 +1,10 @@
 import type { PetV2FailureCategory, PetV2PreviewResponse } from "./types";
+import { petT, type PetUiLocale } from "../pet/i18n";
 
 /** Safe, actionable copy — never expose provider tokens or raw stack traces. */
 export function previewErrorMessage(
   response: Pick<PetV2PreviewResponse, "error" | "errorCode" | "failureCategory">,
+  locale: PetUiLocale = "en",
 ): string {
   if (response.errorCode === "wrong_species" && response.error) {
     return response.error;
@@ -11,39 +13,30 @@ export function previewErrorMessage(
     return response.error;
   }
   if (response.errorCode === "invalid_funnel") {
-    return response.error || "This preview doesn’t match the current experience. Refresh and try again.";
+    return response.error || petT("v2.err.invalid_funnel", locale);
   }
   if (response.errorCode === "rate_limited") {
-    return (
-      response.error ||
-      "This session already used its free previews. Unlock the collection or try again tomorrow."
-    );
+    return response.error || petT("v2.err.rate_limited", locale);
   }
   const category = response.failureCategory || categoryFromCode(response.errorCode);
   switch (category) {
     case "timeout":
-      return "Your preview is still rendering. Wait a moment, then tap Try again — we’ll pick up where it left off.";
+      return petT("v2.err.timeout", locale);
     case "rate_limit":
-      return (
-        response.error ||
-        "The preview service is busy. Tap Try again in a moment — this usually clears quickly."
-      );
+      return response.error || petT("v2.err.rate_limit", locale);
     case "wrong_species":
-      return (
-        response.error ||
-        "That photo doesn’t match this experience. Please upload a clear photo of the right pet."
-      );
+      return response.error || petT("v2.err.wrong_species", locale);
     case "invalid_image":
-      return response.error || "That photo could not be used. Try a smaller JPEG, PNG, or WebP.";
+      return response.error || petT("v2.err.invalid_image", locale);
     case "provider_auth":
-      return "Preview generation is temporarily unavailable. Try again in a few minutes.";
+      return petT("v2.err.provider_auth", locale);
     case "endpoint_unreachable":
-      return "We couldn’t reach the preview service. Check your connection and try again.";
+      return petT("v2.err.endpoint_unreachable", locale);
     case "server_error":
-      return "Something got stuck from an earlier attempt. Tap Try again or replace the photo for a fresh preview.";
+      return petT("v2.err.server_error", locale);
     case "provider_error":
     default:
-      return "We couldn’t finish the preview this time. Try again, or replace the photo if it keeps failing.";
+      return petT("v2.err.provider_error", locale);
   }
 }
 

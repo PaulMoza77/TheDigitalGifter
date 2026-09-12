@@ -7,6 +7,7 @@ import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "
 import { openHostedStripeCheckout } from "../pet/openHostedStripeCheckout";
 import { buildPetOrderReturnUrl } from "../pet/orderReturnUrl";
 import { stripeKeyAccountFingerprint } from "../pet/stripeKeys";
+import { petT, type PetUiLocale } from "../pet/i18n";
 import { trackPetV2Event } from "./analytics";
 import { prepareV2CheckoutUpload } from "./photo";
 import { v2PackOfferCopy } from "./V2PackOffer";
@@ -82,23 +83,32 @@ function resolveV2CheckoutOrder(input: {
     : null;
 }
 
-export function v2CheckoutLoadingCopy(phase: V2CheckoutLoadingPhase): string {
+export function v2CheckoutLoadingCopy(
+  phase: V2CheckoutLoadingPhase,
+  locale: PetUiLocale = "en",
+): string {
   switch (phase) {
     case "preparing_photo":
-      return "Preparing your photo…";
+      return petT("v2.checkout.preparing_photo", locale);
     case "creating_order":
-      return "Starting secure checkout…";
+      return petT("v2.checkout.creating_order", locale);
     case "uploading":
-      return "Uploading your photo…";
+      return petT("v2.checkout.uploading", locale);
     case "creating_session":
-      return "Loading secure payment…";
+      return petT("v2.checkout.creating_session", locale);
     default:
-      return "Loading secure payment…";
+      return petT("v2.checkout.creating_session", locale);
   }
 }
 
 function v2CancelUrl(species: PetV2Species, origin = typeof window !== "undefined" ? window.location.origin : ""): string {
-  return `${origin}/pet/${species}-v2?checkout=canceled`;
+  const path =
+    typeof window !== "undefined"
+      ? window.location.pathname.replace(/\?.*$/, "")
+      : `/pet/${species}-v2`;
+  // Prefer current localized path when already on a pet V2 URL.
+  const cancelPath = /\/pet\/(dog|cat|other)-v2\/?$/.test(path) ? path : `/pet/${species}-v2`;
+  return `${origin}${cancelPath}?checkout=canceled`;
 }
 
 function resolveAmountCents(value?: number | null): number {

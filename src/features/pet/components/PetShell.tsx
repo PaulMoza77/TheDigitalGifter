@@ -3,6 +3,7 @@ import { ArrowLeft, PawPrint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PET_PRODUCT_NAME } from "../types";
 import type { PetFunnelNavigation, PetSpecies } from "../types";
+import { PetLanguageSwitcher, usePetLocale, usePetT } from "../i18n";
 import { usePublicPetOffer } from "../usePublicPetOffer";
 import { SalePriceLabel } from "./SaleOffer";
 import { SpeciesSwitch } from "./SpeciesSwitch";
@@ -13,7 +14,7 @@ export function PetShell({
   species = "dog",
   showSpeciesSwitch = false,
   showBack = false,
-  backLabel = "Back",
+  backLabel,
   onBack,
   footerNote,
 }: {
@@ -26,9 +27,11 @@ export function PetShell({
   onBack?: () => void;
   footerNote?: string;
 }) {
+  const locale = usePetLocale();
+  const t = usePetT(locale);
   const { priceDisplay, compareAtDisplay } = usePublicPetOffer();
   return (
-    <div className="pet-funnel min-h-screen bg-[#140e0a] text-[#f6efe4]">
+    <div className="pet-funnel min-h-screen bg-[#140e0a] text-[#f6efe4]" lang={locale}>
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-10 pt-4 sm:px-6 lg:px-8">
         <header className="flex items-center justify-between gap-3 py-2">
           <button
@@ -39,16 +42,21 @@ export function PetShell({
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#d4a84b] text-[#1a140e]">
               <PawPrint className="h-4 w-4" aria-hidden="true" />
             </span>
-            <span className="text-sm font-semibold tracking-tight">{PET_PRODUCT_NAME}</span>
+            <span className="text-sm font-semibold tracking-tight">
+              {t("v1.product.name") || PET_PRODUCT_NAME}
+            </span>
           </button>
-          <div className="text-right">
-            <p className="text-xs text-[#f6efe4]/55">
-              <SalePriceLabel
-                priceDisplay={priceDisplay}
-                compareAtDisplay={compareAtDisplay}
-                suffix="once"
-              />
-            </p>
+          <div className="flex items-center gap-3">
+            <PetLanguageSwitcher compact />
+            <div className="text-right">
+              <p className="text-xs text-[#f6efe4]/55">
+                <SalePriceLabel
+                  priceDisplay={priceDisplay}
+                  compareAtDisplay={compareAtDisplay}
+                  suffix="once"
+                />
+              </p>
+            </div>
           </div>
         </header>
 
@@ -67,7 +75,7 @@ export function PetShell({
               onClick={onBack}
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              {backLabel}
+              {backLabel ?? t("chrome.back")}
             </Button>
           </div>
         ) : null}
@@ -83,7 +91,10 @@ export function PetShell({
                   compareAtDisplay={compareAtDisplay}
                   suffix="one-time"
                 />
-                {" · No subscription · Same pet in every portrait"}
+                {" · "}
+                {t("v1.offer.noSub")}
+                {" · "}
+                {t("v1.offer.include.portraits")}
               </>
             )}
           </p>

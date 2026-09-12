@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { usePetT } from "../../pet/i18n";
 
 export function V2GeneratingScreen({
   thumbnailUrl,
@@ -15,20 +16,19 @@ export function V2GeneratingScreen({
   onRetry: () => void;
   onBack: () => void;
 }) {
+  const t = usePetT();
   return (
     <div className="mx-auto max-w-md space-y-6 py-6 text-center">
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
-          alt="Your uploaded pet"
+          alt={t("v2.gen.thumbAlt")}
           className="mx-auto h-28 w-28 rounded-2xl object-cover"
         />
       ) : null}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-[#f6efe4]">Creating your pet’s F1 driver preview</h1>
-        <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">
-          We’re turning your pet into a cinematic Formula 1 driver. This is one free preview — not the full collection yet.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-[#f6efe4]">{t("v2.gen.h1")}</h1>
+        <p className="mt-2 text-sm leading-6 text-[#f6efe4]/65">{t("v2.gen.lede")}</p>
       </div>
       {error ? (
         <div className="space-y-3 rounded-2xl border border-[#e07a5f]/40 bg-[#e07a5f]/10 px-4 py-4">
@@ -42,7 +42,7 @@ export function V2GeneratingScreen({
               disabled={busy}
               onClick={onRetry}
             >
-              Try again
+              {t("v2.gen.retry")}
             </Button>
             <Button
               type="button"
@@ -51,7 +51,7 @@ export function V2GeneratingScreen({
               disabled={busy}
               onClick={onBack}
             >
-              Change photo
+              {t("v2.gen.change")}
             </Button>
           </div>
         </div>
