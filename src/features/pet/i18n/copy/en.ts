@@ -50,9 +50,9 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.landing.closingH2": "Reveal your pet’s secret life.",
   "v2.landing.closingLede":
     "Upload one photo for a free personalized teaser. Unlock 12 secret lives and 2 mini clips for {price} today.",
-  "v2.landing.closingRenew": "{compare} {price} · offer renews every 24 hours",
-  "v2.landing.saleLine": "{compare} {price} today · {countdown} left",
-  "v2.landing.stickySale": "{compare} → {price} today · {countdown} left",
+  "v2.landing.closingRenew": "{price} · offer renews every 24 hours",
+  "v2.landing.saleLine": "{price} today · {countdown} left",
+  "v2.landing.stickySale": "{price} today · {countdown} left",
   "v2.landing.stickyIdle": "{price} one-time · no card for the free preview",
   "v2.landing.originalAlt": "Original photo of the demo {pet}",
   "v2.landing.afterAlt": "Formula 1 driver preview of the same demo {pet}",

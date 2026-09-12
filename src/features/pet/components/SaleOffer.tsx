@@ -55,7 +55,9 @@ export function SalePriceLabel({
   return (
     <span className={cn("inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5", className)}>
       {showCompare ? (
-        <s className="text-[#f6efe4]/45">{compareAtDisplay}</s>
+        <s className="text-[#f6efe4]/45 decoration-1 decoration-[#f6efe4]/50 [text-decoration-thickness:1px]">
+          {compareAtDisplay}
+        </s>
       ) : null}
       <span className="font-semibold tracking-tight text-[#f3d48a]">{priceDisplay}</span>
       {suffix ? <span className="font-normal text-[#f6efe4]/70">{suffix}</span> : null}

@@ -48,9 +48,9 @@ export const PET_COPY_ES: PetCopyMap = {
   "v2.landing.closingH2": "Revela la vida secreta de tu mascota.",
   "v2.landing.closingLede":
     "Sube una foto para un teaser personalizado gratis. Desbloquea 12 vidas secretas y 2 miniclips por {price} hoy.",
-  "v2.landing.closingRenew": "{compare} {price} · la oferta se renueva cada 24 horas",
-  "v2.landing.saleLine": "{compare} {price} hoy · quedan {countdown}",
-  "v2.landing.stickySale": "{compare} → {price} hoy · quedan {countdown}",
+  "v2.landing.closingRenew": "{price} · la oferta se renueva cada 24 horas",
+  "v2.landing.saleLine": "{price} hoy · quedan {countdown}",
+  "v2.landing.stickySale": "{price} hoy · quedan {countdown}",
   "v2.landing.stickyIdle": "{price} pago único · sin tarjeta para la vista previa gratis",
   "v2.landing.originalAlt": "Foto original del {pet} de demo",
   "v2.landing.afterAlt": "Vista previa de piloto de Fórmula 1 del mismo {pet} de demo",

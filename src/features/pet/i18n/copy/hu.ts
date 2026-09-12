@@ -48,9 +48,9 @@ export const PET_COPY_HU: PetCopyMap = {
   "v2.landing.closingH2": "Fedd fel a kedvenced titkos életét.",
   "v2.landing.closingLede":
     "Tölts fel egy fotót az ingyenes, személyre szabott előnézethez. Ma {price}-ért feloldhatod a 12 titkos életet és a 2 mini klipet.",
-  "v2.landing.closingRenew": "{compare} {price} · az ajánlat 24 óránként megújul",
-  "v2.landing.saleLine": "{compare} {price} ma · még {countdown} van hátra",
-  "v2.landing.stickySale": "{compare} → {price} ma · még {countdown} van hátra",
+  "v2.landing.closingRenew": "{price} · az ajánlat 24 óránként megújul",
+  "v2.landing.saleLine": "{price} ma · még {countdown} van hátra",
+  "v2.landing.stickySale": "{price} ma · még {countdown} van hátra",
   "v2.landing.stickyIdle": "{price} egyszeri · az ingyenes előnézethez nem kell kártya",
   "v2.landing.originalAlt": "A demó {pet} eredeti fotója",
   "v2.landing.afterAlt": "Ugyanannak a demó {pet}-nak a Forma–1-es versenyző előnézete",
