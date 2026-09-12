@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   canUnlockWithIdentityConfirm,
   identityConfirmLabel,
   type IdentityConfirmKind,
 } from "../../pet-funnel-shared/identityConfirm";
-import { petSpeciesWord, usePetLocale, usePetT } from "../../pet/i18n";
+import { petSpeciesWord, usePetLocale, usePetT, usePetCurrency } from "../../pet/i18n";
 import { V2PackOffer, v2PackOfferCopy } from "../V2PackOffer";
 import type { PetV2Species } from "../types";
 
@@ -30,7 +30,11 @@ export function V2PreviewScreen({
 }) {
   const locale = usePetLocale();
   const t = usePetT(locale);
-  const [offer, setOffer] = useState(() => v2PackOfferCopy());
+  const currency = usePetCurrency();
+  const [offer, setOffer] = useState(() => v2PackOfferCopy(Date.now(), currency));
+  useEffect(() => {
+    setOffer(v2PackOfferCopy(Date.now(), currency));
+  }, [currency]);
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
   const [identityError, setIdentityError] = useState<string | undefined>();
   const petLabel = petSpeciesWord(species, locale, "lower");
@@ -101,7 +105,7 @@ export function V2PreviewScreen({
         <span>{identityConfirmLabel(confirmKind)}</span>
       </label>
       {identityError ? <p className="text-sm text-[#f3a6a6]">{identityError}</p> : null}
-      <V2PackOffer onExpire={() => setOffer(v2PackOfferCopy())} />
+      <V2PackOffer onExpire={() => setOffer(v2PackOfferCopy(Date.now(), currency))} />
       <ul className="space-y-1.5 text-sm text-[#f6efe4]/68">
         <li>{t("v2.teaser.bullet.lives", { pet: petLabel })}</li>
         <li>{t("v2.teaser.bullet.clips")}</li>

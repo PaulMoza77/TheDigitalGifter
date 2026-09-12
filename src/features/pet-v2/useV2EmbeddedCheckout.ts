@@ -7,7 +7,7 @@ import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "
 import { openHostedStripeCheckout } from "../pet/openHostedStripeCheckout";
 import { buildPetOrderReturnUrl } from "../pet/orderReturnUrl";
 import { stripeKeyAccountFingerprint } from "../pet/stripeKeys";
-import { petT, type PetUiLocale } from "../pet/i18n";
+import { petT, type PetUiLocale, usePetCurrency } from "../pet/i18n";
 import { trackPetV2Event } from "./analytics";
 import { prepareV2CheckoutUpload } from "./photo";
 import { v2PackOfferCopy } from "./V2PackOffer";
@@ -264,6 +264,7 @@ export function useV2EmbeddedCheckout(input: {
   onRestartExpired?: () => void;
   api?: PetFunnelApi;
 }): V2EmbeddedCheckoutState {
+  const currency = usePetCurrency();
   const api = input.api ?? petFunnelApi;
   const bootstrapped = useRef(false);
   const bootstrapInFlight = useRef(false);
@@ -446,6 +447,7 @@ export function useV2EmbeddedCheckout(input: {
         },
         sku: "pet-secret-life-12",
         funnelVariant: "v2",
+        currency,
       });
       orderRef.current = { orderId: order.orderId, publicToken: order.publicToken };
       setOrderId(order.orderId);

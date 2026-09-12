@@ -8,6 +8,7 @@ import {
   PetLanguageSwitcher,
   petSpeciesWord,
   usePetBrowserLocaleRedirect,
+  usePetCurrency,
   usePetLocale,
   usePetT,
   withPetLocale,
@@ -36,8 +37,9 @@ export function V2Shell({
   usePetBrowserLocaleRedirect();
   const locale = usePetLocale();
   const t = usePetT(locale);
+  const currency = usePetCurrency();
   const landingHref = withPetLocale(petV2LandingPath(species), locale);
-  const offer = v2PackOfferCopy();
+  const offer = v2PackOfferCopy(Date.now(), currency);
   const footerText =
     footer ??
     t("v2.shell.footer", {

@@ -343,6 +343,7 @@ export function orderRetainsSnapshottedPrice(
 export function rejectClientPriceTampering(
   input: { amountCents?: unknown; currency?: unknown; sku?: unknown },
   serverAmountCents = PET_PRICE_CENTS,
+  serverCurrency: string = PET_CURRENCY,
 ): { ok: true } | { ok: false; code: "INVALID_REQUEST"; message: string } {
   if (input.sku != null && String(input.sku).trim() && String(input.sku).trim() !== PET_SKU) {
     return { ok: false, code: "INVALID_REQUEST", message: "Unknown SKU." };
@@ -350,10 +351,11 @@ export function rejectClientPriceTampering(
   if (input.amountCents != null && input.amountCents !== "" && Number(input.amountCents) !== Number(serverAmountCents)) {
     return { ok: false, code: "INVALID_REQUEST", message: "Price is server-owned." };
   }
+  const expectedCurrency = String(serverCurrency || PET_CURRENCY).trim().toLowerCase();
   if (
     input.currency != null &&
     String(input.currency).trim() &&
-    String(input.currency).trim().toLowerCase() !== PET_CURRENCY
+    String(input.currency).trim().toLowerCase() !== expectedCurrency
   ) {
     return { ok: false, code: "INVALID_REQUEST", message: "Currency is server-owned." };
   }

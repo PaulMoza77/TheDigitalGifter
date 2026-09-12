@@ -1,4 +1,11 @@
 import { PET_PRICE_CENTS, PET_V2_PRICE_CENTS, PET_V3_PRICE_CENTS } from "./constants.ts";
+import {
+  formatPetMoneyServer,
+  normalizePetCurrency,
+  petV2SaleAmount,
+  petV3SaleAmount,
+  type PetCurrency,
+} from "./currency.ts";
 
 /** Live V1 promo charged instead of the $27 list price. */
 export const PET_SALE_PRICE_CENTS = 1700 as const;
@@ -12,7 +19,7 @@ export const PET_SALE_EXPIRES_AT_ISO = "2026-08-25T17:30:00.000Z" as const;
 export const PET_SALE_EXPIRES_AT_MS = Date.parse(PET_SALE_EXPIRES_AT_ISO);
 
 /**
- * @deprecated V2 now always charges PET_V2_PRICE_CENTS ($2.99) with a rolling UI timer.
+ * @deprecated V2 now always charges the presentment-currency sale amount with a rolling UI timer.
  * Kept so older imports still resolve.
  */
 export const PET_V2_SALE_EXPIRES_AT_ISO = "2026-08-26T18:35:00.000Z" as const;
@@ -57,14 +64,14 @@ export function applyPetFlashSaleAmount(listAmountCents: number, nowMs = Date.no
   return sale.active ? sale.amountCents : listAmountCents;
 }
 
-/** V2 always charges $2.99. Never uses the V1 $17 overlay or the $27 list price. */
-export function applyV2SaleAmount(_nowMs = Date.now()): number {
-  return PET_V2_PRICE_CENTS;
+/** V2 always charges presentment-currency sale amount. Never uses the V1 $17 overlay. */
+export function applyV2SaleAmount(_nowMs = Date.now(), currency: PetCurrency | string = "usd"): number {
+  return petV2SaleAmount(normalizePetCurrency(currency));
 }
 
-/** V3 cat funnel is fixed at $2.99 from $27. */
-export function applyV3SaleAmount(): number {
-  return PET_V3_PRICE_CENTS;
+/** V3 cat funnel sale amount in presentment currency. */
+export function applyV3SaleAmount(currency: PetCurrency | string = "usd"): number {
+  return petV3SaleAmount(normalizePetCurrency(currency));
 }
 
 export function checkoutAmountNeedsRefresh(orderAmountCents: number, liveAmountCents: number): boolean {
@@ -82,3 +89,17 @@ export function publicFlashSaleFields(nowMs = Date.now()) {
     saleActive: sale.active,
   };
 }
+
+export function v2PresentmentPrice(currency: PetCurrency | string = "usd") {
+  const code = normalizePetCurrency(currency);
+  const amount = petV2SaleAmount(code);
+  return {
+    currency: code,
+    amountCents: amount,
+    priceDisplay: formatPetMoneyServer(amount, code),
+  };
+}
+
+// Keep unused constant references for compatibility with older bundles.
+void PET_V2_PRICE_CENTS;
+void PET_V3_PRICE_CENTS;

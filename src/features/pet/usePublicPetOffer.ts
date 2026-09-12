@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
+import { usePetCurrency } from "./i18n";
 import { checkoutAllowedWithOffer, deliveryEstimateLabel } from "./croGuards";
 import { petFlashSale } from "./flashSale";
 import { petFunnelApi } from "./supabaseApi";
 import { formatOfferPrice } from "./videoGuards";
 
 export function usePublicPetOffer() {
+  const currency = usePetCurrency();
   const initial = petFlashSale();
   const [priceDisplay, setPriceDisplay] = useState<string>(initial.priceDisplay);
   const [amountCents, setAmountCents] = useState<number | null>(initial.amountCents);
@@ -22,7 +24,7 @@ export function usePublicPetOffer() {
     setLoading(true);
     setOfferError(null);
     try {
-      const offer = await petFunnelApi.getPublicOffer?.();
+      const offer = await petFunnelApi.getPublicOffer?.({ currency });
       if (!offer || offer.amountCents <= 0 || offer.subscription !== false) {
         throw new Error("Pet price is unavailable right now.");
       }
@@ -46,7 +48,7 @@ export function usePublicPetOffer() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currency]);
 
   useEffect(() => {
     void refresh();

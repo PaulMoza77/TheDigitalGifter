@@ -4,7 +4,7 @@ import { PageHead } from "@/components/PageHead";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import { validateOtherSubtype } from "../pet/croGuards";
 import { canGenerateWithSpeciesConfirm } from "../pet-funnel-shared/speciesConfirm";
-import { petT, usePetLocale, withPetLocale } from "../pet/i18n";
+import { petT, usePetLocale, withPetLocale, usePetMoney } from "../pet/i18n";
 import { remainingSessionPreviews } from "./abuse";
 import { trackPetV2Event, petV2LandingPath } from "./analytics";
 import { trackV2BeginCheckout } from "./checkoutAnalytics";
@@ -51,6 +51,7 @@ function normalizeLegacyStep(step: PetV2Step): PetV2Step {
 export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const navigate = useNavigate();
   const locale = usePetLocale();
+  const { v2Sale } = usePetMoney();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const teaserLockRef = useRef(false);
@@ -282,7 +283,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       footer={
         step === "landing"
           ? petT("v2.shell.footer", locale, {
-              headline: petT("v2.pack.headline", locale, { price: "$2.99" }),
+              headline: petT("v2.pack.headline", locale, { price: v2Sale.priceDisplay }),
             })
           : undefined
       }
