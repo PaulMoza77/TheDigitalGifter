@@ -48,9 +48,9 @@ export const PET_COPY_NL: PetCopyMap = {
   "v2.landing.closingH2": "Onthul het geheime leven van je huisdier.",
   "v2.landing.closingLede":
     "Upload één foto voor een gratis persoonlijke teaser. Ontgrendel 12 geheime levens en 2 miniclips voor {price} vandaag.",
-  "v2.landing.closingRenew": "{compare} {price} · aanbieding vernieuwt elke 24 uur",
-  "v2.landing.saleLine": "{compare} {price} vandaag · {countdown} resterend",
-  "v2.landing.stickySale": "{compare} → {price} vandaag · {countdown} resterend",
+  "v2.landing.closingRenew": "{price} · aanbieding vernieuwt elke 24 uur",
+  "v2.landing.saleLine": "{price} vandaag · {countdown} resterend",
+  "v2.landing.stickySale": "{price} vandaag · {countdown} resterend",
   "v2.landing.stickyIdle": "{price} eenmalig · geen kaart voor de gratis preview",
   "v2.landing.originalAlt": "Originele foto van de demo-{pet}",
   "v2.landing.afterAlt": "Formule 1-coureurpreview van dezelfde demo-{pet}",

@@ -32,7 +32,9 @@ export function V3PackOffer({
       )}
       <p className={cn("font-semibold tracking-tight text-[#f6efe4]", compact ? "text-base" : "mt-1 text-lg")}>
         Get 12 secret lives and 2 mini clips for only{" "}
-        <s className="font-medium text-[#f6efe4]/45">{offer.compareAtDisplay}</s>{" "}
+        <s className="font-medium text-[#f6efe4]/45 decoration-1 decoration-[#f6efe4]/50 [text-decoration-thickness:1px]">
+          {offer.compareAtDisplay}
+        </s>{" "}
         <span className="text-[#f3d48a]">{offer.priceDisplay}</span>
       </p>
       <SaleCountdown expiresAt={offer.expiresAt} onExpire={refresh} className="mt-2 text-sm" />
@@ -50,7 +52,10 @@ export function V3SaleLine({ onExpire }: { onExpire?: () => void }) {
   if (!countdown) return null;
   return (
     <p className="mt-3 text-sm font-medium tabular-nums text-[#f3d48a]" role="timer">
-      <s className="font-medium text-[#f6efe4]/45">{offer.compareAtDisplay}</s> {offer.priceDisplay} today · {countdown} left
+      <s className="font-medium text-[#f6efe4]/45 decoration-1 decoration-[#f6efe4]/50 [text-decoration-thickness:1px]">
+        {offer.compareAtDisplay}
+      </s>{" "}
+      {offer.priceDisplay} today · {countdown} left
     </p>
   );
 }
@@ -80,9 +85,16 @@ export function V3StickyCta({
           {label}
         </Button>
         <p className="mt-1.5 text-center text-[11px] tabular-nums text-[#f6efe4]/55">
-          {countdown
-            ? `${offer.compareAtDisplay} → ${offer.priceDisplay} today · ${countdown} left`
-            : `${offer.priceDisplay} one-time · no card for the free preview`}
+          {countdown ? (
+            <>
+              <s className="font-medium text-[#f6efe4]/40 decoration-1 decoration-[#f6efe4]/45 [text-decoration-thickness:1px]">
+                {offer.compareAtDisplay}
+              </s>
+              {` → ${offer.priceDisplay} today · ${countdown} left`}
+            </>
+          ) : (
+            `${offer.priceDisplay} one-time · no card for the free preview`
+          )}
         </p>
       </div>
     </div>
@@ -106,7 +118,10 @@ export function V3ClosingCta({ onClick }: { onClick: () => void }) {
         </p>
       ) : null}
       <p className="mt-0.5 text-xs text-[#1a140e]/60">
-        <s>{offer.compareAtDisplay}</s> {offer.priceDisplay} · offer renews every 24 hours
+        <s className="decoration-1 decoration-[#1a140e]/50 [text-decoration-thickness:1px]">
+          {offer.compareAtDisplay}
+        </s>{" "}
+        {offer.priceDisplay} · offer renews every 24 hours
       </p>
       <Button
         type="button"

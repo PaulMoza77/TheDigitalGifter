@@ -48,9 +48,9 @@ export const PET_COPY_RO: PetCopyMap = {
   "v2.landing.closingH2": "Descoperă viața secretă a animalului tău.",
   "v2.landing.closingLede":
     "Încarcă o fotografie pentru o previzualizare personalizată gratuită. Deblochează 12 vieți secrete și 2 mini clipuri pentru {price} astăzi.",
-  "v2.landing.closingRenew": "{compare} {price} · oferta se reînnoiește la fiecare 24 de ore",
-  "v2.landing.saleLine": "{compare} {price} astăzi · mai rămân {countdown}",
-  "v2.landing.stickySale": "{compare} → {price} astăzi · mai rămân {countdown}",
+  "v2.landing.closingRenew": "{price} · oferta se reînnoiește la fiecare 24 de ore",
+  "v2.landing.saleLine": "{price} astăzi · mai rămân {countdown}",
+  "v2.landing.stickySale": "{price} astăzi · mai rămân {countdown}",
   "v2.landing.stickyIdle": "{price} o singură dată · fără card pentru previzualizarea gratuită",
   "v2.landing.originalAlt": "Fotografia originală a {pet} de demonstrație",
   "v2.landing.afterAlt": "Previzualizare ca pilot de Formula 1 a aceluiași {pet} de demonstrație",

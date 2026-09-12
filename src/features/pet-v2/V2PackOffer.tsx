@@ -1,10 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { SaleCountdown, useSaleCountdown } from "../pet/components/SaleOffer";
 import { usePetCurrency, usePetT } from "../pet/i18n";
 import type { PetCurrency } from "../pet/i18n/currency";
 import { cn } from "@/lib/utils";
 import { v2FlashSale } from "./v2FlashSale";
+
+/** High / compare-at price: thin strikethrough so the sale price reads clearly. */
+function CompareStrike({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <s
+      className={cn(
+        "font-medium text-current/45 decoration-1 decoration-current/55 [text-decoration-thickness:1px]",
+        className,
+      )}
+    >
+      {children}
+    </s>
+  );
+}
 
 export function v2PackOfferCopy(nowMs = Date.now(), currency: PetCurrency | string = "usd") {
   const sale = v2FlashSale(nowMs, currency);
@@ -60,7 +80,7 @@ export function V2PackOffer({
       )}
       <p className={cn("font-semibold tracking-tight text-[#f6efe4]", compact ? "text-base" : "mt-1 text-lg")}>
         {t("v2.pack.headlineRich")}{" "}
-        <s className="font-medium text-[#f6efe4]/45">{offer.compareAtDisplay}</s>{" "}
+        <CompareStrike>{offer.compareAtDisplay}</CompareStrike>{" "}
         <span className="text-[#f3d48a]">{offer.priceDisplay}</span>
       </p>
       <SaleCountdown expiresAt={offer.expiresAt} onExpire={refresh} className="mt-2 text-sm" />
@@ -77,8 +97,10 @@ export function V2SaleLine({ onExpire }: { onExpire?: () => void }) {
   if (!countdown) return null;
   return (
     <p className="mt-3 text-sm font-medium tabular-nums text-[#f3d48a]" role="timer">
+      <CompareStrike className="text-[#f6efe4]/45 decoration-[#f6efe4]/50">
+        {offer.compareAtDisplay}
+      </CompareStrike>{" "}
       {t("v2.landing.saleLine", {
-        compare: offer.compareAtDisplay,
         price: offer.priceDisplay,
         countdown,
       })}
@@ -109,13 +131,20 @@ export function V2StickyCta({
           {label}
         </Button>
         <p className="mt-1.5 text-center text-[11px] tabular-nums text-[#f6efe4]/55">
-          {countdown
-            ? t("v2.landing.stickySale", {
-                compare: offer.compareAtDisplay,
+          {countdown ? (
+            <>
+              <CompareStrike className="text-[#f6efe4]/40 decoration-[#f6efe4]/45">
+                {offer.compareAtDisplay}
+              </CompareStrike>
+              {" → "}
+              {t("v2.landing.stickySale", {
                 price: offer.priceDisplay,
                 countdown,
-              })
-            : t("v2.landing.stickyIdle", { price: offer.priceDisplay })}
+              })}
+            </>
+          ) : (
+            t("v2.landing.stickyIdle", { price: offer.priceDisplay })
+          )}
         </p>
       </div>
     </div>
@@ -144,8 +173,10 @@ export function V2ClosingCta({
         </p>
       ) : null}
       <p className="mt-0.5 text-xs text-[#1a140e]/60">
+        <CompareStrike className="text-[#1a140e]/45 decoration-[#1a140e]/50">
+          {offer.compareAtDisplay}
+        </CompareStrike>{" "}
         {t("v2.landing.closingRenew", {
-          compare: offer.compareAtDisplay,
           price: offer.priceDisplay,
         })}
       </p>
