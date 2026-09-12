@@ -168,9 +168,12 @@ describe("christmas landing wiring", () => {
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("advent-loop.mp4");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("cover-elegant.webp");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("message-letter.webp");
+    expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("finder-still.webp");
     expect(readSrc("src/features/christmas/landing/scenes/AdventScene.tsx")).toContain("adventLoop");
     expect(readSrc("src/features/christmas/landing/scenes/CardsScene.tsx")).toContain("xmas-card-desk");
     expect(readSrc("src/features/christmas/landing/scenes/MessagesScene.tsx")).toContain("xmas-message-letter");
+    expect(readSrc("src/features/christmas/landing/scenes/GiftFinderScene.tsx")).toContain("xmas-finder-stage");
+    expect(readSrc("src/features/christmas/landing/scenes/GiftFinderScene.tsx")).not.toContain("xmas-gifts__tree");
     expect(experience).toContain("/generator?occasion=christmas");
     expect(readSrc("src/features/christmas/landing/scenes/SantaScene.tsx")).toContain(
       "santa.h2Personalized",

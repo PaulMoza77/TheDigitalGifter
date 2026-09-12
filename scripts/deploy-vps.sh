@@ -39,6 +39,7 @@ mozas_rsync \
   --exclude '.env' \
   --exclude '.env.*' \
   --exclude 'secrets/' \
+  --exclude 'supabase/.temp/' \
   "${ROOT}/" \
   "${MOZAS_EXPECTED_USER}@${MOZAS_EXPECTED_HOST}:${REMOTE_REPO}/"
 
