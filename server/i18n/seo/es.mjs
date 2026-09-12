@@ -104,28 +104,36 @@ export const CHRISTMAS_SEO_CONTENT = {
     ],
     faqs: [
       {
-        q: "¿Qué puedo crear en Navidad con TheDigitalGifter?",
-        a: "Ideas de regalos, retratos navideños para familias, parejas y mascotas, un vídeo personalizado de Papá Noel, una lista de deseos para compartir, tarjetas de Navidad, mensajes navideños, un árbol digital y un calendario de Adviento.",
+        q: "¿Qué puedo crear para Navidad con TheDigitalGifter?",
+        a: "Puedes encontrar ideas de regalos, transformar fotos en retratos navideños para familias, parejas y mascotas, empezar la experiencia de Papá Noel, crear una lista de deseos compartible, diseñar una tarjeta, escribir mensajes, decorar un árbol digital y abrir sorpresas de Adviento. Elige una experiencia en esta página y termina en minutos.",
       },
       {
         q: "¿Puede Papá Noel decir el nombre de mi hijo?",
-        a: "Sí. Empieza con su nombre en la página de Navidad o en la experiencia de vídeo de Papá Noel, y luego añade detalles opcionales antes de crear el vídeo.",
+        a: "Puedes empezar con el nombre en la página de Navidad o en la experiencia de Papá Noel y añadir detalles opcionales. Los vídeos hablados están disponibles hoy en inglés y rumano — otros idiomas llegarán.",
       },
       {
-        q: "¿Necesito conocimientos de diseño?",
-        a: "No. Cada experiencia navideña está guiada — sube una foto, responde unas preguntas o empieza con un nombre.",
+        q: "¿Necesito habilidades de diseño?",
+        a: "No. Cada experiencia de Navidad te guía paso a paso — sube una foto, responde unas preguntas o empieza con un nombre — y la página hace el resto.",
       },
       {
         q: "¿Es para regalos digitales, físicos o ambos?",
-        a: "Ambos. Usa el buscador de regalos y la lista de deseos para comprar en cualquier tienda, y crea retratos digitales, tarjetas y vídeos de Papá Noel para enviar.",
+        a: "Ambos. Usa el Buscador y la lista de deseos para comprar en cualquier sitio, y crea retratos y tarjetas digitales para descargar o compartir al instante.",
       },
       {
-        q: "¿Funciona en el móvil?",
-        a: "Sí. El espacio navideño y sus experiencias están pensados para funcionar tanto en el móvil como en el ordenador.",
+        q: "¿Funciona en mi teléfono?",
+        a: "Sí — el hub de Navidad y las experiencias de producto están pensados primero para móvil y también funcionan en ordenador.",
       },
       {
-        q: "¿Está disponible en español?",
-        a: "El contenido y la navegación están en español. El vídeo de Papá Noel y el generador de mensajes producen sus textos y voz en inglés o rumano por ahora; el resto de experiencias funcionan con foto, nombre o texto propio sin depender de un idioma concreto.",
+        q: "¿La foto de mi familia es privada?",
+        a: "Las subidas se usan para crear tu retrato o tarjeta. Las experiencias infantiles son privacy-first y esperan un padre o tutor. Cuando el resultado está listo, lo descargas en privado — no publicamos tus fotos.",
+      },
+      {
+        q: "¿Cuánto tarda crear algo?",
+        a: "La mayoría de experiencias tardan unos minutos. El Buscador y los mensajes son casi instantáneos. Retratos, tarjetas y Papá Noel te guían paso a paso; las creaciones de pago continúan después del checkout.",
+      },
+      {
+        q: "¿Necesito una cuenta para empezar?",
+        a: "Puedes explorar y empezar de inmediato. Algunas experiencias piden un email al unirte o en el pago para guardar el progreso, recibir el resultado o unirte al Christmas Club.",
       },
     ],
   },

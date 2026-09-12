@@ -1286,18 +1286,44 @@
 
 .xmas-faq details {
   border-bottom: 1px solid rgba(246, 239, 227, 0.12);
-  padding: 0.85rem 0;
+  padding: 0.95rem 0;
 }
 
 .xmas-faq summary {
   cursor: pointer;
   font-weight: 600;
   color: #fffaf1;
+  list-style: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0;
+  line-height: 1.35;
+}
+
+.xmas-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.xmas-faq summary::after {
+  content: "+";
+  flex: 0 0 auto;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: rgba(246, 239, 227, 0.72);
+  transition: transform 160ms ease;
+}
+
+.xmas-faq details[open] summary::after {
+  content: "–";
 }
 
 .xmas-faq p {
   color: var(--xmas-ivory-soft);
-  line-height: 1.6;
+  line-height: 1.65;
+  margin: 0.65rem 0 0.25rem;
+  max-width: 62ch;
 }
 
 .xmas-links {
