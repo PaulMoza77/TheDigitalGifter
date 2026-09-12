@@ -14,7 +14,6 @@ import {
   CHRISTMAS_CLUB_ASSETS,
   CHRISTMAS_CLUB_AUTH_RETURN_PATH,
   CHRISTMAS_CLUB_CONFIG,
-  CHRISTMAS_CLUB_DESKTOP_MEDIA,
   CHRISTMAS_CLUB_GOOGLE_PENDING_KEY,
   CHRISTMAS_CLUB_SEO,
 } from "./config";
@@ -54,15 +53,8 @@ function preloadHeroAssets() {
   preload.setAttribute("data-cc-preload", "hero");
   document.head.appendChild(preload);
 
-  if (!document.querySelector('link[data-cc-preload="loop"]')) {
-    const wide = window.matchMedia(CHRISTMAS_CLUB_DESKTOP_MEDIA).matches;
-    const loop = document.createElement("link");
-    loop.rel = "preload";
-    loop.as = "video";
-    loop.href = wide ? CHRISTMAS_CLUB_ASSETS.heroLoop : CHRISTMAS_CLUB_ASSETS.heroLoop720;
-    loop.setAttribute("data-cc-preload", "loop");
-    document.head.appendChild(loop);
-  }
+  // Chrome does not support <link rel="preload" as="video"> (console warning).
+  // Let the scene <video preload="auto"> own the loop fetch instead.
 }
 
 function setThemeColor(color: string) {
