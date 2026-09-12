@@ -93,3 +93,6 @@ verify_jwt = false
 
 [functions.christmas-cards-messages-funnel]
 verify_jwt = false
+
+[functions.christmas-result-share]
+verify_jwt = false
