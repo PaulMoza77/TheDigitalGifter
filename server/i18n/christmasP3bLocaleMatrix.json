@@ -1,0 +1,952 @@
+{
+  "generatedAt": "2026-09-11T05:45:00.000Z",
+  "note": "P3E: Santa TTS live QA PASS for all Wave 1; product readiness drives SEO gates",
+  "productReadiness": {
+    "santa_script_tts": {
+      "en": "ready",
+      "ro": "ready",
+      "de": "ready",
+      "fr": "ready",
+      "es": "ready",
+      "it": "ready",
+      "pt": "ready",
+      "nl": "ready",
+      "pl": "ready"
+    },
+    "messages_generator": {
+      "en": "ready",
+      "ro": "ready",
+      "de": "ready",
+      "fr": "ready",
+      "es": "ready",
+      "it": "ready",
+      "pt": "ready",
+      "nl": "ready",
+      "pl": "ready"
+    },
+    "cards_message_assistant": {
+      "en": "ready",
+      "ro": "ready",
+      "de": "ready",
+      "fr": "ready",
+      "es": "ready",
+      "it": "ready",
+      "pt": "ready",
+      "nl": "ready",
+      "pl": "ready"
+    },
+    "gift_finder_recommendations": {
+      "en": "ready",
+      "ro": "ready",
+      "de": "ready",
+      "fr": "ready",
+      "es": "ready",
+      "it": "ready",
+      "pt": "ready",
+      "nl": "ready",
+      "pl": "ready"
+    }
+  },
+  "matrix": {
+    "en": {
+      "/christmas": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/gift-finder": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/wishlist": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/photo-generator": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/family": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/couples": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/pets": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/dogs": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cats": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/santa-video": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/tree": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/advent": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cards": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/messages": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      }
+    },
+    "ro": {
+      "/christmas": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/gift-finder": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/wishlist": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/photo-generator": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/family": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/couples": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/pets": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/dogs": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cats": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/santa-video": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/tree": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/advent": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cards": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/messages": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      }
+    },
+    "de": {
+      "/christmas": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/gift-finder": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/wishlist": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/photo-generator": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/family": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/couples": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/pets": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/dogs": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cats": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/santa-video": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/tree": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/advent": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cards": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/messages": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      }
+    },
+    "fr": {
+      "/christmas": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/gift-finder": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/wishlist": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/photo-generator": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/family": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/couples": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/pets": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/dogs": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cats": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/santa-video": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/tree": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/advent": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cards": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/messages": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      }
+    },
+    "es": {
+      "/christmas": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/gift-finder": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/wishlist": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/photo-generator": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/family": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/couples": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/pets": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/dogs": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cats": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/santa-video": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/tree": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/advent": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cards": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/messages": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      }
+    },
+    "it": {
+      "/christmas": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/gift-finder": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/wishlist": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/photo-generator": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/family": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/couples": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/pets": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/dogs": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cats": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/santa-video": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/tree": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/advent": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cards": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/messages": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      }
+    },
+    "pt": {
+      "/christmas": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/gift-finder": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/wishlist": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/photo-generator": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/family": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/couples": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/pets": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/dogs": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cats": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/santa-video": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/tree": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/advent": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cards": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/messages": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      }
+    },
+    "nl": {
+      "/christmas": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/gift-finder": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/wishlist": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/photo-generator": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/family": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/couples": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/pets": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/dogs": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cats": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/santa-video": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/tree": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/advent": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cards": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/messages": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      }
+    },
+    "pl": {
+      "/christmas": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/gift-finder": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/wishlist": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/photo-generator": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/family": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/couples": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/pets": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/dogs": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cats": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/santa-video": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/tree": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/advent": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/cards": {
+        "CONTENT": "complete",
+        "PRODUCT": "not-language-dependent",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      },
+      "/christmas/messages": {
+        "CONTENT": "complete",
+        "PRODUCT": "ready",
+        "SEO": "index",
+        "HREFLANG": "included",
+        "SITEMAP": "included"
+      }
+    }
+  }
+}

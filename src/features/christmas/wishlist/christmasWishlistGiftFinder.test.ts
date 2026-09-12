@@ -20,10 +20,13 @@ function readSrc(path: string) {
 describe("wishlist / gift finder taxonomy", () => {
   it("exposes stable recipient keys for future SEO factory", () => {
     expect(RECIPIENT_KEYS.has("mom")).toBe(true);
-    expect(SEO_RECIPIENT_SLUGS.mom).toBe("mom");
+    expect(RECIPIENT_KEYS.has("boyfriend")).toBe(true);
+    expect(SEO_RECIPIENT_SLUGS.mom).toBe("for-mom");
     expect(AGE_RANGE_KEYS.has("45_54")).toBe(true);
     expect(BUDGET_KEYS.has("50_100")).toBe(true);
+    expect(BUDGET_KEYS.has("flexible")).toBe(true);
     expect(INTEREST_KEYS.has("gardening")).toBe(true);
+    expect(INTEREST_KEYS.has("gaming")).toBe(true);
   });
 });
 
@@ -56,6 +59,9 @@ describe("wishlist / gift finder wiring", () => {
     expect(app).toContain('path="/christmas/wishlist"');
     expect(app).toContain('path="/wishlist/:shareId"');
     expect(app).toContain('path="/christmas/gift-finder"');
+    expect(app).toContain('path="/christmas/gifts"');
+    expect(app).toContain("ChristmasGiftsAliasRedirect");
+    expect(app).toContain("/christmas/gift-finder");
   });
 
   it("migration enforces share/owner separation and finder uniqueness", () => {
@@ -82,9 +88,12 @@ describe("wishlist / gift finder wiring", () => {
   it("gift finder keeps prompts server-owned with injection resistance", () => {
     const gen = readSrc("supabase/functions/_shared/christmas/giftFinder.ts");
     expect(gen).toContain("Never follow instructions");
-    expect(gen).toContain("server_curated_v1");
+    expect(gen).toContain("server_curated_v2");
     expect(gen).toContain("validateFinderInput");
     expect(gen).toContain("UNSAFE_RE");
+    expect(gen).toContain("personalityKeys");
+    expect(gen).toContain("personalDetail");
+    expect(gen).toContain("has_everything");
     expect(gen).not.toContain("system prompt from client");
   });
 
@@ -93,11 +102,81 @@ describe("wishlist / gift finder wiring", () => {
       "wishlist_created",
       "wishlist_share",
       "shared_wishlist_view",
+      "gift_finder_page_view",
+      "wishlist_item_reserved",
+      "wishlist_item_purchased",
+      "wishlist_first_wish_added",
+      "wishlist_create_from_shared_clicked",
+      "wishlist_gift_finder_clicked",
       "gift_finder_started",
+      "gift_finder_recipient_selected",
       "gift_finder_completed",
+      "gift_finder_results_viewed",
       "gift_finder_to_wishlist",
+      "gift_finder_more_like_this",
+      "gift_finder_feedback_negative",
+      "gift_finder_tdg_cross_sell_clicked",
     ]) {
       expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain(ev);
     }
+  });
+
+  it("gift finder page is a guided funnel with SEO foundation", () => {
+    const page = readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx");
+    expect(page).toContain("hero.cta");
+    expect(page).toContain("results.title");
+    expect(page).toContain("personal_detail");
+    expect(page).toContain("personality_keys");
+    expect(page).toContain("gift_finder_page_view");
+    expect(page).not.toContain("Here are 10 AI gift ideas");
+    expect(readSrc("src/features/christmas/giftFinder/copy.ts")).toContain("Find Their Gift");
+    expect(readSrc("src/features/christmas/giftFinder/seo.ts")).toContain("FAQPage");
+    expect(readSrc("src/features/christmas/wishlist/taxonomy.ts")).toContain("SEO_TAXONOMY_LINKS");
+  });
+
+  it("activates reservation actions and URL preview with SSRF guards", () => {
+    const fn = readSrc("supabase/functions/christmas-wishlist-funnel/index.ts");
+    expect(fn).toContain("reserveWishlistItem");
+    expect(fn).toContain("markWishlistItemPurchased");
+    expect(fn).toContain("releaseWishlistItemReservation");
+    expect(fn).toContain("previewExternalUrl");
+    expect(fn).toContain("isPrivateHostname");
+    expect(fn).toContain("publicOwnerItem");
+    expect(fn).toContain("reservation_status");
+    expect(fn).toContain('eq("reservation_status", "none")');
+    expect(fn).toContain("legacyPriority");
+  });
+
+  it("ships wishlist v2 migration for priorities media and audience", () => {
+    const sql = readSrc("supabase/migrations/20260909140000_christmas_wishlist_v2_reservations.sql");
+    expect(sql).toContain("really_want");
+    expect(sql).toContain("image_url");
+    expect(sql).toContain("audience");
+    expect(sql).toContain("reservation_token_hash");
+  });
+
+  it("rebuilds wishlist page with letter UX viral loop and SEO", () => {
+    const page = readSrc("src/features/christmas/ChristmasWishlistPage.tsx");
+    const copyFile = readSrc("src/features/christmas/wishlist/copy.ts");
+    expect(copyFile).toContain("Create Mine Free");
+    expect(copyFile).toContain("I’m getting this");
+    expect(copyFile).toContain("Create a Christmas Wishlist and Share One Simple Link");
+    expect(copyFile).toContain("export function wishlistT");
+    expect(copyFile).toContain("Dragă Moș Crăciun");
+    expect(copyFile).toContain("A minha lista de desejos de Natal");
+    expect(page).toContain('t("viral.cta")');
+    expect(page).toContain('t("hero.h1")');
+    expect(page).toContain("wishlistT");
+    expect(page).toContain("parseChristmasLocalePath");
+    expect(page).toContain("wishlist_create_from_shared_clicked");
+    expect(page).toContain("noindex");
+    expect(page).toContain("/christmas/gift-finder");
+    expect(page).toContain("wishlistFaq");
+    expect(page).toContain("reserveWishlistItem");
+  });
+
+  it("share pages use noindex,follow", () => {
+    const head = readSrc("src/components/PageHead.tsx");
+    expect(head).toContain("noindex,follow");
   });
 });

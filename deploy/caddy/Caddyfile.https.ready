@@ -52,7 +52,12 @@ themozas.com, www.themozas.com {
 }
 
 # Apply only after public DNS for these names points at MOZAS_SSH_HOST.
-thedigitalgifter.com, www.thedigitalgifter.com {
+# Canonical host is www — apex permanently redirects (preserve path + query).
+thedigitalgifter.com {
+	redir https://www.thedigitalgifter.com{uri} permanent
+}
+
+www.thedigitalgifter.com {
 	import tdg_upstream
 	log {
 		output file /var/log/caddy/thedigitalgifter.log {

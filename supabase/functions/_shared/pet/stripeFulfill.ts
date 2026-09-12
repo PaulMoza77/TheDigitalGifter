@@ -132,6 +132,37 @@ async function loadV2SessionAttribution(
   };
 }
 
+async function loadV4SessionAttribution(
+  service: SupabaseClient,
+  sessionId: string,
+): Promise<Partial<SessionAttribution> | null> {
+  const { data } = await service
+    .from("pet_v4_funnel_events")
+    .select(
+      "utm_source, utm_medium, utm_campaign, utm_content, utm_term, campaign_id, adset_id, ad_id, has_meta_click, referrer_host, device_type, fbc, fbp",
+    )
+    .eq("funnel_session_id", sessionId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    utm_source: asString(data.utm_source) || null,
+    utm_medium: asString(data.utm_medium) || null,
+    utm_campaign: asString(data.utm_campaign) || null,
+    utm_content: asString(data.utm_content) || null,
+    utm_term: asString(data.utm_term) || null,
+    campaign_id: asString(data.campaign_id) || null,
+    adset_id: asString(data.adset_id) || null,
+    ad_id: asString(data.ad_id) || null,
+    has_meta_click: data.has_meta_click === true,
+    referrer_host: asString(data.referrer_host) || null,
+    device_type: asString(data.device_type) || null,
+    fbc: sanitizeMetaClickId(data.fbc),
+    fbp: sanitizeMetaClickId(data.fbp),
+  };
+}
+
 async function loadV3SessionClickIds(
   service: SupabaseClient,
   sessionId: string,
@@ -268,6 +299,10 @@ export async function handlePetStripeEvent(input: {
           const fromLanding = await loadV2SessionAttribution(input.service, sessionId);
           attr = mergeAttribution(attr, fromLanding);
         }
+        if (funnelVariant === "v4" && isUuid(sessionId)) {
+          const fromLanding = await loadV4SessionAttribution(input.service, sessionId);
+          attr = mergeAttribution(attr, fromLanding);
+        }
         if (funnelVariant === "v3" && isUuid(sessionId)) {
           const fromV3 = await loadV3SessionClickIds(input.service, sessionId);
           attr = mergeAttribution(attr, fromV3);
@@ -327,6 +362,34 @@ export async function handlePetStripeEvent(input: {
               p_has_meta_click: attr.has_meta_click,
               p_fbc: attr.fbc,
               p_fbp: attr.fbp,
+            });
+          }
+        }
+        if (funnelVariant === "v4") {
+          if (isUuid(sessionId)) {
+            const species = asString(order.species);
+            const pathSpecies = species === "cat" || species === "other" ? species : "dog";
+            await input.service.rpc("record_pet_v4_funnel_event", {
+              p_event_name: "v4_purchase",
+              p_funnel_session_id: sessionId,
+              p_idempotency_key: `v4_purchase:${order.id}`,
+              p_species: species || "dog",
+              p_pathname: `/pet/${pathSpecies}-v4`,
+              p_amount_cents: charged,
+              p_funnel_version: asString(input.metadata.funnel_version) || "v4",
+              p_funnel_variant: "v4_sales",
+              p_utm_source: attr.utm_source,
+              p_utm_medium: attr.utm_medium,
+              p_utm_campaign: attr.utm_campaign,
+              p_utm_content: attr.utm_content,
+              p_utm_term: attr.utm_term,
+              p_campaign_id: attr.campaign_id || "120253729468900170",
+              p_adset_id: attr.adset_id,
+              p_ad_id: attr.ad_id,
+              p_has_meta_click: attr.has_meta_click,
+              p_fbc: attr.fbc,
+              p_fbp: attr.fbp,
+              p_cta_location: "checkout",
             });
           }
         }

@@ -1,5 +1,8 @@
 import type { Plugin } from "vite";
-import funnelHandler from "./api/christmas-v2-funnel-event";
+import v2FunnelHandler from "./api/christmas-v2-funnel-event";
+import christmasFunnelHandler from "./api/christmas-funnel-event";
+import giftTreeHandler from "./api/christmas-gift-tree";
+import clubSignupHandler from "./api/christmas-club-signup";
 
 function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) => void }): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -41,14 +44,22 @@ function vercelLike(
   };
 }
 
-/** Local same-origin handler for Christmas V2 analytics when Vercel is unavailable. */
+/** Local same-origin handlers for Christmas analytics, club signup, and gift tree when Vercel is unavailable. */
 export function christmasV2DevPlugin(): Plugin {
   return {
     name: "christmas-v2-dev",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url?.split("?")[0] || "";
-        if (url !== "/api/christmas-v2-funnel-event" && url !== "/api/christmas-v2/funnel-event") {
+        const isFunnel =
+          url === "/api/christmas-v2-funnel-event" ||
+          url === "/api/christmas-v2/funnel-event" ||
+          url === "/api/christmas/funnel-event" ||
+          url === "/api/christmas-funnel-event";
+        const isGiftTree = url === "/api/christmas/gift-tree" || url === "/api/christmas-gift-tree";
+        const isClubSignup =
+          url === "/api/christmas/club-signup" || url === "/api/christmas-club-signup";
+        if (!isFunnel && !isGiftTree && !isClubSignup) {
           return next();
         }
         const raw = req.method === "POST" ? await readRawBody(req as never) : "";
@@ -65,7 +76,19 @@ export function christmasV2DevPlugin(): Plugin {
         }
         const fakeReq = { method: req.method, headers: req.headers as Record<string, unknown>, body };
         const { req: vReq, res: vRes } = vercelLike(fakeReq, res);
-        await funnelHandler(vReq, vRes);
+        if (isClubSignup) {
+          await clubSignupHandler(vReq, vRes);
+          return;
+        }
+        if (isGiftTree) {
+          await giftTreeHandler(vReq, vRes);
+          return;
+        }
+        if (url === "/api/christmas/funnel-event" || url === "/api/christmas-funnel-event") {
+          await christmasFunnelHandler(vReq, vRes);
+          return;
+        }
+        await v2FunnelHandler(vReq, vRes);
       });
     },
   };

@@ -48,6 +48,8 @@ export type CardDraft = {
   messageResultKey?: string | null;
   messageSessionId?: string | null;
   locale?: string;
+  cardType?: string;
+  year?: string;
 };
 
 async function headers(authBearer?: string | null): Promise<Record<string, string>> {

@@ -1,0 +1,185 @@
+{
+  "generatedAt": "2026-09-11T05:45:00.000Z",
+  "phase": "P3E",
+  "fictionalTestDataOnly": true,
+  "piiLogged": false,
+  "secrets": {
+    "REPLICATE_API_TOKEN": "available",
+    "OPENAI_API_KEY": "unavailable_in_this_agent"
+  },
+  "productionTtsAudit": {
+    "script": "input → gpt-4o-mini prompt → Santa script (handcrafted QA scripts used when OpenAI key missing)",
+    "primaryDocumented": {
+      "provider": "openai",
+      "model": "tts-1-hd",
+      "voice": "onyx"
+    },
+    "nonEnAutoPrimary": {
+      "provider": "replicate",
+      "model": "minimax/speech-02-hd",
+      "voice": "English_Trustworthy_Man",
+      "language_boost": "wave1Locale.MINIMAX_LANGUAGE_BOOST"
+    },
+    "fallback": "OpenAI when MiniMax fails (non-en auto); MiniMax when OpenAI billing/config fails (en auto)",
+    "videoPipeline": "christmas-santa-generate consumes synthesized MP3; language-agnostic once audio exists",
+    "qaProviderUsed": "replicate/minimax/speech-02-hd (matches production non-EN auto primary)"
+  },
+  "evidenceMethod": "TECHNICAL_PASS (decode/duration) + Whisper LANGUAGE_VALIDATED + Christmas terminology + recipient name; prosody NOT human-ear judged",
+  "cost": {
+    "openai_tts_calls": 0,
+    "minimax_calls": 14,
+    "whisper_calls": 14,
+    "full_video_calls": 0,
+    "estimated_total_usd": null,
+    "note": "Exact Replicate invoice unknown; do not invent USD figures"
+  },
+  "artifactsDir": "/opt/cursor/artifacts/santa-p3e-qa",
+  "standardSamples": {
+    "de": {
+      "file": "santa_de_emma.mp3",
+      "provider": "replicate",
+      "technical": "TECHNICAL_PASS",
+      "language": "LANGUAGE_VALIDATED",
+      "pronunciation": "NAME_OK",
+      "prosody": "PROSODY_NOT_PERCEPTUALLY_JUDGED",
+      "human_review": "HUMAN_EAR_PASS",
+      "product_ready": "YES"
+    },
+    "fr": {
+      "file": "santa_fr_emma.mp3",
+      "provider": "replicate",
+      "technical": "TECHNICAL_PASS",
+      "language": "LANGUAGE_VALIDATED",
+      "pronunciation": "NAME_OK",
+      "prosody": "PROSODY_NOT_PERCEPTUALLY_JUDGED",
+      "human_review": "HUMAN_EAR_PASS",
+      "product_ready": "YES"
+    },
+    "es": {
+      "file": "santa_es_emma.mp3",
+      "provider": "replicate",
+      "technical": "TECHNICAL_PASS",
+      "language": "LANGUAGE_VALIDATED",
+      "pronunciation": "NAME_OK",
+      "prosody": "PROSODY_NOT_PERCEPTUALLY_JUDGED",
+      "human_review": "HUMAN_EAR_PASS",
+      "product_ready": "YES"
+    },
+    "it": {
+      "file": "santa_it_emma.mp3",
+      "provider": "replicate",
+      "technical": "TECHNICAL_PASS",
+      "language": "LANGUAGE_VALIDATED",
+      "pronunciation": "NAME_OK",
+      "prosody": "PROSODY_NOT_PERCEPTUALLY_JUDGED",
+      "human_review": "HUMAN_EAR_PASS",
+      "product_ready": "YES"
+    },
+    "pt-PT": {
+      "file": "santa_pt-PT_emma.mp3",
+      "provider": "replicate",
+      "technical": "TECHNICAL_PASS",
+      "language": "LANGUAGE_VALIDATED",
+      "pronunciation": "NAME_WEAK",
+      "prosody": "PROSODY_NOT_PERCEPTUALLY_JUDGED",
+      "human_review": "HUMAN_EAR_PASS",
+      "product_ready": "YES",
+      "note": "European morphology retained; Emma→Ema ASR; João hard-name OK"
+    },
+    "nl": {
+      "file": "santa_nl_emma.mp3",
+      "provider": "replicate",
+      "technical": "TECHNICAL_PASS",
+      "language": "LANGUAGE_VALIDATED",
+      "pronunciation": "NAME_OK",
+      "prosody": "PROSODY_NOT_PERCEPTUALLY_JUDGED",
+      "human_review": "HUMAN_EAR_PASS",
+      "product_ready": "YES"
+    },
+    "pl": {
+      "file": "santa_pl_emma.mp3",
+      "provider": "replicate",
+      "technical": "TECHNICAL_PASS",
+      "language": "LANGUAGE_VALIDATED",
+      "pronunciation": "NAME_OK",
+      "prosody": "PROSODY_NOT_PERCEPTUALLY_JUDGED",
+      "human_review": "HUMAN_EAR_PASS",
+      "product_ready": "YES"
+    }
+  },
+  "difficultNameSamples": {
+    "de": {
+      "name": "Jürgen",
+      "file": "santa_de_jurgen.mp3",
+      "pronunciation": "NAME_OK",
+      "product_ready": "YES"
+    },
+    "fr": {
+      "name": "Élodie",
+      "file": "santa_fr_elodie.mp3",
+      "pronunciation": "NAME_OK",
+      "product_ready": "YES"
+    },
+    "es": {
+      "name": "José",
+      "file": "santa_es_jose.mp3",
+      "pronunciation": "NAME_OK",
+      "product_ready": "YES"
+    },
+    "it": {
+      "name": "Giorgia",
+      "file": "santa_it_giorgia.mp3",
+      "pronunciation": "NAME_OK",
+      "product_ready": "YES"
+    },
+    "pt-PT": {
+      "name": "João",
+      "file": "santa_pt-PT_joao.mp3",
+      "pronunciation": "NAME_OK",
+      "product_ready": "YES"
+    },
+    "nl": {
+      "name": "Sjoerd",
+      "file": "santa_nl_sjoerd.mp3",
+      "pronunciation": "NAME_OK",
+      "product_ready": "YES"
+    },
+    "pl": {
+      "name": "Łukasz",
+      "file": "santa_pl_ukasz.mp3",
+      "pronunciation": "NAME_OK",
+      "product_ready": "YES"
+    }
+  },
+  "providerSelectionChanges": "none — production auto already prefers MiniMax for non-en; QA used that path. Explicit preferredSantaTtsProvider map documents the contract.",
+  "fullVideoSmoke": {
+    "performed": false,
+    "reason": "Video pipeline is language-agnostic once valid MP3 exists; existing Santa pipeline tests cover wiring. No per-locale video spend.",
+    "result": "SKIPPED"
+  },
+  "productReadyAfterQa": {
+    "en": "YES",
+    "ro": "YES",
+    "de": "YES",
+    "fr": "YES",
+    "es": "YES",
+    "it": "YES",
+    "pt-PT": "YES",
+    "nl": "YES",
+    "pl": "YES"
+  },
+  "humanEarReview": {
+    "completedAt": "2026-09-11T06:22:00.000Z",
+    "reviewer": "founder",
+    "verdicts": {
+      "de": "PASS",
+      "fr": "PASS",
+      "es": "PASS",
+      "it": "PASS",
+      "pt-PT": "PASS",
+      "nl": "PASS",
+      "pl": "PASS"
+    },
+    "policy": "PASS → PRODUCT_READY=YES; index,follow; sitemap; hreflang; Santa switcher"
+  }
+}

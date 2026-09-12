@@ -56,7 +56,8 @@ export function PageHead({ title, description, image, url, exactTitle = false, n
     }
     canonicalLink.setAttribute("href", pageUrl);
 
-    updateMetaName("robots", noindex ? "noindex,nofollow" : "index,follow");
+    // Shared wishlists/trees: noindex but follow so create-your-own links stay crawlable.
+    updateMetaName("robots", noindex ? "noindex,follow" : "index,follow");
   }, [fullTitle, description, pageUrl, ogImage, noindex]);
 
   return null; // This component only manages head tags

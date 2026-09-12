@@ -1,11 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { ChristmasLanguageSwitcher } from "@/features/christmas/seo/ChristmasLanguageSwitcher";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
+import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
 import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
 import { startChristmasCheckout } from "./photoApi";
+import {
+  consumeSantaNameHandoff,
+  isLikelyKidName,
+  sanitizeKidName,
+} from "./landing/handoff";
 import {
   SANTA_CONSENT_LABEL,
   SANTA_CONSENT_VERSION,
@@ -19,66 +26,21 @@ import {
   type SantaJobStatus,
   type SantaPersonalization,
 } from "./santa/santaTypes";
-
-type Step = "intro" | "form" | "review" | "offer" | "checkout" | "progress" | "result" | "error";
-
-const DRAFT_KEY = "tdg.christmas.santa.v1";
-
-type Draft = {
-  step: Step;
-  childFirstName: string;
-  language: "en" | "ro";
-  age: string;
-  somethingGood: string;
-  hobbyOrInterest: string;
-  christmasWish: string;
-  customFact: string;
-  senderName: string;
-  templateKey: string;
-  guardianConsent: boolean;
-  email: string;
-  orderId: string | null;
-  publicToken: string | null;
-  lastError: string | null;
-};
-
-function emptyDraft(): Draft {
-  return {
-    step: "intro",
-    childFirstName: "",
-    language: "en",
-    age: "",
-    somethingGood: "",
-    hobbyOrInterest: "",
-    christmasWish: "",
-    customFact: "",
-    senderName: "",
-    templateKey: SANTA_V1_ENABLED_TEMPLATES[0],
-    guardianConsent: false,
-    email: "",
-    orderId: null,
-    publicToken: null,
-    lastError: null,
-  };
-}
-
-function readDraft(): Draft {
-  try {
-    const raw = sessionStorage.getItem(DRAFT_KEY);
-    if (!raw) return emptyDraft();
-    return { ...emptyDraft(), ...JSON.parse(raw) };
-  } catch {
-    return emptyDraft();
-  }
-}
-
-function writeDraft(d: Draft) {
-  try {
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
-  } catch {
-    /* ignore */
-  }
-}
+import { SANTA_COPY, progressLabel, type SantaRecipientType } from "./santa/santaCopy";
+import {
+  emptySantaDraft,
+  readSantaDraft,
+  santaFunnelProgress,
+  writeSantaDraft,
+  type SantaDraft,
+  type SantaUiStep,
+} from "./santa/santaDraft";
+import { resolveIncomingSantaName } from "./santa/santaHandoff";
+import { buildSantaMessagePreview, santaMentionChecklist } from "./santa/santaPreview";
+import { SANTA_DEMO_EXAMPLES } from "./santa/santaExamples";
+import { SantaWorkshopScene } from "./santa/SantaWorkshopScene";
+import { SantaDemoPlayer } from "./santa/SantaDemoPlayer";
+import { SantaLandingSections } from "./santa/SantaLandingSections";
 
 const FUNNEL_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-santa-funnel`;
 
@@ -91,39 +53,168 @@ async function anonHeaders(): Promise<Record<string, string>> {
   };
 }
 
+function ensureFonts() {
+  const id = "tdg-santa-fonts";
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap";
+  document.head.appendChild(link);
+}
+
+function trackSanta(
+  eventName:
+    | "christmas_santa_page_view"
+    | "christmas_santa_started"
+    | "christmas_santa_recipient_selected"
+    | "christmas_santa_name_completed"
+    | "christmas_santa_age_completed"
+    | "christmas_santa_achievement_completed"
+    | "christmas_santa_wish_completed"
+    | "christmas_santa_preview_viewed"
+    | "christmas_santa_checkout_started"
+    | "christmas_santa_generation_started"
+    | "christmas_santa_generation_completed"
+    | "christmas_santa_shared"
+    | "santa_form_started"
+    | "santa_form_completed"
+    | "offer_seen"
+    | "checkout_started"
+    | "generation_success"
+    | "generation_failed"
+    | "download"
+    | "share"
+    | "christmas_page_view",
+  metadata?: Record<string, unknown>,
+  extra?: { orderId?: string | null; amountCents?: number | null; packageKey?: string | null },
+) {
+  void trackChristmasEvent(eventName, {
+    productKey: SANTA_PRODUCT_KEY,
+    pathname: SANTA_ROUTE,
+    packageKey: extra?.packageKey,
+    orderId: extra?.orderId,
+    amountCents: extra?.amountCents,
+    metadata,
+  });
+}
+
 export default function ChristmasSantaVideoPage() {
   const [params] = useSearchParams();
-  const [draft, setDraft] = useState<Draft>(() => readDraft());
+  const [draft, setDraft] = useState<SantaDraft>(() => readSantaDraft());
   const [busy, setBusy] = useState(false);
   const [jobStatus, setJobStatus] = useState<SantaJobStatus | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [progressTick, setProgressTick] = useState(0);
   const [checkout, setCheckout] = useState<{
     clientSecret: string;
     publishableKey: string;
     amountCents: number;
   } | null>(null);
   const pageViewed = useRef(false);
+  const handoffApplied = useRef(false);
+  const previewTracked = useRef(false);
   const product = findProduct(CHRISTMAS_CATALOG_SEED, SANTA_PRODUCT_KEY);
   const pkg = product?.packages.find((p) => p.packageKey === SANTA_DEFAULT_PACKAGE);
   const purchasable = Boolean(pkg?.purchasable && pkg.priceCents > 0);
 
-  const patch = useCallback((next: Partial<Draft>) => {
+  const patch = useCallback((next: Partial<SantaDraft>) => {
     setDraft((prev) => {
-      const merged = { ...prev, ...next, lastError: next.lastError ?? null };
-      writeDraft(merged);
+      const merged = { ...prev, ...next, lastError: next.lastError === undefined ? prev.lastError : next.lastError };
+      if (next.lastError === null || next.step) {
+        merged.lastError = next.lastError ?? null;
+      }
+      writeSantaDraft(merged);
       return merged;
     });
+  }, []);
+
+  useEffect(() => {
+    ensureFonts();
+    const id = "santa-video-faq-jsonld";
+    let el = document.getElementById(id) as HTMLScriptElement | null;
+    if (!el) {
+      el = document.createElement("script");
+      el.type = "application/ld+json";
+      el.id = id;
+      document.head.appendChild(el);
+    }
+    el.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: SANTA_COPY.sections.faq.items.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: { "@type": "Answer", text: item.a },
+      })),
+    });
+    return () => {
+      document.getElementById(id)?.remove();
+    };
   }, []);
 
   useEffect(() => {
     if (pageViewed.current) return;
     pageViewed.current = true;
     captureFunnelAttribution(window.location.search);
-    void trackChristmasEvent("christmas_page_view", {
-      productKey: SANTA_PRODUCT_KEY,
-      pathname: SANTA_ROUTE,
-    });
+    trackSanta("christmas_page_view");
+    trackSanta("christmas_santa_page_view");
   }, []);
+
+  // Homepage / query name handoff — skip asking for the name again
+  useEffect(() => {
+    if (handoffApplied.current) return;
+    if (params.get("token")) return;
+    const incoming = resolveIncomingSantaName(params);
+    if (!incoming) {
+      handoffApplied.current = true;
+      return;
+    }
+    handoffApplied.current = true;
+    const current = readSantaDraft();
+    if (current.orderId || current.step === "progress" || current.step === "result" || current.step === "checkout") {
+      return;
+    }
+    if (current.childFirstName && current.step !== "landing" && current.step !== "name" && current.step !== "recipient") {
+      return;
+    }
+    // Keep landing for the personalized hero; skip recipient + name questions.
+    const nextStep: SantaUiStep =
+      current.step === "name" || current.step === "recipient"
+        ? "age"
+        : current.step === "landing"
+          ? "landing"
+          : current.step;
+    patch({
+      childFirstName: incoming.firstName,
+      nameFromHandoff: true,
+      recipientType: "child",
+      step: nextStep,
+    });
+  }, [params, patch]);
+
+  useEffect(() => {
+    if (nameHandoffApplied.current) return;
+    if (params.get("token")) return;
+    const fromQuery = params.get("name") || params.get("child") || params.get("kid");
+    const name = sanitizeKidName(fromQuery || consumeSantaNameHandoff());
+    if (!name || !isLikelyKidName(name)) return;
+    nameHandoffApplied.current = true;
+    setDraft((prev) => {
+      if (prev.orderId || prev.step === "progress" || prev.step === "result" || prev.step === "checkout") {
+        return prev;
+      }
+      const merged = {
+        ...prev,
+        childFirstName: name,
+        step: "form" as Step,
+        lastError: null,
+      };
+      writeDraft(merged);
+      return merged;
+    });
+  }, [params]);
 
   useEffect(() => {
     const token = params.get("token");
@@ -185,14 +276,11 @@ export default function ChristmasSantaVideoPage() {
         if (data.order?.fulfillment_status === "completed" && data.order.resultUrl) {
           setResultUrl(data.order.resultUrl);
           patch({ step: "result" });
-          void trackChristmasEvent("generation_success", {
-            productKey: SANTA_PRODUCT_KEY,
-            orderId: draft.orderId,
-            ...santaAnalyticsDimensions({
-              language: draft.language,
-              templateKey: draft.templateKey,
-            }),
-          });
+          trackSanta("generation_success", santaAnalyticsDimensions({
+            language: draft.language,
+            templateKey: draft.templateKey,
+          }), { orderId: draft.orderId });
+          trackSanta("christmas_santa_generation_completed", undefined, { orderId: draft.orderId });
           return;
         }
         if (data.order?.fulfillment_status === "failed" || status === "failed") {
@@ -200,10 +288,7 @@ export default function ChristmasSantaVideoPage() {
             step: "error",
             lastError: data.order?.job?.error_message_safe || data.order?.last_error || "Generation failed",
           });
-          void trackChristmasEvent("generation_failed", {
-            productKey: SANTA_PRODUCT_KEY,
-            orderId: draft.orderId,
-          });
+          trackSanta("generation_failed", undefined, { orderId: draft.orderId });
         }
       } catch {
         /* keep polling */
@@ -217,7 +302,58 @@ export default function ChristmasSantaVideoPage() {
     };
   }, [draft.step, draft.publicToken, draft.orderId, draft.language, draft.templateKey, patch]);
 
-  function validated(): SantaPersonalization | null {
+  useEffect(() => {
+    if (draft.step !== "progress") return;
+    const id = window.setInterval(() => setProgressTick((t) => t + 1), 4000);
+    return () => window.clearInterval(id);
+  }, [draft.step]);
+
+  useEffect(() => {
+    if (draft.step !== "preview" || previewTracked.current) return;
+    previewTracked.current = true;
+    trackSanta("christmas_santa_preview_viewed", santaAnalyticsDimensions({
+      language: draft.language,
+      templateKey: draft.templateKey,
+      hasAge: Boolean(draft.age),
+      hasWish: Boolean(draft.christmasWish),
+      hasHobby: Boolean(draft.hobbyOrInterest) || Boolean(draft.customFact),
+    }));
+  }, [draft.step, draft.language, draft.templateKey, draft.age, draft.christmasWish, draft.hobbyOrInterest, draft.customFact]);
+
+  const previewScript = useMemo(
+    () =>
+      buildSantaMessagePreview({
+        childFirstName: draft.childFirstName || "friend",
+        language: draft.language,
+        age: draft.age ? Number(draft.age) : null,
+        somethingGood: draft.somethingGood || null,
+        hobbyOrInterest: draft.hobbyOrInterest || null,
+        christmasWish: draft.christmasWish || null,
+        customFact: draft.customFact || null,
+        senderName: draft.senderName || null,
+      }),
+    [draft],
+  );
+
+  const mentions = useMemo(
+    () =>
+      santaMentionChecklist({
+        childFirstName: draft.childFirstName || "friend",
+        language: draft.language,
+        age: draft.age ? Number(draft.age) : null,
+        somethingGood: draft.somethingGood || null,
+        hobbyOrInterest: draft.hobbyOrInterest || null,
+        christmasWish: draft.christmasWish || null,
+        customFact: draft.customFact || null,
+      }),
+    [draft],
+  );
+
+  const progress = santaFunnelProgress(draft.step, draft.nameFromHandoff || Boolean(draft.childFirstName && draft.step !== "name" && draft.step !== "recipient"));
+  const nameKnown = Boolean(draft.childFirstName);
+  const displayName = draft.childFirstName || "them";
+
+  function validated(requireConsent = true): SantaPersonalization | null {
     const result = validateSantaPersonalization({
       childFirstName: draft.childFirstName,
       language: draft.language,
@@ -227,8 +363,8 @@ export default function ChristmasSantaVideoPage() {
       christmasWish: draft.christmasWish,
       customFact: draft.customFact,
       senderName: draft.senderName,
-      templateKey: draft.templateKey,
-      guardianConsent: draft.guardianConsent,
+      templateKey: draft.templateKey || SANTA_V1_ENABLED_TEMPLATES[0],
+      guardianConsent: requireConsent ? draft.guardianConsent : true,
     });
     if (!result.ok) {
       patch({ lastError: result.message });
@@ -237,34 +373,94 @@ export default function ChristmasSantaVideoPage() {
     return result.value;
   }
 
-  function goForm() {
-    patch({ step: "form" });
-    void trackChristmasEvent("santa_form_started", {
-      productKey: SANTA_PRODUCT_KEY,
-      pathname: SANTA_ROUTE,
-    });
+  function startJourney() {
+    trackSanta("christmas_santa_started");
+    trackSanta("santa_form_started");
+    if (draft.nameFromHandoff && draft.childFirstName) {
+      patch({ step: "age", lastError: null });
+      return;
+    }
+    if (draft.childFirstName) {
+      patch({ step: "age", lastError: null });
+      return;
+    }
+    patch({ step: "recipient", lastError: null });
   }
 
-  function goReview() {
-    const v = validated();
-    if (!v) return;
-    patch({ step: "review" });
-    void trackChristmasEvent("santa_form_completed", {
-      productKey: SANTA_PRODUCT_KEY,
-      ...santaAnalyticsDimensions({
-        language: v.language,
-        templateKey: v.templateKey,
-        hasAge: v.age != null,
-        hasWish: Boolean(v.christmasWish),
-        hasHobby: Boolean(v.hobbyOrInterest),
-      }),
+  function selectRecipient(type: SantaRecipientType) {
+    patch({ recipientType: type, step: "name", lastError: null });
+    trackSanta("christmas_santa_recipient_selected", { recipient_type: type });
+  }
+
+  function completeName() {
+    const name = draft.childFirstName.trim();
+    const check = validateSantaPersonalization({
+      childFirstName: name,
+      language: draft.language,
+      guardianConsent: true,
     });
+    if (!check.ok && check.code !== "consent_required") {
+      patch({ lastError: check.message });
+      return;
+    }
+    if (!name) {
+      patch({ lastError: "Please enter a first name." });
+      return;
+    }
+    patch({ childFirstName: name, step: "age", lastError: null });
+    trackSanta("christmas_santa_name_completed");
+  }
+
+  function go(step: SantaUiStep) {
+    patch({ step, lastError: null });
+  }
+
+  function completeAge() {
+    if (draft.age) {
+      const n = Number(draft.age);
+      if (!Number.isFinite(n) || n < 1 || n > 17) {
+        patch({ lastError: "Age must be between 1 and 17 if provided." });
+        return;
+      }
+    }
+    trackSanta("christmas_santa_age_completed", { has_age: Boolean(draft.age) });
+    go("achievement");
+  }
+
+  function completeAchievement() {
+    trackSanta("christmas_santa_achievement_completed", {
+      has_achievement: Boolean(draft.somethingGood.trim()),
+    });
+    go("wish");
+  }
+
+  function completeWish() {
+    trackSanta("christmas_santa_wish_completed", { has_wish: Boolean(draft.christmasWish.trim()) });
+    go("detail");
+  }
+
+  function goPreview() {
+    const v = validated(false);
+    if (!v) return;
+    trackSanta("santa_form_completed", santaAnalyticsDimensions({
+      language: v.language,
+      templateKey: v.templateKey,
+      hasAge: v.age != null,
+      hasWish: Boolean(v.christmasWish),
+      hasHobby: Boolean(v.hobbyOrInterest) || Boolean(v.customFact),
+    }));
+    previewTracked.current = false;
+    go("preview");
   }
 
   function goOffer() {
-    patch({ step: "offer" });
-    void trackChristmasEvent("offer_seen", {
-      productKey: SANTA_PRODUCT_KEY,
+    if (!draft.guardianConsent) {
+      patch({ lastError: "Parent/guardian permission is required." });
+      return;
+    }
+    if (!validated(true)) return;
+    go("offer");
+    trackSanta("offer_seen", undefined, {
       packageKey: SANTA_DEFAULT_PACKAGE,
       amountCents: pkg?.purchasable ? pkg.priceCents : null,
     });
@@ -278,13 +474,11 @@ export default function ChristmasSantaVideoPage() {
       });
       return;
     }
-    const v = validated();
+    const v = validated(true);
     if (!v) return;
     setBusy(true);
-    void trackChristmasEvent("checkout_started", {
-      productKey: SANTA_PRODUCT_KEY,
-      packageKey: SANTA_DEFAULT_PACKAGE,
-    });
+    trackSanta("checkout_started", undefined, { packageKey: SANTA_DEFAULT_PACKAGE });
+    trackSanta("christmas_santa_checkout_started", undefined, { packageKey: SANTA_DEFAULT_PACKAGE });
     try {
       captureFunnelAttribution(window.location.search);
       const attr = attributionParamsForInternal();
@@ -324,6 +518,7 @@ export default function ChristmasSantaVideoPage() {
         orderId: result.orderId,
         publicToken: result.publicToken,
       });
+      trackSanta("christmas_santa_generation_started", undefined, { orderId: result.orderId });
     } catch (err) {
       patch({
         step: "offer",
@@ -336,10 +531,7 @@ export default function ChristmasSantaVideoPage() {
 
   async function onDownload() {
     if (!resultUrl || !draft.orderId) return;
-    void trackChristmasEvent("download", {
-      productKey: SANTA_PRODUCT_KEY,
-      orderId: draft.orderId,
-    });
+    trackSanta("download", undefined, { orderId: draft.orderId });
     const res = await fetch(resultUrl);
     const blob = await res.blob();
     const objectUrl = URL.createObjectURL(blob);
@@ -350,319 +542,666 @@ export default function ChristmasSantaVideoPage() {
     URL.revokeObjectURL(objectUrl);
   }
 
+  async function onShare() {
+    trackSanta("share", undefined, { orderId: draft.orderId });
+    trackSanta("christmas_santa_shared", undefined, { orderId: draft.orderId });
+    const shareUrl = draft.publicToken
+      ? `${window.location.origin}${SANTA_ROUTE}?token=${encodeURIComponent(draft.publicToken)}`
+      : window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "A Christmas message from Santa",
+          text: "Someone sent you a special Christmas message from Santa.",
+          url: shareUrl,
+        });
+        return;
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      patch({ lastError: null });
+      alert("Link copied — share it privately with family.");
+    } catch {
+      /* user cancelled share */
+    }
+  }
+
+  function resetAll() {
+    const next = emptySantaDraft();
+    writeSantaDraft(next);
+    setDraft(next);
+    setResultUrl(null);
+    setCheckout(null);
+    setJobStatus(null);
+    previewTracked.current = false;
+  }
+
+  const showMarketing = draft.step === "landing";
+  const inGuided =
+    draft.step !== "landing" &&
+    draft.step !== "checkout" &&
+    draft.step !== "progress" &&
+    draft.step !== "result" &&
+    draft.step !== "error";
+
+  const progressStageCopy = (() => {
+    const stages = SANTA_COPY.steps.progress.stages;
+    const idx = progressTick % stages.length;
+    const stage = stages[idx];
+    return typeof stage === "function" ? stage(displayName) : stage;
+  })();
+
   return (
     <>
-      <PageHead
-        title="Personalized Santa Video | The Digital Gifter"
-        description="Santa knows their name this Christmas. A private personalized spoken Santa video in English or Romanian."
-        exactTitle
-        url="https://www.thedigitalgifter.com/christmas/santa-video"
+      <ChristmasPageHead
+        path="/christmas/santa-video"
+        image="https://www.thedigitalgifter.com/images/occasions/christmas.png"
       />
-      <main className="mx-auto min-h-[70vh] max-w-lg px-4 py-8 text-slate-900">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          The Digital Gifter · Christmas
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          Santa knows their name this Christmas.
-        </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          A private personalized video where Santa speaks directly to your child — with their name,
-          a warm detail or two, and a Christmas wish.
-        </p>
 
-        {draft.lastError ? (
-          <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            {draft.lastError}
-          </p>
-        ) : null}
+      <div className="santa-video-page relative min-h-screen overflow-x-hidden text-[#F5EDE0]">
+        <div className="relative z-20 flex justify-end px-4 pt-3 sm:px-6">
+          <ChristmasLanguageSwitcher />
+        </div>
+        <ChristmasSnowfall />
+        <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_top,_rgba(212,175,55,0.14),_transparent_55%),linear-gradient(165deg,#0c1f18_0%,#132a22_40%,#1a0a10_100%)]" />
 
-        {draft.step === "intro" && (
-          <section className="mt-8 space-y-4">
-            <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600">
-              <li>Spoken personalized message</li>
-              <li>English or Romanian</li>
-              <li>Private delivery — no public gallery</li>
-            </ul>
-            <button
-              type="button"
-              className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-              onClick={goForm}
-            >
-              Personalize Santa’s message
-            </button>
-          </section>
-        )}
-
-        {draft.step === "form" && (
-          <section className="mt-8 space-y-4">
-            <label className="block text-sm">
-              Child’s first name *
-              <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                value={draft.childFirstName}
-                onChange={(e) => patch({ childFirstName: e.target.value })}
-                maxLength={40}
-                autoComplete="off"
+        <div className="relative z-[3]">
+          <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
+            <Link to="/christmas" className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]">
+              <img
+                src="/TheDigitalGifter.png"
+                alt="The Digital Gifter"
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-full object-cover ring-1 ring-[#d4af37]/40"
               />
-            </label>
-            <label className="block text-sm">
-              Language *
-              <select
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                value={draft.language}
-                onChange={(e) => patch({ language: e.target.value as "en" | "ro" })}
-              >
-                <option value="en">English</option>
-                <option value="ro">Romanian</option>
-              </select>
-            </label>
-            <label className="block text-sm">
-              Age (optional)
-              <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                type="number"
-                min={1}
-                max={17}
-                value={draft.age}
-                onChange={(e) => patch({ age: e.target.value })}
-              />
-            </label>
-            <label className="block text-sm">
-              Something good they did (optional)
-              <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                value={draft.somethingGood}
-                onChange={(e) => patch({ somethingGood: e.target.value })}
-                maxLength={120}
-              />
-            </label>
-            <label className="block text-sm">
-              Hobby / interest (optional)
-              <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                value={draft.hobbyOrInterest}
-                onChange={(e) => patch({ hobbyOrInterest: e.target.value })}
-                maxLength={80}
-              />
-            </label>
-            <label className="block text-sm">
-              Christmas wish (optional)
-              <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                value={draft.christmasWish}
-                onChange={(e) => patch({ christmasWish: e.target.value })}
-                maxLength={120}
-              />
-            </label>
-            <label className="block text-sm">
-              From whom? (optional)
-              <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                value={draft.senderName}
-                onChange={(e) => patch({ senderName: e.target.value })}
-                maxLength={60}
-              />
-            </label>
-            <p className="text-sm font-medium">Santa style</p>
-            <p className="text-xs text-slate-500">Classic Santa (more styles coming later)</p>
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="mt-1"
-                checked={draft.guardianConsent}
-                onChange={(e) => patch({ guardianConsent: e.target.checked })}
-              />
-              <span>{SANTA_CONSENT_LABEL} Details are used only to generate this private video.</span>
-            </label>
-            <button
-              type="button"
-              className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-              onClick={goReview}
-            >
-              Review
-            </button>
-          </section>
-        )}
-
-        {draft.step === "review" && (
-          <section className="mt-8 space-y-3 text-sm text-slate-700">
-            <h2 className="text-lg font-medium text-slate-900">Review</h2>
-            <p>
-              <span className="text-slate-500">Name:</span> {draft.childFirstName}
-            </p>
-            <p>
-              <span className="text-slate-500">Language:</span>{" "}
-              {draft.language === "ro" ? "Romanian" : "English"}
-            </p>
-            {draft.age ? (
-              <p>
-                <span className="text-slate-500">Age:</span> {draft.age}
-              </p>
-            ) : null}
-            {draft.somethingGood ? (
-              <p>
-                <span className="text-slate-500">Something good:</span> {draft.somethingGood}
-              </p>
-            ) : null}
-            {draft.hobbyOrInterest ? (
-              <p>
-                <span className="text-slate-500">Hobby:</span> {draft.hobbyOrInterest}
-              </p>
-            ) : null}
-            {draft.christmasWish ? (
-              <p>
-                <span className="text-slate-500">Wish:</span> {draft.christmasWish}
-              </p>
-            ) : null}
-            {draft.senderName ? (
-              <p>
-                <span className="text-slate-500">From:</span> {draft.senderName}
-              </p>
-            ) : null}
-            <p>
-              <span className="text-slate-500">Style:</span> Classic Santa
-            </p>
-            <p className="text-xs text-slate-500">
-              Deliverable: one private personalized Santa video (spoken). Typical length about half a
-              minute to about a minute depending on your details.
-            </p>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                className="flex-1 rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"
-                onClick={() => patch({ step: "form" })}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                className="flex-1 rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-                onClick={goOffer}
-              >
-                Continue
-              </button>
-            </div>
-          </section>
-        )}
-
-        {draft.step === "offer" && (
-          <section className="mt-8 space-y-4">
-            <h2 className="text-lg font-medium">Unlock your Santa video</h2>
-            <p className="text-sm text-slate-600">
-              After payment, Santa’s message is prepared, spoken, and rendered as a private MP4. You
-              can close this page — reopen your order link anytime.
-            </p>
-            <label className="block text-sm">
-              Email for receipt / recovery (optional)
-              <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                type="email"
-                value={draft.email}
-                onChange={(e) => patch({ email: e.target.value })}
-              />
-            </label>
-            {purchasable && pkg ? (
-              <button
-                type="button"
-                className="w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-                disabled={busy}
-                onClick={() => void startCheckout()}
-              >
-                {busy ? "Preparing checkout…" : `Pay ${(pkg.priceCents / 100).toFixed(2)}`}
-              </button>
-            ) : (
-              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                Preview available — purchase is not enabled yet (production price not configured).
-                The personalization form works; checkout stays off until launch configuration.
-              </p>
-            )}
-            {product ? (
-              <p className="text-xs text-slate-500">Product status: {ctaStateForProduct(product)}</p>
-            ) : null}
-          </section>
-        )}
-
-        {draft.step === "checkout" && checkout && (
-          <section className="mt-8 space-y-4">
-            <h2 className="text-lg font-medium">Secure payment</h2>
-            <CustomStripeCheckout
-              clientSecret={checkout.clientSecret}
-              publishableKey={checkout.publishableKey}
-              dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
-              returnUrl={`${window.location.origin}${SANTA_ROUTE}?checkout=success&token=${encodeURIComponent(draft.publicToken || "")}`}
-              email={draft.email}
-            />
-          </section>
-        )}
-
-        {draft.step === "progress" && (
-          <section className="mt-8 space-y-3 text-sm text-slate-600">
-            <h2 className="text-lg font-medium text-slate-900">Creating your Santa video</h2>
-            <p>{santaProgressCopy(jobStatus || "queued")}</p>
-            <p className="text-xs">
-              This can take several minutes. You can close this page — we’ll keep working, and you can
-              reopen your order link{draft.email ? " or check your email" : ""} when it’s ready.
-            </p>
-          </section>
-        )}
-
-        {draft.step === "result" && resultUrl && (
-          <section className="mt-8 space-y-4">
-            <video
-              src={resultUrl}
-              controls
-              playsInline
-              className="w-full rounded-lg bg-black"
-            />
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                className="rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-                onClick={() => void onDownload()}
-              >
-                Download MP4
-              </button>
-              <button
-                type="button"
-                className="rounded-md border border-slate-300 px-4 py-3 text-sm font-medium"
-                onClick={() => {
-                  const next = emptyDraft();
-                  writeDraft(next);
-                  setDraft(next);
-                  setResultUrl(null);
-                  setCheckout(null);
-                }}
-              >
-                Create another
-              </button>
-              <Link to="/christmas/photo-generator" className="text-center text-sm underline">
-                Try a Christmas portrait
-              </Link>
-            </div>
-          </section>
-        )}
-
-        {draft.step === "error" && (
-          <section className="mt-8 space-y-3">
-            <h2 className="text-lg font-medium">Something went wrong</h2>
-            <p className="text-sm text-slate-600">
-              If you already paid, keep your order link — support can retry without charging again.
-            </p>
-            <Link to="/christmas" className="text-sm underline">
-              Christmas hub
+              <span className="santa-display text-lg font-semibold tracking-tight">{SANTA_COPY.brand}</span>
             </Link>
-          </section>
-        )}
+            <nav aria-label="Breadcrumb" className="text-xs text-[#F5EDE0]/55">
+              <ol className="flex items-center gap-2">
+                <li>
+                  <Link className="hover:text-[#F5EDE0]" to="/christmas">
+                    Christmas
+                  </Link>
+                </li>
+                <li aria-hidden="true">/</li>
+                <li className="text-[#F5EDE0]/80">Santa Video</li>
+              </ol>
+            </nav>
+          </header>
 
-        <nav className="mt-10 flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-200 pt-4 text-xs text-slate-500">
-          <Link to="/christmas" className="hover:underline">
-            Christmas hub
-          </Link>
-          <Link to="/christmas/photo-generator" className="hover:underline">
-            Christmas portrait
-          </Link>
-        </nav>
-      </main>
+          <main>
+            {draft.lastError ? (
+              <p
+                role="alert"
+                className="mx-auto mb-4 max-w-5xl rounded-lg border border-red-400/40 bg-red-950/40 px-4 py-3 text-sm text-red-100"
+              >
+                {draft.lastError}
+              </p>
+            ) : null}
+
+            {draft.step === "landing" && (
+              <section className="mx-auto grid max-w-5xl gap-8 px-4 pb-10 pt-2 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
+                    Christmas · Santa Video
+                  </p>
+                  <h1 className="santa-display mt-3 text-[2.35rem] font-semibold leading-[1.05] tracking-tight text-[#F5EDE0] sm:text-5xl">
+                    {draft.nameFromHandoff && draft.childFirstName
+                      ? SANTA_COPY.hero.handoffHeadline(draft.childFirstName)
+                      : SANTA_COPY.hero.h1}
+                  </h1>
+                  <p className="mt-4 max-w-xl text-base leading-relaxed text-[#F5EDE0]/75 sm:text-lg">
+                    {draft.nameFromHandoff && draft.childFirstName
+                      ? SANTA_COPY.hero.handoffSupport(draft.childFirstName)
+                      : SANTA_COPY.hero.support}
+                  </p>
+                  <div className="mt-7 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#d4af37] px-6 text-sm font-semibold text-[#1a1208] transition hover:bg-[#e0c05a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5EDE0]"
+                      onClick={startJourney}
+                    >
+                      {draft.nameFromHandoff && draft.childFirstName
+                        ? SANTA_COPY.hero.ctaPrefill(draft.childFirstName)
+                        : SANTA_COPY.hero.ctaDirect}
+                    </button>
+                    <a
+                      href="#santa-examples-heading"
+                      className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#F5EDE0]/25 px-5 text-sm font-medium text-[#F5EDE0]/85 hover:border-[#F5EDE0]/50"
+                    >
+                      See examples
+                    </a>
+                  </div>
+                  <p className="mt-4 text-sm text-[#F5EDE0]/55">
+                    About one minute to personalize · English & Romanian
+                  </p>
+                </div>
+                <div className="overflow-hidden rounded-3xl border border-[#d4af37]/20 shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
+                  <SantaWorkshopScene accentName={draft.childFirstName || undefined} />
+                  <div className="border-t border-[#d4af37]/15 bg-[#0c1814]/80 p-4">
+                    <p className="text-xs uppercase tracking-wide text-[#d4af37]">Example</p>
+                    <p className="mt-2 text-sm leading-relaxed text-[#F5EDE0]/85">
+                      “Ho ho ho, Emma! I heard you’ve been doing an amazing job at school this year…”
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {inGuided && (
+              <section className="mx-auto max-w-xl px-4 pb-12 pt-2 sm:px-6">
+                {progress ? (
+                  <p className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-[#d4af37]/90">
+                    {progressLabel(progress.current, progress.total)}
+                  </p>
+                ) : null}
+
+                <div className="mb-6 overflow-hidden rounded-2xl border border-[#d4af37]/15">
+                  <SantaWorkshopScene compact accentName={nameKnown ? draft.childFirstName : undefined} />
+                </div>
+
+                {draft.step === "recipient" && (
+                  <StepShell title={SANTA_COPY.steps.recipient.title}>
+                    <div className="grid gap-3">
+                      {SANTA_COPY.steps.recipient.options.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          className="min-h-12 rounded-xl border border-[#F5EDE0]/20 bg-[#0c1814]/50 px-4 text-left text-sm font-medium hover:border-[#d4af37]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                          onClick={() => selectRecipient(opt.id)}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </StepShell>
+                )}
+
+                {draft.step === "name" && (
+                  <StepShell title={SANTA_COPY.steps.name.title} helper={SANTA_COPY.steps.name.helper}>
+                    <label className="block text-sm">
+                      <span className="sr-only">First name</span>
+                      <input
+                        className="santa-input mt-1 w-full"
+                        value={draft.childFirstName}
+                        onChange={(e) => patch({ childFirstName: e.target.value })}
+                        placeholder={SANTA_COPY.steps.name.placeholder}
+                        maxLength={40}
+                        autoComplete="off"
+                        autoCapitalize="words"
+                        enterKeyHint="done"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") completeName();
+                        }}
+                      />
+                    </label>
+                    <PrimaryButton onClick={completeName}>{SANTA_COPY.steps.name.cta}</PrimaryButton>
+                    <BackButton onClick={() => go("recipient")} />
+                  </StepShell>
+                )}
+
+                {draft.step === "age" && (
+                  <StepShell
+                    title={SANTA_COPY.steps.age.title(displayName)}
+                    helper={SANTA_COPY.steps.age.helper}
+                  >
+                    <label className="block text-sm">
+                      <span className="sr-only">Age</span>
+                      <input
+                        className="santa-input mt-1 w-full"
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={17}
+                        value={draft.age}
+                        onChange={(e) => patch({ age: e.target.value })}
+                      />
+                    </label>
+                    <PrimaryButton onClick={completeAge}>{SANTA_COPY.steps.age.cta}</PrimaryButton>
+                    <SecondaryButton
+                      onClick={() => {
+                        patch({ age: "" });
+                        trackSanta("christmas_santa_age_completed", { has_age: false });
+                        go("achievement");
+                      }}
+                    >
+                      {SANTA_COPY.steps.age.skip}
+                    </SecondaryButton>
+                    <BackButton
+                      onClick={() => go(draft.nameFromHandoff ? "landing" : "name")}
+                    />
+                  </StepShell>
+                )}
+
+                {draft.step === "achievement" && (
+                  <StepShell title={SANTA_COPY.steps.achievement.title(displayName)}>
+                    <div className="flex flex-wrap gap-2">
+                      {SANTA_COPY.steps.achievement.chips.map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          className="rounded-full border border-[#F5EDE0]/20 px-3 py-1.5 text-xs text-[#F5EDE0]/85 hover:border-[#d4af37]/50"
+                          onClick={() => patch({ somethingGood: chip })}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                    <label className="mt-4 block text-sm">
+                      <span className="sr-only">Something they did well</span>
+                      <textarea
+                        className="santa-input mt-1 min-h-[96px] w-full resize-y"
+                        value={draft.somethingGood}
+                        onChange={(e) => patch({ somethingGood: e.target.value })}
+                        placeholder={SANTA_COPY.steps.achievement.placeholder}
+                        maxLength={120}
+                      />
+                    </label>
+                    <PrimaryButton onClick={completeAchievement}>
+                      {SANTA_COPY.steps.achievement.cta}
+                    </PrimaryButton>
+                    <BackButton onClick={() => go("age")} />
+                  </StepShell>
+                )}
+
+                {draft.step === "wish" && (
+                  <StepShell
+                    title={SANTA_COPY.steps.wish.title(displayName)}
+                    helper={SANTA_COPY.steps.wish.helper}
+                  >
+                    <label className="block text-sm">
+                      <span className="sr-only">Christmas wish</span>
+                      <input
+                        className="santa-input mt-1 w-full"
+                        value={draft.christmasWish}
+                        onChange={(e) => patch({ christmasWish: e.target.value })}
+                        placeholder={SANTA_COPY.steps.wish.placeholder}
+                        maxLength={120}
+                      />
+                    </label>
+                    <PrimaryButton onClick={completeWish}>{SANTA_COPY.steps.wish.cta}</PrimaryButton>
+                    <SecondaryButton
+                      onClick={() => {
+                        patch({ christmasWish: "" });
+                        trackSanta("christmas_santa_wish_completed", { has_wish: false });
+                        go("detail");
+                      }}
+                    >
+                      {SANTA_COPY.steps.wish.skip}
+                    </SecondaryButton>
+                    <BackButton onClick={() => go("achievement")} />
+                  </StepShell>
+                )}
+
+                {draft.step === "detail" && (
+                  <StepShell title={SANTA_COPY.steps.detail.title} helper={SANTA_COPY.steps.detail.helper}>
+                    <label className="block text-sm">
+                      <span className="sr-only">Special detail</span>
+                      <input
+                        className="santa-input mt-1 w-full"
+                        value={draft.customFact}
+                        onChange={(e) => patch({ customFact: e.target.value })}
+                        placeholder={SANTA_COPY.steps.detail.placeholder}
+                        maxLength={120}
+                      />
+                    </label>
+                    <PrimaryButton onClick={() => go("language")}>{SANTA_COPY.steps.detail.cta}</PrimaryButton>
+                    <SecondaryButton
+                      onClick={() => {
+                        patch({ customFact: "" });
+                        go("language");
+                      }}
+                    >
+                      {SANTA_COPY.steps.detail.skip}
+                    </SecondaryButton>
+                    <BackButton onClick={() => go("wish")} />
+                  </StepShell>
+                )}
+
+                {draft.step === "language" && (
+                  <StepShell title={SANTA_COPY.steps.language.title} helper={SANTA_COPY.steps.language.helper}>
+                    <fieldset className="space-y-3">
+                      <legend className="sr-only">Language</legend>
+                      {([
+                          { id: "en", label: "English", available: true },
+                          { id: "ro", label: "Română", available: true },
+                          { id: "de", label: "Deutsch", available: true },
+                          { id: "fr", label: "Français", available: true },
+                          { id: "es", label: "Español", available: true },
+                          { id: "it", label: "Italiano", available: true },
+                          { id: "pt", label: "Português", available: true },
+                          { id: "nl", label: "Nederlands", available: true },
+                          { id: "pl", label: "Polski", available: true },
+                        ] as const).map((lang) => (
+                        <label
+                          key={lang.id}
+                          className={`flex min-h-12 items-center justify-between rounded-xl border px-4 ${
+                            lang.available
+                              ? "cursor-pointer border-[#F5EDE0]/20 hover:border-[#d4af37]/50"
+                              : "cursor-not-allowed border-[#F5EDE0]/10 opacity-45"
+                          }`}
+                        >
+                          <span className="flex items-center gap-3 text-sm">
+                            <input
+                              type="radio"
+                              name="santa-language"
+                              disabled={!lang.available}
+                              checked={draft.language === lang.id}
+                              onChange={() => {
+                                patch({ language: lang.id });
+                              }}
+                            />
+                            {lang.label}
+                          </span>
+                          {!lang.available ? (
+                            <span className="text-[11px] uppercase tracking-wide text-[#F5EDE0]/45">
+                              Coming soon
+                            </span>
+                          ) : null}
+                        </label>
+                      ))}
+                    </fieldset>
+                    <p className="mt-4 text-xs text-[#F5EDE0]/55">
+                      Santa style: Classic Santa · Voice: Warm
+                    </p>
+                    <PrimaryButton onClick={goPreview}>{SANTA_COPY.steps.language.cta}</PrimaryButton>
+                    <BackButton onClick={() => go("detail")} />
+                  </StepShell>
+                )}
+
+                {draft.step === "preview" && (
+                  <StepShell
+                    eyebrow={SANTA_COPY.steps.preview.eyebrow}
+                    title={SANTA_COPY.steps.preview.title(displayName)}
+                  >
+                    <blockquote className="whitespace-pre-wrap rounded-2xl border border-[#d4af37]/25 bg-[#0c1814]/55 p-4 text-sm leading-relaxed text-[#F5EDE0]/9">
+                      {previewScript}
+                    </blockquote>
+                    <p className="mt-2 text-xs text-[#F5EDE0]/45">
+                      Preview only — the final spoken video may vary slightly.
+                    </p>
+                    <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                      <SecondaryButton onClick={() => go("achievement")}>
+                        {SANTA_COPY.steps.preview.change}
+                      </SecondaryButton>
+                      <PrimaryButton onClick={() => go("confirm")}>
+                        {SANTA_COPY.steps.preview.perfect}
+                      </PrimaryButton>
+                    </div>
+                    <BackButton onClick={() => go("language")} />
+                  </StepShell>
+                )}
+
+                {draft.step === "confirm" && (
+                  <StepShell title={SANTA_COPY.steps.preview.title(displayName)}>
+                    <p className="text-sm font-medium text-[#d4af37]">
+                      {SANTA_COPY.steps.preview.mentionsTitle}
+                    </p>
+                    <ul className="mt-3 space-y-2 text-sm text-[#F5EDE0]/85">
+                      {mentions.map((item) => (
+                        <li key={item} className="flex gap-2">
+                          <span aria-hidden="true" className="text-[#d4af37]">
+                            ✓
+                          </span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-4 text-sm text-[#F5EDE0]/65">
+                      Language: {draft.language === "ro" ? "Romanian" : "English"} · Classic Santa · Warm voice
+                    </p>
+                    <label className="mt-5 flex items-start gap-3 text-sm text-[#F5EDE0]/85">
+                      <input
+                        type="checkbox"
+                        className="mt-1"
+                        checked={draft.guardianConsent}
+                        onChange={(e) => patch({ guardianConsent: e.target.checked })}
+                      />
+                      <span>{SANTA_CONSENT_LABEL}</span>
+                    </label>
+                    <PrimaryButton onClick={goOffer}>
+                      {SANTA_COPY.steps.preview.cta(displayName)}
+                    </PrimaryButton>
+                    <BackButton onClick={() => go("preview")} />
+                  </StepShell>
+                )}
+
+                {draft.step === "offer" && (
+                  <StepShell title={SANTA_COPY.steps.offer.title}>
+                    <ul className="space-y-2 text-sm text-[#F5EDE0]/8">
+                      {SANTA_COPY.steps.offer.included.map((item) => (
+                        <li key={item} className="flex gap-2">
+                          <span className="text-[#d4af37]" aria-hidden="true">
+                            ✓
+                          </span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <label className="mt-5 block text-sm">
+                      {SANTA_COPY.steps.offer.emailLabel}
+                      <input
+                        className="santa-input mt-1 w-full"
+                        type="email"
+                        value={draft.email}
+                        onChange={(e) => patch({ email: e.target.value })}
+                        autoComplete="email"
+                      />
+                    </label>
+                    <p className="mt-3 text-xs leading-relaxed text-[#F5EDE0]/5">
+                      {SANTA_COPY.steps.offer.consentNote}
+                    </p>
+                    {purchasable && pkg ? (
+                      <PrimaryButton disabled={busy} onClick={() => void startCheckout()}>
+                        {busy ? "Preparing checkout…" : SANTA_COPY.steps.offer.ctaPay}
+                      </PrimaryButton>
+                    ) : (
+                      <p className="mt-4 rounded-xl border border-amber-400/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-100">
+                        {SANTA_COPY.steps.offer.checkoutSoon}
+                        {product ? ` · Status: ${ctaStateForProduct(product)}` : null}
+                      </p>
+                    )}
+                    <BackButton onClick={() => go("confirm")} />
+                  </StepShell>
+                )}
+              </section>
+            )}
+
+            {draft.step === "checkout" && checkout && (
+              <section className="mx-auto max-w-xl px-4 py-8 sm:px-6">
+                <h2 className="santa-display text-3xl">Secure payment</h2>
+                <div className="mt-6 rounded-2xl border border-[#F5EDE0]/15 bg-[#F5EDE0] p-4 text-slate-900">
+                  <CustomStripeCheckout
+                    clientSecret={checkout.clientSecret}
+                    publishableKey={checkout.publishableKey}
+                    dueDisplay={`$${(checkout.amountCents / 100).toFixed(2)}`}
+                    returnUrl={`${window.location.origin}${SANTA_ROUTE}?checkout=success&token=${encodeURIComponent(draft.publicToken || "")}`}
+                    email={draft.email}
+                  />
+                </div>
+              </section>
+            )}
+
+            {draft.step === "progress" && (
+              <section className="mx-auto max-w-xl px-4 py-10 text-center sm:px-6">
+                <div className="overflow-hidden rounded-2xl border border-[#d4af37]/20">
+                  <SantaWorkshopScene compact accentName={displayName} />
+                </div>
+                <h2 className="santa-display mt-6 text-3xl">
+                  {SANTA_COPY.steps.progress.title(displayName)}
+                </h2>
+                <p className="mt-4 text-base text-[#F5EDE0]/8" aria-live="polite">
+                  {progressStageCopy}
+                </p>
+                <p className="mt-2 text-sm text-[#F5EDE0]/55">{santaProgressCopy(jobStatus || "queued")}</p>
+                <p className="mt-6 text-xs text-[#F5EDE0]/45">
+                  This can take several minutes. You can close this page and reopen your order link later.
+                </p>
+              </section>
+            )}
+
+            {draft.step === "result" && resultUrl && (
+              <section className="mx-auto max-w-xl px-4 py-8 sm:px-6">
+                <h2 className="santa-display text-3xl">
+                  {SANTA_COPY.steps.result.title(displayName)}
+                </h2>
+                <video
+                  src={resultUrl}
+                  controls
+                  playsInline
+                  className="mt-6 aspect-video w-full rounded-2xl bg-black"
+                />
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <PrimaryButton onClick={() => void onDownload()}>
+                    {SANTA_COPY.steps.result.download}
+                  </PrimaryButton>
+                  <SecondaryButton onClick={() => void onShare()}>
+                    {SANTA_COPY.steps.result.share}
+                  </SecondaryButton>
+                </div>
+                <SecondaryButton onClick={resetAll}>{SANTA_COPY.steps.result.another}</SecondaryButton>
+                <div className="mt-8 space-y-2 border-t border-[#F5EDE0]/10 pt-6 text-sm">
+                  <p className="text-[#F5EDE0]/55">More Christmas magic</p>
+                  <Link className="block text-[#d4af37] hover:underline" to="/christmas/cards">
+                    {SANTA_COPY.steps.result.crossSellCard}
+                  </Link>
+                  <Link className="block text-[#d4af37] hover:underline" to="/christmas/tree">
+                    {SANTA_COPY.steps.result.crossSellTree}
+                  </Link>
+                  <Link className="block text-[#d4af37] hover:underline" to="/christmas/photo-generator">
+                    {SANTA_COPY.steps.result.crossSellPortrait}
+                  </Link>
+                </div>
+              </section>
+            )}
+
+            {draft.step === "error" && (
+              <section className="mx-auto max-w-xl px-4 py-10 sm:px-6">
+                <h2 className="santa-display text-3xl">Something went wrong</h2>
+                <p className="mt-3 text-sm text-[#F5EDE0]/7">
+                  If you already paid, keep your order link — support can retry without charging again.
+                </p>
+                <Link className="mt-6 inline-block text-[#d4af37] hover:underline" to="/christmas">
+                  Christmas hub
+                </Link>
+              </section>
+            )}
+
+            {showMarketing ? (
+              <>
+                <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:hidden">
+                  <SantaDemoPlayer example={SANTA_DEMO_EXAMPLES[0]} featured />
+                </div>
+                <SantaLandingSections />
+              </>
+            ) : (
+              <div className="border-t border-[#F5EDE0]/10">
+                <SantaLandingSections />
+              </div>
+            )}
+          </main>
+        </div>
+
+        <style>{`
+          .santa-video-page {
+            --santa-display: "Cormorant Garamond", "Times New Roman", serif;
+            --santa-body: "Source Sans 3", "Segoe UI", sans-serif;
+            font-family: var(--santa-body);
+          }
+          .santa-display, .santa-video-page h1, .santa-video-page h2, .santa-video-page h3 {
+            font-family: var(--santa-display);
+          }
+          .santa-input {
+            border-radius: 0.75rem;
+            border: 1px solid rgba(245, 237, 224, 0.22);
+            background: rgba(12, 24, 20, 0.65);
+            color: #F5EDE0;
+            padding: 0.75rem 0.9rem;
+          }
+          .santa-input:focus {
+            outline: none;
+            border-color: #d4af37;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25);
+          }
+          .santa-input::placeholder {
+            color: rgba(245, 237, 224, 0.4);
+          }
+        `}</style>
+      </div>
     </>
+  );
+}
+
+function StepShell({
+  title,
+  helper,
+  eyebrow,
+  children,
+}: {
+  title: string;
+  helper?: string;
+  eyebrow?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      {eyebrow ? (
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#d4af37]">{eyebrow}</p>
+      ) : null}
+      <h2 className="santa-display text-2xl text-[#F5EDE0] sm:text-3xl">{title}</h2>
+      {helper ? <p className="mt-2 text-sm text-[#F5EDE0]/65">{helper}</p> : null}
+      <div className="mt-5 space-y-3">{children}</div>
+    </div>
+  );
+}
+
+function PrimaryButton({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#d4af37] px-5 text-sm font-semibold text-[#1a1208] transition hover:bg-[#e0c05a] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5EDE0]"
+    >
+      {children}
+    </button>
+  );
+}
+
+function SecondaryButton({
+  children,
+  onClick,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#F5EDE0]/25 px-5 text-sm font-medium text-[#F5EDE0]/9 hover:border-[#F5EDE0]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+    >
+      {children}
+    </button>
+  );
+}
+
+function BackButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-sm text-[#F5EDE0]/55 underline-offset-2 hover:text-[#F5EDE0] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+    >
+      Back
+    </button>
   );
 }
