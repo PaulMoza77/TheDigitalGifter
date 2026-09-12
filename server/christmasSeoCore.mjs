@@ -745,16 +745,56 @@ function buildDepthHtmlFromDepth(depth, faqHeading = "Frequently Asked Questions
       `</section>`
     : "";
 
+  // Use <article>, not nested <div>, so shell replace stays robust if a
+  // non-nested-aware matcher ever runs against prerendered HTML.
   const faqs = depth.faqs?.length
     ? `<section data-tdg-faq="true"><h2>${escapeHtml(faqHeading)}</h2>${depth.faqs
         .map(
           (item) =>
-            `<div><h3>${escapeHtml(item.q)}</h3><p>${escapeHtml(item.a)}</p></div>`,
+            `<article><h3>${escapeHtml(item.q)}</h3><p>${escapeHtml(item.a)}</p></article>`,
         )
         .join("")}</section>`
     : "";
 
   return geo + sections + faqs;
+}
+
+/**
+ * Replace the entire #tdg-christmas-seo element, including nested tags.
+ * A naïve /[\s\S]*?<\/div>/ match stops at the first nested </div> and leaves
+ * orphan FAQ markup (seen live when origin re-applies SEO onto prerendered shells).
+ */
+function replaceChristmasSeoShell(html, shell) {
+  const openRe = /<div\b[^>]*\bid="tdg-christmas-seo"[^>]*>/i;
+  const openMatch = openRe.exec(html);
+  if (!openMatch) return html;
+
+  const start = openMatch.index;
+  let pos = start + openMatch[0].length;
+  let depth = 1;
+
+  while (pos < html.length && depth > 0) {
+    const nextOpen = html.indexOf("<div", pos);
+    const nextClose = html.indexOf("</div>", pos);
+    if (nextClose === -1) {
+      // Malformed shell — fall back to stripping from open tag to EOF root close.
+      return `${html.slice(0, start)}${shell}`;
+    }
+
+    if (nextOpen !== -1 && nextOpen < nextClose) {
+      const after = html.charAt(nextOpen + 4);
+      if (after === " " || after === ">" || after === "\n" || after === "\t" || after === "/") {
+        depth += 1;
+      }
+      pos = nextOpen + 4;
+      continue;
+    }
+
+    depth -= 1;
+    pos = nextClose + 6;
+  }
+
+  return `${html.slice(0, start)}${shell}${html.slice(pos)}`;
 }
 
 function buildDepthHtml(pathname) {
@@ -912,10 +952,7 @@ export function applyChristmasSeo(html, pathname) {
 
   const shell = buildSeoShell(entry, { depthOverride, locale, basePath });
   if (/id="tdg-christmas-seo"/.test(next)) {
-    next = next.replace(
-      /<div id="tdg-christmas-seo"[\s\S]*?<\/div>/,
-      shell,
-    );
+    next = replaceChristmasSeoShell(next, shell);
   } else if (/<div id="root"><\/div>/i.test(next)) {
     next = next.replace(
       /<div id="root"><\/div>/i,

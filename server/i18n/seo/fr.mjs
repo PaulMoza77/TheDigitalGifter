@@ -98,23 +98,35 @@ export const CHRISTMAS_SEO_CONTENT = {
     faqs: [
       {
         q: "Que puis-je créer pour Noël avec TheDigitalGifter ?",
-        a: "Des idées de cadeaux, des portraits de Noël pour les familles, les couples et les animaux, une vidéo personnalisée du Père Noël, une liste de souhaits partageable, des cartes de Noël, des messages de Noël, un sapin numérique et un calendrier de l'Avent.",
+        a: "Vous pouvez trouver des idées de cadeaux, transformer des photos en portraits de Noël pour familles, couples et animaux, démarrer l’expérience Père Noël, créer une liste de souhaits partageable, concevoir une carte, écrire des messages, décorer un sapin numérique et ouvrir des surprises de l’Avent. Choisissez une expérience sur cette page et terminez en quelques minutes.",
       },
       {
         q: "Le Père Noël peut-il dire le prénom de mon enfant ?",
-        a: "Oui. Commencez avec son prénom sur la page Noël ou dans l'expérience vidéo du Père Noël, puis ajoutez des détails facultatifs avant de créer la vidéo.",
+        a: "Vous pouvez commencer par le prénom sur la page Noël ou dans l’expérience Père Noël, puis ajouter des détails optionnels. Les vidéos parlées sont disponibles aujourd’hui en anglais et en roumain — d’autres langues suivront.",
       },
       {
         q: "Ai-je besoin de compétences en design ?",
-        a: "Non. Chaque expérience de Noël est guidée — téléchargez une photo, répondez à quelques questions ou commencez simplement avec un prénom.",
+        a: "Non. Chaque expérience de Noël vous guide étape par étape — importez une photo, répondez à quelques questions ou commencez par un prénom — et la page fait le reste.",
       },
       {
         q: "Est-ce pour des cadeaux numériques, physiques, ou les deux ?",
-        a: "Les deux. Utilisez le générateur de cadeaux et la liste de souhaits pour vos achats partout, et créez des portraits numériques, des cartes et des vidéos du Père Noël à envoyer.",
+        a: "Les deux. Utilisez le Trouveur et la liste de souhaits pour faire vos courses partout, et créez des portraits et cartes numériques à télécharger ou partager aussitôt.",
       },
       {
         q: "Cela fonctionne-t-il sur mon téléphone ?",
-        a: "Oui. L'espace Noël et les expériences produits sont conçus pour fonctionner aussi bien sur téléphone que sur ordinateur.",
+        a: "Oui — le hub de Noël et les expériences produit sont conçus d’abord pour le téléphone, et fonctionnent aussi sur ordinateur.",
+      },
+      {
+        q: "La photo de ma famille est-elle privée ?",
+        a: "Les imports servent à créer votre portrait ou votre carte. Les expériences enfants sont privacy-first et attendent un parent ou tuteur. Quand le résultat est prêt, vous le téléchargez en privé — nous ne publions pas vos photos.",
+      },
+      {
+        q: "Combien de temps faut-il pour créer quelque chose ?",
+        a: "La plupart des expériences prennent quelques minutes. Le Trouveur et les messages sont presque instantanés. Portraits, cartes et Père Noël vous guident étape par étape ; les créations payantes continuent après le paiement.",
+      },
+      {
+        q: "Ai-je besoin d’un compte pour commencer ?",
+        a: "Vous pouvez explorer et commencer tout de suite. Certaines expériences demandent un e-mail à l’inscription ou au paiement pour enregistrer la progression, recevoir le résultat ou rejoindre le Christmas Club.",
       },
     ],
   },

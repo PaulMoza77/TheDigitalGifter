@@ -10,6 +10,9 @@ export const LANDING_FAQS = [
   { qKey: "faq.3.q", aKey: "faq.3.a" },
   { qKey: "faq.4.q", aKey: "faq.4.a" },
   { qKey: "faq.5.q", aKey: "faq.5.a" },
+  { qKey: "faq.6.q", aKey: "faq.6.a" },
+  { qKey: "faq.7.q", aKey: "faq.7.a" },
+  { qKey: "faq.8.q", aKey: "faq.8.a" },
 ] as const;
 
 export const LANDING_INTERNAL_LINKS = [

@@ -84,24 +84,36 @@ export const CHRISTMAS_SEO_CONTENT = {
     ],
     faqs: [
       {
-        q: "Co mogę stworzyć na Boże Narodzenie z TheDigitalGifter?",
-        a: "Pomysły na prezenty, świąteczne portrety dla rodzin, par i zwierząt, spersonalizowany film od Świętego Mikołaja, listę życzeń do udostępnienia, kartki świąteczne, wiadomości świąteczne, cyfrową choinkę i kalendarz adwentowy.",
+        q: "Co mogę stworzyć na święta z TheDigitalGifter?",
+        a: "Możesz znaleźć pomysły na prezenty, zamienić zdjęcia w portrety świąteczne dla rodzin, par i zwierząt, rozpocząć doświadczenie ze Świętym Mikołajem, stworzyć udostępnialną listę życzeń, zaprojektować kartkę, napisać wiadomości, udekorować cyfrową choinkę i otwierać niespodzianki Adwentu. Wybierz jedno doświadczenie na tej stronie i skończ w kilka minut.",
       },
       {
         q: "Czy Święty Mikołaj może powiedzieć imię mojego dziecka?",
-        a: "Tak. Zacznij od podania imienia na stronie świątecznej lub w doświadczeniu Filmu od Świętego Mikołaja, a potem dodaj opcjonalne szczegóły przed stworzeniem filmu. Film jest tworzony w języku angielskim lub rumuńskim.",
+        a: "Możesz zacząć od imienia na stronie świątecznej lub w doświadczeniu ze Świętym Mikołajem i dodać opcjonalne szczegóły. Mówione filmy są dziś dostępne po angielsku i rumuńsku — inne języki wkrótce.",
       },
       {
-        q: "Czy potrzebuję umiejętności projektowania?",
-        a: "Nie. Każde świąteczne doświadczenie jest prowadzone krok po kroku — wgraj zdjęcie, odpowiedz na kilka pytań lub zacznij od imienia.",
+        q: "Czy potrzebuję umiejętności projektowych?",
+        a: "Nie. Każde doświadczenie świąteczne prowadzi Cię krok po kroku — prześlij zdjęcie, odpowiedz na kilka pytań lub zacznij od imienia — a strona robi resztę.",
       },
       {
         q: "Czy to dla prezentów cyfrowych, fizycznych, czy obu?",
-        a: "Obu. Użyj Gift Finder i listy życzeń do zakupów w dowolnym miejscu, a twórz cyfrowe portrety, kartki i filmy od Świętego Mikołaja do wysłania.",
+        a: "Obu. Użyj Wyszukiwarki i listy życzeń do zakupów gdziekolwiek oraz twórz cyfrowe portrety i kartki do natychmiastowego pobrania lub udostępnienia.",
       },
       {
         q: "Czy to działa na telefonie?",
-        a: "Tak. Świąteczne centrum i wszystkie doświadczenia produktowe zostały zaprojektowane tak, by działać na telefonach i komputerach.",
+        a: "Tak — hub świąteczny i doświadczenia produktowe są zaprojektowane najpierw na telefon i działają też na komputerze.",
+      },
+      {
+        q: "Czy zdjęcie mojej rodziny jest prywatne?",
+        a: "Przesłane pliki służą do stworzenia portretu lub kartki. Doświadczenia dla dzieci są privacy-first i zakładają rodzica lub opiekuna. Gdy wynik jest gotowy, pobierasz go prywatnie — nie publikujemy Twoich zdjęć.",
+      },
+      {
+        q: "Ile trwa stworzenie czegoś?",
+        a: "Większość doświadczeń zajmuje kilka minut. Wyszukiwarka i wiadomości są niemal natychmiastowe. Portrety, kartki i Święty Mikołaj prowadzą Cię krok po kroku; płatne kreacje kontynuują po checkout.",
+      },
+      {
+        q: "Czy potrzebuję konta, żeby zacząć?",
+        a: "Możesz od razu przeglądać i zaczynać. Niektóre doświadczenia proszą o e-mail przy dołączeniu lub płatności, aby zapisać postęp, otrzymać wynik lub dołączyć do Christmas Club.",
       },
     ],
   },
