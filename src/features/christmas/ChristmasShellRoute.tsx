@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { ChristmasFeatureShell } from "./components/ChristmasFeatureShell";
+import ChristmasKidsPage from "./ChristmasKidsPage";
 import { shellForPath } from "./routes";
-import { Navigate } from "react-router-dom";
 
-/** Sets robots noindex via document head for unfinished shells. */
+/** Sets robots noindex via document head for unfinished shells only. */
 function useNoIndex(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
@@ -34,6 +34,10 @@ export function ChristmasShellRoute() {
 
   if (!shell) {
     return <Navigate to="/christmas" replace />;
+  }
+
+  if (shell.productKey === "christmas_kids" && shell.status === "live_hub") {
+    return <ChristmasKidsPage />;
   }
 
   return <ChristmasFeatureShell shell={shell} />;

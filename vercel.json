@@ -9,108 +9,49 @@
       ]
     }
   ],
-  "functions": {
-    "api/pet-v2/preview.ts": {
-      "maxDuration": 60
+  "redirects": [
+    {
+      "source": "/christmas/gifts",
+      "destination": "/christmas/gift-finder",
+      "permanent": true
     },
-    "api/christmas-funnel.ts": {
-      "maxDuration": 60
-    },
-    "api/christmas-generate.ts": {
-      "maxDuration": 60
-    },
-    "api/christmas-generate-video.ts": {
-      "maxDuration": 60
+    {
+      "source": "/christmas/gifts/",
+      "destination": "/christmas/gift-finder",
+      "permanent": true
     }
+  ],
+  "functions": {
+    "api/pet-v2/preview.ts": { "maxDuration": 60 },
+    "api/christmas-funnel.ts": { "maxDuration": 60 },
+    "api/christmas-generate.ts": { "maxDuration": 60 },
+    "api/christmas-generate-video.ts": { "maxDuration": 60 }
   },
   "rewrites": [
-    {
-      "source": "/api/christmas/funnel-event",
-      "destination": "/api/christmas-funnel-event"
-    },
-    {
-      "source": "/api/pet/funnel-event",
-      "destination": "/api/pet-funnel-event"
-    },
-    {
-      "source": "/api/pet-v2/funnel-event",
-      "destination": "/api/pet-v2-funnel-event"
-    },
-    {
-      "source": "/api/pet-v3/funnel-event",
-      "destination": "/api/pet-v3-funnel-event"
-    },
-    {
-      "source": "/api/christmas-v2/funnel-event",
-      "destination": "/api/christmas-v2-funnel-event"
-    },
-    {
-      "source": "/api/pet-v3/internal-test-status",
-      "destination": "/api/pet-v3-internal-test-status"
-    },
-    {
-      "source": "/sitemap.xml",
-      "destination": "/api/sitemap.xml"
-    },
-    {
-      "source": "/christmas/gifts-for-:slug",
-      "destination": "/api/christmas-seo?cluster=gifts-for&slug=:slug&locale=en"
-    },
-    {
-      "source": "/christmas/messages-for-:slug",
-      "destination": "/api/christmas-seo?cluster=messages-for&slug=:slug&locale=en"
-    },
-    {
-      "source": "/christmas/funny-christmas-messages",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=funny-christmas-messages&locale=en"
-    },
-    {
-      "source": "/christmas/romantic-christmas-messages",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=romantic-christmas-messages&locale=en"
-    },
-    {
-      "source": "/christmas/professional-christmas-messages",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=professional-christmas-messages&locale=en"
-    },
-    {
-      "source": "/christmas/short-christmas-wishes",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=short-christmas-wishes&locale=en"
-    },
-    {
-      "source": "/christmas/christmas-messages-for-family",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=christmas-messages-for-family&locale=en"
-    },
-    {
-      "source": "/ro/christmas/gifts-for-:slug",
-      "destination": "/api/christmas-seo?cluster=gifts-for&slug=:slug&locale=ro"
-    },
-    {
-      "source": "/ro/christmas/messages-for-:slug",
-      "destination": "/api/christmas-seo?cluster=messages-for&slug=:slug&locale=ro"
-    },
-    {
-      "source": "/ro/christmas/funny-christmas-messages",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=funny-christmas-messages&locale=ro"
-    },
-    {
-      "source": "/ro/christmas/romantic-christmas-messages",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=romantic-christmas-messages&locale=ro"
-    },
-    {
-      "source": "/ro/christmas/professional-christmas-messages",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=professional-christmas-messages&locale=ro"
-    },
-    {
-      "source": "/ro/christmas/short-christmas-wishes",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=short-christmas-wishes&locale=ro"
-    },
-    {
-      "source": "/ro/christmas/christmas-messages-for-family",
-      "destination": "/api/christmas-seo?cluster=messages-intent&slug=christmas-messages-for-family&locale=ro"
-    },
-    {
-      "source": "/((?!api/|images/|assets/|\\.well-known/).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/christmas/funnel-event", "destination": "/api/christmas-funnel-event" },
+    { "source": "/api/pet/funnel-event", "destination": "/api/pet-funnel-event" },
+    { "source": "/api/pet-v2/funnel-event", "destination": "/api/pet-v2-funnel-event" },
+    { "source": "/api/pet-v3/funnel-event", "destination": "/api/pet-v3-funnel-event" },
+    { "source": "/api/pet-v4/funnel-event", "destination": "/api/pet-v4-funnel-event" },
+    { "source": "/api/christmas-v2/funnel-event", "destination": "/api/christmas-v2-funnel-event" },
+    { "source": "/api/christmas/gift-tree", "destination": "/api/christmas-gift-tree" },
+    { "source": "/api/christmas/club-signup", "destination": "/api/christmas-club-signup" },
+    { "source": "/api/pet-v3/internal-test-status", "destination": "/api/pet-v3-internal-test-status" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap.xml" },
+    { "source": "/christmas/gifts-for-:slug", "destination": "/api/christmas-seo?cluster=gifts-for&slug=:slug&locale=en" },
+    { "source": "/christmas/messages-for-:slug", "destination": "/api/christmas-seo?cluster=messages-for&slug=:slug&locale=en" },
+    { "source": "/christmas/funny-christmas-messages", "destination": "/api/christmas-seo?cluster=messages-intent&slug=funny-christmas-messages&locale=en" },
+    { "source": "/christmas/romantic-christmas-messages", "destination": "/api/christmas-seo?cluster=messages-intent&slug=romantic-christmas-messages&locale=en" },
+    { "source": "/christmas/professional-christmas-messages", "destination": "/api/christmas-seo?cluster=messages-intent&slug=professional-christmas-messages&locale=en" },
+    { "source": "/christmas/short-christmas-wishes", "destination": "/api/christmas-seo?cluster=messages-intent&slug=short-christmas-wishes&locale=en" },
+    { "source": "/christmas/christmas-messages-for-family", "destination": "/api/christmas-seo?cluster=messages-intent&slug=christmas-messages-for-family&locale=en" },
+    { "source": "/ro/christmas/gifts-for-:slug", "destination": "/api/christmas-seo?cluster=gifts-for&slug=:slug&locale=ro" },
+    { "source": "/ro/christmas/messages-for-:slug", "destination": "/api/christmas-seo?cluster=messages-for&slug=:slug&locale=ro" },
+    { "source": "/ro/christmas/funny-christmas-messages", "destination": "/api/christmas-seo?cluster=messages-intent&slug=funny-christmas-messages&locale=ro" },
+    { "source": "/ro/christmas/romantic-christmas-messages", "destination": "/api/christmas-seo?cluster=messages-intent&slug=romantic-christmas-messages&locale=ro" },
+    { "source": "/ro/christmas/professional-christmas-messages", "destination": "/api/christmas-seo?cluster=messages-intent&slug=professional-christmas-messages&locale=ro" },
+    { "source": "/ro/christmas/short-christmas-wishes", "destination": "/api/christmas-seo?cluster=messages-intent&slug=short-christmas-wishes&locale=ro" },
+    { "source": "/ro/christmas/christmas-messages-for-family", "destination": "/api/christmas-seo?cluster=messages-intent&slug=christmas-messages-for-family&locale=ro" },
+    { "source": "/((?!api/|images/|assets/|\\.well-known/).*)", "destination": "/index.html" }
   ]
 }

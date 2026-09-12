@@ -1,4 +1,5 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
+import { normalizeWave1GenerationLocale } from "../_shared/christmas/wave1Locale.ts";
 import { assertAdmin, getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
 import {
   generateOpaqueToken,

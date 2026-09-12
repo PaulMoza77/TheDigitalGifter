@@ -1,6 +1,6 @@
 /** Server-owned Christmas Message Generator taxonomy (stable keys). */
 
-export type LocaleCode = "en" | "ro";
+export type LocaleCode = "en" | "ro" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "pl";
 
 export const MESSAGE_RECIPIENTS = [
   { key: "mom", en: "Mom", ro: "Mamă", seoSlug: "mom" },
@@ -45,7 +45,7 @@ export const MESSAGE_RELATIONSHIPS = [
   { key: "other", en: "Other", ro: "Altceva" },
 ] as const;
 
-/** Consumed by the Christmas SEO factory: /christmas/messages-for-{slug}. */
+/** Future SEO seam: /christmas/messages-for-{slug} — factory NOT built here. */
 export const SEO_MESSAGE_RECIPIENT_SLUGS: Record<string, string> = Object.fromEntries(
   MESSAGE_RECIPIENTS.map((r) => [r.key, r.seoSlug]),
 );

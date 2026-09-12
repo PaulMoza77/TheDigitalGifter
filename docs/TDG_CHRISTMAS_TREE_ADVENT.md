@@ -16,8 +16,18 @@ Feature flags (Edge / Deno env):
 - `CHRISTMAS_ADVENT_ENABLED` — must be `true` for production claims
 - `CHRISTMAS_ADVENT_CREDITS_ENABLED` — monetary ledger grants (default off)
 - `CHRISTMAS_FREE_GIFT_ENABLED` — free gift claims (default off)
+- `CHRISTMAS_TEST_BYPASS` — server-only lab switch; client `__test_force` is ignored without it
 
-Defaults do **not** enable Advent monetary promotions.
+Defaults do **not** enable Advent monetary promotions or free-gift claims.
+
+### Free-gift claim path
+
+- Catalog: `christmas_free_gifts` (seed rows `active=false`; credits row stays inactive)
+- Claims: `christmas_free_gift_claims` — unique `(user_id, season_year)` / `(guest_token_hash, season_year)` + `idempotency_key`
+- Outcome is server-owned (weighted pick). Client cannot choose the gift.
+- Guests: non-monetary only (`cosmetic` / `surprise_message` / `content_unlock`). Credits never granted to anonymous traffic.
+- Authenticated identity is preferred when a session bearer is present.
+- Production claims stay off until `CHRISTMAS_FREE_GIFT_ENABLED=true` is set on the Edge function.
 
 ## Architecture
 
@@ -98,5 +108,6 @@ Christmas admin can inspect tree aggregates via service role / future RPC. Messa
 
 - `advent_engine_ready=true` (calendar + claim path implemented)
 - `production_advent_claims_live=false` unless date in Dec 1–24 **and** `CHRISTMAS_ADVENT_ENABLED=true`
+- `production_free_gift_live=false` unless `CHRISTMAS_FREE_GIFT_ENABLED=true`
 - Live charges: **NONE** (Tree V1 free; no checkout)
 - Unsolicited customer emails: **NONE**

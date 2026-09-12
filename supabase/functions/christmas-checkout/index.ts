@@ -1,4 +1,5 @@
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
+import { isWave1GenerationLocale, normalizeWave1GenerationLocale } from "../_shared/christmas/wave1Locale.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
 import {
   buildChristmasPortraitPrompt,
@@ -58,6 +59,8 @@ type Body = {
   template_key?: string;
   guardian_consent?: boolean;
   consent_version?: string;
+  /** Gift-tree guest continuity — hashed server-side into order metadata. */
+  guest_token?: string;
   /** Ignored — prompts are server-owned. */
   prompt?: string;
   client_prompt?: string;
@@ -164,7 +167,7 @@ Deno.serve(async (req) => {
     let santaPerso: Record<string, unknown> | null = null;
     if (product.product_key === "christmas_santa_video") {
       const name = asString(body.child_first_name);
-      const language = asString(body.language).toLowerCase();
+      const language = normalizeWave1GenerationLocale(asString(body.language));
       const templateKey = asString(body.template_key) || "classic_santa";
       if (!body.guardian_consent) {
         return jsonResponse({ error: "Parent/guardian consent required", code: "consent_required" }, 400);
@@ -172,8 +175,8 @@ Deno.serve(async (req) => {
       if (!name || name.length > 40) {
         return jsonResponse({ error: "child_first_name required", code: "name_required" }, 400);
       }
-      if (language !== "en" && language !== "ro") {
-        return jsonResponse({ error: "language must be en or ro", code: "invalid_language" }, 400);
+      if (!isWave1GenerationLocale(language)) {
+        return jsonResponse({ error: "unsupported Wave 1 language", code: "invalid_language" }, 400);
       }
       if (templateKey !== "classic_santa") {
         return jsonResponse({ error: "template unavailable", code: "template_unavailable" }, 400);
@@ -255,6 +258,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    const guestToken = asString(body.guest_token);
+    const guestTokenHash = guestToken ? await sha256Hex(guestToken) : "";
+
     if (!orderId) {
       publicToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
       const tokenHash = await sha256Hex(publicToken);
@@ -283,6 +289,7 @@ Deno.serve(async (req) => {
             portrait_type: portraitType,
             species,
             source_route: sourceRoute,
+            ...(guestTokenHash ? { guest_token_hash: guestTokenHash } : {}),
           },
           ...orderPatch,
         })
@@ -290,6 +297,19 @@ Deno.serve(async (req) => {
         .single();
       if (orderError) throw orderError;
       orderId = order.id;
+    } else if (guestTokenHash) {
+      const { data: existingMeta } = await service
+        .from("christmas_orders")
+        .select("metadata")
+        .eq("id", orderId)
+        .maybeSingle();
+      const prev = (existingMeta?.metadata || {}) as Record<string, unknown>;
+      if (!asString(prev.guest_token_hash)) {
+        await service
+          .from("christmas_orders")
+          .update({ metadata: { ...prev, guest_token_hash: guestTokenHash } })
+          .eq("id", orderId);
+      }
     }
 
     if (santaPerso) {
@@ -333,11 +353,15 @@ Deno.serve(async (req) => {
     params.set("metadata[package_key]", pkg.package_key);
     params.set("metadata[sku]", sku);
     params.set("metadata[christmas_order_id]", orderId);
+    if (guestTokenHash) params.set("metadata[guest_token_hash]", guestTokenHash);
     if (styleKey) params.set("metadata[style_key]", styleKey);
     if (portraitType) params.set("metadata[portrait_type]", portraitType);
     if (species) params.set("metadata[species]", species);
     params.set("payment_intent_data[metadata][product_family]", "christmas");
     params.set("payment_intent_data[metadata][christmas_order_id]", orderId);
+    if (guestTokenHash) {
+      params.set("payment_intent_data[metadata][guest_token_hash]", guestTokenHash);
+    }
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",

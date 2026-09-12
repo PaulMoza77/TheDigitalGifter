@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { parseChristmasLocalePath } from "@/features/christmas/seo/localeRouting";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
+import { treeT, type TreeLocale } from "./tree/treeCopy";
 import { ChristmasTreeVisual } from "./tree/ChristmasTreeVisual";
 import {
   BOX_STYLES,
@@ -19,6 +23,10 @@ import {
   type TreeStyle,
 } from "./tree/treeApi";
 import { giftCountBucket, reorderIds } from "./tree/treeLogic";
+import {
+  ChristmasProductSeoDepth,
+  TREE_SEO_DEPTH,
+} from "./seo/ChristmasProductSeoDepth";
 
 type Mode = "create" | "owner" | "shared" | "unavailable";
 
@@ -31,6 +39,14 @@ async function authBearer(): Promise<string | null> {
 
 export default function ChristmasTreePage() {
   const { shareId: routeShareId } = useParams<{ shareId?: string }>();
+  const location = useLocation();
+  const locale = normalizeWave1GenerationLocale(
+    parseChristmasLocalePath(location.pathname).locale,
+  ) as TreeLocale;
+  const t = useCallback(
+    (key: string, vars?: Record<string, string>) => treeT(key, locale, vars),
+    [locale],
+  );
   const isShareRoute = Boolean(routeShareId);
   const [mode, setMode] = useState<Mode>(isShareRoute ? "shared" : "create");
   const [busy, setBusy] = useState(false);
@@ -38,8 +54,8 @@ export default function ChristmasTreePage() {
   const [owner, setOwner] = useState<OwnerTree | null>(null);
   const [shared, setShared] = useState<SharedTree | null>(null);
   const [ownerToken, setOwnerToken] = useState<string | null>(null);
-  const [title, setTitle] = useState("My Christmas Tree");
-  const [message, setMessage] = useState("I've made you a Christmas tree — tap a gift.");
+  const [title, setTitle] = useState(() => treeT("defaults.title", locale));
+  const [message, setMessage] = useState(() => treeT("defaults.message", locale));
   const [fromName, setFromName] = useState("");
   const [style, setStyle] = useState<TreeStyle>("classic");
   const [decor, setDecor] = useState<Decorations>(defaultDecorations());
@@ -49,6 +65,13 @@ export default function ChristmasTreePage() {
   const [reveal, setReveal] = useState<{ name: string; message: string } | null>(null);
   const [shareHint, setShareHint] = useState<string | null>(null);
   const pageViewed = useRef(false);
+
+  useEffect(() => {
+    if (mode === "create" && !owner) {
+      setTitle(t("defaults.title"));
+      setMessage(t("defaults.message"));
+    }
+  }, [locale, mode, owner, t]);
 
   const loadOwner = useCallback(async (treeId: string, token: string | null) => {
     setBusy(true);
@@ -71,7 +94,7 @@ export default function ChristmasTreePage() {
       setOwnerToken(token);
       setMode("owner");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load tree");
+      setError(e instanceof Error ? e.message : t("error.load"));
     } finally {
       setBusy(false);
     }
@@ -175,7 +198,7 @@ export default function ChristmasTreePage() {
       });
       await loadOwner(data.tree_id, data.owner_token);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Create failed");
+      setError(e instanceof Error ? e.message : t("error.create"));
     } finally {
       setBusy(false);
     }
@@ -204,7 +227,7 @@ export default function ChristmasTreePage() {
       });
       await loadOwner(owner.id, ownerToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
+      setError(e instanceof Error ? e.message : t("error.save"));
     } finally {
       setBusy(false);
     }
@@ -234,7 +257,7 @@ export default function ChristmasTreePage() {
       });
       await loadOwner(owner.id, ownerToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Add gift failed");
+      setError(e instanceof Error ? e.message : t("error.addGift"));
     } finally {
       setBusy(false);
     }
@@ -262,7 +285,7 @@ export default function ChristmasTreePage() {
       });
       await loadOwner(owner.id, ownerToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Reorder failed");
+      setError(e instanceof Error ? e.message : t("error.reorder"));
     } finally {
       setBusy(false);
     }
@@ -289,7 +312,7 @@ export default function ChristmasTreePage() {
       }
       await loadOwner(owner.id, ownerToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Share update failed");
+      setError(e instanceof Error ? e.message : t("error.share"));
     } finally {
       setBusy(false);
     }
@@ -304,15 +327,15 @@ export default function ChristmasTreePage() {
     });
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Send your Christmas Tree", url, text: "I've made you a Christmas tree — tap a gift." });
+        await navigator.share({ title: t("share.nativeTitle"), url, text: t("share.nativeText") });
       } else {
         await navigator.clipboard.writeText(url);
-        setShareHint("Link copied");
+        setShareHint(t("share.copied"));
       }
     } catch {
       try {
         await navigator.clipboard.writeText(url);
-        setShareHint("Link copied");
+        setShareHint(t("share.copied"));
       } catch {
         setShareHint(url);
       }
@@ -330,7 +353,7 @@ export default function ChristmasTreePage() {
         share_id: shareId,
         gift_id: giftId,
       });
-      setReveal({ name: data.gift.display_name || "Gift", message: data.gift.message || "" });
+      setReveal({ name: data.gift.display_name || t("gift.defaultName"), message: data.gift.message || "" });
       void trackChristmasEvent("gift_opened", {
         productKey: PRODUCT_KEY,
         pathname: window.location.pathname,
@@ -343,7 +366,7 @@ export default function ChristmasTreePage() {
         setShared(refreshed.tree);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not open gift");
+      setError(e instanceof Error ? e.message : t("error.open"));
     } finally {
       setBusy(false);
     }
@@ -361,14 +384,14 @@ export default function ChristmasTreePage() {
     return (
       <div className="mx-auto min-h-[70vh] max-w-lg px-4 py-16 text-center">
         <PageHead
-          title="Christmas Tree unavailable"
-          description="This Christmas Tree is private or no longer available."
+          title={t("unavailable.metaTitle")}
+          description={t("unavailable.metaDesc")}
           noindex
         />
-        <h1 className="text-2xl font-semibold text-slate-900">This tree is private</h1>
-        <p className="mt-3 text-slate-600">Ask the sender for a fresh share link, or build your own.</p>
+        <h1 className="text-2xl font-semibold text-slate-900">{t("unavailable.title")}</h1>
+        <p className="mt-3 text-slate-600">{t("unavailable.body")}</p>
         <Link className="mt-8 inline-block underline" to="/christmas/tree">
-          Build your Christmas Tree
+          {t("unavailable.cta")}
         </Link>
       </div>
     );
@@ -383,37 +406,33 @@ export default function ChristmasTreePage() {
         color: "#f4efe6",
       }}
     >
-      <PageHead
-        title={
-          isShareRoute
-            ? "A Christmas Tree is waiting for you"
-            : "Build Your Christmas Tree"
-        }
-        description={
-          isShareRoute
-            ? "Someone made you a Christmas tree — tap a gift."
-            : "Create, decorate, and securely share a personalized Christmas tree with gifts under it."
-        }
-        noindex={isShareRoute}
-      />
+      {isShareRoute ? (
+        <PageHead
+          title={t("title.fallback")}
+          description={t("lede.shareMeta")}
+          noindex
+        />
+      ) : (
+        <ChristmasPageHead path="/christmas/tree" />
+      )}
 
       <div className="mx-auto max-w-lg px-4 pb-24 pt-8">
         <p className="text-center text-xs uppercase tracking-[0.2em] text-amber-200/80">
-          The Digital Gifter
+          {t("brand")}
         </p>
         <h1 className="mt-2 text-center font-serif text-3xl tracking-tight text-amber-50 sm:text-4xl">
           {isShareRoute
-            ? shared?.title || "A Christmas Tree"
+            ? shared?.title || t("title.shared")
             : owner
               ? owner.title
-              : "Your Christmas Tree"}
+              : t("title.create")}
         </h1>
         <p className="mt-2 text-center text-sm text-amber-100/75">
           {isShareRoute
             ? shared?.from_name
-              ? `From ${shared.from_name}`
-              : "Tap a gift to open it"
-            : "I've made you a Christmas tree — tap a gift."}
+              ? t("lede.from", { name: shared.from_name })
+              : t("lede.shared")
+            : t("lede.create")}
         </p>
 
         <div className="mt-6">
@@ -427,11 +446,11 @@ export default function ChristmasTreePage() {
         ) : null}
 
         {/* Gifts under tree */}
-        <section className="mt-6" aria-label="Gifts under the tree">
-          <h2 className="text-sm font-medium text-amber-100/90">Gifts under the tree</h2>
+        <section className="mt-6" aria-label={t("gifts.heading")}>
+          <h2 className="text-sm font-medium text-amber-100/90">{t("gifts.heading")}</h2>
           <ul className="mt-3 flex flex-wrap justify-center gap-3">
             {gifts.length === 0 ? (
-              <li className="text-sm text-amber-100/60">No gifts yet</li>
+              <li className="text-sm text-amber-100/60">{t("gifts.empty")}</li>
             ) : (
               gifts.map((g, idx) => (
                 <li key={g.id} className="flex flex-col items-center gap-1">
@@ -439,7 +458,7 @@ export default function ChristmasTreePage() {
                     <button
                       type="button"
                       disabled={busy || g.can_open === false}
-                      aria-label={`Open gift ${g.display_name || idx + 1}`}
+                      aria-label={t("gifts.openAria", { name: g.display_name || String(idx + 1) })}
                       onClick={() => void openGift(g.id, shared!.share_id)}
                       className="h-14 w-14 rounded-md border border-amber-200/30 shadow-md transition hover:scale-105 disabled:opacity-40"
                       style={{
@@ -468,25 +487,25 @@ export default function ChristmasTreePage() {
                     />
                   )}
                   <span className="max-w-[4.5rem] truncate text-center text-[11px] text-amber-100/80">
-                    {g.display_name || `Gift ${idx + 1}`}
+                    {g.display_name || t("gifts.fallbackName", { n: String(idx + 1) })}
                   </span>
                   {mode === "owner" ? (
                     <div className="flex gap-1">
                       <button
                         type="button"
                         className="rounded px-1 text-[10px] underline"
-                        aria-label="Move gift earlier"
+                        aria-label={t("gifts.moveEarlier")}
                         onClick={() => void moveGift(idx, -1)}
                       >
-                        Up
+                        {t("gifts.up")}
                       </button>
                       <button
                         type="button"
                         className="rounded px-1 text-[10px] underline"
-                        aria-label="Move gift later"
+                        aria-label={t("gifts.moveLater")}
                         onClick={() => void moveGift(idx, 1)}
                       >
-                        Down
+                        {t("gifts.down")}
                       </button>
                     </div>
                   ) : null}
@@ -501,10 +520,10 @@ export default function ChristmasTreePage() {
 
         {/* Owner / create controls */}
         {!isShareRoute && mode !== "shared" ? (
-          <section className="mt-10 space-y-6" aria-label="Tree editor">
+          <section className="mt-10 space-y-6" aria-label={t("editor.aria")}>
             <div>
               <label className="block text-xs text-amber-100/70" htmlFor="tree-style">
-                Tree style
+                {t("editor.style")}
               </label>
               <div className="mt-2 flex flex-wrap gap-2" id="tree-style" role="group">
                 {TREE_STYLES.map((s) => (
@@ -518,7 +537,7 @@ export default function ChristmasTreePage() {
                         : "bg-white/10 text-amber-50"
                     }`}
                   >
-                    {s.label}
+                    {t(`treeStyle.${s.key}`)}
                   </button>
                 ))}
               </div>
@@ -526,7 +545,7 @@ export default function ChristmasTreePage() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-xs text-amber-100/70">
-                Lights
+                {t("editor.lights")}
                 <input
                   className="ml-2 align-middle"
                   type="checkbox"
@@ -535,7 +554,7 @@ export default function ChristmasTreePage() {
                 />
               </label>
               <label className="block text-xs text-amber-100/70">
-                Snow
+                {t("editor.snow")}
                 <input
                   className="ml-2 align-middle"
                   type="checkbox"
@@ -544,7 +563,7 @@ export default function ChristmasTreePage() {
                 />
               </label>
               <label className="block text-xs text-amber-100/70">
-                Topper
+                {t("editor.topper")}
                 <select
                   className="mt-1 w-full rounded-md bg-white/10 px-2 py-2 text-sm text-amber-50"
                   value={decor.topper}
@@ -555,14 +574,14 @@ export default function ChristmasTreePage() {
                     }))
                   }
                 >
-                  <option value="star">Star</option>
-                  <option value="angel">Angel</option>
-                  <option value="bow">Bow</option>
-                  <option value="none">None</option>
+                  <option value="star">{t("topper.star")}</option>
+                  <option value="angel">{t("topper.angel")}</option>
+                  <option value="bow">{t("topper.bow")}</option>
+                  <option value="none">{t("topper.none")}</option>
                 </select>
               </label>
               <label className="block text-xs text-amber-100/70">
-                Ornaments
+                {t("editor.ornaments")}
                 <select
                   className="mt-1 w-full rounded-md bg-white/10 px-2 py-2 text-sm text-amber-50"
                   value={decor.ornaments}
@@ -573,16 +592,16 @@ export default function ChristmasTreePage() {
                     }))
                   }
                 >
-                  <option value="classic">Classic</option>
-                  <option value="gold">Gold</option>
-                  <option value="minimal">Minimal</option>
-                  <option value="colorful">Colorful</option>
+                  <option value="classic">{t("ornaments.classic")}</option>
+                  <option value="gold">{t("ornaments.gold")}</option>
+                  <option value="minimal">{t("ornaments.minimal")}</option>
+                  <option value="colorful">{t("ornaments.colorful")}</option>
                 </select>
               </label>
             </div>
 
             <label className="block text-xs text-amber-100/70">
-              Title
+              {t("editor.title")}
               <input
                 className="mt-1 w-full rounded-md bg-white/10 px-3 py-2 text-sm text-amber-50"
                 value={title}
@@ -591,7 +610,7 @@ export default function ChristmasTreePage() {
               />
             </label>
             <label className="block text-xs text-amber-100/70">
-              Greeting
+              {t("editor.greeting")}
               <textarea
                 className="mt-1 w-full rounded-md bg-white/10 px-3 py-2 text-sm text-amber-50"
                 value={message}
@@ -601,7 +620,7 @@ export default function ChristmasTreePage() {
               />
             </label>
             <label className="block text-xs text-amber-100/70">
-              From
+              {t("editor.from")}
               <input
                 className="mt-1 w-full rounded-md bg-white/10 px-3 py-2 text-sm text-amber-50"
                 value={fromName}
@@ -617,7 +636,7 @@ export default function ChristmasTreePage() {
                 onClick={() => void createTree()}
                 className="w-full rounded-md bg-amber-200 py-3 text-sm font-semibold text-slate-900 disabled:opacity-50"
               >
-                {busy ? "Saving…" : "Save my Christmas Tree"}
+                {busy ? t("editor.saving") : t("editor.saveCreate")}
               </button>
             ) : (
               <>
@@ -627,13 +646,13 @@ export default function ChristmasTreePage() {
                   onClick={() => void saveCustomization()}
                   className="w-full rounded-md bg-amber-200 py-3 text-sm font-semibold text-slate-900 disabled:opacity-50"
                 >
-                  Save changes
+                  {t("editor.saveChanges")}
                 </button>
 
                 <div className="rounded-md border border-white/15 p-4">
-                  <h3 className="text-sm font-medium">Add a gift</h3>
+                  <h3 className="text-sm font-medium">{t("gift.add")}</h3>
                   <label className="mt-3 block text-xs text-amber-100/70">
-                    For
+                    {t("gift.for")}
                     <input
                       className="mt-1 w-full rounded-md bg-white/10 px-3 py-2 text-sm"
                       value={giftName}
@@ -642,7 +661,7 @@ export default function ChristmasTreePage() {
                     />
                   </label>
                   <label className="mt-2 block text-xs text-amber-100/70">
-                    Message
+                    {t("gift.message")}
                     <textarea
                       className="mt-1 w-full rounded-md bg-white/10 px-3 py-2 text-sm"
                       value={giftMessage}
@@ -652,7 +671,7 @@ export default function ChristmasTreePage() {
                     />
                   </label>
                   <label className="mt-2 block text-xs text-amber-100/70">
-                    Box
+                    {t("gift.box")}
                     <select
                       className="mt-1 w-full rounded-md bg-white/10 px-2 py-2 text-sm"
                       value={giftBox}
@@ -660,7 +679,7 @@ export default function ChristmasTreePage() {
                     >
                       {BOX_STYLES.map((b) => (
                         <option key={b.key} value={b.key}>
-                          {b.label}
+                          {t(`box.${b.key}`)}
                         </option>
                       ))}
                     </select>
@@ -671,25 +690,23 @@ export default function ChristmasTreePage() {
                     disabled={busy}
                     onClick={() => void addGift()}
                   >
-                    Add gift
+                    {t("gift.addCta")}
                   </button>
                   <p className="mt-3 text-xs text-amber-100/60">
-                    Want more?{" "}
+                    {t("gift.wantMore")}{" "}
                     <Link className="underline" to="/christmas/photo-generator">
-                      Add a Christmas Portrait
+                      {t("gift.crossPortrait")}
                     </Link>{" "}
                     ·{" "}
                     <Link className="underline" to="/christmas/santa-video">
-                      Create a Santa Video
+                      {t("gift.crossSanta")}
                     </Link>
                   </p>
                 </div>
 
                 <div className="rounded-md border border-white/15 p-4">
-                  <h3 className="text-sm font-medium">Send your Christmas Tree</h3>
-                  <p className="mt-1 text-xs text-amber-100/65">
-                    Private by default. Sharing turns on a secure link — it never grants edit access.
-                  </p>
+                  <h3 className="text-sm font-medium">{t("share.heading")}</h3>
+                  <p className="mt-1 text-xs text-amber-100/65">{t("share.privacy")}</p>
                   {!owner.share_enabled ? (
                     <button
                       type="button"
@@ -697,7 +714,7 @@ export default function ChristmasTreePage() {
                       disabled={busy}
                       onClick={() => void toggleShare(true)}
                     >
-                      Enable sharing
+                      {t("share.enable")}
                     </button>
                   ) : (
                     <div className="mt-3 space-y-2">
@@ -706,14 +723,14 @@ export default function ChristmasTreePage() {
                         className="w-full rounded-md bg-emerald-500/90 py-2.5 text-sm font-semibold text-slate-950"
                         onClick={() => void shareNative()}
                       >
-                        Share link
+                        {t("share.link")}
                       </button>
                       <button
                         type="button"
                         className="w-full rounded-md border border-white/20 py-2 text-sm"
                         onClick={() => void toggleShare(false)}
                       >
-                        Turn sharing off
+                        {t("share.off")}
                       </button>
                       {shareHint ? (
                         <p className="break-all text-xs text-amber-100/80">{shareHint}</p>
@@ -723,13 +740,13 @@ export default function ChristmasTreePage() {
                 </div>
 
                 <p className="text-center text-xs text-amber-100/55">
-                  {gifts.length} gift{gifts.length === 1 ? "" : "s"} · bucket{" "}
+                  {gifts.length === 1 ? t("gifts.countOne") : t("gifts.count", { count: String(gifts.length) })} · bucket{" "}
                   {giftCountBucket(gifts.length)}
                 </p>
 
                 <div className="text-center text-sm">
                   <Link className="underline" to="/christmas/advent">
-                    Open Advent Calendar
+                    {t("nav.openAdvent")}
                   </Link>
                 </div>
               </>
@@ -740,14 +757,16 @@ export default function ChristmasTreePage() {
         {isShareRoute ? (
           <p className="mt-10 text-center text-sm text-amber-100/70">
             <Link className="underline" to="/christmas/tree">
-              Make your own Christmas Tree
+              {t("nav.makeOwn")}
             </Link>
             {" · "}
             <Link className="underline" to="/christmas/advent">
-              Advent
+              {t("nav.advent")}
             </Link>
           </p>
-        ) : null}
+        ) : (
+          <ChristmasProductSeoDepth content={TREE_SEO_DEPTH} tone="dark" />
+        )}
       </div>
 
       {reveal ? (
@@ -755,7 +774,7 @@ export default function ChristmasTreePage() {
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
           role="dialog"
           aria-modal="true"
-          aria-label="Gift opened"
+          aria-label={t("reveal.aria")}
         >
           <div className="w-full max-w-md rounded-lg bg-[#1a2430] p-6 text-amber-50 shadow-xl">
             <h2 className="font-serif text-xl">{reveal.name}</h2>
@@ -765,7 +784,7 @@ export default function ChristmasTreePage() {
               className="mt-6 w-full rounded-md bg-amber-200 py-2.5 text-sm font-semibold text-slate-900"
               onClick={() => setReveal(null)}
             >
-              Close
+              {t("reveal.close")}
             </button>
           </div>
         </div>

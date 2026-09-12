@@ -8,6 +8,31 @@ export function SantaLandingSections() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-20 px-4 pb-20 pt-12 sm:px-6">
+      <section aria-labelledby="santa-message-heading">
+        <h2 id="santa-message-heading" className="santa-display text-3xl text-[#F5EDE0] sm:text-4xl">
+          {sections.message.h2}
+        </h2>
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#F5EDE0]/75">
+          {sections.message.body}
+        </p>
+      </section>
+
+      <section aria-labelledby="santa-mention-heading">
+        <h2 id="santa-mention-heading" className="santa-display text-3xl text-[#F5EDE0]">
+          {sections.mention.h2}
+        </h2>
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#F5EDE0]/75">
+          {sections.mention.body}
+        </p>
+        <ul className="mt-6 grid gap-2 sm:grid-cols-2">
+          {sections.mention.items.map((item) => (
+            <li key={item} className="text-sm leading-relaxed text-[#F5EDE0]/80">
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section aria-labelledby="santa-examples-heading">
         <h2 id="santa-examples-heading" className="santa-display text-3xl text-[#F5EDE0] sm:text-4xl">
           {sections.examples.h2}
@@ -26,7 +51,7 @@ export function SantaLandingSections() {
         <h2 id="santa-how-heading" className="santa-display text-3xl text-[#F5EDE0]">
           {sections.how.h2}
         </h2>
-        <ol className="mt-8 grid gap-8 sm:grid-cols-3">
+        <ol className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {sections.how.steps.map((step, i) => (
             <li key={step.title} className="relative">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#d4af37]">
@@ -63,10 +88,9 @@ export function SantaLandingSections() {
       </section>
 
       <section aria-labelledby="santa-geo-heading">
-        <h2 id="santa-geo-heading" className="sr-only">
-          Create a Magical Message From Santa
+        <h2 id="santa-geo-heading" className="santa-display text-2xl text-[#F5EDE0] sm:text-3xl">
+          {sections.geo.whatIs.q}
         </h2>
-        <h3 className="santa-display text-2xl text-[#F5EDE0]">{sections.geo.whatIs.q}</h3>
         <p className="mt-3 max-w-3xl text-base leading-relaxed text-[#F5EDE0]/75">
           {sections.geo.whatIs.a}
         </p>
