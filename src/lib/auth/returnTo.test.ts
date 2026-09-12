@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { isSafeAdminReturnPath, rememberAuthReturnTo, takeAuthReturnTo } from "@/lib/auth/returnTo";
+import { isSafeAdminReturnPath, isSafeAuthReturnPath, rememberAuthReturnTo, takeAuthReturnTo } from "@/lib/auth/returnTo";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -13,6 +13,10 @@ describe("admin return path", () => {
     expect(isSafeAdminReturnPath("/")).toBe(false);
     expect(isSafeAdminReturnPath("//evil.com")).toBe(false);
     expect(isSafeAdminReturnPath("https://evil.com")).toBe(false);
+    expect(isSafeAuthReturnPath("/christmas")).toBe(true);
+    expect(isSafeAuthReturnPath("/christmas?joined=1")).toBe(true);
+    expect(isSafeAuthReturnPath("/christmas/tree")).toBe(false);
+    expect(isSafeAuthReturnPath("//evil.com")).toBe(false);
   });
 
   it("round-trips a stored admin path", () => {
@@ -27,6 +31,8 @@ describe("admin return path", () => {
         },
       },
     });
+    rememberAuthReturnTo("/christmas");
+    expect(takeAuthReturnTo("/")).toBe("/christmas");
     rememberAuthReturnTo("/admin/pet-funnel-analytics");
     expect(takeAuthReturnTo("/")).toBe("/admin/pet-funnel-analytics");
     expect(takeAuthReturnTo("/")).toBe("/");

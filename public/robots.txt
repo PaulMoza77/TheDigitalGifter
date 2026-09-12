@@ -5,6 +5,8 @@ Disallow: /admin
 Disallow: /account
 Disallow: /funnel/payment
 Disallow: /funnel/result
-Disallow: /wishlist/
 
-Sitemap: https://thedigitalgifter.com/sitemap.xml
+# Christmas share / checkout noindex is via meta robots (noindex,follow),
+# not robots.txt Disallow — engines must crawl those URLs to see the directive.
+
+Sitemap: https://www.thedigitalgifter.com/sitemap.xml

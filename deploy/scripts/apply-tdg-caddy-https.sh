@@ -35,9 +35,12 @@ if ! grep -q 'tdg-verify.mozas-prod-01' "${SRC_HTTPS}"; then
   echo "refusing HTTPS Caddyfile without TDG verify host" >&2
   exit 1
 fi
+# Accept combined host block OR production split (apex permanent redirect + www app).
 if ! grep -qE '^[[:space:]]*thedigitalgifter\.com,[[:space:]]*www\.thedigitalgifter\.com[[:space:]]*\{' "${SRC_HTTPS}" \
-  && ! grep -qE '^[[:space:]]*www\.thedigitalgifter\.com,[[:space:]]*thedigitalgifter\.com[[:space:]]*\{' "${SRC_HTTPS}"; then
-  echo "refusing HTTPS Caddyfile without named TDG site block" >&2
+  && ! grep -qE '^[[:space:]]*www\.thedigitalgifter\.com,[[:space:]]*thedigitalgifter\.com[[:space:]]*\{' "${SRC_HTTPS}" \
+  && ! { grep -qE '^[[:space:]]*www\.thedigitalgifter\.com[[:space:]]*\{' "${SRC_HTTPS}" \
+        && grep -qE '^[[:space:]]*thedigitalgifter\.com[[:space:]]*\{' "${SRC_HTTPS}"; }; then
+  echo "refusing HTTPS Caddyfile without named TDG site block (combined or apex+www split)" >&2
   exit 1
 fi
 

@@ -1,9 +1,15 @@
 /**
- * OpenAI TTS with Replicate MiniMax fallback (EN/RO).
+ * OpenAI TTS with Replicate MiniMax fallback (Wave 1 language_boost map).
  * Synthetic character voices — not real-person clones.
  */
 
 import { replicateOutputUrl } from "../pet/replicate.ts";
+import {
+  minimaxLanguageBoost,
+  normalizeWave1GenerationLocale,
+  preferredSantaTtsProvider,
+  type Wave1GenerationLocale,
+} from "./wave1Locale.ts";
 
 export type SantaTtsResult = {
   bytes: Uint8Array;
@@ -48,7 +54,10 @@ async function pollPrediction(token: string, id: string): Promise<Record<string,
   return current;
 }
 
-async function synthesizeViaReplicate(script: string, language: "en" | "ro"): Promise<SantaTtsResult> {
+async function synthesizeViaReplicate(
+  script: string,
+  language: Wave1GenerationLocale,
+): Promise<SantaTtsResult> {
   const token = String(Deno.env.get("REPLICATE_API_TOKEN") || "").trim();
   if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
   const model = replicateTtsModel();
@@ -67,8 +76,8 @@ async function synthesizeViaReplicate(script: string, language: "en" | "ro"): Pr
         text: script.slice(0, 5000),
         voice_id: voice,
         emotion: "happy",
-        english_normalization: true,
-        language_boost: language === "ro" ? "Romanian" : "English",
+        english_normalization: language === "en",
+        language_boost: minimaxLanguageBoost(language),
         audio_format: "mp3",
       },
     }),
@@ -137,18 +146,40 @@ async function synthesizeViaOpenAi(script: string): Promise<SantaTtsResult> {
 
 export async function synthesizeSantaSpeech(
   script: string,
-  language: "en" | "ro" = "en",
+  language: string = "en",
 ): Promise<SantaTtsResult> {
-  const prefer =
+  const locale = normalizeWave1GenerationLocale(language);
+  const envPrefer =
     String(Deno.env.get("CHRISTMAS_SANTA_TTS_PROVIDER") || "auto").trim().toLowerCase() || "auto";
-  if (prefer === "replicate") return synthesizeViaReplicate(script, language);
-  if (prefer === "openai") return synthesizeViaOpenAi(script);
+  const prefer =
+    envPrefer === "auto" ? preferredSantaTtsProvider(locale) : envPrefer;
+  if (prefer === "replicate") {
+    try {
+      return await synthesizeViaReplicate(script, locale);
+    } catch (err) {
+      if (envPrefer === "replicate") throw err;
+      return await synthesizeViaOpenAi(script);
+    }
+  }
+  if (prefer === "openai") {
+    try {
+      return await synthesizeViaOpenAi(script);
+    } catch (err) {
+      if (envPrefer === "openai") throw err;
+      const message = err instanceof Error ? err.message : String(err);
+      if (/credit|billing|quota|openai_tts_failed|not configured/i.test(message)) {
+        return await synthesizeViaReplicate(script, locale);
+      }
+      throw err;
+    }
+  }
+  // Unknown override → previous auto fallback chain
   try {
     return await synthesizeViaOpenAi(script);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (/credit|billing|quota|openai_tts_failed|not configured/i.test(message)) {
-      return await synthesizeViaReplicate(script, language);
+      return await synthesizeViaReplicate(script, locale);
     }
     throw err;
   }

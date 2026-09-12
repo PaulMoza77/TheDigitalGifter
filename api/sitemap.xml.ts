@@ -1,7 +1,17 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import { listChristmasSeoSitemapRows } from "./_lib/christmas/seoPages";
+import { sitemapEntriesForRows } from "../src/features/christmas/seo/factory";
+import { christmasSitemapPaths } from "../server/christmasIndexing.mjs";
+import {
+  buildChristmasHreflangAlternates,
+  parseChristmasLocalePath,
+} from "../server/christmasI18n.mjs";
 
-const SITE_URL = "https://thedigitalgifter.com";
+/** Keep primary EN list in sync with server/christmasIndexing.mjs CHRISTMAS_INDEXABLE_PATHS. */
+const SITE_URL = "https://www.thedigitalgifter.com";
+
+const CHRISTMAS_SITEMAP_PATHS = christmasSitemapPaths();
 
 type SeoPageRow = {
   page_type: string;
@@ -36,22 +46,34 @@ function createUrlXml({
   lastmod,
   changefreq,
   priority,
+  alternates,
 }: {
   loc: string;
   lastmod?: string;
   changefreq: "daily" | "weekly" | "monthly";
   priority: string;
+  alternates?: Array<{ hreflang: string; href: string }>;
 }) {
+  const altXml =
+    alternates && alternates.length
+      ? alternates
+          .map(
+            (a) =>
+              `    <xhtml:link rel="alternate" hreflang="${escapeXml(a.hreflang)}" href="${escapeXml(a.href)}" />`,
+          )
+          .join("\n")
+      : "";
   return `
   <url>
     <loc>${escapeXml(loc)}</loc>
     ${lastmod ? `<lastmod>${escapeXml(lastmod)}</lastmod>` : ""}
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
+${altXml}
   </url>`;
 }
 
-const STATIC_PATHS = [
+const NON_CHRISTMAS_STATIC_PATHS = [
   "/",
   "/templates",
   "/generator",
@@ -63,8 +85,6 @@ const STATIC_PATHS = [
   "/pet/dog",
   "/pet/cat",
   "/pet/other",
-  "/christmas",
-  "/christmas-ai-photos",
   "/blog",
   "/privacy",
   "/terms",
@@ -72,18 +92,30 @@ const STATIC_PATHS = [
 ];
 
 function staticUrlXml() {
-  return STATIC_PATHS.map((path) =>
+  const christmas = CHRISTMAS_SITEMAP_PATHS.map((path) => {
+    const { basePath } = parseChristmasLocalePath(path);
+    const alternates = buildChristmasHreflangAlternates(basePath);
+    return createUrlXml({
+      loc: `${SITE_URL}${path}`,
+      changefreq: "weekly",
+      priority: basePath === "/christmas" ? "0.9" : "0.8",
+      alternates: alternates.length ? alternates : undefined,
+    });
+  });
+  const other = NON_CHRISTMAS_STATIC_PATHS.map((path) =>
     createUrlXml({
       loc: `${SITE_URL}${path}`,
       changefreq: "weekly",
       priority: path === "/" ? "1.0" : "0.7",
     }),
   );
+  return [...other.slice(0, 1), ...christmas, ...other.slice(1)];
 }
 
 function sendSitemap(res: VercelResponse, urls: string[]) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls.join("\n")}
 </urlset>`;
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
@@ -126,6 +158,36 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
 
     const urls = [...fallback];
 
+    try {
+      const christmasRows = await listChristmasSeoSitemapRows();
+      const lastmodByPath = new Map<string, string>();
+      for (const row of christmasRows) {
+        lastmodByPath.set(
+          `${row.canonical_path}:${row.locale}`,
+          getLastMod(row.updated_at, row.created_at),
+        );
+      }
+      for (const entry of sitemapEntriesForRows(christmasRows)) {
+        urls.push(
+          createUrlXml({
+            loc: entry.loc,
+            lastmod: lastmodByPath.get(`${entry.canonicalPath}:${entry.locale}`),
+            changefreq: "weekly",
+            priority: entry.locale === "en" ? "0.8" : "0.7",
+            alternates: entry.alternates.map((alt) => ({
+              hreflang: alt.locale,
+              href: alt.href,
+            })),
+          }),
+        );
+      }
+    } catch (clusterError) {
+      console.error(
+        "[sitemap.xml] christmas cluster:",
+        clusterError instanceof Error ? clusterError.name : "unknown",
+      );
+    }
+
     for (const page of (seoPages ?? []) as SeoPageRow[]) {
       if (!page.page_type || !page.slug) continue;
 
@@ -158,3 +220,5 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     sendSitemap(res, fallback);
   }
 }
+
+export { CHRISTMAS_SITEMAP_PATHS, SITE_URL };

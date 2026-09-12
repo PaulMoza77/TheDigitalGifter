@@ -169,13 +169,40 @@ describe("product wiring", () => {
       "christmas_card_page_view",
       "card_generated",
       "card_download",
+      "card_existing_portrait_used",
+      "card_portrait_cross_sell_clicked",
+      "card_type_selected",
+      "card_message_started",
+      "card_message_generated",
     ]) {
       expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain(ev);
     }
   });
 
-  it("keeps paid Christmas checkout off in catalog seed", () => {
+  it("ships premium card maker structure + portrait handoff", () => {
+    const page = readSrc("src/features/christmas/ChristmasCardsPage.tsx");
+    expect(page).toContain("cardMakerCopy");
+    expect(page).toContain("CardLivePreview");
+    expect(page).toContain("from_portrait");
+    expect(page).toContain("photo.usePortrait");
+    expect(page).toContain("useExistingPortrait");
+    const handoff = readSrc("src/features/christmas/cards/portraitHandoff.ts");
+    expect(handoff).toContain("tdg.christmas.portrait.card.handoff.v1");
+    expect(handoff).toContain("cardsUrlFromPortrait");
+    const portrait = readSrc("src/features/christmas/ChristmasPortraitFunnelPage.tsx");
+    expect(portrait).toContain('t("funnel.card")');
+    expect(portrait).toContain("writePortraitToCardHandoff");
+    const copy = readSrc("src/features/christmas/cards/cardMakerCopy.ts");
+    expect(copy).toContain("Christmas Card Maker");
+    expect(copy).toContain("FAQPage");
+  });
+
+  it("keeps paid Christmas checkout off in catalog seed except live Santa packages", () => {
     for (const p of CHRISTMAS_CATALOG_SEED) {
+      if (p.product_key === "christmas_santa_video") {
+        expect(p.packages.some((pkg) => pkg.purchasable)).toBe(true);
+        continue;
+      }
       expect(p.packages.every((pkg) => !pkg.purchasable)).toBe(true);
     }
   });
@@ -192,5 +219,36 @@ describe("product wiring", () => {
     expect(funnel).toContain("recordCardRender");
     expect(readSrc("docs/TDG_CHRISTMAS_CARDS_MESSAGES.md")).toContain("tdg-christmas-cards-messages-011");
     expect(readSrc("docs/architecture/TDG_CHRISTMAS_CARD_RENDERING_ADR.md")).toContain("Canvas 2D");
+  });
+});
+
+describe("card maker taxonomy", () => {
+  it("curates card types and hero examples", async () => {
+    const { CARD_TYPES, HERO_EXAMPLES, EXAMPLES_GALLERY, CARD_DESIGN_ORDER } = await import(
+      "./cardMakerTypes"
+    );
+    expect(CARD_TYPES.map((t) => t.key)).toContain("family");
+    expect(CARD_TYPES.map((t) => t.key)).toContain("pet");
+    expect(HERO_EXAMPLES).toHaveLength(5);
+    expect(EXAMPLES_GALLERY.some((e) => e.key === "portrait_to_card")).toBe(true);
+    expect(CARD_DESIGN_ORDER).toHaveLength(8);
+  });
+
+  it("exposes locale-aware copy helpers", async () => {
+    const { cardsT, cardsMakerSeo } = await import("./cardMakerCopy");
+    expect(cardsT("hero.cta", "en")).toMatch(/Create/i);
+    expect(cardsT("hero.cta", "ro")).toMatch(/Creează/i);
+    expect(cardsT("hero.cta", "de")).toMatch(/Karte/i);
+    expect(cardsT("hero.cta", "pt")).toMatch(/cartão/i);
+    expect(cardsT("brand", "pl")).toBe("TheDigitalGifter");
+    expect(cardsMakerSeo("en").title).toContain("Christmas Card Maker");
+    expect(cardsMakerSeo("fr").title).toMatch(/Noël/i);
+  });
+
+  it("localizes taxonomy chips for Wave 1 locales", async () => {
+    const { labelFor, MESSAGE_RECIPIENTS, MESSAGE_TONES, MESSAGE_LENGTHS } = await import("./taxonomy");
+    expect(labelFor(MESSAGE_RECIPIENTS, "mom", "de")).toBe("Mama");
+    expect(labelFor(MESSAGE_TONES, "funny", "pl")).toBe("Zabawny");
+    expect(labelFor(MESSAGE_LENGTHS, "short", "pt")).toBe("Curto");
   });
 });

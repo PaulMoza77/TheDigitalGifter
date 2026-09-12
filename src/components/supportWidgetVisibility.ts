@@ -14,6 +14,11 @@ export function isSupportWidgetHidden(pathname: string) {
     return pathname !== "/pet/order" && !pathname.startsWith("/pet/order/");
   }
 
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  if (normalized === "/christmas") {
+    return true;
+  }
+
   if (pathname === "/christmas-ai-photos" || pathname.startsWith("/christmas-ai-photos/")) {
     return (
       pathname !== "/christmas-ai-photos/order" &&

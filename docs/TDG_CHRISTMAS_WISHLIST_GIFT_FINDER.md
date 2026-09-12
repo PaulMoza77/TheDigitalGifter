@@ -1,51 +1,62 @@
 # TDG Christmas Wishlist + Gift Finder
 
-Paired acquisition loop: **Gift Finder → Wishlist → Share → viral return**.
+Paired acquisition loop: **Gift Finder → Wishlist → Share → Reserve → viral return**.
 
-## Status (`tdg-christmas-wishlist-gift-finder-010`)
+## Status
 
 | Surface | Route | Behavior |
 |--------|-------|----------|
-| Wishlist create | `/christmas/wishlist` | Guest-first, ordered items, private-by-default share |
-| Shared wishlist | `/wishlist/:shareId` | Read-only DTO, `noindex` |
+| Wishlist create | `/christmas/wishlist` | Guest-first letter UX, ordered wishes, private-by-default share |
+| Shared wishlist | `/wishlist/:shareId` | Read-only DTO + reserve/purchased, `noindex,follow` |
 | Gift Finder | `/christmas/gift-finder` | Guided form → structured ideas → Add to Wishlist |
 
-Paid Christmas checkout remains **off** (`purchasable=false`).
+Paid Christmas checkout remains **off** for wishlist (`purchasable=false`).
+
+## Product promise
+
+**Create one Christmas wishlist. Add anything. Share it with everyone.**
+
+Coordination without ruining the surprise: viewers can reserve gifts; owner DTOs omit reservation status/identity.
 
 ## Ownership / sharing
 
 Same invariants as Christmas Tree:
 
-- `share_id` = read capability
+- `share_id` = read capability (non-guessable ≥22 chars)
 - `owner_token_hash` / `user_id` = write capability
-- Invariant: `owner_token_hash ≠ share_id` (DB check + create-time guard)
 - Private until Share enabled
-- Public read uses `toPublicWishlistDto` (`noindex` on `/wishlist/:shareId`)
 - Guest claim-to-account via `claimGuestWishlist`
+- No forced signup before create / first wish (guest token in `localStorage`)
 
-## Gift Finder
+## Reservation
 
-- Server owns system prompt (`christmas-wishlist-funnel` + `_shared/christmas/giftFinder.ts`)
-- Primary: OpenAI `gpt-4o-mini` (or `OPENAI_MODEL`)
-- Fallback: deterministic curated catalog (`server_curated_v1`) when key/quota unavailable
-- Rate limit: 8 generations / hour / rate bucket
-- Results persist in `christmas_gift_finder_sessions` + `christmas_gift_finder_results`
-- Refresh reloads same session; “Try different ideas” forces new attempt
+Activated in V2:
 
-## Affiliate
+- `reserveWishlistItem` — race-safe `WHERE reservation_status = 'none'`
+- `markWishlistItemPurchased` / `releaseWishlistItemReservation` — require opaque `reservation_token`
+- Shared DTO exposes `reservation_status` only (never token / identity)
+- Owner DTO strips reservation status (anti-spoiler)
 
-Existing `affiliate_*` tables are **inbound referral attribution** (codes, clicks, conversions).  
-**Outbound merchant affiliate commerce: DEFERRED.** Gift ideas use generic search queries, not affiliate deep links.
+## URL import
 
-## Reservation seam
-
-`christmas_wishlist_items.reservation_status` exists for future “I’ll get this” without shipping a half-secure V1 UX.
+`previewExternalUrl` best-effort OG scrape with SSRF host blocking. On failure UI keeps the URL and falls back to manual title/note.
 
 ## Languages
 
-- Wishlist UI: EN (RO-ready taxonomy labels)
-- Gift Finder UI: EN first; taxonomy + server prompts support RO
-- Recommendations generated in selected locale
+- Copy pack: `wishlist/copy.ts` (EN shipped; RO taxonomy labels ready)
+- Locale-aware money formatting via `Intl.NumberFormat`
+- RTL-ready structural CSS (logical flow / flexible chips)
+
+## Analytics (first-party allowlist)
+
+`wishlist_page_view`, `wishlist_creation_started`, `wishlist_created`, `wishlist_first_wish_added`, `wishlist_item_added`, `wishlist_link_added`, `wishlist_share*`, `shared_wishlist_view`, `wishlist_item_reserved`, `wishlist_item_purchased`, `wishlist_create_from_shared_clicked`, `wishlist_gift_finder_clicked`, …
+
+No owner names, gift notes, or pasted URLs in Meta/GA4 payloads.
+
+## Migrations
+
+1. `20260903200000_christmas_wishlist_gift_finder.sql` — foundation
+2. `20260909140000_christmas_wishlist_v2_reservations.sql` — priorities, media, audience, reservation timestamps
 
 ## Docs
 
