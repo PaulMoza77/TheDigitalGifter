@@ -431,92 +431,145 @@
   font-style: italic;
 }
 
-.xmas-gifts {
+.xmas-finder-scene .xmas-lede {
+  max-width: 36rem;
+}
+
+.xmas-finder-stage {
   position: relative;
-  min-height: 22rem;
+  overflow: hidden;
+  width: min(100%, 34rem);
+  margin-inline: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(246, 239, 227, 0.14);
+  background: #120806;
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(240, 213, 154, 0.08);
 }
 
-.xmas-gifts__tree {
+.xmas-finder-stage__glow {
   position: absolute;
-  inset-inline-start: 12%;
-  bottom: 8%;
-  width: 54%;
-  height: 88%;
+  inset: -18% -10% auto;
+  height: 55%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(212, 179, 106, 0.28), transparent 68%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.xmas-finder-stage__photo,
+.xmas-finder-stage__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.xmas-finder-stage__photo {
+  position: absolute;
+  inset: 0;
+}
+
+.xmas-finder-stage__photo img {
+  object-fit: cover;
+  object-position: 50% 58%;
+  transform: scale(1.02);
+  transition: transform 0.7s ease, filter 0.45s ease;
+}
+
+.xmas-finder-stage.is-picked .xmas-finder-stage__photo img {
+  transform: scale(1.05);
+  filter: saturate(1.08) contrast(1.04);
+}
+
+.xmas-finder-stage__shade {
+  position: absolute;
+  inset: 0;
   background:
-    linear-gradient(180deg, transparent 0 8%, #1f5a38 8% 38%, transparent 38%),
-    linear-gradient(180deg, transparent 0 22%, #174a2e 22% 58%, transparent 58%),
-    linear-gradient(180deg, transparent 0 42%, #123d26 42% 86%, transparent 86%);
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.35));
+    linear-gradient(180deg, rgba(10, 4, 3, 0.18) 0%, transparent 34%, rgba(10, 4, 3, 0.55) 100%),
+    linear-gradient(90deg, rgba(10, 4, 3, 0.22) 0%, transparent 28%, transparent 72%, rgba(10, 4, 3, 0.18) 100%);
+  pointer-events: none;
+  z-index: 1;
 }
 
-.xmas-gifts__trunk {
+.xmas-finder-tags {
   position: absolute;
-  inset-inline-start: 46%;
-  bottom: 0;
-  width: 8%;
-  height: 14%;
-  background: #5b3a22;
-  border-radius: 3px;
+  inset: 0;
+  z-index: 3;
 }
 
-.xmas-gift {
+.xmas-finder-tag {
   position: absolute;
-  width: 4.4rem;
-  height: 3.4rem;
-  border-radius: 6px 6px 4px 4px;
-  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.28);
-  transform-origin: 50% 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.78rem 0.42rem 0.55rem;
+  border: 1px solid rgba(244, 231, 200, 0.28);
+  border-radius: 999px;
+  background: rgba(18, 8, 6, 0.72);
+  color: #f7efe2;
+  font-family: var(--xmas-sans, "Source Sans 3", system-ui, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition:
+    transform 0.28s ease,
+    background 0.28s ease,
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    color 0.28s ease;
 }
 
-.xmas-gift::after {
-  content: "";
+.xmas-finder-tag__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #d4b36a;
+  box-shadow: 0 0 0 3px rgba(212, 179, 106, 0.18);
+}
+
+.xmas-finder-tag:hover,
+.xmas-finder-tag:focus-visible {
+  border-color: rgba(240, 213, 154, 0.7);
+  background: rgba(42, 22, 14, 0.88);
+  transform: translate(-50%, calc(-50% - 4px));
+  outline: none;
+}
+
+.xmas-finder-tag.is-active {
+  color: #1a0d08;
+  background: linear-gradient(180deg, #f3dfb0, #d4b36a);
+  border-color: rgba(255, 236, 190, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(255, 236, 190, 0.35),
+    0 14px 32px rgba(212, 179, 106, 0.28);
+  transform: translate(-50%, calc(-50% - 6px)) scale(1.04);
+}
+
+.xmas-finder-tag.is-active .xmas-finder-tag__dot {
+  background: #5a2418;
+  box-shadow: none;
+}
+
+.xmas-finder-stage__hint {
   position: absolute;
-  inset-inline-start: 46%;
-  top: -0.55rem;
-  width: 8%;
-  height: 128%;
-  background: var(--ribbon, #d4b36a);
-}
-
-.xmas-gift:nth-child(1) {
-  inset-inline-start: 18%;
-  bottom: 6%;
-  background: #7a1d28;
-  --ribbon: #f0d59a;
-}
-
-.xmas-gift:nth-child(2) {
-  inset-inline-start: 38%;
-  bottom: 4%;
-  background: #1d4a36;
-  --ribbon: #f4e1b5;
-}
-
-.xmas-gift:nth-child(3) {
-  inset-inline-start: 58%;
-  bottom: 8%;
-  background: #8a5a22;
-  --ribbon: #f6efe3;
-}
-
-.xmas-gift.is-lit {
-  outline: 2px solid var(--xmas-gold-bright);
-  transform: translateY(-6px);
-}
-
-.xmas-label {
-  position: absolute;
-  inset-inline-start: 62%;
-  top: 18%;
-  width: 7.2rem;
-  padding: 0.55rem 0.65rem;
-  background: #f4e7c8;
-  color: #5a2418;
-  font-family: var(--xmas-display);
-  font-size: 0.92rem;
-  transform: rotate(-8deg);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+  left: 50%;
+  bottom: 0.85rem;
+  z-index: 3;
+  margin: 0;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(12, 5, 4, 0.55);
+  color: rgba(247, 239, 226, 0.78);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .xmas-frame-wrap {
@@ -1465,8 +1518,17 @@
     min-height: 20rem;
   }
 
-  .xmas-gifts {
-    min-height: 16rem;
+  .xmas-finder-stage {
+    width: min(100%, 100%);
+  }
+
+  .xmas-finder-tag {
+    font-size: 0.74rem;
+    padding: 0.36rem 0.62rem 0.36rem 0.48rem;
+  }
+
+  .xmas-finder-stage__hint {
+    font-size: 0.66rem;
   }
 }
 
@@ -1487,6 +1549,15 @@
 
   .xmas-advent-stage__video {
     display: none !important;
+  }
+
+  .xmas-finder-stage__photo img {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .xmas-finder-tag {
+    transition: none !important;
   }
 
   .xmas-cabin__video,

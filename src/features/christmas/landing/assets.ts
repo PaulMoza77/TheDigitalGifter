@@ -28,6 +28,8 @@ export const LANDING_ASSETS = {
   wishlist: "/assets/christmas/wishlist_letter.webp",
   messageLetter: "/assets/christmas/messages/message-letter.webp",
   messageLetterJpg: "/assets/christmas/messages/message-letter.jpg",
+  giftFinderStill: "/christmas/gifts/finder-still.webp",
+  giftFinderStillJpg: "/christmas/gifts/finder-still.jpg",
   santaWebm: "/assets/christmas/santa-alpha.webm",
   santaIdle: "/assets/christmas/santa-idle.webp",
   santaSpeak: "/assets/christmas/santa-speak.webp",
