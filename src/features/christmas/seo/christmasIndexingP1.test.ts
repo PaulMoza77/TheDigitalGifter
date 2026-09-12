@@ -43,6 +43,12 @@ describe("christmas P1 indexing policy", () => {
     expect(CHRISTMAS_SITEMAP_PATHS).not.toContain("/en/christmas");
   });
 
+  it("excludes reserved _fallback seo_pages from the sitemap", () => {
+    const sitemapSource = readFileSync(join(process.cwd(), "api/sitemap.xml.ts"), "utf8");
+    expect(sitemapSource).toContain('.neq("slug", "_fallback")');
+    expect(sitemapSource).toContain('page.slug === "_fallback"');
+  });
+
   it("normalizes apex host and trailing slash", () => {
     expect(buildApexToWwwLocation("thedigitalgifter.com", "/christmas/cards", "?a=1")).toBe(
       "https://www.thedigitalgifter.com/christmas/cards?a=1",
