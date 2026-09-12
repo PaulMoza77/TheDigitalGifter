@@ -1,0 +1,516 @@
+{
+  "timestamp": "2026-09-11T09:41:56.681798+00:00",
+  "production_sha": "e7aafa5e75406e49d7f62860b9710f1514e40450",
+  "infra": {
+    "vercel_used": false,
+    "github_actions_deploy_used": false,
+    "deployment_performed": false
+  },
+  "sitemap": {
+    "url": "https://www.thedigitalgifter.com/sitemap.xml",
+    "status": 200,
+    "total_urls": 146,
+    "christmas_urls": 126,
+    "errors": [],
+    "closeout_reference": {
+      "total_urls": 146,
+      "christmas_urls": 126
+    },
+    "count_delta_note": null
+  },
+  "robots": {
+    "url": "https://www.thedigitalgifter.com/robots.txt",
+    "status": 200,
+    "sitemap_declared": true,
+    "disallows_christmas": false,
+    "text_excerpt": "User-agent: *\nAllow: /\n\nDisallow: /admin\nDisallow: /account\nDisallow: /funnel/payment\nDisallow: /funnel/result\n\n# Christmas share / checkout noindex is via meta robots (noindex,follow),\n# not robots.txt Disallow — engines must crawl those URLs to see the directive.\n\nSitemap: https://www.thedigitalgifter.com/sitemap.xml\n"
+  },
+  "google": {
+    "access": "ACCESS_BLOCKED",
+    "property": null,
+    "sitemap_status": "NOT_SUBMITTED_FROM_THIS_AGENT",
+    "representative_indexing_status": "UNKNOWN_NO_API_ACCESS",
+    "issues": [
+      "No Google Search Console credentials/API available to Cloud Agent"
+    ],
+    "owner_action_required": [
+      "Ensure Domain or URL-prefix property for https://www.thedigitalgifter.com is verified",
+      "Submit https://www.thedigitalgifter.com/sitemap.xml once (if not already)",
+      "Inspect representative EN/DE/RO Santa and money pages for indexing state",
+      "Share read-only Search Console access or a service account if future agents should automate this"
+    ]
+  },
+  "bing": {
+    "access": "ACCESS_BLOCKED",
+    "property": null,
+    "sitemap_status": "NOT_SUBMITTED_FROM_THIS_AGENT",
+    "issues": [
+      "No Bing Webmaster Tools credentials/API available to Cloud Agent"
+    ],
+    "owner_action_required": [
+      "Verify https://www.thedigitalgifter.com in Bing Webmaster Tools",
+      "Submit https://www.thedigitalgifter.com/sitemap.xml once",
+      "Optionally import from Google Search Console if already configured"
+    ]
+  },
+  "indexnow": {
+    "current_status": "NOT_CONFIGURED",
+    "key_file_present": false,
+    "action_taken": "none",
+    "recommendation": "Optional small follow-up: add IndexNow key file + ping on deploy/content publish only. Not required for P4; sitemap+internal links are primary discovery."
+  },
+  "crawler_access": {
+    "/christmas": {
+      "normal": {
+        "status": 200,
+        "canonical": "https://www.thedigitalgifter.com/christmas",
+        "robots": "index,follow",
+        "title": "Christmas at TheDigitalGifter | Gifts, Photos, Santa & More",
+        "bytes": 23069
+      },
+      "googlebot": {
+        "status": 200,
+        "canonical": "https://www.thedigitalgifter.com/christmas",
+        "robots": "index,follow",
+        "title": "Christmas at TheDigitalGifter | Gifts, Photos, Santa & More",
+        "bytes": 23069
+      },
+      "bingbot": {
+        "status": 200,
+        "canonical": "https://www.thedigitalgifter.com/christmas",
+        "robots": "index,follow",
+        "title": "Christmas at TheDigitalGifter | Gifts, Photos, Santa & More",
+        "bytes": 23069
+      },
+      "content_equiv": true
+    },
+    "/de/christmas/santa-video": {
+      "normal": {
+        "status": 200,
+        "canonical": "https://www.thedigitalgifter.com/de/christmas/santa-video",
+        "robots": "index,follow",
+        "title": "Persönliches Weihnachtsmann-Video | Der Weihnachtsmann sagt den Namen deines Kindes",
+        "bytes": 24300
+      },
+      "googlebot": {
+        "status": 200,
+        "canonical": "https://www.thedigitalgifter.com/de/christmas/santa-video",
+        "robots": "index,follow",
+        "title": "Persönliches Weihnachtsmann-Video | Der Weihnachtsmann sagt den Namen deines Kindes",
+        "bytes": 24300
+      },
+      "bingbot": {
+        "status": 200,
+        "canonical": "https://www.thedigitalgifter.com/de/christmas/santa-video",
+        "robots": "index,follow",
+        "title": "Persönliches Weihnachtsmann-Video | Der Weihnachtsmann sagt den Namen deines Kindes",
+        "bytes": 24300
+      },
+      "content_equiv": true
+    },
+    "/christmas/cards": {
+      "normal": {
+        "status": 200,
+        "canonical": "https://www.thedigitalgifter.com/christmas/cards",
+        "robots": "index,follow",
+        "title": "Christmas Card Maker | Personalized Christmas Cards",
+        "bytes": 22101
+      },
+      "googlebot": {
+        "status": 200,
+        "canonical": "https://www.thedigitalgifter.com/christmas/cards",
+        "robots": "index,follow",
+        "title": "Christmas Card Maker | Personalized Christmas Cards",
+        "bytes": 22101
+      },
+      "bingbot": {
+        "status": 200,
+        "canonical": "https://www.thedigitalgifter.com/christmas/cards",
+        "robots": "index,follow",
+        "title": "Christmas Card Maker | Personalized Christmas Cards",
+        "bytes": 22101
+      },
+      "content_equiv": true
+    }
+  },
+  "http_scan": {
+    "urls_checked": 146,
+    "200": 146,
+    "redirect": 0,
+    "404": 0,
+    "5xx": 0,
+    "other": 0,
+    "error": 0,
+    "errors": [],
+    "redirects_in_sitemap": []
+  },
+  "canonical_scan": {
+    "checked": 126,
+    "errors": []
+  },
+  "hreflang_scan": {
+    "clusters_checked": 14,
+    "invalid_targets": [],
+    "missing_reciprocals": [],
+    "missing_reciprocals_count": 0,
+    "errors": []
+  },
+  "indexability_conflicts": [],
+  "structured_data": {
+    "checked": [
+      {
+        "path": "/christmas",
+        "blocks": 7,
+        "types": [
+          "Organization",
+          "WebSite",
+          "Service",
+          "HowTo",
+          "BreadcrumbList",
+          "WebPage",
+          "FAQPage"
+        ]
+      },
+      {
+        "path": "/christmas/gift-finder",
+        "blocks": 7,
+        "types": [
+          "Organization",
+          "WebSite",
+          "Service",
+          "HowTo",
+          "BreadcrumbList",
+          "WebPage",
+          "FAQPage"
+        ]
+      },
+      {
+        "path": "/christmas/photo-generator",
+        "blocks": 7,
+        "types": [
+          "Organization",
+          "WebSite",
+          "Service",
+          "HowTo",
+          "BreadcrumbList",
+          "WebPage",
+          "FAQPage"
+        ]
+      },
+      {
+        "path": "/christmas/santa-video",
+        "blocks": 7,
+        "types": [
+          "Organization",
+          "WebSite",
+          "Service",
+          "HowTo",
+          "BreadcrumbList",
+          "WebPage",
+          "FAQPage"
+        ]
+      },
+      {
+        "path": "/christmas/cards",
+        "blocks": 7,
+        "types": [
+          "Organization",
+          "WebSite",
+          "Service",
+          "HowTo",
+          "BreadcrumbList",
+          "WebPage",
+          "FAQPage"
+        ]
+      },
+      {
+        "path": "/christmas/messages",
+        "blocks": 7,
+        "types": [
+          "Organization",
+          "WebSite",
+          "Service",
+          "HowTo",
+          "BreadcrumbList",
+          "WebPage",
+          "FAQPage"
+        ]
+      },
+      {
+        "path": "/de/christmas",
+        "blocks": 7,
+        "types": [
+          "Organization",
+          "WebSite",
+          "Service",
+          "HowTo",
+          "BreadcrumbList",
+          "WebPage",
+          "FAQPage"
+        ]
+      },
+      {
+        "path": "/de/christmas/santa-video",
+        "blocks": 7,
+        "types": [
+          "Organization",
+          "WebSite",
+          "Service",
+          "HowTo",
+          "BreadcrumbList",
+          "WebPage",
+          "FAQPage"
+        ]
+      },
+      {
+        "path": "/ro/christmas/santa-video",
+        "blocks": 7,
+        "types": [
+          "Organization",
+          "WebSite",
+          "Service",
+          "HowTo",
+          "BreadcrumbList",
+          "WebPage",
+          "FAQPage"
+        ]
+      }
+    ],
+    "errors": [],
+    "warnings": []
+  },
+  "search_snippet_sanity": {
+    "issues": [
+      {
+        "path": "/de/christmas",
+        "issue": "title_long",
+        "len": 76,
+        "title": "Weihnachten bei TheDigitalGifter | Geschenke, Fotos, Weihnachtsmann und mehr"
+      },
+      {
+        "path": "/de/christmas/santa-video",
+        "issue": "title_long",
+        "len": 83,
+        "title": "Persönliches Weihnachtsmann-Video | Der Weihnachtsmann sagt den Namen deines Kindes"
+      },
+      {
+        "path": "/ro/christmas",
+        "issue": "title_long",
+        "len": 72,
+        "title": "Crăciun la TheDigitalGifter | Cadouri, Foto, Moș Crăciun și Multe Altele"
+      }
+    ]
+  },
+  "internal_linking": {
+    "from": "/christmas",
+    "depths": {
+      "/christmas": 0,
+      "/christmas/gift-finder": 1,
+      "/christmas/wishlist": 1,
+      "/christmas/photo-generator": 1,
+      "/christmas/family": 2,
+      "/christmas/couples": 2,
+      "/christmas/pets": 2,
+      "/christmas/dogs": 2,
+      "/christmas/cats": 2,
+      "/christmas/santa-video": 1,
+      "/christmas/tree": 1,
+      "/christmas/advent": 1,
+      "/christmas/cards": 1,
+      "/christmas/messages": 1
+    },
+    "orphans": []
+  },
+  "localized_linking": {
+    "issues": []
+  },
+  "urls": {
+    "/christmas": {
+      "status": 200,
+      "title": "Christmas at TheDigitalGifter | Gifts, Photos, Santa & More",
+      "canonical": "https://www.thedigitalgifter.com/christmas",
+      "robots": "index,follow",
+      "lang": "en",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/christmas/gift-finder": {
+      "status": 200,
+      "title": "Christmas Gift Finder | Find the Perfect Gift | TheDigitalGifter",
+      "canonical": "https://www.thedigitalgifter.com/christmas/gift-finder",
+      "robots": "index,follow",
+      "lang": "en",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/christmas/photo-generator": {
+      "status": 200,
+      "title": "AI Christmas Photo Generator | Family, Couples & Pets",
+      "canonical": "https://www.thedigitalgifter.com/christmas/photo-generator",
+      "robots": "index,follow",
+      "lang": "en",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/christmas/santa-video": {
+      "status": 200,
+      "title": "Personalized Santa Video | Santa Says Your Child’s Name",
+      "canonical": "https://www.thedigitalgifter.com/christmas/santa-video",
+      "robots": "index,follow",
+      "lang": "en",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/christmas/cards": {
+      "status": 200,
+      "title": "Christmas Card Maker | Personalized Christmas Cards",
+      "canonical": "https://www.thedigitalgifter.com/christmas/cards",
+      "robots": "index,follow",
+      "lang": "en",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/christmas/messages": {
+      "status": 200,
+      "title": "Christmas Message Generator | Wishes for Family & Friends",
+      "canonical": "https://www.thedigitalgifter.com/christmas/messages",
+      "robots": "index,follow",
+      "lang": "en",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/ro/christmas": {
+      "status": 200,
+      "title": "Crăciun la TheDigitalGifter | Cadouri, Foto, Moș Crăciun și Multe Altele",
+      "canonical": "https://www.thedigitalgifter.com/ro/christmas",
+      "robots": "index,follow",
+      "lang": "ro",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/ro/christmas/santa-video": {
+      "status": 200,
+      "title": "Video Personalizat de la Moș Crăciun | Îți Spune Numele Copilului",
+      "canonical": "https://www.thedigitalgifter.com/ro/christmas/santa-video",
+      "robots": "index,follow",
+      "lang": "ro",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/de/christmas": {
+      "status": 200,
+      "title": "Weihnachten bei TheDigitalGifter | Geschenke, Fotos, Weihnachtsmann und mehr",
+      "canonical": "https://www.thedigitalgifter.com/de/christmas",
+      "robots": "index,follow",
+      "lang": "de",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/de/christmas/gift-finder": {
+      "status": 200,
+      "title": "Weihnachts-Geschenke-Finder | Das perfekte Geschenk finden | TheDigitalGifter",
+      "canonical": "https://www.thedigitalgifter.com/de/christmas/gift-finder",
+      "robots": "index,follow",
+      "lang": "de",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/de/christmas/photo-generator": {
+      "status": 200,
+      "title": "KI-Weihnachtsfoto-Generator | Familie, Paare & Haustiere",
+      "canonical": "https://www.thedigitalgifter.com/de/christmas/photo-generator",
+      "robots": "index,follow",
+      "lang": "de",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/de/christmas/santa-video": {
+      "status": 200,
+      "title": "Persönliches Weihnachtsmann-Video | Der Weihnachtsmann sagt den Namen deines Kindes",
+      "canonical": "https://www.thedigitalgifter.com/de/christmas/santa-video",
+      "robots": "index,follow",
+      "lang": "de",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/de/christmas/cards": {
+      "status": 200,
+      "title": "Weihnachtskarten-Ersteller | Persönliche Weihnachtskarten",
+      "canonical": "https://www.thedigitalgifter.com/de/christmas/cards",
+      "robots": "index,follow",
+      "lang": "de",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/fr/christmas/santa-video": {
+      "status": 200,
+      "title": "Vidéo personnalisée du Père Noël | Le Père Noël dit le prénom de votre enfant",
+      "canonical": "https://www.thedigitalgifter.com/fr/christmas/santa-video",
+      "robots": "index,follow",
+      "lang": "fr",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/es/christmas/santa-video": {
+      "status": 200,
+      "title": "Vídeo Personalizado de Papá Noel | Papá Noel Dice el Nombre de tu Hijo",
+      "canonical": "https://www.thedigitalgifter.com/es/christmas/santa-video",
+      "robots": "index,follow",
+      "lang": "es",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/pl/christmas/wishlist": {
+      "status": 200,
+      "title": "Kreator Świątecznych List Życzeń | Stwórz i Udostępnij Swoją Listę",
+      "canonical": "https://www.thedigitalgifter.com/pl/christmas/wishlist",
+      "robots": "index,follow",
+      "lang": "pl",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    },
+    "/pt/christmas/santa-video": {
+      "status": 200,
+      "title": "Vídeo Personalizado do Pai Natal | O Pai Natal Diz o Nome do Seu Filho",
+      "canonical": "https://www.thedigitalgifter.com/pt/christmas/santa-video",
+      "robots": "index,follow",
+      "lang": "pt-PT",
+      "hreflang_count": 10,
+      "in_sitemap": true,
+      "jsonld_ok": true,
+      "jsonld_blocks": 7
+    }
+  }
+}

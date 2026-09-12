@@ -12,6 +12,7 @@
     "lint": "tsc -p . --noEmit --pretty false && vite build",
     "test": "vitest run",
     "test:christmas-seo": "node scripts/christmas-seo-smoke.mjs",
+    "seo:production-smoke": "node scripts/seo-production-smoke.mjs",
     "test:pet-preview-identity": "vitest run src/features/pet-preview-identity.test.ts && node scripts/pet-preview-identity-qa.mjs",
     "deploy:pet-preview": "bash scripts/deploy-pet-preview.sh",
     "smoke:pet-preview": "PET_PREVIEW_SMOKE=1 node scripts/pet-preview-live-smoke.mjs",
