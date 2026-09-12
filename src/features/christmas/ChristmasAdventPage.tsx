@@ -1,14 +1,32 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { PageHead } from "@/components/PageHead";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { parseChristmasLocalePath } from "@/features/christmas/seo/localeRouting";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
+import {
+  adventT,
+  doorStateLabel,
+  formatAdventStartDate,
+  type AdventLocale,
+} from "./advent/adventCopy";
+import {
+  adventSeasonStartMs,
+  nextBucharestMidnightMs,
+  padCountdownValue,
+  remainingUntil,
+} from "./advent/countdown";
 import {
   getOrCreateFreeGiftGuestToken,
   treeFunnel,
 } from "./tree/treeApi";
 import { adventDoorState, adventDayParts } from "./tree/treeLogic";
+import {
+  ADVENT_SEO_DEPTH,
+  ChristmasProductSeoDepth,
+} from "./seo/ChristmasProductSeoDepth";
 
 type RewardRow = {
   day: number;
@@ -17,6 +35,13 @@ type RewardRow = {
   reward_type: string;
   active: boolean;
   claimed: boolean;
+};
+
+type FreeGiftView = {
+  title?: string | null;
+  description?: string | null;
+  message?: string | null;
+  reward_type?: string | null;
 };
 
 type AdventStatus = {
@@ -36,9 +61,25 @@ type AdventStatus = {
   };
   rewards: RewardRow[];
   auth_required_for_claim: boolean;
+  free_gift_enabled?: boolean;
+  production_free_gift_live?: boolean;
+  free_gift?: { already: boolean; gift: FreeGiftView | null } | null;
 };
 
+const COUNTDOWN_UNITS = [
+  { key: "days" as const, labelKey: "countdown.days" },
+  { key: "hours" as const, labelKey: "countdown.hours" },
+  { key: "minutes" as const, labelKey: "countdown.minutes" },
+  { key: "seconds" as const, labelKey: "countdown.seconds" },
+];
+
 export default function ChristmasAdventPage() {
+  const location = useLocation();
+  const locale = normalizeWave1GenerationLocale(
+    parseChristmasLocalePath(location.pathname).locale,
+  ) as AdventLocale;
+  const t = (key: string, vars?: Record<string, string>) => adventT(key, locale, vars);
+
   const [status, setStatus] = useState<AdventStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,16 +95,30 @@ export default function ChristmasAdventPage() {
     already?: boolean;
   } | null>(null);
   const [authed, setAuthed] = useState(false);
+  const [now, setNow] = useState(() => new Date());
   const pageViewed = useRef(false);
 
   async function refresh() {
     setBusy(true);
     setError(null);
     try {
-      const data = await treeFunnel<AdventStatus>({ action: "adventStatus" });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const data = await treeFunnel<AdventStatus>(
+        { action: "adventStatus", guest_token: getOrCreateFreeGiftGuestToken() },
+        token,
+      );
       setStatus(data);
+      if (data.free_gift?.already && data.free_gift.gift) {
+        setFreeGift({
+          title: data.free_gift.gift.title || "Christmas gift",
+          description: data.free_gift.gift.description || undefined,
+          message: data.free_gift.gift.message,
+          already: true,
+        });
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load Advent");
+      setError(e instanceof Error ? e.message : t("error.load"));
     } finally {
       setBusy(false);
     }
@@ -83,6 +138,11 @@ export default function ChristmasAdventPage() {
     });
   }, []);
 
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   async function claimDay(day: number) {
     setBusy(true);
     setError(null);
@@ -90,7 +150,7 @@ export default function ChristmasAdventPage() {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) {
-        setError("Sign in to claim today's reward.");
+        setError(t("cta.signInError"));
         return;
       }
       const data = await treeFunnel<{
@@ -99,10 +159,7 @@ export default function ChristmasAdventPage() {
         description?: string;
         entitlement_key?: string | null;
         already?: boolean;
-      }>(
-        { action: "claimAdvent", day },
-        token,
-      );
+      }>({ action: "claimAdvent", day }, token);
       setClaimResult({
         title: data.title,
         description: data.description,
@@ -114,7 +171,7 @@ export default function ChristmasAdventPage() {
       });
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Claim failed");
+      setError(e instanceof Error ? e.message : t("error.claim"));
     } finally {
       setBusy(false);
     }
@@ -124,18 +181,23 @@ export default function ChristmasAdventPage() {
     setBusy(true);
     setError(null);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
       const guest = getOrCreateFreeGiftGuestToken();
       const data = await treeFunnel<{
         ok: boolean;
         already?: boolean;
         gift: { title: string; description?: string; message?: string | null };
-      }>({
-        action: "claimFreeGift",
-        guest_token: guest,
-      });
+      }>(
+        {
+          action: "claimFreeGift",
+          guest_token: guest,
+        },
+        token,
+      );
       setFreeGift({
-        title: data.gift.title,
-        description: data.gift.description,
+        title: data.gift.title || "Christmas gift",
+        description: data.gift.description || undefined,
         message: data.gift.message,
         already: data.already,
       });
@@ -144,18 +206,15 @@ export default function ChristmasAdventPage() {
         pathname: "/christmas/advent",
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Free gift unavailable";
-      setError(
-        msg.includes("free_gift_disabled")
-          ? "Free Christmas Gift opens closer to the season."
-          : msg,
-      );
+      const msg = e instanceof Error ? e.message : t("free.error");
+      setError(msg.includes("free_gift_disabled") ? t("free.disabled") : msg);
     } finally {
       setBusy(false);
     }
   }
 
-  const localParts = adventDayParts(new Date(), status?.season_year || 2026);
+  const seasonYear = status?.season_year || 2026;
+  const localParts = adventDayParts(now, seasonYear);
   const calendar = status?.calendar || {
     eligible_day: localParts.eligibleDay,
     before_season: localParts.beforeSeason,
@@ -164,47 +223,123 @@ export default function ChristmasAdventPage() {
     month: localParts.month,
     day: localParts.day,
   };
-  const rewards = status?.rewards || Array.from({ length: 24 }, (_, i) => ({
-    day: i + 1,
-    title: `Day ${i + 1}`,
-    description: "",
-    reward_type: "surprise_message",
-    active: false,
-    claimed: false,
-  }));
+  const rewards =
+    status?.rewards ||
+    Array.from({ length: 24 }, (_, i) => ({
+      day: i + 1,
+      title: t("day.title", { day: String(i + 1) }),
+      description: "",
+      reward_type: "surprise_message",
+      active: false,
+      claimed: false,
+    }));
+
+  const todayClaimed = rewards.some(
+    (r) => r.day === calendar.eligible_day && r.claimed,
+  );
+
+  const countdownTarget = useMemo(() => {
+    if (calendar.before_season) return adventSeasonStartMs(seasonYear);
+    if (calendar.after_season) return null;
+    if (todayClaimed || calendar.eligible_day == null) return nextBucharestMidnightMs(now);
+    return null;
+  }, [calendar.before_season, calendar.after_season, calendar.eligible_day, seasonYear, todayClaimed, now]);
+
+  const countdown = countdownTarget != null ? remainingUntil(countdownTarget, now) : null;
+  const countdownUntilKey = calendar.before_season
+    ? "countdown.untilAdvent"
+    : "countdown.untilTomorrow";
+
+  const lede = calendar.before_season
+    ? t("lede.preseason", { date: formatAdventStartDate(locale, seasonYear) })
+    : calendar.after_season
+      ? t("lede.ended")
+      : t("lede.openToday");
+
+  const todayAvailable =
+    !calendar.before_season &&
+    !calendar.after_season &&
+    calendar.eligible_day != null &&
+    !todayClaimed;
 
   return (
     <div
       className="min-h-[100dvh] overflow-x-hidden"
+      lang={locale}
       style={{
         background: "linear-gradient(165deg,#1b1020 0%,#0e1a24 50%,#132018 100%)",
         color: "#f6f0e6",
       }}
     >
-      <PageHead
-        title="Christmas Advent Calendar"
-        description="Open a daily Christmas door from December 1. Sign in to claim rewards when the season is live."
-      />
+      <ChristmasPageHead path="/christmas/advent" />
 
       <div className="mx-auto max-w-lg px-4 pb-20 pt-8">
         <p className="text-center text-xs uppercase tracking-[0.2em] text-rose-200/70">
-          The Digital Gifter
+          {t("brand")}
         </p>
-        <h1 className="mt-2 text-center font-serif text-3xl text-rose-50">Advent Calendar</h1>
-        <p className="mt-2 text-center text-sm text-rose-100/75">
-          {calendar.before_season
-            ? "Advent begins December 1."
-            : calendar.after_season
-              ? "This season’s Advent has ended. See you next year."
-              : "Open today’s door for a Christmas reward."}
-        </p>
+        <h1 className="mt-2 text-center font-serif text-3xl text-rose-50">{t("title")}</h1>
+        <p className="mt-2 text-center text-sm text-rose-100/75">{lede}</p>
+
+        {countdown && !countdown.expired ? (
+          <div
+            className="mt-6 text-center"
+            role="timer"
+            aria-live="polite"
+            aria-label={`${countdown.days} ${t("countdown.days")}, ${countdown.hours} ${t("countdown.hours")}, ${countdown.minutes} ${t("countdown.minutes")}, ${countdown.seconds} ${t("countdown.seconds")} ${t(countdownUntilKey)}`}
+          >
+            <p className="text-[11px] uppercase tracking-[0.18em] text-rose-100/55">
+              {t(countdownUntilKey)}
+            </p>
+            <div className="mt-2 flex justify-center gap-3">
+              {COUNTDOWN_UNITS.map((u) => (
+                <div key={u.key} className="min-w-[3.25rem]">
+                  <div className="font-serif text-2xl tabular-nums text-rose-50">
+                    {padCountdownValue(countdown[u.key])}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wide text-rose-100/60">
+                    {t(u.labelKey)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {todayAvailable ? (
+          <div className="mt-6 text-center">
+            <p className="text-xs uppercase tracking-wide text-amber-200/80">
+              {t("cta.availableToday")}
+            </p>
+            <button
+              type="button"
+              className="mt-2 w-full rounded-md bg-amber-200 py-2.5 text-sm font-semibold text-slate-900 disabled:opacity-50"
+              disabled={busy || !status?.advent_enabled}
+              onClick={() => {
+                if (calendar.eligible_day != null) void claimDay(calendar.eligible_day);
+              }}
+            >
+              {t("cta.openToday")}
+            </button>
+          </div>
+        ) : null}
+
+        {!calendar.before_season &&
+        !calendar.after_season &&
+        todayClaimed ? (
+          <p className="mt-4 text-center text-sm text-rose-100/80">{t("cta.comeBackTomorrow")}</p>
+        ) : null}
 
         {status ? (
           <p className="mt-3 text-center text-[11px] text-rose-100/50">
-            Engine ready · claims{" "}
-            {status.production_claims_live ? "live" : "not live yet"} ·{" "}
-            {status.timezone_policy}
+            {t("status.engine", {
+              claims: status.production_claims_live ? t("status.live") : t("status.notLive"),
+              tz: status.timezone_policy,
+            })}
           </p>
+        ) : null}
+
+        {busy && !status ? (
+          <p className="mt-4 text-center text-sm text-rose-100/70">{t("loading")}</p>
         ) : null}
 
         {error ? (
@@ -213,7 +348,7 @@ export default function ChristmasAdventPage() {
           </p>
         ) : null}
 
-        <ol className="mt-8 grid grid-cols-4 gap-2 sm:grid-cols-6" aria-label="Advent doors">
+        <ol className="mt-8 grid grid-cols-4 gap-2 sm:grid-cols-6" aria-label={t("doors.aria")}>
           {rewards.map((r) => {
             const door = adventDoorState({
               day: r.day,
@@ -223,12 +358,13 @@ export default function ChristmasAdventPage() {
               afterSeason: calendar.after_season,
             });
             const isToday = door === "available";
+            const label = doorStateLabel(door, locale);
             return (
               <li key={r.day}>
                 <button
                   type="button"
                   disabled={busy || door !== "available" || !status?.advent_enabled}
-                  aria-label={`Day ${r.day}, ${door}`}
+                  aria-label={t("door.aria", { day: String(r.day), state: label })}
                   onClick={() => void claimDay(r.day)}
                   className={`flex h-14 w-full flex-col items-center justify-center rounded-md border text-sm transition ${
                     isToday
@@ -239,17 +375,7 @@ export default function ChristmasAdventPage() {
                   } disabled:cursor-not-allowed disabled:opacity-70`}
                 >
                   <span className="font-semibold">{r.day}</span>
-                  <span className="text-[9px] uppercase tracking-wide">
-                    {door === "claimed"
-                      ? "Opened"
-                      : door === "available"
-                        ? "Today"
-                        : door === "preseason"
-                          ? "Soon"
-                          : door === "missed"
-                            ? "Missed"
-                            : "Locked"}
-                  </span>
+                  <span className="text-[9px] uppercase tracking-wide">{label}</span>
                 </button>
               </li>
             );
@@ -258,25 +384,26 @@ export default function ChristmasAdventPage() {
 
         {!authed ? (
           <p className="mt-6 text-center text-sm text-rose-100/80">
-            Sign in to claim today’s reward when Advent is live.{" "}
+            {t("cta.signInClaim")}{" "}
             <Link className="underline" to="/account">
-              Sign in
+              {t("cta.signIn")}
             </Link>
           </p>
         ) : null}
 
-        <section className="mt-10 rounded-md border border-white/15 p-4" aria-label="Free Christmas Gift">
-          <h2 className="font-serif text-lg">Get Your Christmas Gift</h2>
-          <p className="mt-1 text-sm text-rose-100/70">
-            A free seasonal surprise — no cash credits for anonymous visitors.
-          </p>
+        <section className="mt-10 rounded-md border border-white/15 p-4" aria-label={t("free.aria")}>
+          <h2 className="font-serif text-lg">{t("free.heading")}</h2>
+          <p className="mt-1 text-sm text-rose-100/70">{t("free.lede")}</p>
+          {!status?.free_gift_enabled ? (
+            <p className="mt-3 text-sm text-rose-100/60">{t("free.disabled")}</p>
+          ) : null}
           <button
             type="button"
-            className="mt-4 w-full rounded-md bg-rose-200 py-2.5 text-sm font-semibold text-slate-900 disabled:opacity-50"
-            disabled={busy}
+            className="mt-4 w-full rounded-md bg-rose-200 py-2.5 text-sm font-semibold text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={busy || !status?.free_gift_enabled || Boolean(freeGift)}
             onClick={() => void claimFreeGift()}
           >
-            Open free gift
+            {freeGift ? t("free.already") : t("cta.openFree")}
           </button>
           {freeGift ? (
             <div className="mt-3 text-sm text-rose-50">
@@ -284,7 +411,7 @@ export default function ChristmasAdventPage() {
               {freeGift.description ? <p className="mt-1 opacity-80">{freeGift.description}</p> : null}
               {freeGift.message ? <p className="mt-1 opacity-80">{freeGift.message}</p> : null}
               {freeGift.already ? (
-                <p className="mt-1 text-xs opacity-60">Same gift on refresh — no reroll.</p>
+                <p className="mt-1 text-xs opacity-60">{t("free.already")}</p>
               ) : null}
             </div>
           ) : null}
@@ -292,13 +419,15 @@ export default function ChristmasAdventPage() {
 
         <p className="mt-10 text-center text-sm">
           <Link className="underline" to="/christmas/tree">
-            Build your Christmas Tree
+            {t("nav.tree")}
           </Link>
           {" · "}
           <Link className="underline" to="/christmas">
-            Christmas hub
+            {t("nav.hub")}
           </Link>
         </p>
+
+        <ChristmasProductSeoDepth content={ADVENT_SEO_DEPTH} tone="dark" />
       </div>
 
       {claimResult ? (
@@ -306,7 +435,7 @@ export default function ChristmasAdventPage() {
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
           role="dialog"
           aria-modal="true"
-          aria-label="Reward claimed"
+          aria-label={t("reward.aria")}
         >
           <div className="w-full max-w-md rounded-lg bg-[#1e1524] p-6">
             <h2 className="font-serif text-xl">{claimResult.title}</h2>
@@ -315,7 +444,9 @@ export default function ChristmasAdventPage() {
             ) : null}
             {claimResult.entitlement_key ? (
               <p className="mt-2 text-xs text-rose-100/60">
-                Unlocked: {claimResult.entitlement_key.replace(/_/g, " ")}
+                {t("reward.unlocked", {
+                  label: claimResult.entitlement_key.replace(/_/g, " "),
+                })}
               </p>
             ) : null}
             <button
@@ -323,7 +454,7 @@ export default function ChristmasAdventPage() {
               className="mt-6 w-full rounded-md bg-rose-200 py-2.5 text-sm font-semibold text-slate-900"
               onClick={() => setClaimResult(null)}
             >
-              Close
+              {t("cta.close")}
             </button>
           </div>
         </div>

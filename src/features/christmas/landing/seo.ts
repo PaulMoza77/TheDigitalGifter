@@ -1,3 +1,4 @@
+import { christmasPathForLocale, type ChristmasLocaleCode } from "@/features/christmas/seo/localeRouting";
 import { landingT, type ChristmasLandingLocale } from "./copy";
 
 export const CHRISTMAS_LANDING_PATH = "/christmas";
@@ -12,7 +13,8 @@ export const LANDING_FAQS = [
 ] as const;
 
 export const LANDING_INTERNAL_LINKS = [
-  { href: "/christmas/gift-finder", labelKey: "nav.gifts" },
+  { href: "/christmas/tree-gifts", labelKey: "nav.gifts" },
+  { href: "/christmas/gift-finder", labelKey: "nav.finder" },
   { href: "/christmas/family", labelKey: "nav.portraits" },
   { href: "/christmas/santa-video", labelKey: "nav.santa" },
   { href: "/christmas/wishlist", labelKey: "nav.wishlist" },
@@ -23,12 +25,16 @@ export const LANDING_INTERNAL_LINKS = [
   { href: "/generator?occasion=christmas", labelKey: "hero.cta" },
 ] as const;
 
+function landingPublicPath(locale: ChristmasLandingLocale): string {
+  return christmasPathForLocale(CHRISTMAS_LANDING_PATH, locale as ChristmasLocaleCode);
+}
+
 export function christmasLandingSeo(locale: ChristmasLandingLocale = "en") {
   return {
     title: landingT("seo.title", locale),
     description: landingT("seo.description", locale),
-    url: `${CHRISTMAS_SITE_ORIGIN}${CHRISTMAS_LANDING_PATH}`,
-    image: `${CHRISTMAS_SITE_ORIGIN}/assets/christmas/christmas_hero_room.webp`,
+    url: `${CHRISTMAS_SITE_ORIGIN}${landingPublicPath(locale)}`,
+    image: `${CHRISTMAS_SITE_ORIGIN}/christmas/cabin-hero-1920.webp`,
   };
 }
 
@@ -62,12 +68,18 @@ export function christmasLandingJsonLd(locale: ChristmasLandingLocale = "en") {
       {
         "@type": "ItemList",
         name: "Christmas experiences by The Digital Gifter",
-        itemListElement: LANDING_INTERNAL_LINKS.map((link, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          name: landingT(link.labelKey, locale),
-          url: `${CHRISTMAS_SITE_ORIGIN}${link.href}`,
-        })),
+        itemListElement: LANDING_INTERNAL_LINKS.map((link, index) => {
+          const href = link.href.startsWith("/christmas")
+            ? christmasPathForLocale(link.href.split("?")[0], locale as ChristmasLocaleCode) +
+              (link.href.includes("?") ? `?${link.href.split("?")[1]}` : "")
+            : link.href;
+          return {
+            "@type": "ListItem",
+            position: index + 1,
+            name: landingT(link.labelKey, locale),
+            url: `${CHRISTMAS_SITE_ORIGIN}${href}`,
+          };
+        }),
       },
       {
         "@type": "FAQPage",

@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+import { parseChristmasLocalePath } from "@/features/christmas/seo/localeRouting";
+import { normalizeWave1GenerationLocale } from "@/features/christmas/i18n/wave1Locale";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
-import { EXAMPLE_WISHES, WISHLIST_COPY_EN, WISHLIST_FAQ_EN } from "./wishlist/copy";
+import {
+  EXAMPLE_WISHES,
+  wishlistFaq,
+  wishlistOwnerStats,
+  wishlistShareSeoDescription,
+  wishlistT,
+} from "./wishlist/copy";
 import {
   PRIORITY_EMOJI,
   WISHLIST_AUDIENCES,
@@ -35,8 +44,6 @@ import "./wishlist/wishlist.css";
 const PRODUCT = "christmas_wishlist";
 const PATH = "/christmas/wishlist";
 const LOGO_SRC = "/TheDigitalGifter.png";
-const copy = WISHLIST_COPY_EN;
-
 type ComposerMode = "closed" | "link" | "manual" | "edit";
 type LandingPhase = "hero" | "create";
 
@@ -69,9 +76,14 @@ function WishMedia({ item }: { item: Pick<WishlistItem, "title" | "image_url"> }
 
 export default function ChristmasWishlistPage() {
   const { shareId: routeShareId } = useParams<{ shareId?: string }>();
+  const location = useLocation();
   const isShare = Boolean(routeShareId);
   const howId = useId();
-  const locale: LocaleCode = "en";
+  const locale = normalizeWave1GenerationLocale(
+    parseChristmasLocalePath(location.pathname).locale,
+  ) as LocaleCode;
+  const t = (key: string, vars?: Record<string, string>) => wishlistT(locale, key, vars);
+  const faq = useMemo(() => wishlistFaq(locale), [locale]);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +92,7 @@ export default function ChristmasWishlistPage() {
   const [ownerToken, setOwnerToken] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [phase, setPhase] = useState<LandingPhase>("hero");
-  const [title, setTitle] = useState(() => defaultWishlistTitle());
+  const [title, setTitle] = useState(() => defaultWishlistTitle(null, "en"));
   const [audience, setAudience] = useState("me");
   const [description, setDescription] = useState("");
   const [composer, setComposer] = useState<ComposerMode>("closed");
@@ -118,11 +130,11 @@ export default function ChristmasWishlistPage() {
       setOwnerToken(token);
       setPhase("hero");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load wishlist");
+      setError(e instanceof Error ? e.message : t("error.load"));
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     const href =
@@ -149,6 +161,26 @@ export default function ChristmasWishlistPage() {
   useEffect(() => {
     setMyReservations(readReservations());
   }, []);
+
+  // Localize the create-form default title when locale changes — never rewrite user/server titles.
+  useEffect(() => {
+    const knownDefaults = [
+      "en",
+      "ro",
+      "de",
+      "fr",
+      "es",
+      "it",
+      "pt",
+      "nl",
+      "pl",
+    ].map((loc) => defaultWishlistTitle(null, loc));
+    if (!title.trim() || knownDefaults.includes(title)) {
+      setTitle(defaultWishlistTitle(null, locale));
+    }
+    // Intentionally omit `title` from deps: only react to locale switches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
 
   useEffect(() => {
     if (isShare && routeShareId) {
@@ -253,7 +285,7 @@ export default function ChristmasWishlistPage() {
       }>(
         {
           action: "createWishlist",
-          title: title.trim() || defaultWishlistTitle(),
+          title: title.trim() || defaultWishlistTitle(null, locale),
           description,
           audience,
         },
@@ -273,7 +305,7 @@ export default function ChristmasWishlistPage() {
       await loadOwner(data.wishlist_id, data.owner_token);
       setComposer("closed");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Create failed");
+      setError(e instanceof Error ? e.message : t("error.create"));
     } finally {
       setBusy(false);
     }
@@ -282,7 +314,7 @@ export default function ChristmasWishlistPage() {
   async function previewLink() {
     const url = sanitizeExternalUrlClient(itemUrl);
     if (!url) {
-      setError("Link must start with https:// (or http://)");
+      setError(t("error.linkHttps"));
       return;
     }
     setPreviewBusy(true);
@@ -315,16 +347,16 @@ export default function ChristmasWishlistPage() {
     if (!owner) return;
     const url = itemUrl ? sanitizeExternalUrlClient(itemUrl) : null;
     if (itemUrl && !url) {
-      setError("Link must start with https:// (or http://)");
+      setError(t("error.linkHttps"));
       return;
     }
     const image = itemImage ? sanitizeExternalUrlClient(itemImage) : null;
     if (itemImage && !image) {
-      setError("Image link must be a valid http(s) URL");
+      setError(t("error.imageUrl"));
       return;
     }
     if (!itemTitle.trim()) {
-      setError("Please add a wish title");
+      setError(t("error.titleRequired"));
       return;
     }
     setBusy(true);
@@ -381,7 +413,7 @@ export default function ChristmasWishlistPage() {
       resetComposer();
       await loadOwner(owner.id, ownerToken);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save wish");
+      setError(err instanceof Error ? err.message : t("error.saveWish"));
     } finally {
       setBusy(false);
     }
@@ -406,7 +438,7 @@ export default function ChristmasWishlistPage() {
       void trackChristmasEvent("wishlist_item_reordered", { productKey: PRODUCT, pathname: PATH });
       await loadOwner(owner.id, ownerToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Reorder failed");
+      setError(e instanceof Error ? e.message : t("error.reorder"));
     } finally {
       setBusy(false);
     }
@@ -428,7 +460,7 @@ export default function ChristmasWishlistPage() {
       void trackChristmasEvent("wishlist_item_removed", { productKey: PRODUCT, pathname: PATH });
       await loadOwner(owner.id, ownerToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Remove failed");
+      setError(e instanceof Error ? e.message : t("error.remove"));
     } finally {
       setBusy(false);
     }
@@ -457,24 +489,24 @@ export default function ChristmasWishlistPage() {
     try {
       await ensureShareEnabled();
       const url = `${window.location.origin}/wishlist/${owner.share_id}`;
-      const msg = shareMessage(owner.title, url);
+      const msg = shareMessage(owner.title, url, locale);
       void trackChristmasEvent("wishlist_share", { productKey: PRODUCT, pathname: PATH });
       if (channel === "whatsapp") {
         window.open(`https://wa.me/?text=${encodeURIComponent(`${msg.text}\n${url}`)}`, "_blank", "noopener,noreferrer");
-        setShareHint(copy.linkCopied);
+        setShareHint(t("share.linkCopied"));
       } else if (channel === "email") {
         window.location.href = `mailto:?subject=${encodeURIComponent(msg.title)}&body=${encodeURIComponent(`${msg.text}\n${url}`)}`;
       } else if (channel === "native" && navigator.share) {
         await navigator.share({ title: msg.title, text: msg.text, url });
       } else {
         await navigator.clipboard.writeText(url);
-        setShareHint(copy.linkCopied);
+        setShareHint(t("share.linkCopied"));
       }
     } catch {
       try {
         if (owner?.share_id) {
           await navigator.clipboard.writeText(`${window.location.origin}/wishlist/${owner.share_id}`);
-          setShareHint(copy.linkCopied);
+          setShareHint(t("share.linkCopied"));
         }
       } catch {
         setShareHint(shareUrl);
@@ -502,7 +534,7 @@ export default function ChristmasWishlistPage() {
       }
       await loadOwner(owner.id, ownerToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Share update failed");
+      setError(e instanceof Error ? e.message : t("error.shareUpdate"));
     } finally {
       setBusy(false);
     }
@@ -511,7 +543,7 @@ export default function ChristmasWishlistPage() {
   async function reserveItem(item: WishlistItem) {
     if (!shared || !routeShareId) return;
     if (item.reservation_status && item.reservation_status !== "none") {
-      setError(copy.alreadyTaken);
+      setError(t("reserve.alreadyTaken"));
       return;
     }
     setBusy(true);
@@ -538,8 +570,8 @@ export default function ChristmasWishlistPage() {
       });
       setShared(refreshed.wishlist);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : copy.reservationFail;
-      setError(msg === "already_reserved" ? copy.alreadyTaken : copy.reservationFail);
+      const msg = e instanceof Error ? e.message : t("reserve.fail");
+      setError(msg === "already_reserved" ? t("reserve.alreadyTaken") : t("reserve.fail"));
       try {
         const refreshed = await wishlistFunnel<{ ok: boolean; wishlist: SharedWishlist }>({
           action: "getSharedWishlist",
@@ -576,7 +608,7 @@ export default function ChristmasWishlistPage() {
       });
       setShared(refreshed.wishlist);
     } catch (e) {
-      setError(e instanceof Error ? e.message : copy.reservationFail);
+      setError(e instanceof Error ? e.message : t("reserve.fail"));
     } finally {
       setBusy(false);
     }
@@ -595,14 +627,14 @@ export default function ChristmasWishlistPage() {
   if (unavailable) {
     return (
       <div className="wl-page" data-fonts={fontsReady ? "ready" : "loading"}>
-        <PageHead title={copy.unavailableTitle} description={copy.unavailableBody} noindex exactTitle />
+        <PageHead title={t("unavailable.title")} description={t("unavailable.body")} noindex exactTitle />
         <div className="wl-shell text-center">
-          <p className="wl-brand-name">{copy.brand}</p>
-          <h1 className="wl-hero-h1 mt-6">{copy.unavailableTitle}</h1>
-          <p className="wl-hero-support">{copy.unavailableBody}</p>
+          <p className="wl-brand-name">{t("brand.name")}</p>
+          <h1 className="wl-hero-h1 mt-6">{t("unavailable.title")}</h1>
+          <p className="wl-hero-support">{t("unavailable.body")}</p>
           <div className="mt-8">
             <Link className="wl-cta" to="/christmas/wishlist">
-              {copy.createMine}
+              {t("unavailable.createMine")}
             </Link>
           </div>
         </div>
@@ -612,20 +644,24 @@ export default function ChristmasWishlistPage() {
 
   const items = owner?.items || shared?.items || [];
   const pageTitle = isShare
-    ? copy.shareSeoTitle(shared?.title || "Christmas Wishlist")
-    : copy.seoTitle;
+    ? t("share.seoTitle", { name: shared?.title || t("title.default") })
+    : t("seo.title");
   const pageDesc = isShare
-    ? copy.shareSeoDescription(shared?.title || "Christmas Wishlist")
-    : copy.seoDescription;
+    ? wishlistShareSeoDescription(locale, shared?.title || t("title.default"))
+    : t("seo.description");
 
   return (
     <div className="wl-page" data-fonts={fontsReady ? "ready" : "loading"}>
-      <PageHead
-        title={pageTitle}
-        description={pageDesc}
-        exactTitle={!isShare}
-        noindex={isShare}
-      />
+      {isShare ? (
+        <PageHead
+          title={pageTitle}
+          description={pageDesc}
+          exactTitle
+          noindex
+        />
+      ) : (
+        <ChristmasPageHead path="/christmas/wishlist" />
+      )}
       <ChristmasSnowfall />
       <div className="wl-glow wl-glow--ember" aria-hidden />
       <div className="wl-glow wl-glow--gold" aria-hidden />
@@ -635,22 +671,23 @@ export default function ChristmasWishlistPage() {
         {isShare ? (
           <>
             <header className="wl-brand">
-              <p className="wl-made-with text-center !text-[rgba(247,240,228,0.55)]">{copy.madeWith}</p>
+              <p className="wl-made-with text-center !text-[rgba(247,240,228,0.55)]">{t("brand.madeWith")}</p>
             </header>
-            <div className="wl-letter" role="region" aria-label={shared?.title || "Christmas Wishlist"}>
+            <div className="wl-letter" role="region" aria-label={shared?.title || t("title.default")}>
               <div className="wl-letter__ribbon" aria-hidden />
               <div className="wl-letter__inner">
-                <h1 className="wl-letter-title">{shared?.title || copy.loading}</h1>
+                <h1 className="wl-letter-title">{shared?.title || t("loading")}</h1>
+                <p className="wl-letter-note">{t("letter.dearSanta")}</p>
                 {shared?.description ? <p className="wl-letter-note">“{shared.description}”</p> : (
-                  <p className="wl-letter-note">Thanks for making Christmas magical ❤️</p>
+                  <p className="wl-letter-note">{t("letter.thanks")}</p>
                 )}
                 {error ? <p className="wl-alert" role="alert">{error}</p> : null}
 
-                <ul className="mt-4" aria-label="Wishlist items">
+                <ul className="mt-4" aria-label={t("a11y.wishlistItems")}>
                   {busy && !shared ? (
-                    <li className="wl-hint">{copy.loading}</li>
+                    <li className="wl-hint">{t("loading")}</li>
                   ) : items.length === 0 ? (
-                    <li className="wl-hint">No wishes on this list yet.</li>
+                    <li className="wl-hint">{t("empty.shared")}</li>
                   ) : (
                     items.map((item) => {
                       const taken = item.reservation_status === "reserved" || item.reservation_status === "purchased";
@@ -669,11 +706,11 @@ export default function ChristmasWishlistPage() {
                               {formatMoney(item.budget_amount, item.currency, locale) ? (
                                 <span>{formatMoney(item.budget_amount, item.currency, locale)}</span>
                               ) : null}
-                              {item.preference_size ? <span>{copy.size}: {item.preference_size}</span> : null}
-                              {item.preference_color ? <span>{copy.color}: {item.preference_color}</span> : null}
+                              {item.preference_size ? <span>{t("add.size")}: {item.preference_size}</span> : null}
+                              {item.preference_color ? <span>{t("add.color")}: {item.preference_color}</span> : null}
                               {taken ? (
                                 <span className="wl-badge wl-badge--taken">
-                                  {item.reservation_status === "purchased" ? copy.purchased : copy.reserved}
+                                  {item.reservation_status === "purchased" ? t("reserve.purchased") : t("reserve.reserved")}
                                 </span>
                               ) : null}
                             </div>
@@ -686,7 +723,7 @@ export default function ChristmasWishlistPage() {
                                   rel="noopener noreferrer"
                                   onClick={() => trackExternal(item)}
                                 >
-                                  {copy.openLink}
+                                  {t("item.openLink")}
                                 </a>
                               ) : null}
                               {!taken ? (
@@ -696,7 +733,7 @@ export default function ChristmasWishlistPage() {
                                   disabled={busy}
                                   onClick={() => void reserveItem(item)}
                                 >
-                                  {copy.reserve}
+                                  {t("reserve.cta")}
                                 </button>
                               ) : null}
                               {mine && item.reservation_status === "reserved" ? (
@@ -706,7 +743,7 @@ export default function ChristmasWishlistPage() {
                                   disabled={busy}
                                   onClick={() => void markPurchased(item)}
                                 >
-                                  {copy.markPurchased}
+                                  {t("reserve.markPurchased")}
                                 </button>
                               ) : null}
                             </div>
@@ -720,7 +757,7 @@ export default function ChristmasWishlistPage() {
             </div>
 
             <div className="wl-viral">
-              <h2>{copy.viralTitle}</h2>
+              <h2>{t("viral.title")}</h2>
               <Link
                 className="wl-cta mt-4"
                 to="/christmas/wishlist"
@@ -731,7 +768,7 @@ export default function ChristmasWishlistPage() {
                   })
                 }
               >
-                {copy.viralCta}
+                {t("viral.cta")}
               </Link>
               <p className="mt-3 text-sm text-[rgba(247,240,228,0.6)]">
                 <Link
@@ -744,7 +781,7 @@ export default function ChristmasWishlistPage() {
                     })
                   }
                 >
-                  {copy.tryGiftFinder}
+                  {t("crossSell.tryGiftFinder")}
                 </Link>
               </p>
             </div>
@@ -758,11 +795,11 @@ export default function ChristmasWishlistPage() {
               <>
                 <header className="wl-brand">
                   <img src={LOGO_SRC} alt="" />
-                  <p className="wl-brand-name">{copy.brand}</p>
-                  <p className="wl-eyebrow">Christmas Wishlist</p>
+                  <p className="wl-brand-name">{t("brand.name")}</p>
+                  <p className="wl-eyebrow">{t("brand.eyebrow")}</p>
                 </header>
-                <h1 className="wl-hero-h1">{copy.heroH1}</h1>
-                <p className="wl-hero-support">{copy.heroSupport}</p>
+                <h1 className="wl-hero-h1">{t("hero.h1")}</h1>
+                <p className="wl-hero-support">{t("hero.support")}</p>
                 <div className="wl-cta-row">
                   <button
                     type="button"
@@ -778,19 +815,20 @@ export default function ChristmasWishlistPage() {
                       });
                     }}
                   >
-                    {copy.ctaCreate}
+                    {t("hero.ctaCreate")}
                   </button>
                   <a className="wl-cta-ghost" href={`#${howId}`}>
-                    {copy.ctaHow}
+                    {t("hero.ctaHow")}
                   </a>
                 </div>
 
                 {/* Example letter */}
-                <aside className="wl-letter" aria-label="Example wishlist">
+                <aside className="wl-letter" aria-label={t("a11y.exampleWishlist")}>
                   <div className="wl-letter__ribbon" aria-hidden />
                   <div className="wl-letter__inner">
-                    <h2 className="wl-letter-title">{copy.exampleTitle}</h2>
-                    <p className="wl-made-with">Example only · not a real customer list</p>
+                    <h2 className="wl-letter-title">{t("example.title")}</h2>
+                    <p className="wl-letter-note">{t("letter.dearSanta")}</p>
+                    <p className="wl-made-with">{t("example.only")}</p>
                     <ul className="mt-3">
                       {EXAMPLE_WISHES.map((w) => (
                         <li key={w.title} className="wl-example-item">
@@ -804,22 +842,22 @@ export default function ChristmasWishlistPage() {
                   </div>
                 </aside>
 
-                <section id="wl-create" className="wl-letter mt-6" aria-label="Create wishlist">
+                <section id="wl-create" className="wl-letter mt-6" aria-label={t("a11y.createWishlist")}>
                     <div className="wl-letter__inner">
-                      <h2 className="wl-letter-title">{copy.createTitleAsk}</h2>
+                      <h2 className="wl-letter-title">{t("create.titleAsk")}</h2>
                       <label className="mt-4 block">
-                        <span className="wl-label">Wishlist name</span>
+                        <span className="wl-label">{t("create.nameLabel")}</span>
                         <input
                           className="wl-input"
                           value={title}
                           maxLength={80}
-                          placeholder={copy.createTitlePlaceholder}
+                          placeholder={t("create.titlePlaceholder")}
                           onChange={(e) => setTitle(e.target.value)}
                         />
                       </label>
                       <div className="mt-4">
-                        <p className="wl-label">{copy.createForAsk}</p>
-                        <div className="wl-audience" role="group" aria-label={copy.createForAsk}>
+                        <p className="wl-label">{t("create.forAsk")}</p>
+                        <div className="wl-audience" role="group" aria-label={t("create.forAsk")}>
                           {WISHLIST_AUDIENCES.map((a) => (
                             <button
                               key={a.key}
@@ -834,12 +872,12 @@ export default function ChristmasWishlistPage() {
                         </div>
                       </div>
                       <label className="mt-4 block">
-                        <span className="wl-label">Optional message</span>
+                        <span className="wl-label">{t("create.messageLabel")}</span>
                         <textarea
                           className="wl-textarea"
                           value={description}
                           maxLength={500}
-                          placeholder="Thanks for making Christmas magical ❤️"
+                          placeholder={t("create.messagePlaceholder")}
                           onChange={(e) => setDescription(e.target.value)}
                         />
                       </label>
@@ -850,9 +888,9 @@ export default function ChristmasWishlistPage() {
                         disabled={busy || !title.trim()}
                         onClick={() => void createList()}
                       >
-                        {copy.createSubmit}
+                        {t("create.submit")}
                       </button>
-                      <p className="wl-hint">{copy.saveListHint}</p>
+                      <p className="wl-hint">{t("create.saveHint")}</p>
                     </div>
                   </section>
               </>
@@ -860,35 +898,37 @@ export default function ChristmasWishlistPage() {
               <>
                 <header className="wl-brand">
                   <img src={LOGO_SRC} alt="" />
-                  <p className="wl-brand-name text-[1.65rem]">{copy.brand}</p>
+                  <p className="wl-brand-name text-[1.65rem]">{t("brand.name")}</p>
                 </header>
                 <div className="wl-letter" role="region" aria-label={owner.title}>
                   <div className="wl-letter__ribbon" aria-hidden />
                   <div className="wl-letter__inner">
                     <h1 className="wl-letter-title">{owner.title}</h1>
+                    <p className="wl-letter-note">{t("letter.dearSanta")}</p>
                     {owner.description ? <p className="wl-letter-note">“{owner.description}”</p> : null}
                     <p className="wl-stats">
-                      {copy.ownerStats(owner.items.length, owner.share_count || 0, owner.view_count || 0)}
+                      {wishlistOwnerStats(locale, owner.items.length, owner.share_count || 0, owner.view_count || 0)}
                     </p>
+                    <p className="wl-hint">{t("status.autosave")}</p>
                     {error ? <p className="wl-alert" role="alert">{error}</p> : null}
 
                     {owner.items.length === 0 && composer === "closed" ? (
                       <div className="wl-empty">
-                        <h3>{copy.emptyAsk}</h3>
+                        <h3>{t("empty.ask")}</h3>
                         <button type="button" className="wl-cta mt-4" onClick={() => openComposer("manual")}>
-                          {copy.emptyCta}
+                          {t("empty.cta")}
                         </button>
                         <div className="wl-mode-row">
                           <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("link")}>
-                            {copy.pasteLink}
+                            {t("add.pasteLink")}
                           </button>
                           <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("manual")}>
-                            {copy.writeWish}
+                            {t("add.writeWish")}
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <ul className="mt-2" aria-label="Your wishes">
+                      <ul className="mt-2" aria-label={t("a11y.yourWishes")}>
                         {owner.items.map((item, idx) => (
                           <li key={item.id} className="wl-wish">
                             <WishMedia item={item} />
@@ -912,20 +952,20 @@ export default function ChristmasWishlistPage() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                   >
-                                    {copy.openLink}
+                                    {t("item.openLink")}
                                   </a>
                                 ) : null}
                                 <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("edit", item)}>
-                                  {copy.edit}
+                                  {t("item.edit")}
                                 </button>
                                 <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void moveItem(idx, -1)}>
-                                  {copy.moveUp}
+                                  {t("item.moveUp")}
                                 </button>
                                 <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void moveItem(idx, 1)}>
-                                  {copy.moveDown}
+                                  {t("item.moveDown")}
                                 </button>
                                 <button type="button" className="wl-btn wl-btn--danger" disabled={busy} onClick={() => void removeItem(item.id)}>
-                                  {copy.remove}
+                                  {t("item.remove")}
                                 </button>
                               </div>
                             </div>
@@ -937,15 +977,15 @@ export default function ChristmasWishlistPage() {
                     {composer !== "closed" ? (
                       <form className="mt-4 border-t border-[rgba(26,18,15,0.1)] pt-4" onSubmit={(e) => void saveWish(e)}>
                         <h3 className="wl-letter-title text-[1.25rem]">
-                          {composer === "edit" ? copy.edit : composer === "link" ? copy.pasteLink : copy.writeWish}
+                          {composer === "edit" ? t("item.edit") : composer === "link" ? t("add.pasteLink") : t("add.writeWish")}
                         </h3>
                         {(composer === "link" || composer === "edit") && (
                           <label className="mt-3 block">
-                            <span className="wl-label">{copy.pasteLink}</span>
+                            <span className="wl-label">{t("add.pasteLink")}</span>
                             <input
                               className="wl-input"
                               value={itemUrl}
-                              placeholder={copy.pasteLinkHint}
+                              placeholder={t("add.pasteLinkHint")}
                               inputMode="url"
                               autoComplete="url"
                               onChange={(e) => setItemUrl(e.target.value)}
@@ -959,40 +999,40 @@ export default function ChristmasWishlistPage() {
                             disabled={previewBusy || !itemUrl.trim()}
                             onClick={() => void previewLink()}
                           >
-                            {previewBusy ? copy.loading : "Look up link"}
+                            {previewBusy ? t("loading") : t("add.lookupLink")}
                           </button>
                         ) : null}
                         {linkPreview && !linkPreview.extracted ? (
-                          <p className="wl-hint">{copy.linkImportFail}</p>
+                          <p className="wl-hint">{t("add.linkImportFail")}</p>
                         ) : null}
                         {linkPreview?.retailer ? (
-                          <p className="wl-hint">Store: {linkPreview.retailer}</p>
+                          <p className="wl-hint">{t("add.store", { name: linkPreview.retailer })}</p>
                         ) : null}
 
                         <label className="mt-3 block">
-                          <span className="wl-label">{copy.whatWant}</span>
+                          <span className="wl-label">{t("add.whatWant")}</span>
                           <input
                             className="wl-input"
                             value={itemTitle}
                             maxLength={120}
-                            placeholder={copy.whatWantExample}
+                            placeholder={t("add.whatWantExample")}
                             required
                             onChange={(e) => setItemTitle(e.target.value)}
                           />
                         </label>
                         <label className="mt-3 block">
-                          <span className="wl-label">{copy.addNote}</span>
+                          <span className="wl-label">{t("add.note")}</span>
                           <input
                             className="wl-input"
                             value={itemNote}
                             maxLength={500}
-                            placeholder={copy.noteExample}
+                            placeholder={t("add.noteExample")}
                             onChange={(e) => setItemNote(e.target.value)}
                           />
                         </label>
 
-                        <p className="wl-label mt-4">Priority</p>
-                        <div className="wl-priority" role="group">
+                        <p className="wl-label mt-4">{t("add.priority")}</p>
+                        <div className="wl-priority" role="group" aria-label={t("a11y.priority")}>
                           {WISHLIST_PRIORITIES.filter((p) => p.key !== "surprise_me").map((p) => (
                             <button
                               key={p.key}
@@ -1010,23 +1050,23 @@ export default function ChristmasWishlistPage() {
                           className="wl-details-toggle"
                           onClick={() => setShowDetails((v) => !v)}
                         >
-                          {copy.addDetails}
+                          {t("add.details")}
                         </button>
                         {showDetails ? (
                           <div className="mt-2 space-y-3">
                             {composer === "manual" ? (
                               <label className="block">
-                                <span className="wl-label">{copy.externalLink}</span>
+                                <span className="wl-label">{t("add.externalLink")}</span>
                                 <input
                                   className="wl-input"
                                   value={itemUrl}
-                                  placeholder={copy.pasteLinkHint}
+                                  placeholder={t("add.pasteLinkHint")}
                                   onChange={(e) => setItemUrl(e.target.value)}
                                 />
                               </label>
                             ) : null}
                             <label className="block">
-                              <span className="wl-label">{copy.imageUrl}</span>
+                              <span className="wl-label">{t("add.imageUrl")}</span>
                               <input
                                 className="wl-input"
                                 value={itemImage}
@@ -1035,7 +1075,7 @@ export default function ChristmasWishlistPage() {
                               />
                             </label>
                             <label className="block">
-                              <span className="wl-label">{copy.preferredPrice}</span>
+                              <span className="wl-label">{t("add.preferredPrice")}</span>
                               <input
                                 className="wl-input"
                                 value={itemBudget}
@@ -1045,16 +1085,16 @@ export default function ChristmasWishlistPage() {
                             </label>
                             <div className="grid grid-cols-2 gap-2">
                               <label className="block">
-                                <span className="wl-label">{copy.size}</span>
+                                <span className="wl-label">{t("add.size")}</span>
                                 <input className="wl-input" value={itemSize} maxLength={40} onChange={(e) => setItemSize(e.target.value)} />
                               </label>
                               <label className="block">
-                                <span className="wl-label">{copy.color}</span>
+                                <span className="wl-label">{t("add.color")}</span>
                                 <input className="wl-input" value={itemColor} maxLength={40} onChange={(e) => setItemColor(e.target.value)} />
                               </label>
                             </div>
                             <label className="block">
-                              <span className="wl-label">{copy.quantity}</span>
+                              <span className="wl-label">{t("add.quantity")}</span>
                               <input
                                 className="wl-input"
                                 value={itemQty}
@@ -1067,10 +1107,10 @@ export default function ChristmasWishlistPage() {
 
                         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                           <button type="submit" className="wl-cta flex-1" disabled={busy || !itemTitle.trim()}>
-                            {copy.saveWish}
+                            {t("add.saveWish")}
                           </button>
                           <button type="button" className="wl-cta-ghost flex-1 !text-[var(--wl-ink)] !border-[rgba(26,18,15,0.15)]" onClick={resetComposer}>
-                            {copy.cancel}
+                            {t("add.cancel")}
                           </button>
                         </div>
                       </form>
@@ -1079,42 +1119,42 @@ export default function ChristmasWishlistPage() {
                     {owner.items.length > 0 && composer === "closed" ? (
                       <div className="wl-sticky-add">
                         <button type="button" className="wl-cta wl-cta--gold" onClick={() => openComposer("manual")}>
-                          {copy.addWish}
+                          {t("add.wish")}
                         </button>
                         <div className="wl-mode-row">
                           <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("link")}>
-                            {copy.pasteLink}
+                            {t("add.pasteLink")}
                           </button>
                           <button type="button" className="wl-btn wl-btn--soft" onClick={() => openComposer("manual")}>
-                            {copy.writeWish}
+                            {t("add.writeWish")}
                           </button>
                         </div>
                       </div>
                     ) : null}
 
                     <div className="wl-share-panel">
-                      <h3 className="wl-letter-title text-[1.25rem]">{copy.shareCta}</h3>
+                      <h3 className="wl-letter-title text-[1.25rem]">{t("share.cta")}</h3>
                       <p className="wl-hint">
-                        {owner.share_enabled ? copy.sharingOn : copy.enableShareFirst}
+                        {owner.share_enabled ? t("share.on") : t("share.enableFirst")}
                       </p>
                       <div className="wl-share-grid">
                         <button type="button" className="wl-btn wl-btn--primary" disabled={busy} onClick={() => void shareVia("copy")}>
-                          {copy.copyLink}
+                          {t("share.copyLink")}
                         </button>
                         <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void shareVia("whatsapp")}>
-                          {copy.shareWhatsApp}
+                          {t("share.whatsapp")}
                         </button>
                         <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void shareVia("email")}>
-                          {copy.shareEmail}
+                          {t("share.email")}
                         </button>
                         <button type="button" className="wl-btn wl-btn--soft" disabled={busy} onClick={() => void shareVia("native")}>
-                          {copy.shareNative}
+                          {t("share.native")}
                         </button>
                       </div>
                       {shareHint ? <p className="wl-hint break-all">{shareHint}</p> : null}
                       {owner.share_enabled ? (
                         <button type="button" className="wl-btn wl-btn--danger mt-3" onClick={() => void toggleShare(false)}>
-                          {copy.turnShareOff}
+                          {t("share.turnOff")}
                         </button>
                       ) : null}
                       {owner.share_enabled && shareUrl ? (
@@ -1125,7 +1165,7 @@ export default function ChristmasWishlistPage() {
                 </div>
 
                 <div className="wl-section text-center">
-                  <p className="text-[rgba(247,240,228,0.7)]">{copy.notSure}</p>
+                  <p className="text-[rgba(247,240,228,0.7)]">{t("crossSell.notSure")}</p>
                   <Link
                     className="wl-cta-ghost mt-3 inline-flex !w-auto"
                     to="/christmas/gift-finder"
@@ -1136,96 +1176,93 @@ export default function ChristmasWishlistPage() {
                       })
                     }
                   >
-                    {copy.tryGiftFinder}
+                    {t("crossSell.tryGiftFinder")}
                   </Link>
                 </div>
 
                 <div className="wl-section">
-                  <h2 className="!text-left text-[1.25rem]">{copy.personalIdeas}</h2>
+                  <h2 className="!text-left text-[1.25rem]">{t("crossSell.personalIdeas")}</h2>
                   <div className="wl-links !justify-start !mt-3">
-                    <Link to="/christmas/photo-generator">{copy.addPortrait}</Link>
-                    <Link to="/christmas/santa-video">{copy.addSanta}</Link>
-                    <Link to="/christmas/cards">{copy.addCard}</Link>
-                    <Link to="/christmas/tree">{copy.addTree}</Link>
+                    <Link to="/christmas/photo-generator">{t("crossSell.addPortrait")}</Link>
+                    <Link to="/christmas/santa-video">{t("crossSell.addSanta")}</Link>
+                    <Link to="/christmas/cards">{t("crossSell.addCard")}</Link>
+                    <Link to="/christmas/tree">{t("crossSell.addTree")}</Link>
                   </div>
-                  <p className="mt-3 text-sm text-[rgba(247,240,228,0.55)]">{copy.putUnderTree}</p>
+                  <p className="mt-3 text-sm text-[rgba(247,240,228,0.55)]">{t("crossSell.putUnderTree")}</p>
                 </div>
               </>
             )}
 
             {/* How it works + SEO / GEO */}
             <section className="wl-section" id={howId} aria-labelledby={`${howId}-title`}>
-              <h2 id={`${howId}-title`}>{copy.howTitle}</h2>
+              <h2 id={`${howId}-title`}>{t("how.title")}</h2>
               <ol className="wl-how">
                 <li className="wl-how__step">
                   <span className="wl-how__num" aria-hidden>
                     1
                   </span>
-                  <h3>{copy.how1Title}</h3>
-                  <p>{copy.how1Body}</p>
+                  <h3>{t("how.1.title")}</h3>
+                  <p>{t("how.1.body")}</p>
                 </li>
                 <li className="wl-how__step">
                   <span className="wl-how__num" aria-hidden>
                     2
                   </span>
-                  <h3>{copy.how2Title}</h3>
-                  <p>{copy.how2Body}</p>
+                  <h3>{t("how.2.title")}</h3>
+                  <p>{t("how.2.body")}</p>
                 </li>
                 <li className="wl-how__step">
                   <span className="wl-how__num" aria-hidden>
                     3
                   </span>
-                  <h3>{copy.how3Title}</h3>
-                  <p>{copy.how3Body}</p>
+                  <h3>{t("how.3.title")}</h3>
+                  <p>{t("how.3.body")}</p>
                 </li>
                 <li className="wl-how__step">
                   <span className="wl-how__num" aria-hidden>
                     4
                   </span>
-                  <h3>{copy.how4Title}</h3>
-                  <p>{copy.how4Body}</p>
+                  <h3>{t("how.4.title")}</h3>
+                  <p>{t("how.4.body")}</p>
                 </li>
               </ol>
             </section>
 
-            <section className="wl-section" aria-label="About Christmas wishlists">
+            <section className="wl-section" aria-label={t("a11y.about")}>
               <article className="wl-seo-block">
-                <h2>{copy.seoCreateTitle}</h2>
-                <p>{copy.seoCreateBody}</p>
+                <h2>{t("seo.createTitle")}</h2>
+                <p>{t("seo.createBody")}</p>
               </article>
               <article className="wl-seo-block">
-                <h2>{copy.seoAnywhereTitle}</h2>
-                <p>{copy.seoAnywhereBody}</p>
+                <h2>{t("seo.anywhereTitle")}</h2>
+                <p>{t("seo.anywhereBody")}</p>
               </article>
               <article className="wl-seo-block">
-                <h2>{copy.seoShareTitle}</h2>
-                <p>{copy.seoShareBody}</p>
+                <h2>{t("seo.shareTitle")}</h2>
+                <p>{t("seo.shareBody")}</p>
               </article>
               <article className="wl-seo-block">
-                <h2>{copy.seoDuplicateTitle}</h2>
-                <p>{copy.seoDuplicateBody}</p>
+                <h2>{t("seo.duplicateTitle")}</h2>
+                <p>{t("seo.duplicateBody")}</p>
               </article>
               <article className="wl-seo-block">
-                <h2>{copy.seoKidsTitle}</h2>
-                <p>{copy.seoKidsBody}</p>
+                <h2>{t("seo.kidsTitle")}</h2>
+                <p>{t("seo.kidsBody")}</p>
               </article>
               <article className="wl-seo-block">
-                <h2>{copy.geoWhatTitle}</h2>
-                <p>{copy.geoWhatBody}</p>
+                <h2>{t("geo.whatTitle")}</h2>
+                <p>{t("geo.whatBody")}</p>
                 <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[rgba(247,240,228,0.78)]">
-                  <li>Can I add products from different stores? Yes — paste any store link or add a wish manually.</li>
-                  <li>Can people reserve gifts? Yes — viewers can mark “I’m getting this.”</li>
-                  <li>Will I know who bought my gift? No — reservations stay anonymous to protect the surprise.</li>
-                  <li>Can I share one link? Yes — one wishlist link is enough for everyone.</li>
-                  <li>Can I create one for my child? Yes — choose “My child” when creating.</li>
-                  <li>Can I add non-product wishes? Yes — experiences and handwritten wishes are welcome.</li>
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <li key={i}>{t(`geo.bullet.${i}`)}</li>
+                  ))}
                 </ul>
               </article>
             </section>
 
-            <section className="wl-section wl-faq" aria-label={copy.faqTitle}>
-              <h2>{copy.faqTitle}</h2>
-              {WISHLIST_FAQ_EN.map((item) => (
+            <section className="wl-section wl-faq" aria-label={t("faq.title")}>
+              <h2>{t("faq.title")}</h2>
+              {faq.map((item) => (
                 <details key={item.q}>
                   <summary>{item.q}</summary>
                   <p>{item.a}</p>
@@ -1233,11 +1270,11 @@ export default function ChristmasWishlistPage() {
               ))}
             </section>
 
-            <nav className="wl-links" aria-label="More Christmas gifts">
-              <Link to="/christmas/gift-finder">Gift Finder</Link>
-              <Link to="/christmas/tree">Christmas Tree</Link>
-              <Link to="/christmas/cards">Christmas Cards</Link>
-              <Link to="/christmas">All Christmas gifts</Link>
+            <nav className="wl-links" aria-label={t("a11y.moreGifts")}>
+              <Link to="/christmas/gift-finder">{t("nav.giftFinder")}</Link>
+              <Link to="/christmas/tree">{t("nav.tree")}</Link>
+              <Link to="/christmas/cards">{t("nav.cards")}</Link>
+              <Link to="/christmas">{t("nav.all")}</Link>
             </nav>
           </>
         ) : null}

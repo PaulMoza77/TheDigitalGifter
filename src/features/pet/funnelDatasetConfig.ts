@@ -1,16 +1,20 @@
 import { emptyStepCounts, type FunnelStepCounts } from "./funnelDashboard";
 
-export const FUNNEL_DATASET_IDS = ["v1", "v2", "v3"] as const;
+export const FUNNEL_DATASET_IDS = ["v1", "v2", "v3", "v4"] as const;
 export type FunnelDatasetId = (typeof FUNNEL_DATASET_IDS)[number];
 
 export type FunnelDatasetConfig = {
   id: FunnelDatasetId;
   /** Meta campaign_id. Empty string means Campaign is not configured yet. */
   campaignId: string;
-  funnelVariant: "v1" | "v2_preview" | "v3_cat_preview";
+  funnelVariant: "v1" | "v2_preview" | "v3_cat_preview" | "v4_sales";
   shortLabel: string;
   displayName: string;
-  eventSource: "pet_funnel_events" | "pet_v2_funnel_events" | "pet_v3_funnel_events";
+  eventSource:
+    | "pet_funnel_events"
+    | "pet_v2_funnel_events"
+    | "pet_v3_funnel_events"
+    | "pet_v4_funnel_events";
   kpiLabels: {
     landing: string;
     step2: string;
@@ -112,13 +116,42 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
       purchase: "Purchase",
     },
   },
+  v4: {
+    id: "v4",
+    campaignId: "120253729468900170",
+    funnelVariant: "v4_sales",
+    shortLabel: "V4",
+    displayName: "New Sales Campaign",
+    eventSource: "pet_v4_funnel_events",
+    kpiLabels: {
+      landing: "Landing Sessions",
+      step2: "Photo Uploads",
+      step3: "Teaser Viewed",
+      step4: "Offer Viewed",
+      checkout: "Checkout Clicks",
+      purchase: "Purchases",
+      landingHelper: "V4 first-touch landing cohort",
+      step2Of: "landing cohort",
+      step3Of: "uploads",
+      step4Of: "teasers",
+      checkoutOf: "offers",
+    },
+    stageLabels: {
+      landing_view: "Landing",
+      pet_name_submitted: "Upload completed",
+      photo_upload_completed: "Teaser viewed",
+      order_review_viewed: "Offer viewed",
+      initiate_checkout: "Checkout clicked",
+      purchase: "Purchase",
+    },
+  },
 };
 
 /** RPC campaign filter when a dataset has no Meta campaign_id yet. Matches no real campaign. */
 export const UNCONFIGURED_CAMPAIGN_ID = "__not_configured__";
 
 export function isFunnelDatasetId(value: unknown): value is FunnelDatasetId {
-  return value === "v1" || value === "v2" || value === "v3";
+  return value === "v1" || value === "v2" || value === "v3" || value === "v4";
 }
 
 export function funnelDataset(id: FunnelDatasetId): FunnelDatasetConfig {
@@ -141,9 +174,9 @@ export function datasetCampaignId(id: FunnelDatasetId, allowlistCampaignId?: str
   return FUNNEL_DATASETS[id].campaignId.trim();
 }
 
-/** V3 first-party funnel is live even before a Meta campaign_id is wired. */
+/** V3/V4 first-party funnels are live even before Meta sync catches up. */
 export function isDatasetConfigured(id: FunnelDatasetId, allowlistCampaignId?: string | null): boolean {
-  if (id === "v3") return true;
+  if (id === "v3" || id === "v4") return true;
   return datasetCampaignId(id, allowlistCampaignId).length > 0;
 }
 

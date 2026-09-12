@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useSearchParams,
   Outlet,
 } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -20,10 +21,14 @@ import {
 } from "@/features/pet/PetRoutes";
 import { PetV2Route } from "@/features/pet-v2/PetV2Routes";
 import { PetV3Route } from "@/features/pet-v3/PetV3Routes";
+import { PetV4Route } from "@/features/pet-v4/PetV4Routes";
+// Soft-redirect helper is available at PetV4CampaignRedirect — enable only after
+// migration 20260910120000_pet_v4_sales_campaign_analytics.sql is applied in prod.
 import {
   ChristmasV2OrderRoute,
   ChristmasV2Route,
 } from "@/features/christmas-v2/ChristmasV2Routes";
+import { christmasLocalePrefixedRoutes } from "@/features/christmas/seo/christmasLocaleRoutes";
 
 const PrivacyPolicyPage = lazy(() =>
   import("@/pages/website/PrivacyPolicyPage").then((m) => ({
@@ -115,6 +120,7 @@ const SpiritualCategoryPage = lazy(
 const PetsCategoryPage = lazy(() => import("@/pages/website/PetsCategoryPage"));
 
 const ChristmasPage = lazy(() => import("@/pages/website/ChristmasPage"));
+const ChristmasSuitePage = lazy(() => import("@/pages/website/ChristmasSuitePage"));
 const ChristmasShellRoute = lazy(() =>
   import("@/features/christmas/ChristmasShellRoute").then((m) => ({
     default: m.ChristmasShellRoute,
@@ -135,14 +141,26 @@ const ChristmasWishlistPage = lazy(
 const ChristmasGiftFinderPage = lazy(
   () => import("@/features/christmas/ChristmasGiftFinderPage"),
 );
+const ChristmasGiftsPage = lazy(
+  () => import("@/features/christmas/gifts/ChristmasGiftsPage"),
+);
 const ChristmasPortraitFunnelPage = lazy(
   () => import("@/features/christmas/ChristmasPortraitFunnelPage"),
+);
+const ChristmasPhotoGeneratorPage = lazy(
+  () => import("@/features/christmas/ChristmasPhotoGeneratorPage"),
+);
+const ChristmasFamilyPage = lazy(
+  () => import("@/features/christmas/ChristmasFamilyPage"),
 );
 const ChristmasCardsPage = lazy(
   () => import("@/features/christmas/ChristmasCardsPage"),
 );
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
+);
+const ChristmasSeoClusterPage = lazy(
+  () => import("@/features/christmas/seo/ChristmasSeoClusterPage"),
 );
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
@@ -256,12 +274,16 @@ function FunnelAttributionCapture() {
 
 function WebsiteLayout() {
   const [showPricing, setShowPricing] = useState(false);
+  const location = useLocation();
+  const hideChromeExtras =
+    location.pathname === "/christmas/tree-gifts" ||
+    location.pathname.startsWith("/christmas/tree-gifts/");
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
       <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
 
-      <main className="flex-1">
+      <main className={`flex-1 ${hideChromeExtras ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
@@ -270,7 +292,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      <WebsiteFooter />
+      {hideChromeExtras ? null : <WebsiteFooter />}
     </div>
   );
 }
@@ -279,6 +301,31 @@ function FunnelLayout() {
   return (
     <div className="min-h-screen w-full bg-black text-white">
       <Outlet />
+    </div>
+  );
+}
+
+function ChristmasGiftsAliasRedirect() {
+  const [params] = useSearchParams();
+  const qs = params.toString();
+  return (
+    <Navigate
+      to={`/christmas/gift-finder${qs ? `?${qs}` : ""}`}
+      replace
+    />
+  );
+}
+
+function ChristmasRouteFallback() {
+  const christmasBoot =
+    typeof window !== "undefined" &&
+    Boolean((window as Window & { __TDG_CHRISTMAS_BOOT__?: boolean }).__TDG_CHRISTMAS_BOOT__);
+  if (christmasBoot) {
+    return <div className="min-h-screen bg-transparent" aria-hidden="true" />;
+  }
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#0b0504] text-white/70">
+      Loading...
     </div>
   );
 }
@@ -425,13 +472,7 @@ function AppInner() {
       <FunnelAttributionCapture />
       <ScrollToTop />
 
-      <Suspense
-        fallback={
-          <div className="flex min-h-screen items-center justify-center bg-black text-white/80">
-            Loading...
-          </div>
-        }
-      >
+      <Suspense fallback={<ChristmasRouteFallback />}>
         <Routes>
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
@@ -454,9 +495,9 @@ function AppInner() {
             />
             <Route path="/categories/pets" element={<PetsCategoryPage />} />
 
-            <Route path="/christmas" element={<ChristmasPage />} />
-            <Route path="/christmas/photo-generator" element={<ChristmasPortraitFunnelPage />} />
-            <Route path="/christmas/family" element={<ChristmasPortraitFunnelPage />} />
+            <Route path="/christmas/suite" element={<ChristmasSuitePage />} />
+            <Route path="/christmas/photo-generator" element={<ChristmasPhotoGeneratorPage />} />
+            <Route path="/christmas/family" element={<ChristmasFamilyPage />} />
             <Route path="/christmas/couples" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/kids" element={<ChristmasShellRoute />} />
             <Route path="/christmas/pets" element={<ChristmasPortraitFunnelPage />} />
@@ -469,8 +510,50 @@ function AppInner() {
             <Route path="/christmas/wishlist" element={<ChristmasWishlistPage />} />
             <Route path="/wishlist/:shareId" element={<ChristmasWishlistPage />} />
             <Route path="/christmas/gift-finder" element={<ChristmasGiftFinderPage />} />
+            <Route path="/christmas/tree-gifts" element={<ChristmasGiftsPage />} />
+            <Route
+              path="/christmas/gifts"
+              element={<ChristmasGiftsAliasRedirect />}
+            />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
+            <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/messages-for-:slug" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/funny-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/romantic-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/professional-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/short-christmas-wishes" element={<ChristmasSeoClusterPage />} />
+            <Route path="/christmas/christmas-messages-for-family" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/messages-for-:slug" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/funny-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/romantic-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/professional-christmas-messages" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/short-christmas-wishes" element={<ChristmasSeoClusterPage />} />
+            <Route path="/ro/christmas/christmas-messages-for-family" element={<ChristmasSeoClusterPage />} />
+            {/* P3B: Wave 1 locale-prefixed Christmas routes (Strategy A) */}
+            {(["ro", "de", "fr", "es", "it", "pt", "nl", "pl"] as const).flatMap((prefix) =>
+              christmasLocalePrefixedRoutes(prefix, [
+                { path: "/christmas", element: <ChristmasPage /> },
+                { path: "/christmas/suite", element: <ChristmasSuitePage /> },
+                { path: "/christmas/photo-generator", element: <ChristmasPhotoGeneratorPage /> },
+                { path: "/christmas/family", element: <ChristmasFamilyPage /> },
+                { path: "/christmas/couples", element: <ChristmasPortraitFunnelPage /> },
+                { path: "/christmas/kids", element: <ChristmasShellRoute /> },
+                { path: "/christmas/pets", element: <ChristmasPortraitFunnelPage /> },
+                { path: "/christmas/dogs", element: <ChristmasPortraitFunnelPage /> },
+                { path: "/christmas/cats", element: <ChristmasPortraitFunnelPage /> },
+                { path: "/christmas/santa-video", element: <ChristmasSantaVideoPage /> },
+                { path: "/christmas/tree", element: <ChristmasTreePage /> },
+                { path: "/christmas/tree/:shareId", element: <ChristmasTreePage /> },
+                { path: "/christmas/advent", element: <ChristmasAdventPage /> },
+                { path: "/christmas/wishlist", element: <ChristmasWishlistPage /> },
+                { path: "/christmas/gift-finder", element: <ChristmasGiftFinderPage /> },
+                { path: "/christmas/tree-gifts", element: <ChristmasGiftsPage /> },
+                { path: "/christmas/cards", element: <ChristmasCardsPage /> },
+                { path: "/christmas/messages", element: <ChristmasMessagesPage /> },
+              ]),
+            )}
             <Route path="/birthday" element={<BirthdayPage />} />
             <Route path="/new-years-eve" element={<NewYearsEvePage />} />
             <Route path="/thanksgiving" element={<ThanksgivingPage />} />
@@ -595,6 +678,10 @@ function AppInner() {
             <Route path="/pet/cat-v2" element={<PetV2Route />} />
             <Route path="/pet/other-v2" element={<PetV2Route />} />
             <Route path="/pet/cat-v3" element={<PetV3Route />} />
+            <Route path="/pet/dog-v4" element={<PetV4Route />} />
+            <Route path="/pet/cat-v4" element={<PetV4Route />} />
+            <Route path="/pet/other-v4" element={<PetV4Route />} />
+            <Route path="/christmas" element={<ChristmasPage />} />
             <Route path="/christmas-ai-photos" element={<ChristmasV2Route />} />
             <Route
               path="/christmas-ai-photos/order"

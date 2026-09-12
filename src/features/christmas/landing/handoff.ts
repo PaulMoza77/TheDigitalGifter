@@ -3,8 +3,28 @@
 export const SANTA_HANDOFF_KEY = "tdg.christmas.santa.handoff.v1";
 export const SANTA_ROUTE = "/christmas/santa-video";
 
-export const GIFT_FINDER_RECIPIENTS = ["mom", "dad", "partner", "friend", "child"] as const;
+export const GIFT_FINDER_RECIPIENTS = [
+  "mom",
+  "dad",
+  "wife",
+  "husband",
+  "girlfriend",
+  "boyfriend",
+  "partner",
+  "daughter",
+  "son",
+  "teen",
+  "child",
+  "grandma",
+  "grandpa",
+  "friend",
+  "coworker",
+  "teacher",
+  "other",
+] as const;
 export type GiftFinderRecipient = (typeof GIFT_FINDER_RECIPIENTS)[number];
+
+export const GIFT_FINDER_LANDING_RECIPIENTS = ["mom", "dad", "partner", "friend", "child"] as const;
 
 export const PORTRAIT_VERTICALS = ["family", "couples", "pets"] as const;
 export type PortraitVertical = (typeof PORTRAIT_VERTICALS)[number];
@@ -29,9 +49,14 @@ export function sanitizeKidName(raw: string): string {
     .slice(0, 40);
 }
 
+/**
+ * Unicode-safe first names: letters + marks, spaces, hyphens, apostrophes.
+ * Rejects empty, oversized, and control characters.
+ */
 export function isLikelyKidName(name: string): boolean {
-  if (!name || name.length < 1) return false;
-  return /^[A-Za-zÀ-ÿăâîșțĂÂÎȘȚ' -]+$/u.test(name);
+  if (!name || name.length < 1 || name.length > 40) return false;
+  if (/[\u0000-\u001F\u007F]/.test(name)) return false;
+  return /^[\p{L}\p{M}][\p{L}\p{M}'’\-\s]*$/u.test(name);
 }
 
 export function writeSantaNameHandoff(childFirstName: string): void {
@@ -70,12 +95,13 @@ export function consumeSantaNameHandoff(): string {
   return name;
 }
 
-export function santaExperienceUrl(childFirstName: string): string {
-  const name = sanitizeKidName(childFirstName);
-  const params = new URLSearchParams();
-  if (name) params.set("name", name);
-  const q = params.toString();
-  return q ? `${SANTA_ROUTE}?${q}` : SANTA_ROUTE;
+/**
+ * Prefer sessionStorage handoff — do not put the child's name in the URL
+ * (avoids referrer / analytics leakage). Optional name query remains readable
+ * on the Santa page for deep links, but the landing CTA no longer emits it.
+ */
+export function santaExperienceUrl(_childFirstName?: string): string {
+  return SANTA_ROUTE;
 }
 
 export function giftFinderUrl(recipient: GiftFinderRecipient): string {
@@ -101,7 +127,7 @@ export function messagesUrl(recipient: string, tone: string): string {
 
 export function parseGiftRecipient(value: string | null): GiftFinderRecipient | null {
   if (!value) return null;
-  const key = value === "kids" ? "child" : value;
+  const key = value === "kids" ? "child" : value === "grandparent" ? "grandma" : value;
   return (GIFT_FINDER_RECIPIENTS as readonly string[]).includes(key)
     ? (key as GiftFinderRecipient)
     : null;

@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-09-11T05:45:00.000Z",
+  "note": "P3E: live MiniMax TTS + Whisper language/term/name evidence PASS for Wave 1. Prosody not human-ear judged; SEO gated on automated commercial-acceptability evidence (criterion B).",
+  "providers": {
+    "script": "OpenAI gpt-4o-mini (existing) + template fallback",
+    "tts_primary_documented": "OpenAI tts-1-hd (EN auto primary)",
+    "tts_non_en_auto_primary": "Replicate minimax/speech-02-hd with language_boost map",
+    "tts_fallback": "OpenAI ↔ MiniMax depending on auto/prefer mode",
+    "video": "existing christmas-santa-generate pipeline unchanged (language-agnostic once audio exists)"
+  },
+  "minimax_language_boost": {
+    "en": "English",
+    "ro": "Romanian",
+    "de": "German",
+    "fr": "French",
+    "es": "Spanish",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "nl": "Dutch",
+    "pl": "Polish"
+  },
+  "locales": {
+    "en": { "script": "PASS", "tts": "PASS", "video": "PASS", "quality": "PASS", "product_ready": "YES" },
+    "ro": { "script": "PASS", "tts": "PASS", "video": "PASS", "quality": "PASS", "product_ready": "YES" },
+    "de": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "fr": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "es": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "it": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "pt-PT": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES", "ptNote": "European morphology (tens/ajudaste/teu) retained; no BR markers in ASR" },
+    "nl": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" },
+    "pl": { "script": "PASS", "tts": "PASS", "video": "SKIPPED_LANGUAGE_AGNOSTIC", "quality": "PASS_AUTOMATED", "product_ready": "YES" }
+  }
+}

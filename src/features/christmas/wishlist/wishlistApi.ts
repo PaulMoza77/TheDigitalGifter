@@ -60,31 +60,10 @@ export type GiftIdea = {
   budget_max: number | null;
   currency?: string | null;
   category: string;
+  gift_type?: string | null;
+  ranking_role?: string | null;
   search_query: string;
   tdg_product_key?: string | null;
-};
-
-export type GiftFinderRunInput = {
-  locale: string;
-  recipient_key: string;
-  age_range_key: string;
-  interest_keys: string[];
-  custom_interest?: string;
-  budget_key: string;
-  gift_type_key: string;
-  vibe_key?: string;
-  force_new?: boolean;
-};
-
-export type GiftFinderRunResult = {
-  ok: boolean;
-  session_id: string;
-  ideas: GiftIdea[];
-  provider: string;
-  model: string;
-  latency_ms?: number;
-  already?: boolean;
-  used_fallback?: boolean;
 };
 
 export type UrlPreview = {
@@ -174,34 +153,6 @@ export function writeReservation(itemId: string, token: string | null) {
   }
 }
 
-export async function runGiftFinder(
-  input: GiftFinderRunInput,
-  authBearer?: string | null,
-): Promise<GiftFinderRunResult> {
-  return wishlistFunnel<GiftFinderRunResult>(
-    {
-      action: "runGiftFinder",
-      guest_token: getOrCreateFinderGuestToken(),
-      ...input,
-    },
-    authBearer,
-  );
-}
-
-export async function getGiftFinderSession(
-  sessionId: string,
-  authBearer?: string | null,
-): Promise<GiftFinderRunResult> {
-  return wishlistFunnel<GiftFinderRunResult>(
-    {
-      action: "getGiftFinderSession",
-      session_id: sessionId,
-      guest_token: getOrCreateFinderGuestToken(),
-    },
-    authBearer,
-  );
-}
-
 export function getOrCreateFinderGuestToken(): string {
   try {
     const existing = localStorage.getItem(FINDER_GUEST_KEY);
@@ -271,16 +222,22 @@ export function reorderIds(ids: string[], fromIndex: number, toIndex: number): s
   return next;
 }
 
-export function defaultWishlistTitle(firstName?: string | null): string {
+import { wishlistT } from "./copy";
+
+export function defaultWishlistTitle(firstName?: string | null, locale: string = "en"): string {
   const name = String(firstName || "").trim();
-  if (name) return `${name}’s Christmas Wishlist`.slice(0, 80);
-  return "My Christmas Wishlist";
+  if (name) return wishlistT(locale, "title.named", { name }).slice(0, 80);
+  return wishlistT(locale, "title.default");
 }
 
-export function shareMessage(title: string, url: string): { title: string; text: string; url: string } {
+export function shareMessage(
+  title: string,
+  url: string,
+  locale: string = "en",
+): { title: string; text: string; url: string } {
   return {
-    title: `${title} 🎄`,
-    text: `${title} shared a Christmas Wishlist with you 🎄\nSee what’s on the list →`,
+    title: wishlistT(locale, "share.seoTitle", { name: title }),
+    text: wishlistT(locale, "share.messageText", { title }),
     url,
   };
 }
