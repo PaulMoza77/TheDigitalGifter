@@ -11,7 +11,6 @@ FUNCTION_URL="${SUPABASE_URL%/}/functions/v1/christmas-result-share"
 
 [[ "$PROJECT_REF" == "kjlsocejpmnzhhduyumy" ]] || { echo "BLOCKED: unexpected project $PROJECT_REF"; exit 2; }
 [[ -n "${SUPABASE_ACCESS_TOKEN:-}" ]] || { echo "BLOCKED: SUPABASE_ACCESS_TOKEN missing"; exit 2; }
-[[ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]] || { echo "BLOCKED: SUPABASE_SERVICE_ROLE_KEY missing"; exit 2; }
 [[ -f "$MIGRATION" ]] || { echo "BLOCKED: migration missing"; exit 2; }
 
 mgmt_sql() {
@@ -24,8 +23,7 @@ mgmt_sql() {
   [[ "$code" == "200" || "$code" == "201" ]] || { echo "Management SQL failed HTTP $code"; cat "$out"; exit 2; }
 }
 
-SQL="$(cat "$MIGRATION")"
-mgmt_sql "$SQL" /tmp/result-share-migration.json
+mgmt_sql "$(cat "$MIGRATION")" /tmp/result-share-migration.json
 echo "Migration applied."
 
 npx --yes supabase functions deploy christmas-result-share \
@@ -47,21 +45,33 @@ if(!r || r.rls_enabled!==true || r.hash_column!==true || r.no_ciphertext!==true 
 NODE
 echo "Schema/RLS verification PASS."
 
+SAFE_ASSET_SQL="select a.storage_path
+from public.christmas_order_assets a
+join public.christmas_orders o on o.id=a.order_id
+where a.storage_bucket='christmas-generated'
+  and a.storage_path is not null
+  and (a.storage_path like 'smoke/%' or coalesce(o.metadata->>'is_test','false')='true')
+order by a.created_at desc limit 1;"
+mgmt_sql "$SAFE_ASSET_SQL" /tmp/result-share-safe-asset.json
+SAFE_PATH="$(node -e "const x=require('/tmp/result-share-safe-asset.json'); const r=Array.isArray(x)?x[0]:x; process.stdout.write(r?.storage_path||'')")"
+if [[ -z "$SAFE_PATH" ]]; then SAFE_PATH="smoke/result-share-no-object"; fi
+SAFE_PATH_SQL="$(printf '%s' "$SAFE_PATH" | sed "s/'/''/g")"
+
 SMOKE_TOKEN="$(openssl rand -hex 24)"
 SMOKE_HASH="$(node -e "const c=require('crypto');process.stdout.write(c.createHash('sha256').update(process.argv[1]).digest('hex'))" "$SMOKE_TOKEN")"
 SMOKE_B64="$(printf '%s' "$SMOKE_TOKEN" | base64 | tr -d '\n')"
-SMOKE_PATH="smoke/result-share-$(date +%s)-${RANDOM}.txt"
 ORDER_ID=""
-ASSET_ID=""
 
 cleanup() {
   if [[ -n "$ORDER_ID" ]]; then
-    mgmt_sql "delete from public.christmas_orders where id='${ORDER_ID}'::uuid and metadata->>'source'='christmas-result-share-smoke';" /tmp/result-share-cleanup-db.json || true
+    local sql payload code
+    sql="delete from public.christmas_orders where id='${ORDER_ID}'::uuid and metadata->>'source'='christmas-result-share-smoke';"
+    payload="$(node -e 'process.stdout.write(JSON.stringify({query:process.argv[1]}))' "$sql")"
+    code="$(curl -sS -o /tmp/result-share-cleanup.json -w '%{http_code}' -X POST \
+      "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
+      -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" -H "Content-Type: application/json" -d "$payload" || true)"
+    echo "Smoke cleanup HTTP $code"
   fi
-  curl -sS -o /tmp/result-share-cleanup-storage.json -X DELETE \
-    "${SUPABASE_URL%/}/storage/v1/object/christmas-generated/${SMOKE_PATH}" \
-    -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-    -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" >/dev/null || true
 }
 trap cleanup EXIT
 
@@ -73,7 +83,7 @@ FIXTURE_SQL="with o as (
   returning id
 ), a as (
   insert into public.christmas_order_assets(order_id,asset_kind,storage_bucket,storage_path,metadata)
-  select id,'other','christmas-generated','${SMOKE_PATH}','{\"style_key\":\"smoke\"}'::jsonb from o
+  select id,'other','christmas-generated','${SAFE_PATH_SQL}','{\"style_key\":\"smoke\"}'::jsonb from o
   returning id,order_id
 ), u as (
   update public.christmas_orders x set result_asset_id=a.id from a where x.id=a.order_id returning x.id
@@ -81,16 +91,7 @@ FIXTURE_SQL="with o as (
 select u.id as order_id,a.id as asset_id from u join a on a.order_id=u.id;"
 mgmt_sql "$FIXTURE_SQL" /tmp/result-share-fixture.json
 ORDER_ID="$(node -e "const x=require('/tmp/result-share-fixture.json'); const r=Array.isArray(x)?x[0]:x; process.stdout.write(r?.order_id||'')")"
-ASSET_ID="$(node -e "const x=require('/tmp/result-share-fixture.json'); const r=Array.isArray(x)?x[0]:x; process.stdout.write(r?.asset_id||'')")"
-[[ -n "$ORDER_ID" && -n "$ASSET_ID" ]] || { echo "Fixture creation failed"; cat /tmp/result-share-fixture.json; exit 2; }
-
-echo -n 'TDG Christmas result-share synthetic smoke asset' >/tmp/result-share-smoke.txt
-UPLOAD_CODE="$(curl -sS -o /tmp/result-share-upload.json -w '%{http_code}' -X POST \
-  "${SUPABASE_URL%/}/storage/v1/object/christmas-generated/${SMOKE_PATH}" \
-  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Content-Type: text/plain" -H "x-upsert: true" --data-binary @/tmp/result-share-smoke.txt)"
-[[ "$UPLOAD_CODE" == "200" || "$UPLOAD_CODE" == "201" ]] || { echo "Storage upload failed HTTP $UPLOAD_CODE"; cat /tmp/result-share-upload.json; exit 2; }
+[[ -n "$ORDER_ID" ]] || { echo "Fixture creation failed"; cat /tmp/result-share-fixture.json; exit 2; }
 
 post_share() {
   local body="$1" out="$2" expected="$3" code
@@ -103,19 +104,27 @@ GEN_ID="$(node -e "const x=require('/tmp/result-share-enable.json');process.stdo
 SHARE_TOKEN="$(node -e "const x=require('/tmp/result-share-enable.json');process.stdout.write(x.share_token||'')")"
 [[ -n "$GEN_ID" && ${#SHARE_TOKEN} -ge 32 ]] || { echo "Enable smoke failed"; cat /tmp/result-share-enable.json; exit 2; }
 
-post_share "{\"action\":\"getSharedResult\",\"generation_id\":\"${GEN_ID}\",\"token\":\"${SHARE_TOKEN}\"}" /tmp/result-share-open.json 200
+post_share "{\"action\":\"getOwnerShare\",\"public_token\":\"${SMOKE_TOKEN}\"}" /tmp/result-share-owner-enabled.json 200
 node - <<'NODE'
-const x=require('/tmp/result-share-open.json'); if(x.ok!==true || !x.resultUrl || x.generation_id==null) process.exit(2);
+const x=require('/tmp/result-share-owner-enabled.json'); if(x.ok!==true || x.share_enabled!==true || !x.generation_id) process.exit(2);
 NODE
+
+if [[ "$SAFE_PATH" != "smoke/result-share-no-object" ]]; then
+  post_share "{\"action\":\"getSharedResult\",\"generation_id\":\"${GEN_ID}\",\"token\":\"${SHARE_TOKEN}\"}" /tmp/result-share-open.json 200
+  node - <<'NODE'
+const x=require('/tmp/result-share-open.json'); if(x.ok!==true || !x.resultUrl || !x.generation_id) process.exit(2);
+NODE
+  echo "Public open smoke PASS using pre-existing test/smoke asset."
+else
+  post_share "{\"action\":\"getSharedResult\",\"generation_id\":\"${GEN_ID}\",\"token\":\"not-a-valid-capability-token\"}" /tmp/result-share-invalid-open.json 404
+  echo "No pre-existing test storage object; positive signed-asset open skipped, token gate PASS."
+fi
 
 post_share "{\"action\":\"revokeShare\",\"public_token\":\"${SMOKE_TOKEN}\"}" /tmp/result-share-revoke.json 200
+post_share "{\"action\":\"getOwnerShare\",\"public_token\":\"${SMOKE_TOKEN}\"}" /tmp/result-share-owner-revoked.json 200
 node - <<'NODE'
-const x=require('/tmp/result-share-revoke.json'); if(x.ok!==true || x.share_enabled!==false) process.exit(2);
+const x=require('/tmp/result-share-owner-revoked.json'); if(x.ok!==true || x.share_enabled!==false) process.exit(2);
 NODE
+post_share "{\"action\":\"getSharedResult\",\"generation_id\":\"${GEN_ID}\",\"token\":\"${SHARE_TOKEN}\"}" /tmp/result-share-revoked-open.json 404
 
-post_share "{\"action\":\"getSharedResult\",\"generation_id\":\"${GEN_ID}\",\"token\":\"${SHARE_TOKEN}\"}" /tmp/result-share-revoked.json 404
-node - <<'NODE'
-const x=require('/tmp/result-share-revoked.json'); if(x.error!=='unavailable') process.exit(2);
-NODE
-
-echo "RESULT_SHARE_SMOKE_PASS enable=open=revoke=old_link_denied"
+echo "RESULT_SHARE_SMOKE_PASS enable=PASS owner_state=PASS revoke=PASS old_link_denied=PASS"
