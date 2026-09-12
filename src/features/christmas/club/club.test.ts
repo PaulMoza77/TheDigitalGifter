@@ -67,6 +67,10 @@ describe("christmas club live cabin + gift tree", () => {
     expect(landing).toContain("AdventScene");
     expect(landing).toContain("WishlistScene");
     expect(landing).toContain("CardsScene");
+    expect(landing).toContain("StoryErrorBoundary");
+    expect(santa).toContain("advent-loop.mp4");
+    expect(santa).toContain("cover-elegant.webp");
+    expect(santa).toContain("message-letter.webp");
     expect(gifts).toContain("h-[min(78svh,640px)]");
     expect(tree).toContain("mobileMp4");
     expect(tree).toContain("desktopMp4");

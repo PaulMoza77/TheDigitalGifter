@@ -1,9 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { adventDayParts } from "../../tree/treeLogic";
 import { LANDING_ASSETS } from "../assets";
 import { landingT, type ChristmasLandingLocale } from "../copy";
-import { SceneShell } from "../SceneShell";
+import { useInViewOnce } from "../useInViewOnce";
+import { usePrefersReducedMotion } from "../usePrefersReducedMotion";
 
+function pickAdventLoop(): string {
+  if (typeof window === "undefined") return LANDING_ASSETS.adventLoop540;
+  return window.matchMedia("(min-width: 901px)").matches
+    ? LANDING_ASSETS.adventLoop
+    : LANDING_ASSETS.adventLoop540;
+}
+
+/**
+ * Landing Advent: framed photoreal loop (door opens, light spills) —
+ * sized like the gift-tree frame. Product flow stays on /christmas/advent.
+ */
 export function AdventScene({
   locale,
   onInteract,
@@ -14,46 +26,86 @@ export function AdventScene({
   onCta: () => void;
 }) {
   const t = (key: string) => landingT(key, locale);
-  const parts = useMemo(() => adventDayParts(new Date(), 2026), []);
-  const today = parts.eligibleDay ?? 1;
-  const [open, setOpen] = useState<number | null>(null);
+  const reduced = usePrefersReducedMotion();
+  const { ref, inView } = useInViewOnce<HTMLElement>();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const viewedRef = useRef(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [loopSrc] = useState(pickAdventLoop);
+  const today = adventDayParts(new Date(), 2026).eligibleDay ?? 1;
+
+  useEffect(() => {
+    if (!inView || viewedRef.current) return;
+    viewedRef.current = true;
+    onInteract(today);
+  }, [inView, onInteract, today]);
+
+  useEffect(() => {
+    if (reduced || !inView) return;
+    const video = videoRef.current;
+    if (!video) return;
+    setVideoReady(false);
+    const markReady = () => setVideoReady(true);
+    if (video.readyState >= 2) markReady();
+    video.addEventListener("loadeddata", markReady);
+    video.addEventListener("canplay", markReady);
+    void video.play().catch(() => {
+      /* autoplay blocked — poster remains */
+    });
+    return () => {
+      video.removeEventListener("loadeddata", markReady);
+      video.removeEventListener("canplay", markReady);
+    };
+  }, [inView, loopSrc, reduced]);
 
   return (
-    <SceneShell
+    <section
       id="advent"
-      kicker={t("advent.kicker")}
-      title={t("advent.h2")}
-      lede={t("advent.lede")}
-      reverse
-      visual={
-        <div className="xmas-advent">
-          <figure className="xmas-photo">
-            <img src={LANDING_ASSETS.advent} alt={t("advent.alt")} width={1280} height={720} loading="lazy" />
-          </figure>
-          <div className="xmas-advent-grid" role="list">
-            {Array.from({ length: 24 }, (_, i) => i + 1).map((day) => (
-              <button
-                key={day}
-                type="button"
-                className={`xmas-door ${day === today ? "is-today" : ""} ${open === day ? "is-open" : ""}`}
-                aria-label={`${t("advent.today")} ${day}`}
-                onClick={() => {
-                  setOpen(day);
-                  onInteract(day);
-                }}
-              >
-                {day}
-              </button>
-            ))}
-          </div>
-        </div>
-      }
+      ref={ref}
+      className="xmas-scene xmas-advent-landing"
+      aria-labelledby="advent-title"
     >
-      <div className="xmas-actions">
-        <button type="button" className="xmas-btn xmas-btn--gold" onClick={onCta}>
-          {t("advent.cta")}
+      <div className={`xmas-advent-landing__intro xmas-reveal ${inView ? "is-in" : ""}`}>
+        <p className="xmas-kicker">{t("advent.kicker")}</p>
+        <h2 id="advent-title">{t("advent.h2")}</h2>
+        <p className="xmas-lede">{t("advent.lede")}</p>
+        <div className="xmas-actions" style={{ justifyContent: "center" }}>
+          <button type="button" className="xmas-btn xmas-btn--gold" onClick={onCta}>
+            {t("advent.cta")}
+          </button>
+        </div>
+      </div>
+
+      <div className={`xmas-advent-landing__frame xmas-reveal ${inView ? "is-in" : ""}`}>
+        <button
+          type="button"
+          className="xmas-advent-stage"
+          onClick={onCta}
+          aria-label={t("advent.cta")}
+        >
+          <picture className="xmas-advent-stage__poster">
+            <source type="image/webp" srcSet={LANDING_ASSETS.adventLoopPoster} />
+            <img
+              src={LANDING_ASSETS.adventLoopPosterJpg}
+              alt={t("advent.alt")}
+              width={1280}
+              height={720}
+            />
+          </picture>
+          {!reduced ? (
+            <video
+              ref={videoRef}
+              className={`xmas-advent-stage__video${videoReady ? " is-ready" : ""}`}
+              muted
+              playsInline
+              loop
+              autoPlay
+              preload="metadata"
+              src={loopSrc}
+            />
+          ) : null}
         </button>
       </div>
-    </SceneShell>
+    </section>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LANDING_ASSETS } from "../assets";
 import { landingT, type ChristmasLandingLocale } from "../copy";
 import { MESSAGE_RECIPIENTS, MESSAGE_TONES } from "../handoff";
 import { SceneShell } from "../SceneShell";
@@ -64,15 +65,31 @@ export function MessagesScene({
   return (
     <SceneShell
       id="messages"
+      className="xmas-messages-scene"
       kicker={t("messages.kicker")}
       title={t("messages.h2")}
       lede={t("messages.lede")}
       reverse
       visual={
-        <div>
-          <p className="xmas-type" aria-live="polite">
-            {typed}
-          </p>
+        <div className={`xmas-message-letter xmas-message-letter--${tone}`}>
+          <picture>
+            <source type="image/webp" srcSet={LANDING_ASSETS.messageLetter} />
+            <img
+              src={LANDING_ASSETS.messageLetterJpg}
+              alt={t("messages.alt")}
+              width={880}
+              height={1173}
+            />
+          </picture>
+          <div className="xmas-message-ink">
+            <p className="xmas-message-ink__to">
+              {t("messages.for")} {t(RECIPIENT_KEYS[who])}
+            </p>
+            <p className="xmas-type" aria-live="polite">
+              {typed}
+              {reduced ? null : <span className="xmas-message-caret" aria-hidden="true" />}
+            </p>
+          </div>
         </div>
       }
     >

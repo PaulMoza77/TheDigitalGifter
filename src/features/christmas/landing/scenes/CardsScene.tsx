@@ -11,11 +11,18 @@ const LABELS: Record<CardTheme, string> = {
   funny: "cards.funny",
 };
 
-const INSIDE: Record<CardTheme, string> = {
-  elegant: "With gold light and quiet joy — Merry Christmas.",
-  family: "The table is full. So is the heart. Merry Christmas.",
-  romantic: "All I want this Christmas is closer to you.",
-  funny: "We checked the list twice. You’re still on it.",
+const INSIDE: Record<CardTheme, { kicker: string; line: string }> = {
+  elegant: { kicker: "Elegant", line: "With gold light and quiet joy — Merry Christmas." },
+  family: { kicker: "Family", line: "The table is full. So is the heart. Merry Christmas." },
+  romantic: { kicker: "Romantic", line: "All I want this Christmas is closer to you." },
+  funny: { kicker: "Funny", line: "We checked the list twice. You’re still on it." },
+};
+
+const COVERS: Record<CardTheme, string> = {
+  elegant: LANDING_ASSETS.cardCoverElegant,
+  family: LANDING_ASSETS.cardCoverFamily,
+  romantic: LANDING_ASSETS.cardCoverRomantic,
+  funny: LANDING_ASSETS.cardCoverFunny,
 };
 
 export function CardsScene({
@@ -27,28 +34,64 @@ export function CardsScene({
 }) {
   const t = (key: string) => landingT(key, locale);
   const [theme, setTheme] = useState<CardTheme>("elegant");
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
+  const inside = INSIDE[theme];
+
+  function pickTheme(next: CardTheme) {
+    setTheme(next);
+    setOpen(false);
+  }
 
   return (
     <SceneShell
       id="cards"
+      className="xmas-cards-scene"
       kicker={t("cards.kicker")}
       title={t("cards.h2")}
       lede={t("cards.lede")}
       visual={
-        <div className={`xmas-card-flip ${open ? "is-open" : ""}`}>
+        <div className={`xmas-card-desk xmas-card-desk--${theme}`}>
+          <div className="xmas-card-desk__glow" aria-hidden="true" />
+          <span className="xmas-card-spark xmas-card-spark--a" aria-hidden="true" />
+          <span className="xmas-card-spark xmas-card-spark--b" aria-hidden="true" />
+          <span className="xmas-card-spark xmas-card-spark--c" aria-hidden="true" />
+          <div className="xmas-card-stack" aria-hidden="true">
+            <span />
+            <span />
+          </div>
           <button
             type="button"
-            className="xmas-card-flip__inner"
+            className={`xmas-card-flip ${open ? "is-open" : ""}`}
             aria-expanded={open}
+            aria-label={open ? inside.line : t("cards.hint")}
             onClick={() => setOpen((v) => !v)}
-            style={{ width: "100%", border: 0, padding: 0, background: "transparent", cursor: "pointer" }}
           >
-            <div className="xmas-card-face">
-              <img src={LANDING_ASSETS.card} alt={t("cards.alt")} width={1152} height={864} loading="lazy" />
-            </div>
-            <div className="xmas-card-face xmas-card-face--back">{INSIDE[theme]}</div>
+            <span className="xmas-card-flip__inner">
+              <span className="xmas-card-face xmas-card-face--front">
+                <picture key={theme}>
+                  <source type="image/webp" srcSet={COVERS[theme]} />
+                  <img
+                    src={COVERS[theme].replace(".webp", ".jpg")}
+                    alt=""
+                    width={720}
+                    height={960}
+                  />
+                </picture>
+                <span className="xmas-card-shine" aria-hidden="true" />
+                <span className="xmas-card-seal" aria-hidden="true" />
+              </span>
+              <span className="xmas-card-face xmas-card-face--back">
+                <span className="xmas-card-inside">
+                  <span className="xmas-card-inside__kicker">{inside.kicker}</span>
+                  <span className="xmas-card-inside__line">{inside.line}</span>
+                  <span className="xmas-card-inside__mark" aria-hidden="true">
+                    The Digital Gifter
+                  </span>
+                </span>
+              </span>
+            </span>
           </button>
+          <p className="xmas-card-hint">{t("cards.hint")}</p>
         </div>
       }
     >
@@ -59,10 +102,7 @@ export function CardsScene({
             type="button"
             className="xmas-tag"
             aria-pressed={theme === key}
-            onClick={() => {
-              setTheme(key);
-              setOpen(true);
-            }}
+            onClick={() => pickTheme(key)}
           >
             {t(LABELS[key])}
           </button>

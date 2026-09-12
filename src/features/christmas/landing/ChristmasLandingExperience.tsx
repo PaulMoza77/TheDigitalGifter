@@ -40,6 +40,7 @@ import { SantaScene } from "./scenes/SantaScene";
 import { TreeScene } from "./scenes/TreeScene";
 import { WishlistScene } from "./scenes/WishlistScene";
 import { christmasLandingJsonLd, upsertJsonLd } from "./seo";
+import { StoryErrorBoundary } from "./StoryErrorBoundary";
 
 const CREATE_HREF = "/generator?occasion=christmas";
 
@@ -184,34 +185,40 @@ export function ChristmasLandingExperience({
           void navigate(localeProductHref("/christmas/tree", locale));
         }}
       />
-      <AdventScene
-        locale={locale}
-        onInteract={(day) => {
-          trackHubEvent("christmas_hub_interact", { surface: "hub_advent", action: "door", day }, "christmas_advent");
-        }}
-        onCta={() => {
-          trackHubEvent("christmas_hub_cta", { surface: "hub_advent" }, "christmas_advent");
-          void navigate(localeProductHref("/christmas/advent", locale));
-        }}
-      />
-      <CardsScene
-        locale={locale}
-        onCta={(theme: CardTheme) => {
-          trackHubEvent("christmas_hub_cta", { surface: "hub_cards", theme }, "christmas_card");
-          void navigate(localeProductHref(cardsUrl(theme), locale));
-        }}
-      />
-      <MessagesScene
-        locale={locale}
-        onCta={(recipient, tone) => {
-          trackHubEvent(
-            "christmas_hub_cta",
-            { surface: "hub_messages", recipient_key: recipient, tone },
-            "christmas_messages",
-          );
-          void navigate(localeProductHref(messagesUrl(recipient, tone), locale));
-        }}
-      />
+      <StoryErrorBoundary>
+        <AdventScene
+          locale={locale}
+          onInteract={(day) => {
+            trackHubEvent("christmas_hub_interact", { surface: "hub_advent", action: "door", day }, "christmas_advent");
+          }}
+          onCta={() => {
+            trackHubEvent("christmas_hub_cta", { surface: "hub_advent" }, "christmas_advent");
+            void navigate(localeProductHref("/christmas/advent", locale));
+          }}
+        />
+      </StoryErrorBoundary>
+      <StoryErrorBoundary>
+        <CardsScene
+          locale={locale}
+          onCta={(theme: CardTheme) => {
+            trackHubEvent("christmas_hub_cta", { surface: "hub_cards", theme }, "christmas_card");
+            void navigate(localeProductHref(cardsUrl(theme), locale));
+          }}
+        />
+      </StoryErrorBoundary>
+      <StoryErrorBoundary>
+        <MessagesScene
+          locale={locale}
+          onCta={(recipient, tone) => {
+            trackHubEvent(
+              "christmas_hub_cta",
+              { surface: "hub_messages", recipient_key: recipient, tone },
+              "christmas_messages",
+            );
+            void navigate(localeProductHref(messagesUrl(recipient, tone), locale));
+          }}
+        />
+      </StoryErrorBoundary>
       <FinalCtaScene locale={locale} onCta={() => goCreate("finale")} />
       <GeoScene locale={locale} />
       <FaqScene locale={locale} />
