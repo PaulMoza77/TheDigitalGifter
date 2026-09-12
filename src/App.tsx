@@ -29,6 +29,7 @@ import {
   ChristmasV2Route,
 } from "@/features/christmas-v2/ChristmasV2Routes";
 import { christmasLocalePrefixedRoutes } from "@/features/christmas/seo/christmasLocaleRoutes";
+import { petLocalePrefixedRoutes } from "@/features/pet/i18n";
 
 const PrivacyPolicyPage = lazy(() =>
   import("@/pages/website/PrivacyPolicyPage").then((m) => ({
@@ -681,6 +682,28 @@ function AppInner() {
             <Route path="/pet/dog-v4" element={<PetV4Route />} />
             <Route path="/pet/cat-v4" element={<PetV4Route />} />
             <Route path="/pet/other-v4" element={<PetV4Route />} />
+            {(["ro", "hu", "de", "it", "fr", "es", "pt", "nl", "pl"] as const).flatMap((prefix) =>
+              petLocalePrefixedRoutes(prefix, [
+                { path: "/pet", element: <Navigate to={`/${prefix}/pet/dog`} replace /> },
+                { path: "/pet/dog", element: <PetLandingRoute /> },
+                { path: "/pet/cat", element: <PetLandingRoute /> },
+                { path: "/pet/other", element: <PetLandingRoute /> },
+                { path: "/pet/create", element: <PetCreateRoute /> },
+                { path: "/pet/checkout", element: <PetCheckoutRoute /> },
+                { path: "/pet/order", element: <PetOrderRoute /> },
+                { path: "/pet/dog-v2", element: <PetV2Route /> },
+                { path: "/pet/cat-v2", element: <PetV2Route /> },
+                { path: "/pet/other-v2", element: <PetV2Route /> },
+                { path: "/pet/cat-v3", element: <PetV3Route /> },
+                { path: "/pet/dog-v4", element: <PetV4Route /> },
+                { path: "/pet/cat-v4", element: <PetV4Route /> },
+                { path: "/pet/other-v4", element: <PetV4Route /> },
+                { path: "/pet-v2", element: <Navigate to={`/${prefix}/pet/dog-v2`} replace /> },
+                { path: "/pet-v2/dog", element: <Navigate to={`/${prefix}/pet/dog-v2`} replace /> },
+                { path: "/pet-v2/cat", element: <Navigate to={`/${prefix}/pet/cat-v2`} replace /> },
+                { path: "/pet-v2/other", element: <Navigate to={`/${prefix}/pet/other-v2`} replace /> },
+              ]),
+            )}
             <Route path="/christmas" element={<ChristmasPage />} />
             <Route path="/christmas-ai-photos" element={<ChristmasV2Route />} />
             <Route

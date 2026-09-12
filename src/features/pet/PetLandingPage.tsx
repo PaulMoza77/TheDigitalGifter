@@ -4,9 +4,6 @@ import { Button } from "@/components/ui/button";
 import { PageHead } from "@/components/PageHead";
 import { trackMetaViewContent } from "@/lib/metaPixel";
 import {
-  PET_HERO_PROMISE,
-  PET_HERO_SUBTITLE,
-  PET_LANDING_COPY,
   PET_SEO,
 } from "./catalog";
 import {
@@ -26,6 +23,7 @@ import {
 import { createSecretLivesCta, landingNameStepCreatesOrder, validateOtherSubtype, validatePetName } from "./croGuards";
 import { trackFunnelEvent, trackFunnelViewItem } from "./funnelAnalytics";
 import { trackPetFunnelInternalEvent } from "./funnelInternal";
+import { petT, usePetLocale, withPetLocale } from "./i18n";
 import { PET_PRICE_DISPLAY, type PetFunnelNavigation, type PetSpecies } from "./types";
 import { usePetDraft } from "./usePetDraft";
 import { usePublicPetOffer } from "./usePublicPetOffer";
@@ -36,12 +34,22 @@ export type PetLandingPageProps = {
 };
 
 export function PetLandingPage({ navigation, species = "dog" }: PetLandingPageProps) {
+  const locale = usePetLocale();
   const { priceDisplay, amountCents, compareAtDisplay, saleExpiresAt, deliveryEstimate, loading, offerError, offerVerified, refresh } =
     usePublicPetOffer();
   const { draft } = usePetDraft();
   const [subtypeError, setSubtypeError] = useState<string | undefined>();
-  const copy = PET_LANDING_COPY[species];
-  const seo = PET_SEO[species];
+  const copy = {
+    heading: petT(`v1.landing.${species}.heading`, locale),
+    description: petT(`v1.landing.${species}.description`, locale),
+    support: petT(`v1.landing.${species}.support`, locale),
+  };
+  const seo = {
+    title: petT(`v1.seo.${species}.title`, locale),
+    description: petT(`v1.seo.${species}.description`, locale),
+    path: withPetLocale(PET_SEO[species].path, locale),
+    ogImage: PET_SEO[species].ogImage,
+  };
   const nameCheck = validatePetName(draft.petName);
   const stickyVisible = nameCheck.ok && (species !== "other" || validateOtherSubtype({
     species,
@@ -100,13 +108,13 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
 
   const trustItems = useMemo(
     () => [
-      "12 portraits",
-      "2 cinematic clips",
-      "Human checked",
+      petT("v1.offer.include.portraits", locale),
+      petT("v1.offer.include.clips", locale),
+      petT("v1.offer.include.review", locale),
       loading ? null : `${priceDisplay} once`,
-      "No subscription",
+      petT("v1.offer.noSub", locale),
     ],
-    [loading, priceDisplay],
+    [loading, priceDisplay, locale],
   );
 
   return (
@@ -122,9 +130,11 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
         <section className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
           <div>
             <h1 className="text-4xl font-semibold tracking-tight text-[#f6efe4] sm:text-5xl lg:text-[3.2rem] lg:leading-[1.08]">
-              {PET_HERO_PROMISE}
+              {petT("v1.hero.promise", locale)}
             </h1>
-            <p className="mt-4 max-w-md text-lg leading-7 text-[#f6efe4]/72">{PET_HERO_SUBTITLE}</p>
+            <p className="mt-4 max-w-md text-lg leading-7 text-[#f6efe4]/72">
+              {petT("v1.hero.subtitle", locale)}
+            </p>
             <p className="mt-2 max-w-md text-sm leading-6 text-[#f6efe4]/60">{copy.support}</p>
             <SaleBanner
               priceDisplay={priceDisplay}
@@ -213,7 +223,7 @@ export function PetLandingPage({ navigation, species = "dog" }: PetLandingPagePr
           submitName(nameCheck.name);
         }}
         label={createSecretLivesCta(draft.petName)}
-        supporting={`${priceLabel ?? PET_PRICE_DISPLAY} · No subscription`}
+        supporting={`${priceLabel ?? PET_PRICE_DISPLAY} · ${petT("v1.offer.noSub", locale)}`}
       />
     </PetShell>
   );

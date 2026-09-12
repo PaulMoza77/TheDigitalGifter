@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SaleCountdown, useSaleCountdown } from "../pet/components/SaleOffer";
+import { usePetT } from "../pet/i18n";
 import { v2FlashSale } from "./v2FlashSale";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ export function V2PackOffer({
   compact?: boolean;
   onExpire?: () => void;
 }) {
+  const t = usePetT();
   const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const refresh = () => {
     setOffer(v2PackOfferCopy());
@@ -39,22 +41,23 @@ export function V2PackOffer({
     >
       {compact ? null : (
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d4a84b]">
-          24-hour offer
+          {t("v2.pack.badge")}
         </p>
       )}
       <p className={cn("font-semibold tracking-tight text-[#f6efe4]", compact ? "text-base" : "mt-1 text-lg")}>
-        Get 12 secret lives and 2 mini clips for only{" "}
+        {t("v2.pack.headlineRich")}{" "}
         <s className="font-medium text-[#f6efe4]/45">{offer.compareAtDisplay}</s>{" "}
         <span className="text-[#f3d48a]">{offer.priceDisplay}</span>
       </p>
       <SaleCountdown expiresAt={offer.expiresAt} onExpire={refresh} className="mt-2 text-sm" />
-      <p className="mt-1 text-sm text-[#f6efe4]/65">One-time · no subscription · same pet in every portrait and clip</p>
+      <p className="mt-1 text-sm text-[#f6efe4]/65">{t("v2.pack.fine")}</p>
     </div>
   );
 }
 
 /** One-line urgency — no extra bordered box. Sticky CTA already repeats the timer. */
 export function V2SaleLine({ onExpire }: { onExpire?: () => void }) {
+  const t = usePetT();
   const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const countdown = useSaleCountdown(offer.expiresAt, () => {
     setOffer(v2PackOfferCopy());
@@ -63,7 +66,11 @@ export function V2SaleLine({ onExpire }: { onExpire?: () => void }) {
   if (!countdown) return null;
   return (
     <p className="mt-3 text-sm font-medium tabular-nums text-[#f3d48a]" role="timer">
-      <s className="font-medium text-[#f6efe4]/45">{offer.compareAtDisplay}</s> {offer.priceDisplay} today · {countdown} left
+      {t("v2.landing.saleLine", {
+        compare: offer.compareAtDisplay,
+        price: offer.priceDisplay,
+        countdown,
+      })}
     </p>
   );
 }
@@ -77,6 +84,7 @@ export function V2StickyCta({
   label: string;
   onExpire?: () => void;
 }) {
+  const t = usePetT();
   const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const countdown = useSaleCountdown(offer.expiresAt, () => {
     setOffer(v2PackOfferCopy());
@@ -94,8 +102,12 @@ export function V2StickyCta({
         </Button>
         <p className="mt-1.5 text-center text-[11px] tabular-nums text-[#f6efe4]/55">
           {countdown
-            ? `${offer.compareAtDisplay} → ${offer.priceDisplay} today · ${countdown} left`
-            : `${offer.priceDisplay} one-time · no card for the free preview`}
+            ? t("v2.landing.stickySale", {
+                compare: offer.compareAtDisplay,
+                price: offer.priceDisplay,
+                countdown,
+              })
+            : t("v2.landing.stickyIdle", { price: offer.priceDisplay })}
         </p>
       </div>
     </div>
@@ -109,6 +121,7 @@ export function V2ClosingCta({
   onClick: () => void;
   onExpire?: () => void;
 }) {
+  const t = usePetT();
   const [offer, setOffer] = useState(() => v2PackOfferCopy());
   const countdown = useSaleCountdown(offer.expiresAt, () => {
     setOffer(v2PackOfferCopy());
@@ -116,10 +129,9 @@ export function V2ClosingCta({
   });
   return (
     <section className="rounded-[28px] bg-[#d4a84b] px-6 py-9 text-center text-[#1a140e]">
-      <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Reveal your pet’s secret life.</h2>
+      <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("v2.landing.closingH2")}</h2>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#1a140e]/75">
-        Upload one photo for a free personalized teaser. Unlock 12 secret lives and 2 mini clips for{" "}
-        {offer.priceDisplay} today.
+        {t("v2.landing.closingLede", { price: offer.priceDisplay })}
       </p>
       {countdown ? (
         <p className="mt-3 font-mono text-2xl font-semibold tabular-nums tracking-wide" role="timer">
@@ -127,14 +139,17 @@ export function V2ClosingCta({
         </p>
       ) : null}
       <p className="mt-0.5 text-xs text-[#1a140e]/60">
-        <s>{offer.compareAtDisplay}</s> {offer.priceDisplay} · offer renews every 24 hours
+        {t("v2.landing.closingRenew", {
+          compare: offer.compareAtDisplay,
+          price: offer.priceDisplay,
+        })}
       </p>
       <Button
         type="button"
         onClick={onClick}
         className="mt-5 h-12 min-h-[48px] w-full rounded-full bg-[#1a140e] px-7 text-base font-semibold text-[#f6efe4] hover:bg-[#2a2018] sm:w-auto"
       >
-        Upload your pet photo
+        {t("v2.landing.cta")}
       </Button>
     </section>
   );

@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { PET_SUBTYPE_OPTIONS } from "../catalog";
+import { usePetT } from "../i18n";
 import type { PetSubtype } from "../types";
 import { cn } from "@/lib/utils";
 import { FieldError, petFieldClass } from "./FieldError";
@@ -17,13 +18,14 @@ export function SubtypePicker({
   error?: string;
   onChange: (subtype: PetSubtype, detail?: string) => void;
 }) {
+  const t = usePetT();
   const errorId = useId();
   const detailId = useId();
   const detailErrorId = useId();
 
   return (
     <fieldset aria-describedby={error ? errorId : undefined} className="space-y-3">
-      <legend className="text-sm font-medium text-[#f6efe4]">What kind of pet do you have?</legend>
+      <legend className="text-sm font-medium text-[#f6efe4]">{t("species.tablist")}</legend>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {PET_SUBTYPE_OPTIONS.map((option) => {
           const selected = value === option.id;
@@ -46,7 +48,7 @@ export function SubtypePicker({
                 value={option.id}
                 onChange={() => onChange(option.id, option.id === "other" ? detail || "" : "")}
               />
-              {option.label}
+              {t(`subtype.${option.id}`)}
             </label>
           );
         })}
@@ -54,7 +56,7 @@ export function SubtypePicker({
       {value === "other" ? (
         <div>
           <Label htmlFor={detailId} className="text-sm text-[#f6efe4]">
-            What kind of pet?
+            {t("species.otherHint")}
           </Label>
           <Input
             id={detailId}
@@ -68,10 +70,6 @@ export function SubtypePicker({
           />
         </div>
       ) : null}
-      <p className="text-xs leading-5 text-[#f6efe4]/55">
-        We review unusual pets before generation. If the source photo is unsuitable, we will contact
-        the customer before processing.
-      </p>
       <FieldError id={error ? detailErrorId : errorId} message={error} />
     </fieldset>
   );

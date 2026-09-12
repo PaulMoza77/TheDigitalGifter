@@ -4,6 +4,7 @@ import { PageHead } from "@/components/PageHead";
 import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import { validateOtherSubtype } from "../pet/croGuards";
 import { canGenerateWithSpeciesConfirm } from "../pet-funnel-shared/speciesConfirm";
+import { petT, usePetLocale, withPetLocale } from "../pet/i18n";
 import { remainingSessionPreviews } from "./abuse";
 import { trackPetV2Event, petV2LandingPath } from "./analytics";
 import { trackV2BeginCheckout } from "./checkoutAnalytics";
@@ -34,7 +35,6 @@ import { V2PhotoScreen } from "./screens/PhotoScreen";
 import { TeaserOfferScreen } from "./screens/TeaserOfferScreen";
 import {
   PET_V2_PRICE_CENTS,
-  V2_PROVIDER_UNAVAILABLE_COPY,
   type PetV2Draft,
   type PetV2Species,
   type PetV2Step,
@@ -50,6 +50,7 @@ function normalizeLegacyStep(step: PetV2Step): PetV2Step {
 
 export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
   const navigate = useNavigate();
+  const locale = usePetLocale();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const teaserLockRef = useRef(false);
@@ -73,7 +74,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     file: getV2PhotoFile(),
     species,
     onRestartExpired: () => {
-      setPhotoError("Your secure checkout session expired. Please upload your pet photo again.");
+      setPhotoError(petT("v2.checkout.expired", locale));
       go("photo", { orderId: null, publicToken: null });
     },
   });
@@ -198,6 +199,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
         hasPhoto: true,
         confirmed: speciesConfirmed,
         kind: species === "cat" ? "cat" : "dog",
+        locale,
       });
       if (!confirm.ok) {
         setPhotoError(confirm.message);
@@ -229,7 +231,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
     try {
       const status = await fetchV2ProviderStatus();
       if (!status.available) {
-        setProviderBlocked(status.message || V2_PROVIDER_UNAVAILABLE_COPY);
+        setProviderBlocked(status.message || petT("v2.provider.unavailable", locale));
         trackPetV2Event({
           eventName: "v2_provider_unavailable",
           species,
@@ -279,7 +281,9 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       showBack={step !== "landing"}
       footer={
         step === "landing"
-          ? "Free personalized teaser — unlock the full collection for $2.99."
+          ? petT("v2.shell.footer", locale, {
+              headline: petT("v2.pack.headline", locale, { price: "$2.99" }),
+            })
           : undefined
       }
       padForSticky={step === "landing"}
@@ -290,7 +294,7 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       onSpecies={
         step === "landing"
           ? (next) => {
-              void navigate(petV2LandingPath(next));
+              void navigate(withPetLocale(petV2LandingPath(next), locale));
             }
           : undefined
       }
@@ -298,12 +302,19 @@ export function PetV2FunnelPage({ species }: { species: PetV2Species }) {
       <PageHead
         title={
           species === "cat"
-            ? "Reveal your cat’s secret life | My Pet’s Secret Life"
+            ? petT("v1.seo.cat.title", locale)
             : species === "other"
-              ? "Reveal your pet’s secret life | My Pet’s Secret Life"
-              : "Reveal your dog’s secret life | My Pet’s Secret Life"
+              ? petT("v1.seo.other.title", locale)
+              : petT("v1.seo.dog.title", locale)
         }
-        description="Upload one photo for a free blurred teaser, then unlock 12 secret lives and 2 mini clips for $2.99."
+        description={petT(
+          species === "cat"
+            ? "v1.seo.cat.description"
+            : species === "other"
+              ? "v1.seo.other.description"
+              : "v1.seo.dog.description",
+          locale,
+        )}
       />
 
       <input

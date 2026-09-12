@@ -36,18 +36,25 @@ export function petV2LandingPath(species: string): string {
 }
 
 export function parsePetV2Species(pathname: string): "dog" | "cat" | "other" {
-  const segment = pathname.split("/").filter(Boolean)[1] || "";
+  // Strip optional /{locale} prefix so /ro/pet/dog-v2 still resolves.
+  const parts = pathname.split("/").filter(Boolean);
+  const petIdx = parts.findIndex((part) => part === "pet" || part === "pet-v2");
+  const segment =
+    parts[petIdx] === "pet-v2"
+      ? parts[petIdx + 1] || ""
+      : parts[petIdx + 1] || "";
   if (segment === "cat-v2" || segment === "cat") return "cat";
   if (segment === "other-v2" || segment === "other") return "other";
   return "dog";
 }
 
 export function isPetV2Pathname(value: string): boolean {
+  const bare = value.replace(/^\/(ro|hu|de|it|fr|es|pt|nl|pl)(?=\/)/i, "");
   return (
-    value === "/pet/dog-v2" ||
-    value === "/pet/cat-v2" ||
-    value === "/pet/other-v2" ||
-    value === "/pet-v2" ||
+    bare === "/pet/dog-v2" ||
+    bare === "/pet/cat-v2" ||
+    bare === "/pet/other-v2" ||
+    bare === "/pet-v2" ||
     value.startsWith("/pet-v2/")
   );
 }
