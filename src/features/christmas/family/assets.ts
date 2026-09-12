@@ -1,4 +1,5 @@
 import { LANDING_ASSETS } from "../landing/assets";
+import { FAMILY_STYLE_PREVIEWS } from "../photoGenerator/assets";
 
 export const FAMILY_ASSETS = {
   room: LANDING_ASSETS.hero,
@@ -31,44 +32,37 @@ export const FAMILY_STYLE_CHIPS: FamilyStyleChip[] = [
   {
     styleKey: "family_cozy_fireplace",
     labelKey: "styles.cozy",
-    preview: FAMILY_ASSETS.familyAfter,
+    preview: FAMILY_STYLE_PREVIEWS.family_cozy_fireplace,
   },
   {
     styleKey: "family_winter_wonderland",
     labelKey: "styles.snowy",
-    preview: FAMILY_ASSETS.finale,
+    preview: FAMILY_STYLE_PREVIEWS.family_winter_wonderland,
   },
   {
     styleKey: "classic_family_christmas",
     labelKey: "styles.classic",
-    preview: FAMILY_ASSETS.funnelAfter,
+    preview: FAMILY_STYLE_PREVIEWS.classic_family_christmas,
   },
   {
     styleKey: "family_elegant_christmas",
     labelKey: "styles.elegant",
-    preview: FAMILY_ASSETS.coupleAfter,
+    preview: FAMILY_STYLE_PREVIEWS.family_elegant_christmas,
   },
   {
     styleKey: "family_christmas_morning",
     labelKey: "styles.morning",
-    preview: FAMILY_ASSETS.funnelEx2After,
+    preview: FAMILY_STYLE_PREVIEWS.family_christmas_morning,
   },
   {
     styleKey: "family_luxury_christmas",
     labelKey: "styles.cabin",
-    preview: FAMILY_ASSETS.funnelEx3After,
+    preview: FAMILY_STYLE_PREVIEWS.family_luxury_christmas,
   },
 ];
 
 export const STYLE_PREVIEW_BY_KEY: Record<string, string> = {
-  classic_family_christmas: FAMILY_ASSETS.funnelAfter,
-  family_cozy_fireplace: FAMILY_ASSETS.familyAfter,
-  family_winter_wonderland: FAMILY_ASSETS.finale,
-  family_elegant_christmas: FAMILY_ASSETS.coupleAfter,
-  family_christmas_morning: FAMILY_ASSETS.funnelEx2After,
-  family_luxury_christmas: FAMILY_ASSETS.funnelEx3After,
-  family_christmas_movie: FAMILY_ASSETS.familyStill,
-  family_vintage_christmas: FAMILY_ASSETS.funnelAfter,
+  ...FAMILY_STYLE_PREVIEWS,
 };
 
 export type FamilyGalleryItem = {
@@ -129,42 +123,42 @@ export const FAMILY_SCENE_CARDS = [
     id: "cozy",
     titleKey: "styles.cozy",
     descKey: "styles.cozyDesc",
-    image: FAMILY_ASSETS.familyAfter,
+    image: FAMILY_STYLE_PREVIEWS.family_cozy_fireplace,
     styleKey: "family_cozy_fireplace",
   },
   {
     id: "morning",
     titleKey: "styles.morning",
     descKey: "styles.morningDesc",
-    image: FAMILY_ASSETS.funnelEx2After,
+    image: FAMILY_STYLE_PREVIEWS.family_christmas_morning,
     styleKey: "family_christmas_morning",
   },
   {
     id: "cabin",
     titleKey: "styles.cabin",
     descKey: "styles.cabinDesc",
-    image: FAMILY_ASSETS.funnelEx3After,
+    image: FAMILY_STYLE_PREVIEWS.family_luxury_christmas,
     styleKey: "family_luxury_christmas",
   },
   {
     id: "elegant",
     titleKey: "styles.elegant",
     descKey: "styles.elegantDesc",
-    image: FAMILY_ASSETS.coupleAfter,
+    image: FAMILY_STYLE_PREVIEWS.family_elegant_christmas,
     styleKey: "family_elegant_christmas",
   },
   {
     id: "classic",
     titleKey: "styles.classic",
     descKey: "styles.classicDesc",
-    image: FAMILY_ASSETS.funnelAfter,
+    image: FAMILY_STYLE_PREVIEWS.classic_family_christmas,
     styleKey: "classic_family_christmas",
   },
   {
     id: "wonderland",
     titleKey: "styles.wonderland",
     descKey: "styles.wonderlandDesc",
-    image: FAMILY_ASSETS.funnelEx3After,
+    image: FAMILY_STYLE_PREVIEWS.family_winter_wonderland,
     styleKey: "family_winter_wonderland",
   },
 ] as const;
