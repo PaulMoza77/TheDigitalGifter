@@ -104,28 +104,36 @@ export const CHRISTMAS_SEO_CONTENT = {
     ],
     faqs: [
       {
-        q: "Cosa posso creare a Natale con TheDigitalGifter?",
-        a: "Idee regalo, ritratti natalizi per famiglie, coppie e animali domestici, un video personalizzato di Babbo Natale, una lista dei desideri condivisibile, biglietti di Natale, messaggi natalizi, un albero digitale e un calendario dell'Avvento.",
+        q: "Cosa posso creare per Natale con TheDigitalGifter?",
+        a: "Puoi trovare idee regalo, trasformare foto in ritratti natalizi per famiglie, coppie e animali, avviare l’esperienza Babbo Natale, creare una lista dei desideri condividibile, progettare un biglietto, scrivere messaggi, decorare un albero digitale e aprire sorprese dell’Avvento. Scegli un’esperienza su questa pagina e finisci in pochi minuti.",
       },
       {
         q: "Babbo Natale può dire il nome di mio figlio?",
-        a: "Sì. Inizia con il suo nome sulla pagina di Natale o nell'esperienza del video di Babbo Natale, poi aggiungi dettagli opzionali prima di creare il video.",
+        a: "Puoi iniziare con il nome sulla pagina Natale o nell’esperienza Babbo Natale e aggiungere dettagli opzionali. I video parlati sono disponibili oggi in inglese e rumeno — altre lingue arriveranno.",
       },
       {
         q: "Servono competenze di design?",
-        a: "No. Ogni esperienza natalizia è guidata — carica una foto, rispondi a qualche domanda o inizia con un nome.",
+        a: "No. Ogni esperienza natalizia ti guida passo dopo passo — carica una foto, rispondi a poche domande o inizia con un nome — e la pagina fa il resto.",
       },
       {
         q: "È per regali digitali, fisici o entrambi?",
-        a: "Entrambi. Usa il ricercatore di regali e la lista dei desideri per acquisti in qualsiasi negozio, e crea ritratti digitali, biglietti e video di Babbo Natale da inviare.",
+        a: "Entrambi. Usa il Trova-regali e la lista dei desideri per fare shopping ovunque, e crea ritratti e biglietti digitali da scaricare o condividere subito.",
       },
       {
-        q: "Funziona sul telefono?",
-        a: "Sì. Lo spazio natalizio e le sue esperienze sono pensati per funzionare sia su telefono che su computer.",
+        q: "Funziona sul mio telefono?",
+        a: "Sì — l’hub di Natale e le esperienze prodotto sono pensati prima per il telefono e funzionano anche su desktop.",
       },
       {
-        q: "È disponibile in italiano?",
-        a: "I contenuti e la navigazione sono in italiano. Il video di Babbo Natale e il generatore di messaggi producono oggi il loro testo e la voce in inglese o rumeno; le altre esperienze funzionano con foto, nome o testo tuo senza dipendere da una lingua specifica.",
+        q: "La foto della mia famiglia è privata?",
+        a: "Gli upload servono a creare il ritratto o il biglietto. Le esperienze per bambini sono privacy-first e prevedono un genitore o tutore. Quando il risultato è pronto, lo scarichi in privato — non pubblichiamo le tue foto.",
+      },
+      {
+        q: "Quanto tempo serve per creare qualcosa?",
+        a: "La maggior parte delle esperienze richiede pochi minuti. Trova-regali e messaggi sono quasi istantanei. Ritratti, biglietti e Babbo Natale ti guidano passo dopo passo; le creazioni a pagamento continuano dopo il checkout.",
+      },
+      {
+        q: "Serve un account per iniziare?",
+        a: "Puoi esplorare e iniziare subito. Alcune esperienze chiedono un’email all’iscrizione o al pagamento per salvare i progressi, ricevere il risultato o unirti al Christmas Club.",
       },
     ],
   },

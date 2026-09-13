@@ -83,24 +83,36 @@ export const CHRISTMAS_SEO_CONTENT = {
     ],
     faqs: [
       {
-        q: "Wat kan ik met TheDigitalGifter maken voor Kerst?",
-        a: "Cadeau-ideeën, kerstportretten voor gezinnen, koppels en huisdieren, een gepersonaliseerde Kerstman-video, een deelbaar verlanglijstje, kerstkaarten, kerstboodschappen, een digitale boom en een adventskalender.",
+        q: "Wat kan ik voor Kerst maken met TheDigitalGifter?",
+        a: "Je kunt cadeau-ideeën vinden, foto’s omzetten in kerstportretten voor families, koppels en huisdieren, de kerstman-ervaring starten, een deelbaar verlanglijstje maken, een kaart ontwerpen, berichten schrijven, een digitale boom versieren en adventsverrassingen openen. Kies één ervaring op deze pagina en je bent in minuten klaar.",
       },
       {
-        q: "Kan de Kerstman de naam van mijn kind zeggen?",
-        a: "Ja. Begin met de voornaam op de kerstpagina of in de Kerstman-video-ervaring en voeg daarna optionele details toe voordat je de video maakt. De video wordt gemaakt in het Engels of Roemeens.",
+        q: "Kan de kerstman de naam van mijn kind zeggen?",
+        a: "Je kunt starten met de voornaam op de kerstpagina of in de kerstman-ervaring en optionele details toevoegen. Gesproken video’s zijn vandaag beschikbaar in het Engels en Roemeens — andere talen volgen.",
       },
       {
         q: "Heb ik ontwerpvaardigheden nodig?",
-        a: "Nee. Elke kerstervaring is begeleid — upload een foto, beantwoord een paar vragen, of begin met een naam.",
+        a: "Nee. Elke kerstervaring begeleidt je stap voor stap — upload een foto, beantwoord een paar vragen of begin met een naam — en de pagina doet de rest.",
       },
       {
-        q: "Is dit voor digitale cadeaus, fysieke cadeaus, of allebei?",
-        a: "Allebei. Gebruik de Gift Finder en het verlanglijstje om overal te winkelen, en maak digitale portretten, kaarten en Kerstman-video's om te versturen.",
+        q: "Is dit voor digitale cadeaus, fysieke cadeaus, of beide?",
+        a: "Beide. Gebruik de Cadeauzoeker en het verlanglijstje om overal te winkelen, en maak digitale portretten en kaarten om meteen te downloaden of te delen.",
       },
       {
         q: "Werkt dit op mijn telefoon?",
-        a: "Ja. De kersthub en alle productervaringen zijn gemaakt om zowel op telefoons als op desktops te werken.",
+        a: "Ja — de kersthub en productervaringen zijn eerst voor telefoons gemaakt en werken ook op desktop.",
+      },
+      {
+        q: "Is de foto van mijn gezin privé?",
+        a: "Uploads worden gebruikt om je portret of kaart te maken. Kindervaringen zijn privacy-first en verwachten een ouder of voogd. Als het resultaat klaar is, download je het privé — we plaatsen je foto’s niet openbaar.",
+      },
+      {
+        q: "Hoe lang duurt het om iets te maken?",
+        a: "De meeste ervaringen duren een paar minuten. Cadeauzoeker en berichten zijn bijna direct klaar. Portretten, kaarten en de kerstman begeleiden je stap voor stap; betaalde creaties gaan verder na checkout.",
+      },
+      {
+        q: "Heb ik een account nodig om te starten?",
+        a: "Je kunt meteen verkennen en starten. Sommige ervaringen vragen om een e-mail bij aanmelden of checkout zodat je voortgang kunt opslaan, je resultaat ontvangen of lid worden van de Christmas Club.",
       },
     ],
   },

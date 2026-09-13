@@ -139,6 +139,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
       .select("page_type, slug, updated_at, created_at")
       .eq("is_active", true)
       .in("page_type", ["occasion", "recipient", "style", "generator"])
+      .neq("slug", "_fallback")
       .order("page_type", { ascending: true })
       .order("slug", { ascending: true });
 
@@ -189,7 +190,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     }
 
     for (const page of (seoPages ?? []) as SeoPageRow[]) {
-      if (!page.page_type || !page.slug) continue;
+      if (!page.page_type || !page.slug || page.slug === "_fallback") continue;
 
       urls.push(
         createUrlXml({

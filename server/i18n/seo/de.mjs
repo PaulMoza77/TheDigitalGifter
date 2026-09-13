@@ -97,23 +97,35 @@ export const CHRISTMAS_SEO_CONTENT = {
     faqs: [
       {
         q: "Was kann ich zu Weihnachten mit TheDigitalGifter erstellen?",
-        a: "Geschenkideen, Weihnachtsporträts für Familien, Paare und Haustiere, ein persönliches Weihnachtsmann-Video, einen teilbaren Wunschzettel, Weihnachtskarten, Weihnachtsgrüße, einen digitalen Baum und einen Adventskalender.",
+        a: "Du kannst Geschenkideen finden, Fotos in Weihnachtsporträts für Familien, Paare und Haustiere verwandeln, das Santa-Erlebnis starten, eine teilbare Wunschliste bauen, eine Karte gestalten, Nachrichten schreiben, einen digitalen Baum schmücken und Adventsüberraschungen öffnen. Wähle ein Erlebnis auf dieser Seite und bist in Minuten fertig.",
       },
       {
         q: "Kann der Weihnachtsmann den Namen meines Kindes sagen?",
-        a: "Ja. Beginne mit dem Vornamen auf der Weihnachtsseite oder im Weihnachtsmann-Video-Erlebnis und füge dann optionale Details hinzu, bevor du das Video erstellst.",
+        a: "Du kannst mit dem Vornamen auf der Weihnachtsseite oder im Santa-Erlebnis starten und optionale Details ergänzen. Gesprochene Videos sind derzeit für Englisch und Rumänisch verfügbar — andere Sprachen folgen.",
       },
       {
         q: "Brauche ich Design-Kenntnisse?",
-        a: "Nein. Jedes Weihnachtserlebnis ist geführt — lade ein Foto hoch, beantworte ein paar Fragen oder starte einfach mit einem Namen.",
+        a: "Nein. Jedes Weihnachtserlebnis führt dich Schritt für Schritt — lade ein Foto hoch, beantworte ein paar Fragen oder starte mit einem Namen — und die Seite erledigt den Rest.",
       },
       {
         q: "Ist das für digitale Geschenke, physische Geschenke oder beides?",
-        a: "Beides. Nutze den Geschenke-Finder und den Wunschzettel für Einkäufe überall, und erstelle digitale Porträts, Karten und Weihnachtsmann-Videos zum Verschicken.",
+        a: "Beides. Nutze den Geschenke-Finder und den Wunschzettel für Einkäufe überall, und erstelle digitale Porträts und Karten zum Sofort-Download oder Teilen.",
       },
       {
         q: "Funktioniert das auch auf dem Handy?",
-        a: "Ja. Die Weihnachtsseite und alle Erlebnisse sind für Smartphones genauso ausgelegt wie für den Desktop.",
+        a: "Ja — der Weihnachts-Hub und die Produkterlebnisse sind zuerst für Handys gebaut und funktionieren auch am Desktop.",
+      },
+      {
+        q: "Ist das Familienfoto privat?",
+        a: "Uploads werden genutzt, um dein Porträt oder deine Karte zu erstellen. Kinder-Erlebnisse sind privacy-first und erwarten eine Erziehungsberechtigte Person. Fertige Ergebnisse lädst du privat herunter — wir veröffentlichen deine Fotos nicht.",
+      },
+      {
+        q: "Wie lange dauert das Erstellen?",
+        a: "Die meisten Erlebnisse dauern wenige Minuten. Geschenke-Finder und Nachrichten sind fast sofort fertig. Porträts, Karten und Santa führen dich Schritt für Schritt; bezahlte Kreationen laufen nach dem Checkout weiter.",
+      },
+      {
+        q: "Brauche ich ein Konto, um zu starten?",
+        a: "Du kannst sofort erkunden und starten. Manche Erlebnisse fragen bei Beitritt oder Checkout nach einer E-Mail, damit du Fortschritt speichern, dein Ergebnis erhalten oder dem Christmas Club beitreten kannst.",
       },
     ],
   },

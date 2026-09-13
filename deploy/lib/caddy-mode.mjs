@@ -14,6 +14,14 @@ function hasNamedTdgHttpsSite(text) {
   );
 }
 
+function hasNamedCasahubSite(text) {
+  const src = String(text || "");
+  return (
+    /^\s*casahub\.eu,\s*www\.casahub\.eu\s*\{/m.test(src) ||
+    /^\s*www\.casahub\.eu,\s*casahub\.eu\s*\{/m.test(src)
+  );
+}
+
 /**
  * @param {string} activeCaddyfile
  * @param {string | null | undefined} modeMarker  "http" | "https" | empty
@@ -55,12 +63,24 @@ export function assertCaddyContentMatchesMode(candidateContent, mode) {
   if (!text.includes("thedigitalgifter.com")) {
     throw new Error("Caddyfile must include thedigitalgifter.com");
   }
+  if (!text.includes("casahub.eu") || !text.includes("www.casahub.eu")) {
+    throw new Error("Caddyfile must include CasaHub hosts");
+  }
+  if (!text.includes("casahub-web:3000")) {
+    throw new Error("Caddyfile must keep CasaHub upstream casahub-web:3000");
+  }
   if (mode === "https") {
     if (!hasNamedTdgHttpsSite(text)) {
       throw new Error("HTTPS Caddyfile must use a named site block for TDG");
     }
     if (!/Strict-Transport-Security/i.test(text)) {
       throw new Error("HTTPS Caddyfile must set HSTS");
+    }
+    if (!hasNamedCasahubSite(text)) {
+      throw new Error("HTTPS Caddyfile must use a named site block for CasaHub");
+    }
+    if (!text.includes("mcp.themozas.com") || !text.includes("mozas-mcp-bridge:8787")) {
+      throw new Error("HTTPS Caddyfile must keep MCP site and upstream");
     }
   }
   if (mode === "http") {

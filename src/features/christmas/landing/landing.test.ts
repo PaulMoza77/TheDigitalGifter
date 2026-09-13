@@ -45,7 +45,10 @@ describe("christmas landing copy + seo", () => {
     expect(LANDING_COPY_KEYS).toContain("seo.title");
     expect(LANDING_COPY_KEYS).toContain("nav.finder");
     expect(LANDING_COPY_KEYS).toContain("finder.cta");
-    expect(LANDING_FAQS).toHaveLength(5);
+    expect(LANDING_FAQS).toHaveLength(8);
+    expect(landingT("faq.6.q")).toMatch(/private/i);
+    expect(landingT("faq.7.q")).toMatch(/long|take/i);
+    expect(landingT("faq.8.q")).toMatch(/account/i);
   });
 
   it("ships Wave 1 UI packs with CTA coverage and soft Santa for non-en/ro", () => {
