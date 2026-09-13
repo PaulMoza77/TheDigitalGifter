@@ -57,15 +57,51 @@ smoke_shared_edge_caddy() {
   echo "shared_edge_caddy_smoke=ok"
 }
 
+# Host Caddyfile is root:root 0600 on Mozas; mozas can write it via a root
+# container with a rw bind of /opt/mozas/proxy (the live Caddy mount is ro).
+caddyfile_root_sh() {
+  local proxy_dir="${1:?proxy dir}"
+  local src="${2:-}"
+  local script="${3:?sh}"
+  if [[ -n "${src}" ]]; then
+    docker run --rm --user 0 --entrypoint /bin/sh \
+      -v "${proxy_dir}:/proxy" \
+      -v "${src}:/incoming/Caddyfile:ro" \
+      mozas/proxy:caddy-2.9 \
+      -c "${script}"
+  else
+    docker run --rm --user 0 --entrypoint /bin/sh \
+      -v "${proxy_dir}:/proxy" \
+      mozas/proxy:caddy-2.9 \
+      -c "${script}"
+  fi
+}
+
+read_live_caddyfile() {
+  docker exec mozas-caddy cat /etc/caddy/Caddyfile
+}
+
 install_caddyfile_atomic() {
   local src="${1:?src}"
   local dest="${2:?dest}"
   local backup="${3:?backup}"
-  local candidate
+  local dest_dir dest_base bak_base
+  dest_dir="$(dirname "${dest}")"
+  dest_base="$(basename "${dest}")"
+  bak_base="$(basename "${backup}")"
 
-  candidate="$(mktemp "${dest}.candidate.XXXXXX")"
-  cp "${src}" "${candidate}"
-  cp -a "${dest}" "${backup}"
-  mv -f "${candidate}" "${dest}"
+  caddyfile_root_sh "${dest_dir}" "${src}" \
+    "cp -a /proxy/${dest_base} /proxy/${bak_base} && cat /incoming/Caddyfile > /proxy/${dest_base} && chmod 644 /proxy/${dest_base}"
   echo "caddyfile_atomic_install=yes backup=${backup}"
+}
+
+restore_caddyfile_from_backup() {
+  local dest="${1:?dest}"
+  local backup="${2:?backup}"
+  local dest_dir dest_base bak_base
+  dest_dir="$(dirname "${dest}")"
+  dest_base="$(basename "${dest}")"
+  bak_base="$(basename "${backup}")"
+  caddyfile_root_sh "${dest_dir}" "" \
+    "cp -a /proxy/${bak_base} /proxy/${dest_base}"
 }

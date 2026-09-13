@@ -60,7 +60,7 @@ ln -sfn "$(basename "${BACKUP}")" "${PROXY_DIR}/Caddyfile.bak-tdg-https"
 
 if ! docker exec mozas-caddy caddy validate --config /etc/caddy/Caddyfile >/dev/null; then
   echo "HTTPS Caddyfile failed validation — restoring previous file" >&2
-  cp -a "${BACKUP}" "${PROXY_DIR}/Caddyfile"
+  restore_caddyfile_from_backup "${PROXY_DIR}/Caddyfile" "${BACKUP}"
   exit 1
 fi
 
@@ -75,7 +75,7 @@ for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
 done
 if ! curl -fsS http://127.0.0.1/healthz >/dev/null 2>&1; then
   echo "Caddy restarted but :80 healthz did not recover — restoring previous file" >&2
-  cp -a "${BACKUP}" "${PROXY_DIR}/Caddyfile"
+  restore_caddyfile_from_backup "${PROXY_DIR}/Caddyfile" "${BACKUP}"
   docker restart mozas-caddy >/dev/null || true
   exit 1
 fi
@@ -88,7 +88,7 @@ echo "tdg_caddy_mode=https"
 ORIGIN_IP="${ORIGIN_IP:-127.0.0.1}"
 if ! smoke_shared_edge_caddy "${ORIGIN_IP}"; then
   echo "shared edge smoke failed — restoring previous Caddyfile" >&2
-  cp -a "${BACKUP}" "${PROXY_DIR}/Caddyfile"
+  restore_caddyfile_from_backup "${PROXY_DIR}/Caddyfile" "${BACKUP}"
   docker restart mozas-caddy >/dev/null || true
   exit 1
 fi
