@@ -96,3 +96,9 @@ verify_jwt = false
 
 [functions.christmas-result-share]
 verify_jwt = false
+
+[functions.christmas-commerce-config]
+verify_jwt = false
+
+[functions.app-christmas-job]
+verify_jwt = false

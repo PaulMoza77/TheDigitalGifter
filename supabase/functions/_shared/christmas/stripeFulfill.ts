@@ -228,8 +228,22 @@ export async function handleChristmasStripeEvent(input: {
             .maybeSingle();
           if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
         }
-        enqueueChristmasGenerate(orderId, mode);
-      }
+        const commercialKey = asString(input.metadata.commercial_key);
+        if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
+          const { data: ord } = await input.service
+            .from("christmas_orders")
+            .select("user_id,email,commercial_snapshot")
+            .eq("id", orderId)
+            .maybeSingle();
+          await input.service.rpc("grant_christmas_bundle_entitlements", {
+            p_order_id: orderId,
+            p_user_id: ord?.user_id || null,
+            p_email: ord?.email || null,
+            p_snapshot: ord?.commercial_snapshot || {},
+          });
+        } else {
+          enqueueChristmasGenerate(orderId, mode);
+        }
     }
 
     return new Response(JSON.stringify({ ok: true, christmas: result }), {

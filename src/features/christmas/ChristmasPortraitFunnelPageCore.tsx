@@ -301,9 +301,9 @@ export default function ChristmasPortraitFunnelPage() {
                           amount:
                             formatMoney(
                               funnel.catalogAmount / 100,
-                              funnel.product?.packages[0]?.currency || "usd",
+                              funnel.catalogCurrency || "eur",
                               locale,
-                            ) || `${(funnel.catalogAmount / 100).toFixed(2)} USD`,
+                            ) || `${(funnel.catalogAmount / 100).toFixed(2)} EUR`,
                         })}
                   </button>
                 ) : (
@@ -386,6 +386,19 @@ export default function ChristmasPortraitFunnelPage() {
                     }}
                   >
                     {t("funnel.card")}
+                  </Link>
+                  <Link
+                    to={pathFor("/christmas/santa-video")}
+                    className="xmas-btn xmas-btn--ghost"
+                    style={{ textAlign: "center" }}
+                    onClick={() => {
+                      void trackChristmasEvent("christmas_upsell_view", {
+                        productKey: "xmas_santa_video",
+                        metadata: { placement: "portrait_result" },
+                      });
+                    }}
+                  >
+                    Add a Santa video
                   </Link>
                   <button
                     type="button"

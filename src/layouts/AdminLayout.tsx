@@ -239,6 +239,11 @@ const SidebarNavigation: React.FC<{
             icon: Gift,
           },
           {
+            label: "Christmas Monetization",
+            path: "/admin/christmas-monetization",
+            icon: Gift,
+          },
+          {
             label: "Pet Funnel Analytics",
             path: "/admin/pet-funnel-analytics",
             icon: BarChart3,
