@@ -3,8 +3,10 @@ import { useSearchParams } from "react-router-dom";
 import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
 import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
 import { CHRISTMAS_CATALOG_SEED, findProduct } from "./catalog";
+import { catalogFromRows, commercialKeyForProduct } from "./commercialOffers";
 import {
   createChristmasUpload,
+  fetchChristmasCommercialOffers,
   getChristmasOrderByToken,
   startChristmasCheckout,
   uploadChristmasBlob,
@@ -97,6 +99,7 @@ export function useChristmasPortraitFunnel({
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [purchasable, setPurchasable] = useState(false);
   const [catalogAmount, setCatalogAmount] = useState<number | null>(null);
+  const [catalogCurrency, setCatalogCurrency] = useState("eur");
   const fileRef = useRef<HTMLInputElement>(null);
   const fileBlobRef = useRef<Blob | null>(null);
   const pageViewed = useRef(false);
@@ -146,8 +149,8 @@ export function useChristmasPortraitFunnel({
     if (onPageView) {
       onPageView();
     } else {
-      void trackChristmasEvent("christmas_page_view", {
-        productKey: vertical.productKey,
+    void trackChristmasEvent("christmas_product_view", {
+      productKey: vertical.productKey,
         pathname: vertical.routePath,
         metadata: {
           portrait_type: vertical.portraitType,
@@ -158,10 +161,31 @@ export function useChristmasPortraitFunnel({
   }, [vertical, onPageView]);
 
   useEffect(() => {
-    const pkg = product?.packages.find((p) => p.packageKey === vertical.packageKey);
-    setPurchasable(Boolean(pkg?.purchasable && pkg.priceCents > 0));
-    setCatalogAmount(pkg?.purchasable && pkg.priceCents > 0 ? pkg.priceCents : null);
-  }, [product, vertical.packageKey]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await fetchChristmasCommercialOffers();
+        const offers = catalogFromRows(rows as any);
+        const key = commercialKeyForProduct(activeProductKey) || "xmas_portrait";
+        const offer = offers.find((item) => item.key === key);
+        if (cancelled) return;
+        const ok = Boolean(
+          offer?.active && offer.webCheckoutEnabled && offer.webPriceMinor > 0,
+        );
+        setPurchasable(ok);
+        setCatalogAmount(ok && offer ? offer.webPriceMinor : null);
+        setCatalogCurrency(offer?.webCurrency || "eur");
+      } catch {
+        if (!cancelled) {
+          setPurchasable(false);
+          setCatalogAmount(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeProductKey]);
 
   useEffect(() => {
     const token = params.get("token");
@@ -451,10 +475,11 @@ export function useChristmasPortraitFunnel({
       return;
     }
     setBusy(true);
-    void trackChristmasEvent("checkout_started", {
+    void trackChristmasEvent("christmas_checkout_started", {
       productKey: activeProductKey,
       styleKey: draft.styleKey,
       packageKey: vertical.packageKey,
+      amountCents: catalogAmount,
       metadata: { portrait_type: activePortraitType },
     });
     try {
@@ -463,8 +488,6 @@ export function useChristmasPortraitFunnel({
       const result = await startChristmasCheckout({
         product_key: activeProductKey,
         package_key: vertical.packageKey,
-        amount_cents: 1,
-        currency: "eur",
         email: draft.email || undefined,
         style_key: draft.styleKey,
         source_path: draft.sourcePath,
@@ -596,6 +619,7 @@ export function useChristmasPortraitFunnel({
     resultUrl,
     purchasable,
     catalogAmount,
+    catalogCurrency,
     fileRef,
     styles,
     product,

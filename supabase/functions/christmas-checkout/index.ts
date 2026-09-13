@@ -6,10 +6,17 @@ import {
   isPortraitProductKey,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import {
+  catalogFromRows,
+  commercialKeyForProduct,
+  resolveWebCheckout,
+  snapshotWebOrder,
+} from "../_shared/christmas/commercialOffers.ts";
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
- * Amount is always resolved server-side from christmas_packages.
+ * Amount is always resolved server-side from pricing_items (christmas_offer).
+ * Client amount_cents is ignored. christmas_packages remain for funnel/SKU metadata.
  * Disabled unless CHRISTMAS_CHECKOUT_ENABLED=true.
  *
  * Supports portrait vertical products: christmas_photo|family|couple|pet.
@@ -111,32 +118,54 @@ Deno.serve(async (req) => {
     void body.client_prompt;
 
     const service = getServiceClient();
+
+    const commercialKey = commercialKeyForProduct(productKey);
+    const { data: pricingRows, error: pricingError } = await service
+      .from("pricing_items")
+      .select("*")
+      .eq("category", "christmas_offer");
+    if (pricingError) throw pricingError;
+    const catalog = catalogFromRows(pricingRows || []);
+    const checkoutPlan = resolveWebCheckout({
+      productKey,
+      catalog,
+      clientAmountCents: body.amount_cents,
+      clientCurrency: body.currency,
+    });
+    if (!checkoutPlan.ok) {
+      return jsonResponse({ error: checkoutPlan.message, code: checkoutPlan.code }, 400);
+    }
+
     const { data: product, error: productError } = await service
       .from("christmas_products")
       .select("id, product_key, name, active")
-      .eq("product_key", productKey)
+      .eq("product_key", productKey === "xmas_portrait" ? "christmas_photo" : productKey === "xmas_santa_video" ? "christmas_santa_video" : productKey === "xmas_magic_bundle" ? "christmas_magic_bundle" : productKey)
       .maybeSingle();
     if (productError) throw productError;
-    if (!product?.active) {
-      return jsonResponse({ error: "Unknown or inactive product", code: "inactive_product" }, 400);
-    }
 
     const { data: pkg, error: pkgError } = await service
       .from("christmas_packages")
       .select("*")
-      .eq("product_id", product.id)
+      .eq("product_id", product?.id || "00000000-0000-0000-0000-000000000000")
       .eq("package_key", packageKey)
       .maybeSingle();
     if (pkgError) throw pkgError;
-    if (!pkg?.active) {
-      return jsonResponse({ error: "Unknown or inactive package", code: "inactive_package" }, 400);
-    }
-    if (!pkg.purchasable) {
-      return jsonResponse({ error: "Package is not purchasable", code: "not_purchasable" }, 400);
-    }
-    if (!pkg.price_cents || pkg.price_cents <= 0) {
-      return jsonResponse({ error: "Invalid configured price", code: "invalid_price" }, 400);
-    }
+
+    const resolvedProductKey =
+      product?.product_key ||
+      (commercialKey === "xmas_portrait"
+        ? "christmas_photo"
+        : commercialKey === "xmas_santa_video"
+          ? "christmas_santa_video"
+          : commercialKey === "xmas_magic_bundle"
+            ? "christmas_magic_bundle"
+            : productKey);
+    const productName = product?.name || checkoutPlan.offer.name;
+    const amountCents = checkoutPlan.amountCents;
+    const currency = checkoutPlan.currency;
+    const commercialSnapshot = snapshotWebOrder(checkoutPlan.offer);
+    const packageKeyResolved = pkg?.package_key || packageKey || "single";
+    const sku = checkoutPlan.sku;
 
     const styleKey = asString(body.style_key);
     const sourcePath = asString(body.source_path);
@@ -144,17 +173,17 @@ Deno.serve(async (req) => {
     const portraitType = asString(body.portrait_type) || null;
     const sourceRoute = asString(body.source_route) ||
       recoveryRouteForOrder({
-        productKey: product.product_key,
+        productKey: resolvedProductKey,
         species,
         landingPath: asString(body.landing_path),
       });
 
-    if (isPortraitProductKey(product.product_key)) {
+    if (isPortraitProductKey(resolvedProductKey) && commercialKey !== "xmas_magic_bundle") {
       if (!styleKey || !sourcePath) {
         return jsonResponse({ error: "style_key and source_path required", code: "missing_photo_fields" }, 400);
       }
       const promptCheck = buildChristmasPortraitPrompt({
-        productKey: product.product_key,
+        productKey: resolvedProductKey,
         styleKey,
         species,
         clientPrompt: body.client_prompt || body.prompt,
@@ -165,7 +194,7 @@ Deno.serve(async (req) => {
     }
 
     let santaPerso: Record<string, unknown> | null = null;
-    if (product.product_key === "christmas_santa_video") {
+    if (resolvedProductKey === "christmas_santa_video") {
       const name = asString(body.child_first_name);
       const language = normalizeWave1GenerationLocale(asString(body.language));
       const templateKey = asString(body.template_key) || "classic_santa";
@@ -218,7 +247,7 @@ Deno.serve(async (req) => {
     const email = asString(body.email).toLowerCase();
     const successUrl =
       asString(body.success_url) ||
-      (product.product_key === "christmas_santa_video"
+      (resolvedProductKey === "christmas_santa_video"
         ? `${siteOrigin()}/christmas/santa-video?checkout=success`
         : `${siteOrigin()}${sourceRoute}?checkout=success`);
     const sku = `xmas_${product.product_key}_${pkg.package_key}`;
@@ -239,9 +268,13 @@ Deno.serve(async (req) => {
       portrait_type: portraitType,
       species,
       source_route: sourceRoute,
-      amount_cents: pkg.price_cents,
-      currency: pkg.currency,
-      package_key: pkg.package_key,
+      amount_cents: amountCents,
+      currency,
+      package_key: packageKeyResolved,
+      pricing_key: checkoutPlan.offer.key,
+      pricing_updated_at: checkoutPlan.offer.updatedAt,
+      charged_amount_cents: amountCents,
+      commercial_snapshot: commercialSnapshot,
       sku,
     };
 
@@ -268,7 +301,7 @@ Deno.serve(async (req) => {
         .from("christmas_orders")
         .insert({
           public_token_hash: tokenHash,
-          product_key: product.product_key,
+          product_key: resolvedProductKey,
           payment_status: "pending",
           fulfillment_status: "not_started",
           locale: asString(body.locale) || "en",
@@ -341,16 +374,17 @@ Deno.serve(async (req) => {
     params.set("return_url", returnUrl);
     if (email) params.set("customer_email", email);
     params.set("line_items[0][quantity]", "1");
-    params.set("line_items[0][price_data][currency]", pkg.currency);
-    params.set("line_items[0][price_data][unit_amount]", String(pkg.price_cents));
+    params.set("line_items[0][price_data][currency]", currency);
+    params.set("line_items[0][price_data][unit_amount]", String(amountCents));
     params.set(
       "line_items[0][price_data][product_data][name]",
-      `${product.name} — ${pkg.package_name}`,
+      productName,
     );
     params.set("metadata[product_family]", "christmas");
     params.set("metadata[product_type]", "christmas");
-    params.set("metadata[product_key]", product.product_key);
-    params.set("metadata[package_key]", pkg.package_key);
+    params.set("metadata[product_key]", resolvedProductKey);
+    params.set("metadata[package_key]", packageKeyResolved);
+    params.set("metadata[commercial_key]", checkoutPlan.offer.key);
     params.set("metadata[sku]", sku);
     params.set("metadata[christmas_order_id]", orderId);
     if (guestTokenHash) params.set("metadata[guest_token_hash]", guestTokenHash);
@@ -399,8 +433,8 @@ Deno.serve(async (req) => {
       sessionId: session.id,
       clientSecret: session.client_secret,
       publishableKey: publishable,
-      amountCents: pkg.price_cents,
-      currency: pkg.currency,
+      amountCents,
+      currency,
       uiMode: "custom",
     });
   } catch (err) {

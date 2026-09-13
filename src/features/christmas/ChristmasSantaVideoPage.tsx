@@ -7,7 +7,8 @@ import { captureFunnelAttribution, attributionParamsForInternal } from "@/featur
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
 import { CHRISTMAS_CATALOG_SEED, findProduct, ctaStateForProduct } from "./catalog";
-import { startChristmasCheckout } from "./photoApi";
+import { startChristmasCheckout, fetchChristmasCommercialOffers } from "./photoApi";
+import { catalogFromRows } from "./commercialOffers";
 import {
   consumeSantaNameHandoff,
   isLikelyKidName,
@@ -117,7 +118,31 @@ export default function ChristmasSantaVideoPage() {
   const previewTracked = useRef(false);
   const product = findProduct(CHRISTMAS_CATALOG_SEED, SANTA_PRODUCT_KEY);
   const pkg = product?.packages.find((p) => p.packageKey === SANTA_DEFAULT_PACKAGE);
-  const purchasable = Boolean(pkg?.purchasable && pkg.priceCents > 0);
+  const [purchasable, setPurchasable] = useState(false);
+  const [serverAmount, setServerAmount] = useState<number | null>(null);
+  const [serverCurrency, setServerCurrency] = useState("eur");
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchChristmasCommercialOffers()
+      .then((rows) => {
+        if (cancelled) return;
+        const offer = catalogFromRows(rows as any).find((item) => item.key === "xmas_santa_video");
+        const ok = Boolean(offer?.active && offer.webCheckoutEnabled && offer.webPriceMinor > 0);
+        setPurchasable(ok);
+        setServerAmount(ok && offer ? offer.webPriceMinor : null);
+        setServerCurrency(offer?.webCurrency || "eur");
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPurchasable(false);
+          setServerAmount(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const patch = useCallback((next: Partial<SantaDraft>) => {
     setDraft((prev) => {
@@ -462,7 +487,7 @@ export default function ChristmasSantaVideoPage() {
     go("offer");
     trackSanta("offer_seen", undefined, {
       packageKey: SANTA_DEFAULT_PACKAGE,
-      amountCents: pkg?.purchasable ? pkg.priceCents : null,
+      amountCents: serverAmount,
     });
   }
 
@@ -485,8 +510,6 @@ export default function ChristmasSantaVideoPage() {
       const result = await startChristmasCheckout({
         product_key: SANTA_PRODUCT_KEY,
         package_key: SANTA_DEFAULT_PACKAGE,
-        amount_cents: 1,
-        currency: "eur",
         email: draft.email || undefined,
         child_first_name: v.childFirstName,
         language: v.language,
@@ -991,7 +1014,7 @@ export default function ChristmasSantaVideoPage() {
                     <p className="mt-3 text-xs leading-relaxed text-[#F5EDE0]/5">
                       {SANTA_COPY.steps.offer.consentNote}
                     </p>
-                    {purchasable && pkg ? (
+                    {purchasable && serverAmount ? (
                       <PrimaryButton disabled={busy} onClick={() => void startCheckout()}>
                         {busy ? "Preparing checkout…" : SANTA_COPY.steps.offer.ctaPay}
                       </PrimaryButton>

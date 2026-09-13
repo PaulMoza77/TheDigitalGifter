@@ -115,6 +115,15 @@ async function startChristmasCheckoutRequest(body: Record<string, unknown>) {
   };
 }
 
+export async function fetchChristmasCommercialOffers() {
+  const { data, error } = await supabase
+    .from("pricing_items")
+    .select("*")
+    .eq("category", "christmas_offer");
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getChristmasOrderByToken(publicToken: string) {
   const res = await fetch(FUNNEL_URL, {
     method: "POST",

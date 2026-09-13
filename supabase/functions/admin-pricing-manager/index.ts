@@ -54,6 +54,30 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: "key and name are required" }, 400);
       }
 
+      if (String(item.category || "") === "christmas_offer") {
+        const { validateChristmasOfferPatch } = await import(
+          "../_shared/christmas/commercialOffers.ts"
+        );
+        const meta = (item.metadata || {}) as Record<string, unknown>;
+        const check = validateChristmasOfferPatch({
+          key: String(item.key),
+          name: String(item.name || ""),
+          active: item.active !== false && item.is_active !== false,
+          webCheckoutEnabled: meta.web_checkout_enabled !== false,
+          webPriceMinor: Number(item.price_cents ?? meta.web_price_minor),
+          webCurrency: String(item.currency || "eur"),
+          compareAtPriceMinor:
+            meta.compare_at_price_minor == null ? null : Number(meta.compare_at_price_minor),
+          appCreditsCost: Number(meta.app_credits_cost ?? item.credits),
+          bundleComponents: Array.isArray(meta.bundle_components)
+            ? (meta.bundle_components as string[])
+            : null,
+        });
+        if (!check.ok) {
+          return jsonResponse({ error: check.message, code: check.code }, 400);
+        }
+      }
+
       let stripePriceId = (item.stripe_price_id as string) || null;
       let stripeProductId = (item.stripe_product_id as string) || null;
 
