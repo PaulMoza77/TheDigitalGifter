@@ -36,6 +36,11 @@
 	handle @tdg {
 		import tdg_upstream
 	}
+	@casahub host casahub.eu www.casahub.eu
+	handle @casahub {
+		import security_headers
+		reverse_proxy casahub-web:3000
+	}
 	handle {
 		import themozas_upstream
 	}
