@@ -230,7 +230,7 @@ export async function renderChristmasCard(input: CardRenderInput): Promise<CardR
   else if (to) footer = `To ${to}`;
   else if (from) footer = `From ${from}`;
   if (footer) {
-    ctx.fillStyle = style.muted || style.accent;
+    ctx.fillStyle = style.muted;
     ctx.font = `500 ${Math.max(20, Math.round(fontSize * 0.45))}px Georgia, serif`;
     ctx.fillText(footer, layout.width / 2, panelY + panelH - 36, maxTextW);
   }

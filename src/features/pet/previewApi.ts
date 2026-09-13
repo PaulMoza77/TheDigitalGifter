@@ -87,6 +87,17 @@ export function createPreviewPetApi(): PetFunnelApi {
       };
     },
 
+    async updateOrderContact(input) {
+      const order = ensurePreviewOrder(input.publicToken);
+      order.email = input.email;
+      order.petName = input.petName;
+      return { orderId: input.orderId, email: input.email, petName: input.petName, updated: true };
+    },
+
+    async recordV3InitiateCheckout(input) {
+      return { eventId: input.eventId, sent: true, alreadySent: false };
+    },
+
     async getSignedUploadUrl(input) {
       ensurePreviewOrder(input.publicToken);
       return {

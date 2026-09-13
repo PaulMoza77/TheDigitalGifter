@@ -68,7 +68,7 @@ describe("christmas P2B adjacent content depth", () => {
 
   it("wires client SEO depth for verticals and product pages", () => {
     const funnel = readFileSync(
-      join(process.cwd(), "src/features/christmas/ChristmasPortraitFunnelPage.tsx"),
+      join(process.cwd(), "src/features/christmas/ChristmasPortraitFunnelPageCore.tsx"),
       "utf8",
     );
     expect(funnel).toContain("PortraitVerticalSeoSections");

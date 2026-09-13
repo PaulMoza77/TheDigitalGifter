@@ -60,6 +60,7 @@ export function PetCheckoutPage({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const bootstrapped = useRef(false);
   const appliedPromo = resolveServerOwnedPromo(promoInput);
+  const appliedPromoCode = appliedPromo.ok ? appliedPromo.code : null;
   const verifiedDisplay =
     offerVerified && amountCents
       ? formatOfferPrice(amountCents)
@@ -193,7 +194,7 @@ export function PetCheckoutPage({
     }
 
     const cached = readCachedEmbeddedCheckout();
-    if (cached && !appliedPromo.code) {
+    if (cached && !appliedPromoCode) {
       if (isValidCachedEmbeddedCheckout(cached)) {
         setClientSecret(cached.clientSecret!);
         setPublishableKey(cached.publishableKey!);
@@ -280,7 +281,7 @@ export function PetCheckoutPage({
 
   useEffect(() => {
     if (bootstrapped.current) return;
-    if (!checkoutAllowed || !formCheck.ok || !photoFile || appliedPromo.code) return;
+    if (!checkoutAllowed || !formCheck.ok || !photoFile || appliedPromoCode) return;
     bootstrapped.current = true;
     void pay();
     // Bootstrap once when the review page is ready for payment.

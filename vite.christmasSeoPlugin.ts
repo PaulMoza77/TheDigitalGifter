@@ -5,6 +5,8 @@
 import type { Plugin } from "vite";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
+// Shared runtime registry is authored as plain ESM and validated by its own tests.
+// @ts-expect-error JavaScript module has no colocated TypeScript declaration.
 import { applyChristmasSeo, listChristmasSeoPaths } from "./server/christmasSeo.mjs";
 
 export function christmasSeoPrerenderPlugin(): Plugin {

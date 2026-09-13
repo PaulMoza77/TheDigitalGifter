@@ -14,8 +14,8 @@ describe("V2 checkout performance helpers", () => {
     const hook = readSrc("src/features/pet-v2/useV2EmbeddedCheckout.ts");
     expect(hook).toContain('case "preparing_photo"');
     expect(hook).toContain('case "uploading"');
-    expect(hook).toContain("Preparing your photo…");
-    expect(hook).toContain("Uploading your photo…");
+    expect(hook).toContain('petT("v2.checkout.preparing_photo"');
+    expect(hook).toContain('petT("v2.checkout.uploading"');
   });
 
   it("prepareV2CheckoutUpload returns usable photo metadata without throwing", async () => {

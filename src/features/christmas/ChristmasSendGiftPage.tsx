@@ -553,7 +553,7 @@ function readGiftFragment(): { gift: GiftKey; to: string; from: string; message:
   const gift = params.get("type") as GiftKey | null;
   if (!GIFT_OPTIONS.some((option) => option.key === gift)) return null;
   return {
-    gift,
+    gift: gift as GiftKey,
     to: clamp(params.get("to") || "", 60),
     from: clamp(params.get("from") || "", 60),
     message: clamp(params.get("message") || "", 280),

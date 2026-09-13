@@ -187,7 +187,6 @@ export function ChristmasTreeScene({
               // Sole network owner for the hero MP4. Do not combine with fetch()/preload link.
               preload="auto"
               disablePictureInPicture
-              // @ts-expect-error non-standard but supported
               disableRemotePlayback
             >
               <source src={src} type="video/mp4" />

@@ -156,7 +156,7 @@ for (const path of CHRISTMAS_NOINDEX_PATHS) {
 }
 assert(shouldNoindexChristmasPath("/wishlist/abc123"), "wishlist share noindex");
 assert(shouldNoindexChristmasPath("/christmas/tree/abc123"), "tree share noindex");
-assert(shouldNoindexChristmasPath("/christmas/kids"), "kids noindex");
+assert(!shouldNoindexChristmasPath("/christmas/kids"), "kids follows current indexable registry policy");
 assert(shouldNoindexChristmasPath("/christmas-ai-photos"), "ai-photos funnel noindex");
 assert(shouldNoindexChristmasPath("/christmas-ai-photos/order"), "ai-photos order noindex");
 
@@ -186,7 +186,6 @@ for (const includedRo of ["/ro/christmas", "/ro/christmas/cards", "/ro/christmas
 }
 for (const excluded of [
   "/christmas/gifts",
-  "/christmas/kids",
   "/christmas-ai-photos",
   "/christmas-ai-photos/order",
   "/christmas/suite",
@@ -575,7 +574,7 @@ async function checkOrigin(base) {
     assert(!extractCanonical(html).includes("?"), `canonical no query ${path}`);
   }
 
-  for (const path of ["/christmas/kids", "/christmas-ai-photos", "/christmas-ai-photos/order"]) {
+  for (const path of ["/christmas-ai-photos", "/christmas-ai-photos/order"]) {
     const res = await fetch(`${base}${path}`, { redirect: "follow" });
     assert(res.ok, `HTTP ${res.status} for noindex ${path}`);
     const html = await res.text();

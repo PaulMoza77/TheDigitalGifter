@@ -35,12 +35,13 @@ const TINY_JPEG =
 describe("pet preview identity + funnel integrity", () => {
   it("Dog V2 copy never uses Cat V3 secret-life wording", () => {
     const preview = readSrc("src/features/pet-v2/screens/PreviewScreen.tsx");
-    expect(preview).toContain("Your {petLabel}’s secret life starts here");
+    expect(preview).toContain('t("v2.preview.h1"');
+    expect(readSrc("src/features/pet/i18n/copy/en.ts")).toContain('"v2.preview.h1": "Your {pet} as an F1 driver"');
     expect(preview).not.toContain("Your cat’s secret life starts here");
     expect(V3_CONFIG.copy.previewSubhead).toContain("Your cat’s secret life starts here");
     expect(PET_V2_DRAFT_STORAGE_KEY).not.toBe(PET_V3_DRAFT_STORAGE_KEY);
     expect(PET_V2_SESSION_KEY).not.toBe(PET_V3_SESSION_KEY);
-    expect(readSrc("src/features/pet-v2/screens/PhotoScreen.tsx")).toContain("speciesConfirmLabel");
+    expect(readSrc("src/features/pet-v2/screens/PhotoScreen.tsx")).toContain('"v2.photo.confirm.dog"');
     expect(readSrc("src/features/pet-v3/screens/PhotoScreen.tsx")).toContain('speciesConfirmLabel("cat")');
   });
 

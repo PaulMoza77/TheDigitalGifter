@@ -16,9 +16,10 @@ function readSrc(relative: string) {
 }
 
 describe("V3 dashboard analytics contract", () => {
-  it("exposes V1, V2, and V3 dataset selectors in the admin page", () => {
+  it("exposes the configured funnel dataset selectors in the admin page", () => {
     const page = readSrc("src/pages/admin/PetFunnelAnalyticsPage.tsx");
-    expect(page).toContain('(["v1", "v2", "v3"] as const)');
+    expect(page).toContain("FUNNEL_DATASETS");
+    expect(readSrc("src/features/pet/funnelDatasetConfig.ts")).toContain('["v1", "v2", "v3", "v4"]');
     expect(page).not.toContain('"all"');
   });
 
@@ -32,7 +33,7 @@ describe("V3 dashboard analytics contract", () => {
     expect(hook).toContain("parseRpcJsonArray");
     expect(hook).toContain("metaCampaignConfigured");
     expect(hook).toContain("v3ExtendedSteps");
-    expect(hook).toContain('datasetId === "v3" ? asNumber(v3Backend.purchases)');
+    expect(hook).toMatch(/datasetId === "v3"[\s\S]{0,100}asNumber\(v3Backend\.purchases\)/);
   });
 
   it("includes checkout_viewed in the V3 SQL step allow-list", () => {
@@ -84,7 +85,7 @@ describe("V3 dashboard analytics contract", () => {
 
   it("does not use V1 backend purchases when V3 dataset is active", () => {
     const hook = readSrc("src/hooks/usePetFunnelAnalytics.ts");
-    expect(hook).toContain('datasetId === "v3" ? asNumber(v3Backend.revenue_cents) : asNumber(backend.revenue_cents)');
+    expect(hook).toMatch(/datasetId === "v3"[\s\S]{0,100}asNumber\(v3Backend\.revenue_cents\)/);
     expect(hook).toContain('datasetId === "v3" ? [] : ads');
   });
 

@@ -31,6 +31,7 @@ export function RetryPackPanel({
   );
 
   if (!offer) return null;
+  const activeOffer = offer;
 
   function toggleScene(sceneId: string) {
     setSelected((current) => {
@@ -44,7 +45,7 @@ export function RetryPackPanel({
   }
 
   async function checkout() {
-    if (offer.purchased) return;
+    if (activeOffer.purchased) return;
     if (selected.length < 1) {
       toast.message("Pick at least one portrait to retry");
       return;
