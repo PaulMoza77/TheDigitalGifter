@@ -29,8 +29,12 @@ if [[ "${FORCE_TDG_CADDY_HTTP:-}" != "yes" ]]; then
     echo "refusing to overwrite HTTPS Caddy with HTTP file (mode marker=https). Use mozas-ensure-tdg-caddy or FORCE_TDG_CADDY_HTTP=yes." >&2
     exit 3
   fi
-  if grep -qE '^[[:space:]]*thedigitalgifter\.com,[[:space:]]*www\.thedigitalgifter\.com[[:space:]]*\{' "${PROXY_DIR}/Caddyfile" \
-    || grep -qE '^[[:space:]]*www\.thedigitalgifter\.com,[[:space:]]*thedigitalgifter\.com[[:space:]]*\{' "${PROXY_DIR}/Caddyfile"; then
+  live_https=0
+  if docker exec mozas-caddy grep -qE '^[[:space:]]*thedigitalgifter\.com,[[:space:]]*www\.thedigitalgifter\.com[[:space:]]*\{' /etc/caddy/Caddyfile \
+    || docker exec mozas-caddy grep -qE '^[[:space:]]*www\.thedigitalgifter\.com,[[:space:]]*thedigitalgifter\.com[[:space:]]*\{' /etc/caddy/Caddyfile; then
+    live_https=1
+  fi
+  if [[ "${live_https}" -eq 1 ]]; then
     echo "refusing to overwrite active named HTTPS TDG site with HTTP file. Use mozas-ensure-tdg-caddy." >&2
     exit 3
   fi
@@ -45,7 +49,7 @@ ln -sfn "$(basename "${BACKUP}")" "${PROXY_DIR}/Caddyfile.bak-tdg"
 
 if ! docker exec mozas-caddy caddy validate --config /etc/caddy/Caddyfile >/dev/null; then
   echo "Caddyfile failed validation — restoring previous file" >&2
-  cp -a "${BACKUP}" "${PROXY_DIR}/Caddyfile"
+  restore_caddyfile_from_backup "${PROXY_DIR}/Caddyfile" "${BACKUP}"
   exit 1
 fi
 
@@ -63,6 +67,6 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
   sleep 1
 done
 echo "Caddy restarted but :80 healthz did not recover — restoring previous file" >&2
-cp -a "${BACKUP}" "${PROXY_DIR}/Caddyfile"
+restore_caddyfile_from_backup "${PROXY_DIR}/Caddyfile" "${BACKUP}"
 docker restart mozas-caddy >/dev/null || true
 exit 1

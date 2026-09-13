@@ -7,27 +7,26 @@ set -euo pipefail
 PROXY_DIR="${MOZAS_PROXY_DIR:-/opt/mozas/proxy}"
 REPO_CADDY="${TDG_CADDY_DIR:-/opt/mozas/projects/thedigitalgifter/repo/deploy/caddy}"
 MODE_FILE="${PROXY_DIR}/tdg-caddy.mode"
-ACTIVE="${PROXY_DIR}/Caddyfile"
-
-[[ -f "${ACTIVE}" ]] || { echo "missing ${ACTIVE}" >&2; exit 1; }
 [[ -d "${REPO_CADDY}" ]] || { echo "missing ${REPO_CADDY}" >&2; exit 1; }
 
 mode="$(
-  MODE_FILE="${MODE_FILE}" ACTIVE="${ACTIVE}" python3 - <<'PY'
-import os, re
+  MODE_FILE="${MODE_FILE}" python3 - <<'PY'
+import os
 from pathlib import Path
-active = Path(os.environ["ACTIVE"]).read_text()
 marker_path = Path(os.environ["MODE_FILE"])
 marker = marker_path.read_text().strip().lower() if marker_path.exists() else ""
 if marker in ("http", "https"):
     print(marker)
-    raise SystemExit(0)
-named = bool(re.search(r"(?m)^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{", active)) \
-    or bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com,\s*thedigitalgifter\.com\s*\{", active)) \
-    or bool(re.search(r"(?m)^\s*www\.thedigitalgifter\.com\s*\{", active))
-print("https" if named else "http")
+else:
+    print("")
 PY
 )"
+if [[ -z "${mode}" ]]; then
+  active="$(docker exec mozas-caddy cat /etc/caddy/Caddyfile)"
+  mode="$(
+    python3 -c 'import os,re,sys; a=sys.stdin.read(); named=bool(re.search(r"(?m)^\\s*www\\.thedigitalgifter\\.com\\s*\\{", a)); print("https" if named else "http")' <<<"${active}"
+  )"
+fi
 
 if [[ "${mode}" != "http" && "${mode}" != "https" ]]; then
   echo "unable to detect caddy mode" >&2
