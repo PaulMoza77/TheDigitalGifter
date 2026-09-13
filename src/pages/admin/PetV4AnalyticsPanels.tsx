@@ -181,9 +181,34 @@ export function PetV4AnalyticsPanels({
   const placementRows = (dashboard.breakdowns.placement || []).map((r) => ({ ...r, key: r.key }));
   const countryRows = (dashboard.breakdowns.country || []).map((r) => ({ ...r, key: r.key }));
   const adRows = dashboard.breakdowns.ads || [];
+  const noFirstParty =
+    (fp.landing_sessions ?? 0) === 0 &&
+    (recent.visitors ?? 0) === 0 &&
+    (dq.events_in_range ?? 0) === 0;
+  const metaNeverSynced = !metaLastSyncedAt;
+  const metaEmpty = (meta.spend_cents ?? 0) === 0 && (meta.impressions ?? 0) === 0;
 
   return (
     <div className="space-y-6">
+      {noFirstParty || (metaNeverSynced && metaEmpty) ? (
+        <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          {noFirstParty ? (
+            <p>
+              No first-party V4 events yet. Ads that still open{" "}
+              <span className="font-mono">/pet/*-v2</span> with this campaign_id are now
+              redirected to <span className="font-mono">/pet/*-v4</span>. Romania and Italy
+              sessions are marked internal and excluded from these KPIs.
+            </p>
+          ) : null}
+          {metaNeverSynced && metaEmpty ? (
+            <p className={noFirstParty ? "mt-2" : undefined}>
+              Meta Ads Insights have never synced for this dashboard — spend stays $0 until you
+              click <span className="font-medium">Sync historical data</span> above.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <SectionCard
         title="V4 health summary"
         subtitle="Last 60 minutes — live pulse, not the selected date range."
