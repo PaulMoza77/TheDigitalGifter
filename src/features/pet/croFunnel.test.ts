@@ -68,7 +68,7 @@ describe("pet funnel CRO", () => {
     expect(app).not.toMatch(/const PetLandingRoute = lazy/);
     const landing = readSrc("src/features/pet/PetLandingPage.tsx");
     expect(landing).not.toMatch(/Loading\.\.\./);
-    expect(landing).toContain("PET_HERO_PROMISE");
+    expect(landing).toContain('petT("v1.hero.promise"');
     expect(landing).toContain("NameCapture");
     expect(readSrc("src/features/pet/components/NameCapture.tsx")).toContain("Enter your pet’s name");
   });
@@ -118,7 +118,8 @@ describe("pet funnel CRO", () => {
 
   it("6. dog/cat species are inherited from the route", () => {
     const routes = readSrc("src/features/pet/PetRoutes.tsx");
-    expect(routes).toContain("parsePetSpecies(pathname.split");
+    expect(routes).toContain('parsePetLocalePath(pathname)');
+    expect(routes).toContain('parsePetSpecies(basePath.split');
     expect(routes).toContain("parsePetSpecies(params.get(\"species\"))");
   });
 

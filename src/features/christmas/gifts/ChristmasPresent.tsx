@@ -57,7 +57,8 @@ export function ChristmasPresent({
   }
 
   return (
-    <button
+    <>
+      <button
       type="button"
       aria-label={
         available
@@ -95,6 +96,7 @@ export function ChristmasPresent({
       }}
     >
       <span aria-hidden className="gt-hotspot-glow" />
+      </button>
       <style>{`
         .gt-hotspot-glow {
           position: absolute;
@@ -165,6 +167,6 @@ export function ChristmasPresent({
           .gt-hotspot-opening .gt-hotspot-glow { animation: none !important; opacity: 0.4; }
         }
       `}</style>
-    </button>
+    </>
   );
 }

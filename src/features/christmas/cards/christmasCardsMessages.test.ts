@@ -197,14 +197,14 @@ describe("product wiring", () => {
     expect(copy).toContain("FAQPage");
   });
 
-  it("keeps paid Christmas checkout off in catalog seed except live Santa packages", () => {
+  it("keeps purchasable catalog packages server-compatible and paid", () => {
     for (const p of CHRISTMAS_CATALOG_SEED) {
-      if (p.product_key === "christmas_santa_video") {
-        expect(p.packages.some((pkg) => pkg.purchasable)).toBe(true);
-        continue;
+      for (const pkg of p.packages) {
+        if (pkg.purchasable) expect(pkg.priceCents).toBeGreaterThan(0);
       }
-      expect(p.packages.every((pkg) => !pkg.purchasable)).toBe(true);
     }
+    expect(CHRISTMAS_CATALOG_SEED.find((p) => p.productKey === "christmas_card")?.packages.every((pkg) => !pkg.purchasable)).toBe(true);
+    expect(CHRISTMAS_CATALOG_SEED.find((p) => p.productKey === "christmas_messages")?.packages.every((pkg) => !pkg.purchasable)).toBe(true);
   });
 
   it("ships migration + edge funnel + docs", () => {

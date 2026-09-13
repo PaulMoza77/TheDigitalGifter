@@ -181,7 +181,7 @@ describe("christmas landing wiring", () => {
     expect(readSrc("src/features/christmas/landing/scenes/SantaScene.tsx")).toContain(
       "santa.h2Personalized",
     );
-    expect(readSrc("src/features/christmas/ChristmasSantaVideoPage.tsx")).toContain("consumeSantaNameHandoff");
+    expect(readSrc("src/features/christmas/ChristmasSantaVideoPage.tsx")).toContain("resolveIncomingSantaName");
     expect(readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx")).toContain("parseGiftRecipient");
     expect(readSrc("src/App.tsx")).toContain("/christmas/tree-gifts");
     expect(readSrc("src/features/christmas/gifts/ChristmasGiftsPage.tsx")).toContain("ChristmasGiftsExperience");

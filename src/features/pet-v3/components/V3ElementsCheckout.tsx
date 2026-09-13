@@ -219,12 +219,13 @@ function CheckoutBody({
 
   return (
     <div className="space-y-4">
+      <div onPointerDown={markInteraction}>
       <ExpressCheckoutElement
         options={PET_EXPRESS_CHECKOUT_OPTIONS}
         onConfirm={(event) => void confirm(event)}
-        onClick={markInteraction}
         onCancel={() => setError(null)}
       />
+      </div>
 
       <div className="flex items-center gap-3">
         <span className="h-px flex-1 bg-[#f6efe4]/12" />

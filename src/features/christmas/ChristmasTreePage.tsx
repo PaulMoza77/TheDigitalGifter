@@ -17,7 +17,7 @@ import {
   TREE_STYLES,
   writeOwnerRecovery,
   type BoxStyle,
-  type Decorations,
+  type Decoration,
   type OwnerTree,
   type SharedTree,
   type TreeStyle,
@@ -58,7 +58,7 @@ export default function ChristmasTreePage() {
   const [message, setMessage] = useState(() => treeT("defaults.message", locale));
   const [fromName, setFromName] = useState("");
   const [style, setStyle] = useState<TreeStyle>("classic");
-  const [decor, setDecor] = useState<Decorations>(defaultDecorations());
+  const [decor, setDecor] = useState<Decoration>(defaultDecorations());
   const [giftName, setGiftName] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
   const [giftBox, setGiftBox] = useState<BoxStyle>("red");
@@ -570,7 +570,7 @@ export default function ChristmasTreePage() {
                   onChange={(e) =>
                     setDecor((d) => ({
                       ...d,
-                      topper: e.target.value as Decorations["topper"],
+                      topper: e.target.value as Decoration["topper"],
                     }))
                   }
                 >
@@ -588,7 +588,7 @@ export default function ChristmasTreePage() {
                   onChange={(e) =>
                     setDecor((d) => ({
                       ...d,
-                      ornaments: e.target.value as Decorations["ornaments"],
+                      ornaments: e.target.value as Decoration["ornaments"],
                     }))
                   }
                 >

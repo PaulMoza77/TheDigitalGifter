@@ -59,7 +59,7 @@ export function PetV3FunnelPage() {
         photo: null,
         uploadId: null,
         photoPreviewDataUrl: null,
-      }));
+      }) as unknown as Partial<PetV3Draft>);
     },
   });
 
@@ -111,7 +111,7 @@ export function PetV3FunnelPage() {
       photo: { fileName: file.name, contentType: check.contentType, byteSize: file.size },
       uploadId: cryptoRandomId(),
       photoPreviewDataUrl: local,
-    }));
+    }) as unknown as Partial<PetV3Draft>);
   }
 
   async function generate(regenerate = false) {
@@ -240,7 +240,7 @@ export function PetV3FunnelPage() {
       padForSticky={step === "landing"}
       onBack={() => {
         if (isGenerating) return;
-        go(backStepFrom(step, draft));
+        go(backStepFrom(step, draft) as PetV3Step);
       }}
     >
       <PageHead title={copy.pageTitle} description={copy.pageDescription} exactTitle />
@@ -286,7 +286,7 @@ export function PetV3FunnelPage() {
               photo: null,
               uploadId: null,
               photoPreviewDataUrl: null,
-            }));
+            }) as unknown as Partial<PetV3Draft>);
           }}
           speciesConfirmed={speciesConfirmed}
           onSpeciesConfirmed={setSpeciesConfirmed}

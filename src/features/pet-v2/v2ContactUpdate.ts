@@ -36,7 +36,7 @@ export async function validateAndUpdateV2OrderContact(input: {
   }
 
   if (hasPetName) {
-    const named = validatePetName(input.petName);
+    const named = validatePetName(input.petName!);
     if (!named.ok) {
       return { ok: false, error: named.message, focusId: "v2-pet-name" };
     }

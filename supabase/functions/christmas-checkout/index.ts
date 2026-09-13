@@ -400,6 +400,7 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: {
         Authorization: `Bearer ${stripeSecret}`,
+        "Stripe-Version": "2025-03-31.basil",
         "Content-Type": "application/x-www-form-urlencoded",
         "Idempotency-Key": `xmas-checkout-${orderId}`,
       },

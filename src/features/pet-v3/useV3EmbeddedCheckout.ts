@@ -331,6 +331,8 @@ export function useV3EmbeddedCheckout(input: {
           fileName: upload.photo.fileName,
           contentType: upload.photo.contentType,
           byteSize: upload.photo.byteSize,
+          width: null,
+          height: null,
         },
         sku: "pet-secret-life-12",
         funnelVariant: "v3",

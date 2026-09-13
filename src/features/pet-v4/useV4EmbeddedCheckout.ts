@@ -268,7 +268,7 @@ export function useV4EmbeddedCheckout(input: {
   const [publicToken, setPublicToken] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
-  const [amountCents, setAmountCents] = useState(PET_V2_PRICE_CENTS);
+  const [amountCents, setAmountCents] = useState<number>(PET_V2_PRICE_CENTS);
   const [loading, setLoading] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<V2CheckoutLoadingPhase>(null);
   const [initError, setInitError] = useState<string | null>(null);
@@ -437,6 +437,8 @@ export function useV4EmbeddedCheckout(input: {
           fileName: upload.photo.fileName,
           contentType: upload.photo.contentType,
           byteSize: upload.photo.byteSize,
+          width: null,
+          height: null,
         },
         sku: "pet-secret-life-12",
         funnelVariant: PET_V4_ORDER_VARIANT,

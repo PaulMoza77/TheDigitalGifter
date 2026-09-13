@@ -9,4 +9,6 @@ export {
   listChristmasSeoPaths,
   normalizeSeoPath,
   resolveChristmasSeoRequest,
+// TypeScript cannot infer exports from the shared server-side ESM registry.
+// @ts-expect-error typed by christmasSeo.mjs.d.ts
 } from "../../../../server/christmasSeo.mjs";

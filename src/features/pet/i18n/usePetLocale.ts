@@ -65,7 +65,7 @@ export function usePetBrowserLocaleRedirect(): void {
       return;
     }
 
-    if (preference && preference !== "en") {
+    if (preference) {
       const next = petPathForLocale(pathname, preference);
       if (next !== pathname) {
         void navigate(`${next}${search}`, { replace: true });

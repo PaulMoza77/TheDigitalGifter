@@ -145,7 +145,7 @@ describe("Cat V3 analytics contract", () => {
 
   it("redirects /pet/cat?fv=v3 to /pet/cat-v3 preserving UTMs", () => {
     expect(readSrc("src/features/pet/PetRoutes.tsx")).toContain('params.get("fv")?.toLowerCase() !== "v3"');
-    expect(readSrc("src/features/pet/PetRoutes.tsx")).toContain("navigate(`/pet/cat-v3");
+    expect(readSrc("src/features/pet/PetRoutes.tsx")).toContain('withPetLocale("/pet/cat-v3", locale)');
   });
 
   it("writes Stripe V3 metadata with funnel_version and attribution", () => {

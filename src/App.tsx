@@ -86,6 +86,7 @@ const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const PetOrdersPage = lazy(() => import("@/pages/admin/PetOrders"));
 const ChristmasOrdersPage = lazy(() => import("@/pages/admin/ChristmasOrders"));
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
+const ChristmasAnalyticsPage = lazy(() => import("@/pages/admin/ChristmasAnalyticsPage"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 const SupportTicketsPage = lazy(
@@ -161,6 +162,9 @@ const ChristmasCardsPage = lazy(
 );
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
+);
+const ChristmasSendGiftPage = lazy(
+  () => import("@/features/christmas/ChristmasSendGiftPage"),
 );
 const ChristmasSeoClusterPage = lazy(
   () => import("@/features/christmas/seo/ChristmasSeoClusterPage"),
@@ -520,6 +524,8 @@ function AppInner() {
             />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
+            <Route path="/christmas/send-a-gift" element={<ChristmasSendGiftPage />} />
+            <Route path="/send-a-gift" element={<Navigate to="/christmas/send-a-gift" replace />} />
             <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
             <Route path="/christmas/messages-for-:slug" element={<ChristmasSeoClusterPage />} />
             <Route path="/christmas/funny-christmas-messages" element={<ChristmasSeoClusterPage />} />
@@ -555,6 +561,7 @@ function AppInner() {
                 { path: "/christmas/tree-gifts", element: <ChristmasGiftsPage /> },
                 { path: "/christmas/cards", element: <ChristmasCardsPage /> },
                 { path: "/christmas/messages", element: <ChristmasMessagesPage /> },
+                { path: "/christmas/send-a-gift", element: <ChristmasSendGiftPage /> },
               ]),
             )}
             <Route path="/birthday" element={<BirthdayPage />} />
@@ -824,6 +831,7 @@ function AppInner() {
               element={<ChristmasMonetizationPage />}
             />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
+            <Route path="christmas-analytics" element={<ChristmasAnalyticsPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
 

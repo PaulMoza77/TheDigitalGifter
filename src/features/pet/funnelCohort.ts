@@ -73,7 +73,7 @@ function afterReliable(iso: string, reliableFrom: string | null | undefined): bo
 
 function sessionEventSets(
   events: FirstPartyEventRow[],
-): Map<string, { events: Set<string>; firstCampaignId: string | null; landingAt: string | null }> {
+): Map<string, { events: Set<string>; firstCampaignId: string | null; landingAt: string | null; ordered: FirstPartyEventRow[] }> {
   const bySession = new Map<
     string,
     { events: Set<string>; firstCampaignId: string | null; landingAt: string | null; ordered: FirstPartyEventRow[] }

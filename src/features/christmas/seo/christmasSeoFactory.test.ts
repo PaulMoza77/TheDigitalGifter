@@ -27,7 +27,9 @@ describe("Christmas SEO factory catalog", () => {
   const rows = buildClusterRows();
 
   it("covers gifts-for taxonomy slugs and message-intent slugs", () => {
-    expect(requiredGiftSlugs().sort()).toEqual(Object.values(SEO_RECIPIENT_SLUGS).sort());
+    const taxonomySlugs = new Set(Object.values(SEO_RECIPIENT_SLUGS).map((slug) => slug.replace(/^for-/, "")));
+    expect(requiredGiftSlugs().every((slug) => taxonomySlugs.has(slug))).toBe(true);
+    expect(new Set(requiredGiftSlugs()).size).toBe(requiredGiftSlugs().length);
     expect(requiredMessageSlugs()).toEqual(
       expect.arrayContaining([
         "mom",

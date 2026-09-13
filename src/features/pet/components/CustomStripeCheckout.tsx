@@ -258,6 +258,7 @@ function CheckoutBody({
   return (
     <div className="space-y-4">
       <div className="min-h-[52px]">
+        <div onPointerDown={markInteraction}>
         <ExpressCheckoutElement
           options={surface === "dark" ? DARK_EXPRESS_OPTIONS : {
             ...PET_EXPRESS_CHECKOUT_OPTIONS,
@@ -268,7 +269,7 @@ function CheckoutBody({
             },
           }}
           onReady={(event) => {
-            const methods = event?.availablePaymentMethods || {};
+            const methods = (event?.availablePaymentMethods || {}) as Record<string, boolean>;
             const applePay = Boolean(methods.applePay);
             const googlePay = Boolean(methods.googlePay);
             const link = Boolean(methods.link);
@@ -280,9 +281,9 @@ function CheckoutBody({
             });
           }}
           onConfirm={(event) => void confirm(event)}
-          onClick={markInteraction}
           onCancel={() => setError(null)}
         />
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

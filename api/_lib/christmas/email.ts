@@ -61,7 +61,12 @@ export async function sendChristmasDeliveryEmail(input: {
   );
 
   await input.service.from("christmas_email_deliveries").upsert(
-    { order_id: input.orderId, kind, status: apiKey && from ? "queued" : "skipped" },
+    {
+      order_id: input.orderId,
+      kind,
+      status: apiKey && from ? "queued" : "skipped",
+      last_error: apiKey && from ? null : "email_provider_unconfigured",
+    },
     { onConflict: "order_id,kind" },
   );
 
@@ -76,9 +81,10 @@ export async function sendChristmasDeliveryEmail(input: {
     body: JSON.stringify({ from, to: [input.email], subject, html }),
   });
   if (!res.ok) {
+    const providerError = (await res.text()).slice(0, 500);
     await input.service
       .from("christmas_email_deliveries")
-      .update({ status: "failed" })
+      .update({ status: "failed", last_error: providerError || `resend_http_${res.status}` })
       .eq("order_id", input.orderId)
       .eq("kind", kind);
     throw new Error(`Christmas delivery email failed (${res.status})`);
@@ -86,7 +92,12 @@ export async function sendChristmasDeliveryEmail(input: {
   const body = (await res.json()) as { id?: string };
   await input.service
     .from("christmas_email_deliveries")
-    .update({ status: "sent", provider_message_id: asString(body.id) })
+    .update({
+      status: "sent",
+      provider_message_id: asString(body.id),
+      last_error: null,
+      sent_at: new Date().toISOString(),
+    })
     .eq("order_id", input.orderId)
     .eq("kind", kind);
   await input.service
