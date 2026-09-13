@@ -250,7 +250,6 @@ Deno.serve(async (req) => {
       (resolvedProductKey === "christmas_santa_video"
         ? `${siteOrigin()}/christmas/santa-video?checkout=success`
         : `${siteOrigin()}${sourceRoute}?checkout=success`);
-    const sku = `xmas_${product.product_key}_${pkg.package_key}`;
 
     let orderId = asString(body.existing_order_id);
     let publicToken = "";
