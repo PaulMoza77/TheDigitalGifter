@@ -228,7 +228,7 @@ export function ChristmasClubPage() {
           <img src="/TheDigitalGifter.png" alt="" width={36} height={36} />
           <span>{t("brand")}</span>
         </a>
-        <div className="cc-lang" style={{ position: "absolute", top: "1rem", insetInlineEnd: "1rem", zIndex: 5 }}>
+        <div className="cc-lang">
           <ChristmasLanguageSwitcher />
         </div>
 

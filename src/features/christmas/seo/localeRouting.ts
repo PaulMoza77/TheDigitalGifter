@@ -14,6 +14,23 @@ export type ChristmasLocaleCode =
   | "nl"
   | "pl";
 
+export const CHRISTMAS_DEFAULT_LOCALE: ChristmasLocaleCode = "en";
+
+export const CHRISTMAS_LOCALE_PREF_KEY = "tdg.christmas.locale.v1" as const;
+export const CHRISTMAS_LOCALE_AUTO_KEY = "tdg.christmas.localeAuto.v1" as const;
+
+const CHRISTMAS_LOCALE_SET = new Set<string>([
+  "en",
+  "ro",
+  "de",
+  "fr",
+  "es",
+  "it",
+  "pt",
+  "nl",
+  "pl",
+]);
+
 export const CHRISTMAS_UI_LOCALES: Array<{
   code: ChristmasLocaleCode;
   label: string;
@@ -111,4 +128,152 @@ export function switchableChristmasLocales(pathname: string) {
   const gated = PRODUCT_GATED_ROUTE_LOCALES[basePath];
   if (!gated) return CHRISTMAS_UI_LOCALES;
   return CHRISTMAS_UI_LOCALES.filter((l) => gated.includes(l.code));
+}
+
+export function isChristmasUiLocale(value: unknown): value is ChristmasLocaleCode {
+  return typeof value === "string" && CHRISTMAS_LOCALE_SET.has(value);
+}
+
+export function christmasHtmlLang(locale: ChristmasLocaleCode): string {
+  return locale === "pt" ? "pt-PT" : locale;
+}
+
+export function isChristmasAppPath(pathname: string): boolean {
+  const { basePath } = parseChristmasLocalePath(pathname);
+  return (
+    basePath === "/christmas" ||
+    basePath.startsWith("/christmas/") ||
+    basePath === "/christmas-ai-photos"
+  );
+}
+
+export function normalizeChristmasUiLocale(value: unknown): ChristmasLocaleCode {
+  const raw = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace("_", "-");
+  if (raw === "pt-pt" || raw.startsWith("pt-")) return "pt";
+  if (raw.startsWith("en-") || raw === "en") return "en";
+  const code = raw.split("-")[0];
+  if (isChristmasUiLocale(code)) return code;
+  return CHRISTMAS_DEFAULT_LOCALE;
+}
+
+/** Map navigator.language / languages → supported Christmas locale (EN fallback). */
+export function detectBrowserChristmasLocale(
+  languages: readonly string[] | string | null | undefined = typeof navigator !== "undefined"
+    ? navigator.languages?.length
+      ? navigator.languages
+      : navigator.language
+    : null,
+): ChristmasLocaleCode {
+  const list = Array.isArray(languages)
+    ? languages
+    : typeof languages === "string" && languages
+      ? [languages]
+      : [];
+  for (const entry of list) {
+    const raw = String(entry || "")
+      .trim()
+      .toLowerCase()
+      .replace("_", "-");
+    if (!raw) continue;
+    if (raw === "pt-pt" || raw.startsWith("pt-")) return "pt";
+    const code = raw.split("-")[0];
+    if (isChristmasUiLocale(code)) return code;
+  }
+  return CHRISTMAS_DEFAULT_LOCALE;
+}
+
+export function readChristmasLocalePreference(): ChristmasLocaleCode | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(CHRISTMAS_LOCALE_PREF_KEY);
+    return isChristmasUiLocale(raw) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeChristmasLocalePreference(locale: ChristmasLocaleCode): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(CHRISTMAS_LOCALE_PREF_KEY, locale);
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export function readChristmasLocaleAutoFlag(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(CHRISTMAS_LOCALE_AUTO_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writeChristmasLocaleAutoFlag(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(CHRISTMAS_LOCALE_AUTO_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export type ChristmasLocaleRedirectPlan =
+  | { kind: "stay"; locale: ChristmasLocaleCode }
+  | { kind: "redirect"; locale: ChristmasLocaleCode; path: string };
+
+/**
+ * Decide whether an unprefixed Christmas URL should immediately apply a
+ * stored preference or a one-shot browser-language detection.
+ */
+export function planChristmasBrowserLocaleRedirect(input: {
+  pathname: string;
+  search?: string;
+  preference: ChristmasLocaleCode | null;
+  autoAlreadyRan: boolean;
+  detected: ChristmasLocaleCode;
+}): ChristmasLocaleRedirectPlan {
+  const parsed = parseChristmasLocalePath(input.pathname);
+  const switchable = new Set(switchableChristmasLocales(input.pathname).map((l) => l.code));
+  const search = input.search && input.search !== "?" ? input.search : "";
+
+  if (!isChristmasAppPath(input.pathname)) {
+    return { kind: "stay", locale: CHRISTMAS_DEFAULT_LOCALE };
+  }
+
+  if (parsed.isPrefixed) {
+    const locale = isChristmasUiLocale(parsed.locale) ? parsed.locale : CHRISTMAS_DEFAULT_LOCALE;
+    return { kind: "stay", locale };
+  }
+
+  const allowed = (candidate: ChristmasLocaleCode): ChristmasLocaleCode =>
+    switchable.has(candidate) ? candidate : CHRISTMAS_DEFAULT_LOCALE;
+
+  if (input.preference === "en") {
+    return { kind: "stay", locale: CHRISTMAS_DEFAULT_LOCALE };
+  }
+
+  if (input.preference) {
+    const locale = allowed(input.preference);
+    if (locale === CHRISTMAS_DEFAULT_LOCALE) {
+      return { kind: "stay", locale };
+    }
+    const path = `${christmasPathForLocale(input.pathname, locale)}${search}`;
+    return { kind: "redirect", locale, path };
+  }
+
+  if (input.autoAlreadyRan) {
+    return { kind: "stay", locale: CHRISTMAS_DEFAULT_LOCALE };
+  }
+
+  const locale = allowed(input.detected);
+  if (locale === CHRISTMAS_DEFAULT_LOCALE) {
+    return { kind: "stay", locale };
+  }
+  const path = `${christmasPathForLocale(input.pathname, locale)}${search}`;
+  return { kind: "redirect", locale, path };
 }
