@@ -211,25 +211,6 @@ def start_clip(clip_id: str, image_url: str) -> dict:
     raise RuntimeError(f"{clip_id} could not start: {last_error}")
 
 
-def poll_until_done(job: dict, timeout_s: int = 900) -> dict:
-    started = time.time()
-    while time.time() - started < timeout_s:
-        pred = get_prediction(job["prediction_id"])
-        status = pred.get("status")
-        print(f"{job['clip']}: {status}")
-        if status == "succeeded":
-            url = output_url(pred.get("output"))
-            if not url:
-                raise RuntimeError(f"{job['clip']} succeeded with no output URL: {pred.get('output')}")
-            job["output_url"] = url
-            job["raw"] = {"id": pred.get("id"), "metrics": pred.get("metrics")}
-            return job
-        if status in {"failed", "canceled"}:
-            raise RuntimeError(f"{job['clip']} {status}: {pred.get('error')}")
-        time.sleep(8)
-    raise TimeoutError(f"{job['clip']} timed out after {timeout_s}s")
-
-
 def run_ffmpeg(args: list[str]) -> None:
     proc = subprocess.run(args, check=False, capture_output=True, text=True)
     if proc.returncode != 0:
@@ -283,10 +264,12 @@ def concat_and_overlay(clip_paths: list[Path], final_path: Path) -> None:
                 "fontsize=46:"
                 "line_spacing=8:"
                 "x=(w-text_w)/2:"
-                "y=(h-text_h)/2:"
-                "shadowcolor=black@0.55:"
-                "shadowx=2:"
-                "shadowy=3:"
+                "y=(h*0.42-text_h/2):"
+                "shadowcolor=black@0.7:"
+                "shadowx=3:"
+                "shadowy=4:"
+                "borderw=1:"
+                "bordercolor=black@0.25:"
                 "enable='gte(t,12.5)'"
             ),
             "-c:v",
