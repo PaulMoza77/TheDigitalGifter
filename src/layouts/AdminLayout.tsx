@@ -21,6 +21,7 @@ import {
   BarChart3,
   PawPrint,
   Gift,
+  Library,
 } from "lucide-react";
 import { formatAlertCount } from "@/hooks/adminNavAlerts";
 import { useAdminNavAlerts, type AdminNavAlerts } from "@/hooks/useAdminNavAlerts";
@@ -163,6 +164,11 @@ const SidebarNavigation: React.FC<{
             path: "/admin/blog",
             icon: Newspaper,
             badge: "SEO",
+          },
+          {
+            label: "Library",
+            path: "/admin/library",
+            icon: Library,
           },
         ],
       },
