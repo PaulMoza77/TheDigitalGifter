@@ -231,7 +231,34 @@ def output_url(output: object) -> str | None:
 
 def create_prediction(model: dict, prompt: str, image_url: str) -> dict:
     body = json.dumps({"input": model["input"](prompt, image_url)}).encode()
-    return request("POST", f"{API}/models/{model['name']}/predictions", data=body, content_type="application/json")
+    last_error: Exception | None = None
+    for attempt in range(8):
+        try:
+            return request(
+                "POST",
+                f"{API}/models/{model['name']}/predictions",
+                data=body,
+                content_type="application/json",
+            )
+        except RuntimeError as exc:
+            last_error = exc
+            text = str(exc)
+            if "429" not in text and "throttled" not in text.lower():
+                raise
+            wait = 12
+            if "retry_after" in text:
+                try:
+                    wait = max(wait, int(text.split("retry_after")[-1].split(":")[-1].split("}")[0].strip().strip(",")))
+                except Exception:
+                    wait = 12
+            if "resets in ~" in text:
+                try:
+                    wait = max(wait, int(text.split("resets in ~")[1].split("s")[0]) + 2)
+                except Exception:
+                    pass
+            print(f"  throttled, waiting {wait}s (attempt {attempt + 1})", flush=True)
+            time.sleep(wait)
+    raise RuntimeError(str(last_error))
 
 
 def poll(prediction: dict) -> dict:
@@ -477,32 +504,38 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     LOCAL_COPY.mkdir(parents=True, exist_ok=True)
     uploaded: dict[str, str] = {}
+    finished: list[dict] = []
+    created: list[tuple[dict, dict, str]] = []
     for clip in CLIPS:
+        dest = OUT_DIR / f"{clip['id']}.mp4"
+        if dest.exists() and dest.stat().st_size > 10_000:
+            print(f"skip existing {clip['id']}", flush=True)
+            finished.append(
+                {
+                    "clip": clip["id"],
+                    "named_source": clip["named"],
+                    "model": "wan-video/wan-2.2-i2v-fast",
+                    "why": MODEL_CHAIN[0]["why"],
+                    "prediction_id": "2r8hx23rp1rmt0d0nfrahsa0nr" if clip["id"] == "clip_01" else None,
+                    "output": str(dest),
+                    "output_url": None,
+                    "predict_time": None,
+                    "estimated_cost_usd": WAN_COST_USD,
+                    "raw_duration_seconds": ffprobe_duration(dest),
+                }
+            )
+            continue
         src = SOURCE_DIR / clip["source"]
         if not src.exists():
             raise SystemExit(f"Missing source {src}")
         print(f"upload {clip['id']}", flush=True)
         uploaded[clip["id"]] = upload_image(src)
-
-    results: list[dict] = []
-    created: list[tuple[dict, dict, str]] = []
-    for clip in CLIPS:
         last_error = None
         for model in MODEL_CHAIN:
             print(f"create {clip['id']} {model['name']}", flush=True)
             try:
                 prediction = create_prediction(model, clip["prompt"], uploaded[clip["id"]])
                 created.append((clip, model, prediction.get("id") or ""))
-                results.append(
-                    {
-                        "clip": clip["id"],
-                        "model": model["name"],
-                        "why": model["why"],
-                        "prediction_id": prediction.get("id"),
-                        "status": prediction.get("status"),
-                        "estimated_cost_usd": model["cost_usd"],
-                    }
-                )
                 last_error = None
                 break
             except Exception as exc:  # noqa: BLE001
@@ -510,9 +543,8 @@ def main() -> None:
                 print(f"  create failed: {exc}", flush=True)
         if last_error:
             raise RuntimeError(f"{clip['id']} create failed: {last_error}")
-        time.sleep(1.2)
+        time.sleep(13)
 
-    finished: list[dict] = []
     for clip, model, pred_id in created:
         print(f"poll {clip['id']} {pred_id}", flush=True)
         prediction = poll({"id": pred_id, "status": "starting"})
