@@ -114,6 +114,8 @@ Deno.serve(async (req) => {
     if (
       eventType === "checkout.session.completed" ||
       eventType === "checkout.session.async_payment_succeeded" ||
+      eventType === "charge.refunded" ||
+      eventType === "refund.created" ||
       (eventType === "invoice.paid" &&
         (isPetCheckoutMetadata(metadata) ||
           isPetUpsellMetadata(metadata) ||

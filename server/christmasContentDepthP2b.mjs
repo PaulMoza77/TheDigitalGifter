@@ -745,4 +745,71 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       "How to Write a Meaningful Christmas Message",
     ],
   },
+  "/christmas/planner": {
+    path: "/christmas/planner",
+    wave: "p2b",
+    geo: {
+      h2: "What is a Christmas planner?",
+      body:
+        "A Christmas planner is a private command center for the season: countdown, a date-aware checklist, gifts you are giving, budget, meals, and hosting. TheDigitalGifter planner is not a PDF or spreadsheet — it changes from a 13-week plan in September to a rescue plan in late December.",
+    },
+    sections: [
+      {
+        h2: "Christmas gift planner",
+        body:
+          "Track people you are buying for separately from your public wishlist. Statuses run from idea to given. Gift Finder can add an idea to a recipient without duplicating the recommendation engine.",
+        linkHref: "/christmas/gift-finder",
+        linkLabel: "Find a Christmas gift idea",
+      },
+      {
+        h2: "Christmas budget planner",
+        body:
+          "Set one season budget. Categories stay simple: gifts, food, travel, decor, events, clothing, charity, other. Gift prices roll into spent automatically.",
+      },
+      {
+        h2: "Christmas meal planner",
+        body:
+          "Build Christmas Eve and Christmas Day menus, then roll a grocery list. Original TDG recipes can ship as free teasers, a tier include, or a standalone add-on.",
+      },
+      {
+        h2: "Christmas hosting planner",
+        body:
+          "Keep a guest list with RSVP, adults/kids, dietary notes, and what people bring — without collecting passports or payment cards.",
+      },
+      {
+        h2: "Christmas planning timeline",
+        body:
+          "Tasks are generated from today’s date plus hosting, travel, children, and gift count. You can complete, skip, reschedule, or add custom tasks.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Is the Christmas planner free?",
+        a: "Countdown, onboarding, a basic dashboard, a short plan, and up to three gift people are free. Gifts, budget, food, recipes, hosting, and travel unlock with planner packs on the existing Christmas checkout.",
+      },
+      {
+        q: "Does it replace Gift Finder or Wishlist?",
+        a: "No. The planner tracks gifts you are giving. Wishlist stays the shareable list. Gift Finder remains the idea engine.",
+      },
+      {
+        q: "Can I use it on my phone?",
+        a: "Yes. The command center is mobile-first with Today, Plan, Gifts, and More.",
+      },
+      {
+        q: "What happens after Christmas?",
+        a: "From 26 December the planner switches to next season and invites a memory note for next year.",
+      },
+      {
+        q: "Do I need a new checkout?",
+        a: "No. Planner packs use the same Christmas commerce orders and entitlements as other Christmas products.",
+      },
+    ],
+    markers: [
+      "What is a Christmas planner?",
+      "Christmas gift planner",
+      "Christmas budget planner",
+      "Christmas meal planner",
+      "Christmas hosting planner",
+    ],
+  },
 };

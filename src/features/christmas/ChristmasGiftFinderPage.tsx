@@ -173,6 +173,7 @@ export default function ChristmasGiftFinderPage() {
   const [ideas, setIdeas] = useState<GiftIdea[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  const plannerRecipientId = params.get("plannerRecipient") || params.get("planner_recipient");
   const [loadingCopy, setLoadingCopy] = useState(gfT("loading.1", locale));
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const viewed = useRef(false);
@@ -467,6 +468,43 @@ export default function ChristmasGiftFinderPage() {
             ? raw
             : gfT("error.wishlistSave", locale),
       );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function addToPlanner(idea: GiftIdea) {
+    if (!plannerRecipientId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { data: rec, error: recErr } = await supabase
+        .from("christmas_gift_recipients")
+        .select("id, profile_id")
+        .eq("id", plannerRecipientId)
+        .maybeSingle();
+      if (recErr || !rec) throw new Error("Could not add to planner");
+      const { error: insErr } = await supabase.from("christmas_gift_items").insert({
+        profile_id: rec.profile_id,
+        recipient_id: rec.id,
+        idea: idea.title.slice(0, 200),
+        selected_gift: idea.title.slice(0, 200),
+        status: "idea",
+        source_type: "gift_finder",
+        source_ref: idea.result_key || idea.id,
+        planned_price_minor:
+          idea.budget_max != null ? Math.round(Number(idea.budget_max) * 100) : null,
+      });
+      if (insErr) throw insErr;
+      setSavedMsg("Added to Christmas Planner");
+      void trackChristmasEvent("planner_gift_added", {
+        productKey: "christmas_planner",
+        pathname: PATH,
+        locale,
+        metadata: { source: "gift_finder" },
+      });
+    } catch {
+      setError("Could not add this idea to your planner.");
     } finally {
       setBusy(false);
     }
@@ -897,6 +935,16 @@ export default function ChristmasGiftFinderPage() {
                             <Heart className="h-4 w-4" aria-hidden="true" />
                             {gfT("results.save", locale)}
                           </button>
+                          {plannerRecipientId ? (
+                            <button
+                              type="button"
+                              className="gf-btn-ghost"
+                              disabled={busy}
+                              onClick={() => void addToPlanner(idea)}
+                            >
+                              Add to planner
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             className="gf-btn-ghost"

@@ -183,14 +183,22 @@ export async function handleChristmasStripeEvent(input: {
         : Array.isArray(snap.entitlements)
           ? (snap.entitlements as unknown[]).map((k) => String(k))
           : [];
-      await input.service.rpc("grant_christmas_planner_entitlements", {
-        p_order_id: orderId,
-        p_entitlements: keys,
-        p_tier: packageKey || asString(ord?.package_key),
-        p_source: "stripe",
-        p_source_transaction_id: sessionId,
-        p_season_year: 2026,
-      });
+      // Funnel product → multi-arg grant into user_entitlements.
+      // V1 product key → single-arg overload into christmas_feature_grants.
+      if (productKey === "christmas_planner") {
+        await input.service.rpc("grant_christmas_planner_entitlements", {
+          p_order_id: orderId,
+        });
+      } else {
+        await input.service.rpc("grant_christmas_planner_entitlements", {
+          p_order_id: orderId,
+          p_entitlements: keys,
+          p_tier: packageKey || asString(ord?.package_key),
+          p_source: "stripe",
+          p_source_transaction_id: sessionId,
+          p_season_year: 2026,
+        });
+      }
       if (result.status === "paid") {
         const email = asString(ord?.email);
         const token = asString(meta.public_token_hint);

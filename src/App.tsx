@@ -675,6 +675,8 @@ function AppInner() {
                 { path: "/christmas/tree-gifts", element: <ChristmasGiftsPage /> },
                 { path: "/christmas/cards", element: <ChristmasCardsPage /> },
                 { path: "/christmas/messages", element: <ChristmasMessagesPage /> },
+                { path: "/christmas/planner", element: <ChristmasPlannerPage /> },
+                { path: "/christmas/planner/welcome", element: <ChristmasPlannerWelcomePage /> },
                 { path: "/christmas/send-a-gift", element: <ChristmasSendGiftPage /> },
               ]),
             )}

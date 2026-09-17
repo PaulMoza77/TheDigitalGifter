@@ -51,6 +51,7 @@ export const CHRISTMAS_KNOWN_SPA_PATHS = [
   "/christmas/suite",
   "/christmas/planner/welcome",
   "/christmas/tree-gifts",
+  "/christmas/planner/welcome",
   "/christmas-ai-photos",
   "/christmas-ai-photos/order",
 ];
