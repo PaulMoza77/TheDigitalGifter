@@ -71,7 +71,7 @@ Source + generated buckets remain private. No public galleries. Kids Christmas i
 
 ## Email / recovery
 
-Same Resend template; recovery link uses `source_route` / product+species mapping so the correct vertical reopens.
+Same V1 Resend seam (`sendPhotoSantaDeliveryEmail`); recovery link uses `source_route` / product+species mapping so the correct vertical reopens. Skips entirely when `RESEND_API_KEY` or from-address is unset.
 
 ## Real generation QA (controlled proofs)
 
