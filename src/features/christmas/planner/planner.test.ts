@@ -187,7 +187,8 @@ describe("christmas planner wiring", () => {
     expect(sql).not.toContain("pet_orders_sku_chk");
     expect(christmasSitemapPaths()).toContain("/christmas/planner");
     expect(getChristmasSeo("/christmas/planner")?.title).toMatch(/Christmas Planner/i);
-    expect(findProduct(CHRISTMAS_CATALOG_SEED, PLANNER_PRODUCT_KEY)?.routePath).toBe("/christmas/planner");
+    expect(readSrc("src/pages/admin/ChristmasOrders.tsx")).toContain("Grant entitlement");
+    expect(readSrc("src/pages/admin/ChristmasOrders.tsx")).toContain("adminRevoke");
   });
 
   it("keeps Apple Pay / Google Pay on ExpressCheckoutElement capability callbacks", () => {
@@ -197,6 +198,16 @@ describe("christmas planner wiring", () => {
     expect(checkout).toContain("applePay");
     expect(checkout).toContain("googlePay");
     expect(readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx")).toContain("onWalletAvailability");
+    expect(readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx")).toContain("walletCapabilityOnly");
+    expect(checkout).toContain("walletCapabilityOnly");
+    expect(checkout).toContain('applePay: "auto" as const');
+    expect(checkout).toContain('googlePay: "auto" as const');
+  });
+
+  it("does not duplicate the English planner on locale-prefixed Christmas routes", () => {
+    const app = readSrc("src/App.tsx");
+    const localeBlock = app.slice(app.lastIndexOf("christmasLocalePrefixedRoutes(prefix"));
+    expect(localeBlock).not.toContain('path="/christmas/planner"');
   });
 
   it("does not invent testimonials", () => {

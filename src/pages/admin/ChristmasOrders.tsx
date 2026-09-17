@@ -151,6 +151,7 @@ export default function ChristmasOrdersPage() {
   const [productFilter, setProductFilter] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("");
   const [selected, setSelected] = useState<ChristmasOrderRow | null>(null);
+  const [plannerBusy, setPlannerBusy] = useState(false);
   const [santaJob, setSantaJob] = useState<SantaJobRow | null>(null);
   const [santaBusy, setSantaBusy] = useState(false);
 
@@ -338,6 +339,38 @@ export default function ChristmasOrdersPage() {
       setSantaBusy(false);
     }
   }, [selected, load]);
+
+  const setPlannerEntitlement = useCallback(
+    async (status: "active" | "revoked") => {
+      if (!selected?.user_id) {
+        toast.error("Claimed user id required");
+        return;
+      }
+      const key = window.prompt("Entitlement key (e.g. planner.plan)", "planner.plan");
+      if (!key) return;
+      const reason = window.prompt("Admin reason", status === "revoked" ? "support revoke" : "support grant");
+      setPlannerBusy(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("christmas-planner-funnel", {
+          body: {
+            action: status === "revoked" ? "adminRevoke" : "adminGrant",
+            user_id: selected.user_id,
+            entitlement_key: key,
+            tier: selected.package_key,
+            reason,
+          },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(String(data.error));
+        toast.success(status === "revoked" ? "Entitlement revoked" : "Entitlement granted");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Entitlement update failed");
+      } finally {
+        setPlannerBusy(false);
+      }
+    },
+    [selected],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -717,6 +750,26 @@ export default function ChristmasOrdersPage() {
                       : "granted on paid webhook"}
                   </dd>
                 </div>
+                {selected.user_id ? (
+                  <div className="sm:col-span-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={plannerBusy}
+                      onClick={() => void setPlannerEntitlement("active")}
+                    >
+                      Grant entitlement
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={plannerBusy}
+                      onClick={() => void setPlannerEntitlement("revoked")}
+                    >
+                      Revoke entitlement
+                    </Button>
+                  </div>
+                ) : null}
               </>
             ) : null}
             <div>

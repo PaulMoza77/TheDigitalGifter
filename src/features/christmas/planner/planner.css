@@ -10,6 +10,7 @@
   font-family: "Source Sans 3", system-ui, sans-serif;
   min-height: 100dvh;
   overflow-x: hidden;
+  padding-bottom: 5.5rem;
 }
 
 .tdg-planner h1,
@@ -170,6 +171,10 @@
   border: 1px solid rgba(246, 239, 228, 0.14);
   border-radius: 1.25rem;
   padding: 1.1rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
 }
 
 .tdg-planner__offer.is-selected,
@@ -248,7 +253,9 @@
   line-height: 1.7;
 }
 
-.tdg-planner input[type="email"] {
+.tdg-planner input[type="email"],
+.tdg-planner input[type="password"],
+.tdg-planner input[type="text"] {
   width: 100%;
   border-radius: 0.8rem;
   border: 1px solid rgba(246, 239, 228, 0.2);
@@ -258,6 +265,9 @@
 }
 
 @media (min-width: 860px) {
+  .tdg-planner {
+    padding-bottom: 0;
+  }
   .tdg-planner__hero-copy {
     padding: 4rem 3rem 5rem;
   }
@@ -273,6 +283,12 @@
   .tdg-planner__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  .tdg-planner .tdg-planner__mobile-compare {
+    display: none;
+  }
+  .tdg-planner__sticky {
+    display: none;
+  }
 }
 
 @media (max-width: 859px) {
@@ -281,8 +297,8 @@
   }
 }
 
-@media (min-width: 860px) {
-  .tdg-planner .tdg-planner__mobile-compare {
-    display: none;
+@media (max-width: 389px) {
+  .tdg-planner__mock {
+    grid-template-columns: 1fr;
   }
 }

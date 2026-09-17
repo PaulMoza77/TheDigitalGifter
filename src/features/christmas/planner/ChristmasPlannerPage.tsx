@@ -443,6 +443,8 @@ export default function ChristmasPlannerPage() {
               publishableKey={checkout.publishableKey}
               dueDisplay={money(checkout.amountCents, catalog.packages[0]?.currency || "usd")}
               email={email}
+              appearanceTheme="night"
+              walletCapabilityOnly
               payButtonLabel={() => "Pay"}
               onWalletAvailability={(info) => {
                 void trackChristmasEvent("planner_wallet_presented", {
