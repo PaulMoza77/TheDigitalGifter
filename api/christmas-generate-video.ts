@@ -12,6 +12,7 @@ import {
 } from "./_lib/christmas/constants";
 import { asString, isUuid } from "./_lib/christmas/crypto";
 import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabaseClient";
+import { christmasOrderIsPaid } from "./_lib/christmas/generationClaim";
 
 type Body = { order_id?: string };
 
@@ -121,13 +122,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const service = getServiceClient();
 
     const { data: order, error } = await service
-      .from("christmas_orders")
+      .from("christmas_v2_orders")
       .select("*")
       .eq("id", orderId)
       .maybeSingle();
     if (error) throw error;
     if (!order) return res.status(404).json({ error: "order not found" });
-    if (!order.paid_at) return res.status(402).json({ error: "Payment required", code: "PAYMENT_REQUIRED" });
+    if (!christmasOrderIsPaid({ paymentStatus: order.payment_status, paidAt: order.paid_at })) {
+      return res.status(402).json({ error: "payment_required", code: "payment_required" });
+    }
 
     if (!videoGenerationEnabled() && !generationMock()) {
       return res.status(200).json({ ok: true, status: "held", started: 0 });
@@ -135,10 +138,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const [{ data: scenes }, { data: videos }] = await Promise.all([
       service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .select("id, scene_key, status, result_path, result_bucket")
         .eq("order_id", orderId),
-      service.from("christmas_order_videos").select("*").eq("order_id", orderId),
+      service.from("christmas_v2_order_videos").select("*").eq("order_id", orderId),
     ]);
 
     // Upsell child packs may reference starter scene keys that live on the parent order.
@@ -146,7 +149,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const parentOrderId = asString(order.parent_order_id);
     if (parentOrderId) {
       const { data: parentScenes } = await service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .select("id, scene_key, status, result_path, result_bucket")
         .eq("order_id", parentOrderId);
       if (parentScenes?.length) {
@@ -174,7 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
       if (!source?.result_path) {
         await service
-          .from("christmas_order_videos")
+          .from("christmas_v2_order_videos")
           .update({
             status: "failed",
             last_error: "Source scene result missing",
@@ -185,7 +188,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       await service
-        .from("christmas_order_videos")
+        .from("christmas_v2_order_videos")
         .update({
           status: "generating",
           last_error: null,
@@ -198,7 +201,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         if (generationMock()) {
           await service
-            .from("christmas_order_videos")
+            .from("christmas_v2_order_videos")
             .update({
               status: "succeeded",
               model_name: "mock",
@@ -227,7 +230,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (upErr) throw upErr;
 
           await service
-            .from("christmas_order_videos")
+            .from("christmas_v2_order_videos")
             .update({
               status: "succeeded",
               model_name: prediction.model,
@@ -260,7 +263,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } catch (genErr) {
         const message = genErr instanceof Error ? genErr.message : String(genErr);
         await service
-          .from("christmas_order_videos")
+          .from("christmas_v2_order_videos")
           .update({
             status: "failed",
             last_error: message.slice(0, 500),

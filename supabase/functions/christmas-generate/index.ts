@@ -13,6 +13,11 @@ import {
 } from "../_shared/christmas/constants.ts";
 import { asString } from "../_shared/christmas/crypto.ts";
 import { sendChristmasDeliveryEmail } from "../_shared/christmas/email.ts";
+import {
+  christmasOrderIsPaid,
+  interpretChristmasGenerationClaim,
+  parseChristmasGenerationClaim,
+} from "../_shared/christmas/generationClaim.ts";
 
 type Body = { order_id?: string };
 
@@ -148,16 +153,18 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (error) throw error;
     if (!order) return jsonResponse({ error: "order not found" }, 404);
-    if (!order.paid_at) return jsonResponse({ error: "Payment required", code: "PAYMENT_REQUIRED" }, 402);
+    if (!christmasOrderIsPaid({ paymentStatus: order.payment_status, paidAt: order.paid_at })) {
+      return jsonResponse({ error: "payment_required", code: "payment_required" }, 402);
+    }
 
     const claim = await service.rpc("claim_christmas_v2_generation_job", { p_order_id: orderId });
     if (claim.error) throw claim.error;
-    const claimData = (typeof claim.data === "string" ? JSON.parse(claim.data) : claim.data) as {
-      claimed?: boolean;
-      status?: string;
-    };
-    if (!claimData?.claimed) {
-      return jsonResponse({ ok: true, status: "already_running", claim: claimData });
+    const claimDecision = interpretChristmasGenerationClaim(parseChristmasGenerationClaim(claim.data));
+    if (claimDecision.kind === "payment_required") {
+      return jsonResponse(claimDecision.body, claimDecision.httpStatus);
+    }
+    if (claimDecision.kind === "not_claimed") {
+      return jsonResponse(claimDecision.body, claimDecision.httpStatus);
     }
 
     if (!order.photo_path) {

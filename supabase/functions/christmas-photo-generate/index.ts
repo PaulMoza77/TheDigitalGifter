@@ -5,6 +5,11 @@ import {
   buildChristmasPortraitPrompt,
   recoveryRouteForOrder,
 } from "../_shared/christmas/portraitPromptRegistry.ts";
+import {
+  christmasOrderIsPaid,
+  interpretChristmasGenerationClaim,
+  parseChristmasGenerationClaim,
+} from "../_shared/christmas/generationClaim.ts";
 
 /**
  * Post-payment Christmas portrait generation (all verticals).
@@ -95,7 +100,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (error) throw error;
     if (!order) return jsonResponse({ error: "order not found" }, 404);
-    if (order.payment_status !== "paid") {
+    if (!christmasOrderIsPaid({ paymentStatus: asString(order.payment_status), paidAt: order.paid_at })) {
       return jsonResponse({ error: "payment_required", code: "payment_required" }, 402);
     }
     if (!order.source_path || !order.style_key) {
@@ -104,12 +109,12 @@ Deno.serve(async (req) => {
 
     const claim = await service.rpc("claim_christmas_generation_job", { p_order_id: orderId });
     if (claim.error) throw claim.error;
-    const claimData = (typeof claim.data === "string" ? JSON.parse(claim.data) : claim.data) as {
-      claimed?: boolean;
-      status?: string;
-    };
-    if (!claimData?.claimed) {
-      return jsonResponse({ ok: true, status: claimData?.status || "not_claimed", claim: claimData });
+    const claimDecision = interpretChristmasGenerationClaim(parseChristmasGenerationClaim(claim.data));
+    if (claimDecision.kind === "payment_required") {
+      return jsonResponse(claimDecision.body, claimDecision.httpStatus);
+    }
+    if (claimDecision.kind === "not_claimed") {
+      return jsonResponse(claimDecision.body, claimDecision.httpStatus);
     }
 
     if (!generationEnabled() && !generationMock()) {

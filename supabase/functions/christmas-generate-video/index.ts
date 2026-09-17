@@ -8,6 +8,7 @@ import {
   videoGenerationEnabled,
 } from "../_shared/christmas/constants.ts";
 import { asString, isUuid } from "../_shared/christmas/crypto.ts";
+import { christmasOrderIsPaid } from "../_shared/christmas/generationClaim.ts";
 
 type Body = { order_id?: string };
 
@@ -91,13 +92,15 @@ Deno.serve(async (req) => {
     const service = getServiceClient();
 
     const { data: order, error } = await service
-      .from("christmas_orders")
+      .from("christmas_v2_orders")
       .select("*")
       .eq("id", orderId)
       .maybeSingle();
     if (error) throw error;
     if (!order) return jsonResponse({ error: "order not found" }, 404);
-    if (!order.paid_at) return jsonResponse({ error: "Payment required", code: "PAYMENT_REQUIRED" }, 402);
+    if (!christmasOrderIsPaid({ paymentStatus: order.payment_status, paidAt: order.paid_at })) {
+      return jsonResponse({ error: "payment_required", code: "payment_required" }, 402);
+    }
 
     if (!videoGenerationEnabled() && !generationMock()) {
       return jsonResponse({ ok: true, status: "held", started: 0 });
@@ -105,10 +108,10 @@ Deno.serve(async (req) => {
 
     const [{ data: scenes }, { data: videos }] = await Promise.all([
       service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .select("id, scene_key, status, result_path, result_bucket")
         .eq("order_id", orderId),
-      service.from("christmas_order_videos").select("*").eq("order_id", orderId),
+      service.from("christmas_v2_order_videos").select("*").eq("order_id", orderId),
     ]);
 
     // Upsell child packs may reference starter scene keys that live on the parent order.
@@ -116,7 +119,7 @@ Deno.serve(async (req) => {
     const parentOrderId = asString(order.parent_order_id);
     if (parentOrderId) {
       const { data: parentScenes } = await service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .select("id, scene_key, status, result_path, result_bucket")
         .eq("order_id", parentOrderId);
       if (parentScenes?.length) {
@@ -146,7 +149,7 @@ Deno.serve(async (req) => {
       );
       if (!source?.result_path) {
         await service
-          .from("christmas_order_videos")
+          .from("christmas_v2_order_videos")
           .update({
             status: "failed",
             last_error: "Source scene result missing",
@@ -157,7 +160,7 @@ Deno.serve(async (req) => {
       }
 
       await service
-        .from("christmas_order_videos")
+        .from("christmas_v2_order_videos")
         .update({
           status: "generating",
           last_error: null,
@@ -170,7 +173,7 @@ Deno.serve(async (req) => {
       try {
         if (generationMock()) {
           await service
-            .from("christmas_order_videos")
+            .from("christmas_v2_order_videos")
             .update({
               status: "succeeded",
               model_name: "mock",
@@ -199,7 +202,7 @@ Deno.serve(async (req) => {
           if (upErr) throw upErr;
 
           await service
-            .from("christmas_order_videos")
+            .from("christmas_v2_order_videos")
             .update({
               status: "succeeded",
               model_name: prediction.model,
@@ -232,7 +235,7 @@ Deno.serve(async (req) => {
       } catch (genErr) {
         const message = genErr instanceof Error ? genErr.message : String(genErr);
         await service
-          .from("christmas_order_videos")
+          .from("christmas_v2_order_videos")
           .update({
             status: "failed",
             last_error: message.slice(0, 500),

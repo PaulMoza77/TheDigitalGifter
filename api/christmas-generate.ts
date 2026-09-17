@@ -19,6 +19,11 @@ import { asString } from "./_lib/christmas/crypto";
 import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabaseClient";
 import { invokeChristmasGenerateVideo, resolveSiteOriginFromRequest } from "./_lib/christmas/stripeFulfill";
 import { sendChristmasDeliveryEmail } from "./_lib/christmas/email";
+import {
+  christmasOrderIsPaid,
+  interpretChristmasGenerationClaim,
+  parseChristmasGenerationClaim,
+} from "./_lib/christmas/generationClaim";
 
 type Body = { order_id?: string };
 
@@ -141,27 +146,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const service = getServiceClient();
 
     const { data: order, error } = await service
-      .from("christmas_orders")
+      .from("christmas_v2_orders")
       .select("*")
       .eq("id", orderId)
       .maybeSingle();
     if (error) throw error;
     if (!order) return res.status(404).json({ error: "order not found" });
-    if (!order.paid_at) return res.status(402).json({ error: "Payment required", code: "PAYMENT_REQUIRED" });
+    if (!christmasOrderIsPaid({ paymentStatus: order.payment_status, paidAt: order.paid_at })) {
+      return res.status(402).json({ error: "payment_required", code: "payment_required" });
+    }
 
-    const claim = await service.rpc("claim_christmas_generation_job", { p_order_id: orderId });
+    const claim = await service.rpc("claim_christmas_v2_generation_job", { p_order_id: orderId });
     if (claim.error) throw claim.error;
-    const claimData = (typeof claim.data === "string" ? JSON.parse(claim.data) : claim.data) as {
-      claimed?: boolean;
-      status?: string;
-    };
-    if (!claimData?.claimed) {
-      return res.status(200).json({ ok: true, status: "already_running", claim: claimData });
+    const claimDecision = interpretChristmasGenerationClaim(parseChristmasGenerationClaim(claim.data));
+    if (claimDecision.kind === "payment_required") {
+      return res.status(claimDecision.httpStatus).json(claimDecision.body);
+    }
+    if (claimDecision.kind === "not_claimed") {
+      return res.status(claimDecision.httpStatus).json(claimDecision.body);
     }
 
     if (!order.photo_path) {
       await service
-        .from("christmas_generation_jobs")
+        .from("christmas_v2_generation_jobs")
         .update({
           status: "failed",
           last_error: "source_photo_missing",
@@ -170,7 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         .eq("order_id", orderId);
       await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .update({ status: "failed", last_error: "source_photo_missing", updated_at: new Date().toISOString() })
         .eq("id", orderId);
       return res.status(400).json({ error: "Source photo missing" });
@@ -181,7 +188,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .createSignedUrl(order.photo_path, CHRISTMAS_SIGNED_DOWNLOAD_SECONDS);
     if (!signed?.signedUrl) {
       await service
-        .from("christmas_generation_jobs")
+        .from("christmas_v2_generation_jobs")
         .update({
           status: "failed",
           last_error: "source_photo_sign_failed",
@@ -193,7 +200,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { data: scenes, error: sceneError } = await service
-      .from("christmas_order_scenes")
+      .from("christmas_v2_order_scenes")
       .select("*")
       .eq("order_id", orderId)
       .order("scene_number", { ascending: true });
@@ -201,11 +208,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!generationEnabled() && !generationMock()) {
       await service
-        .from("christmas_generation_jobs")
+        .from("christmas_v2_generation_jobs")
         .update({ status: "held", last_error: "generation_disabled" })
         .eq("order_id", orderId);
       await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .update({ status: "paid", last_error: "generation_disabled" })
         .eq("id", orderId);
       return res.status(200).json({ ok: true, status: "held", started: 0 });
@@ -223,14 +230,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const def = sceneByKey(sceneKey);
       if (!def) {
         await service
-          .from("christmas_order_scenes")
+          .from("christmas_v2_order_scenes")
           .update({ status: "failed", last_error: "unknown_scene" })
           .eq("id", scene.id);
         continue;
       }
 
       await service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .update({
           status: "generating",
           started_at: new Date().toISOString(),
@@ -245,7 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (generationMock()) {
           await copyObject(service, CHRISTMAS_SOURCE_BUCKET, order.photo_path, CHRISTMAS_RESULT_BUCKET, resultPath, contentType);
           await service
-            .from("christmas_order_scenes")
+            .from("christmas_v2_order_scenes")
             .update({
               status: "succeeded",
               progress_percent: 100,
@@ -268,7 +275,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .upload(resultPath, bytes, { contentType: "image/jpeg", upsert: true });
           if (upErr) throw upErr;
           await service
-            .from("christmas_order_scenes")
+            .from("christmas_v2_order_scenes")
             .update({
               status: "succeeded",
               progress_percent: 100,
@@ -285,7 +292,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } catch (genErr) {
         const message = genErr instanceof Error ? genErr.message : String(genErr);
         await service
-          .from("christmas_order_scenes")
+          .from("christmas_v2_order_scenes")
           .update({
             status: "failed",
             last_error: message.slice(0, 500),
@@ -295,7 +302,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const finalized = await service.rpc("christmas_finalize_generation_if_done", { p_order_id: orderId });
+    const finalized = await service.rpc("christmas_v2_finalize_generation_if_done", { p_order_id: orderId });
     if (finalized.error) throw finalized.error;
     const finalData = (typeof finalized.data === "string" ? JSON.parse(finalized.data) : finalized.data) as {
       done?: boolean;
@@ -305,7 +312,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (finalData?.done && (finalData.succeeded || 0) > 0) {
       const { data: refreshed } = await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .select("*")
         .eq("id", orderId)
         .maybeSingle();
