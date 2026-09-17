@@ -33,6 +33,9 @@ describe("admin video library", () => {
       expect(video.filename.endsWith(".mp4")).toBe(true);
     }
     expect(searchLibraryVideos("final", "christmas_reels").some((video) => video.id === "reel-final")).toBe(true);
+    expect(
+      searchLibraryVideos("Kling 1080p", "christmas_reels").some((video) => video.id === "reel-kling-1080p-final"),
+    ).toBe(true);
     expect(searchLibraryVideos("astronaut", "pet_dog")).toHaveLength(1);
     expect(LIBRARY_VIDEOS.find((video) => video.id === "reel-05")?.durationSeconds).toBe(1.2);
     expect(LIBRARY_VIDEOS.find((video) => video.id === "pet-dog-astronaut")?.poster).toContain("/pet/dog/scenes/");

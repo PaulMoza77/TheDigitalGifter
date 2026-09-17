@@ -1,0 +1,30 @@
+{
+  "CLEAN": {
+    "path": "/workspace/final/final_christmas_reel_1080p.mp4",
+    "width": 1080,
+    "height": 1920,
+    "coded_width": 1080,
+    "coded_height": 1920,
+    "fps": 24.0,
+    "bitrate": 15684863,
+    "duration": 13.5,
+    "size": 26468207,
+    "codec": "h264",
+    "pix_fmt": "yuv420p",
+    "nb_frames": "324"
+  },
+  "TEXT": {
+    "path": "/workspace/final/final_christmas_reel_1080p_text.mp4",
+    "width": 1080,
+    "height": 1920,
+    "coded_width": 1080,
+    "coded_height": 1920,
+    "fps": 24.0,
+    "bitrate": 15684602,
+    "duration": 13.5,
+    "size": 26467767,
+    "codec": "h264",
+    "pix_fmt": "yuv420p",
+    "nb_frames": "324"
+  }
+}
