@@ -48,29 +48,36 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-kling-1080p-cut2");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-cut3");
+    expect(searchLibraryVideos("ice skating", "christmas_reels", "photo").some((item) => item.id === "photo-nyc-ice-girl")).toBe(
+      true,
+    );
+    expect(searchLibraryVideos("kids sledding", "christmas_reels", "photo").some((item) => item.id === "photo-village-kids-sled")).toBe(
+      true,
+    );
     expect(searchLibraryVideos("astronaut", "pet_dog")).toHaveLength(1);
     expect(LIBRARY_VIDEOS.find((video) => video.id === "reel-05")?.durationSeconds).toBe(1.2);
     expect(LIBRARY_VIDEOS.find((video) => video.id === "pet-dog-astronaut")?.poster).toContain("/pet/dog/scenes/");
   });
 
   it("splits Christmas Reels into Reels, Shorts, and Photos badges", () => {
-    expect(countChristmasKind("reel")).toBeGreaterThanOrEqual(5);
-    expect(countChristmasKind("short")).toBeGreaterThanOrEqual(12);
-    expect(countChristmasKind("photo")).toBeGreaterThanOrEqual(12);
+    expect(countChristmasKind("reel")).toBeGreaterThanOrEqual(6);
+    expect(countChristmasKind("short")).toBeGreaterThanOrEqual(15);
+    expect(countChristmasKind("photo")).toBeGreaterThanOrEqual(27);
     expect(searchLibraryVideos("", "christmas_reels", "reel").every((item) => item.kind === "reel")).toBe(true);
     expect(searchLibraryVideos("", "christmas_reels", "short").every((item) => item.kind === "short")).toBe(true);
     expect(searchLibraryVideos("", "christmas_reels", "photo").every((item) => item.kind === "photo")).toBe(true);
-    expect(searchLibraryVideos("ice", "christmas_reels", "short").some((item) => item.id === "reel-06")).toBe(true);
-    expect(searchLibraryVideos("village", "christmas_reels", "short").some((item) => item.id === "reel-07")).toBe(
+    expect(searchLibraryVideos("ice", "christmas_reels", "short").some((item) => item.id === "short-ice-nyc")).toBe(true);
+    expect(searchLibraryVideos("village", "christmas_reels", "short").some((item) => item.id === "short-kids-sled")).toBe(
       true,
     );
-    expect(searchLibraryVideos("ice", "christmas_reels", "photo").some((item) => item.id === "photo-wan-ice-rink")).toBe(
+    expect(searchLibraryVideos("ice", "christmas_reels", "photo").some((item) => item.id === "photo-nyc-ice-girl")).toBe(
       true,
     );
-    expect(searchLibraryVideos("cozy cottage", "christmas_reels", "reel").some((item) => item.id === "reel-cozy-final")).toBe(
-      true,
-    );
+    expect(
+      searchLibraryVideos("kids", "christmas_reels", "photo").some((item) => item.id === "photo-village-kids-sled"),
+    ).toBe(true);
+    expect(searchLibraryVideos("cut3", "christmas_reels", "reel").some((item) => item.id === "reel-cut3")).toBe(true);
   });
 
   it("keeps Christmas media files on public downloadable paths", () => {
@@ -79,6 +86,11 @@ describe("admin video library", () => {
       "public/assets/christmas/cozy-reel/clip1.mp4",
       "public/assets/christmas/instagram-reel/source/clip_06.jpg",
       "public/assets/christmas/instagram-reel-kling-1080p/source/cozy_christmas_reading_nook_by_snowy_village.jpg",
+      "public/assets/christmas/library-stills/nyc_girl_ice_skating.jpg",
+      "public/assets/christmas/library-stills/village_kids_sledding.jpg",
+      "public/assets/christmas/instagram-reel-cut3/clip_ice_nyc.mp4",
+      "public/assets/christmas/instagram-reel-cut3/clip_kids_sled.mp4",
+      "public/assets/christmas/instagram-reel-cut3/final_christmas_reel_cut3.mp4",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
