@@ -87,6 +87,7 @@ describe("admin video library", () => {
 
   it("is wired into admin nav and the /admin/library route", () => {
     expect(readSrc("src/App.tsx")).toMatch(/path="library"/);
+    expect(readSrc("src/App.tsx")).toContain("/dev/library");
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/library");
     const page = readSrc("src/pages/admin/AdminLibraryPage.tsx");
     expect(page).toContain("LibraryVideoCard");

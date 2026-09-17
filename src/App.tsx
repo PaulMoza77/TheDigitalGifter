@@ -593,6 +593,9 @@ function AppInner() {
 
       <Suspense fallback={<ChristmasRouteFallback />}>
         <Routes>
+          {import.meta.env.DEV ? (
+            <Route path="/dev/library" element={<AdminLibraryPage />} />
+          ) : null}
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
