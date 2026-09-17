@@ -293,12 +293,15 @@ function WebsiteLayout() {
   const hideChromeExtras =
     location.pathname === "/christmas/tree-gifts" ||
     location.pathname.startsWith("/christmas/tree-gifts/");
+  const hidePlannerChrome =
+    location.pathname === "/christmas/planner" ||
+    location.pathname.startsWith("/christmas/planner/");
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
-      <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
+      {hidePlannerChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
 
-      <main className={`flex-1 ${hideChromeExtras ? "min-h-0" : ""}`}>
+      <main className={`flex-1 ${hideChromeExtras || hidePlannerChrome ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
@@ -307,7 +310,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      {hideChromeExtras ? null : <WebsiteFooter />}
+      {hideChromeExtras || hidePlannerChrome ? null : <WebsiteFooter />}
     </div>
   );
 }

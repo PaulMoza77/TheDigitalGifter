@@ -151,15 +151,25 @@ export default function ChristmasPlannerPage() {
   };
 
   const startPay = useCallback(async () => {
-    if (starting.current) return;
-    starting.current = true;
-    setBusy(true);
-    setError(null);
     void trackChristmasEvent("planner_cta_clicked", {
       productKey: PLANNER_PRODUCT_KEY,
       packageKey,
       pathname: "/christmas/planner",
     });
+    if (!catalog.checkoutLive) {
+      setError("Checkout is not live yet. Packages and prices are ready — payment will open when the Planner offer is enabled.");
+      void trackChristmasEvent("planner_purchase_failed", {
+        productKey: PLANNER_PRODUCT_KEY,
+        packageKey,
+        pathname: "/christmas/planner",
+        metadata: { reason: "checkout_disabled" },
+      });
+      return;
+    }
+    if (starting.current) return;
+    starting.current = true;
+    setBusy(true);
+    setError(null);
     void trackChristmasEvent("planner_checkout_started", {
       productKey: PLANNER_PRODUCT_KEY,
       packageKey,
@@ -210,7 +220,7 @@ export default function ChristmasPlannerPage() {
       starting.current = false;
       setBusy(false);
     }
-  }, [packageKey, chargedAddons, email, displayTotal]);
+  }, [packageKey, chargedAddons, email, displayTotal, catalog.checkoutLive]);
 
   const seo = useMemo(() => plannerSeo(), []);
 
@@ -491,7 +501,7 @@ export default function ChristmasPlannerPage() {
           className="tdg-planner__btn"
           onClick={() => {
             document.getElementById("checkout")?.scrollIntoView({ behavior: "smooth" });
-            if (!checkout) void startPay();
+            if (!checkout && catalog.checkoutLive) void startPay();
           }}
         >
           Get Christmas Planner

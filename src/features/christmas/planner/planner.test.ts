@@ -173,7 +173,7 @@ describe("christmas planner privacy + attribution events", () => {
 describe("christmas planner wiring", () => {
   it("registers routes, checkout branch, entitlements SQL, and SEO", () => {
     const app = readSrc("src/App.tsx");
-    expect(app).toContain('path="/christmas/planner"');
+    expect(app).toContain("hidePlannerChrome");
     expect(app).toContain('path="/christmas/planner/welcome"');
     expect(app).toContain('path="christmas"');
     expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("resolvePlannerCheckoutFromRows");
@@ -213,6 +213,7 @@ describe("christmas planner wiring", () => {
   it("does not invent testimonials", () => {
     const page = readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx");
     expect(page).toContain("New for Christmas 2026");
+    expect(page).toContain("catalog.checkoutLive");
     expect(page.toLowerCase()).not.toContain("5,000 happy customers");
     expect(page.toLowerCase()).not.toContain("rated 4.9");
   });
