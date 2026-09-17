@@ -95,6 +95,8 @@
   background: var(--gold);
   color: var(--evergreen);
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .tdg-planner__btn:disabled {
