@@ -1,10 +1,10 @@
 import React from "react";
-import { Download, Library, Search } from "lucide-react";
+import { Library, Search } from "lucide-react";
 
+import LibraryVideoCard from "@/features/admin-library/LibraryVideoCard";
 import {
   LIBRARY_CATEGORIES,
   LIBRARY_VIDEOS,
-  librarySrcPath,
   searchLibraryVideos,
   type LibraryCategoryId,
 } from "@/features/admin-library/catalog";
@@ -14,6 +14,7 @@ type CategoryFilter = LibraryCategoryId | "all";
 export default function AdminLibraryPage() {
   const [category, setCategory] = React.useState<CategoryFilter>("christmas_reels");
   const [query, setQuery] = React.useState("");
+  const [playingId, setPlayingId] = React.useState<string | null>(null);
 
   const videos = React.useMemo(() => searchLibraryVideos(query, category), [query, category]);
 
@@ -28,8 +29,7 @@ export default function AdminLibraryPage() {
               Library
             </h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-              Browse and download published marketing videos, grouped by category.
-              Files are served from the public site origin.
+              Preview clips in place, see how long each one is, and save them without leaving this page.
             </p>
           </div>
           <p className="text-sm text-slate-400">
@@ -77,38 +77,14 @@ export default function AdminLibraryPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {videos.map((video) => {
-              const href = librarySrcPath(video.src);
-              return (
-                <article
-                  key={video.id}
-                  className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70"
-                >
-                  <video
-                    className="aspect-[9/16] w-full bg-black object-contain sm:aspect-video"
-                    src={href}
-                    controls
-                    playsInline
-                    preload="metadata"
-                  />
-                  <div className="flex flex-col gap-3 p-4">
-                    <div>
-                      <h2 className="text-sm font-semibold text-slate-50">{video.title}</h2>
-                      <p className="mt-1 text-xs leading-5 text-slate-400">{video.description}</p>
-                      <p className="mt-1 font-mono text-[11px] text-slate-500">{video.filename}</p>
-                    </div>
-                    <a
-                      href={href}
-                      download={video.filename}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-400/40 bg-indigo-500/20 px-3 py-2 text-sm font-medium text-indigo-100 transition hover:bg-indigo-500/30"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download
-                    </a>
-                  </div>
-                </article>
-              );
-            })}
+            {videos.map((video) => (
+              <LibraryVideoCard
+                key={video.id}
+                video={video}
+                playing={playingId === video.id}
+                onPlayingChange={(next) => setPlayingId(next ? video.id : null)}
+              />
+            ))}
           </div>
         )}
       </div>
