@@ -12,6 +12,11 @@ import {
   resolveWebCheckout,
   snapshotWebOrder,
 } from "../_shared/christmas/commercialOffers.ts";
+import {
+  isPlannerProductKey,
+  PLANNER_PRODUCT_KEY,
+  resolvePlannerCheckoutFromRows,
+} from "../_shared/christmas/plannerCommerce.ts";
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
@@ -67,11 +72,8 @@ type Body = {
   guardian_consent?: boolean;
   consent_version?: string;
   /** Gift-tree guest continuity — hashed server-side into order metadata. */
-  guest_token?: string;
-  /** Ignored — prompts are server-owned. */
-  prompt?: string;
-  client_prompt?: string;
-};
+  /** Planner add-ons — charged only when not already included in the package. */
+  addon_keys?: string[];
 
 function asString(value: unknown): string {
   return String(value ?? "").trim();
@@ -118,54 +120,130 @@ Deno.serve(async (req) => {
     void body.client_prompt;
 
     const service = getServiceClient();
+    const plannerFlow = isPlannerProductKey(productKey);
 
-    const commercialKey = commercialKeyForProduct(productKey);
-    const { data: pricingRows, error: pricingError } = await service
-      .from("pricing_items")
-      .select("*")
-      .eq("category", "christmas_offer");
-    if (pricingError) throw pricingError;
-    const catalog = catalogFromRows(pricingRows || []);
-    const checkoutPlan = resolveWebCheckout({
-      productKey,
-      catalog,
-      clientAmountCents: body.amount_cents,
-      clientCurrency: body.currency,
-    });
-    if (!checkoutPlan.ok) {
-      return jsonResponse({ error: checkoutPlan.message, code: checkoutPlan.code }, 400);
+    let resolvedProductKey = productKey;
+    let productName = "";
+    let amountCents = 0;
+    let currency = "usd";
+    let commercialSnapshot: Record<string, unknown> = {};
+    let packageKeyResolved = packageKey;
+    let sku = "";
+    let commercialKey: string | null = null;
+    let plannerAddonKeys: string[] = [];
+    let plannerLineItems: Array<{ packageKey: string; name: string; amountCents: number }> = [];
+    let plannerEntitlements: string[] = [];
+    let pricingKey: string | null = null;
+    let pricingUpdatedAt: string | null = null;
+
+    if (plannerFlow) {
+      const { data: plannerProduct, error: plannerProductError } = await service
+        .from("christmas_products")
+        .select("id, product_key, name, active, metadata")
+        .eq("product_key", PLANNER_PRODUCT_KEY)
+        .maybeSingle();
+      if (plannerProductError) throw plannerProductError;
+      if (!plannerProduct) {
+        return jsonResponse({ error: "Unknown Christmas Planner product.", code: "unknown_product" }, 400);
+      }
+      const { data: plannerPackages, error: plannerPkgError } = await service
+        .from("christmas_packages")
+        .select("*")
+        .eq("product_id", plannerProduct.id);
+      if (plannerPkgError) throw plannerPkgError;
+      const plannerPlan = resolvePlannerCheckoutFromRows({
+        product: plannerProduct,
+        packages: plannerPackages || [],
+        packageKey,
+        addonKeys: Array.isArray(body.addon_keys) ? body.addon_keys.map((k) => String(k)) : [],
+        clientAmountCents: body.amount_cents,
+        clientCurrency: body.currency,
+        christmasCheckoutEnabled: true,
+      });
+      if (!plannerPlan.ok) {
+        const status = plannerPlan.code === "checkout_disabled" ? 403 : 400;
+        return jsonResponse({ error: plannerPlan.message, code: plannerPlan.code }, status);
+      }
+      resolvedProductKey = plannerPlan.productKey;
+      productName = plannerPlan.productName;
+      amountCents = plannerPlan.amountCents;
+      currency = plannerPlan.currency;
+      packageKeyResolved = plannerPlan.packageKey;
+      sku = plannerPlan.sku;
+      plannerAddonKeys = plannerPlan.addonKeys;
+      plannerLineItems = plannerPlan.lineItems;
+      plannerEntitlements = plannerPlan.entitlements;
+      pricingKey = PLANNER_PRODUCT_KEY;
+      commercialSnapshot = {
+        pricingKey: PLANNER_PRODUCT_KEY,
+        chargedAmountMinor: plannerPlan.amountCents,
+        currency: plannerPlan.currency,
+        entitlement: plannerPlan.tier,
+        addonKeys: plannerPlan.addonKeys,
+        skippedAddonKeys: plannerPlan.skippedAddonKeys,
+        entitlements: plannerPlan.entitlements,
+        seasonYear: plannerPlan.seasonYear,
+      };
+    } else {
+      commercialKey = commercialKeyForProduct(productKey);
+      const { data: pricingRows, error: pricingError } = await service
+        .from("pricing_items")
+        .select("*")
+        .eq("category", "christmas_offer");
+      if (pricingError) throw pricingError;
+      const catalog = catalogFromRows(pricingRows || []);
+      const checkoutPlan = resolveWebCheckout({
+        productKey,
+        catalog,
+        clientAmountCents: body.amount_cents,
+        clientCurrency: body.currency,
+      });
+      if (!checkoutPlan.ok) {
+        return jsonResponse({ error: checkoutPlan.message, code: checkoutPlan.code }, 400);
+      }
+
+      const { data: product, error: productError } = await service
+        .from("christmas_products")
+        .select("id, product_key, name, active")
+        .eq(
+          "product_key",
+          productKey === "xmas_portrait"
+            ? "christmas_photo"
+            : productKey === "xmas_santa_video"
+              ? "christmas_santa_video"
+              : productKey === "xmas_magic_bundle"
+                ? "christmas_magic_bundle"
+                : productKey,
+        )
+        .maybeSingle();
+      if (productError) throw productError;
+
+      const { data: pkg, error: pkgError } = await service
+        .from("christmas_packages")
+        .select("*")
+        .eq("product_id", product?.id || "00000000-0000-0000-0000-000000000000")
+        .eq("package_key", packageKey)
+        .maybeSingle();
+      if (pkgError) throw pkgError;
+
+      resolvedProductKey =
+        product?.product_key ||
+        (commercialKey === "xmas_portrait"
+          ? "christmas_photo"
+          : commercialKey === "xmas_santa_video"
+            ? "christmas_santa_video"
+            : commercialKey === "xmas_magic_bundle"
+              ? "christmas_magic_bundle"
+              : productKey);
+      productName = product?.name || checkoutPlan.offer.name;
+      amountCents = checkoutPlan.amountCents;
+      currency = checkoutPlan.currency;
+      commercialSnapshot = snapshotWebOrder(checkoutPlan.offer);
+      packageKeyResolved = pkg?.package_key || packageKey || "single";
+      sku = checkoutPlan.sku;
+      pricingKey = checkoutPlan.offer.key;
+      pricingUpdatedAt = checkoutPlan.offer.updatedAt;
     }
-
-    const { data: product, error: productError } = await service
-      .from("christmas_products")
-      .select("id, product_key, name, active")
-      .eq("product_key", productKey === "xmas_portrait" ? "christmas_photo" : productKey === "xmas_santa_video" ? "christmas_santa_video" : productKey === "xmas_magic_bundle" ? "christmas_magic_bundle" : productKey)
-      .maybeSingle();
-    if (productError) throw productError;
-
-    const { data: pkg, error: pkgError } = await service
-      .from("christmas_packages")
-      .select("*")
-      .eq("product_id", product?.id || "00000000-0000-0000-0000-000000000000")
-      .eq("package_key", packageKey)
-      .maybeSingle();
-    if (pkgError) throw pkgError;
-
-    const resolvedProductKey =
-      product?.product_key ||
-      (commercialKey === "xmas_portrait"
-        ? "christmas_photo"
-        : commercialKey === "xmas_santa_video"
-          ? "christmas_santa_video"
-          : commercialKey === "xmas_magic_bundle"
-            ? "christmas_magic_bundle"
-            : productKey);
-    const productName = product?.name || checkoutPlan.offer.name;
-    const amountCents = checkoutPlan.amountCents;
-    const currency = checkoutPlan.currency;
-    const commercialSnapshot = snapshotWebOrder(checkoutPlan.offer);
-    const packageKeyResolved = pkg?.package_key || packageKey || "single";
-    const sku = checkoutPlan.sku;
 
     const styleKey = asString(body.style_key);
     const sourcePath = asString(body.source_path);
@@ -247,9 +325,11 @@ Deno.serve(async (req) => {
     const email = asString(body.email).toLowerCase();
     const successUrl =
       asString(body.success_url) ||
-      (resolvedProductKey === "christmas_santa_video"
-        ? `${siteOrigin()}/christmas/santa-video?checkout=success`
-        : `${siteOrigin()}${sourceRoute}?checkout=success`);
+      (plannerFlow
+        ? `${siteOrigin()}/christmas/planner/welcome?checkout=success`
+        : resolvedProductKey === "christmas_santa_video"
+          ? `${siteOrigin()}/christmas/santa-video?checkout=success`
+          : `${siteOrigin()}${sourceRoute}?checkout=success`);
 
     let orderId = asString(body.existing_order_id);
     let publicToken = "";
@@ -270,8 +350,8 @@ Deno.serve(async (req) => {
       amount_cents: amountCents,
       currency,
       package_key: packageKeyResolved,
-      pricing_key: checkoutPlan.offer.key,
-      pricing_updated_at: checkoutPlan.offer.updatedAt,
+      pricing_key: pricingKey,
+      pricing_updated_at: pricingUpdatedAt,
       charged_amount_cents: amountCents,
       commercial_snapshot: commercialSnapshot,
       sku,
@@ -321,6 +401,13 @@ Deno.serve(async (req) => {
             portrait_type: portraitType,
             species,
             source_route: sourceRoute,
+            ...(plannerFlow
+              ? {
+                  addon_keys: plannerAddonKeys,
+                  entitlements: plannerEntitlements,
+                  product_family: "christmas_planner",
+                }
+              : {}),
             ...(guestTokenHash ? { guest_token_hash: guestTokenHash } : {}),
           },
           ...orderPatch,
@@ -372,20 +459,27 @@ Deno.serve(async (req) => {
       : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}&token=${encodeURIComponent(publicToken || "recover")}`;
     params.set("return_url", returnUrl);
     if (email) params.set("customer_email", email);
-    params.set("line_items[0][quantity]", "1");
-    params.set("line_items[0][price_data][currency]", currency);
-    params.set("line_items[0][price_data][unit_amount]", String(amountCents));
-    params.set(
-      "line_items[0][price_data][product_data][name]",
-      productName,
-    );
+    const items = plannerFlow && plannerLineItems.length
+      ? plannerLineItems
+      : [{ packageKey: packageKeyResolved, name: productName, amountCents }];
+    items.forEach((item, index) => {
+      params.set(`line_items[${index}][quantity]`, "1");
+      params.set(`line_items[${index}][price_data][currency]`, currency);
+      params.set(`line_items[${index}][price_data][unit_amount]`, String(item.amountCents));
+      params.set(`line_items[${index}][price_data][product_data][name]`, item.name);
+    });
     params.set("metadata[product_family]", "christmas");
     params.set("metadata[product_type]", "christmas");
     params.set("metadata[product_key]", resolvedProductKey);
     params.set("metadata[package_key]", packageKeyResolved);
-    params.set("metadata[commercial_key]", checkoutPlan.offer.key);
+    params.set("metadata[commercial_key]", pricingKey || "");
     params.set("metadata[sku]", sku);
     params.set("metadata[christmas_order_id]", orderId);
+    if (plannerFlow) {
+      params.set("metadata[planner]", "1");
+      params.set("metadata[addon_keys]", plannerAddonKeys.join(","));
+      params.set("metadata[entitlements]", plannerEntitlements.join(","));
+    }
     if (guestTokenHash) params.set("metadata[guest_token_hash]", guestTokenHash);
     if (styleKey) params.set("metadata[style_key]", styleKey);
     if (portraitType) params.set("metadata[portrait_type]", portraitType);
@@ -402,7 +496,9 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${stripeSecret}`,
         "Stripe-Version": "2025-03-31.basil",
         "Content-Type": "application/x-www-form-urlencoded",
-        "Idempotency-Key": `xmas-checkout-${orderId}`,
+        "Idempotency-Key": plannerFlow
+          ? `xmas-planner-${orderId}-${packageKeyResolved}-${plannerAddonKeys.join(".")}-${amountCents}`
+          : `xmas-checkout-${orderId}`,
       },
       body: params,
     });
@@ -436,6 +532,8 @@ Deno.serve(async (req) => {
       amountCents,
       currency,
       uiMode: "custom",
+      addonKeys: plannerFlow ? plannerAddonKeys : undefined,
+      entitlements: plannerFlow ? plannerEntitlements : undefined,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -17,6 +17,7 @@ import {
 type ChristmasOrderRow = {
   id: string;
   email: string | null;
+  user_id?: string | null;
   product_key: string;
   package_key: string;
   style_key?: string | null;
@@ -89,6 +90,7 @@ const PRODUCT_FILTER_PRESETS = [
   { value: "christmas_couple", label: "Couple" },
   { value: "christmas_pet", label: "Pet" },
   { value: "christmas_santa_video", label: "Santa Video" },
+  { value: "christmas_planner_2026", label: "Planner" },
 ];
 
 const SPECIES_FILTER_PRESETS = [
@@ -157,7 +159,7 @@ export default function ChristmasOrdersPage() {
     const { data, error } = await supabase
       .from("christmas_orders")
       .select(
-        "id,email,product_key,package_key,style_key,portrait_type,species,source_route,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,created_at,paid_at,model_name,generation_started_at,generation_finished_at,metadata",
+        "id,email,user_id,product_key,package_key,style_key,portrait_type,species,source_route,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,created_at,paid_at,model_name,generation_started_at,generation_finished_at,metadata",
       )
       .order("created_at", { ascending: false })
       .limit(200);
@@ -693,6 +695,30 @@ export default function ChristmasOrdersPage() {
               <dt className="text-slate-500">Landing</dt>
               <dd>{selected.landing_path || "—"}</dd>
             </div>
+            {selected.product_key === "christmas_planner_2026" ? (
+              <>
+                <div>
+                  <dt className="text-slate-500">Claimed user</dt>
+                  <dd className="font-mono text-xs">{selected.user_id || "unclaimed guest"}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Add-ons</dt>
+                  <dd className="text-xs">
+                    {Array.isArray(selected.metadata?.addon_keys)
+                      ? selected.metadata.addon_keys.join(", ") || "none"
+                      : String(selected.metadata?.addon_keys || "none")}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Entitlements</dt>
+                  <dd className="text-xs">
+                    {Array.isArray(selected.metadata?.entitlements)
+                      ? selected.metadata.entitlements.join(", ")
+                      : "granted on paid webhook"}
+                  </dd>
+                </div>
+              </>
+            ) : null}
             <div>
               <dt className="text-slate-500">UTM</dt>
               <dd>

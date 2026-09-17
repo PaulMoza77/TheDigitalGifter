@@ -76,7 +76,7 @@ verify_jwt = false
 [functions.delete-my-account]
 verify_jwt = true
 
-[functions.christmas-checkout]
+[functions.christmas-planner-funnel]
 verify_jwt = false
 
 [functions.christmas-photo-funnel]

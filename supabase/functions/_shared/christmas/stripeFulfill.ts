@@ -8,6 +8,8 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
 import { GIFT_TREE_PAID_OFFERS } from "./giftTreeRewards.ts";
+import { isPlannerProductKey } from "./plannerCommerce.ts";
+import { sendPlannerReadyEmail } from "./plannerEmail.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -155,12 +157,58 @@ export async function handleChristmasStripeEvent(input: {
       result: { ...result, product_family: "christmas" },
     });
 
+    if (result.ok === true && (result.status === "paid" || result.status === "already_paid") && isPlannerProductKey(asString(input.metadata.product_key))) {
+      const productKey = asString(input.metadata.product_key);
+      const packageKey = asString(input.metadata.package_key);
+      const entitlements = asString(input.metadata.entitlements)
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean);
+      const { data: ord } = await input.service
+        .from("christmas_orders")
+        .select("user_id,email,package_key,metadata,commercial_snapshot")
+        .eq("id", orderId)
+        .maybeSingle();
+      const meta = (ord?.metadata || {}) as Record<string, unknown>;
+      const snap = (ord?.commercial_snapshot || {}) as Record<string, unknown>;
+      const keys = entitlements.length
+        ? entitlements
+        : Array.isArray(snap.entitlements)
+          ? (snap.entitlements as unknown[]).map((k) => String(k))
+          : [];
+      await input.service.rpc("grant_christmas_planner_entitlements", {
+        p_order_id: orderId,
+        p_entitlements: keys,
+        p_tier: packageKey || asString(ord?.package_key),
+        p_source: "stripe",
+        p_source_transaction_id: sessionId,
+        p_season_year: 2026,
+      });
+      if (result.status === "paid") {
+        const email = asString(ord?.email);
+        const token = asString(meta.public_token_hint);
+        if (email && token) {
+          waitUntil(
+            sendPlannerReadyEmail({
+              service: input.service,
+              orderId,
+              email,
+              publicToken: token,
+              packageName: packageKey || "Christmas Planner",
+              unlocked: keys,
+            }).catch((err) => console.error("planner email failed", err)),
+          );
+        }
+      }
+    }
+
     if (result.ok === true && result.status === "paid") {
       const productKey = asString(input.metadata.product_key);
       const packageKey = asString(input.metadata.package_key);
 
-      // Gift Tree packs buy additional opens — never enqueue photo/video generation.
-      if (productKey === "christmas_gift_tree") {
+      if (isPlannerProductKey(productKey)) {
+        // Entitlements + email handled above (including webhook replay).
+      } else if (productKey === "christmas_gift_tree") {
         const paid = GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey)
           || (packageKey === "open_5"
             ? GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === "open_five")

@@ -164,6 +164,12 @@ const ChristmasCardsPage = lazy(
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
 );
+const ChristmasPlannerPage = lazy(
+  () => import("@/features/christmas/planner/ChristmasPlannerPage"),
+);
+const ChristmasPlannerWelcomePage = lazy(
+  () => import("@/features/christmas/planner/ChristmasPlannerWelcomePage"),
+);
 const ChristmasSendGiftPage = lazy(
   () => import("@/features/christmas/ChristmasSendGiftPage"),
 );
@@ -196,6 +202,7 @@ const BlogPostPage = lazy(() => import("@/pages/blog/BlogPostPage"));
 // ================= CLIENT ACCOUNT =================
 const AccountDashboard = lazy(() => import("@/pages/account/AccountDashboard"));
 const AccountAffiliate = lazy(() => import("@/pages/account/AccountAffiliate"));
+const AccountChristmasPage = lazy(() => import("@/pages/account/AccountChristmasPage"));
 const AccountGeneratorRedirect = lazy(
   () => import("@/pages/account/AccountGeneratorRedirect")
 );
@@ -525,6 +532,8 @@ function AppInner() {
             />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
+            <Route path="/christmas/planner" element={<ChristmasPlannerPage />} />
+            <Route path="/christmas/planner/welcome" element={<ChristmasPlannerWelcomePage />} />
             <Route path="/christmas/send-a-gift" element={<ChristmasSendGiftPage />} />
             <Route path="/send-a-gift" element={<Navigate to="/christmas/send-a-gift" replace />} />
             <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
@@ -562,6 +571,8 @@ function AppInner() {
                 { path: "/christmas/tree-gifts", element: <ChristmasGiftsPage /> },
                 { path: "/christmas/cards", element: <ChristmasCardsPage /> },
                 { path: "/christmas/messages", element: <ChristmasMessagesPage /> },
+                { path: "/christmas/planner", element: <ChristmasPlannerPage /> },
+                { path: "/christmas/planner/welcome", element: <ChristmasPlannerWelcomePage /> },
                 { path: "/christmas/send-a-gift", element: <ChristmasSendGiftPage /> },
               ]),
             )}
@@ -654,6 +665,7 @@ function AppInner() {
                 element={<Navigate to="/account/dashboard" replace />}
               />
               <Route path="dashboard" element={<AccountDashboard />} />
+              <Route path="christmas" element={<AccountChristmasPage />} />
               <Route path="affiliate" element={<AccountAffiliate />} />
               <Route path="generator" element={<AccountGeneratorRedirect />} />
             </Route>

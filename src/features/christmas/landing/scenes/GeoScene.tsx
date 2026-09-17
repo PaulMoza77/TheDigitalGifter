@@ -15,6 +15,7 @@ export function GeoScene({ locale }: { locale: ChristmasLandingLocale }) {
         <h2 id="christmas-geo-title">{t("geo.h2")}</h2>
         <p className="xmas-lede">{t("geo.body")}</p>
         <nav className="xmas-links" aria-label="Primary Christmas products">
+          <Link to="/christmas/planner">Plan your entire Christmas in one place</Link>
           <Link to="/christmas/gift-finder">Find a Christmas gift they’ll actually love</Link>
           <Link to="/christmas/photo-generator">Turn your photo into Christmas magic</Link>
           <Link to="/christmas/santa-video">Create a personalized Santa video</Link>

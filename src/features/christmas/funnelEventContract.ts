@@ -1,3 +1,5 @@
+import { sanitizePlannerAnalyticsMetadata } from "./planner/analyticsPrivacy";
+
 export const CHRISTMAS_FUNNEL_EVENT_PATH = "/api/christmas/funnel-event";
 
 export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
@@ -177,6 +179,20 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "christmas_reward_redeem_start",
   "christmas_reward_redeemed",
   "my_gifts_view",
+  "planner_landing_view",
+  "planner_cta_clicked",
+  "planner_package_viewed",
+  "planner_package_selected",
+  "planner_addon_selected",
+  "planner_checkout_started",
+  "planner_wallet_presented",
+  "planner_payment_submitted",
+  "planner_purchase",
+  "planner_purchase_failed",
+  "planner_welcome_view",
+  "planner_claim_started",
+  "planner_claim_completed",
+  "planner_opened",
 ] as const;
 
 export type ChristmasFunnelEventName = (typeof CHRISTMAS_FUNNEL_ALLOWED_EVENTS)[number];
@@ -359,10 +375,11 @@ export function validateChristmasFunnelIngestPayload(
     adId: sanitizeFunnelText(body.ad_id, 120),
     hasFbclid: Boolean(body.has_fbclid),
     referrerHost: sanitizeFunnelText(body.referrer_host, 120),
-    metadata:
+    metadata: sanitizePlannerAnalyticsMetadata(
       body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata)
         ? body.metadata
         : {},
+    ),
   };
 }
 

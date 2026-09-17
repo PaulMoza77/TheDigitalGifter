@@ -39,6 +39,7 @@ export const CHRISTMAS_INDEXABLE_PATHS = [
   "/christmas/advent",
   "/christmas/cards",
   "/christmas/messages",
+  "/christmas/planner",
 ];
 
 /**
@@ -48,6 +49,7 @@ export const CHRISTMAS_INDEXABLE_PATHS = [
 export const CHRISTMAS_KNOWN_SPA_PATHS = [
   ...CHRISTMAS_INDEXABLE_PATHS,
   "/christmas/suite",
+  "/christmas/planner/welcome",
   "/christmas/tree-gifts",
   "/christmas-ai-photos",
   "/christmas-ai-photos/order",
@@ -65,6 +67,7 @@ export const CHRISTMAS_PERMANENT_REDIRECTS = Object.freeze({
 export const CHRISTMAS_NOINDEX_PATHS = Object.freeze([
   "/christmas-ai-photos",
   "/christmas-ai-photos/order",
+  "/christmas/planner/welcome",
 ]);
 
 const INDEXABLE_SET = new Set(CHRISTMAS_INDEXABLE_PATHS);
