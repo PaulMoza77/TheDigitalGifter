@@ -30,7 +30,9 @@ paid → `christmas-santa-generate` (async, service role)
 → Santa still (Flux cache)  
 → lipsync (Replicate, if model available) **or** ffmpeg still+audio mux via `/api/christmas-santa-compose`  
 → private MP4 on `christmas-generated`  
-→ result email (when configured; no customer emails in testing)
+→ `sendPhotoSantaDeliveryEmail` (when Resend is configured; no customer emails in testing)
+
+Recovery link uses `source_route` (typically `/christmas/santa-video`) — same V1 seam as Photo. Not a full lifecycle matrix (GAP-LIFECYCLE-003 / PR 98).
 
 Browser may close; recovery via `?token=` on the product route.
 

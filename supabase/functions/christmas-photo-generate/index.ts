@@ -1,10 +1,8 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, isServiceRoleRequest, readJson } from "../_shared/supabase.ts";
 import { kontextProInput, replicateOutputUrl } from "../_shared/pet/replicate.ts";
-import {
-  buildChristmasPortraitPrompt,
-  recoveryRouteForOrder,
-} from "../_shared/christmas/portraitPromptRegistry.ts";
+import { buildChristmasPortraitPrompt } from "../_shared/christmas/portraitPromptRegistry.ts";
+import { sendPhotoSantaDeliveryEmail } from "../_shared/christmas/deliveryEmail.ts";
 
 /**
  * Post-payment Christmas portrait generation (all verticals).
@@ -277,43 +275,18 @@ Deno.serve(async (req) => {
       .eq("id", orderId);
 
     try {
-      const email = asString(order.email);
-      const apiKey = asString(Deno.env.get("RESEND_API_KEY"));
-      const from = asString(
-        Deno.env.get("CHRISTMAS_EMAIL_FROM") || Deno.env.get("TRANSACTIONAL_EMAIL_FROM"),
-      );
-      const tokenHint = asString(
-        (order.metadata as Record<string, unknown> | null)?.public_token_hint,
-      );
-      if (email && apiKey && from && tokenHint) {
-        const site = (
-          Deno.env.get("SITE_URL") ||
-          Deno.env.get("PUBLIC_APP_URL") ||
-          "https://www.thedigitalgifter.com"
-        ).replace(/\/$/, "");
-        const route = recoveryRouteForOrder({
-          productKey: asString(order.product_key),
-          species: asString(order.species) || null,
-          sourceRoute: asString(order.source_route) || null,
-          landingPath: asString(order.landing_path) || null,
-        });
-        const link = `${site}${route}?token=${encodeURIComponent(tokenHint)}`;
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from,
-            to: [email],
-            subject: "Your Christmas portrait is ready",
-            html: `<p>Your personalized Christmas portrait is ready.</p><p><a href="${link}">Open your result</a></p><p>— The Digital Gifter</p>`,
-          }),
-        });
-      }
+      await sendPhotoSantaDeliveryEmail({
+        email: asString(order.email),
+        tokenHint: asString(
+          (order.metadata as Record<string, unknown> | null)?.public_token_hint,
+        ),
+        productKey: asString(order.product_key),
+        sourceRoute: asString(order.source_route) || null,
+        landingPath: asString(order.landing_path) || null,
+        species: asString(order.species) || null,
+      });
     } catch {
-      /* best-effort transactional email */
+      /* best-effort transactional email — never block fulfillment */
     }
 
     return jsonResponse({
