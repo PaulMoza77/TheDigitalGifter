@@ -6,8 +6,10 @@ import { formatDurationSeconds } from "./formatDuration";
 import {
   getCachedLibraryVideoFile,
   isIosLikeDevice,
+  isIpadLikeDevice,
   isShareGestureLost,
   isUserShareCancel,
+  openLibraryVideoInNewTab,
   rememberLibraryVideoFile,
   fetchLibraryVideoFile,
   shareLibraryVideoFile,
@@ -35,13 +37,14 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
   const [duration, setDuration] = React.useState(video.durationSeconds ?? null);
   const [saving, setSaving] = React.useState(false);
   const [progressLabel, setProgressLabel] = React.useState<string | null>(null);
-  const [ios, setIos] = React.useState(false);
+  const [ios] = React.useState(() =>
+    isIosLikeDevice(navigator.userAgent, navigator.maxTouchPoints, navigator.platform),
+  );
+  const [ipad] = React.useState(() =>
+    isIpadLikeDevice(navigator.userAgent, navigator.maxTouchPoints, navigator.platform),
+  );
   const [capturedPoster, setCapturedPoster] = React.useState<string | null>(null);
   const saveLockRef = React.useRef(false);
-
-  React.useEffect(() => {
-    setIos(isIosLikeDevice(navigator.userAgent, navigator.maxTouchPoints, navigator.platform));
-  }, []);
 
   React.useEffect(() => {
     const node = cardRef.current;
@@ -105,6 +108,16 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
 
   async function onSave() {
     if (saveLockRef.current) return;
+
+    // iPad: do this in the tap itself. Fetch + navigator.share opens an empty AirDrop card.
+    if (ipad) {
+      videoRef.current?.pause();
+      onPlayingChange(false);
+      openLibraryVideoInNewTab(href, video.filename);
+      toast.message("Clip opened. Tap Share, then Save Video to add it to Photos.");
+      return;
+    }
+
     saveLockRef.current = true;
     setSaving(true);
     setProgressLabel(null);
@@ -238,7 +251,11 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
               ? "Save to Photos"
               : "Download"}
         </button>
-        {ios ? (
+        {ipad ? (
+          <p className="text-[11px] leading-4 text-slate-500">
+            Opens the clip in a new tab. Tap the Share icon, then Save Video — that is the Photos option.
+          </p>
+        ) : ios ? (
           <p className="text-[11px] leading-4 text-slate-500">
             Stays on this page. When the share sheet opens, tap Save Video — that is the Photos option.
             Ignore Save to Files.

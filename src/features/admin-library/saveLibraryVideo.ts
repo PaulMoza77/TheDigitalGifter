@@ -1,12 +1,18 @@
-export type SaveLibraryVideoResult = "shared" | "downloaded" | "ready";
+export type SaveLibraryVideoResult = "shared" | "downloaded" | "ready" | "opened";
 
 const FILE_CACHE_LIMIT = 3;
 const fileCache = new Map<string, File>();
 const FETCH_TIMEOUT_MS = 120_000;
 
+export function isIpadLikeDevice(userAgent = "", maxTouchPoints = 0, platform = ""): boolean {
+  if (/iPad/i.test(userAgent)) return true;
+  // iPadOS 13+ reports a desktop Mac UA.
+  return platform === "MacIntel" && maxTouchPoints > 1;
+}
+
 export function isIosLikeDevice(userAgent = "", maxTouchPoints = 0, platform = ""): boolean {
   if (/iPad|iPhone|iPod/i.test(userAgent)) return true;
-  return platform === "MacIntel" && maxTouchPoints > 1;
+  return isIpadLikeDevice(userAgent, maxTouchPoints, platform);
 }
 
 export function isUserShareCancel(error: unknown): boolean {
@@ -58,6 +64,20 @@ export function triggerBlobDownload(blob: Blob, filename: string): void {
   link.click();
   link.remove();
   globalThis.setTimeout(() => URL.revokeObjectURL(objectUrl), 2_000);
+}
+
+/** iPad Web Share for MP4s is an empty AirDrop card. Open the real file instead. */
+export function openLibraryVideoInNewTab(url: string, filename: string): "opened" {
+  const absolute = new URL(url, window.location.href).toString();
+  const link = document.createElement("a");
+  link.href = absolute;
+  link.download = filename;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  return "opened";
 }
 
 export function iosVideoSharePayload(file: File): ShareData {
@@ -129,7 +149,9 @@ export async function fetchLibraryVideoFile(
   try {
     const response = await fetch(url, {
       credentials: "same-origin",
-      cache: "force-cache",
+      // Video tags cache Range responses. force-cache can return a truncated MP4
+      // and iOS then shows an empty share sheet instead of Save Video.
+      cache: "no-store",
       signal: controller.signal,
     });
     if (!response.ok) {
@@ -161,13 +183,20 @@ export async function saveLibraryVideo(input: {
   title?: string;
   onProgress?: (loaded: number, total: number | null) => void;
 }): Promise<SaveLibraryVideoResult> {
+  const ios = isIosLikeDevice(navigator.userAgent, navigator.maxTouchPoints, navigator.platform);
+  const ipad = isIpadLikeDevice(navigator.userAgent, navigator.maxTouchPoints, navigator.platform);
+
+  // iPad Safari's file share sheet is an empty AirDrop popover and never saves.
+  // Open the same-origin MP4 so the native player Share → Save Video works.
+  if (ipad) {
+    return openLibraryVideoInNewTab(input.url, input.filename);
+  }
+
   const cached = getCachedLibraryVideoFile(input.url);
   const file = cached ?? (await fetchLibraryVideoFile(input.url, input.filename, input.onProgress));
   if (!cached) rememberLibraryVideoFile(input.url, file);
 
-  const ios = isIosLikeDevice(navigator.userAgent, navigator.maxTouchPoints, navigator.platform);
-
-  // iPhone/iPad Safari ignores <a download> for MP4 and navigates to a dead-end file page.
+  // iPhone Safari ignores <a download> for MP4 and navigates to a dead-end file page.
   // Share the video file alone so the sheet includes Save Video → Photos.
   if (ios) {
     await shareLibraryVideoFile(file);
