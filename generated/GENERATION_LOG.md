@@ -30,6 +30,19 @@ Original stills: 941×1672 JPEG. Lanczos upscale to 1080×1920 PNG (no extra sha
 | clip_04_chalet_raw | 8rvftx08rnrmw0d0nsfrka2qtr | no |
 | clip_05_cozy_raw | 5df470hqwsrmy0d0nsft8eda14 | no |
 
+## 1080p re-export (sharpness pass)
+
+Masters remain Kling v3 Pro **1080×1920** (not proxies). Seedance locked-camera regen was blocked by Replicate **402 insufficient credit**.
+
+Export rebuilt as a **single-pass** 1080×1920 encode from those masters:
+- no downscale
+- early/stable trim windows
+- 12% slowdown to reduce camera/snow busyness
+- mild unsharp only
+- H.264 High, **16 Mbps** target (12–20 Mbps VBV)
+
+Verified with ffprobe: **1080×1920**, ~15.7 Mbps, 24 fps. See `final/FFPROBE.txt`.
+
 ## Edit
 
 Hard cuts, no music/voice.
