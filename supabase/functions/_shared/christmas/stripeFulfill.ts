@@ -301,6 +301,7 @@ export async function handleChristmasStripeEvent(input: {
         } else {
           enqueueChristmasGenerate(orderId, mode);
         }
+      }
     }
 
     return new Response(JSON.stringify({ ok: true, christmas: result }), {
