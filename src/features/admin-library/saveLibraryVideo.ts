@@ -26,7 +26,10 @@ export function videoFileType(filename: string, blobType = ""): string {
   const lower = filename.toLowerCase();
   if (lower.endsWith(".mov")) return "video/quicktime";
   if (lower.endsWith(".m4v") || lower.endsWith(".mp4")) return "video/mp4";
-  if (blobType.startsWith("video/")) return blobType;
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (blobType.startsWith("video/") || blobType.startsWith("image/")) return blobType;
   return "video/mp4";
 }
 
