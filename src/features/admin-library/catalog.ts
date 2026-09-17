@@ -12,6 +12,10 @@ export type LibraryVideo = {
   src: string;
   filename: string;
   category: LibraryCategoryId;
+  /** Known length in seconds. Used before the file metadata loads. */
+  durationSeconds?: number;
+  /** Still image shown until the first video frame paints (iOS often stays black otherwise). */
+  poster?: string;
 };
 
 export type LibraryCategory = {
@@ -72,6 +76,8 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
     src: `/pet/${species}/clips/${slug}.mp4`,
     filename: `${species}-${slug}.mp4`,
     category,
+    durationSeconds: 5,
+    poster: `/pet/${species}/scenes/${slug}.webp`,
   }));
 }
 
@@ -83,6 +89,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
     src: "/assets/christmas/instagram-reel/final_christmas_reel.mp4",
     filename: "final_christmas_reel.mp4",
     category: "christmas_reels",
+    durationSeconds: 13.4,
   },
   {
     id: "reel-01",
@@ -91,6 +98,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
     src: "/assets/christmas/instagram-reel/clip_01.mp4",
     filename: "clip_01.mp4",
     category: "christmas_reels",
+    durationSeconds: 2.2,
   },
   {
     id: "reel-02",
@@ -99,6 +107,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
     src: "/assets/christmas/instagram-reel/clip_02.mp4",
     filename: "clip_02.mp4",
     category: "christmas_reels",
+    durationSeconds: 1.2,
   },
   {
     id: "reel-03",
@@ -107,6 +116,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
     src: "/assets/christmas/instagram-reel/clip_03.mp4",
     filename: "clip_03.mp4",
     category: "christmas_reels",
+    durationSeconds: 2.2,
   },
   {
     id: "reel-04",
@@ -115,6 +125,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
     src: "/assets/christmas/instagram-reel/clip_04.mp4",
     filename: "clip_04.mp4",
     category: "christmas_reels",
+    durationSeconds: 2.2,
   },
   {
     id: "reel-05",
@@ -123,6 +134,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
     src: "/assets/christmas/instagram-reel/clip_05.mp4",
     filename: "clip_05.mp4",
     category: "christmas_reels",
+    durationSeconds: 1.2,
   },
   {
     id: "reel-06",
@@ -131,6 +143,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
     src: "/assets/christmas/instagram-reel/clip_06.mp4",
     filename: "clip_06.mp4",
     category: "christmas_reels",
+    durationSeconds: 2.2,
   },
   {
     id: "reel-07",
@@ -139,6 +152,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
     src: "/assets/christmas/instagram-reel/clip_07.mp4",
     filename: "clip_07.mp4",
     category: "christmas_reels",
+    durationSeconds: 2.2,
   },
   {
     id: "cabin-hero",

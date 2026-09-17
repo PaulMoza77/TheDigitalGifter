@@ -34,11 +34,17 @@ describe("admin video library", () => {
     }
     expect(searchLibraryVideos("final", "christmas_reels").some((video) => video.id === "reel-final")).toBe(true);
     expect(searchLibraryVideos("astronaut", "pet_dog")).toHaveLength(1);
+    expect(LIBRARY_VIDEOS.find((video) => video.id === "reel-05")?.durationSeconds).toBe(1.2);
+    expect(LIBRARY_VIDEOS.find((video) => video.id === "pet-dog-astronaut")?.poster).toContain("/pet/dog/scenes/");
   });
 
   it("is wired into admin nav and the /admin/library route", () => {
     expect(readSrc("src/App.tsx")).toMatch(/path="library"/);
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/library");
-    expect(readSrc("src/pages/admin/AdminLibraryPage.tsx")).toContain("download=");
+    const page = readSrc("src/pages/admin/AdminLibraryPage.tsx");
+    expect(page).toContain("LibraryVideoCard");
+    expect(page).not.toContain("download=");
+    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("playsInline");
+    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Save to Photos");
   });
 });
