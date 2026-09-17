@@ -124,14 +124,16 @@ export default function ChristmasPlannerWelcomePage() {
       {status === "loading" ? <p>Checking your purchase…</p> : null}
       {status === "pending" ? <p>Payment is still confirming. Refresh this page in a moment — your purchase is saved.</p> : null}
       {status === "missing" ? (
-        <p>
-          We could not find a Planner purchase in this browser. Open the link from your email, or return to the Planner
-          offer.
-        </p>
-        <div style={{ height: 16 }} />
-        <Link className="tdg-planner__btn" to="/christmas/planner">
-          Return to the Planner offer
-        </Link>
+        <>
+          <p>
+            We could not find a Planner purchase in this browser. Open the link from your email, or return to the
+            Planner offer.
+          </p>
+          <div style={{ height: 16 }} />
+          <Link className="tdg-planner__btn" to="/christmas/planner">
+            Return to the Planner offer
+          </Link>
+        </>
       ) : null}
       {status === "paid" ? (
         <>

@@ -173,7 +173,7 @@ describe("christmas planner privacy + attribution events", () => {
 describe("christmas planner wiring", () => {
   it("registers routes, checkout branch, entitlements SQL, and SEO", () => {
     const app = readSrc("src/App.tsx");
-    expect(app).toContain("hidePlannerChrome");
+    expect(app).toContain("PlannerAwareSupportWidget");
     expect(app).toContain('path="/christmas/planner/welcome"');
     expect(app).toContain('path="christmas"');
     expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("resolvePlannerCheckoutFromRows");

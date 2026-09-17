@@ -250,7 +250,10 @@
   align-items: center;
 }
 
-.tdg-planner section#checkout {
+.tdg-planner__sticky .tdg-planner__btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
   scroll-margin-bottom: 6rem;
 }
 

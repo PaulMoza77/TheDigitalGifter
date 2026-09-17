@@ -334,6 +334,17 @@ function ChristmasGiftsAliasRedirect() {
   );
 }
 
+function PlannerAwareSupportWidget() {
+  const location = useLocation();
+  if (
+    location.pathname === "/christmas/planner" ||
+    location.pathname.startsWith("/christmas/planner/")
+  ) {
+    return null;
+  }
+  return <SupportTicketWidget />;
+}
+
 function ChristmasRouteFallback() {
   const christmasBoot =
     typeof window !== "undefined" &&
@@ -866,7 +877,7 @@ function AppInner() {
       </Suspense>
 
       <Suspense fallback={null}>
-        <SupportTicketWidget />
+        <PlannerAwareSupportWidget />
       </Suspense>
       <Toaster position="top-right" />
       <CreditsFunnelModal />
