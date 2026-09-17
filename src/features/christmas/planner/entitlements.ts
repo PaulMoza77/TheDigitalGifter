@@ -34,20 +34,47 @@ export function mergeFeatures(lists: PlannerFeatureKey[][]): PlannerFeatureKey[]
 
 export function accessFromGrants(input: {
   grantKeys: string[];
-  orders: Array<{ product_key: string; package_key: string; payment_status: string; refunded_at?: string | null }>;
+  orders?: Array<{
+    product_key: string;
+    package_key: string;
+    payment_status: string;
+    refunded_at?: string | null;
+    season_year?: number;
+  }>;
+  grants?: Array<{
+    feature_key: string;
+    status: string;
+    season_year: number;
+    expires_at?: string | null;
+    now?: Date;
+  }>;
   seasonYear: number;
 }): PlannerAccess {
-  const fromOrders = input.orders
-    .filter((o) => o.payment_status === "paid" && !o.refunded_at && isPlannerProductKey(o.product_key))
-    .flatMap((o) => featuresForPackage(o.product_key, o.package_key));
-  const fromGrants = input.grantKeys.filter((k): k is PlannerFeatureKey =>
+  const fromActiveGrants = (input.grants || [])
+    .filter((g) => {
+      if (g.status !== "active") return false;
+      if (g.season_year !== input.seasonYear) return false;
+      if (g.expires_at && new Date(g.expires_at).getTime() <= (g.now || new Date()).getTime()) {
+        return false;
+      }
+      return true;
+    })
+    .map((g) => g.feature_key);
+
+  const grantKeys = [...input.grantKeys, ...fromActiveGrants].filter((k): k is PlannerFeatureKey =>
     (PLANNER_FEATURE_KEYS as readonly string[]).includes(k),
   );
-  const features = mergeFeatures([fromGrants, fromOrders]);
+  const features = mergeFeatures([grantKeys]);
   const package_keys = [
     ...new Set(
-      input.orders
-        .filter((o) => o.payment_status === "paid" && !o.refunded_at && isPlannerProductKey(o.product_key))
+      (input.orders || [])
+        .filter(
+          (o) =>
+            o.payment_status === "paid" &&
+            !o.refunded_at &&
+            isPlannerProductKey(o.product_key) &&
+            (o.season_year == null || o.season_year === input.seasonYear),
+        )
         .map((o) => o.package_key),
     ),
   ];
@@ -106,5 +133,11 @@ export function upgradePackageForFeature(feature: PlannerFeatureKey): {
   }
   if (feature === "hosting") return { productKey: "christmas_planner_hosting", packageKey: "hosting" };
   if (feature === "travel") return { productKey: "christmas_planner_travel", packageKey: "travel" };
-  return { productKey: "christmas_planner", packageKey: "core" };
+  return { productKey: "christmas_planner", packageKey: "essentials" };
+}
+
+export function addonIncludedInPackage(packageKey: string, addonKey: string): boolean {
+  const pack = PLANNER_PACKAGE_FEATURES[packageKey] || [];
+  const addon = PLANNER_PACKAGE_FEATURES[addonKey] || [];
+  return addon.length > 0 && addon.every((f) => pack.includes(f));
 }

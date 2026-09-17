@@ -433,7 +433,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     description:
       "Plan Christmas in one command center: a date-aware checklist, gifts you’re giving, budget, meals, and hosting. Start free, then unlock packs.",
     canonicalPath: "/christmas/planner",
-    h1: "A Personal Christmas Command Center",
+    h1: "Your Entire Christmas, Beautifully Planned",
     lede:
       "See days left, how ready you are, what to do next, and whether you’re on budget — then jump into gifts, meals, or hosting without a spreadsheet.",
     h2: "Start free, then unlock the season",

@@ -208,6 +208,9 @@ const ChristmasPlannerTodayPage = lazy(
 const ChristmasPlannerPublicPage = lazy(
   () => import("@/features/christmas/planner/ChristmasPlannerPublicPage"),
 );
+const ChristmasPlannerWelcomePage = lazy(
+  () => import("@/features/christmas/planner/ChristmasPlannerWelcomePage"),
+);
 const PlannerPlanRoute = lazy(() =>
   import("@/features/christmas/planner/ChristmasPlannerPages").then((m) => ({
     default: m.ChristmasPlannerPlanPage,
@@ -598,6 +601,7 @@ function AppInner() {
             <Route path="/categories/pets" element={<PetsCategoryPage />} />
 
             <Route path="/christmas/planner" element={<ChristmasPlannerPublicPage />} />
+            <Route path="/christmas/planner/welcome" element={<ChristmasPlannerWelcomePage />} />
             <Route path="/christmas/suite" element={<ChristmasSuitePage />} />
             <Route path="/christmas/photo-generator" element={<ChristmasPhotoGeneratorPage />} />
             <Route path="/christmas/family" element={<ChristmasFamilyPage />} />
@@ -658,6 +662,7 @@ function AppInner() {
                 { path: "/christmas/cards", element: <ChristmasCardsPage /> },
                 { path: "/christmas/messages", element: <ChristmasMessagesPage /> },
                 { path: "/christmas/planner", element: <ChristmasPlannerPublicPage /> },
+                { path: "/christmas/planner/welcome", element: <ChristmasPlannerWelcomePage /> },
                 { path: "/christmas/send-a-gift", element: <ChristmasSendGiftPage /> },
               ]),
             )}

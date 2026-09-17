@@ -17,6 +17,20 @@ const PLANNER_EVENTS = [
   "planner_module_opened",
   "planner_paywall_viewed",
   "planner_upgrade_clicked",
+  "planner_landing_view",
+  "planner_cta_clicked",
+  "planner_package_viewed",
+  "planner_package_selected",
+  "planner_addon_selected",
+  "planner_checkout_started",
+  "planner_wallet_presented",
+  "planner_payment_submitted",
+  "planner_purchase",
+  "planner_purchase_failed",
+  "planner_welcome_view",
+  "planner_claim_started",
+  "planner_claim_completed",
+  "planner_opened",
 ] as const;
 
 export type PlannerAnalyticsEvent = (typeof PLANNER_EVENTS)[number];
@@ -60,11 +74,17 @@ export function trackPlannerEvent(
     feature?: PlannerFeatureKey;
     planMode?: string;
     countBucket?: string;
+    packageKey?: string | null;
+    orderId?: string | null;
+    amountCents?: number | null;
     metadata?: Record<string, unknown>;
   },
 ): void {
   void trackChristmasEvent(eventName as ChristmasFunnelEventName, {
     productKey: "christmas_planner",
+    packageKey: extra?.packageKey,
+    orderId: extra?.orderId,
+    amountCents: extra?.amountCents,
     metadata: sanitizePlannerMetadata({
       module: extra?.module,
       feature: extra?.feature,

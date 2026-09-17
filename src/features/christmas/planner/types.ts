@@ -23,25 +23,41 @@ export const PLANNER_PRODUCT_KEYS = [
 
 export type PlannerProductKey = (typeof PLANNER_PRODUCT_KEYS)[number];
 
+export const PLANNER_CORE_FEATURES: readonly PlannerFeatureKey[] = [
+  "planner_core",
+  "gift_planner",
+  "budget",
+  "advanced_planning",
+  "rescue_mode",
+];
+
+export const PLANNER_COMPLETE_FEATURES: readonly PlannerFeatureKey[] = [
+  "planner_core",
+  "gift_planner",
+  "budget",
+  "food_planner",
+  "recipes",
+  "hosting",
+  "travel",
+  "advanced_planning",
+  "rescue_mode",
+  "premium_content",
+];
+
 export const PLANNER_PACKAGE_FEATURES: Record<string, readonly PlannerFeatureKey[]> = {
-  core: ["planner_core", "gift_planner", "budget", "advanced_planning", "rescue_mode"],
-  complete: [
-    "planner_core",
-    "gift_planner",
-    "budget",
-    "food_planner",
-    "recipes",
-    "hosting",
-    "travel",
-    "advanced_planning",
-    "rescue_mode",
-    "premium_content",
-  ],
+  essentials: PLANNER_CORE_FEATURES,
+  core: PLANNER_CORE_FEATURES,
+  magic: PLANNER_COMPLETE_FEATURES,
+  complete: PLANNER_COMPLETE_FEATURES,
+  all_in: PLANNER_COMPLETE_FEATURES,
   food: ["food_planner", "recipes"],
   recipes: ["recipes", "premium_content"],
   hosting: ["hosting"],
   travel: ["travel"],
 };
+
+export const PLANNER_PAID_TIER_KEYS = ["essentials", "magic", "all_in"] as const;
+export const PLANNER_ADDON_PACKAGE_KEYS = ["food", "recipes", "hosting", "travel"] as const;
 
 export const TASK_CATEGORIES = [
   "gifts",
@@ -210,4 +226,6 @@ export const FREE_LIMITS = {
 
 export const PLANNER_ACCOUNT_ROUTE = "/account/christmas";
 export const PLANNER_PUBLIC_ROUTE = "/christmas/planner";
+export const PLANNER_WELCOME_ROUTE = "/christmas/planner/welcome";
 export const PLANNER_UPGRADE_HASH = "pricing";
+export const PLANNER_ORDER_STORAGE_KEY = "tdg.christmas.planner.order.v1";

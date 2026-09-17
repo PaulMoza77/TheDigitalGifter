@@ -52,6 +52,12 @@ create unique index if not exists christmas_feature_grants_user_feat_uidx
   on public.christmas_feature_grants (user_id, feature_key, season_year)
   where user_id is not null and status = 'active';
 
+-- Guest + authenticated webhook replay: one logical grant per order/feature/season.
+-- Includes revoked rows so a replay cannot recreate access after revoke/refund.
+create unique index if not exists christmas_feature_grants_order_feat_uidx
+  on public.christmas_feature_grants (order_id, feature_key, season_year)
+  where order_id is not null;
+
 create index if not exists christmas_feature_grants_email_idx
   on public.christmas_feature_grants (email_normalized, season_year)
   where email_normalized is not null;
@@ -837,16 +843,42 @@ grant all on table public.christmas_card_tracker to service_role;
 -- Entitlement RPCs (server-authoritative; never trust client isPremium)
 -- ---------------------------------------------------------------------------
 
+create or replace function public.christmas_planner_season_year(p_at timestamptz default now())
+returns integer
+language sql
+stable
+as $$
+  select case
+    when extract(month from p_at) = 12 and extract(day from p_at) >= 26
+      then extract(year from p_at)::integer + 1
+    else extract(year from p_at)::integer
+  end;
+$$;
+
+revoke all on function public.christmas_planner_season_year(timestamptz) from public;
+grant execute on function public.christmas_planner_season_year(timestamptz) to anon, authenticated, service_role;
+
 create or replace function public.christmas_planner_package_features(p_package_key text)
 returns text[]
 language sql
 immutable
 as $$
   select case p_package_key
+    when 'essentials' then array[
+      'planner_core', 'gift_planner', 'budget', 'advanced_planning', 'rescue_mode'
+    ]
     when 'core' then array[
       'planner_core', 'gift_planner', 'budget', 'advanced_planning', 'rescue_mode'
     ]
+    when 'magic' then array[
+      'planner_core', 'gift_planner', 'budget', 'food_planner', 'recipes',
+      'hosting', 'travel', 'advanced_planning', 'rescue_mode', 'premium_content'
+    ]
     when 'complete' then array[
+      'planner_core', 'gift_planner', 'budget', 'food_planner', 'recipes',
+      'hosting', 'travel', 'advanced_planning', 'rescue_mode', 'premium_content'
+    ]
+    when 'all_in' then array[
       'planner_core', 'gift_planner', 'budget', 'food_planner', 'recipes',
       'hosting', 'travel', 'advanced_planning', 'rescue_mode', 'premium_content'
     ]
@@ -855,6 +887,23 @@ as $$
     when 'hosting' then array['hosting']
     when 'travel' then array['travel']
     else array[]::text[]
+  end;
+$$;
+
+create or replace function public.christmas_planner_features_for_product(
+  p_product_key text,
+  p_package_key text
+)
+returns text[]
+language sql
+immutable
+as $$
+  select case p_product_key
+    when 'christmas_planner_food' then public.christmas_planner_package_features('food')
+    when 'christmas_planner_recipes' then public.christmas_planner_package_features('recipes')
+    when 'christmas_planner_hosting' then public.christmas_planner_package_features('hosting')
+    when 'christmas_planner_travel' then public.christmas_planner_package_features('travel')
+    else public.christmas_planner_package_features(p_package_key)
   end;
 $$;
 
@@ -867,9 +916,10 @@ as $$
 declare
   ord public.christmas_orders%rowtype;
   feat text;
-  features text[];
+  features text[] := array[]::text[];
   email_norm text;
   season integer;
+  addon_key text;
 begin
   select * into ord from public.christmas_orders where id = p_order_id;
   if not found then
@@ -878,35 +928,47 @@ begin
   if ord.payment_status is distinct from 'paid' then
     return;
   end if;
-  if ord.product_key not in (
-    'christmas_planner',
-    'christmas_planner_food',
-    'christmas_planner_recipes',
-    'christmas_planner_hosting',
-    'christmas_planner_travel'
-  ) then
+  if ord.refunded_at is not null then
+    return;
+  end if;
+  if ord.product_key not like 'christmas_planner%' then
     return;
   end if;
 
   email_norm := lower(trim(coalesce(ord.email_normalized, ord.email, '')));
   season := coalesce(
     nullif((ord.metadata->>'season_year')::integer, 0),
-    extract(year from coalesce(ord.paid_at, now()))::integer
+    public.christmas_planner_season_year(coalesce(ord.paid_at, now()))
   );
 
-  features := public.christmas_planner_package_features(ord.package_key);
-  if ord.product_key = 'christmas_planner_food' then
-    features := public.christmas_planner_package_features('food');
-  elsif ord.product_key = 'christmas_planner_recipes' then
-    features := public.christmas_planner_package_features('recipes');
-  elsif ord.product_key = 'christmas_planner_hosting' then
-    features := public.christmas_planner_package_features('hosting');
-  elsif ord.product_key = 'christmas_planner_travel' then
-    features := public.christmas_planner_package_features('travel');
+  features := public.christmas_planner_features_for_product(ord.product_key, ord.package_key);
+
+  if jsonb_typeof(ord.metadata->'addon_keys') = 'array' then
+    for addon_key in
+      select jsonb_array_elements_text(ord.metadata->'addon_keys')
+    loop
+      features := array(
+        select distinct x from unnest(
+          features || public.christmas_planner_package_features(addon_key)
+        ) as x
+        where x is not null
+      );
+    end loop;
   end if;
 
-  foreach feat in array features loop
-    if ord.user_id is not null then
+  foreach feat in array coalesce(features, array[]::text[]) loop
+    if exists (
+      select 1
+      from public.christmas_feature_grants g
+      where g.order_id = p_order_id
+        and g.feature_key = feat
+        and g.season_year = season
+        and g.status in ('revoked', 'expired')
+    ) then
+      continue;
+    end if;
+
+    begin
       insert into public.christmas_feature_grants (
         user_id, email_normalized, feature_key, source, source_ref, order_id, season_year, status
       )
@@ -919,27 +981,11 @@ begin
         p_order_id,
         season,
         'active'
-      )
-      on conflict (user_id, feature_key, season_year) where user_id is not null and status = 'active'
-      do update set
-        order_id = excluded.order_id,
-        email_normalized = coalesce(public.christmas_feature_grants.email_normalized, excluded.email_normalized),
-        updated_at = now();
-    else
-      insert into public.christmas_feature_grants (
-        user_id, email_normalized, feature_key, source, source_ref, order_id, season_year, status
-      )
-      values (
-        null,
-        nullif(email_norm, ''),
-        feat,
-        'order',
-        p_order_id::text,
-        p_order_id,
-        season,
-        'active'
       );
-    end if;
+    exception
+      when unique_violation then
+        null;
+    end;
   end loop;
 
   update public.christmas_orders
@@ -955,6 +1001,55 @@ $$;
 revoke all on function public.grant_christmas_planner_entitlements(uuid) from public;
 grant execute on function public.grant_christmas_planner_entitlements(uuid) to service_role;
 
+create or replace function public.revoke_christmas_planner_entitlements(p_order_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.christmas_feature_grants
+  set status = 'revoked', updated_at = now()
+  where order_id = p_order_id
+    and status = 'active';
+
+  return jsonb_build_object(
+    'ok', true,
+    'revoked', (select count(*) from public.christmas_feature_grants where order_id = p_order_id and status = 'revoked')
+  );
+end;
+$$;
+
+revoke all on function public.revoke_christmas_planner_entitlements(uuid) from public;
+grant execute on function public.revoke_christmas_planner_entitlements(uuid) to service_role;
+
+create or replace function public.refund_christmas_planner_order(p_order_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  updated integer;
+begin
+  update public.christmas_orders
+  set
+    payment_status = 'refunded',
+    refunded_at = coalesce(refunded_at, now()),
+    updated_at = now()
+  where id = p_order_id
+    and product_key like 'christmas_planner%';
+  get diagnostics updated = row_count;
+
+  perform public.revoke_christmas_planner_entitlements(p_order_id);
+
+  return jsonb_build_object('ok', true, 'matched', updated > 0);
+end;
+$$;
+
+revoke all on function public.refund_christmas_planner_order(uuid) from public;
+grant execute on function public.refund_christmas_planner_order(uuid) to service_role;
+
 create or replace function public.claim_christmas_planner_grants_for_user()
 returns jsonb
 language plpgsql
@@ -964,29 +1059,46 @@ as $$
 declare
   uid uuid;
   email_norm text;
+  confirmed_at timestamptz;
 begin
   uid := auth.uid();
   if uid is null then
     return jsonb_build_object('ok', false, 'code', 'not_authenticated');
   end if;
 
-  select lower(trim(email)) into email_norm
+  select lower(trim(email)), email_confirmed_at
+    into email_norm, confirmed_at
   from auth.users
   where id = uid;
 
-  update public.christmas_feature_grants
-  set user_id = uid, updated_at = now()
-  where user_id is null
-    and email_normalized is not null
-    and email_normalized = email_norm
-    and status = 'active';
+  if email_norm is null or confirmed_at is null then
+    return jsonb_build_object('ok', false, 'code', 'email_unverified');
+  end if;
 
+  -- Attach unclaimed guest orders for this verified email only.
+  -- Never take an order already bound to another user.
   update public.christmas_orders
   set user_id = uid, updated_at = now()
   where user_id is null
     and email_normalized = email_norm
     and payment_status = 'paid'
+    and refunded_at is null
     and product_key like 'christmas_planner%';
+
+  update public.christmas_feature_grants g
+  set user_id = uid, updated_at = now()
+  where g.user_id is null
+    and g.email_normalized = email_norm
+    and g.status = 'active'
+    and not exists (
+      select 1
+      from public.christmas_feature_grants other
+      where other.user_id = uid
+        and other.feature_key = g.feature_key
+        and other.season_year = g.season_year
+        and other.status = 'active'
+        and other.id is distinct from g.id
+    );
 
   insert into public.christmas_feature_grants (
     user_id, email_normalized, feature_key, source, source_ref, order_id, season_year, status
@@ -998,23 +1110,39 @@ begin
     'claim',
     o.id::text,
     o.id,
-    extract(year from coalesce(o.paid_at, o.created_at))::integer,
+    coalesce(
+      nullif((o.metadata->>'season_year')::integer, 0),
+      public.christmas_planner_season_year(coalesce(o.paid_at, o.created_at))
+    ),
     'active'
   from public.christmas_orders o
   cross join lateral unnest(
-    case o.product_key
-      when 'christmas_planner_food' then public.christmas_planner_package_features('food')
-      when 'christmas_planner_recipes' then public.christmas_planner_package_features('recipes')
-      when 'christmas_planner_hosting' then public.christmas_planner_package_features('hosting')
-      when 'christmas_planner_travel' then public.christmas_planner_package_features('travel')
-      else public.christmas_planner_package_features(o.package_key)
-    end
+    public.christmas_planner_features_for_product(o.product_key, o.package_key)
   ) as f(feat)
   where o.payment_status = 'paid'
+    and o.refunded_at is null
     and o.product_key like 'christmas_planner%'
-    and (o.user_id = uid or o.email_normalized = email_norm)
-  on conflict (user_id, feature_key, season_year) where user_id is not null and status = 'active'
-  do nothing;
+    and o.user_id = uid
+    and not exists (
+      select 1
+      from public.christmas_feature_grants g
+      where (
+        g.order_id = o.id
+        and g.feature_key = f.feat
+        and g.season_year = coalesce(
+          nullif((o.metadata->>'season_year')::integer, 0),
+          public.christmas_planner_season_year(coalesce(o.paid_at, o.created_at))
+        )
+      ) or (
+        g.user_id = uid
+        and g.feature_key = f.feat
+        and g.season_year = coalesce(
+          nullif((o.metadata->>'season_year')::integer, 0),
+          public.christmas_planner_season_year(coalesce(o.paid_at, o.created_at))
+        )
+        and g.status = 'active'
+      )
+    );
 
   return jsonb_build_object('ok', true);
 end;
@@ -1035,7 +1163,6 @@ declare
   email_norm text;
   season integer;
   features text[] := array[]::text[];
-  feat text;
   package_keys text[] := array[]::text[];
 begin
   uid := auth.uid();
@@ -1044,57 +1171,37 @@ begin
   end if;
 
   select lower(trim(email)) into email_norm from auth.users where id = uid;
-  season := extract(year from now())::integer;
-  if extract(month from now()) = 12 and extract(day from now()) >= 26 then
-    season := season + 1;
-  end if;
+  season := public.christmas_planner_season_year(now());
 
+  -- Entitlements are the source of truth. Historical paid orders never restore
+  -- revoked or expired grants, and never leak into another season.
   select coalesce(array_agg(distinct g.feature_key), array[]::text[])
   into features
   from public.christmas_feature_grants g
   where g.status = 'active'
     and (g.expires_at is null or g.expires_at > now())
-    and (g.user_id = uid or (email_norm is not null and g.email_normalized = email_norm))
-    and g.season_year in (season, season - 1, extract(year from now())::integer);
+    and g.season_year = season
+    and (
+      g.user_id = uid
+      or (
+        g.user_id is null
+        and email_norm is not null
+        and g.email_normalized = email_norm
+      )
+    );
 
   select coalesce(array_agg(distinct o.package_key), array[]::text[])
   into package_keys
   from public.christmas_orders o
-  where o.payment_status = 'paid'
-    and o.refunded_at is null
-    and o.product_key like 'christmas_planner%'
-    and (o.user_id = uid or o.email_normalized = email_norm);
-
-  foreach feat in array coalesce(package_keys, array[]::text[]) loop
-    null;
-  end loop;
-
-  -- Union features from paid planner orders (covers claim lag / revoked-row recovery)
-  select coalesce(
-    (
-      select array_agg(distinct x)
-      from (
-        select unnest(features) as x
-        union
-        select unnest(
-          case o.product_key
-            when 'christmas_planner_food' then public.christmas_planner_package_features('food')
-            when 'christmas_planner_recipes' then public.christmas_planner_package_features('recipes')
-            when 'christmas_planner_hosting' then public.christmas_planner_package_features('hosting')
-            when 'christmas_planner_travel' then public.christmas_planner_package_features('travel')
-            else public.christmas_planner_package_features(o.package_key)
-          end
-        )
-        from public.christmas_orders o
-        where o.payment_status = 'paid'
-          and o.refunded_at is null
-          and o.product_key like 'christmas_planner%'
-          and (o.user_id = uid or o.email_normalized = email_norm)
-      ) u
-      where x is not null
-    ),
-    array[]::text[]
-  ) into features;
+  join public.christmas_feature_grants g on g.order_id = o.id
+  where o.product_key like 'christmas_planner%'
+    and g.status = 'active'
+    and (g.expires_at is null or g.expires_at > now())
+    and g.season_year = season
+    and (
+      g.user_id = uid
+      or (g.user_id is null and g.email_normalized = email_norm)
+    );
 
   return jsonb_build_object(
     'ok', true,
@@ -1125,7 +1232,7 @@ values
     'Christmas Planner',
     'Personal Christmas command center: gifts, budget, meals, hosting, and a date-aware plan.',
     true, true, 8, '/christmas/planner',
-    '{"planner_v1":true,"live_offer":true}'::jsonb
+    '{"planner_v1":true,"live_offer":false}'::jsonb
   ),
   (
     'christmas_planner_food',
@@ -1178,52 +1285,59 @@ insert into public.christmas_packages (
   currency, price_cents, compare_at_cents, active, purchasable, features, sort_order, metadata
 )
 select p.id, v.package_key, v.package_name, v.description,
-  'eur', v.price_cents, v.compare_at_cents, true, true, v.features::jsonb, v.sort_order,
+  'eur', v.price_cents, v.compare_at_cents, true, false, v.features::jsonb, v.sort_order,
   v.metadata::jsonb
 from public.christmas_products p
 join (
   values
     (
-      'christmas_planner', 'core', 'Christmas Planner Core',
+      'christmas_planner', 'essentials', 'Essentials',
       'Gifts, budget, dynamic plan, and rescue mode for this season.',
-      1499, 2499,
+      1499, null,
       '["planner_core","gift_planner","budget","advanced_planning","rescue_mode"]',
-      10, '{"features":["planner_core","gift_planner","budget","advanced_planning","rescue_mode"]}'
+      10, '{"tier":"paid_1","recommended":false}'
     ),
     (
-      'christmas_planner', 'complete', 'Christmas Planner Complete',
-      'Everything in Core plus food, recipes, hosting, and travel.',
-      2499, 3999,
+      'christmas_planner', 'magic', 'Christmas Magic',
+      'Everything in Essentials plus food, recipes, hosting, and travel.',
+      2499, null,
       '["planner_core","gift_planner","budget","food_planner","recipes","hosting","travel","advanced_planning","rescue_mode","premium_content"]',
-      20, '{"features":["planner_core","gift_planner","budget","food_planner","recipes","hosting","travel","advanced_planning","rescue_mode","premium_content"]}'
+      20, '{"tier":"paid_2","recommended":true}'
+    ),
+    (
+      'christmas_planner', 'all_in', 'All-in',
+      'The complete season command center. Architecture reserved for the highest commercial tier.',
+      3499, null,
+      '["planner_core","gift_planner","budget","food_planner","recipes","hosting","travel","advanced_planning","rescue_mode","premium_content"]',
+      30, '{"tier":"paid_3","recommended":false}'
     ),
     (
       'christmas_planner_food', 'food', 'Food Planner',
       'Meals, grocery list, and recipe access.',
       799, null,
       '["food_planner","recipes"]',
-      10, '{"features":["food_planner","recipes"]}'
+      10, '{"planner_addon":true}'
     ),
     (
       'christmas_planner_recipes', 'recipes', 'Recipes Pack',
       'Standalone recipe catalog add-on.',
       499, null,
       '["recipes","premium_content"]',
-      10, '{"features":["recipes","premium_content"]}'
+      10, '{"planner_addon":true}'
     ),
     (
       'christmas_planner_hosting', 'hosting', 'Hosting Pack',
       'Guest list and hosting tasks.',
       599, null,
       '["hosting"]',
-      10, '{"features":["hosting"]}'
+      10, '{"planner_addon":true}'
     ),
     (
       'christmas_planner_travel', 'travel', 'Travel Pack',
       'Trips and packing (no identity documents).',
       599, null,
       '["travel"]',
-      10, '{"features":["travel"]}'
+      10, '{"planner_addon":true}'
     )
 ) as v(product_key, package_key, package_name, description, price_cents, compare_at_cents, features, sort_order, metadata)
   on p.product_key = v.product_key
@@ -1231,12 +1345,13 @@ on conflict (product_id, package_key) do update
 set
   package_name = excluded.package_name,
   description = excluded.description,
-  price_cents = excluded.price_cents,
-  compare_at_cents = excluded.compare_at_cents,
-  active = true,
-  purchasable = true,
   features = excluded.features,
   metadata = coalesce(public.christmas_packages.metadata, '{}'::jsonb) || excluded.metadata,
+  active = true,
+  -- Never flip live charges on from a migration re-run. Prices stay editable in DB.
+  purchasable = public.christmas_packages.purchasable,
+  price_cents = public.christmas_packages.price_cents,
+  currency = public.christmas_packages.currency,
   updated_at = now();
 
 -- Original TDG recipe teasers + paid catalog (not copied from third-party sites)

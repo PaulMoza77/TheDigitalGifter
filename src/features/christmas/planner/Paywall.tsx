@@ -13,6 +13,7 @@ export function PlannerPaywall({
   body: string;
 }) {
   const pack = upgradePackageForFeature(feature);
+  const to = `${PLANNER_PUBLIC_ROUTE}?package=${encodeURIComponent(pack.packageKey)}#pricing`;
   return (
     <div className="tdg-planner-card tdg-planner-lock">
       <h2>{title}</h2>
@@ -20,16 +21,13 @@ export function PlannerPaywall({
       <div className="tdg-planner-actions" style={{ marginTop: 12 }}>
         <Link
           className="tdg-planner-btn primary"
-          to={`${PLANNER_PUBLIC_ROUTE}#pricing`}
+          to={to}
           onClick={() => {
-            trackPlannerEvent("planner_upgrade_clicked", { feature });
+            trackPlannerEvent("planner_upgrade_clicked", { feature, packageKey: pack.packageKey });
           }}
         >
-          See plans
+          Unlock {pack.packageKey === "food" || pack.packageKey === "recipes" || pack.packageKey === "hosting" || pack.packageKey === "travel" ? pack.packageKey : "this season"}
         </Link>
-        <span className="tdg-planner-muted">
-          Unlocks {pack.productKey.replace("christmas_planner_", "")} · {pack.packageKey}
-        </span>
       </div>
     </div>
   );
@@ -40,10 +38,11 @@ export function money(minor: number | null | undefined, currency: string): strin
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
-      currency: currency.toUpperCase(),
-      maximumFractionDigits: 0,
+      currency: (currency || "eur").toUpperCase(),
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(n);
   } catch {
-    return `${n.toFixed(0)} ${currency.toUpperCase()}`;
+    return `${n.toFixed(2)} ${(currency || "eur").toUpperCase()}`;
   }
 }

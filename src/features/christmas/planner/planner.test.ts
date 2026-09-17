@@ -8,7 +8,14 @@ import {
   resolvePlanMode,
   upcomingChristmasYear,
 } from "./date";
-import { accessFromGrants, canAddRecipient, featuresForPackage, hasFeature } from "./entitlements";
+import { accessFromGrants, addonIncludedInPackage, canAddRecipient, featuresForPackage, hasFeature } from "./entitlements";
+import {
+  accessForSeason,
+  applyOrderGrant,
+  claimGrants,
+  grantsForPaidOrder,
+  revokeOrder,
+} from "./entitlementEngine";
 import { generateInitialPlan, recommendedToday } from "./planGenerator";
 import { computeReadiness } from "./readiness";
 import { answerFromContext } from "./assistant";
@@ -94,8 +101,11 @@ describe("dynamic plan templates", () => {
 
 describe("entitlements are feature-mapped, not isPremium", () => {
   it("maps core vs food add-on separately", () => {
-    expect(featuresForPackage("christmas_planner", "core")).toContain("gift_planner");
-    expect(featuresForPackage("christmas_planner", "core")).not.toContain("hosting");
+    expect(featuresForPackage("christmas_planner", "essentials")).toContain("gift_planner");
+    expect(featuresForPackage("christmas_planner", "magic")).toContain("hosting");
+    expect(featuresForPackage("christmas_planner", "all_in")).toContain("travel");
+    expect(addonIncludedInPackage("magic", "food")).toBe(true);
+    expect(addonIncludedInPackage("essentials", "food")).toBe(false);
     expect(featuresForPackage("christmas_planner_food", "food")).toEqual(["food_planner", "recipes"]);
   });
 
@@ -195,14 +205,170 @@ describe("planner wiring", () => {
     const app = readSrc("src/App.tsx");
     expect(app).toContain('path="/account/christmas"');
     expect(app).toContain('path="/christmas/planner"');
+    expect(app).toContain('path="/christmas/planner/welcome"');
     const sql = readSrc("supabase/migrations/20260917120000_christmas_planner.sql");
-    expect(sql).toContain("enable row level security");
+    expect(sql).toContain("christmas_planner_profiles_owner_all");
+    expect(sql).toContain("christmas_planner_owns_profile(profile_id)");
+    expect(sql).toContain("revoke all on table public.christmas_planner_profiles from anon");
+    expect(sql).toContain("using (published = true)");
     expect(sql).toContain("christmas_planner_owns_profile");
     expect(sql).toContain("get_christmas_planner_access");
     expect(sql).toContain("grant_christmas_planner_entitlements");
-    expect(readSrc("src/features/christmas/funnelEventContract.ts")).toContain("planner_dashboard_viewed");
+    expect(sql).toContain("christmas_planner_season_year");
+    expect(sql).toContain("refund_christmas_planner_order");
+    expect(sql).toContain("christmas_feature_grants_order_feat_uidx");
+    expect(sql).toContain("email_unverified");
+    expect(sql).not.toContain("revoked-row recovery");
+    expect(sql).toContain("purchasable = public.christmas_packages.purchasable");
+    expect(readSrc("src/features/christmas/funnelEventContract.ts")).toContain("planner_landing_view");
+    expect(readSrc("src/features/christmas/funnelEventContract.ts")).toContain("planner_purchase");
     expect(readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts")).toContain(
       "grant_christmas_planner_entitlements",
     );
+    expect(readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts")).toContain(
+      "refund_christmas_planner_order",
+    );
+    expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("planner_checkout_disabled");
+    expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("addon_already_included");
+    expect(readSrc("src/features/christmas/planner/ChristmasPlannerPublicPage.tsx")).not.toContain("€14.99");
+    expect(readSrc("src/features/christmas/planner/ChristmasPlannerPublicPage.tsx")).toContain(
+      "Your entire Christmas, beautifully planned.",
+    );
   });
 });
+
+describe("planner entitlement invariants", () => {
+  const order2026 = grantsForPaidOrder({
+    orderId: "o-2026",
+    productKey: "christmas_planner",
+    packageKey: "essentials",
+    seasonYear: 2026,
+    userId: "user-a",
+    email: "a@x.com",
+    paymentStatus: "paid",
+  });
+
+  it("1. 2026 order does not unlock 2027", () => {
+    const access = accessForSeason(order2026, "user-a", 2027);
+    expect(hasFeature(access, "planner_core")).toBe(false);
+  });
+
+  it("2. active grant unlocks current season", () => {
+    expect(hasFeature(accessForSeason(order2026, "user-a", 2026), "gift_planner")).toBe(true);
+  });
+
+  it("3. revoked grant does not reappear from historical order", () => {
+    const once = applyOrderGrant(order2026, order2026[0]);
+    const revoked = revokeOrder(once, "o-2026");
+    const replay = order2026.reduce((acc, g) => applyOrderGrant(acc, g), revoked);
+    expect(replay.every((g) => g.status === "revoked")).toBe(true);
+    expect(hasFeature(accessForSeason(replay, "user-a", 2026), "planner_core")).toBe(false);
+  });
+
+  it("4. expired grant does not unlock", () => {
+    const expired = order2026.map((g) => ({ ...g, expiresAt: "2026-01-01T00:00:00Z" }));
+    const access = accessFromGrants({
+      grantKeys: [],
+      grants: expired.map((g) => ({
+        feature_key: g.featureKey,
+        status: "active",
+        season_year: 2026,
+        expires_at: g.expiresAt,
+        now: new Date("2026-09-17T00:00:00Z"),
+      })),
+      seasonYear: 2026,
+    });
+    expect(access.paid).toBe(false);
+  });
+
+  it("5. refund removes access", () => {
+    const refunded = revokeOrder(order2026, "o-2026");
+    expect(hasFeature(accessForSeason(refunded, "user-a", 2026), "planner_core")).toBe(false);
+  });
+
+  it("6. guest webhook replay creates one entitlement", () => {
+    const guest = grantsForPaidOrder({
+      orderId: "g1",
+      productKey: "christmas_planner",
+      packageKey: "essentials",
+      seasonYear: 2026,
+      userId: null,
+      email: "guest@x.com",
+      paymentStatus: "paid",
+    });
+    const replay = guest.reduce((acc, g) => applyOrderGrant(acc, g), guest);
+    expect(replay).toHaveLength(guest.length);
+  });
+
+  it("7. authenticated webhook replay creates one entitlement", () => {
+    const replay = order2026.reduce((acc, g) => applyOrderGrant(acc, g), order2026);
+    expect(replay).toHaveLength(order2026.length);
+  });
+
+  it("8. repeated claim is idempotent", () => {
+    const guest = grantsForPaidOrder({
+      orderId: "g2",
+      productKey: "christmas_planner",
+      packageKey: "essentials",
+      seasonYear: 2026,
+      userId: null,
+      email: "a@x.com",
+      paymentStatus: "paid",
+    });
+    const first = claimGrants({
+      grants: guest,
+      actorUserId: "user-a",
+      actorEmail: "a@x.com",
+      verified: true,
+      orders: [{ orderId: "g2", userId: null, email: "a@x.com" }],
+    });
+    const second = claimGrants({
+      grants: first.grants,
+      actorUserId: "user-a",
+      actorEmail: "a@x.com",
+      verified: true,
+      orders: [{ orderId: "g2", userId: "user-a", email: "a@x.com" }],
+    });
+    expect(second.grants.filter((g) => g.featureKey === "planner_core")).toHaveLength(1);
+  });
+
+  it("9. wrong user cannot claim someone else's purchase", () => {
+    const claimed = claimGrants({
+      grants: order2026,
+      actorUserId: "user-b",
+      actorEmail: "b@x.com",
+      verified: true,
+      orders: [{ orderId: "o-2026", userId: "user-a", email: "a@x.com" }],
+    });
+    expect(claimed.claimedOrderIds).toEqual([]);
+    expect(claimed.grants.every((g) => g.userId === "user-a")).toBe(true);
+  });
+
+  it("10-11. forged package/price are rejected in checkout plan", () => {
+    const checkout = readSrc("src/features/christmas/checkout.ts");
+    expect(checkout).toContain("planner_checkout_disabled");
+    expect(checkout).toContain("isPlannerCheckoutProduct");
+    const edge = readSrc("supabase/functions/christmas-checkout/index.ts");
+    expect(edge).toContain("void body.amount_cents");
+    expect(edge).toContain("not_purchasable");
+  });
+
+  it("12. add-on already included cannot double-charge", () => {
+    expect(addonIncludedInPackage("magic", "hosting")).toBe(true);
+    expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("addon_already_included");
+  });
+
+  it("13. planner kill switch prevents charge even if global checkout is on", () => {
+    const checkout = readSrc("src/features/christmas/checkout.ts");
+    expect(checkout).toContain("CHRISTMAS_PLANNER_CHECKOUT_ENABLED");
+    expect(checkout).toContain("christmasPlannerCheckoutEnabled");
+  });
+
+  it("14. global Christmas features outside Planner are not enabled by planner seed", () => {
+    const sql = readSrc("supabase/migrations/20260917120000_christmas_planner.sql");
+    expect(sql).not.toContain("purchasable = true");
+    expect(sql).toContain("live_offer\":false");
+    expect(readSrc("src/features/christmas/catalog.ts")).toContain("purchasable: false");
+  });
+});
+

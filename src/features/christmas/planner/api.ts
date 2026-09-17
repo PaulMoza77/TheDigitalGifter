@@ -9,6 +9,75 @@ import type {
   PlannerTask,
 } from "./types";
 
+export type PlannerCatalogRow = {
+  productKey: string;
+  packageKey: string;
+  packageName: string;
+  description: string;
+  currency: string;
+  priceCents: number;
+  purchasable: boolean;
+  active: boolean;
+  features: string[];
+  sortOrder: number;
+  recommended: boolean;
+  addon: boolean;
+};
+
+export async function fetchPlannerCatalog(): Promise<PlannerCatalogRow[]> {
+  const { data: products, error } = await supabase
+    .from("christmas_products")
+    .select("id, product_key, active")
+    .like("product_key", "christmas_planner%")
+    .eq("active", true);
+  if (error || !products?.length) return [];
+  const ids = products.map((p) => p.id);
+  const { data: packages } = await supabase
+    .from("christmas_packages")
+    .select("product_id, package_key, package_name, description, currency, price_cents, purchasable, active, features, sort_order, metadata")
+    .in("product_id", ids)
+    .eq("active", true);
+  const byId = new Map(products.map((p) => [p.id, p.product_key]));
+  return (packages || []).map((pkg) => {
+    const productKey = String(byId.get(pkg.product_id) || "");
+    const meta = (pkg.metadata || {}) as Record<string, unknown>;
+    const features = Array.isArray(pkg.features)
+      ? pkg.features.map(String)
+      : [];
+    return {
+      productKey,
+      packageKey: String(pkg.package_key),
+      packageName: String(pkg.package_name),
+      description: String(pkg.description || ""),
+      currency: String(pkg.currency || "eur"),
+      priceCents: Number(pkg.price_cents || 0),
+      purchasable: Boolean(pkg.purchasable),
+      active: Boolean(pkg.active),
+      features,
+      sortOrder: Number(pkg.sort_order || 0),
+      recommended: Boolean(meta.recommended),
+      addon: productKey !== "christmas_planner" || Boolean(meta.planner_addon),
+    };
+  });
+}
+
+export function persistPlannerOrder(payload: Record<string, unknown>) {
+  try {
+    localStorage.setItem("tdg.christmas.planner.order.v1", JSON.stringify(payload));
+  } catch {
+    // ignore
+  }
+}
+
+export function readPlannerOrder(): Record<string, unknown> | null {
+  try {
+    const raw = localStorage.getItem("tdg.christmas.planner.order.v1");
+    return raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchPlannerAccess(): Promise<PlannerAccess | null> {
   await supabase.rpc("claim_christmas_planner_grants_for_user");
   const { data, error } = await supabase.rpc("get_christmas_planner_access");

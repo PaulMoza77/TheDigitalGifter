@@ -309,6 +309,7 @@ export function usePlannerBundle() {
     const season = access?.season_year || upcomingChristmasYear(new Date());
     const profile = await loadProfile(season);
     setState({ loading: false, access, profile });
+    trackPlannerEvent("planner_opened", { planMode: profile?.plan_mode });
   }
 
   useEffect(() => {
