@@ -60,6 +60,8 @@ describe("videoFileType", () => {
     expect(videoFileType("final_christmas_reel_1080p.mp4", "application/octet-stream")).toBe("video/mp4");
     expect(videoFileType("clip.mp4", "application/mp4")).toBe("video/mp4");
     expect(videoFileType("clip.mp4", "video/quicktime")).toBe("video/mp4");
+    expect(videoFileType("nyc_rockefeller_ice_rink.jpg", "application/octet-stream")).toBe("image/jpeg");
+    expect(videoFileType("still.png", "application/octet-stream")).toBe("image/png");
   });
 });
 

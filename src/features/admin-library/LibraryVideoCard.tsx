@@ -13,7 +13,7 @@ import {
   shareLibraryVideoFile,
   triggerBlobDownload,
 } from "./saveLibraryVideo";
-import { librarySrcPath, type LibraryVideo } from "./catalog";
+import { isLibraryPhoto, librarySrcPath, type LibraryVideo } from "./catalog";
 
 type Props = {
   video: LibraryVideo;
@@ -27,8 +27,15 @@ function formatFetchProgress(loaded: number, total: number | null): string {
   return `Downloading ${mb(loaded)}`;
 }
 
+const KIND_LABEL: Record<LibraryVideo["kind"], string> = {
+  reel: "Reel",
+  short: "Short",
+  photo: "Photo",
+};
+
 export default function LibraryVideoCard({ video, playing, onPlayingChange }: Props) {
   const href = librarySrcPath(video.src);
+  const photo = isLibraryPhoto(video);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const cardRef = React.useRef<HTMLElement | null>(null);
   const [visible, setVisible] = React.useState(false);
@@ -101,7 +108,7 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
     }
   }
 
-  const stillSrc = capturedPoster || video.poster;
+  const stillSrc = photo ? href : capturedPoster || video.poster;
 
   async function onSave() {
     if (saveLockRef.current) return;
@@ -132,18 +139,22 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
       saveLockRef.current = false;
       try {
         await shareLibraryVideoFile(file);
-        toast.success("Choose Save Video to add it to Photos.");
+        toast.success(photo ? "Choose Save Image to add it to Photos." : "Choose Save Video to add it to Photos.");
       } catch (error) {
         if (isUserShareCancel(error)) return;
         if (isShareGestureLost(error)) {
-          toast.message("Video is ready. Tap Save to Photos again, then choose Save Video.");
+          toast.message(
+            photo
+              ? "Photo is ready. Tap Save to Photos again, then choose Save Image."
+              : "Video is ready. Tap Save to Photos again, then choose Save Video.",
+          );
           return;
         }
         throw error;
       }
     } catch (error) {
       if (isUserShareCancel(error)) return;
-      toast.error(error instanceof Error ? error.message : "Could not save this video.");
+      toast.error(error instanceof Error ? error.message : `Could not save this ${photo ? "photo" : "video"}.`);
     } finally {
       saveLockRef.current = false;
       setSaving(false);
@@ -159,56 +170,64 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
       className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70"
     >
       <div className="relative aspect-[9/16] w-full bg-slate-950 sm:aspect-video">
-        {visible ? (
-          <video
-            ref={(el) => {
-              videoRef.current = el;
-              if (!el) return;
-              el.setAttribute("playsinline", "true");
-              el.setAttribute("webkit-playsinline", "true");
-              el.playsInline = true;
-              el.muted = true;
-            }}
-            className="absolute inset-0 h-full w-full bg-black object-contain"
-            src={href}
-            poster={video.poster}
-            playsInline
-            muted
-            preload="metadata"
-            controls={false}
-            onLoadedMetadata={paintFirstFrame}
-            onLoadedData={paintFirstFrame}
-            onSeeked={capturePosterFrame}
-            onDurationChange={() => {
-              const el = videoRef.current;
-              if (el && Number.isFinite(el.duration) && el.duration > 0) setDuration(el.duration);
-            }}
-            onEnded={() => onPlayingChange(false)}
-          />
-        ) : null}
-        {stillSrc && !playing ? (
-          <img
-            src={stillSrc}
-            alt=""
-            className="pointer-events-none absolute inset-0 z-[5] h-full w-full object-cover"
-          />
-        ) : null}
+        {photo ? (
+          <img src={href} alt={video.title} className="absolute inset-0 h-full w-full bg-black object-cover" />
+        ) : (
+          <>
+            {visible ? (
+              <video
+                ref={(el) => {
+                  videoRef.current = el;
+                  if (!el) return;
+                  el.setAttribute("playsinline", "true");
+                  el.setAttribute("webkit-playsinline", "true");
+                  el.playsInline = true;
+                  el.muted = true;
+                }}
+                className="absolute inset-0 h-full w-full bg-black object-contain"
+                src={href}
+                poster={video.poster}
+                playsInline
+                muted
+                preload="metadata"
+                controls={false}
+                onLoadedMetadata={paintFirstFrame}
+                onLoadedData={paintFirstFrame}
+                onSeeked={capturePosterFrame}
+                onDurationChange={() => {
+                  const el = videoRef.current;
+                  if (el && Number.isFinite(el.duration) && el.duration > 0) setDuration(el.duration);
+                }}
+                onEnded={() => onPlayingChange(false)}
+              />
+            ) : null}
+            {stillSrc && !playing ? (
+              <img
+                src={stillSrc}
+                alt=""
+                className="pointer-events-none absolute inset-0 z-[5] h-full w-full object-cover"
+              />
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                const el = videoRef.current;
+                if (el && !playing) el.muted = false;
+                onPlayingChange(!playing);
+              }}
+              className="absolute inset-0 z-10 flex items-center justify-center bg-black/15 text-white transition hover:bg-black/25"
+              aria-label={playing ? `Pause ${video.title}` : `Play ${video.title}`}
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
+                {playing ? <Pause className="h-6 w-6" /> : <Play className="ml-0.5 h-6 w-6" />}
+              </span>
+            </button>
+          </>
+        )}
 
-        <button
-          type="button"
-          onClick={() => {
-            const el = videoRef.current;
-            if (el && !playing) el.muted = false;
-            onPlayingChange(!playing);
-          }}
-          className="absolute inset-0 z-10 flex items-center justify-center bg-black/15 text-white transition hover:bg-black/25"
-          aria-label={playing ? `Pause ${video.title}` : `Play ${video.title}`}
-        >
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
-            {playing ? <Pause className="h-6 w-6" /> : <Play className="ml-0.5 h-6 w-6" />}
-          </span>
-        </button>
-
+        <p className="pointer-events-none absolute left-2 top-2 z-20 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-white">
+          {KIND_LABEL[video.kind]}
+        </p>
         {durationLabel ? (
           <p className="pointer-events-none absolute right-2 top-2 z-20 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white">
             {durationLabel}
@@ -233,15 +252,15 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           {saving
-            ? progressLabel || "Preparing video…"
+            ? progressLabel || (photo ? "Preparing photo…" : "Preparing video…")
             : ios
               ? "Save to Photos"
               : "Download"}
         </button>
         {ios ? (
           <p className="text-[11px] leading-4 text-slate-500">
-            Stays on this page. When the share sheet opens, tap Save Video — that is the Photos option.
-            Ignore Save to Files.
+            Stays on this page. When the share sheet opens, tap {photo ? "Save Image" : "Save Video"} — that is the
+            Photos option. Ignore Save to Files.
           </p>
         ) : null}
       </div>

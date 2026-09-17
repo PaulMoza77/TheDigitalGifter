@@ -3,20 +3,33 @@ import { Library, Search } from "lucide-react";
 
 import LibraryVideoCard from "@/features/admin-library/LibraryVideoCard";
 import {
+  CHRISTMAS_LIBRARY_KINDS,
   LIBRARY_CATEGORIES,
   LIBRARY_VIDEOS,
+  countChristmasKind,
   searchLibraryVideos,
   type LibraryCategoryId,
+  type LibraryKind,
 } from "@/features/admin-library/catalog";
 
 type CategoryFilter = LibraryCategoryId | "all";
 
 export default function AdminLibraryPage() {
   const [category, setCategory] = React.useState<CategoryFilter>("christmas_reels");
+  const [kind, setKind] = React.useState<LibraryKind>("reel");
   const [query, setQuery] = React.useState("");
   const [playingId, setPlayingId] = React.useState<string | null>(null);
 
-  const videos = React.useMemo(() => searchLibraryVideos(query, category), [query, category]);
+  const kindFilter = category === "christmas_reels" ? kind : "all";
+  const videos = React.useMemo(
+    () => searchLibraryVideos(query, category, kindFilter),
+    [query, category, kindFilter],
+  );
+  const christmasTotal = LIBRARY_VIDEOS.filter((item) => item.category === "christmas_reels").length;
+  const totalLabel =
+    category === "christmas_reels"
+      ? `${videos.length} of ${christmasTotal} Christmas items`
+      : `${videos.length} of ${LIBRARY_VIDEOS.length} items`;
 
   return (
     <div className="min-h-screen overflow-y-auto bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
@@ -29,27 +42,24 @@ export default function AdminLibraryPage() {
               Library
             </h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-              Preview clips in place, see how long each one is, and save them without leaving this page.
+              Preview clips and photos in place, see how long each video is, and save them without leaving this page.
             </p>
           </div>
-          <p className="text-sm text-slate-400">
-            {videos.length} of {LIBRARY_VIDEOS.length} videos
-          </p>
+          <p className="text-sm text-slate-400">{totalLabel}</p>
         </header>
 
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
-            <FilterChip
-              active={category === "all"}
-              label="All"
-              onClick={() => setCategory("all")}
-            />
+            <FilterChip active={category === "all"} label="All" onClick={() => setCategory("all")} />
             {LIBRARY_CATEGORIES.map((item) => (
               <FilterChip
                 key={item.id}
                 active={category === item.id}
                 label={item.label}
-                onClick={() => setCategory(item.id)}
+                onClick={() => {
+                  setCategory(item.id);
+                  if (item.id === "christmas_reels") setKind("reel");
+                }}
               />
             ))}
           </div>
@@ -65,15 +75,31 @@ export default function AdminLibraryPage() {
           </label>
         </div>
 
+        {category === "christmas_reels" ? (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {CHRISTMAS_LIBRARY_KINDS.map((item) => (
+              <KindBadge
+                key={item.id}
+                active={kind === item.id}
+                label={item.label}
+                count={countChristmasKind(item.id)}
+                onClick={() => setKind(item.id)}
+              />
+            ))}
+          </div>
+        ) : null}
+
         {category !== "all" ? (
           <p className="mb-4 text-sm text-slate-400">
-            {LIBRARY_CATEGORIES.find((item) => item.id === category)?.description}
+            {category === "christmas_reels"
+              ? CHRISTMAS_LIBRARY_KINDS.find((item) => item.id === kind)?.description
+              : LIBRARY_CATEGORIES.find((item) => item.id === category)?.description}
           </p>
         ) : null}
 
         {videos.length === 0 ? (
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-10 text-center text-sm text-slate-400">
-            No videos match this filter.
+            No items match this filter.
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -113,6 +139,34 @@ function FilterChip({
       ].join(" ")}
     >
       {label}
+    </button>
+  );
+}
+
+function KindBadge({
+  active,
+  label,
+  count,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "rounded-full border px-3 py-1.5 text-sm font-semibold transition",
+        active
+          ? "border-amber-300/50 bg-amber-400/20 text-amber-50"
+          : "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800",
+      ].join(" ")}
+    >
+      {label}
+      <span className="ml-1.5 text-xs font-medium opacity-70">{count}</span>
     </button>
   );
 }
