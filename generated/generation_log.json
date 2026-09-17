@@ -1,0 +1,162 @@
+{
+  "model": "kwaivgi/kling-v3-video",
+  "mode": "pro",
+  "duration": 5,
+  "clips": [
+    {
+      "id": "clip_01_train_raw",
+      "prediction_id": "wmb2tk14h1rmr0d0nsfa99fa54",
+      "status": "succeeded",
+      "output_url": "https://replicate.delivery/xezq/Vfg86kEj5bTsDa0SYIE18bsCHx8xqugocE631D7d2YcdfUOXA/tmpw8z31nmt.mp4",
+      "file": "/workspace/generated/clip_01_train_raw.mp4",
+      "probe": {
+        "programs": [],
+        "streams": [
+          {
+            "width": 1080,
+            "height": 1920,
+            "avg_frame_rate": "24/1",
+            "duration": "5.041667"
+          }
+        ],
+        "format": {
+          "duration": "5.041667"
+        }
+      },
+      "metrics": {
+        "model_variant": "pro",
+        "predict_time": 130.365450024,
+        "total_time": 130.404676266,
+        "video_output_duration_seconds": 5,
+        "with_audio": false
+      },
+      "cost": null,
+      "regen": false,
+      "error": null
+    },
+    {
+      "id": "clip_02_santa_raw",
+      "prediction_id": "16x2hcnag5rmr0d0nsf9d2p8g8",
+      "status": "succeeded",
+      "output_url": "https://replicate.delivery/xezq/aCJommsb5wYkCpaT9R34GzioHoXTNRGNMgBxINxpyuftfUOXA/tmpf7f_p516.mp4",
+      "file": "/workspace/generated/clip_02_santa_raw.mp4",
+      "probe": {
+        "programs": [],
+        "streams": [
+          {
+            "width": 1080,
+            "height": 1920,
+            "avg_frame_rate": "24/1",
+            "duration": "5.041667"
+          }
+        ],
+        "format": {
+          "duration": "5.041667"
+        }
+      },
+      "metrics": {
+        "model_variant": "pro",
+        "predict_time": 129.278805175,
+        "total_time": 129.302088079,
+        "video_output_duration_seconds": 5,
+        "with_audio": false
+      },
+      "cost": null,
+      "regen": false,
+      "error": null
+    },
+    {
+      "id": "clip_03_market_raw",
+      "prediction_id": "e3qyn6esmdrmy0d0nsf86nxq0w",
+      "status": "succeeded",
+      "output_url": "https://replicate.delivery/xezq/QQ0dmg1MenwtGiN3DodU0ZGVfGFotQ9hUldpbDE5nKqzfpcuA/tmp3z1jfj3f.mp4",
+      "file": "/workspace/generated/clip_03_market_raw.mp4",
+      "probe": {
+        "programs": [],
+        "streams": [
+          {
+            "width": 1080,
+            "height": 1920,
+            "avg_frame_rate": "24/1",
+            "duration": "5.041667"
+          }
+        ],
+        "format": {
+          "duration": "5.041667"
+        }
+      },
+      "metrics": {
+        "model_variant": "pro",
+        "predict_time": 140.61388236,
+        "total_time": 140.628346624,
+        "video_output_duration_seconds": 5,
+        "with_audio": false
+      },
+      "cost": null,
+      "regen": false,
+      "error": null
+    },
+    {
+      "id": "clip_04_chalet_raw",
+      "prediction_id": "8rvftx08rnrmw0d0nsfrka2qtr",
+      "status": "succeeded",
+      "output_url": "https://replicate.delivery/xezq/OfOYXj2pjrSKMS0BzLiDqvvnKYT8kEsBqYRD80Ffs920fpcuA/tmp0uk4siem.mp4",
+      "file": "/workspace/generated/clip_04_chalet_raw.mp4",
+      "probe": {
+        "programs": [],
+        "streams": [
+          {
+            "width": 1080,
+            "height": 1920,
+            "avg_frame_rate": "24/1",
+            "duration": "5.041667"
+          }
+        ],
+        "format": {
+          "duration": "5.041667"
+        }
+      },
+      "metrics": {
+        "model_variant": "pro",
+        "predict_time": 130.261167823,
+        "total_time": 130.280777336,
+        "video_output_duration_seconds": 5,
+        "with_audio": false
+      },
+      "cost": null,
+      "regen": false,
+      "error": null
+    },
+    {
+      "id": "clip_05_cozy_raw",
+      "prediction_id": "5df470hqwsrmy0d0nsft8eda14",
+      "status": "succeeded",
+      "output_url": "https://replicate.delivery/xezq/nuqMYSqKk05gPhbN9NX4AdIHbt03BhAo3IzCorUr2rJAQlzF/tmpjdtfi9b1.mp4",
+      "file": "/workspace/generated/clip_05_cozy_raw.mp4",
+      "probe": {
+        "programs": [],
+        "streams": [
+          {
+            "width": 1080,
+            "height": 1920,
+            "avg_frame_rate": "24/1",
+            "duration": "5.041667"
+          }
+        ],
+        "format": {
+          "duration": "5.041667"
+        }
+      },
+      "metrics": {
+        "model_variant": "pro",
+        "predict_time": 130.298343337,
+        "total_time": 130.31700799,
+        "video_output_duration_seconds": 5,
+        "with_audio": false
+      },
+      "cost": null,
+      "regen": false,
+      "error": null
+    }
+  ]
+}
