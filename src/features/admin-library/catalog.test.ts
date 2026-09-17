@@ -49,5 +49,7 @@ describe("admin video library", () => {
     expect(page).not.toContain("download=");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("playsInline");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Save to Photos");
+    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("openLibraryVideoInNewTab");
+    expect(readSrc("src/features/admin-library/saveLibraryVideo.ts")).toContain("cache: \"no-store\"");
   });
 });

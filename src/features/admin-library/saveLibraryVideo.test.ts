@@ -4,6 +4,7 @@ import { formatDurationSeconds } from "./formatDuration";
 import {
   clearLibraryVideoFileCache,
   isIosLikeDevice,
+  isIpadLikeDevice,
   isShareGestureLost,
   isUserShareCancel,
   saveLibraryVideo,
@@ -46,6 +47,15 @@ describe("isIosLikeDevice", () => {
   });
 });
 
+describe("isIpadLikeDevice", () => {
+  it("detects iPad and iPadOS desktop UA, but not iPhone", () => {
+    expect(isIpadLikeDevice("Mozilla/5.0 (iPad; CPU OS 16_0 like Mac OS X)")).toBe(true);
+    expect(isIpadLikeDevice("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)", 5, "MacIntel")).toBe(true);
+    expect(isIpadLikeDevice("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)", 5, "iPhone")).toBe(false);
+    expect(isIpadLikeDevice("Mozilla/5.0 (Windows NT 10.0; Win64; x64)", 0, "Win32")).toBe(false);
+  });
+});
+
 describe("share cancel helpers", () => {
   it("treats AbortError as a user cancel and NotAllowedError as a lost gesture", () => {
     expect(isUserShareCancel({ name: "AbortError" })).toBe(true);
@@ -68,6 +78,45 @@ describe("saveLibraryVideo", () => {
     clearLibraryVideoFileCache();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+
+  it("opens the same-origin MP4 on iPad instead of the empty AirDrop share sheet", async () => {
+    const share = vi.fn();
+    const click = vi.fn();
+    const fetchMock = vi.fn();
+    const link: Record<string, unknown> = {
+      href: "",
+      download: "",
+      target: "",
+      rel: "",
+      click,
+      remove: vi.fn(),
+    };
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("navigator", {
+      userAgent: "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X)",
+      maxTouchPoints: 5,
+      platform: "iPad",
+      canShare: () => true,
+      share,
+    });
+    vi.stubGlobal("window", {
+      location: { href: "https://www.thedigitalgifter.com/admin/library" },
+    });
+    vi.stubGlobal("document", {
+      createElement: () => link,
+      body: { appendChild: vi.fn() },
+    });
+
+    await expect(
+      saveLibraryVideo({ url: "/assets/clip_05.mp4", filename: "clip_05.mp4" }),
+    ).resolves.toBe("opened");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(share).not.toHaveBeenCalled();
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(link.download).toBe("clip_05.mp4");
+    expect(link.target).toBe("_blank");
+    expect(String(link.href)).toContain("/assets/clip_05.mp4");
   });
 
   it("shares a fetched file on iOS with files only so Photos stays available", async () => {
