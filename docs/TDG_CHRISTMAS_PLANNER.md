@@ -1,29 +1,32 @@
-# Christmas Planner funnel (Task 1)
+# Christmas Planner (launch)
 
 **Product key:** `christmas_planner_2026`  
-**Routes:** `/christmas/planner` · `/christmas/planner/welcome` · `/account/christmas`
+**Routes:** `/christmas/planner` (editorial funnel) · `/christmas/planner/welcome` · `/account/christmas` (command center)
 
-## What this task shipped
+## Architecture (canonical)
 
-Conversion funnel, Christmas commerce extension, entitlements, guest claim, transactional email, SEO, and analytics. The interactive Planner application is **not** in this task.
+| Concern | Source |
+|---|---|
+| Sales funnel UI | Editorial `ChristmasPlannerPage` (PR #214 + redesign) |
+| Commerce / packages / guest claim | Funnel: `user_entitlements`, opaque public token, `christmas-planner-funnel` |
+| Interactive Planner app | V1 modules under `/account/christmas` |
+| Workspace tables | Migration `20260917180000_christmas_planner_workspace.sql` |
+| Feature access | `get_christmas_planner_access()` maps `user_entitlements` (`planner.*`) → app features |
 
-## Commerce
+Do **not** introduce a second entitlement table or a conflicting `grant_christmas_planner_entitlements(uuid)` signature.
 
-Reuses `christmas_products` / `christmas_packages` / `christmas_orders` / `christmas-checkout` Custom Checkout Elements / `fulfill_christmas_order_payment` / Stripe webhook.
+## Kill switches
 
-Packages: `essentials`, `magic`, `all_in` plus standalone add-ons. Prices live in DB (seed is bootstrap only). Client `amount_cents` is ignored.
-
-**Kill switches:**
-
-- `CHRISTMAS_CHECKOUT_ENABLED` (global Christmas checkout)
+- `CHRISTMAS_CHECKOUT_ENABLED`
 - `CHRISTMAS_PLANNER_CHECKOUT_ENABLED` **or** product metadata `checkout_live=true`
 
-Seed ships `checkout_live=false` so production cannot charge until intentionally enabled.
+Seed ships checkout off.
 
-## Entitlements
+## Migrations (apply in order)
 
-Table `user_entitlements` with sources `stripe | apple | promo | admin`. Granted idempotently from the paid webhook. Guest orders claim via opaque public token after login — never by unverified email match.
+1. `20260917140000_christmas_planner_funnel.sql` — product, packages, `user_entitlements`, claim/grant RPCs
+2. `20260917180000_christmas_planner_workspace.sql` — profiles/tasks/gifts/budget/meals/… + access bridge + refund
 
-## Guest recovery
+## Free vs paid
 
-Public token stored hashed on the order; raw token in localStorage + welcome email link. Closing the browser should not lose a paid purchase if the email or local recovery is kept.
+Account Planner works free with limits. Paid packages unlock feature keys via entitlements.

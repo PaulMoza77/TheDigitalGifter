@@ -175,7 +175,14 @@ describe("christmas planner wiring", () => {
     const app = readSrc("src/App.tsx");
     expect(app).toContain("PlannerAwareSupportWidget");
     expect(app).toContain('path="/christmas/planner/welcome"');
-    expect(app).toContain('path="christmas"');
+    expect(app).toContain('path="/account/christmas"');
+    expect(app).toContain("ChristmasPlannerLayout");
+    expect(readSrc("supabase/migrations/20260917180000_christmas_planner_workspace.sql")).toContain(
+      "get_christmas_planner_access",
+    );
+    expect(readSrc("supabase/migrations/20260917180000_christmas_planner_workspace.sql")).toContain(
+      "user_entitlements",
+    );
     expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("resolvePlannerCheckoutFromRows");
     expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("void body.amount_cents");
     expect(readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts")).toContain(

@@ -202,9 +202,99 @@ const BlogPostPage = lazy(() => import("@/pages/blog/BlogPostPage"));
 // ================= CLIENT ACCOUNT =================
 const AccountDashboard = lazy(() => import("@/pages/account/AccountDashboard"));
 const AccountAffiliate = lazy(() => import("@/pages/account/AccountAffiliate"));
-const AccountChristmasPage = lazy(() => import("@/pages/account/AccountChristmasPage"));
 const AccountGeneratorRedirect = lazy(
   () => import("@/pages/account/AccountGeneratorRedirect")
+);
+const ChristmasPlannerLayout = lazy(
+  () => import("@/features/christmas/planner/ChristmasPlannerLayout"),
+);
+const ChristmasPlannerTodayPage = lazy(
+  () => import("@/features/christmas/planner/ChristmasPlannerPages"),
+);
+const PlannerPlanRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerPages").then((m) => ({
+    default: m.ChristmasPlannerPlanPage,
+  })),
+);
+const PlannerGiftsRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerPages").then((m) => ({
+    default: m.ChristmasPlannerGiftsPage,
+  })),
+);
+const PlannerMoreRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerPages").then((m) => ({
+    default: m.ChristmasPlannerMorePage,
+  })),
+);
+const PlannerBudgetRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerPages").then((m) => ({
+    default: m.ChristmasPlannerBudgetPage,
+  })),
+);
+const PlannerCalendarRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerCalendarPage,
+  })),
+);
+const PlannerShoppingRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerShoppingPage,
+  })),
+);
+const PlannerFoodRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerFoodPage,
+  })),
+);
+const PlannerRecipesRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerRecipesPage,
+  })),
+);
+const PlannerHostingRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerHostingPage,
+  })),
+);
+const PlannerHomeRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerHomePage,
+  })),
+);
+const PlannerTravelRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerTravelPage,
+  })),
+);
+const PlannerTraditionsRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerTraditionsPage,
+  })),
+);
+const PlannerCardsRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerCardsPage,
+  })),
+);
+const PlannerWishlistRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerWishlistBridgePage,
+  })),
+);
+const PlannerMemoriesRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerMemoriesPage,
+  })),
+);
+const PlannerClubRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerClubPage,
+  })),
+);
+const PlannerSettingsRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerSettingsPage,
+  })),
 );
 
 // ================= FUNNEL =================
@@ -671,13 +761,32 @@ function AppInner() {
           </Route>
 
           <Route element={<ProtectedClientRoute />}>
+            <Route path="/account/christmas" element={<ChristmasPlannerLayout />}>
+              <Route index element={<ChristmasPlannerTodayPage />} />
+              <Route path="plan" element={<PlannerPlanRoute />} />
+              <Route path="gifts" element={<PlannerGiftsRoute />} />
+              <Route path="more" element={<PlannerMoreRoute />} />
+              <Route path="budget" element={<PlannerBudgetRoute />} />
+              <Route path="calendar" element={<PlannerCalendarRoute />} />
+              <Route path="shopping" element={<PlannerShoppingRoute />} />
+              <Route path="food" element={<PlannerFoodRoute />} />
+              <Route path="recipes" element={<PlannerRecipesRoute />} />
+              <Route path="hosting" element={<PlannerHostingRoute />} />
+              <Route path="home" element={<PlannerHomeRoute />} />
+              <Route path="travel" element={<PlannerTravelRoute />} />
+              <Route path="traditions" element={<PlannerTraditionsRoute />} />
+              <Route path="cards" element={<PlannerCardsRoute />} />
+              <Route path="wishlist" element={<PlannerWishlistRoute />} />
+              <Route path="memories" element={<PlannerMemoriesRoute />} />
+              <Route path="club" element={<PlannerClubRoute />} />
+              <Route path="settings" element={<PlannerSettingsRoute />} />
+            </Route>
             <Route path="/account" element={<ClientLayout />}>
               <Route
                 index
                 element={<Navigate to="/account/dashboard" replace />}
               />
               <Route path="dashboard" element={<AccountDashboard />} />
-              <Route path="christmas" element={<AccountChristmasPage />} />
               <Route path="affiliate" element={<AccountAffiliate />} />
               <Route path="generator" element={<AccountGeneratorRedirect />} />
             </Route>

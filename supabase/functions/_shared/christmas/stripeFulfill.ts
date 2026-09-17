@@ -79,6 +79,13 @@ export async function handleChristmasStripeEvent(input: {
   obj: Record<string, unknown>;
   metadata: Record<string, unknown>;
 }): Promise<Response | null> {
+  if (
+    input.eventType === "charge.refunded" ||
+    input.eventType === "refund.created"
+  ) {
+    return handleChristmasPlannerRefund(input);
+  }
+
   if (!isChristmasCheckoutMetadata(input.metadata)) return null;
 
   if (input.eventType === "invoice.paid") {
@@ -328,6 +335,72 @@ export async function handleChristmasStripeEvent(input: {
   }
 
   return new Response(JSON.stringify({ ok: true, ...result }), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function handleChristmasPlannerRefund(input: {
+  service: SupabaseClient;
+  eventId: string;
+  eventType: string;
+  obj: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+}): Promise<Response | null> {
+  const meta = {
+    ...input.metadata,
+    ...(((input.obj.payment_intent as { metadata?: Record<string, unknown> } | undefined)?.metadata) ||
+      {}),
+  };
+  let orderId = isUuid(asString(meta.christmas_order_id))
+    ? asString(meta.christmas_order_id)
+    : "";
+  const paymentIntentId = asString(
+    input.obj.payment_intent ||
+      (typeof input.obj.charge === "object" && input.obj.charge
+        ? (input.obj.charge as { payment_intent?: string }).payment_intent
+        : "") ||
+      "",
+  );
+
+  if (!orderId && paymentIntentId) {
+    const { data: byPi } = await input.service
+      .from("christmas_orders")
+      .select("id, product_key")
+      .eq("stripe_payment_intent_id", paymentIntentId)
+      .maybeSingle();
+    if (byPi?.id) orderId = byPi.id;
+  }
+  if (!orderId) {
+    const sessionId = asString(input.obj.checkout_session || input.obj.id);
+    if (sessionId.startsWith("cs_")) {
+      const { data: bySession } = await input.service
+        .from("christmas_orders")
+        .select("id")
+        .eq("stripe_checkout_session_id", sessionId)
+        .maybeSingle();
+      if (bySession?.id) orderId = bySession.id;
+    }
+  }
+  if (!orderId) return null;
+
+  const { data: ord } = await input.service
+    .from("christmas_orders")
+    .select("id, product_key")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!ord) return null;
+  const productKey = asString(ord.product_key);
+  if (!productKey.startsWith("christmas_planner") && !isPlannerProductKey(productKey)) {
+    return null;
+  }
+
+  await input.service.rpc("refund_christmas_planner_order", { p_order_id: orderId });
+  await input.service.from("processed_stripe_events").insert({
+    event_id: input.eventId,
+    event_type: input.eventType,
+    result: { status: "planner_refunded", order_id: orderId },
+  });
+  return new Response(JSON.stringify({ ok: true, status: "planner_refunded", order_id: orderId }), {
     headers: { "Content-Type": "application/json" },
   });
 }

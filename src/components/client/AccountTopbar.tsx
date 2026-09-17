@@ -7,10 +7,10 @@ import {
   Menu,
   Plus,
   Shield,
+  TreePine,
   Users,
   Wand2,
   X,
-  Gift,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -70,7 +70,7 @@ export default function AccountTopbar() {
   const items: TopbarItem[] = React.useMemo(() => {
     const base: TopbarItem[] = [
       { label: "Dashboard", to: "/account/dashboard", icon: LayoutGrid },
-      { label: "Christmas Planner", to: "/account/christmas", icon: Gift },
+      { label: "Christmas Planner", to: "/account/christmas", icon: TreePine },
       { label: "Affiliate", to: "/account/affiliate", icon: Users },
     ];
 
