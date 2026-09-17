@@ -22,6 +22,7 @@ export default function ChristmasSuitePage() {
       "christmas_couple",
       "christmas_pet",
       "christmas_santa_video",
+      "christmas_planner",
       "christmas_tree",
       "christmas_advent",
       "christmas_wishlist",

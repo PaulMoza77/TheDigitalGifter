@@ -17,6 +17,20 @@ export function christmasCheckoutEnabled(): boolean {
   return raw === "true" || raw === "1" || raw === "on";
 }
 
+/** Planner-specific live-charge gate. Requires global Christmas checkout as well. */
+export function christmasPlannerCheckoutEnabled(): boolean {
+  const raw = String(
+    (typeof process !== "undefined" && process.env?.CHRISTMAS_PLANNER_CHECKOUT_ENABLED) || "",
+  )
+    .trim()
+    .toLowerCase();
+  return christmasCheckoutEnabled() && (raw === "true" || raw === "1" || raw === "on");
+}
+
+export function isPlannerCheckoutProduct(productKey: string): boolean {
+  return productKey.startsWith("christmas_planner");
+}
+
 export type CreateChristmasCheckoutInput = {
   productKey: string;
   packageKey: string;
@@ -68,6 +82,14 @@ export function planChristmasCheckout(
       ok: false,
       code: "checkout_disabled",
       message: "Christmas checkout is not enabled.",
+    };
+  }
+
+  if (isPlannerCheckoutProduct(input.productKey) && !christmasPlannerCheckoutEnabled()) {
+    return {
+      ok: false,
+      code: "planner_checkout_disabled",
+      message: "Christmas Planner checkout is not enabled.",
     };
   }
 

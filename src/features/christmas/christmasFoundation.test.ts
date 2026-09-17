@@ -7,7 +7,7 @@ import {
   ctaStateForProduct,
   type ChristmasProductDef,
 } from "./catalog";
-import { planChristmasCheckout, christmasCheckoutEnabled } from "./checkout";
+import { planChristmasCheckout, christmasCheckoutEnabled, christmasPlannerCheckoutEnabled } from "./checkout";
 import {
   applyPaymentPaid,
   isIdempotentPaidReplay,
@@ -129,6 +129,27 @@ describe("christmas pricing security", () => {
     }
     if (prev == null) delete process.env.CHRISTMAS_CHECKOUT_ENABLED;
     else process.env.CHRISTMAS_CHECKOUT_ENABLED = prev;
+  });
+
+  it("planner checkout stays disabled when only the global Christmas switch is on", () => {
+    const prev = process.env.CHRISTMAS_CHECKOUT_ENABLED;
+    const prevPlanner = process.env.CHRISTMAS_PLANNER_CHECKOUT_ENABLED;
+    process.env.CHRISTMAS_CHECKOUT_ENABLED = "true";
+    delete process.env.CHRISTMAS_PLANNER_CHECKOUT_ENABLED;
+    expect(christmasPlannerCheckoutEnabled()).toBe(false);
+    const plan = planChristmasCheckout({
+      catalog: CHRISTMAS_CATALOG_SEED,
+      productKey: "christmas_planner",
+      packageKey: "essentials",
+      clientAmountCents: 1,
+      successUrl: "https://example.com/success",
+    });
+    expect(plan.ok).toBe(false);
+    if (!plan.ok) expect(plan.code).toBe("planner_checkout_disabled");
+    if (prev == null) delete process.env.CHRISTMAS_CHECKOUT_ENABLED;
+    else process.env.CHRISTMAS_CHECKOUT_ENABLED = prev;
+    if (prevPlanner == null) delete process.env.CHRISTMAS_PLANNER_CHECKOUT_ENABLED;
+    else process.env.CHRISTMAS_PLANNER_CHECKOUT_ENABLED = prevPlanner;
   });
 });
 

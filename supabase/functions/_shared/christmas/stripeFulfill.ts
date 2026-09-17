@@ -77,6 +77,13 @@ export async function handleChristmasStripeEvent(input: {
   obj: Record<string, unknown>;
   metadata: Record<string, unknown>;
 }): Promise<Response | null> {
+  if (
+    input.eventType === "charge.refunded" ||
+    input.eventType === "refund.created"
+  ) {
+    return handleChristmasPlannerRefund(input);
+  }
+
   if (!isChristmasCheckoutMetadata(input.metadata)) return null;
 
   if (input.eventType === "invoice.paid") {
@@ -229,7 +236,19 @@ export async function handleChristmasStripeEvent(input: {
           if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
         }
         const commercialKey = asString(input.metadata.commercial_key);
-        if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
+        const plannerProduct =
+          productKey.startsWith("christmas_planner") ||
+          asString(input.metadata.product_key).startsWith("christmas_planner");
+        if (plannerProduct) {
+          await input.service.rpc("grant_christmas_planner_entitlements", {
+            p_order_id: orderId,
+          });
+          waitUntil(
+            sendPlannerAccessEmail(input.service, orderId).catch((err) => {
+              console.error("planner access email failed", err);
+            }),
+          );
+        } else if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
           const { data: ord } = await input.service
             .from("christmas_orders")
             .select("user_id,email,commercial_snapshot")
@@ -282,4 +301,132 @@ export async function handleChristmasStripeEvent(input: {
   return new Response(JSON.stringify({ ok: true, ...result }), {
     headers: { "Content-Type": "application/json" },
   });
+}
+
+async function handleChristmasPlannerRefund(input: {
+  service: SupabaseClient;
+  eventId: string;
+  eventType: string;
+  obj: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+}): Promise<Response | null> {
+  const meta = {
+    ...input.metadata,
+    ...(((input.obj.payment_intent as { metadata?: Record<string, unknown> } | undefined)?.metadata) ||
+      {}),
+  };
+  let orderId = isUuid(asString(meta.christmas_order_id))
+    ? asString(meta.christmas_order_id)
+    : "";
+  const paymentIntentId = asString(
+    input.obj.payment_intent ||
+      (typeof input.obj.charge === "object" && input.obj.charge
+        ? (input.obj.charge as { payment_intent?: string }).payment_intent
+        : "") ||
+      "",
+  );
+
+  if (!orderId && paymentIntentId) {
+    const { data: byPi } = await input.service
+      .from("christmas_orders")
+      .select("id, product_key")
+      .eq("stripe_payment_intent_id", paymentIntentId)
+      .maybeSingle();
+    if (byPi?.id) orderId = byPi.id;
+  }
+  if (!orderId) {
+    const sessionId = asString(input.obj.checkout_session || input.obj.id);
+    if (sessionId.startsWith("cs_")) {
+      const { data: bySession } = await input.service
+        .from("christmas_orders")
+        .select("id")
+        .eq("stripe_checkout_session_id", sessionId)
+        .maybeSingle();
+      if (bySession?.id) orderId = bySession.id;
+    }
+  }
+  if (!orderId) return null;
+
+  const { data: ord } = await input.service
+    .from("christmas_orders")
+    .select("id, product_key")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!ord) return null;
+  if (!asString(ord.product_key).startsWith("christmas_planner")) {
+    return null;
+  }
+
+  await input.service.rpc("refund_christmas_planner_order", { p_order_id: orderId });
+  await input.service.from("processed_stripe_events").insert({
+    event_id: input.eventId,
+    event_type: input.eventType,
+    result: { status: "planner_refunded", order_id: orderId },
+  });
+  return new Response(JSON.stringify({ ok: true, status: "planner_refunded", order_id: orderId }), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function sendPlannerAccessEmail(service: SupabaseClient, orderId: string) {
+  const { data: ord } = await service
+    .from("christmas_orders")
+    .select("id, email, metadata, amount_cents, currency, package_key, public_token_hash")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!ord) return;
+  const meta = (ord.metadata || {}) as Record<string, unknown>;
+  if (asString(meta.planner_access_email_sent_at)) return;
+  const email = asString(ord.email);
+  if (!email.includes("@")) return;
+
+  const origin = Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_APP_URL") || "https://www.thedigitalgifter.com";
+  const welcome = `${origin.replace(/\/$/, "")}/christmas/planner/welcome?order=${encodeURIComponent(orderId)}`;
+  const apiKey = asString(Deno.env.get("RESEND_API_KEY"));
+  const from = asString(
+    Deno.env.get("CHRISTMAS_EMAIL_FROM") ||
+      Deno.env.get("TRANSACTIONAL_EMAIL_FROM") ||
+      Deno.env.get("PET_EMAIL_FROM"),
+  );
+  if (!apiKey || !from) {
+    await service
+      .from("christmas_orders")
+      .update({
+        metadata: { ...meta, planner_access_email_status: "unconfigured" },
+      })
+      .eq("id", orderId);
+    return;
+  }
+
+  const html = `<!doctype html><html><body style="font-family:Georgia,serif;background:#1a0f12;color:#F7F0E4;padding:32px">
+  <div style="max-width:560px;margin:0 auto;background:#2a181c;border-radius:18px;padding:28px">
+    <h1 style="font-size:26px;margin:0 0 12px">Your Christmas Planner is ready 🎄</h1>
+    <p style="line-height:1.6;opacity:.9">Your purchase is saved. Sign in or create an account with this email to unlock your season command center.</p>
+    <p style="margin:24px 0"><a href="${welcome}" style="display:inline-block;background:#e4c38a;color:#2a181c;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600">Continue to my Planner</a></p>
+    <p style="font-size:12px;opacity:.55">The Digital Gifter · Keep this email if you close the browser.</p>
+  </div></body></html>`;
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [email],
+      subject: "Your Christmas Planner is ready 🎄",
+      html,
+    }),
+  });
+  await service
+    .from("christmas_orders")
+    .update({
+      metadata: {
+        ...meta,
+        planner_access_email_sent_at: new Date().toISOString(),
+        planner_access_email_status: res.ok ? "sent" : `failed_${res.status}`,
+      },
+    })
+    .eq("id", orderId);
 }

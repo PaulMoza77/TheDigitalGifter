@@ -1,0 +1,460 @@
+.tdg-planner {
+  --planner-bg: #1a0f12;
+  --planner-paper: #2a181c;
+  --planner-ink: #f7efe6;
+  --planner-muted: rgba(247, 239, 230, 0.72);
+  --planner-gold: #e4c38a;
+  --planner-berry: #c45c5c;
+  --planner-pine: #3d6b58;
+  min-height: 100dvh;
+  background:
+    radial-gradient(900px 420px at 50% -10%, rgba(228, 195, 138, 0.16), transparent 55%),
+    radial-gradient(700px 360px at 100% 100%, rgba(61, 107, 88, 0.14), transparent 50%),
+    var(--planner-bg);
+  color: var(--planner-ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+.tdg-planner * {
+  box-sizing: border-box;
+}
+
+.tdg-planner button,
+.tdg-planner input,
+.tdg-planner select,
+.tdg-planner textarea {
+  font: inherit;
+}
+
+.tdg-planner-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 16px 108px;
+}
+
+.tdg-planner-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.tdg-planner-brand {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--planner-gold);
+}
+
+.tdg-planner h1 {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  line-height: 1.15;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.tdg-planner h2 {
+  font-size: 1.05rem;
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.tdg-planner p {
+  margin: 0;
+  color: var(--planner-muted);
+}
+
+.tdg-planner-hero {
+  padding: 8px 0 18px;
+}
+
+.tdg-planner-ready {
+  margin-top: 10px;
+  font-size: 1.05rem;
+  color: var(--planner-ink);
+}
+
+.tdg-planner-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.tdg-planner-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--planner-pine), var(--planner-gold));
+}
+
+.tdg-planner-card {
+  background: rgba(42, 24, 28, 0.88);
+  border: 1px solid rgba(228, 195, 138, 0.16);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.tdg-planner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tdg-planner-btn {
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(228, 195, 138, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--planner-ink);
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.tdg-planner-btn.primary {
+  background: var(--planner-gold);
+  color: #2a181c;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.tdg-planner-btn.ghost {
+  background: transparent;
+}
+
+.tdg-planner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tdg-planner-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.tdg-planner-row button {
+  flex-shrink: 0;
+}
+
+.tdg-planner-input,
+.tdg-planner-select,
+.tdg-planner-area {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--planner-ink);
+  padding: 10px 12px;
+  margin: 6px 0 12px;
+}
+
+.tdg-planner-area {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.tdg-planner-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  background: rgba(18, 10, 12, 0.94);
+  border-top: 1px solid rgba(228, 195, 138, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.tdg-planner-nav a,
+.tdg-planner-nav button {
+  min-height: 48px;
+  border: 0;
+  background: transparent;
+  color: var(--planner-muted);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tdg-planner-nav a.active,
+.tdg-planner-nav button.active {
+  color: var(--planner-gold);
+}
+
+.tdg-planner-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.tdg-planner-chip {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tdg-planner-chip.on {
+  background: rgba(228, 195, 138, 0.2);
+  border-color: var(--planner-gold);
+}
+
+.tdg-planner-muted {
+  color: var(--planner-muted);
+  font-size: 0.92rem;
+}
+
+.tdg-planner-lock {
+  opacity: 0.95;
+}
+
+.tdg-planner a {
+  color: var(--planner-gold);
+}
+
+.tdg-planner-more a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (min-width: 860px) {
+  .tdg-planner-shell {
+    padding-bottom: 40px;
+  }
+  .tdg-planner-nav {
+    position: static;
+    max-width: 720px;
+    margin: 0 auto 16px;
+    border-radius: 18px;
+    padding: 8px;
+  }
+}
+
+.tdg-planner-funnel {
+  overflow-x: hidden;
+}
+
+.tdg-planner-lede {
+  font-size: 1.08rem;
+  max-width: 36rem;
+  margin-top: 10px;
+}
+
+.tdg-funnel-hero {
+  padding: 28px 16px 12px;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.tdg-funnel-mock {
+  margin-top: 22px;
+  border-radius: 24px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(228, 195, 138, 0.16), rgba(42, 24, 28, 0.92));
+  border: 1px solid rgba(228, 195, 138, 0.22);
+}
+
+.tdg-funnel-mock-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--planner-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+}
+
+.tdg-funnel-mock-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 12px 0;
+  overflow: hidden;
+}
+
+.tdg-funnel-mock-bar span {
+  display: block;
+  width: 62%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--planner-pine), var(--planner-gold));
+}
+
+.tdg-funnel-mock ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--planner-ink);
+}
+
+.tdg-funnel-section {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 28px 16px;
+}
+
+.tdg-funnel-transform,
+.tdg-funnel-modules,
+.tdg-funnel-packages,
+.tdg-funnel-addons {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.tdg-funnel-transform article,
+.tdg-funnel-modules article,
+.tdg-funnel-packages article,
+.tdg-funnel-addons article {
+  border: 1px solid rgba(228, 195, 138, 0.16);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(42, 24, 28, 0.72);
+}
+
+.tdg-funnel-packages article.on {
+  border-color: var(--planner-gold);
+}
+
+.tdg-funnel-price {
+  font-size: 1.4rem;
+  color: var(--planner-ink);
+  margin: 8px 0;
+}
+
+.tdg-funnel-badge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: rgba(228, 195, 138, 0.2);
+  color: var(--planner-gold);
+  font-size: 12px;
+}
+
+.tdg-funnel-soon {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--planner-gold);
+  font-size: 12px;
+}
+
+.tdg-funnel-compare {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.tdg-funnel-compare table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 520px;
+}
+
+.tdg-funnel-compare th,
+.tdg-funnel-compare td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+}
+
+.tdg-funnel-sub {
+  margin-top: 22px;
+}
+
+.tdg-funnel-email {
+  display: block;
+  margin: 16px 0;
+}
+
+.tdg-funnel-sticky {
+  position: sticky;
+  bottom: 12px;
+  width: 100%;
+  z-index: 8;
+}
+
+.tdg-planner-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.tdg-planner-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.tdg-planner-sheet-card {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: 92dvh;
+  overflow: auto;
+  background: #1a0f12;
+  color: var(--planner-ink);
+  border-radius: 24px 24px 0 0;
+  padding: 16px 16px 28px;
+}
+
+.tdg-planner-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.tdg-planner-linkish {
+  background: none;
+  border: 0;
+  color: var(--planner-gold);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+@media (min-width: 720px) {
+  .tdg-funnel-packages,
+  .tdg-funnel-modules,
+  .tdg-funnel-transform {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tdg-funnel-packages {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .tdg-planner-sheet {
+    align-items: center;
+  }
+  .tdg-planner-sheet-card {
+    border-radius: 24px;
+  }
+}
