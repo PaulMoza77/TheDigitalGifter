@@ -64,6 +64,7 @@ function CheckoutBody({
   confirmDisabled,
   payButtonClassName,
   surface = "light",
+  walletCapabilityOnly = false,
 }: {
   dueDisplay: string;
   email?: string;
@@ -81,6 +82,8 @@ function CheckoutBody({
   confirmDisabled?: boolean;
   payButtonClassName?: string;
   surface?: "light" | "dark";
+  /** When true, Apple Pay / Google Pay use Stripe `auto` — no reserved/fake wallet buttons. */
+  walletCapabilityOnly?: boolean;
 }) {
   const checkoutState = useCheckoutElements();
   const [busy, setBusy] = useState(false);
@@ -254,20 +257,34 @@ function CheckoutBody({
 
   const payLabel = dueDisplay.replace(" USD", "");
   const buttonText = payButtonLabel ? payButtonLabel(payLabel) : `Pay ${payLabel} — Get portraits`;
+  const expressOptions = walletCapabilityOnly
+    ? {
+        ...(surface === "dark" ? DARK_EXPRESS_OPTIONS : PET_EXPRESS_CHECKOUT_OPTIONS),
+        layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
+        paymentMethods: {
+          ...PET_EXPRESS_CHECKOUT_OPTIONS.paymentMethods,
+          applePay: "auto" as const,
+          googlePay: "auto" as const,
+          link: "never" as const,
+        },
+      }
+    : surface === "dark"
+      ? DARK_EXPRESS_OPTIONS
+      : {
+          ...PET_EXPRESS_CHECKOUT_OPTIONS,
+          layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
+          paymentMethods: {
+            ...PET_EXPRESS_CHECKOUT_OPTIONS.paymentMethods,
+            applePay: "always" as const,
+          },
+        };
 
   return (
     <div className="space-y-4">
       <div className="min-h-[52px]">
         <div onPointerDown={markInteraction}>
         <ExpressCheckoutElement
-          options={surface === "dark" ? DARK_EXPRESS_OPTIONS : {
-            ...PET_EXPRESS_CHECKOUT_OPTIONS,
-            layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
-            paymentMethods: {
-              ...PET_EXPRESS_CHECKOUT_OPTIONS.paymentMethods,
-              applePay: "always" as const,
-            },
-          }}
+          options={expressOptions}
           onReady={(event) => {
             const methods = (event?.availablePaymentMethods || {}) as Record<string, boolean>;
             const applePay = Boolean(methods.applePay);
@@ -341,6 +358,7 @@ export function CustomStripeCheckout({
   appearanceTheme = "stripe",
   appearanceVariables,
   payButtonClassName,
+  walletCapabilityOnly = false,
 }: {
   clientSecret: string;
   publishableKey: string;
@@ -359,6 +377,7 @@ export function CustomStripeCheckout({
   appearanceTheme?: "stripe" | "night";
   appearanceVariables?: Record<string, string>;
   payButtonClassName?: string;
+  walletCapabilityOnly?: boolean;
 }) {
   const [reloadNonce, setReloadNonce] = useState(0);
   const hasAutoRetried = useRef(false);
@@ -472,6 +491,7 @@ export function CustomStripeCheckout({
         confirmDisabled={confirmDisabled}
         payButtonClassName={payButtonClassName}
         surface={surface}
+        walletCapabilityOnly={walletCapabilityOnly}
       />
     </CheckoutElementsProvider>
   );

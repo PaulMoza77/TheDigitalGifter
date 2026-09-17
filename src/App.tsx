@@ -164,6 +164,12 @@ const ChristmasCardsPage = lazy(
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
 );
+const ChristmasPlannerPage = lazy(
+  () => import("@/features/christmas/planner/ChristmasPlannerPage"),
+);
+const ChristmasPlannerWelcomePage = lazy(
+  () => import("@/features/christmas/planner/ChristmasPlannerWelcomePage"),
+);
 const ChristmasSendGiftPage = lazy(
   () => import("@/features/christmas/ChristmasSendGiftPage"),
 );
@@ -204,12 +210,6 @@ const ChristmasPlannerLayout = lazy(
 );
 const ChristmasPlannerTodayPage = lazy(
   () => import("@/features/christmas/planner/ChristmasPlannerPages"),
-);
-const ChristmasPlannerPublicPage = lazy(
-  () => import("@/features/christmas/planner/ChristmasPlannerPublicPage"),
-);
-const ChristmasPlannerWelcomePage = lazy(
-  () => import("@/features/christmas/planner/ChristmasPlannerWelcomePage"),
 );
 const PlannerPlanRoute = lazy(() =>
   import("@/features/christmas/planner/ChristmasPlannerPages").then((m) => ({
@@ -383,12 +383,15 @@ function WebsiteLayout() {
   const hideChromeExtras =
     location.pathname === "/christmas/tree-gifts" ||
     location.pathname.startsWith("/christmas/tree-gifts/");
+  const hidePlannerChrome =
+    location.pathname === "/christmas/planner" ||
+    location.pathname.startsWith("/christmas/planner/");
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
-      <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
+      {hidePlannerChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
 
-      <main className={`flex-1 ${hideChromeExtras ? "min-h-0" : ""}`}>
+      <main className={`flex-1 ${hideChromeExtras || hidePlannerChrome ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
@@ -397,7 +400,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      {hideChromeExtras ? null : <WebsiteFooter />}
+      {hideChromeExtras || hidePlannerChrome ? null : <WebsiteFooter />}
     </div>
   );
 }
@@ -419,6 +422,17 @@ function ChristmasGiftsAliasRedirect() {
       replace
     />
   );
+}
+
+function PlannerAwareSupportWidget() {
+  const location = useLocation();
+  if (
+    location.pathname === "/christmas/planner" ||
+    location.pathname.startsWith("/christmas/planner/")
+  ) {
+    return null;
+  }
+  return <SupportTicketWidget />;
 }
 
 function ChristmasRouteFallback() {
@@ -600,8 +614,6 @@ function AppInner() {
             />
             <Route path="/categories/pets" element={<PetsCategoryPage />} />
 
-            <Route path="/christmas/planner" element={<ChristmasPlannerPublicPage />} />
-            <Route path="/christmas/planner/welcome" element={<ChristmasPlannerWelcomePage />} />
             <Route path="/christmas/suite" element={<ChristmasSuitePage />} />
             <Route path="/christmas/photo-generator" element={<ChristmasPhotoGeneratorPage />} />
             <Route path="/christmas/family" element={<ChristmasFamilyPage />} />
@@ -624,6 +636,8 @@ function AppInner() {
             />
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
+            <Route path="/christmas/planner" element={<ChristmasPlannerPage />} />
+            <Route path="/christmas/planner/welcome" element={<ChristmasPlannerWelcomePage />} />
             <Route path="/christmas/send-a-gift" element={<ChristmasSendGiftPage />} />
             <Route path="/send-a-gift" element={<Navigate to="/christmas/send-a-gift" replace />} />
             <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
@@ -661,7 +675,7 @@ function AppInner() {
                 { path: "/christmas/tree-gifts", element: <ChristmasGiftsPage /> },
                 { path: "/christmas/cards", element: <ChristmasCardsPage /> },
                 { path: "/christmas/messages", element: <ChristmasMessagesPage /> },
-                { path: "/christmas/planner", element: <ChristmasPlannerPublicPage /> },
+                { path: "/christmas/planner", element: <ChristmasPlannerPage /> },
                 { path: "/christmas/planner/welcome", element: <ChristmasPlannerWelcomePage /> },
                 { path: "/christmas/send-a-gift", element: <ChristmasSendGiftPage /> },
               ]),
@@ -974,7 +988,7 @@ function AppInner() {
       </Suspense>
 
       <Suspense fallback={null}>
-        <SupportTicketWidget />
+        <PlannerAwareSupportWidget />
       </Suspense>
       <Toaster position="top-right" />
       <CreditsFunnelModal />

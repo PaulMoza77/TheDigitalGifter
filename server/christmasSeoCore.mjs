@@ -57,6 +57,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     links: [
       { href: "/christmas/send-a-gift", label: "Send a Christmas Gift Online" },
       { href: "/christmas/gift-finder", label: "Find a Christmas Gift They’ll Love" },
+      { href: "/christmas/planner", label: "Christmas Planner" },
       { href: "/christmas/wishlist", label: "Create a Christmas Wishlist" },
       { href: "/christmas/photo-generator", label: "AI Christmas Photo Generator" },
       { href: "/christmas/kids", label: "Christmas Portraits for Kids" },
@@ -98,6 +99,32 @@ export const CHRISTMAS_SEO_ROUTES = [
       { href: "/christmas/send-a-gift", label: "Send a Gift" },
     ],
     ogImage: `${SITE_ORIGIN}/christmas/og-countdown.jpg`,
+  },
+  {
+    path: "/christmas/planner",
+    title: "Christmas Planner 2026 | Online Christmas Planning | TheDigitalGifter",
+    description:
+      "Plan gifts, budget, meals, hosting, cards, and traditions in one interactive Christmas Planner. Not a PDF. Built for phone-first Christmas planning.",
+    canonicalPath: "/christmas/planner",
+    h1: "Your entire Christmas, beautifully planned.",
+    lede:
+      "Christmas Planner by The Digital Gifter is an interactive Christmas planning experience — gifts, budget, meals, hosting, cards, and traditions in one place. It is not a PDF.",
+    h2: "A digital Christmas planner for the whole season",
+    h2Body:
+      "Use it as a Christmas gift planner, budget planner, and meal planner. Start on your phone from Instagram or TikTok, pay once, and keep access on your account.",
+    links: [
+      { href: "/christmas", label: "Christmas at TheDigitalGifter" },
+      { href: "/christmas/gift-finder", label: "Christmas Gift Finder" },
+      { href: "/christmas/wishlist", label: "Christmas Wishlist" },
+      { href: "/christmas/cards", label: "Christmas Cards" },
+      { href: "/christmas/messages", label: "Christmas Messages" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/planner", label: "Christmas Planner" },
+    ],
+    ogImage: `${SITE_ORIGIN}/christmas/cabin-hero-1920.webp`,
   },
   {
     path: "/christmas/gift-finder",

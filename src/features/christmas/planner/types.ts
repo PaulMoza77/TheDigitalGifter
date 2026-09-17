@@ -14,6 +14,7 @@ export const PLANNER_FEATURE_KEYS = [
 export type PlannerFeatureKey = (typeof PLANNER_FEATURE_KEYS)[number];
 
 export const PLANNER_PRODUCT_KEYS = [
+  "christmas_planner_2026",
   "christmas_planner",
   "christmas_planner_food",
   "christmas_planner_recipes",

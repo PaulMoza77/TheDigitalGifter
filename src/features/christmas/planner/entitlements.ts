@@ -7,8 +7,45 @@ import {
   type PlannerFeatureKey,
 } from "./types";
 
+/** Funnel user_entitlements keys → V1 app feature flags (mirrors SQL map_planner_entitlement_to_features). */
+export const FUNNEL_ENTITLEMENT_TO_FEATURES: Record<string, readonly PlannerFeatureKey[]> = {
+  "planner.countdown": ["planner_core"],
+  "planner.plan": ["planner_core", "advanced_planning"],
+  "planner.tasks": ["planner_core"],
+  "planner.gifts": ["gift_planner"],
+  "planner.wishlist": ["gift_planner"],
+  "planner.budget": ["budget"],
+  "planner.shopping": ["budget", "advanced_planning"],
+  "planner.meals": ["food_planner"],
+  "planner.recipes_collection": ["recipes"],
+  "planner.hosting": ["hosting"],
+  "planner.travel": ["travel"],
+  "planner.rescue_mode": ["rescue_mode"],
+  "planner.premium_content": ["premium_content"],
+  "planner.club_premium": ["premium_content"],
+  "planner.gift_finder_advanced": ["advanced_planning"],
+  "planner.activities": ["advanced_planning"],
+  "planner.cards_messages": ["advanced_planning"],
+  "planner.ai_assistant": ["advanced_planning"],
+  "planner.photo_credits_bonus": ["premium_content"],
+};
+
+export function featuresFromFunnelEntitlementKeys(keys: string[]): PlannerFeatureKey[] {
+  const mapped: PlannerFeatureKey[][] = [];
+  for (const key of keys) {
+    if ((PLANNER_FEATURE_KEYS as readonly string[]).includes(key)) {
+      mapped.push([key as PlannerFeatureKey]);
+      continue;
+    }
+    const feats = FUNNEL_ENTITLEMENT_TO_FEATURES[key];
+    if (feats?.length) mapped.push([...feats]);
+  }
+  return mergeFeatures(mapped);
+}
+
 export function isPlannerProductKey(value: string): boolean {
-  return (PLANNER_PRODUCT_KEYS as readonly string[]).includes(value);
+  const key = String(value || "").trim();
+  return key === "christmas_planner_2026" || (PLANNER_PRODUCT_KEYS as readonly string[]).includes(key);
 }
 
 export function featuresForPackage(
@@ -61,9 +98,8 @@ export function accessFromGrants(input: {
     })
     .map((g) => g.feature_key);
 
-  const grantKeys = [...input.grantKeys, ...fromActiveGrants].filter((k): k is PlannerFeatureKey =>
-    (PLANNER_FEATURE_KEYS as readonly string[]).includes(k),
-  );
+  const rawKeys = [...input.grantKeys, ...fromActiveGrants];
+  const grantKeys = featuresFromFunnelEntitlementKeys(rawKeys);
   const features = mergeFeatures([grantKeys]);
   const package_keys = [
     ...new Set(
@@ -127,13 +163,17 @@ export function upgradePackageForFeature(feature: PlannerFeatureKey): {
   productKey: string;
   packageKey: string;
 } {
-  if (feature === "food_planner") return { productKey: "christmas_planner_food", packageKey: "food" };
+  // Canonical funnel product; add-ons are packages on the same product.
+  if (feature === "food_planner") return { productKey: "christmas_planner_2026", packageKey: "addon_recipes" };
   if (feature === "recipes" || feature === "premium_content") {
-    return { productKey: "christmas_planner_recipes", packageKey: "recipes" };
+    return { productKey: "christmas_planner_2026", packageKey: "addon_recipes" };
   }
-  if (feature === "hosting") return { productKey: "christmas_planner_hosting", packageKey: "hosting" };
-  if (feature === "travel") return { productKey: "christmas_planner_travel", packageKey: "travel" };
-  return { productKey: "christmas_planner", packageKey: "essentials" };
+  if (feature === "hosting") return { productKey: "christmas_planner_2026", packageKey: "addon_hosting" };
+  if (feature === "travel") return { productKey: "christmas_planner_2026", packageKey: "addon_travel" };
+  if (feature === "advanced_planning") {
+    return { productKey: "christmas_planner_2026", packageKey: "magic" };
+  }
+  return { productKey: "christmas_planner_2026", packageKey: "essentials" };
 }
 
 export function addonIncludedInPackage(packageKey: string, addonKey: string): boolean {

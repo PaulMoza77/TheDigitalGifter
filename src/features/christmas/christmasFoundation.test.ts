@@ -139,7 +139,7 @@ describe("christmas pricing security", () => {
     expect(christmasPlannerCheckoutEnabled()).toBe(false);
     const plan = planChristmasCheckout({
       catalog: CHRISTMAS_CATALOG_SEED,
-      productKey: "christmas_planner",
+      productKey: "christmas_planner_2026",
       packageKey: "essentials",
       clientAmountCents: 1,
       successUrl: "https://example.com/success",

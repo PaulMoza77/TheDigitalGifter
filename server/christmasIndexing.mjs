@@ -49,6 +49,7 @@ export const CHRISTMAS_INDEXABLE_PATHS = [
 export const CHRISTMAS_KNOWN_SPA_PATHS = [
   ...CHRISTMAS_INDEXABLE_PATHS,
   "/christmas/suite",
+  "/christmas/planner/welcome",
   "/christmas/tree-gifts",
   "/christmas/planner/welcome",
   "/christmas-ai-photos",

@@ -1,10 +1,10 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
-import "./planner.css";
+import "./plannerApp.css";
 
 export default function ChristmasPlannerLayout() {
   return (
-    <div className="tdg-planner">
+    <div className="tdg-planner-app">
       <PageHead
         title="Christmas Planner"
         description="Your private Christmas command center."

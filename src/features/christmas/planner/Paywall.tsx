@@ -26,7 +26,10 @@ export function PlannerPaywall({
             trackPlannerEvent("planner_upgrade_clicked", { feature, packageKey: pack.packageKey });
           }}
         >
-          Unlock {pack.packageKey === "food" || pack.packageKey === "recipes" || pack.packageKey === "hosting" || pack.packageKey === "travel" ? pack.packageKey : "this season"}
+          Unlock{" "}
+          {pack.packageKey.startsWith("addon_")
+            ? pack.packageKey.replace("addon_", "").replace(/_/g, " ")
+            : "this season"}
         </Link>
       </div>
     </div>

@@ -1,25 +1,32 @@
-# Christmas Planner V1
+# Christmas Planner (launch)
 
-**Route (product):** `/account/christmas` (noindex)  
-**Route (acquisition):** `/christmas/planner` (indexable)
+**Product key:** `christmas_planner_2026`  
+**Routes:** `/christmas/planner` (editorial funnel) · `/christmas/planner/welcome` · `/account/christmas` (command center)
 
-Does **not** replace Gift Finder, Wishlist, cards, messages, tree, or Christmas checkout.
+## Architecture (canonical)
 
-## Entitlements
+| Concern | Source |
+|---|---|
+| Sales funnel UI | Editorial `ChristmasPlannerPage` (PR #214 + redesign) |
+| Commerce / packages / guest claim | Funnel: `user_entitlements`, opaque public token, `christmas-planner-funnel` |
+| Interactive Planner app | V1 modules under `/account/christmas` |
+| Workspace tables | Migration `20260917180000_christmas_planner_workspace.sql` |
+| Feature access | `get_christmas_planner_access()` maps `user_entitlements` (`planner.*`) → app features |
 
-Feature keys (never gate only on `isPremium`):
+Do **not** introduce a second entitlement table or a conflicting `grant_christmas_planner_entitlements(uuid)` signature.
 
-- `planner_core`, `gift_planner`, `budget`, `food_planner`, `recipes`, `hosting`, `travel`, `advanced_planning`, `rescue_mode`, `premium_content`
+## Kill switches
 
-Packages on existing `christmas_products` / `christmas_packages` / `christmas_orders`:
+- `CHRISTMAS_CHECKOUT_ENABLED`
+- `CHRISTMAS_PLANNER_CHECKOUT_ENABLED` **or** product metadata `checkout_live=true`
 
-- `christmas_planner` `core` | `complete`
-- add-ons: food, recipes, hosting, travel
+Seed ships checkout off.
 
-Paid access is resolved by `get_christmas_planner_access()` from grants + paid orders. Guest purchases claim via `claim_christmas_planner_grants_for_user()`.
+## Migrations (apply in order)
 
-Fulfillment: `grant_christmas_planner_entitlements(order_id)` from Stripe (no photo generate).
+1. `20260917140000_christmas_planner_funnel.sql` — product, packages, `user_entitlements`, claim/grant RPCs
+2. `20260917180000_christmas_planner_workspace.sql` — profiles/tasks/gifts/budget/meals/… + access bridge + refund
 
-## Data
+## Free vs paid
 
-Owner RLS via `christmas_planner_owns_profile`. Recipes catalog is public-read for published rows.
+Account Planner works free with limits. Paid packages unlock feature keys via entitlements.

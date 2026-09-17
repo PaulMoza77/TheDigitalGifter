@@ -8,6 +8,8 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
 import { GIFT_TREE_PAID_OFFERS } from "./giftTreeRewards.ts";
+import { isPlannerProductKey } from "./plannerCommerce.ts";
+import { sendPlannerReadyEmail } from "./plannerEmail.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -162,12 +164,60 @@ export async function handleChristmasStripeEvent(input: {
       result: { ...result, product_family: "christmas" },
     });
 
+    if (result.ok === true && (result.status === "paid" || result.status === "already_paid") && isPlannerProductKey(asString(input.metadata.product_key))) {
+      const productKey = asString(input.metadata.product_key);
+      const packageKey = asString(input.metadata.package_key);
+      const entitlements = asString(input.metadata.entitlements)
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean);
+      const { data: ord } = await input.service
+        .from("christmas_orders")
+        .select("user_id,email,package_key,metadata,commercial_snapshot")
+        .eq("id", orderId)
+        .maybeSingle();
+      const meta = (ord?.metadata || {}) as Record<string, unknown>;
+      const snap = (ord?.commercial_snapshot || {}) as Record<string, unknown>;
+      const keys = entitlements.length
+        ? entitlements
+        : Array.isArray(snap.entitlements)
+          ? (snap.entitlements as unknown[]).map((k) => String(k))
+          : [];
+      // Canonical path: always grant into user_entitlements (funnel multi-arg RPC).
+      // Legacy single-arg overload writing christmas_feature_grants is intentionally unused.
+      await input.service.rpc("grant_christmas_planner_entitlements", {
+        p_order_id: orderId,
+        p_entitlements: keys,
+        p_tier: packageKey || asString(ord?.package_key),
+        p_source: "stripe",
+        p_source_transaction_id: sessionId,
+        p_season_year: 2026,
+      });
+      if (result.status === "paid") {
+        const email = asString(ord?.email);
+        const token = asString(meta.public_token_hint);
+        if (email && token) {
+          waitUntil(
+            sendPlannerReadyEmail({
+              service: input.service,
+              orderId,
+              email,
+              publicToken: token,
+              packageName: packageKey || "Christmas Planner",
+              unlocked: keys,
+            }).catch((err) => console.error("planner email failed", err)),
+          );
+        }
+      }
+    }
+
     if (result.ok === true && result.status === "paid") {
       const productKey = asString(input.metadata.product_key);
       const packageKey = asString(input.metadata.package_key);
 
-      // Gift Tree packs buy additional opens — never enqueue photo/video generation.
-      if (productKey === "christmas_gift_tree") {
+      if (isPlannerProductKey(productKey)) {
+        // Entitlements + email handled above (including webhook replay).
+      } else if (productKey === "christmas_gift_tree") {
         const paid = GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey)
           || (packageKey === "open_5"
             ? GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === "open_five")
@@ -236,19 +286,7 @@ export async function handleChristmasStripeEvent(input: {
           if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
         }
         const commercialKey = asString(input.metadata.commercial_key);
-        const plannerProduct =
-          productKey.startsWith("christmas_planner") ||
-          asString(input.metadata.product_key).startsWith("christmas_planner");
-        if (plannerProduct) {
-          await input.service.rpc("grant_christmas_planner_entitlements", {
-            p_order_id: orderId,
-          });
-          waitUntil(
-            sendPlannerAccessEmail(input.service, orderId).catch((err) => {
-              console.error("planner access email failed", err);
-            }),
-          );
-        } else if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
+        if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
           const { data: ord } = await input.service
             .from("christmas_orders")
             .select("user_id,email,commercial_snapshot")
@@ -353,7 +391,8 @@ async function handleChristmasPlannerRefund(input: {
     .eq("id", orderId)
     .maybeSingle();
   if (!ord) return null;
-  if (!asString(ord.product_key).startsWith("christmas_planner")) {
+  const productKey = asString(ord.product_key);
+  if (!productKey.startsWith("christmas_planner") && !isPlannerProductKey(productKey)) {
     return null;
   }
 
@@ -366,67 +405,4 @@ async function handleChristmasPlannerRefund(input: {
   return new Response(JSON.stringify({ ok: true, status: "planner_refunded", order_id: orderId }), {
     headers: { "Content-Type": "application/json" },
   });
-}
-
-async function sendPlannerAccessEmail(service: SupabaseClient, orderId: string) {
-  const { data: ord } = await service
-    .from("christmas_orders")
-    .select("id, email, metadata, amount_cents, currency, package_key, public_token_hash")
-    .eq("id", orderId)
-    .maybeSingle();
-  if (!ord) return;
-  const meta = (ord.metadata || {}) as Record<string, unknown>;
-  if (asString(meta.planner_access_email_sent_at)) return;
-  const email = asString(ord.email);
-  if (!email.includes("@")) return;
-
-  const origin = Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_APP_URL") || "https://www.thedigitalgifter.com";
-  const welcome = `${origin.replace(/\/$/, "")}/christmas/planner/welcome?order=${encodeURIComponent(orderId)}`;
-  const apiKey = asString(Deno.env.get("RESEND_API_KEY"));
-  const from = asString(
-    Deno.env.get("CHRISTMAS_EMAIL_FROM") ||
-      Deno.env.get("TRANSACTIONAL_EMAIL_FROM") ||
-      Deno.env.get("PET_EMAIL_FROM"),
-  );
-  if (!apiKey || !from) {
-    await service
-      .from("christmas_orders")
-      .update({
-        metadata: { ...meta, planner_access_email_status: "unconfigured" },
-      })
-      .eq("id", orderId);
-    return;
-  }
-
-  const html = `<!doctype html><html><body style="font-family:Georgia,serif;background:#1a0f12;color:#F7F0E4;padding:32px">
-  <div style="max-width:560px;margin:0 auto;background:#2a181c;border-radius:18px;padding:28px">
-    <h1 style="font-size:26px;margin:0 0 12px">Your Christmas Planner is ready 🎄</h1>
-    <p style="line-height:1.6;opacity:.9">Your purchase is saved. Sign in or create an account with this email to unlock your season command center.</p>
-    <p style="margin:24px 0"><a href="${welcome}" style="display:inline-block;background:#e4c38a;color:#2a181c;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600">Continue to my Planner</a></p>
-    <p style="font-size:12px;opacity:.55">The Digital Gifter · Keep this email if you close the browser.</p>
-  </div></body></html>`;
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [email],
-      subject: "Your Christmas Planner is ready 🎄",
-      html,
-    }),
-  });
-  await service
-    .from("christmas_orders")
-    .update({
-      metadata: {
-        ...meta,
-        planner_access_email_sent_at: new Date().toISOString(),
-        planner_access_email_status: res.ok ? "sent" : `failed_${res.status}`,
-      },
-    })
-    .eq("id", orderId);
 }

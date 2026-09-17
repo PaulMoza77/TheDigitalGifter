@@ -1,37 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
-import { startChristmasCheckout } from "@/features/christmas/photoApi";
-import { attributionParamsForInternal, captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { getChristmasFunnelSessionId } from "@/features/christmas/analytics";
 import { trackPlannerEvent } from "./analytics";
-import { persistPlannerOrder, type PlannerCatalogRow } from "./api";
+import { startPlannerCheckout } from "./api";
+import { getOrCreatePlannerGuestToken, persistPlannerOrderRecovery } from "./guest";
 import { money } from "./Paywall";
-import { PLANNER_WELCOME_ROUTE } from "./types";
 
-function guestToken(): string {
-  const key = "tdg.christmas.planner.guest";
-  try {
-    const existing = localStorage.getItem(key);
-    if (existing) return existing;
-    const next = crypto.randomUUID();
-    localStorage.setItem(key, next);
-    return next;
-  } catch {
-    return crypto.randomUUID();
-  }
-}
+export type PlannerCheckoutSelection = {
+  packageKey: string;
+  packageName: string;
+};
 
+/** In-app upgrade sheet — uses funnel commerce (`christmas_planner_2026`). */
 export function PlannerCheckoutSheet({
   open,
   onClose,
   selected,
-  addons,
+  addonKeys = [],
   email,
 }: {
   open: boolean;
   onClose: () => void;
-  selected: PlannerCatalogRow | null;
-  addons: PlannerCatalogRow[];
+  selected: PlannerCheckoutSelection | null;
+  addonKeys?: string[];
   email: string;
 }) {
   const [session, setSession] = useState<{
@@ -58,46 +49,28 @@ export function PlannerCheckoutSheet({
       setBusy(true);
       setError(null);
       setSession(null);
-      captureFunnelAttribution(window.location.search);
-      const attr = attributionParamsForInternal();
-      const origin = window.location.origin;
       trackPlannerEvent("planner_checkout_started", {
         packageKey: pack.packageKey,
-        metadata: { addons: addons.map((a) => a.packageKey).join(",") },
+        metadata: { addons: addonKeys.join(",") },
       });
       try {
-        const result = await startChristmasCheckout({
-          product_key: pack.productKey,
-          package_key: pack.packageKey,
-          addon_keys: addons.map((a) => a.packageKey),
+        const result = await startPlannerCheckout({
+          packageKey: pack.packageKey,
+          addonKeys,
           email: email.trim() || undefined,
-          amount_cents: 1,
-          currency: "usd",
-          landing_path: "/christmas/planner",
-          source_route: "/christmas/planner",
-          guest_token: guestToken(),
-          funnel_session_id: getChristmasFunnelSessionId(),
-          utm_source: attr.utm_source,
-          utm_medium: attr.utm_medium,
-          utm_campaign: attr.utm_campaign,
-          utm_content: attr.utm_content,
-          utm_term: attr.utm_term,
-          campaign_id: attr.campaign_id,
-          adset_id: attr.adset_id,
-          ad_id: attr.ad_id,
-          success_url: `${origin}${PLANNER_WELCOME_ROUTE}?checkout=success`,
-          cancel_url: `${origin}/christmas/planner?checkout=canceled`,
+          guestToken: getOrCreatePlannerGuestToken(),
+          funnelSessionId: getChristmasFunnelSessionId(),
         });
         if (cancelled) return;
-        persistPlannerOrder({
-          orderId: result.orderId,
-          publicToken: result.publicToken,
-          sessionId: result.sessionId,
-          packageKey: pack.packageKey,
-          addons: addons.map((a) => a.packageKey),
-          amountCents: result.amountCents,
-          currency: result.currency,
-        });
+        if (result.publicToken) {
+          persistPlannerOrderRecovery({
+            orderId: result.orderId,
+            publicToken: result.publicToken,
+            packageKey: pack.packageKey,
+            addonKeys,
+            funnelSessionId: getChristmasFunnelSessionId(),
+          });
+        }
         setSession({
           clientSecret: result.clientSecret,
           publishableKey: result.publishableKey,
@@ -110,8 +83,11 @@ export function PlannerCheckoutSheet({
         if (cancelled) return;
         const code = (err as { code?: string }).code || "";
         const message =
-          code === "planner_checkout_disabled" || code === "not_purchasable"
-            ? "Planner paid checkout is not live yet. You can start the free planner now."
+          code === "planner_checkout_disabled" ||
+          code === "checkout_disabled" ||
+          code === "not_purchasable" ||
+          /not enabled|checkout_disabled/i.test(err instanceof Error ? err.message : "")
+            ? "Planner paid checkout is not live yet. You can explore the free planner now."
             : err instanceof Error
               ? err.message
               : "Checkout failed";
@@ -128,7 +104,7 @@ export function PlannerCheckoutSheet({
     return () => {
       cancelled = true;
     };
-  }, [open, selected?.productKey, selected?.packageKey, addons.map((a) => a.packageKey).join(","), email]);
+  }, [open, selected?.packageKey, addonKeys.join(","), email]);
 
   if (!open) return null;
 
@@ -145,38 +121,31 @@ export function PlannerCheckoutSheet({
         {selected ? (
           <p className="tdg-planner-muted">
             {selected.packageName}
-            {addons.length ? ` + ${addons.map((a) => a.packageName).join(", ")}` : ""}
+            {addonKeys.length ? ` + ${addonKeys.join(", ")}` : ""}
           </p>
         ) : null}
-        {busy ? <p className="tdg-planner-muted">Preparing Apple Pay, Google Pay, and card…</p> : null}
-        {error ? <p role="alert">{error}</p> : null}
-        {session ? (
-          <CustomStripeCheckout
-            clientSecret={session.clientSecret}
-            publishableKey={session.publishableKey}
-            email={email}
-            dueDisplay={due}
-            appearanceTheme="night"
-            payButtonLabel={(pay) => `Pay ${pay} — unlock this season`}
-            loadingLabel="Checking wallet availability…"
-            onPaymentInteraction={() =>
-              trackPlannerEvent("planner_payment_submitted", {
-                packageKey: selected?.packageKey,
-                orderId: session.orderId,
-                amountCents: session.amountCents,
-              })
-            }
-            onWalletAvailability={(info) => {
-              trackPlannerEvent("planner_wallet_presented", {
-                packageKey: selected?.packageKey,
-                metadata: {
-                  applePay: info.applePay,
-                  googlePay: info.googlePay,
-                  any: info.any,
-                },
-              });
-            }}
-          />
+        {busy ? <p className="tdg-planner-muted">Preparing checkout…</p> : null}
+        {error ? <p className="tdg-planner-muted">{error}</p> : null}
+        {session?.clientSecret ? (
+          <>
+            <p className="tdg-planner-muted">Due today: {due}</p>
+            <CustomStripeCheckout
+              clientSecret={session.clientSecret}
+              publishableKey={session.publishableKey}
+              dueDisplay={due}
+              email={email}
+              appearanceTheme="night"
+              walletCapabilityOnly
+              payButtonLabel={() => "Pay"}
+              onPaymentInteraction={() => {
+                trackPlannerEvent("planner_payment_submitted", {
+                  packageKey: selected?.packageKey,
+                  orderId: session.orderId,
+                  amountCents: session.amountCents,
+                });
+              }}
+            />
+          </>
         ) : null}
       </div>
     </div>
