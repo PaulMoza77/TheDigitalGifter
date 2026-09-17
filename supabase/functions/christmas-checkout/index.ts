@@ -72,8 +72,12 @@ type Body = {
   guardian_consent?: boolean;
   consent_version?: string;
   /** Gift-tree guest continuity — hashed server-side into order metadata. */
+  guest_token?: string;
   /** Planner add-ons — charged only when not already included in the package. */
   addon_keys?: string[];
+  prompt?: string;
+  client_prompt?: string;
+};
 
 function asString(value: unknown): string {
   return String(value ?? "").trim();

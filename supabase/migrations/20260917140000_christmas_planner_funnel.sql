@@ -26,6 +26,7 @@ alter table public.christmas_products
       'messages',
       'planner',
       'hub',
+      'send_a_gift',
       'other'
     )
   );
