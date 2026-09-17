@@ -1,7 +1,31 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { formatDurationSeconds } from "./formatDuration";
-import { isIosLikeDevice, isUserShareCancel, saveLibraryVideo } from "./saveLibraryVideo";
+import {
+  clearLibraryVideoFileCache,
+  isIosLikeDevice,
+  isShareGestureLost,
+  isUserShareCancel,
+  saveLibraryVideo,
+  videoFileType,
+} from "./saveLibraryVideo";
+
+function mockVideoResponse(bytes: number[], contentType = "video/mp4") {
+  const buffer = new Uint8Array(bytes).buffer;
+  return {
+    ok: true,
+    headers: {
+      get(name: string) {
+        const key = name.toLowerCase();
+        if (key === "content-type") return contentType;
+        if (key === "content-length") return String(bytes.length);
+        return null;
+      },
+    },
+    arrayBuffer: async () => buffer,
+    body: null,
+  };
+}
 
 describe("formatDurationSeconds", () => {
   it("renders short clips in seconds", () => {
@@ -22,28 +46,33 @@ describe("isIosLikeDevice", () => {
   });
 });
 
-describe("isUserShareCancel", () => {
-  it("treats AbortError as a user cancel", () => {
+describe("share cancel helpers", () => {
+  it("treats AbortError as a user cancel and NotAllowedError as a lost gesture", () => {
     expect(isUserShareCancel({ name: "AbortError" })).toBe(true);
+    expect(isUserShareCancel({ name: "NotAllowedError" })).toBe(false);
     expect(isUserShareCancel(new Error("fail"))).toBe(false);
+    expect(isShareGestureLost({ name: "NotAllowedError" })).toBe(true);
+  });
+});
+
+describe("videoFileType", () => {
+  it("forces mp4 files to video/mp4 so iOS offers Save Video", () => {
+    expect(videoFileType("final_christmas_reel_1080p.mp4", "application/octet-stream")).toBe("video/mp4");
+    expect(videoFileType("clip.mp4", "application/mp4")).toBe("video/mp4");
+    expect(videoFileType("clip.mp4", "video/quicktime")).toBe("video/mp4");
   });
 });
 
 describe("saveLibraryVideo", () => {
   afterEach(() => {
+    clearLibraryVideoFileCache();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
-  it("shares a fetched file on iOS so Safari does not navigate away", async () => {
+  it("shares a fetched file on iOS with files only so Photos stays available", async () => {
     const share = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        blob: async () => new Blob([new Uint8Array([0, 0, 0, 1])], { type: "video/mp4" }),
-      }),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockVideoResponse([0, 0, 0, 1], "application/octet-stream")));
     vi.stubGlobal("navigator", {
       userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
       maxTouchPoints: 5,
@@ -56,21 +85,19 @@ describe("saveLibraryVideo", () => {
       saveLibraryVideo({ url: "/assets/clip_05.mp4", filename: "clip_05.mp4", title: "Cookies" }),
     ).resolves.toBe("shared");
     expect(share).toHaveBeenCalledTimes(1);
-    const payload = share.mock.calls[0][0] as { files: File[] };
-    expect(payload.files[0].name).toBe("clip_05.mp4");
-    expect(payload.files[0].type).toBe("video/mp4");
+    const payload = share.mock.calls[0][0] as Record<string, unknown>;
+    expect(Object.keys(payload)).toEqual(["files"]);
+    expect(payload.text).toBeUndefined();
+    expect(payload.title).toBeUndefined();
+    const files = payload.files as File[];
+    expect(files[0].name).toBe("clip_05.mp4");
+    expect(files[0].type).toBe("video/mp4");
   });
 
   it("downloads with a blob link on desktop", async () => {
     const click = vi.fn();
     const remove = vi.fn();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        blob: async () => new Blob([new Uint8Array([1, 2, 3])], { type: "video/mp4" }),
-      }),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockVideoResponse([1, 2, 3])));
     vi.stubGlobal("navigator", {
       userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)",
       maxTouchPoints: 0,
@@ -90,7 +117,6 @@ describe("saveLibraryVideo", () => {
       }),
       body: { appendChild: vi.fn() },
     });
-    vi.stubGlobal("window", { setTimeout: (fn: () => void) => fn() });
 
     await expect(
       saveLibraryVideo({ url: "/assets/clip_05.mp4", filename: "clip_05.mp4" }),

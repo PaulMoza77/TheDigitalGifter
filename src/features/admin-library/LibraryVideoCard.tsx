@@ -3,7 +3,16 @@ import { Download, Loader2, Pause, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { formatDurationSeconds } from "./formatDuration";
-import { isIosLikeDevice, isUserShareCancel, saveLibraryVideo } from "./saveLibraryVideo";
+import {
+  getCachedLibraryVideoFile,
+  isIosLikeDevice,
+  isShareGestureLost,
+  isUserShareCancel,
+  rememberLibraryVideoFile,
+  fetchLibraryVideoFile,
+  shareLibraryVideoFile,
+  triggerBlobDownload,
+} from "./saveLibraryVideo";
 import { librarySrcPath, type LibraryVideo } from "./catalog";
 
 type Props = {
@@ -12,6 +21,12 @@ type Props = {
   onPlayingChange: (playing: boolean) => void;
 };
 
+function formatFetchProgress(loaded: number, total: number | null): string {
+  const mb = (value: number) => `${Math.max(0.1, value / (1024 * 1024)).toFixed(1)} MB`;
+  if (total && total > 0) return `${mb(loaded)} / ${mb(total)}`;
+  return `Downloading ${mb(loaded)}`;
+}
+
 export default function LibraryVideoCard({ video, playing, onPlayingChange }: Props) {
   const href = librarySrcPath(video.src);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
@@ -19,8 +34,10 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
   const [visible, setVisible] = React.useState(false);
   const [duration, setDuration] = React.useState(video.durationSeconds ?? null);
   const [saving, setSaving] = React.useState(false);
+  const [progressLabel, setProgressLabel] = React.useState<string | null>(null);
   const [ios, setIos] = React.useState(false);
   const [capturedPoster, setCapturedPoster] = React.useState<string | null>(null);
+  const saveLockRef = React.useRef(false);
 
   React.useEffect(() => {
     setIos(isIosLikeDevice(navigator.userAgent, navigator.maxTouchPoints, navigator.platform));
@@ -87,24 +104,50 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
   const stillSrc = capturedPoster || video.poster;
 
   async function onSave() {
-    if (saving) return;
+    if (saveLockRef.current) return;
+    saveLockRef.current = true;
     setSaving(true);
+    setProgressLabel(null);
     try {
-      const result = await saveLibraryVideo({
-        url: href,
-        filename: video.filename,
-        title: video.title,
-      });
-      if (result === "shared") {
-        toast.success("Share sheet opened — choose Save Video to add it to Photos.");
-      } else {
+      videoRef.current?.pause();
+      onPlayingChange(false);
+
+      let file = getCachedLibraryVideoFile(href);
+      if (!file) {
+        file = await fetchLibraryVideoFile(href, video.filename, (loaded, total) => {
+          setProgressLabel(formatFetchProgress(loaded, total));
+        });
+        rememberLibraryVideoFile(href, file);
+      }
+
+      if (!ios) {
+        triggerBlobDownload(file, video.filename);
         toast.success(`Downloading ${video.filename}`);
+        return;
+      }
+
+      // Stop the spinner before the share sheet so a hung Files UI cannot trap the button.
+      setSaving(false);
+      setProgressLabel(null);
+      saveLockRef.current = false;
+      try {
+        await shareLibraryVideoFile(file);
+        toast.success("Choose Save Video to add it to Photos.");
+      } catch (error) {
+        if (isUserShareCancel(error)) return;
+        if (isShareGestureLost(error)) {
+          toast.message("Video is ready. Tap Save to Photos again, then choose Save Video.");
+          return;
+        }
+        throw error;
       }
     } catch (error) {
       if (isUserShareCancel(error)) return;
       toast.error(error instanceof Error ? error.message : "Could not save this video.");
     } finally {
+      saveLockRef.current = false;
       setSaving(false);
+      setProgressLabel(null);
     }
   }
 
@@ -189,11 +232,16 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-400/40 bg-indigo-500/20 px-3 py-2 text-sm font-medium text-indigo-100 transition hover:bg-indigo-500/30 disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          {ios ? "Save to Photos" : "Download"}
+          {saving
+            ? progressLabel || "Preparing video…"
+            : ios
+              ? "Save to Photos"
+              : "Download"}
         </button>
         {ios ? (
           <p className="text-[11px] leading-4 text-slate-500">
-            Stays on this page. iPhone will open a share sheet — tap Save Video to put it in Photos.
+            Stays on this page. When the share sheet opens, tap Save Video — that is the Photos option.
+            Ignore Save to Files.
           </p>
         ) : null}
       </div>
