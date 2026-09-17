@@ -81,7 +81,7 @@ export function trackPlannerEvent(
   },
 ): void {
   void trackChristmasEvent(eventName as ChristmasFunnelEventName, {
-    productKey: "christmas_planner",
+    productKey: "christmas_planner_2026",
     packageKey: extra?.packageKey,
     orderId: extra?.orderId,
     amountCents: extra?.amountCents,
