@@ -29,7 +29,7 @@ export const LIBRARY_CATEGORIES: LibraryCategory[] = [
     id: "christmas_reels",
     label: "Christmas Reels",
     description:
-      "NEW Kling 1080p Reels first, then the older Wan 2.2 test clips (NYC street, cocoa, cottage).",
+      "NEW Kling 1080p Reels first (Cut 2 remix, then the 5-clip final), then the older Wan 2.2 test clips.",
   },
   {
     id: "christmas_marketing",
@@ -83,6 +83,17 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
 }
 
 export const LIBRARY_VIDEOS: LibraryVideo[] = [
+  {
+    id: "reel-kling-1080p-cut2",
+    title: "NEW · Kling 1080p Cut 2",
+    description:
+      "True 1080×1920 remix, ~15.5 Mbps, 12.5s. Four clips: Santa → market → Polar Express → cozy cat. No text overlay.",
+    src: "/assets/christmas/instagram-reel-kling-1080p/final_christmas_reel_1080p_cut2.mp4",
+    filename: "final_christmas_reel_1080p_cut2.mp4",
+    category: "christmas_reels",
+    durationSeconds: 12.5,
+    poster: "/assets/christmas/instagram-reel-kling-1080p/posters/final_cut2.jpg",
+  },
   {
     id: "reel-kling-1080p-final",
     title: "NEW · Kling 1080p Final Reel",
