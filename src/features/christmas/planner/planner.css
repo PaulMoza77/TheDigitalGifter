@@ -494,6 +494,12 @@
   line-height: 1.1;
   max-width: 14ch;
   margin-bottom: 1.25rem;
+  color: var(--cream);
+}
+
+.tdg-planner__section--dark .tdg-planner__lede,
+.tdg-planner__section--mid .tdg-planner__lede {
+  color: rgba(243, 235, 224, 0.86);
 }
 
 /* —— Packages editorial —— */
@@ -538,6 +544,11 @@
 .tdg-planner__offer h3 {
   font-size: clamp(1.55rem, 4vw, 2rem);
   margin-bottom: 0.2rem;
+  color: var(--cream);
+}
+
+.tdg-planner__offer.is-selected h3 {
+  color: var(--gold-soft);
 }
 
 .tdg-planner__price {
