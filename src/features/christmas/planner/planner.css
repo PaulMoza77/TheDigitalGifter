@@ -251,6 +251,8 @@
 .tdg-planner section#checkout {
   scroll-margin-bottom: 6rem;
 }
+
+.tdg-planner__checkout {
   background: #0c1c15;
   border-radius: 1.25rem;
   padding: 1rem;
