@@ -39,6 +39,7 @@ export const CHRISTMAS_INDEXABLE_PATHS = [
   "/christmas/advent",
   "/christmas/cards",
   "/christmas/messages",
+  "/christmas/planner",
 ];
 
 /**

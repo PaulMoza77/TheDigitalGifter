@@ -106,9 +106,22 @@ Deno.serve(async (req) => {
 
     const body = await readJson<Body>(req);
     const productKey = asString(body.product_key);
+    const isPlannerProduct = productKey.startsWith("christmas_planner");
     const packageKey =
       asString(body.package_key) ||
-      (productKey === "christmas_santa_video" ? "basic" : "single");
+      (productKey === "christmas_santa_video"
+        ? "basic"
+        : productKey === "christmas_planner"
+          ? "core"
+          : productKey === "christmas_planner_food"
+            ? "food"
+            : productKey === "christmas_planner_recipes"
+              ? "recipes"
+              : productKey === "christmas_planner_hosting"
+                ? "hosting"
+                : productKey === "christmas_planner_travel"
+                  ? "travel"
+                  : "single");
     if (!productKey) return jsonResponse({ error: "product_key required" }, 400);
 
     // Client-supplied amount / prompts are intentionally ignored.
@@ -119,22 +132,65 @@ Deno.serve(async (req) => {
 
     const service = getServiceClient();
 
-    const commercialKey = commercialKeyForProduct(productKey);
-    const { data: pricingRows, error: pricingError } = await service
-      .from("pricing_items")
-      .select("*")
-      .eq("category", "christmas_offer");
-    if (pricingError) throw pricingError;
-    const catalog = catalogFromRows(pricingRows || []);
-    const checkoutPlan = resolveWebCheckout({
-      productKey,
-      catalog,
-      clientAmountCents: body.amount_cents,
-      clientCurrency: body.currency,
-    });
-    if (!checkoutPlan.ok) {
-      return jsonResponse({ error: checkoutPlan.message, code: checkoutPlan.code }, 400);
+    let checkoutPlan: {
+      ok: true;
+      offer: { key: string; name: string; updatedAt: string | null };
+      amountCents: number;
+      currency: string;
+      sku: string;
+    };
+
+    if (isPlannerProduct) {
+      const { data: plannerProduct, error: plannerProductError } = await service
+        .from("christmas_products")
+        .select("id, product_key, name, active")
+        .eq("product_key", productKey)
+        .maybeSingle();
+      if (plannerProductError) throw plannerProductError;
+      if (!plannerProduct?.active) {
+        return jsonResponse({ error: "Planner product is not available", code: "inactive_product" }, 400);
+      }
+      const { data: plannerPkg, error: plannerPkgError } = await service
+        .from("christmas_packages")
+        .select("*")
+        .eq("product_id", plannerProduct.id)
+        .eq("package_key", packageKey)
+        .maybeSingle();
+      if (plannerPkgError) throw plannerPkgError;
+      if (!plannerPkg?.active || !plannerPkg?.purchasable || Number(plannerPkg.price_cents) <= 0) {
+        return jsonResponse({ error: "Planner package is not purchasable", code: "not_purchasable" }, 400);
+      }
+      checkoutPlan = {
+        ok: true,
+        offer: {
+          key: `xmas_${productKey}_${packageKey}`,
+          name: String(plannerPkg.package_name || plannerProduct.name),
+          updatedAt: plannerPkg.updated_at ? String(plannerPkg.updated_at) : null,
+        },
+        amountCents: Number(plannerPkg.price_cents),
+        currency: String(plannerPkg.currency || "eur"),
+        sku: `xmas_${productKey}_${packageKey}`,
+      };
+    } else {
+      const { data: pricingRows, error: pricingError } = await service
+        .from("pricing_items")
+        .select("*")
+        .eq("category", "christmas_offer");
+      if (pricingError) throw pricingError;
+      const catalog = catalogFromRows(pricingRows || []);
+      const resolved = resolveWebCheckout({
+        productKey,
+        catalog,
+        clientAmountCents: body.amount_cents,
+        clientCurrency: body.currency,
+      });
+      if (!resolved.ok) {
+        return jsonResponse({ error: resolved.message, code: resolved.code }, 400);
+      }
+      checkoutPlan = resolved;
     }
+
+    const commercialKey = isPlannerProduct ? null : commercialKeyForProduct(productKey);
 
     const { data: product, error: productError } = await service
       .from("christmas_products")
@@ -163,7 +219,16 @@ Deno.serve(async (req) => {
     const productName = product?.name || checkoutPlan.offer.name;
     const amountCents = checkoutPlan.amountCents;
     const currency = checkoutPlan.currency;
-    const commercialSnapshot = snapshotWebOrder(checkoutPlan.offer);
+    const commercialSnapshot = isPlannerProduct
+      ? {
+          pricingKey: checkoutPlan.offer.key,
+          chargedAmountMinor: amountCents,
+          currency,
+          entitlement: "christmas_planner",
+          productKey: resolvedProductKey,
+          packageKey,
+        }
+      : snapshotWebOrder(checkoutPlan.offer as Parameters<typeof snapshotWebOrder>[0]);
     const packageKeyResolved = pkg?.package_key || packageKey || "single";
     const sku = checkoutPlan.sku;
 
@@ -247,7 +312,9 @@ Deno.serve(async (req) => {
     const email = asString(body.email).toLowerCase();
     const successUrl =
       asString(body.success_url) ||
-      (resolvedProductKey === "christmas_santa_video"
+      (resolvedProductKey.startsWith("christmas_planner")
+        ? `${siteOrigin()}/account/christmas?checkout=success`
+        : resolvedProductKey === "christmas_santa_video"
         ? `${siteOrigin()}/christmas/santa-video?checkout=success`
         : `${siteOrigin()}${sourceRoute}?checkout=success`);
 

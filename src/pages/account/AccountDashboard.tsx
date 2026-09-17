@@ -394,6 +394,16 @@ export default function AccountDashboard() {
             </Button>
 
             <Button
+              asChild
+              className="rounded-2xl border border-amber-200/30 bg-amber-200/90 text-zinc-950 hover:bg-amber-100"
+            >
+              <Link to="/account/christmas">
+                Christmas Planner
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+
+            <Button
               type="button"
               variant="secondary"
               onClick={handleRefresh}

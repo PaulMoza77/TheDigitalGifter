@@ -229,7 +229,14 @@ export async function handleChristmasStripeEvent(input: {
           if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
         }
         const commercialKey = asString(input.metadata.commercial_key);
-        if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
+        const plannerProduct =
+          productKey.startsWith("christmas_planner") ||
+          asString(input.metadata.product_key).startsWith("christmas_planner");
+        if (plannerProduct) {
+          await input.service.rpc("grant_christmas_planner_entitlements", {
+            p_order_id: orderId,
+          });
+        } else if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
           const { data: ord } = await input.service
             .from("christmas_orders")
             .select("user_id,email,commercial_snapshot")

@@ -183,6 +183,7 @@ export const CHRISTMAS_I18N_ROUTE_BASES = [
   "/christmas/advent",
   "/christmas/cards",
   "/christmas/messages",
+  "/christmas/planner",
 ];
 
 const WAVE1_SEO_LOCALES = ["ro", "de", "fr", "es", "it", "pt", "nl", "pl"];

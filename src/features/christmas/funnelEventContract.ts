@@ -177,6 +177,20 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "christmas_reward_redeem_start",
   "christmas_reward_redeemed",
   "my_gifts_view",
+  "planner_onboarding_started",
+  "planner_onboarding_completed",
+  "planner_dashboard_viewed",
+  "planner_task_completed",
+  "planner_recipient_added",
+  "planner_gift_added",
+  "planner_budget_set",
+  "planner_meal_created",
+  "planner_recipe_saved",
+  "planner_guest_added",
+  "planner_activity_scheduled",
+  "planner_module_opened",
+  "planner_paywall_viewed",
+  "planner_upgrade_clicked",
 ] as const;
 
 export type ChristmasFunnelEventName = (typeof CHRISTMAS_FUNNEL_ALLOWED_EVENTS)[number];

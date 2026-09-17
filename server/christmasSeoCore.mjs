@@ -65,6 +65,7 @@ export const CHRISTMAS_SEO_ROUTES = [
       { href: "/christmas/advent", label: "Open the Advent Calendar" },
       { href: "/christmas/cards", label: "Create a Christmas Card" },
       { href: "/christmas/messages", label: "Find a Christmas Message" },
+      { href: "/christmas/planner", label: "Christmas Planner" },
     ],
     breadcrumbs: [
       { href: "/", label: "Home" },
@@ -424,6 +425,30 @@ export const CHRISTMAS_SEO_ROUTES = [
       { href: "/", label: "Home" },
       { href: "/christmas", label: "Christmas" },
       { href: "/christmas/messages", label: "Messages" },
+    ],
+  },
+  {
+    path: "/christmas/planner",
+    title: "Christmas Planner | Gifts, Budget, Meals & Hosting Checklist",
+    description:
+      "Plan Christmas in one command center: a date-aware checklist, gifts you’re giving, budget, meals, and hosting. Start free, then unlock packs.",
+    canonicalPath: "/christmas/planner",
+    h1: "A Personal Christmas Command Center",
+    lede:
+      "See days left, how ready you are, what to do next, and whether you’re on budget — then jump into gifts, meals, or hosting without a spreadsheet.",
+    h2: "Start free, then unlock the season",
+    h2Body:
+      "Countdown, onboarding, and a short plan are free. Core adds unlimited gifts, budget, and rescue mode. Food, recipes, hosting, and travel are add-ons on the existing Christmas checkout.",
+    links: [
+      { href: "/account/christmas", label: "Open your Christmas Planner" },
+      { href: "/christmas/gift-finder", label: "Christmas Gift Finder" },
+      { href: "/christmas/wishlist", label: "Christmas Wishlist" },
+      { href: "/christmas", label: "Christmas Club" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/planner", label: "Planner" },
     ],
   },
   {
