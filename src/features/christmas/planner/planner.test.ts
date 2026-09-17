@@ -217,4 +217,19 @@ describe("christmas planner wiring", () => {
     expect(page.toLowerCase()).not.toContain("5,000 happy customers");
     expect(page.toLowerCase()).not.toContain("rated 4.9");
   });
+
+  it("uses editorial story sections instead of a SaaS card-grid hero", () => {
+    const page = readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx");
+    const css = readSrc("src/features/christmas/planner/planner.css");
+    expect(page).toContain("Your entire Christmas,");
+    expect(page).toContain("beautifully planned.");
+    expect(page).toContain("tdg-planner__pulse");
+    expect(page).toContain("Christmas shouldn’t feel like project management.");
+    expect(page).toContain("Christmas Rescue Mode");
+    expect(page).not.toContain("Preview mock");
+    expect(page).not.toContain("tdg-planner__mock");
+    expect(css).toContain("--parchment");
+    expect(css).toContain("tdg-planner__pulse");
+    expect(css).not.toContain("tdg-planner__mock");
+  });
 });
