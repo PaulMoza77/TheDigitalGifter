@@ -156,6 +156,8 @@ describe("christmas planner privacy + attribution events", () => {
   it("allowlists planner funnel events", () => {
     for (const name of [
       "planner_landing_view",
+      "planner_teaser_viewed",
+      "planner_teaser_cta_clicked",
       "planner_build_started",
       "planner_cta_clicked",
       "planner_personalization_q1",
@@ -305,6 +307,29 @@ describe("christmas planner wiring", () => {
     expect(css).toContain("--parchment");
     expect(css).toContain("tdg-planner__pulse");
     expect(css).not.toContain("tdg-planner__mock");
+  });
+
+  it("shows a compact pre-quiz teaser and hides it after personalization", () => {
+    const page = readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx");
+    expect(page).toContain("Everything Christmas. One beautiful place.");
+    expect(page).toContain("tdg-planner__teaser");
+    expect(page).toContain("{!ready ? (");
+    expect(page).toContain("{ready && preview ? (");
+    expect(page).toContain("openQuizFromTeaser");
+    expect(page).toContain("planner_teaser_viewed");
+    expect(page).toContain("planner_teaser_cta_clicked");
+    expect(page).toContain("Ready to plan");
+    expect(page).toContain("Not set yet");
+    expect(page).toContain("Your plan appears here");
+    expect((page.match(/Everything Christmas\. One beautiful place\./g) || []).length).toBe(1);
+    expect(page).not.toContain("tdg-planner__teaser-card");
+    const faqIndex = page.indexOf("tdg-planner__section--faq");
+    const teaserIndex = page.indexOf("tdg-planner__teaser");
+    const resultIndex = page.indexOf("Your Christmas plan is ready");
+    expect(teaserIndex).toBeGreaterThan(0);
+    expect(teaserIndex).toBeLessThan(faqIndex);
+    expect(resultIndex).toBeGreaterThan(teaserIndex);
+    expect(resultIndex).toBeLessThan(faqIndex);
   });
 
   it("does not duplicate gifts, food, hosting, rescue, pricing, or checkout as standalone tours", () => {

@@ -1155,8 +1155,73 @@
   column-gap: 0.85rem;
 }
 
-.tdg-planner--compact .tdg-planner__addon-price {
-  justify-self: end;
+.tdg-planner--compact .tdg-planner__teaser {
+  padding: 2rem 1.2rem 2.2rem;
+}
+
+.tdg-planner--compact .tdg-planner__teaser h2 {
+  max-width: 14ch;
+  font-size: clamp(1.85rem, 7vw, 2.85rem);
+  margin-bottom: 0.55rem;
+}
+
+.tdg-planner--compact .tdg-planner__teaser-line {
+  color: var(--ink-soft);
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  margin-bottom: 1.1rem;
+}
+
+.tdg-planner--compact .tdg-planner__teaser-grid {
+  display: grid;
+  gap: 1.15rem;
+  align-items: center;
+}
+
+.tdg-planner--compact .tdg-planner__device--teaser {
+  width: min(100%, 19.5rem);
+  margin: 0 auto;
+}
+
+.tdg-planner--compact .tdg-planner__device--teaser .tdg-planner__device-screen {
+  min-height: 0;
+  padding: 0.85rem 0.85rem 1rem;
+}
+
+.tdg-planner--compact .tdg-planner__device--teaser .tdg-planner__device-count {
+  font-size: 2.15rem;
+  margin: 0.4rem 0 0.1rem;
+}
+
+.tdg-planner--compact .tdg-planner__device--teaser .tdg-planner__device-row {
+  padding-top: 0.45rem;
+}
+
+.tdg-planner--compact .tdg-planner__teaser-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tdg-planner--compact .tdg-planner__teaser-benefits li {
+  font-family: var(--serif);
+  font-size: 1.12rem;
+  line-height: 1.35;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(26, 23, 20, 0.14);
+  color: var(--ink);
+}
+
+.tdg-planner--compact .tdg-planner__teaser-benefits li:last-child {
+  border-bottom: 1px solid rgba(26, 23, 20, 0.14);
+}
+
+.tdg-planner--compact .tdg-planner__teaser-copy .tdg-planner__cta-row {
+  margin-top: 1.05rem;
+}
+
+.tdg-planner--compact .tdg-planner__teaser-copy .tdg-planner__micro {
+  color: var(--ink-soft);
 }
 
 @media (max-width: 430px) {
@@ -1195,6 +1260,20 @@
 
   .tdg-planner--compact .tdg-planner__device-wrap--single {
     max-width: 24rem;
+  }
+
+  .tdg-planner--compact .tdg-planner__teaser {
+    padding: 3.4rem 3rem;
+  }
+
+  .tdg-planner--compact .tdg-planner__teaser-grid {
+    grid-template-columns: minmax(18rem, 21rem) minmax(0, 1fr);
+    gap: 2.4rem;
+    align-items: center;
+  }
+
+  .tdg-planner--compact .tdg-planner__device--teaser {
+    margin: 0;
   }
 }
 

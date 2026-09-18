@@ -18,6 +18,8 @@ const PLANNER_EVENTS = [
   "planner_paywall_viewed",
   "planner_upgrade_clicked",
   "planner_landing_view",
+  "planner_teaser_viewed",
+  "planner_teaser_cta_clicked",
   "planner_build_started",
   "planner_cta_clicked",
   "planner_personalization_q1",
