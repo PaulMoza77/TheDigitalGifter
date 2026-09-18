@@ -455,30 +455,6 @@ export const CHRISTMAS_SEO_ROUTES = [
     ],
   },
   {
-    path: "/christmas/planner",
-    title: "Christmas Planner | Gifts, Budget, Meals & Hosting Checklist",
-    description:
-      "Plan Christmas in one command center: a date-aware checklist, gifts you’re giving, budget, meals, and hosting. Start free, then unlock packs.",
-    canonicalPath: "/christmas/planner",
-    h1: "Your Entire Christmas, Beautifully Planned",
-    lede:
-      "See days left, how ready you are, what to do next, and whether you’re on budget — then jump into gifts, meals, or hosting without a spreadsheet.",
-    h2: "Start free, then unlock the season",
-    h2Body:
-      "Countdown, onboarding, and a short plan are free. Core adds unlimited gifts, budget, and rescue mode. Food, recipes, hosting, and travel are add-ons on the existing Christmas checkout.",
-    links: [
-      { href: "/account/christmas", label: "Open your Christmas Planner" },
-      { href: "/christmas/gift-finder", label: "Christmas Gift Finder" },
-      { href: "/christmas/wishlist", label: "Christmas Wishlist" },
-      { href: "/christmas", label: "Christmas Club" },
-    ],
-    breadcrumbs: [
-      { href: "/", label: "Home" },
-      { href: "/christmas", label: "Christmas" },
-      { href: "/christmas/planner", label: "Planner" },
-    ],
-  },
-  {
     path: "/christmas-ai-photos",
     title: "Create Your Christmas Photos | TheDigitalGifter",
     description:

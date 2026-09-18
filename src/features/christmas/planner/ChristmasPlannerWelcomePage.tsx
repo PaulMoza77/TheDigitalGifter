@@ -25,6 +25,7 @@ export default function ChristmasPlannerWelcomePage() {
     void trackChristmasEvent("planner_welcome_view", {
       productKey: PLANNER_PRODUCT_KEY,
       pathname: "/christmas/planner/welcome",
+      metadata: { funnel_variant: "compact_personalized_v1" },
     });
     let cancelled = false;
     async function load() {
@@ -45,6 +46,7 @@ export default function ChristmasPlannerWelcomePage() {
             orderId: order.orderId,
             amountCents: order.amountCents,
             pathname: "/christmas/planner/welcome",
+            metadata: { funnel_variant: "compact_personalized_v1" },
           });
           const { data } = await supabase.auth.getSession();
           if (data.session?.user) {
@@ -70,6 +72,7 @@ export default function ChristmasPlannerWelcomePage() {
       void trackChristmasEvent("planner_claim_started", {
         productKey: PLANNER_PRODUCT_KEY,
         pathname: "/christmas/planner/welcome",
+        metadata: { funnel_variant: "compact_personalized_v1" },
       });
       const result = await claimPlannerOrder(publicToken);
       setClaimed(true);
@@ -78,7 +81,7 @@ export default function ChristmasPlannerWelcomePage() {
         productKey: PLANNER_PRODUCT_KEY,
         orderId: result.orderId,
         pathname: "/christmas/planner/welcome",
-        metadata: { already: result.already },
+        metadata: { already: result.already, funnel_variant: "compact_personalized_v1" },
       });
     } catch (err) {
       const code = (err as { code?: string }).code;

@@ -44,7 +44,16 @@ import { generateInitialPlan, recommendedToday } from "./planGenerator";
 import { computeReadiness } from "./readiness";
 import { answerFromContext } from "./assistant";
 import { sanitizePlannerMetadata } from "./analytics";
+import { PLANNER_FAQS } from "./copy";
 import { FREE_LIMITS } from "./types";
+import {
+  buildPersonalizedPreview,
+  mapPersonalizationToPlanInput,
+  persistPlannerPersonalization,
+  personalizationComplete,
+  readPlannerPersonalization,
+  toggleChaosChoice,
+} from "./personalization";
 
 function readSrc(rel: string) {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
@@ -147,10 +156,17 @@ describe("christmas planner privacy + attribution events", () => {
   it("allowlists planner funnel events", () => {
     for (const name of [
       "planner_landing_view",
+      "planner_build_started",
       "planner_cta_clicked",
+      "planner_personalization_q1",
+      "planner_personalization_q2",
+      "planner_personalization_q3",
+      "planner_personalization_completed",
+      "planner_preview_viewed",
       "planner_package_viewed",
       "planner_package_selected",
       "planner_addon_selected",
+      "planner_checkout_viewed",
       "planner_checkout_started",
       "planner_wallet_presented",
       "planner_payment_submitted",
@@ -266,23 +282,58 @@ describe("christmas planner wiring", () => {
     const page = readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx");
     expect(page).toContain("New for Christmas 2026");
     expect(page).toContain("catalog.checkoutLive");
+    expect(page).toContain("Christmas Planner launch access is opening soon.");
     expect(page.toLowerCase()).not.toContain("5,000 happy customers");
     expect(page.toLowerCase()).not.toContain("rated 4.9");
   });
 
-  it("uses editorial story sections instead of a SaaS card-grid hero", () => {
+  it("uses a compact personalized funnel instead of repeated product tours", () => {
     const page = readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx");
     const css = readSrc("src/features/christmas/planner/planner.css");
     expect(page).toContain("Your entire Christmas,");
     expect(page).toContain("beautifully planned.");
+    expect(page).toContain("BUILD MY CHRISTMAS PLAN");
     expect(page).toContain("tdg-planner__pulse");
-    expect(page).toContain("Christmas shouldn’t feel like project management.");
-    expect(page).toContain("Christmas Rescue Mode");
+    expect(page).toContain("tdg-planner--compact");
+    expect(page).toContain("walletCapabilityOnly");
+    expect(page).not.toContain("The quiet truth");
+    expect(page).not.toContain("Christmas shouldn’t feel like project management.");
     expect(page).not.toContain("Preview mock");
     expect(page).not.toContain("tdg-planner__mock");
+    expect(page).not.toContain("7 of 12 ordered");
+    expect(page).not.toContain("$420 left");
     expect(css).toContain("--parchment");
     expect(css).toContain("tdg-planner__pulse");
     expect(css).not.toContain("tdg-planner__mock");
+  });
+
+  it("does not duplicate gifts, food, hosting, rescue, pricing, or checkout as standalone tours", () => {
+    const page = readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx");
+    expect(page).not.toContain("Gifts without the panic");
+    expect(page).not.toContain("Christmas dinner without the chaos");
+    expect(page).not.toContain("Host without forgetting anything");
+    expect(page).not.toContain("Everything else, quietly covered");
+    expect(page).not.toContain("Compare packages");
+    expect((page.match(/id="packages"/g) || []).length).toBe(1);
+    expect((page.match(/id="checkout"/g) || []).length).toBe(1);
+    expect((page.match(/Starting late\? No panic/g) || []).length).toBe(1);
+  });
+
+  it("keeps funnel session and guest recovery on the compact checkout path", () => {
+    const page = readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx");
+    expect(page).toContain("getChristmasFunnelSessionId()");
+    expect(page).toContain("funnelSessionId: getChristmasFunnelSessionId()");
+    expect(page).toContain("persistPlannerOrderRecovery");
+    expect(page).toContain("walletCapabilityOnly");
+    expect(page).toContain("SEE MY OPTIONS");
+    expect(page).toContain("BUILD MY PLAN");
+    expect(readSrc("src/features/christmas/planner/personalization.ts")).toContain(
+      'compact_personalized_v1',
+    );
+    expect(readSrc("src/features/christmas/planner/personalization.ts")).toContain(
+      "tdg.christmas.planner.personalization.v1",
+    );
+    expect(readSrc("src/features/christmas/planner/copy.ts").match(/q:/g)?.length).toBe(4);
   });
 });
 
@@ -517,5 +568,49 @@ describe("planner entitlement invariants", () => {
       grants = applyOrderGrant(grants, g);
     }
     expect(grants.length).toBe(base.length);
+  });
+});
+
+describe("compact funnel personalization", () => {
+  it("persists quiz answers and maps them onto real Planner templates", () => {
+    const memory = new Map<string, string>();
+    const local = {
+      getItem: (key: string) => memory.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        memory.set(key, value);
+      },
+    };
+    (globalThis as { window?: unknown }).window = { localStorage: local } as Window;
+    persistPlannerPersonalization({
+      start: "late",
+      chaos: ["gifts", "budget"],
+      role: "hosting",
+    });
+    const stored = readPlannerPersonalization();
+    expect(personalizationComplete(stored)).toBe(true);
+    expect(stored.chaos).toEqual(["gifts", "budget"]);
+
+    const preview = buildPersonalizedPreview(stored, new Date("2026-12-18T12:00:00Z"));
+    expect(preview).toBeTruthy();
+    if (!preview) return;
+    expect(preview.rescueMode).toBe(true);
+    expect(preview.generatedTaskCount).toBe(preview.tasks.length);
+    expect(preview.generatedTaskCount).toBeGreaterThan(0);
+    expect(preview.focus.length).toBeGreaterThan(0);
+    expect(preview.focus.length).toBeLessThanOrEqual(3);
+    expect(preview.giftTaskCount).toBe(
+      preview.tasks.filter((task) => task.category === "gifts" || task.category === "shopping").length,
+    );
+    expect(preview.todayTasks.length).toBeLessThanOrEqual(3);
+
+    const november = mapPersonalizationToPlanInput(
+      { start: "november", chaos: ["food"], role: "staying_home" },
+      new Date("2026-09-17T12:00:00Z"),
+    );
+    expect(november.rescueMode).toBe(false);
+    expect(november.hosting).toBe(false);
+    expect(toggleChaosChoice(["gifts"], "budget")).toEqual(["gifts", "budget"]);
+    expect(toggleChaosChoice(["gifts", "budget"], "food")).toEqual(["budget", "food"]);
+    expect(PLANNER_FAQS).toHaveLength(4);
   });
 });
