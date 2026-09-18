@@ -4,6 +4,7 @@ import { classifyPath } from "./routes.mjs";
 describe("TDG origin path classification", () => {
   it("keeps health, Apple Pay, and known APIs off the SPA fallback", () => {
     expect(classifyPath("/healthz")).toEqual({ kind: "health" });
+    expect(classifyPath("/healthz/higgsfield-runner")).toEqual({ kind: "health" });
     expect(classifyPath("/.well-known/apple-developer-merchantid-domain-association")).toEqual({
       kind: "apple",
     });
@@ -16,6 +17,8 @@ describe("TDG origin path classification", () => {
     expect(classifyPath("/api/pet-provider-status").kind).toBe("api");
     expect(classifyPath("/api/christmas-funnel").kind).toBe("api");
     expect(classifyPath("/api/christmas-santa-compose").kind).toBe("api");
+    expect(classifyPath("/api/admin-library")).toEqual({ kind: "api", module: "admin-library.ts" });
+    expect(classifyPath("/api/admin-library-cron")).toEqual({ kind: "api", module: "admin-library-cron.ts" });
     expect(classifyPath("/api/christmas/gift-tree").kind).toBe("api");
     expect(classifyPath("/api/christmas-gift-tree").kind).toBe("api");
     expect(classifyPath("/sitemap.xml").kind).toBe("api");

@@ -10,6 +10,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { APPLE_PAY_PATH, classifyPath } from "./routes.mjs";
 import { invokeVercelHandler } from "./vercel-compat.mjs";
 import { applyChristmasSeo } from "./christmasSeo.mjs";
+import { snapshotRunner, startHiggsfieldRunner } from "./higgsfieldRunner.mjs";
 import {
   applyChristmasNoindexShell,
   buildApexToWwwLocation,
@@ -189,6 +190,10 @@ async function handle(req, res) {
   const classified = classifyPath(url.pathname);
 
   if (classified.kind === "health") {
+    if (url.pathname === "/healthz/higgsfield-runner") {
+      sendJson(res, 200, snapshotRunner());
+      return;
+    }
     res.statusCode = 200;
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-store");
@@ -306,4 +311,5 @@ const server = createServer((req, res) => {
 
 server.listen(port, "0.0.0.0", () => {
   console.log(JSON.stringify({ source: "tdg-origin", listening: port, dist: existsSync(distDir) }));
+  startHiggsfieldRunner();
 });

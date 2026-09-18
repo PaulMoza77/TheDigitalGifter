@@ -2,15 +2,17 @@ import React from "react";
 import { Library, Search } from "lucide-react";
 
 import LibraryVideoCard from "@/features/admin-library/LibraryVideoCard";
+import HiggsfieldStudio from "@/features/admin-library/HiggsfieldStudio";
 import {
   CHRISTMAS_LIBRARY_KINDS,
   LIBRARY_CATEGORIES,
   LIBRARY_VIDEOS,
-  countChristmasKind,
-  searchLibraryVideos,
   type LibraryCategoryId,
   type LibraryKind,
+  type LibraryVideo,
 } from "@/features/admin-library/catalog";
+import { searchMergedLibrary } from "@/features/admin-library/libraryMerge";
+import { fetchLibraryState } from "@/features/admin-library/adminLibraryApi";
 
 type CategoryFilter = LibraryCategoryId | "all";
 
@@ -19,17 +21,32 @@ export default function AdminLibraryPage() {
   const [kind, setKind] = React.useState<LibraryKind>("reel");
   const [query, setQuery] = React.useState("");
   const [playingId, setPlayingId] = React.useState<string | null>(null);
+  const [generated, setGenerated] = React.useState<LibraryVideo[]>([]);
+  const [refreshToken, setRefreshToken] = React.useState(0);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void fetchLibraryState()
+      .then((state) => {
+        if (!cancelled) setGenerated(state.items || []);
+      })
+      .catch(() => {
+        if (!cancelled) setGenerated([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshToken]);
 
   const kindFilter = category === "christmas_reels" ? kind : "all";
   const videos = React.useMemo(
-    () => searchLibraryVideos(query, category, kindFilter),
-    [query, category, kindFilter],
+    () => searchMergedLibrary(query, category, kindFilter, generated),
+    [query, category, kindFilter, generated],
   );
-  const christmasTotal = LIBRARY_VIDEOS.filter((item) => item.category === "christmas_reels").length;
   const totalLabel =
     category === "christmas_reels"
-      ? `${videos.length} of ${christmasTotal} Christmas items`
-      : `${videos.length} of ${LIBRARY_VIDEOS.length} items`;
+      ? `${videos.length} Christmas items (static + generated)`
+      : `${videos.length} of ${LIBRARY_VIDEOS.length + generated.length} items`;
 
   return (
     <div className="min-h-screen overflow-y-auto bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
@@ -47,6 +64,8 @@ export default function AdminLibraryPage() {
           </div>
           <p className="text-sm text-slate-400">{totalLabel}</p>
         </header>
+
+        <HiggsfieldStudio onImported={() => setRefreshToken((n) => n + 1)} />
 
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
@@ -82,7 +101,7 @@ export default function AdminLibraryPage() {
                 key={item.id}
                 active={kind === item.id}
                 label={item.label}
-                count={countChristmasKind(item.id)}
+                count={searchMergedLibrary("", "christmas_reels", item.id, generated).length}
                 onClick={() => setKind(item.id)}
               />
             ))}

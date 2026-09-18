@@ -35,6 +35,13 @@ merge_key VITE_APP_URL "${VITE_APP_URL:-}"
 merge_key VITE_ADMIN_EMAILS "${VITE_ADMIN_EMAILS:-}"
 merge_key SUPABASE_URL "${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
 merge_key SUPABASE_SERVICE_ROLE_KEY "${SUPABASE_SERVICE_ROLE_KEY:-}"
+merge_key HF_CREDENTIALS "${HF_CREDENTIALS:-}"
+merge_key HF_API_KEY_ID "${HF_API_KEY_ID:-}"
+merge_key HF_API_KEY_SECRET "${HF_API_KEY_SECRET:-}"
+merge_key HIGGSFIELD_MOCK "${HIGGSFIELD_MOCK:-}"
+merge_key TDG_PUBLIC_ORIGIN "${TDG_PUBLIC_ORIGIN:-}"
+merge_key TDG_HIGGSFIELD_RUNNER "${TDG_HIGGSFIELD_RUNNER:-}"
+merge_key TDG_HIGGSFIELD_POLL_MS "${TDG_HIGGSFIELD_POLL_MS:-}"
 
 if ! grep -qE '^TDG_RELEASE=' "${APP_ENV}"; then
   printf 'TDG_RELEASE=latest\n' >>"${APP_ENV}"
@@ -76,6 +83,11 @@ if grep -qE '^SUPABASE_URL=.' "${APP_ENV}"; then
   echo "KEY_NONEMPTY: SUPABASE_URL"
 else
   echo "KEY_EMPTY: SUPABASE_URL"
+fi
+if grep -qE '^HF_CREDENTIALS=.' "${APP_ENV}" || { grep -qE '^HF_API_KEY_ID=.' "${APP_ENV}" && grep -qE '^HF_API_KEY_SECRET=.' "${APP_ENV}"; }; then
+  echo "KEY_NONEMPTY: HF_CREDENTIALS_OR_PAIR"
+else
+  echo "KEY_EMPTY: HF_CREDENTIALS_OR_PAIR"
 fi
 if [[ "${missing}" -eq 1 ]]; then
   echo "tdg_secrets_status=incomplete"

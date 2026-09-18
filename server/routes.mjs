@@ -25,6 +25,8 @@ export const API_MODULES = {
   "/api/christmas-club-signup": "christmas-club-signup.ts",
   "/api/christmas-v2/funnel-event": "christmas-v2-funnel-event.ts",
   "/api/christmas-v2-funnel-event": "christmas-v2-funnel-event.ts",
+  "/api/admin-library": "admin-library.ts",
+  "/api/admin-library-cron": "admin-library-cron.ts",
   "/sitemap.xml": "sitemap.xml.ts",
   "/api/sitemap.xml": "sitemap.xml.ts",
   "/api/christmas-seo": "christmas-seo.ts",
@@ -41,7 +43,7 @@ export const APPLE_PAY_PATH = "/.well-known/apple-developer-merchantid-domain-as
  */
 export function classifyPath(pathname) {
   const path = String(pathname || "/").split("?")[0] || "/";
-  if (path === "/healthz") return { kind: "health" };
+  if (path === "/healthz" || path === "/healthz/higgsfield-runner") return { kind: "health" };
   if (path === APPLE_PAY_PATH) return { kind: "apple" };
   if (Object.prototype.hasOwnProperty.call(API_MODULES, path)) {
     return { kind: "api", module: API_MODULES[path] };

@@ -3,3 +3,6 @@ generated/edit/
 generated/edit_1080/
 generated/kling_v1/
 final/verify_frame_1080x1920.png
+.env
+.env.local
+.env.*.local
