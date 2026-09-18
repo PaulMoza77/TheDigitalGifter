@@ -5,6 +5,7 @@ import { trackPlannerEvent } from "./analytics";
 import { fetchPlannerAccess, insertTasks, loadProfile, upsertProfile } from "./api";
 import { daysUntilChristmas, localDateParts, resolvePlanMode, upcomingChristmasYear } from "./date";
 import { generateInitialPlan } from "./planGenerator";
+import { onboardingSeedFromPersonalization, readPlannerPersonalization } from "./personalization";
 import type { PlannerAccess, PlannerProfile, PreparedLevel } from "./types";
 
 const COUNTRIES = ["US", "GB", "IE", "DE", "FR", "ES", "IT", "NL", "PL", "RO", "CA", "AU"];
@@ -30,6 +31,13 @@ export function PlannerOnboarding() {
 
   useEffect(() => {
     trackPlannerEvent("planner_onboarding_started");
+    const seed = onboardingSeedFromPersonalization(readPlannerPersonalization());
+    setForm((f) => ({
+      ...f,
+      hosting: seed.hosting,
+      travelling: seed.travelling,
+      prepared_level: seed.prepared_level,
+    }));
   }, []);
 
   const questions = useMemo(

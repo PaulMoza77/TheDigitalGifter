@@ -5,7 +5,7 @@ export const PLANNER_SITE_ORIGIN = "https://www.thedigitalgifter.com";
 
 export function plannerSeo() {
   return {
-    title: "Christmas Planner 2026 | Online Christmas Planning | The Digital Gifter",
+    title: "Christmas Planner 2026 | Online Christmas Planning | TheDigitalGifter",
     description:
       "Plan gifts, budget, meals, hosting, cards, and traditions in one interactive Christmas Planner. Not a PDF. Built for phone-first Christmas planning.",
     url: `${PLANNER_SITE_ORIGIN}${PLANNER_PATH}`,
