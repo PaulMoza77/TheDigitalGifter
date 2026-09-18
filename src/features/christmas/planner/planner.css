@@ -7,7 +7,7 @@
   --cream: #f3ebe0;
   --parchment: #ebe1d2;
   --ink: #1a1714;
-  --ink-soft: rgba(26, 23, 20, 0.72);
+  --ink-soft: #3a312b;
   --gold: #b8964a;
   --gold-soft: #c9ae6e;
   --burgundy: #6b2430;
@@ -81,8 +81,12 @@
 
 .tdg-planner__micro {
   font-size: 0.82rem;
-  opacity: 0.72;
+  color: var(--ink-soft);
   letter-spacing: 0.01em;
+}
+
+.tdg-planner__micro--on-dark {
+  color: var(--cream);
 }
 
 .tdg-planner__kicker {
@@ -115,8 +119,6 @@
   height: 100%;
   object-fit: cover;
   object-position: center 40%;
-  transform: scale(1.04);
-  animation: tdg-planner-kenburns 28s ease-in-out infinite alternate;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -312,6 +314,7 @@
 .tdg-planner__device h3 {
   font-size: 1.55rem;
   margin-bottom: 0.35rem;
+  color: var(--cream);
 }
 
 .tdg-planner__device-count {
@@ -323,8 +326,8 @@
 }
 
 .tdg-planner__device-meta {
-  font-size: 0.85rem;
-  opacity: 0.72;
+  font-size: 0.9rem;
+  color: var(--candle);
   margin-bottom: 1.1rem;
 }
 
@@ -342,13 +345,15 @@
 
 .tdg-planner__device-row strong {
   font-family: var(--serif);
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 560;
+  color: var(--cream);
 }
 
 .tdg-planner__device-row span {
-  font-size: 0.82rem;
-  opacity: 0.7;
+  font-size: 0.92rem;
+  color: var(--cream);
+  line-height: 1.4;
 }
 
 .tdg-planner__bar {
@@ -366,10 +371,10 @@
 
 .tdg-planner__honest {
   margin-top: 0.9rem;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  opacity: 0.55;
+  color: var(--candle);
 }
 
 /* —— Split editorial —— */
@@ -558,7 +563,7 @@
 }
 
 .tdg-planner__offer p {
-  opacity: 0.78;
+  color: var(--cream);
   max-width: 36rem;
   margin-bottom: 0.85rem;
 }
@@ -626,6 +631,7 @@
   font-size: 1.05rem;
   color: var(--gold-soft);
   white-space: nowrap;
+  padding-left: 0.5rem;
 }
 
 /* —— Compare —— */
@@ -967,9 +973,9 @@
   background: transparent;
   color: inherit;
   min-height: 44px;
-  padding: 0.55rem 0.7rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  padding: 0.55rem 0.55rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
   font-weight: 700;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
@@ -1236,7 +1242,8 @@
   }
 
   .tdg-planner--compact .tdg-planner__device-row span {
-    font-size: 0.78rem;
+    font-size: 0.92rem;
+    color: var(--cream);
   }
 }
 
@@ -1259,7 +1266,7 @@
   }
 
   .tdg-planner--compact .tdg-planner__device-wrap--single {
-    max-width: 24rem;
+    max-width: 32rem;
   }
 
   .tdg-planner--compact .tdg-planner__teaser {
@@ -1284,5 +1291,178 @@
 
   .tdg-planner--compact .tdg-planner__hero-copy {
     padding-bottom: 4.2rem;
+  }
+}
+
+/* —— Live cabin hero —— */
+.tdg-planner__cabin {
+  position: absolute;
+  inset: 0;
+}
+
+.tdg-planner__cabin-poster,
+.tdg-planner__cabin-poster img,
+.tdg-planner__cabin-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.tdg-planner__cabin-poster img,
+.tdg-planner__cabin-video {
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+.tdg-planner__cabin-video {
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.tdg-planner__cabin-video.is-ready {
+  opacity: 1;
+}
+
+.tdg-planner__cabin-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(8, 3, 2, 0.34) 0%, rgba(8, 3, 2, 0.08) 28%, rgba(8, 3, 2, 0.28) 58%, rgba(8, 3, 2, 0.82) 100%),
+    linear-gradient(90deg, rgba(8, 3, 2, 0.42) 0%, transparent 34%, transparent 66%, rgba(8, 3, 2, 0.28) 100%);
+}
+
+.tdg-planner__hero-copy {
+  position: relative;
+  z-index: 2;
+}
+
+.tdg-planner__live-strip {
+  margin-top: 1.15rem;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  color: var(--cream);
+  letter-spacing: 0.01em;
+  max-width: 36rem;
+  line-height: 1.45;
+}
+
+.tdg-planner--compact .tdg-planner__device--large {
+  width: min(100%, 28rem);
+}
+
+.tdg-planner--compact .tdg-planner__value-lead {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  color: var(--ink);
+  max-width: 36rem;
+  margin: 0.75rem 0 1.4rem;
+}
+
+.tdg-planner--compact .tdg-planner__value-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tdg-planner--compact .tdg-planner__value-list li {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.95rem 0;
+  border-top: 1px solid rgba(26, 23, 20, 0.16);
+}
+
+.tdg-planner--compact .tdg-planner__value-list li:last-child {
+  border-bottom: 1px solid rgba(26, 23, 20, 0.16);
+}
+
+.tdg-planner--compact .tdg-planner__value-list strong {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  color: var(--ink);
+}
+
+.tdg-planner--compact .tdg-planner__value-list span {
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.tdg-planner--compact .tdg-planner__ba {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.tdg-planner--compact .tdg-planner__ba ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tdg-planner--compact .tdg-planner__ba li {
+  font-family: var(--serif);
+  font-size: 1.22rem;
+  color: var(--ink);
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(26, 23, 20, 0.16);
+}
+
+.tdg-planner--compact .tdg-planner__ba li:last-child {
+  border-bottom: 1px solid rgba(26, 23, 20, 0.16);
+}
+
+.tdg-planner--compact .tdg-planner__section--mid .tdg-planner__tab {
+  color: var(--cream);
+}
+
+.tdg-planner--compact .tdg-planner__section--mid .tdg-planner__tab.is-on {
+  color: var(--candle);
+  border-bottom-color: var(--gold);
+}
+
+.tdg-planner--compact .tdg-planner__build h2 {
+  margin-bottom: 0.35rem;
+}
+
+.tdg-planner--compact .tdg-planner__offer--row p {
+  color: var(--cream);
+}
+
+@media (min-width: 768px) {
+  .tdg-planner--compact .tdg-planner__ba {
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+  }
+}
+
+@media (min-width: 860px) {
+  .tdg-planner--compact .tdg-planner__value-list li {
+    grid-template-columns: 12rem minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: 1.5rem;
+  }
+
+  .tdg-planner--compact .tdg-planner__device--large {
+    width: min(100%, 32rem);
+  }
+
+  .tdg-planner__cabin-poster img,
+  .tdg-planner__cabin-video {
+    object-position: center center;
+  }
+}
+
+@media (max-width: 859px) {
+  .tdg-planner__cabin-poster img,
+  .tdg-planner__cabin-video {
+    object-position: 72% 42%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tdg-planner__cabin-video {
+    display: none;
   }
 }
