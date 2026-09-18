@@ -52,13 +52,15 @@ No silent fallback to 720p or another provider.
 Estimate only (no paid generate):
 
 ```
-npx tsx scripts/tdg-library-generate.ts --photo photo-nyc-ice-girl --prompt "subtle snowfall, slow cinematic push-in" --estimate-only
+npx tsx scripts/tdg-library-generate.ts --photo photo-nyc-ice-girl-upscaled-1080 --prompt "subtle snowfall, slow cinematic push-in" --estimate-only
 ```
+
+Native still `photo-nyc-ice-girl` is 941×1672 and stays in the catalog. `photo-nyc-ice-girl-upscaled-1080` is a Lanczos 1080×1920 copy (no extra native detail). Source-prep does not prove the generated MP4 is 1080p.
 
 First real generate after you accept the printed estimate:
 
 ```
-npx tsx scripts/tdg-library-generate.ts --photo photo-nyc-ice-girl --prompt "subtle snowfall, slow cinematic push-in" --budget 1.50
+npx tsx scripts/tdg-library-generate.ts --photo photo-nyc-ice-girl-upscaled-1080 --prompt "subtle snowfall, slow cinematic push-in" --budget 1.50
 ```
 
 Resume (tablet closed / agent interrupted):

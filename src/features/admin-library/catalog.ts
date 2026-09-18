@@ -397,6 +397,16 @@ const NEW_STILL_PHOTOS: LibraryVideo[] = [
     kind: "photo",
   },
   {
+    id: "photo-nyc-ice-girl-upscaled-1080",
+    title: "Photo · NYC girl ice skating (upscaled 1080×1920)",
+    description:
+      "UPSCALED copy of photo-nyc-ice-girl. Lanczos resize/crop to 1080×1920 9:16 from the native 941×1672 JPEG. Original file is unchanged. This copy has no extra native detail. Source-prep does not prove the generated MP4 resolution.",
+    src: "/assets/christmas/library-stills/nyc_girl_ice_skating_upscaled_1080x1920.jpg",
+    filename: "nyc_girl_ice_skating_upscaled_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
     id: "photo-village-kids-sled",
     title: "Photo · Kids sledding in the village",
     description: "Alpine village at sunset. Children on sleds, a golden retriever, snowy houses, and a lake.",

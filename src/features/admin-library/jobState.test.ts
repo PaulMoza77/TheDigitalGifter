@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   canResetEstimateStatus,
@@ -104,6 +107,15 @@ describe("media spec", () => {
   it("reads PNG dimensions and rejects undersized or non-9:16 stills", () => {
     expect(probeImageBuffer(png(1080, 1920))).toEqual({ format: "png", width: 1080, height: 1920 });
     expect(evaluateSourcePhoto({ width: 1080, height: 1920 }).ok).toBe(true);
+    const upscaled = probeImageBuffer(
+      new Uint8Array(
+        readFileSync(
+          resolve(dirname(fileURLToPath(import.meta.url)), "../../../public/assets/christmas/library-stills/nyc_girl_ice_skating_upscaled_1080x1920.jpg"),
+        ),
+      ),
+    );
+    expect(upscaled).toMatchObject({ format: "jpeg", width: 1080, height: 1920 });
+    expect(evaluateSourcePhoto(upscaled).ok).toBe(true);
     expect(evaluateSourcePhoto({ width: 720, height: 1280 }).ok).toBe(false);
     expect(evaluateSourcePhoto({ width: 941, height: 1672 }).ok).toBe(false);
     expect(evaluateSourcePhoto({ width: 941, height: 1672 }).notes.join(" ")).toMatch(/Paid submit stays blocked/);

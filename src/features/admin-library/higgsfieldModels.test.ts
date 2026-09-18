@@ -67,6 +67,9 @@ describe("Higgsfield TDG library payloads", () => {
 
   it("picks existing library photos and prepends generated clips into the same catalog", () => {
     expect(findLibraryPhoto("photo-nyc-ice-girl")?.filename).toBe("nyc_girl_ice_skating.jpg");
+    expect(findLibraryPhoto("photo-nyc-ice-girl-upscaled-1080")?.filename).toBe(
+      "nyc_girl_ice_skating_upscaled_1080x1920.jpg",
+    );
     const merged = mergeLibraryVideos([
       {
         id: "hf-test",

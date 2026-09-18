@@ -6,7 +6,7 @@ import type { LibraryVideo } from "../../../src/features/admin-library/catalog";
 import { findLibraryPhoto } from "../../../src/features/admin-library/libraryMerge";
 import { evaluateSourcePhoto, probeImageBuffer } from "../../../src/features/admin-library/mediaSpec";
 import type { HiggsfieldTransport } from "./client";
-import { TDG_LIBRARY_BUCKET } from "./storage";
+import { TDG_LIBRARY_BUCKET, uploadLibraryObject } from "./storage";
 
 const IMAGE_TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -92,6 +92,11 @@ export async function preparePhotoForHiggsfield(
   const { bytes, contentType } = await readResolvedPhotoBytes(service, photo);
   const probe = probeImageBuffer(bytes);
   const check = evaluateSourcePhoto(probe);
+  if (photo.id.includes("upscaled") || /UPSCALED/i.test(photo.description || "")) {
+    check.notes.push(
+      "Source is an upscaled copy, not native 1080p. Generated MP4 size is still verified after import; this prep does not prove result resolution.",
+    );
+  }
   // Estimate may proceed with an explicit nonconforming still. Paid submit stays blocked.
   // Private library objects are not on a durable public URL. Upload to Higgsfield input storage.
   const mustUpload = Boolean(photo.storagePath);
@@ -106,6 +111,51 @@ export async function preparePhotoForHiggsfield(
     imageUrl = `${origin}${photo.src}`;
   }
   return { photo, imageUrl, width: probe.width, height: probe.height, notes: check.notes };
+}
+
+export async function registerLibraryStillFile(
+  service: SupabaseClient,
+  input: {
+    catalogId: string;
+    title: string;
+    description: string;
+    filename: string;
+    bytes: Uint8Array;
+    sourcePhotoId?: string | null;
+  },
+): Promise<{ photoId: string; width: number; height: number; storagePath: string }> {
+  const probe = probeImageBuffer(input.bytes);
+  const storagePath = `photos/${input.catalogId}/${input.filename}`;
+  await uploadLibraryObject(storagePath, input.bytes, contentTypeForFilename(input.filename));
+  const { error } = await service.from("tdg_library_items").upsert(
+    {
+      catalog_id: input.catalogId,
+      title: input.title,
+      description: input.description,
+      filename: input.filename,
+      category: "christmas_reels",
+      kind: "photo",
+      storage_bucket: TDG_LIBRARY_BUCKET,
+      storage_path: storagePath,
+      source_photo_id: input.sourcePhotoId || null,
+      effective_width: probe.width,
+      effective_height: probe.height,
+      spec_ok: evaluateSourcePhoto(probe).ok,
+      spec_notes: evaluateSourcePhoto(probe).notes.concat(
+        /UPSCALED/i.test(input.description)
+          ? ["Registered as an upscaled still. Output MP4 spec is verified separately after import."]
+          : [],
+      ),
+      requested_params: {
+        kind: "library_still",
+        native_source: input.sourcePhotoId || null,
+      },
+      created_by: "script",
+    },
+    { onConflict: "catalog_id" },
+  );
+  if (error) throw error;
+  return { photoId: input.catalogId, width: probe.width, height: probe.height, storagePath };
 }
 
 export async function listSelectablePhotos(service: SupabaseClient): Promise<Array<{ id: string; title: string; filename: string; src: string; source: "static" | "library" }>> {
@@ -129,7 +179,8 @@ export async function listSelectablePhotos(service: SupabaseClient): Promise<Arr
       source: "library" as const,
     };
   });
-  return [...uploaded, ...staticItems];
+  const seen = new Set(uploaded.map((item) => item.id));
+  return [...uploaded, ...staticItems.filter((item) => !seen.has(item.id))];
 }
 
 export function commandKey(input: {

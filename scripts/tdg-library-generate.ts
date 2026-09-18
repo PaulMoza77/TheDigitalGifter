@@ -30,6 +30,7 @@ import { resolve } from "node:path";
 import { getServiceClient } from "../api/_lib/christmas/supabaseClient";
 import { composeLibraryReel } from "../api/_lib/higgsfield/compose";
 import { estimateJob, retryImport, submitJob, syncJob } from "../api/_lib/higgsfield/jobs";
+import { registerLibraryStillFile } from "../api/_lib/higgsfield/photos";
 
 function loadDotEnv() {
   const path = resolve(process.cwd(), ".env");
@@ -67,6 +68,7 @@ function usage(): void {
   npx tsx scripts/tdg-library-generate.ts --photo <library photo id> --prompt "<text>" --budget <usd>
   npx tsx scripts/tdg-library-generate.ts --photo <id> --prompt "<text>" --estimate-only
   npx tsx scripts/tdg-library-generate.ts --job <uuid>
+  npx tsx scripts/tdg-library-generate.ts --register-still <jpg> --photo <id> --title "..." --source-photo photo-nyc-ice-girl
   npx tsx scripts/tdg-library-generate.ts --compose id1,id2 [--title "Reel"]`);
 }
 
@@ -93,6 +95,24 @@ async function main() {
     return;
   }
   const service = getServiceClient();
+
+  if (arg("register-still") || hasFlag("register-still")) {
+    const filePath = resolve(arg("register-still") || arg("file"));
+    const bytes = new Uint8Array(readFileSync(filePath));
+    const filename = arg("filename") || filePath.split("/").pop() || "still.jpg";
+    const catalogId = arg("photo") || arg("photo-id");
+    if (!catalogId) throw new Error("--photo <catalog id> is required with --register-still");
+    const registered = await registerLibraryStillFile(service, {
+      catalogId,
+      title: arg("title") || filename,
+      description: arg("description") || "",
+      filename,
+      bytes,
+      sourcePhotoId: arg("source-photo") || null,
+    });
+    console.log(JSON.stringify({ registered, charged: false }, null, 2));
+    return;
+  }
 
   if (hasFlag("compose") || arg("compose")) {
     const clipIds = arg("compose").split(",").map((s) => s.trim()).filter(Boolean);

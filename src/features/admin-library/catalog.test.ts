@@ -52,6 +52,11 @@ describe("admin video library", () => {
     expect(searchLibraryVideos("ice skating", "christmas_reels", "photo").some((item) => item.id === "photo-nyc-ice-girl")).toBe(
       true,
     );
+    expect(
+      searchLibraryVideos("upscaled 1080", "christmas_reels", "photo").some(
+        (item) => item.id === "photo-nyc-ice-girl-upscaled-1080",
+      ),
+    ).toBe(true);
     expect(searchLibraryVideos("kids sledding", "christmas_reels", "photo").some((item) => item.id === "photo-village-kids-sled")).toBe(
       true,
     );
@@ -87,6 +92,7 @@ describe("admin video library", () => {
       "public/assets/christmas/instagram-reel/source/clip_06.jpg",
       "public/assets/christmas/instagram-reel-kling-1080p/source/cozy_christmas_reading_nook_by_snowy_village.jpg",
       "public/assets/christmas/library-stills/nyc_girl_ice_skating.jpg",
+      "public/assets/christmas/library-stills/nyc_girl_ice_skating_upscaled_1080x1920.jpg",
       "public/assets/christmas/library-stills/village_kids_sledding.jpg",
       "public/assets/christmas/instagram-reel-cut3/clip_ice_nyc.mp4",
       "public/assets/christmas/instagram-reel-cut3/clip_kids_sled.mp4",
