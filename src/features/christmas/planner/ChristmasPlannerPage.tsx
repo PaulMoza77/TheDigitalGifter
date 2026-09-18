@@ -113,6 +113,37 @@ function ensureFonts() {
   document.head.appendChild(link);
 }
 
+function TeaserDevice({ days }: { days: number }) {
+  return (
+    <div className="tdg-planner__device tdg-planner__device--teaser" aria-label="Christmas Planner product preview">
+      <div className="tdg-planner__device-screen">
+        <div className="tdg-planner__device-brand">The Digital Gifter · Planner</div>
+        <h3>Today</h3>
+        <div className="tdg-planner__device-count">{days}</div>
+        <div className="tdg-planner__device-meta">days to Christmas</div>
+        <div className="tdg-planner__device-rows">
+          <div className="tdg-planner__device-row">
+            <strong>Your next steps</strong>
+            <span>Your plan appears here</span>
+          </div>
+          <div className="tdg-planner__device-row">
+            <strong>Gifts</strong>
+            <span>Ready to plan</span>
+          </div>
+          <div className="tdg-planner__device-row">
+            <strong>Budget</strong>
+            <span>Not set yet</span>
+          </div>
+          <div className="tdg-planner__device-row">
+            <strong>Upcoming</strong>
+            <span>After three short questions</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DeviceShell({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="tdg-planner__device" aria-label="Christmas Planner product preview">
@@ -395,7 +426,10 @@ export default function ChristmasPlannerPage() {
   const [checkoutSeen, setCheckoutSeen] = useState(false);
   const [paymentInView, setPaymentInView] = useState(false);
   const [heroInView, setHeroInView] = useState(true);
+  const [teaserInView, setTeaserInView] = useState(false);
+  const [teaserSeen, setTeaserSeen] = useState(false);
   const heroRef = useRef<HTMLElement | null>(null);
+  const teaserRef = useRef<HTMLElement | null>(null);
   const purchaseRef = useRef<HTMLElement | null>(null);
   const packagesRef = useRef<HTMLElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
@@ -506,6 +540,24 @@ export default function ChristmasPlannerPage() {
   }, []);
 
   useEffect(() => {
+    const node = teaserRef.current;
+    if (!node || ready || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((entry) => entry.isIntersecting);
+        setTeaserInView(visible);
+        if (visible && !teaserSeen) {
+          setTeaserSeen(true);
+          void trackPlannerFunnel("planner_teaser_viewed");
+        }
+      },
+      { threshold: 0.18 },
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [ready, teaserSeen]);
+
+  useEffect(() => {
     const node = paymentRef.current;
     if (!node || typeof IntersectionObserver === "undefined") return;
     const obs = new IntersectionObserver(
@@ -534,6 +586,11 @@ export default function ChristmasPlannerPage() {
       quizHistory.current = true;
     }
   }, [answers.chaos.length, answers.role, answers.start]);
+
+  const openQuizFromTeaser = useCallback(() => {
+    void trackPlannerFunnel("planner_teaser_cta_clicked");
+    openQuiz();
+  }, [openQuiz]);
 
   useEffect(() => {
     if (!quizOpen) return;
@@ -636,7 +693,7 @@ export default function ChristmasPlannerPage() {
   }, [packageKey, chargedAddons, displayTotal, catalog.checkoutLive]);
 
   const seo = useMemo(() => plannerSeo(), []);
-  const stickyHidden = (paymentInView && ready) || (heroInView && ready);
+  const stickyHidden = (paymentInView && ready) || (heroInView && ready) || (!ready && teaserInView);
   const stickyLabel = !ready
     ? "BUILD MY PLAN"
     : !packagesSeen
@@ -695,6 +752,35 @@ export default function ChristmasPlannerPage() {
           </p>
         </div>
       </header>
+
+      {!ready ? (
+        <section
+          className="tdg-planner__section tdg-planner__section--cream tdg-planner__teaser"
+          ref={teaserRef}
+          id="preview"
+        >
+          <div className="tdg-planner__inner">
+            <h2>Everything Christmas. One beautiful place.</h2>
+            <p className="tdg-planner__teaser-line">Gifts · Budget · Meals · Hosting · Traditions · Wishlist</p>
+            <div className="tdg-planner__teaser-grid">
+              <TeaserDevice days={days} />
+              <div className="tdg-planner__teaser-copy">
+                <ul className="tdg-planner__teaser-benefits">
+                  <li>Know exactly what to do next</li>
+                  <li>Keep gifts and Christmas spending under control</li>
+                  <li>Plan meals, hosting and the little things before they become stressful</li>
+                </ul>
+                <div className="tdg-planner__cta-row">
+                  <button type="button" className="tdg-planner__btn" onClick={openQuizFromTeaser}>
+                    BUILD MY CHRISTMAS PLAN
+                  </button>
+                  <span className="tdg-planner__micro">3 quick questions · Takes less than a minute</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {ready && preview ? (
         <section className="tdg-planner__section tdg-planner__section--cream" ref={previewRef} id="plan">
