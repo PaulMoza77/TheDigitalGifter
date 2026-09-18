@@ -113,9 +113,17 @@ describe("admin video library", () => {
     const page = readSrc("src/pages/admin/AdminLibraryPage.tsx");
     expect(page).toContain("LibraryVideoCard");
     expect(page).toContain("CHRISTMAS_LIBRARY_KINDS");
+    expect(page).toContain("onShare");
+    expect(page).toContain("Schedule batch");
     expect(page).not.toContain("download=");
+    expect(page).not.toMatch(/Higgsfield|Budget USD|Assemble Reel from selected shorts/);
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("playsInline");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Save to Photos");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("isLibraryPhoto");
+    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Share / Schedule");
+    expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/social-accounts");
+    expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/publishing");
+    expect(readSrc("src/App.tsx")).toContain("path=\"social-accounts\"");
+    expect(readSrc("src/App.tsx")).toContain("path=\"publishing\"");
   });
 });
