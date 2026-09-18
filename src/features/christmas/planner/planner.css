@@ -1352,6 +1352,32 @@
   width: min(100%, 28rem);
 }
 
+.tdg-planner--compact .tdg-planner__demo-layout {
+  display: grid;
+  gap: 1.6rem;
+  margin-top: 1.15rem;
+}
+
+.tdg-planner--compact .tdg-planner__demo-cta {
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  gap: 0.9rem;
+}
+
+.tdg-planner--compact .tdg-planner__demo-cta-lead {
+  font-family: var(--serif);
+  font-size: clamp(1.45rem, 3vw, 2.05rem);
+  line-height: 1.2;
+  color: var(--cream);
+  max-width: 16ch;
+}
+
+.tdg-planner--compact .tdg-planner__demo-cta .tdg-planner__cta-row,
+.tdg-planner--compact .tdg-planner__demo-cta .tdg-planner__btn {
+  margin: 0;
+}
+
 .tdg-planner--compact .tdg-planner__value-lead {
   font-family: var(--serif);
   font-size: 1.2rem;
@@ -1446,6 +1472,16 @@
 
   .tdg-planner--compact .tdg-planner__device--large {
     width: min(100%, 32rem);
+  }
+
+  .tdg-planner--compact .tdg-planner__demo-layout {
+    grid-template-columns: minmax(20rem, 32rem) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 3.25rem;
+  }
+
+  .tdg-planner--compact .tdg-planner__demo-layout .tdg-planner__device {
+    margin: 0;
   }
 
   .tdg-planner__cabin-poster img,

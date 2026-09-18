@@ -804,7 +804,18 @@ export default function ChristmasPlannerPage() {
           <section className="tdg-planner__section tdg-planner__section--mid" id="preview">
             <div className="tdg-planner__inner">
               <h2>See your Christmas before the chaos starts.</h2>
-              {demoBlock}
+              <div className="tdg-planner__demo-layout">
+                {demoBlock}
+                <div className="tdg-planner__demo-cta">
+                  <p className="tdg-planner__demo-cta-lead">This is the Planner. Now make it yours.</p>
+                  <button type="button" className="tdg-planner__btn" onClick={openQuiz}>
+                    Build Your Christmas Plan
+                  </button>
+                  <span className="tdg-planner__micro tdg-planner__micro--on-dark">
+                    3 quick questions · Takes less than a minute
+                  </span>
+                </div>
+              </div>
             </div>
           </section>
 
