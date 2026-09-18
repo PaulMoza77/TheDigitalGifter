@@ -25,7 +25,9 @@
     "api/pet-v2/preview.ts": { "maxDuration": 60 },
     "api/christmas-funnel.ts": { "maxDuration": 60 },
     "api/christmas-generate.ts": { "maxDuration": 60 },
-    "api/christmas-generate-video.ts": { "maxDuration": 60 }
+    "api/christmas-generate-video.ts": { "maxDuration": 60 },
+    "api/admin-library.ts": { "maxDuration": 60 },
+    "api/admin-library-cron.ts": { "maxDuration": 60 }
   },
   "rewrites": [
     { "source": "/api/christmas/funnel-event", "destination": "/api/christmas-funnel-event" },
@@ -53,5 +55,11 @@
     { "source": "/ro/christmas/short-christmas-wishes", "destination": "/api/christmas-seo?cluster=messages-intent&slug=short-christmas-wishes&locale=ro" },
     { "source": "/ro/christmas/christmas-messages-for-family", "destination": "/api/christmas-seo?cluster=messages-intent&slug=christmas-messages-for-family&locale=ro" },
     { "source": "/((?!api/|images/|assets/|\\.well-known/).*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/admin-library-cron",
+      "schedule": "*/2 * * * *"
+    }
   ]
 }

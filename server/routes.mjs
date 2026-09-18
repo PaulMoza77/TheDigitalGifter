@@ -25,6 +25,8 @@ export const API_MODULES = {
   "/api/christmas-club-signup": "christmas-club-signup.ts",
   "/api/christmas-v2/funnel-event": "christmas-v2-funnel-event.ts",
   "/api/christmas-v2-funnel-event": "christmas-v2-funnel-event.ts",
+  "/api/admin-library": "admin-library.ts",
+  "/api/admin-library-cron": "admin-library-cron.ts",
   "/sitemap.xml": "sitemap.xml.ts",
   "/api/sitemap.xml": "sitemap.xml.ts",
   "/api/christmas-seo": "christmas-seo.ts",

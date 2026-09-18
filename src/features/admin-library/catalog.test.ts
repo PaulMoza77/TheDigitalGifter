@@ -108,5 +108,8 @@ describe("admin video library", () => {
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("playsInline");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Save to Photos");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("isLibraryPhoto");
+    expect(readSrc("src/pages/admin/AdminLibraryPage.tsx")).toContain("HiggsfieldStudio");
+    expect(readSrc("src/features/admin-library/HiggsfieldStudio.tsx")).toContain("kling-3.0-pro");
+    expect(readSrc("scripts/tdg-library-generate.ts")).toContain("--estimate-only");
   });
 });

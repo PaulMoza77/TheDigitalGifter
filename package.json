@@ -11,6 +11,7 @@
     "deploy:static": "node scripts/prepare-static-deploy.mjs",
     "lint": "tsc -b --pretty false && vite build",
     "test": "vitest run",
+    "tdg:library-generate": "npx tsx scripts/tdg-library-generate.ts",
     "test:christmas-seo": "node scripts/christmas-seo-smoke.mjs",
     "test:pet-preview-identity": "vitest run src/features/pet-preview-identity.test.ts && node scripts/pet-preview-identity-qa.mjs",
     "deploy:pet-preview": "bash scripts/deploy-pet-preview.sh",
