@@ -158,6 +158,9 @@ describe("christmas planner privacy + attribution events", () => {
       "planner_landing_view",
       "planner_teaser_viewed",
       "planner_teaser_cta_clicked",
+      "planner_value_section_viewed",
+      "planner_demo_viewed",
+      "planner_demo_tab_clicked",
       "planner_build_started",
       "planner_cta_clicked",
       "planner_personalization_q1",
@@ -282,7 +285,7 @@ describe("christmas planner wiring", () => {
 
   it("does not invent testimonials", () => {
     const page = readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx");
-    expect(page).toContain("New for Christmas 2026");
+    expect(page).toContain("Built by The Digital Gifter.");
     expect(page).toContain("catalog.checkoutLive");
     expect(page).toContain("Christmas Planner launch access is opening soon.");
     expect(page.toLowerCase()).not.toContain("5,000 happy customers");
@@ -295,41 +298,43 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("Your entire Christmas,");
     expect(page).toContain("beautifully planned.");
     expect(page).toContain("BUILD MY CHRISTMAS PLAN");
-    expect(page).toContain("tdg-planner__pulse");
     expect(page).toContain("tdg-planner--compact");
     expect(page).toContain("walletCapabilityOnly");
     expect(page).not.toContain("The quiet truth");
-    expect(page).not.toContain("Christmas shouldn’t feel like project management.");
     expect(page).not.toContain("Preview mock");
     expect(page).not.toContain("tdg-planner__mock");
     expect(page).not.toContain("7 of 12 ordered");
     expect(page).not.toContain("$420 left");
     expect(css).toContain("--parchment");
-    expect(css).toContain("tdg-planner__pulse");
     expect(css).not.toContain("tdg-planner__mock");
   });
 
-  it("shows a compact pre-quiz teaser and hides it after personalization", () => {
+  it("explains the product before the quiz and hides those sections after personalization", () => {
     const page = readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx");
-    expect(page).toContain("Everything Christmas. One beautiful place.");
-    expect(page).toContain("tdg-planner__teaser");
+    const css = readSrc("src/features/christmas/planner/planner.css");
+    expect(page).toContain("Everything you need for Christmas. In one place.");
+    expect(page).toContain("See your Christmas before the chaos starts.");
+    expect(page).toContain("Christmas should feel magical.");
+    expect(page).toContain("Let’s build your Christmas.");
+    expect(page).toContain("PlannerHeroScene");
+    expect(readSrc("src/features/christmas/planner/PlannerHeroScene.tsx")).toContain("LANDING_ASSETS.cabinLoop");
+    expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("cabin-hero-loop.mp4");
     expect(page).toContain("{!ready ? (");
     expect(page).toContain("{ready && preview ? (");
-    expect(page).toContain("openQuizFromTeaser");
-    expect(page).toContain("!ready && teaserInView");
-    expect(page).toContain("planner_teaser_viewed");
-    expect(page).toContain("planner_teaser_cta_clicked");
+    expect(page).toContain("planner_value_section_viewed");
+    expect(page).toContain("planner_demo_viewed");
+    expect(page).toContain("planner_demo_tab_clicked");
     expect(page).toContain("Ready to plan");
     expect(page).toContain("Not set yet");
-    expect(page).toContain("Your plan appears here");
-    expect((page.match(/Everything Christmas\. One beautiful place\./g) || []).length).toBe(1);
+    expect(page).toContain("Example Planner · no fake customer progress");
+    expect(css).toContain("color: var(--cream)");
     expect(page).not.toContain("tdg-planner__teaser-card");
     const faqIndex = page.indexOf("tdg-planner__section--faq");
-    const teaserIndex = page.indexOf("tdg-planner__teaser");
+    const valueIndex = page.indexOf("tdg-planner__value");
     const resultIndex = page.indexOf("Your Christmas plan is ready");
-    expect(teaserIndex).toBeGreaterThan(0);
-    expect(teaserIndex).toBeLessThan(faqIndex);
-    expect(resultIndex).toBeGreaterThan(teaserIndex);
+    expect(valueIndex).toBeGreaterThan(0);
+    expect(valueIndex).toBeLessThan(faqIndex);
+    expect(resultIndex).toBeGreaterThan(valueIndex);
     expect(resultIndex).toBeLessThan(faqIndex);
   });
 
@@ -342,7 +347,7 @@ describe("christmas planner wiring", () => {
     expect(page).not.toContain("Compare packages");
     expect((page.match(/id="packages"/g) || []).length).toBe(1);
     expect((page.match(/id="checkout"/g) || []).length).toBe(1);
-    expect((page.match(/Starting late\? No panic/g) || []).length).toBe(1);
+    expect(page).toContain("Starting late? The Planner automatically focuses only on what still matters.");
   });
 
   it("keeps funnel session and guest recovery on the compact checkout path", () => {
@@ -351,7 +356,7 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("funnelSessionId: getChristmasFunnelSessionId()");
     expect(page).toContain("persistPlannerOrderRecovery");
     expect(page).toContain("walletCapabilityOnly");
-    expect(page).toContain("SEE MY OPTIONS");
+    expect(page).toContain("SEE OPTIONS");
     expect(page).toContain("BUILD MY PLAN");
     expect(readSrc("src/features/christmas/planner/personalization.ts")).toContain(
       'compact_personalized_v1',

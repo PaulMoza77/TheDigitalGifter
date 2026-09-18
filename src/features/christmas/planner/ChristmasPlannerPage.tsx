@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type
 import { Link } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { CHRISTMAS_CATALOG_SEED, findProduct } from "../catalog";
-import { FONT_HREF, LANDING_ASSETS } from "../landing/assets";
+import { FONT_HREF } from "../landing/assets";
 import {
   PLANNER_PRODUCT_KEY,
   addonsIncludedInPackage,
@@ -37,6 +37,7 @@ import {
   type RoleOptionId,
   type StartOptionId,
 } from "./personalization";
+import { PlannerHeroScene } from "./PlannerHeroScene";
 import "./planner.css";
 
 const CustomStripeCheckout = lazy(() =>
@@ -47,25 +48,79 @@ const CustomStripeCheckout = lazy(() =>
 
 const PACKAGE_COPY: Record<
   string,
-  { kicker: string; ticks: string[]; ribbon?: string }
+  { audience: string; ticks: string[]; ribbon?: string }
 > = {
   essentials: {
-    kicker: "The planning basics",
-    ticks: ["Plan", "Gifts", "Budget", "Shopping"],
+    audience: "For people who mainly want to stay organized.",
+    ticks: ["Christmas plan", "Daily tasks", "Gifts", "Budget", "Shopping tracker"],
   },
   magic: {
-    kicker: "Everything most families need",
-    ticks: ["Everything above", "Food", "Hosting", "Cards", "Rescue Mode"],
+    audience: "For families planning the full Christmas.",
+    ticks: [
+      "Everything in Essentials",
+      "Food planner",
+      "Hosting",
+      "Cards",
+      "Activities",
+      "Travel",
+      "Rescue Mode",
+    ],
     ribbon: "Most popular",
   },
   all_in: {
-    kicker: "The complete Christmas season",
-    ticks: ["Everything", "Recipes", "Premium content", "bonus TDG benefits"],
+    audience: "The complete Christmas experience.",
+    ticks: [
+      "Everything in Magic",
+      "Recipe collection",
+      "Premium content",
+      "Bonus TDG Christmas benefits",
+      "Future AI assistant access",
+    ],
     ribbon: "Best value",
   },
 };
 
+const VALUE_ROWS = [
+  {
+    title: "Gifts",
+    copy: "Track everyone, every idea, every order and every wrapped gift.",
+  },
+  {
+    title: "Budget",
+    copy: "Set a Christmas budget and always know what you have left.",
+  },
+  {
+    title: "Food & recipes",
+    copy: "Plan Christmas Eve, Christmas Day, recipes and one grocery list.",
+  },
+  {
+    title: "Hosting",
+    copy: "Guests, prep, home, dietary needs and the small things you usually forget.",
+  },
+  {
+    title: "Traditions & activities",
+    copy: "Markets, movie nights, family traditions, kids activities and memories.",
+  },
+  {
+    title: "Wishlist & Gift Finder",
+    copy: "Build and share wishlists and get help finding the right gift.",
+  },
+  {
+    title: "Christmas Rescue Mode",
+    copy: "Starting late? The Planner automatically focuses only on what still matters.",
+  },
+] as const;
+
 type PreviewTab = "today" | "gifts" | "budget" | "food" | "hosting" | "more";
+
+const DEMO_TABS: Array<[PreviewTab, string]> = [
+  ["today", "TODAY"],
+  ["gifts", "GIFTS"],
+  ["budget", "BUDGET"],
+  ["food", "FOOD"],
+  ["hosting", "HOSTING"],
+  ["more", "MORE"],
+];
 
 function money(cents: number, currency: string) {
   try {
@@ -113,45 +168,23 @@ function ensureFonts() {
   document.head.appendChild(link);
 }
 
-function TeaserDevice({ days }: { days: number }) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="tdg-planner__device tdg-planner__device--teaser" aria-label="Christmas Planner product preview">
-      <div className="tdg-planner__device-screen">
-        <div className="tdg-planner__device-brand">The Digital Gifter · Planner</div>
-        <h3>Today</h3>
-        <div className="tdg-planner__device-count">{days}</div>
-        <div className="tdg-planner__device-meta">days to Christmas</div>
-        <div className="tdg-planner__device-rows">
-          <div className="tdg-planner__device-row">
-            <strong>Your next steps</strong>
-            <span>Your plan appears here</span>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Gifts</strong>
-            <span>Ready to plan</span>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Budget</strong>
-            <span>Not set yet</span>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Upcoming</strong>
-            <span>After three short questions</span>
-          </div>
-        </div>
-      </div>
+    <div className="tdg-planner__device-row">
+      <strong>{label}</strong>
+      <span>{value}</span>
     </div>
   );
 }
 
-function DeviceShell({ title, children }: { title: string; children: ReactNode }) {
+function DeviceShell({ title, children, note }: { title: string; children: ReactNode; note: string }) {
   return (
-    <div className="tdg-planner__device" aria-label="Christmas Planner product preview">
+    <div className="tdg-planner__device tdg-planner__device--large" aria-label="Christmas Planner product preview">
       <div className="tdg-planner__device-screen">
         <div className="tdg-planner__device-brand">The Digital Gifter · Planner</div>
         <h3>{title}</h3>
         {children}
-        <p className="tdg-planner__honest">Preview from your answers · live Planner fills in as you plan</p>
+        <p className="tdg-planner__honest">{note}</p>
       </div>
     </div>
   );
@@ -160,146 +193,109 @@ function DeviceShell({ title, children }: { title: string; children: ReactNode }
 function PreviewDevice({
   tab,
   preview,
+  days,
 }: {
   tab: PreviewTab;
-  preview: PersonalizedPlannerPreview;
+  preview: PersonalizedPlannerPreview | null;
+  days: number;
 }) {
+  const note = preview
+    ? "Preview from your answers · live Planner fills in as you plan"
+    : "Example Planner · no fake customer progress";
+
   if (tab === "gifts") {
     return (
-      <DeviceShell title="Gifts">
-        <p className="tdg-planner__device-meta">Idea → ordered → wrapped</p>
+      <DeviceShell title="Gifts" note={note}>
+        <p className="tdg-planner__device-meta">People · ideas · ordered · arrived · wrapped</p>
         <div className="tdg-planner__device-rows">
-          <div className="tdg-planner__device-row">
-            <strong>Recipients</strong>
-            <span>Your people, in one list</span>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Gift tasks in your plan</strong>
-            <span>
-              {preview.giftTaskCount} {preview.giftTaskCount === 1 ? "task" : "tasks"} from Planner templates
-            </span>
-            <div className="tdg-planner__bar" aria-hidden>
-              <i style={{ ["--w" as string]: "0%" }} />
-            </div>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Gift Finder</strong>
-            <span>Sits beside your lists when you need an idea</span>
-          </div>
+          <Row label="People" value="Everyone you buy for, in one list" />
+          <Row label="Ideas" value="Capture ideas as they appear" />
+          <Row label="Ordered" value="Track what you have actually bought" />
+          <Row label="Arrived" value="Know what is already in the house" />
+          <Row label="Wrapped" value="Ready for the tree" />
+          <Row
+            label="Gift Finder"
+            value={
+              preview
+                ? `${preview.giftTaskCount} gift ${preview.giftTaskCount === 1 ? "task" : "tasks"} in your generated plan`
+                : "Help finding the right gift, beside your lists"
+            }
+          />
         </div>
       </DeviceShell>
     );
   }
   if (tab === "budget") {
     return (
-      <DeviceShell title="Budget">
+      <DeviceShell title="Budget" note={note}>
         <p className="tdg-planner__device-meta">Planned · spent · remaining</p>
         <div className="tdg-planner__device-rows">
-          <div className="tdg-planner__device-row">
-            <strong>Set budget</strong>
-            <span>
-              {preview.budgetTaskCount
-                ? "In your generated plan — not spent yet"
-                : "Add a budget when you start"}
-            </span>
-            <div className="tdg-planner__bar" aria-hidden>
-              <i style={{ ["--w" as string]: "0%" }} />
-            </div>
-          </div>
+          <Row
+            label="Planned"
+            value={preview?.budgetTaskCount ? "Set-budget task is in your generated plan" : "Set a Christmas budget"}
+          />
+          <Row label="Spent" value="Nothing spent yet · updates as you log gifts" />
+          <Row label="Remaining" value="Always know what you have left" />
         </div>
       </DeviceShell>
     );
   }
   if (tab === "food") {
     return (
-      <DeviceShell title="Food">
+      <DeviceShell title="Food" note={note}>
         <div className="tdg-planner__device-rows">
-          <div className="tdg-planner__device-row">
-            <strong>Christmas Eve</strong>
-            <span>Menu, timing, prep</span>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Christmas Day</strong>
-            <span>The table, without the scramble</span>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Recipes</strong>
-            <span>Save what you actually cook</span>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Grocery list</strong>
-            <span>One list for the season table</span>
-          </div>
+          <Row label="Christmas Eve" value="Menu, timing, prep" />
+          <Row label="Christmas Day" value="The table, without the scramble" />
+          <Row label="Recipes" value="Save what you actually cook" />
+          <Row label="Grocery list" value="One list for the season table" />
         </div>
       </DeviceShell>
     );
   }
   if (tab === "hosting") {
     return (
-      <DeviceShell title="Hosting">
+      <DeviceShell title="Hosting" note={note}>
         <div className="tdg-planner__device-rows">
-          <div className="tdg-planner__device-row">
-            <strong>Guests</strong>
-            <span>Who’s coming, and who eats what</span>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Prep</strong>
-            <span>The jobs that keep the house ready</span>
-          </div>
-          <div className="tdg-planner__device-row">
-            <strong>Home</strong>
-            <span>Rooms, timing, the calm bits</span>
-          </div>
+          <Row label="Guests" value="Who is coming, and who eats what" />
+          <Row label="Prep" value="The jobs that keep the house ready" />
+          <Row label="Dietary notes" value="Allergies and preferences, in one place" />
+          <Row label="House prep" value="Rooms, timing, the calm bits" />
         </div>
       </DeviceShell>
     );
   }
   if (tab === "more") {
     return (
-      <DeviceShell title="More">
+      <DeviceShell title="More" note={note}>
         <div className="tdg-planner__device-rows">
-          {["Cards", "Travel", "Traditions", "Wishlist", "Activities", "Memories", "Christmas Club"].map((item) => (
-            <div className="tdg-planner__device-row" key={item}>
-              <strong>{item}</strong>
-            </div>
-          ))}
+          <Row label="Travel" value="Trips, packing, timing" />
+          <Row label="Cards" value="Who still needs a card" />
+          <Row label="Traditions" value="The rituals you want to keep" />
+          <Row label="Wishlist" value="Build and share wishlists" />
+          <Row label="Activities" value="Markets, movie nights, kids days" />
+          <Row label="Memories" value="Keep the season, not only the tasks" />
+          <Row label="Christmas Club" value="Premium Club content where included" />
         </div>
       </DeviceShell>
     );
   }
+
+  const next = preview?.todayTasks.length
+    ? preview.todayTasks.map((task) => task.title).join(" · ")
+    : "Your next three tasks appear here";
+  const upcoming = preview?.upcoming.length
+    ? preview.upcoming.map((task) => task.title).join(" · ")
+    : "Upcoming dates appear after you start";
+
   return (
-    <DeviceShell title="Today">
-      <div className="tdg-planner__device-count">{preview.daysLeft}</div>
+    <DeviceShell title="Today" note={note}>
+      <div className="tdg-planner__device-count">{preview?.daysLeft ?? days}</div>
       <div className="tdg-planner__device-meta">days to Christmas</div>
       <div className="tdg-planner__device-rows">
-        <div className="tdg-planner__device-row">
-          <strong>Next {preview.todayTasks.length || 0} tasks</strong>
-          <span>
-            {preview.todayTasks.length
-              ? preview.todayTasks.map((task) => task.title).join(" · ")
-              : "Your plan fills this after you start"}
-          </span>
-        </div>
-        <div className="tdg-planner__device-row">
-          <strong>Gift progress</strong>
-          <span>
-            0 of {preview.giftTaskCount} gift {preview.giftTaskCount === 1 ? "task" : "tasks"} started
-          </span>
-          <div className="tdg-planner__bar" aria-hidden>
-            <i style={{ ["--w" as string]: "0%" }} />
-          </div>
-        </div>
-        <div className="tdg-planner__device-row">
-          <strong>Budget progress</strong>
-          <span>{preview.budgetTaskCount ? "Budget not set yet" : "No budget task in this plan"}</span>
-          <div className="tdg-planner__bar" aria-hidden>
-            <i style={{ ["--w" as string]: "0%" }} />
-          </div>
-        </div>
-        <div className="tdg-planner__device-row">
-          <strong>Upcoming</strong>
-          <span>{preview.upcoming.map((task) => task.title).join(" · ")}</span>
-        </div>
+        <Row label="Your next steps" value={next} />
+        <Row label="Gifts" value="Ready to plan" />
+        <Row label="Budget" value="Not set yet" />
+        <Row label="Upcoming" value={upcoming} />
       </div>
     </DeviceShell>
   );
@@ -356,7 +352,7 @@ function QuizLayer({
         <div className="tdg-planner__quiz-body">
           <p className="tdg-planner__kicker">Question 2</p>
           <h2 id="tdg-planner-quiz-title">What usually gets most chaotic?</h2>
-          <p className="tdg-planner__micro">Choose up to two.</p>
+        <p className="tdg-planner__micro tdg-planner__micro--on-dark">Choose up to two.</p>
           <div className="tdg-planner__choices" role="group" aria-label="What usually gets most chaotic?">
             {CHAOS_OPTIONS.map((option) => (
               <button
@@ -426,10 +422,11 @@ export default function ChristmasPlannerPage() {
   const [checkoutSeen, setCheckoutSeen] = useState(false);
   const [paymentInView, setPaymentInView] = useState(false);
   const [heroInView, setHeroInView] = useState(true);
-  const [teaserInView, setTeaserInView] = useState(false);
-  const [teaserSeen, setTeaserSeen] = useState(false);
+  const [valueSeen, setValueSeen] = useState(false);
+  const [demoSeen, setDemoSeen] = useState(false);
   const heroRef = useRef<HTMLElement | null>(null);
-  const teaserRef = useRef<HTMLElement | null>(null);
+  const valueRef = useRef<HTMLElement | null>(null);
+  const demoRef = useRef<HTMLDivElement | null>(null);
   const purchaseRef = useRef<HTMLElement | null>(null);
   const packagesRef = useRef<HTMLElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
@@ -540,22 +537,36 @@ export default function ChristmasPlannerPage() {
   }, []);
 
   useEffect(() => {
-    const node = teaserRef.current;
+    const node = valueRef.current;
     if (!node || ready || typeof IntersectionObserver === "undefined") return;
     const obs = new IntersectionObserver(
       (entries) => {
-        const visible = entries.some((entry) => entry.isIntersecting);
-        setTeaserInView(visible);
-        if (visible && !teaserSeen) {
-          setTeaserSeen(true);
-          void trackPlannerFunnel("planner_teaser_viewed");
+        if (entries.some((entry) => entry.isIntersecting) && !valueSeen) {
+          setValueSeen(true);
+          void trackPlannerFunnel("planner_value_section_viewed");
         }
       },
-      { threshold: 0.18 },
+      { threshold: 0.2 },
     );
     obs.observe(node);
     return () => obs.disconnect();
-  }, [ready, teaserSeen]);
+  }, [ready, valueSeen]);
+
+  useEffect(() => {
+    const node = demoRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && !demoSeen) {
+          setDemoSeen(true);
+          void trackPlannerFunnel("planner_demo_viewed");
+        }
+      },
+      { threshold: 0.2 },
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [demoSeen, ready]);
 
   useEffect(() => {
     const node = paymentRef.current;
@@ -587,10 +598,10 @@ export default function ChristmasPlannerPage() {
     }
   }, [answers.chaos.length, answers.role, answers.start]);
 
-  const openQuizFromTeaser = useCallback(() => {
-    void trackPlannerFunnel("planner_teaser_cta_clicked");
-    openQuiz();
-  }, [openQuiz]);
+  const onDemoTab = (id: PreviewTab) => {
+    setTab(id);
+    void trackPlannerFunnel("planner_demo_tab_clicked", { metadata: { tab: id } });
+  };
 
   useEffect(() => {
     if (!quizOpen) return;
@@ -693,11 +704,11 @@ export default function ChristmasPlannerPage() {
   }, [packageKey, chargedAddons, displayTotal, catalog.checkoutLive]);
 
   const seo = useMemo(() => plannerSeo(), []);
-  const stickyHidden = (paymentInView && ready) || (heroInView && ready) || (!ready && teaserInView);
+  const stickyHidden = (paymentInView && ready) || (heroInView && ready) || quizOpen;
   const stickyLabel = !ready
     ? "BUILD MY PLAN"
     : !packagesSeen
-      ? "SEE MY OPTIONS"
+      ? "SEE OPTIONS"
       : `CONTINUE · ${money(displayTotal, selected?.currency || "usd")}`;
 
   const onSticky = () => {
@@ -713,24 +724,35 @@ export default function ChristmasPlannerPage() {
     if (catalog.checkoutLive && !checkout) void startPay();
   };
 
+  const demoBlock = (
+    <div className="tdg-planner__demo" ref={demoRef}>
+      <div className="tdg-planner__tabs" role="tablist" aria-label="Planner preview">
+        {DEMO_TABS.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            className={`tdg-planner__tab${tab === id ? " is-on" : ""}`}
+            onClick={() => onDemoTab(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="tdg-planner__device-wrap tdg-planner__device-wrap--single">
+        <PreviewDevice tab={tab} preview={preview} days={days} />
+      </div>
+    </div>
+  );
+
   return (
     <div className="tdg-planner tdg-planner--compact">
       <PageHead title={seo.title} description={seo.description} url={seo.url} image={seo.image} exactTitle />
 
       <header className="tdg-planner__hero" ref={heroRef}>
         <div className="tdg-planner__media">
-          <picture>
-            <source srcSet={`${LANDING_ASSETS.cabin1280} 1280w, ${LANDING_ASSETS.cabin1920} 1920w`} type="image/webp" />
-            <img
-              src={LANDING_ASSETS.cabin1920Jpg}
-              alt="A luxury mountain cabin living room at Christmas"
-              width={1920}
-              height={1080}
-              fetchPriority="high"
-              decoding="async"
-            />
-          </picture>
-          <div className="tdg-planner__veil" />
+          <PlannerHeroScene alt="A luxury mountain cabin living room at Christmas" />
         </div>
         <div className="tdg-planner__hero-copy">
           <h1>
@@ -745,41 +767,97 @@ export default function ChristmasPlannerPage() {
             <button type="button" className="tdg-planner__btn" onClick={openQuiz}>
               BUILD MY CHRISTMAS PLAN
             </button>
-            <span className="tdg-planner__micro">Takes less than a minute.</span>
+            <span className="tdg-planner__micro tdg-planner__micro--on-dark">
+              3 quick questions · Takes less than a minute
+            </span>
           </div>
-          <p className="tdg-planner__pulse tdg-planner__pulse--single">
-            {days} days left · Gifts · Budget · Food · Hosting · Traditions
+          <p className="tdg-planner__live-strip">
+            {days} days left · Today: 3 things · Gifts: ready to plan · Budget: not set yet
           </p>
         </div>
       </header>
 
       {!ready ? (
-        <section
-          className="tdg-planner__section tdg-planner__section--cream tdg-planner__teaser"
-          ref={teaserRef}
-          id="preview"
-        >
-          <div className="tdg-planner__inner">
-            <h2>Everything Christmas. One beautiful place.</h2>
-            <p className="tdg-planner__teaser-line">Gifts · Budget · Meals · Hosting · Traditions · Wishlist</p>
-            <div className="tdg-planner__teaser-grid">
-              <TeaserDevice days={days} />
-              <div className="tdg-planner__teaser-copy">
-                <ul className="tdg-planner__teaser-benefits">
-                  <li>Know exactly what to do next</li>
-                  <li>Keep gifts and Christmas spending under control</li>
-                  <li>Plan meals, hosting and the little things before they become stressful</li>
-                </ul>
-                <div className="tdg-planner__cta-row">
-                  <button type="button" className="tdg-planner__btn" onClick={openQuizFromTeaser}>
-                    BUILD MY CHRISTMAS PLAN
-                  </button>
-                  <span className="tdg-planner__micro">3 quick questions · Takes less than a minute</span>
+        <>
+          <section
+            className="tdg-planner__section tdg-planner__section--cream tdg-planner__value"
+            ref={valueRef}
+            id="what-you-get"
+          >
+            <div className="tdg-planner__inner">
+              <h2>Everything you need for Christmas. In one place.</h2>
+              <p className="tdg-planner__value-lead">
+                No scattered notes. No forgotten gifts. No last-minute meal panic. Just one clear plan from now until
+                Christmas.
+              </p>
+              <ul className="tdg-planner__value-list">
+                {VALUE_ROWS.map((row) => (
+                  <li key={row.title}>
+                    <strong>{row.title}</strong>
+                    <span>{row.copy}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+
+          <section className="tdg-planner__section tdg-planner__section--mid" id="preview">
+            <div className="tdg-planner__inner">
+              <h2>See your Christmas before the chaos starts.</h2>
+              {demoBlock}
+            </div>
+          </section>
+
+          <section className="tdg-planner__section tdg-planner__section--cream tdg-planner__transform">
+            <div className="tdg-planner__inner">
+              <h2>
+                Christmas should feel magical.
+                <br />
+                Not like project management.
+              </h2>
+              <div className="tdg-planner__ba">
+                <div>
+                  <p className="tdg-planner__kicker" style={{ color: "var(--burgundy)" }}>
+                    Before
+                  </p>
+                  <ul>
+                    <li>Notes everywhere</li>
+                    <li>Forgotten gifts</li>
+                    <li>Overspending</li>
+                    <li>Meal planning at the last minute</li>
+                    <li>Hosting stress</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="tdg-planner__kicker" style={{ color: "var(--burgundy)" }}>
+                    After
+                  </p>
+                  <ul>
+                    <li>One plan</li>
+                    <li>One budget</li>
+                    <li>One gift list</li>
+                    <li>One meal plan</li>
+                    <li>Clear next steps every day</li>
+                  </ul>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+
+          <section className="tdg-planner__section tdg-planner__section--dark tdg-planner__build">
+            <div className="tdg-planner__inner">
+              <h2>Let’s build your Christmas.</h2>
+              <div className="tdg-planner__cta-row">
+                <button type="button" className="tdg-planner__btn" onClick={openQuiz}>
+                  BUILD MY CHRISTMAS PLAN
+                </button>
+                <span className="tdg-planner__micro tdg-planner__micro--on-dark">
+                  3 quick questions · Takes less than a minute
+                </span>
+              </div>
+            </div>
+          </section>
+        </>
       ) : null}
 
       {ready && preview ? (
@@ -794,8 +872,7 @@ export default function ChristmasPlannerPage() {
             <p className="tdg-planner__style">Your planning style: {preview.styleLabel}</p>
             {preview.rescueMode ? (
               <p className="tdg-planner__rescue-inline">
-                Starting late? No panic. Your Planner automatically switches to Christmas Rescue Mode and shows only
-                what still matters.
+                Starting late? The Planner automatically focuses only on what still matters.
               </p>
             ) : (
               <p className="tdg-planner__adapt">Your plan adapts automatically as Christmas gets closer.</p>
@@ -806,32 +883,7 @@ export default function ChristmasPlannerPage() {
                 <li key={task.template_key}>{task.title}</li>
               ))}
             </ol>
-            <div className="tdg-planner__tabs" role="tablist" aria-label="Planner preview">
-              {(
-                [
-                  ["today", "TODAY"],
-                  ["gifts", "GIFTS"],
-                  ["budget", "BUDGET"],
-                  ["food", "FOOD"],
-                  ["hosting", "HOSTING"],
-                  ["more", "MORE"],
-                ] as Array<[PreviewTab, string]>
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === id}
-                  className={`tdg-planner__tab${tab === id ? " is-on" : ""}`}
-                  onClick={() => setTab(id)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="tdg-planner__device-wrap tdg-planner__device-wrap--single">
-              <PreviewDevice tab={tab} preview={preview} />
-            </div>
+            {demoBlock}
           </div>
         </section>
       ) : null}
@@ -875,7 +927,7 @@ export default function ChristmasPlannerPage() {
                     <div className="tdg-planner__offer-top">
                       <div>
                         <h3>{pkg.packageName}</h3>
-                        <p>{copy?.kicker || pkg.description}</p>
+                        <p>{copy?.audience || pkg.description}</p>
                       </div>
                       <div className="tdg-planner__price">{money(pkg.priceCents, pkg.currency)}</div>
                     </div>
@@ -893,7 +945,9 @@ export default function ChristmasPlannerPage() {
             <div className="tdg-planner__addons">
               <h3 className="tdg-planner__addons-title">Make it yours</h3>
               {visibleAddons.length === 0 ? (
-                <p className="tdg-planner__micro">Everything in this package is already included.</p>
+                <p className="tdg-planner__micro tdg-planner__micro--on-dark">
+                  Everything in this package is already included.
+                </p>
               ) : (
                 visibleAddons.map((addon) => (
                   <label key={addon.packageKey}>
@@ -937,8 +991,8 @@ export default function ChristmasPlannerPage() {
               </div>
 
               <p className="tdg-planner__trust-strip">
-                New for Christmas 2026 · Built by The Digital Gifter.
-                <span> Gift Finder · Wishlist · Christmas Cards · Christmas photo experiences</span>
+                Built by The Digital Gifter.
+                <span> Gift Finder · Wishlist · Christmas Cards · Christmas Experiences</span>
               </p>
 
               {error ? (
@@ -961,7 +1015,7 @@ export default function ChristmasPlannerPage() {
                 </button>
               ) : (
                 <div className="tdg-planner__checkout">
-                  <Suspense fallback={<p className="tdg-planner__micro">Loading secure payment…</p>}>
+                  <Suspense fallback={<p className="tdg-planner__micro tdg-planner__micro--on-dark">Loading secure payment…</p>}>
                     <CustomStripeCheckout
                       clientSecret={checkout.clientSecret}
                       publishableKey={checkout.publishableKey}
@@ -1015,7 +1069,7 @@ export default function ChristmasPlannerPage() {
               account.
             </p>
           </article>
-          <p className="tdg-planner__micro" style={{ marginTop: "1.25rem" }}>
+          <p className="tdg-planner__micro tdg-planner__micro--on-dark" style={{ marginTop: "1.25rem" }}>
             More Christmas tools live on the <Link to="/christmas">Christmas hub</Link>.
           </p>
         </div>
@@ -1051,7 +1105,7 @@ export default function ChristmasPlannerPage() {
         <div className="tdg-planner__sticky">
           <div>
             <strong>{ready ? selected?.packageName || "Your plan" : "Christmas Planner"}</strong>
-            <div className="tdg-planner__micro">
+            <div className="tdg-planner__micro tdg-planner__micro--on-dark">
               {ready ? money(displayTotal, selected?.currency || "usd") : "Takes less than a minute."}
             </div>
           </div>
