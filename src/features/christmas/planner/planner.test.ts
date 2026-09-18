@@ -316,6 +316,7 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("{!ready ? (");
     expect(page).toContain("{ready && preview ? (");
     expect(page).toContain("openQuizFromTeaser");
+    expect(page).toContain("!ready && teaserInView");
     expect(page).toContain("planner_teaser_viewed");
     expect(page).toContain("planner_teaser_cta_clicked");
     expect(page).toContain("Ready to plan");

@@ -426,6 +426,7 @@ export default function ChristmasPlannerPage() {
   const [checkoutSeen, setCheckoutSeen] = useState(false);
   const [paymentInView, setPaymentInView] = useState(false);
   const [heroInView, setHeroInView] = useState(true);
+  const [teaserInView, setTeaserInView] = useState(false);
   const [teaserSeen, setTeaserSeen] = useState(false);
   const heroRef = useRef<HTMLElement | null>(null);
   const teaserRef = useRef<HTMLElement | null>(null);
@@ -543,13 +544,14 @@ export default function ChristmasPlannerPage() {
     if (!node || ready || typeof IntersectionObserver === "undefined") return;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting) && !teaserSeen) {
+        const visible = entries.some((entry) => entry.isIntersecting);
+        setTeaserInView(visible);
+        if (visible && !teaserSeen) {
           setTeaserSeen(true);
           void trackPlannerFunnel("planner_teaser_viewed");
-          obs.disconnect();
         }
       },
-      { threshold: 0.3 },
+      { threshold: 0.18 },
     );
     obs.observe(node);
     return () => obs.disconnect();
@@ -691,7 +693,7 @@ export default function ChristmasPlannerPage() {
   }, [packageKey, chargedAddons, displayTotal, catalog.checkoutLive]);
 
   const seo = useMemo(() => plannerSeo(), []);
-  const stickyHidden = (paymentInView && ready) || (heroInView && ready);
+  const stickyHidden = (paymentInView && ready) || (heroInView && ready) || (!ready && teaserInView);
   const stickyLabel = !ready
     ? "BUILD MY PLAN"
     : !packagesSeen
