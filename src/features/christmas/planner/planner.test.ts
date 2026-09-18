@@ -314,6 +314,9 @@ describe("christmas planner wiring", () => {
     const css = readSrc("src/features/christmas/planner/planner.css");
     expect(page).toContain("Everything you need for Christmas. In one place.");
     expect(page).toContain("See your Christmas before the chaos starts.");
+    expect(page).toContain("Build Your Christmas Plan");
+    expect(page).toContain("tdg-planner__demo-cta");
+    expect(css).toContain("tdg-planner__demo-layout");
     expect(page).toContain("Christmas should feel magical.");
     expect(page).toContain("Let’s build your Christmas.");
     expect(page).toContain("PlannerHeroScene");
