@@ -27,6 +27,7 @@ COPY api ./api
 COPY server ./server
 # Origin /api handlers import shared TypeScript from src/ (gift tree, funnel contract).
 COPY src ./src
+COPY scripts ./scripts
 COPY public/.well-known ./public/.well-known
 ENV NODE_ENV=production \
     VERCEL_ENV=production \
