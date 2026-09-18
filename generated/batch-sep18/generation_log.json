@@ -1,0 +1,76 @@
+{
+  "created_at": "2026-09-18T19:19:39.477204+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 1.4000000000000001,
+  "clips": [
+    {
+      "id": "christmas_master_01",
+      "title": "Alpine chalet hot tub",
+      "source_image": "alpine_chalet_hot_tub.jpg",
+      "job_id": "0ef4e9d1-efb7-442c-8415-8e38cc0507da",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas dusk. This exact luxury Alpine chalet photograph comes alive for five seconds. Preserve the house, glass gable, stone chimney, interior Christmas tree, fireplace, dining table, outdoor fire pit seating, wooden hot tub, lanterns, candles, snow-covered stones, pine trees, and mountain range exactly as in the first frame. Hot-tub water ripples gently with steam rising naturally. Candle flames and lanterns flicker extremely subtly. Fairy lights on the eaves twinkle very softly. Distant fireplace flames breathe. A few pine needles shift in a cold breeze. Natural sparse snowfall, not a fake overlay. Very slow cinematic push-in toward the chalet with tiny lens breathing. Architecture stays rigid. No new people. No morphing. Archival-cinematic luxury Christmas footage.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/tmp/tdg-hf-batch/masters/christmas_master_01.mp4",
+      "probe": null,
+      "created_at": "2026-09-18T19:21:58.746881+00:00"
+    },
+    {
+      "id": "christmas_master_02",
+      "title": "NYC ice skater",
+      "source_image": "nyc_ice_skater.jpg",
+      "job_id": "f166f39c-abfd-4cc1-93bd-61e9bcbba1f3",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 New York Christmas night. This exact photograph of the young woman ice skating comes alive for five seconds. Preserve her face, long brown hair, cream knit sweater, red scarf, white ruffled skirt, black tights, cream gloves, white ice skates, brownstone wreaths, streetlamps, and Empire State Building exactly as in the first frame. She continues one natural skating stride forward on the ice with realistic weight shift, arm balance, and a small natural blink. Hair and scarf drift slightly in cold air. Ice reflections slide. Distant lights twinkle. Soft natural snowfall. Very subtle tracking / slow push-in matching her glide. Skyline and buildings stay structurally stable. No extra people, no face morph, no warped skates. Genuine cinematic Christmas footage.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/tmp/tdg-hf-batch/masters/christmas_master_02.mp4",
+      "probe": null,
+      "created_at": "2026-09-18T19:21:59.950901+00:00"
+    },
+    {
+      "id": "christmas_master_03",
+      "title": "Village kids sledding",
+      "source_image": "village_kids_sledding.jpg",
+      "job_id": "44967c04-09c3-420a-b2cc-eca32356999b",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Alpine Christmas village at sunset. This exact photograph comes alive for five seconds. Preserve the three children, wooden sleds, golden retriever, stone houses, garlands, lake, church steeple, bridge, and mountains exactly as in the first frame. The girl in the green coat and red hat slides a little farther down the lane with realistic sled physics and joyful body motion. The boy in the blue coat follows on his sled. The child behind continues naturally. The golden retriever trots beside them with realistic gait. Chimney smoke rises. Warm window lights twinkle. Natural snowfall. Footsteps and sleds lightly disturb the snow. Very slow cinematic push-in. Houses and mountains stay rigid. Preserve all faces and clothing. No extra children. No warped sleds.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/tmp/tdg-hf-batch/masters/christmas_master_03.mp4",
+      "probe": null,
+      "created_at": "2026-09-18T19:22:01.020453+00:00"
+    },
+    {
+      "id": "christmas_master_04",
+      "title": "Prague cafe cookies",
+      "source_image": "prague_cafe_cookies.jpg",
+      "job_id": "4baf09a1-26ea-473e-bd31-8a411342de99",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas bakery cafe. This exact photograph comes alive for five seconds. Preserve the gingerbread cookies, linzer cookies, cinnamon roll, bundt cake, muffins, floral cocoa mug with whipped cream, lantern candle, plaid scarf on the chair, pastry case, window, and the snowy Prague Charles Bridge / Old Town towers outside exactly as in the first frame. Candle flame flickers extremely subtly. Faint steam rises from the cocoa. Warm fairy lights twinkle. Tiny snow drift visible through the window. Distant pedestrians outside take a few slow steps only if they stay sharp. Very slow cinematic push-in toward the cookie plate. Food, mug, and architecture remain structurally stable. No melting pastry, no morphing cookies, no new objects.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/tmp/tdg-hf-batch/masters/christmas_master_04.mp4",
+      "probe": null,
+      "created_at": "2026-09-18T19:22:02.317426+00:00"
+    },
+    {
+      "id": "christmas_master_05",
+      "title": "Vintage snowman",
+      "source_image": "vintage_snowman.jpg",
+      "job_id": "49ff2fbe-eade-4b91-a068-cf69bfdb872c",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal vintage Christmas home-movie 9:16. This exact photograph of three children building a snowman comes alive for five seconds. Preserve the boy in the red coat, the girl in the green coat, the kneeling child in the navy coat, the snowman with top hat and red plaid scarf, the vintage sled, the cream house with wreath and garland, the parked vintage cars, and the neighboring houses exactly as in the first frame. The standing boy makes a small natural adjustment to the snowman's face. The girl smiles and steadies the scarf with realistic hand motion. The kneeling child packs a little snow at the base. Natural blinking. Clothing shifts slightly. Soft snowfall. Porch lights glow steadily. Very subtle cinematic push-in with tiny handheld breathing, like a high-quality scan of archival film. Cars and house stay completely structurally stable. Preserve all faces and period clothing. No extra people, no morphing snowman, no bending vehicles.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/tmp/tdg-hf-batch/masters/christmas_master_05.mp4",
+      "probe": null,
+      "created_at": "2026-09-18T19:22:03.216546+00:00"
+    }
+  ],
+  "reels": []
+}

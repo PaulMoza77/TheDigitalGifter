@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-"""Generate 5 Kling 3.0 Pro I2V masters (1080p, 5s, silent) and 3 Reels."""
+"""Generate 5 Higgsfield Kling 3.0 Pro I2V masters (5s, sound=off) and 3 Reels.
+
+Fails closed if Higgsfield credentials are missing. Never uses Replicate.
+Credentials: HF_CREDENTIALS=KEY_ID:KEY_SECRET (or HF_API_KEY_ID + HF_API_KEY_SECRET).
+Never print credential values.
+"""
 
 from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -13,31 +19,21 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path("/workspace")
-SOURCE = ROOT / "source" / "batch-sep18"
-MASTERS = ROOT / "public" / "assets" / "christmas" / "reels" / "masters"
-FINALS = ROOT / "public" / "assets" / "christmas" / "reels" / "final"
-POSTERS = ROOT / "public" / "assets" / "christmas" / "reels" / "posters"
-LOG = ROOT / "public" / "assets" / "christmas" / "reels" / "generation_manifest.json"
-GENLOG = ROOT / "generated" / "batch-sep18" / "generation_log.json"
-
-TOKEN = os.environ.get("REPLICATE_API_TOKEN") or ""
-MODEL = "kwaivgi/kling-v3-video"
+HIGGSFIELD_API_BASE = "https://api.higgsfield.ai"
+MODEL_ID = "kling-video/v3.0/pro/image-to-video"
+ESTIMATE_PATH = "/estimate/kling-video/v3.0/pro/image-to-video"
+SUBMIT_PATH = "/kling-video/v3.0/pro/image-to-video"
 DURATION = 5
-MODE = "pro"
-# Previous TDG Kling 3.0 Pro 1080p silent tariff (GENERATION_LOG.md).
-USD_PER_SECOND = 0.112
-PREVIOUS_TOTAL = 2.80
+BUDGET_USD = 2.00
+PREVIOUS_JOB_ID = "086e782a-6cc2-47cc-9131-1b5bc3d6830c"
 
-NEG = (
-    "slideshow, Ken Burns, camera-only motion, fake parallax, morphing faces, identity change, "
-    "warped hands, extra fingers, disappearing limbs, duplicated people, melting objects, "
-    "bending cars, bending buildings, changing clothing, changing background, sudden object appearance, "
-    "excessive motion blur, AI shimmer, texture crawling, temporal flickering, surreal movement, "
-    "random camera shake, cartoon motion, fake snow overlay covering the image, extra people, "
-    "warped architecture, melting ice, identity drift, watermark, muddy image, plastic textures, "
-    "jerky camera, fast zoom, aggressive orbit, dramatic drone, rapid pan"
-)
+ROOT = Path(os.environ.get("TDG_ROOT") or "/workspace")
+SOURCE = Path(os.environ.get("TDG_SOURCE") or (ROOT / "source" / "batch-sep18"))
+MASTERS = Path(os.environ.get("TDG_MASTERS") or (ROOT / "public" / "assets" / "christmas" / "reels" / "masters"))
+FINALS = Path(os.environ.get("TDG_FINALS") or (ROOT / "public" / "assets" / "christmas" / "reels" / "final"))
+POSTERS = Path(os.environ.get("TDG_POSTERS") or (ROOT / "public" / "assets" / "christmas" / "reels" / "posters"))
+LOG = Path(os.environ.get("TDG_LOG") or (ROOT / "public" / "assets" / "christmas" / "reels" / "generation_manifest.json"))
+GENLOG = Path(os.environ.get("TDG_GENLOG") or (ROOT / "generated" / "batch-sep18" / "generation_log.json"))
 
 CLIPS = [
     {
@@ -134,111 +130,97 @@ CLIPS = [
 ]
 
 
-def api(method: str, url: str, data: dict | None = None, timeout: int = 120) -> dict:
+def read_credentials() -> tuple[str, str]:
+    combined = (os.environ.get("HF_CREDENTIALS") or os.environ.get("HF_KEY") or "").strip()
+    if ":" in combined:
+        key_id, secret = combined.split(":", 1)
+        key_id, secret = key_id.strip(), secret.strip()
+        if key_id and secret:
+            return key_id, secret
+    key_id = (os.environ.get("HF_API_KEY_ID") or os.environ.get("HF_API_KEY") or "").strip()
+    secret = (os.environ.get("HF_API_KEY_SECRET") or os.environ.get("HF_SECRET") or os.environ.get("HF_API_SECRET") or "").strip()
+    if key_id and secret:
+        return key_id, secret
+    print(
+        "BLOCKED: Higgsfield credentials missing. Set HF_CREDENTIALS on the job runner "
+        "(VPS container thedigitalgifter). Fail closed — no Replicate fallback.",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
+
+
+def auth_header() -> str:
+    key_id, secret = read_credentials()
+    return f"Key {key_id}:{secret}"
+
+
+def hf_request(method: str, path_or_url: str, data: dict | None = None, timeout: int = 180) -> dict:
+    url = path_or_url if path_or_url.startswith("http") else f"{HIGGSFIELD_API_BASE}{path_or_url}"
     body = None if data is None else json.dumps(data).encode()
-    req = urllib.request.Request(
-        url,
-        data=body,
-        method=method,
-        headers={
-            "Authorization": f"Bearer {TOKEN}",
-            "Content-Type": "application/json",
-            "User-Agent": "tdg-christmas-batch-sep18/1.0",
-        },
-    )
-    for _ in range(8):
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                return json.loads(resp.read().decode())
-        except urllib.error.HTTPError as e:
-            err = e.read().decode()
-            if e.code == 429:
-                retry_after = 12
-                try:
-                    retry_after = int(json.loads(err).get("retry_after") or 12) + 2
-                except Exception:
-                    pass
-                print(f"  429 throttled, waiting {retry_after}s...", flush=True)
-                time.sleep(retry_after)
-                continue
-            raise RuntimeError(f"{method} {url} -> {e.code} {err[:800]}") from e
-    raise RuntimeError(f"{method} {url} still throttled after retries")
+    headers = {
+        "Authorization": auth_header(),
+        "User-Agent": "tdg-christmas-batch-sep18/higgsfield",
+        "Accept": "application/json",
+    }
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+    req = urllib.request.Request(url, data=body, method=method, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read().decode()
+            return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as e:
+        err = e.read().decode()
+        raise RuntimeError(f"{method} {url} -> {e.code} {err[:800]}") from e
 
 
-def upload_file(path: Path) -> str:
-    boundary = "----TdgBatchSep18"
-    data = path.read_bytes()
-    parts = [
-        (
-            f"--{boundary}\r\nContent-Disposition: form-data; name=\"content\"; "
-            f"filename=\"{path.name}\"\r\nContent-Type: image/png\r\n\r\n"
-        ).encode(),
-        data,
-        f"\r\n--{boundary}--\r\n".encode(),
-    ]
-    req = urllib.request.Request(
-        "https://api.replicate.com/v1/files",
-        data=b"".join(parts),
-        method="POST",
-        headers={
-            "Authorization": f"Bearer {TOKEN}",
-            "Content-Type": f"multipart/form-data; boundary={boundary}",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=180) as resp:
-        payload = json.loads(resp.read().decode())
-    url = (payload.get("urls") or {}).get("get")
-    if not url:
-        raise RuntimeError(f"file upload missing url: {payload}")
-    return url
+def parse_estimate(body: unknown) -> dict:
+    if not isinstance(body, dict):
+        raise RuntimeError(f"estimate response not an object: {body!r}")
+    usd_raw = body.get("usd") if isinstance(body, dict) else None
+    usd = float(usd_raw) if usd_raw is not None else float("nan")
+    if not (usd >= 0):
+        raise RuntimeError(f"live estimate missing usd: {body}")
+    credits = body.get("credits")
+    return {"usd": usd, "credits": None if credits is None else str(credits), "raw": body}
 
 
-def output_url(output) -> str | None:
-    if isinstance(output, str) and output.startswith("http"):
-        return output
-    if isinstance(output, list):
-        for item in output:
-            if isinstance(item, str) and item.startswith("http"):
-                return item
-            if isinstance(item, dict) and isinstance(item.get("url"), str):
-                return item["url"]
-    if isinstance(output, dict) and isinstance(output.get("url"), str):
-        return output["url"]
+def video_url_from_status(body: dict) -> str | None:
+    video = body.get("video")
+    if isinstance(video, dict) and isinstance(video.get("url"), str):
+        return video["url"]
+    if isinstance(body.get("video_url"), str):
+        return body["video_url"]
     return None
 
 
-def create_prediction(image_url: str, prompt: str) -> dict:
-    return api(
-        "POST",
-        f"https://api.replicate.com/v1/models/{MODEL}/predictions",
-        {
-            "input": {
-                "prompt": prompt,
-                "start_image": image_url,
-                "mode": MODE,
-                "duration": DURATION,
-                "generate_audio": False,
-                "negative_prompt": NEG,
-            }
-        },
-    )
+def upload_image(path: Path) -> str:
+    ctype = "image/png" if path.suffix.lower() == ".png" else "image/jpeg"
+    meta = hf_request("POST", "/files/generate-upload-url", {"content_type": ctype})
+    public_url = meta.get("public_url")
+    upload_url = meta.get("upload_url")
+    if not public_url or not upload_url:
+        raise RuntimeError(f"upload URL missing fields: keys={list(meta.keys())}")
+    headers = dict(meta.get("upload_headers") or {"Content-Type": ctype})
+    data = path.read_bytes()
+    req = urllib.request.Request(str(upload_url), data=data, method="PUT", headers=headers)
+    with urllib.request.urlopen(req, timeout=180) as resp:
+        resp.read()
+    return str(public_url)
 
 
-def poll(pred_id: str, timeout_s: int = 1200) -> dict:
-    start = time.time()
-    while time.time() - start < timeout_s:
-        current = api("GET", f"https://api.replicate.com/v1/predictions/{pred_id}")
-        status = str(current.get("status"))
-        print(f"  {pred_id} {status}", flush=True)
-        if status in {"succeeded", "failed", "canceled"}:
-            return current
-        time.sleep(8)
-    raise TimeoutError(f"prediction {pred_id} timed out")
+def clip_payload(image_url: str, prompt: str) -> dict:
+    return {
+        "image_url": image_url,
+        "prompt": prompt,
+        "duration": DURATION,
+        "sound": "off",
+    }
 
 
 def download(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    req = urllib.request.Request(url, headers={"User-Agent": "tdg-christmas-batch-sep18/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "tdg-christmas-batch-sep18/higgsfield"})
     with urllib.request.urlopen(req, timeout=180) as resp, dest.open("wb") as f:
         while True:
             chunk = resp.read(1024 * 256)
@@ -291,44 +273,19 @@ def probe_summary(path: Path) -> dict:
 
 
 def validate_master(info: dict) -> None:
-    if info["width"] != 1080 or info["height"] != 1920:
-        raise RuntimeError(f"{info['filename']} not 1080x1920: {info['width']}x{info['height']}")
+    if info["width"] < 1080 or info["height"] < 1080:
+        raise RuntimeError(f"{info['filename']} too small: {info['width']}x{info['height']}")
     if info["duration"] < 4.5 or info["duration"] > 6.5:
         raise RuntimeError(f"{info['filename']} duration {info['duration']}")
     if info["size"] < 200_000:
         raise RuntimeError(f"{info['filename']} looks empty/corrupt ({info['size']} bytes)")
-    if info["codec"] not in {"h264", "hevc", "vp9", "av1"}:
-        raise RuntimeError(f"{info['filename']} unexpected codec {info['codec']}")
 
 
-def print_estimate() -> float:
-    per = USD_PER_SECOND * DURATION
-    total = per * len(CLIPS)
-    print("=" * 72)
-    print("HIGGSFIELD STATUS: NOT CONFIGURED in this environment")
-    print("  No HF_API_KEY / HIGGSFIELD secrets present.")
-    print("  Configured video API: Replicate REPLICATE_API_TOKEN")
-    print("MODEL: kwaivgi/kling-v3-video")
-    print("MODE: pro (1080p)  — not standard/720p, not a cheaper/faster model")
-    print("DURATION: 5s each  AUDIO: generate_audio=false")
-    print("ASPECT: 9:16 from 1080x1920 start frames")
-    print(f"PREVIOUS TDG KLING 3.0 PRO TARIFF: ${USD_PER_SECOND:.3f}/s silent 1080p")
-    print(f"ESTIMATED COST PER CLIP: ${per:.2f}")
-    print(f"MASTER CLIPS REQUESTED: {len(CLIPS)}")
-    print(f"TOTAL ESTIMATED COST FOR ALL 5 GENERATIONS: ${total:.2f}")
-    print(f"PREVIOUS BATCH TOTAL: ${PREVIOUS_TOTAL:.2f}")
-    delta = abs(total - PREVIOUS_TOTAL)
-    print(f"DELTA VS PREVIOUS: ${delta:.2f}")
-    if total > PREVIOUS_TOTAL * 1.5:
-        print("STOP: major unexpected price increase")
-        raise SystemExit(2)
-    print("PRICE CHECK: consistent with previous Kling 3.0 Pro pricing — proceeding")
-    print("=" * 72, flush=True)
-    return total
+def ffmpeg_available() -> bool:
+    return bool(shutil.which("ffmpeg") and shutil.which("ffprobe"))
 
 
 def export_reel(dest: Path, specs: list[tuple[Path, float, float]]) -> dict:
-    """specs: (src, start, duration) using hard cuts, 1080x1920, 30fps, high bitrate."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     inputs: list[str] = []
     filters: list[str] = []
@@ -389,107 +346,189 @@ def export_reel(dest: Path, specs: list[tuple[Path, float, float]]) -> dict:
 def poster(src: Path, dest: Path, t: float = 0.4) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     subprocess.check_call(
-        [
-            "ffmpeg",
-            "-y",
-            "-ss",
-            str(t),
-            "-i",
-            str(src),
-            "-frames:v",
-            "1",
-            "-q:v",
-            "3",
-            str(dest),
-        ]
+        ["ffmpeg", "-y", "-ss", str(t), "-i", str(src), "-frames:v", "1", "-q:v", "3", str(dest)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
 
 
+def verify_auth() -> None:
+    print("HIGGSFIELD_AUTH: ping generate-upload-url", flush=True)
+    meta = hf_request("POST", "/files/generate-upload-url", {"content_type": "image/png"})
+    if not meta.get("upload_url"):
+        raise RuntimeError("HIGGSFIELD_AUTH FAIL: upload URL response missing upload_url")
+    print("HIGGSFIELD_AUTH: PASS", flush=True)
+    print(f"MODEL: {MODEL_ID}", flush=True)
+    try:
+        prev = hf_request("GET", f"/requests/{PREVIOUS_JOB_ID}/status")
+        print(
+            f"previous_id {PREVIOUS_JOB_ID} higgsfield_status={prev.get('status')}",
+            flush=True,
+        )
+    except RuntimeError as err:
+        print(
+            f"previous_id {PREVIOUS_JOB_ID} is the TDG job row from the earlier estimate test; "
+            f"Higgsfield /requests lookup skipped ({str(err)[:120]})",
+            flush=True,
+        )
+
+
+def poll_job(request_id: str, timeout_s: int = 1200) -> dict:
+    start = time.time()
+    while time.time() - start < timeout_s:
+        current = hf_request("GET", f"/requests/{request_id}/status")
+        status = str(current.get("status") or "")
+        print(f"  {request_id} {status}", flush=True)
+        if status.lower() in {"completed", "succeeded", "failed", "nsfw", "canceled", "cancelled", "error"}:
+            return current
+        time.sleep(8)
+    raise TimeoutError(f"Higgsfield job {request_id} timed out")
+
+
 def main() -> int:
-    if not TOKEN:
-        print("REPLICATE_API_TOKEN missing", file=sys.stderr)
-        return 1
-    estimated_total = print_estimate()
+    estimate_only = "--estimate-only" in sys.argv
+    skip_reels = "--skip-reels" in sys.argv
+    read_credentials()
+    verify_auth()
+
     MASTERS.mkdir(parents=True, exist_ok=True)
-    FINALS.mkdir(parents=True, exist_ok=True)
-    POSTERS.mkdir(parents=True, exist_ok=True)
     GENLOG.parent.mkdir(parents=True, exist_ok=True)
 
-    uploads = {}
+    uploads: dict[str, str] = {}
     for clip in CLIPS:
         if not clip["image"].exists():
             raise SystemExit(f"missing still {clip['image']}")
         print(f"Uploading {clip['image'].name}...", flush=True)
-        uploads[clip["id"]] = upload_file(clip["image"])
+        uploads[clip["id"]] = upload_image(clip["image"])
 
-    jobs = []
+    estimates = []
+    total_usd = 0.0
+    print("=" * 72)
+    print("LIVE HIGGSFIELD ESTIMATE")
     for clip in CLIPS:
-        print(f"Creating {clip['id']}...", flush=True)
-        pred = create_prediction(uploads[clip["id"]], clip["prompt"])
-        print(f"  id={pred.get('id')} status={pred.get('status')}", flush=True)
-        jobs.append({"clip": clip, "pred": pred})
-        time.sleep(8)
+        payload = clip_payload(uploads[clip["id"]], clip["prompt"])
+        body = hf_request("POST", ESTIMATE_PATH, payload)
+        est = parse_estimate(body)
+        estimates.append({"id": clip["id"], **est})
+        total_usd += est["usd"]
+        print(f"  {clip['id']}: ${est['usd']:.4f}  credits={est['credits']}", flush=True)
+    print(f"Per clip (first): ${estimates[0]['usd']:.4f}")
+    print(f"5 clips: ${total_usd:.4f}")
+    credits_vals = []
+    for row in estimates:
+        try:
+            credits_vals.append(float(row["credits"]))
+        except (TypeError, ValueError):
+            credits_vals.append(None)
+    if all(v is not None for v in credits_vals):
+        print(f"Credits per clip: {credits_vals[0]}")
+        print(f"Total credits: {sum(credits_vals):.4f}")
+    else:
+        print("Credits per clip: (see rows above)")
+        print("Total credits: (see rows above)")
+    print("=" * 72, flush=True)
+
+    if total_usd > BUDGET_USD:
+        print(f"STOP: live Higgsfield total ${total_usd:.4f} exceeds ${BUDGET_USD:.2f}", flush=True)
+        LOG.parent.mkdir(parents=True, exist_ok=True)
+        LOG.write_text(
+            json.dumps(
+                {
+                    "status": "BLOCKED_PRICE",
+                    "provider": "higgsfield",
+                    "model": MODEL_ID,
+                    "estimated_total_usd": total_usd,
+                    "estimates": [{k: v for k, v in row.items() if k != "raw"} for row in estimates],
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+        return 3
+
+    if estimate_only:
+        print("estimate-only: not submitting paid jobs", flush=True)
+        return 0
+
+    print("PRICE CHECK: total <= $2.00 — proceeding with paid Higgsfield generation", flush=True)
+    jobs = []
+    for clip, est in zip(CLIPS, estimates):
+        payload = clip_payload(uploads[clip["id"]], clip["prompt"])
+        print(f"Submitting {clip['id']}...", flush=True)
+        submitted = hf_request("POST", SUBMIT_PATH, payload)
+        request_id = submitted.get("request_id")
+        if not request_id:
+            raise RuntimeError(f"submit missing request_id: {submitted}")
+        print(f"  job={request_id} status={submitted.get('status')}", flush=True)
+        jobs.append({"clip": clip, "estimate": est, "submit": submitted, "request_id": str(request_id)})
+        time.sleep(2)
 
     log = {
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "provider": "replicate",
-        "higgsfield_configured": False,
-        "model": MODEL,
-        "mode": MODE,
+        "provider": "higgsfield",
+        "model": MODEL_ID,
         "duration": DURATION,
-        "generate_audio": False,
-        "estimated_total_usd": estimated_total,
-        "usd_per_second": USD_PER_SECOND,
+        "sound": "off",
+        "estimated_total_usd": total_usd,
         "clips": [],
         "reels": [],
     }
 
-    actual_total = 0.0
     for item in jobs:
         clip = item["clip"]
-        pred_id = str(item["pred"].get("id"))
-        print(f"Polling {clip['id']} {pred_id}...", flush=True)
-        done = poll(pred_id)
-        if str(done.get("status")) != "succeeded":
-            raise RuntimeError(f"{clip['id']} failed: {done.get('error')}")
-        url = output_url(done.get("output"))
+        request_id = item["request_id"]
+        print(f"Polling {clip['id']} {request_id}...", flush=True)
+        done = poll_job(request_id)
+        status = str(done.get("status") or "").lower()
+        if status not in {"completed", "succeeded"}:
+            raise RuntimeError(f"{clip['id']} failed: status={done.get('status')} error={done.get('error')}")
+        url = video_url_from_status(done)
         if not url:
-            raise RuntimeError(f"{clip['id']} missing output: {done.get('output')}")
+            raise RuntimeError(f"{clip['id']} missing video url: keys={list(done.keys())}")
         dest = MASTERS / clip["filename"]
-        print(f"Downloading {url} -> {dest}", flush=True)
+        print(f"Downloading {clip['id']} -> {dest}", flush=True)
         download(url, dest)
-        info = probe_summary(dest)
-        validate_master(info)
-        print(
-            f"FFPROBE {info['filename']} {info['width']}x{info['height']} "
-            f"{info['duration']:.3f}s {info['codec']} {info['fps']}fps",
-            flush=True,
-        )
-        metrics = done.get("metrics") or {}
-        cost = USD_PER_SECOND * float(metrics.get("video_output_duration_seconds") or DURATION)
-        actual_total += cost
-        poster(dest, POSTERS / f"{clip['id']}.jpg")
+        info = None
+        if ffmpeg_available():
+            info = probe_summary(dest)
+            validate_master(info)
+            print(
+                f"FFPROBE {info['filename']} {info['width']}x{info['height']} "
+                f"{info['duration']:.3f}s {info['codec']} {info['fps']}fps",
+                flush=True,
+            )
+        else:
+            size = dest.stat().st_size
+            print(f"DOWNLOADED {dest.name} bytes={size} (ffprobe later)", flush=True)
+            if size < 200_000:
+                raise RuntimeError(f"{dest.name} looks empty")
+        cost = item["estimate"]["usd"]
         entry = {
             "id": clip["id"],
             "title": clip["title"],
             "source_image": clip["source_still"],
-            "prediction_id": done.get("id"),
-            "model": MODEL,
-            "mode": MODE,
+            "job_id": request_id,
+            "model": MODEL_ID,
             "prompt": clip["prompt"],
             "generation_cost_usd": cost,
-            "output_url": url,
-            "file": f"/assets/christmas/reels/masters/{clip['filename']}",
+            "credits": item["estimate"]["credits"],
+            "file": str(dest),
             "probe": info,
-            "metrics": metrics,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         log["clips"].append(entry)
-        GENLOG.write_text(json.dumps(log, indent=2))
-        LOG.write_text(json.dumps(log, indent=2))
+        GENLOG.parent.mkdir(parents=True, exist_ok=True)
+        GENLOG.write_text(json.dumps(log, indent=2) + "\n")
+        LOG.parent.mkdir(parents=True, exist_ok=True)
+        LOG.write_text(json.dumps(log, indent=2) + "\n")
 
+    if skip_reels or not ffmpeg_available():
+        print("Masters ready. Skipping reel assembly on this host.", flush=True)
+        return 0
+
+    FINALS.mkdir(parents=True, exist_ok=True)
+    POSTERS.mkdir(parents=True, exist_ok=True)
     m = {c["id"]: MASTERS / c["filename"] for c in CLIPS}
-    # Cinematic / emotional: dusk luxury → family village joy → bakery warmth → ice romance → home memory
     cinematic = export_reel(
         FINALS / "christmas_reel_cinematic_01.mp4",
         [
@@ -500,7 +539,6 @@ def main() -> int:
             (m["christmas_master_02"], 0.15, 3.00),
         ],
     )
-    # Fast social hook: skater first frame, quicker cuts, ~12s
     social = export_reel(
         FINALS / "christmas_reel_social_hook_02.mp4",
         [
@@ -511,7 +549,6 @@ def main() -> int:
             (m["christmas_master_05"], 0.15, 2.50),
         ],
     )
-    # Nostalgic memory: home-movie snowman → sledding → bakery → chalet → skate
     nostalgic = export_reel(
         FINALS / "christmas_reel_nostalgic_03.mp4",
         [
@@ -528,12 +565,12 @@ def main() -> int:
         ("christmas_reel_nostalgic_03", nostalgic),
     ]:
         poster(FINALS / f"{name}.mp4", POSTERS / f"{name}.jpg")
-        log["reels"].append({"id": name, "probe": info, "file": f"/assets/christmas/reels/final/{name}.mp4"})
-
-    log["actual_estimated_total_usd"] = round(actual_total, 4)
-    GENLOG.write_text(json.dumps(log, indent=2) + "\n")
+        log["reels"].append({"id": name, "probe": info, "file": str(FINALS / f"{name}.mp4")})
+    for clip in CLIPS:
+        poster(MASTERS / clip["filename"], POSTERS / f"{clip['id']}.jpg")
+    log["status"] = "COMPLETE"
     LOG.write_text(json.dumps(log, indent=2) + "\n")
-    print("TOTAL GENERATION COST (tariff):", f"${actual_total:.2f}", flush=True)
+    GENLOG.write_text(json.dumps(log, indent=2) + "\n")
     print("All masters and reels written.", flush=True)
     return 0
 

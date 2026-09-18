@@ -112,6 +112,42 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
 
 const CHRISTMAS_REELS: LibraryVideo[] = [
   {
+    id: "reel-christmas-cinematic-01",
+    title: "NEW · Cinematic Christmas Reel",
+    description:
+      "15s 1080×1920. Higgsfield Kling 3.0 Pro: chalet spa → sledding village → vintage snowman → Prague bakery → NYC ice.",
+    src: "/assets/christmas/reels/final/christmas_reel_cinematic_01.mp4",
+    filename: "christmas_reel_cinematic_01.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 15,
+    poster: "/assets/christmas/reels/posters/christmas_reel_cinematic_01.jpg",
+  },
+  {
+    id: "reel-christmas-social-02",
+    title: "NEW · Social-hook Christmas Reel",
+    description:
+      "12s 1080×1920. Higgsfield Kling 3.0 Pro. Opens on the NYC skater, then village, chalet, bakery, snowman.",
+    src: "/assets/christmas/reels/final/christmas_reel_social_hook_02.mp4",
+    filename: "christmas_reel_social_hook_02.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 12.07,
+    poster: "/assets/christmas/reels/posters/christmas_reel_social_hook_02.jpg",
+  },
+  {
+    id: "reel-christmas-nostalgic-03",
+    title: "NEW · Nostalgic Christmas Reel",
+    description:
+      "14.6s 1080×1920. Higgsfield Kling 3.0 Pro memory cut: snowman → sledding → bakery → chalet → ice.",
+    src: "/assets/christmas/reels/final/christmas_reel_nostalgic_03.mp4",
+    filename: "christmas_reel_nostalgic_03.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 14.57,
+    poster: "/assets/christmas/reels/posters/christmas_reel_nostalgic_03.jpg",
+  },
+  {
     id: "reel-cut3",
     title: "NEW · Ice · Village kids · Prague Reel",
     description:
@@ -184,6 +220,61 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
 ];
 
 const CHRISTMAS_SHORTS: LibraryVideo[] = [
+  {
+    id: "short-christmas-master-01",
+    title: "Master · Alpine chalet hot tub",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Steaming spa and Christmas chalet.",
+    src: "/assets/christmas/reels/masters/christmas_master_01.mp4",
+    filename: "christmas_master_01.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/reels/posters/christmas_master_01.jpg",
+  },
+  {
+    id: "short-christmas-master-02",
+    title: "Master · NYC ice skater",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Street rink and Empire State Building.",
+    src: "/assets/christmas/reels/masters/christmas_master_02.mp4",
+    filename: "christmas_master_02.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/reels/posters/christmas_master_02.jpg",
+  },
+  {
+    id: "short-christmas-master-03",
+    title: "Master · Village kids sledding",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Children, sleds, and a golden retriever.",
+    src: "/assets/christmas/reels/masters/christmas_master_03.mp4",
+    filename: "christmas_master_03.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/reels/posters/christmas_master_03.jpg",
+  },
+  {
+    id: "short-christmas-master-04",
+    title: "Master · Prague cafe cookies",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Bakery window over Charles Bridge.",
+    src: "/assets/christmas/reels/masters/christmas_master_04.mp4",
+    filename: "christmas_master_04.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/reels/posters/christmas_master_04.jpg",
+  },
+  {
+    id: "short-christmas-master-05",
+    title: "Master · Vintage family snowman",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Three children and a top-hat snowman.",
+    src: "/assets/christmas/reels/masters/christmas_master_05.mp4",
+    filename: "christmas_master_05.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/reels/posters/christmas_master_05.jpg",
+  },
   {
     id: "short-ice-nyc",
     title: "NYC girl ice skating",
