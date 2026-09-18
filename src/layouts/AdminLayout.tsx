@@ -240,19 +240,9 @@ const SidebarNavigation: React.FC<{
             alertCount: alerts.petOrders,
           },
           {
-            label: "Christmas Orders",
-            path: "/admin/christmas-orders",
+            label: "Christmas",
+            path: "/admin/christmas",
             icon: Gift,
-          },
-          {
-            label: "Christmas Monetization",
-            path: "/admin/christmas-monetization",
-            icon: Gift,
-          },
-          {
-            label: "Christmas Analytics",
-            path: "/admin/christmas-analytics",
-            icon: BarChart3,
           },
           {
             label: "Pet Funnel Analytics",

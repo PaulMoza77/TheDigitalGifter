@@ -15,9 +15,14 @@ describe("christmas foundation wiring", () => {
     expect(seo).toBeGreaterThan(photo);
     expect(app).toContain('path="/christmas/santa-video"');
     expect(app).toContain('path="christmas-orders"');
+    expect(app).toContain('path="christmas" element={<ChristmasAdminLayout />}');
+    expect(app).toContain("ChristmasDashboardPage");
+    expect(app).toContain('to="/admin/christmas/orders"');
   });
 
   it("does not remove classic /christmas hub route", () => {
+    expect(readSrc("src/layouts/AdminLayout.tsx")).toContain('path: "/admin/christmas"');
+    expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain('path: "/admin/christmas-orders"');
     expect(readSrc("src/App.tsx")).toContain('path="/christmas"');
     expect(readSrc("src/App.tsx")).toContain('path="/christmas/suite"');
     expect(readSrc("src/pages/website/ChristmasSuitePage.tsx")).toContain(

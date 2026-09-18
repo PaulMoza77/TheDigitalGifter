@@ -82,6 +82,12 @@ const PricingPage = lazy(() => import("@/pages/admin/PricingPage"));
 const ChristmasMonetizationPage = lazy(
   () => import("@/pages/admin/ChristmasMonetizationPage"),
 );
+const ChristmasAdminLayout = lazy(
+  () => import("@/pages/admin/christmas/ChristmasAdminLayout"),
+);
+const ChristmasDashboardPage = lazy(
+  () => import("@/pages/admin/christmas/ChristmasDashboardPage"),
+);
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const PetOrdersPage = lazy(() => import("@/pages/admin/PetOrders"));
 const ChristmasOrdersPage = lazy(() => import("@/pages/admin/ChristmasOrders"));
@@ -964,13 +970,25 @@ function AppInner() {
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="pet-orders" element={<PetOrdersPage />} />
-            <Route path="christmas-orders" element={<ChristmasOrdersPage />} />
+            <Route path="christmas" element={<ChristmasAdminLayout />}>
+              <Route index element={<ChristmasDashboardPage />} />
+              <Route path="analytics" element={<ChristmasAnalyticsPage />} />
+              <Route path="orders" element={<ChristmasOrdersPage />} />
+              <Route path="monetization" element={<ChristmasMonetizationPage />} />
+            </Route>
+            <Route
+              path="christmas-orders"
+              element={<Navigate to="/admin/christmas/orders" replace />}
+            />
             <Route
               path="christmas-monetization"
-              element={<ChristmasMonetizationPage />}
+              element={<Navigate to="/admin/christmas/monetization" replace />}
+            />
+            <Route
+              path="christmas-analytics"
+              element={<Navigate to="/admin/christmas/analytics" replace />}
             />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
-            <Route path="christmas-analytics" element={<ChristmasAnalyticsPage />} />
             <Route path="library" element={<AdminLibraryPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
