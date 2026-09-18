@@ -1,0 +1,26 @@
+{
+  "status": "FAILED",
+  "created_at": "2026-09-18T19:06:00Z",
+  "higgsfield_configured": false,
+  "higgsfield_probe": {
+    "api": "https://api.higgsfield.ai/models",
+    "http": 401,
+    "detail": "Invalid credentials — no Higgsfield API key in this environment"
+  },
+  "provider_attempted": "replicate",
+  "model": "kwaivgi/kling-v3-video",
+  "mode": "pro",
+  "duration": 5,
+  "generate_audio": false,
+  "estimated_cost_per_clip_usd": 0.56,
+  "estimated_total_usd": 2.80,
+  "previous_kling3_pro_batch_usd": 2.80,
+  "price_check": "consistent",
+  "generation_error": {
+    "http": 402,
+    "title": "Insufficient credit",
+    "detail": "Replicate account paulmoza77 has insufficient credit to run kwaivgi/kling-v3-video."
+  },
+  "masters_generated": 0,
+  "reels_generated": 0
+}

@@ -88,6 +88,7 @@ describe("admin video library", () => {
       "public/assets/christmas/instagram-reel-kling-1080p/source/cozy_christmas_reading_nook_by_snowy_village.jpg",
       "public/assets/christmas/library-stills/nyc_girl_ice_skating.jpg",
       "public/assets/christmas/library-stills/village_kids_sledding.jpg",
+      "public/assets/christmas/library-stills/vintage_family_snowman.jpg",
       "public/assets/christmas/instagram-reel-cut3/clip_ice_nyc.mp4",
       "public/assets/christmas/instagram-reel-cut3/clip_kids_sled.mp4",
       "public/assets/christmas/instagram-reel-cut3/final_christmas_reel_cut3.mp4",

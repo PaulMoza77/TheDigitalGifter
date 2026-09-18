@@ -478,6 +478,15 @@ const NEW_STILL_PHOTOS: LibraryVideo[] = [
     kind: "photo",
   },
   {
+    id: "photo-vintage-snowman",
+    title: "Photo · Vintage family snowman",
+    description: "Three children building a top-hat snowman in front of a wreath-lit house and vintage cars.",
+    src: "/assets/christmas/library-stills/vintage_family_snowman.jpg",
+    filename: "vintage_family_snowman.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
     id: "photo-luxury-train",
     title: "Photo · Luxury Christmas train",
     description: "Dark Orient-Express style train at an Alpine station at dusk.",
