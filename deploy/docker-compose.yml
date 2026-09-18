@@ -26,6 +26,10 @@ services:
       PET_FULFILLMENT_ENABLED: ${PET_FULFILLMENT_ENABLED:-true}
       CHRISTMAS_CHECKOUT_ENABLED: ${CHRISTMAS_CHECKOUT_ENABLED:-false}
       CHRISTMAS_PLANNER_CHECKOUT_ENABLED: ${CHRISTMAS_PLANNER_CHECKOUT_ENABLED:-false}
+      # Pass through existing VPS secrets/app.env values. Empty if unset.
+      HF_CREDENTIALS: ${HF_CREDENTIALS:-}
+      HF_API_KEY_ID: ${HF_API_KEY_ID:-}
+      HF_API_KEY_SECRET: ${HF_API_KEY_SECRET:-}
       VERCEL_ENV: production
       TDG_RELEASE: ${TDG_RELEASE:-latest}
     expose:

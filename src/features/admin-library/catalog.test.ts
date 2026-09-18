@@ -48,7 +48,7 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-cut3");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-christmas-cinematic-01");
     expect(searchLibraryVideos("ice skating", "christmas_reels", "photo").some((item) => item.id === "photo-nyc-ice-girl")).toBe(
       true,
     );
@@ -88,9 +88,18 @@ describe("admin video library", () => {
       "public/assets/christmas/instagram-reel-kling-1080p/source/cozy_christmas_reading_nook_by_snowy_village.jpg",
       "public/assets/christmas/library-stills/nyc_girl_ice_skating.jpg",
       "public/assets/christmas/library-stills/village_kids_sledding.jpg",
+      "public/assets/christmas/library-stills/vintage_family_snowman.jpg",
       "public/assets/christmas/instagram-reel-cut3/clip_ice_nyc.mp4",
       "public/assets/christmas/instagram-reel-cut3/clip_kids_sled.mp4",
       "public/assets/christmas/instagram-reel-cut3/final_christmas_reel_cut3.mp4",
+      "public/assets/christmas/reels/masters/christmas_master_01.mp4",
+      "public/assets/christmas/reels/masters/christmas_master_02.mp4",
+      "public/assets/christmas/reels/masters/christmas_master_03.mp4",
+      "public/assets/christmas/reels/masters/christmas_master_04.mp4",
+      "public/assets/christmas/reels/masters/christmas_master_05.mp4",
+      "public/assets/christmas/reels/final/christmas_reel_cinematic_01.mp4",
+      "public/assets/christmas/reels/final/christmas_reel_social_hook_02.mp4",
+      "public/assets/christmas/reels/final/christmas_reel_nostalgic_03.mp4",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
