@@ -87,7 +87,7 @@ export function evaluateSourcePhoto(input: { width: number; height: number }): {
   if (!aspectOk) notes.push(`Source photo ${input.width}×${input.height} is not 9:16.`);
   if (!sizeOk) {
     notes.push(
-      `Source photo ${input.width}×${input.height} is below 1080×1920. Refusing submit so 1080p is not silently replaced.`,
+      `Source photo ${input.width}×${input.height} is below 1080×1920. Paid submit stays blocked so 1080p is not silently replaced.`,
     );
   }
   return { ok: aspectOk && sizeOk, notes };

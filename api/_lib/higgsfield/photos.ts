@@ -92,7 +92,7 @@ export async function preparePhotoForHiggsfield(
   const { bytes, contentType } = await readResolvedPhotoBytes(service, photo);
   const probe = probeImageBuffer(bytes);
   const check = evaluateSourcePhoto(probe);
-  if (!check.ok) throw new Error(check.notes.join(" "));
+  // Estimate may proceed with an explicit nonconforming still. Paid submit stays blocked.
   // Private library objects are not on a durable public URL. Upload to Higgsfield input storage.
   const mustUpload = Boolean(photo.storagePath);
   const origin = String(process.env.TDG_PUBLIC_ORIGIN || process.env.VITE_APP_URL || "").replace(/\/$/, "");

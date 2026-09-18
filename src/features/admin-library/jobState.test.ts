@@ -105,6 +105,8 @@ describe("media spec", () => {
     expect(probeImageBuffer(png(1080, 1920))).toEqual({ format: "png", width: 1080, height: 1920 });
     expect(evaluateSourcePhoto({ width: 1080, height: 1920 }).ok).toBe(true);
     expect(evaluateSourcePhoto({ width: 720, height: 1280 }).ok).toBe(false);
+    expect(evaluateSourcePhoto({ width: 941, height: 1672 }).ok).toBe(false);
+    expect(evaluateSourcePhoto({ width: 941, height: 1672 }).notes.join(" ")).toMatch(/Paid submit stays blocked/);
     expect(evaluateSourcePhoto({ width: 1920, height: 1080 }).ok).toBe(false);
   });
 
