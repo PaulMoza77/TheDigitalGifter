@@ -394,6 +394,8 @@ export default function ChristmasPlannerPage() {
   const [previewSeen, setPreviewSeen] = useState(false);
   const [checkoutSeen, setCheckoutSeen] = useState(false);
   const [paymentInView, setPaymentInView] = useState(false);
+  const [heroInView, setHeroInView] = useState(true);
+  const heroRef = useRef<HTMLElement | null>(null);
   const purchaseRef = useRef<HTMLElement | null>(null);
   const packagesRef = useRef<HTMLElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
@@ -491,6 +493,17 @@ export default function ChristmasPlannerPage() {
     obs.observe(node);
     return () => obs.disconnect();
   }, [ready, checkoutSeen, packageKey, displayTotal]);
+
+  useEffect(() => {
+    const node = heroRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entries) => setHeroInView(entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0.45)),
+      { threshold: [0.2, 0.45, 0.7] },
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     const node = paymentRef.current;
@@ -623,7 +636,7 @@ export default function ChristmasPlannerPage() {
   }, [packageKey, chargedAddons, displayTotal, catalog.checkoutLive]);
 
   const seo = useMemo(() => plannerSeo(), []);
-  const stickyHidden = paymentInView && ready;
+  const stickyHidden = (paymentInView && ready) || (heroInView && ready);
   const stickyLabel = !ready
     ? "BUILD MY PLAN"
     : !packagesSeen
@@ -647,7 +660,7 @@ export default function ChristmasPlannerPage() {
     <div className="tdg-planner tdg-planner--compact">
       <PageHead title={seo.title} description={seo.description} url={seo.url} image={seo.image} exactTitle />
 
-      <header className="tdg-planner__hero">
+      <header className="tdg-planner__hero" ref={heroRef}>
         <div className="tdg-planner__media">
           <picture>
             <source srcSet={`${LANDING_ASSETS.cabin1280} 1280w, ${LANDING_ASSETS.cabin1920} 1920w`} type="image/webp" />
