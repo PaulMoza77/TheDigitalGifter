@@ -631,6 +631,7 @@
   font-size: 1.05rem;
   color: var(--gold-soft);
   white-space: nowrap;
+  padding-left: 0.5rem;
 }
 
 /* —— Compare —— */
@@ -972,9 +973,9 @@
   background: transparent;
   color: inherit;
   min-height: 44px;
-  padding: 0.55rem 0.7rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  padding: 0.55rem 0.55rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
   font-weight: 700;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
