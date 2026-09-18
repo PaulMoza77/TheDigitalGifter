@@ -1363,6 +1363,7 @@
   justify-items: start;
   align-content: center;
   gap: 0.9rem;
+  padding-bottom: 5.4rem;
 }
 
 .tdg-planner--compact .tdg-planner__demo-cta-lead {
@@ -1482,6 +1483,10 @@
 
   .tdg-planner--compact .tdg-planner__demo-layout .tdg-planner__device {
     margin: 0;
+  }
+
+  .tdg-planner--compact .tdg-planner__demo-cta {
+    padding-bottom: 0;
   }
 
   .tdg-planner__cabin-poster img,
