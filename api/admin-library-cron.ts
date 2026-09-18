@@ -16,6 +16,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!cronSecret || provided !== cronSecret) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  const n = await syncOpenJobs(getServiceClient());
-  return res.status(200).json({ ok: true, synced: n });
+  const result = await syncOpenJobs(getServiceClient());
+  return res.status(200).json({ ok: true, ...result });
 }

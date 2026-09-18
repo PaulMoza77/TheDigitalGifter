@@ -21,6 +21,11 @@ describe("Higgsfield server helpers", () => {
     expect(status.status).toBe("completed");
   });
 
+  it("refuses to treat a non-MP4 buffer as a verified import", async () => {
+    const { probeMp4 } = await import("./storage");
+    await expect(probeMp4(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]))).rejects.toThrow(/not a readable MP4/);
+  });
+
   it("keeps Reel montage as ffmpeg concat without audio", () => {
     const args = ffmpegConcatArgs("/tmp/list.txt", "/tmp/out.mp4");
     expect(args).toContain("concat");

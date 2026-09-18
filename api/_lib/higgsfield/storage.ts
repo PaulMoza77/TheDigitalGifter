@@ -5,14 +5,16 @@ import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import { getServiceClient } from "../christmas/supabaseClient";
+import { isFtypMp4 } from "../../../src/features/admin-library/mediaSpec";
 
 export const TDG_LIBRARY_BUCKET = "tdg-library";
 export const TDG_LIBRARY_SIGNED_SECONDS = 60 * 60 * 24;
 
 export type ProbeResult = {
-  durationSeconds: number | null;
-  width: number | null;
-  height: number | null;
+  durationSeconds: number;
+  width: number;
+  height: number;
+  codec: string | null;
 };
 
 export async function downloadBinary(url: string): Promise<Uint8Array> {
@@ -44,6 +46,9 @@ function run(cmd: string, args: string[]): Promise<{ stdout: string; stderr: str
 }
 
 export async function probeMp4(bytes: Uint8Array): Promise<ProbeResult> {
+  if (!isFtypMp4(bytes)) {
+    throw new Error("Downloaded file is not a readable MP4 (missing ftyp). Import not verified.");
+  }
   const dir = await fs.mkdtemp(join(tmpdir(), "tdg-lib-"));
   const file = join(dir, "clip.mp4");
   try {
@@ -54,26 +59,35 @@ export async function probeMp4(bytes: Uint8Array): Promise<ProbeResult> {
       "-select_streams",
       "v:0",
       "-show_entries",
-      "stream=width,height",
+      "stream=width,height,codec_name",
       "-show_entries",
-      "format=duration",
+      "format=duration,format_name",
       "-of",
       "json",
       file,
     ]);
     const data = JSON.parse(stdout) as {
-      streams?: Array<{ width?: number; height?: number }>;
-      format?: { duration?: string };
+      streams?: Array<{ width?: number; height?: number; codec_name?: string }>;
+      format?: { duration?: string; format_name?: string };
     };
-    const stream = data.streams?.[0] || {};
+    const stream = data.streams?.[0];
+    if (!stream?.width || !stream?.height) {
+      throw new Error("ffprobe did not return video width/height. Import not verified.");
+    }
     const duration = data.format?.duration ? Number(data.format.duration) : NaN;
+    if (!Number.isFinite(duration) || duration <= 0) {
+      throw new Error("ffprobe did not return a positive duration. Import not verified.");
+    }
+    const formatName = String(data.format?.format_name || "");
+    if (formatName && !formatName.includes("mp4") && !formatName.includes("mov") && !formatName.includes("ism")) {
+      throw new Error(`ffprobe format ${formatName} is not MP4. Import not verified.`);
+    }
     return {
-      durationSeconds: Number.isFinite(duration) ? duration : null,
-      width: stream.width ?? null,
-      height: stream.height ?? null,
+      durationSeconds: duration,
+      width: stream.width,
+      height: stream.height,
+      codec: stream.codec_name ?? null,
     };
-  } catch {
-    return { durationSeconds: null, width: null, height: null };
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }

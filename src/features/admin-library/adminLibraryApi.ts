@@ -36,13 +36,32 @@ export type PublicJob = {
   confirmed_cost_usd: number | null;
   budget_usd: number | null;
   param_notes?: string[];
+  spec_ok?: boolean | null;
+  spec_notes?: string[] | null;
   last_error: string | null;
   effective_width: number | null;
   effective_height: number | null;
 };
 
-export async function fetchLibraryState(): Promise<{ items: LibraryVideo[]; jobs: PublicJob[] }> {
+export async function fetchLibraryState(): Promise<{
+  items: LibraryVideo[];
+  jobs: PublicJob[];
+}> {
   return call("list", {}, "GET");
+}
+
+export async function fetchLibraryPhotos(): Promise<{
+  photos: Array<{ id: string; title: string; filename: string; src: string; source?: string }>;
+}> {
+  return call("photos", {}, "GET");
+}
+
+export async function uploadLibraryStill(input: { filename: string; title?: string; bytesBase64: string }): Promise<{
+  photoId: string;
+  width: number;
+  height: number;
+}> {
+  return call("upload-photo", input);
 }
 
 export async function estimateLibraryClip(input: {

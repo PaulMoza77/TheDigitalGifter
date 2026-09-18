@@ -1,25 +1,26 @@
 import React from "react";
 import { toast } from "sonner";
 
-import { libraryPhotos } from "./libraryMerge";
 import { HIGGSFIELD_MODELS, type HiggsfieldModelKey } from "./higgsfieldModels";
 import {
   composeLibraryReel,
   estimateLibraryClip,
+  fetchLibraryPhotos,
   retryLibraryImport,
   submitLibraryClip,
   syncLibraryJob,
+  uploadLibraryStill,
   type PublicJob,
 } from "./adminLibraryApi";
 import { LIBRARY_VIDEOS } from "./catalog";
 
 export default function HiggsfieldStudio({ onImported }: { onImported: () => void }) {
-  const photos = React.useMemo(() => libraryPhotos(), []);
   const shorts = React.useMemo(
     () => LIBRARY_VIDEOS.filter((item) => item.category === "christmas_reels" && item.kind === "short"),
     [],
   );
-  const [photoId, setPhotoId] = React.useState(photos[0]?.id || "");
+  const [photos, setPhotos] = React.useState<Array<{ id: string; title: string; filename: string; source?: string }>>([]);
+  const [photoId, setPhotoId] = React.useState("");
   const [modelKey, setModelKey] = React.useState<HiggsfieldModelKey>("kling-3.0-pro");
   const [prompt, setPrompt] = React.useState("");
   const [budget, setBudget] = React.useState("1.50");
@@ -28,6 +29,20 @@ export default function HiggsfieldStudio({ onImported }: { onImported: () => voi
   const [estimate, setEstimate] = React.useState<{ usd: number; credits: string | null } | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [selected, setSelected] = React.useState<string[]>([]);
+  const fileRef = React.useRef<HTMLInputElement>(null);
+
+  function refreshPhotos() {
+    void fetchLibraryPhotos()
+      .then((result) => {
+        setPhotos(result.photos || []);
+        setPhotoId((current) => current || result.photos[0]?.id || "");
+      })
+      .catch(() => undefined);
+  }
+
+  React.useEffect(() => {
+    refreshPhotos();
+  }, [onImported]);
 
   React.useEffect(() => {
     if (!job?.id) return;
@@ -42,6 +57,34 @@ export default function HiggsfieldStudio({ onImported }: { onImported: () => voi
     }, 5000);
     return () => window.clearInterval(timer);
   }, [job?.id, job?.status, onImported]);
+
+  async function onUploadStill(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    try {
+      const bytesBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result || "");
+          const comma = result.indexOf(",");
+          resolve(comma >= 0 ? result.slice(comma + 1) : result);
+        };
+        reader.onerror = () => reject(new Error("Could not read file"));
+        reader.readAsDataURL(file);
+      });
+      const uploaded = await uploadLibraryStill({ filename: file.name, title: file.name, bytesBase64 });
+      toast.success(`Saved ${uploaded.width}×${uploaded.height} still to TDG Library`);
+      setPhotoId(uploaded.photoId);
+      refreshPhotos();
+      onImported();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   async function onEstimate() {
     setBusy(true);
@@ -121,10 +164,22 @@ export default function HiggsfieldStudio({ onImported }: { onImported: () => voi
           >
             {photos.map((photo) => (
               <option key={photo.id} value={photo.id}>
+                {photo.source === "library" ? "Library · " : ""}
                 {photo.title}
               </option>
             ))}
           </select>
+        </label>
+        <label className="text-sm text-slate-300">
+          Upload still (JPEG/PNG/WebP, ≥1080×1920, 9:16)
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={busy}
+            onChange={(event) => void onUploadStill(event)}
+            className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-800 file:px-2 file:py-1 file:text-slate-200"
+          />
         </label>
         <label className="text-sm text-slate-300">
           Model
@@ -170,7 +225,7 @@ export default function HiggsfieldStudio({ onImported }: { onImported: () => voi
         </button>
         <button
           type="button"
-          disabled={busy || !job}
+          disabled={busy || !job || job.status === "submitting" || job.status === "submit_unconfirmed"}
           onClick={() => void onGenerate()}
           className="rounded-xl bg-indigo-500 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
@@ -201,8 +256,18 @@ export default function HiggsfieldStudio({ onImported }: { onImported: () => voi
           {job.estimated_cost_usd != null ? ` · est $${Number(job.estimated_cost_usd).toFixed(4)}` : ""}
           {job.confirmed_cost_usd != null ? ` · confirmed $${Number(job.confirmed_cost_usd).toFixed(4)}` : " · confirmed n/a"}
           {job.effective_width && job.effective_height ? ` · ${job.effective_width}×${job.effective_height}` : ""}
+          {job.spec_ok === false ? " · SPEC NONCONFORMING (original kept, no paid regenerate)" : ""}
+          {job.spec_ok === true ? " · spec verified" : ""}
         </p>
       ) : null}
+      {job?.spec_notes?.length ? (
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-200">
+          {job.spec_notes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
+        </ul>
+      ) : null}
+      {job?.last_error ? <p className="mt-2 text-xs text-rose-300">{job.last_error}</p> : null}
       {notes.length ? (
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-500">
           {notes.map((note) => (

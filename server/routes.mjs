@@ -43,7 +43,7 @@ export const APPLE_PAY_PATH = "/.well-known/apple-developer-merchantid-domain-as
  */
 export function classifyPath(pathname) {
   const path = String(pathname || "/").split("?")[0] || "/";
-  if (path === "/healthz") return { kind: "health" };
+  if (path === "/healthz" || path === "/healthz/higgsfield-runner") return { kind: "health" };
   if (path === APPLE_PAY_PATH) return { kind: "apple" };
   if (Object.prototype.hasOwnProperty.call(API_MODULES, path)) {
     return { kind: "api", module: API_MODULES[path] };

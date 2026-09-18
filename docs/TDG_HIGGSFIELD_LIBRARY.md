@@ -20,7 +20,25 @@ HF_CREDENTIALS=KEY_ID:KEY_SECRET
 
 Also required on the same host: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. Optional: `HIGGSFIELD_MOCK=true` (no paid API), `TDG_PUBLIC_ORIGIN=https://www.thedigitalgifter.com`.
 
-Apply `supabase/migrations/20260918180000_tdg_library_higgsfield.sql` on the live Supabase project before the first real job.
+Apply `supabase/migrations/20260918180000_tdg_library_higgsfield.sql` and `supabase/migrations/20260918190000_tdg_higgsfield_submit_claim.sql` on the live Supabase project before the first real job.
+
+## Duplicate paid submit
+
+Higgsfield generation POST is **not** idempotent (no documented idempotency key). TDG claims `submitting` with an atomic `UPDATE … WHERE status IN ('created','estimated') AND provider_request_id IS NULL`. Concurrent requests cannot both POST.
+
+`submitting` without `provider_request_id` is ambiguous: the runner waits, then marks `submit_unconfirmed`. It never auto-retries POST. `estimateJob` may refresh tariffs but must not roll in-flight rows back to `estimated`.
+
+## MP4 verification
+
+`ffprobe` must succeed (readable MP4, duration, width, height). 5s / 1080×1920 / 9:16 is recorded as `spec_ok`. Nonconforming originals are still stored in TDG Library with explicit notes. No paid regenerate.
+
+## Source photos
+
+Selectable stills are static `LIBRARY_VIDEOS` photos **plus** `tdg_library_items` of `kind=photo` (private `tdg-library` bucket). Private files are uploaded to Higgsfield input storage so the provider can read them. Dimensions are checked before estimate/submit (≥1080×1920, 9:16).
+
+## Persistent runner (VPS)
+
+`vercel.json` cron `/api/admin-library-cron` is not proof that anything runs. Production resume is the origin process: `startHiggsfieldRunner()` in `server/origin.mjs` (`setInterval`, default 120s). Inspect `GET /healthz/higgsfield-runner` (`periodicResume`, `ffmpeg`, `ffprobe`, `credentialsConfigured` booleans only). One job error does not stop the rest of the tick.
 
 ## Models (documented IDs)
 

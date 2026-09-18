@@ -4,6 +4,7 @@ import { classifyPath } from "./routes.mjs";
 describe("TDG origin path classification", () => {
   it("keeps health, Apple Pay, and known APIs off the SPA fallback", () => {
     expect(classifyPath("/healthz")).toEqual({ kind: "health" });
+    expect(classifyPath("/healthz/higgsfield-runner")).toEqual({ kind: "health" });
     expect(classifyPath("/.well-known/apple-developer-merchantid-domain-association")).toEqual({
       kind: "apple",
     });

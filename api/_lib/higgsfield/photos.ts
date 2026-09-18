@@ -1,9 +1,12 @@
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LibraryVideo } from "../../../src/features/admin-library/catalog";
 import { findLibraryPhoto } from "../../../src/features/admin-library/libraryMerge";
+import { evaluateSourcePhoto, probeImageBuffer } from "../../../src/features/admin-library/mediaSpec";
 import type { HiggsfieldTransport } from "./client";
+import { TDG_LIBRARY_BUCKET } from "./storage";
 
 const IMAGE_TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -18,45 +21,115 @@ export function contentTypeForFilename(filename: string): string {
   return IMAGE_TYPES[ext] || "image/jpeg";
 }
 
-export async function readLibraryPhotoBytes(photo: LibraryVideo): Promise<{ bytes: Uint8Array; contentType: string }> {
+export type ResolvedPhoto = LibraryVideo & {
+  storageBucket?: string | null;
+  storagePath?: string | null;
+};
+
+export async function resolveLibraryPhoto(
+  service: SupabaseClient,
+  photoId: string,
+): Promise<ResolvedPhoto> {
+  const staticPhoto = findLibraryPhoto(photoId);
+  if (staticPhoto) return staticPhoto;
+  const { data, error } = await service
+    .from("tdg_library_items")
+    .select("*")
+    .eq("catalog_id", photoId)
+    .eq("kind", "photo")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error(`Unknown TDG Library photo: ${photoId}`);
+  const rec = data as Record<string, unknown>;
+  return {
+    id: String(rec.catalog_id),
+    title: String(rec.title || rec.catalog_id),
+    description: String(rec.description || ""),
+    src: "",
+    filename: String(rec.filename || "photo.jpg"),
+    category: "christmas_reels",
+    kind: "photo",
+    storageBucket: String(rec.storage_bucket || TDG_LIBRARY_BUCKET),
+    storagePath: String(rec.storage_path || ""),
+  };
+}
+
+export async function readResolvedPhotoBytes(
+  service: SupabaseClient,
+  photo: ResolvedPhoto,
+): Promise<{ bytes: Uint8Array; contentType: string }> {
+  if (photo.storageBucket && photo.storagePath) {
+    const { data, error } = await service.storage.from(photo.storageBucket).download(photo.storagePath);
+    if (error || !data) throw new Error(`Could not read private library photo ${photo.id}`);
+    return { bytes: new Uint8Array(await data.arrayBuffer()), contentType: contentTypeForFilename(photo.filename) };
+  }
   const relative = photo.src.replace(/^\//, "");
-  const candidates = [
-    join(process.cwd(), "public", relative),
-    join(process.cwd(), "dist", relative),
-  ];
+  const candidates = [join(process.cwd(), "public", relative), join(process.cwd(), "dist", relative)];
   for (const path of candidates) {
     try {
       const bytes = await fs.readFile(path);
       return { bytes, contentType: contentTypeForFilename(photo.filename) };
     } catch {
-      /* try next */
+      /* next */
     }
   }
   const origin = String(process.env.TDG_PUBLIC_ORIGIN || process.env.VITE_APP_URL || "https://www.thedigitalgifter.com").replace(
     /\/$/,
     "",
   );
-  const url = `${origin}${photo.src}`;
-  const res = await fetch(url);
+  if (!photo.src.startsWith("/")) throw new Error(`Could not load library photo ${photo.id}`);
+  const res = await fetch(`${origin}${photo.src}`);
   if (!res.ok) throw new Error(`Could not load library photo ${photo.id} (${res.status})`);
-  const buf = new Uint8Array(await res.arrayBuffer());
-  return { bytes: buf, contentType: contentTypeForFilename(photo.filename) };
+  return { bytes: new Uint8Array(await res.arrayBuffer()), contentType: contentTypeForFilename(photo.filename) };
 }
 
-export async function uploadLibraryPhoto(
+export async function preparePhotoForHiggsfield(
+  service: SupabaseClient,
   transport: HiggsfieldTransport,
   photoId: string,
-): Promise<{ photo: LibraryVideo; imageUrl: string }> {
-  const photo = findLibraryPhoto(photoId);
-  if (!photo) throw new Error(`Unknown TDG Library photo: ${photoId}`);
+): Promise<{ photo: ResolvedPhoto; imageUrl: string; width: number; height: number; notes: string[] }> {
+  const photo = await resolveLibraryPhoto(service, photoId);
+  const { bytes, contentType } = await readResolvedPhotoBytes(service, photo);
+  const probe = probeImageBuffer(bytes);
+  const check = evaluateSourcePhoto(probe);
+  if (!check.ok) throw new Error(check.notes.join(" "));
+  // Private library objects are not on a durable public URL. Upload to Higgsfield input storage.
+  const mustUpload = Boolean(photo.storagePath);
   const origin = String(process.env.TDG_PUBLIC_ORIGIN || process.env.VITE_APP_URL || "").replace(/\/$/, "");
-  if (/^https:\/\//i.test(origin) && !/localhost|127\.0\.0\.1/i.test(origin)) {
-    return { photo, imageUrl: `${origin}${photo.src}` };
+  const publicOk = /^https:\/\//i.test(origin) && !/localhost|127\.0\.0\.1/i.test(origin) && photo.src.startsWith("/");
+  let imageUrl: string;
+  if (mustUpload || !publicOk) {
+    const upload = await transport.createUploadUrl(contentType);
+    await transport.putUpload(upload.upload_url, bytes, upload.upload_headers);
+    imageUrl = upload.public_url;
+  } else {
+    imageUrl = `${origin}${photo.src}`;
   }
-  const { bytes, contentType } = await readLibraryPhotoBytes(photo);
-  const upload = await transport.createUploadUrl(contentType);
-  await transport.putUpload(upload.upload_url, bytes, upload.upload_headers);
-  return { photo, imageUrl: upload.public_url };
+  return { photo, imageUrl, width: probe.width, height: probe.height, notes: check.notes };
+}
+
+export async function listSelectablePhotos(service: SupabaseClient): Promise<Array<{ id: string; title: string; filename: string; src: string; source: "static" | "library" }>> {
+  const { libraryPhotos } = await import("../../../src/features/admin-library/libraryMerge");
+  const staticItems = libraryPhotos().map((p) => ({
+    id: p.id,
+    title: p.title,
+    filename: p.filename,
+    src: p.src,
+    source: "static" as const,
+  }));
+  const { data, error } = await service.from("tdg_library_items").select("catalog_id,title,filename,kind").eq("kind", "photo").order("created_at", { ascending: false }).limit(200);
+  if (error) throw error;
+  const uploaded = (data || []).map((row) => {
+    const rec = row as Record<string, unknown>;
+    return {
+      id: String(rec.catalog_id),
+      title: String(rec.title || rec.catalog_id),
+      filename: String(rec.filename || "photo.jpg"),
+      src: "",
+      source: "library" as const,
+    };
+  });
+  return [...uploaded, ...staticItems];
 }
 
 export function commandKey(input: {

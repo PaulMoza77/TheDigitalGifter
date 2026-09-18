@@ -58,6 +58,7 @@ describe("Higgsfield TDG library payloads", () => {
 
   it("resumes provider jobs without a second paid submit", () => {
     expect(canSubmitPaidGeneration("queued", "req-1")).toBe(false);
+    expect(canSubmitPaidGeneration("submitting", null)).toBe(false);
     expect(resumeAction("queued", "req-1")).toBe("poll");
     expect(resumeAction("import_failed", "req-1")).toBe("import");
     expect(resumeAction("imported", "req-1")).toBe("none");

@@ -3,22 +3,13 @@
  * Never expose Higgsfield credentials to the browser.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { libraryPhotos } from "../src/features/admin-library/libraryMerge";
 import { HIGGSFIELD_MODELS } from "../src/features/admin-library/higgsfieldModels";
 import { requireAdmin } from "./_lib/higgsfield/adminAuth";
 import { composeLibraryReel } from "./_lib/higgsfield/compose";
-import {
-  estimateJob,
-  listLibraryItems,
-  listOpenJobs,
-  loadJobByCommandKey,
-  loadJobById,
-  retryImport,
-  submitJob,
-  syncJob,
-  syncOpenJobs,
-} from "./_lib/higgsfield/jobs";
-import { signedLibraryUrl } from "./_lib/higgsfield/storage";
+import { listSelectablePhotos, listLibraryItems, listOpenJobs, loadJobByCommandKey, loadJobById, retryImport, submitJob, syncJob, syncOpenJobs, estimateJob } from "./_lib/higgsfield/jobs";
+import { signedLibraryUrl, TDG_LIBRARY_BUCKET, uploadLibraryObject } from "./_lib/higgsfield/storage";
+import { evaluateSourcePhoto, probeImageBuffer } from "../src/features/admin-library/mediaSpec";
+import { contentTypeForFilename } from "./_lib/higgsfield/photos";
 
 type Body = Record<string, unknown>;
 
@@ -65,6 +56,10 @@ function publicJob(job: Record<string, unknown> | null) {
     effective_width: job.effective_width,
     effective_height: job.effective_height,
     library_item_id: job.library_item_id,
+    spec_ok: job.spec_ok ?? null,
+    spec_notes: job.spec_notes ?? null,
+    source_width: job.source_width ?? null,
+    source_height: job.source_height ?? null,
     last_error: job.last_error,
   };
 }
@@ -100,7 +95,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === "photos") {
-      return res.status(200).json({ photos: libraryPhotos().map((p) => ({ id: p.id, title: p.title, filename: p.filename, src: p.src })) });
+      const photos = await listSelectablePhotos(auth.service);
+      return res.status(200).json({ photos });
     }
 
     if (action === "list") {
@@ -110,6 +106,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+    if (action === "upload-photo") {
+      const filename = String(body.filename || "upload.jpg");
+      const raw = String(body.bytesBase64 || "");
+      if (!raw) throw new Error("bytesBase64 required");
+      const bytes = Uint8Array.from(Buffer.from(raw, "base64"));
+      const probe = probeImageBuffer(bytes);
+      const check = evaluateSourcePhoto(probe);
+      if (!check.ok) throw new Error(check.notes.join(" "));
+      const catalogId = `photo-upload-${Date.now()}`;
+      const storagePath = `photos/${catalogId}/${filename}`;
+      await uploadLibraryObject(storagePath, bytes, contentTypeForFilename(filename));
+      const { error } = await auth.service.from("tdg_library_items").insert({
+        catalog_id: catalogId,
+        title: String(body.title || filename),
+        description: `Uploaded library still ${probe.width}×${probe.height}`,
+        filename,
+        category: "christmas_reels",
+        kind: "photo",
+        storage_bucket: TDG_LIBRARY_BUCKET,
+        storage_path: storagePath,
+        effective_width: probe.width,
+        effective_height: probe.height,
+        created_by: auth.email,
+      });
+      if (error) throw error;
+      return res.status(200).json({ photoId: catalogId, width: probe.width, height: probe.height });
+    }
 
     if (action === "estimate") {
       const result = await estimateJob({
