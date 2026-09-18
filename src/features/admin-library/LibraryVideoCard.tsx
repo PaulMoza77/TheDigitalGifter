@@ -1,5 +1,5 @@
 import React from "react";
-import { Download, Loader2, Pause, Play } from "lucide-react";
+import { Download, Loader2, Pause, Play, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { formatDurationSeconds } from "./formatDuration";
@@ -19,6 +19,9 @@ type Props = {
   video: LibraryVideo;
   playing: boolean;
   onPlayingChange: (playing: boolean) => void;
+  selected?: boolean;
+  onToggleSelect?: () => void;
+  onShare?: () => void;
 };
 
 function formatFetchProgress(loaded: number, total: number | null): string {
@@ -33,7 +36,14 @@ const KIND_LABEL: Record<LibraryVideo["kind"], string> = {
   photo: "Photo",
 };
 
-export default function LibraryVideoCard({ video, playing, onPlayingChange }: Props) {
+export default function LibraryVideoCard({
+  video,
+  playing,
+  onPlayingChange,
+  selected = false,
+  onToggleSelect,
+  onShare,
+}: Props) {
   const href = librarySrcPath(video.src);
   const photo = isLibraryPhoto(video);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
@@ -167,7 +177,10 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
   return (
     <article
       ref={cardRef}
-      className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70"
+      className={[
+        "overflow-hidden rounded-2xl border bg-slate-900/70",
+        selected ? "border-indigo-400/60" : "border-slate-800",
+      ].join(" ")}
     >
       <div className="relative aspect-[9/16] w-full bg-slate-950 sm:aspect-video">
         {photo ? (
@@ -242,13 +255,30 @@ export default function LibraryVideoCard({ video, playing, onPlayingChange }: Pr
           <p className="mt-1 font-mono text-[11px] text-slate-500">
             {video.filename}
             {durationLabel ? ` · ${durationLabel}` : ""}
+            {photo ? "" : " · 1080×1920"}
           </p>
         </div>
+        {onToggleSelect && video.kind === "reel" ? (
+          <label className="flex items-center gap-2 text-xs text-slate-400">
+            <input type="checkbox" checked={selected} onChange={onToggleSelect} />
+            Select
+          </label>
+        ) : null}
+        {video.kind === "reel" && onShare ? (
+          <button
+            type="button"
+            onClick={onShare}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400"
+          >
+            <Share2 className="h-4 w-4" />
+            Share / Schedule
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => void onSave()}
           disabled={saving}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-400/40 bg-indigo-500/20 px-3 py-2 text-sm font-medium text-indigo-100 transition hover:bg-indigo-500/30 disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-800 disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           {saving

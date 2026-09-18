@@ -25,8 +25,15 @@
     "api/pet-v2/preview.ts": { "maxDuration": 60 },
     "api/christmas-funnel.ts": { "maxDuration": 60 },
     "api/christmas-generate.ts": { "maxDuration": 60 },
-    "api/christmas-generate-video.ts": { "maxDuration": 60 }
+    "api/christmas-generate-video.ts": { "maxDuration": 60 },
+    "api/social-publisher-cron.ts": { "maxDuration": 60 }
   },
+  "crons": [
+    {
+      "path": "/api/social-publisher-cron",
+      "schedule": "* * * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/api/christmas/funnel-event", "destination": "/api/christmas-funnel-event" },
     { "source": "/api/pet/funnel-event", "destination": "/api/pet-funnel-event" },

@@ -102,3 +102,6 @@ verify_jwt = false
 
 [functions.app-christmas-job]
 verify_jwt = false
+
+[functions.social-publisher]
+verify_jwt = false

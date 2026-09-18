@@ -10,7 +10,12 @@ import {
   searchLibraryVideos,
   type LibraryCategoryId,
   type LibraryKind,
+  type LibraryVideo,
 } from "@/features/admin-library/catalog";
+import BulkScheduleDialog from "@/features/social-publisher/BulkScheduleDialog";
+import PublishReelDrawer from "@/features/social-publisher/PublishReelDrawer";
+import { socialPublisherApi } from "@/features/social-publisher/api";
+import { resolveDefaultTimezone } from "@/features/social-publisher/timezone";
 
 type CategoryFilter = LibraryCategoryId | "all";
 
@@ -19,6 +24,30 @@ export default function AdminLibraryPage() {
   const [kind, setKind] = React.useState<LibraryKind>("reel");
   const [query, setQuery] = React.useState("");
   const [playingId, setPlayingId] = React.useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [publisher, setPublisher] = React.useState<LibraryVideo | null>(null);
+  const [bulkOpen, setBulkOpen] = React.useState(false);
+  const [timezone, setTimezone] = React.useState(() =>
+    resolveDefaultTimezone({
+      browserTimezone: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC",
+    }),
+  );
+
+  React.useEffect(() => {
+    void socialPublisherApi
+      .bootstrap()
+      .then((data) => {
+        setTimezone(
+          resolveDefaultTimezone({
+            settingsTimezone: data.timezone,
+            browserTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          }),
+        );
+      })
+      .catch(() => {
+        /* keep browser/UTC fallback */
+      });
+  }, []);
 
   const kindFilter = category === "christmas_reels" ? kind : "all";
   const videos = React.useMemo(
@@ -30,19 +59,20 @@ export default function AdminLibraryPage() {
     category === "christmas_reels"
       ? `${videos.length} of ${christmasTotal} Christmas items`
       : `${videos.length} of ${LIBRARY_VIDEOS.length} items`;
+  const selectedVideos = videos.filter((item) => item.kind === "reel" && selectedIds.includes(item.id));
 
   return (
     <div className="min-h-screen overflow-y-auto bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Admin Panel</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Media library</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-50 sm:text-3xl">
               <Library className="h-7 w-7 text-slate-300" />
               Library
             </h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-              Preview clips and photos in place, see how long each video is, and save them without leaving this page.
+              Finished Reels, Shorts, and Photos. Preview, save, and schedule — generation lives in Studio.
             </p>
           </div>
           <p className="text-sm text-slate-400">{totalLabel}</p>
@@ -97,6 +127,19 @@ export default function AdminLibraryPage() {
           </p>
         ) : null}
 
+        {selectedVideos.length > 0 ? (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-400/20 bg-indigo-500/10 px-4 py-3">
+            <p className="text-sm text-indigo-100">{selectedVideos.length} Reels selected</p>
+            <button
+              type="button"
+              onClick={() => setBulkOpen(true)}
+              className="rounded-xl bg-indigo-500 px-3 py-2 text-sm font-semibold text-white"
+            >
+              Schedule batch
+            </button>
+          </div>
+        ) : null}
+
         {videos.length === 0 ? (
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-10 text-center text-sm text-slate-400">
             No items match this filter.
@@ -109,11 +152,35 @@ export default function AdminLibraryPage() {
                 video={video}
                 playing={playingId === video.id}
                 onPlayingChange={(next) => setPlayingId(next ? video.id : null)}
+                selected={selectedIds.includes(video.id)}
+                onToggleSelect={
+                  video.kind === "reel"
+                    ? () =>
+                        setSelectedIds((current) =>
+                          current.includes(video.id)
+                            ? current.filter((id) => id !== video.id)
+                            : [...current, video.id],
+                        )
+                    : undefined
+                }
+                onShare={video.kind === "reel" ? () => setPublisher(video) : undefined}
               />
             ))}
           </div>
         )}
       </div>
+
+      {publisher ? (
+        <PublishReelDrawer video={publisher} timezone={timezone} onClose={() => setPublisher(null)} />
+      ) : null}
+      {bulkOpen ? (
+        <BulkScheduleDialog
+          videos={selectedVideos}
+          timezone={timezone}
+          onClose={() => setBulkOpen(false)}
+          onScheduled={() => setSelectedIds([])}
+        />
+      ) : null}
     </div>
   );
 }

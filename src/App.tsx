@@ -94,6 +94,9 @@ const ChristmasOrdersPage = lazy(() => import("@/pages/admin/ChristmasOrders"));
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const ChristmasAnalyticsPage = lazy(() => import("@/pages/admin/ChristmasAnalyticsPage"));
 const AdminLibraryPage = lazy(() => import("@/pages/admin/AdminLibraryPage"));
+const AdminStudioPage = lazy(() => import("@/pages/admin/AdminStudioPage"));
+const AdminSocialAccountsPage = lazy(() => import("@/pages/admin/AdminSocialAccountsPage"));
+const AdminPublishingPage = lazy(() => import("@/pages/admin/AdminPublishingPage"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 const SupportTicketsPage = lazy(
@@ -990,6 +993,9 @@ function AppInner() {
             />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
             <Route path="library" element={<AdminLibraryPage />} />
+            <Route path="studio" element={<AdminStudioPage />} />
+            <Route path="social-accounts" element={<AdminSocialAccountsPage />} />
+            <Route path="publishing" element={<AdminPublishingPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
 
