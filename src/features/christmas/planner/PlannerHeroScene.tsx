@@ -88,6 +88,8 @@ export function PlannerHeroScene({ alt }: { alt: string }) {
         />
       ) : null}
       <div className="tdg-planner__cabin-veil" />
+      <div className="tdg-planner__cabin-glow" aria-hidden="true" />
+      <div className="tdg-planner__cabin-ember" aria-hidden="true" />
     </div>
   );
 }
