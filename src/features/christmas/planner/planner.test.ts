@@ -378,6 +378,11 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("SEE OPTIONS");
     expect(page).toContain("BUILD MY PLAN");
     expect(page).toContain("OPEN MY CHRISTMAS PLANNER");
+    expect(page).toContain("navigate(PLANNER_ACCOUNT_ROUTE)");
+    const finishQuiz = page.slice(page.indexOf("const finishQuiz"), page.indexOf("const toggleAddon"));
+    expect(finishQuiz).toContain("navigate(PLANNER_ACCOUNT_ROUTE)");
+    expect(finishQuiz).not.toContain("history.back()");
+    expect(finishQuiz).not.toContain("scrollIntoView");
     expect(readSrc("src/features/christmas/planner/personalization.ts")).toContain(
       'compact_personalized_v1',
     );
