@@ -681,6 +681,12 @@ describe("private planner privacy surface", () => {
     const workspace = readSrc("supabase/migrations/20260917180000_christmas_planner_workspace.sql");
     expect(layout).toContain("noindex");
     expect(gate).toContain("PlannerAuthGate");
+    const auth = readSrc("src/features/christmas/planner/PlannerAuthGate.tsx");
+    const appCss = readSrc("src/features/christmas/planner/plannerApp.css");
+    expect(auth).toContain("tdg-planner-google");
+    expect(auth).toContain('fill="#4285F4"');
+    expect(auth).toContain("Continue with Google");
+    expect(appCss).toContain(".tdg-planner-google");
     expect(pages.toLowerCase()).not.toContain("share my planner");
     expect(pages.toLowerCase()).not.toContain("public_token");
     expect(settings).toContain("there is no share setting");
