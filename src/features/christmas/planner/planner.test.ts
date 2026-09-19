@@ -233,7 +233,7 @@ describe("christmas planner wiring", () => {
     expect(app).toContain('path="/account/christmas"');
     expect(app).toContain("ChristmasPlannerLayout");
     expect(app).toContain("ChristmasPlannerPage");
-    expect(app).toContain('path="grocery"');
+    expect(readSrc("src/features/christmas/planner/intelligence/engine.ts")).toContain("runPlannerIntelligence");
     expect(app).not.toContain("ChristmasPlannerPublicPage");
     expect(app).not.toContain("AccountChristmasPage");
     expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("resolvePlannerCheckoutFromRows");
