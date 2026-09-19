@@ -442,7 +442,9 @@ function PlannerAwareSupportWidget() {
   const location = useLocation();
   if (
     location.pathname === "/christmas/planner" ||
-    location.pathname.startsWith("/christmas/planner/")
+    location.pathname.startsWith("/christmas/planner/") ||
+    location.pathname === "/account/christmas" ||
+    location.pathname.startsWith("/account/christmas/")
   ) {
     return null;
   }

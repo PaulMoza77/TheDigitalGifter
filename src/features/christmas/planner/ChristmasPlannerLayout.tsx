@@ -79,37 +79,35 @@ function PlannerAppShell() {
             <a href="/account/dashboard">Account</a>
           </div>
         </header>
-        <div className="tdg-planner-body">
-          <aside className="tdg-planner-side" aria-label="Planner modules">
-            <div className="tdg-planner-side-brand">
-              <strong>Christmas Planner</strong>
-            </div>
-            <nav className="tdg-planner-side-nav">
-              {SIDE.map((item) => (
-                <PlannerSidebarItem
-                  key={item.to}
-                  to={item.to}
-                  label={item.label}
-                  icon={item.icon}
-                  end={"end" in item ? Boolean(item.end) : false}
-                />
-              ))}
-            </nav>
-            <div className="tdg-planner-side-foot">
-              <NavLink to="/account/christmas/settings" className={({ isActive }) => (isActive ? "active" : "")}>
-                <Settings size={16} strokeWidth={1.6} aria-hidden />
-                Settings
-              </NavLink>
-              <a href="/account/dashboard">
-                <UserRound size={16} strokeWidth={1.6} aria-hidden />
-                Account
-              </a>
-            </div>
-          </aside>
-          <main className="tdg-planner-main">
-            {loading ? <p className="tdg-planner-muted">Opening your Christmas…</p> : !profile ? <PlannerOnboarding /> : <Outlet />}
-          </main>
-        </div>
+        <aside className="tdg-planner-side" aria-label="Planner modules">
+          <div className="tdg-planner-side-brand">
+            <strong>Christmas Planner</strong>
+          </div>
+          <nav className="tdg-planner-side-nav">
+            {SIDE.map((item) => (
+              <PlannerSidebarItem
+                key={item.to}
+                to={item.to}
+                label={item.label}
+                icon={item.icon}
+                end={"end" in item ? Boolean(item.end) : false}
+              />
+            ))}
+          </nav>
+          <div className="tdg-planner-side-foot">
+            <NavLink to="/account/christmas/settings" className={({ isActive }) => (isActive ? "active" : "")}>
+              <Settings size={16} strokeWidth={1.6} aria-hidden />
+              Settings
+            </NavLink>
+            <a href="/account/dashboard">
+              <UserRound size={16} strokeWidth={1.6} aria-hidden />
+              Account
+            </a>
+          </div>
+        </aside>
+        <main className="tdg-planner-main">
+          {loading ? <p className="tdg-planner-muted">Opening your Christmas…</p> : !profile ? <PlannerOnboarding /> : <Outlet />}
+        </main>
         <nav className="tdg-planner-nav" aria-label="Christmas planner">
           {MOBILE_NAV.map((item) => (
             <NavLink
