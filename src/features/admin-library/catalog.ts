@@ -112,6 +112,18 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
 
 const CHRISTMAS_REELS: LibraryVideo[] = [
   {
+    id: "reel-global-christmas-journey",
+    title: "NEW · Global Christmas journey Reel",
+    description:
+      "13.7s 1080×1920. Higgsfield Kling 3.0 Pro silent visual master: Lapland aurora → Alps infinity pool → humble home → The Plaza NYC → White House. No captions, no music.",
+    src: "/assets/christmas/global-reel/final/global_christmas_journey_reel.mp4",
+    filename: "global_christmas_journey_reel.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 13.73,
+    poster: "/assets/christmas/global-reel/posters/global_christmas_journey_reel.jpg",
+  },
+  {
     id: "reel-luxury-palace",
     title: "NEW · Luxury Christmas palace Reel",
     description:
@@ -292,6 +304,61 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
 ];
 
 const CHRISTMAS_SHORTS: LibraryVideo[] = [
+  {
+    id: "short-global-01-lapland",
+    title: "Global · Lapland aurora igloos",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Fire pit, falling snow, moving aurora, glass lodges.",
+    src: "/assets/christmas/global-reel/masters/global_01_lapland.mp4",
+    filename: "global_01_lapland.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/global-reel/posters/global_01_lapland.jpg",
+  },
+  {
+    id: "short-global-02-alps",
+    title: "Global · Alps infinity pool",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Heated pool steam and Matterhorn hotel terrace.",
+    src: "/assets/christmas/global-reel/masters/global_02_alps.mp4",
+    filename: "global_02_alps.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/global-reel/posters/global_02_alps.jpg",
+  },
+  {
+    id: "short-global-03-home",
+    title: "Global · Humble Christmas home",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Slow walk toward a warm neighborhood cottage.",
+    src: "/assets/christmas/global-reel/masters/global_03_home.mp4",
+    filename: "global_03_home.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/global-reel/posters/global_03_home.jpg",
+  },
+  {
+    id: "short-global-04-plaza",
+    title: "Global · The Plaza New York",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Wet Fifth Avenue, carriage, and hotel canopy.",
+    src: "/assets/christmas/global-reel/masters/global_04_plaza.mp4",
+    filename: "global_04_plaza.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/global-reel/posters/global_04_plaza.jpg",
+  },
+  {
+    id: "short-global-05-white-house",
+    title: "Global · White House Christmas",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Flag, fountain, and north facade at dusk.",
+    src: "/assets/christmas/global-reel/masters/global_05_white_house.mp4",
+    filename: "global_05_white_house.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/global-reel/posters/global_05_white_house.jpg",
+  },
   {
     id: "short-palace-01-establish",
     title: "Palace · Wide mansion arrival",
@@ -659,6 +726,51 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
 ];
 
 const NEW_STILL_PHOTOS: LibraryVideo[] = [
+  {
+    id: "photo-global-lapland",
+    title: "Photo · Lapland aurora igloos",
+    description: "Glass igloos, fire pit, and northern lights over a frozen lake.",
+    src: "/assets/christmas/global-reel/source/01_lapland_aurora_1080x1920.jpg",
+    filename: "01_lapland_aurora_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-global-alps",
+    title: "Photo · Alps infinity pool",
+    description: "Bellevue Alpine Resort terrace, steaming pool, and Matterhorn sunset.",
+    src: "/assets/christmas/global-reel/source/02_alps_infinity_pool_1080x1920.jpg",
+    filename: "02_alps_infinity_pool_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-global-home",
+    title: "Photo · Humble Christmas home",
+    description: "Snowy cottage porch, wreath, snowman, and warm window light.",
+    src: "/assets/christmas/global-reel/source/03_humble_christmas_home_1080x1920.jpg",
+    filename: "03_humble_christmas_home_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-global-plaza",
+    title: "Photo · The Plaza New York",
+    description: "Christmas canopy, carriage, and wet pavement at The Plaza Hotel.",
+    src: "/assets/christmas/global-reel/source/04_plaza_new_york_1080x1920.jpg",
+    filename: "04_plaza_new_york_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-global-white-house",
+    title: "Photo · White House Christmas",
+    description: "North facade, flag, fountain, and THE WHITE HOUSE WASHINGTON plaque.",
+    src: "/assets/christmas/global-reel/source/05_white_house_1080x1920.jpg",
+    filename: "05_white_house_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
   {
     id: "photo-palace-establish",
     title: "Photo · Luxury palace wide estate",
