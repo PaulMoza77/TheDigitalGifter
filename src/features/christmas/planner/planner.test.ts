@@ -327,6 +327,12 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("Christmas should feel magical.");
     expect(page).toContain("Let’s build your Christmas.");
     expect(page).toContain("PlannerHeroScene");
+    expect(page).toContain("tdg-planner__device-frame");
+    expect(page).toContain("tdg-planner__countdown");
+    expect(page).toContain("tdg-planner__checkout-panel--ivory");
+    expect(css).toContain(".tdg-planner__device-frame");
+    expect(css).toContain("color: var(--ink)");
+    expect(css).toContain("tdg-planner__cabin-glow");
     expect(readSrc("src/features/christmas/planner/PlannerHeroScene.tsx")).toContain("LANDING_ASSETS.cabinLoop");
     expect(readSrc("src/features/christmas/landing/assets.ts")).toContain("cabin-hero-loop.mp4");
     expect(page).toContain("{!ready ? (");

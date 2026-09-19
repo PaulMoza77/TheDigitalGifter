@@ -181,11 +181,13 @@ function Row({ label, value }: { label: string; value: string }) {
 function DeviceShell({ title, children, note }: { title: string; children: ReactNode; note: string }) {
   return (
     <div className="tdg-planner__device tdg-planner__device--large" aria-label="Christmas Planner product preview">
-      <div className="tdg-planner__device-screen">
-        <div className="tdg-planner__device-brand">The Digital Gifter · Planner</div>
-        <h3>{title}</h3>
-        {children}
-        <p className="tdg-planner__honest">{note}</p>
+      <div className="tdg-planner__device-frame">
+        <div className="tdg-planner__device-screen">
+          <div className="tdg-planner__device-brand">The Digital Gifter · Planner</div>
+          <h3>{title}</h3>
+          {children}
+          <p className="tdg-planner__honest">{note}</p>
+        </div>
       </div>
     </div>
   );
@@ -742,6 +744,11 @@ export default function ChristmasPlannerPage() {
           <PlannerHeroScene alt="A luxury mountain cabin living room at Christmas" />
         </div>
         <div className="tdg-planner__hero-copy">
+          <p className="tdg-planner__kicker">Christmas Planner</p>
+          <p className="tdg-planner__countdown">
+            <span className="tdg-planner__countdown-eyebrow">The season is already moving</span>
+            <span className="tdg-planner__countdown-digits">{days} days to Christmas</span>
+          </p>
           <h1>
             Your entire Christmas,
             <br />
@@ -759,7 +766,7 @@ export default function ChristmasPlannerPage() {
             </span>
           </div>
           <p className="tdg-planner__live-strip">
-            {days} days left · Today: 3 things · Gifts: ready to plan · Budget: not set yet
+            Today: 3 things · Gifts: ready to plan · Budget: not set yet
           </p>
         </div>
       </header>
@@ -772,6 +779,7 @@ export default function ChristmasPlannerPage() {
             id="what-you-get"
           >
             <div className="tdg-planner__inner">
+              <p className="tdg-planner__kicker tdg-planner__kicker--ink">The Christmas planning experience</p>
               <h2>Everything you need for Christmas. In one place.</h2>
               <p className="tdg-planner__value-lead">
                 No scattered notes. No forgotten gifts. No last-minute meal panic. Just one clear plan from now until
@@ -788,8 +796,9 @@ export default function ChristmasPlannerPage() {
             </div>
           </section>
 
-          <section className="tdg-planner__section tdg-planner__section--mid" id="preview">
+          <section className="tdg-planner__section tdg-planner__section--scene" id="preview">
             <div className="tdg-planner__inner">
+              <p className="tdg-planner__kicker">Inside the Planner</p>
               <h2>See your Christmas before the chaos starts.</h2>
               <div className="tdg-planner__demo-layout">
                 {demoBlock}
@@ -815,7 +824,7 @@ export default function ChristmasPlannerPage() {
               </h2>
               <div className="tdg-planner__ba">
                 <div>
-                  <p className="tdg-planner__kicker" style={{ color: "var(--burgundy)" }}>
+                  <p className="tdg-planner__kicker tdg-planner__kicker--ink">
                     Before
                   </p>
                   <ul>
@@ -827,7 +836,7 @@ export default function ChristmasPlannerPage() {
                   </ul>
                 </div>
                 <div>
-                  <p className="tdg-planner__kicker" style={{ color: "var(--burgundy)" }}>
+                  <p className="tdg-planner__kicker tdg-planner__kicker--ink">
                     After
                   </p>
                   <ul>
@@ -861,7 +870,7 @@ export default function ChristmasPlannerPage() {
       {ready && preview ? (
         <section className="tdg-planner__section tdg-planner__section--cream" ref={previewRef} id="plan" data-testid="planner-handoff">
           <div className="tdg-planner__inner">
-            <p className="tdg-planner__kicker" style={{ color: "var(--burgundy)" }}>
+            <p className="tdg-planner__kicker tdg-planner__kicker--ink">
               YOUR CHRISTMAS PLAN IS READY
             </p>
             <h2>Your Christmas Plan is ready.</h2>
@@ -905,6 +914,7 @@ export default function ChristmasPlannerPage() {
           id="packages"
         >
           <div className="tdg-planner__inner">
+            <p className="tdg-planner__kicker">Packages</p>
             <h2>Choose your Christmas</h2>
             <p className="tdg-planner__micro tdg-planner__micro--on-dark">SEE OPTIONS if you want paid modules later. The Planner itself opens free with limits.</p>
             <div className="tdg-planner__packages tdg-planner__packages--rows">
@@ -973,7 +983,7 @@ export default function ChristmasPlannerPage() {
               )}
             </div>
 
-            <div className="tdg-planner__checkout-panel" id="checkout" ref={paymentRef}>
+            <div className="tdg-planner__checkout-panel tdg-planner__checkout-panel--ivory" id="checkout" ref={paymentRef}>
               <h3 className="tdg-planner__summary-title">Your Christmas Plan</h3>
               <div className="tdg-planner__summary tdg-planner__summary--lines">
                 {selected ? (
@@ -1060,8 +1070,9 @@ export default function ChristmasPlannerPage() {
         </section>
       ) : null}
 
-      <section className="tdg-planner__section tdg-planner__section--mid tdg-planner__section--faq">
-        <div className="tdg-planner__inner">
+      <section className="tdg-planner__section tdg-planner__section--scene tdg-planner__section--faq">
+        <div className="tdg-planner__inner tdg-planner__faq">
+          <p className="tdg-planner__kicker">Questions</p>
           <h2>FAQ</h2>
           {PLANNER_FAQS.map((item) => (
             <details key={item.q}>
@@ -1077,7 +1088,7 @@ export default function ChristmasPlannerPage() {
               account.
             </p>
           </article>
-          <p className="tdg-planner__micro tdg-planner__micro--on-dark" style={{ marginTop: "1.25rem" }}>
+          <p className="tdg-planner__micro tdg-planner__micro--on-dark tdg-planner__hub-link">
             More Christmas tools live on the <Link to="/christmas">Christmas hub</Link>.
           </p>
         </div>
