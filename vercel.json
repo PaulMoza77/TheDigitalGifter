@@ -26,11 +26,17 @@
     "api/christmas-funnel.ts": { "maxDuration": 60 },
     "api/christmas-generate.ts": { "maxDuration": 60 },
     "api/christmas-generate-video.ts": { "maxDuration": 60 },
-    "api/social-publisher-cron.ts": { "maxDuration": 60 }
+    "api/social-publisher-cron.ts": { "maxDuration": 60 },
+    "api/clip-factory.ts": { "maxDuration": 60 },
+    "api/clip-factory-tick.ts": { "maxDuration": 60 }
   },
   "crons": [
     {
       "path": "/api/social-publisher-cron",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/clip-factory-tick",
       "schedule": "* * * * *"
     }
   ],

@@ -24,6 +24,7 @@ describe("admin video library", () => {
     const ids = LIBRARY_VIDEOS.map((video) => video.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(LIBRARY_CATEGORIES.map((item) => item.id)).toEqual([
+      "clip_factory",
       "christmas_reels",
       "christmas_marketing",
       "pet_dog",
@@ -125,6 +126,8 @@ describe("admin video library", () => {
     expect(readSrc("src/App.tsx")).toMatch(/path="library"/);
     expect(readSrc("src/App.tsx")).toContain("/dev/library");
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/library");
+    expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/clip-factory");
+    expect(readSrc("src/App.tsx")).toContain("path=\"clip-factory\"");
     const page = readSrc("src/pages/admin/AdminLibraryPage.tsx");
     expect(page).toContain("LibraryVideoCard");
     expect(page).toContain("CHRISTMAS_LIBRARY_KINDS");
