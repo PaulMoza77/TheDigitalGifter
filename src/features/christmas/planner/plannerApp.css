@@ -122,9 +122,8 @@
 .tdg-planner-main {
   min-width: 0;
   padding: 18px 16px 108px;
-  max-width: 920px;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .tdg-planner-context {
@@ -411,7 +410,81 @@
 }
 
 .tdg-planner-stat {
-  padding: 12px 0;
+  padding: 14px 16px;
+  background: var(--planner-parchment);
+  border: 1px solid var(--planner-line);
+  border-radius: 16px;
+  min-height: 108px;
+}
+
+.tdg-planner-dash {
+  display: grid;
+  gap: 18px;
+}
+
+.tdg-planner-empty {
+  padding: 18px 16px;
+  border: 1px dashed rgba(20, 51, 40, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.7);
+  display: grid;
+  gap: 10px;
+}
+
+.tdg-planner-empty strong {
+  font-family: var(--planner-serif);
+  font-size: 1.15rem;
+  color: var(--planner-ink);
+}
+
+.tdg-planner-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(20, 51, 40, 0.08);
+  color: var(--planner-pine);
+}
+
+.tdg-planner-status.is-done {
+  background: rgba(20, 51, 40, 0.16);
+}
+
+.tdg-planner-person {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--planner-line);
+  background: #fffdf8;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tdg-planner-person.on {
+  border-color: var(--planner-pine);
+  background: var(--planner-parchment);
+}
+
+.tdg-planner-gift-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 6px;
+}
+
+.tdg-planner-composer {
+  display: grid;
+  gap: 0;
+}
+
+.tdg-planner-composer .tdg-planner-actions {
+  margin-top: 4px;
 }
 
 .tdg-planner-stat b {
@@ -572,6 +645,20 @@
   }
   .tdg-planner-main {
     padding: 28px 32px 48px;
+    max-width: none;
+  }
+  .tdg-planner-dash {
+    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
+    align-items: start;
+  }
+  .tdg-planner-people {
+    flex-direction: column;
+    overflow: visible;
+  }
+  .tdg-planner-split {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    gap: 20px;
   }
 }
 
@@ -580,7 +667,7 @@
     grid-template-columns: 232px minmax(0, 1fr) 280px;
   }
   .tdg-planner-main {
-    max-width: 900px;
+    max-width: none;
     margin: 0;
     padding-right: 20px;
   }

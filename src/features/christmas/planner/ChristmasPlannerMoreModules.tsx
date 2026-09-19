@@ -349,6 +349,12 @@ export function ChristmasPlannerFoodPage() {
           </Link>
         </div>
       </div>
+      {dishes.filter((d) => d.meal_id === meal?.id).length === 0 ? (
+        <div className="tdg-planner-empty">
+          <strong>Menu is still a blank page.</strong>
+          <p>Add the first dish for this sitting — servings, prep time, then send ingredients to Grocery.</p>
+        </div>
+      ) : null}
       {dishes
         .filter((d) => d.meal_id === meal?.id)
         .map((d) => (
