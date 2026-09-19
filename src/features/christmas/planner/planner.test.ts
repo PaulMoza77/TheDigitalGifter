@@ -40,7 +40,7 @@ import {
   grantsForPaidOrder,
   revokeOrder,
 } from "./entitlementEngine";
-import { generateInitialPlan, recommendedToday } from "./planGenerator";
+import { generateInitialPlan, progressiveSurface, recommendedToday } from "./planGenerator";
 import { computeReadiness } from "./readiness";
 import { answerFromContext } from "./assistant";
 import { sanitizePlannerMetadata } from "./analytics";
@@ -181,6 +181,12 @@ describe("christmas planner privacy + attribution events", () => {
       "planner_claim_started",
       "planner_claim_completed",
       "planner_opened",
+      "planner_task_added",
+      "planner_task_rescheduled",
+      "planner_gift_status_changed",
+      "planner_budget_updated",
+      "planner_event_created",
+      "planner_ai_opened",
     ]) {
       expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain(name);
     }
@@ -226,6 +232,7 @@ describe("christmas planner wiring", () => {
     expect(app).toContain('path="/account/christmas"');
     expect(app).toContain("ChristmasPlannerLayout");
     expect(app).toContain("ChristmasPlannerPage");
+    expect(app).toContain('path="grocery"');
     expect(app).not.toContain("ChristmasPlannerPublicPage");
     expect(app).not.toContain("AccountChristmasPage");
     expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("resolvePlannerCheckoutFromRows");
@@ -332,9 +339,12 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("Example Planner · no fake customer progress");
     expect(css).toContain("color: var(--cream)");
     expect(page).not.toContain("tdg-planner__teaser-card");
+    expect(page).toContain("OPEN MY CHRISTMAS PLANNER");
+    expect(page).toContain("YOUR CHRISTMAS PLAN IS READY");
+    expect(page).toContain("This preview is not your Planner");
     const faqIndex = page.indexOf("tdg-planner__section--faq");
     const valueIndex = page.indexOf("tdg-planner__value");
-    const resultIndex = page.indexOf("Your Christmas plan is ready");
+    const resultIndex = page.indexOf("YOUR CHRISTMAS PLAN IS READY");
     expect(valueIndex).toBeGreaterThan(0);
     expect(valueIndex).toBeLessThan(faqIndex);
     expect(resultIndex).toBeGreaterThan(valueIndex);
@@ -361,6 +371,7 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("walletCapabilityOnly");
     expect(page).toContain("SEE OPTIONS");
     expect(page).toContain("BUILD MY PLAN");
+    expect(page).toContain("OPEN MY CHRISTMAS PLANNER");
     expect(readSrc("src/features/christmas/planner/personalization.ts")).toContain(
       'compact_personalized_v1',
     );
@@ -648,3 +659,42 @@ describe("compact funnel personalization", () => {
     expect(PLANNER_FAQS).toHaveLength(4);
   });
 });
+
+describe("private planner privacy surface", () => {
+  it("keeps account planner noindex, auth-gated, and without share tokens", () => {
+    const layout = readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx");
+    const pages = readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx");
+    const more = readSrc("src/features/christmas/planner/ChristmasPlannerMoreModules.tsx");
+    const settings = more;
+    const gate = readSrc("src/routes/ProtectedClientRoute.tsx");
+    const workspace = readSrc("supabase/migrations/20260917180000_christmas_planner_workspace.sql");
+    expect(layout).toContain("noindex");
+    expect(gate).toContain("PlannerAuthGate");
+    expect(pages.toLowerCase()).not.toContain("share my planner");
+    expect(pages.toLowerCase()).not.toContain("public_token");
+    expect(settings).toContain("there is no share setting");
+    expect(workspace).toContain("christmas_planner_owns_profile");
+    expect(workspace).toContain("revoke all on table public.christmas_planner_profiles from anon");
+    expect(workspace).toContain("using (public.christmas_planner_owns_profile(profile_id) or public.is_admin())");
+  });
+});
+
+describe("progressive generated plan", () => {
+  it("caps rescue mode so the list stays essential", () => {
+    const tasks = generateInitialPlan({
+      today: { year: 2026, month: 12, day: 18 },
+      christmas: christmasDayParts(2026),
+      mode: "rescue",
+      hosting: true,
+      travelling: true,
+      hasChildren: true,
+      giftCount: 8,
+      prepared: "rescue",
+      chaos: ["everything"],
+    });
+    const limited = progressiveSurface(tasks, "2026-12-18", "rescue");
+    expect(limited.length).toBeLessThanOrEqual(7);
+    expect(limited.length).toBeGreaterThan(0);
+  });
+});
+

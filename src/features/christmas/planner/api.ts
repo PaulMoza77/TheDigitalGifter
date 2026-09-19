@@ -237,6 +237,17 @@ export async function patchTask(id: string, patch: Partial<PlannerTask>): Promis
   await supabase.from("christmas_planner_tasks").update(patch).eq("id", id);
 }
 
+export async function deleteTask(id: string): Promise<void> {
+  await supabase.from("christmas_planner_tasks").delete().eq("id", id);
+}
+
+export async function insertTask(
+  row: Omit<PlannerTask, "id"> & { id?: string },
+): Promise<PlannerTask | null> {
+  const { data } = await supabase.from("christmas_planner_tasks").insert(row).select("*").maybeSingle();
+  return (data as PlannerTask) || null;
+}
+
 export async function loadRecipients(profileId: string): Promise<GiftRecipient[]> {
   const { data } = await supabase
     .from("christmas_gift_recipients")

@@ -1,0 +1,408 @@
+{
+  "created_at": "2026-09-19T05:46:48.890230+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 1.4000000000000001,
+  "regenerations": 0,
+  "clips": [
+    {
+      "id": "christmas_master_06",
+      "title": "Village balcony girl + teddy",
+      "source_image": "01_village_balcony_girl.jpg",
+      "job_id": "35380f7a-2873-4681-8813-51f9f3b304d9",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas night. This exact photograph comes alive for five seconds. Preserve the girl in the red knit hat, her face, hair, red-and-cream sweater, teddy bear, wooden balcony railing, lantern, wrapped gifts with red bows, garlands, snowman, stone bridge, ice rink, giant Christmas tree, village houses, castle, mountains, moon, and Santa's distant sleigh exactly as in the first frame. Natural sparse snowfall. Lantern flame flickers extremely subtly. Fairy lights twinkle very softly. Distant ice-skaters make tiny natural movements. Chimney smoke rises. Water reflections drift. Santa's sleigh glides slowly along the same sky path. Very slow cinematic push-in from the balcony with slight foreground-background parallax. Architecture, faces, and gifts stay rigid. Do not add text, logos, extra people, extra limbs, or morphing. Archival-cinematic luxury Christmas footage.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/reels/masters/christmas_master_06.mp4",
+      "probe": {
+        "filename": "christmas_master_06.mp4",
+        "path": "/workspace/public/assets/christmas/reels/masters/christmas_master_06.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 42163876,
+        "size": 26572028
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep19/qc/christmas_master_06_first.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_06_mid.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_06_last.jpg"
+      ],
+      "created_at": "2026-09-19T05:48:49.519169+00:00"
+    },
+    {
+      "id": "christmas_master_07",
+      "title": "Santa and child watching sleigh",
+      "source_image": "02_santa_child_aurora.jpg",
+      "job_id": "b2449649-37fa-4740-8ce3-e11ed2a798cc",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas night. This exact photograph comes alive for five seconds. Preserve Santa's face, beard, red suit, the child in the cream knit hat pointing, the golden retriever, plaid blankets, lantern, hot cocoa mugs, cookies, wrapped gifts, wooden sign reading SOME PLACES STILL BELIEVE, lake, village, castle, moon, aurora, and the distant sleigh exactly as in the first frame. The child keeps the same pointing pose with only a tiny natural arm settle. Santa breathes and may blink. The dog's fur shifts slightly; it does not stand up. Aurora drifts slowly. Distant sleigh glides on the same path. Lantern flame flickers. Steam from cocoa. Soft snowfall. Very slow cinematic push-in. Do not mutate the sign letters. No extra people, no face morph, no new objects. Warm emotional Christmas film.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/reels/masters/christmas_master_07.mp4",
+      "probe": {
+        "filename": "christmas_master_07.mp4",
+        "path": "/workspace/public/assets/christmas/reels/masters/christmas_master_07.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 31410924,
+        "size": 19795428
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep19/qc/christmas_master_07_first.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_07_mid.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_07_last.jpg"
+      ],
+      "created_at": "2026-09-19T05:50:51.481726+00:00"
+    },
+    {
+      "id": "christmas_master_08",
+      "title": "Santa sleigh over alpine village",
+      "source_image": "03_santa_sleigh_believe.jpg",
+      "job_id": "3fe1cb9a-1abb-490c-856c-24e7194ec7bd",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas night from Santa's sleigh. This exact photograph comes alive for five seconds. Preserve Santa's face, beard, red suit, the reindeer anatomy, harnesses, gift pile, garland, lantern, BELIEVE GOOD THINGS STILL HAPPEN sign, lake, stone bridge, village, castle, mountains, and moon exactly as in the first frame. The sleigh eases slightly forward through the air with physically believable motion. Reindeer make small realistic gait/head movements. Lantern flame flickers. Gift ribbons shift slightly. Soft snowfall. Water reflections drift. Very slow camera with tiny tracking, not a wild flyover. Architecture stays rigid. Do not mutate sign text. No extra reindeer, no warped antlers, no extra limbs, no morphing Santa. Luxury Christmas movie footage.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/reels/masters/christmas_master_08.mp4",
+      "probe": {
+        "filename": "christmas_master_08.mp4",
+        "path": "/workspace/public/assets/christmas/reels/masters/christmas_master_08.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 35173082,
+        "size": 22166371
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep19/qc/christmas_master_08_first.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_08_mid.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_08_last.jpg"
+      ],
+      "created_at": "2026-09-19T05:52:55.649414+00:00"
+    },
+    {
+      "id": "christmas_master_09",
+      "title": "Polar Express train interior",
+      "source_image": "04_polar_express_interior.jpg",
+      "job_id": "a38519ce-444c-49ec-b4e7-28b3f2f9f2af",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Polar Express interior. This exact photograph comes alive for five seconds. Preserve the girl with the red hair bow, her cream sweater, teddy bear, THE POLAR EXPRESS seat, Santa hat on the opposite seat, gingerbread cookies, cocoa mug, brass lantern, wood paneling, window view of the castle, viaduct, river, and mountains exactly as in the first frame. The girl breathes and may blink; she does not turn into a different person. Outside, the landscape drifts slowly past the window as if the train is moving gently. Lantern flame flickers. Cocoa steam. Fairy lights twinkle. Subtle reflections on the window glass. Extremely slow cinematic camera. Do not warp the train interior, castle, or cookies. No added text or logos. Emotional Christmas film.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/reels/masters/christmas_master_09.mp4",
+      "probe": {
+        "filename": "christmas_master_09.mp4",
+        "path": "/workspace/public/assets/christmas/reels/masters/christmas_master_09.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 24059002,
+        "size": 15162185
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep19/qc/christmas_master_09_first.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_09_mid.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_09_last.jpg"
+      ],
+      "created_at": "2026-09-19T05:55:32.555671+00:00"
+    },
+    {
+      "id": "christmas_master_10",
+      "title": "Polar Express locomotive at station",
+      "source_image": "05_polar_express_station.jpg",
+      "job_id": "b28b5865-5f8f-4bd5-a7bb-e8006bf46419",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Polar Express locomotive at a snowy station. This exact photograph comes alive for five seconds. Preserve the black steam locomotive number 1225, wreath, headlamp, steam, cars, wet rails, station lanterns, BELIEVE ALL ABOARD FOR A BRIGHTER TOMORROW sign, the girl in the red coat and knit hat holding a lantern, mountains, moon, and viaduct exactly as in the first frame. The train eases slowly forward toward camera with correct wheel and steam physics. Thick steam and smoke drift naturally. Headlamp glows steadily. Station lights twinkle. Soft snowfall. The girl stands still with only tiny coat/hat movement and a small breath in the cold. Very slow cinematic push-in. Do not break wheels, warp the locomotive, mutate sign letters, or add extra people. Luxury Christmas movie opening shot.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/reels/masters/christmas_master_10.mp4",
+      "probe": {
+        "filename": "christmas_master_10.mp4",
+        "path": "/workspace/public/assets/christmas/reels/masters/christmas_master_10.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 26041329,
+        "size": 16411464
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep19/qc/christmas_master_10_first.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_10_mid.jpg",
+        "/workspace/generated/batch-sep19/qc/christmas_master_10_last.jpg"
+      ],
+      "created_at": "2026-09-19T05:58:24.749133+00:00"
+    }
+  ],
+  "reels": [
+    {
+      "id": "reel-01",
+      "title": "Polar Express arrival",
+      "file": "/workspace/public/assets/christmas/reels/final/reel-01.mp4",
+      "probe": {
+        "filename": "reel-01.mp4",
+        "duration": 12.6,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 16643874,
+        "size": 26214103
+      },
+      "new_clips": [
+        "christmas_master_10",
+        "christmas_master_09",
+        "christmas_master_06"
+      ],
+      "library_clips": [
+        "reel-kling-01-train"
+      ],
+      "shots": [
+        {
+          "src": "christmas_master_10.mp4",
+          "start": 0.06,
+          "duration": 3.35,
+          "id": "christmas_master_10"
+        },
+        {
+          "src": "christmas_master_09.mp4",
+          "start": 0.18,
+          "duration": 3.2,
+          "id": "christmas_master_09"
+        },
+        {
+          "src": "clip_01_train_raw.mp4",
+          "start": 0.1,
+          "duration": 3.1,
+          "id": "reel-kling-01-train"
+        },
+        {
+          "src": "christmas_master_06.mp4",
+          "start": 0.25,
+          "duration": 3.55,
+          "id": "christmas_master_06"
+        }
+      ]
+    },
+    {
+      "id": "reel-02",
+      "title": "Santa's village night",
+      "file": "/workspace/public/assets/christmas/reels/final/reel-02.mp4",
+      "probe": {
+        "filename": "reel-02.mp4",
+        "duration": 12.433333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15173573,
+        "size": 23582262
+      },
+      "new_clips": [
+        "christmas_master_06",
+        "christmas_master_08",
+        "christmas_master_07"
+      ],
+      "library_clips": [
+        "short-christmas-master-03"
+      ],
+      "shots": [
+        {
+          "src": "christmas_master_06.mp4",
+          "start": 0.08,
+          "duration": 3.3,
+          "id": "christmas_master_06"
+        },
+        {
+          "src": "christmas_master_03.mp4",
+          "start": 0.18,
+          "duration": 3.05,
+          "id": "short-christmas-master-03"
+        },
+        {
+          "src": "christmas_master_08.mp4",
+          "start": 0.12,
+          "duration": 3.25,
+          "id": "christmas_master_08"
+        },
+        {
+          "src": "christmas_master_07.mp4",
+          "start": 0.2,
+          "duration": 3.4,
+          "id": "christmas_master_07"
+        }
+      ]
+    },
+    {
+      "id": "reel-03",
+      "title": "Alps to fireside",
+      "file": "/workspace/public/assets/christmas/reels/final/reel-03.mp4",
+      "probe": {
+        "filename": "reel-03.mp4",
+        "duration": 12.266667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15578620,
+        "size": 23887218
+      },
+      "new_clips": [
+        "christmas_master_08"
+      ],
+      "library_clips": [
+        "short-christmas-master-01",
+        "reel-cozy-01",
+        "short-christmas-master-04"
+      ],
+      "shots": [
+        {
+          "src": "christmas_master_08.mp4",
+          "start": 0.1,
+          "duration": 3.35,
+          "id": "christmas_master_08"
+        },
+        {
+          "src": "christmas_master_01.mp4",
+          "start": 0.2,
+          "duration": 3.25,
+          "id": "short-christmas-master-01"
+        },
+        {
+          "src": "clip1.mp4",
+          "start": 0.2,
+          "duration": 3.3,
+          "id": "reel-cozy-01"
+        },
+        {
+          "src": "christmas_master_04.mp4",
+          "start": 0.15,
+          "duration": 3.2,
+          "id": "short-christmas-master-04"
+        }
+      ]
+    },
+    {
+      "id": "reel-04",
+      "title": "Sleigh ride home",
+      "file": "/workspace/public/assets/christmas/reels/final/reel-04.mp4",
+      "probe": {
+        "filename": "reel-04.mp4",
+        "duration": 12.266667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15321333,
+        "size": 23492712
+      },
+      "new_clips": [
+        "christmas_master_08",
+        "christmas_master_07"
+      ],
+      "library_clips": [
+        "reel-kling-02-santa",
+        "reel-kling-03-market"
+      ],
+      "shots": [
+        {
+          "src": "christmas_master_08.mp4",
+          "start": 0.05,
+          "duration": 3.4,
+          "id": "christmas_master_08"
+        },
+        {
+          "src": "clip_02_santa_raw.mp4",
+          "start": 0.1,
+          "duration": 3.05,
+          "id": "reel-kling-02-santa"
+        },
+        {
+          "src": "clip_03_market_raw.mp4",
+          "start": 0.12,
+          "duration": 3.0,
+          "id": "reel-kling-03-market"
+        },
+        {
+          "src": "christmas_master_07.mp4",
+          "start": 0.25,
+          "duration": 3.45,
+          "id": "christmas_master_07"
+        }
+      ]
+    },
+    {
+      "id": "reel-05",
+      "title": "Believe \u2014 Christmas trailer",
+      "file": "/workspace/public/assets/christmas/reels/final/reel-05.mp4",
+      "probe": {
+        "filename": "reel-05.mp4",
+        "duration": 13.033333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15779891,
+        "size": 25708073
+      },
+      "new_clips": [
+        "christmas_master_10",
+        "christmas_master_08",
+        "christmas_master_06",
+        "christmas_master_07"
+      ],
+      "library_clips": [
+        "reel-kling-01-train"
+      ],
+      "shots": [
+        {
+          "src": "christmas_master_10.mp4",
+          "start": 0.04,
+          "duration": 2.85,
+          "id": "christmas_master_10"
+        },
+        {
+          "src": "christmas_master_08.mp4",
+          "start": 0.08,
+          "duration": 2.7,
+          "id": "christmas_master_08"
+        },
+        {
+          "src": "clip_01_train_raw.mp4",
+          "start": 0.08,
+          "duration": 2.55,
+          "id": "reel-kling-01-train"
+        },
+        {
+          "src": "christmas_master_06.mp4",
+          "start": 0.15,
+          "duration": 2.7,
+          "id": "christmas_master_06"
+        },
+        {
+          "src": "christmas_master_07.mp4",
+          "start": 0.35,
+          "duration": 2.95,
+          "id": "christmas_master_07"
+        }
+      ]
+    }
+  ],
+  "status": "COMPLETE",
+  "actual_cost_usd": 1.4,
+  "reels_assembled_at": "2026-09-19T06:05:10.418224+00:00"
+}
