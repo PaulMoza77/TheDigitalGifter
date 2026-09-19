@@ -4,8 +4,10 @@ import { PageHead } from "@/components/PageHead";
 import { useEffect, useMemo, useState } from "react";
 import { countdownCopy, daysUntilChristmas } from "./date";
 import { computeReadiness } from "./readiness";
-import { loadBudget, loadGifts, loadRecipients, loadTasks } from "./api";
+import { loadPlannerWorkspace } from "./intelligence";
 import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./Onboarding";
+import { CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
+import { CopilotLaunchButton } from "./copilot/CopilotSheet";
 import { PlannerProgress, PlannerSidebarItem } from "./plannerUi";
 import "./plannerApp.css";
 
@@ -28,7 +30,9 @@ const MOBILE_NAV = [
 export default function ChristmasPlannerLayout() {
   return (
     <PlannerBundleProvider>
-      <PlannerAppShell />
+      <CopilotHost>
+        <PlannerAppShell />
+      </CopilotHost>
     </PlannerBundleProvider>
   );
 }
@@ -36,24 +40,26 @@ export default function ChristmasPlannerLayout() {
 function PlannerAppShell() {
   const location = useLocation();
   const { loading, profile } = usePlannerBundle();
+  const copilot = useCopilotUi();
   const [readiness, setReadiness] = useState<number | null>(null);
 
   const daysLeft = useMemo(() => daysUntilChristmas(new Date(), profile?.timezone), [profile?.timezone]);
 
   useEffect(() => {
     if (!profile) return;
-    void Promise.all([loadTasks(profile.id), loadRecipients(profile.id), loadGifts(profile.id), loadBudget(profile.id)]).then(
-      ([tasks, recipients, gifts]) => {
-        setReadiness(
-          computeReadiness({
-            profile,
-            tasks,
-            recipients,
-            gifts,
-          }).percent,
-        );
-      },
-    );
+    void loadPlannerWorkspace(profile).then((snapshot) => {
+      setReadiness(
+        computeReadiness({
+          profile,
+          tasks: snapshot.tasks,
+          recipients: snapshot.recipients,
+          gifts: snapshot.gifts,
+          cardsNeeded: snapshot.cards.length,
+          cardsPrepared: snapshot.cards.filter((c) => c.status === "prepared" || c.status === "sent").length,
+          mealsCount: snapshot.meals.length,
+        }).percent,
+      );
+    });
   }, [profile, location.pathname]);
 
   return (
@@ -75,6 +81,7 @@ function PlannerAppShell() {
                 <PlannerProgress value={readiness} compact />
               </span>
             ) : null}
+            {profile ? <CopilotLaunchButton onClick={() => copilot?.openCopilot(undefined, "header")} /> : null}
             <a href="/account/dashboard">Account</a>
           </div>
         </header>

@@ -49,7 +49,15 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-luxury-palace");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-north-pole-santa");
+    expect(
+      searchLibraryVideos("North Pole Santa", "christmas_reels", "reel").some((video) => video.id === "reel-north-pole-santa"),
+    ).toBe(true);
+    expect(
+      searchLibraryVideos("Global Christmas journey", "christmas_reels", "reel").some(
+        (video) => video.id === "reel-global-christmas-journey",
+      ),
+    ).toBe(true);
     expect(
       searchLibraryVideos("Luxury Christmas palace", "christmas_reels", "reel").some((video) => video.id === "reel-luxury-palace"),
     ).toBe(true);
@@ -112,10 +120,18 @@ describe("admin video library", () => {
       "public/assets/christmas/reels/final/reel-01.mp4",
       "public/assets/christmas/reels/final/reel-05.mp4",
       "public/assets/christmas/library-stills/01_village_balcony_girl.jpg",
+      "public/assets/christmas/north-pole-santa/final/north_pole_santa_reel.mp4",
+      "public/assets/christmas/north-pole-santa/masters/santa_01_workshop.mp4",
+      "public/assets/christmas/north-pole-santa/masters/santa_04_sweep.mp4",
+      "public/assets/christmas/north-pole-santa/source/01_workshop_wrapping_1080x1920.jpg",
       "public/assets/christmas/luxury-palace/final/luxury_christmas_palace_reel.mp4",
       "public/assets/christmas/luxury-palace/masters/palace_01_establish.mp4",
       "public/assets/christmas/luxury-palace/masters/palace_05_hero.mp4",
       "public/assets/christmas/luxury-palace/source/05_hero_balcony_palace_1080x1920.jpg",
+      "public/assets/christmas/global-reel/final/global_christmas_journey_reel.mp4",
+      "public/assets/christmas/global-reel/masters/global_01_lapland.mp4",
+      "public/assets/christmas/global-reel/masters/global_05_white_house.mp4",
+      "public/assets/christmas/global-reel/source/05_white_house_1080x1920.jpg",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);

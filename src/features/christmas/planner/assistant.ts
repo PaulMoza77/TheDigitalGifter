@@ -102,7 +102,7 @@ export function answerFromContext(question: string, ctx: AssistantSafeContext): 
   if (intent === "gift_ideas") {
     return {
       source: "local_rules",
-      text: "Use Need an idea? on a recipient — that opens Gift Finder and can add a result back. I don’t invent gifts from private notes.",
+      text: "Use Need an idea? on a recipient — Gift Concierge stays in Gifts and can add a result to their list. I don’t invent gifts from private notes.",
     };
   }
   if (intent === "rescue") {
@@ -113,6 +113,6 @@ export function answerFromContext(question: string, ctx: AssistantSafeContext): 
   }
   return {
     source: "coming_next",
-    text: "Ask Christmas AI can answer from your planner counts. Private notes stay on the server until a controlled assistant ships.",
+    text: "Christmas Copilot can answer from your planner counts. Private notes stay in the Planner until a controlled model path is switched on.",
   };
 }

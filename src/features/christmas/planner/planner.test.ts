@@ -182,12 +182,19 @@ describe("christmas planner privacy + attribution events", () => {
       "planner_claim_started",
       "planner_claim_completed",
       "planner_opened",
+      "gift_concierge_opened",
+      "gift_concierge_generated",
+      "gift_concierge_refined",
+      "gift_concierge_suggestion_added",
+      "gift_concierge_failed",
       "planner_task_added",
       "planner_task_rescheduled",
       "planner_gift_status_changed",
       "planner_budget_updated",
       "planner_event_created",
       "planner_ai_opened",
+      "copilot_opened",
+      "copilot_turn",
     ]) {
       expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain(name);
     }
@@ -232,8 +239,9 @@ describe("christmas planner wiring", () => {
     expect(app).toContain('path="/christmas/planner/welcome"');
     expect(app).toContain('path="/account/christmas"');
     expect(app).toContain("ChristmasPlannerLayout");
+    expect(readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx")).toContain("CopilotHost");
     expect(app).toContain("ChristmasPlannerPage");
-    expect(app).toContain('path="grocery"');
+    expect(readSrc("src/features/christmas/planner/intelligence/engine.ts")).toContain("runPlannerIntelligence");
     expect(app).not.toContain("ChristmasPlannerPublicPage");
     expect(app).not.toContain("AccountChristmasPage");
     expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain("resolvePlannerCheckoutFromRows");

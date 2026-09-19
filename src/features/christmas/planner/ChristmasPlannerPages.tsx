@@ -1,9 +1,29 @@
-import { FormEvent, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "./analytics";
-import { answerFromContext } from "./assistant";
 import { insertTask, loadBudget, loadGifts, loadRecipients, loadTasks } from "./api";
+import {
+  dismissInsight,
+  executePlannerAction,
+  invalidatePlannerSnapshot,
+  loadDismissedInsightIds,
+  loadPlannerWorkspace,
+  runPlannerIntelligence,
+  computeRecipientBudgets,
+  computeBudgetTotals,
+  formatPlannerMoney,
+  buildPlannerSnapshot,
+  type PlannerIntelligence,
+} from "./intelligence";
+import {
+  PlannerAttentionList,
+  PlannerNextBestAction,
+  PlannerOnTrackState,
+  PlannerReadinessBreakdown,
+  PlannerRecommendationSheet,
+  PlannerRescueBanner,
+} from "./intelligence/components";
 import {
   countdownCopy,
   daysUntilChristmas,
@@ -17,11 +37,11 @@ import {
   taskCategoryLabel,
 } from "./date";
 import { canAddCustomTask, canAddRecipient, hasFeature } from "./entitlements";
-import { recommendedToday } from "./planGenerator";
 import { computeReadiness } from "./readiness";
+import { GiftConcierge } from "./giftConcierge";
 import { money, PlannerPaywall } from "./Paywall";
+import { useCopilotUi } from "./copilot/CopilotHost";
 import {
-  ASSISTANT_PROMPTS,
   PlannerComposer,
   PlannerEmptyState,
   PlannerModuleLinkRow,
@@ -49,35 +69,72 @@ import {
   type TaskCategory,
 } from "./types";
 
+function buildMiniBudgetSnapshot(profile: import("./types").PlannerProfile, gifts: GiftItem[], rows: BudgetEntry[]) {
+  return buildPlannerSnapshot({
+    profile,
+    tasks: [],
+    recipients: [],
+    gifts,
+    budgetEntries: rows,
+  });
+}
+
 export default function ChristmasPlannerTodayPage() {
   const { loading, access, profile } = usePlannerBundle();
+  const copilot = useCopilotUi();
   const [tasks, setTasks] = useState<PlannerTask[]>([]);
   const [recipients, setRecipients] = useState<GiftRecipient[]>([]);
   const [gifts, setGifts] = useState<GiftItem[]>([]);
-  const [budget, setBudget] = useState<BudgetEntry[]>([]);
-  const [mealsCount, setMealsCount] = useState(0);
+  const [intel, setIntel] = useState<PlannerIntelligence | null>(null);
+  const [dismissed, setDismissed] = useState<string[]>([]);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [quick, setQuick] = useState<"task" | "gift" | "event" | "meal" | null>(null);
   const [draft, setDraft] = useState("");
 
+  async function refreshIntelligence(nextProfile = profile, nextDismissed = dismissed) {
+    if (!nextProfile) return;
+    invalidatePlannerSnapshot(nextProfile.id);
+    const snapshot = await loadPlannerWorkspace(nextProfile);
+    const engine = runPlannerIntelligence(snapshot, nextDismissed);
+    setIntel(engine);
+    setTasks(await loadTasks(nextProfile.id));
+    setRecipients(
+      snapshot.recipients.map((r) => ({
+        id: r.id,
+        profile_id: nextProfile.id,
+        display_name: r.display_name,
+        relationship: r.relationship,
+        budget_minor: r.budget_minor,
+        notes: "",
+      })),
+    );
+    setGifts(await loadGifts(nextProfile.id));
+    if (nextProfile.hosting && engine.hostingTaskKeysNeeded.length) {
+      await executePlannerAction(
+        { userId: nextProfile.user_id, access, profile: nextProfile },
+        { type: "ensure_hosting_tasks", payload: {} },
+      );
+      invalidatePlannerSnapshot(nextProfile.id);
+      const again = await loadPlannerWorkspace(nextProfile);
+      setIntel(runPlannerIntelligence(again, nextDismissed));
+      setTasks(await loadTasks(nextProfile.id));
+    }
+  }
+
   useEffect(() => {
     if (!profile) return;
-    void Promise.all([
-      loadTasks(profile.id),
-      loadRecipients(profile.id),
-      loadGifts(profile.id),
-      loadBudget(profile.id),
-      supabase.from("christmas_meals").select("id", { count: "exact", head: true }).eq("profile_id", profile.id),
-    ]).then(([t, r, g, b, meals]) => {
-      setTasks(t);
-      setRecipients(r);
-      setGifts(g);
-      setBudget(b);
-      setMealsCount(meals.count || 0);
-    });
+    const stored = loadDismissedInsightIds(profile.id, profile.season_year);
+    setDismissed(stored);
+    void refreshIntelligence(profile, stored);
   }, [profile?.id]);
 
   useEffect(() => {
-    if (profile) trackPlannerEvent("planner_dashboard_viewed", { planMode: profile.plan_mode });
+    if (profile) {
+      trackPlannerEvent("planner_dashboard_viewed", {
+        planMode: profile.plan_mode,
+        metadata: { module: "today" },
+      });
+    }
   }, [profile?.id]);
 
   if (loading) return <p className="tdg-planner-muted">Opening your Christmas…</p>;
@@ -85,30 +142,30 @@ export default function ChristmasPlannerTodayPage() {
 
   const tz = profile.timezone;
   const daysLeft = daysUntilChristmas(new Date(), tz);
-  const mode = resolvePlanMode(daysLeft, profile.prepared_level);
+  const mode = intel?.snapshot.planMode || resolvePlanMode(daysLeft, profile.prepared_level);
   const todayIso = isoDate(localDateParts(new Date(), tz));
-  const openTasks = tasks.filter((t) => t.status === "open" || t.status === "rescheduled");
-  const todayTasks = recommendedToday(openTasks, todayIso, 5);
-  const todayIds = new Set(todayTasks.map((t) => t.id));
-  const thisWeek = openTasks
-    .filter((t) => t.due_on && t.due_on >= todayIso && !todayIds.has(t.id))
+  const readiness = intel?.readiness || computeReadiness({ profile, tasks, recipients, gifts });
+  const todayIds = new Set((intel?.todayPriorities || []).map((t) => t.id));
+  const todayTasks = (intel?.todayPriorities || [])
+    .map((row) => tasks.find((t) => t.id === row.id))
+    .filter((t): t is PlannerTask => Boolean(t));
+  const thisWeek = tasks
+    .filter((t) => t.status === "open" && t.due_on && t.due_on >= todayIso && !todayIds.has(t.id))
     .slice(0, 6);
-  const readiness = computeReadiness({
-    profile,
-    tasks,
-    recipients,
-    gifts,
-    mealsCount,
-  });
+  const mealsCount = intel?.snapshot.meals.length || 0;
   const plannedGifts = gifts.filter((g) => g.status !== "idea").length;
   const wrapped = gifts.filter((g) => g.status === "wrapped" || g.status === "given").length;
-  const planned = budget.reduce((s, b) => s + b.planned_minor, 0) || profile.total_budget_minor || 0;
-  const spent =
-    budget.reduce((s, b) => s + b.spent_minor, 0) +
-    gifts.reduce((s, g) => s + (g.actual_price_minor || 0), 0);
-  const remaining = planned - spent;
-  const nextDeadline = openTasks.find((t) => t.due_on) || null;
-  const upcomingCount = openTasks.filter((t) => t.due_on).length;
+  const giftsWithoutPlan = Math.max(
+    0,
+    recipients.length - new Set(gifts.filter((g) => g.status !== "idea").map((g) => g.recipient_id)).size,
+  );
+  const spent = intel?.budget.spentMinor ?? gifts.reduce((s, g) => s + (g.actual_price_minor || 0), 0);
+  const remaining = intel?.budget.remainingMinor;
+  const planned = profile.total_budget_minor || intel?.budget.forecastMinor || 0;
+  const nextDeadline = tasks.find((t) => t.status === "open" && t.due_on) || null;
+  const upcomingCount = tasks.filter((t) => t.status === "open" && t.due_on).length;
+  const attention = intel?.attention || [];
+  const onTrack = Boolean(intel && attention.length === 0 && !intel.rescue.active);
 
   async function addQuick(event: FormEvent) {
     event.preventDefault();
@@ -161,7 +218,7 @@ export default function ChristmasPlannerTodayPage() {
         section: "christmas_day",
       });
       trackPlannerEvent("planner_meal_created", { module: "today" });
-      setMealsCount((n) => n + 1);
+      await refreshIntelligence();
     }
     setDraft("");
     setQuick(null);
@@ -179,6 +236,7 @@ export default function ChristmasPlannerTodayPage() {
         <h1>{countdownCopy(daysLeft)}</h1>
         <p className="tdg-planner-ready">Your Christmas is {readiness.percent}% ready.</p>
         <PlannerProgress value={readiness.percent} />
+        <PlannerReadinessBreakdown readiness={readiness} />
         <div className="tdg-planner-summary">
           <PlannerStat label="Readiness" value={`${readiness.percent}%`} hint="Season progress" />
           <PlannerStat label="Gifts" value={giftValue} hint={giftHint} />
@@ -189,6 +247,28 @@ export default function ChristmasPlannerTodayPage() {
 
       <div className="tdg-planner-dash">
         <div className="tdg-planner-today-main">
+          {intel?.rescue.active ? <PlannerRescueBanner remaining={intel.rescue.essentialRemaining} /> : null}
+          <PlannerNextBestAction action={intel?.nextBestAction || null} />
+          {onTrack ? <PlannerOnTrackState /> : (
+            <PlannerAttentionList
+              insights={attention}
+              onDismiss={(id) => {
+                if (!profile) return;
+                const next = dismissInsight(profile.id, profile.season_year, id);
+                setDismissed(next);
+                void refreshIntelligence(profile, next);
+              }}
+              onAction={(insight) => {
+                if (insight.actionType === "review_reschedule") setRescheduleOpen(true);
+                if (insight.actionType === "ensure_hosting_tasks" && profile) {
+                  void executePlannerAction(
+                    { userId: profile.user_id, access, profile },
+                    { type: "ensure_hosting_tasks", payload: {} },
+                  ).then(() => refreshIntelligence());
+                }
+              }}
+            />
+          )}
           <PlannerSection
             title="Today’s priorities"
             action={
@@ -226,9 +306,10 @@ export default function ChristmasPlannerTodayPage() {
                   <TaskRow
                     key={task.id}
                     task={task}
-                    onChange={(next) =>
-                      setTasks((prev) => (next ? prev.map((t) => (t.id === next.id ? next : t)) : prev.filter((t) => t.id !== task.id)))
-                    }
+                    onChange={(next) => {
+                      setTasks((prev) => (next ? prev.map((t) => (t.id === next.id ? next : t)) : prev.filter((t) => t.id !== task.id)));
+                      void refreshIntelligence();
+                    }}
                   />
                 ))}
               </div>
@@ -261,7 +342,7 @@ export default function ChristmasPlannerTodayPage() {
           />
           <PlannerSnapshotRow
             label="Budget"
-            title={!planned ? "Set your Christmas budget." : `${money(spent, profile.currency)} spent`}
+            title={!planned ? "Set your Christmas budget." : intel?.budget.overForecastMinor ? `${formatPlannerMoney(intel.budget.forecastMinor, profile.currency)} forecast` : `${money(spent, profile.currency)} spent`}
             action={!planned ? "Stay in control from day one →" : "Update budget →"}
             to="/account/christmas/budget"
           />
@@ -273,7 +354,7 @@ export default function ChristmasPlannerTodayPage() {
           />
           <PlannerSnapshotRow
             label="Hosting"
-            title={profile.hosting ? "Hosting this year" : "Not started"}
+            title={profile.hosting ? `${intel?.snapshot.guests.reduce((s, g) => s + g.adults + g.kids, 0) || intel?.snapshot.guests.length || 0} guests` : "Not hosting this year"}
             action="Open hosting →"
             to="/account/christmas/hosting"
           />
@@ -294,48 +375,60 @@ export default function ChristmasPlannerTodayPage() {
         />
       ) : null}
 
-      <AssistantPanel
-        daysLeft={daysLeft}
-        planMode={mode}
-        readinessPercent={readiness.percent}
-        openTasks={tasks.filter((t) => t.status === "open").length}
-        recipientCount={recipients.length}
-        giftsWithoutPlan={Math.max(0, recipients.length - new Set(gifts.filter((g) => g.status !== "idea").map((g) => g.recipient_id)).size)}
-        budgetRemainingMinor={planned ? remaining : null}
-        currency={profile.currency}
-        hosting={profile.hosting}
-      />
-    </div>
-  );
-}
+      {rescheduleOpen && intel?.travelConflicts.length ? (
+        <PlannerRecommendationSheet
+          title="Move these tasks before your trip?"
+          body="Nothing changes until you apply. Your dates stay as they are if you keep them."
+          rows={intel.travelConflicts.map((c) => ({
+            id: c.taskId,
+            label: c.title,
+            from: c.oldDate || "No date",
+            to: c.suggestedDate,
+          }))}
+          confirmLabel={`Apply ${intel.travelConflicts.length} changes`}
+          onCancel={() => setRescheduleOpen(false)}
+          onConfirm={() => {
+            if (!profile) return;
+            void executePlannerAction(
+              { userId: profile.user_id, access, profile },
+              {
+                type: "reschedule_tasks",
+                confirm: true,
+                payload: {
+                  changes: intel.travelConflicts.map((c) => ({ taskId: c.taskId, dueOn: c.suggestedDate })),
+                },
+              },
+            ).then(() => {
+              setRescheduleOpen(false);
+              void refreshIntelligence();
+            });
+          }}
+        />
+      ) : null}
 
-function AssistantPanel(props: Parameters<typeof answerFromContext>[1]) {
-  const [q, setQ] = useState("What should I do this weekend?");
-  const [a, setA] = useState<string | null>(null);
-  useEffect(() => {
-    trackPlannerEvent("planner_ai_opened", { module: "today" });
-  }, []);
-  return (
-    <section className="tdg-planner-section">
-      <h2>Ask Christmas AI</h2>
-      <p className="tdg-planner-muted">Answers use your planner counts only. Private notes never leave this device.</p>
-      <div className="tdg-planner-prompt">
-        {ASSISTANT_PROMPTS.map((prompt) => (
-          <button key={prompt} type="button" onClick={() => setQ(prompt)}>
-            {prompt}
-          </button>
-        ))}
-      </div>
-      <input className="tdg-planner-input" value={q} onChange={(e) => setQ(e.target.value.slice(0, 140))} />
-      <button
-        type="button"
-        className="tdg-planner-btn primary"
-        onClick={() => setA(answerFromContext(q, props).text)}
-      >
-        Ask
-      </button>
-      {a ? <p style={{ marginTop: 12, color: "inherit" }}>{a}</p> : null}
-    </section>
+      <section className="tdg-planner-section tdg-copilot-today">
+        <h2>Christmas Copilot</h2>
+        <p className="tdg-planner-muted">Uses your current plan — Engine facts, then plain language. Notes never go to ads.</p>
+        <div className="tdg-planner-prompt">
+          {(giftsWithoutPlan > 0
+            ? ["What gifts am I still missing?", "What should I do this weekend?", "What am I forgetting?"]
+            : ["What should I do this weekend?", "What am I forgetting?", "Am I over budget?"]
+          ).map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              className="tdg-planner-chip"
+              onClick={() => copilot?.openCopilot(prompt, "today")}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+        <button type="button" className="tdg-planner-btn primary" onClick={() => copilot?.openCopilot(undefined, "today")}>
+          Ask Copilot
+        </button>
+      </section>
+    </div>
   );
 }
 
@@ -416,6 +509,11 @@ export function ChristmasPlannerPlanPage() {
   return (
     <div className="tdg-planner-page">
       <PlannerPageHeader title="Plan" lede="Your season, step by step." />
+      {profile.prepared_level === "rescue" || daysUntilChristmas(new Date(), profile.timezone) <= 7 ? (
+        <p className="tdg-intel-kicker" style={{ marginBottom: 12 }}>
+          Rescue focus is on — nice-to-have tasks stay listed, just lower.
+        </p>
+      ) : null}
       <div className="tdg-planner-seg" role="tablist" aria-label="Plan views">
         {(["today", "week", "all", "calendar"] as const).map((v) => (
           <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? "on" : ""} onClick={() => setView(v)}>
@@ -467,6 +565,7 @@ export function ChristmasPlannerPlanPage() {
 
 export function ChristmasPlannerGiftsPage() {
   const { loading, access, profile } = usePlannerBundle();
+  const [params] = useSearchParams();
   const [recipients, setRecipients] = useState<GiftRecipient[]>([]);
   const [gifts, setGifts] = useState<GiftItem[]>([]);
   const [name, setName] = useState("");
@@ -475,13 +574,18 @@ export function ChristmasPlannerGiftsPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [idea, setIdea] = useState("");
   const [editing, setEditing] = useState<GiftItem | null>(null);
+  const [conciergeOpen, setConciergeOpen] = useState(false);
+  const ideaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!profile) return;
     void Promise.all([loadRecipients(profile.id), loadGifts(profile.id)]).then(([r, g]) => {
       setRecipients(r);
       setGifts(g);
-      setActiveId(r[0]?.id || null);
+      const giftId = params.get("gift");
+      const fromGift = giftId ? g.find((item) => item.id === giftId) : null;
+      setActiveId(fromGift?.recipient_id || r[0]?.id || null);
+      if (fromGift) setEditing(fromGift);
     });
     trackPlannerEvent("planner_module_opened", { module: "gifts" });
   }, [profile?.id]);
@@ -539,6 +643,7 @@ export function ChristmasPlannerGiftsPage() {
   }
 
   const personGifts = gifts.filter((g) => g.recipient_id === active?.id);
+  const budgets = computeRecipientBudgets({ recipients, gifts });
   const ideas = gifts.filter((g) => g.status === "idea").length;
   const ordered = gifts.filter((g) => g.status === "ordered").length;
   const wrappedCount = gifts.filter((g) => g.status === "wrapped" || g.status === "given").length;
@@ -577,6 +682,7 @@ export function ChristmasPlannerGiftsPage() {
                 const planned = theirs.filter((g) => ["planned", "ordered", "arrived", "hidden", "wrapped", "given"].includes(g.status)).length;
                 const wrapped = theirs.filter((g) => g.status === "wrapped" || g.status === "given").length;
                 const pct = theirs.length ? Math.round((wrapped / theirs.length) * 100) : 0;
+                const budgetRow = budgets.find((b) => b.recipientId === r.id);
                 return (
                   <button key={r.id} type="button" className={`tdg-planner-person ${active?.id === r.id ? "on" : ""}`} onClick={() => setActiveId(r.id)}>
                     <strong>{r.display_name}</strong>
@@ -584,7 +690,11 @@ export function ChristmasPlannerGiftsPage() {
                     <div className="tdg-planner-gift-meta">
                       <span>{theirs.length} gifts</span>
                       <span>{planned} in motion</span>
-                      <span>{r.budget_minor != null ? money(r.budget_minor, profile.currency) : "No budget"}</span>
+                      <span className={`tdg-intel-spend is-${budgetRow?.status || "no_budget"}`}>
+                        {budgetRow?.budgetMinor != null
+                          ? `${formatPlannerMoney(budgetRow.committedMinor, profile.currency)} of ${formatPlannerMoney(budgetRow.budgetMinor, profile.currency)}`
+                          : "No budget"}
+                      </span>
                     </div>
                     <PlannerProgress value={pct} compact />
                   </button>
@@ -595,27 +705,79 @@ export function ChristmasPlannerGiftsPage() {
         </div>
         {active ? (
           <PlannerPanel>
-            <h2>{active.display_name}</h2>
-            <p className="tdg-planner-muted">
-              {prettyLabel(active.relationship || "")}
-              {active.budget_minor != null ? ` · ${money(active.budget_minor, profile.currency)} budget` : ""}
-            </p>
+            {(() => {
+              const row = budgets.find((b) => b.recipientId === active.id);
+              const remaining = row?.remainingMinor;
+              const usedPct =
+                row?.budgetMinor && row.budgetMinor > 0
+                  ? Math.min(100, Math.round((row.committedMinor / row.budgetMinor) * 100))
+                  : 0;
+              return (
+                <>
+                  <h2>{active.display_name}</h2>
+                  <p className="tdg-planner-muted">{prettyLabel(active.relationship || "Family")}</p>
+                  <div className="tdg-planner-recipient-summary">
+                    <PlannerStat
+                      label="Budget"
+                      value={row?.budgetMinor != null ? formatPlannerMoney(row.budgetMinor, profile.currency) : "—"}
+                      hint="for this person"
+                    />
+                    <PlannerStat
+                      label="Planned"
+                      value={formatPlannerMoney(row?.committedMinor || 0, profile.currency)}
+                      hint="committed so far"
+                    />
+                    <PlannerStat
+                      label="Remaining"
+                      value={remaining == null ? "—" : formatPlannerMoney(Math.max(0, remaining), profile.currency)}
+                      hint={remaining != null && remaining < 0 ? "over budget" : "left to spend"}
+                    />
+                    <PlannerStat label="Gifts" value={String(personGifts.length)} hint={personGifts.length === 1 ? "on their list" : "on their list"} />
+                  </div>
+                  {row?.budgetMinor != null ? (
+                    <div className="tdg-planner-recipient-bar">
+                      <PlannerProgress value={usedPct} />
+                      <p className="tdg-planner-muted">
+                        {formatPlannerMoney(row.committedMinor, profile.currency)} planned of {formatPlannerMoney(row.budgetMinor, profile.currency)}
+                        {remaining != null ? ` · ${formatPlannerMoney(Math.max(0, remaining), profile.currency)} remaining` : ""}
+                      </p>
+                    </div>
+                  ) : null}
+                </>
+              );
+            })()}
             <PlannerComposer>
-              <input className="tdg-planner-input" placeholder="Gift idea" value={idea} onChange={(e) => setIdea(e.target.value)} />
+              <input
+                ref={ideaRef}
+                className="tdg-planner-input"
+                placeholder="Gift idea"
+                value={idea}
+                onChange={(e) => setIdea(e.target.value)}
+              />
               <div className="tdg-planner-actions">
                 <button type="button" className="tdg-planner-btn primary" onClick={() => void addGift()}>
-                  Add idea
+                  + Add idea
                 </button>
-                <Link className="tdg-planner-btn" to={`/christmas/gift-finder?plannerRecipient=${active.id}`}>
+                <button type="button" className="tdg-planner-btn" onClick={() => setConciergeOpen(true)}>
                   Need an idea?
-                </Link>
+                </button>
               </div>
             </PlannerComposer>
             {personGifts.length === 0 ? (
               <PlannerEmptyState
                 mark="gift"
-                title={`Nothing yet for ${active.display_name}.`}
-                body="Add an idea, then move it from planned to ordered, arrived, and wrapped."
+                title={`Nothing planned for ${active.display_name} yet.`}
+                body="Find the first idea or add one yourself."
+                action={
+                  <div className="tdg-planner-actions">
+                    <button type="button" className="tdg-planner-btn primary" onClick={() => setConciergeOpen(true)}>
+                      Find an idea
+                    </button>
+                    <button type="button" className="tdg-planner-btn" onClick={() => ideaRef.current?.focus()}>
+                      Add manually
+                    </button>
+                  </div>
+                }
               />
             ) : (
               personGifts.map((g) => (
@@ -625,8 +787,8 @@ export function ChristmasPlannerGiftsPage() {
                     <div className="tdg-planner-gift-meta">
                       <PlannerStatusChip tone={g.status === "wrapped" || g.status === "given" ? "done" : "gold"}>{giftStatusLabel(g.status)}</PlannerStatusChip>
                       {g.store ? <span>{g.store}</span> : null}
-                      {g.planned_price_minor ? <span>{money(g.planned_price_minor, profile.currency)}</span> : null}
-                      {g.actual_price_minor ? <span>paid {money(g.actual_price_minor, profile.currency)}</span> : null}
+                      {g.planned_price_minor ? <span>{formatPlannerMoney(g.planned_price_minor, profile.currency)}</span> : null}
+                      {g.actual_price_minor ? <span>paid {formatPlannerMoney(g.actual_price_minor, profile.currency)}</span> : null}
                     </div>
                   </div>
                   <select
@@ -656,6 +818,25 @@ export function ChristmasPlannerGiftsPage() {
           </PlannerPanel>
         ) : null}
       </div>
+      {active && conciergeOpen ? (
+        <GiftConcierge
+          open={conciergeOpen}
+          recipient={active}
+          gifts={gifts}
+          profileId={profile.id}
+          currency={profile.currency}
+          countryCode={profile.country_code}
+          locale={profile.locale}
+          onClose={() => setConciergeOpen(false)}
+          onAdded={(gift) => {
+            setGifts((p) => (p.some((x) => x.id === gift.id) ? p : [...p, gift]));
+          }}
+          onAddManually={() => {
+            setConciergeOpen(false);
+            requestAnimationFrame(() => ideaRef.current?.focus());
+          }}
+        />
+      ) : null}
       {editing ? (
         <GiftEditor
           gift={editing}
@@ -820,10 +1001,13 @@ export function ChristmasPlannerBudgetPage() {
     );
   }
 
-  const giftSpent = gifts.reduce((s, g) => s + (g.actual_price_minor || 0), 0);
-  const planned = (profile.total_budget_minor || 0) || rows.reduce((s, r) => s + r.planned_minor, 0);
-  const spent = rows.reduce((s, r) => s + r.spent_minor, 0) + giftSpent;
-  const remaining = planned - spent;
+  const totals = computeBudgetTotals(
+    buildMiniBudgetSnapshot(profile, gifts, rows),
+  );
+  const giftSpent = totals.giftSpentMinor;
+  const planned = totals.totalBudgetMinor || totals.forecastMinor;
+  const spent = totals.spentMinor;
+  const remaining = totals.remainingMinor ?? planned - spent;
 
   async function ensureCategory(cat: BudgetCategory) {
     const existing = rows.find((r) => r.category === cat);
@@ -842,7 +1026,8 @@ export function ChristmasPlannerBudgetPage() {
       <PlannerPageHeader title="Budget" lede="Keep Christmas spending beautifully under control." />
       <div className="tdg-planner-summary">
         <PlannerStat label="Total" value={money(planned, profile.currency)} hint="season budget" />
-        <PlannerStat label="Spent" value={money(spent, profile.currency)} hint="including gifts" />
+        <PlannerStat label="Forecast" value={money(totals.forecastMinor, profile.currency)} hint="gifts + other plans" />
+        <PlannerStat label="Spent" value={money(spent, profile.currency)} hint="gift actuals + manual" />
         <PlannerStat label="Remaining" value={money(remaining, profile.currency)} hint={remaining < 0 ? "over plan" : "left to spend"} />
         <PlannerStat label="Used" value={`${planned ? Math.min(100, Math.round((spent / planned) * 100)) : 0}%`} hint="of the total" />
       </div>
@@ -863,13 +1048,20 @@ export function ChristmasPlannerBudgetPage() {
           />
         </label>
         <PlannerProgress value={planned ? Math.min(100, Math.round((spent / planned) * 100)) : 0} />
-        <p className="tdg-planner-muted">Gift prices roll into spent automatically.</p>
+        <p className="tdg-planner-muted">
+          Gift prices roll into spent and forecast automatically. Manual expenses stay separate so the same gift is never counted twice.
+        </p>
+        {totals.overForecastMinor > 0 ? (
+          <p className="tdg-intel-spend is-over">
+            Forecast is {money(totals.overForecastMinor, profile.currency)} over your season total.
+          </p>
+        ) : null}
       </section>
       {BUDGET_CATEGORIES.map((cat) => {
         const row = rows.find((r) => r.category === cat);
-        const extra = cat === "gifts" ? giftSpent : 0;
+        const extra = cat === "gifts" ? totals.giftCommittedMinor : 0;
         const cap = row?.planned_minor || 0;
-        const used = (row?.spent_minor || 0) + extra;
+        const used = cat === "gifts" ? totals.giftCommittedMinor : (row?.spent_minor || 0);
         return (
           <div key={cat} className="tdg-planner-budget-row">
             <div>
