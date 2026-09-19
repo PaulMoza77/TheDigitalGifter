@@ -702,6 +702,7 @@ describe("private planner privacy surface", () => {
     const more = readSrc("src/features/christmas/planner/ChristmasPlannerMoreModules.tsx");
     const ui = readSrc("src/features/christmas/planner/plannerUi.tsx");
     const css = readSrc("src/features/christmas/planner/plannerApp.css");
+    const layout = readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx");
     expect(pages).toContain("Your season, step by step.");
     expect(pages).toContain("Plan everyone you’re buying for");
     expect(pages).toContain("Keep Christmas spending beautifully under control.");
@@ -714,6 +715,9 @@ describe("private planner privacy surface", () => {
     expect(css).toContain("Contrast lock");
     expect(css).toContain(".tdg-planner-app .tdg-planner-side a");
     expect(css).toContain("#f4ead9");
+    expect(css).toContain("a.tdg-planner-btn.primary");
+    expect(css).toContain("overscroll-behavior: contain");
+    expect(layout).toContain("TheDigitalGifter.png");
   });
 });
 

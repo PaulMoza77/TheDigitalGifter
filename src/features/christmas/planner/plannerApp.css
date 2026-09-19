@@ -42,12 +42,41 @@
   align-items: center;
   gap: 12px;
   min-height: 52px;
-  padding: 8px 18px;
+  padding: 0 18px 0 0;
   background: var(--planner-pine);
   color: #f4ead9;
   position: sticky;
   top: 0;
   z-index: 30;
+}
+
+.tdg-planner-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 14px 0 16px;
+  color: #f7f0e4;
+  text-decoration: none;
+  background: var(--planner-pine);
+}
+
+.tdg-planner-logo img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #143328;
+}
+
+.tdg-planner-logo span {
+  font-family: var(--planner-serif);
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #f7f0e4;
+  white-space: nowrap;
 }
 
 .tdg-planner-header-brand {
@@ -116,7 +145,7 @@
 }
 
 .tdg-planner-side-brand {
-  padding: 8px 14px 28px;
+  padding: 4px 14px 16px;
 }
 
 .tdg-planner-side-brand strong {
@@ -563,7 +592,18 @@
 }
 
 .tdg-planner-app a.tdg-planner-btn {
-  color: inherit;
+  color: var(--planner-ink);
+  text-decoration: none;
+}
+
+.tdg-planner-app a.tdg-planner-btn.primary,
+.tdg-planner-app .tdg-planner-btn.primary {
+  color: #f7f0e4;
+  background: var(--planner-pine);
+}
+
+.tdg-planner-app a.tdg-planner-btn:hover {
+  text-decoration: none;
 }
 
 .tdg-planner-app a {
@@ -1063,15 +1103,28 @@
 }
 
 @media (min-width: 960px) {
+  .tdg-planner-app {
+    height: 100dvh;
+    overflow: hidden;
+  }
   .tdg-planner-frame {
     display: grid;
     grid-template-columns: 232px minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
   }
   .tdg-planner-header {
-    grid-column: 2 / -1;
-    padding-left: 32px;
+    grid-column: 1 / -1;
+    grid-template-columns: 232px minmax(0, 1fr) auto;
+    padding-left: 0;
     padding-right: 32px;
+    position: relative;
+  }
+  .tdg-planner-logo {
+    width: 232px;
+    padding-left: 18px;
   }
   .tdg-planner-header-brand {
     display: none;
@@ -1083,14 +1136,30 @@
     grid-column: 1 / -1;
     display: grid;
     grid-template-columns: 232px minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
   }
   .tdg-planner-side {
     display: flex;
     flex-direction: column;
     background: var(--planner-pine);
     color: #f4ead9;
-    padding: 22px 10px 28px;
-    min-height: calc(100dvh - 52px);
+    padding: 18px 10px 16px;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+  .tdg-planner-side-nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .tdg-planner-side-foot {
+    flex-shrink: 0;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(247, 240, 228, 0.1);
   }
   .tdg-planner-nav {
     display: none;
@@ -1098,6 +1167,10 @@
   .tdg-planner-main {
     padding: 28px 36px 56px;
     max-width: none;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   .tdg-planner-today {
     margin: 0 auto;
@@ -1134,6 +1207,12 @@
   .tdg-planner-frame,
   .tdg-planner-body {
     grid-template-columns: 240px minmax(0, 1fr);
+  }
+  .tdg-planner-header {
+    grid-template-columns: 240px minmax(0, 1fr) auto;
+  }
+  .tdg-planner-logo {
+    width: 240px;
   }
   .tdg-planner-main {
     padding: 32px 48px 64px;
@@ -1178,13 +1257,22 @@
 .tdg-planner-app .tdg-planner-nav a,
 .tdg-planner-app .tdg-planner-header,
 .tdg-planner-app .tdg-planner-header a,
-.tdg-planner-app .tdg-planner-header p {
+.tdg-planner-app .tdg-planner-header p,
+.tdg-planner-app .tdg-planner-logo,
+.tdg-planner-app .tdg-planner-logo span {
   color: #f4ead9;
+}
+
+.tdg-planner-app a.tdg-planner-btn.primary,
+.tdg-planner-app button.tdg-planner-btn.primary,
+.tdg-planner-app .tdg-planner-btn.primary {
+  color: #f7f0e4;
 }
 
 .tdg-planner-app .tdg-planner-side a.active,
 .tdg-planner-app .tdg-planner-nav a.active,
-.tdg-planner-app .tdg-planner-header-brand {
+.tdg-planner-app .tdg-planner-header-brand,
+.tdg-planner-app .tdg-planner-logo span {
   color: #f7eed8;
 }
 
