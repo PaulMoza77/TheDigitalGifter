@@ -1550,6 +1550,141 @@
   }
 }
 
+/* Christmas Copilot — planner chrome, not a generic chat embed */
+.tdg-planner-header .tdg-copilot-launch {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(247, 240, 228, 0.28);
+  background: rgba(247, 240, 228, 0.08);
+  color: #f7f0e4;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.tdg-copilot-launch.is-fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  z-index: 34;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--planner-pine);
+  color: #f7f0e4;
+  box-shadow: 0 10px 24px rgba(20, 51, 40, 0.28);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.tdg-copilot-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.tdg-copilot-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(20, 22, 18, 0.5);
+  cursor: pointer;
+}
+
+.tdg-copilot-sheet {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(420px, 100%);
+  background: var(--planner-cream);
+  color: var(--planner-ink);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  overflow: auto;
+  box-shadow: -16px 0 40px rgba(28, 22, 18, 0.12);
+}
+
+.tdg-copilot-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tdg-copilot-head h2 {
+  font-family: var(--planner-serif);
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.tdg-copilot-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tdg-copilot-composer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tdg-copilot-composer .tdg-planner-input {
+  margin: 0;
+  flex: 1;
+}
+
+.tdg-copilot-reply p {
+  margin: 0 0 10px;
+}
+
+.tdg-copilot-card {
+  border: 1px solid var(--planner-line);
+  background: #fffdf8;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.tdg-copilot-card ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.tdg-copilot-confirm {
+  border: 1px dashed var(--planner-gold);
+  padding: 12px;
+  margin: 8px 0 12px;
+}
+
+.tdg-copilot-today .tdg-planner-prompt {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 959px) {
+  .tdg-planner-header .tdg-copilot-launch:not(.is-fab) {
+    display: none;
+  }
+  .tdg-copilot-launch.is-fab {
+    display: inline-flex;
+  }
+  .tdg-copilot-sheet {
+    top: auto;
+    height: min(92dvh, 720px);
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+  }
+}
+
 .tdg-intel-kicker {
   margin: 0 0 6px;
   font-size: 0.72rem;

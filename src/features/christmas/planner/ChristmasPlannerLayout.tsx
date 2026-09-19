@@ -6,6 +6,8 @@ import { countdownCopy, daysUntilChristmas } from "./date";
 import { computeReadiness } from "./readiness";
 import { loadPlannerWorkspace } from "./intelligence";
 import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./Onboarding";
+import { CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
+import { CopilotLaunchButton } from "./copilot/CopilotSheet";
 import { PlannerProgress, PlannerSidebarItem } from "./plannerUi";
 import "./plannerApp.css";
 
@@ -28,7 +30,9 @@ const MOBILE_NAV = [
 export default function ChristmasPlannerLayout() {
   return (
     <PlannerBundleProvider>
-      <PlannerAppShell />
+      <CopilotHost>
+        <PlannerAppShell />
+      </CopilotHost>
     </PlannerBundleProvider>
   );
 }
@@ -36,6 +40,7 @@ export default function ChristmasPlannerLayout() {
 function PlannerAppShell() {
   const location = useLocation();
   const { loading, profile } = usePlannerBundle();
+  const copilot = useCopilotUi();
   const [readiness, setReadiness] = useState<number | null>(null);
 
   const daysLeft = useMemo(() => daysUntilChristmas(new Date(), profile?.timezone), [profile?.timezone]);
@@ -76,6 +81,7 @@ function PlannerAppShell() {
                 <PlannerProgress value={readiness} compact />
               </span>
             ) : null}
+            {profile ? <CopilotLaunchButton onClick={() => copilot?.openCopilot(undefined, "header")} /> : null}
             <a href="/account/dashboard">Account</a>
           </div>
         </header>

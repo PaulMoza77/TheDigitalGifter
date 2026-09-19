@@ -193,6 +193,8 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "planner_meal_created",
   "planner_event_created",
   "planner_ai_opened",
+  "copilot_opened",
+  "copilot_turn",
   "planner_recipe_saved",
   "planner_guest_added",
   "planner_activity_scheduled",
