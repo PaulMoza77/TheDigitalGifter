@@ -776,13 +776,13 @@
 /* —— Checkout —— */
 .tdg-planner__checkout-panel {
   margin-top: 2.4rem;
-  max-width: 34rem;
+  max-width: 36rem;
 }
 
 .tdg-planner__checkout-panel--ivory {
   background: var(--cream);
   color: var(--ink);
-  padding: 1.6rem 1.35rem 1.7rem;
+  padding: 2rem 1.55rem 2.15rem;
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
 }
 
@@ -1072,6 +1072,10 @@
 
 .tdg-planner--compact .tdg-planner__section {
   padding: 3.4rem 1.25rem 3.6rem;
+}
+
+.tdg-planner--compact .tdg-planner__section--scene {
+  padding-bottom: 4.4rem;
 }
 
 .tdg-planner--compact .tdg-planner__section--faq {
@@ -1557,7 +1561,7 @@
   justify-items: start;
   align-content: center;
   gap: 1rem;
-  padding-bottom: 1.5rem;
+  padding-bottom: 0.25rem;
 }
 
 .tdg-planner--compact .tdg-planner__demo-cta-lead {
@@ -1663,7 +1667,7 @@
 
 @media (min-width: 860px) {
   .tdg-planner--compact .tdg-planner__value-list li {
-    grid-template-columns: 12rem minmax(0, 1fr);
+    grid-template-columns: 16.5rem minmax(0, 1fr);
     align-items: baseline;
     column-gap: 1.5rem;
   }
