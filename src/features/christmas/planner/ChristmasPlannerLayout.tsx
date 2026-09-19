@@ -61,7 +61,10 @@ function PlannerAppShell() {
       <PageHead title="Christmas Planner" description="Your private Christmas command center." noindex exactTitle />
       <div className="tdg-planner-frame">
         <header className="tdg-planner-header">
-          <strong className="tdg-planner-header-brand">Christmas Planner</strong>
+          <a className="tdg-planner-logo" href="/christmas" aria-label="The Digital Gifter">
+            <img src="/TheDigitalGifter.png" alt="" width={36} height={36} decoding="async" />
+            <span>The Digital Gifter</span>
+          </a>
           <p className="tdg-planner-header-count">{countdownCopy(daysLeft)}</p>
           <div className="tdg-planner-header-meta">
             {readiness != null ? (
@@ -79,7 +82,6 @@ function PlannerAppShell() {
           <aside className="tdg-planner-side" aria-label="Planner modules">
             <div className="tdg-planner-side-brand">
               <strong>Christmas Planner</strong>
-              <span>The Digital Gifter</span>
             </div>
             <nav className="tdg-planner-side-nav">
               {SIDE.map((item) => (
