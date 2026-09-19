@@ -94,14 +94,28 @@ export async function executePlannerAction(ctx: ActionContext, request: PlannerA
   }
 
   if (request.type === "add_gift_idea") {
+    const sourceType = p.sourceType === "gift_finder" || p.sourceType === "wishlist" ? p.sourceType : "manual";
+    const sourceRef = p.sourceRef ? String(p.sourceRef).slice(0, 80) : null;
+    if (sourceRef) {
+      const { data: existing } = await supabase
+        .from("christmas_gift_items")
+        .select("id")
+        .eq("profile_id", profileId)
+        .eq("recipient_id", String(p.recipientId))
+        .eq("source_ref", sourceRef)
+        .maybeSingle();
+      if (existing?.id) return { ok: true, data: { id: existing.id, duplicate: true } };
+    }
     const { data, error } = await supabase
       .from("christmas_gift_items")
       .insert({
         profile_id: profileId,
         recipient_id: String(p.recipientId),
         idea: String(p.idea).trim().slice(0, 200),
+        selected_gift: String(p.selectedGift || p.idea).trim().slice(0, 200),
         status: "idea",
-        source_type: "manual",
+        source_type: sourceType,
+        source_ref: sourceRef,
       })
       .select("id")
       .maybeSingle();

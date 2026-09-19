@@ -125,8 +125,8 @@ describe("wishlist / gift finder wiring", () => {
     const page = readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx");
     expect(page).toContain("hero.cta");
     expect(page).toContain("results.title");
-    expect(page).toContain("personal_detail");
-    expect(page).toContain("personality_keys");
+    expect(readSrc("src/features/christmas/giftFinder/service.ts")).toContain("personal_detail");
+    expect(readSrc("src/features/christmas/giftFinder/service.ts")).toContain("personality_keys");
     expect(page).toContain("gift_finder_page_view");
     expect(page).not.toContain("Here are 10 AI gift ideas");
     expect(readSrc("src/features/christmas/giftFinder/copy.ts")).toContain("Find Their Gift");

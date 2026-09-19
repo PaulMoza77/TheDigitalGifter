@@ -278,7 +278,7 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
   if (intent === "gift_ideas") {
     return {
       ...base(),
-      message: "Use Need an idea? on a recipient — that opens Gift Finder and can add a result back. I don’t invent gifts from private notes.",
+      message: "Use Need an idea? on a recipient — Gift Concierge stays in Gifts and can add a result to their list. I don’t invent gifts from private notes.",
       cards: insightCards(insights, ["gifts"]),
       followUpOptions: ["What gifts am I still missing?", "Am I over budget?"],
     };

@@ -212,6 +212,7 @@ export type GiftItem = {
   delivery_on: string | null;
   return_deadline: string | null;
   source_type: "manual" | "gift_finder" | "wishlist";
+  source_ref: string | null;
 };
 
 export type BudgetEntry = {

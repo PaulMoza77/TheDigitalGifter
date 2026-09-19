@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "./analytics";
@@ -38,6 +38,7 @@ import {
 } from "./date";
 import { canAddCustomTask, canAddRecipient, hasFeature } from "./entitlements";
 import { computeReadiness } from "./readiness";
+import { GiftConcierge } from "./giftConcierge";
 import { money, PlannerPaywall } from "./Paywall";
 import { useCopilotUi } from "./copilot/CopilotHost";
 import {
@@ -573,6 +574,8 @@ export function ChristmasPlannerGiftsPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [idea, setIdea] = useState("");
   const [editing, setEditing] = useState<GiftItem | null>(null);
+  const [conciergeOpen, setConciergeOpen] = useState(false);
+  const ideaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!profile) return;
@@ -689,7 +692,7 @@ export function ChristmasPlannerGiftsPage() {
                       <span>{planned} in motion</span>
                       <span className={`tdg-intel-spend is-${budgetRow?.status || "no_budget"}`}>
                         {budgetRow?.budgetMinor != null
-                          ? `${money(budgetRow.committedMinor, profile.currency)} of ${money(budgetRow.budgetMinor, profile.currency)}`
+                          ? `${formatPlannerMoney(budgetRow.committedMinor, profile.currency)} of ${formatPlannerMoney(budgetRow.budgetMinor, profile.currency)}`
                           : "No budget"}
                       </span>
                     </div>
@@ -702,31 +705,79 @@ export function ChristmasPlannerGiftsPage() {
         </div>
         {active ? (
           <PlannerPanel>
-            <h2>{active.display_name}</h2>
-            <p className="tdg-planner-muted">
-              {prettyLabel(active.relationship || "")}
-              {(() => {
-                const row = budgets.find((b) => b.recipientId === active.id);
-                if (!row || row.budgetMinor == null) return "";
-                return ` · ${money(row.committedMinor, profile.currency)} of ${money(row.budgetMinor, profile.currency)}`;
-              })()}
-            </p>
+            {(() => {
+              const row = budgets.find((b) => b.recipientId === active.id);
+              const remaining = row?.remainingMinor;
+              const usedPct =
+                row?.budgetMinor && row.budgetMinor > 0
+                  ? Math.min(100, Math.round((row.committedMinor / row.budgetMinor) * 100))
+                  : 0;
+              return (
+                <>
+                  <h2>{active.display_name}</h2>
+                  <p className="tdg-planner-muted">{prettyLabel(active.relationship || "Family")}</p>
+                  <div className="tdg-planner-recipient-summary">
+                    <PlannerStat
+                      label="Budget"
+                      value={row?.budgetMinor != null ? formatPlannerMoney(row.budgetMinor, profile.currency) : "—"}
+                      hint="for this person"
+                    />
+                    <PlannerStat
+                      label="Planned"
+                      value={formatPlannerMoney(row?.committedMinor || 0, profile.currency)}
+                      hint="committed so far"
+                    />
+                    <PlannerStat
+                      label="Remaining"
+                      value={remaining == null ? "—" : formatPlannerMoney(Math.max(0, remaining), profile.currency)}
+                      hint={remaining != null && remaining < 0 ? "over budget" : "left to spend"}
+                    />
+                    <PlannerStat label="Gifts" value={String(personGifts.length)} hint={personGifts.length === 1 ? "on their list" : "on their list"} />
+                  </div>
+                  {row?.budgetMinor != null ? (
+                    <div className="tdg-planner-recipient-bar">
+                      <PlannerProgress value={usedPct} />
+                      <p className="tdg-planner-muted">
+                        {formatPlannerMoney(row.committedMinor, profile.currency)} planned of {formatPlannerMoney(row.budgetMinor, profile.currency)}
+                        {remaining != null ? ` · ${formatPlannerMoney(Math.max(0, remaining), profile.currency)} remaining` : ""}
+                      </p>
+                    </div>
+                  ) : null}
+                </>
+              );
+            })()}
             <PlannerComposer>
-              <input className="tdg-planner-input" placeholder="Gift idea" value={idea} onChange={(e) => setIdea(e.target.value)} />
+              <input
+                ref={ideaRef}
+                className="tdg-planner-input"
+                placeholder="Gift idea"
+                value={idea}
+                onChange={(e) => setIdea(e.target.value)}
+              />
               <div className="tdg-planner-actions">
                 <button type="button" className="tdg-planner-btn primary" onClick={() => void addGift()}>
-                  Add idea
+                  + Add idea
                 </button>
-                <Link className="tdg-planner-btn" to={`/christmas/gift-finder?plannerRecipient=${active.id}`}>
+                <button type="button" className="tdg-planner-btn" onClick={() => setConciergeOpen(true)}>
                   Need an idea?
-                </Link>
+                </button>
               </div>
             </PlannerComposer>
             {personGifts.length === 0 ? (
               <PlannerEmptyState
                 mark="gift"
-                title={`Nothing yet for ${active.display_name}.`}
-                body="Add an idea, then move it from planned to ordered, arrived, and wrapped."
+                title={`Nothing planned for ${active.display_name} yet.`}
+                body="Find the first idea or add one yourself."
+                action={
+                  <div className="tdg-planner-actions">
+                    <button type="button" className="tdg-planner-btn primary" onClick={() => setConciergeOpen(true)}>
+                      Find an idea
+                    </button>
+                    <button type="button" className="tdg-planner-btn" onClick={() => ideaRef.current?.focus()}>
+                      Add manually
+                    </button>
+                  </div>
+                }
               />
             ) : (
               personGifts.map((g) => (
@@ -736,8 +787,8 @@ export function ChristmasPlannerGiftsPage() {
                     <div className="tdg-planner-gift-meta">
                       <PlannerStatusChip tone={g.status === "wrapped" || g.status === "given" ? "done" : "gold"}>{giftStatusLabel(g.status)}</PlannerStatusChip>
                       {g.store ? <span>{g.store}</span> : null}
-                      {g.planned_price_minor ? <span>{money(g.planned_price_minor, profile.currency)}</span> : null}
-                      {g.actual_price_minor ? <span>paid {money(g.actual_price_minor, profile.currency)}</span> : null}
+                      {g.planned_price_minor ? <span>{formatPlannerMoney(g.planned_price_minor, profile.currency)}</span> : null}
+                      {g.actual_price_minor ? <span>paid {formatPlannerMoney(g.actual_price_minor, profile.currency)}</span> : null}
                     </div>
                   </div>
                   <select
@@ -767,6 +818,25 @@ export function ChristmasPlannerGiftsPage() {
           </PlannerPanel>
         ) : null}
       </div>
+      {active && conciergeOpen ? (
+        <GiftConcierge
+          open={conciergeOpen}
+          recipient={active}
+          gifts={gifts}
+          profileId={profile.id}
+          currency={profile.currency}
+          countryCode={profile.country_code}
+          locale={profile.locale}
+          onClose={() => setConciergeOpen(false)}
+          onAdded={(gift) => {
+            setGifts((p) => (p.some((x) => x.id === gift.id) ? p : [...p, gift]));
+          }}
+          onAddManually={() => {
+            setConciergeOpen(false);
+            requestAnimationFrame(() => ideaRef.current?.focus());
+          }}
+        />
+      ) : null}
       {editing ? (
         <GiftEditor
           gift={editing}

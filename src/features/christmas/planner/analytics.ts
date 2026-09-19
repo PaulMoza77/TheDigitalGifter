@@ -51,6 +51,11 @@ const PLANNER_EVENTS = [
   "planner_claim_started",
   "planner_claim_completed",
   "planner_opened",
+  "gift_concierge_opened",
+  "gift_concierge_generated",
+  "gift_concierge_refined",
+  "gift_concierge_suggestion_added",
+  "gift_concierge_failed",
 ] as const;
 
 export type PlannerAnalyticsEvent = (typeof PLANNER_EVENTS)[number];
@@ -69,6 +74,8 @@ const BLOCKED_META_KEYS = [
   "email",
 ];
 
+const EXACT_ONLY_BLOCKED = new Set(["budget", "price", "gift"]);
+
 export function sanitizePlannerMetadata(
   metadata?: Record<string, unknown> | null,
 ): Record<string, unknown> {
@@ -76,7 +83,13 @@ export function sanitizePlannerMetadata(
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(metadata)) {
     const lk = key.toLowerCase();
-    if (BLOCKED_META_KEYS.some((b) => lk === b || lk.includes(b))) continue;
+    if (
+      BLOCKED_META_KEYS.some((b) =>
+        EXACT_ONLY_BLOCKED.has(b) ? lk === b : lk === b || lk.includes(b),
+      )
+    ) {
+      continue;
+    }
     if (typeof value === "string") {
       if (value.length > 40) continue;
       out[key] = value;

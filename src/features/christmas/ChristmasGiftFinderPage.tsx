@@ -25,6 +25,7 @@ import {
   SEO_TAXONOMY_LINKS,
 } from "./giftFinder/seo";
 import { readFinderAnswers, writeFinderAnswers } from "./giftFinder/state";
+import { runGiftFinder } from "./giftFinder/service";
 import "./giftFinder/GiftFinder.css";
 import {
   AGE_RANGE_WIZARD,
@@ -307,36 +308,25 @@ export default function ChristmasGiftFinderPage() {
         locale,
         metadata: { recipient_key: recipient },
       });
-      const data = await wishlistFunnel<{
-        ok: boolean;
-        session_id: string;
-        ideas: GiftIdea[];
-        provider: string;
-        model: string;
-      }>(
-        {
-          action: "runGiftFinder",
-          guest_token: getOrCreateFinderGuestToken(),
-          locale,
-          recipient_key: recipient,
-          age_range_key: age,
-          interest_keys: interests,
-          custom_interest: customInterest,
-          // Privacy: sent to generation only — never included in analytics metadata.
-          personal_detail: personalDetail.slice(0, 280),
-          personality_keys: personalities,
-          budget_key: budget,
-          gift_type_key: "either",
-          vibe_key: primaryVibeFromPersonalities(personalities),
-          refinement_key: opts?.refinementKey || refinement || null,
-          force_new: Boolean(opts?.forceNew || opts?.refinementKey),
-        },
-        await authBearer(),
-      );
-      setSessionId(data.session_id);
+      const data = await runGiftFinder({
+        locale,
+        recipientKey: recipient,
+        ageRangeKey: age,
+        interestKeys: interests,
+        customInterest,
+        // Privacy: sent to generation only — never included in analytics metadata.
+        personalDetail: personalDetail.slice(0, 280),
+        personalityKeys: personalities,
+        budgetKey: budget,
+        giftTypeKey: "either",
+        vibeKey: primaryVibeFromPersonalities(personalities),
+        refinementKey: opts?.refinementKey || refinement || null,
+        forceNew: Boolean(opts?.forceNew || opts?.refinementKey),
+      });
+      setSessionId(data.sessionId);
       setIdeas(data.ideas || []);
       try {
-        sessionStorage.setItem(FINDER_SESSION_KEY, data.session_id);
+        if (data.sessionId) sessionStorage.setItem(FINDER_SESSION_KEY, data.sessionId);
       } catch {
         /* ignore */
       }
