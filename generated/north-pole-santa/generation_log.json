@@ -1,0 +1,131 @@
+{
+  "created_at": "2026-09-19T20:29:22.782375+00:00",
+  "updated_at": "2026-09-19T20:29:22.782398+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 1.12,
+  "regenerations": 0,
+  "clips": [
+    {
+      "id": "santa_01_workshop",
+      "title": "North Pole toy workshop wrapping",
+      "source_image": "01_workshop_wrapping_1080x1920.jpg",
+      "job_id": "9e0e6690-021e-4722-b753-1a3fb4685664",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas film. This exact North Pole toy workshop photograph comes alive for five seconds. Preserve Santa's face, glasses, beard, red suit, white gloves, the two elf children, teddy bear, wrapped gifts, wooden table, lantern, parchment scroll, wooden crate reading SPREADING JOY WORLDWIDE, NORTH POLE TOY WORKSHOP sign, window, shelves of toys, and every letter of visible text exactly as in the first frame. Very slow expensive cinematic camera push toward Santa tying the red ribbon. Stabilized tripod, no handheld shake. Santa's gloved hands complete one small natural ribbon-tie motion. Elves keep the same poses with tiny working hand movement only. Candle flame in the lantern flickers naturally. Christmas lights shimmer gently, never pulse. Soft steam rises from the red SANTA FUEL mug. Tiny dust motes in warm light. Foreground gifts stay still; background elves move slower than Santa. Do not morph faces, hands, architecture, signs, or wrapping paper. Do not add people. Archival cinematic footage filmed inside Santa's workshop.",
+      "conservative": false,
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/north-pole-santa/masters/santa_01_workshop.mp4",
+      "probe": {
+        "filename": "santa_01_workshop.mp4",
+        "path": "/workspace/public/assets/christmas/north-pole-santa/masters/santa_01_workshop.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 25527359,
+        "size": 16087556
+      },
+      "qc_frames": [
+        "/workspace/generated/north-pole-santa/qc/santa_01_workshop_first.jpg",
+        "/workspace/generated/north-pole-santa/qc/santa_01_workshop_mid.jpg",
+        "/workspace/generated/north-pole-santa/qc/santa_01_workshop_last.jpg"
+      ],
+      "created_at": "2026-09-19T20:31:06.512576+00:00"
+    },
+    {
+      "id": "santa_02_sleigh",
+      "title": "Santa loading the sleigh",
+      "source_image": "02_sleigh_loading_1080x1920.jpg",
+      "job_id": "234c4a0d-af3d-4921-9f75-75d28e3228c3",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas night at the North Pole. This exact photograph comes alive for five seconds. Preserve Santa's face, beard, red suit, the red-and-gold sleigh, reindeer, gift sack reading Delivering Happiness Worldwide, NORTH POLE sign, wooden SLEIGH CHECKLIST crate, lanterns, wreaths, elves in the doorway, snow, and all signage letters exactly as in the first frame. Slow stabilized cinematic glide toward Santa loading gifts. Natural falling snow at different depths and speeds. Aurora drifts almost imperceptibly across the sky. Lantern flames flicker. Reindeer breathe visible cold air and one ear twitches; they do not walk away. Santa settles a gift into the sleigh with one small realistic motion. Subtle steam from the workshop doorway. Christmas lights shimmer softly. Wet-snow reflections. Architecture, sleigh runners, and faces stay rigid. No extra reindeer, no warped antlers, no mutated text. Luxury Christmas commercial filmed outdoors.",
+      "conservative": false,
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/north-pole-santa/masters/santa_02_sleigh.mp4",
+      "probe": {
+        "filename": "santa_02_sleigh.mp4",
+        "path": "/workspace/public/assets/christmas/north-pole-santa/masters/santa_02_sleigh.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 29211025,
+        "size": 18409033
+      },
+      "qc_frames": [
+        "/workspace/generated/north-pole-santa/qc/santa_02_sleigh_first.jpg",
+        "/workspace/generated/north-pole-santa/qc/santa_02_sleigh_mid.jpg",
+        "/workspace/generated/north-pole-santa/qc/santa_02_sleigh_last.jpg"
+      ],
+      "created_at": "2026-09-19T20:32:44.810842+00:00"
+    },
+    {
+      "id": "santa_03_desk",
+      "title": "Santa polishing the snow globe",
+      "source_image": "03_snow_globe_desk_1080x1920.jpg",
+      "job_id": "2016a1ba-96e6-4b69-a04f-6be0cd9da82f",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 warm Christmas interior. This exact photograph comes alive for five seconds. Preserve Santa's face, glasses, beard, red coat, leather apron, white gloves, the snow globe cottage, red mug reading FUELED BY COOKIES AND CHRISTMAS MAGIC, chocolate-chip cookies, wooden toy train, Today checklist parchment, lantern, NORTH POLE sign, reindeer at the window, and all text exactly as in the first frame. Extremely slow cinematic push toward Santa and the snow globe. Santa gently wipes the globe once with the cloth; hands stay anatomically correct. Tiny snow swirls inside the globe. Steam rises from the coffee. Candle lantern flickers. Window snow falls gently. Christmas lights shimmer. Reindeer outside may blink once and breathe. Do not change faces, mug lettering, checklist words, or workshop architecture. Warm, intimate, human Christmas film \u2014 not luxury advertising.",
+      "conservative": false,
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/north-pole-santa/masters/santa_03_desk.mp4",
+      "probe": {
+        "filename": "santa_03_desk.mp4",
+        "path": "/workspace/public/assets/christmas/north-pole-santa/masters/santa_03_desk.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 23249776,
+        "size": 14652204
+      },
+      "qc_frames": [
+        "/workspace/generated/north-pole-santa/qc/santa_03_desk_first.jpg",
+        "/workspace/generated/north-pole-santa/qc/santa_03_desk_mid.jpg",
+        "/workspace/generated/north-pole-santa/qc/santa_03_desk_last.jpg"
+      ],
+      "created_at": "2026-09-19T20:34:13.533341+00:00"
+    },
+    {
+      "id": "santa_04_sweep",
+      "title": "Santa sweeping the workshop",
+      "source_image": "04_workshop_sweeping_1080x1920.jpg",
+      "job_id": "97cfd8e3-a0a4-4d84-8b1e-406fd5ac5459",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 North Pole workshop. This exact photograph comes alive for five seconds. Preserve Santa's face, glasses, beard, red suit, black boots, broom, red sack reading A Cleaner North Pole A Happier World, red bucket Even Santa Cleans, wooden crate TIDY ELVES HAPPY ELVES, NORTH POLE signs, Christmas tree, reindeer outside the arch, and all lettering exactly as in the first frame. Slow stabilized cinematic push toward Santa. He makes one short realistic broom sweep; snow dust slides across the wooden floor with real physics then settles. Tree lights shimmer. Candle glow. Gentle snowfall visible through the open arch. Reindeer in the background shift weight slightly. Architecture stays rigid. The last second becomes calmer and almost locked-off on Santa, broom, sack, and the snowy North Pole beyond. Do not morph faces, broom, signs, or building proportions. Closing shot of a cinematic Christmas campaign.",
+      "conservative": false,
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/north-pole-santa/masters/santa_04_sweep.mp4",
+      "probe": {
+        "filename": "santa_04_sweep.mp4",
+        "path": "/workspace/public/assets/christmas/north-pole-santa/masters/santa_04_sweep.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 29285945,
+        "size": 18456248
+      },
+      "qc_frames": [
+        "/workspace/generated/north-pole-santa/qc/santa_04_sweep_first.jpg",
+        "/workspace/generated/north-pole-santa/qc/santa_04_sweep_mid.jpg",
+        "/workspace/generated/north-pole-santa/qc/santa_04_sweep_last.jpg"
+      ],
+      "created_at": "2026-09-19T20:36:01.665473+00:00"
+    }
+  ],
+  "reels": [],
+  "status": "MASTERS_READY",
+  "actual_cost_usd": 1.12
+}
