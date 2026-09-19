@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "./analytics";
-import { answerFromContext } from "./assistant";
 import { insertTask, loadBudget, loadGifts, loadRecipients, loadTasks } from "./api";
 import {
   dismissInsight,
@@ -40,8 +39,8 @@ import {
 import { canAddCustomTask, canAddRecipient, hasFeature } from "./entitlements";
 import { computeReadiness } from "./readiness";
 import { money, PlannerPaywall } from "./Paywall";
+import { useCopilotUi } from "./copilot/CopilotHost";
 import {
-  ASSISTANT_PROMPTS,
   PlannerComposer,
   PlannerEmptyState,
   PlannerModuleLinkRow,
@@ -81,6 +80,7 @@ function buildMiniBudgetSnapshot(profile: import("./types").PlannerProfile, gift
 
 export default function ChristmasPlannerTodayPage() {
   const { loading, access, profile } = usePlannerBundle();
+  const copilot = useCopilotUi();
   const [tasks, setTasks] = useState<PlannerTask[]>([]);
   const [recipients, setRecipients] = useState<GiftRecipient[]>([]);
   const [gifts, setGifts] = useState<GiftItem[]>([]);
@@ -154,6 +154,10 @@ export default function ChristmasPlannerTodayPage() {
   const mealsCount = intel?.snapshot.meals.length || 0;
   const plannedGifts = gifts.filter((g) => g.status !== "idea").length;
   const wrapped = gifts.filter((g) => g.status === "wrapped" || g.status === "given").length;
+  const giftsWithoutPlan = Math.max(
+    0,
+    recipients.length - new Set(gifts.filter((g) => g.status !== "idea").map((g) => g.recipient_id)).size,
+  );
   const spent = intel?.budget.spentMinor ?? gifts.reduce((s, g) => s + (g.actual_price_minor || 0), 0);
   const remaining = intel?.budget.remainingMinor;
   const planned = profile.total_budget_minor || intel?.budget.forecastMinor || 0;
@@ -401,48 +405,29 @@ export default function ChristmasPlannerTodayPage() {
         />
       ) : null}
 
-      <AssistantPanel
-        daysLeft={daysLeft}
-        planMode={mode}
-        readinessPercent={readiness.percent}
-        openTasks={tasks.filter((t) => t.status === "open").length}
-        recipientCount={recipients.length}
-        giftsWithoutPlan={Math.max(0, recipients.length - new Set(gifts.filter((g) => g.status !== "idea").map((g) => g.recipient_id)).size)}
-        budgetRemainingMinor={planned ? remaining ?? null : null}
-        currency={profile.currency}
-        hosting={profile.hosting}
-      />
+      <section className="tdg-planner-section tdg-copilot-today">
+        <h2>Christmas Copilot</h2>
+        <p className="tdg-planner-muted">Uses your current plan — Engine facts, then plain language. Notes never go to ads.</p>
+        <div className="tdg-planner-prompt">
+          {(giftsWithoutPlan > 0
+            ? ["What gifts am I still missing?", "What should I do this weekend?", "What am I forgetting?"]
+            : ["What should I do this weekend?", "What am I forgetting?", "Am I over budget?"]
+          ).map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              className="tdg-planner-chip"
+              onClick={() => copilot?.openCopilot(prompt, "today")}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+        <button type="button" className="tdg-planner-btn primary" onClick={() => copilot?.openCopilot(undefined, "today")}>
+          Ask Copilot
+        </button>
+      </section>
     </div>
-  );
-}
-
-function AssistantPanel(props: Parameters<typeof answerFromContext>[1]) {
-  const [q, setQ] = useState("What should I do this weekend?");
-  const [a, setA] = useState<string | null>(null);
-  useEffect(() => {
-    trackPlannerEvent("planner_ai_opened", { module: "today" });
-  }, []);
-  return (
-    <section className="tdg-planner-section">
-      <h2>Ask Christmas AI</h2>
-      <p className="tdg-planner-muted">Answers use your planner counts only. Private notes never leave this device.</p>
-      <div className="tdg-planner-prompt">
-        {ASSISTANT_PROMPTS.map((prompt) => (
-          <button key={prompt} type="button" onClick={() => setQ(prompt)}>
-            {prompt}
-          </button>
-        ))}
-      </div>
-      <input className="tdg-planner-input" value={q} onChange={(e) => setQ(e.target.value.slice(0, 140))} />
-      <button
-        type="button"
-        className="tdg-planner-btn primary"
-        onClick={() => setA(answerFromContext(q, props).text)}
-      >
-        Ask
-      </button>
-      {a ? <p style={{ marginTop: 12, color: "inherit" }}>{a}</p> : null}
-    </section>
   );
 }
 
