@@ -132,13 +132,6 @@
   background: rgba(247, 240, 228, 0.18);
 }
 
-.tdg-planner-body {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  width: 100%;
-}
-
 .tdg-planner-side {
   display: none;
   color: #f4ead9;
@@ -230,6 +223,7 @@
 
 .tdg-planner-main {
   min-width: 0;
+  flex: 1 1 auto;
   padding: 18px 16px 132px;
   width: 100%;
   margin: 0;
@@ -1103,20 +1097,31 @@
 }
 
 @media (min-width: 960px) {
-  .tdg-planner-app {
+  html:has(.tdg-planner-app:not(.tdg-planner-app--auth)),
+  body:has(.tdg-planner-app:not(.tdg-planner-app--auth)),
+  #root:has(.tdg-planner-app:not(.tdg-planner-app--auth)) {
     height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+  .tdg-planner-app {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    max-height: 100dvh;
     overflow: hidden;
   }
   .tdg-planner-frame {
     display: grid;
     grid-template-columns: 232px minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
-    height: 100dvh;
+    height: 100%;
     min-height: 0;
     overflow: hidden;
   }
   .tdg-planner-header {
     grid-column: 1 / -1;
+    grid-row: 1;
     grid-template-columns: 232px minmax(0, 1fr) auto;
     padding-left: 0;
     padding-right: 32px;
@@ -1132,28 +1137,22 @@
   .tdg-planner-header-count {
     text-align: left;
   }
-  .tdg-planner-body {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 232px minmax(0, 1fr);
-    min-height: 0;
-    overflow: hidden;
-  }
   .tdg-planner-side {
+    grid-column: 1;
+    grid-row: 2;
     display: flex;
     flex-direction: column;
     background: var(--planner-pine);
     color: #f4ead9;
     padding: 18px 10px 16px;
     min-height: 0;
-    height: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   .tdg-planner-side-nav {
     flex: 1 1 auto;
     min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
   }
   .tdg-planner-side-foot {
     flex-shrink: 0;
@@ -1165,10 +1164,12 @@
     display: none;
   }
   .tdg-planner-main {
+    grid-column: 2;
+    grid-row: 2;
     padding: 28px 36px 56px;
     max-width: none;
     min-height: 0;
-    height: 100%;
+    min-width: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -1204,8 +1205,7 @@
 }
 
 @media (min-width: 1280px) {
-  .tdg-planner-frame,
-  .tdg-planner-body {
+  .tdg-planner-frame {
     grid-template-columns: 240px minmax(0, 1fr);
   }
   .tdg-planner-header {
