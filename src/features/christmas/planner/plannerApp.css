@@ -559,10 +559,123 @@
   font-size: 0.85rem;
 }
 
+.tdg-planner-app--auth {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(2rem, 8vh, 4.5rem) 1.25rem 3rem;
+  background:
+    radial-gradient(900px 420px at 50% -10%, rgba(196, 165, 116, 0.18), transparent 58%),
+    var(--planner-cream);
+}
+
 .tdg-planner-auth {
-  max-width: 420px;
-  margin: 48px auto;
-  padding: 0 16px 80px;
+  width: min(100%, 26rem);
+  margin: 0 auto;
+  padding: 0;
+  text-align: center;
+}
+
+.tdg-planner-app--auth .tdg-planner-auth h1 {
+  font-size: clamp(2rem, 6vw, 2.65rem);
+  line-height: 1.08;
+  margin: 0.35rem 0 0;
+  max-width: 14ch;
+  margin-inline: auto;
+}
+
+.tdg-planner-auth-lede {
+  max-width: 32ch;
+  margin: 1rem auto 2rem;
+  color: var(--planner-muted);
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+
+.tdg-planner-google {
+  width: 100%;
+  min-height: 3.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(20, 51, 40, 0.14);
+  background: #fff;
+  color: #1f1f1f;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(28, 22, 18, 0.06);
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.tdg-planner-google:hover:not(:disabled) {
+  background: #fafafa;
+  transform: translateY(-1px);
+}
+
+.tdg-planner-google:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tdg-planner-google-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+}
+
+.tdg-planner-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 1.65rem 0 1.4rem;
+  color: var(--planner-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.tdg-planner-auth-divider::before,
+.tdg-planner-auth-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--planner-line);
+}
+
+.tdg-planner-auth-form {
+  text-align: left;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tdg-planner-auth-form label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--planner-ink);
+  margin-top: 0.55rem;
+}
+
+.tdg-planner-auth-form .tdg-planner-input {
+  margin: 0 0 0.35rem;
+  min-height: 3rem;
+  border-radius: 12px;
+}
+
+.tdg-planner-auth-form .tdg-planner-btn.primary {
+  width: 100%;
+  margin-top: 1.1rem;
+  min-height: 3.1rem;
+  border-radius: 999px;
+}
+
+.tdg-planner-auth-error {
+  margin-top: 0.55rem;
+  color: var(--planner-burgundy);
+  font-size: 0.92rem;
 }
 
 .tdg-planner-top {
