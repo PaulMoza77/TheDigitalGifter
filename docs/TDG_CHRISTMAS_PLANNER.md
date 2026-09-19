@@ -30,3 +30,7 @@ Seed ships checkout off.
 ## Free vs paid
 
 Account Planner works free with limits. Paid packages unlock feature keys via entitlements.
+
+## Christmas Copilot (P0)
+
+Private app sheet on `/account/christmas`. Answers are generated on-device from `PlannerSnapshot` / insights. **No model calls, no Copilot writes.** Architecture: `docs/architecture/TDG_CHRISTMAS_COPILOT_ADR.md`. Kill switch: `VITE_CHRISTMAS_PLANNER_COPILOT=0`.

@@ -188,6 +188,8 @@ describe("christmas planner privacy + attribution events", () => {
       "planner_budget_updated",
       "planner_event_created",
       "planner_ai_opened",
+      "copilot_opened",
+      "copilot_turn",
     ]) {
       expect(CHRISTMAS_FUNNEL_ALLOWED_EVENTS).toContain(name);
     }
@@ -232,6 +234,7 @@ describe("christmas planner wiring", () => {
     expect(app).toContain('path="/christmas/planner/welcome"');
     expect(app).toContain('path="/account/christmas"');
     expect(app).toContain("ChristmasPlannerLayout");
+    expect(readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx")).toContain("CopilotHost");
     expect(app).toContain("ChristmasPlannerPage");
     expect(app).toContain('path="grocery"');
     expect(app).not.toContain("ChristmasPlannerPublicPage");

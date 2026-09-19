@@ -113,6 +113,6 @@ export function answerFromContext(question: string, ctx: AssistantSafeContext): 
   }
   return {
     source: "coming_next",
-    text: "Ask Christmas AI can answer from your planner counts. Private notes stay on the server until a controlled assistant ships.",
+    text: "Christmas Copilot can answer from your planner counts. Private notes stay in the Planner until a controlled model path is switched on.",
   };
 }
