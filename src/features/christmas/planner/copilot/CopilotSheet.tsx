@@ -1,13 +1,10 @@
 import { Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { loadBudget, loadGifts, loadRecipients, loadTasks } from "../api";
 import { trackPlannerEvent } from "../analytics";
-import { daysUntilChristmas, isoDate, localDateParts, resolvePlanMode } from "../date";
-import { buildIntelligence, type IntelligenceBundle } from "../intelligence";
+import { loadDismissedInsightIds, loadPlannerWorkspace, runPlannerIntelligence } from "../intelligence";
+import type { PlannerIntelligence } from "../intelligence/types";
 import { usePlannerBundle } from "../Onboarding";
-import { computeReadiness } from "../readiness";
 import { ASSISTANT_PROMPTS } from "../plannerUi";
 import { askCopilot, copilotEnabled, tryApplyCopilotPlan, type CopilotCard, type CopilotResponse } from "./ask";
 
@@ -71,73 +68,24 @@ export function CopilotSheet({
   const { profile } = usePlannerBundle();
   const [question, setQuestion] = useState("What should I do this weekend?");
   const [reply, setReply] = useState<CopilotResponse | null>(null);
-  const [bundle, setBundle] = useState<IntelligenceBundle | null>(null);
+  const [intel, setIntel] = useState<PlannerIntelligence | null>(null);
   const [applyNote, setApplyNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !profile) return;
     trackPlannerEvent("copilot_opened", { module });
-    const tz = profile.timezone;
-    const todayIso = isoDate(localDateParts(new Date(), tz));
-    void Promise.all([
-      loadTasks(profile.id),
-      loadRecipients(profile.id),
-      loadGifts(profile.id),
-      loadBudget(profile.id),
-      supabase.from("christmas_meals").select("id", { count: "exact", head: true }).eq("profile_id", profile.id),
-      supabase
-        .from("christmas_grocery_items")
-        .select("id", { count: "exact", head: true })
-        .eq("profile_id", profile.id)
-        .eq("status", "need"),
-      supabase
-        .from("christmas_trips")
-        .select("start_on")
-        .eq("profile_id", profile.id)
-        .order("start_on", { ascending: true })
-        .limit(1),
-    ]).then(([tasks, recipients, gifts, budget, meals, grocery, trips]) => {
-      const daysLeft = daysUntilChristmas(new Date(), tz);
-      const planMode = resolvePlanMode(daysLeft, profile.prepared_level);
-      const planned = budget.reduce((s, b) => s + b.planned_minor, 0) || profile.total_budget_minor || 0;
-      const spent =
-        budget.reduce((s, b) => s + b.spent_minor, 0) + gifts.reduce((s, g) => s + (g.actual_price_minor || 0), 0);
-      const readiness = computeReadiness({
-        profile,
-        tasks,
-        recipients,
-        gifts,
-        mealsCount: meals.count || 0,
-      });
-      setBundle(
-        buildIntelligence({
-          seasonYear: profile.season_year,
-          todayIso,
-          daysLeft,
-          planMode,
-          readinessPercent: readiness.percent,
-          hosting: profile.hosting,
-          travelling: profile.travelling,
-          hasChildren: profile.has_children,
-          currency: profile.currency,
-          tasks,
-          recipients,
-          gifts,
-          budgetPlannedMinor: planned,
-          budgetSpentMinor: spent,
-          mealsCount: meals.count || 0,
-          groceryNeedCount: grocery.count || 0,
-          tripStartOn: (trips.data?.[0] as { start_on?: string | null } | undefined)?.start_on || null,
-        }),
-      );
-    });
-  }, [open, profile?.id, module]);
+    void (async () => {
+      const snapshot = await loadPlannerWorkspace(profile);
+      const dismissed = loadDismissedInsightIds(profile.id, profile.season_year);
+      setIntel(runPlannerIntelligence(snapshot, dismissed));
+    })();
+  }, [open, profile, module]);
 
   useEffect(() => {
-    if (!open || !seed || !bundle) return;
+    if (!open || !seed || !intel) return;
     const q = seed;
     setQuestion(q);
-    const response = askCopilot(q, bundle);
+    const response = askCopilot(q, intel);
     setReply(response);
     setApplyNote(null);
     trackPlannerEvent("copilot_turn", {
@@ -145,18 +93,15 @@ export function CopilotSheet({
       metadata: { intent: response.modelPath, count_bucket: String(response.cards.length) },
     });
     onSeedConsumed();
-  }, [open, seed, bundle, module, onSeedConsumed]);
+  }, [open, seed, intel, module, onSeedConsumed]);
 
-  const prompts = useMemo(() => {
-    const extra = bundle?.snapshot.hosting ? [] : [];
-    return [...ASSISTANT_PROMPTS, "What can I safely ignore?", ...extra];
-  }, [bundle]);
+  const prompts = useMemo(() => [...ASSISTANT_PROMPTS, "What can I safely ignore?"], []);
 
   function ask(next = question) {
-    if (!bundle) return;
+    if (!intel) return;
     const q = next.trim().slice(0, 240);
     if (!q) return;
-    const response = askCopilot(q, bundle);
+    const response = askCopilot(q, intel);
     setReply(response);
     setApplyNote(null);
     trackPlannerEvent("copilot_turn", {
@@ -175,9 +120,9 @@ export function CopilotSheet({
           <div>
             <p className="tdg-planner-brand">Christmas Copilot</p>
             <h2 id="tdg-copilot-title">Using your current Christmas plan</h2>
-            {bundle ? (
+            {intel ? (
               <p className="tdg-planner-muted">
-                {bundle.snapshot.readinessPercent}% ready · {bundle.snapshot.daysLeft} days left · counts only — notes stay in the planner
+                {intel.readiness.percent}% ready · {intel.snapshot.daysLeft} days left · Engine facts — notes stay in the planner
               </p>
             ) : (
               <p className="tdg-planner-muted">Reading your plan…</p>
@@ -197,7 +142,7 @@ export function CopilotSheet({
               className="tdg-planner-chip"
               onClick={() => {
                 setQuestion(prompt);
-                if (bundle) ask(prompt);
+                if (intel) ask(prompt);
               }}
             >
               {prompt}
@@ -216,7 +161,7 @@ export function CopilotSheet({
             placeholder="Ask about today, gifts, budget, dinner…"
             aria-label="Ask Christmas Copilot"
           />
-          <button type="button" className="tdg-planner-btn primary" onClick={() => ask()} disabled={!bundle}>
+          <button type="button" className="tdg-planner-btn primary" onClick={() => ask()} disabled={!intel}>
             Ask
           </button>
         </div>
@@ -229,7 +174,7 @@ export function CopilotSheet({
             ))}
             {reply.unsupported?.reason === "no_tool" ? (
               <div className="tdg-copilot-confirm">
-                <p>I can prepare this change later. Nothing was written.</p>
+                <p>I can prepare this change later. Nothing was written by Copilot.</p>
                 <button
                   type="button"
                   className="tdg-planner-btn"

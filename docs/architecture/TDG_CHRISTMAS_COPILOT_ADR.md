@@ -15,9 +15,9 @@ Private Christmas Planner already had a local “Ask Christmas AI” that answer
 3. **No new Edge Function, no migration.** Mozas SPA deploy only. Kill switch: `VITE_CHRISTMAS_PLANNER_COPILOT=0`.
 4. **Privacy.** Snapshot may include list display names (already on-screen). Never hiding places, booking notes, emails, URLs. Analytics: `copilot_opened` / `copilot_turn` with module + modelPath buckets only.
 5. **UX.** Header / FAB sparkle, Today chips, right sheet (desktop) / bottom sheet (mobile). Not a generic chat embed.
-6. **LLM + apply** require a later entitled Edge Function (`planner.ai_assistant`), user JWT, confirmation tokens, and fail-closed rate limits.
+6. **LLM + apply** require a later entitled Edge Function (`planner.ai_assistant`), user JWT, confirmation tokens, and fail-closed rate limits. Writes today stay on the Intelligence Engine’s confirmed Action Registry (Planner UI), not Copilot.
 
 ## Consequences
 
 - Production Copilot is useful immediately and cannot spend model credits or write data.
-- Engine types live under `src/features/christmas/planner/intelligence/` so a later Engine PR can replace the builder without changing the Copilot UI contract.
+- Copilot consumes **Intelligence Engine V1** (`runPlannerIntelligence`) — no second scoring system.

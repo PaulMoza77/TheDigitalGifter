@@ -1,9 +1,14 @@
-export type {
-  IntelligenceBundle,
-  IntelligenceInput,
-  NextBestAction,
-  PlannerInsight,
-  PlannerInsightKind,
-  PlannerSnapshot,
-} from "./types";
-export { buildIntelligence, snapshotVersion } from "./build";
+export { runPlannerIntelligence } from "./engine";
+export { buildPlannerSnapshot } from "./snapshot";
+export { loadPlannerWorkspace, invalidatePlannerSnapshot } from "./loadSnapshot";
+export { executePlannerAction } from "./actions";
+export { validatePlannerAction, previewPlannerAction, DESTRUCTIVE_ACTIONS } from "./actionContract";
+export { loadDismissedInsightIds, dismissInsight } from "./dismiss";
+export { computeBudgetTotals, formatPlannerMoney, giftCommittedMinor, giftSpentMinor } from "./budgetIntelligence";
+export { deriveShoppingItems, shoppingForTab, computeRecipientBudgets } from "./giftIntelligence";
+export { deriveCalendarItems } from "./calendarIntelligence";
+export { mergeGroceryList, aggregateMealIngredients, detectFoodCompleteness, servingHints, guestCount, parseIngredient, ingredientsFromRecipe, buildPrepTimeline } from "./foodIntelligence";
+export { detectTravelConflicts } from "./travelIntelligence";
+export { hostingTasksToInsert, missingHostingTemplateKeys } from "./hostingIntelligence";
+export { computeReadiness } from "./readinessIntelligence";
+export * from "./types";
