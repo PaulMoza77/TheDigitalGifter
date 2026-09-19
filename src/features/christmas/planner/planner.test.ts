@@ -721,6 +721,8 @@ describe("private planner privacy surface", () => {
     expect(css).toContain("html:has(.tdg-planner-app:not(.tdg-planner-app--auth))");
     expect(css).toContain("grid-column: 1");
     expect(css).toContain("grid-column: 2");
+    expect(css).toContain(".tdg-planner-side");
+    expect(css).toContain("overflow-y: auto");
     expect(layout).toContain("TheDigitalGifter.png");
     expect(layout).not.toContain("tdg-planner-body");
     expect(layout).toContain('aside className="tdg-planner-side"');
