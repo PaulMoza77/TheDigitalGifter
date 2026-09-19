@@ -121,7 +121,7 @@
 
 .tdg-planner-main {
   min-width: 0;
-  padding: 18px 16px 108px;
+  padding: 18px 16px 132px;
   width: 100%;
   margin: 0;
 }
@@ -491,6 +491,11 @@
   display: block;
   font-size: 1.15rem;
   color: var(--planner-ink);
+}
+
+.tdg-planner-stat .tdg-planner-linkish {
+  display: inline-block;
+  margin-top: 8px;
 }
 
 .tdg-planner-cal {
