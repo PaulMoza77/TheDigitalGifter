@@ -7,6 +7,8 @@ import { hasFeature } from "./entitlements";
 import { PlannerPaywall, money } from "./Paywall";
 import { trackPlannerEvent } from "./analytics";
 import { loadGifts, loadTasks } from "./api";
+import { deriveCalendarItems, deriveShoppingItems, shoppingForTab, detectFoodCompleteness, ingredientsFromRecipe, executePlannerAction, invalidatePlannerSnapshot, detectTravelConflicts, buildPlannerSnapshot } from "./intelligence";
+import { PlannerRecommendationSheet } from "./intelligence/components";
 import { GROCERY_AISLES, HOME_AREAS, type GiftItem, type GroceryAisle, type PlannerTask } from "./types";
 import { formatPlannerDate, giftStatusLabel, prettyLabel } from "./date";
 import { PlannerComposer, PlannerEmptyState, PlannerPageHeader, PlannerStatusChip } from "./plannerUi";
@@ -26,12 +28,9 @@ export function ChristmasPlannerShoppingPage() {
   if (loading) return <p>Loading shopping…</p>;
   if (!profile) return <PlannerOnboarding />;
 
-  const filtered = gifts.filter((g) => {
-    if (tab === "need") return g.status === "idea" || g.status === "planned";
-    if (tab === "ordered" || tab === "arriving") return g.status === "ordered";
-    if (tab === "arrived") return g.status === "arrived" || g.status === "hidden" || g.status === "wrapped";
-    return Boolean(g.return_deadline);
-  });
+  const filtered = shoppingForTab(deriveShoppingItems(gifts), tab)
+    .map((row) => gifts.find((g) => g.id === row.giftId))
+    .filter((g): g is GiftItem => Boolean(g));
 
   async function addPurchase() {
     if (!profile || !extra.name.trim()) return;
@@ -139,11 +138,40 @@ export function ChristmasPlannerCalendarPage() {
   if (loading) return <p>Loading calendar…</p>;
   if (!profile) return <PlannerOnboarding />;
 
-  const items = [
-    ...tasks.filter((t) => t.due_on).map((t) => ({ id: t.id, on: t.due_on as string, title: t.title, kind: "task" })),
-    ...events.map((e) => ({ id: e.id, on: e.starts_on, title: e.title, kind: e.event_kind || "event" })),
-    ...gifts.filter((g) => g.delivery_on).map((g) => ({ id: g.id, on: g.delivery_on as string, title: g.selected_gift || g.idea, kind: "delivery" })),
-  ].sort((a, b) => a.on.localeCompare(b.on));
+  const derived = deriveCalendarItems({
+    season: profile.season_year,
+    today: "",
+    daysLeft: 0,
+    timezone: profile.timezone,
+    currency: profile.currency,
+    planMode: profile.plan_mode,
+    profile: {
+      id: profile.id,
+      userId: profile.user_id,
+      hosting: profile.hosting,
+      travelling: profile.travelling,
+      hasChildren: profile.has_children,
+      preparedLevel: profile.prepared_level,
+      chaosAreas: [],
+      totalBudgetMinor: profile.total_budget_minor,
+      onboardingCompleted: true,
+    },
+    tasks,
+    recipients: [],
+    gifts,
+    budgetEntries: [],
+    meals: [],
+    dishes: [],
+    recipes: [],
+    grocery: [],
+    guests: [],
+    home: [],
+    trips: [],
+    events: events.map((e) => ({ id: e.id, title: e.title, event_kind: e.event_kind, starts_on: e.starts_on, source_type: "manual", source_ref: null })),
+    cards: [],
+    traditions: [],
+  });
+  const items = derived.map((item) => ({ id: item.sourceId, on: item.date, title: item.title, kind: item.kind, href: item.href, key: item.id }));
 
   const first = new Date(Date.UTC(cursor.y, cursor.m - 1, 1));
   const startWeekday = first.getUTCDay();
@@ -204,7 +232,7 @@ export function ChristmasPlannerCalendarPage() {
                       .filter((it) => it.on === cell.iso)
                       .slice(0, 3)
                       .map((it) => (
-                        <i key={`${it.kind}-${it.id}`} className={`dot-${it.kind === "delivery" ? "delivery" : it.kind === "task" ? "task" : "event"}`} />
+                        <i key={`${it.kind}-${it.id}`} className={`dot-${it.kind === "gift_delivery" || it.kind === "gift_return" ? "delivery" : it.kind === "task" ? "task" : "event"}`} />
                       ))}
                   </span>
                 </button>
@@ -223,9 +251,15 @@ export function ChristmasPlannerCalendarPage() {
         />
       ) : (
         (view === "agenda" ? items : items.filter((it) => it.on === selected)).map((item) => (
-          <div key={`${item.kind}-${item.id}`} className="tdg-planner-row tdg-planner-appear">
+          <div key={item.key} className="tdg-planner-row tdg-planner-appear">
             <div>
-              <strong>{item.title}</strong>
+              {item.href ? (
+                <Link to={item.href}>
+                  <strong>{item.title}</strong>
+                </Link>
+              ) : (
+                <strong>{item.title}</strong>
+              )}
               <div className="tdg-planner-muted">
                 {formatPlannerDate(item.on)} · {prettyLabel(item.kind)}
               </div>
@@ -295,18 +329,25 @@ const FOOD_TABS = [
 export function ChristmasPlannerFoodPage() {
   const { loading, access, profile } = usePlannerBundle();
   const [tab, setTab] = useState<(typeof FOOD_TABS)[number][0]>("christmas_day");
-  const [dishes, setDishes] = useState<Array<{ id: string; dish_name: string; servings: number; prep_minutes: number | null; cook_minutes: number | null; notes: string; meal_id: string }>>([]);
+  const [dishes, setDishes] = useState<Array<{ id: string; dish_name: string; servings: number; prep_minutes: number | null; cook_minutes: number | null; notes: string; meal_id: string; recipe_id: string | null }>>([]);
   const [meals, setMeals] = useState<Array<{ id: string; section: string; title: string }>>([]);
+  const [recipes, setRecipes] = useState<Array<{ id: string; title: string; servings: number; prep_minutes: number; cook_minutes: number; category: string; tags: string[]; ingredients: unknown }>>([]);
+  const [people, setPeople] = useState(0);
   const [draft, setDraft] = useState({ dish: "", servings: "8", prep: "", cook: "", notes: "" });
 
   useEffect(() => {
     if (!profile) return;
     void Promise.all([
       supabase.from("christmas_meals").select("id,section,title").eq("profile_id", profile.id),
-      supabase.from("christmas_meal_items").select("id,dish_name,servings,prep_minutes,cook_minutes,notes,meal_id").eq("profile_id", profile.id),
-    ]).then(([m, d]) => {
+      supabase.from("christmas_meal_items").select("id,dish_name,servings,prep_minutes,cook_minutes,notes,meal_id,recipe_id").eq("profile_id", profile.id),
+      supabase.from("christmas_recipes").select("id,title,servings,prep_minutes,cook_minutes,category,tags,ingredients").eq("published", true),
+      supabase.from("christmas_guests").select("adults,kids").eq("profile_id", profile.id),
+    ]).then(([m, d, rec, guests]) => {
       setMeals((m.data as typeof meals) || []);
       setDishes((d.data as typeof dishes) || []);
+      setRecipes((rec.data as typeof recipes) || []);
+      const list = (guests.data as Array<{ adults: number; kids: number }>) || [];
+      setPeople(list.reduce((s, g) => s + (g.adults || 0) + (g.kids || 0), 0));
     });
     trackPlannerEvent("planner_module_opened", { module: "food" });
   }, [profile?.id]);
@@ -338,6 +379,7 @@ export function ChristmasPlannerFoodPage() {
   return (
     <div className="tdg-planner-page">
       <PlannerPageHeader title="Food" lede="Plan meals for Christmas Eve, Day, and everything in between." />
+      {profile.hosting && people > 0 ? <p className="tdg-planner-muted">Planning for {people} people.</p> : null}
       <div className="tdg-planner-seg">
         {FOOD_TABS.map(([id, label]) => (
           <button key={id} type="button" className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
@@ -370,7 +412,7 @@ export function ChristmasPlannerFoodPage() {
                   cook_minutes: draft.cook ? Number(draft.cook) : null,
                   notes: draft.notes.slice(0, 500),
                 })
-                .select("id,dish_name,servings,prep_minutes,cook_minutes,notes,meal_id")
+                .select("id,dish_name,servings,prep_minutes,cook_minutes,notes,meal_id,recipe_id")
                 .maybeSingle();
               if (data) setDishes((p) => [...p, data as (typeof dishes)[0]]);
               setDraft({ dish: "", servings: "8", prep: "", cook: "", notes: "" });
@@ -401,12 +443,55 @@ export function ChristmasPlannerFoodPage() {
                 {d.servings} servings
                 {d.prep_minutes ? ` · prep ${d.prep_minutes}m` : ""}
                 {d.cook_minutes ? ` · cook ${d.cook_minutes}m` : ""}
+                {people > 0 && d.servings < people ? ` · scale to ${people}?` : ""}
               </div>
             </div>
+            <div className="tdg-planner-actions">
+            {people > 0 && d.servings !== people ? (
+              <button
+                type="button"
+                className="tdg-planner-btn"
+                onClick={async () => {
+                  await supabase.from("christmas_meal_items").update({ servings: people }).eq("id", d.id);
+                  setDishes((p) => p.map((x) => (x.id === d.id ? { ...x, servings: people } : x)));
+                }}
+              >
+                Scale to {people}
+              </button>
+            ) : null}
             <button
               type="button"
               className="tdg-planner-btn"
               onClick={async () => {
+                const recipe = d.recipe_id ? recipes.find((r) => r.id === d.recipe_id) : null;
+                if (recipe) {
+                  const items = ingredientsFromRecipe(
+                    {
+                      id: recipe.id,
+                      title: recipe.title,
+                      servings: recipe.servings,
+                      prep_minutes: recipe.prep_minutes,
+                      cook_minutes: recipe.cook_minutes,
+                      category: recipe.category,
+                      tags: recipe.tags || [],
+                      ingredients: recipe.ingredients,
+                    },
+                    d.servings,
+                  );
+                  if (items.length) {
+                    await supabase.from("christmas_grocery_items").insert(
+                      items.map((item) => ({
+                        profile_id: profile.id,
+                        name: `${item.aisle}|${item.name}`.slice(0, 120),
+                        quantity: item.displayQuantity.slice(0, 40),
+                        status: "need",
+                        source_type: "grocery",
+                        meal_item_id: d.id,
+                      })),
+                    );
+                    return;
+                  }
+                }
                 await supabase.from("christmas_grocery_items").insert({
                   profile_id: profile.id,
                   name: d.dish_name.slice(0, 120),
@@ -419,8 +504,38 @@ export function ChristmasPlannerFoodPage() {
             >
               Add ingredients
             </button>
+            </div>
           </div>
         ))}
+      {meal ? (
+        <p className="tdg-planner-muted">
+          {detectFoodCompleteness({
+            meals: meals.map((m) => ({ id: m.id, section: m.section, title: m.title, meal_on: null })),
+            dishes: dishes.map((d) => ({
+              id: d.id,
+              meal_id: d.meal_id,
+              recipe_id: d.recipe_id,
+              dish_name: d.dish_name,
+              servings: d.servings,
+              prep_minutes: d.prep_minutes,
+              cook_minutes: d.cook_minutes,
+              day_time: "",
+            })),
+            recipes: recipes.map((r) => ({
+              id: r.id,
+              title: r.title,
+              servings: r.servings,
+              prep_minutes: r.prep_minutes,
+              cook_minutes: r.cook_minutes,
+              category: r.category,
+              tags: r.tags || [],
+              ingredients: r.ingredients,
+            })),
+          })
+            .filter((row) => row.mealId === meal.id)
+            .map((row) => (row.missing.length ? `${row.title} is missing ${row.missing.join(", ")}.` : `${row.title} looks complete.`))}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -820,15 +935,22 @@ export function ChristmasPlannerHomePage() {
 export function ChristmasPlannerTravelPage() {
   const { loading, access, profile } = usePlannerBundle();
   const [trips, setTrips] = useState<Array<{ id: string; destination: string; start_on: string | null; end_on: string | null; booking_notes: string; packing: string; gifts_to_take: string; home_arrangements: string }>>([]);
+  const [tasks, setTasks] = useState<PlannerTask[]>([]);
+  const [sheet, setSheet] = useState(false);
   const [draft, setDraft] = useState({ destination: "", start: "", end: "", booking: "", packing: "", gifts: "", home: "", pets: "" });
 
   useEffect(() => {
     if (!profile) return;
-    void supabase
-      .from("christmas_trips")
-      .select("id,destination,start_on,end_on,booking_notes,packing,gifts_to_take,home_arrangements")
-      .eq("profile_id", profile.id)
-      .then(({ data }) => setTrips((data as typeof trips) || []));
+    void Promise.all([
+      supabase
+        .from("christmas_trips")
+        .select("id,destination,start_on,end_on,booking_notes,packing,gifts_to_take,home_arrangements")
+        .eq("profile_id", profile.id),
+      loadTasks(profile.id),
+    ]).then(([tripRes, taskRows]) => {
+      setTrips((tripRes.data as typeof trips) || []);
+      setTasks(taskRows);
+    });
     trackPlannerEvent("planner_module_opened", { module: "travel" });
   }, [profile?.id]);
 
@@ -843,9 +965,36 @@ export function ChristmasPlannerTravelPage() {
     );
   }
 
+  const conflicts = detectTravelConflicts(
+    buildPlannerSnapshot({
+      profile,
+      tasks,
+      recipients: [],
+      gifts: [],
+      budgetEntries: [],
+      trips: trips.map((t) => ({
+        id: t.id,
+        destination: t.destination,
+        start_on: t.start_on,
+        end_on: t.end_on,
+        packing: t.packing || "",
+        gifts_to_take: t.gifts_to_take || "",
+      })),
+    }),
+  );
+
   return (
     <div className="tdg-planner-page">
       <PlannerPageHeader title="Travel" lede="Trips, packing, and home notes. Never passports or cards." />
+      {conflicts.length > 0 ? (
+        <div className="tdg-intel-card tdg-intel-important">
+          <h3>{conflicts.length} tasks conflict with your travel dates</h3>
+          <p>Dates will not change until you apply suggestions.</p>
+          <button type="button" className="tdg-planner-btn primary" onClick={() => setSheet(true)}>
+            Review changes
+          </button>
+        </div>
+      ) : null}
       <div className="tdg-planner-card">
         <input className="tdg-planner-input" placeholder="Destination" value={draft.destination} onChange={(e) => setDraft({ ...draft, destination: e.target.value })} />
         <input className="tdg-planner-input" type="date" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} />
@@ -894,6 +1043,28 @@ export function ChristmasPlannerTravelPage() {
           {t.home_arrangements ? <p className="tdg-planner-muted">{t.home_arrangements}</p> : null}
         </div>
       ))}
+      {sheet ? (
+        <PlannerRecommendationSheet
+          title="Move these tasks before your trip?"
+          body="Nothing is changed until you apply."
+          rows={conflicts.map((c) => ({ id: c.taskId, label: c.title, from: c.oldDate || "No date", to: c.suggestedDate }))}
+          confirmLabel={`Apply ${conflicts.length} changes`}
+          onCancel={() => setSheet(false)}
+          onConfirm={() => {
+            void executePlannerAction(
+              { userId: profile.user_id, access, profile },
+              {
+                type: "reschedule_tasks",
+                confirm: true,
+                payload: { changes: conflicts.map((c) => ({ taskId: c.taskId, dueOn: c.suggestedDate })) },
+              },
+            ).then(async () => {
+              setSheet(false);
+              setTasks(await loadTasks(profile.id));
+            });
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1131,7 +1302,7 @@ export function ChristmasPlannerClubPage() {
 }
 
 export function ChristmasPlannerSettingsPage() {
-  const { loading, profile, reload } = usePlannerBundle();
+  const { loading, profile, reload, access } = usePlannerBundle();
   const [form, setForm] = useState({
     hosting: false,
     travelling: false,
@@ -1202,6 +1373,13 @@ export function ChristmasPlannerSettingsPage() {
               })
               .eq("id", profile.id);
             await reload();
+            if (form.hosting) {
+              invalidatePlannerSnapshot(profile.id);
+              await executePlannerAction(
+                { userId: profile.user_id, access, profile: { ...profile, hosting: true } },
+                { type: "ensure_hosting_tasks", payload: {} },
+              );
+            }
           }}
         >
           Save
