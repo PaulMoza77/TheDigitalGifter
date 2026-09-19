@@ -1,8 +1,11 @@
 // FILE: src/routes/ProtectedClientRoute.tsx
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
+import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
+
+const PlannerAuthGate = lazy(() => import("@/features/christmas/planner/PlannerAuthGate"));
 
 export default function ProtectedClientRoute() {
   const location = useLocation();
@@ -41,6 +44,14 @@ export default function ProtectedClientRoute() {
   }
 
   if (!session) {
+    if (location.pathname === "/account/christmas" || location.pathname.startsWith("/account/christmas/")) {
+      rememberAuthReturnTo("/account/christmas");
+      return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#f6efe4] text-[#1c1612]">Opening…</div>}>
+          <PlannerAuthGate />
+        </Suspense>
+      );
+    }
     return <Navigate to="/" replace state={{ from: location }} />;
   }
 

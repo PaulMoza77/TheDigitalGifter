@@ -255,6 +255,11 @@ const PlannerFoodRoute = lazy(() =>
     default: m.ChristmasPlannerFoodPage,
   })),
 );
+const PlannerGroceryRoute = lazy(() =>
+  import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
+    default: m.ChristmasPlannerGroceryPage,
+  })),
+);
 const PlannerRecipesRoute = lazy(() =>
   import("@/features/christmas/planner/ChristmasPlannerMoreModules").then((m) => ({
     default: m.ChristmasPlannerRecipesPage,
@@ -784,6 +789,7 @@ function AppInner() {
               <Route path="calendar" element={<PlannerCalendarRoute />} />
               <Route path="shopping" element={<PlannerShoppingRoute />} />
               <Route path="food" element={<PlannerFoodRoute />} />
+              <Route path="grocery" element={<PlannerGroceryRoute />} />
               <Route path="recipes" element={<PlannerRecipesRoute />} />
               <Route path="hosting" element={<PlannerHostingRoute />} />
               <Route path="home" element={<PlannerHomeRoute />} />

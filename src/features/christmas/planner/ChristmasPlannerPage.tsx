@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
+import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
 import { CHRISTMAS_CATALOG_SEED, findProduct } from "../catalog";
 import { FONT_HREF } from "../landing/assets";
 import {
@@ -403,6 +404,7 @@ function QuizLayer({
 }
 
 export default function ChristmasPlannerPage() {
+  const navigate = useNavigate();
   const [catalog, setCatalog] = useState<PlannerCatalog>(seedCatalog);
   const [packageKey, setPackageKey] = useState<string>("magic");
   const [addonKeys, setAddonKeys] = useState<string[]>([]);
@@ -422,7 +424,6 @@ export default function ChristmasPlannerPage() {
   const [packagesSeen, setPackagesSeen] = useState(false);
   const [previewSeen, setPreviewSeen] = useState(false);
   const [checkoutSeen, setCheckoutSeen] = useState(false);
-  const [paymentInView, setPaymentInView] = useState(false);
   const [heroInView, setHeroInView] = useState(true);
   const [valueSeen, setValueSeen] = useState(false);
   const [demoSeen, setDemoSeen] = useState(false);
@@ -570,17 +571,6 @@ export default function ChristmasPlannerPage() {
     return () => obs.disconnect();
   }, [demoSeen, ready]);
 
-  useEffect(() => {
-    const node = paymentRef.current;
-    if (!node || typeof IntersectionObserver === "undefined") return;
-    const obs = new IntersectionObserver(
-      (entries) => setPaymentInView(entries.some((entry) => entry.isIntersecting)),
-      { threshold: 0.35 },
-    );
-    obs.observe(node);
-    return () => obs.disconnect();
-  }, [ready, checkout, catalog.checkoutLive]);
-
   const closeQuiz = useCallback(() => {
     setQuizOpen(false);
     if (quizHistory.current && window.history.state?.plannerQuiz) {
@@ -706,24 +696,21 @@ export default function ChristmasPlannerPage() {
   }, [packageKey, chargedAddons, displayTotal, catalog.checkoutLive]);
 
   const seo = useMemo(() => plannerSeo(), []);
-  const stickyHidden = (paymentInView && ready) || (heroInView && ready) || quizOpen;
-  const stickyLabel = !ready
-    ? "BUILD MY PLAN"
-    : !packagesSeen
-      ? "SEE OPTIONS"
-      : `CONTINUE · ${money(displayTotal, selected?.currency || "usd")}`;
+  const stickyHidden = heroInView && !ready || quizOpen;
+  const stickyLabel = !ready ? "BUILD MY PLAN" : "OPEN MY CHRISTMAS PLANNER";
+
+  const openPlanner = useCallback(() => {
+    persistPlannerPersonalization(answers);
+    rememberAuthReturnTo("/account/christmas");
+    navigate("/account/christmas");
+  }, [answers, navigate]);
 
   const onSticky = () => {
     if (!ready) {
       openQuiz();
       return;
     }
-    if (!packagesSeen) {
-      packagesRef.current?.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-    purchaseRef.current?.scrollIntoView({ behavior: "smooth" });
-    if (catalog.checkoutLive && !checkout) void startPay();
+    openPlanner();
   };
 
   const demoBlock = (
@@ -881,15 +868,15 @@ export default function ChristmasPlannerPage() {
       ) : null}
 
       {ready && preview ? (
-        <section className="tdg-planner__section tdg-planner__section--cream" ref={previewRef} id="plan">
+        <section className="tdg-planner__section tdg-planner__section--cream" ref={previewRef} id="plan" data-testid="planner-handoff">
           <div className="tdg-planner__inner">
             <p className="tdg-planner__kicker tdg-planner__kicker--ink">
-              Your Christmas plan is ready
+              YOUR CHRISTMAS PLAN IS READY
             </p>
-            <h2>
+            <h2>Your Christmas Plan is ready.</h2>
+            <p className="tdg-planner__style">
               {preview.daysLeft} {preview.daysLeft === 1 ? "day" : "days"} remaining
-            </h2>
-            <p className="tdg-planner__style">Your planning style: {preview.styleLabel}</p>
+            </p>
             {preview.rescueMode ? (
               <p className="tdg-planner__rescue-inline">
                 Starting late? The Planner automatically focuses only on what still matters.
@@ -897,13 +884,22 @@ export default function ChristmasPlannerPage() {
             ) : (
               <p className="tdg-planner__adapt">Your plan adapts automatically as Christmas gets closer.</p>
             )}
-            <p className="tdg-planner__focus-label">Your suggested starting focus:</p>
+            <p className="tdg-planner__focus-label">Your starting priorities:</p>
             <ol className="tdg-planner__focus">
-              {preview.focus.map((task) => (
-                <li key={task.template_key}>{task.title}</li>
+              {preview.focus.map((task, index) => (
+                <li key={task.template_key}>
+                  {index + 1}. {task.title}
+                </li>
               ))}
             </ol>
-            {demoBlock}
+            <div className="tdg-planner__cta-row" style={{ marginTop: "1.5rem" }}>
+              <button type="button" className="tdg-planner__btn" onClick={openPlanner} data-testid="open-my-christmas-planner">
+                OPEN MY CHRISTMAS PLANNER
+              </button>
+              <span className="tdg-planner__micro">
+                This preview is not your Planner. The real Planner opens after you sign in.
+              </span>
+            </div>
           </div>
         </section>
       ) : null}
@@ -920,6 +916,7 @@ export default function ChristmasPlannerPage() {
           <div className="tdg-planner__inner">
             <p className="tdg-planner__kicker">Packages</p>
             <h2>Choose your Christmas</h2>
+            <p className="tdg-planner__micro tdg-planner__micro--on-dark">SEE OPTIONS if you want paid modules later. The Planner itself opens free with limits.</p>
             <div className="tdg-planner__packages tdg-planner__packages--rows">
               {catalog.packages.map((pkg) => {
                 const copy = PACKAGE_COPY[pkg.packageKey];

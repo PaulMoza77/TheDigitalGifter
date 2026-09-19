@@ -1,18 +1,63 @@
-import { useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "./analytics";
 import { fetchPlannerAccess, insertTasks, loadProfile, upsertProfile } from "./api";
 import { daysUntilChristmas, localDateParts, resolvePlanMode, upcomingChristmasYear } from "./date";
-import { generateInitialPlan } from "./planGenerator";
-import { onboardingSeedFromPersonalization, readPlannerPersonalization } from "./personalization";
+import { generateInitialPlan, progressiveSurface } from "./planGenerator";
+import { initializePlannerFromPersonalization } from "./initializeProfile";
+import { personalizationComplete, readPlannerPersonalization } from "./personalization";
 import type { PlannerAccess, PlannerProfile, PreparedLevel } from "./types";
 
 const COUNTRIES = ["US", "GB", "IE", "DE", "FR", "ES", "IT", "NL", "PL", "RO", "CA", "AU"];
 const CURRENCIES = ["eur", "usd", "gbp", "ron"];
 
+type BundleState = {
+  loading: boolean;
+  access: PlannerAccess | null;
+  profile: PlannerProfile | null;
+  reload: () => Promise<void>;
+};
+
+const PlannerBundleContext = createContext<BundleState | null>(null);
+
+export function PlannerBundleProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<{
+    loading: boolean;
+    access: PlannerAccess | null;
+    profile: PlannerProfile | null;
+  }>({ loading: true, access: null, profile: null });
+
+  const reload = useCallback(async () => {
+    const access = await fetchPlannerAccess();
+    const season = access?.season_year || upcomingChristmasYear(new Date());
+    let profile = await loadProfile(season);
+    if (!profile && personalizationComplete(readPlannerPersonalization())) {
+      profile = await initializePlannerFromPersonalization();
+    }
+    setState({ loading: false, access, profile });
+    trackPlannerEvent("planner_opened", { planMode: profile?.plan_mode });
+  }, []);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  const value = useMemo(() => ({ ...state, reload }), [state, reload]);
+  return <PlannerBundleContext.Provider value={value}>{children}</PlannerBundleContext.Provider>;
+}
+
+export function usePlannerBundle() {
+  const ctx = useContext(PlannerBundleContext);
+  if (!ctx) {
+    throw new Error("PlannerBundleProvider is required");
+  }
+  return ctx;
+}
+
 export function PlannerOnboarding() {
   const navigate = useNavigate();
+  const bundle = usePlannerBundle();
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,14 +76,28 @@ export function PlannerOnboarding() {
 
   useEffect(() => {
     trackPlannerEvent("planner_onboarding_started");
-    const seed = onboardingSeedFromPersonalization(readPlannerPersonalization());
+    const stored = readPlannerPersonalization();
+    if (personalizationComplete(stored)) {
+      setBusy(true);
+      void initializePlannerFromPersonalization(stored).then(async (profile) => {
+        if (profile) {
+          await bundle.reload();
+          navigate("/account/christmas", { replace: true });
+          return;
+        }
+        setBusy(false);
+      });
+      return;
+    }
+    const seed = stored;
     setForm((f) => ({
       ...f,
-      hosting: seed.hosting,
-      travelling: seed.travelling,
-      prepared_level: seed.prepared_level,
+      hosting: seed.role === "hosting" || seed.role === "mix",
+      travelling: seed.role === "travelling" || seed.role === "mix",
+      prepared_level:
+        seed.start === "late" || seed.start === "december" ? "rescue" : seed.start === "november" ? "some" : "starting",
     }));
-  }, []);
+  }, [bundle, navigate]);
 
   const questions = useMemo(
     () => [
@@ -226,16 +285,20 @@ export function PlannerOnboarding() {
       return;
     }
     const today = localDateParts(new Date(), tz);
-    const generated = generateInitialPlan({
-      today,
-      christmas: { year: season, month: 12, day: 25 },
+    const generated = progressiveSurface(
+      generateInitialPlan({
+        today,
+        christmas: { year: season, month: 12, day: 25 },
+        mode,
+        hosting: form.hosting,
+        travelling: form.travelling,
+        hasChildren: form.has_children,
+        giftCount: form.recipient_count_approx,
+        prepared: form.prepared_level,
+      }),
+      `${today.year}-${String(today.month).padStart(2, "0")}-${String(today.day).padStart(2, "0")}`,
       mode,
-      hosting: form.hosting,
-      travelling: form.travelling,
-      hasChildren: form.has_children,
-      giftCount: form.recipient_count_approx,
-      prepared: form.prepared_level,
-    });
+    );
     await insertTasks(
       generated.map((t) => ({
         ...t,
@@ -258,10 +321,15 @@ export function PlannerOnboarding() {
       trackPlannerEvent("planner_budget_set", { countBucket: "set" });
     }
     trackPlannerEvent("planner_onboarding_completed", { planMode: mode });
+    await bundle.reload();
     navigate("/account/christmas", { replace: true });
   }
 
   const q = questions[step];
+
+  if (busy && step === 0) {
+    return <p className="tdg-planner-muted">Creating your Christmas plan…</p>;
+  }
 
   return (
     <div>
@@ -269,7 +337,7 @@ export function PlannerOnboarding() {
         <span className="tdg-planner-brand">Christmas Planner</span>
         <span className="tdg-planner-muted">{step + 1}/{questions.length}</span>
       </div>
-      <h1>3 minutes and your Christmas is organized.</h1>
+      <h1>A few details and your Christmas is organized.</h1>
       <p className="tdg-planner-muted">We’ll build a plan that matches today’s date — not a generic checklist.</p>
       <div className="tdg-planner-card" style={{ marginTop: 18 }}>
         <h2>{q.title}</h2>
@@ -304,27 +372,5 @@ export type PlannerBundle = {
   access: PlannerAccess | null;
   profile: PlannerProfile;
 };
-
-export function usePlannerBundle() {
-  const [state, setState] = useState<{
-    loading: boolean;
-    access: PlannerAccess | null;
-    profile: PlannerProfile | null;
-  }>({ loading: true, access: null, profile: null });
-
-  async function reload() {
-    const access = await fetchPlannerAccess();
-    const season = access?.season_year || upcomingChristmasYear(new Date());
-    const profile = await loadProfile(season);
-    setState({ loading: false, access, profile });
-    trackPlannerEvent("planner_opened", { planMode: profile?.plan_mode });
-  }
-
-  useEffect(() => {
-    void reload();
-  }, []);
-
-  return { ...state, reload };
-}
 
 export { loadBudget, loadGifts, loadRecipients, loadTasks } from "./api";

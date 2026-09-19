@@ -135,6 +135,19 @@ export const HOME_AREAS = [
   "other",
 ] as const;
 
+export const GROCERY_AISLES = [
+  "produce",
+  "meat",
+  "dairy",
+  "bakery",
+  "pantry",
+  "drinks",
+  "other",
+] as const;
+export type GroceryAisle = (typeof GROCERY_AISLES)[number];
+
+export const TRADITION_SECTIONS = ["family", "kids", "couple", "friends", "kindness"] as const;
+
 export const PLAN_MODES = ["early", "standard", "sprint", "rescue", "wrap"] as const;
 export type PlanMode = (typeof PLAN_MODES)[number];
 
@@ -159,6 +172,7 @@ export type PlannerProfile = {
   onboarding_completed_at: string | null;
   plan_mode: PlanMode;
   locale: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type PlannerTask = {
