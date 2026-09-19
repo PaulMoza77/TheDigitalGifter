@@ -1,4 +1,5 @@
 export type LibraryCategoryId =
+  | "clip_factory"
   | "christmas_reels"
   | "christmas_marketing"
   | "pet_dog"
@@ -19,6 +20,8 @@ export type LibraryVideo = {
   durationSeconds?: number;
   /** Still image shown until the first video frame paints (iOS often stays black otherwise). */
   poster?: string;
+  width?: number;
+  height?: number;
 };
 
 export type LibraryCategory = {
@@ -34,6 +37,11 @@ export type LibraryKindFilter = {
 };
 
 export const LIBRARY_CATEGORIES: LibraryCategory[] = [
+  {
+    id: "clip_factory",
+    label: "Clip Factory",
+    description: "Vertical clips generated from long-form video, with captions and provenance.",
+  },
   {
     id: "christmas_reels",
     label: "Christmas Reels",
@@ -1085,6 +1093,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
 ];
 
 export function librarySrcPath(src: string): string {
+  if (src.includes("/api/clip-factory")) return src;
   return src.split("?")[0];
 }
 
@@ -1092,9 +1101,27 @@ export function isLibraryPhoto(item: LibraryVideo): boolean {
   return item.kind === "photo" || /\.(jpe?g|png|webp)$/i.test(item.filename);
 }
 
-export function videosForCategory(categoryId: LibraryCategoryId | "all"): LibraryVideo[] {
-  if (categoryId === "all") return LIBRARY_VIDEOS;
-  return LIBRARY_VIDEOS.filter((video) => video.category === categoryId);
+export function videosForCategory(
+  categoryId: LibraryCategoryId | "all",
+  videos: LibraryVideo[] = LIBRARY_VIDEOS,
+): LibraryVideo[] {
+  if (categoryId === "all") return videos;
+  return videos.filter((video) => video.category === categoryId);
+}
+
+export function searchLibraryCatalog(
+  videos: LibraryVideo[],
+  query: string,
+  categoryId: LibraryCategoryId | "all",
+  kind: LibraryKind | "all" = "all",
+): LibraryVideo[] {
+  const needle = query.trim().toLowerCase();
+  let list = videosForCategory(categoryId, videos);
+  if (kind !== "all") list = list.filter((item) => item.kind === kind);
+  if (!needle) return list;
+  return list.filter((video) =>
+    [video.title, video.description, video.filename, video.id].join(" ").toLowerCase().includes(needle),
+  );
 }
 
 export function searchLibraryVideos(
@@ -1102,13 +1129,7 @@ export function searchLibraryVideos(
   categoryId: LibraryCategoryId | "all",
   kind: LibraryKind | "all" = "all",
 ): LibraryVideo[] {
-  const needle = query.trim().toLowerCase();
-  let list = videosForCategory(categoryId);
-  if (kind !== "all") list = list.filter((item) => item.kind === kind);
-  if (!needle) return list;
-  return list.filter((video) =>
-    [video.title, video.description, video.filename, video.id].join(" ").toLowerCase().includes(needle),
-  );
+  return searchLibraryCatalog(LIBRARY_VIDEOS, query, categoryId, kind);
 }
 
 export function countChristmasKind(kind: LibraryKind): number {

@@ -131,6 +131,7 @@ function publicMetadata(meta: Record<string, unknown> | null) {
 }
 
 function isAssetSrcAllowed(src: string): boolean {
+  if (src.startsWith("/api/clip-factory") && !src.includes("..")) return true;
   return src.startsWith("/assets/") && !src.includes("..") && !src.includes("://");
 }
 

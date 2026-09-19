@@ -7,11 +7,12 @@ import {
   LIBRARY_CATEGORIES,
   LIBRARY_VIDEOS,
   countChristmasKind,
-  searchLibraryVideos,
+  searchLibraryCatalog,
   type LibraryCategoryId,
   type LibraryKind,
   type LibraryVideo,
 } from "@/features/admin-library/catalog";
+import { clipFactoryApi } from "@/features/clip-factory/api";
 import BulkScheduleDialog from "@/features/social-publisher/BulkScheduleDialog";
 import PublishReelDrawer from "@/features/social-publisher/PublishReelDrawer";
 import { socialPublisherApi } from "@/features/social-publisher/api";
@@ -27,6 +28,7 @@ export default function AdminLibraryPage() {
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
   const [publisher, setPublisher] = React.useState<LibraryVideo | null>(null);
   const [bulkOpen, setBulkOpen] = React.useState(false);
+  const [factoryVideos, setFactoryVideos] = React.useState<LibraryVideo[]>([]);
   const [timezone, setTimezone] = React.useState(() =>
     resolveDefaultTimezone({
       browserTimezone: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC",
@@ -49,16 +51,42 @@ export default function AdminLibraryPage() {
       });
   }, []);
 
+  React.useEffect(() => {
+    void clipFactoryApi
+      .dynamicLibrary()
+      .then((data) => {
+        setFactoryVideos(
+          (data.videos || []).map((row) => ({
+            id: String(row.id),
+            title: String(row.title || "Clip Factory"),
+            description: String(row.description || ""),
+            src: String(row.src || ""),
+            filename: String(row.filename || "clip.mp4"),
+            category: "clip_factory",
+            kind: (row.kind as LibraryKind) || "reel",
+            durationSeconds: typeof row.durationSeconds === "number" ? row.durationSeconds : undefined,
+            poster: typeof row.poster === "string" ? row.poster : undefined,
+            width: typeof row.width === "number" ? row.width : 1080,
+            height: typeof row.height === "number" ? row.height : 1920,
+          })),
+        );
+      })
+      .catch(() => {
+        setFactoryVideos([]);
+      });
+  }, []);
+
+  const catalog = React.useMemo(() => [...factoryVideos, ...LIBRARY_VIDEOS], [factoryVideos]);
   const kindFilter = category === "christmas_reels" ? kind : "all";
   const videos = React.useMemo(
-    () => searchLibraryVideos(query, category, kindFilter),
-    [query, category, kindFilter],
+    () => searchLibraryCatalog(catalog, query, category, kindFilter),
+    [catalog, query, category, kindFilter],
   );
   const christmasTotal = LIBRARY_VIDEOS.filter((item) => item.category === "christmas_reels").length;
   const totalLabel =
     category === "christmas_reels"
       ? `${videos.length} of ${christmasTotal} Christmas items`
-      : `${videos.length} of ${LIBRARY_VIDEOS.length} items`;
+      : `${videos.length} of ${catalog.length} items`;
   const selectedVideos = videos.filter((item) => item.kind === "reel" && selectedIds.includes(item.id));
 
   return (
