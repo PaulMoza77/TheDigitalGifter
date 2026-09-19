@@ -1,15 +1,40 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "./analytics";
 import { answerFromContext } from "./assistant";
 import { insertTask, loadBudget, loadGifts, loadRecipients, loadTasks } from "./api";
-import { countdownCopy, daysUntilChristmas, isoDate, localDateParts, planModeLabel, resolvePlanMode } from "./date";
+import {
+  countdownCopy,
+  daysUntilChristmas,
+  formatPlannerDate,
+  giftStatusLabel,
+  isoDate,
+  localDateParts,
+  planModeLabel,
+  prettyLabel,
+  resolvePlanMode,
+  taskCategoryLabel,
+} from "./date";
 import { canAddCustomTask, canAddRecipient, hasFeature } from "./entitlements";
 import { recommendedToday } from "./planGenerator";
 import { computeReadiness } from "./readiness";
 import { money, PlannerPaywall } from "./Paywall";
-import { ASSISTANT_PROMPTS, TaskRow } from "./plannerUi";
+import {
+  ASSISTANT_PROMPTS,
+  PlannerComposer,
+  PlannerEmptyState,
+  PlannerModuleLinkRow,
+  PlannerPageHeader,
+  PlannerPanel,
+  PlannerProgress,
+  PlannerQuickAdd,
+  PlannerSection,
+  PlannerSnapshotRow,
+  PlannerStat,
+  PlannerStatusChip,
+  TaskRow,
+} from "./plannerUi";
 import { PlannerOnboarding, usePlannerBundle } from "./Onboarding";
 import {
   BUDGET_CATEGORIES,
@@ -62,7 +87,12 @@ export default function ChristmasPlannerTodayPage() {
   const daysLeft = daysUntilChristmas(new Date(), tz);
   const mode = resolvePlanMode(daysLeft, profile.prepared_level);
   const todayIso = isoDate(localDateParts(new Date(), tz));
-  const todayTasks = recommendedToday(tasks.filter((t) => t.status === "open" || t.status === "rescheduled"), todayIso, 6);
+  const openTasks = tasks.filter((t) => t.status === "open" || t.status === "rescheduled");
+  const todayTasks = recommendedToday(openTasks, todayIso, 5);
+  const todayIds = new Set(todayTasks.map((t) => t.id));
+  const thisWeek = openTasks
+    .filter((t) => t.due_on && t.due_on >= todayIso && !todayIds.has(t.id))
+    .slice(0, 6);
   const readiness = computeReadiness({
     profile,
     tasks,
@@ -77,9 +107,8 @@ export default function ChristmasPlannerTodayPage() {
     budget.reduce((s, b) => s + b.spent_minor, 0) +
     gifts.reduce((s, g) => s + (g.actual_price_minor || 0), 0);
   const remaining = planned - spent;
-  const nextUp = tasks
-    .filter((t) => t.status === "open" && t.due_on && t.due_on > todayIso)
-    .slice(0, 5);
+  const nextDeadline = openTasks.find((t) => t.due_on) || null;
+  const upcomingCount = openTasks.filter((t) => t.due_on).length;
 
   async function addQuick(event: FormEvent) {
     event.preventDefault();
@@ -138,124 +167,123 @@ export default function ChristmasPlannerTodayPage() {
     setQuick(null);
   }
 
+  const giftHint = recipients.length === 0 ? "No one added yet" : `${plannedGifts} planned · ${wrapped} wrapped`;
+  const budgetHint = planned ? `of ${money(planned, profile.currency)}` : "Set a season total";
+  const giftValue = recipients.length === 0 ? "—" : `${recipients.length} ${recipients.length === 1 ? "person" : "people"}`;
+  const budgetValue = planned ? money(spent, profile.currency) : "—";
+
   return (
-    <div>
+    <div className="tdg-planner-today">
       <header className="tdg-planner-hero">
-        <p className="tdg-planner-muted">{planModeLabel(mode)}</p>
+        <p className="tdg-planner-kicker">{planModeLabel(mode)}</p>
         <h1>{countdownCopy(daysLeft)}</h1>
-        <p className="tdg-planner-ready">Your Christmas is {readiness.percent}% ready</p>
-        <div className="tdg-planner-bar" aria-hidden>
-          <span style={{ width: `${readiness.percent}%` }} />
+        <p className="tdg-planner-ready">Your Christmas is {readiness.percent}% ready.</p>
+        <PlannerProgress value={readiness.percent} />
+        <div className="tdg-planner-summary">
+          <PlannerStat label="Readiness" value={`${readiness.percent}%`} hint="Season progress" />
+          <PlannerStat label="Gifts" value={giftValue} hint={giftHint} />
+          <PlannerStat label="Budget" value={budgetValue} hint={budgetHint} />
+          <PlannerStat label="Upcoming" value={String(upcomingCount)} hint={upcomingCount === 1 ? "dated task" : "dated tasks"} />
         </div>
       </header>
 
       <div className="tdg-planner-dash">
-        <section className="tdg-planner-section">
-          <h2>Today’s checklist</h2>
-          {todayTasks.length === 0 ? (
-            <div className="tdg-planner-empty">
-              <strong>Nothing due this hour — keep the season moving.</strong>
-              <p>Add a gift person, schedule a meal, or drop a custom task onto today.</p>
-              <div className="tdg-planner-actions">
-                <Link className="tdg-planner-btn primary" to="/account/christmas/gifts">
-                  Add a gift
-                </Link>
-                <Link className="tdg-planner-btn" to="/account/christmas/plan">
-                  Open plan
-                </Link>
-              </div>
-            </div>
-          ) : (
-            todayTasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                onChange={(next) => setTasks((prev) => (next ? prev.map((t) => (t.id === next.id ? next : t)) : prev.filter((t) => t.id !== task.id)))}
+        <div className="tdg-planner-today-main">
+          <PlannerSection
+            title="Today’s priorities"
+            action={
+              <PlannerQuickAdd
+                open={quick}
+                onOpen={setQuick}
+                onClose={() => {
+                  setQuick(null);
+                  setDraft("");
+                }}
+                draft={draft}
+                onDraft={setDraft}
+                onSubmit={(e) => void addQuick(e)}
               />
-            ))
-          )}
-        </section>
-
-        <div>
-          <section className="tdg-planner-section">
-            <div className="tdg-planner-stats">
-              <div className="tdg-planner-stat">
-                <span className="tdg-planner-muted">Gift status</span>
-                <b>
-                  {recipients.length} {recipients.length === 1 ? "person" : "people"}
-                </b>
-                <span className="tdg-planner-muted">
-                  {plannedGifts} planned · {wrapped} wrapped
-                </span>
-                <Link className="tdg-planner-linkish" to="/account/christmas/gifts">
-                  Manage gifts
-                </Link>
-              </div>
-              <div className="tdg-planner-stat">
-                <span className="tdg-planner-muted">Budget</span>
-                <b>{money(spent, profile.currency)} spent</b>
-                <span className="tdg-planner-muted">of {money(planned || 0, profile.currency)}</span>
-                <Link className="tdg-planner-linkish" to="/account/christmas/budget">
-                  Update budget
-                </Link>
-              </div>
-              <div className="tdg-planner-stat">
-                <span className="tdg-planner-muted">Food / hosting</span>
-                <b>{mealsCount} meals</b>
-                <span className="tdg-planner-muted">{mealsCount ? "Menus started" : "Plan Eve or Christmas Day"}</span>
-                <Link className="tdg-planner-linkish" to="/account/christmas/food">
-                  Open food
-                </Link>
-              </div>
-              <div className="tdg-planner-stat">
-                <span className="tdg-planner-muted">Upcoming</span>
-                <b>{nextUp.length} dated</b>
-                <span className="tdg-planner-muted">{nextUp[0] ? nextUp[0].title : "Nothing dated yet"}</span>
-                <Link className="tdg-planner-linkish" to="/account/christmas/calendar">
-                  Open calendar
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          <section className="tdg-planner-section">
-            <h2>Next up</h2>
-            {nextUp.length === 0 ? (
-              <div className="tdg-planner-empty">
-                <strong>Date the next few things.</strong>
-                <p>Reschedule a plan task or add an event so this week has a spine.</p>
-              </div>
-            ) : (
-              nextUp.map((t) => (
-                <div key={t.id} className="tdg-planner-row">
-                  <div>
-                    <strong>{t.title}</strong>
-                    <div className="tdg-planner-muted">{t.due_on} · {t.category}</div>
+            }
+          >
+            {todayTasks.length === 0 ? (
+              <PlannerEmptyState
+                title="A quiet start — keep the season moving."
+                body="Add a gift person, schedule a meal, or drop a task onto today."
+                action={
+                  <div className="tdg-planner-actions">
+                    <Link className="tdg-planner-btn primary" to="/account/christmas/gifts">
+                      Start gift list
+                    </Link>
+                    <Link className="tdg-planner-btn" to="/account/christmas/plan">
+                      Open plan
+                    </Link>
                   </div>
-                </div>
-              ))
+                }
+              />
+            ) : (
+              <div className="tdg-planner-list">
+                {todayTasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    onChange={(next) =>
+                      setTasks((prev) => (next ? prev.map((t) => (t.id === next.id ? next : t)) : prev.filter((t) => t.id !== task.id)))
+                    }
+                  />
+                ))}
+              </div>
             )}
-          </section>
+          </PlannerSection>
 
-          <section className="tdg-planner-section">
-            <h2>Quick add</h2>
-            <div className="tdg-planner-actions">
-              {(["task", "gift", "event", "meal"] as const).map((k) => (
-                <button key={k} type="button" className={`tdg-planner-chip ${quick === k ? "on" : ""}`} onClick={() => setQuick(k)}>
-                  + {k[0].toUpperCase() + k.slice(1)}
-                </button>
-              ))}
-            </div>
-            {quick ? (
-              <form className="tdg-planner-composer" onSubmit={(e) => void addQuick(e)}>
-                <input className="tdg-planner-input" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`Add ${quick}`} />
-                <button type="submit" className="tdg-planner-btn primary">
-                  Add
-                </button>
-              </form>
-            ) : null}
-          </section>
+          <PlannerSection title="This week">
+            {thisWeek.length === 0 ? (
+              <p className="tdg-planner-muted">Nothing else dated this week. Priorities above are the whole picture for now.</p>
+            ) : (
+              <ol className="tdg-planner-week">
+                {thisWeek.map((task) => (
+                  <li key={task.id}>
+                    <time dateTime={task.due_on || undefined}>{formatPlannerDate(task.due_on)}</time>
+                    <span>{task.title}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </PlannerSection>
         </div>
+
+        <aside className="tdg-planner-snapshot" aria-label="Christmas snapshot">
+          <h2>Christmas snapshot</h2>
+          <PlannerSnapshotRow
+            label="Gifts"
+            title={recipients.length === 0 ? "No one added yet." : `${recipients.length} ${recipients.length === 1 ? "person" : "people"} planned`}
+            action={recipients.length === 0 ? "Start your gift list →" : "Open gifts →"}
+            to="/account/christmas/gifts"
+          />
+          <PlannerSnapshotRow
+            label="Budget"
+            title={!planned ? "Set your Christmas budget." : `${money(spent, profile.currency)} spent`}
+            action={!planned ? "Stay in control from day one →" : "Update budget →"}
+            to="/account/christmas/budget"
+          />
+          <PlannerSnapshotRow
+            label="Food"
+            title={mealsCount === 0 ? "Nothing planned yet." : `${mealsCount} ${mealsCount === 1 ? "meal" : "meals"} planned`}
+            action={mealsCount === 0 ? "Start with Christmas Eve →" : "Open food →"}
+            to="/account/christmas/food"
+          />
+          <PlannerSnapshotRow
+            label="Hosting"
+            title={profile.hosting ? "Hosting this year" : "Not started"}
+            action="Open hosting →"
+            to="/account/christmas/hosting"
+          />
+          <PlannerSnapshotRow
+            label="Upcoming"
+            title={nextDeadline ? `${formatPlannerDate(nextDeadline.due_on)} — ${nextDeadline.title}` : "No dated tasks yet"}
+            action="Open calendar →"
+            to="/account/christmas/calendar"
+          />
+        </aside>
       </div>
 
       {!hasFeature(access, "planner_core") ? (
@@ -324,15 +352,16 @@ export function ChristmasPlannerPlanPage() {
     trackPlannerEvent("planner_module_opened", { module: "plan" });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading plan…</p>;
+  if (loading) return <p className="tdg-planner-muted">Loading plan…</p>;
   if (!profile) return <PlannerOnboarding />;
 
   const tz = profile.timezone;
   const todayIso = isoDate(localDateParts(new Date(), tz));
   const weekEnd = isoDate(localDateParts(new Date(Date.now() + 7 * 86400000), tz));
   const filtered = tasks.filter((t) => {
-    if (view === "today") return t.status !== "skipped" && (t.due_on || todayIso) <= todayIso;
-    if (view === "week") return t.status !== "skipped" && (t.due_on || todayIso) <= weekEnd;
+    if (t.status === "skipped") return false;
+    if (view === "today") return (t.due_on || todayIso) <= todayIso;
+    if (view === "week") return (t.due_on || todayIso) <= weekEnd;
     if (view === "calendar") return Boolean(t.due_on);
     return true;
   });
@@ -363,63 +392,73 @@ export function ChristmasPlannerPlanPage() {
     }
   }
 
-  const byDate = useMemo(() => {
-    const map = new Map<string, PlannerTask[]>();
-    for (const task of filtered) {
-      const key = task.due_on || "undated";
-      map.set(key, [...(map.get(key) || []), task]);
-    }
-    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [filtered]);
+  const onTaskChange = (task: PlannerTask, next: PlannerTask | null) =>
+    setTasks((prev) => (next ? prev.map((t) => (t.id === next.id ? next : t)) : prev.filter((t) => t.id !== task.id)));
+
+  const groups =
+    view === "calendar"
+      ? null
+      : [
+          { key: "Overdue", rows: filtered.filter((t) => t.status !== "done" && t.due_on && t.due_on < todayIso) },
+          { key: "Today", rows: filtered.filter((t) => t.status !== "done" && (t.due_on === todayIso || (!t.due_on && view === "today"))) },
+          { key: "Coming up", rows: filtered.filter((t) => t.status !== "done" && t.due_on && t.due_on > todayIso && t.due_on <= weekEnd) },
+          { key: "Later", rows: filtered.filter((t) => t.status !== "done" && (!t.due_on || t.due_on > weekEnd) && view === "all") },
+          { key: "Done", rows: filtered.filter((t) => t.status === "done") },
+        ].filter((g) => g.rows.length);
+
+  const byDateMap = new Map<string, PlannerTask[]>();
+  for (const task of filtered) {
+    const key = task.due_on || "undated";
+    byDateMap.set(key, [...(byDateMap.get(key) || []), task]);
+  }
+  const byDate = [...byDateMap.entries()].sort(([a], [b]) => a.localeCompare(b));
 
   return (
-    <div>
-      <h1>Plan</h1>
-      <div className="tdg-planner-chips">
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Plan" lede="Your season, step by step." />
+      <div className="tdg-planner-seg" role="tablist" aria-label="Plan views">
         {(["today", "week", "all", "calendar"] as const).map((v) => (
-          <button key={v} type="button" className={`tdg-planner-chip ${view === v ? "on" : ""}`} onClick={() => setView(v)}>
+          <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? "on" : ""} onClick={() => setView(v)}>
             {v === "week" ? "This week" : v === "all" ? "All" : v[0].toUpperCase() + v.slice(1)}
           </button>
         ))}
       </div>
-      <div className="tdg-planner-card tdg-planner-composer">
-        <input className="tdg-planner-input" placeholder="Add a custom task" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <select className="tdg-planner-select" value={category} onChange={(e) => setCategory(e.target.value as TaskCategory)}>
+      <PlannerComposer>
+        <input className="tdg-planner-input" placeholder="Add a task" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <select className="tdg-planner-select" value={category} onChange={(e) => setCategory(e.target.value as TaskCategory)} aria-label="Category">
           {TASK_CATEGORIES.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {taskCategoryLabel(c)}
             </option>
           ))}
         </select>
         <button type="button" className="tdg-planner-btn primary" onClick={() => void addCustom()}>
           Add task
         </button>
-      </div>
+      </PlannerComposer>
       {filtered.length === 0 ? (
-        <div className="tdg-planner-empty">
-          <strong>No tasks in this view.</strong>
-          <p>Add a custom task, or switch to All to see the generated plan. Edit opens due date, category, skip, and delete for your tasks.</p>
-        </div>
+        <PlannerEmptyState
+          mark="plan"
+          title="No tasks here yet."
+          body="Add your own task or switch views to see your full Christmas plan."
+        />
       ) : view === "calendar" ? (
         byDate.map(([date, rows]) => (
           <section key={date} className="tdg-planner-section">
-            <h2>{date}</h2>
+            <h2>{date === "undated" ? "Undated" : formatPlannerDate(date)}</h2>
             {rows.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                onChange={(next) => setTasks((prev) => (next ? prev.map((t) => (t.id === next.id ? next : t)) : prev.filter((t) => t.id !== task.id)))}
-              />
+              <TaskRow key={task.id} task={task} onChange={(next) => onTaskChange(task, next)} />
             ))}
           </section>
         ))
       ) : (
-        filtered.map((task) => (
-          <TaskRow
-            key={task.id}
-            task={task}
-            onChange={(next) => setTasks((prev) => (next ? prev.map((t) => (t.id === next.id ? next : t)) : prev.filter((t) => t.id !== task.id)))}
-          />
+        (groups || []).map((group) => (
+          <section key={group.key} className="tdg-planner-section tdg-planner-appear">
+            <h2>{group.key}</h2>
+            {group.rows.map((task) => (
+              <TaskRow key={task.id} task={task} onChange={(next) => onTaskChange(task, next)} />
+            ))}
+          </section>
         ))
       )}
     </div>
@@ -500,45 +539,54 @@ export function ChristmasPlannerGiftsPage() {
   }
 
   const personGifts = gifts.filter((g) => g.recipient_id === active?.id);
+  const ideas = gifts.filter((g) => g.status === "idea").length;
+  const ordered = gifts.filter((g) => g.status === "ordered").length;
+  const wrappedCount = gifts.filter((g) => g.status === "wrapped" || g.status === "given").length;
 
   return (
-    <div>
-      <h1>Gifts</h1>
-      <p className="tdg-planner-muted">People you need to buy for — not your public wishlist.</p>
-      {!hasFeature(access, "gift_planner") ? (
-        <p className="tdg-planner-muted">Free: up to 3 people.</p>
-      ) : null}
-      <div className="tdg-planner-split">
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Gifts" lede="Plan everyone you’re buying for — privately, in one place.">
+        {!hasFeature(access, "gift_planner") ? <p className="tdg-planner-muted">Free includes up to 3 people.</p> : null}
+      </PlannerPageHeader>
+      <div className="tdg-planner-summary">
+        <PlannerStat label="People" value={String(recipients.length)} hint={recipients.length === 1 ? "on your list" : "on your list"} />
+        <PlannerStat label="Ideas" value={String(ideas)} hint="still deciding" />
+        <PlannerStat label="Ordered" value={String(ordered)} hint="in motion" />
+        <PlannerStat label="Wrapped" value={String(wrappedCount)} hint="ready to give" />
+      </div>
+      <div className="tdg-planner-split tdg-planner-gifts">
         <div>
-          <div className="tdg-planner-card">
+          <PlannerComposer>
             <input className="tdg-planner-input" placeholder="Add a person" value={name} onChange={(e) => setName(e.target.value)} />
             <input className="tdg-planner-input" placeholder="Relationship" value={relation} onChange={(e) => setRelation(e.target.value)} />
             <input className="tdg-planner-input" placeholder="Budget" type="number" value={budget} onChange={(e) => setBudget(e.target.value)} />
             <button type="button" className="tdg-planner-btn primary" disabled={locked && !name} onClick={() => void addPerson()}>
               Add person
             </button>
-          </div>
+          </PlannerComposer>
           <div className="tdg-planner-people">
             {recipients.length === 0 ? (
-              <div className="tdg-planner-empty">
-                <strong>Who are you buying for?</strong>
-                <p>Add a person, set a budget, then track each gift from idea to wrapped.</p>
-              </div>
+              <PlannerEmptyState
+                mark="gift"
+                title="Start your gift list with the people who matter most."
+                body="Add a name, a relationship, and a budget. Then track each gift from idea to wrapped."
+              />
             ) : (
               recipients.map((r) => {
                 const theirs = gifts.filter((g) => g.recipient_id === r.id);
                 const planned = theirs.filter((g) => ["planned", "ordered", "arrived", "hidden", "wrapped", "given"].includes(g.status)).length;
                 const wrapped = theirs.filter((g) => g.status === "wrapped" || g.status === "given").length;
+                const pct = theirs.length ? Math.round((wrapped / theirs.length) * 100) : 0;
                 return (
                   <button key={r.id} type="button" className={`tdg-planner-person ${active?.id === r.id ? "on" : ""}`} onClick={() => setActiveId(r.id)}>
                     <strong>{r.display_name}</strong>
-                    <div className="tdg-planner-muted">{r.relationship || "Person"}</div>
+                    <div className="tdg-planner-muted">{prettyLabel(r.relationship || "Person")}</div>
                     <div className="tdg-planner-gift-meta">
                       <span>{theirs.length} gifts</span>
                       <span>{planned} in motion</span>
-                      <span>{wrapped} wrapped</span>
                       <span>{r.budget_minor != null ? money(r.budget_minor, profile.currency) : "No budget"}</span>
                     </div>
+                    <PlannerProgress value={pct} compact />
                   </button>
                 );
               })
@@ -546,66 +594,66 @@ export function ChristmasPlannerGiftsPage() {
           </div>
         </div>
         {active ? (
-          <div>
+          <PlannerPanel>
             <h2>{active.display_name}</h2>
             <p className="tdg-planner-muted">
-              {active.relationship}
+              {prettyLabel(active.relationship || "")}
               {active.budget_minor != null ? ` · ${money(active.budget_minor, profile.currency)} budget` : ""}
             </p>
-            <input className="tdg-planner-input" placeholder="Gift title" value={idea} onChange={(e) => setIdea(e.target.value)} />
-            <div className="tdg-planner-actions">
-              <button type="button" className="tdg-planner-btn primary" onClick={() => void addGift()}>
-                Add gift
-              </button>
-              <Link className="tdg-planner-btn" to={`/christmas/gift-finder?plannerRecipient=${active.id}`}>
-                Gift Finder
-              </Link>
-            </div>
-            {personGifts.length === 0 ? (
-              <div className="tdg-planner-empty">
-                <strong>No gifts yet for {active.display_name}.</strong>
-                <p>Add an idea, then move it idea → planned → ordered → arrived → wrapped.</p>
+            <PlannerComposer>
+              <input className="tdg-planner-input" placeholder="Gift idea" value={idea} onChange={(e) => setIdea(e.target.value)} />
+              <div className="tdg-planner-actions">
+                <button type="button" className="tdg-planner-btn primary" onClick={() => void addGift()}>
+                  Add idea
+                </button>
+                <Link className="tdg-planner-btn" to={`/christmas/gift-finder?plannerRecipient=${active.id}`}>
+                  Need an idea?
+                </Link>
               </div>
+            </PlannerComposer>
+            {personGifts.length === 0 ? (
+              <PlannerEmptyState
+                mark="gift"
+                title={`Nothing yet for ${active.display_name}.`}
+                body="Add an idea, then move it from planned to ordered, arrived, and wrapped."
+              />
             ) : (
               personGifts.map((g) => (
-                <div key={g.id} className="tdg-planner-card">
-                  <div className="tdg-planner-row">
-                    <div>
-                      <strong>{g.selected_gift || g.idea}</strong>
-                      <div className="tdg-planner-gift-meta">
-                        <span className="tdg-planner-status">{g.status}</span>
-                        {g.store ? <span>{g.store}</span> : null}
-                        {g.planned_price_minor ? <span>{money(g.planned_price_minor, profile.currency)}</span> : null}
-                        {g.actual_price_minor ? <span>paid {money(g.actual_price_minor, profile.currency)}</span> : null}
-                        {g.delivery_on ? <span>arrives {g.delivery_on}</span> : null}
-                      </div>
+                <div key={g.id} className="tdg-planner-gift-row">
+                  <div>
+                    <strong>{g.selected_gift || g.idea}</strong>
+                    <div className="tdg-planner-gift-meta">
+                      <PlannerStatusChip tone={g.status === "wrapped" || g.status === "given" ? "done" : "gold"}>{giftStatusLabel(g.status)}</PlannerStatusChip>
+                      {g.store ? <span>{g.store}</span> : null}
+                      {g.planned_price_minor ? <span>{money(g.planned_price_minor, profile.currency)}</span> : null}
+                      {g.actual_price_minor ? <span>paid {money(g.actual_price_minor, profile.currency)}</span> : null}
                     </div>
-                    <select
-                      className="tdg-planner-select"
-                      style={{ width: 140, margin: 0 }}
-                      value={g.status}
-                      aria-label={`Status for ${g.selected_gift || g.idea}`}
-                      onChange={async (e) => {
-                        const status = e.target.value as GiftItemStatus;
-                        await supabase.from("christmas_gift_items").update({ status }).eq("id", g.id);
-                        setGifts((p) => p.map((x) => (x.id === g.id ? { ...x, status } : x)));
-                        trackPlannerEvent("planner_gift_status_changed", { module: "gifts" });
-                      }}
-                    >
-                      {GIFT_ITEM_STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
                   </div>
+                  <select
+                    className="tdg-planner-select"
+                    style={{ width: 140, margin: 0 }}
+                    value={g.status}
+                    aria-label={`Status for ${g.selected_gift || g.idea}`}
+                    onChange={async (e) => {
+                      const status = e.target.value as GiftItemStatus;
+                      await supabase.from("christmas_gift_items").update({ status }).eq("id", g.id);
+                      setGifts((p) => p.map((x) => (x.id === g.id ? { ...x, status } : x)));
+                      trackPlannerEvent("planner_gift_status_changed", { module: "gifts" });
+                    }}
+                  >
+                    {GIFT_ITEM_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {giftStatusLabel(s)}
+                      </option>
+                    ))}
+                  </select>
                   <button type="button" className="tdg-planner-linkish" onClick={() => setEditing(g)}>
-                    Store, URL, delivery, hiding place
+                    Details
                   </button>
                 </div>
               ))
             )}
-          </div>
+          </PlannerPanel>
         ) : null}
       </div>
       {editing ? (
@@ -686,38 +734,56 @@ export function ChristmasPlannerMorePage() {
   useEffect(() => {
     trackPlannerEvent("planner_module_opened", { module: "more" });
   }, []);
-  const items = [
-    ["/account/christmas/budget", "Budget", "Season totals and simple expenses"],
-    ["/account/christmas/calendar", "Calendar", "Tasks, events, deliveries"],
-    ["/account/christmas/shopping", "Shopping", "To buy, ordered, arriving, returns"],
-    ["/account/christmas/food", "Food", "Eve, Day, parties, drinks"],
-    ["/account/christmas/recipes", "Recipes", "Original TDG recipes"],
-    ["/account/christmas/grocery", "Grocery", "One list from meals and extras"],
-    ["/account/christmas/hosting", "Hosting", "Guests, RSVP, rooms"],
-    ["/account/christmas/home", "Home", "Tree, rooms, outdoor lights"],
-    ["/account/christmas/travel", "Travel", "Trips and packing — no passport data"],
-    ["/account/christmas/cards", "Cards", "Track, then open existing makers"],
-    ["/christmas/wishlist", "Wishlist", "Your shareable list — separate from Planner"],
-    ["/account/christmas/traditions", "Traditions", "Family, kids, kindness"],
-    ["/account/christmas/memories", "Memories", "Notes for next year"],
-    ["/account/christmas/club", "Christmas Club", "Countdown community"],
-    ["/account/christmas/settings", "Settings", "Currency, hosting, reset"],
+  const groups = [
+    {
+      title: "Planning",
+      items: [
+        ["/account/christmas/budget", "Budget", "Track the season total", "budget"],
+        ["/account/christmas/calendar", "Calendar", "See every date, task and delivery", "calendar"],
+        ["/account/christmas/shopping", "Shopping", "To buy, ordered, arriving, returns", "shopping"],
+      ],
+    },
+    {
+      title: "Home & food",
+      items: [
+        ["/account/christmas/food", "Food", "Plan meals for Christmas Eve and Day", "food"],
+        ["/account/christmas/recipes", "Recipes", "Save seasonal dishes", "food"],
+        ["/account/christmas/grocery", "Grocery", "One list from meals and extras", "list"],
+        ["/account/christmas/hosting", "Hosting", "Guests, prep and home", "home"],
+        ["/account/christmas/home", "Home", "Tree, rooms and lights", "home"],
+      ],
+    },
+    {
+      title: "People",
+      items: [
+        ["/account/christmas/travel", "Travel", "Trips, packing and plans", "travel"],
+        ["/account/christmas/cards", "Cards", "Keep greetings on track", "star"],
+        ["/christmas/wishlist", "Wishlist", "Open your public wishlist", "gift"],
+      ],
+    },
+    {
+      title: "Season extras",
+      items: [
+        ["/account/christmas/traditions", "Traditions", "Make time for what matters", "star"],
+        ["/account/christmas/memories", "Memories", "Keep the season", "memory"],
+        ["/account/christmas/club", "Christmas Club", "Countdown community", "star"],
+        ["/account/christmas/settings", "Settings", "Currency, hosting, reset", "settings"],
+      ],
+    },
   ] as const;
   return (
-    <div>
-      <h1>More</h1>
-      <div className="tdg-planner-more">
-        {items.map(([href, label, desc]) => (
-          <Link key={href} to={href}>
-            <span aria-hidden>✦</span>
-            <span>
-              <strong>{label}</strong>
-              <span className="desc">{desc}</span>
-            </span>
-            <span aria-hidden>›</span>
-          </Link>
-        ))}
-      </div>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="More" lede="Everything else for your Christmas season." />
+      {groups.map((group) => (
+        <section key={group.title} className="tdg-planner-section">
+          <p className="tdg-planner-kicker">{group.title}</p>
+          <div className="tdg-planner-more">
+            {group.items.map(([href, label, desc, mark]) => (
+              <PlannerModuleLinkRow key={href} to={href} title={label} description={desc} mark={mark} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
@@ -743,11 +809,14 @@ export function ChristmasPlannerBudgetPage() {
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "budget")) {
     return (
-      <PlannerPaywall
-        feature="budget"
-        title="Budget is a paid module"
-        body="See planned vs spent without spreadsheet complexity. Gift prices roll in automatically."
-      />
+      <div className="tdg-planner-page">
+        <PlannerPageHeader title="Budget" lede="Keep Christmas spending beautifully under control." />
+        <PlannerPaywall
+          feature="budget"
+          title="Track gifts, meals and extras without spreadsheet chaos."
+          body="See planned versus spent as the season unfolds. Gift prices roll in automatically."
+        />
+      </div>
     );
   }
 
@@ -769,46 +838,47 @@ export function ChristmasPlannerBudgetPage() {
   }
 
   return (
-    <div>
-      <h1>Budget</h1>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Budget" lede="Keep Christmas spending beautifully under control." />
+      <div className="tdg-planner-summary">
+        <PlannerStat label="Total" value={money(planned, profile.currency)} hint="season budget" />
+        <PlannerStat label="Spent" value={money(spent, profile.currency)} hint="including gifts" />
+        <PlannerStat label="Remaining" value={money(remaining, profile.currency)} hint={remaining < 0 ? "over plan" : "left to spend"} />
+        <PlannerStat label="Used" value={`${planned ? Math.min(100, Math.round((spent / planned) * 100)) : 0}%`} hint="of the total" />
+      </div>
       <section className="tdg-planner-section">
-        <p className="tdg-planner-muted">Total Christmas budget</p>
-        <input
-          className="tdg-planner-input"
-          type="number"
-          value={total}
-          onChange={(e) => setTotal(e.target.value)}
-          onBlur={async () => {
-            const minor = Math.max(0, Number(total || 0) * 100);
-            await supabase.from("christmas_planner_profiles").update({ total_budget_minor: minor }).eq("id", profile.id);
-            trackPlannerEvent("planner_budget_updated", { module: "budget" });
-            await reload();
-          }}
-        />
-        <div className="tdg-planner-stats">
-          <div className="tdg-planner-stat">
-            <span className="tdg-planner-muted">Spent</span>
-            <b>{money(spent, profile.currency)}</b>
-          </div>
-          <div className="tdg-planner-stat">
-            <span className="tdg-planner-muted">Remaining</span>
-            <b>{money(remaining, profile.currency)}</b>
-          </div>
-        </div>
-        <div className="tdg-planner-bar">
-          <span style={{ width: `${planned ? Math.min(100, Math.round((spent / planned) * 100)) : 0}%` }} />
-        </div>
+        <label>
+          Total Christmas budget
+          <input
+            className="tdg-planner-input"
+            type="number"
+            value={total}
+            onChange={(e) => setTotal(e.target.value)}
+            onBlur={async () => {
+              const minor = Math.max(0, Number(total || 0) * 100);
+              await supabase.from("christmas_planner_profiles").update({ total_budget_minor: minor }).eq("id", profile.id);
+              trackPlannerEvent("planner_budget_updated", { module: "budget" });
+              await reload();
+            }}
+          />
+        </label>
+        <PlannerProgress value={planned ? Math.min(100, Math.round((spent / planned) * 100)) : 0} />
+        <p className="tdg-planner-muted">Gift prices roll into spent automatically.</p>
       </section>
-      <p className="tdg-planner-muted">Gift prices roll into spent automatically.</p>
       {BUDGET_CATEGORIES.map((cat) => {
         const row = rows.find((r) => r.category === cat);
         const extra = cat === "gifts" ? giftSpent : 0;
+        const cap = row?.planned_minor || 0;
+        const used = (row?.spent_minor || 0) + extra;
         return (
-          <div key={cat} className="tdg-planner-row">
+          <div key={cat} className="tdg-planner-budget-row">
             <div>
-              <strong>{cat}</strong>
+              <strong>{prettyLabel(cat)}</strong>
               <div className="tdg-planner-muted">
-                {money((row?.spent_minor || 0) + extra, profile.currency)} of {money(row?.planned_minor || 0, profile.currency)}
+                {money(used, profile.currency)} of {money(cap, profile.currency)}
+              </div>
+              <div className="tdg-planner-bar is-compact">
+                <span style={{ width: `${cap ? Math.min(100, Math.round((used / cap) * 100)) : 0}%` }} />
               </div>
             </div>
             <input
@@ -831,11 +901,12 @@ export function ChristmasPlannerBudgetPage() {
       })}
       <section className="tdg-planner-section">
         <h2>Add expense</h2>
+        <PlannerComposer>
         <input className="tdg-planner-input" placeholder="What did you buy?" value={expense.label} onChange={(e) => setExpense({ ...expense, label: e.target.value })} />
         <select className="tdg-planner-select" value={expense.category} onChange={(e) => setExpense({ ...expense, category: e.target.value as BudgetCategory })}>
           {BUDGET_CATEGORIES.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {prettyLabel(c)}
             </option>
           ))}
         </select>
@@ -856,6 +927,7 @@ export function ChristmasPlannerBudgetPage() {
         >
           Add expense
         </button>
+        </PlannerComposer>
       </section>
     </div>
   );
@@ -899,8 +971,8 @@ export function ChristmasPlannerSimpleModule({
   }
 
   return (
-    <div>
-      <h1>{title}</h1>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title={title} lede="A quiet place to keep this part of the season." />
       <div className="tdg-planner-card">
         {fields.map((f) => (
           <input
