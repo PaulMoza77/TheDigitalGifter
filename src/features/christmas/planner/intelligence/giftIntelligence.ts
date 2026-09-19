@@ -44,6 +44,7 @@ export function computeRecipientBudgets(input: {
       plannedMinor,
       actualMinor,
       committedMinor,
+      remainingMinor: budget == null ? null : budget - committedMinor,
       status,
     };
   });

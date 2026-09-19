@@ -159,6 +159,8 @@ export const CHRISTMAS_FUNNELS: ChristmasFunnelDef[] = [
       { event: "gift_finder_completed", label: "Completed" },
       { event: "gift_finder_results_viewed", label: "Results" },
       { event: "gift_finder_result_clicked", label: "Result clicked" },
+      { event: "gift_concierge_opened", label: "Planner concierge opened" },
+      { event: "gift_concierge_generated", label: "Planner concierge generated" },
     ],
     emailEvents: [],
   },
@@ -196,7 +198,7 @@ export const CHRISTMAS_FUNNELS: ChristmasFunnelDef[] = [
     label: "Planner",
     productKeys: ["christmas_planner_2026"],
     pathIncludes: ["/christmas/planner"],
-    eventPrefixes: ["planner_"],
+    eventPrefixes: ["planner_", "gift_concierge_"],
     steps: [
       { event: "planner_landing_view", label: "Landing" },
       { event: "planner_cta_clicked", label: "CTA" },

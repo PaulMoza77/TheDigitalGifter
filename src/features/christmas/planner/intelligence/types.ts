@@ -245,6 +245,7 @@ export type RecipientBudgetState = {
   plannedMinor: number;
   actualMinor: number;
   committedMinor: number;
+  remainingMinor: number | null;
   status: "no_budget" | "under" | "close" | "over";
 };
 

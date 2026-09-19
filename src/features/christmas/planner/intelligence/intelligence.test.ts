@@ -75,6 +75,7 @@ function gift(patch: Partial<GiftItem> & Pick<GiftItem, "id" | "recipient_id">):
     delivery_on: null,
     return_deadline: null,
     source_type: "manual",
+    source_ref: null,
     ...patch,
   };
 }
