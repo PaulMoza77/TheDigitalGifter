@@ -48,7 +48,10 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-christmas-cinematic-01");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-sep19-01");
+    expect(searchLibraryVideos("Polar Express arrival", "christmas_reels", "reel").some((video) => video.id === "reel-sep19-01")).toBe(
+      true,
+    );
     expect(searchLibraryVideos("ice skating", "christmas_reels", "photo").some((item) => item.id === "photo-nyc-ice-girl")).toBe(
       true,
     );
@@ -100,6 +103,11 @@ describe("admin video library", () => {
       "public/assets/christmas/reels/final/christmas_reel_cinematic_01.mp4",
       "public/assets/christmas/reels/final/christmas_reel_social_hook_02.mp4",
       "public/assets/christmas/reels/final/christmas_reel_nostalgic_03.mp4",
+      "public/assets/christmas/reels/masters/christmas_master_06.mp4",
+      "public/assets/christmas/reels/masters/christmas_master_10.mp4",
+      "public/assets/christmas/reels/final/reel-01.mp4",
+      "public/assets/christmas/reels/final/reel-05.mp4",
+      "public/assets/christmas/library-stills/01_village_balcony_girl.jpg",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
