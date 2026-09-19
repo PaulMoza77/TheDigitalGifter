@@ -12,6 +12,7 @@ import {
 } from "./commerce";
 import { fetchPlannerCatalog, startPlannerCheckout, type PlannerCatalog } from "./api";
 import { PLANNER_FAQS } from "./copy";
+import { PLANNER_ACCOUNT_ROUTE } from "./types";
 import {
   getOrCreatePlannerGuestToken,
   persistPlannerOrderRecovery,
@@ -620,12 +621,10 @@ export default function ChristmasPlannerPage() {
     persistPlannerPersonalization(next);
     void trackPlannerFunnel("planner_personalization_completed", { metadata: analyticsEnums(next) });
     setQuizOpen(false);
-    if (quizHistory.current && window.history.state?.plannerQuiz) {
-      quizHistory.current = false;
-      window.history.back();
-    }
-    window.setTimeout(() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
-  }, []);
+    quizHistory.current = false;
+    rememberAuthReturnTo(PLANNER_ACCOUNT_ROUTE);
+    navigate(PLANNER_ACCOUNT_ROUTE);
+  }, [navigate]);
 
   const toggleAddon = (key: string) => {
     setAddonKeys((prev) => {
@@ -701,8 +700,8 @@ export default function ChristmasPlannerPage() {
 
   const openPlanner = useCallback(() => {
     persistPlannerPersonalization(answers);
-    rememberAuthReturnTo("/account/christmas");
-    navigate("/account/christmas");
+    rememberAuthReturnTo(PLANNER_ACCOUNT_ROUTE);
+    navigate(PLANNER_ACCOUNT_ROUTE);
   }, [answers, navigate]);
 
   const onSticky = () => {
