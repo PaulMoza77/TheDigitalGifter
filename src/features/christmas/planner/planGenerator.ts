@@ -109,6 +109,48 @@ const TEMPLATES: PlanTemplateTask[] = [
     ifHosting: true,
   },
   {
+    template_key: "start_buying",
+    title: "Start buying gifts that need shipping",
+    category: "shopping",
+    offsetDays: 60,
+    priority: "high",
+    when: ["early", "standard"],
+    minGifts: 1,
+  },
+  {
+    template_key: "plan_decor",
+    title: "Plan tree, lights, and table decor",
+    category: "decorating",
+    offsetDays: 50,
+    priority: "normal",
+    when: ["early", "standard"],
+  },
+  {
+    template_key: "book_activities",
+    title: "Book markets, photos, or family activities",
+    category: "events",
+    offsetDays: 45,
+    priority: "normal",
+    when: ["early", "standard"],
+  },
+  {
+    template_key: "order_remaining",
+    title: "Order remaining gifts",
+    category: "shopping",
+    offsetDays: 21,
+    priority: "high",
+    when: ["early", "standard", "sprint", "rescue", "always"],
+  },
+  {
+    template_key: "prepare_house",
+    title: "Prepare the house for guests or Christmas Day",
+    category: "home",
+    offsetDays: 5,
+    priority: "normal",
+    when: ["standard", "sprint", "rescue"],
+    ifHosting: true,
+  },
+  {
     template_key: "tree_up",
     title: "Put up the tree and lights",
     category: "decorating",
@@ -195,6 +237,7 @@ export type GeneratePlanInput = {
   hasChildren: boolean;
   giftCount: number;
   prepared: PreparedLevel;
+  chaos?: string[];
 };
 
 export type GeneratedTask = {
@@ -216,11 +259,21 @@ function clampDue(christmas: LocalDateParts, offsetFromChristmas: number, today:
   return due;
 }
 
+const CHAOS_BOOST: Record<string, TaskCategory[]> = {
+  gifts: ["gifts", "shopping"],
+  budget: ["gifts", "shopping"],
+  food: ["food"],
+  hosting: ["hosting", "decorating", "home"],
+  family: ["family", "events", "cards"],
+};
+
 export function generateInitialPlan(input: GeneratePlanInput): GeneratedTask[] {
   const daysLeft = Math.round(
     (Date.UTC(input.christmas.year, 11, 25) - Date.UTC(input.today.year, input.today.month - 1, input.today.day)) /
       86_400_000,
   );
+  const chaos = input.chaos || [];
+  const everything = chaos.includes("everything");
 
   return TEMPLATES.filter((tpl) => {
     if (!tpl.when.includes("always") && !tpl.when.includes(input.mode)) return false;
@@ -234,17 +287,41 @@ export function generateInitialPlan(input: GeneratePlanInput): GeneratedTask[] {
   }).map((tpl) => {
     const offset = input.mode === "rescue" ? Math.min(tpl.offsetDays, Math.max(daysLeft, 0)) : tpl.offsetDays;
     const due = tpl.offsetDays < 0 ? addDays(input.christmas, 1) : clampDue(input.christmas, offset, input.today);
+    const boosted =
+      everything ||
+      chaos.some((id) => (CHAOS_BOOST[id] || []).includes(tpl.category) || (id === "budget" && tpl.template_key === "set_budget"));
     return {
       title: tpl.title,
       category: tpl.category,
       due_on: isoDate(due),
       status: "open" as const,
-      priority: tpl.priority,
+      priority: boosted && tpl.priority === "low" ? ("normal" as const) : tpl.priority,
       notes: "",
       origin: "system" as const,
       template_key: tpl.template_key,
     };
   });
+}
+
+/** Keep the generated plan useful — do not dump every seasonal task at once. */
+export function progressiveSurface(tasks: GeneratedTask[], todayIso: string, mode: PlanMode): GeneratedTask[] {
+  const windowDays = mode === "rescue" ? 8 : mode === "sprint" ? 16 : mode === "standard" ? 32 : 50;
+  const cap = mode === "rescue" ? 7 : mode === "sprint" ? 10 : mode === "wrap" ? 4 : 14;
+  const ranked = [...tasks].sort((a, b) => {
+    const pri = (t: GeneratedTask) => (t.priority === "high" ? 0 : t.priority === "normal" ? 1 : 2);
+    if (pri(a) !== pri(b)) return pri(a) - pri(b);
+    return a.due_on.localeCompare(b.due_on);
+  });
+  const picked: GeneratedTask[] = [];
+  for (const task of ranked) {
+    const due = task.due_on || todayIso;
+    const days = Math.round((Date.parse(`${due}T00:00:00Z`) - Date.parse(`${todayIso}T00:00:00Z`)) / 86_400_000);
+    const essential = task.priority === "high" || days <= windowDays;
+    if (!essential && picked.length >= Math.min(6, cap)) continue;
+    picked.push(task);
+    if (picked.length >= cap) break;
+  }
+  return picked;
 }
 
 export function recommendedToday<T extends { due_on: string | null; status: string; priority: string }>(

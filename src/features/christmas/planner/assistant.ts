@@ -28,14 +28,18 @@ const SAFE_INTENTS = [
   "dinner",
   "gift_ideas",
   "rescue",
+  "missing_gifts",
+  "prep_tomorrow",
 ] as const;
 
 export function classifyAssistantIntent(question: string): (typeof SAFE_INTENTS)[number] | "coming_next" {
   const q = question.toLowerCase();
+  if (q.includes("missing") && q.includes("gift")) return "missing_gifts";
+  if (q.includes("tomorrow") || q.includes("prep")) return "prep_tomorrow";
   if (q.includes("weekend") || q.includes("today") || q.includes("should i do")) return "weekend";
-  if (q.includes("budget") || q.includes("stay within")) return "budget";
+  if (q.includes("budget") || q.includes("over budget") || q.includes("stay within")) return "budget";
   if (q.includes("forgetting") || q.includes("forget")) return "forgetting";
-  if (q.includes("dinner") || q.includes("menu")) return "dinner";
+  if (q.includes("dinner") || q.includes("menu") || q.includes("for 8") || q.includes("for eight")) return "dinner";
   if (q.includes("gift") && (q.includes("idea") || q.includes("dad") || q.includes("under"))) return "gift_ideas";
   if (q.includes("rescue") || q.includes("7-day") || q.includes("7 day")) return "rescue";
   return "coming_next";
@@ -76,8 +80,23 @@ export function answerFromContext(question: string, ctx: AssistantSafeContext): 
     return {
       source: "local_rules",
       text: ctx.hosting
-        ? "Open Food, add Christmas Day, then save a recipe so groceries roll up. Full AI menus are coming next — with server-side privacy controls."
+        ? "For eight people: add Christmas Day in Food, set servings to 8, then add dishes and send ingredients to Grocery. Notes stay on this device."
         : "You’re not marked as hosting. Turn hosting on in Settings if you need a dinner plan.",
+    };
+  }
+  if (intent === "missing_gifts") {
+    return {
+      source: "local_rules",
+      text:
+        ctx.giftsWithoutPlan > 0
+          ? `${ctx.giftsWithoutPlan} ${ctx.giftsWithoutPlan === 1 ? "person still needs" : "people still need"} a planned gift. Open Gifts and use Need an idea?`
+          : "Every person on your gift list has at least one planned gift.",
+    };
+  }
+  if (intent === "prep_tomorrow") {
+    return {
+      source: "local_rules",
+      text: `Tomorrow: clear Today’s checklist first (${ctx.openTasks} open). If you’re hosting, draft one menu. If gifts are light, add one idea per person.`,
     };
   }
   if (intent === "gift_ideas") {

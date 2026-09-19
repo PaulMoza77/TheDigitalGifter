@@ -233,6 +233,7 @@ export function buildPersonalizedPreview(
     hasChildren: mapped.hasChildren,
     giftCount: mapped.giftCount,
     prepared: mapped.prepared,
+    chaos: mapped.chaos,
   });
   const todayIso = `${today.year}-${String(today.month).padStart(2, "0")}-${String(today.day).padStart(2, "0")}`;
   const giftTaskCount = tasks.filter((task) => task.category === "gifts" || task.category === "shopping").length;
