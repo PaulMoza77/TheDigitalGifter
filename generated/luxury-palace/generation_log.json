@@ -1,0 +1,33 @@
+{
+  "status": "ESTIMATE_ONLY",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "estimated_total_usd": 1.4000000000000001,
+  "estimates": [
+    {
+      "id": "palace_01_establish",
+      "usd": 0.28,
+      "credits": "4.480"
+    },
+    {
+      "id": "palace_02_approach",
+      "usd": 0.28,
+      "credits": "4.480"
+    },
+    {
+      "id": "palace_03_gates",
+      "usd": 0.28,
+      "credits": "4.480"
+    },
+    {
+      "id": "palace_04_entrance",
+      "usd": 0.28,
+      "credits": "4.480"
+    },
+    {
+      "id": "palace_05_hero",
+      "usd": 0.28,
+      "credits": "4.480"
+    }
+  ]
+}
