@@ -1,7 +1,5 @@
-import { Link } from "react-router-dom";
-import { PLANNER_PUBLIC_ROUTE, type PlannerFeatureKey } from "./types";
-import { trackPlannerEvent } from "./analytics";
-import { upgradePackageForFeature } from "./entitlements";
+import { type PlannerFeatureKey } from "./types";
+import { PlannerLockedModule } from "./plannerUi";
 
 export function PlannerPaywall({
   feature,
@@ -12,28 +10,19 @@ export function PlannerPaywall({
   title: string;
   body: string;
 }) {
-  const pack = upgradePackageForFeature(feature);
-  const to = `${PLANNER_PUBLIC_ROUTE}?package=${encodeURIComponent(pack.packageKey)}#pricing`;
-  return (
-    <div className="tdg-planner-card tdg-planner-lock">
-      <h2>{title}</h2>
-      <p>{body}</p>
-      <div className="tdg-planner-actions" style={{ marginTop: 12 }}>
-        <Link
-          className="tdg-planner-btn primary"
-          to={to}
-          onClick={() => {
-            trackPlannerEvent("planner_upgrade_clicked", { feature, packageKey: pack.packageKey });
-          }}
-        >
-          Unlock{" "}
-          {pack.packageKey.startsWith("addon_")
-            ? pack.packageKey.replace("addon_", "").replace(/_/g, " ")
-            : "this season"}
-        </Link>
-      </div>
-    </div>
-  );
+  const bullets =
+    feature === "budget"
+      ? ["Planned vs spent at a glance", "Gift prices roll in automatically", "Category caps without a spreadsheet"]
+      : feature === "food_planner"
+        ? ["Menus for Eve and Christmas Day", "One grocery list from dishes", "Prep times you can actually follow"]
+        : feature === "hosting"
+          ? ["Guests and RSVPs in one place", "Dietary notes, not sensitive data", "Home prep checklist"]
+          : feature === "travel"
+            ? ["Trips and packing lists", "Booking notes only", "Never passport or card data"]
+            : feature === "recipes"
+              ? ["Original TDG recipes", "Save into Eve and Day menus", "Ingredients into grocery"]
+              : undefined;
+  return <PlannerLockedModule feature={feature} title={title} body={body} bullets={bullets} />;
 }
 
 export function money(minor: number | null | undefined, currency: string): string {

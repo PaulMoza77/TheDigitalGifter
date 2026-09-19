@@ -22,6 +22,7 @@ import {
   christmasDayParts,
   countdownCopy,
   daysUntilChristmas,
+  formatPlannerDate,
   resolvePlanMode,
   upcomingChristmasYear,
 } from "./date";
@@ -400,6 +401,7 @@ describe("christmas planner season dates", () => {
     expect(daysUntilChristmas(now, "UTC")).toBe(99);
     expect(resolvePlanMode(99, "starting")).toBe("early");
     expect(countdownCopy(99)).toContain("99 days");
+    expect(formatPlannerDate("2026-09-26")).toBe("Sep 26");
   });
 
   it("switches to 5–8 week plan in November", () => {
@@ -693,6 +695,25 @@ describe("private planner privacy surface", () => {
     expect(workspace).toContain("christmas_planner_owns_profile");
     expect(workspace).toContain("revoke all on table public.christmas_planner_profiles from anon");
     expect(workspace).toContain("using (public.christmas_planner_owns_profile(profile_id) or public.is_admin())");
+  });
+
+  it("upgrades remaining modules with headers, marks, and ivory chrome", () => {
+    const pages = readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx");
+    const more = readSrc("src/features/christmas/planner/ChristmasPlannerMoreModules.tsx");
+    const ui = readSrc("src/features/christmas/planner/plannerUi.tsx");
+    const css = readSrc("src/features/christmas/planner/plannerApp.css");
+    expect(pages).toContain("Your season, step by step.");
+    expect(pages).toContain("Plan everyone you’re buying for");
+    expect(pages).toContain("Keep Christmas spending beautifully under control.");
+    expect(pages).toContain("Everything else for your Christmas season.");
+    expect(pages).not.toContain("Today’s checklist");
+    expect(more).toContain("See your season at a glance.");
+    expect(more).toContain("From to-buy through arriving");
+    expect(ui).toContain("PlannerPageHeader");
+    expect(ui).toContain("PlannerLockedModule");
+    expect(css).toContain("Contrast lock");
+    expect(css).toContain(".tdg-planner-app .tdg-planner-side a");
+    expect(css).toContain("#f4ead9");
   });
 });
 

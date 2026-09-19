@@ -8,6 +8,8 @@ import { PlannerPaywall, money } from "./Paywall";
 import { trackPlannerEvent } from "./analytics";
 import { loadGifts, loadTasks } from "./api";
 import { GROCERY_AISLES, HOME_AREAS, type GiftItem, type GroceryAisle, type PlannerTask } from "./types";
+import { formatPlannerDate, giftStatusLabel, prettyLabel } from "./date";
+import { PlannerComposer, PlannerEmptyState, PlannerPageHeader, PlannerStatusChip } from "./plannerUi";
 
 export function ChristmasPlannerShoppingPage() {
   const { loading, profile } = usePlannerBundle();
@@ -65,32 +67,35 @@ export function ChristmasPlannerShoppingPage() {
   }
 
   return (
-    <div>
-      <h1>Shopping</h1>
-      <p className="tdg-planner-muted">Gift orders plus other Christmas purchases.</p>
-      <div className="tdg-planner-chips">
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Shopping" lede="From to-buy through arriving, arrived, and returns." />
+      <div className="tdg-planner-seg" role="tablist">
         {(["need", "ordered", "arriving", "arrived", "returns"] as const).map((t) => (
-          <button key={t} type="button" className={`tdg-planner-chip ${tab === t ? "on" : ""}`} onClick={() => setTab(t)}>
-            {t === "need" ? "To buy" : t}
+          <button key={t} type="button" className={tab === t ? "on" : ""} onClick={() => setTab(t)}>
+            {t === "need" ? "To buy" : prettyLabel(t)}
           </button>
         ))}
       </div>
-      {filtered.map((g) => (
-        <div key={g.id} className="tdg-planner-row">
-          <div>
-            <strong>{g.selected_gift || g.idea}</strong>
-            <div className="tdg-planner-muted">
-              {g.status}
-              {g.delivery_on ? ` · arrives ${g.delivery_on}` : ""}
-              {g.store ? ` · ${g.store}` : ""}
-              {g.planned_price_minor ? ` · ${money(g.planned_price_minor, profile.currency)}` : ""}
-              {g.return_deadline ? ` · return by ${g.return_deadline}` : ""}
+      {filtered.length === 0 ? (
+        <PlannerEmptyState mark="shopping" title="Nothing in this lane yet." body="Add a purchase, or move gifts along as you order them." />
+      ) : (
+        filtered.map((g) => (
+          <div key={g.id} className="tdg-planner-row tdg-planner-appear">
+            <div>
+              <strong>{g.selected_gift || g.idea}</strong>
+              <div className="tdg-planner-gift-meta">
+                <PlannerStatusChip>{giftStatusLabel(g.status)}</PlannerStatusChip>
+                {g.delivery_on ? <span>arrives {formatPlannerDate(g.delivery_on)}</span> : null}
+                {g.store ? <span>{g.store}</span> : null}
+                {g.planned_price_minor ? <span>{money(g.planned_price_minor, profile.currency)}</span> : null}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))
+      )}
       <section className="tdg-planner-section">
         <h2>Non-gift purchase</h2>
+        <PlannerComposer>
         <input className="tdg-planner-input" placeholder="Item" value={extra.name} onChange={(e) => setExtra({ ...extra, name: e.target.value })} />
         <input className="tdg-planner-input" placeholder="Store" value={extra.store} onChange={(e) => setExtra({ ...extra, store: e.target.value })} />
         <input className="tdg-planner-input" placeholder="Price" type="number" value={extra.price} onChange={(e) => setExtra({ ...extra, price: e.target.value })} />
@@ -98,6 +103,7 @@ export function ChristmasPlannerShoppingPage() {
         <button type="button" className="tdg-planner-btn primary" onClick={() => void addPurchase()}>
           Add purchase
         </button>
+        </PlannerComposer>
       </section>
     </div>
   );
@@ -151,29 +157,37 @@ export function ChristmasPlannerCalendarPage() {
     }),
   ];
 
+  const todayIso = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
+  const monthLabel = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(cursor.y, cursor.m - 1, 1)),
+  );
+
   return (
-    <div>
-      <h1>Calendar</h1>
-      <div className="tdg-planner-chips">
-        <button type="button" className={`tdg-planner-chip ${view === "month" ? "on" : ""}`} onClick={() => setView("month")}>
+    <div className="tdg-planner-page tdg-planner-cal-page">
+      <PlannerPageHeader title="Calendar" lede="See your season at a glance." />
+      <div className="tdg-planner-seg" role="tablist">
+        <button type="button" className={view === "month" ? "on" : ""} onClick={() => setView("month")}>
           Month
         </button>
-        <button type="button" className={`tdg-planner-chip ${view === "agenda" ? "on" : ""}`} onClick={() => setView("agenda")}>
+        <button type="button" className={view === "agenda" ? "on" : ""} onClick={() => setView("agenda")}>
           Agenda
         </button>
       </div>
       {view === "month" ? (
         <>
-          <div className="tdg-planner-actions" style={{ marginBottom: 12 }}>
+          <div className="tdg-planner-cal-nav">
             <button type="button" className="tdg-planner-btn" onClick={() => setCursor((c) => (c.m === 1 ? { y: c.y - 1, m: 12 } : { y: c.y, m: c.m - 1 }))}>
-              Prev
+              Previous
             </button>
-            <strong>
-              {cursor.y}-{String(cursor.m).padStart(2, "0")}
-            </strong>
+            <strong>{monthLabel}</strong>
             <button type="button" className="tdg-planner-btn" onClick={() => setCursor((c) => (c.m === 12 ? { y: c.y + 1, m: 1 } : { y: c.y, m: c.m + 1 }))}>
               Next
             </button>
+          </div>
+          <div className="tdg-planner-cal-weekdays" aria-hidden>
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+              <span key={d}>{d}</span>
+            ))}
           </div>
           <div className="tdg-planner-cal">
             {cells.map((cell, i) =>
@@ -181,10 +195,18 @@ export function ChristmasPlannerCalendarPage() {
                 <button
                   key={cell.iso}
                   type="button"
-                  className={`${items.some((it) => it.on === cell.iso) ? "has" : ""} ${selected === cell.iso ? "on" : ""}`}
+                  className={`${items.some((it) => it.on === cell.iso) ? "has" : ""} ${selected === cell.iso ? "on" : ""} ${cell.iso === todayIso ? "is-today" : ""}`}
                   onClick={() => setSelected(cell.iso)}
                 >
-                  {cell.day}
+                  <span>{cell.day}</span>
+                  <span className="tdg-planner-cal-dots">
+                    {items
+                      .filter((it) => it.on === cell.iso)
+                      .slice(0, 3)
+                      .map((it) => (
+                        <i key={`${it.kind}-${it.id}`} className={`dot-${it.kind === "delivery" ? "delivery" : it.kind === "task" ? "task" : "event"}`} />
+                      ))}
+                  </span>
                 </button>
               ) : (
                 <span key={`e-${i}`} />
@@ -193,19 +215,27 @@ export function ChristmasPlannerCalendarPage() {
           </div>
         </>
       ) : null}
-      {(view === "agenda" ? items : items.filter((it) => it.on === selected)).map((item) => (
-        <div key={`${item.kind}-${item.id}`} className="tdg-planner-row">
-          <div>
-            <strong>{item.title}</strong>
-            <div className="tdg-planner-muted">
-              {item.on} · {item.kind}
+      {(view === "agenda" ? items : items.filter((it) => it.on === selected)).length === 0 ? (
+        <PlannerEmptyState
+          mark="calendar"
+          title={selected ? "Nothing on this day yet." : "Pick a day, or switch to Agenda."}
+          body="Add an event or a task so the calendar has a spine."
+        />
+      ) : (
+        (view === "agenda" ? items : items.filter((it) => it.on === selected)).map((item) => (
+          <div key={`${item.kind}-${item.id}`} className="tdg-planner-row tdg-planner-appear">
+            <div>
+              <strong>{item.title}</strong>
+              <div className="tdg-planner-muted">
+                {formatPlannerDate(item.on)} · {prettyLabel(item.kind)}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))
+      )}
       {selected ? (
-        <div className="tdg-planner-card">
-          <h2>Add on {selected}</h2>
+        <PlannerComposer>
+          <h2>Add on {formatPlannerDate(selected)}</h2>
           <input className="tdg-planner-input" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Event or task title" />
           <div className="tdg-planner-actions">
             <button
@@ -247,7 +277,7 @@ export function ChristmasPlannerCalendarPage() {
               Add task
             </button>
           </div>
-        </div>
+        </PlannerComposer>
       ) : null}
     </div>
   );
@@ -284,7 +314,12 @@ export function ChristmasPlannerFoodPage() {
   if (loading) return <p>Loading food…</p>;
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "food_planner")) {
-    return <PlannerPaywall feature="food_planner" title="Food planner is a paid module" body="Plan Eve and Day menus, then send ingredients to Grocery." />;
+    return (
+      <div className="tdg-planner-page">
+        <PlannerPageHeader title="Food" lede="Plan meals for Christmas Eve, Day, and everything in between." />
+        <PlannerPaywall feature="food_planner" title="Menus, prep times, then groceries." body="Plan Eve and Day dishes, then send ingredients to Grocery." />
+      </div>
+    );
   }
 
   const meal = meals.find((m) => m.section === tab);
@@ -301,16 +336,16 @@ export function ChristmasPlannerFoodPage() {
   }
 
   return (
-    <div>
-      <h1>Food</h1>
-      <div className="tdg-planner-chips">
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Food" lede="Plan meals for Christmas Eve, Day, and everything in between." />
+      <div className="tdg-planner-seg">
         {FOOD_TABS.map(([id, label]) => (
-          <button key={id} type="button" className={`tdg-planner-chip ${tab === id ? "on" : ""}`} onClick={() => setTab(id)}>
+          <button key={id} type="button" className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
             {label}
           </button>
         ))}
       </div>
-      <div className="tdg-planner-card">
+      <PlannerComposer>
         <input className="tdg-planner-input" placeholder="Dish" value={draft.dish} onChange={(e) => setDraft({ ...draft, dish: e.target.value })} />
         <input className="tdg-planner-input" type="number" placeholder="Servings" value={draft.servings} onChange={(e) => setDraft({ ...draft, servings: e.target.value })} />
         <input className="tdg-planner-input" type="number" placeholder="Prep minutes" value={draft.prep} onChange={(e) => setDraft({ ...draft, prep: e.target.value })} />
@@ -348,12 +383,13 @@ export function ChristmasPlannerFoodPage() {
             Add recipe
           </Link>
         </div>
-      </div>
+        </PlannerComposer>
       {dishes.filter((d) => d.meal_id === meal?.id).length === 0 ? (
-        <div className="tdg-planner-empty">
-          <strong>Menu is still a blank page.</strong>
-          <p>Add the first dish for this sitting — servings, prep time, then send ingredients to Grocery.</p>
-        </div>
+        <PlannerEmptyState
+          mark="food"
+          title="This sitting is still a blank page."
+          body="Add the first dish — servings, prep time, then send ingredients to Grocery."
+        />
       ) : null}
       {dishes
         .filter((d) => d.meal_id === meal?.id)
@@ -430,16 +466,18 @@ export function ChristmasPlannerRecipesPage() {
   }
 
   return (
-    <div>
-      <h1>Recipes</h1>
-      <p className="tdg-planner-muted">Original TDG recipes — not copied from other sites.</p>
-      <div className="tdg-planner-chips">
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Recipes" lede="Original TDG dishes — warm, seasonal, never scraped." />
+      <div className="tdg-planner-seg">
         {["all", "christmas_dinner", "side_dishes", "desserts", "cookies", "drinks", "breakfast", "make_ahead", "vegetarian"].map((id) => (
           <button key={id} type="button" className={`tdg-planner-chip ${filter === id ? "on" : ""}`} onClick={() => setFilter(id)}>
             {id.replace(/_/g, " ")}
           </button>
         ))}
       </div>
+      {visible.length === 0 ? (
+        <PlannerEmptyState mark="food" title="No recipes in this filter." body="Try All, or another sitting of the table." />
+      ) : null}
       {visible.map((r) => {
         const locked = r.entitlement_key !== "free" && !r.teaser && !canAll;
         return (
@@ -519,13 +557,18 @@ export function ChristmasPlannerGroceryPage() {
   if (loading) return <p>Loading grocery…</p>;
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "food_planner")) {
-    return <PlannerPaywall feature="food_planner" title="Grocery lives with the food planner" body="Unlock meals to keep one grocery list for Christmas." />;
+    return (
+      <div className="tdg-planner-page">
+        <PlannerPageHeader title="Grocery" lede="One list from meals, extras, and the shops you still need." />
+        <PlannerPaywall feature="food_planner" title="Grocery lives with the food planner." body="Unlock meals to keep one grocery list for Christmas." />
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h1>Grocery</h1>
-      <div className="tdg-planner-card">
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Grocery" lede="One list from meals, extras, and the shops you still need." />
+      <PlannerComposer>
         <input className="tdg-planner-input" placeholder="Item" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
         <select className="tdg-planner-select" value={draft.aisle} onChange={(e) => setDraft({ ...draft, aisle: e.target.value as GroceryAisle })}>
           {GROCERY_AISLES.map((a) => (
@@ -557,7 +600,10 @@ export function ChristmasPlannerGroceryPage() {
         >
           Add item
         </button>
-      </div>
+      </PlannerComposer>
+      {items.length === 0 ? (
+        <PlannerEmptyState mark="list" title="The list is empty." body="Add an item, or send ingredients over from Food and Recipes." />
+      ) : null}
       {GROCERY_AISLES.map((aisle) => {
         const rows = items.filter((it) => parseAisle(it.name).aisle === aisle);
         if (!rows.length) return null;
@@ -609,12 +655,17 @@ export function ChristmasPlannerHostingPage() {
   if (loading) return <p>Loading hosting…</p>;
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "hosting")) {
-    return <PlannerPaywall feature="hosting" title="Hosting is a paid module" body="Guests, RSVP, dietary notes, and rooms — no extra sensitive data." />;
+    return (
+      <div className="tdg-planner-page">
+        <PlannerPageHeader title="Hosting" lede="Guests, prep, and a calm house — no extra sensitive data." />
+        <PlannerPaywall feature="hosting" title="Hosting, beautifully organized." body="Guests, RSVP, dietary notes, and rooms — no extra sensitive data." />
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h1>Hosting</h1>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Hosting" lede="Guests, prep, and a calm house — no extra sensitive data." />
       <section className="tdg-planner-section">
         <h2>Guests</h2>
         <input className="tdg-planner-input" placeholder="Name or household" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
@@ -714,8 +765,8 @@ export function ChristmasPlannerHomePage() {
   if (!profile) return <PlannerOnboarding />;
 
   return (
-    <div>
-      <h1>Home & decorating</h1>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Home" lede="Tree, rooms, and the little setups that make the house feel ready." />
       {HOME_AREAS.map((area) => (
         <section key={area} className="tdg-planner-section">
           <h2>{area.replace(/_/g, " ")}</h2>
@@ -784,13 +835,17 @@ export function ChristmasPlannerTravelPage() {
   if (loading) return <p>Loading travel…</p>;
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "travel")) {
-    return <PlannerPaywall feature="travel" title="Travel is a paid module" body="Trips, packing, and home notes. We never store passport or card data." />;
+    return (
+      <div className="tdg-planner-page">
+        <PlannerPageHeader title="Travel" lede="Trips, packing, and home notes. Never passports or cards." />
+        <PlannerPaywall feature="travel" title="Travel, without the paperwork panic." body="Trips, packing, and home notes. We never store passport or card data." />
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h1>Travel</h1>
-      <p className="tdg-planner-muted">Booking references only — never passports or payment cards.</p>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Travel" lede="Trips, packing, and home notes. Never passports or cards." />
       <div className="tdg-planner-card">
         <input className="tdg-planner-input" placeholder="Destination" value={draft.destination} onChange={(e) => setDraft({ ...draft, destination: e.target.value })} />
         <input className="tdg-planner-input" type="date" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} />
@@ -875,8 +930,8 @@ export function ChristmasPlannerTraditionsPage() {
   }
 
   return (
-    <div>
-      <h1>Traditions & activities</h1>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Traditions" lede="Make time for what matters — family, kindness, and the small rituals." />
       {Object.entries(TRADITION_IDEAS).map(([section, ideas]) => (
         <section key={section} className="tdg-planner-section">
           <h2>{section}</h2>
@@ -943,9 +998,8 @@ export function ChristmasPlannerCardsPage() {
   if (!profile) return <PlannerOnboarding />;
 
   return (
-    <div>
-      <h1>Cards & messages</h1>
-      <p className="tdg-planner-muted">Track who needs a card. Generation stays in the existing makers.</p>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Cards" lede="Track who needs a greeting, then open the makers you already use." />
       <div className="tdg-planner-actions" style={{ marginBottom: 12 }}>
         <Link className="tdg-planner-btn primary" to="/christmas/messages">
           Generate Message
@@ -1015,9 +1069,8 @@ export function ChristmasPlannerMemoriesPage() {
   if (!profile) return <PlannerOnboarding />;
 
   return (
-    <div>
-      <h1>Memories</h1>
-      <p className="tdg-planner-muted">A quiet journal for this season and the next.</p>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Memories" lede="A quiet journal for this season, and a note for the next." />
       <div className="tdg-planner-card">
         <select className="tdg-planner-select" value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value })}>
           <option value="photo_note">Photo</option>
@@ -1065,8 +1118,8 @@ export function ChristmasPlannerClubPage() {
     trackPlannerEvent("planner_module_opened", { module: "club" });
   }, []);
   return (
-    <div>
-      <h1>Christmas Club</h1>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Christmas Club" lede="Countdown community — the Planner stays private." />
       <p>Community posts aren’t live yet — we won’t fake an active feed. Join the existing Christmas Club for countdown updates.</p>
       <div className="tdg-planner-actions" style={{ marginTop: 16 }}>
         <Link className="tdg-planner-btn primary" to={CHRISTMAS_CLUB_ROUTE}>
@@ -1106,9 +1159,8 @@ export function ChristmasPlannerSettingsPage() {
   if (!profile) return <PlannerOnboarding />;
 
   return (
-    <div>
-      <h1>Settings</h1>
-      <p className="tdg-planner-muted">Season {profile.season_year}. This Planner is private — there is no share setting.</p>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Settings" lede="Season preferences. This Planner is private — there is no share setting." />
       <div className="tdg-planner-card">
         <select className="tdg-planner-select" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
           {["eur", "usd", "gbp", "ron"].map((c) => (
@@ -1180,8 +1232,8 @@ export function ChristmasPlannerSettingsPage() {
 
 export function ChristmasPlannerWishlistBridgePage() {
   return (
-    <div>
-      <h1>Wishlist</h1>
+    <div className="tdg-planner-page">
+      <PlannerPageHeader title="Wishlist" lede="Your shareable list lives separately. Sharing it never shares this Planner." />
       <p>Your personal Christmas wishlist stays on the existing shareable list. Sharing wishlist does not share this Planner.</p>
       <Link className="tdg-planner-btn primary" to="/christmas/wishlist">
         Open My Wishlist

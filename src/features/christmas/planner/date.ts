@@ -78,3 +78,57 @@ export function countdownCopy(daysLeft: number): string {
   if (daysLeft === -1) return "Christmas was yesterday";
   return `Christmas was ${Math.abs(daysLeft)} days ago`;
 }
+
+export function formatPlannerDate(iso: string | null | undefined): string {
+  if (!iso) return "No date";
+  const [year, month, day] = iso.split("-").map(Number);
+  if (!year || !month || !day) return iso;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  gifts: "Gifts",
+  shopping: "Shopping",
+  cards: "Cards",
+  food: "Food",
+  hosting: "Hosting",
+  home: "Home",
+  decorating: "Decorating",
+  travel: "Travel",
+  family: "Family",
+  events: "Events",
+  personal: "Personal",
+  other: "Other",
+};
+
+export function taskCategoryLabel(category: string): string {
+  return CATEGORY_LABELS[category] || category.charAt(0).toUpperCase() + category.slice(1);
+}
+
+export function taskPriorityLabel(priority: string): string {
+  if (priority === "high") return "High";
+  if (priority === "low") return "Low";
+  return "Normal";
+}
+
+const GIFT_STATUS_LABELS: Record<string, string> = {
+  idea: "Idea",
+  planned: "Planned",
+  ordered: "Ordered",
+  arrived: "Arrived",
+  hidden: "Hidden",
+  wrapped: "Wrapped",
+  given: "Given",
+};
+
+export function giftStatusLabel(status: string): string {
+  return GIFT_STATUS_LABELS[status] || status;
+}
+
+export function prettyLabel(value: string): string {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
