@@ -48,7 +48,10 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-sep19-01");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-luxury-palace");
+    expect(
+      searchLibraryVideos("Luxury Christmas palace", "christmas_reels", "reel").some((video) => video.id === "reel-luxury-palace"),
+    ).toBe(true);
     expect(searchLibraryVideos("Polar Express arrival", "christmas_reels", "reel").some((video) => video.id === "reel-sep19-01")).toBe(
       true,
     );
@@ -108,6 +111,10 @@ describe("admin video library", () => {
       "public/assets/christmas/reels/final/reel-01.mp4",
       "public/assets/christmas/reels/final/reel-05.mp4",
       "public/assets/christmas/library-stills/01_village_balcony_girl.jpg",
+      "public/assets/christmas/luxury-palace/final/luxury_christmas_palace_reel.mp4",
+      "public/assets/christmas/luxury-palace/masters/palace_01_establish.mp4",
+      "public/assets/christmas/luxury-palace/masters/palace_05_hero.mp4",
+      "public/assets/christmas/luxury-palace/source/05_hero_balcony_palace_1080x1920.jpg",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);

@@ -24,11 +24,11 @@ C5 = MASTERS / "palace_05_hero.mp4"
 # xfade 0.14s — almost invisible motion-matched dissolve, not a template wipe.
 XFADE = 0.14
 SHOTS = [
-    (C1, 0.22, 2.58, "palace_01_establish"),
-    (C2, 0.38, 2.58, "palace_02_approach"),
-    (C3, 0.32, 2.58, "palace_03_gates"),
-    (C4, 0.28, 3.10, "palace_04_entrance"),
-    (C5, 0.55, 4.15, "palace_05_hero"),
+    (C1, 0.18, 2.55, "palace_01_establish"),
+    (C2, 0.28, 2.55, "palace_02_approach"),
+    (C3, 0.16, 2.65, "palace_03_gates"),
+    (C4, 0.18, 3.15, "palace_04_entrance"),
+    (C5, 0.40, 4.20, "palace_05_hero"),
 ]
 
 

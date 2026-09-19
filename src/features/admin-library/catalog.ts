@@ -112,6 +112,18 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
 
 const CHRISTMAS_REELS: LibraryVideo[] = [
   {
+    id: "reel-luxury-palace",
+    title: "NEW · Luxury Christmas palace Reel",
+    description:
+      "14.5s 1080×1920. Higgsfield Kling 3.0 Pro silent journey: wide estate → fountain/car → open gates → grand tree hall → balcony hero. No captions.",
+    src: "/assets/christmas/luxury-palace/final/luxury_christmas_palace_reel.mp4",
+    filename: "luxury_christmas_palace_reel.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 14.53,
+    poster: "/assets/christmas/luxury-palace/posters/luxury_christmas_palace_reel.jpg",
+  },
+  {
     id: "reel-sep19-01",
     title: "NEW · Polar Express arrival Reel",
     description:
@@ -280,6 +292,61 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
 ];
 
 const CHRISTMAS_SHORTS: LibraryVideo[] = [
+  {
+    id: "short-palace-01-establish",
+    title: "Palace · Wide mansion arrival",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Slow dolly toward the snowy estate and fountain.",
+    src: "/assets/christmas/luxury-palace/masters/palace_01_establish.mp4",
+    filename: "palace_01_establish.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/luxury-palace/posters/palace_01_establish.jpg",
+  },
+  {
+    id: "short-palace-02-approach",
+    title: "Palace · Fountain and Rolls-Royce",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Tracking toward the wreath-lit entrance.",
+    src: "/assets/christmas/luxury-palace/masters/palace_02_approach.mp4",
+    filename: "palace_02_approach.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/luxury-palace/posters/palace_02_approach.jpg",
+  },
+  {
+    id: "short-palace-03-gates",
+    title: "Palace · Walking to the open doors",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Approach through the gates to the interior tree.",
+    src: "/assets/christmas/luxury-palace/masters/palace_03_gates.mp4",
+    filename: "palace_03_gates.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/luxury-palace/posters/palace_03_gates.jpg",
+  },
+  {
+    id: "short-palace-04-entrance",
+    title: "Palace · Grand hall tree reveal",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Dolly through the doorway into the Christmas hall.",
+    src: "/assets/christmas/luxury-palace/masters/palace_04_entrance.mp4",
+    filename: "palace_04_entrance.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/luxury-palace/posters/palace_04_entrance.jpg",
+  },
+  {
+    id: "short-palace-05-hero",
+    title: "Palace · Balcony hero reveal",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Elevated push toward the giant tree and open night.",
+    src: "/assets/christmas/luxury-palace/masters/palace_05_hero.mp4",
+    filename: "palace_05_hero.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/luxury-palace/posters/palace_05_hero.jpg",
+  },
   {
     id: "short-christmas-master-06",
     title: "Master · Village balcony girl",
@@ -592,6 +659,51 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
 ];
 
 const NEW_STILL_PHOTOS: LibraryVideo[] = [
+  {
+    id: "photo-palace-establish",
+    title: "Photo · Luxury palace wide estate",
+    description: "Snowy night facade, circular fountain, and black sedan used for the palace arrival short.",
+    src: "/assets/christmas/luxury-palace/source/01_establish_wide_mansion_1080x1920.jpg",
+    filename: "01_establish_wide_mansion_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-palace-approach",
+    title: "Photo · Palace fountain and car",
+    description: "Closer entrance with wreath, spiral trees, and luxury sedan.",
+    src: "/assets/christmas/luxury-palace/source/02_approach_fountain_car_1080x1920.jpg",
+    filename: "02_approach_fountain_car_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-palace-gates",
+    title: "Photo · Open palace gates",
+    description: "Wreath-lined gates looking through to the fountain and interior Christmas tree.",
+    src: "/assets/christmas/luxury-palace/source/03_enter_open_gates_1080x1920.jpg",
+    filename: "03_enter_open_gates_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-palace-entrance",
+    title: "Photo · Grand Christmas hall",
+    description: "Doorway view of the enormous tree, chandelier, and marble staircase.",
+    src: "/assets/christmas/luxury-palace/source/04_grand_entrance_tree_1080x1920.jpg",
+    filename: "04_grand_entrance_tree_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-palace-hero",
+    title: "Photo · Palace balcony hero",
+    description: "Elevated view of the Christmas palace, gift ring, chandelier, and snowy exterior.",
+    src: "/assets/christmas/luxury-palace/source/05_hero_balcony_palace_1080x1920.jpg",
+    filename: "05_hero_balcony_palace_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
   {
     id: "photo-village-balcony-girl",
     title: "Photo · Village balcony girl",
