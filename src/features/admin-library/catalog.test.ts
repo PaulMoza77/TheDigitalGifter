@@ -48,7 +48,10 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-global-christmas-journey");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-north-pole-santa");
+    expect(
+      searchLibraryVideos("North Pole Santa", "christmas_reels", "reel").some((video) => video.id === "reel-north-pole-santa"),
+    ).toBe(true);
     expect(
       searchLibraryVideos("Global Christmas journey", "christmas_reels", "reel").some(
         (video) => video.id === "reel-global-christmas-journey",
@@ -116,6 +119,10 @@ describe("admin video library", () => {
       "public/assets/christmas/reels/final/reel-01.mp4",
       "public/assets/christmas/reels/final/reel-05.mp4",
       "public/assets/christmas/library-stills/01_village_balcony_girl.jpg",
+      "public/assets/christmas/north-pole-santa/final/north_pole_santa_reel.mp4",
+      "public/assets/christmas/north-pole-santa/masters/santa_01_workshop.mp4",
+      "public/assets/christmas/north-pole-santa/masters/santa_04_sweep.mp4",
+      "public/assets/christmas/north-pole-santa/source/01_workshop_wrapping_1080x1920.jpg",
       "public/assets/christmas/luxury-palace/final/luxury_christmas_palace_reel.mp4",
       "public/assets/christmas/luxury-palace/masters/palace_01_establish.mp4",
       "public/assets/christmas/luxury-palace/masters/palace_05_hero.mp4",

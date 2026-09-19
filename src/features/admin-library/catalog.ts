@@ -112,6 +112,18 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
 
 const CHRISTMAS_REELS: LibraryVideo[] = [
   {
+    id: "reel-north-pole-santa",
+    title: "NEW · North Pole Santa Reel",
+    description:
+      "13.3s 1080×1920. Higgsfield Kling 3.0 Pro silent journey: toy workshop → sleigh loading → snow globe desk → Santa sweeping. No captions.",
+    src: "/assets/christmas/north-pole-santa/final/north_pole_santa_reel.mp4",
+    filename: "north_pole_santa_reel.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 13.37,
+    poster: "/assets/christmas/north-pole-santa/posters/north_pole_santa_reel.jpg",
+  },
+  {
     id: "reel-global-christmas-journey",
     title: "NEW · Global Christmas journey Reel",
     description:
@@ -304,6 +316,50 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
 ];
 
 const CHRISTMAS_SHORTS: LibraryVideo[] = [
+  {
+    id: "short-santa-01-workshop",
+    title: "Santa · Toy workshop wrapping",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Santa tying a ribbon with elves at the workbench.",
+    src: "/assets/christmas/north-pole-santa/masters/santa_01_workshop.mp4",
+    filename: "santa_01_workshop.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/north-pole-santa/posters/santa_01_workshop.jpg",
+  },
+  {
+    id: "short-santa-02-sleigh",
+    title: "Santa · Loading the sleigh",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Aurora, reindeer, and gifts going into the sleigh.",
+    src: "/assets/christmas/north-pole-santa/masters/santa_02_sleigh.mp4",
+    filename: "santa_02_sleigh.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/north-pole-santa/posters/santa_02_sleigh.jpg",
+  },
+  {
+    id: "short-santa-03-desk",
+    title: "Santa · Snow globe desk",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Santa polishing a snow globe over cookies and cocoa.",
+    src: "/assets/christmas/north-pole-santa/masters/santa_03_desk.mp4",
+    filename: "santa_03_desk.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/north-pole-santa/posters/santa_03_desk.jpg",
+  },
+  {
+    id: "short-santa-04-sweep",
+    title: "Santa · Sweeping the workshop",
+    description: "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Closing beat: Santa sweeping snow across the floor.",
+    src: "/assets/christmas/north-pole-santa/masters/santa_04_sweep.mp4",
+    filename: "santa_04_sweep.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/north-pole-santa/posters/santa_04_sweep.jpg",
+  },
   {
     id: "short-global-01-lapland",
     title: "Global · Lapland aurora igloos",
@@ -726,6 +782,42 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
 ];
 
 const NEW_STILL_PHOTOS: LibraryVideo[] = [
+  {
+    id: "photo-santa-workshop",
+    title: "Photo · North Pole toy workshop",
+    description: "Santa and elves wrapping gifts at the wooden workbench under workshop lights.",
+    src: "/assets/christmas/north-pole-santa/source/01_workshop_wrapping_1080x1920.jpg",
+    filename: "01_workshop_wrapping_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-santa-sleigh",
+    title: "Photo · Santa loading the sleigh",
+    description: "Red sleigh, reindeer, aurora, and the NORTH POLE workshop doorway at night.",
+    src: "/assets/christmas/north-pole-santa/source/02_sleigh_loading_1080x1920.jpg",
+    filename: "02_sleigh_loading_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-santa-desk",
+    title: "Photo · Santa and the snow globe",
+    description: "Warm desk with cookies, cocoa mug, checklist, and Santa polishing a snow globe.",
+    src: "/assets/christmas/north-pole-santa/source/03_snow_globe_desk_1080x1920.jpg",
+    filename: "03_snow_globe_desk_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
+  {
+    id: "photo-santa-sweep",
+    title: "Photo · Santa sweeping the workshop",
+    description: "Santa with a broom, red sack, and snowy North Pole through the open arch.",
+    src: "/assets/christmas/north-pole-santa/source/04_workshop_sweeping_1080x1920.jpg",
+    filename: "04_workshop_sweeping_1080x1920.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+  },
   {
     id: "photo-global-lapland",
     title: "Photo · Lapland aurora igloos",
