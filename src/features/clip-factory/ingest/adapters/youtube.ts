@@ -1,4 +1,5 @@
-import { IngestFailure, type SourceMetadata, type VideoSourceAdapter } from "../types";
+import { capabilityMessage } from "../capability";
+import { IngestFailure, normalizeSourceMetadata, type SourceMetadata, type VideoSourceAdapter } from "../types";
 import { parsePublicHttpUrl } from "../ssrf";
 
 const YOUTUBE_HOST = /(^|\.)youtube\.com$|(^|\.)youtu\.be$|(^|\.)youtube-nocookie\.com$/i;
@@ -36,7 +37,11 @@ export function youtubeAuthorizedImportConfigured(): boolean {
 }
 
 function youtubeFallbackMessage(): string {
-  return "YouTube source detected. Provide the original media to continue.";
+  return capabilityMessage("REFERENCE_ONLY", "youtube");
+}
+
+function youtubeCapability() {
+  return youtubeAuthorizedImportConfigured() ? ("FULL_IMPORT" as const) : ("REFERENCE_ONLY" as const);
 }
 
 function mapYoutubePrivacy(status?: string): SourceMetadata["privacy"] {
@@ -77,8 +82,8 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
     if (item.status?.uploadStatus && item.status.uploadStatus !== "processed") {
       throw new IngestFailure("video_unavailable", "Video is unavailable.");
     }
-    const canImport = youtubeAuthorizedImportConfigured();
-    return {
+    const ingestionCapability = youtubeCapability();
+    return normalizeSourceMetadata({
       provider: "youtube",
       url: normalizedUrl,
       normalizedUrl,
@@ -89,11 +94,14 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
       thumbnailUrl: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || null,
       privacy,
       embeddable: item.status?.embeddable ?? null,
-      canImport,
-      importMode: canImport ? "authorized_api" : "unavailable",
-      fallback: canImport ? null : "upload",
-      message: canImport ? null : youtubeFallbackMessage(),
-    };
+      canImport: ingestionCapability === "FULL_IMPORT",
+      ingestionCapability,
+      mediaUrl: null,
+      importMode: ingestionCapability === "FULL_IMPORT" ? "authorized_api" : "unavailable",
+      fallback: ingestionCapability === "FULL_IMPORT" ? null : "upload",
+      message: capabilityMessage(ingestionCapability, "youtube"),
+      metadata: { privacy, embeddable: item.status?.embeddable ?? null },
+    });
   }
 
   const oembed = new URL("https://www.youtube.com/oembed");
@@ -106,8 +114,8 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
     }
     if (res.ok) {
       const json = (await res.json().catch(() => ({}))) as { title?: string; author_name?: string; thumbnail_url?: string };
-      const canImport = youtubeAuthorizedImportConfigured();
-      return {
+      const ingestionCapability = youtubeCapability();
+      return normalizeSourceMetadata({
         provider: "youtube",
         url: normalizedUrl,
         normalizedUrl,
@@ -118,17 +126,20 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
         thumbnailUrl: json.thumbnail_url || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
         privacy: "public",
         embeddable: true,
-        canImport,
-        importMode: canImport ? "authorized_api" : "unavailable",
-        fallback: canImport ? null : "upload",
-        message: canImport ? null : youtubeFallbackMessage(),
-      };
+        canImport: ingestionCapability === "FULL_IMPORT",
+        ingestionCapability,
+        mediaUrl: null,
+        importMode: ingestionCapability === "FULL_IMPORT" ? "authorized_api" : "unavailable",
+        fallback: ingestionCapability === "FULL_IMPORT" ? null : "upload",
+        message: capabilityMessage(ingestionCapability, "youtube"),
+        metadata: { oembed: true },
+      });
     }
   } catch (error) {
     if (error instanceof IngestFailure) throw error;
   }
-  const canImport = youtubeAuthorizedImportConfigured();
-  return {
+  const ingestionCapability = youtubeCapability();
+  return normalizeSourceMetadata({
     provider: "youtube",
     url: normalizedUrl,
     normalizedUrl,
@@ -139,11 +150,14 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
     thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
     privacy: "unknown",
     embeddable: null,
-    canImport,
-    importMode: canImport ? "authorized_api" : "unavailable",
-    fallback: canImport ? null : "upload",
-    message: canImport ? null : youtubeFallbackMessage(),
-  };
+    canImport: ingestionCapability === "FULL_IMPORT",
+    ingestionCapability,
+    mediaUrl: null,
+    importMode: ingestionCapability === "FULL_IMPORT" ? "authorized_api" : "unavailable",
+    fallback: ingestionCapability === "FULL_IMPORT" ? null : "upload",
+    message: capabilityMessage(ingestionCapability, "youtube"),
+    metadata: { oembed: false },
+  });
 }
 
 export function parseIsoDuration(value?: string | null): number | null {
@@ -174,7 +188,7 @@ export const youtubeAdapter: VideoSourceAdapter = {
     return fetchYoutubeMetadata(id);
   },
   canImport(metadata) {
-    return Boolean(metadata.canImport && youtubeAuthorizedImportConfigured());
+    return metadata.ingestionCapability === "FULL_IMPORT" && youtubeAuthorizedImportConfigured();
   },
   async import() {
     throw new IngestFailure(

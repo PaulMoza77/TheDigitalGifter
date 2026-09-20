@@ -4,6 +4,8 @@ export const CLIP_FACTORY_JOB_STATUSES = [
   "source_detected",
   "waiting_for_media",
   "importing",
+  "downloading",
+  "ingesting",
   "extracting_audio",
   "transcribing",
   "analyzing",
@@ -11,10 +13,9 @@ export const CLIP_FACTORY_JOB_STATUSES = [
   "rendering",
   "captioning",
   "saving",
+  "finalizing",
   "completed",
   "failed",
-  // legacy rows from the first Clip Factory release
-  "ingesting",
   "analyzing_audio",
   "understanding_scenes",
   "finding_hooks",
@@ -26,11 +27,12 @@ export const CLIP_FACTORY_JOB_STATUSES = [
 export type ClipFactoryJobStatus = (typeof CLIP_FACTORY_JOB_STATUSES)[number];
 
 const TRANSITIONS: Record<string, readonly string[]> = {
-  queued: ["importing", "ingesting", "waiting_for_media", "source_detected", "failed"],
+  queued: ["importing", "ingesting", "downloading", "waiting_for_media", "source_detected", "failed"],
   waiting_for_media: ["queued", "importing", "uploading", "failed"],
   source_detected: ["waiting_for_media", "queued", "importing", "failed"],
   uploading: ["queued", "importing", "failed"],
-  importing: ["extracting_audio", "analyzing_audio", "failed"],
+  importing: ["extracting_audio", "analyzing_audio", "downloading", "failed"],
+  downloading: ["extracting_audio", "importing", "failed"],
   ingesting: ["extracting_audio", "analyzing_audio", "failed"],
   extracting_audio: ["transcribing", "failed"],
   analyzing_audio: ["transcribing", "failed"],
@@ -43,7 +45,8 @@ const TRANSITIONS: Record<string, readonly string[]> = {
   ready: ["rendering", "completed", "failed"],
   rendering: ["captioning", "saving", "completed", "partial", "failed"],
   captioning: ["saving", "rendering", "completed", "failed"],
-  saving: ["completed", "rendering", "partial", "failed"],
+  saving: ["completed", "rendering", "partial", "failed", "finalizing"],
+  finalizing: ["completed", "partial", "failed"],
   completed: ["rendering", "failed"],
   partial: ["rendering", "failed", "queued"],
   failed: ["queued", "importing", "rendering"],
@@ -61,11 +64,12 @@ export function assertJobTransition(from: string, to: string): void {
 }
 
 export function normalizeJobStatus(status: string): ClipFactoryJobStatus {
-  if (status === "ingesting") return "importing";
+  if (status === "ingesting" || status === "downloading") return "importing";
   if (status === "analyzing_audio") return "extracting_audio";
   if (status === "understanding_scenes") return "analyzing";
   if (status === "finding_hooks" || status === "scoring") return "selecting_moments";
   if (status === "ready") return "selecting_moments";
+  if (status === "finalizing") return "saving";
   return (CLIP_FACTORY_JOB_STATUSES as readonly string[]).includes(status)
     ? (status as ClipFactoryJobStatus)
     : "queued";

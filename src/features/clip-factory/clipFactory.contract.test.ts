@@ -22,6 +22,11 @@ describe("clip factory production wiring", () => {
     expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).not.toContain("Automatic import isn't available");
     expect(read("api/clip-factory.ts")).toContain("rights_confirmed");
     expect(read("src/features/clip-factory/ingest/types.ts")).toContain("VideoSourceAdapter");
+    expect(read("src/features/clip-factory/ingest/types.ts")).toContain("ingestionCapability");
+    expect(read("src/features/clip-factory/ingest/capability.ts")).toContain("FULL_IMPORT");
+    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("Find Viral Moments");
+    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("ingest this URL automatically");
+    expect(read("api/_lib/clip-factory/worker.ts")).toContain("Importing source...");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("clip_factory_analysis_started");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("importYoutubeAuthorized");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("library_assets");

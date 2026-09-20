@@ -1,4 +1,6 @@
 import { classifyVideoUrl, sourceKindForProvider } from "./ingest/classify";
+import { isFullImport } from "./ingest/capability";
+import type { IngestionCapability } from "./ingest/capability";
 import { requiresRightsConfirmation, rightsConfirmationError } from "./jobStates";
 import {
   CAPTION_STYLES,
@@ -33,6 +35,7 @@ export type PreparedJob =
       rightsConfirmed: boolean;
       autoRender: boolean;
       waitingForMedia: boolean;
+      ingestionCapability: IngestionCapability;
     }
   | { ok: false; code: string; message: string };
 
@@ -46,6 +49,7 @@ function attachReference(url: string | undefined, payload: Record<string, unknow
     url: payload.url || decision.normalizedUrl,
     provider: decision.provider,
     importMode: decision.importMode,
+    ingestionCapability: decision.ingestionCapability,
   };
 }
 
@@ -65,6 +69,7 @@ export function prepareClipFactoryJob(body: CreateJobInput): PreparedJob {
   let sourceLabel = String(body.source_label || "").trim() || "Untitled video";
   let provider = requestedKind || "unknown";
   let waitingForMedia = false;
+  let ingestionCapability: IngestionCapability = "FULL_IMPORT";
 
   if (requestedKind === "upload" || String(body.object_path || "").startsWith("uploads/")) {
     const objectPath = String(body.object_path || "");
@@ -94,9 +99,10 @@ export function prepareClipFactoryJob(body: CreateJobInput): PreparedJob {
     }
     sourceKind = sourceKindForProvider(decision.provider);
     provider = decision.provider;
-    sourcePayload = { url: decision.normalizedUrl, referenceUrl: decision.normalizedUrl, provider: decision.provider, importMode: decision.importMode };
+    sourcePayload = { url: decision.normalizedUrl, referenceUrl: decision.normalizedUrl, provider: decision.provider, importMode: decision.importMode, ingestionCapability: decision.ingestionCapability, mediaUrl: decision.canImport ? decision.normalizedUrl : null };
     sourceLabel = sourceLabel === "Untitled video" ? new URL(decision.normalizedUrl).hostname : sourceLabel;
-    waitingForMedia = !decision.canImport;
+    ingestionCapability = decision.ingestionCapability;
+    waitingForMedia = !isFullImport(decision.ingestionCapability);
     if (waitingForMedia) {
       sourcePayload.mediaKind = "reference";
     }
@@ -118,5 +124,6 @@ export function prepareClipFactoryJob(body: CreateJobInput): PreparedJob {
     rightsConfirmed: Boolean(body.rights_confirmed) || hasLocalMedia,
     autoRender: body.auto_render !== false,
     waitingForMedia,
+    ingestionCapability,
   };
 }

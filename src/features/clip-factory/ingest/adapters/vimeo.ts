@@ -1,4 +1,5 @@
-import { IngestFailure, type VideoSourceAdapter } from "../types";
+import { capabilityMessage } from "../capability";
+import { IngestFailure, normalizeSourceMetadata, type VideoSourceAdapter } from "../types";
 import { parsePublicHttpUrl } from "../ssrf";
 
 const VIMEO_HOST = /(^|\.)vimeo\.com$/i;
@@ -52,7 +53,8 @@ export const vimeoAdapter: VideoSourceAdapter = {
         throw new IngestFailure("video_private", "Video is private.");
       }
       const canImport = Boolean(json.privacy?.download && json.download?.some((d) => d.link));
-      return {
+      const ingestionCapability = canImport ? "FULL_IMPORT" : "AUTHORIZED_IMPORT_REQUIRED";
+      return normalizeSourceMetadata({
         provider: "vimeo",
         url: normalizedUrl,
         normalizedUrl,
@@ -63,12 +65,13 @@ export const vimeoAdapter: VideoSourceAdapter = {
         thumbnailUrl: json.pictures?.sizes?.at(-1)?.link || null,
         privacy: json.privacy?.view === "unlisted" ? "unlisted" : "public",
         canImport,
+        ingestionCapability,
+        mediaUrl: canImport ? json.download?.find((d) => d.link)?.link || null : null,
         importMode: canImport ? "authorized_api" : "unavailable",
         fallback: canImport ? null : "upload",
-        message: canImport
-          ? null
-          : "Automatic import isn't available for this source. Upload the original video file instead.",
-      };
+        message: capabilityMessage(ingestionCapability, "vimeo"),
+        metadata: { privacy: json.privacy || {} },
+      });
     }
     const oembed = new URL("https://vimeo.com/api/oembed.json");
     oembed.searchParams.set("url", normalizedUrl);
@@ -78,20 +81,22 @@ export const vimeoAdapter: VideoSourceAdapter = {
     }
     if (res.status === 404) throw new IngestFailure("video_unavailable", "Video is unavailable.");
     if (!res.ok) {
-      return {
+      return normalizeSourceMetadata({
         provider: "vimeo",
         url: normalizedUrl,
         normalizedUrl,
         externalId: id,
         title: "Vimeo video",
         canImport: false,
+        ingestionCapability: "REFERENCE_ONLY",
+        mediaUrl: null,
         importMode: "unavailable",
         fallback: "upload",
-        message: "Automatic import isn't available for this source. Upload the original video file instead.",
-      };
+        message: capabilityMessage("REFERENCE_ONLY", "vimeo"),
+      });
     }
     const json = (await res.json()) as { title?: string; author_name?: string; thumbnail_url?: string; duration?: number };
-    return {
+    return normalizeSourceMetadata({
       provider: "vimeo",
       url: normalizedUrl,
       normalizedUrl,
@@ -102,13 +107,15 @@ export const vimeoAdapter: VideoSourceAdapter = {
       thumbnailUrl: json.thumbnail_url || null,
       privacy: "public",
       canImport: false,
+      ingestionCapability: token ? "AUTHORIZED_IMPORT_REQUIRED" : "REFERENCE_ONLY",
+      mediaUrl: null,
       importMode: "unavailable",
       fallback: "upload",
-      message: "Automatic import isn't available for this source. Upload the original video file instead.",
-    };
+      message: capabilityMessage(token ? "AUTHORIZED_IMPORT_REQUIRED" : "REFERENCE_ONLY", "vimeo"),
+    });
   },
   canImport(metadata) {
-    return Boolean(metadata.canImport && vimeoAccessToken());
+    return metadata.ingestionCapability === "FULL_IMPORT" && Boolean(vimeoAccessToken());
   },
   async import() {
     throw new IngestFailure(

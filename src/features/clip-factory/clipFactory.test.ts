@@ -10,7 +10,7 @@ import { hostnameIsBlocked, isBlockedResolvedAddress, parsePublicHttpUrl } from 
 import { prepareClipFactoryJob } from "./createJob";
 import { canTransitionJob, requiresRightsConfirmation, rightsConfirmationError } from "./jobStates";
 import { clipTimestampsValid, selectNonOverlappingMoments } from "./moments";
-import { overallViralScore, SCORE_WEIGHTS, normalizeDimensions } from "./scoring";
+import { overallViralScore, SCORE_WEIGHTS, normalizeDimensions, extraSignalBonus } from "./scoring";
 import type { Transcript, ViralCandidate } from "./types";
 
 const transcript: Transcript = {
@@ -58,6 +58,7 @@ describe("clip factory scoring", () => {
     const scores = normalizeDimensions({ hook: 100, retention: 0, emotion: 0, humor: 0, visual: 0, standalone: 0, shareability: 0 });
     expect(overallViralScore(scores, "viral")).toBe(Math.round(100 * SCORE_WEIGHTS.viral.hook));
     expect(SCORE_WEIGHTS.funny.humor).toBeGreaterThan(SCORE_WEIGHTS.educational.humor);
+    expect(extraSignalBonus({ surprise: 100, curiosity: 100, controversy: 0, storytelling: 0, seasonal: 0, quotability: 0, information: 0, objective_fit: 0 })).toBeGreaterThan(0);
   });
 });
 
@@ -119,13 +120,14 @@ describe("clip factory ingest urls", () => {
     expect(classifyMediaUrl("https://cdn.example.com/talk.mp4").ok).toBe(true);
   });
 
-  it("classifies YouTube instead of rejecting the hostname", () => {
+  it("classifies YouTube as reference-only without an authorized importer", () => {
     const classified = classifyVideoUrl("https://youtube.com/watch?v=dQw4w9wgGcI");
     expect(classified.ok).toBe(true);
     if (classified.ok) {
       expect(classified.provider).toBe("youtube");
       expect(classified.normalizedUrl).toBe("https://www.youtube.com/watch?v=dQw4w9wgGcI");
       expect(classified.canImport).toBe(false);
+      expect(classified.ingestionCapability).toBe("REFERENCE_ONLY");
     }
     expect(extractYoutubeId("https://youtu.be/dQw4w9wgGcI")).toBe("dQw4w9wgGcI");
     expect(normalizeYoutubeUrl("dQw4w9wgGcI")).toContain("watch?v=");
@@ -170,6 +172,19 @@ describe("clip factory job creation", () => {
     expect(prepareClipFactoryJob({ source_kind: "library", library_asset_id: "reel-north-pole-santa" }).ok).toBe(true);
   });
 
+  it("queues authorized direct media URLs for one-click FULL_IMPORT", () => {
+    const result = prepareClipFactoryJob({
+      url: "https://cdn.example.com/talk.mp4",
+      rights_confirmed: true,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.waitingForMedia).toBe(false);
+      expect(result.ingestionCapability).toBe("FULL_IMPORT");
+      expect(result.sourceKind).toBe("direct_media_url");
+    }
+  });
+
   it("saves a YouTube reference as waiting-for-media instead of a dead-end error", () => {
     const result = prepareClipFactoryJob({
       url: "https://www.youtube.com/watch?v=dQw4w9wgGcI",
@@ -177,6 +192,7 @@ describe("clip factory job creation", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.waitingForMedia).toBe(true);
+      expect(result.ingestionCapability).toBe("REFERENCE_ONLY");
       expect(result.sourceKind).toBe("youtube");
       expect(String(result.sourcePayload.referenceUrl || result.sourcePayload.url)).toContain("dQw4w9wgGcI");
     }

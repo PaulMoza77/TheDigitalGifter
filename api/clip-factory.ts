@@ -167,10 +167,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         const adapter = detectUrlAdapter(raw);
         const metadata = adapter ? await adapter.getMetadata(raw) : null;
+        const capability = metadata?.ingestionCapability || classified.ingestionCapability;
+        const ready = capability === "FULL_IMPORT";
         return res.status(200).json({
           classification: classified,
           metadata,
-          ready: Boolean(metadata?.canImport || classified.canImport),
+          source: metadata
+            ? {
+                sourceId: metadata.sourceId,
+                sourceType: metadata.sourceType,
+                originalUrl: metadata.originalUrl,
+                title: metadata.title,
+                thumbnail: metadata.thumbnail || metadata.thumbnailUrl,
+                duration: metadata.duration ?? metadata.durationSeconds,
+                author: metadata.author,
+                mediaUrl: metadata.mediaUrl || null,
+                mediaAsset: metadata.mediaAsset || null,
+                metadata: metadata.metadata || {},
+                ingestionCapability: capability,
+              }
+            : null,
+          ready,
+          ingestionCapability: capability,
         });
       } catch (err) {
         if (err instanceof IngestFailure) return apiError(res, 400, err.code, err.message);
@@ -321,6 +339,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (err instanceof IngestFailure) return apiError(res, 400, err.code, err.message);
         }
       }
+      const metaCapability = (sourceMetadata as { ingestionCapability?: string }).ingestionCapability;
+      const waitingForMedia =
+        prepared.waitingForMedia ||
+        (metaCapability ? metaCapability !== "FULL_IMPORT" && !asString(body.object_path) && !asString(body.library_asset_id) : prepared.waitingForMedia);
+      if (metaCapability) {
+        sourcePayload.ingestionCapability = metaCapability;
+        if ((sourceMetadata as { mediaUrl?: string }).mediaUrl) {
+          sourcePayload.mediaUrl = (sourceMetadata as { mediaUrl?: string }).mediaUrl;
+        }
+      }
 
       if (idempotencyKey) {
         const { data: existing } = await service
@@ -341,11 +369,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           created_by: admin.userId,
           created_by_email: admin.email,
           idempotency_key: idempotencyKey,
-          status: prepared.waitingForMedia ? "waiting_for_media" : "queued",
-          stage: prepared.waitingForMedia ? "source_detected" : "queued",
-          progress: prepared.waitingForMedia ? 5 : 2,
-          progress_label: prepared.waitingForMedia
-            ? "YouTube source detected. Provide the original media to continue."
+          status: waitingForMedia ? "waiting_for_media" : "queued",
+          stage: waitingForMedia ? "source_detected" : "queued",
+          progress: waitingForMedia ? 5 : 2,
+          progress_label: waitingForMedia
+            ? (sourceMetadata as { message?: string }).message || "Source detected. Original media is required to continue."
             : "Queued",
           source_kind: sourceKind,
           source_payload: sourcePayload,
@@ -360,7 +388,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select("*")
         .single();
       if (inserted.error) throw inserted.error;
-      if (!prepared.waitingForMedia) kickClipFactoryWorker();
+      if (!waitingForMedia) kickClipFactoryWorker();
       return res.status(200).json({ job: await hydrateJob(service, inserted.data) });
     }
 

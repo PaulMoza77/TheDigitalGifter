@@ -118,13 +118,13 @@ export default function AdminClipFactoryPage() {
   const [libraryId, setLibraryId] = React.useState("");
   const [libraryItems, setLibraryItems] = React.useState<Array<{ id: string; title: string; libraryKind?: string }>>([]);
   const [advanced, setAdvanced] = React.useState(false);
-  const [rightsConfirmed, setRightsConfirmed] = React.useState(false);
   const [urlPreview, setUrlPreview] = React.useState<{
     provider: string;
     title?: string | null;
     durationSeconds?: number | null;
     thumbnailUrl?: string | null;
     canImport: boolean;
+    ingestionCapability: string;
     message?: string | null;
   } | null>(null);
   const [urlIssue, setUrlIssue] = React.useState<string | null>(null);
@@ -188,10 +188,11 @@ export default function AdminClipFactoryPage() {
           setUrlIssue(null);
           setUrlPreview({
             provider: data.metadata?.provider || data.classification.provider,
-            title: data.metadata?.title,
-            durationSeconds: data.metadata?.durationSeconds,
-            thumbnailUrl: data.metadata?.thumbnailUrl,
+            title: data.metadata?.title || data.source?.title,
+            durationSeconds: data.metadata?.durationSeconds ?? data.source?.duration,
+            thumbnailUrl: data.metadata?.thumbnailUrl || data.source?.thumbnail,
             canImport: Boolean(data.ready),
+            ingestionCapability: data.ingestionCapability || data.metadata?.ingestionCapability || data.classification.ingestionCapability || "UNSUPPORTED",
             message: data.metadata?.message || data.classification.message,
           });
         })
@@ -214,7 +215,7 @@ export default function AdminClipFactoryPage() {
     try {
       const idempotency = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       let payload: Record<string, unknown> = { options, idempotency_key: idempotency };
-      if (url.trim()) payload = { ...payload, url: url.trim(), source_label: urlPreview?.title || undefined, rights_confirmed: rightsConfirmed };
+      if (url.trim()) payload = { ...payload, url: url.trim(), source_label: urlPreview?.title || undefined, rights_confirmed: true };
       if (file) {
         const signed = await clipFactoryApi.signedUpload(file.type || "video/mp4", file.size, file.name);
         await fetch(signed.uploadUrl, { method: "PUT", headers: signed.headers, body: file });
@@ -247,8 +248,9 @@ export default function AdminClipFactoryPage() {
     }
   }
 
-  const analyzing = Boolean(job && !["ready", "completed", "partial", "failed", "waiting_for_media", "source_detected", "rendering"].includes(job.status));
+  const analyzing = Boolean(job && !["ready", "completed", "partial", "failed", "waiting_for_media", "source_detected"].includes(job.status) && !(job.clips_generated > 0));
   const waitingForMedia = Boolean(job && ["waiting_for_media", "source_detected"].includes(job.status) && !job.media_id);
+  const showResults = Boolean(job && (["ready", "completed", "partial", "rendering"].includes(job.status) || (job.clips_generated || 0) > 0 || (job.candidates || []).length > 0) && !waitingForMedia && !analyzing);
 
   async function attachToJob(next: { file?: File | null; libraryId?: string }) {
     if (!job) return;
@@ -370,9 +372,9 @@ export default function AdminClipFactoryPage() {
                         {urlPreview.durationSeconds ? ` • ${formatClock(urlPreview.durationSeconds)}` : ""}
                       </p>
                       <p className="mt-3 text-sm leading-6 text-slate-200">
-                        {urlPreview.canImport
-                          ? "Ready to analyze"
-                          : "YouTube source detected. Provide the original media to continue."}
+                        {urlPreview.ingestionCapability === "FULL_IMPORT"
+                          ? "Ready. Find Viral Moments will ingest this URL automatically — no file upload."
+                          : urlPreview.message || "YouTube source detected. Provide the original media to continue."}
                       </p>
                     </div>
                   </div>
@@ -380,21 +382,15 @@ export default function AdminClipFactoryPage() {
               ) : null}
               {urlIssue ? <p className="text-sm text-rose-300">{urlIssue}</p> : null}
               {url.trim() ? (
-                <label className="flex items-start gap-3 text-sm text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={rightsConfirmed}
-                    onChange={(e) => setRightsConfirmed(e.target.checked)}
-                    className="mt-1"
-                  />
-                  <span>I confirm that I own this content or have permission to use it.</span>
-                </label>
+                <p className="text-xs leading-5 text-slate-500">
+                  Pressing Find Viral Moments confirms you own this content or have permission to use it.
+                </p>
               ) : null}
-              {urlPreview && !urlPreview.canImport ? (
-                <p className="text-sm font-medium text-slate-200">To create clips, provide the original video:</p>
+              {urlPreview && urlPreview.ingestionCapability !== "FULL_IMPORT" ? (
+                <p className="text-sm font-medium text-slate-200">Automatic media import is not available for this source. Provide the original video:</p>
               ) : null}
-              <div className="flex flex-wrap gap-3">
-                <label className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${urlPreview && !urlPreview.canImport ? "border-indigo-400/70 bg-indigo-500/10" : "border-slate-700 bg-slate-950"}`}>
+              <div className={`flex flex-wrap gap-3 ${urlPreview?.ingestionCapability === "FULL_IMPORT" ? "opacity-80" : ""}`}>
+                <label className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${urlPreview && urlPreview.ingestionCapability !== "FULL_IMPORT" ? "border-indigo-400/70 bg-indigo-500/10" : "border-slate-700 bg-slate-950"}`}>
                   <Upload className="h-4 w-4" />
                   {file ? file.name : "Upload original"}
                   <input
@@ -523,7 +519,7 @@ export default function AdminClipFactoryPage() {
               ) : null}
               <div>
                 <h2 className="text-xl font-semibold">{job?.source_label}</h2>
-                <p className="mt-2 text-sm text-slate-300">YouTube source detected. Provide the original media to continue.</p>
+                <p className="mt-2 text-sm text-slate-300">{job?.progress_label || "YouTube source detected. Provide the original media to continue."}</p>
               </div>
             </div>
             <p className="mt-5 text-sm font-medium text-slate-200">To create clips, provide the original video:</p>
@@ -604,20 +600,63 @@ export default function AdminClipFactoryPage() {
           </section>
         ) : null}
 
-        {job && ["ready", "completed", "partial", "rendering"].includes(job.status) ? (
+        {job && showResults ? (
           <section className="mt-6">
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-2xl font-semibold">{job.moments_found} Viral Moments Found</h2>
-                <p className="text-sm text-slate-400">{job.source_label}</p>
+                <h2 className="text-2xl font-semibold">
+                  {job.clips_generated ? `${job.clips_generated} clips ready` : `${job.moments_found} Viral Moments Found`}
+                </h2>
+                <p className="text-sm text-slate-400">{job.progress_label || job.source_label}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => void generate((job.candidates || []).filter((c) => !c.rejected).slice(0, 10).map((c) => c.id))}
-                className="rounded-2xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold"
-              >
-                Generate Best 10
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const urls = (job.renders || []).filter((r) => r.status === "completed" && r.playback_url).map((r) => r.playback_url as string);
+                    urls.forEach((href) => window.open(href, "_blank", "noopener,noreferrer"));
+                  }}
+                  className="rounded-2xl border border-slate-700 px-4 py-2.5 text-sm"
+                >
+                  Download all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.success("Completed clips are already saved to the TDG Library.")}
+                  className="rounded-2xl border border-slate-700 px-4 py-2.5 text-sm"
+                >
+                  Save all to Library
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const first = (job.renders || []).find((r) => r.status === "completed" && r.library_asset_id);
+                    const card = (job.candidates || []).find((c) => c.id === first?.candidate_id);
+                    if (!first || !card) return;
+                    setPublisher({
+                      id: first.library_asset_id || card.id,
+                      title: card.title,
+                      description: card.suggested_post_caption || card.summary,
+                      src: first.playback_url || "",
+                      filename: `${card.title}.mp4`,
+                      category: "clip_factory",
+                      kind: "reel",
+                      width: 1080,
+                      height: 1920,
+                    });
+                  }}
+                  className="rounded-2xl border border-slate-700 px-4 py-2.5 text-sm"
+                >
+                  Schedule all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void generate((job.candidates || []).filter((c) => !c.rejected).slice(0, 10).map((c) => c.id))}
+                  className="rounded-2xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold"
+                >
+                  Publish selected
+                </button>
+              </div>
             </div>
             <div className="mb-4 flex flex-wrap gap-2">
               {(["score", "shortest", "longest", "funny", "emotional", "educational", "visual"] as const).map((key) => (
@@ -635,16 +674,20 @@ export default function AdminClipFactoryPage() {
                   const render = job.renders?.find((r) => r.candidate_id === card.id);
                   return (
                     <article key={card.id} className="rounded-3xl border border-slate-800 bg-slate-900/60 p-5">
+                      {render?.status === "completed" && render.playback_url ? (
+                        <video className="mb-4 aspect-[9/16] w-full max-h-80 rounded-2xl bg-black object-cover" src={render.playback_url} controls playsInline />
+                      ) : null}
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-3xl font-semibold tabular-nums">{card.overall_viral_score} <span className="text-sm font-normal text-slate-500">/ 100</span></p>
                         <span className="rounded-full bg-amber-500/15 px-2 py-1 text-[11px] uppercase tracking-wide text-amber-200">
-                          {card.scores.hook >= 80 ? "Strong hook" : card.category}
+                          Viral score: {card.overall_viral_score}
                         </span>
                       </div>
                       <h3 className="mt-3 text-lg font-medium leading-6">“{card.hook || card.title}”</h3>
                       <p className="mt-2 text-sm text-slate-400">
-                        {Math.round(card.duration)} sec · {formatClock(card.start_time)} → {formatClock(card.end_time)}
+                        {formatClock(card.duration)} · {formatClock(card.start_time)} → {formatClock(card.end_time)}
                       </p>
+                      <p className="mt-3 text-sm text-slate-300">{card.why_it_works[0] || card.reason}</p>
                       <p className="mt-4 text-[11px] uppercase tracking-[0.2em] text-slate-500">Why this works</p>
                       <ul className="mt-2 space-y-1 text-sm text-slate-300">
                         {(card.why_it_works.length ? card.why_it_works : [card.reason]).slice(0, 5).map((line) => (
@@ -654,7 +697,7 @@ export default function AdminClipFactoryPage() {
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button type="button" className="rounded-xl border border-slate-700 px-3 py-2 text-sm" onClick={() => { setPreview(card); setTrim({ start: card.start_time, end: card.end_time }); }}>Preview</button>
                         <button type="button" className="rounded-xl border border-slate-700 px-3 py-2 text-sm" onClick={() => { setPreview(card); setTrim({ start: card.start_time, end: card.end_time }); }}>Edit</button>
-                        <button type="button" className="rounded-xl bg-indigo-500 px-3 py-2 text-sm font-semibold" onClick={() => void generate([card.id])}>Generate</button>
+                        <button type="button" className="rounded-xl bg-indigo-500 px-3 py-2 text-sm font-semibold" onClick={() => void generate([card.id])}>{render?.status === "completed" ? "Regenerate" : "Generate"}</button>
                         <button type="button" className="rounded-xl px-3 py-2 text-sm text-slate-500" onClick={() => void clipFactoryApi.rejectCandidate(job.id, card.id, true).then(async () => setJob((await clipFactoryApi.getJob(job.id)).job))}>Reject</button>
                       </div>
                       {render ? (

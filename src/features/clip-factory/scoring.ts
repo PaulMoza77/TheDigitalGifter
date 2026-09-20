@@ -59,11 +59,16 @@ export function overallViralScore(scores: ScoreDimensions, objective: ObjectiveO
 export function extraSignalBonus(raw: Record<string, unknown> | null | undefined): number {
   const src = raw || {};
   const surprise = clampScore(src.surprise);
+  const curiosity = clampScore(src.curiosity);
+  const controversy = clampScore(src.controversy ?? src.debate);
+  const storytelling = clampScore(src.storytelling ?? src.payoff ?? src.story_payoff);
+  const seasonal = clampScore(src.seasonal ?? src.seasonal_relevance);
   const quotability = clampScore(src.quotability);
-  const payoff = clampScore(src.payoff ?? src.story_payoff);
   const information = clampScore(src.information ?? src.information_density);
   const objectiveFit = clampScore(src.objective_fit ?? src.relevance);
-  return Math.round((surprise + quotability + payoff + information + objectiveFit) / 5 / 12);
+  return Math.round(
+    (surprise + curiosity + controversy + storytelling + seasonal + quotability + information + objectiveFit) / 8 / 12,
+  );
 }
 
 export function durationFitPenalty(duration: number, target: "auto" | "10-20" | "20-30" | "30-60"): number {
