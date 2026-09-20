@@ -79,7 +79,7 @@ export function recipeAllergens(recipe: RecipeCatalogRow): string[] {
   if (recipe.allergens?.length) return recipe.allergens.map((a) => a.toLowerCase());
   const blob = `${(recipe.tags || []).join(" ")} ${JSON.stringify(recipe.ingredients || [])}`.toLowerCase();
   const found: string[] = [];
-  if (/\b(nut|walnut|almond|peanut|hazelnut)\b/.test(blob)) found.push("nuts");
+  if (/\b(nut|nuts|walnut|walnuts|almond|almonds|peanut|peanuts|hazelnut|hazelnuts)\b/.test(blob)) found.push("nuts");
   if (/\b(milk|cream|butter|cheese|dairy)\b/.test(blob)) found.push("dairy");
   if (/\b(egg|eggs)\b/.test(blob)) found.push("eggs");
   if (/\b(gluten|flour|bread|wheat)\b/.test(blob)) found.push("gluten");

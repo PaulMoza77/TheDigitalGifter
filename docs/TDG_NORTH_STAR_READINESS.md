@@ -1,26 +1,26 @@
 # TDG North Star — implementation audit
 
-Baseline: main after North Star merge. This document is evidence-oriented: DONE requires a working intended flow, not merely a file or unit test.
+Baseline: main after Founding Pass product work. DONE requires a working intended flow, not merely a file or unit test.
 
 | Area | State | Evidence / gap |
 |---|---|---|
-| Planner shell/onboarding | PARTIAL | Profile, onboarding and account routes exist; final acquisition-to-account UX still needs production mobile acceptance. |
-| Calendar/tasks | PARTIAL | christmas_events + planner tasks and UI exist; final polish/production acceptance remains. |
-| Budget | PARTIAL | Budget entries/profile total and gift intelligence exist; cross-module automatic spend reconciliation is incomplete. |
-| Gifts/recipients | PARTIAL | Recipient/gift lifecycle and Gift Concierge are substantial; production provider flow is not fully enabled. |
-| Gift Finder | PARTIAL | Recommendation flow exists and feeds Planner; final paid/free product UX needs acceptance. |
-| Live affiliate shopping | BLOCKED | Official eBay adapter, OAuth, marketplace mapping, cache/privacy/tests exist. Feature is gated by credentials + explicit production access. |
-| Price comparison | PARTIAL | Exact-product comparison foundation added in this branch. Multi-provider offers/identifiers are still required before UI can truthfully compare retailers. |
-| Recipes catalog | PARTIAL | Recipe schema/UI/intelligence exists; high-quality 1,500-recipe licensed/original catalog is missing. |
-| Meal planning | PARTIAL | Meals/dishes/recipe linking/serving intelligence exist; final product UX/catalog depth missing. |
-| Grocery generation | PARTIAL | Ingredient parsing, serving scaling, aggregation and persisted grocery items exist; normalization and production UX need acceptance. |
-| Studio integration | PARTIAL | Christmas products/routes and cross-sell seams exist; unified Planner contextual cross-sell not complete. |
-| Copilot | PARTIAL | Snapshot/insights/actions exist; current documented Copilot is intentionally local/no model calls and is not the final cross-module agent. |
-| Commerce/paywall/entitlements | PARTIAL | Server-authoritative catalog, packages, checkout gates and user_entitlements exist; $17 Founding Pass configuration + real E2E intentionally pending near launch. |
-| Analytics/admin reporting | PARTIAL | Rich event taxonomy exists; one coherent North-Star funnel dashboard and production verification remain. |
-| SEO/acquisition | PARTIAL | Christmas/Gift Finder/SEO surfaces exist; final indexability/canonical/hreflang/Search Console verification remains. |
-| Mobile production QA | MISSING | Requires physical/mobile production acceptance after final UI/flows. |
-| VPS-only hygiene | PARTIAL | Deployment cleanup is PR #253; runtime @vercel compatibility must be migrated separately, not blindly deleted. |
+| Planner shell/onboarding | PARTIAL | Profile, onboarding, account routes, and Founding Pass landing exist. Production mobile acceptance still required. |
+| Calendar/tasks | PARTIAL | christmas_events + planner tasks and UI exist; production mobile acceptance remains. |
+| Budget | PARTIAL | Gift actual prices update Engine spend; Copilot can preview marking a gift ordered with amount. Cross-module auto-reconciliation is not a full accounting system. |
+| Gifts/recipients | PARTIAL | Recipient → Concierge → products → Add to Gift Plan → status/budget. Live provider shopping remains credential-gated. |
+| Gift Finder | PARTIAL | Recommendation flow exists and feeds Planner; paid/free product UX still needs production acceptance. |
+| Live affiliate shopping | BLOCKED | Official eBay adapter, OAuth, mapping, cache/privacy/tests exist. Gated by credentials + explicit production access. |
+| Price comparison | PARTIAL | Exact-identity grouping/UI ships. Does not advertise compare for one provider. Second official provider still absent, so no live multi-retailer compare. |
+| Recipes catalog | PARTIAL | Explorer (search, filters, detail, servings, save, menu, grocery) works against the original TDG seed. 1,500 licensed/original recipes are not in the catalog. |
+| Meal planning | PARTIAL | Eve/Day/custom sittings, guest count, times, completeness, servings → grocery. Catalog depth and production UX acceptance remain. |
+| Grocery generation | PARTIAL | Derived list, merge, incompatible units, aisle grouping, have/bought, manual extras, no duplicate persisted rows. Needs production data after migration. |
+| Studio integration | PARTIAL | Contextual cues from gifts/cards/memories (not a spammy dashboard). Credits/economics not fully wired. |
+| Copilot | PARTIAL | Deterministic Engine answers plus preview/confirm apply for validated writes. No live model; commerce facts still must come from providers. |
+| Commerce/paywall/entitlements | PARTIAL | $17 Founding Pass is server-authoritative in seed + migration. Kill switches remain off. Real-money E2E not run. |
+| Analytics/admin reporting | PARTIAL | Funnel steps expanded; Planner North Star admin panel computes visitors/starts/preview/checkout/purchase/conversion/revenue/AOV/UTM/device/activation/drop-off. Production verification remaining. |
+| SEO/acquisition | PARTIAL | Canonical/hreflang/sitemap/index checks pass in smoke (155 routes, 0 failures). Search Console verification remaining. |
+| Mobile production QA | MISSING | Requires physical/mobile production acceptance. |
+| VPS-only hygiene | PARTIAL | `@vercel/node` / `@vercel/functions` removed; Node API types + origin adapter. Historical Vercel mentions remain in docs/history. Deploy still needs MOZAS SSH. |
 
 ## Confirmed architecture worth preserving
 - Server-authoritative Christmas catalog/checkout and entitlement bridge.
@@ -35,14 +35,12 @@ Baseline: main after North Star merge. This document is evidence-oriented: DONE 
 - 1,500 quality recipes require a lawful content acquisition/generation/QA pipeline, not copied web recipes.
 - Real-money checkout validation waits until launch candidate by product decision.
 - Physical-device production QA requires an actual device/session.
+- VPS deploy requires MOZAS_SSH_* secrets.
 
 ## Launch-critical remaining implementation
-1. Final Planner mobile UX and paid value moment.
-2. Configure $17 Founding Pass in authoritative catalog/admin and validate entitlement mapping.
-3. Finish Recipes explorer/menu builder/grocery UX using existing intelligence.
-4. Seed/ingest and QA recipe catalog.
-5. Enable eBay after production credentials/access; add at least one additional official provider before advertising Price Compare.
-6. Connect Studio cross-sells to Planner context.
-7. Complete admin funnel dashboard and recovery analytics.
-8. Final SEO + VPS runtime cleanup + production smoke.
-9. Then 1–3 controlled real-money E2E tests.
+1. Production mobile QA of Planner + Founding Pass value moment.
+2. Apply Founding Pass migration and keep checkout killed until launch QA, then 1–3 real charges.
+3. Seed/ingest and QA a lawful 1,500-recipe catalog.
+4. Enable eBay after credentials; add a second official provider before advertising Price Compare.
+5. Production analytics verification and Search Console.
+6. VPS deploy + post-deploy smoke when SSH is available.

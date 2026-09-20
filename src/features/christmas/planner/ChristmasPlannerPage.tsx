@@ -928,7 +928,7 @@ export default function ChristmasPlannerPage() {
             <p className="tdg-planner__kicker">Founding Pass</p>
             <h2>Christmas 2026 — $17 one-time</h2>
             <p className="tdg-planner__micro tdg-planner__micro--on-dark">
-              Planner, gifts, recipes, meals, grocery, and Studio member benefits. Checkout is technically ready and stays
+              Planner, gifts, recipes, meals, grocery, and Studio member benefits. SEE OPTIONS below. Checkout is technically ready and stays
               killed until final launch QA. Existing Essentials / Magic / All-In entitlements still work.
             </p>
             <div className="tdg-planner__packages tdg-planner__packages--rows">
