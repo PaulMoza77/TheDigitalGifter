@@ -36,7 +36,7 @@ export function youtubeAuthorizedImportConfigured(): boolean {
 }
 
 function youtubeFallbackMessage(): string {
-  return "Automatic import isn't available for this source. Upload the original video file instead.";
+  return "YouTube source detected. Provide the original media to continue.";
 }
 
 function mapYoutubePrivacy(status?: string): SourceMetadata["privacy"] {

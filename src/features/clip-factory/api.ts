@@ -117,6 +117,7 @@ export const clipFactoryApi = {
   getJob: (jobId: string) => invoke<{ job: ClipFactoryJob }>("get_job", { job_id: jobId }),
   listJobs: () => invoke<{ jobs: ClipFactoryJob[] }>("list_jobs"),
   retry: (jobId: string) => invoke<{ job: ClipFactoryJob }>("retry_job", { job_id: jobId }),
+  attachMedia: (payload: Record<string, unknown>) => invoke<{ job: ClipFactoryJob }>("attach_media", payload),
   rejectCandidate: (jobId: string, candidateId: string, rejected: boolean) =>
     invoke<{ ok: true }>("reject_candidate", { job_id: jobId, candidate_id: candidateId, rejected }),
   updateCandidate: (jobId: string, candidateId: string, patch: Record<string, unknown>) =>

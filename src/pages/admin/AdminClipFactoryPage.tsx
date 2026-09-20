@@ -214,6 +214,7 @@ export default function AdminClipFactoryPage() {
     try {
       const idempotency = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       let payload: Record<string, unknown> = { options, idempotency_key: idempotency };
+      if (url.trim()) payload = { ...payload, url: url.trim(), source_label: urlPreview?.title || undefined, rights_confirmed: rightsConfirmed };
       if (file) {
         const signed = await clipFactoryApi.signedUpload(file.type || "video/mp4", file.size, file.name);
         await fetch(signed.uploadUrl, { method: "PUT", headers: signed.headers, body: file });
@@ -227,16 +228,9 @@ export default function AdminClipFactoryPage() {
           library_kind: item?.libraryKind === "asset" ? "asset" : "catalog",
         };
       } else if (url.trim()) {
-        if (urlPreview && !urlPreview.canImport) {
-          toast.error(urlPreview.message || "Automatic import isn't available for this source. Upload the original video file instead.");
-          return;
-        }
         payload = {
           ...payload,
           source_kind: urlPreview?.provider === "youtube" || urlPreview?.provider === "vimeo" ? urlPreview.provider : "direct_media_url",
-          url: url.trim(),
-          rights_confirmed: rightsConfirmed,
-          source_label: urlPreview?.title || undefined,
         };
       } else {
         toast.error("Paste a video URL, upload a file, or choose one from the Library.");
@@ -253,7 +247,32 @@ export default function AdminClipFactoryPage() {
     }
   }
 
-  const analyzing = Boolean(job && !["ready", "completed", "partial", "failed"].includes(job.status));
+  const analyzing = Boolean(job && !["ready", "completed", "partial", "failed", "waiting_for_media", "source_detected", "rendering"].includes(job.status));
+  const waitingForMedia = Boolean(job && ["waiting_for_media", "source_detected"].includes(job.status) && !job.media_id);
+
+  async function attachToJob(next: { file?: File | null; libraryId?: string }) {
+    if (!job) return;
+    setBusy(true);
+    try {
+      let payload: Record<string, unknown> = { job_id: job.id };
+      if (next.file) {
+        const signed = await clipFactoryApi.signedUpload(next.file.type || "video/mp4", next.file.size, next.file.name);
+        await fetch(signed.uploadUrl, { method: "PUT", headers: signed.headers, body: next.file });
+        payload = { ...payload, object_path: signed.objectPath, file_name: next.file.name };
+      } else if (next.libraryId) {
+        payload = { ...payload, library_asset_id: next.libraryId };
+      } else {
+        return;
+      }
+      const updated = await clipFactoryApi.attachMedia(payload);
+      setJob(updated.job);
+      loadJobs();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not attach media.");
+    } finally {
+      setBusy(false);
+    }
+  }
   const candidates = sortCandidates(
     (job?.candidates || [])
       .filter((c) => !c.rejected)
@@ -326,29 +345,36 @@ export default function AdminClipFactoryPage() {
                   value={url}
                   onChange={(e) => {
                     setUrl(e.target.value);
-                    setFile(null);
-                    setLibraryId("");
                   }}
                   placeholder="https://…/video.mp4"
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-indigo-400/60"
                 />
               </label>
               {urlPreview ? (
-                <div className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
-                  {urlPreview.thumbnailUrl ? (
-                    <img src={urlPreview.thumbnailUrl} alt="" className="h-20 w-14 rounded-xl object-cover" />
-                  ) : (
-                    <span className="flex h-20 w-14 items-center justify-center rounded-xl bg-slate-800 text-[10px] uppercase tracking-wide text-slate-400">
-                      {urlPreview.provider}
-                    </span>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">{urlPreview.provider === "direct" ? "Direct video" : urlPreview.provider}</p>
-                    <p className="mt-1 truncate text-sm font-medium">{urlPreview.title || "Ready to analyze"}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {urlPreview.durationSeconds ? `${Math.round(urlPreview.durationSeconds)}s · ` : ""}
-                      {urlPreview.canImport ? "Ready to analyze" : urlPreview.message}
-                    </p>
+                <div className="rounded-3xl border border-emerald-500/20 bg-emerald-950/20 p-4 sm:p-5">
+                  <p className="text-sm font-medium text-emerald-200">
+                    ✓ {urlPreview.provider === "youtube" ? "YouTube" : urlPreview.provider} video detected
+                  </p>
+                  <div className="mt-4 flex gap-4">
+                    {urlPreview.thumbnailUrl ? (
+                      <img src={urlPreview.thumbnailUrl} alt="" className="h-24 w-40 rounded-xl object-cover" />
+                    ) : (
+                      <span className="flex h-24 w-40 items-center justify-center rounded-xl bg-slate-800 text-[10px] uppercase tracking-wide text-slate-400">
+                        {urlPreview.provider}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold leading-6">{urlPreview.title || "YouTube video"}</h3>
+                      <p className="mt-1 text-sm text-slate-400">
+                        {urlPreview.provider === "youtube" ? "YouTube" : urlPreview.provider}
+                        {urlPreview.durationSeconds ? ` • ${formatClock(urlPreview.durationSeconds)}` : ""}
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-slate-200">
+                        {urlPreview.canImport
+                          ? "Ready to analyze"
+                          : "YouTube source detected. Provide the original media to continue."}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ) : null}
@@ -364,17 +390,19 @@ export default function AdminClipFactoryPage() {
                   <span>I confirm that I own this content or have permission to use it.</span>
                 </label>
               ) : null}
+              {urlPreview && !urlPreview.canImport ? (
+                <p className="text-sm font-medium text-slate-200">To create clips, provide the original video:</p>
+              ) : null}
               <div className="flex flex-wrap gap-3">
                 <label className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${urlPreview && !urlPreview.canImport ? "border-indigo-400/70 bg-indigo-500/10" : "border-slate-700 bg-slate-950"}`}>
                   <Upload className="h-4 w-4" />
-                  {file ? file.name : "Upload Video"}
+                  {file ? file.name : "Upload original"}
                   <input
                     type="file"
                     accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
                     className="hidden"
                     onChange={(e) => {
                       setFile(e.target.files?.[0] || null);
-                      setUrl("");
                       setLibraryId("");
                     }}
                   />
@@ -384,7 +412,6 @@ export default function AdminClipFactoryPage() {
                   onChange={(e) => {
                     setLibraryId(e.target.value);
                     setFile(null);
-                    setUrl("");
                   }}
                   className="min-w-[220px] flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
                 >
@@ -484,6 +511,52 @@ export default function AdminClipFactoryPage() {
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Find Viral Moments
             </button>
+          </section>
+        ) : null}
+
+        {waitingForMedia ? (
+          <section className="rounded-[28px] border border-slate-800 bg-slate-900/50 p-6 sm:p-8">
+            <p className="text-sm font-medium text-emerald-200">✓ YouTube video detected</p>
+            <div className="mt-4 flex gap-4">
+              {job?.source_thumbnail_url || job?.source_metadata?.thumbnailUrl ? (
+                <img src={job.source_thumbnail_url || job.source_metadata?.thumbnailUrl || ""} alt="" className="h-24 w-40 rounded-xl object-cover" />
+              ) : null}
+              <div>
+                <h2 className="text-xl font-semibold">{job?.source_label}</h2>
+                <p className="mt-2 text-sm text-slate-300">YouTube source detected. Provide the original media to continue.</p>
+              </div>
+            </div>
+            <p className="mt-5 text-sm font-medium text-slate-200">To create clips, provide the original video:</p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-indigo-500 px-4 py-3 text-sm font-semibold">
+                <Upload className="h-4 w-4" />
+                {busy ? "Uploading…" : "Upload original"}
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+                  className="hidden"
+                  onChange={(e) => {
+                    const next = e.target.files?.[0];
+                    if (next) void attachToJob({ file: next });
+                  }}
+                />
+              </label>
+              <select
+                defaultValue=""
+                disabled={busy}
+                onChange={(e) => {
+                  if (e.target.value) void attachToJob({ libraryId: e.target.value });
+                }}
+                className="min-w-[220px] rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+              >
+                <option value="">Choose from Library</option>
+                {libraryItems.map((item) => (
+                  <option key={`${item.libraryKind || "catalog"}-${item.id}`} value={item.id}>
+                    {item.title}
+                  </option>
+                ))}
+              </select>
+            </div>
           </section>
         ) : null}
 

@@ -32,8 +32,22 @@ export type PreparedJob =
       options: ClipFactoryOptions;
       rightsConfirmed: boolean;
       autoRender: boolean;
+      waitingForMedia: boolean;
     }
   | { ok: false; code: string; message: string };
+
+function attachReference(url: string | undefined, payload: Record<string, unknown>): Record<string, unknown> {
+  if (!url) return payload;
+  const decision = classifyVideoUrl(url);
+  if (!decision.ok) return payload;
+  return {
+    ...payload,
+    referenceUrl: decision.normalizedUrl,
+    url: payload.url || decision.normalizedUrl,
+    provider: decision.provider,
+    importMode: decision.importMode,
+  };
+}
 
 export function prepareClipFactoryJob(body: CreateJobInput): PreparedJob {
   const options = { ...DEFAULT_CLIP_FACTORY_OPTIONS, ...(body.options || {}) };
@@ -50,22 +64,29 @@ export function prepareClipFactoryJob(body: CreateJobInput): PreparedJob {
   let sourcePayload: Record<string, unknown> = {};
   let sourceLabel = String(body.source_label || "").trim() || "Untitled video";
   let provider = requestedKind || "unknown";
+  let waitingForMedia = false;
 
-  if (requestedKind === "upload") {
+  if (requestedKind === "upload" || String(body.object_path || "").startsWith("uploads/")) {
     const objectPath = String(body.object_path || "");
     if (!objectPath.startsWith("uploads/")) {
       return { ok: false, code: "invalid_request", message: "Upload path is invalid." };
     }
-    sourcePayload = { objectPath };
+    sourcePayload = attachReference(body.url, { objectPath, mediaKind: "upload" });
     sourceLabel = String(body.file_name || sourceLabel);
-    provider = "upload";
-  } else if (requestedKind === "library") {
+    provider = typeof sourcePayload.provider === "string" ? String(sourcePayload.provider) : "upload";
+    sourceKind = provider === "youtube" || provider === "vimeo" ? provider : "upload";
+  } else if (requestedKind === "library" || body.library_asset_id) {
     const libraryAssetId = String(body.library_asset_id || "");
     if (!libraryAssetId) {
       return { ok: false, code: "invalid_request", message: "Choose a video from the Library." };
     }
-    sourcePayload = { libraryAssetId, libraryKind: body.library_kind || "catalog" };
-    provider = "library";
+    sourcePayload = attachReference(body.url, {
+      libraryAssetId,
+      libraryKind: body.library_kind || "catalog",
+      mediaKind: "library",
+    });
+    provider = typeof sourcePayload.provider === "string" ? String(sourcePayload.provider) : "library";
+    sourceKind = provider === "youtube" || provider === "vimeo" ? provider : "library";
   } else {
     const decision = classifyVideoUrl(String(body.url || ""));
     if (!decision.ok) {
@@ -73,18 +94,16 @@ export function prepareClipFactoryJob(body: CreateJobInput): PreparedJob {
     }
     sourceKind = sourceKindForProvider(decision.provider);
     provider = decision.provider;
-    sourcePayload = { url: decision.normalizedUrl, provider: decision.provider, importMode: decision.importMode };
+    sourcePayload = { url: decision.normalizedUrl, referenceUrl: decision.normalizedUrl, provider: decision.provider, importMode: decision.importMode };
     sourceLabel = sourceLabel === "Untitled video" ? new URL(decision.normalizedUrl).hostname : sourceLabel;
-    if (!decision.canImport) {
-      return {
-        ok: false,
-        code: "import_unavailable",
-        message: decision.message || "Automatic import isn't available for this source. Upload the original video file instead.",
-      };
+    waitingForMedia = !decision.canImport;
+    if (waitingForMedia) {
+      sourcePayload.mediaKind = "reference";
     }
   }
 
-  if (requiresRightsConfirmation(sourceKind)) {
+  const hasLocalMedia = Boolean(sourcePayload.objectPath || sourcePayload.libraryAssetId);
+  if (!waitingForMedia && !hasLocalMedia && requiresRightsConfirmation(sourceKind)) {
     const rightsError = rightsConfirmationError(body.rights_confirmed);
     if (rightsError) return { ok: false, code: "rights_required", message: rightsError };
   }
@@ -96,7 +115,8 @@ export function prepareClipFactoryJob(body: CreateJobInput): PreparedJob {
     sourceLabel,
     provider,
     options,
-    rightsConfirmed: Boolean(body.rights_confirmed) || !requiresRightsConfirmation(sourceKind),
+    rightsConfirmed: Boolean(body.rights_confirmed) || hasLocalMedia,
     autoRender: body.auto_render !== false,
+    waitingForMedia,
   };
 }

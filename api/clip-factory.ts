@@ -237,6 +237,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ videos });
     }
 
+    if (postAction === "attach_media") {
+      const jobId = asString(body.job_id);
+      const { data: job } = await service.from("clip_factory_jobs").select("*").eq("id", jobId).maybeSingle();
+      if (!job) return apiError(res, 404, "not_found", "Job not found.");
+      if (job.media_id) return apiError(res, 409, "media_already_attached", "This project already has media.");
+      const payload = { ...(job.source_payload || {}) } as Record<string, unknown>;
+      if (asString(body.object_path).startsWith("uploads/")) {
+        payload.objectPath = asString(body.object_path);
+        payload.mediaKind = "upload";
+      } else if (asString(body.library_asset_id)) {
+        const libraryAssetId = asString(body.library_asset_id);
+        const catalog = LIBRARY_VIDEOS.find((v) => v.id === libraryAssetId);
+        const { data: asset } = catalog
+          ? { data: null }
+          : await service.from("library_assets").select("id,title").eq("id", libraryAssetId).maybeSingle();
+        if (!catalog && !asset) return apiError(res, 400, "invalid_request", "Choose a video from the Library.");
+        payload.libraryAssetId = libraryAssetId;
+        payload.libraryKind = catalog ? "catalog" : "asset";
+        payload.mediaKind = "library";
+      } else {
+        return apiError(res, 400, "invalid_request", "Upload a file or choose one from the Library.");
+      }
+      await service
+        .from("clip_factory_jobs")
+        .update({
+          source_payload: payload,
+          status: "queued",
+          stage: "queued",
+          progress: 4,
+          progress_label: "Uploading video",
+          error_message: null,
+          error_code: null,
+          lease_expires_at: null,
+          rights_confirmed: true,
+          rights_confirmed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", jobId);
+      kickClipFactoryWorker();
+      const { data: fresh } = await service.from("clip_factory_jobs").select("*").eq("id", jobId).single();
+      return res.status(200).json({ job: await hydrateJob(service, fresh) });
+    }
+
     if (postAction === "create_job") {
       const prepared = prepareClipFactoryJob({
         source_kind: asString(body.source_kind),
@@ -298,10 +341,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           created_by: admin.userId,
           created_by_email: admin.email,
           idempotency_key: idempotencyKey,
-          status: "queued",
-          stage: "queued",
-          progress: 2,
-          progress_label: "Queued",
+          status: prepared.waitingForMedia ? "waiting_for_media" : "queued",
+          stage: prepared.waitingForMedia ? "source_detected" : "queued",
+          progress: prepared.waitingForMedia ? 5 : 2,
+          progress_label: prepared.waitingForMedia
+            ? "YouTube source detected. Provide the original media to continue."
+            : "Queued",
           source_kind: sourceKind,
           source_payload: sourcePayload,
           source_label: (sourceMetadata as { title?: string }).title || sourceLabel,
@@ -315,7 +360,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select("*")
         .single();
       if (inserted.error) throw inserted.error;
-      kickClipFactoryWorker();
+      if (!prepared.waitingForMedia) kickClipFactoryWorker();
       return res.status(200).json({ job: await hydrateJob(service, inserted.data) });
     }
 

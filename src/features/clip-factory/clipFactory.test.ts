@@ -170,16 +170,30 @@ describe("clip factory job creation", () => {
     expect(prepareClipFactoryJob({ source_kind: "library", library_asset_id: "reel-north-pole-santa" }).ok).toBe(true);
   });
 
-  it("returns a specific fallback for YouTube without authorized import", () => {
+  it("saves a YouTube reference as waiting-for-media instead of a dead-end error", () => {
     const result = prepareClipFactoryJob({
       url: "https://www.youtube.com/watch?v=dQw4w9wgGcI",
-      rights_confirmed: true,
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.code).toBe("import_unavailable");
-      expect(result.message).toMatch(/Upload the original video file/i);
-      expect(result.message).not.toMatch(/This source cannot be imported automatically/i);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.waitingForMedia).toBe(true);
+      expect(result.sourceKind).toBe("youtube");
+      expect(String(result.sourcePayload.referenceUrl || result.sourcePayload.url)).toContain("dQw4w9wgGcI");
+    }
+  });
+
+  it("keeps the YouTube reference when an original file is uploaded onto the same job", () => {
+    const result = prepareClipFactoryJob({
+      source_kind: "upload",
+      object_path: "uploads/original.mp4",
+      file_name: "original.mp4",
+      url: "https://youtu.be/dQw4w9wgGcI",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.waitingForMedia).toBe(false);
+      expect(result.sourcePayload.objectPath).toBe("uploads/original.mp4");
+      expect(String(result.sourcePayload.referenceUrl)).toContain("dQw4w9wgGcI");
     }
   });
 

@@ -110,7 +110,17 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
   const cost: Record<string, number> = { ...(job.cost || {}) };
 
   try {
-    if (["queued", "ingesting", "importing", "failed"].includes(job.status) && !job.media_id) {
+    if (["waiting_for_media", "source_detected"].includes(job.status) && !job.media_id) {
+      const payload = job.source_payload || {};
+      if (!String(payload.objectPath || "") && !String(payload.libraryAssetId || "")) {
+        await patchJob(jobId, {
+          lease_expires_at: null,
+          progress_label: "YouTube source detected. Provide the original media to continue.",
+        });
+        return;
+      }
+    }
+    if (["queued", "ingesting", "importing", "uploading", "failed"].includes(job.status) && !job.media_id) {
       await patchJob(jobId, {
         status: "importing",
         stage: "importing",
@@ -121,12 +131,19 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       });
       await recordEvent(jobId, "clip_factory_source_added", { source_kind: job.source_kind });
       const payload = job.source_payload || {};
-      if (job.source_kind === "upload") {
-        const objectPath = String(payload.objectPath || "");
+      const objectPath = String(payload.objectPath || "");
+      const libraryAssetId = String(payload.libraryAssetId || "");
+      if (["waiting_for_media", "source_detected"].includes(job.status) && !objectPath && !libraryAssetId) {
+        await patchJob(jobId, { lease_expires_at: null, progress_label: "YouTube source detected. Provide the original media to continue." });
+        return;
+      }
+      if (objectPath.startsWith("uploads/")) {
+        await downloadStorage(objectPath, sourcePath);
+      } else if (job.source_kind === "upload") {
         if (!objectPath.startsWith("uploads/")) throw new IngestError("invalid_url", "Upload path is invalid.");
         await downloadStorage(objectPath, sourcePath);
-      } else if (job.source_kind === "library") {
-        const assetId = String(payload.libraryAssetId || "");
+      } else if (job.source_kind === "library" || libraryAssetId) {
+        const assetId = libraryAssetId || String(payload.libraryAssetId || "");
         const catalog = LIBRARY_VIDEOS.find((v) => v.id === assetId);
         if (catalog) {
           const local = resolveLocalLibrary(catalog.src);
@@ -138,16 +155,20 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
           await downloadStorage(asset.storage_path, sourcePath);
         }
       } else if (job.source_kind === "direct_media_url") {
-        await downloadDirectMedia(String(payload.url || ""), sourcePath);
-      } else if (job.source_kind === "youtube") {
-        await importYoutubeAuthorized(String(payload.url || ""), sourcePath);
-      } else if (job.source_kind === "vimeo") {
-        await importVimeoAuthorized(String(payload.url || ""), sourcePath);
+        await downloadDirectMedia(String(payload.url || payload.mediaUrl || ""), sourcePath);
+      } else if (job.source_kind === "youtube" && String(process.env.CLIP_FACTORY_YOUTUBE_IMPORT_URL || "").trim()) {
+        await importYoutubeAuthorized(String(payload.url || payload.referenceUrl || ""), sourcePath);
+      } else if (job.source_kind === "vimeo" && String(process.env.VIMEO_ACCESS_TOKEN || "").trim()) {
+        await importVimeoAuthorized(String(payload.url || payload.referenceUrl || ""), sourcePath);
       } else {
-        throw new IngestError(
-          "import_unavailable",
-          "Automatic import isn't available for this source. Upload the original video file instead.",
-        );
+        await patchJob(jobId, {
+          status: "waiting_for_media",
+          stage: "source_detected",
+          progress: 5,
+          progress_label: "YouTube source detected. Provide the original media to continue.",
+          lease_expires_at: null,
+        });
+        return;
       }
 
       let probe;

@@ -1,5 +1,8 @@
 export const CLIP_FACTORY_JOB_STATUSES = [
   "queued",
+  "uploading",
+  "source_detected",
+  "waiting_for_media",
   "importing",
   "extracting_audio",
   "transcribing",
@@ -23,7 +26,10 @@ export const CLIP_FACTORY_JOB_STATUSES = [
 export type ClipFactoryJobStatus = (typeof CLIP_FACTORY_JOB_STATUSES)[number];
 
 const TRANSITIONS: Record<string, readonly string[]> = {
-  queued: ["importing", "ingesting", "failed"],
+  queued: ["importing", "ingesting", "waiting_for_media", "source_detected", "failed"],
+  waiting_for_media: ["queued", "importing", "uploading", "failed"],
+  source_detected: ["waiting_for_media", "queued", "importing", "failed"],
+  uploading: ["queued", "importing", "failed"],
   importing: ["extracting_audio", "analyzing_audio", "failed"],
   ingesting: ["extracting_audio", "analyzing_audio", "failed"],
   extracting_audio: ["transcribing", "failed"],

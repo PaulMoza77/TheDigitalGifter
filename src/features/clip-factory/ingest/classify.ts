@@ -47,7 +47,7 @@ export function classifyVideoUrl(raw: string): UrlClassification {
     message:
       adapter.id === "direct" || canImport
         ? null
-        : "Automatic import isn't available for this source. Upload the original video file instead.",
+        : "YouTube source detected. Provide the original media to continue.",
   };
 }
 

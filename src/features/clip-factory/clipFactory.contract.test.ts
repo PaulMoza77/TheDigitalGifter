@@ -16,7 +16,10 @@ describe("clip factory production wiring", () => {
     expect(read("server/routes.mjs")).toContain('"/api/clip-factory": "clip-factory.ts"');
     expect(read("api/clip-factory.ts")).toContain("requireClipFactoryAdmin");
     expect(read("api/clip-factory.ts")).toContain("create_job");
-    expect(read("api/clip-factory.ts")).toContain("inspect_url");
+    expect(read("api/clip-factory.ts")).toContain("attach_media");
+    expect(read("api/clip-factory.ts")).toContain("waiting_for_media");
+    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("YouTube source detected. Provide the original media to continue.");
+    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).not.toContain("Automatic import isn't available");
     expect(read("api/clip-factory.ts")).toContain("rights_confirmed");
     expect(read("src/features/clip-factory/ingest/types.ts")).toContain("VideoSourceAdapter");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("clip_factory_analysis_started");
