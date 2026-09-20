@@ -15,7 +15,6 @@ import {
 import {
   isPlannerProductKey,
   PLANNER_PRODUCT_KEY,
-  plannerCheckoutFlagEnabled,
   plannerSafeCheckoutSuccessUrl,
   resolvePlannerCheckoutFromRows,
 } from "../_shared/christmas/plannerCommerce.ts";
@@ -112,8 +111,10 @@ Deno.serve(async (req) => {
   try {
     const body = await readJson<Body>(req);
     const productKey = asString(body.product_key);
-    const plannerFlowPreview = isPlannerProductKey(productKey);
-    if (!checkoutEnabled() && !(plannerFlowPreview && plannerCheckoutFlagEnabled())) {
+    if (!productKey) return jsonResponse({ error: "product_key required" }, 400);
+    // Planner Founding Pass is gated by checkout_live / CHRISTMAS_PLANNER_CHECKOUT_ENABLED.
+    // Other Christmas products stay behind the global CHRISTMAS_CHECKOUT_ENABLED kill switch.
+    if (!isPlannerProductKey(productKey) && !checkoutEnabled()) {
       return jsonResponse({ error: "Christmas checkout is not enabled", code: "checkout_disabled" }, 403);
     }
     // Client-supplied Stripe price IDs are never accepted.
@@ -122,7 +123,6 @@ Deno.serve(async (req) => {
     const packageKey =
       asString(body.package_key) ||
       (productKey === "christmas_santa_video" ? "basic" : "single");
-    if (!productKey) return jsonResponse({ error: "product_key required" }, 400);
 
     // Client-supplied amount / prompts are intentionally ignored.
     void body.amount_cents;
