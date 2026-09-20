@@ -145,7 +145,7 @@ def shot_filter(i: int, start: float, dur: float, zoom: float) -> str:
         f"[{i}:v]trim=start={start}:duration={dur},setpts=PTS-STARTPTS,"
         f"fps=30,scale=1080*{z:.3f}:1920*{z:.3f}:flags=lanczos,"
         f"crop=1080:1920:x='(in_w-1080)*t/{dur:.3f}*0.85':y='(in_h-1920)*t/{dur:.3f}*0.45',"
-        f"setsar=1,eq=contrast=1.03:saturation=1.04:gamma=0.98,unsharp=5:5:0.35:5:5:0.0,format=yuv420p[v{i}]"
+        f"setsar=1,eq=contrast=1.03:saturation=1.04:gamma=0.98,unsharp=5:5:0.35:5:5:0.0,format=yuv420p,settb=1/30,fps=30[v{i}]"
     )
 
 
@@ -176,14 +176,14 @@ def export_reel(reel: dict) -> dict:
             nxt = f"v{i}"
             out = "base" if i == n - 1 else f"x{i}"
             if modes[i] == "fade":
-                fade_at = max(0.05, offset - xfade)
-                filters.append(
-                    f"[{current}][{nxt}]xfade=transition=fade:duration={xfade:.3f}:offset={fade_at:.3f}[{out}]"
-                )
-                offset = offset + durs[i] - xfade
+                fade_dur = xfade
             else:
-                filters.append(f"[{current}][{nxt}]concat=n=2:v=1:a=0[{out}]")
-                offset = offset + durs[i]
+                fade_dur = min(0.08, xfade)
+            fade_at = max(0.05, offset - fade_dur)
+            filters.append(
+                f"[{current}][{nxt}]xfade=transition=fade:duration={fade_dur:.3f}:offset={fade_at:.3f}[{out}]"
+            )
+            offset = offset + durs[i] - fade_dur
             current = out
 
     overlay = reel.get("overlay")
