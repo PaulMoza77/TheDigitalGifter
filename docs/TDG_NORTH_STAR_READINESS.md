@@ -13,7 +13,7 @@ Baseline: main after Founding Pass product work. DONE requires a working intende
 | Price comparison | PARTIAL | Exact-identity grouping/UI ships. Does not advertise compare for one provider. Second official provider still absent, so no live multi-retailer compare. |
 | Recipes catalog | PARTIAL | Explorer (search, filters, detail, servings, save, menu, grocery) works against the original TDG seed. 1,500 licensed/original recipes are not in the catalog. |
 | Meal planning | PARTIAL | Eve/Day/custom sittings, guest count, times, completeness, servings → grocery. Catalog depth and production UX acceptance remain. |
-| Grocery generation | PARTIAL | Derived list, merge, incompatible units, aisle grouping, have/bought, manual extras, no duplicate persisted rows. Needs production data after migration. |
+| Grocery generation | PARTIAL | Derived list, merge, incompatible units, aisle grouping, have/bought, manual extras, no duplicate persisted rows. Additive grocery/recipe columns applied in production. Catalog depth and production UX acceptance remain. |
 | Studio integration | PARTIAL | Contextual cues from gifts/cards/memories (not a spammy dashboard). Credits/economics not fully wired. |
 | Copilot | PARTIAL | Deterministic Engine answers plus preview/confirm apply for validated writes. No live model; commerce facts still must come from providers. |
 | Commerce/paywall/entitlements | PARTIAL | $17 Founding Pass is server-authoritative in seed + migration. Kill switches remain off. Real-money E2E not run. |
@@ -32,10 +32,6 @@ Baseline: main after Founding Pass product work. DONE requires a working intende
 ## External blockers / operator actions
 - Affiliate provider credentials and production access cannot be invented in code.
 - A second/third official commerce provider is required for meaningful cross-retailer Price Compare.
-- 1,500 quality recipes require a lawful content acquisition/generation/QA pipeline, not copied web recipes.
-- Real-money checkout validation waits until launch candidate by product decision.
-- Physical-device production QA requires an actual device/session.
-- Live affiliate / second official provider credentials and production access cannot be invented in code.
 - 1,500 quality recipes require a lawful content acquisition/generation/QA pipeline, not copied web recipes.
 - Real-money checkout validation waits until launch candidate by product decision.
 - Physical-device production QA requires an actual device/session.
