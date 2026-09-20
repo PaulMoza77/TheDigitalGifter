@@ -17,6 +17,8 @@ describe("christmas foundation wiring", () => {
     expect(app).toContain('path="christmas-orders"');
     expect(app).toContain('path="christmas" element={<ChristmasAdminLayout />}');
     expect(app).toContain("ChristmasDashboardPage");
+    expect(app).toContain("AffiliateCommercePage");
+    expect(app).toContain("affiliate-commerce");
     expect(app).toContain('to="/admin/christmas/orders"');
   });
 

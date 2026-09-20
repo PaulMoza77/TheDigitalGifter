@@ -193,6 +193,8 @@ describe("christmas planner privacy + attribution events", () => {
       "affiliate_product_clicked",
       "affiliate_product_added_to_planner",
       "affiliate_product_search_failed",
+      "affiliate_product_price_refreshed",
+      "affiliate_product_find_similar",
       "planner_task_added",
       "planner_task_rescheduled",
       "planner_gift_status_changed",

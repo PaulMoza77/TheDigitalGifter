@@ -1,4 +1,5 @@
-import type { AffiliateProviderStatus } from "./types.ts";
+import { providerHealth } from "./health.ts";
+import type { AffiliateProviderHealth, AffiliateProviderId } from "./types.ts";
 
 export type AffiliateEnv = {
   get(name: string): string | undefined;
@@ -21,6 +22,11 @@ export function readEbayCredentials(env: AffiliateEnv): {
   };
 }
 
+export function ebayCredentialsPresent(env: AffiliateEnv): boolean {
+  const creds = readEbayCredentials(env);
+  return Boolean(creds.clientId && creds.clientSecret && creds.campaignId);
+}
+
 export function affiliateSearchEnabled(env: AffiliateEnv): boolean {
   return truthyFlag(env.get("AFFILIATE_PRODUCT_SEARCH_ENABLED"));
 }
@@ -31,18 +37,13 @@ export function ebayProductionAccessAllowed(env: AffiliateEnv): boolean {
   return truthyFlag(raw);
 }
 
-export function ebayProviderStatus(env: AffiliateEnv): AffiliateProviderStatus {
-  if (!affiliateSearchEnabled(env)) {
-    return { provider: "ebay", code: "DISABLED_FEATURE_FLAG", enabled: false };
-  }
-  const creds = readEbayCredentials(env);
-  if (!creds.clientId || !creds.clientSecret || !creds.campaignId) {
-    return { provider: "ebay", code: "DISABLED_MISSING_CREDENTIALS", enabled: false };
-  }
-  if (!ebayProductionAccessAllowed(env)) {
-    return { provider: "ebay", code: "DISABLED_NO_PRODUCTION_ACCESS", enabled: false };
-  }
-  return { provider: "ebay", code: "ENABLED", enabled: true };
+export function ebayProviderStatus(env: AffiliateEnv): AffiliateProviderHealth {
+  return providerHealth({
+    provider: "ebay",
+    featureEnabled: affiliateSearchEnabled(env),
+    configured: ebayCredentialsPresent(env),
+    productionAccess: ebayProductionAccessAllowed(env),
+  });
 }
 
 export function missingEbayCredentialNames(env: AffiliateEnv): string[] {
@@ -52,4 +53,71 @@ export function missingEbayCredentialNames(env: AffiliateEnv): string[] {
   if (!creds.clientSecret) missing.push("EBAY_CLIENT_SECRET");
   if (!creds.campaignId) missing.push("EBAY_EPN_CAMPAIGN_ID");
   return missing;
+}
+
+export function readAwinConfig(env: AffiliateEnv): {
+  feedUrl: string;
+  publisherId: string;
+} {
+  return {
+    feedUrl: String(env.get("AWIN_FEED_URL") || "").trim(),
+    publisherId: String(env.get("AWIN_PUBLISHER_ID") || "").trim(),
+  };
+}
+
+export function awinCredentialsPresent(env: AffiliateEnv): boolean {
+  const cfg = readAwinConfig(env);
+  return Boolean(cfg.feedUrl && cfg.publisherId);
+}
+
+export function awinSearchEnabled(env: AffiliateEnv): boolean {
+  return truthyFlag(env.get("AWIN_PRODUCT_SEARCH_ENABLED"));
+}
+
+export function awinProductionAccessAllowed(env: AffiliateEnv): boolean {
+  const raw = env.get("AWIN_PRODUCTION_ACCESS");
+  if (raw == null || String(raw).trim() === "") return false;
+  return truthyFlag(raw);
+}
+
+export function awinProviderStatus(env: AffiliateEnv): AffiliateProviderHealth {
+  return providerHealth({
+    provider: "awin",
+    featureEnabled: awinSearchEnabled(env),
+    configured: awinCredentialsPresent(env),
+    productionAccess: awinProductionAccessAllowed(env),
+    implemented: false,
+  });
+}
+
+export function amazonProviderStatus(): AffiliateProviderHealth {
+  return providerHealth({
+    provider: "amazon",
+    featureEnabled: false,
+    configured: false,
+    productionAccess: false,
+    implemented: false,
+  });
+}
+
+export function activeAffiliateProvider(env: AffiliateEnv): AffiliateProviderId {
+  const raw = String(env.get("AFFILIATE_SEARCH_PROVIDER") || "ebay").trim().toLowerCase();
+  if (raw === "awin" || raw === "amazon" || raw === "ebay") return raw;
+  return "ebay";
+}
+
+export function allProviderHealth(env: AffiliateEnv): AffiliateProviderHealth[] {
+  return [ebayProviderStatus(env), awinProviderStatus(env), amazonProviderStatus()];
+}
+
+export function publicCredentialsFlags(env: AffiliateEnv): {
+  ebay: boolean;
+  awin: boolean;
+  amazon: boolean;
+} {
+  return {
+    ebay: ebayCredentialsPresent(env),
+    awin: awinCredentialsPresent(env),
+    amazon: false,
+  };
 }

@@ -38,9 +38,12 @@ import {
 } from "./date";
 import { canAddCustomTask, canAddRecipient, hasFeature } from "./entitlements";
 import { computeReadiness } from "./readiness";
-import { GiftConcierge } from "./giftConcierge";
+import { GiftConcierge, recipientSpendContext, type ConciergeIntent } from "./giftConcierge";
 import { money, PlannerPaywall } from "./Paywall";
 import { PlannerGiftOutboundLink, PlannerGiftPriceLabel } from "./PlannerGiftLink";
+import { AffiliateDisclosure } from "../affiliateProducts/AffiliateDisclosure";
+import { AffiliateSavedProductPanel, findSimilarQuery } from "../affiliateProducts/AffiliateSavedProduct";
+import { freshnessCheckedLabel } from "../affiliateProducts/helpers";
 import { useCopilotUi } from "./copilot/CopilotHost";
 import {
   PlannerComposer,
@@ -576,6 +579,7 @@ export function ChristmasPlannerGiftsPage() {
   const [idea, setIdea] = useState("");
   const [editing, setEditing] = useState<GiftItem | null>(null);
   const [conciergeOpen, setConciergeOpen] = useState(false);
+  const [conciergeIntent, setConciergeIntent] = useState<ConciergeIntent>(null);
   const ideaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -789,6 +793,9 @@ export function ChristmasPlannerGiftsPage() {
                       <PlannerStatusChip tone={g.status === "wrapped" || g.status === "given" ? "done" : "gold"}>{giftStatusLabel(g.status)}</PlannerStatusChip>
                       {g.store ? <span>{g.store}</span> : null}
                       <PlannerGiftPriceLabel gift={g} currency={profile.currency} />
+                      {g.source_type === "affiliate_product" && g.price_checked_at ? (
+                        <span>{freshnessCheckedLabel(g.price_checked_at)}</span>
+                      ) : null}
                       {g.actual_price_minor ? <span>paid {formatPlannerMoney(g.actual_price_minor, profile.currency)}</span> : null}
                     </div>
                     {g.url ? <PlannerGiftOutboundLink gift={g} source="gifts" /> : null}
@@ -817,6 +824,7 @@ export function ChristmasPlannerGiftsPage() {
                 </div>
               ))
             )}
+            {personGifts.some((g) => g.source_type === "affiliate_product") ? <AffiliateDisclosure /> : null}
           </PlannerPanel>
         ) : null}
       </div>
@@ -829,12 +837,17 @@ export function ChristmasPlannerGiftsPage() {
           currency={profile.currency}
           countryCode={profile.country_code}
           locale={profile.locale}
-          onClose={() => setConciergeOpen(false)}
+          intent={conciergeIntent}
+          onClose={() => {
+            setConciergeOpen(false);
+            setConciergeIntent(null);
+          }}
           onAdded={(gift) => {
             setGifts((p) => (p.some((x) => x.id === gift.id) ? p : [...p, gift]));
           }}
           onAddManually={() => {
             setConciergeOpen(false);
+            setConciergeIntent(null);
             requestAnimationFrame(() => ideaRef.current?.focus());
           }}
         />
@@ -843,10 +856,22 @@ export function ChristmasPlannerGiftsPage() {
         <GiftEditor
           gift={editing}
           currency={profile.currency}
+          remainingMinor={
+            active ? recipientSpendContext(active, gifts).remainingMinor : null
+          }
           onClose={() => setEditing(null)}
           onSave={(next) => {
             setGifts((p) => p.map((x) => (x.id === next.id ? next : x)));
             setEditing(null);
+          }}
+          onLiveUpdate={(next) => {
+            setGifts((p) => p.map((x) => (x.id === next.id ? next : x)));
+            setEditing(next);
+          }}
+          onFindSimilar={(gift) => {
+            setEditing(null);
+            setConciergeIntent({ kind: "find_similar", query: findSimilarQuery(gift) });
+            setConciergeOpen(true);
           }}
         />
       ) : null}
@@ -857,13 +882,19 @@ export function ChristmasPlannerGiftsPage() {
 function GiftEditor({
   gift,
   currency,
+  remainingMinor,
   onClose,
   onSave,
+  onLiveUpdate,
+  onFindSimilar,
 }: {
   gift: GiftItem;
   currency: string;
+  remainingMinor: number | null;
   onClose: () => void;
   onSave: (g: GiftItem) => void;
+  onLiveUpdate: (g: GiftItem) => void;
+  onFindSimilar: (g: GiftItem) => void;
 }) {
   const [form, setForm] = useState(gift);
   return (
@@ -876,10 +907,24 @@ function GiftEditor({
             Close
           </button>
         </div>
+        {form.source_type === "affiliate_product" ? (
+          <AffiliateSavedProductPanel
+            gift={form}
+            currency={currency}
+            remainingMinor={remainingMinor}
+            onChange={(next) => {
+              setForm(next);
+              onLiveUpdate(next);
+            }}
+            onFindSimilar={onFindSimilar}
+          />
+        ) : null}
         <input className="tdg-planner-input" value={form.idea} onChange={(e) => setForm({ ...form, idea: e.target.value.slice(0, 200) })} placeholder="Idea" />
         <input className="tdg-planner-input" value={form.selected_gift} onChange={(e) => setForm({ ...form, selected_gift: e.target.value.slice(0, 200) })} placeholder="Selected gift" />
-        <input className="tdg-planner-input" value={form.url || ""} onChange={(e) => setForm({ ...form, url: e.target.value || null })} placeholder="Product link" />
-        {form.url ? <PlannerGiftOutboundLink gift={form} source="gift_editor" /> : null}
+        {form.source_type !== "affiliate_product" ? (
+          <input className="tdg-planner-input" value={form.url || ""} onChange={(e) => setForm({ ...form, url: e.target.value || null })} placeholder="Product link" />
+        ) : null}
+        {form.source_type !== "affiliate_product" && form.url ? <PlannerGiftOutboundLink gift={form} source="gift_editor" /> : null}
         <input className="tdg-planner-input" value={form.store} onChange={(e) => setForm({ ...form, store: e.target.value.slice(0, 80) })} placeholder="Store" />
         <input className="tdg-planner-input" type="number" placeholder="Planned price" value={form.planned_price_minor ? form.planned_price_minor / 100 : ""} onChange={(e) => setForm({ ...form, planned_price_minor: e.target.value ? Number(e.target.value) * 100 : null })} />
         <input className="tdg-planner-input" type="number" placeholder="Actual price" value={form.actual_price_minor ? form.actual_price_minor / 100 : ""} onChange={(e) => setForm({ ...form, actual_price_minor: e.target.value ? Number(e.target.value) * 100 : null })} />

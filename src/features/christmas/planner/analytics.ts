@@ -62,6 +62,8 @@ const PLANNER_EVENTS = [
   "affiliate_product_clicked",
   "affiliate_product_added_to_planner",
   "affiliate_product_search_failed",
+  "affiliate_product_price_refreshed",
+  "affiliate_product_find_similar",
 ] as const;
 
 export type PlannerAnalyticsEvent = (typeof PLANNER_EVENTS)[number];

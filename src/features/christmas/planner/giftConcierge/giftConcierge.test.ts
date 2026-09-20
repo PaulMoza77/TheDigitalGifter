@@ -196,7 +196,11 @@ describe("gift concierge wiring", () => {
     expect(concierge).toContain("addAffiliateProductToPlanner");
     expect(concierge).not.toContain("navigate(");
     expect(concierge).not.toContain("/christmas/gift-finder");
-    expect(concierge).toContain("Some product links are affiliate links");
+    expect(concierge).toContain("AffiliateDisclosure");
+    expect(concierge).toContain("find_similar");
+    expect(concierge).toContain("liveShoppingUnavailableCopy");
+    const disclosure = readSrc("src/features/christmas/affiliateProducts/AffiliateDisclosure.tsx");
+    expect(disclosure).toContain("Some product links are affiliate links");
     const add = readSrc("src/features/christmas/affiliateProducts/addProduct.ts");
     expect(add).toContain('source_type: "affiliate_product"');
     expect(add).toContain("affiliateUrl");
@@ -204,8 +208,13 @@ describe("gift concierge wiring", () => {
     expect(add).toContain('status: "planned"');
     const giftsPage = readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx");
     expect(giftsPage).toContain("PlannerGiftOutboundLink");
+    expect(giftsPage).toContain("AffiliateSavedProductPanel");
+    expect(giftsPage).toContain("find_similar");
     const shopping = readSrc("src/features/christmas/planner/ChristmasPlannerMoreModules.tsx");
     expect(shopping).toContain("PlannerGiftOutboundLink");
+    expect(shopping).toContain("AffiliateDisclosure");
+    const link = readSrc("src/features/christmas/planner/PlannerGiftLink.tsx");
+    expect(link).toContain('rel="sponsored noopener noreferrer"');
   });
 
   it("does not send recipient names into affiliate analytics or reference ids", () => {

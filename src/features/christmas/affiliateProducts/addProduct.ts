@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type { GiftItem } from "../planner/types";
 import type { AffiliateProduct } from "./index";
+import { snapshotFromProduct } from "./helpers";
 import { affiliateSourceRef, plannerGiftOutboundUrl } from "./helpers";
 
 function alreadyHasAffiliateProduct(existing: GiftItem[], product: AffiliateProduct): GiftItem | undefined {
@@ -39,12 +40,7 @@ export async function addAffiliateProductToPlanner(input: {
       source_ref: affiliateSourceRef(input.product),
       image_url: input.product.imageUrl?.slice(0, 2000) || null,
       price_checked_at: new Date().toISOString(),
-      source_meta: {
-        provider: input.product.provider,
-        externalProductId: input.product.externalProductId,
-        currency: input.product.currency,
-        condition: input.product.condition || null,
-      },
+      source_meta: snapshotFromProduct(input.product),
     })
     .select("*")
     .maybeSingle();

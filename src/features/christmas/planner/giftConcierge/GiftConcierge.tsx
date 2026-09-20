@@ -20,10 +20,13 @@ import {
 import {
   AffiliateProductImage,
 } from "../../affiliateProducts/AffiliateProductImage";
+import { AffiliateDisclosure } from "../../affiliateProducts/AffiliateDisclosure";
 import { addAffiliateProductToPlanner } from "../../affiliateProducts/addProduct";
 import {
   deliveryWarning,
   fetchAffiliateProductStatus,
+  getOrCreateAffiliateReferenceId,
+  liveShoppingUnavailableCopy,
   overBudgetDeltaMinor,
   plannerGiftOutboundUrl,
   productFitsRemaining,
@@ -34,6 +37,12 @@ import "./giftConcierge.css";
 
 type ConciergeTab = "ideas" | "shop";
 
+export type ConciergeIntent = {
+  kind: "find_similar";
+  query: string;
+  category?: string | null;
+} | null;
+
 type Props = {
   open: boolean;
   recipient: GiftRecipient;
@@ -42,6 +51,7 @@ type Props = {
   currency: string;
   countryCode?: string | null;
   locale?: string;
+  intent?: ConciergeIntent;
   onClose: () => void;
   onAdded: (gift: GiftItem) => void;
   onAddManually: () => void;
@@ -55,6 +65,7 @@ export function GiftConcierge({
   currency,
   countryCode,
   locale,
+  intent = null,
   onClose,
   onAdded,
   onAddManually,
@@ -94,26 +105,39 @@ export function GiftConcierge({
       openedFor.current = null;
       return;
     }
-    if (openedFor.current === recipient.id) return;
+    if (openedFor.current === recipient.id && !intent) return;
     openedFor.current = recipient.id;
     finderReset();
     shop.reset();
     setDraft({ interests: "", vibeKeys: [], priceKey: null, customBudget: "" });
     setAvoid([]);
-    setTab("ideas");
-    setShopQuery("");
-    setShopSource("recipient_search");
+    const similar = intent?.kind === "find_similar";
+    setTab(similar ? "shop" : "ideas");
+    setShopQuery(similar ? intent.query : "");
+    setShopSource(similar ? "idea" : "recipient_search");
     trackPlannerEvent("gift_concierge_opened", {
       module: "gifts",
       metadata: {
         relationship_category: generalizedRelationshipCategory(recipient.relationship),
-        source: "planner",
+        source: similar ? "find_similar" : "planner",
       },
     });
     void fetchAffiliateProductStatus().then((status) => {
       setShopEnabled(Boolean(status.enabled));
+      if (similar) {
+        if (status.enabled) {
+          void runShopSearch({
+            query: intent.query,
+            source: "idea",
+            ideaTitle: intent.query,
+            searchQuery: intent.category || intent.query,
+          });
+        } else {
+          shop.setPhase("disabled");
+        }
+      }
     });
-  }, [open, recipient.id, recipient.relationship, finderReset, shop.reset]);
+  }, [open, recipient.id, recipient.relationship, finderReset, shop.reset, intent?.kind, intent?.query]);
 
   const remainingLabel =
     spend.remainingMinor == null ? null : formatPlannerMoney(Math.max(0, spend.remainingMinor), currency);
@@ -233,13 +257,24 @@ export function GiftConcierge({
     });
     try {
       const result = await shop.search(shopContextInput(overrides));
+      if (!result.enabled) {
+        return;
+      }
+      if (!result.ok) {
+        trackPlannerEvent("affiliate_product_search_failed", {
+          module: "gifts",
+          metadata: { provider: result.provider || "ebay", source, reason: result.reason || "provider_unavailable" },
+        });
+        return;
+      }
       trackPlannerEvent("affiliate_product_results_viewed", {
         module: "gifts",
         metadata: {
-          provider: "ebay",
+          provider: result.provider || "ebay",
           marketplace: result.marketplace || undefined,
           result_count: result.products.length,
           source,
+          affiliate_reference_id: getOrCreateAffiliateReferenceId(),
         },
       });
     } catch {
@@ -251,11 +286,14 @@ export function GiftConcierge({
   }
 
   function shopThisIdea(idea: GiftIdea) {
-    if (!shopEnabled) return;
     const q = (idea.search_query || idea.title).slice(0, 80);
     setShopQuery(q);
     setShopSource("idea");
     setTab("shop");
+    if (!shopEnabled) {
+      shop.setPhase("disabled");
+      return;
+    }
     void runShopSearch({ query: q, source: "idea", ideaTitle: idea.title, searchQuery: idea.search_query });
   }
 
@@ -552,6 +590,7 @@ export function GiftConcierge({
               onQuery={(v) => setShopQuery(v.slice(0, 80))}
               loadingCopy={shopLoadingCopy}
               phase={shop.phase}
+              reason={shop.reason}
               products={shop.products}
               addingKey={addingKey}
               gifts={gifts}
@@ -583,6 +622,7 @@ function ShopPanel({
   onQuery,
   loadingCopy,
   phase,
+  reason,
   products,
   addingKey,
   gifts,
@@ -602,6 +642,7 @@ function ShopPanel({
   onQuery: (v: string) => void;
   loadingCopy: string;
   phase: string;
+  reason: string | null;
   products: AffiliateProduct[];
   addingKey: string | null;
   gifts: GiftItem[];
@@ -642,11 +683,17 @@ function ShopPanel({
 
       {phase === "error" || phase === "disabled" ? (
         <div className="tdg-concierge-error" role="alert">
-          <p>We couldn’t load live products right now.</p>
+          <p>
+            {phase === "disabled"
+              ? liveShoppingUnavailableCopy(reason)
+              : "We couldn’t load live products right now."}
+          </p>
           <div className="tdg-planner-actions">
-            <button type="button" className="tdg-planner-btn primary" onClick={onRetry}>
-              Try again
-            </button>
+            {phase === "error" ? (
+              <button type="button" className="tdg-planner-btn primary" onClick={onRetry}>
+                Try again
+              </button>
+            ) : null}
             <button type="button" className="tdg-planner-btn" onClick={onBackIdeas}>
               Back to gift ideas
             </button>
@@ -728,9 +775,7 @@ function ShopPanel({
               );
             })
           )}
-          <p className="tdg-aff-disclose">
-            Some product links are affiliate links. We may earn a commission at no extra cost to you.
-          </p>
+          <AffiliateDisclosure />
         </div>
       ) : null}
     </div>

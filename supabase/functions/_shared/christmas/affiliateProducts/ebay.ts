@@ -4,6 +4,7 @@ import type { NormalizedAffiliateSearch } from "./types.ts";
 
 export const EBAY_TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token";
 export const EBAY_BROWSE_SEARCH_URL = "https://api.ebay.com/buy/browse/v1/item_summary/search";
+export const EBAY_BROWSE_ITEM_URL = "https://api.ebay.com/buy/browse/v1/item";
 export const EBAY_OAUTH_SCOPE = "https://api.ebay.com/oauth/api_scope";
 
 export type EbayMoney = { value?: string; currency?: string };
@@ -135,6 +136,39 @@ export function normalizeEbayItem(item: EbayItemSummary, rank: number): Affiliat
   return out;
 }
 
+/**
+ * Lookup may return an item that is no longer buyable.
+ * Keep identity even if the affiliate URL is missing so we can mark unavailable.
+ */
+export function normalizeEbayLookupItem(item: EbayItemSummary): AffiliateProduct | null {
+  const title = String(item.title || "").trim().slice(0, 200);
+  const id = String(item.itemId || "").trim();
+  if (!title || !id) return null;
+  const price = parseEbayMoney(item.price);
+  const { start, end } = deliveryWindow(item);
+  const merchant = String(item.seller?.username || "eBay").trim().slice(0, 80) || "eBay";
+  const affiliateUrl = isSafeHttpUrl(item.itemAffiliateWebUrl) ? String(item.itemAffiliateWebUrl) : "";
+  const availability = availabilityFromItem(item) || (!isFixedPriceItem(item) ? "unavailable" : "unknown");
+  const product: AffiliateProduct = {
+    provider: "ebay",
+    externalProductId: id.slice(0, 80),
+    title,
+    merchant,
+    price: price?.amount ?? 0,
+    currency: price?.currency || "EUR",
+    affiliateUrl,
+    availability,
+  };
+  const imageUrl = ebayImageUrl(item);
+  if (imageUrl) product.imageUrl = imageUrl;
+  if (start) product.deliveryStart = start;
+  if (end) product.deliveryEnd = end;
+  const productUrl = isSafeHttpUrl(item.itemWebUrl) ? String(item.itemWebUrl) : undefined;
+  if (productUrl) product.productUrl = productUrl;
+  if (item.condition) product.condition = String(item.condition).slice(0, 40);
+  return product;
+}
+
 /** Preserve provider order. Filter invalid rows; do not re-sort. */
 export function normalizeEbaySearchResults(payload: EbaySearchResponse, limit: number): AffiliateProduct[] {
   const items = payload.itemSummaries || [];
@@ -173,6 +207,20 @@ export function ebayEndUserContext(campaignId: string, referenceId: string): str
   const campaign = String(campaignId).trim();
   const ref = String(referenceId).trim();
   return `affiliateCampaignId=${campaign},affiliateReferenceId=${ref}`;
+}
+
+export function buildEbayBrowseItemUrl(itemId: string): string {
+  const id = String(itemId || "").trim();
+  if (!id || id.length > 80) throw new Error("ebay_item_id_invalid");
+  const url = `${EBAY_BROWSE_ITEM_URL}/${encodeURIComponent(id)}`;
+  if (!url.startsWith(`${EBAY_BROWSE_ITEM_URL}/`)) throw new Error("ebay_url_rejected");
+  return url;
+}
+
+export function isEbayItemNotFound(status: number, body: string): boolean {
+  if (status === 404) return true;
+  const lower = body.toLowerCase();
+  return status === 400 && (lower.includes("not found") || lower.includes("invalid item"));
 }
 
 export function isEbayProductionAccessError(status: number, body: string): boolean {

@@ -5,6 +5,7 @@ const TABS = [
   { to: "/admin/christmas/analytics", label: "Analytics", end: false },
   { to: "/admin/christmas/orders", label: "Orders", end: false },
   { to: "/admin/christmas/monetization", label: "Monetization", end: false },
+  { to: "/admin/christmas/affiliate-commerce", label: "Affiliate Commerce", end: false },
 ] as const;
 
 function tabClass(isActive: boolean) {
