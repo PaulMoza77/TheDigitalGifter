@@ -34,6 +34,16 @@ export type AffiliateProduct = {
   category?: string;
   condition?: string;
   providerRank?: number;
+  /** ISO timestamp from the provider fetch/normalization boundary when available. */
+  checkedAt?: string;
+  /** Strong product identifiers used for exact cross-provider comparison. */
+  gtin?: string;
+  upc?: string;
+  ean?: string;
+  isbn?: string;
+  mpn?: string;
+  brand?: string;
+  model?: string;
   metadata?: Record<string, string | number | boolean | null>;
 };
 
