@@ -30,9 +30,11 @@ const MOBILE_NAV = [
 export default function ChristmasPlannerLayout() {
   return (
     <PlannerBundleProvider>
-      <CopilotHost>
-        <PlannerAppShell />
-      </CopilotHost>
+      <div className="tdg-planner-app">
+        <CopilotHost>
+          <PlannerAppShell />
+        </CopilotHost>
+      </div>
     </PlannerBundleProvider>
   );
 }
@@ -63,7 +65,7 @@ function PlannerAppShell() {
   }, [profile, location.pathname]);
 
   return (
-    <div className="tdg-planner-app">
+    <>
       <PageHead title="Christmas Planner" description="Your private Christmas command center." noindex exactTitle />
       <div className="tdg-planner-frame">
         <header className="tdg-planner-header">
@@ -128,6 +130,6 @@ function PlannerAppShell() {
           ))}
         </nav>
       </div>
-    </div>
+    </>
   );
 }

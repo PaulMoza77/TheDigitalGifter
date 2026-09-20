@@ -1588,6 +1588,16 @@
   position: fixed;
   inset: 0;
   z-index: 50;
+  /* Keep tokens even if the sheet is portaled; body uses light-on-dark. */
+  --planner-cream: #f6efe4;
+  --planner-parchment: #efe4d2;
+  --planner-ink: #1c1612;
+  --planner-muted: #5c534b;
+  --planner-gold: #8a6a32;
+  --planner-burgundy: #7a2430;
+  --planner-pine: #143328;
+  --planner-line: rgba(20, 51, 40, 0.12);
+  color: var(--planner-ink);
 }
 
 .tdg-copilot-backdrop {
@@ -1614,6 +1624,17 @@
   box-shadow: -16px 0 40px rgba(28, 22, 18, 0.12);
 }
 
+.tdg-copilot-sheet,
+.tdg-copilot-sheet h2,
+.tdg-copilot-sheet p,
+.tdg-copilot-sheet li,
+.tdg-copilot-sheet strong,
+.tdg-copilot-sheet label,
+.tdg-copilot-sheet button,
+.tdg-copilot-sheet input {
+  color: var(--planner-ink);
+}
+
 .tdg-copilot-head {
   display: flex;
   justify-content: space-between;
@@ -1625,6 +1646,39 @@
   font-family: var(--planner-serif);
   font-size: 1.35rem;
   margin: 0;
+}
+
+.tdg-copilot-sheet .tdg-planner-brand {
+  color: #6d542c;
+}
+
+.tdg-copilot-sheet .tdg-planner-muted {
+  color: var(--planner-muted);
+}
+
+.tdg-copilot-sheet .tdg-planner-linkish {
+  color: var(--planner-pine);
+}
+
+.tdg-copilot-sheet .tdg-planner-chip {
+  background: #fffdf8;
+  border-color: rgba(20, 51, 40, 0.22);
+  color: var(--planner-ink);
+}
+
+.tdg-copilot-sheet .tdg-planner-btn.primary {
+  background: var(--planner-pine);
+  color: var(--planner-cream);
+}
+
+.tdg-copilot-sheet .tdg-planner-input {
+  background: #fffdf8;
+  color: var(--planner-ink);
+}
+
+.tdg-copilot-sheet .tdg-planner-input::placeholder {
+  color: #6f675f;
+  opacity: 1;
 }
 
 .tdg-copilot-prompts {
@@ -1646,13 +1700,25 @@
 
 .tdg-copilot-reply p {
   margin: 0 0 10px;
+  color: var(--planner-ink);
 }
 
 .tdg-copilot-card {
   border: 1px solid var(--planner-line);
   background: #fffdf8;
+  color: var(--planner-ink);
   padding: 12px 14px;
   margin-bottom: 10px;
+}
+
+.tdg-copilot-card strong {
+  display: block;
+  color: var(--planner-ink);
+}
+
+.tdg-copilot-card p,
+.tdg-copilot-card li {
+  color: var(--planner-ink);
 }
 
 .tdg-copilot-card ul {
@@ -1664,6 +1730,7 @@
   border: 1px dashed var(--planner-gold);
   padding: 12px;
   margin: 8px 0 12px;
+  color: var(--planner-ink);
 }
 
 .tdg-copilot-today .tdg-planner-prompt {
