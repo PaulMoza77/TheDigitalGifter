@@ -281,7 +281,13 @@ describe("christmas planner wiring", () => {
     const funnelCss = readSrc("src/features/christmas/planner/planner.css");
     expect(layout).toContain("tdg-planner-app");
     expect(layout).toContain("plannerApp.css");
+    expect(layout).toMatch(/className="tdg-planner-app"[\s\S]*<CopilotHost>/);
     expect(appCss).toContain(".tdg-planner-app");
+    expect(appCss).toContain(".tdg-copilot-root");
+    expect(appCss).toContain(".tdg-copilot-sheet p");
+    expect(appCss).toContain(".tdg-copilot-card li");
+    expect(appCss).toMatch(/\.tdg-copilot-root[\s\S]*--planner-ink: #1c1612/);
+    expect(appCss).toMatch(/\.tdg-copilot-sheet p[\s\S]*color: var\(--planner-ink\)/);
     expect(funnelCss).toContain("--parchment");
     expect(funnelCss).not.toContain(".tdg-planner-app");
   });
