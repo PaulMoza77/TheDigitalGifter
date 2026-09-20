@@ -13,6 +13,7 @@ import { GROCERY_AISLES, HOME_AREAS, type GiftItem, type GroceryAisle, type Plan
 import { formatPlannerDate, giftStatusLabel, prettyLabel } from "./date";
 import { PlannerComposer, PlannerEmptyState, PlannerPageHeader, PlannerStatusChip } from "./plannerUi";
 import { PlannerGiftOutboundLink, PlannerGiftPriceLabel } from "./PlannerGiftLink";
+import { AffiliateDisclosure } from "../affiliateProducts/AffiliateDisclosure";
 
 export function ChristmasPlannerShoppingPage() {
   const { loading, profile } = usePlannerBundle();
@@ -94,6 +95,7 @@ export function ChristmasPlannerShoppingPage() {
           </div>
         ))
       )}
+      {filtered.some((g) => g.source_type === "affiliate_product") ? <AffiliateDisclosure /> : null}
       <section className="tdg-planner-section">
         <h2>Non-gift purchase</h2>
         <PlannerComposer>

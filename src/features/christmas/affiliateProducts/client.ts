@@ -1,9 +1,14 @@
 import { supabase } from "@/lib/supabase";
-import type { AffiliateProviderStatus, AffiliateSearchResult, AffiliateSearchSource } from "../../../../supabase/functions/_shared/christmas/affiliateProducts/types.ts";
+import type {
+  AffiliateProviderHealth,
+  AffiliateSearchResult,
+  AffiliateSearchSource,
+} from "../../../../supabase/functions/_shared/christmas/affiliateProducts/types.ts";
 import {
   createAffiliateReferenceId,
   isSafeAffiliateReferenceId,
 } from "../../../../supabase/functions/_shared/christmas/affiliateProducts/query.ts";
+import type { GiftItem } from "../planner/types";
 
 export {
   affiliateSourceRef,
@@ -12,6 +17,10 @@ export {
   plannerGiftOutboundUrl,
   productFitsRemaining,
   snapshotPriceLabel,
+  affiliateFreshnessState,
+  freshnessCheckedLabel,
+  liveShoppingUnavailableCopy,
+  affiliateUrlForGift,
 } from "./helpers";
 
 const FUNNEL_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/affiliate-product-search`;
@@ -36,19 +45,25 @@ async function authHeaders(): Promise<Record<string, string>> {
   };
 }
 
+const disabledEbay: AffiliateProviderHealth = {
+  provider: "ebay",
+  enabled: false,
+  configured: false,
+  productionAccess: false,
+  reason: "DISABLED_FEATURE_FLAG",
+  code: "DISABLED_FEATURE_FLAG",
+};
+
 export type AffiliateStatusResponse = {
   ok: boolean;
   enabled: boolean;
-  ebay: AffiliateProviderStatus;
+  ebay: AffiliateProviderHealth;
+  providers?: AffiliateProviderHealth[];
 };
 
 export async function fetchAffiliateProductStatus(): Promise<AffiliateStatusResponse> {
   if (!FUNNEL_URL || FUNNEL_URL.includes("placeholder.supabase")) {
-    return {
-      ok: true,
-      enabled: false,
-      ebay: { provider: "ebay", code: "DISABLED_FEATURE_FLAG", enabled: false },
-    };
+    return { ok: true, enabled: false, ebay: disabledEbay, providers: [disabledEbay] };
   }
   try {
     const res = await fetch(FUNNEL_URL, {
@@ -58,24 +73,45 @@ export async function fetchAffiliateProductStatus(): Promise<AffiliateStatusResp
     });
     const json = (await res.json()) as AffiliateStatusResponse;
     if (!res.ok) {
-      return {
-        ok: false,
-        enabled: false,
-        ebay: { provider: "ebay", code: "DISABLED_FEATURE_FLAG", enabled: false },
-      };
+      return { ok: false, enabled: false, ebay: disabledEbay };
     }
     return {
       ok: true,
       enabled: Boolean(json.enabled),
-      ebay: json.ebay || { provider: "ebay", code: "DISABLED_FEATURE_FLAG", enabled: false },
+      ebay: json.ebay || disabledEbay,
+      providers: json.providers,
     };
   } catch {
+    return { ok: false, enabled: false, ebay: disabledEbay };
+  }
+}
+
+export type AffiliateAdminStatusResponse = AffiliateStatusResponse & {
+  credentialsPresent?: { ebay: boolean; awin: boolean; amazon: boolean };
+  missingCredentialNames?: { ebay: string[]; awin: string[] };
+  revenue?: { status: string };
+  activeProvider?: string;
+};
+
+export async function fetchAffiliateAdminStatus(): Promise<AffiliateAdminStatusResponse> {
+  if (!FUNNEL_URL || FUNNEL_URL.includes("placeholder.supabase")) {
     return {
-      ok: false,
+      ok: true,
       enabled: false,
-      ebay: { provider: "ebay", code: "DISABLED_FEATURE_FLAG", enabled: false },
+      ebay: disabledEbay,
+      providers: [disabledEbay],
+      credentialsPresent: { ebay: false, awin: false, amazon: false },
+      revenue: { status: "awaiting_provider_reporting" },
     };
   }
+  const res = await fetch(FUNNEL_URL, {
+    method: "POST",
+    headers: await authHeaders(),
+    body: JSON.stringify({ action: "admin_status" }),
+  });
+  const json = (await res.json()) as AffiliateAdminStatusResponse;
+  if (!res.ok) throw new Error(json && "error" in json ? String((json as { error?: string }).error) : "admin_status_failed");
+  return json;
 }
 
 export type AffiliateSearchClientInput = {
@@ -127,4 +163,40 @@ export async function searchAffiliateProducts(input: AffiliateSearchClientInput)
   if (!json.ok && json.reason === "DISABLED_NO_PRODUCTION_ACCESS") return json;
   if (!res.ok || json.error) throw new Error(json.error || "affiliate_unavailable");
   return json;
+}
+
+export type AffiliateLookupClientResult = {
+  ok: boolean;
+  enabled: boolean;
+  unavailable: boolean;
+  reason?: string | null;
+  gift?: GiftItem;
+};
+
+export async function refreshAffiliateGiftPrice(giftId: string): Promise<AffiliateLookupClientResult> {
+  if (!FUNNEL_URL || FUNNEL_URL.includes("placeholder.supabase")) {
+    return { ok: true, enabled: false, unavailable: false, reason: "DISABLED_FEATURE_FLAG" };
+  }
+  const res = await fetch(FUNNEL_URL, {
+    method: "POST",
+    headers: await authHeaders(),
+    body: JSON.stringify({
+      action: "lookup",
+      gift_id: giftId,
+      affiliate_reference_id: getOrCreateAffiliateReferenceId(),
+    }),
+  });
+  const json = (await res.json()) as AffiliateLookupClientResult & { error?: string };
+  if (res.status === 401 || json.error === "auth_required") throw new Error("affiliate_auth");
+  if (!res.ok && json.error === "rate_limited") throw new Error("rate_limited");
+  if (!res.ok && json.error) {
+    return { ok: false, enabled: false, unavailable: false, reason: json.error };
+  }
+  return {
+    ok: Boolean(json.ok),
+    enabled: Boolean(json.enabled),
+    unavailable: Boolean(json.unavailable),
+    reason: json.reason,
+    gift: json.gift as GiftItem | undefined,
+  };
 }

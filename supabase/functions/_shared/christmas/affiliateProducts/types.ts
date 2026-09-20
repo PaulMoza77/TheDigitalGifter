@@ -1,9 +1,9 @@
 /**
- * Affiliate product provider contract (V1).
+ * Affiliate product provider contract (V1.5).
  *
  * Frontend and Concierge consume AffiliateProduct only.
- * Additional providers (Awin, Amazon) must normalize to this shape
- * without changing Gift Concierge UI.
+ * V1 searches one provider at a time. Do not merge ranked result sets
+ * until provider terms and ranking rules are explicit.
  *
  * Do not scrape retailer HTML. Official provider APIs / feeds only.
  */
@@ -54,17 +54,27 @@ export type AffiliateSearchRequest = {
 };
 
 export type AffiliateProviderStatusCode =
-  | "ENABLED"
   | "DISABLED_FEATURE_FLAG"
   | "DISABLED_MISSING_CREDENTIALS"
   | "DISABLED_NO_PRODUCTION_ACCESS"
-  | "DISABLED_NOT_IMPLEMENTED";
+  | "DISABLED_NOT_IMPLEMENTED"
+  | "READY"
+  | "DEGRADED";
 
-export type AffiliateProviderStatus = {
+/**
+ * Safe provider health. Never include secrets, tokens, or campaign values.
+ */
+export type AffiliateProviderHealth = {
   provider: AffiliateProviderId;
-  code: AffiliateProviderStatusCode;
   enabled: boolean;
+  configured: boolean;
+  productionAccess: boolean;
+  reason: AffiliateProviderStatusCode;
+  /** @deprecated use reason */
+  code: AffiliateProviderStatusCode;
 };
+
+export type AffiliateProviderStatus = AffiliateProviderHealth;
 
 export type AffiliateSearchResult = {
   ok: boolean;
@@ -74,18 +84,38 @@ export type AffiliateSearchResult = {
   products: AffiliateProduct[];
   cached?: boolean;
   reason?: string;
-  status: AffiliateProviderStatus;
+  status: AffiliateProviderHealth;
+};
+
+export type AffiliateLookupRequest = {
+  provider: AffiliateProviderId;
+  externalProductId: string;
+  marketplace: string | null;
+  affiliateReferenceId: string;
+};
+
+export type AffiliateLookupResult = {
+  ok: boolean;
+  enabled: boolean;
+  provider: AffiliateProviderId;
+  marketplace: string | null;
+  product: AffiliateProduct | null;
+  unavailable: boolean;
+  reason?: string;
+  status: AffiliateProviderHealth;
 };
 
 export type AffiliateProvider = {
   id: AffiliateProviderId;
-  status(): AffiliateProviderStatus;
+  status(): AffiliateProviderHealth;
   search(input: NormalizedAffiliateSearch): Promise<AffiliateSearchResult>;
+  lookup(input: AffiliateLookupRequest): Promise<AffiliateLookupResult>;
 };
 
 export type NormalizedAffiliateSearch = {
   query: string;
   source: AffiliateSearchSource;
+  provider: AffiliateProviderId;
   countryCode: string | null;
   locale: string;
   currency: string | null;
@@ -99,15 +129,46 @@ export type NormalizedAffiliateSearch = {
 };
 
 /**
- * Future AwinProvider:
- * - Ingest official Awin product feeds (name, description, price, images, deep link).
- * - Map deep link → affiliateUrl. Do not rewrite tracking params unless Awin documents it.
- * - Preserve feed order unless Awin permits ranking.
+ * Click attribution (no PII tables):
+ * - affiliateReferenceId: opaque gc_* sent to the provider (EPN customid / Awin clickref later)
+ * - funnel_session_id: existing Christmas analytics session
+ * - metadata.provider, metadata.source, metadata.price_bucket
+ * Reconcile provider reports by matching gc_* → these events. Never encode names.
+ */
+export type AffiliateAttributionMap = {
+  affiliateReferenceId: string;
+  provider: AffiliateProviderId;
+  source: AffiliateSearchSource;
+  funnelSessionId?: string;
+};
+
+/**
+ * Future earnings import. Do not invent commission from clicks.
+ * Import later from eBay EPN reports / Awin transactions.
+ */
+export type AffiliateProviderTransaction = {
+  provider: AffiliateProviderId;
+  providerTransactionId: string;
+  affiliateReferenceId: string;
+  saleAmountMinor: number;
+  commissionAmountMinor: number;
+  currency: string;
+  status: "pending" | "approved" | "paid" | "rejected" | "unknown";
+  transactionDate: string;
+};
+
+export const AFFILIATE_REVENUE_SEAM = "awaiting_provider_reporting" as const;
+
+/**
+ * Awin: official product feed + publisher deep links only.
+ * Required config when live ingest is approved:
+ * - AWIN_PRODUCT_SEARCH_ENABLED
+ * - AWIN_PRODUCTION_ACCESS
+ * - AWIN_FEED_URL (official advertiser/publisher feed)
+ * - AWIN_PUBLISHER_ID
+ * Network ingest stays OFF until those are verified.
  *
- * Future AmazonProvider:
- * - Marketplace-specific Associates / Creators API only.
- * - Requires valid Associates credentials per marketplace.
- * - Never scrape amazon.com / amazon.de HTML.
+ * Amazon: Associates / Creators API only. Not implemented in V1.5.
  */
 export type FutureProviderNotes = {
   awin: "feed_plus_deeplink";

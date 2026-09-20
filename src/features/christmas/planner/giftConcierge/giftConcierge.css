@@ -282,6 +282,43 @@
   color: var(--planner-muted, #5c564c);
 }
 
+.tdg-aff-saved {
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--planner-line, rgba(80, 64, 40, 0.12));
+}
+
+.tdg-aff-saved-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.tdg-aff-saved .tdg-aff-img,
+.tdg-aff-saved .tdg-aff-ph {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+}
+
+.tdg-aff-saved-meta,
+.tdg-aff-saved-change {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
+
+.tdg-aff-saved-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--planner-muted, #5c564c);
+}
+
+.tdg-aff-unavail {
+  margin-top: 10px;
+}
+
 @keyframes tdgConciergeIn {
   from {
     transform: translateX(24px);

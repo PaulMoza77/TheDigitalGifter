@@ -1,4 +1,5 @@
 export { GiftConcierge } from "./GiftConcierge";
+export type { ConciergeIntent } from "./GiftConcierge";
 export {
   buildConciergeFinderInput,
   recipientFinderKeys,

@@ -1,4 +1,10 @@
-import type { AffiliateSearchRequest, AffiliateSearchSource, NormalizedAffiliateSearch } from "./types.ts";
+import type {
+  AffiliateProviderId,
+  AffiliateSearchRequest,
+  AffiliateSearchSource,
+  NormalizedAffiliateSearch,
+} from "./types.ts";
+import { AFFILIATE_PROVIDERS } from "./types.ts";
 import { coarseDeliveryCountry, resolveEbayMarketplace } from "./marketplace.ts";
 
 export const AFFILIATE_QUERY_MAX_LEN = 80;
@@ -90,6 +96,10 @@ export function validateAffiliateSearchInput(
   },
 ): ValidateSearchError | ValidateSearchOk {
   const source: AffiliateSearchSource = raw.source === "idea" ? "idea" : "recipient_search";
+  const providerRaw = String(raw.provider || "ebay").trim().toLowerCase();
+  const provider: AffiliateProviderId = AFFILIATE_PROVIDERS.includes(providerRaw as AffiliateProviderId)
+    ? (providerRaw as AffiliateProviderId)
+    : "ebay";
   const query = sanitizeProductQuery(
     raw.query ||
       buildProductSearchQuery({
@@ -132,6 +142,7 @@ export function validateAffiliateSearchInput(
     value: {
       query,
       source,
+      provider,
       countryCode,
       locale,
       currency: String(raw.currency || "").trim().toUpperCase().slice(0, 8) || null,
