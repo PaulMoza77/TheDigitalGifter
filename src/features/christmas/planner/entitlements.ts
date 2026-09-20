@@ -159,21 +159,13 @@ export function canAddCustomTask(
   return { ok: true };
 }
 
-export function upgradePackageForFeature(feature: PlannerFeatureKey): {
+export function upgradePackageForFeature(_feature: PlannerFeatureKey): {
   productKey: string;
   packageKey: string;
 } {
-  // Canonical funnel product; add-ons are packages on the same product.
-  if (feature === "food_planner") return { productKey: "christmas_planner_2026", packageKey: "addon_recipes" };
-  if (feature === "recipes" || feature === "premium_content") {
-    return { productKey: "christmas_planner_2026", packageKey: "addon_recipes" };
-  }
-  if (feature === "hosting") return { productKey: "christmas_planner_2026", packageKey: "addon_hosting" };
-  if (feature === "travel") return { productKey: "christmas_planner_2026", packageKey: "addon_travel" };
-  if (feature === "advanced_planning") {
-    return { productKey: "christmas_planner_2026", packageKey: "magic" };
-  }
-  return { productKey: "christmas_planner_2026", packageKey: "essentials" };
+  // Launch commerce is Founding Pass only. Locked modules must open that offer,
+  // not an essentials hash on the public planner landing.
+  return { productKey: "christmas_planner_2026", packageKey: "founding_pass" };
 }
 
 export function addonIncludedInPackage(packageKey: string, addonKey: string): boolean {

@@ -103,6 +103,7 @@ export type SnapshotGift = {
   return_deadline: string | null;
   source_type?: string;
   price_checked_at?: string | null;
+  currency?: string | null;
 };
 
 export type SnapshotBudgetEntry = {
@@ -111,6 +112,8 @@ export type SnapshotBudgetEntry = {
   label: string;
   planned_minor: number;
   spent_minor: number;
+  source_type?: "manual" | "gift" | "grocery" | "system";
+  source_ref?: string | null;
 };
 
 export type SnapshotMeal = {
@@ -262,9 +265,23 @@ export type BudgetTotals = {
   manualPlannedMinor: number;
   manualSpentMinor: number;
   spentMinor: number;
+  plannedOutstandingMinor: number;
   forecastMinor: number;
   remainingMinor: number | null;
+  remainingAfterSpendMinor: number | null;
   overForecastMinor: number;
+  giftsWithoutPriceCount: number;
+  groceryCostKnown: boolean;
+  groceryPlannedMinor: number | null;
+  categoryRows: Array<{
+    category: BudgetCategory;
+    label: string;
+    budgetMinor: number;
+    spentMinor: number;
+    plannedMinor: number;
+    remainingMinor: number;
+    overMinor: number;
+  }>;
   categoryForecast: Array<{
     category: BudgetCategory | "gifts_derived";
     plannedMinor: number;
@@ -441,6 +458,8 @@ export function toSnapshotRecipient(row: GiftRecipient): SnapshotRecipient {
 }
 
 export function toSnapshotGift(row: GiftItem): SnapshotGift {
+  const meta = row.source_meta as { currency?: string } | null | undefined;
+  const metaCurrency = typeof meta?.currency === "string" ? meta.currency : null;
   return {
     id: row.id,
     recipient_id: row.recipient_id,
@@ -455,6 +474,7 @@ export function toSnapshotGift(row: GiftItem): SnapshotGift {
     return_deadline: row.return_deadline,
     source_type: row.source_type,
     price_checked_at: row.price_checked_at ?? null,
+    currency: metaCurrency,
   };
 }
 
@@ -465,5 +485,7 @@ export function toSnapshotBudget(row: BudgetEntry): SnapshotBudgetEntry {
     label: row.label,
     planned_minor: row.planned_minor,
     spent_minor: row.spent_minor,
+    source_type: row.source_type,
+    source_ref: row.source_ref ?? null,
   };
 }

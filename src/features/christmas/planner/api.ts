@@ -273,6 +273,98 @@ export async function loadBudget(profileId: string): Promise<BudgetEntry[]> {
   return (data as BudgetEntry[]) || [];
 }
 
+export async function upsertCategoryBudget(input: {
+  profileId: string;
+  existingId?: string;
+  category: BudgetEntry["category"];
+  plannedMinor: number;
+}): Promise<BudgetEntry | null> {
+  const planned_minor = Math.max(0, Math.round(input.plannedMinor) || 0);
+  if (input.existingId) {
+    const { data } = await supabase
+      .from("christmas_budget_entries")
+      .update({ planned_minor })
+      .eq("id", input.existingId)
+      .select("*")
+      .maybeSingle();
+    return (data as BudgetEntry) || null;
+  }
+  const { data } = await supabase
+    .from("christmas_budget_entries")
+    .insert({
+      profile_id: input.profileId,
+      category: input.category,
+      label: input.category,
+      planned_minor,
+      spent_minor: 0,
+      source_type: "system",
+    })
+    .select("*")
+    .maybeSingle();
+  return (data as BudgetEntry) || null;
+}
+
+export async function insertBudgetExpense(input: {
+  profileId: string;
+  category: BudgetEntry["category"];
+  label: string;
+  amountMinor: number;
+  status: "planned" | "paid";
+  note?: string;
+}): Promise<BudgetEntry | null> {
+  const amount = Math.max(0, Math.round(input.amountMinor) || 0);
+  const paid = input.status === "paid";
+  const { data } = await supabase
+    .from("christmas_budget_entries")
+    .insert({
+      profile_id: input.profileId,
+      category: input.category,
+      label: input.label.trim().slice(0, 80) || "Expense",
+      planned_minor: paid ? 0 : amount,
+      spent_minor: paid ? amount : 0,
+      source_type: "manual",
+      source_ref: (input.note || "").trim().slice(0, 200) || null,
+    })
+    .select("*")
+    .maybeSingle();
+  return (data as BudgetEntry) || null;
+}
+
+export async function patchBudgetExpense(
+  id: string,
+  patch: {
+    label?: string;
+    category?: BudgetEntry["category"];
+    amountMinor?: number;
+    status?: "planned" | "paid";
+    note?: string;
+  },
+): Promise<BudgetEntry | null> {
+  const next: Record<string, unknown> = {};
+  if (patch.label != null) next.label = patch.label.trim().slice(0, 80);
+  if (patch.category) next.category = patch.category;
+  if (patch.note != null) next.source_ref = patch.note.trim().slice(0, 200) || null;
+  if (patch.amountMinor != null || patch.status) {
+    const amount = Math.max(0, Math.round(patch.amountMinor || 0) || 0);
+    const paid = patch.status === "paid";
+    next.planned_minor = paid ? 0 : amount;
+    next.spent_minor = paid ? amount : 0;
+  }
+  const { data } = await supabase.from("christmas_budget_entries").update(next).eq("id", id).select("*").maybeSingle();
+  return (data as BudgetEntry) || null;
+}
+
+export async function deleteBudgetExpense(id: string): Promise<void> {
+  await supabase.from("christmas_budget_entries").delete().eq("id", id);
+}
+
+export async function setPlannerTotalBudget(profileId: string, totalMinor: number): Promise<void> {
+  await supabase
+    .from("christmas_planner_profiles")
+    .update({ total_budget_minor: Math.max(0, Math.round(totalMinor) || 0) })
+    .eq("id", profileId);
+}
+
 export async function loadModuleRows<T>(table: string, profileId: string): Promise<T[]> {
   const { data } = await supabase.from(table).select("*").eq("profile_id", profileId);
   return (data as T[]) || [];

@@ -4,7 +4,8 @@ export { loadPlannerWorkspace, invalidatePlannerSnapshot } from "./loadSnapshot"
 export { executePlannerAction } from "./actions";
 export { validatePlannerAction, previewPlannerAction, DESTRUCTIVE_ACTIONS } from "./actionContract";
 export { loadDismissedInsightIds, dismissInsight } from "./dismiss";
-export { computeBudgetTotals, formatPlannerMoney, giftCommittedMinor, giftSpentMinor } from "./budgetIntelligence";
+export { computeBudgetTotals, formatPlannerMoney, giftCommittedMinor, giftSpentMinor, giftPlannedMinor, collectBudgetCopy, expenseLinesFromEntries, groceryEstimatedCostMinor, isAllocationRow, suggestedAllocations } from "./budgetIntelligence";
+export type { BudgetExpenseLine, CategoryBudgetRow } from "./budgetIntelligence";
 export { deriveShoppingItems, shoppingForTab, computeRecipientBudgets } from "./giftIntelligence";
 export { deriveCalendarItems } from "./calendarIntelligence";
 export { mergeGroceryList, aggregateMealIngredients, detectFoodCompleteness, servingHints, guestCount, parseIngredient, ingredientsFromRecipe, buildPrepTimeline } from "./foodIntelligence";

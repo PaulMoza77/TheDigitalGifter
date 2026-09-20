@@ -205,14 +205,18 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
         followUpOptions: ["What am I forgetting?", "What gifts am I still missing?"],
       };
     }
-    const remaining = budget.remainingMinor;
-    const over = insights.find((i) => i.type.includes("budget") || i.category === "budget");
+    const remaining = budget.remainingAfterSpendMinor ?? budget.remainingMinor;
+    const over = insights.find((i) => i.id === "budget.forecast_over" || i.id.startsWith("budget.category_over"));
     return {
       ...base(),
       message: over
         ? over.body
         : remaining != null
-          ? `About ${money(remaining)} remains versus the Engine forecast. Spent ${money(budget.spentMinor)}.`
+          ? `You have ${money(remaining)} left. Spent ${money(budget.spentMinor)}${
+              budget.plannedOutstandingMinor > 0
+                ? `, with ${money(budget.plannedOutstandingMinor)} still planned.`
+                : "."
+            }`
           : "Budget is set. Open Budget for the category split.",
       cards: [
         {

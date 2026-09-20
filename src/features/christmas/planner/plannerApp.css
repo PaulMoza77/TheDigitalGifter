@@ -2078,3 +2078,192 @@
   color: var(--planner-pine);
   font-weight: 600;
 }
+
+.tdg-budget-page {
+  max-width: 720px;
+  padding-bottom: 96px;
+}
+
+.tdg-budget-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.tdg-budget-head h1 {
+  font-size: clamp(2.1rem, 6vw, 3.1rem);
+  letter-spacing: -0.04em;
+  margin: 4px 0 0;
+  color: var(--planner-pine);
+}
+
+.tdg-budget-hero {
+  margin: 12px 0 20px;
+}
+
+.tdg-budget-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tdg-budget-metrics strong {
+  display: block;
+  font-size: 1.25rem;
+  color: var(--planner-pine);
+}
+
+.tdg-budget-metrics .is-over {
+  color: #8a3b2a;
+}
+
+.tdg-budget-bar {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(20, 52, 36, 0.1);
+  overflow: hidden;
+}
+
+.tdg-budget-bar .is-spent,
+.tdg-budget-bar .is-planned {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.tdg-budget-bar .is-spent {
+  background: var(--planner-pine);
+}
+
+.tdg-budget-bar .is-planned {
+  background: #c6a15b;
+}
+
+.tdg-budget-insights {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.tdg-budget-insights li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--planner-line);
+  color: var(--planner-ink);
+}
+
+.tdg-budget-setup h2,
+.tdg-budget-cats h2,
+.tdg-budget-expenses h2 {
+  font-size: 1.2rem;
+  margin: 8px 0 12px;
+}
+
+.tdg-budget-amount {
+  font-size: 1.6rem;
+}
+
+.tdg-budget-suggest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.tdg-budget-suggest-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.tdg-budget-suggest-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--planner-line);
+}
+
+.tdg-budget-expense-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tdg-budget-expense-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--planner-line);
+}
+
+.tdg-budget-expense-amt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tdg-budget-fab {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+  z-index: 3;
+}
+
+.tdg-budget-unlock {
+  margin-top: 16px;
+}
+
+.tdg-budget-unlock--banner {
+  padding: 16px 0 8px;
+  border-top: 1px solid var(--planner-line);
+  border-bottom: 1px solid var(--planner-line);
+  margin-bottom: 20px;
+}
+
+.tdg-planner-linkish {
+  display: inline-block;
+  margin-top: 6px;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--planner-pine);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.tdg-planner-launch {
+  padding: 12px 0;
+}
+
+.tdg-budget-edit-total {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .tdg-budget-metrics {
+    grid-template-columns: 1fr;
+  }
+  .tdg-budget-metrics strong {
+    font-size: 1.55rem;
+  }
+  .tdg-budget-head {
+    flex-direction: column;
+  }
+  .tdg-budget-fab {
+    bottom: 84px;
+  }
+  .tdg-budget-expense-list li {
+    flex-direction: column;
+  }
+}

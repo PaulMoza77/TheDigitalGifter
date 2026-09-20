@@ -138,15 +138,108 @@ export function collectInsights(snapshot: PlannerSnapshot, dismissedIds: string[
         type: "forecast",
         severity: budget.overForecastMinor > budget.totalBudgetMinor * 0.15 ? "important" : "suggestion",
         category: "budget",
-        title: "Your current plan is over budget",
-        body: `At your current plan, you’re likely to spend ${formatPlannerMoney(budget.forecastMinor, currency)} against a ${formatPlannerMoney(budget.totalBudgetMinor, currency)} budget.`,
+        title: "Your current plan is a little over budget",
+        body: `You’re about ${formatPlannerMoney(budget.overForecastMinor, currency)} over if everything planned is purchased. Easy to ease back in Budget.`,
         reason: "Forecast is gift planned/actual prices plus other manual category plans, without double-counting gift rows as budget expenses.",
-        recommendedAction: "Review gifts over budget",
+        recommendedAction: "Ease the plan a little",
         actionType: "open_module",
         actionPayload: { href: "/account/christmas/budget" },
         dueDate: null,
         priority: 19,
         dismissible: false,
+        autoResolvable: true,
+      }),
+    );
+  }
+
+  if (budget.remainingAfterSpendMinor != null && budget.remainingAfterSpendMinor >= 0 && budget.totalBudgetMinor) {
+    out.push(
+      insight({
+        id: "budget.cash_left",
+        type: "forecast",
+        severity: "info",
+        category: "budget",
+        title: `You have ${formatPlannerMoney(budget.remainingAfterSpendMinor, currency)} left.`,
+        body:
+          budget.plannedOutstandingMinor > 0
+            ? `You still have ${formatPlannerMoney(budget.plannedOutstandingMinor, currency)} planned but not yet spent.`
+            : "That’s what’s left against the Christmas budget you’ve set.",
+        reason: "Remaining after actual spend, using the planner currency only.",
+        recommendedAction: "Open Budget",
+        actionType: "open_module",
+        actionPayload: { href: "/account/christmas/budget" },
+        dueDate: null,
+        priority: 5,
+        dismissible: true,
+        autoResolvable: true,
+      }),
+    );
+  }
+
+  const giftCat = budget.categoryRows.find((row) => row.category === "gifts");
+  if (giftCat && giftCat.budgetMinor > 0) {
+    const used = Math.round((giftCat.spentMinor / giftCat.budgetMinor) * 100);
+    if (used >= 78) {
+      out.push(
+        insight({
+          id: "budget.gift_almost",
+          type: "forecast",
+          severity: used >= 100 ? "suggestion" : "info",
+          category: "budget",
+          title: used >= 100 ? "Gift budget reached" : "Gift budget almost reached",
+          body: `Your gift budget is ${Math.min(used, 100)}% used.`,
+          reason: "Gift spend is derived from purchased gift prices, not a second ledger.",
+          recommendedAction: "Review gifts",
+          actionType: "open_module",
+          actionPayload: { href: "/account/christmas/budget" },
+          dueDate: null,
+          priority: 14,
+          dismissible: true,
+          autoResolvable: true,
+        }),
+      );
+    }
+  }
+
+  for (const row of budget.categoryRows) {
+    if (row.budgetMinor > 0 && row.spentMinor > row.budgetMinor) {
+      out.push(
+        insight({
+          id: `budget.category_over:${row.category}`,
+          type: "forecast",
+          severity: "suggestion",
+          category: "budget",
+          title: `${row.label} is a little over`,
+          body: `You are ${formatPlannerMoney(row.spentMinor - row.budgetMinor, currency)} over your ${row.label} budget.`,
+          reason: "Category remaining is that category’s cap minus spent, without alarming language.",
+          recommendedAction: "Review this category",
+          actionType: "open_module",
+          actionPayload: { href: "/account/christmas/budget" },
+          dueDate: null,
+          priority: 13,
+          dismissible: true,
+          autoResolvable: true,
+        }),
+      );
+    }
+  }
+
+  if (budget.giftsWithoutPriceCount > 0) {
+    out.push(
+      insight({
+        id: "budget.gifts_without_price",
+        type: "unallocated",
+        severity: "info",
+        category: "budget",
+        title: `${budget.giftsWithoutPriceCount} ${budget.giftsWithoutPriceCount === 1 ? "gift doesn’t" : "gifts don’t"} have a budget yet.`,
+        body: "Add an expected price so Budget can keep the season total honest.",
+        reason: "Counted from gifts with no planned or actual price in the planner currency.",
+        recommendedAction: "Add gift prices",
+        actionType: "open_module",
+        actionPayload: { href: "/account/christmas/gifts" },
+        dueDate: null,
+        priority: 7,
+        dismissible: true,
         autoResolvable: true,
       }),
     );

@@ -103,6 +103,34 @@ export const BUDGET_CATEGORIES = [
 ] as const;
 export type BudgetCategory = (typeof BUDGET_CATEGORIES)[number];
 
+/** Consumer-facing Budget dashboard categories (maps onto existing DB keys). */
+export const BUDGET_DASHBOARD_CATEGORIES = [
+  "gifts",
+  "food",
+  "decor",
+  "travel",
+  "events",
+  "other",
+] as const;
+export type BudgetDashboardCategory = (typeof BUDGET_DASHBOARD_CATEGORIES)[number];
+
+export const BUDGET_CATEGORY_LABELS: Record<BudgetCategory, string> = {
+  gifts: "Gifts",
+  food: "Food & Drinks",
+  decor: "Decorations",
+  travel: "Travel",
+  events: "Activities",
+  clothing: "Other",
+  charity: "Other",
+  other: "Other",
+};
+
+export const PLANNER_CURRENCIES = ["eur", "usd", "gbp", "ron"] as const;
+export type PlannerCurrency = (typeof PLANNER_CURRENCIES)[number];
+
+export const FOUNDING_PASS_PACKAGE_KEY = "founding_pass";
+export const FOUNDING_PASS_PRICE_LABEL = "$17";
+
 export const MEAL_SECTIONS = [
   "christmas_eve",
   "christmas_day",
@@ -228,6 +256,8 @@ export type GiftItem = {
   source_meta?: GiftSourceMeta | Record<string, unknown> | null;
 };
 
+export type BudgetSourceType = "manual" | "gift" | "grocery" | "system";
+
 export type BudgetEntry = {
   id: string;
   profile_id: string;
@@ -235,6 +265,8 @@ export type BudgetEntry = {
   label: string;
   planned_minor: number;
   spent_minor: number;
+  source_type?: BudgetSourceType;
+  source_ref?: string | null;
 };
 
 export type PlannerAccess = {
