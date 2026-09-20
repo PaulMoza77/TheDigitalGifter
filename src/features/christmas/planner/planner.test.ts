@@ -687,6 +687,9 @@ describe("compact funnel personalization", () => {
       preview.tasks.filter((task) => task.category === "gifts" || task.category === "shopping").length,
     );
     expect(preview.todayTasks.length).toBeLessThanOrEqual(3);
+    expect(preview.peopleCount).toBeGreaterThanOrEqual(4);
+    expect(preview.giftPeopleCount).toBeGreaterThanOrEqual(2);
+    expect(preview.budgetUsd).toBe(1200);
 
     const november = mapPersonalizationToPlanInput(
       { start: "november", chaos: ["food"], role: "staying_home" },

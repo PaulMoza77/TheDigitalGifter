@@ -215,6 +215,11 @@ export type PersonalizedPlannerPreview = {
   budgetTaskCount: number;
   upcoming: GeneratedTask[];
   tasks: GeneratedTask[];
+  peopleCount: number;
+  giftPeopleCount: number;
+  budgetUsd: number;
+  celebrateLabel: string;
+  menuLabel: string;
 };
 
 export function buildPersonalizedPreview(
@@ -238,6 +243,10 @@ export function buildPersonalizedPreview(
   const todayIso = `${today.year}-${String(today.month).padStart(2, "0")}-${String(today.day).padStart(2, "0")}`;
   const giftTaskCount = tasks.filter((task) => task.category === "gifts" || task.category === "shopping").length;
   const budgetTaskCount = tasks.filter((task) => task.template_key === "set_budget").length;
+  const giftPeople = mapped.giftCount > 0 ? 5 : 2;
+  const peopleCount = mapped.hosting ? 8 : Math.max(4, giftPeople);
+  const celebrateLabel = mapped.hosting ? "Christmas Eve dinner" : "Christmas Day at home";
+  const menuLabel = mapped.chaos.includes("food") || mapped.hosting ? "suggested Christmas menu" : "a starter menu when you host";
   return {
     daysLeft: mapped.daysLeft,
     seasonYear: mapped.seasonYear,
@@ -254,6 +263,11 @@ export function buildPersonalizedPreview(
     budgetTaskCount,
     upcoming: [...tasks].sort((a, b) => a.due_on.localeCompare(b.due_on)).slice(0, 3),
     tasks,
+    peopleCount,
+    giftPeopleCount: giftPeople,
+    budgetUsd: 1200,
+    celebrateLabel,
+    menuLabel,
   };
 }
 

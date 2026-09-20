@@ -53,13 +53,16 @@ const PACKAGE_COPY: Record<
   { audience: string; ticks: string[]; ribbon?: string }
 > = {
   founding_pass: {
-    audience: "The complete Christmas 2026 Planner — one $17 payment. Checkout stays off until launch QA.",
+    audience: "Plan your entire Christmas in one place. $17 one-time. No subscription required for this offer.",
     ticks: [
-      "Planner, tasks, and calendar",
-      "Budget that follows gift purchases",
-      "Gift Planner and Gift Finder",
-      "Recipes, meals, and smart grocery",
-      "Christmas Studio member benefit where valid",
+      "Complete Christmas Planner",
+      "Gift Planner + Gift Finder",
+      "Christmas Meal Planner",
+      "Recipe Explorer",
+      "Smart Grocery List",
+      "Christmas Budget",
+      "Calendar & Tasks",
+      "Personalized Christmas Studio benefits where currently valid",
     ],
     ribbon: "Founding Pass",
   },
@@ -886,7 +889,7 @@ export default function ChristmasPlannerPage() {
             </p>
             <h2>Your Christmas Plan is ready.</h2>
             <p className="tdg-planner__style">
-              {preview.daysLeft} {preview.daysLeft === 1 ? "day" : "days"} remaining
+              {preview.peopleCount} people · {preview.giftPeopleCount} gifts · {preview.celebrateLabel} · ${preview.budgetUsd.toLocaleString("en-US")} budget
             </p>
             {preview.rescueMode ? (
               <p className="tdg-planner__rescue-inline">
@@ -895,6 +898,14 @@ export default function ChristmasPlannerPage() {
             ) : (
               <p className="tdg-planner__adapt">Your plan adapts automatically as Christmas gets closer.</p>
             )}
+            <p className="tdg-planner__focus-label">We found:</p>
+            <ul className="tdg-planner__focus">
+              <li>gift ideas for {preview.giftPeopleCount} people</li>
+              <li>{preview.menuLabel}</li>
+              <li>personalized shopping list</li>
+              <li>{preview.generatedTaskCount} Christmas tasks</li>
+              <li>budget allocation</li>
+            </ul>
             <p className="tdg-planner__focus-label">Your starting priorities:</p>
             <ol className="tdg-planner__focus">
               {preview.focus.map((task, index) => (
@@ -904,7 +915,10 @@ export default function ChristmasPlannerPage() {
               ))}
             </ol>
             <div className="tdg-planner__cta-row" style={{ marginTop: "1.5rem" }}>
-              <button type="button" className="tdg-planner__btn" onClick={openPlanner} data-testid="open-my-christmas-planner">
+              <button type="button" className="tdg-planner__btn" onClick={() => packagesRef.current?.scrollIntoView({ behavior: "smooth" })}>
+                Unlock your complete Christmas plan
+              </button>
+              <button type="button" className="tdg-planner__btn tdg-planner__btn--ghost" onClick={openPlanner} data-testid="open-my-christmas-planner">
                 OPEN MY CHRISTMAS PLANNER
               </button>
               <span className="tdg-planner__micro">
@@ -926,10 +940,12 @@ export default function ChristmasPlannerPage() {
         >
           <div className="tdg-planner__inner">
             <p className="tdg-planner__kicker">Founding Pass</p>
-            <h2>Christmas 2026 — $17 one-time</h2>
+            <h2>Christmas 2026 Founding Pass</h2>
+            <p className="tdg-planner__lede tdg-planner__lede--on-dark">Plan your entire Christmas in one place.</p>
+            <p className="tdg-planner__price-hero">$17 one-time</p>
             <p className="tdg-planner__micro tdg-planner__micro--on-dark">
-              Planner, gifts, recipes, meals, grocery, and Studio member benefits. SEE OPTIONS below. Checkout is technically ready and stays
-              killed until final launch QA. Existing Essentials / Magic / All-In entitlements still work.
+              No subscription required for this offer. SEE OPTIONS below. Checkout is technically ready and stays
+              killed until final launch QA.
             </p>
             <div className="tdg-planner__packages tdg-planner__packages--rows">
               {catalog.packages.map((pkg) => {

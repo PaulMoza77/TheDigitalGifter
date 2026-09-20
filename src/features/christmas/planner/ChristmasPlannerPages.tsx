@@ -20,7 +20,6 @@ import {
   PlannerAttentionList,
   PlannerNextBestAction,
   PlannerOnTrackState,
-  PlannerReadinessBreakdown,
   PlannerRecommendationSheet,
   PlannerRescueBanner,
 } from "./intelligence/components";
@@ -31,7 +30,6 @@ import {
   giftStatusLabel,
   isoDate,
   localDateParts,
-  planModeLabel,
   prettyLabel,
   resolvePlanMode,
   taskCategoryLabel,
@@ -144,7 +142,6 @@ export default function ChristmasPlannerTodayPage() {
 
   const tz = profile.timezone;
   const daysLeft = daysUntilChristmas(new Date(), tz);
-  const mode = intel?.snapshot.planMode || resolvePlanMode(daysLeft, profile.prepared_level);
   const todayIso = isoDate(localDateParts(new Date(), tz));
   const readiness = intel?.readiness || computeReadiness({ profile, tasks, recipients, gifts });
   const todayIds = new Set((intel?.todayPriorities || []).map((t) => t.id));
@@ -155,8 +152,6 @@ export default function ChristmasPlannerTodayPage() {
     .filter((t) => t.status === "open" && t.due_on && t.due_on >= todayIso && !todayIds.has(t.id))
     .slice(0, 6);
   const mealsCount = intel?.snapshot.meals.length || 0;
-  const plannedGifts = gifts.filter((g) => g.status !== "idea").length;
-  const wrapped = gifts.filter((g) => g.status === "wrapped" || g.status === "given").length;
   const giftsWithoutPlan = Math.max(
     0,
     recipients.length - new Set(gifts.filter((g) => g.status !== "idea").map((g) => g.recipient_id)).size,
@@ -165,7 +160,6 @@ export default function ChristmasPlannerTodayPage() {
   const remaining = intel?.budget.remainingMinor;
   const planned = profile.total_budget_minor || intel?.budget.forecastMinor || 0;
   const nextDeadline = tasks.find((t) => t.status === "open" && t.due_on) || null;
-  const upcomingCount = tasks.filter((t) => t.status === "open" && t.due_on).length;
   const attention = intel?.attention || [];
   const onTrack = Boolean(intel && attention.length === 0 && !intel.rescue.active);
 
@@ -226,24 +220,39 @@ export default function ChristmasPlannerTodayPage() {
     setQuick(null);
   }
 
-  const giftHint = recipients.length === 0 ? "No one added yet" : `${plannedGifts} planned · ${wrapped} wrapped`;
-  const budgetHint = planned ? `of ${money(planned, profile.currency)}` : "Set a season total";
-  const giftValue = recipients.length === 0 ? "—" : `${recipients.length} ${recipients.length === 1 ? "person" : "people"}`;
-  const budgetValue = planned ? money(spent, profile.currency) : "—";
+  const groceryNeed = (intel?.snapshot.grocery || []).filter((row) => row.status === "need").length;
+  const menuIncomplete = mealsCount === 0 || Boolean(intel?.foodCompleteness?.some((row) => row.missing.length));
+  const nextActions = [
+    giftsWithoutPlan > 0 ? { to: "/account/christmas/gifts", label: `${giftsWithoutPlan} gift${giftsWithoutPlan === 1 ? "" : "s"} left to buy` } : null,
+    menuIncomplete ? { to: "/account/christmas/food", label: mealsCount === 0 ? "Dinner menu not started" : "Dinner menu incomplete" } : null,
+    groceryNeed > 0 ? { to: "/account/christmas/grocery", label: `${groceryNeed} grocery items remaining` } : null,
+    thisWeek.length > 0 ? { to: "/account/christmas/plan", label: `${thisWeek.length} task${thisWeek.length === 1 ? "" : "s"} due this week` } : null,
+  ].filter(Boolean) as Array<{ to: string; label: string }>;
 
   return (
     <div className="tdg-planner-today">
-      <header className="tdg-planner-hero">
-        <p className="tdg-planner-kicker">{planModeLabel(mode)}</p>
-        <h1>{countdownCopy(daysLeft)}</h1>
-        <p className="tdg-planner-ready">Your Christmas is {readiness.percent}% ready.</p>
+      <header className="tdg-planner-hero tdg-home-hero">
+        <p className="tdg-planner-kicker">{countdownCopy(daysLeft)}</p>
+        <h1>What do I need to do next for Christmas?</h1>
+        <p className="tdg-planner-ready">Your Christmas is {readiness.percent}% planned</p>
         <PlannerProgress value={readiness.percent} />
-        <PlannerReadinessBreakdown readiness={readiness} />
-        <div className="tdg-planner-summary">
-          <PlannerStat label="Readiness" value={`${readiness.percent}%`} hint="Season progress" />
-          <PlannerStat label="Gifts" value={giftValue} hint={giftHint} />
-          <PlannerStat label="Budget" value={budgetValue} hint={budgetHint} />
-          <PlannerStat label="Upcoming" value={String(upcomingCount)} hint={upcomingCount === 1 ? "dated task" : "dated tasks"} />
+        {nextActions.length ? (
+          <ol className="tdg-home-next">
+            {nextActions.slice(0, 4).map((item) => (
+              <li key={item.to}>
+                <Link to={item.to}>{item.label}</Link>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="tdg-planner-muted">You are on track. Open a module only if you want to tweak something.</p>
+        )}
+        <div className="tdg-home-modules">
+          <Link to="/account/christmas/gifts">Gifts</Link>
+          <Link to="/account/christmas/food">Meals</Link>
+          <Link to="/account/christmas/grocery">Shopping</Link>
+          <Link to="/account/christmas/plan">Tasks</Link>
+          <Link to="/account/christmas/budget">Budget</Link>
         </div>
       </header>
 
@@ -572,6 +581,8 @@ export function ChristmasPlannerGiftsPage() {
   const [gifts, setGifts] = useState<GiftItem[]>([]);
   const [name, setName] = useState("");
   const [relation, setRelation] = useState("family");
+  const [ageRange, setAgeRange] = useState("");
+  const [interests, setInterests] = useState("");
   const [budget, setBudget] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [idea, setIdea] = useState("");
@@ -612,6 +623,10 @@ export function ChristmasPlannerGiftsPage() {
         display_name: name.trim().slice(0, 80),
         relationship: relation.slice(0, 40),
         budget_minor: budget ? Math.max(0, Number(budget) * 100) : null,
+        notes: [ageRange.trim() && `Age ${ageRange.trim()}`, interests.trim() && `Likes ${interests.trim()}`]
+          .filter(Boolean)
+          .join(". ")
+          .slice(0, 400),
       })
       .select("*")
       .maybeSingle();
@@ -664,8 +679,10 @@ export function ChristmasPlannerGiftsPage() {
       <div className="tdg-planner-split tdg-planner-gifts">
         <div>
           <PlannerComposer>
-            <input className="tdg-planner-input" placeholder="Add a person" value={name} onChange={(e) => setName(e.target.value)} />
+            <input className="tdg-planner-input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
             <input className="tdg-planner-input" placeholder="Relationship" value={relation} onChange={(e) => setRelation(e.target.value)} />
+            <input className="tdg-planner-input" placeholder="Age range" value={ageRange} onChange={(e) => setAgeRange(e.target.value)} />
+            <input className="tdg-planner-input" placeholder="Interests" value={interests} onChange={(e) => setInterests(e.target.value)} />
             <input className="tdg-planner-input" placeholder="Budget" type="number" value={budget} onChange={(e) => setBudget(e.target.value)} />
             <button type="button" className="tdg-planner-btn primary" disabled={locked && !name} onClick={() => void addPerson()}>
               Add person
@@ -764,7 +781,7 @@ export function ChristmasPlannerGiftsPage() {
                   + Add idea
                 </button>
                 <button type="button" className="tdg-planner-btn" onClick={() => setConciergeOpen(true)}>
-                  Need an idea?
+                  Find gifts
                 </button>
               </div>
             </PlannerComposer>

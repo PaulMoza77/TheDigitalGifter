@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { CalendarDays, Gift, LayoutList, ListTodo, MoreHorizontal, Settings, UserRound, Wallet } from "lucide-react";
+import { CalendarDays, Gift, LayoutList, ListTodo, MoreHorizontal, Settings, UserRound, UtensilsCrossed, Wallet } from "lucide-react";
 import { PageHead } from "@/components/PageHead";
 import { useEffect, useMemo, useState } from "react";
 import { countdownCopy, daysUntilChristmas } from "./date";
@@ -13,8 +13,9 @@ import "./plannerApp.css";
 
 const SIDE = [
   { to: "/account/christmas", label: "Today", icon: ListTodo, end: true as const },
-  { to: "/account/christmas/plan", label: "Plan", icon: LayoutList },
   { to: "/account/christmas/gifts", label: "Gifts", icon: Gift },
+  { to: "/account/christmas/food", label: "Meals", icon: UtensilsCrossed },
+  { to: "/account/christmas/plan", label: "Tasks", icon: LayoutList },
   { to: "/account/christmas/budget", label: "Budget", icon: Wallet },
   { to: "/account/christmas/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/account/christmas/more", label: "More", icon: MoreHorizontal },
@@ -22,8 +23,8 @@ const SIDE = [
 
 const MOBILE_NAV = [
   { to: "/account/christmas", label: "Today", icon: ListTodo, end: true as const },
-  { to: "/account/christmas/plan", label: "Plan", icon: LayoutList },
   { to: "/account/christmas/gifts", label: "Gifts", icon: Gift },
+  { to: "/account/christmas/food", label: "Meals", icon: UtensilsCrossed },
   { to: "/account/christmas/more", label: "More", icon: MoreHorizontal },
 ];
 
