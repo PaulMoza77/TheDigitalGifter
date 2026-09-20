@@ -23,6 +23,7 @@ export type RecipeCatalogRow = {
 
 export type RecipeFilters = {
   query?: string;
+  tag?: string;
   country?: string;
   region?: string;
   course?: string;
@@ -108,6 +109,11 @@ export function filterRecipes(
       const hay = `${recipe.title} ${recipe.description} ${(recipe.tags || []).join(" ")}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
+    if (filters.tag) {
+      const needle = filters.tag.toLowerCase();
+      const hay = `${recipe.title} ${recipe.description} ${(recipe.tags || []).join(" ")} ${(recipe.occasions as string[] | undefined) || []}`.toLowerCase();
+      if (!hay.includes(needle)) return false;
+    }
     if (filters.country && filters.country !== "all" && recipeCountry(recipe) !== filters.country) return false;
     if (filters.region && filters.region !== "all" && recipeRegion(recipe) !== filters.region) return false;
     if (filters.course && filters.course !== "all" && recipeCourse(recipe) !== filters.course) return false;
@@ -149,3 +155,69 @@ export function scaleIngredientList(ingredients: unknown, fromServings: number, 
     return raw;
   });
 }
+
+export const RECIPE_DISCOVERY = [
+  { id: "christmas", label: "Christmas", tag: "christmas" },
+  { id: "christmas-eve", label: "Christmas Eve", tag: "christmas-eve" },
+  { id: "christmas-dinner", label: "Christmas Dinner", tag: "christmas-dinner" },
+  { id: "desserts", label: "Desserts", course: "dessert" },
+  { id: "cookies", label: "Cookies", tag: "cookies" },
+  { id: "drinks", label: "Drinks", course: "drink" },
+  { id: "breakfast", label: "Breakfast", course: "breakfast" },
+  { id: "appetizers", label: "Appetizers", course: "appetizer" },
+  { id: "traditional", label: "Traditional", tag: "traditional" },
+  { id: "vegetarian", label: "Vegetarian", dietary: "vegetarian" },
+  { id: "quick", label: "Quick", maxPrepMinutes: 20 },
+  { id: "budget", label: "Budget-friendly", tag: "budget" },
+] as const;
+
+export function applyDiscoveryChip(
+  filters: RecipeFilters,
+  chip: (typeof RECIPE_DISCOVERY)[number],
+): RecipeFilters {
+  const next: RecipeFilters = { ...filters, tag: undefined, course: filters.course, dietary: filters.dietary, maxPrepMinutes: filters.maxPrepMinutes };
+  if ("tag" in chip && chip.tag) next.tag = chip.tag;
+  if ("course" in chip && chip.course) next.course = chip.course;
+  if ("dietary" in chip && chip.dietary) next.dietary = chip.dietary;
+  if ("maxPrepMinutes" in chip) next.maxPrepMinutes = chip.maxPrepMinutes;
+  return next;
+}
+
+export function suggestMenu(
+  recipes: RecipeCatalogRow[],
+  input: {
+    guests: number;
+    dietary?: string;
+    country?: string;
+    sitting: "christmas_eve" | "christmas_day" | "breakfast" | "custom";
+  },
+): RecipeCatalogRow[] {
+  const diet = input.dietary && input.dietary !== "all" ? input.dietary : "";
+  const country = input.country && input.country !== "all" ? input.country : "";
+  const pool = recipes.filter((recipe) => {
+    if (diet && !recipeDietary(recipe).includes(diet)) return false;
+    if (country && recipeCountry(recipe) !== country && recipeCountry(recipe) !== "international") return false;
+    return true;
+  });
+  const pick = (course: string, tag?: string) =>
+    pool.find((recipe) => recipeCourse(recipe) === course && (!tag || (recipe.tags || []).includes(tag))) ||
+    pool.find((recipe) => recipeCourse(recipe) === course) ||
+    null;
+  if (input.sitting === "breakfast") {
+    return [pick("breakfast"), pick("drink")].filter(Boolean) as RecipeCatalogRow[];
+  }
+  const appetizer = pick("appetizer") || pick("side");
+  const main = pick("main");
+  const side = pool.find((recipe) => recipeCourse(recipe) === "side" && recipe.id !== appetizer?.id) || null;
+  const dessert = pick("dessert");
+  return [appetizer, main, side, dessert].filter(Boolean) as RecipeCatalogRow[];
+}
+
+export function formatMinutes(total: number): string {
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  if (hours <= 0) return `${minutes}m`;
+  if (minutes <= 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
+}
+

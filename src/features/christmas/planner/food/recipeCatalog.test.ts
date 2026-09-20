@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { filterRecipes, recipeCourse, recipeDifficulty, type RecipeCatalogRow } from "./recipeCatalog";
+import {
+  filterRecipes,
+  formatMinutes,
+  recipeCourse,
+  recipeDifficulty,
+  suggestMenu,
+  type RecipeCatalogRow,
+} from "./recipeCatalog";
 
 function recipe(partial: Partial<RecipeCatalogRow>): RecipeCatalogRow {
   return {
@@ -35,5 +42,17 @@ describe("recipe explorer filters", () => {
   it("hides recipes that contain a selected allergen", () => {
     const rows = [recipe({ id: "n", ingredients: ["handful walnuts"] }), recipe({ id: "safe", ingredients: ["800g carrots"] })];
     expect(filterRecipes(rows, { allergen: "nuts" }).map((r) => r.id)).toEqual(["safe"]);
+  });
+
+  it("suggests a sit-down menu and formats time", () => {
+    const rows = [
+      recipe({ id: "main", title: "Roast", category: "christmas_dinner", course: "main", tags: ["christmas-dinner"] }),
+      recipe({ id: "side", title: "Potatoes", category: "side_dishes", course: "side" }),
+      recipe({ id: "dessert", title: "Pie", category: "desserts", course: "dessert" }),
+      recipe({ id: "app", title: "Eggs", category: "easy", course: "appetizer" }),
+    ];
+    const menu = suggestMenu(rows, { guests: 12, sitting: "christmas_eve" });
+    expect(menu.map((r) => r.id).sort()).toEqual(["app", "dessert", "main", "side"].sort());
+    expect(formatMinutes(260)).toBe("4h 20m");
   });
 });

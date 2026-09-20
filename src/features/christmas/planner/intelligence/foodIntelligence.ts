@@ -41,12 +41,13 @@ const UNIT_ALIASES: Record<string, string> = {
 };
 
 const AISLE_HINTS: Array<[GroceryAisle, RegExp]> = [
-  ["produce", /\b(carrot|potato|onion|garlic|lemon|orange|thyme|rosemary|spinach|cranberry|herb|zest)\b/i],
-  ["meat", /\b(turkey|ham|beef|chicken|lamb|goose|bacon)\b/i],
+  ["frozen", /\b(frozen|ice cream|puff pastry|peas|filo)\b/i],
+  ["produce", /\b(carrot|potato|onion|garlic|lemon|orange|thyme|rosemary|spinach|cranberry|herb|zest|cabbage|apple|pear)\b/i],
+  ["meat", /\b(turkey|ham|beef|chicken|lamb|goose|bacon|pork|sausage|mince)\b/i],
   ["dairy", /\b(butter|milk|cheese|cream|egg|eggs|yoghurt|yogurt)\b/i],
-  ["bakery", /\b(bread|flour|pastry|roll)\b/i],
-  ["drinks", /\b(juice|wine|ale|sparkler|champagne|cocoa)\b/i],
-  ["pantry", /\b(honey|oil|salt|pepper|sugar|stock|spice)\b/i],
+  ["bakery", /\b(bread|flour|pastry|roll|yeast)\b/i],
+  ["drinks", /\b(juice|wine|ale|sparkler|champagne|cocoa|beer)\b/i],
+  ["pantry", /\b(honey|oil|salt|pepper|sugar|stock|spice|rice|pasta)\b/i],
 ];
 
 export function guestCount(snapshot: PlannerSnapshot): number {
@@ -97,6 +98,32 @@ export function scaleQuantity(quantity: number | null, fromServings: number, toS
   return Math.round((quantity * (toServings / fromServings)) * 100) / 100;
 }
 
+/** Merge g with kg and ml with l. Display prefers kg/l when the amount is large. */
+export function canonicalizeQuantity(
+  quantity: number | null,
+  unit: string | null,
+): { quantity: number | null; unit: string | null } {
+  if (quantity == null) return { quantity, unit: unit ? UNIT_ALIASES[unit.toLowerCase()] || unit : unit };
+  const u = unit ? UNIT_ALIASES[unit.toLowerCase()] || unit.toLowerCase() : null;
+  if (u === "kg") return { quantity: Math.round(quantity * 100000) / 100, unit: "g" };
+  if (u === "l") return { quantity: Math.round(quantity * 100000) / 100, unit: "ml" };
+  return { quantity, unit: u };
+}
+
+export function displayQuantity(quantity: number | null, unit: string | null): string {
+  if (quantity == null) return unit || "";
+  if (unit === "g" && quantity >= 1000) {
+    const kg = Math.round((quantity / 1000) * 100) / 100;
+    return `${kg} kg`;
+  }
+  if (unit === "ml" && quantity >= 1000) {
+    const litres = Math.round((quantity / 1000) * 100) / 100;
+    return `${litres} l`;
+  }
+  const n = Number.isInteger(quantity) ? String(quantity) : String(Math.round(quantity * 100) / 100);
+  return unit ? `${n} ${unit}` : n;
+}
+
 export function ingredientsFromRecipe(
   recipe: SnapshotRecipe,
   mealServings: number,
@@ -109,14 +136,16 @@ export function ingredientsFromRecipe(
     if (!parsed) continue;
     const name = normalizeIngredientName(parsed.name);
     if (!name) continue;
-    const qty = scaleQuantity(parsed.quantity, scaleFrom, mealServings);
-    const unit = parsed.unit;
+    const scaled = scaleQuantity(parsed.quantity, scaleFrom, mealServings);
+    const canon = canonicalizeQuantity(scaled, parsed.unit);
+    const qty = canon.quantity;
+    const unit = canon.unit;
     const key = `${name}|${unit || ""}`;
     const existing = map.get(key);
     if (existing) {
       if (existing.quantity != null && qty != null) existing.quantity += qty;
       existing.sources.push(recipe.title);
-      existing.displayQuantity = formatQty(existing.quantity, existing.unit);
+      existing.displayQuantity = displayQuantity(existing.quantity, existing.unit);
       continue;
     }
     map.set(key, {
@@ -125,7 +154,7 @@ export function ingredientsFromRecipe(
       quantity: qty,
       unit,
       aisle: aisleFor(name),
-      displayQuantity: formatQty(qty, unit),
+      displayQuantity: displayQuantity(qty, unit),
       sources: [recipe.title],
     });
   }
@@ -133,9 +162,7 @@ export function ingredientsFromRecipe(
 }
 
 function formatQty(quantity: number | null, unit: string | null): string {
-  if (quantity == null) return unit || "";
-  const n = Number.isInteger(quantity) ? String(quantity) : String(quantity);
-  return unit ? `${n} ${unit}` : n;
+  return displayQuantity(quantity, unit);
 }
 
 export function aggregateMealIngredients(snapshot: PlannerSnapshot): NormalizedIngredient[] {
@@ -153,7 +180,7 @@ export function aggregateMealIngredients(snapshot: PlannerSnapshot): NormalizedI
       }
       if (existing.quantity != null && item.quantity != null && existing.unit === item.unit) {
         existing.quantity += item.quantity;
-        existing.displayQuantity = formatQty(existing.quantity, existing.unit);
+        existing.displayQuantity = displayQuantity(existing.quantity, existing.unit);
       }
       existing.sources.push(...item.sources);
     }

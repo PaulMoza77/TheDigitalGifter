@@ -18,6 +18,7 @@ export async function applyGroceryOps(profileId: string, ops: GroceryPersistOp[]
         status: "need",
         source_type: "derived",
         ingredient_key: op.ingredientKey,
+        source_notes: op.sourceNotes || (op.sources || []).join(" · ").slice(0, 240),
       })),
     );
     if (!error) inserted = toInsert.length;
@@ -25,7 +26,13 @@ export async function applyGroceryOps(profileId: string, ops: GroceryPersistOp[]
   for (const op of toUpdate) {
     const { error } = await supabase
       .from("christmas_grocery_items")
-      .update({ quantity: op.quantity, name: op.name, ingredient_key: op.ingredientKey, source_type: "derived" })
+      .update({
+        quantity: op.quantity,
+        name: op.name,
+        ingredient_key: op.ingredientKey,
+        source_type: "derived",
+        source_notes: op.sources?.join(" · ").slice(0, 240) || "",
+      })
       .eq("id", op.id)
       .eq("profile_id", profileId);
     if (!error) updated += 1;

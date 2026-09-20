@@ -4344,7 +4344,7 @@ export const REGIONAL_DISHES = [
     notes: "Buy boudin blanc from a butcher; cheap ones are pasty.",
   }),
   d({
-    slug: "soupe-a-loignon-gratinée",
+    slug: "soupe-a-loignon-gratinee",
     title: "Soupe à l'oignon gratinée",
     country: "france",
     region: "ile-de-france",
@@ -5165,7 +5165,7 @@ export const REGIONAL_DISHES = [
     notes: "The mix should be pipeable, not sloppy; add potato if it is wet.",
   }),
   d({
-    slug: "salade-de-mâche",
+    slug: "salade-de-mache",
     title: "Mâche salad with walnuts",
     country: "france",
     region: "auvergne-rhone-alpes",
@@ -8532,7 +8532,7 @@ export const REGIONAL_DISHES = [
     notes: "Coriander is the Portuguese tell; parsley is a different dish.",
   }),
   d({
-    slug: "migas-extremeñas",
+    slug: "migas-extremenas",
     title: "Migas extremeñas",
     country: "spain",
     region: "extremadura",
@@ -8702,7 +8702,7 @@ export const REGIONAL_DISHES = [
     notes: "Closer to a bread pudding than the fried original; keep both.",
   }),
   d({
-    slug: "risgrynsgröt",
+    slug: "risgrynsgrot",
     title: "Risgrynsgröt",
     country: "sweden",
     region: "svealand",
@@ -9388,7 +9388,7 @@ export const REGIONAL_DISHES = [
     notes: "Buy prepared lutefisk; do not make lye fish from scratch at home.",
   }),
   d({
-    slug: "risengrynsgrøt-norsk",
+    slug: "risengrynsgrot-norsk",
     title: "Norwegian risengrynsgrøt",
     country: "norway",
     region: "eastern norway",
@@ -9866,7 +9866,7 @@ export const REGIONAL_DISHES = [
     notes: "Wholegrain mustard can replace Dijon for more texture.",
   }),
   d({
-    slug: "gløgg-uten-alkohol",
+    slug: "glogg-uten-alkohol",
     title: "Alcohol-free glögg",
     country: "sweden",
     region: "svealand",
@@ -10205,7 +10205,7 @@ export const REGIONAL_DISHES = [
     notes: "Taste the steaming liquid before you commit the potatoes to it.",
   }),
   d({
-    slug: "gløgg-with-port",
+    slug: "glogg-with-port",
     title: "Port-laced glögg",
     country: "sweden",
     region: "svealand",
@@ -10342,7 +10342,7 @@ export const REGIONAL_DISHES = [
     notes: "Stale slices make excellent toast on the 27th.",
   }),
   d({
-    slug: "risengrød-leftover-tart",
+    slug: "risengrad-leftover-tart",
     title: "Rice porridge tart",
     country: "denmark",
     region: "zealand",
@@ -10854,7 +10854,7 @@ export const REGIONAL_DISHES = [
     notes: "Cheese on top is common; keep it optional for a lighter version.",
   }),
   d({
-    slug: "lencsefőzelék",
+    slug: "lencsefozelek",
     title: "Lencsefőzelék",
     country: "hungary",
     region: "budapest",

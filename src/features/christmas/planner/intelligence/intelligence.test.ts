@@ -7,6 +7,7 @@ import { deriveCalendarItems } from "./calendarIntelligence";
 import {
   aggregateMealIngredients,
   detectFoodCompleteness,
+  ingredientsFromRecipe,
   mergeGroceryList,
   parseIngredient,
   servingHints,
@@ -238,6 +239,28 @@ describe("food intelligence", () => {
     expect(hints.some((h) => h.needsScale)).toBe(true);
     const intel = runPlannerIntelligence(snapshot);
     expect(intel.insights.some((i) => i.id === "food.completeness:christmas_day")).toBe(true);
+  });
+
+  it("merges grams and kilograms for the same ingredient", () => {
+    const merged = ingredientsFromRecipe(
+      {
+        id: "pot",
+        title: "Roast potatoes",
+        servings: 4,
+        prep_minutes: 10,
+        cook_minutes: 40,
+        category: "side_dishes",
+        tags: [],
+        ingredients: [
+          { name: "potatoes", quantity: 500, unit: "g" },
+          { name: "potatoes", quantity: 1, unit: "kg" },
+        ],
+      },
+      4,
+    );
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.quantity).toBe(1500);
+    expect(merged[0]?.displayQuantity).toBe("1.5 kg");
   });
 });
 

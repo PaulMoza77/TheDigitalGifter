@@ -4,13 +4,14 @@ import type { GroceryAisle } from "../christmas/planner/types";
 import type { GroceryMergeRow, SnapshotGrocery } from "../christmas/planner/intelligence/types";
 
 export type GroceryPersistOp =
-  | {
+    | {
       op: "insert";
       ingredientKey: string;
       name: string;
       quantity: string;
       sourceType: "derived";
       sources: string[];
+      sourceNotes?: string;
     }
   | {
       op: "update";
@@ -18,6 +19,7 @@ export type GroceryPersistOp =
       ingredientKey: string;
       quantity: string;
       name: string;
+      sources?: string[];
     }
   | { op: "keep"; id: string; reason: "checked" | "manual" | "unchanged" }
   | { op: "delete"; id: string; reason: "stale_derived_need" };
@@ -65,6 +67,7 @@ export function planGroceryRegeneration(input: {
           ingredientKey: item.key,
           quantity: item.displayQuantity.slice(0, 40),
           name: persistName,
+          sources: item.sources || [],
         });
       } else {
         ops.push({ op: "keep", id: match.id, reason: "unchanged" });
@@ -78,6 +81,7 @@ export function planGroceryRegeneration(input: {
       quantity: item.displayQuantity.slice(0, 40),
       sourceType: "derived",
       sources: item.sources || [],
+      sourceNotes: (item.sources || []).join(" · ").slice(0, 240),
     });
   }
 
@@ -111,6 +115,7 @@ export const GROCERY_AISLE_ORDER: GroceryAisle[] = [
   "dairy",
   "bakery",
   "pantry",
+  "frozen",
   "drinks",
   "other",
 ];

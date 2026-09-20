@@ -142,6 +142,7 @@ export const GROCERY_AISLES = [
   "dairy",
   "bakery",
   "pantry",
+  "frozen",
   "drinks",
   "other",
 ] as const;

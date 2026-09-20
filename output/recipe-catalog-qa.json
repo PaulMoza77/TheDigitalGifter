@@ -1,0 +1,53 @@
+{
+  "ok": true,
+  "count": 392,
+  "countries": [
+    "bulgaria",
+    "czechia",
+    "denmark",
+    "france",
+    "germany",
+    "hungary",
+    "international",
+    "italy",
+    "norway",
+    "poland",
+    "portugal",
+    "romania",
+    "serbia",
+    "spain",
+    "sweden",
+    "united-kingdom",
+    "united-states"
+  ],
+  "cuisines": [
+    "american",
+    "british",
+    "bulgarian",
+    "czech",
+    "danish",
+    "french",
+    "german",
+    "hungarian",
+    "international",
+    "italian",
+    "norwegian",
+    "polish",
+    "portuguese",
+    "romanian",
+    "serbian",
+    "spanish",
+    "swedish"
+  ],
+  "courses": [
+    "appetizer",
+    "breakfast",
+    "dessert",
+    "drink",
+    "main",
+    "side"
+  ],
+  "issues": [],
+  "generatedAt": "2026-09-20T19:37:54.466Z",
+  "license": "Original TDG methods. Traditional dish names are culinary facts, not copied headnotes."
+}
