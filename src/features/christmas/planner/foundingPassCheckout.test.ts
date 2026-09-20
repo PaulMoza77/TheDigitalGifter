@@ -39,6 +39,9 @@ describe("Founding Pass $17 checkout authority", () => {
     expect(publicCatalog.packages).toHaveLength(1);
     expect(publicCatalog.packages[0]?.packageKey).toBe("founding_pass");
     expect(publicCatalog.packages[0]?.priceCents).toBe(1700);
+    expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain(
+      "if (!isPlannerProductKey(productKey) && !checkoutEnabled())",
+    );
     expect(publicCatalog.packages.some((pkg) => pkg.priceCents === 1299)).toBe(false);
     expect(FOUNDING_PASS_PRICE_LABEL).toBe("$17");
   });
