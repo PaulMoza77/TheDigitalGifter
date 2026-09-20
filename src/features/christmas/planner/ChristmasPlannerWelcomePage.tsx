@@ -165,11 +165,16 @@ export default function ChristmasPlannerWelcomePage() {
               type="button"
               className="tdg-planner__btn"
               onClick={() => {
+                const returnTo = params.get("return_to") || "";
+                const next =
+                  returnTo.startsWith("/account/christmas") && !returnTo.startsWith("//")
+                    ? returnTo.split("?")[0]
+                    : PLANNER_ACCOUNT_ROUTE;
                 void trackChristmasEvent("planner_opened", {
                   productKey: PLANNER_PRODUCT_KEY,
-                  pathname: PLANNER_ACCOUNT_ROUTE,
+                  pathname: next,
                 });
-                navigate(PLANNER_ACCOUNT_ROUTE);
+                navigate(next);
               }}
             >
               Continue to my Planner

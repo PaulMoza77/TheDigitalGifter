@@ -1,10 +1,12 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CalendarDays, Gift, LayoutList, ListTodo, MoreHorizontal, Settings, UserRound, UtensilsCrossed, Wallet } from "lucide-react";
 import { PageHead } from "@/components/PageHead";
 import { useEffect, useMemo, useState } from "react";
 import { countdownCopy, daysUntilChristmas } from "./date";
 import { computeReadiness } from "./readiness";
 import { loadPlannerWorkspace } from "./intelligence";
+import { claimPlannerOrder } from "./api";
+import { readPlannerOrderRecovery } from "./guest";
 import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./Onboarding";
 import { CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
 import { CopilotLaunchButton } from "./copilot/CopilotSheet";
@@ -42,11 +44,34 @@ export default function ChristmasPlannerLayout() {
 
 function PlannerAppShell() {
   const location = useLocation();
-  const { loading, profile } = usePlannerBundle();
+  const navigate = useNavigate();
+  const { loading, profile, reload } = usePlannerBundle();
   const copilot = useCopilotUi();
   const [readiness, setReadiness] = useState<number | null>(null);
 
   const daysLeft = useMemo(() => daysUntilChristmas(new Date(), profile?.timezone), [profile?.timezone]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("checkout") !== "success") return;
+    const token = params.get("token") || readPlannerOrderRecovery()?.publicToken || "";
+    let cancelled = false;
+    void (async () => {
+      if (token) {
+        try {
+          await claimPlannerOrder(token);
+        } catch {
+          // Webhook may already have attached entitlements to this account.
+        }
+      }
+      if (cancelled) return;
+      await reload();
+      navigate(location.pathname, { replace: true });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, location.search, navigate, reload]);
 
   useEffect(() => {
     if (!profile) return;

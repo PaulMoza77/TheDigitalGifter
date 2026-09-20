@@ -106,7 +106,7 @@ describe("christmas planner commerce", () => {
     if (!plan.ok) expect(plan.code).toBe("unknown_package");
   });
 
-  it("does not charge add-ons already included in All-In", () => {
+  it("does not charge add-ons already included in Founding Pass", () => {
     process.env.CHRISTMAS_CHECKOUT_ENABLED = "true";
     process.env.CHRISTMAS_PLANNER_CHECKOUT_ENABLED = "true";
     const catalog = plannerCatalog().map((p) =>
@@ -114,12 +114,12 @@ describe("christmas planner commerce", () => {
     );
     const plan = resolvePlannerCheckout({
       catalog,
-      packageKey: "all_in",
+      packageKey: "founding_pass",
       addonKeys: ["addon_recipes", "addon_hosting"],
     });
     expect(plan.ok).toBe(true);
     if (plan.ok) {
-      expect(plan.amountCents).toBe(4900);
+      expect(plan.amountCents).toBe(1700);
       expect(plan.addonKeys).toEqual([]);
       expect(plan.skippedAddonKeys).toEqual(["addon_recipes", "addon_hosting"]);
     }
@@ -143,7 +143,7 @@ describe("christmas planner commerce", () => {
     delete process.env.CHRISTMAS_PLANNER_CHECKOUT_ENABLED;
     const plan = resolvePlannerCheckout({
       catalog: plannerCatalog(),
-      packageKey: "all_in",
+      packageKey: "founding_pass",
     });
     expect(plan.ok).toBe(false);
     if (!plan.ok) expect(plan.code).toBe("checkout_disabled");
@@ -534,8 +534,14 @@ describe("entitlements are feature-mapped, not isPremium", () => {
     expect(unlock).toContain("FOUNDING_PASS_PACKAGE_KEY");
     expect(unlock).toContain("Unlock your complete Christmas plan");
     expect(unlock).toContain("FOUNDING_PASS_PRICE_LABEL");
-    expect(unlock).toContain("Christmas Planner launch access is opening soon.");
+    expect(unlock).toContain("startPlannerCheckout");
+    expect(unlock).toContain("returnPath");
     expect(unlock).toContain('data-testid="founding-pass-unlock"');
+    expect(unlock).toContain('data-testid="founding-pass-checkout"');
+    expect(unlock).not.toContain("FoundingPassOfferSheet");
+    expect(unlock).not.toContain("opening soon");
+    expect(unlock).not.toContain("checkout stays off");
+    expect(unlock).not.toContain("12.99");
     expect(unlock).not.toContain("navigate(");
     expect(unlock).not.toContain("/account/christmas\"");
     expect(budget).toContain("FoundingPassUnlockButton");

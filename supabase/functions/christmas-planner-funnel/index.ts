@@ -90,9 +90,12 @@ Deno.serve(async (req) => {
           productKey: product.product_key,
           name: product.name,
           description: product.description,
-          checkoutLive: meta.checkout_live === true,
+          checkoutLive:
+            meta.checkout_live === true ||
+            ["true", "1", "on"].includes(String(Deno.env.get("CHRISTMAS_PLANNER_CHECKOUT_ENABLED") || "").trim().toLowerCase()),
           seasonYear: Number(meta.season_year) || 2026,
           packages: (packages || [])
+            .filter((pkg) => pkg.package_key === "founding_pass")
             .filter((pkg) => isPlannerPackageKey(pkg.package_key))
             .filter((pkg) => {
               const meta = (pkg.metadata || {}) as Record<string, unknown>;

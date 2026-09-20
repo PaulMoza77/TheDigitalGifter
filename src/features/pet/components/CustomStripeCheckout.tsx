@@ -215,8 +215,8 @@ function CheckoutBody({
   if (checkoutState.type === "loading") {
     return (
       <div className="space-y-4" role="status" aria-live="polite">
-        <ApplePayButton disabled />
-        <p className={`text-center text-sm ${mutedText}`}>{loadingLabel}</p>
+        {walletCapabilityOnly ? null : <ApplePayButton disabled />}
+        <p className={`text-center text-sm ${mutedText}`}>{walletCapabilityOnly ? "Loading secure payment…" : loadingLabel}</p>
       </div>
     );
   }

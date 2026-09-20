@@ -455,7 +455,10 @@ export default function ChristmasPlannerPage() {
   const ready = personalizationComplete(answers);
   const preview = useMemo(() => (ready ? buildPersonalizedPreview(answers) : null), [answers, ready]);
 
-  const selected = catalog.packages.find((pkg) => pkg.packageKey === packageKey) || catalog.packages[0];
+  const selected =
+    catalog.packages.find((pkg) => pkg.packageKey === "founding_pass") ||
+    catalog.packages.find((pkg) => pkg.packageKey === packageKey) ||
+    null;
   const includedAddons = isPlannerPackageKey(packageKey) ? addonsIncludedInPackage(packageKey) : [];
   const chargedAddons = addonKeys.filter((key) => !includedAddons.includes(key as never));
   const visibleAddons = catalog.addons.filter((addon) => !includedAddons.includes(addon.packageKey as never));
@@ -476,11 +479,7 @@ export default function ChristmasPlannerPage() {
     void fetchPlannerCatalog()
       .then((row) => {
         setCatalog(row);
-        const preferred =
-          row.packages.find((pkg) => pkg.packageKey === "founding_pass") ||
-          row.packages.find((pkg) => pkg.packageKey === "magic") ||
-          row.packages.find((pkg) => pkg.packageKey === "all_in") ||
-          row.packages[0];
+        const preferred = row.packages.find((pkg) => pkg.packageKey === "founding_pass");
         if (preferred) setPackageKey(preferred.packageKey);
       })
       .catch(() => {
@@ -670,11 +669,12 @@ export default function ChristmasPlannerPage() {
       const guestToken = getOrCreatePlannerGuestToken();
       const recovered = readPlannerOrderRecovery();
       const result = await startPlannerCheckout({
-        packageKey,
+        packageKey: "founding_pass",
         addonKeys: chargedAddons,
         guestToken,
         funnelSessionId: getChristmasFunnelSessionId(),
         existingOrderId: recovered?.orderId,
+        returnPath: "/christmas/planner/welcome",
       });
       if (result.publicToken) {
         persistPlannerOrderRecovery({

@@ -5,6 +5,12 @@
 
 export const PLANNER_PRODUCT_KEY = "christmas_planner_2026";
 export const PLANNER_SEASON_YEAR = 2026;
+export const FOUNDING_PASS_PACKAGE_KEY = "founding_pass";
+export const FOUNDING_PASS_PRICE_CENTS = 1700;
+export const FOUNDING_PASS_CURRENCY = "usd";
+export const PLANNER_ACCOUNT_ROUTE = "/account/christmas";
+export const PLANNER_ROUTE = "/christmas/planner";
+export const PLANNER_WELCOME_ROUTE = "/christmas/planner/welcome";
 
 export const PLANNER_PACKAGE_KEYS = ["founding_pass", "essentials", "magic", "all_in"] as const;
 export const PLANNER_ADDON_KEYS = [
@@ -144,6 +150,32 @@ function addonsIncludedInPackage(packageKey: PlannerPackageKey): PlannerAddonKey
   return PLANNER_ADDON_KEYS.filter((key) => owned.has(ADDON_ENTITLEMENTS[key]));
 }
 
+export function plannerCheckoutReturnPath(path: string | null | undefined): string {
+  const raw = String(path || "").trim().split("#")[0];
+  const pathname = raw.split("?")[0];
+  if (
+    pathname === PLANNER_ACCOUNT_ROUTE ||
+    pathname.startsWith(`${PLANNER_ACCOUNT_ROUTE}/`)
+  ) {
+    if (!pathname.startsWith("//") && !pathname.includes("://") && !pathname.includes("\\") && !pathname.includes("@")) {
+      return pathname;
+    }
+  }
+  return PLANNER_WELCOME_ROUTE;
+}
+
+export function plannerSafeCheckoutSuccessUrl(rawSuccess: string, origin: string): string {
+  const site = origin.replace(/\/$/, "");
+  try {
+    const url = new URL(rawSuccess, site);
+    if (url.origin !== new URL(site).origin) return `${site}${PLANNER_WELCOME_ROUTE}?checkout=success`;
+    const path = plannerCheckoutReturnPath(url.pathname);
+    return `${site}${path}?checkout=success`;
+  } catch {
+    return `${site}${PLANNER_WELCOME_ROUTE}?checkout=success`;
+  }
+}
+
 export function entitlementsForSelection(packageKey: string, addonKeys: string[]): string[] {
   const keys: string[] = [];
   if (isPlannerPackageKey(packageKey)) keys.push(...PACKAGE_ENTITLEMENTS[packageKey]);
@@ -184,14 +216,12 @@ export function resolvePlannerCheckoutFromRows(input: {
 }): PlannerResolve {
   void input.clientAmountCents;
   void input.clientCurrency;
-  if (!input.christmasCheckoutEnabled) {
-    return { ok: false, code: "checkout_disabled", message: "Christmas checkout is not enabled." };
-  }
   const meta = input.product.metadata || {};
   const live = meta.checkout_live === true || plannerCheckoutFlagEnabled();
   if (!live) {
     return { ok: false, code: "checkout_disabled", message: "Christmas Planner checkout is not enabled." };
   }
+  void input.christmasCheckoutEnabled;
   if (!input.product.active) {
     return { ok: false, code: "inactive_product", message: "Christmas Planner is not available." };
   }
@@ -202,6 +232,18 @@ export function resolvePlannerCheckoutFromRows(input: {
   if (!pkg.purchasable) return { ok: false, code: "not_purchasable", message: "This Planner package is not purchasable." };
   if (!pkg.price_cents || pkg.price_cents <= 0) {
     return { ok: false, code: "invalid_price", message: "Configured package price is not valid." };
+  }
+  if (packageKey === FOUNDING_PASS_PACKAGE_KEY) {
+    if (
+      pkg.price_cents !== FOUNDING_PASS_PRICE_CENTS ||
+      String(pkg.currency).toLowerCase() !== FOUNDING_PASS_CURRENCY
+    ) {
+      return {
+        ok: false,
+        code: "invalid_price",
+        message: "Founding Pass price is not the authoritative $17 USD offer.",
+      };
+    }
   }
 
   const requested = [...new Set((input.addonKeys || []).map((k) => String(k || "").trim()).filter(Boolean))];

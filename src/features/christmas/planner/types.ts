@@ -129,6 +129,8 @@ export const PLANNER_CURRENCIES = ["eur", "usd", "gbp", "ron"] as const;
 export type PlannerCurrency = (typeof PLANNER_CURRENCIES)[number];
 
 export const FOUNDING_PASS_PACKAGE_KEY = "founding_pass";
+export const FOUNDING_PASS_PRICE_CENTS = 1700;
+export const FOUNDING_PASS_CURRENCY = "usd";
 export const FOUNDING_PASS_PRICE_LABEL = "$17";
 
 export const MEAL_SECTIONS = [
