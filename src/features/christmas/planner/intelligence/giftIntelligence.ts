@@ -70,7 +70,10 @@ export function deriveShoppingItems(gifts: SnapshotGift[]): DerivedShoppingItem[
       deliveryOn: gift.delivery_on,
       returnDeadline: gift.return_deadline,
       store: gift.store,
+      url: gift.url || null,
       priceMinor: gift.actual_price_minor ?? gift.planned_price_minor,
+      priceCheckedAt: gift.price_checked_at || null,
+      sourceType: gift.source_type,
       actionable,
     };
   });

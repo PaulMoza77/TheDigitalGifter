@@ -94,7 +94,10 @@ export async function executePlannerAction(ctx: ActionContext, request: PlannerA
   }
 
   if (request.type === "add_gift_idea") {
-    const sourceType = p.sourceType === "gift_finder" || p.sourceType === "wishlist" ? p.sourceType : "manual";
+    const sourceType =
+      p.sourceType === "gift_finder" || p.sourceType === "wishlist" || p.sourceType === "affiliate_product"
+        ? p.sourceType
+        : "manual";
     const sourceRef = p.sourceRef ? String(p.sourceRef).slice(0, 80) : null;
     if (sourceRef) {
       const { data: existing } = await supabase

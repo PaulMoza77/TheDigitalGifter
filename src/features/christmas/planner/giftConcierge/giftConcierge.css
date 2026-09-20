@@ -218,6 +218,70 @@
   margin-top: 16px;
 }
 
+.tdg-concierge-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 22px 0;
+}
+
+.tdg-concierge-tab {
+  min-height: 40px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.tdg-concierge-tab.on {
+  border-bottom-color: var(--planner-pine, #1f4a3a);
+  font-weight: 600;
+}
+
+.tdg-aff-row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.tdg-aff-img,
+.tdg-aff-ph {
+  width: 88px;
+  height: 88px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: #efe6d4;
+}
+
+.tdg-aff-ph {
+  display: grid;
+  place-items: center;
+}
+
+.tdg-aff-ph span {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 2px solid rgba(31, 74, 58, 0.28);
+}
+
+.tdg-aff-copy h3 {
+  font-size: 1rem;
+}
+
+.tdg-aff-skel {
+  height: 96px;
+}
+
+.tdg-aff-disclose {
+  margin: 16px 0 0;
+  font-size: 0.78rem;
+  color: var(--planner-muted, #5c564c);
+}
+
 @keyframes tdgConciergeIn {
   from {
     transform: translateX(24px);

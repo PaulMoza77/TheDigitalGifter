@@ -56,6 +56,12 @@ const PLANNER_EVENTS = [
   "gift_concierge_refined",
   "gift_concierge_suggestion_added",
   "gift_concierge_failed",
+  "affiliate_products_opened",
+  "affiliate_product_search",
+  "affiliate_product_results_viewed",
+  "affiliate_product_clicked",
+  "affiliate_product_added_to_planner",
+  "affiliate_product_search_failed",
 ] as const;
 
 export type PlannerAnalyticsEvent = (typeof PLANNER_EVENTS)[number];
@@ -72,6 +78,7 @@ const BLOCKED_META_KEYS = [
   "budget",
   "price",
   "email",
+  "query",
 ];
 
 const EXACT_ONLY_BLOCKED = new Set(["budget", "price", "gift"]);
