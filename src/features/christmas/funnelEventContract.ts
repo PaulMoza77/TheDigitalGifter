@@ -232,6 +232,12 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "gift_concierge_refined",
   "gift_concierge_suggestion_added",
   "gift_concierge_failed",
+  "affiliate_products_opened",
+  "affiliate_product_search",
+  "affiliate_product_results_viewed",
+  "affiliate_product_clicked",
+  "affiliate_product_added_to_planner",
+  "affiliate_product_search_failed",
 ] as const;
 
 export type ChristmasFunnelEventName = (typeof CHRISTMAS_FUNNEL_ALLOWED_EVENTS)[number];

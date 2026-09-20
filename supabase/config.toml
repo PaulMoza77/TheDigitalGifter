@@ -105,3 +105,6 @@ verify_jwt = false
 
 [functions.social-publisher]
 verify_jwt = false
+
+[functions.affiliate-product-search]
+verify_jwt = false

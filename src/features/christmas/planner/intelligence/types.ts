@@ -94,11 +94,14 @@ export type SnapshotGift = {
   idea: string;
   selected_gift: string;
   store: string;
+  url: string | null;
   planned_price_minor: number | null;
   actual_price_minor: number | null;
   status: GiftItemStatus;
   delivery_on: string | null;
   return_deadline: string | null;
+  source_type?: string;
+  price_checked_at?: string | null;
 };
 
 export type SnapshotBudgetEntry = {
@@ -280,7 +283,10 @@ export type DerivedShoppingItem = {
   deliveryOn: string | null;
   returnDeadline: string | null;
   store: string;
+  url: string | null;
   priceMinor: number | null;
+  priceCheckedAt: string | null;
+  sourceType?: string;
   actionable: boolean;
 };
 
@@ -438,11 +444,14 @@ export function toSnapshotGift(row: GiftItem): SnapshotGift {
     idea: row.idea,
     selected_gift: row.selected_gift,
     store: row.store,
+    url: row.url,
     planned_price_minor: row.planned_price_minor,
     actual_price_minor: row.actual_price_minor,
     status: row.status,
     delivery_on: row.delivery_on,
     return_deadline: row.return_deadline,
+    source_type: row.source_type,
+    price_checked_at: row.price_checked_at ?? null,
   };
 }
 

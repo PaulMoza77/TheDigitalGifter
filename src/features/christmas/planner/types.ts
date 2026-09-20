@@ -197,6 +197,14 @@ export type GiftRecipient = {
   notes: string;
 };
 
+export type GiftSourceMeta = {
+  provider?: string;
+  externalProductId?: string;
+  currency?: string;
+  condition?: string | null;
+  marketplace?: string;
+};
+
 export type GiftItem = {
   id: string;
   profile_id: string;
@@ -211,8 +219,11 @@ export type GiftItem = {
   hiding_place: string;
   delivery_on: string | null;
   return_deadline: string | null;
-  source_type: "manual" | "gift_finder" | "wishlist";
+  source_type: "manual" | "gift_finder" | "wishlist" | "affiliate_product";
   source_ref: string | null;
+  image_url?: string | null;
+  price_checked_at?: string | null;
+  source_meta?: GiftSourceMeta | Record<string, unknown> | null;
 };
 
 export type BudgetEntry = {

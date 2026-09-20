@@ -17,7 +17,22 @@ import {
   typicalPriceLabel,
   type ConciergeDraft,
 } from "./context";
+import {
+  AffiliateProductImage,
+} from "../../affiliateProducts/AffiliateProductImage";
+import { addAffiliateProductToPlanner } from "../../affiliateProducts/addProduct";
+import {
+  deliveryWarning,
+  fetchAffiliateProductStatus,
+  overBudgetDeltaMinor,
+  plannerGiftOutboundUrl,
+  productFitsRemaining,
+} from "../../affiliateProducts/client";
+import { priceBucketFromMinor, type AffiliateProduct } from "../../affiliateProducts/helpers";
+import { useAffiliateProductSearch } from "../../affiliateProducts/useAffiliateProductSearch";
 import "./giftConcierge.css";
+
+type ConciergeTab = "ideas" | "shop";
 
 type Props = {
   open: boolean;
@@ -49,6 +64,7 @@ export function GiftConcierge({
   const existingTitles = existingGiftTitlesForRecipient(gifts, recipient.id);
   const finder = useGiftFinder();
   const finderReset = finder.reset;
+  const shop = useAffiliateProductSearch();
   const [draft, setDraft] = useState<ConciergeDraft>({
     interests: "",
     vibeKeys: [],
@@ -57,6 +73,10 @@ export function GiftConcierge({
   });
   const [avoid, setAvoid] = useState<string[]>([]);
   const [addingKey, setAddingKey] = useState<string | null>(null);
+  const [tab, setTab] = useState<ConciergeTab>("ideas");
+  const [shopEnabled, setShopEnabled] = useState(false);
+  const [shopQuery, setShopQuery] = useState("");
+  const [shopSource, setShopSource] = useState<"idea" | "recipient_search">("recipient_search");
   const addingLock = useRef(false);
   const openedFor = useRef<string | null>(null);
 
@@ -77,8 +97,12 @@ export function GiftConcierge({
     if (openedFor.current === recipient.id) return;
     openedFor.current = recipient.id;
     finderReset();
+    shop.reset();
     setDraft({ interests: "", vibeKeys: [], priceKey: null, customBudget: "" });
     setAvoid([]);
+    setTab("ideas");
+    setShopQuery("");
+    setShopSource("recipient_search");
     trackPlannerEvent("gift_concierge_opened", {
       module: "gifts",
       metadata: {
@@ -86,14 +110,22 @@ export function GiftConcierge({
         source: "planner",
       },
     });
-  }, [open, recipient.id, recipient.relationship, finderReset]);
+    void fetchAffiliateProductStatus().then((status) => {
+      setShopEnabled(Boolean(status.enabled));
+    });
+  }, [open, recipient.id, recipient.relationship, finderReset, shop.reset]);
 
   const remainingLabel =
     spend.remainingMinor == null ? null : formatPlannerMoney(Math.max(0, spend.remainingMinor), currency);
   const budgetLabel = spend.budgetMinor == null ? null : formatPlannerMoney(spend.budgetMinor, currency);
+  const christmasOn = `${new Date().getFullYear()}-12-25`;
 
   const loadingCopy = useMemo(
     () => `Finding thoughtful ideas for ${recipient.display_name}…`,
+    [recipient.display_name],
+  );
+  const shopLoadingCopy = useMemo(
+    () => `Finding real products for ${recipient.display_name}…`,
     [recipient.display_name],
   );
 
@@ -164,6 +196,117 @@ export function GiftConcierge({
     }
   }
 
+  function shopContextInput(overrides?: { query?: string; source?: "idea" | "recipient_search"; ideaTitle?: string; searchQuery?: string }) {
+    return {
+      query: overrides?.query ?? shopQuery,
+      source: overrides?.source ?? shopSource,
+      countryCode,
+      locale,
+      currency,
+      priceMaxMinor: spend.remainingMinor != null && spend.remainingMinor > 0 ? spend.remainingMinor : null,
+      ideaTitle: overrides?.ideaTitle,
+      searchQuery: overrides?.searchQuery,
+      interests: draft.interests,
+      vibeKeys: draft.vibeKeys,
+      relationshipCategory: generalizedRelationshipCategory(recipient.relationship),
+    };
+  }
+
+  async function runShopSearch(overrides?: {
+    query?: string;
+    source?: "idea" | "recipient_search";
+    ideaTitle?: string;
+    searchQuery?: string;
+  }) {
+    const source = overrides?.source ?? shopSource;
+    trackPlannerEvent("affiliate_products_opened", {
+      module: "gifts",
+      metadata: { provider: "ebay", source },
+    });
+    trackPlannerEvent("affiliate_product_search", {
+      module: "gifts",
+      metadata: {
+        provider: "ebay",
+        source,
+        price_bucket: priceBucketFromMinor(spend.remainingMinor),
+      },
+    });
+    try {
+      const result = await shop.search(shopContextInput(overrides));
+      trackPlannerEvent("affiliate_product_results_viewed", {
+        module: "gifts",
+        metadata: {
+          provider: "ebay",
+          marketplace: result.marketplace || undefined,
+          result_count: result.products.length,
+          source,
+        },
+      });
+    } catch {
+      trackPlannerEvent("affiliate_product_search_failed", {
+        module: "gifts",
+        metadata: { provider: "ebay", source, reason: "provider_unavailable" },
+      });
+    }
+  }
+
+  function shopThisIdea(idea: GiftIdea) {
+    if (!shopEnabled) return;
+    const q = (idea.search_query || idea.title).slice(0, 80);
+    setShopQuery(q);
+    setShopSource("idea");
+    setTab("shop");
+    void runShopSearch({ query: q, source: "idea", ideaTitle: idea.title, searchQuery: idea.search_query });
+  }
+
+  async function addProduct(product: AffiliateProduct) {
+    const key = `${product.provider}:${product.externalProductId}`;
+    if (addingLock.current) return;
+    addingLock.current = true;
+    setAddingKey(key);
+    try {
+      const result = await addAffiliateProductToPlanner({
+        profileId,
+        recipientId: recipient.id,
+        product,
+        existing: gifts,
+      });
+      invalidatePlannerSnapshot();
+      onAdded(result.gift);
+      trackPlannerEvent("affiliate_product_added_to_planner", {
+        module: "gifts",
+        metadata: {
+          provider: product.provider,
+          source: shopSource,
+          duplicate: result.duplicate,
+          price_bucket: priceBucketFromMinor(Math.round(product.price * 100)),
+        },
+      });
+      trackPlannerEvent("planner_gift_added", {
+        module: "gifts",
+        countBucket: "1",
+        metadata: { source: "affiliate_product" },
+      });
+    } finally {
+      addingLock.current = false;
+      setAddingKey(null);
+    }
+  }
+
+  function openAffiliate(product: AffiliateProduct) {
+    const href = plannerGiftOutboundUrl({ url: product.affiliateUrl });
+    if (!href) return;
+    trackPlannerEvent("affiliate_product_clicked", {
+      module: "gifts",
+      metadata: {
+        provider: product.provider,
+        source: shopSource,
+        price_bucket: priceBucketFromMinor(Math.round(product.price * 100)),
+      },
+    });
+    window.open(href, "_blank", "noopener,noreferrer");
+  }
+
   function toggleVibe(key: string) {
     setDraft((prev) => ({
       ...prev,
@@ -192,7 +335,35 @@ export function GiftConcierge({
           </button>
         </header>
 
+        {shopEnabled ? (
+          <div className="tdg-concierge-tabs" role="tablist" aria-label="Gift Concierge">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "ideas"}
+              className={`tdg-concierge-tab ${tab === "ideas" ? "on" : ""}`}
+              onClick={() => setTab("ideas")}
+            >
+              Ideas
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "shop"}
+              className={`tdg-concierge-tab ${tab === "shop" ? "on" : ""}`}
+              onClick={() => {
+                setTab("shop");
+                if (shop.phase === "idle") void runShopSearch({ source: "recipient_search" });
+              }}
+            >
+              Shop real products
+            </button>
+          </div>
+        ) : null}
+
         <div className="tdg-concierge-body">
+          {tab === "ideas" ? (
+            <>
           {finder.phase === "idle" || finder.phase === "error" ? (
             <div className="tdg-concierge-intro">
               <h3>Need inspiration for {recipient.display_name}?</h3>
@@ -332,6 +503,11 @@ export function GiftConcierge({
                       >
                         {justAdded ? "Added ✓" : addingKey === key ? "Adding…" : `Add to ${recipient.display_name}`}
                       </button>
+                      {shopEnabled ? (
+                        <button type="button" className="tdg-planner-btn" onClick={() => shopThisIdea(idea)}>
+                          Shop this idea
+                        </button>
+                      ) : null}
                       <button type="button" className="tdg-planner-linkish" onClick={() => void generate(idea)}>
                         More like this
                       </button>
@@ -364,10 +540,210 @@ export function GiftConcierge({
               </div>
             </div>
           ) : null}
+            </>
+          ) : (
+            <ShopPanel
+              recipientName={recipient.display_name}
+              remainingLabel={remainingLabel}
+              remainingMinor={spend.remainingMinor}
+              currency={currency}
+              christmasOn={christmasOn}
+              query={shopQuery}
+              onQuery={(v) => setShopQuery(v.slice(0, 80))}
+              loadingCopy={shopLoadingCopy}
+              phase={shop.phase}
+              products={shop.products}
+              addingKey={addingKey}
+              gifts={gifts}
+              onSearch={() => void runShopSearch({ query: shopQuery, source: shopSource })}
+              onRetry={() => void runShopSearch()}
+              onBackIdeas={() => setTab("ideas")}
+              onAdd={addProduct}
+              onView={openAffiliate}
+              onMoreLike={(product) => {
+                setShopQuery(product.title.slice(0, 80));
+                setShopSource("idea");
+                void runShopSearch({ query: product.title.slice(0, 80), source: "idea", ideaTitle: product.title });
+              }}
+            />
+          )}
         </div>
       </aside>
     </div>
   );
+}
+
+function ShopPanel({
+  recipientName,
+  remainingLabel,
+  remainingMinor,
+  currency,
+  christmasOn,
+  query,
+  onQuery,
+  loadingCopy,
+  phase,
+  products,
+  addingKey,
+  gifts,
+  onSearch,
+  onRetry,
+  onBackIdeas,
+  onAdd,
+  onView,
+  onMoreLike,
+}: {
+  recipientName: string;
+  remainingLabel: string | null;
+  remainingMinor: number | null;
+  currency: string;
+  christmasOn: string;
+  query: string;
+  onQuery: (v: string) => void;
+  loadingCopy: string;
+  phase: string;
+  products: AffiliateProduct[];
+  addingKey: string | null;
+  gifts: GiftItem[];
+  onSearch: () => void;
+  onRetry: () => void;
+  onBackIdeas: () => void;
+  onAdd: (p: AffiliateProduct) => void;
+  onView: (p: AffiliateProduct) => void;
+  onMoreLike: (p: AffiliateProduct) => void;
+}) {
+  return (
+    <div className="tdg-concierge-shop">
+      <label className="tdg-concierge-label">
+        Search products
+        <input
+          className="tdg-planner-input"
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onSearch();
+          }}
+          placeholder="engraved jewelry"
+        />
+      </label>
+      <button type="button" className="tdg-planner-btn primary tdg-concierge-cta" onClick={onSearch}>
+        Search
+      </button>
+
+      {phase === "loading" ? (
+        <div className="tdg-concierge-loading" aria-live="polite">
+          <p>{loadingCopy}</p>
+          <div className="tdg-concierge-skeleton tdg-aff-skel" />
+          <div className="tdg-concierge-skeleton tdg-aff-skel" />
+          <div className="tdg-concierge-skeleton tdg-aff-skel" />
+          <div className="tdg-concierge-skeleton tdg-aff-skel" />
+        </div>
+      ) : null}
+
+      {phase === "error" || phase === "disabled" ? (
+        <div className="tdg-concierge-error" role="alert">
+          <p>We couldn’t load live products right now.</p>
+          <div className="tdg-planner-actions">
+            <button type="button" className="tdg-planner-btn primary" onClick={onRetry}>
+              Try again
+            </button>
+            <button type="button" className="tdg-planner-btn" onClick={onBackIdeas}>
+              Back to gift ideas
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {phase === "results" ? (
+        <div className="tdg-concierge-results">
+          {products.length === 0 ? (
+            <p className="tdg-planner-muted">No live products matched this search. Try a simpler phrase.</p>
+          ) : (
+            products.map((product) => {
+              const key = `${product.provider}:${product.externalProductId}`;
+              const justAdded = gifts.some(
+                (g) => g.source_ref === key || g.url === product.affiliateUrl,
+              );
+              const fit = productFitsRemaining(product.price, remainingMinor);
+              const over = overBudgetDeltaMinor(product.price, remainingMinor);
+              const price = formatProductPrice(product.price, product.currency, currency);
+              const warn = deliveryWarning({ deliveryEnd: product.deliveryEnd, christmasOn });
+              return (
+                <article key={key} className="tdg-concierge-row tdg-aff-row">
+                  <AffiliateProductImage product={product} />
+                  <div className="tdg-aff-copy">
+                    <h3>{product.title}</h3>
+                    <p className="tdg-concierge-meta">
+                      <span>{price}</span>
+                      <span>{product.merchant}</span>
+                      {product.condition ? <span>{product.condition}</span> : null}
+                    </p>
+                    {product.deliveryStart || product.deliveryEnd ? (
+                      <p className="tdg-concierge-meta">
+                        Arrives {product.deliveryStart || ""}
+                        {product.deliveryEnd && product.deliveryStart !== product.deliveryEnd
+                          ? `–${product.deliveryEnd}`
+                          : product.deliveryEnd && !product.deliveryStart
+                            ? product.deliveryEnd
+                            : ""}
+                      </p>
+                    ) : null}
+                    {warn === "after_christmas" ? (
+                      <p className="tdg-concierge-fit is-over">May arrive after Christmas</p>
+                    ) : null}
+                    {warn === "after_leave" ? (
+                      <p className="tdg-concierge-fit is-over">May arrive after you leave.</p>
+                    ) : null}
+                    {fit === "fits" && remainingLabel ? (
+                      <p className="tdg-concierge-fit is-ok">Fits your {remainingLabel} remaining budget</p>
+                    ) : null}
+                    {fit === "over" && over != null && remainingLabel ? (
+                      <p className="tdg-concierge-fit is-over">
+                        {formatPlannerMoney(over, currency)} over remaining budget
+                      </p>
+                    ) : null}
+                    <div className="tdg-concierge-row-actions">
+                      <button
+                        type="button"
+                        className="tdg-planner-btn primary"
+                        disabled={Boolean(addingKey)}
+                        onClick={() => void onAdd(product)}
+                      >
+                        {justAdded ? "Added ✓" : addingKey === key ? "Adding…" : `Add to ${recipientName}`}
+                      </button>
+                      <button type="button" className="tdg-planner-linkish" onClick={() => onView(product)}>
+                        View product ↗
+                      </button>
+                      <button type="button" className="tdg-planner-linkish" onClick={() => onMoreLike(product)}>
+                        More like this
+                      </button>
+                    </div>
+                    {justAdded ? (
+                      <p className="tdg-concierge-added" role="status">
+                        Added to {recipientName} ✓
+                      </p>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })
+          )}
+          <p className="tdg-aff-disclose">
+            Some product links are affiliate links. We may earn a commission at no extra cost to you.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatProductPrice(amount: number, productCurrency: string, fallback: string): string {
+  const code = (productCurrency || fallback || "EUR").toUpperCase();
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: code }).format(amount);
+  } catch {
+    return `${amount} ${code}`;
+  }
 }
 
 function prettyRel(value: string): string {

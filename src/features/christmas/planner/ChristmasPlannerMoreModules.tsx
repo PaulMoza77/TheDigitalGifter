@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { CHRISTMAS_CLUB_ROUTE } from "@/features/christmas/club/config";
 import { PlannerOnboarding, usePlannerBundle } from "./Onboarding";
 import { hasFeature } from "./entitlements";
-import { PlannerPaywall, money } from "./Paywall";
+import { PlannerPaywall } from "./Paywall";
 import { trackPlannerEvent } from "./analytics";
 import { loadGifts, loadTasks } from "./api";
 import { deriveCalendarItems, deriveShoppingItems, shoppingForTab, detectFoodCompleteness, ingredientsFromRecipe, executePlannerAction, invalidatePlannerSnapshot, detectTravelConflicts, buildPlannerSnapshot } from "./intelligence";
@@ -12,6 +12,7 @@ import { PlannerRecommendationSheet } from "./intelligence/components";
 import { GROCERY_AISLES, HOME_AREAS, type GiftItem, type GroceryAisle, type PlannerTask } from "./types";
 import { formatPlannerDate, giftStatusLabel, prettyLabel } from "./date";
 import { PlannerComposer, PlannerEmptyState, PlannerPageHeader, PlannerStatusChip } from "./plannerUi";
+import { PlannerGiftOutboundLink, PlannerGiftPriceLabel } from "./PlannerGiftLink";
 
 export function ChristmasPlannerShoppingPage() {
   const { loading, profile } = usePlannerBundle();
@@ -86,8 +87,9 @@ export function ChristmasPlannerShoppingPage() {
                 <PlannerStatusChip>{giftStatusLabel(g.status)}</PlannerStatusChip>
                 {g.delivery_on ? <span>arrives {formatPlannerDate(g.delivery_on)}</span> : null}
                 {g.store ? <span>{g.store}</span> : null}
-                {g.planned_price_minor ? <span>{money(g.planned_price_minor, profile.currency)}</span> : null}
+                <PlannerGiftPriceLabel gift={g} currency={profile.currency} />
               </div>
+              {g.url ? <PlannerGiftOutboundLink gift={g} source="shopping" /> : null}
             </div>
           </div>
         ))

@@ -198,7 +198,7 @@ export const CHRISTMAS_FUNNELS: ChristmasFunnelDef[] = [
     label: "Planner",
     productKeys: ["christmas_planner_2026"],
     pathIncludes: ["/christmas/planner"],
-    eventPrefixes: ["planner_", "gift_concierge_"],
+    eventPrefixes: ["planner_", "gift_concierge_", "affiliate_product"],
     steps: [
       { event: "planner_landing_view", label: "Landing" },
       { event: "planner_cta_clicked", label: "CTA" },

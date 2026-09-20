@@ -180,7 +180,56 @@ describe("gift concierge wiring", () => {
     const page = readSrc("src/features/christmas/ChristmasGiftFinderPage.tsx");
     expect(page).toContain("runGiftFinder");
     expect(page).toContain('path="/christmas/gift-finder"');
+    expect(page).not.toContain("Shop real products");
     const service = readSrc("src/features/christmas/giftFinder/service.ts");
     expect(service).toContain('action: "runGiftFinder"');
+  });
+
+  it("shops an idea inline without changing routes", () => {
+    const concierge = readSrc("src/features/christmas/planner/giftConcierge/GiftConcierge.tsx");
+    expect(concierge).toContain("Shop this idea");
+    expect(concierge).toContain("Shop real products");
+    expect(concierge).toContain("Finding real products for");
+    expect(concierge).toContain("We couldn’t load live products right now.");
+    expect(concierge).toContain("Back to gift ideas");
+    expect(concierge).toContain("product.affiliateUrl");
+    expect(concierge).toContain("addAffiliateProductToPlanner");
+    expect(concierge).not.toContain("navigate(");
+    expect(concierge).not.toContain("/christmas/gift-finder");
+    expect(concierge).toContain("Some product links are affiliate links");
+    const add = readSrc("src/features/christmas/affiliateProducts/addProduct.ts");
+    expect(add).toContain('source_type: "affiliate_product"');
+    expect(add).toContain("affiliateUrl");
+    expect(add).toContain("price_checked_at");
+    expect(add).toContain('status: "planned"');
+    const giftsPage = readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx");
+    expect(giftsPage).toContain("PlannerGiftOutboundLink");
+    const shopping = readSrc("src/features/christmas/planner/ChristmasPlannerMoreModules.tsx");
+    expect(shopping).toContain("PlannerGiftOutboundLink");
+  });
+
+  it("does not send recipient names into affiliate analytics or reference ids", () => {
+    const concierge = readSrc("src/features/christmas/planner/giftConcierge/GiftConcierge.tsx");
+    const clickBlock = concierge.slice(
+      concierge.indexOf('trackPlannerEvent("affiliate_product_clicked"'),
+      concierge.indexOf("window.open"),
+    );
+    expect(clickBlock).not.toContain("display_name");
+    expect(clickBlock).not.toContain("recipient.notes");
+    expect(clickBlock).not.toContain("query:");
+    const client = readSrc("src/features/christmas/affiliateProducts/client.ts");
+    expect(client).toContain("getOrCreateAffiliateReferenceId");
+    expect(client).toContain("createAffiliateReferenceId");
+    const clean = sanitizePlannerMetadata({
+      provider: "ebay",
+      source: "idea",
+      display_name: "Andreas",
+      query: "engraved jewelry for Andreas",
+      notes: "private",
+    });
+    expect(clean.display_name).toBeUndefined();
+    expect(clean.query).toBeUndefined();
+    expect(clean.notes).toBeUndefined();
+    expect(clean.provider).toBe("ebay");
   });
 });

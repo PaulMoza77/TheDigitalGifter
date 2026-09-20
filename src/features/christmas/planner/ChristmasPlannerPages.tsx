@@ -40,6 +40,7 @@ import { canAddCustomTask, canAddRecipient, hasFeature } from "./entitlements";
 import { computeReadiness } from "./readiness";
 import { GiftConcierge } from "./giftConcierge";
 import { money, PlannerPaywall } from "./Paywall";
+import { PlannerGiftOutboundLink, PlannerGiftPriceLabel } from "./PlannerGiftLink";
 import { useCopilotUi } from "./copilot/CopilotHost";
 import {
   PlannerComposer,
@@ -787,9 +788,10 @@ export function ChristmasPlannerGiftsPage() {
                     <div className="tdg-planner-gift-meta">
                       <PlannerStatusChip tone={g.status === "wrapped" || g.status === "given" ? "done" : "gold"}>{giftStatusLabel(g.status)}</PlannerStatusChip>
                       {g.store ? <span>{g.store}</span> : null}
-                      {g.planned_price_minor ? <span>{formatPlannerMoney(g.planned_price_minor, profile.currency)}</span> : null}
+                      <PlannerGiftPriceLabel gift={g} currency={profile.currency} />
                       {g.actual_price_minor ? <span>paid {formatPlannerMoney(g.actual_price_minor, profile.currency)}</span> : null}
                     </div>
+                    {g.url ? <PlannerGiftOutboundLink gift={g} source="gifts" /> : null}
                   </div>
                   <select
                     className="tdg-planner-select"
@@ -876,7 +878,8 @@ function GiftEditor({
         </div>
         <input className="tdg-planner-input" value={form.idea} onChange={(e) => setForm({ ...form, idea: e.target.value.slice(0, 200) })} placeholder="Idea" />
         <input className="tdg-planner-input" value={form.selected_gift} onChange={(e) => setForm({ ...form, selected_gift: e.target.value.slice(0, 200) })} placeholder="Selected gift" />
-        <input className="tdg-planner-input" value={form.url || ""} onChange={(e) => setForm({ ...form, url: e.target.value || null })} placeholder="URL" />
+        <input className="tdg-planner-input" value={form.url || ""} onChange={(e) => setForm({ ...form, url: e.target.value || null })} placeholder="Product link" />
+        {form.url ? <PlannerGiftOutboundLink gift={form} source="gift_editor" /> : null}
         <input className="tdg-planner-input" value={form.store} onChange={(e) => setForm({ ...form, store: e.target.value.slice(0, 80) })} placeholder="Store" />
         <input className="tdg-planner-input" type="number" placeholder="Planned price" value={form.planned_price_minor ? form.planned_price_minor / 100 : ""} onChange={(e) => setForm({ ...form, planned_price_minor: e.target.value ? Number(e.target.value) * 100 : null })} />
         <input className="tdg-planner-input" type="number" placeholder="Actual price" value={form.actual_price_minor ? form.actual_price_minor / 100 : ""} onChange={(e) => setForm({ ...form, actual_price_minor: e.target.value ? Number(e.target.value) * 100 : null })} />
@@ -899,6 +902,9 @@ function GiftEditor({
                 delivery_on: form.delivery_on,
                 return_deadline: form.return_deadline,
                 hiding_place: form.hiding_place,
+                source_meta: form.source_meta,
+                image_url: form.image_url,
+                price_checked_at: form.price_checked_at,
               })
               .eq("id", form.id);
             onSave(form);
