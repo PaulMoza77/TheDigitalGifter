@@ -128,7 +128,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         priceCents: 1299,
         compareAtCents: null,
         active: true,
-        purchasable: true,
+        purchasable: false,
         features: [
           "Christmas countdown",
           "Personalized Christmas plan",
@@ -150,7 +150,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         priceCents: 2700,
         compareAtCents: null,
         active: true,
-        purchasable: true,
+        purchasable: false,
         features: [
           "Everything in Essentials",
           "Meals planner",
@@ -173,7 +173,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         priceCents: 4900,
         compareAtCents: null,
         active: true,
-        purchasable: true,
+        purchasable: false,
         features: [
           "Everything in Christmas Magic",
           "Recipe collection / food planner",

@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { PLANNER_PRODUCT_KEY } from "./commerce";
+import { PLANNER_PRODUCT_KEY, plannerCheckoutReturnPath } from "./commerce";
 import { startChristmasCheckout } from "../photoApi";
 import { attributionParamsForInternal, captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import type {
@@ -131,10 +131,13 @@ export async function startPlannerCheckout(input: {
   guestToken: string;
   funnelSessionId: string;
   existingOrderId?: string | null;
+  returnPath?: string | null;
 }) {
   const origin = window.location.origin;
   captureFunnelAttribution(window.location.search);
   const attr = attributionParamsForInternal();
+  const currentPath = `${window.location.pathname}${window.location.search}`.slice(0, 120);
+  const returnPath = plannerCheckoutReturnPath(input.returnPath || currentPath);
   return startChristmasCheckout({
     product_key: PLANNER_PRODUCT_KEY,
     package_key: input.packageKey,
@@ -142,8 +145,8 @@ export async function startPlannerCheckout(input: {
     email: input.email || undefined,
     guest_token: input.guestToken,
     funnel_session_id: input.funnelSessionId,
-    landing_path: `${window.location.pathname}${window.location.search}`.slice(0, 120),
-    source_route: "/christmas/planner",
+    landing_path: currentPath,
+    source_route: returnPath,
     existing_order_id: input.existingOrderId || undefined,
     utm_source: attr.utm_source,
     utm_medium: attr.utm_medium,
@@ -153,8 +156,8 @@ export async function startPlannerCheckout(input: {
     campaign_id: attr.campaign_id,
     adset_id: attr.adset_id,
     ad_id: attr.ad_id,
-    success_url: `${origin}/christmas/planner/welcome?checkout=success`,
-    cancel_url: `${origin}/christmas/planner?checkout=canceled`,
+    success_url: `${origin}${returnPath}?checkout=success`,
+    cancel_url: `${origin}${returnPath}?checkout=canceled`,
   });
 }
 

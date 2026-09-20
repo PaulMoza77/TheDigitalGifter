@@ -15,6 +15,8 @@ import {
 import {
   isPlannerProductKey,
   PLANNER_PRODUCT_KEY,
+  plannerCheckoutFlagEnabled,
+  plannerSafeCheckoutSuccessUrl,
   resolvePlannerCheckoutFromRows,
 } from "../_shared/christmas/plannerCommerce.ts";
 
@@ -23,6 +25,8 @@ import {
  * Amount is always resolved server-side from pricing_items (christmas_offer).
  * Client amount_cents is ignored. christmas_packages remain for funnel/SKU metadata.
  * Disabled unless CHRISTMAS_CHECKOUT_ENABLED=true.
+ * Planner Founding Pass may also open when CHRISTMAS_PLANNER_CHECKOUT_ENABLED=true
+ * without turning on other Christmas product sales.
  *
  * Supports portrait vertical products: christmas_photo|family|couple|pet.
  * Style validation uses the server-owned prompt registry (never client prompts).
@@ -106,12 +110,15 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
   try {
-    if (!checkoutEnabled()) {
-      return jsonResponse({ error: "Christmas checkout is not enabled", code: "checkout_disabled" }, 403);
-    }
-
     const body = await readJson<Body>(req);
     const productKey = asString(body.product_key);
+    const plannerFlowPreview = isPlannerProductKey(productKey);
+    if (!checkoutEnabled() && !(plannerFlowPreview && plannerCheckoutFlagEnabled())) {
+      return jsonResponse({ error: "Christmas checkout is not enabled", code: "checkout_disabled" }, 403);
+    }
+    // Client-supplied Stripe price IDs are never accepted.
+    void (body as { price_id?: unknown }).price_id;
+    void (body as { stripe_price_id?: unknown }).stripe_price_id;
     const packageKey =
       asString(body.package_key) ||
       (productKey === "christmas_santa_video" ? "basic" : "single");
@@ -327,11 +334,10 @@ Deno.serve(async (req) => {
     }
 
     const email = asString(body.email).toLowerCase();
-    const successUrl =
-      asString(body.success_url) ||
-      (plannerFlow
-        ? `${siteOrigin()}/christmas/planner/welcome?checkout=success`
-        : resolvedProductKey === "christmas_santa_video"
+    const successUrl = plannerFlow
+      ? plannerSafeCheckoutSuccessUrl(asString(body.success_url) || asString(body.landing_path), siteOrigin())
+      : asString(body.success_url) ||
+        (resolvedProductKey === "christmas_santa_video"
           ? `${siteOrigin()}/christmas/santa-video?checkout=success`
           : `${siteOrigin()}${sourceRoute}?checkout=success`);
 
@@ -458,6 +464,7 @@ Deno.serve(async (req) => {
     const params = new URLSearchParams();
     params.set("mode", "payment");
     params.set("ui_mode", "custom");
+    // Do not set payment_method_types — automatic methods include Apple Pay / Google Pay when Stripe + domain + device allow them.
     const returnUrl = successUrl.includes("{CHECKOUT_SESSION_ID}")
       ? successUrl
       : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}&token=${encodeURIComponent(publicToken || "recover")}`;

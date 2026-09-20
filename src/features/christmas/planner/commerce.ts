@@ -11,6 +11,11 @@ import {
   type ChristmasProductDef,
 } from "../catalog";
 import { christmasCheckoutEnabled } from "../checkout";
+import {
+  FOUNDING_PASS_CURRENCY,
+  FOUNDING_PASS_PACKAGE_KEY,
+  FOUNDING_PASS_PRICE_CENTS,
+} from "./types";
 
 export const PLANNER_PRODUCT_FAMILY = "christmas_planner" as const;
 export const PLANNER_PRODUCT_KEY = "christmas_planner_2026" as const;
@@ -131,7 +136,27 @@ export function plannerCheckoutFlagEnabled(): boolean {
 
 export function plannerCheckoutLive(product: ChristmasProductDef | null | undefined): boolean {
   if (plannerCheckoutFlagEnabled()) return true;
-  return Boolean(product?.metadata?.checkout_live === true);
+  return christmasCheckoutEnabled() && product?.metadata?.checkout_live === true;
+}
+
+/** Authenticated Planner unlock return path. Rejects open redirects. */
+export function isSafePlannerReturnPath(path: string): boolean {
+  const raw = String(path || "").trim();
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://") || raw.includes("\\") || raw.includes("@")) {
+    return false;
+  }
+  const pathname = raw.split("?")[0].split("#")[0];
+  if (pathname === PLANNER_ACCOUNT_ROUTE || pathname.startsWith(`${PLANNER_ACCOUNT_ROUTE}/`)) return true;
+  if (pathname === PLANNER_ROUTE || pathname.startsWith(`${PLANNER_ROUTE}/`)) return true;
+  return false;
+}
+
+export function plannerCheckoutReturnPath(path: string | null | undefined): string {
+  const raw = String(path || "").trim().split("#")[0];
+  const pathname = raw.split("?")[0];
+  if (isSafePlannerReturnPath(pathname) && pathname.startsWith(PLANNER_ACCOUNT_ROUTE)) return pathname;
+  if (pathname === PLANNER_WELCOME_ROUTE || pathname.startsWith(`${PLANNER_WELCOME_ROUTE}/`)) return PLANNER_WELCOME_ROUTE;
+  return PLANNER_WELCOME_ROUTE;
 }
 
 export type PlannerCheckoutPlan =
@@ -188,12 +213,6 @@ export function resolvePlannerCheckout(input: {
   void input.clientAmountCents;
   void input.clientCurrency;
 
-  if (input.requireCheckoutEnabled !== false) {
-    if (!christmasCheckoutEnabled()) {
-      return { ok: false, code: "checkout_disabled", message: "Christmas checkout is not enabled." };
-    }
-  }
-
   const product =
     findProduct(input.catalog, input.productKey || PLANNER_PRODUCT_KEY) ||
     findProduct(input.catalog, PLANNER_PRODUCT_KEY);
@@ -203,7 +222,7 @@ export function resolvePlannerCheckout(input: {
   if (!product.active) {
     return { ok: false, code: "inactive_product", message: "Christmas Planner is not available." };
   }
-  if (input.requireCheckoutEnabled !== false && !plannerCheckoutLive(product) && !plannerCheckoutFlagEnabled()) {
+  if (input.requireCheckoutEnabled !== false && !plannerCheckoutLive(product)) {
     return {
       ok: false,
       code: "checkout_disabled",
@@ -224,6 +243,15 @@ export function resolvePlannerCheckout(input: {
   }
   if (pkg.priceCents <= 0) {
     return { ok: false, code: "invalid_price", message: "Configured package price is not valid." };
+  }
+  if (packageKey === FOUNDING_PASS_PACKAGE_KEY) {
+    if (pkg.priceCents !== FOUNDING_PASS_PRICE_CENTS || String(pkg.currency).toLowerCase() !== FOUNDING_PASS_CURRENCY) {
+      return {
+        ok: false,
+        code: "invalid_price",
+        message: "Founding Pass price is not the authoritative $17 USD offer.",
+      };
+    }
   }
 
   const requestedAddons = [...new Set((input.addonKeys || []).map((k) => String(k || "").trim()).filter(Boolean))];
@@ -325,7 +353,7 @@ export function plannerPublicCatalog(product: ChristmasProductDef) {
     productKey: product.productKey,
     name: product.name,
     description: product.description,
-    checkoutLive: plannerCheckoutLive(product) && christmasCheckoutEnabled(),
+    checkoutLive: plannerCheckoutLive(product),
     seasonYear: Number(product.metadata?.season_year) || PLANNER_SEASON_YEAR,
     packages,
     addons,

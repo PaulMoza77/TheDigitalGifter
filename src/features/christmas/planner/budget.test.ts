@@ -328,7 +328,7 @@ describe("christmas budget entitlement + CTA wiring", () => {
     expect(ui).not.toContain("${PLANNER_PUBLIC_ROUTE}");
     expect(ui).not.toContain("#pricing");
     expect(unlock).toContain("FOUNDING_PASS_PACKAGE_KEY");
-    expect(unlock).toContain("planner-checkout-disabled");
+    expect(unlock).toContain("planner-checkout-error");
     expect(food).toContain("PlannerPaywall");
     expect(food).toContain("Unlock the Founding Pass");
   });
