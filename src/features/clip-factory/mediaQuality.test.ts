@@ -23,15 +23,15 @@ describe("clip factory media quality", () => {
     expect(poison.ok).toBe(false);
     if (!poison.ok) expect(poison.code).toBe("synthetic_or_empty");
 
-    const tiny = assessMediaQuality({
+    const tinyButTextured = assessMediaQuality({
       durationSeconds: 12.6,
       width: 1280,
       height: 720,
       fileSizeBytes: 174007,
       hasVideo: true,
+      jpegSampleBytes: [42_000, 38_000, 51_000, 44_000],
     });
-    expect(tiny.ok).toBe(false);
-    if (!tiny.ok) expect(tiny.code).toBe("synthetic_or_empty");
+    expect(tinyButTextured.ok).toBe(true);
 
     expect(durationMatchesExpected(12.6, 480)).toBe(false);
     expect(durationMatchesExpected(480, 480)).toBe(true);
@@ -73,6 +73,29 @@ describe("clip factory media quality", () => {
         summary: "Danger was waiting for him",
         transcriptText: "He got separated from his family and ended up alone in a city where danger was waiting for him",
         visualNotes: [{ t: 12, note: "A person walks down a street at night." }],
+      }),
+    ).toBe(true);
+  });
+
+  it("does not treat a dark but textured scene as invalid by itself", () => {
+    const darkNight = assessMediaQuality({
+      durationSeconds: 48,
+      width: 1280,
+      height: 720,
+      fileSizeBytes: 900_000,
+      hasVideo: true,
+      jpegSampleBytes: [18_400, 22_100, 16_800, 19_200],
+    });
+    expect(darkNight.ok).toBe(true);
+    expect(
+      candidateTextGrounded({
+        start: 0,
+        end: 20,
+        title: "Night street",
+        hook: "He walked the empty street",
+        summary: "A person walks at night",
+        transcriptText: "He walked down the empty street where danger was waiting",
+        visualNotes: [{ t: 4, note: "A dim street at night with a person in frame." }],
       }),
     ).toBe(true);
   });

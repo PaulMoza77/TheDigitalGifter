@@ -69,9 +69,7 @@ function storedLooksReusable(hit: StoredMediaHit, expectedDuration: number | nul
   if (hit.invalidated) return false;
   if (isKnownInvalidMediaHash(hit.mediaHash)) return false;
   const duration = Number(hit.durationSeconds || 0);
-  const size = Number(hit.fileSizeBytes || 0);
   if (duration < 3) return false;
-  if (size > 0 && size < duration * 25_000) return false;
   if (expectedDuration && Math.abs(duration - expectedDuration) > Math.max(2.5, expectedDuration * 0.12)) return false;
   return true;
 }
