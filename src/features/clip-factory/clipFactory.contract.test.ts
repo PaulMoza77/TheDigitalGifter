@@ -13,6 +13,8 @@ describe("clip factory production wiring", () => {
     expect(read("src/App.tsx")).toContain("path=\"clip-factory\"");
     expect(read("src/layouts/AdminLayout.tsx")).toContain("/admin/clip-factory");
     expect(read("src/layouts/AdminLayout.tsx")).toContain("AI Clip Factory");
+    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("classifyMediaUrl");
+    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("YouTube, TikTok, and Vimeo");
     expect(read("server/routes.mjs")).toContain('"/api/clip-factory": "clip-factory.ts"');
     expect(read("api/clip-factory.ts")).toContain("requireClipFactoryAdmin");
     expect(read("api/clip-factory.ts")).toContain("create_job");

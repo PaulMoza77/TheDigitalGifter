@@ -111,6 +111,8 @@ describe("clip factory ingest urls", () => {
   it("blocks SSRF and YouTube bypass, allows direct https media", () => {
     expect(classifyMediaUrl("http://127.0.0.1/secret.mp4").ok).toBe(false);
     expect(classifyMediaUrl("https://youtube.com/watch?v=abc").code).toBe("unsupported_external_source");
+    expect(classifyMediaUrl("https://youtu.be/pV9UPP7n0Po?si=FkEddLy1mRT8UksM").code).toBe("unsupported_external_source");
+    expect(String(classifyMediaUrl("https://youtu.be/pV9UPP7n0Po").message)).toMatch(/YouTube/i);
     expect(classifyMediaUrl("https://cdn.example.com/talk.mp4").ok).toBe(true);
   });
 });

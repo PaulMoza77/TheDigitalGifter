@@ -43,7 +43,7 @@ export function classifyMediaUrl(raw: string): UrlIngestDecision {
       code: "unsupported_external_source",
       host,
       message:
-        "This source cannot be imported automatically. Download or export a file you have rights to use, then upload it here.",
+        "YouTube, TikTok, and Vimeo pages cannot be imported. Download or export an MP4 you have rights to use, then upload it here (or paste a direct .mp4 URL).",
     };
   }
   return { ok: true, kind: "direct_media_url", url: url.toString() };
