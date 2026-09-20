@@ -49,7 +49,7 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-north-pole-santa");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-christmas-movie-nostalgia-01");
     expect(
       searchLibraryVideos("North Pole Santa", "christmas_reels", "reel").some((video) => video.id === "reel-north-pole-santa"),
     ).toBe(true);
@@ -93,6 +93,17 @@ describe("admin video library", () => {
       searchLibraryVideos("kids", "christmas_reels", "photo").some((item) => item.id === "photo-village-kids-sled"),
     ).toBe(true);
     expect(searchLibraryVideos("cut3", "christmas_reels", "reel").some((item) => item.id === "reel-cut3")).toBe(true);
+    expect(
+      searchLibraryVideos("Christmas Movie Nostalgia", "christmas_reels", "reel").some(
+        (item) => item.id === "reel-christmas-movie-nostalgia-01",
+      ),
+    ).toBe(true);
+    expect(searchLibraryVideos("ready-to-post", "christmas_reels", "reel").length).toBeGreaterThanOrEqual(3);
+    expect(
+      searchLibraryVideos("recognizable-scene", "christmas_reels", "photo").some(
+        (item) => item.id === "photo-home-alone-house",
+      ),
+    ).toBe(true);
   });
 
   it("keeps Christmas media files on public downloadable paths", () => {
@@ -120,6 +131,15 @@ describe("admin video library", () => {
       "public/assets/christmas/reels/final/reel-01.mp4",
       "public/assets/christmas/reels/final/reel-05.mp4",
       "public/assets/christmas/library-stills/01_village_balcony_girl.jpg",
+      "public/assets/christmas/library-stills/polar_express_alpine_viaduct.jpg",
+      "public/assets/christmas/library-stills/home_alone_style_christmas_house.jpg",
+      "public/assets/christmas/library-stills/grinch_whoville_rooftop.jpg",
+      "public/assets/christmas/cinematic-sep20/masters/cinematic_01_polar_express.mp4",
+      "public/assets/christmas/cinematic-sep20/masters/cinematic_08_grinch.mp4",
+      "public/assets/christmas/cinematic-sep20/final/christmas_movie_nostalgia_reel_01.mp4",
+      "public/assets/christmas/cinematic-sep20/final/christmas_magic_reel_02.mp4",
+      "public/assets/christmas/cinematic-sep20/final/the_perfect_christmas_reel_03.mp4",
+      "public/assets/christmas/cinematic-sep20/posters/reel-nostalgia-01.jpg",
       "public/assets/christmas/north-pole-santa/final/north_pole_santa_reel.mp4",
       "public/assets/christmas/north-pole-santa/masters/santa_01_workshop.mp4",
       "public/assets/christmas/north-pole-santa/masters/santa_04_sweep.mp4",

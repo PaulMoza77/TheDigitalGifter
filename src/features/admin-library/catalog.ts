@@ -22,6 +22,14 @@ export type LibraryVideo = {
   poster?: string;
   width?: number;
   height?: number;
+  tags?: string[];
+  model?: string;
+  jobId?: string;
+  costUsd?: number;
+  sourceImage?: string;
+  createdAt?: string;
+  fileSizeBytes?: number;
+  clipsUsed?: string[];
 };
 
 export type LibraryCategory = {
@@ -68,6 +76,26 @@ export const LIBRARY_CATEGORIES: LibraryCategory[] = [
     label: "Pet · Other",
     description: "Public other-pet teaser clips.",
   },
+];
+
+const CINEMATIC_SOURCE_TAGS = [
+  "christmas",
+  "reel-source",
+  "cinematic",
+  "viral",
+  "recognizable-scene",
+  "AI-generated",
+];
+
+const CINEMATIC_REEL_TAGS = [
+  "christmas",
+  "reel",
+  "ready-to-post",
+  "instagram",
+  "tiktok",
+  "facebook",
+  "youtube-shorts",
+  "viral-candidate",
 ];
 
 export const CHRISTMAS_LIBRARY_KINDS: LibraryKindFilter[] = [
@@ -119,6 +147,83 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
 }
 
 const CHRISTMAS_REELS: LibraryVideo[] = [
+  {
+    id: "reel-christmas-movie-nostalgia-01",
+    title: "Christmas Movie Nostalgia — Reel 01",
+    description:
+      "12–15s 1080×1920 silent Reel. Home Alone-style house → Polar Express → Rockefeller → Plaza → cozy fireside → Santa and child. Tags: christmas, reel, ready-to-post, instagram, tiktok, facebook, youtube-shorts, viral-candidate.",
+    src: "/assets/christmas/cinematic-sep20/final/christmas_movie_nostalgia_reel_01.mp4",
+    filename: "christmas_movie_nostalgia_reel_01.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 14.3,
+    poster: "/assets/christmas/cinematic-sep20/posters/reel-nostalgia-01.jpg",
+    width: 1080,
+    height: 1920,
+    fileSizeBytes: 28976501,
+    createdAt: "2026-09-20T09:32:00Z",
+    tags: CINEMATIC_REEL_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    clipsUsed: [
+      "cinematic_03_home_alone_house",
+      "cinematic_01_polar_express",
+      "cinematic_04_rockefeller",
+      "cinematic_05_plaza_hotel",
+      "reel-cozy-01",
+      "short-christmas-master-07",
+    ],
+  },
+  {
+    id: "reel-christmas-magic-02",
+    title: "Christmas Magic — Reel 02",
+    description:
+      "12–15s 1080×1920 silent Reel. Santa over London → Polar Express → North Pole workshop → village balcony → Coca-Cola truck → Rockefeller tree. Tags: christmas, reel, ready-to-post, instagram, tiktok, facebook, youtube-shorts, viral-candidate.",
+    src: "/assets/christmas/cinematic-sep20/final/christmas_magic_reel_02.mp4",
+    filename: "christmas_magic_reel_02.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 13.4,
+    poster: "/assets/christmas/cinematic-sep20/posters/reel-magic-02.jpg",
+    width: 1080,
+    height: 1920,
+    fileSizeBytes: 26366775,
+    createdAt: "2026-09-20T09:33:00Z",
+    tags: CINEMATIC_REEL_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    clipsUsed: [
+      "cinematic_06_santa_london",
+      "cinematic_01_polar_express",
+      "cinematic_07_workshop",
+      "short-christmas-master-06",
+      "cinematic_02_coca_cola_truck",
+      "cinematic_04_rockefeller",
+    ],
+  },
+  {
+    id: "reel-perfect-christmas-03",
+    title: "The Perfect Christmas — Reel 03",
+    description:
+      "12–15s 1080×1920 silent Reel. Loop-friendly cozy cut: house → fireplace → Prague bakery → Alps terrace → humble home → house. Tags: christmas, reel, ready-to-post, instagram, tiktok, facebook, youtube-shorts, viral-candidate.",
+    src: "/assets/christmas/cinematic-sep20/final/the_perfect_christmas_reel_03.mp4",
+    filename: "the_perfect_christmas_reel_03.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 13.33,
+    poster: "/assets/christmas/cinematic-sep20/posters/reel-perfect-03.jpg",
+    width: 1080,
+    height: 1920,
+    fileSizeBytes: 25219391,
+    createdAt: "2026-09-20T09:34:00Z",
+    tags: CINEMATIC_REEL_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    clipsUsed: [
+      "cinematic_03_home_alone_house",
+      "reel-cozy-01",
+      "short-christmas-master-04",
+      "short-global-02-alps",
+      "short-global-03-home",
+    ],
+  },
   {
     id: "reel-north-pole-santa",
     title: "NEW · North Pole Santa Reel",
@@ -324,6 +429,174 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
 ];
 
 const CHRISTMAS_SHORTS: LibraryVideo[] = [
+  {
+    id: "short-cinematic-polar-express",
+    title: "Short · Polar Express alpine viaduct",
+    description:
+      "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Steam locomotive on a lit Alpine viaduct. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/cinematic-sep20/masters/cinematic_01_polar_express.mp4",
+    filename: "cinematic_01_polar_express.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/cinematic-sep20/posters/cinematic_01_polar_express.jpg",
+    width: 1080,
+    height: 1920,
+    tags: CINEMATIC_SOURCE_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    sourceImage: "polar_express_alpine_viaduct.jpg",
+    jobId: "ff036768-a163-4c5b-a0de-111550dfb3ce",
+    costUsd: 0.28,
+    fileSizeBytes: 13525893,
+    createdAt: "2026-09-20T09:12:25Z",
+  },
+  {
+    id: "short-cinematic-coca-cola-truck",
+    title: "Short · Coca-Cola Christmas truck",
+    description:
+      "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Holiday truck rolling through Times Square snow. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/cinematic-sep20/masters/cinematic_02_coca_cola_truck.mp4",
+    filename: "cinematic_02_coca_cola_truck.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/cinematic-sep20/posters/cinematic_02_coca_cola_truck.jpg",
+    width: 1080,
+    height: 1920,
+    tags: CINEMATIC_SOURCE_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    sourceImage: "coca_cola_christmas_truck_times_square.jpg",
+    jobId: "6aaedbe5-bcd8-4bce-80c9-61473078a7fd",
+    costUsd: 0.28,
+    fileSizeBytes: 18391832,
+    createdAt: "2026-09-20T09:15:24Z",
+  },
+  {
+    id: "short-cinematic-home-alone-house",
+    title: "Short · Home Alone-style Christmas house",
+    description:
+      "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Slow push toward house 671. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/cinematic-sep20/masters/cinematic_03_home_alone_house.mp4",
+    filename: "cinematic_03_home_alone_house.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/cinematic-sep20/posters/cinematic_03_home_alone_house.jpg",
+    width: 1080,
+    height: 1920,
+    tags: CINEMATIC_SOURCE_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    sourceImage: "home_alone_style_christmas_house.jpg",
+    jobId: "5bd7e3cc-aa34-4e41-8a40-133329366f23",
+    costUsd: 0.28,
+    fileSizeBytes: 18714974,
+    createdAt: "2026-09-20T09:17:32Z",
+  },
+  {
+    id: "short-cinematic-rockefeller",
+    title: "Short · Rockefeller Center ice rink",
+    description:
+      "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Tree, Prometheus, and skaters. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/cinematic-sep20/masters/cinematic_04_rockefeller.mp4",
+    filename: "cinematic_04_rockefeller.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/cinematic-sep20/posters/cinematic_04_rockefeller.jpg",
+    width: 1080,
+    height: 1920,
+    tags: CINEMATIC_SOURCE_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    sourceImage: "rockefeller_center_ice_rink.jpg",
+    jobId: "eac5b74e-cd54-4e32-a2b4-76ad548c4528",
+    costUsd: 0.28,
+    fileSizeBytes: 18712067,
+    createdAt: "2026-09-20T09:19:33Z",
+  },
+  {
+    id: "short-cinematic-plaza-hotel",
+    title: "Short · The Plaza Hotel Fifth Avenue",
+    description:
+      "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Horse carriage at The Plaza canopy. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/cinematic-sep20/masters/cinematic_05_plaza_hotel.mp4",
+    filename: "cinematic_05_plaza_hotel.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/cinematic-sep20/posters/cinematic_05_plaza_hotel.jpg",
+    width: 1080,
+    height: 1920,
+    tags: CINEMATIC_SOURCE_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    sourceImage: "plaza_hotel_fifth_avenue.jpg",
+    jobId: "1aa5e426-6c6e-40cf-8dca-caa864e53873",
+    costUsd: 0.28,
+    fileSizeBytes: 19721355,
+    createdAt: "2026-09-20T09:21:51Z",
+  },
+  {
+    id: "short-cinematic-santa-london",
+    title: "Short · Santa flying over London",
+    description:
+      "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Sleigh over Big Ben and the Thames. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/cinematic-sep20/masters/cinematic_06_santa_london.mp4",
+    filename: "cinematic_06_santa_london.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/cinematic-sep20/posters/cinematic_06_santa_london.jpg",
+    width: 1080,
+    height: 1920,
+    tags: CINEMATIC_SOURCE_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    sourceImage: "santa_sleigh_over_london.jpg",
+    jobId: "9ad53d6a-1d09-4682-8d20-406502b8e82c",
+    costUsd: 0.28,
+    fileSizeBytes: 24095954,
+    createdAt: "2026-09-20T09:24:00Z",
+  },
+  {
+    id: "short-cinematic-workshop",
+    title: "Short · Santa’s Workshop North Pole",
+    description:
+      "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Santa checking the Nice List. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/cinematic-sep20/masters/cinematic_07_workshop.mp4",
+    filename: "cinematic_07_workshop.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/cinematic-sep20/posters/cinematic_07_workshop.jpg",
+    width: 1080,
+    height: 1920,
+    tags: CINEMATIC_SOURCE_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    sourceImage: "santa_workshop_north_pole.jpg",
+    jobId: "f8804f21-1c89-4dba-bf9f-24702e93f310",
+    costUsd: 0.28,
+    fileSizeBytes: 14205674,
+    createdAt: "2026-09-20T09:26:08Z",
+  },
+  {
+    id: "short-cinematic-grinch",
+    title: "Short · Grinch over Whoville",
+    description:
+      "Higgsfield Kling 3.0 Pro, 5s, 1080×1920, silent. Grinch on a rooftop above Whoville. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/cinematic-sep20/masters/cinematic_08_grinch.mp4",
+    filename: "cinematic_08_grinch.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/cinematic-sep20/posters/cinematic_08_grinch.jpg",
+    width: 1080,
+    height: 1920,
+    tags: CINEMATIC_SOURCE_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    sourceImage: "grinch_whoville_rooftop.jpg",
+    jobId: "59108722-55b0-4bc7-8560-6639d7d77610",
+    costUsd: 0.28,
+    fileSizeBytes: 13003875,
+    createdAt: "2026-09-20T09:28:16Z",
+  },
   {
     id: "short-santa-01-workshop",
     title: "Santa · Toy workshop wrapping",
@@ -790,6 +1063,94 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
 ];
 
 const NEW_STILL_PHOTOS: LibraryVideo[] = [
+  {
+    id: "photo-polar-express-viaduct",
+    title: "Photo · Polar Express alpine viaduct",
+    description:
+      "Steam locomotive with wreath and red carriages on a lit stone viaduct at sunset. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/library-stills/polar_express_alpine_viaduct.jpg",
+    filename: "polar_express_alpine_viaduct.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    tags: CINEMATIC_SOURCE_TAGS,
+  },
+  {
+    id: "photo-coca-cola-truck",
+    title: "Photo · Coca-Cola Christmas truck",
+    description:
+      "Lit Coca-Cola holiday truck with Santa mural in Times Square snowfall. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/library-stills/coca_cola_christmas_truck_times_square.jpg",
+    filename: "coca_cola_christmas_truck_times_square.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    tags: CINEMATIC_SOURCE_TAGS,
+  },
+  {
+    id: "photo-home-alone-house",
+    title: "Photo · Home Alone-style Christmas house",
+    description:
+      "Brick colonial house 671 with warm windows, wreath, and Christmas lights in snow. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/library-stills/home_alone_style_christmas_house.jpg",
+    filename: "home_alone_style_christmas_house.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    tags: CINEMATIC_SOURCE_TAGS,
+  },
+  {
+    id: "photo-rockefeller-rink",
+    title: "Photo · Rockefeller Center ice rink",
+    description:
+      "Rockefeller Christmas tree, Prometheus fountain, and skaters in falling snow. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/library-stills/rockefeller_center_ice_rink.jpg",
+    filename: "rockefeller_center_ice_rink.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    tags: CINEMATIC_SOURCE_TAGS,
+  },
+  {
+    id: "photo-plaza-hotel-carriage",
+    title: "Photo · The Plaza Hotel Fifth Avenue",
+    description:
+      "White horse carriage at The Plaza canopy on snowy Fifth Avenue. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/library-stills/plaza_hotel_fifth_avenue.jpg",
+    filename: "plaza_hotel_fifth_avenue.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    tags: CINEMATIC_SOURCE_TAGS,
+  },
+  {
+    id: "photo-santa-over-london",
+    title: "Photo · Santa flying over London",
+    description:
+      "Santa’s sleigh and reindeer over Big Ben, Parliament, and the Thames under a full moon. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/library-stills/santa_sleigh_over_london.jpg",
+    filename: "santa_sleigh_over_london.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    tags: CINEMATIC_SOURCE_TAGS,
+  },
+  {
+    id: "photo-santa-workshop-north-pole",
+    title: "Photo · Santa’s Workshop North Pole",
+    description:
+      "Santa checking the Nice List at the workshop door with elves, reindeer, and aurora. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/library-stills/santa_workshop_north_pole.jpg",
+    filename: "santa_workshop_north_pole.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    tags: CINEMATIC_SOURCE_TAGS,
+  },
+  {
+    id: "photo-grinch-whoville",
+    title: "Photo · Grinch over Whoville",
+    description:
+      "Grinch in a Santa coat on a snowy rooftop above Whoville’s Christmas lights. Tags: christmas, reel-source, cinematic, viral, recognizable-scene, AI-generated.",
+    src: "/assets/christmas/library-stills/grinch_whoville_rooftop.jpg",
+    filename: "grinch_whoville_rooftop.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    tags: CINEMATIC_SOURCE_TAGS,
+  },
   {
     id: "photo-santa-workshop",
     title: "Photo · North Pole toy workshop",
@@ -1324,7 +1685,10 @@ export function searchLibraryCatalog(
   if (kind !== "all") list = list.filter((item) => item.kind === kind);
   if (!needle) return list;
   return list.filter((video) =>
-    [video.title, video.description, video.filename, video.id].join(" ").toLowerCase().includes(needle),
+    [video.title, video.description, video.filename, video.id, ...(video.tags || [])]
+      .join(" ")
+      .toLowerCase()
+      .includes(needle),
   );
 }
 
