@@ -69,18 +69,18 @@ REELS = [
         "min_dur": 30.0,
         "max_dur": 46.0,
         "shots": [
-            (N["viaduct"], 0.04, 3.15, 1.04, "npj_04_viaduct_wide", "cut"),
-            (N["window"], 0.08, 2.85, 1.03, "npj_01_train_window", "cut"),
-            (N["aurora_w"], 0.08, 3.05, 1.03, "npj_03_aurora_window", "fade"),
-            (LIB["c_train"], 0.12, 2.55, 1.03, "short-cinematic-polar-express", "cut"),
-            (N["station"], 0.10, 2.70, 1.03, "npj_02_station", "fade"),
-            (N["village"], 0.08, 2.85, 1.03, "npj_05_village_arrival", "cut"),
-            (N["street"], 0.10, 2.70, 1.03, "npj_06_workshop_street", "cut"),
-            (N["list"], 0.10, 2.65, 1.02, "npj_07_workshop_list", "fade"),
-            (N["wrap"], 0.12, 2.55, 1.03, "npj_08_wrapping", "cut"),
-            (LIB["santa_sleigh"], 0.15, 2.45, 1.04, "short-santa-02-sleigh", "cut"),
-            (N["sleigh_win"], 0.08, 2.90, 1.03, "npj_09_window_sleigh", "fade"),
-            (N["plaza"], 0.10, 2.80, 1.03, "npj_11_plaza", "fade"),
+            (N["viaduct"], 0.04, 3.55, 1.04, "npj_04_viaduct_wide", "cut"),
+            (N["window"], 0.08, 3.25, 1.03, "npj_01_train_window", "cut"),
+            (N["aurora_w"], 0.08, 3.45, 1.03, "npj_03_aurora_window", "fade"),
+            (LIB["c_train"], 0.12, 2.95, 1.03, "short-cinematic-polar-express", "cut"),
+            (N["station"], 0.10, 3.15, 1.03, "npj_02_station", "fade"),
+            (N["village"], 0.08, 3.25, 1.03, "npj_05_village_arrival", "cut"),
+            (N["street"], 0.10, 3.15, 1.03, "npj_06_workshop_street", "cut"),
+            (N["list"], 0.10, 3.05, 1.02, "npj_07_workshop_list", "fade"),
+            (N["wrap"], 0.12, 2.95, 1.03, "npj_08_wrapping", "cut"),
+            (LIB["santa_sleigh"], 0.15, 2.85, 1.04, "short-santa-02-sleigh", "cut"),
+            (N["sleigh_win"], 0.08, 3.35, 1.03, "npj_09_window_sleigh", "fade"),
+            (N["plaza"], 0.10, 3.25, 1.03, "npj_11_plaza", "fade"),
         ],
     },
     {
@@ -95,18 +95,18 @@ REELS = [
         "min_dur": 30.0,
         "max_dur": 46.0,
         "shots": [
-            (N["list"], 0.06, 2.85, 1.03, "npj_07_workshop_list", "cut"),
-            (LIB["santa_wrap"], 0.10, 2.55, 1.03, "short-santa-01-workshop", "cut"),
-            (N["wrap"], 0.10, 2.55, 1.03, "npj_08_wrapping", "cut"),
-            (N["street"], 0.08, 2.70, 1.03, "npj_06_workshop_street", "fade"),
-            (LIB["santa_sleigh"], 0.08, 2.70, 1.04, "short-santa-02-sleigh", "cut"),
-            (LIB["c_london"], 0.06, 2.85, 1.05, "short-cinematic-santa-london", "cut"),
-            (LIB["master08"], 0.20, 2.45, 1.04, "short-christmas-master-08", "cut"),
-            (LIB["c_rock"], 0.15, 2.35, 1.03, "short-cinematic-rockefeller", "fade"),
-            (N["plaza"], 0.10, 2.45, 1.03, "npj_11_plaza", "cut"),
-            (LIB["c_house"], 0.10, 2.35, 1.04, "short-cinematic-home-alone-house", "fade"),
-            (N["sleigh_win"], 0.06, 3.15, 1.03, "npj_09_window_sleigh", "fade"),
-            (LIB["cozy1"], 0.20, 2.55, 1.03, "reel-cozy-01", "fade"),
+            (N["list"], 0.06, 3.35, 1.03, "npj_07_workshop_list", "cut"),
+            (LIB["santa_wrap"], 0.10, 3.05, 1.03, "short-santa-01-workshop", "cut"),
+            (N["wrap"], 0.10, 3.05, 1.03, "npj_08_wrapping", "cut"),
+            (N["street"], 0.08, 3.20, 1.03, "npj_06_workshop_street", "fade"),
+            (LIB["santa_sleigh"], 0.08, 3.20, 1.04, "short-santa-02-sleigh", "cut"),
+            (LIB["c_london"], 0.06, 3.25, 1.05, "short-cinematic-santa-london", "cut"),
+            (LIB["master08"], 0.20, 2.90, 1.04, "short-christmas-master-08", "cut"),
+            (LIB["c_rock"], 0.15, 2.80, 1.03, "short-cinematic-rockefeller", "fade"),
+            (N["plaza"], 0.10, 2.95, 1.03, "npj_11_plaza", "cut"),
+            (LIB["c_house"], 0.10, 2.80, 1.04, "short-cinematic-home-alone-house", "fade"),
+            (N["sleigh_win"], 0.06, 3.45, 1.03, "npj_09_window_sleigh", "fade"),
+            (LIB["cozy1"], 0.20, 3.00, 1.03, "reel-cozy-01", "fade"),
         ],
     },
     {
@@ -117,22 +117,22 @@ REELS = [
         "theme": "magical-christmas-night",
         "overlay": None,
         "overlay_end": 0,
-        "xfade": 0.20,
+        "xfade": 0.16,
         "min_dur": 30.0,
         "max_dur": 46.0,
         "shots": [
-            (N["snowman"], 0.08, 2.85, 1.04, "npj_10_snowman", "cut"),
-            (LIB["home"], 0.12, 2.35, 1.03, "short-global-03-home", "fade"),
-            (LIB["lapland"], 0.10, 2.55, 1.04, "short-global-01-lapland", "cut"),
-            (N["viaduct"], 0.06, 2.70, 1.04, "npj_04_viaduct_wide", "cut"),
-            (N["window"], 0.10, 2.45, 1.03, "npj_01_train_window", "fade"),
-            (N["village"], 0.10, 2.45, 1.03, "npj_05_village_arrival", "cut"),
-            (LIB["c_workshop"], 0.12, 2.35, 1.03, "short-cinematic-workshop", "fade"),
-            (LIB["c_london"], 0.08, 2.55, 1.05, "short-cinematic-santa-london", "cut"),
-            (LIB["alps"], 0.15, 2.25, 1.03, "short-global-02-alps", "cut"),
-            (LIB["plaza_g"], 0.12, 2.25, 1.03, "short-global-04-plaza", "fade"),
-            (LIB["master07"], 0.20, 2.45, 1.04, "short-christmas-master-07", "fade"),
-            (N["sleigh_win"], 0.20, 2.90, 1.03, "npj_09_window_sleigh", "fade"),
+            (N["snowman"], 0.08, 3.25, 1.04, "npj_10_snowman", "cut"),
+            (LIB["home"], 0.12, 2.80, 1.03, "short-global-03-home", "fade"),
+            (LIB["lapland"], 0.10, 3.00, 1.04, "short-global-01-lapland", "cut"),
+            (N["viaduct"], 0.06, 3.20, 1.04, "npj_04_viaduct_wide", "cut"),
+            (N["window"], 0.10, 2.90, 1.03, "npj_01_train_window", "fade"),
+            (N["village"], 0.10, 2.95, 1.03, "npj_05_village_arrival", "cut"),
+            (LIB["c_workshop"], 0.12, 2.80, 1.03, "short-cinematic-workshop", "fade"),
+            (LIB["c_london"], 0.08, 3.05, 1.05, "short-cinematic-santa-london", "cut"),
+            (LIB["alps"], 0.15, 2.70, 1.03, "short-global-02-alps", "cut"),
+            (LIB["plaza_g"], 0.12, 2.70, 1.03, "short-global-04-plaza", "fade"),
+            (LIB["master07"], 0.20, 2.90, 1.04, "short-christmas-master-07", "fade"),
+            (N["sleigh_win"], 0.20, 3.35, 1.03, "npj_09_window_sleigh", "fade"),
         ],
     },
     {
@@ -147,12 +147,12 @@ REELS = [
         "min_dur": 13.5,
         "max_dur": 16.8,
         "shots": [
-            (N["viaduct"], 0.04, 2.15, 1.06, "npj_04_viaduct_wide", "cut"),
-            (N["aurora_w"], 0.10, 1.95, 1.04, "npj_03_aurora_window", "cut"),
-            (N["village"], 0.08, 1.90, 1.04, "npj_05_village_arrival", "cut"),
-            (LIB["c_london"], 0.08, 1.95, 1.06, "short-cinematic-santa-london", "cut"),
-            (N["sleigh_win"], 0.10, 2.15, 1.04, "npj_09_window_sleigh", "fade"),
-            (N["viaduct"], 0.20, 1.85, 1.05, "npj_04_viaduct_wide", "cut"),
+            (N["viaduct"], 0.04, 2.65, 1.06, "npj_04_viaduct_wide", "cut"),
+            (N["aurora_w"], 0.10, 2.45, 1.04, "npj_03_aurora_window", "cut"),
+            (N["village"], 0.08, 2.40, 1.04, "npj_05_village_arrival", "cut"),
+            (LIB["c_london"], 0.08, 2.45, 1.06, "short-cinematic-santa-london", "cut"),
+            (N["sleigh_win"], 0.10, 2.65, 1.04, "npj_09_window_sleigh", "fade"),
+            (N["viaduct"], 0.20, 2.35, 1.05, "npj_04_viaduct_wide", "cut"),
         ],
     },
     {
@@ -167,12 +167,12 @@ REELS = [
         "min_dur": 13.5,
         "max_dur": 16.8,
         "shots": [
-            (N["snowman"], 0.06, 2.05, 1.05, "npj_10_snowman", "cut"),
-            (N["street"], 0.10, 1.90, 1.04, "npj_06_workshop_street", "cut"),
-            (N["wrap"], 0.12, 1.80, 1.03, "npj_08_wrapping", "cut"),
-            (LIB["santa_sleigh"], 0.10, 1.90, 1.05, "short-santa-02-sleigh", "cut"),
-            (N["plaza"], 0.08, 1.90, 1.04, "npj_11_plaza", "cut"),
-            (N["sleigh_win"], 0.08, 2.25, 1.04, "npj_09_window_sleigh", "fade"),
+            (N["snowman"], 0.06, 2.55, 1.05, "npj_10_snowman", "cut"),
+            (N["street"], 0.10, 2.40, 1.04, "npj_06_workshop_street", "cut"),
+            (N["wrap"], 0.12, 2.30, 1.03, "npj_08_wrapping", "cut"),
+            (LIB["santa_sleigh"], 0.10, 2.40, 1.05, "short-santa-02-sleigh", "cut"),
+            (N["plaza"], 0.08, 2.40, 1.04, "npj_11_plaza", "cut"),
+            (N["sleigh_win"], 0.08, 2.70, 1.04, "npj_09_window_sleigh", "fade"),
         ],
     },
 ]
@@ -330,10 +330,19 @@ def export_reel(reel: dict) -> dict:
 
 
 def main() -> int:
+    import sys
+
     FINALS.mkdir(parents=True, exist_ok=True)
     POSTERS.mkdir(parents=True, exist_ok=True)
+    only = [a.split("=", 1)[1] for a in sys.argv if a.startswith("--only=")]
+    only_set = set(only[0].split(",")) if only else None
     report = []
+    log = json.loads(LOG.read_text()) if LOG.exists() else {}
+    if only_set:
+        report = [r for r in (log.get("reels") or []) if r.get("id") not in only_set]
     for reel in REELS:
+        if only_set and reel["id"] not in only_set:
+            continue
         info = export_reel(reel)
         used = [s[4] for s in reel["shots"]]
         row = {
