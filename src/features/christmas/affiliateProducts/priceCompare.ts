@@ -31,13 +31,13 @@ function clean(value: unknown): string | null {
 export function productIdentity(product: AffiliateProduct): ProductIdentity {
   const m = product.metadata || {};
   return {
-    gtin: clean(m.gtin),
-    upc: clean(m.upc),
-    ean: clean(m.ean),
-    isbn: clean(m.isbn),
-    mpn: clean(m.mpn),
-    brand: clean(m.brand),
-    model: clean(m.model),
+    gtin: clean(product.gtin ?? m.gtin),
+    upc: clean(product.upc ?? m.upc),
+    ean: clean(product.ean ?? m.ean),
+    isbn: clean(product.isbn ?? m.isbn),
+    mpn: clean(product.mpn ?? m.mpn),
+    brand: clean(product.brand ?? m.brand),
+    model: clean(product.model ?? m.model),
   };
 }
 
@@ -52,7 +52,7 @@ export function productIdentityKey(product: AffiliateProduct): string | null {
 }
 
 function checkedAt(product: AffiliateProduct): string | null {
-  const raw = product.metadata?.checkedAt ?? product.metadata?.fetchedAt ?? null;
+  const raw = product.checkedAt ?? product.metadata?.checkedAt ?? product.metadata?.fetchedAt ?? null;
   const value = raw == null ? "" : String(raw);
   return /^\d{4}-\d{2}-\d{2}T/.test(value) ? value : null;
 }
