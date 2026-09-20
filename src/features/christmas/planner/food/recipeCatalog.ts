@@ -19,6 +19,10 @@ export type RecipeCatalogRow = {
   difficulty?: string | null;
   dietary?: string[] | null;
   allergens?: string[] | null;
+  occasions?: string[] | null;
+  notes?: string | null;
+  cost_band?: string | null;
+  cuisine?: string | null;
 };
 
 export type RecipeFilters = {
@@ -111,7 +115,7 @@ export function filterRecipes(
     }
     if (filters.tag) {
       const needle = filters.tag.toLowerCase();
-      const hay = `${recipe.title} ${recipe.description} ${(recipe.tags || []).join(" ")} ${(recipe.occasions as string[] | undefined) || []}`.toLowerCase();
+      const hay = `${recipe.title} ${recipe.description} ${(recipe.tags || []).join(" ")} ${(recipe.occasions || []).join(" ")}`.toLowerCase();
       if (!hay.includes(needle)) return false;
     }
     if (filters.country && filters.country !== "all" && recipeCountry(recipe) !== filters.country) return false;
