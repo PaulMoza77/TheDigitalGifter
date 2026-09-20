@@ -40,10 +40,11 @@ async function recordEvent(jobId: string | null, eventName: string, detail: Reco
 
 async function patchJob(id: string, patch: Record<string, unknown>) {
   const service = getServiceClient();
-  await service
+  const { error } = await service
     .from("clip_factory_jobs")
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", id);
+  if (error) throw error;
 }
 
 async function hashFile(path: string): Promise<string> {
