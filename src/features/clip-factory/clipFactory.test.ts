@@ -185,13 +185,14 @@ describe("clip factory job creation", () => {
     }
   });
 
-  it("saves a YouTube reference as waiting-for-media instead of a dead-end error", () => {
+  it("queues YouTube URLs for authorized ingest instead of stopping at metadata", () => {
     const result = prepareClipFactoryJob({
       url: "https://www.youtube.com/watch?v=dQw4w9wgGcI",
+      rights_confirmed: true,
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.waitingForMedia).toBe(true);
+      expect(result.waitingForMedia).toBe(false);
       expect(result.ingestionCapability).toBe("REFERENCE_ONLY");
       expect(result.sourceKind).toBe("youtube");
       expect(String(result.sourcePayload.referenceUrl || result.sourcePayload.url)).toContain("dQw4w9wgGcI");

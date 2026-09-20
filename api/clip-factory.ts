@@ -340,9 +340,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
       const metaCapability = (sourceMetadata as { ingestionCapability?: string }).ingestionCapability;
+      const provider = prepared.provider;
+      const canAttemptAuthorizedIngest =
+        provider === "direct" || provider === "youtube" || provider === "vimeo" || prepared.sourceKind === "direct_media_url";
       const waitingForMedia =
-        prepared.waitingForMedia ||
-        (metaCapability ? metaCapability !== "FULL_IMPORT" && !asString(body.object_path) && !asString(body.library_asset_id) : prepared.waitingForMedia);
+        !canAttemptAuthorizedIngest &&
+        (prepared.waitingForMedia ||
+          (metaCapability
+            ? metaCapability !== "FULL_IMPORT" && !asString(body.object_path) && !asString(body.library_asset_id)
+            : prepared.waitingForMedia));
       if (metaCapability) {
         sourcePayload.ingestionCapability = metaCapability;
         if ((sourceMetadata as { mediaUrl?: string }).mediaUrl) {

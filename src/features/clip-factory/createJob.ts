@@ -102,8 +102,9 @@ export function prepareClipFactoryJob(body: CreateJobInput): PreparedJob {
     sourcePayload = { url: decision.normalizedUrl, referenceUrl: decision.normalizedUrl, provider: decision.provider, importMode: decision.importMode, ingestionCapability: decision.ingestionCapability, mediaUrl: decision.canImport ? decision.normalizedUrl : null };
     sourceLabel = sourceLabel === "Untitled video" ? new URL(decision.normalizedUrl).hostname : sourceLabel;
     ingestionCapability = decision.ingestionCapability;
-    waitingForMedia = !isFullImport(decision.ingestionCapability);
-    if (waitingForMedia) {
+    waitingForMedia = false;
+    if (!isFullImport(decision.ingestionCapability) && decision.provider !== "youtube" && decision.provider !== "vimeo" && decision.provider !== "direct") {
+      waitingForMedia = true;
       sourcePayload.mediaKind = "reference";
     }
   }

@@ -4,13 +4,12 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getServiceClient } from "../christmas/supabaseClient";
-import { LIBRARY_VIDEOS } from "../../../src/features/admin-library/catalog";
 import { buildAssCaptions, resolveCaptionStyle } from "../../../src/features/clip-factory/captions";
 import { planReframe } from "../../../src/features/clip-factory/reframe";
 import type { CaptionStyle, ClipFactoryOptions, Transcript } from "../../../src/features/clip-factory/types";
 import { DEFAULT_CLIP_FACTORY_OPTIONS } from "../../../src/features/clip-factory/types";
-import { downloadDirectMedia, IngestError, sanitizeFilename } from "./ingest";
-import { importVimeoAuthorized, importYoutubeAuthorized } from "./providers";
+import { acquireSourceMedia } from "./acquire";
+import { IngestError, sanitizeFilename } from "./ingest";
 import { desiredClipCount } from "../../../src/features/clip-factory/boundaries";
 import {
   detectScenes,
@@ -110,17 +109,12 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
   const cost: Record<string, number> = { ...(job.cost || {}) };
 
   try {
-    if (["waiting_for_media", "source_detected"].includes(job.status) && !job.media_id) {
-      const payload = job.source_payload || {};
-      if (!String(payload.objectPath || "") && !String(payload.libraryAssetId || "")) {
-        await patchJob(jobId, {
-          lease_expires_at: null,
-          progress_label: job.source_metadata?.message || "Source detected. Original media is required to continue.",
-        });
-        return;
-      }
-    }
-    if (["queued", "ingesting", "importing", "downloading", "uploading", "failed"].includes(job.status) && !job.media_id) {
+    if (
+      ["queued", "ingesting", "importing", "downloading", "uploading", "failed", "waiting_for_media", "source_detected"].includes(
+        job.status,
+      ) &&
+      !job.media_id
+    ) {
       await patchJob(jobId, {
         status: "importing",
         stage: "importing",
@@ -131,45 +125,36 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       });
       await recordEvent(jobId, "clip_factory_source_added", { source_kind: job.source_kind });
       const payload = job.source_payload || {};
-      const objectPath = String(payload.objectPath || "");
-      const libraryAssetId = String(payload.libraryAssetId || "");
-      if (["waiting_for_media", "source_detected"].includes(job.status) && !objectPath && !libraryAssetId) {
-        await patchJob(jobId, { lease_expires_at: null, progress_label: job.source_metadata?.message || "Source detected. Original media is required to continue." });
-        return;
-      }
-      if (objectPath.startsWith("uploads/")) {
-        await downloadStorage(objectPath, sourcePath);
-      } else if (job.source_kind === "upload") {
-        if (!objectPath.startsWith("uploads/")) throw new IngestError("invalid_url", "Upload path is invalid.");
-        await downloadStorage(objectPath, sourcePath);
-      } else if (job.source_kind === "library" || libraryAssetId) {
-        const assetId = libraryAssetId || String(payload.libraryAssetId || "");
-        const catalog = LIBRARY_VIDEOS.find((v) => v.id === assetId);
-        if (catalog) {
-          const local = resolveLocalLibrary(catalog.src);
-          if (!local) throw new IngestError("invalid_url", "Library file is not available on this origin.");
-          await fs.copyFile(local, sourcePath);
-        } else {
-          const { data: asset } = await service.from("library_assets").select("storage_path,storage_bucket,title").eq("id", assetId).maybeSingle();
-          if (!asset?.storage_path) throw new IngestError("invalid_url", "That Library item was not found.");
-          await downloadStorage(asset.storage_path, sourcePath);
-        }
-      } else if (job.source_kind === "direct_media_url") {
+      if (job.source_kind === "direct_media_url" || job.source_kind === "youtube" || job.source_kind === "vimeo") {
         await patchJob(jobId, { status: "downloading", stage: "importing", progress: 12, progress_label: "Importing source..." });
-        await downloadDirectMedia(String(payload.mediaUrl || payload.url || ""), sourcePath);
-      } else if (job.source_kind === "youtube" && String(process.env.CLIP_FACTORY_YOUTUBE_IMPORT_URL || "").trim()) {
-        await importYoutubeAuthorized(String(payload.url || payload.referenceUrl || ""), sourcePath);
-      } else if (job.source_kind === "vimeo" && String(process.env.VIMEO_ACCESS_TOKEN || "").trim()) {
-        await importVimeoAuthorized(String(payload.url || payload.referenceUrl || ""), sourcePath);
-      } else {
-        await patchJob(jobId, {
-          status: "waiting_for_media",
-          stage: "source_detected",
-          progress: 5,
-          progress_label: job.source_metadata?.message || "Source detected. Original media is required to continue.",
-          lease_expires_at: null,
-        });
-        return;
+      }
+      const ingested = await acquireSourceMedia({
+        sourceKind: job.source_kind,
+        sourcePayload: payload,
+        sourceLabel: job.source_label,
+        dest: sourcePath,
+        downloadStorage,
+        resolveLibraryFile: resolveLocalLibrary,
+        copyFile: (from, to) => fs.copyFile(from, to),
+        findStoredMedia: async (sourceUrl) => {
+          const { data } = await service
+            .from("clip_factory_media")
+            .select("storage_path,source_label")
+            .eq("source_url", sourceUrl)
+            .maybeSingle();
+          return data?.storage_path ? { storagePath: data.storage_path, title: data.source_label } : null;
+        },
+        loadLibraryAsset: async (id) => {
+          const { data: asset } = await service
+            .from("library_assets")
+            .select("storage_path,title")
+            .eq("id", id)
+            .maybeSingle();
+          return asset?.storage_path ? { storagePath: asset.storage_path, title: asset.title } : null;
+        },
+      });
+      if (ingested.status !== "ingested") {
+        throw new IngestError("import_failed", "Source media was not ingested.");
       }
 
       let probe;

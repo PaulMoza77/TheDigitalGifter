@@ -28,7 +28,9 @@ describe("clip factory production wiring", () => {
     expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("ingest this URL automatically");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("Importing source...");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("clip_factory_analysis_started");
-    expect(read("api/_lib/clip-factory/worker.ts")).toContain("importYoutubeAuthorized");
+    expect(read("api/_lib/clip-factory/worker.ts")).toContain("acquireSourceMedia");
+    expect(read("api/_lib/clip-factory/acquire.ts")).toContain("NormalizedIngest");
+    expect(read("api/_lib/clip-factory/acquire.ts")).toContain("YouTube Data API v3");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("library_assets");
     expect(read("api/_lib/clip-factory/openai.ts")).toContain("whisper-1");
     expect(read("src/features/clip-factory/scoring.ts")).toContain("SCORE_WEIGHTS");

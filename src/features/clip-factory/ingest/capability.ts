@@ -22,7 +22,7 @@ export function capabilityMessage(capability: IngestionCapability, provider: str
   }
   if (capability === "REFERENCE_ONLY") {
     return provider === "youtube"
-      ? "YouTube source detected. Official YouTube APIs do not expose downloadable media. Attach the original file or Library item you have rights to use."
+      ? "YouTube Data API / oEmbed detected this video, but YouTube does not provide an official downloadable media file. Automatic ingest needs CLIP_FACTORY_YOUTUBE_IMPORT_URL or the original file."
       : "This source can be referenced, but its media cannot be imported automatically. Attach original media to continue.";
   }
   return "This URL is not a supported automatic import source.";

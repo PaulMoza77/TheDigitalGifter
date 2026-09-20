@@ -55,7 +55,7 @@ describe("youtube adapter", () => {
     expect(meta.canImport).toBe(false);
     expect(meta.ingestionCapability).toBe("REFERENCE_ONLY");
     expect(meta.thumbnailUrl).toContain("dQw4w9wgGcI");
-    expect(meta.message).toMatch(/YouTube source detected/i);
+    expect(meta.message).toMatch(/YouTube Data API|official downloadable media/i);
   });
 
   it("does not claim import unless an authorized importer is configured", async () => {
@@ -80,7 +80,7 @@ describe("youtube adapter", () => {
     expect(meta.title).toBe("Demo");
     expect(meta.canImport).toBe(false);
     expect(meta.ingestionCapability).toBe("REFERENCE_ONLY");
-    expect(meta.message).toMatch(/YouTube source detected/i);
+    expect(meta.message).toMatch(/YouTube Data API|official downloadable media/i);
     expect(youtubeAdapter.canImport(meta)).toBe(false);
   });
 });
