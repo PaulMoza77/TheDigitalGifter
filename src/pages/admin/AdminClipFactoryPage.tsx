@@ -18,6 +18,7 @@ import {
   type ClipFactoryJob,
 } from "@/features/clip-factory/api";
 import { sortCandidates } from "@/features/clip-factory/diversity";
+import { classifyMediaUrl } from "@/features/clip-factory/safeUrl";
 import {
   ANALYSIS_STAGE_ORDER,
   DEFAULT_CLIP_FACTORY_OPTIONS,
@@ -174,7 +175,12 @@ export default function AdminClipFactoryPage() {
       } else if (libraryId) {
         payload = { ...payload, source_kind: "library", library_asset_id: libraryId };
       } else if (url.trim()) {
-        payload = { ...payload, source_kind: "direct_media_url", url: url.trim() };
+        const decision = classifyMediaUrl(url.trim());
+        if (!decision.ok) {
+          toast.error(decision.message);
+          return;
+        }
+        payload = { ...payload, source_kind: "direct_media_url", url: decision.url };
       } else {
         toast.error("Paste a video URL, upload a file, or choose one from the Library.");
         return;
@@ -190,6 +196,7 @@ export default function AdminClipFactoryPage() {
     }
   }
 
+  const urlDecision = url.trim() ? classifyMediaUrl(url.trim()) : null;
   const analyzing = Boolean(job && !["ready", "completed", "partial", "failed"].includes(job.status));
   const candidates = sortCandidates(
     (job?.candidates || [])
@@ -266,9 +273,22 @@ export default function AdminClipFactoryPage() {
                     setFile(null);
                     setLibraryId("");
                   }}
-                  placeholder="https://…/video.mp4"
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-indigo-400/60"
+                  placeholder="https://cdn.example.com/talk.mp4"
+                  aria-invalid={Boolean(urlDecision && !urlDecision.ok)}
+                  className={[
+                    "w-full rounded-2xl border bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600",
+                    urlDecision && !urlDecision.ok
+                      ? "border-amber-400/70 focus:border-amber-300"
+                      : "border-slate-700 focus:border-indigo-400/60",
+                  ].join(" ")}
                 />
+                {urlDecision && !urlDecision.ok ? (
+                  <p className="mt-2 text-sm text-amber-200">{urlDecision.message}</p>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Direct file URLs only (.mp4, .mov, .webm). YouTube, TikTok, and Vimeo links are not imported — upload the file instead.
+                  </p>
+                )}
               </label>
               <div className="flex flex-wrap gap-3">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm">
@@ -383,7 +403,7 @@ export default function AdminClipFactoryPage() {
 
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || Boolean(urlDecision && !urlDecision.ok)}
               onClick={() => void createJob()}
               className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-5 py-3.5 text-base font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60 sm:w-auto"
             >
