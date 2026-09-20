@@ -1,8 +1,10 @@
 import { LIBRARY_VIDEOS } from "../../../src/features/admin-library/catalog";
 import { capabilityMessage } from "../../../src/features/clip-factory/ingest/capability";
 import { extractYoutubeId } from "../../../src/features/clip-factory/ingest/adapters/youtube";
+import { isKnownInvalidMediaHash } from "../../../src/features/clip-factory/mediaQuality";
 import { downloadDirectMedia, IngestError } from "./ingest";
-import { importVimeoAuthorized, importYoutubeAuthorized } from "./providers";
+import { importVimeoAuthorized } from "./providers";
+import { importYoutubeMedia } from "./youtubeImport";
 
 export type NormalizedIngest = {
   sourceType: string;
@@ -14,22 +16,33 @@ export type NormalizedIngest = {
   status: "ingested";
 };
 
+export type StoredMediaHit = {
+  storagePath: string;
+  title?: string | null;
+  durationSeconds?: number | null;
+  fileSizeBytes?: number | null;
+  mediaHash?: string | null;
+  invalidated?: boolean;
+};
+
 export type AcquireInput = {
   sourceKind: string;
   sourcePayload: Record<string, unknown>;
   sourceLabel?: string | null;
   dest: string;
+  expectedDurationSeconds?: number | null;
   downloadStorage: (storagePath: string, dest: string) => Promise<void>;
   resolveLibraryFile: (src: string) => string | null;
   copyFile: (from: string, to: string) => Promise<void>;
-  findStoredMedia?: (sourceUrl: string) => Promise<{ storagePath: string; title?: string | null } | null>;
+  findStoredMedia?: (sourceUrl: string) => Promise<StoredMediaHit | null>;
   loadLibraryAsset?: (id: string) => Promise<{ storagePath: string; title?: string | null } | null>;
 };
 
-function youtubeLimitation(): IngestError {
+function youtubeLimitation(detail?: string): IngestError {
   return new IngestError(
     "import_unavailable",
-    "YouTube Data API v3 and oEmbed return metadata only (title, thumbnail, duration). They do not expose a downloadable media file. Automatic import isn't available for this source without CLIP_FACTORY_YOUTUBE_IMPORT_URL (a YouTube-authorized partner importer) or the original file.",
+    detail ||
+      "YouTube Data API v3 and oEmbed return metadata only (title, thumbnail, duration). They do not expose a downloadable media file. Automatic import was blocked. Upload the original MP4 you have rights to use.",
   );
 }
 
@@ -52,12 +65,26 @@ function done(
   };
 }
 
+function storedLooksReusable(hit: StoredMediaHit, expectedDuration: number | null | undefined): boolean {
+  if (hit.invalidated) return false;
+  if (isKnownInvalidMediaHash(hit.mediaHash)) return false;
+  const duration = Number(hit.durationSeconds || 0);
+  const size = Number(hit.fileSizeBytes || 0);
+  if (duration < 3) return false;
+  if (size > 0 && size < duration * 25_000) return false;
+  if (expectedDuration && Math.abs(duration - expectedDuration) > Math.max(2.5, expectedDuration * 0.12)) return false;
+  return true;
+}
+
 export async function acquireSourceMedia(input: AcquireInput): Promise<NormalizedIngest> {
   const payload = input.sourcePayload || {};
   const objectPath = String(payload.objectPath || "");
   const libraryAssetId = String(payload.libraryAssetId || "");
   const sourceUrl = String(payload.mediaUrl || payload.url || payload.referenceUrl || "") || null;
   const title = input.sourceLabel || null;
+  const expectedDuration =
+    input.expectedDurationSeconds ??
+    (typeof payload.durationSeconds === "number" ? payload.durationSeconds : null);
 
   if (objectPath.startsWith("uploads/")) {
     await input.downloadStorage(objectPath, input.dest);
@@ -90,18 +117,20 @@ export async function acquireSourceMedia(input: AcquireInput): Promise<Normalize
     const url = String(payload.url || payload.referenceUrl || "");
     const id = extractYoutubeId(url);
     if (!id) throw new IngestError("invalid_url", "That YouTube URL is missing a video id.");
-    if (String(process.env.CLIP_FACTORY_YOUTUBE_IMPORT_URL || "").trim()) {
-      const downloaded = await importYoutubeAuthorized(url, input.dest);
-      return done("youtube", url, title, input.dest, downloaded.contentType, downloaded.bytes);
-    }
     if (input.findStoredMedia) {
       const stored = await input.findStoredMedia(url);
-      if (stored?.storagePath) {
+      if (stored?.storagePath && storedLooksReusable(stored, expectedDuration)) {
         await input.downloadStorage(stored.storagePath, input.dest);
-        return done("youtube", url, stored.title || title, input.dest, "video/mp4", 0);
+        return done("youtube", url, stored.title || title, input.dest, "video/mp4", stored.fileSizeBytes || 0);
       }
     }
-    throw youtubeLimitation();
+    try {
+      const downloaded = await importYoutubeMedia(url, input.dest);
+      return done("youtube", url, title, input.dest, downloaded.contentType, downloaded.bytes);
+    } catch (error) {
+      if (error instanceof IngestError) throw error;
+      throw youtubeLimitation(error instanceof Error ? error.message : undefined);
+    }
   }
 
   if (input.sourceKind === "vimeo") {

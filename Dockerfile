@@ -18,7 +18,8 @@ RUN npm run build
 
 FROM node:22-alpine
 WORKDIR /app
-RUN apk add --no-cache wget ffmpeg font-dejavu fontconfig \
+RUN apk add --no-cache wget ffmpeg font-dejavu fontconfig python3 py3-pip \
+  && pip3 install --break-system-packages --no-cache-dir yt-dlp \
   && addgroup -S tdg && adduser -S tdg -G tdg
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm install --no-save tsx@4.20.5

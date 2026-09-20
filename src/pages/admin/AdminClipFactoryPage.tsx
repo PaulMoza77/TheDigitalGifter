@@ -166,13 +166,16 @@ export default function AdminClipFactoryPage() {
       }
     }
     void refresh();
-    const active = !job || !["completed", "failed"].includes(job.status);
-    const timer = window.setInterval(() => void refresh(), active ? 2500 : 12000);
+    const active = !job || !["completed", "failed", "waiting_for_media", "source_detected"].includes(job.status);
+    const timer = window.setInterval(() => {
+      void refresh();
+      loadJobs();
+    }, active ? 2500 : 12000);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [jobId, job?.status]);
+  }, [jobId, job?.status, loadJobs]);
 
   React.useEffect(() => {
     const trimmed = url.trim();
@@ -519,7 +522,7 @@ export default function AdminClipFactoryPage() {
               ) : null}
               <div>
                 <h2 className="text-xl font-semibold">{job?.source_label}</h2>
-                <p className="mt-2 text-sm text-slate-300">{job?.progress_label || "YouTube source detected. Provide the original media to continue."}</p>
+            <p className="mt-2 text-sm text-slate-300">{job?.error_message || job?.progress_label || "YouTube source detected. Provide the original media to continue."}</p>
               </div>
             </div>
             <p className="mt-5 text-sm font-medium text-slate-200">To create clips, provide the original video:</p>
@@ -567,8 +570,8 @@ export default function AdminClipFactoryPage() {
               {ANALYSIS_STAGE_ORDER.map((stage) => {
                 const currentIndex = ANALYSIS_STAGE_ORDER.indexOf(job.stage as (typeof ANALYSIS_STAGE_ORDER)[number]);
                 const thisIndex = ANALYSIS_STAGE_ORDER.indexOf(stage);
-                const done = currentIndex > thisIndex || job.status === "completed";
-                const active = job.stage === stage || (stage === "importing" && (job.stage === "queued" || job.stage === "ingesting"));
+                const done = currentIndex > thisIndex;
+                const active = job.stage === stage || (stage === "importing" && (job.stage === "queued" || job.stage === "ingesting" || job.stage === "downloading"));
                 const label =
                   stage === "analyzing" && job.media?.duration_seconds
                     ? `Analyzing ${formatClock(job.media.duration_seconds)} of content`
@@ -605,9 +608,17 @@ export default function AdminClipFactoryPage() {
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold">
-                  {job.clips_generated ? `${job.clips_generated} clips ready` : `${job.moments_found} Viral Moments Found`}
+                  {job.status === "partial" || (job.clips_generated && job.moments_found && job.clips_generated < job.moments_found)
+                    ? `${job.clips_generated} of ${job.moments_found} clips ready`
+                    : job.clips_generated
+                      ? `${job.clips_generated} clips ready`
+                      : `${job.moments_found} Viral Moments Found`}
                 </h2>
-                <p className="text-sm text-slate-400">{job.progress_label || job.source_label}</p>
+                {job.error_message && job.status === "partial" ? (
+                  <p className="mt-1 text-sm text-amber-200">{job.error_message}</p>
+                ) : (
+                  <p className="text-sm text-slate-400">{job.progress_label || job.source_label}</p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <button

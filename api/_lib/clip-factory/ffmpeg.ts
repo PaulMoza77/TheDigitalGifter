@@ -78,8 +78,13 @@ export async function ffprobeFile(path: string): Promise<ProbeInfo> {
   };
 }
 
-export async function extractAudioMp3(input: string, output: string): Promise<void> {
-  await runCommand("ffmpeg", ["-y", "-i", input, "-vn", "-ac", "1", "-ar", "16000", "-b:a", "64k", output], 300_000);
+export async function extractAudioMp3(input: string, output: string, start?: number, duration?: number): Promise<void> {
+  const args = ["-y"];
+  if (typeof start === "number" && start > 0) args.push("-ss", String(start));
+  args.push("-i", input);
+  if (typeof duration === "number" && duration > 0) args.push("-t", String(duration));
+  args.push("-vn", "-ac", "1", "-ar", "16000", "-b:a", "64k", output);
+  await runCommand("ffmpeg", args, 300_000);
 }
 
 export async function detectScenes(input: string): Promise<number[]> {

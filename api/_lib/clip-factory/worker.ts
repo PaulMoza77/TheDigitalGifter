@@ -11,15 +11,16 @@ import { DEFAULT_CLIP_FACTORY_OPTIONS } from "../../../src/features/clip-factory
 import { acquireSourceMedia } from "./acquire";
 import { IngestError, sanitizeFilename } from "./ingest";
 import { desiredClipCount } from "../../../src/features/clip-factory/boundaries";
+import { isKnownInvalidMediaHash } from "../../../src/features/clip-factory/mediaQuality";
+import { transcribeWhisperLong, describeFrames, openaiConfigured, proposeMoments } from "./openai";
+import { assertUsableRenderedClip, assertUsableSourceMedia } from "./validateMedia";
 import {
   detectScenes,
   extractAudioMp3,
   extractJpeg,
   extractThumbnail,
-  ffprobeFile,
   renderVerticalClip,
 } from "./ffmpeg";
-import { describeFrames, openaiConfigured, proposeMoments, transcribeWhisper } from "./openai";
 import { signedPlaybackPath } from "./mediaSign";
 
 const BUCKET = "clip-factory";
@@ -103,12 +104,21 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
   const { data: job, error } = await service.from("clip_factory_jobs").select("*").eq("id", jobId).maybeSingle();
   if (error || !job) throw error || new Error("job_not_found");
   const options = { ...DEFAULT_CLIP_FACTORY_OPTIONS, ...(job.options || {}) } as ClipFactoryOptions;
+  const expectedDuration =
+    Number((job.source_metadata as { durationSeconds?: number } | null)?.durationSeconds) ||
+    Number((job.source_payload as { durationSeconds?: number } | null)?.durationSeconds) ||
+    null;
   const workDir = join(tmpdir(), `tdg-clip-${jobId}`);
   await fs.mkdir(workDir, { recursive: true });
   const sourcePath = join(workDir, "source.mp4");
   const cost: Record<string, number> = { ...(job.cost || {}) };
 
   try {
+    if (job.media_id && isKnownInvalidMediaHash(String(job.media_hash || ""))) {
+      await patchJob(jobId, { media_id: null, media_hash: null });
+      job.media_id = null;
+      job.media_hash = null;
+    }
     if (
       ["queued", "ingesting", "importing", "downloading", "uploading", "failed", "waiting_for_media", "source_detected"].includes(
         job.status,
@@ -133,16 +143,29 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
         sourcePayload: payload,
         sourceLabel: job.source_label,
         dest: sourcePath,
+        expectedDurationSeconds: expectedDuration,
         downloadStorage,
         resolveLibraryFile: resolveLocalLibrary,
         copyFile: (from, to) => fs.copyFile(from, to),
         findStoredMedia: async (sourceUrl) => {
           const { data } = await service
             .from("clip_factory_media")
-            .select("storage_path,source_label")
+            .select("storage_path,source_label,duration_seconds,file_size_bytes,media_hash,invalidated_at")
             .eq("source_url", sourceUrl)
+            .is("invalidated_at", null)
+            .order("created_at", { ascending: false })
+            .limit(1)
             .maybeSingle();
-          return data?.storage_path ? { storagePath: data.storage_path, title: data.source_label } : null;
+          return data?.storage_path
+            ? {
+                storagePath: data.storage_path,
+                title: data.source_label,
+                durationSeconds: data.duration_seconds,
+                fileSizeBytes: data.file_size_bytes,
+                mediaHash: data.media_hash,
+                invalidated: Boolean(data.invalidated_at),
+              }
+            : null;
         },
         loadLibraryAsset: async (id) => {
           const { data: asset } = await service
@@ -159,18 +182,16 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
 
       let probe;
       try {
-        probe = await ffprobeFile(sourcePath);
-      } catch {
+        probe = await assertUsableSourceMedia({
+          path: sourcePath,
+          expectedDurationSeconds: expectedDuration,
+        });
+      } catch (err) {
+        if (err instanceof IngestError) throw err;
         throw new IngestError("corrupt_file", "This file could not be read as video. Try MP4/H.264.");
-      }
-      if (!probe.duration || probe.duration < 3) {
-        throw new IngestError("very_short_video", `Video is too short (${probe.duration.toFixed(1)}s). Use a clip of at least 3 seconds.`);
       }
       if (probe.duration > 7200) {
         throw new IngestError("duration_exceeded", "Video exceeds maximum supported duration.");
-      }
-      if (probe.width < 240 || probe.height < 240) {
-        throw new IngestError("low_resolution", `Resolution ${probe.width}×${probe.height} is too low for a good vertical crop.`);
       }
       const mediaHash = await hashFile(sourcePath);
       const storedPath = `media/${mediaHash}/source.mp4`;
@@ -223,11 +244,22 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
 
     const { data: media } = await service.from("clip_factory_media").select("*").eq("id", job.media_id).maybeSingle();
     if (!media) throw new Error("media_missing");
+    if (media.invalidated_at || isKnownInvalidMediaHash(media.media_hash)) {
+      throw new IngestError(
+        "synthetic_or_empty",
+        "Stored source was marked invalid (placeholder/synthetic), not the original video. Upload the original MP4.",
+      );
+    }
     try {
       await fs.access(sourcePath);
     } catch {
       await downloadStorage(media.storage_path, sourcePath);
     }
+    await assertUsableSourceMedia({
+      path: sourcePath,
+      expectedDurationSeconds: expectedDuration || Number(media.duration_seconds || 0),
+      mediaHash: media.media_hash,
+    });
 
     await recordEvent(jobId, "clip_factory_analysis_started", { media_hash: media.media_hash });
     await patchJob(jobId, {
@@ -245,7 +277,7 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       .eq("media_hash", media.media_hash)
       .maybeSingle();
 
-    if (cachedTranscript) {
+    if (cachedTranscript && String(cachedTranscript.full_text || "").trim()) {
       transcript = {
         language: cachedTranscript.language,
         languageProbability: cachedTranscript.language_probability,
@@ -264,15 +296,14 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
         );
       }
       await patchJob(jobId, { status: "extracting_audio", stage: "extracting_audio", progress: 28, progress_label: "Extracting audio" });
-      const audioPath = join(workDir, "audio.mp3");
       try {
-        await extractAudioMp3(sourcePath, audioPath);
-      } catch {
-        throw new IngestError("no_audio", "Audio could not be extracted from this file.");
-      }
-      await patchJob(jobId, { status: "transcribing", stage: "transcribing", progress: 34, progress_label: `Transcribing ${formatClock(Number(media.duration_seconds || 0))} video...` });
-      try {
-        const result = await transcribeWhisper(audioPath, options.language);
+        const result = await transcribeWhisperLong({
+          sourcePath,
+          workDir,
+          durationSeconds: Number(media.duration_seconds || 0),
+          language: options.language,
+          extractAudio: extractAudioMp3,
+        });
         transcript = result;
         cost.whisper_seconds = (cost.whisper_seconds || 0) + (result.usage.minutes * 60 || media.duration_seconds || 0);
         cost.openai_calls = (cost.openai_calls || 0) + 1;
@@ -374,6 +405,12 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     }
     cost.openai_calls = (cost.openai_calls || 0) + 1;
     cost.openai_tokens = (cost.openai_tokens || 0) + proposed.tokens;
+    if (!proposed.candidates.length && !transcript.fullText.trim()) {
+      throw new IngestError(
+        "no_moments",
+        "No speech or visible scenes could be grounded in this file. If this was a YouTube link, the imported media was not the original video. Upload the original MP4.",
+      );
+    }
 
     const reframe = planReframe({
       width: media.width,
@@ -510,26 +547,39 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       .eq("status", "completed");
     const readyCount = completedCount || 0;
     await patchJob(jobId, {
-      status: readyCount ? (readyCount === renderIds.length ? "completed" : "partial") : "partial",
+      status: readyCount ? (readyCount === renderIds.length ? "completed" : "partial") : "failed",
       stage: readyCount ? "completed" : "failed",
       progress: 100,
-      progress_label: readyCount ? `${readyCount} clips ready` : "Rendering failed",
+      progress_label: readyCount
+        ? readyCount === renderIds.length
+          ? `${readyCount} clips ready`
+          : `${readyCount} of ${renderIds.length} clips ready`
+        : "Rendering failed",
       clips_generated: readyCount,
+      error_message: readyCount ? (readyCount === renderIds.length ? null : `${renderIds.length - readyCount} clip(s) failed`) : "No valid clips were rendered from the imported source.",
       lease_expires_at: null,
     });
   } catch (err) {
     const code = err instanceof IngestError ? err.code : "analysis_failed";
     const message = err instanceof Error ? err.message : String(err);
+    const waiting =
+      code === "import_unavailable" ||
+      code === "source_auth_required" ||
+      code === "duration_mismatch" ||
+      code === "synthetic_or_empty" ||
+      code === "uniform_frames";
     await patchJob(jobId, {
-      status: "failed",
-      stage: "failed",
-      failed_stage: "analysis",
+      status: waiting ? "waiting_for_media" : "failed",
+      stage: waiting ? "source_detected" : "failed",
+      failed_stage: waiting ? "importing" : "analysis",
       error_code: code,
       error_message: message.slice(0, 500),
       lease_expires_at: null,
+      progress: waiting ? 5 : 100,
+      progress_label: waiting ? message.slice(0, 180) : message.slice(0, 120),
     });
-    await recordEvent(jobId, "clip_factory_analysis_failed", { code, message: message.slice(0, 400) });
-    throw err;
+    await recordEvent(jobId, waiting ? "clip_factory_waiting_for_media" : "clip_factory_analysis_failed", { code, message: message.slice(0, 400) });
+    if (!waiting) throw err;
   } finally {
     await fs.rm(workDir, { recursive: true, force: true }).catch(() => undefined);
   }
@@ -634,6 +684,7 @@ export async function renderClipFactoryCandidate(input: {
       assPath,
       hasAudio: Boolean(media.has_audio),
     });
+    const probe = await assertUsableRenderedClip({ path: outPath, expectedDuration: duration });
     await patchJob(input.jobId, { status: "saving", stage: "saving", progress: 86, progress_label: "Saving to Library" });
     const mid = Math.min(duration * 0.35, Math.max(0.2, duration / 2));
     await extractThumbnail(outPath, mid, thumbPath);
@@ -642,8 +693,6 @@ export async function renderClipFactoryCandidate(input: {
     const thumbKey = `renders/${input.jobId}/${candidate.id}.jpg`;
     const videoBytes = await uploadBytes(outPath, videoKey, "video/mp4");
     await uploadBytes(thumbPath, thumbKey, "image/jpeg");
-    const probe = await ffprobeFile(outPath);
-
     const filename = sanitizeFilename(`${candidate.title || "clip"}-${candidate.id.slice(0, 8)}.mp4`);
     const libraryInsert = await service
       .from("library_assets")

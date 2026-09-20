@@ -115,6 +115,7 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
     if (res.ok) {
       const json = (await res.json().catch(() => ({}))) as { title?: string; author_name?: string; thumbnail_url?: string };
       const ingestionCapability = youtubeCapability();
+      const scrapedDuration = await scrapeYoutubeDuration(id);
       return normalizeSourceMetadata({
         provider: "youtube",
         url: normalizedUrl,
@@ -122,7 +123,7 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
         externalId: id,
         title: json.title || "YouTube video",
         author: json.author_name || null,
-        durationSeconds: null,
+        durationSeconds: scrapedDuration,
         thumbnailUrl: json.thumbnail_url || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
         privacy: "public",
         embeddable: true,
@@ -139,6 +140,7 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
     if (error instanceof IngestFailure) throw error;
   }
   const ingestionCapability = youtubeCapability();
+  const scrapedDuration = await scrapeYoutubeDuration(id);
   return normalizeSourceMetadata({
     provider: "youtube",
     url: normalizedUrl,
@@ -146,7 +148,7 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
     externalId: id,
     title: "YouTube video",
     author: null,
-    durationSeconds: null,
+    durationSeconds: scrapedDuration,
     thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
     privacy: "unknown",
     embeddable: null,
@@ -168,6 +170,30 @@ export function parseIsoDuration(value?: string | null): number | null {
   const minutes = Number(match[2] || 0);
   const seconds = Number(match[3] || 0);
   return hours * 3600 + minutes * 60 + seconds;
+}
+
+export function parseYoutubeDurationFromHtml(html: string): number | null {
+  const length = /"lengthSeconds":"(\d+)"/.exec(html);
+  if (length) return Number(length[1]);
+  const ms = /"approxDurationMs":"(\d+)"/.exec(html);
+  if (ms) return Number(ms[1]) / 1000;
+  return null;
+}
+
+async function scrapeYoutubeDuration(id: string): Promise<number | null> {
+  try {
+    const res = await fetch(`https://www.youtube.com/watch?v=${id}`, {
+      headers: {
+        Accept: "text/html",
+        "User-Agent": "Mozilla/5.0 (compatible; TheDigitalGifter-ClipFactory/1.0)",
+      },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    return parseYoutubeDurationFromHtml(html);
+  } catch {
+    return null;
+  }
 }
 
 export const youtubeAdapter: VideoSourceAdapter = {

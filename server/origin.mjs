@@ -306,4 +306,22 @@ const server = createServer((req, res) => {
 
 server.listen(port, "0.0.0.0", () => {
   console.log(JSON.stringify({ source: "tdg-origin", listening: port, dist: existsSync(distDir) }));
+  const tickMs = Number(process.env.CLIP_FACTORY_TICK_MS || 15000);
+  if (tickMs > 0) {
+    const runTick = () => {
+      import("../api/_lib/clip-factory/worker.ts")
+        .then((mod) => mod.tickClipFactory("origin-loop"))
+        .catch((error) => {
+          console.error(
+            JSON.stringify({
+              source: "clip-factory",
+              event: "origin_tick_failed",
+              message: error instanceof Error ? error.message : String(error),
+            }),
+          );
+        });
+    };
+    setInterval(runTick, tickMs);
+    setTimeout(runTick, 2500);
+  }
 });

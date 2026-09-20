@@ -19,7 +19,11 @@ describe("clip factory production wiring", () => {
     expect(read("api/clip-factory.ts")).toContain("attach_media");
     expect(read("api/clip-factory.ts")).toContain("waiting_for_media");
     expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("YouTube source detected. Provide the original media to continue.");
-    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).not.toContain("Automatic import isn't available");
+    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("Automatic media import is not available for this source");
+    expect(read("api/_lib/clip-factory/acquire.ts")).toContain("YouTube Data API v3");
+    expect(read("api/_lib/clip-factory/worker.ts")).toContain("assertUsableSourceMedia");
+    expect(read("api/_lib/clip-factory/worker.ts")).toContain("assertUsableRenderedClip");
+    expect(read("src/features/clip-factory/mediaQuality.ts")).toContain("KNOWN_INVALID_MEDIA_HASHES");
     expect(read("api/clip-factory.ts")).toContain("rights_confirmed");
     expect(read("src/features/clip-factory/ingest/types.ts")).toContain("VideoSourceAdapter");
     expect(read("src/features/clip-factory/ingest/types.ts")).toContain("ingestionCapability");
@@ -43,6 +47,12 @@ describe("clip factory production wiring", () => {
     expect(sql).toContain("revoke all on public.clip_factory_jobs from anon, authenticated");
     expect(sql).not.toMatch(/drop table/i);
     expect(read("Dockerfile")).toContain("font-dejavu");
+    expect(read("Dockerfile")).toContain("yt-dlp");
+    expect(read("api/_lib/clip-factory/worker.ts")).not.toContain("color=c=");
+    expect(read("api/_lib/clip-factory/worker.ts")).not.toContain("The family walked into the room");
+    expect(read("api/_lib/clip-factory/acquire.ts")).not.toContain("color=c=");
+    expect(read("supabase/migrations/20260920213000_clip_factory_invalidate_placeholder.sql")).toContain("1035c4690f0871aab131142f8b39fb055b82eaea8fe38706519dcc377d0b2c33");
+    expect(read("server/origin.mjs")).toContain("tickClipFactory");
     expect(read("supabase/functions/social-publisher/index.ts")).toContain("/api/clip-factory");
   });
 });
