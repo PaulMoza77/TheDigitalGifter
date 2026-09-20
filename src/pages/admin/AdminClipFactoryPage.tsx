@@ -25,6 +25,9 @@ import {
   type CaptionStyle,
   type ClipFactoryOptions,
 } from "@/features/clip-factory/types";
+import PublishReelDrawer from "@/features/social-publisher/PublishReelDrawer";
+import { resolveDefaultTimezone } from "@/features/social-publisher/timezone";
+import type { LibraryVideo } from "@/features/admin-library/catalog";
 
 const COUNT_CHIPS: Array<{ id: ClipFactoryOptions["clipCount"]; label: string }> = [
   { id: 5, label: "5" },
@@ -113,8 +116,23 @@ export default function AdminClipFactoryPage() {
   const [url, setUrl] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
   const [libraryId, setLibraryId] = React.useState("");
-  const [libraryItems, setLibraryItems] = React.useState<Array<{ id: string; title: string }>>([]);
+  const [libraryItems, setLibraryItems] = React.useState<Array<{ id: string; title: string; libraryKind?: string }>>([]);
   const [advanced, setAdvanced] = React.useState(false);
+  const [rightsConfirmed, setRightsConfirmed] = React.useState(false);
+  const [urlPreview, setUrlPreview] = React.useState<{
+    provider: string;
+    title?: string | null;
+    durationSeconds?: number | null;
+    thumbnailUrl?: string | null;
+    canImport: boolean;
+    message?: string | null;
+  } | null>(null);
+  const [urlIssue, setUrlIssue] = React.useState<string | null>(null);
+  const [publisher, setPublisher] = React.useState<LibraryVideo | null>(null);
+  const timezone = React.useMemo(
+    () => resolveDefaultTimezone({ browserTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+    [],
+  );
   const [busy, setBusy] = React.useState(false);
   const [job, setJob] = React.useState<ClipFactoryJob | null>(null);
   const [jobs, setJobs] = React.useState<ClipFactoryJob[]>([]);
@@ -148,7 +166,7 @@ export default function AdminClipFactoryPage() {
       }
     }
     void refresh();
-    const active = !job || !["completed", "failed", "ready", "partial"].includes(job.status);
+    const active = !job || !["completed", "failed"].includes(job.status);
     const timer = window.setInterval(() => void refresh(), active ? 2500 : 12000);
     return () => {
       cancelled = true;
@@ -156,8 +174,37 @@ export default function AdminClipFactoryPage() {
     };
   }, [jobId, job?.status]);
 
+  React.useEffect(() => {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setUrlPreview(null);
+      setUrlIssue(null);
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      void clipFactoryApi
+        .inspectUrl(trimmed)
+        .then((data) => {
+          setUrlIssue(null);
+          setUrlPreview({
+            provider: data.metadata?.provider || data.classification.provider,
+            title: data.metadata?.title,
+            durationSeconds: data.metadata?.durationSeconds,
+            thumbnailUrl: data.metadata?.thumbnailUrl,
+            canImport: Boolean(data.ready),
+            message: data.metadata?.message || data.classification.message,
+          });
+        })
+        .catch((error) => {
+          setUrlPreview(null);
+          setUrlIssue(error instanceof Error ? error.message : "That URL could not be inspected.");
+        });
+    }, 400);
+    return () => window.clearTimeout(handle);
+  }, [url]);
+
   function openJob(id: string) {
-    navigate(`/admin/clip-factory?job=${id}`);
+    void navigate(`/admin/clip-factory?job=${id}`);
   }
 
   async function createJob() {
@@ -172,9 +219,25 @@ export default function AdminClipFactoryPage() {
         await fetch(signed.uploadUrl, { method: "PUT", headers: signed.headers, body: file });
         payload = { ...payload, source_kind: "upload", object_path: signed.objectPath, file_name: file.name };
       } else if (libraryId) {
-        payload = { ...payload, source_kind: "library", library_asset_id: libraryId };
+        const item = libraryItems.find((row) => row.id === libraryId);
+        payload = {
+          ...payload,
+          source_kind: "library",
+          library_asset_id: libraryId,
+          library_kind: item?.libraryKind === "asset" ? "asset" : "catalog",
+        };
       } else if (url.trim()) {
-        payload = { ...payload, source_kind: "direct_media_url", url: url.trim() };
+        if (urlPreview && !urlPreview.canImport) {
+          toast.error(urlPreview.message || "Automatic import isn't available for this source. Upload the original video file instead.");
+          return;
+        }
+        payload = {
+          ...payload,
+          source_kind: urlPreview?.provider === "youtube" || urlPreview?.provider === "vimeo" ? urlPreview.provider : "direct_media_url",
+          url: url.trim(),
+          rights_confirmed: rightsConfirmed,
+          source_label: urlPreview?.title || undefined,
+        };
       } else {
         toast.error("Paste a video URL, upload a file, or choose one from the Library.");
         return;
@@ -248,7 +311,7 @@ export default function AdminClipFactoryPage() {
             AI finds the strongest moments, edits them and creates ready-to-post Reels, Shorts and TikToks.
           </p>
           {jobId ? (
-            <button type="button" onClick={() => navigate("/admin/clip-factory")} className="mt-4 text-sm text-indigo-300">
+            <button type="button" onClick={() => void navigate("/admin/clip-factory")} className="mt-4 text-sm text-indigo-300">
               New job
             </button>
           ) : null}
@@ -270,8 +333,39 @@ export default function AdminClipFactoryPage() {
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-indigo-400/60"
                 />
               </label>
+              {urlPreview ? (
+                <div className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
+                  {urlPreview.thumbnailUrl ? (
+                    <img src={urlPreview.thumbnailUrl} alt="" className="h-20 w-14 rounded-xl object-cover" />
+                  ) : (
+                    <span className="flex h-20 w-14 items-center justify-center rounded-xl bg-slate-800 text-[10px] uppercase tracking-wide text-slate-400">
+                      {urlPreview.provider}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">{urlPreview.provider === "direct" ? "Direct video" : urlPreview.provider}</p>
+                    <p className="mt-1 truncate text-sm font-medium">{urlPreview.title || "Ready to analyze"}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {urlPreview.durationSeconds ? `${Math.round(urlPreview.durationSeconds)}s · ` : ""}
+                      {urlPreview.canImport ? "Ready to analyze" : urlPreview.message}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+              {urlIssue ? <p className="text-sm text-rose-300">{urlIssue}</p> : null}
+              {url.trim() ? (
+                <label className="flex items-start gap-3 text-sm text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={rightsConfirmed}
+                    onChange={(e) => setRightsConfirmed(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <span>I confirm that I own this content or have permission to use it.</span>
+                </label>
+              ) : null}
               <div className="flex flex-wrap gap-3">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm">
+                <label className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${urlPreview && !urlPreview.canImport ? "border-indigo-400/70 bg-indigo-500/10" : "border-slate-700 bg-slate-950"}`}>
                   <Upload className="h-4 w-4" />
                   {file ? file.name : "Upload Video"}
                   <input
@@ -296,7 +390,7 @@ export default function AdminClipFactoryPage() {
                 >
                   <option value="">Choose from Library</option>
                   {libraryItems.map((item) => (
-                    <option key={item.id} value={item.id}>
+                    <option key={`${item.libraryKind || "catalog"}-${item.id}`} value={item.id}>
                       {item.title}
                     </option>
                   ))}
@@ -396,7 +490,7 @@ export default function AdminClipFactoryPage() {
         {job && analyzing ? (
           <section className="rounded-[28px] border border-slate-800 bg-slate-900/50 p-6 sm:p-8">
             <p className="text-sm text-slate-400">{job.source_label}</p>
-            <h2 className="mt-1 text-2xl font-semibold">Finding the strongest moments</h2>
+            <h2 className="mt-1 text-2xl font-semibold">{job.progress_label || "Finding the strongest moments"}</h2>
             <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-800">
               <div className="h-full rounded-full bg-indigo-400 transition-all" style={{ width: `${Math.max(6, job.progress)}%` }} />
             </div>
@@ -404,12 +498,16 @@ export default function AdminClipFactoryPage() {
               {ANALYSIS_STAGE_ORDER.map((stage) => {
                 const currentIndex = ANALYSIS_STAGE_ORDER.indexOf(job.stage as (typeof ANALYSIS_STAGE_ORDER)[number]);
                 const thisIndex = ANALYSIS_STAGE_ORDER.indexOf(stage);
-                const done = currentIndex > thisIndex || job.status === "ready";
-                const active = job.stage === stage || (stage === "ingesting" && job.stage === "queued");
+                const done = currentIndex > thisIndex || job.status === "completed";
+                const active = job.stage === stage || (stage === "importing" && (job.stage === "queued" || job.stage === "ingesting"));
+                const label =
+                  stage === "analyzing" && job.media?.duration_seconds
+                    ? `Analyzing ${formatClock(job.media.duration_seconds)} of content`
+                    : STAGE_LABELS[stage];
                 return (
                   <li key={stage} className="flex items-center gap-3 rounded-2xl border border-slate-800 px-4 py-3">
                     {done ? <Check className="h-4 w-4 text-emerald-300" /> : active ? <Loader2 className="h-4 w-4 animate-spin text-indigo-300" /> : <span className="h-4 w-4 rounded-full border border-slate-700" />}
-                    <span className={active ? "text-white" : "text-slate-400"}>{STAGE_LABELS[stage]}</span>
+                    <span className={active ? "text-white" : "text-slate-400"}>{label}</span>
                   </li>
                 );
               })}
@@ -420,7 +518,7 @@ export default function AdminClipFactoryPage() {
 
         {job?.status === "failed" ? (
           <section className="mt-6 rounded-[28px] border border-rose-500/20 bg-rose-950/20 p-6">
-            <h2 className="text-xl font-semibold">Analysis could not finish</h2>
+            <h2 className="text-xl font-semibold">This job could not finish</h2>
             <p className="mt-2 text-sm leading-6 text-rose-100">{job.error_message || "The job failed."}</p>
             <button
               type="button"
@@ -487,9 +585,71 @@ export default function AdminClipFactoryPage() {
                         <button type="button" className="rounded-xl px-3 py-2 text-sm text-slate-500" onClick={() => void clipFactoryApi.rejectCandidate(job.id, card.id, true).then(async () => setJob((await clipFactoryApi.getJob(job.id)).job))}>Reject</button>
                       </div>
                       {render ? (
-                        <p className={`mt-3 text-xs ${statusTone(render.status)}`}>
-                          {render.status === "completed" ? "Saved to Library" : render.status === "failed" ? render.error_message : "Rendering…"}
-                        </p>
+                        <div className="mt-3 space-y-2">
+                          <p className={`text-xs ${statusTone(render.status)}`}>
+                            {render.status === "completed" ? "Saved to Library" : render.status === "failed" ? render.error_message : "Rendering…"}
+                          </p>
+                          {render.status === "completed" ? (
+                            <div className="flex flex-wrap gap-2">
+                              {render.playback_url ? (
+                                <a className="rounded-xl border border-slate-700 px-3 py-2 text-sm" href={render.playback_url} target="_blank" rel="noreferrer">
+                                  Preview
+                                </a>
+                              ) : null}
+                              {render.playback_url ? (
+                                <a className="rounded-xl border border-slate-700 px-3 py-2 text-sm" href={render.playback_url} download>
+                                  Download
+                                </a>
+                              ) : null}
+                              {render.library_asset_id ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="rounded-xl border border-slate-700 px-3 py-2 text-sm"
+                                    onClick={() =>
+                                      setPublisher({
+                                        id: render.library_asset_id || card.id,
+                                        title: card.title,
+                                        description: card.suggested_post_caption || card.summary,
+                                        src: render.playback_url || "",
+                                        filename: `${card.title}.mp4`,
+                                        category: "clip_factory",
+                                        kind: "reel",
+                                        width: 1080,
+                                        height: 1920,
+                                      })
+                                    }
+                                  >
+                                    Schedule
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950"
+                                    onClick={() =>
+                                      setPublisher({
+                                        id: render.library_asset_id || card.id,
+                                        title: card.title,
+                                        description: card.suggested_post_caption || card.summary,
+                                        src: render.playback_url || "",
+                                        filename: `${card.title}.mp4`,
+                                        category: "clip_factory",
+                                        kind: "reel",
+                                        width: 1080,
+                                        height: 1920,
+                                      })
+                                    }
+                                  >
+                                    Publish
+                                  </button>
+                                </>
+                              ) : null}
+                            </div>
+                          ) : render.status === "failed" ? (
+                            <button type="button" className="text-sm text-indigo-300" onClick={() => void generate([card.id])}>
+                              Retry
+                            </button>
+                          ) : null}
+                        </div>
                       ) : null}
                     </article>
                   );
@@ -535,10 +695,12 @@ export default function AdminClipFactoryPage() {
               <button
                 type="button"
                 className="mt-5 w-full rounded-2xl bg-indigo-500 py-3 font-semibold"
-                onClick={async () => {
-                  await clipFactoryApi.updateCandidate(job.id, preview.id, { start_time: trim.start, end_time: trim.end });
-                  await generate([preview.id]);
-                  setPreview(null);
+                onClick={() => {
+                  void (async () => {
+                    await clipFactoryApi.updateCandidate(job.id, preview.id, { start_time: trim.start, end_time: trim.end });
+                    await generate([preview.id]);
+                    setPreview(null);
+                  })();
                 }}
               >
                 Generate this clip
@@ -546,6 +708,8 @@ export default function AdminClipFactoryPage() {
             </div>
           </div>
         ) : null}
+
+        <PublishReelDrawer video={publisher} timezone={timezone} onClose={() => setPublisher(null)} />
 
         <section className="mt-12">
           <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold">

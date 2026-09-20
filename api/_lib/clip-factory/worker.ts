@@ -10,6 +10,8 @@ import { planReframe } from "../../../src/features/clip-factory/reframe";
 import type { CaptionStyle, ClipFactoryOptions, Transcript } from "../../../src/features/clip-factory/types";
 import { DEFAULT_CLIP_FACTORY_OPTIONS } from "../../../src/features/clip-factory/types";
 import { downloadDirectMedia, IngestError, sanitizeFilename } from "./ingest";
+import { importVimeoAuthorized, importYoutubeAuthorized } from "./providers";
+import { desiredClipCount } from "../../../src/features/clip-factory/boundaries";
 import {
   detectScenes,
   extractAudioMp3,
@@ -70,6 +72,15 @@ function resolveLocalLibrary(src: string): string | null {
   return candidates.find((path) => existsSync(path)) || null;
 }
 
+function formatClock(seconds: number): string {
+  const t = Math.max(0, Number(seconds) || 0);
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = Math.floor(t % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 function estimateCost(cost: Record<string, number>): number {
   const whisperUsd = ((cost.whisper_seconds || 0) / 60) * 0.006;
   const tokenUsd = ((cost.openai_tokens || 0) / 1_000_000) * 0.25;
@@ -99,8 +110,15 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
   const cost: Record<string, number> = { ...(job.cost || {}) };
 
   try {
-    if (["queued", "ingesting", "failed"].includes(job.status) && !job.media_id) {
-      await patchJob(jobId, { status: "ingesting", stage: "ingesting", progress: 8, error_message: null, failed_stage: null });
+    if (["queued", "ingesting", "importing", "failed"].includes(job.status) && !job.media_id) {
+      await patchJob(jobId, {
+        status: "importing",
+        stage: "importing",
+        progress: 8,
+        progress_label: "Importing video",
+        error_message: null,
+        failed_stage: null,
+      });
       await recordEvent(jobId, "clip_factory_source_added", { source_kind: job.source_kind });
       const payload = job.source_payload || {};
       if (job.source_kind === "upload") {
@@ -109,17 +127,26 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
         await downloadStorage(objectPath, sourcePath);
       } else if (job.source_kind === "library") {
         const assetId = String(payload.libraryAssetId || "");
-        const asset = LIBRARY_VIDEOS.find((v) => v.id === assetId);
-        if (!asset) throw new IngestError("invalid_url", "That Library item was not found.");
-        const local = resolveLocalLibrary(asset.src);
-        if (!local) throw new IngestError("invalid_url", "Library file is not available on this origin.");
-        await fs.copyFile(local, sourcePath);
+        const catalog = LIBRARY_VIDEOS.find((v) => v.id === assetId);
+        if (catalog) {
+          const local = resolveLocalLibrary(catalog.src);
+          if (!local) throw new IngestError("invalid_url", "Library file is not available on this origin.");
+          await fs.copyFile(local, sourcePath);
+        } else {
+          const { data: asset } = await service.from("library_assets").select("storage_path,storage_bucket,title").eq("id", assetId).maybeSingle();
+          if (!asset?.storage_path) throw new IngestError("invalid_url", "That Library item was not found.");
+          await downloadStorage(asset.storage_path, sourcePath);
+        }
       } else if (job.source_kind === "direct_media_url") {
         await downloadDirectMedia(String(payload.url || ""), sourcePath);
+      } else if (job.source_kind === "youtube") {
+        await importYoutubeAuthorized(String(payload.url || ""), sourcePath);
+      } else if (job.source_kind === "vimeo") {
+        await importVimeoAuthorized(String(payload.url || ""), sourcePath);
       } else {
         throw new IngestError(
-          "unsupported_external_source",
-          "This source type is not imported automatically. Upload a file you have rights to use.",
+          "import_unavailable",
+          "Automatic import isn't available for this source. Upload the original video file instead.",
         );
       }
 
@@ -133,7 +160,7 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
         throw new IngestError("very_short_video", `Video is too short (${probe.duration.toFixed(1)}s). Use a clip of at least 3 seconds.`);
       }
       if (probe.duration > 7200) {
-        throw new IngestError("very_long_video", "Video is longer than 2 hours. Split it before clipping.");
+        throw new IngestError("duration_exceeded", "Video exceeds maximum supported duration.");
       }
       if (probe.width < 240 || probe.height < 240) {
         throw new IngestError("low_resolution", `Resolution ${probe.width}×${probe.height} is too low for a good vertical crop.`);
@@ -173,10 +200,14 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
         if (inserted.error) throw inserted.error;
         mediaId = inserted.data.id;
       }
+      if (job.source_kind === "upload" && String(payload.objectPath || "").startsWith("uploads/")) {
+        await service.storage.from(BUCKET).remove([String(payload.objectPath)]);
+      }
       await patchJob(jobId, {
         media_id: mediaId,
         media_hash: mediaHash,
         progress: 18,
+        progress_label: "Importing video",
         cost: { ...cost, estimated_usd: estimateCost(cost) },
       });
       job.media_id = mediaId;
@@ -192,7 +223,13 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     }
 
     await recordEvent(jobId, "clip_factory_analysis_started", { media_hash: media.media_hash });
-    await patchJob(jobId, { status: "analyzing_audio", stage: "analyzing_audio", progress: 24, analysis_started_at: new Date().toISOString() });
+    await patchJob(jobId, {
+      status: "extracting_audio",
+      stage: "extracting_audio",
+      progress: 24,
+      progress_label: "Extracting audio",
+      analysis_started_at: new Date().toISOString(),
+    });
 
     let transcript: Transcript = { language: null, fullText: "", words: [], segments: [] };
     const { data: cachedTranscript } = await service
@@ -209,9 +246,9 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
         words: cachedTranscript.words || [],
         segments: cachedTranscript.segments || [],
       };
-      await patchJob(jobId, { status: "transcribing", stage: "transcribing", progress: 40 });
+      await patchJob(jobId, { status: "transcribing", stage: "transcribing", progress: 40, progress_label: "Transcribing" });
     } else if (!media.has_audio) {
-      await patchJob(jobId, { status: "transcribing", stage: "transcribing", progress: 40 });
+      await patchJob(jobId, { status: "transcribing", stage: "transcribing", progress: 40, progress_label: "Transcribing" });
     } else {
       if (!openaiConfigured()) {
         throw new IngestError(
@@ -219,14 +256,14 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
           "OPENAI_API_KEY is not configured on the server, so speech cannot be transcribed.",
         );
       }
-      await patchJob(jobId, { status: "analyzing_audio", stage: "analyzing_audio", progress: 28 });
+      await patchJob(jobId, { status: "extracting_audio", stage: "extracting_audio", progress: 28, progress_label: "Extracting audio" });
       const audioPath = join(workDir, "audio.mp3");
       try {
         await extractAudioMp3(sourcePath, audioPath);
       } catch {
         throw new IngestError("no_audio", "Audio could not be extracted from this file.");
       }
-      await patchJob(jobId, { status: "transcribing", stage: "transcribing", progress: 34 });
+      await patchJob(jobId, { status: "transcribing", stage: "transcribing", progress: 34, progress_label: "Transcribing" });
       try {
         const result = await transcribeWhisper(audioPath, options.language);
         transcript = result;
@@ -252,7 +289,14 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       }
     }
 
-    await patchJob(jobId, { status: "understanding_scenes", stage: "understanding_scenes", progress: 52, cost: { ...cost, estimated_usd: estimateCost(cost) } });
+    const durationLabel = formatClock(Number(media.duration_seconds || 0));
+    await patchJob(jobId, {
+      status: "analyzing",
+      stage: "analyzing",
+      progress: 52,
+      progress_label: `Analyzing ${durationLabel} of content`,
+      cost: { ...cost, estimated_usd: estimateCost(cost) },
+    });
 
     let visualNotes: Awaited<ReturnType<typeof describeFrames>>["notes"] = [];
     const { data: cachedScenes } = await service
@@ -298,14 +342,14 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       }, { onConflict: "media_hash" });
     }
 
-    await patchJob(jobId, { status: "finding_hooks", stage: "finding_hooks", progress: 68 });
+    await patchJob(jobId, { status: "selecting_moments", stage: "selecting_moments", progress: 68, progress_label: "Finding candidate moments" });
     if (!openaiConfigured()) {
       throw new IngestError(
         "ai_provider_failure",
         "OPENAI_API_KEY is not configured, so viral moments cannot be selected from this video.",
       );
     }
-    await patchJob(jobId, { status: "scoring", stage: "scoring", progress: 78 });
+    await patchJob(jobId, { status: "selecting_moments", stage: "selecting_moments", progress: 78, progress_label: "Selecting best moments" });
     let proposed;
     try {
       proposed = await proposeMoments({
@@ -375,20 +419,77 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       /* thumbnail is optional at analysis time */
     }
 
+    const want = desiredClipCount(options.clipCount, Number(media.duration_seconds || 0));
     await patchJob(jobId, {
-      status: "ready",
-      stage: "ready",
-      progress: 100,
+      status: "selecting_moments",
+      stage: "selecting_moments",
+      progress: 82,
+      progress_label: `Found ${proposed.candidates.length} candidate moments`,
       moments_found: proposed.candidates.length,
       analysis_completed_at: new Date().toISOString(),
       cost: { ...cost, estimated_usd: estimateCost(cost) },
       error_message: proposed.candidates.length ? null : "No strong standalone moments were found. Try a longer talking-head or story video.",
-      lease_expires_at: null,
     });
     await recordEvent(jobId, "clip_factory_analysis_completed", {
       moments_found: proposed.candidates.length,
       estimated_usd: estimateCost(cost),
     });
+
+    const autoRender = job.auto_render !== false;
+    if (!proposed.candidates.length) {
+      await patchJob(jobId, { status: "failed", stage: "failed", failed_stage: "selecting_moments", error_code: "no_moments", lease_expires_at: null });
+      return;
+    }
+    if (!autoRender) {
+      await patchJob(jobId, { status: "ready", stage: "ready", progress: 100, lease_expires_at: null });
+      return;
+    }
+
+    const { data: storedCandidates } = await service
+      .from("clip_factory_candidates")
+      .select("id")
+      .eq("job_id", jobId)
+      .eq("rejected", false)
+      .order("overall_viral_score", { ascending: false })
+      .limit(want);
+    const renderIds = (storedCandidates || []).map((row) => row.id);
+    await patchJob(jobId, {
+      status: "rendering",
+      stage: "rendering",
+      progress: 86,
+      progress_label: `Selecting best ${renderIds.length}`,
+    });
+    for (const candidateId of renderIds) {
+      const { data: existing } = await service
+        .from("clip_factory_renders")
+        .select("id,status")
+        .eq("job_id", jobId)
+        .eq("candidate_id", candidateId)
+        .maybeSingle();
+      if (!existing) {
+        await service.from("clip_factory_renders").insert({
+          job_id: jobId,
+          candidate_id: candidateId,
+          status: "queued",
+          start_time: 0,
+          end_time: 0,
+          caption_style: options.captionStyle,
+          ai_hook_enabled: options.aiHook,
+        });
+      }
+    }
+    for (const candidateId of renderIds) {
+      try {
+        await renderClipFactoryCandidate({
+          jobId,
+          candidateId,
+          captionStyle: options.captionStyle,
+          aiHook: options.aiHook,
+        });
+      } catch {
+        /* render row already records the failure */
+      }
+    }
   } catch (err) {
     const code = err instanceof IngestError ? err.code : "analysis_failed";
     const message = err instanceof Error ? err.message : String(err);
@@ -449,7 +550,7 @@ export async function renderClipFactoryCandidate(input: {
     await service.from("clip_factory_renders").update({ status: "rendering", error_message: null, updated_at: new Date().toISOString() }).eq("id", renderId);
   }
 
-  await patchJob(input.jobId, { status: "rendering", stage: "rendering", progress: 55 });
+  await patchJob(input.jobId, { status: "rendering", stage: "rendering", progress: 55, progress_label: "Rendering clips" });
   await recordEvent(input.jobId, "clip_factory_render_started", { candidate_id: input.candidateId });
 
   const workDir = join(tmpdir(), `tdg-render-${renderId}`);
@@ -496,7 +597,7 @@ export async function renderClipFactoryCandidate(input: {
     const cropExpr = ffmpegCropExpression(crop, start, media.width, media.height);
     const filter = verticalFilter(crop.mode || "center", cropExpr);
 
-    await patchJob(input.jobId, { stage: "generating_captions", progress: 70 });
+    await patchJob(input.jobId, { status: "captioning", stage: "captioning", progress: 70, progress_label: "Adding captions" });
     await renderVerticalClip({
       source: sourcePath,
       output: outPath,
@@ -506,7 +607,7 @@ export async function renderClipFactoryCandidate(input: {
       assPath,
       hasAudio: Boolean(media.has_audio),
     });
-    await patchJob(input.jobId, { stage: "optimizing_vertical", progress: 86 });
+    await patchJob(input.jobId, { status: "saving", stage: "saving", progress: 86, progress_label: "Saving to Library" });
     const mid = Math.min(duration * 0.35, Math.max(0.2, duration / 2));
     await extractThumbnail(outPath, mid, thumbPath);
 
@@ -576,16 +677,23 @@ export async function renderClipFactoryCandidate(input: {
       .select("id", { count: "exact", head: true })
       .eq("job_id", input.jobId)
       .eq("status", "completed");
+    const { count: pending } = await service
+      .from("clip_factory_renders")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", input.jobId)
+      .in("status", ["queued", "rendering"]);
     const generated = count || 1;
     const cost = { ...(job.cost || {}), render_ms: Date.now() - started, storage_bytes: ((job.cost || {}).storage_bytes || 0) + videoBytes };
     cost.estimated_usd = estimateCost(cost);
+    const done = !pending;
     await patchJob(input.jobId, {
       clips_generated: generated,
-      status: "completed",
-      stage: "completed",
-      progress: 100,
+      status: done ? "completed" : "rendering",
+      stage: done ? "completed" : "rendering",
+      progress: done ? 100 : Math.min(95, 70 + generated * 5),
+      progress_label: done ? "Saved to Library" : `Saving to Library (${generated} ready)`,
       cost,
-      lease_expires_at: null,
+      lease_expires_at: done ? null : undefined,
     });
     await recordEvent(input.jobId, "clip_factory_render_completed", { render_id: renderId, library_asset_id: libraryInsert.data.id });
     await recordEvent(input.jobId, "clip_factory_saved_to_library", { library_asset_id: libraryInsert.data.id });
@@ -636,7 +744,7 @@ export async function tickClipFactory(workerId = "origin"): Promise<{ claimed: n
       try {
         if (pendingRender.data && (job.status === "rendering" || pendingRender.data.status === "queued" || pendingRender.data.status === "rendering")) {
           await renderClipFactoryCandidate({ jobId: job.id, candidateId: pendingRender.data.candidate_id });
-        } else if (job.status !== "ready" && job.status !== "completed" && job.status !== "partial") {
+        } else if (job.status !== "ready" && job.status !== "completed" && job.status !== "partial" && job.status !== "failed") {
           await processClipFactoryJob(job.id);
         }
       } catch (err) {

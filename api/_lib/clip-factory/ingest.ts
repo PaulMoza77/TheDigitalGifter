@@ -3,8 +3,9 @@ import { createWriteStream, promises as fs } from "node:fs";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import { classifyMediaUrl, isBlockedResolvedAddress } from "../../../src/features/clip-factory/safeUrl";
+import { DOWNLOAD_TIMEOUT_MS, MAX_INGEST_BYTES, MAX_REDIRECTS } from "../../../src/features/clip-factory/ingest/ssrf";
 
-const MAX_BYTES = 500 * 1024 * 1024;
+const MAX_BYTES = MAX_INGEST_BYTES;
 const ALLOWED_TYPES = /^(video\/(mp4|quicktime|webm|x-m4v|mpeg)|application\/octet-stream)/i;
 
 export class IngestError extends Error {
@@ -30,14 +31,25 @@ export async function assertSafeHostname(hostname: string): Promise<void> {
   }
 }
 
-export async function downloadDirectMedia(urlString: string, dest: string): Promise<{ contentType: string; bytes: number }> {
+export async function downloadDirectMedia(
+  urlString: string,
+  dest: string,
+  redirects = 0,
+): Promise<{ contentType: string; bytes: number }> {
+  if (redirects > MAX_REDIRECTS) throw new IngestError("ssrf_blocked", "Too many redirects.");
   const decision = classifyMediaUrl(urlString);
   if (!decision.ok) throw new IngestError(decision.code, decision.message);
+  if (decision.kind !== "direct_media_url") {
+    throw new IngestError(
+      "import_unavailable",
+      "Automatic import isn't available for this source. Upload the original video file instead.",
+    );
+  }
   const url = new URL(decision.url);
   await assertSafeHostname(url.hostname);
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 180_000);
+  const timer = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
   try {
     const response = await fetch(decision.url, {
       method: "GET",
@@ -49,8 +61,11 @@ export async function downloadDirectMedia(urlString: string, dest: string): Prom
       const loc = response.headers.get("location") || "";
       const next = classifyMediaUrl(new URL(loc, decision.url).toString());
       if (!next.ok) throw new IngestError(next.code, next.message);
+      if (next.kind !== "direct_media_url") {
+        throw new IngestError("ssrf_blocked", "Redirect target is not a media file.");
+      }
       await assertSafeHostname(new URL(next.url).hostname);
-      return downloadDirectMedia(next.url, dest);
+      return downloadDirectMedia(next.url, dest, redirects + 1);
     }
     if (!response.ok || !response.body) {
       throw new IngestError("unsupported_codec", `Could not download that URL (${response.status}).`);

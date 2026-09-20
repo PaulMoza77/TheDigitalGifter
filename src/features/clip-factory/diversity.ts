@@ -1,23 +1,8 @@
-import { intervalIoU } from "./boundaries";
+import { selectNonOverlappingMoments } from "./moments";
 import type { ViralCandidate } from "./types";
 
 export function selectDiverseCandidates(input: ViralCandidate[], limit: number): ViralCandidate[] {
-  const ranked = [...input].sort((a, b) => b.overallViralScore - a.overallViralScore);
-  const picked: ViralCandidate[] = [];
-  for (const cand of ranked) {
-    if (picked.length >= limit) break;
-    const tooSimilar = picked.some((other) => intervalIoU(cand.startTime, cand.endTime, other.startTime, other.endTime) > 0.45);
-    if (tooSimilar) continue;
-    picked.push(cand);
-  }
-  if (picked.length < limit) {
-    for (const cand of ranked) {
-      if (picked.length >= limit) break;
-      if (picked.includes(cand)) continue;
-      picked.push(cand);
-    }
-  }
-  return picked.map((item, index) => ({ ...item, overallViralScore: item.overallViralScore, duration: Number((item.endTime - item.startTime).toFixed(3)) }));
+  return selectNonOverlappingMoments(input, limit);
 }
 
 export function sortCandidates(

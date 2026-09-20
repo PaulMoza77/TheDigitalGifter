@@ -1,9 +1,18 @@
 export const CLIP_FACTORY_STAGES = [
   "queued",
+  "importing",
+  "extracting_audio",
+  "transcribing",
+  "analyzing",
+  "selecting_moments",
+  "rendering",
+  "captioning",
+  "saving",
+  "completed",
+  "failed",
   "uploading",
   "ingesting",
   "analyzing_audio",
-  "transcribing",
   "understanding_scenes",
   "finding_hooks",
   "scoring",
@@ -12,10 +21,7 @@ export const CLIP_FACTORY_STAGES = [
   "optimizing_vertical",
   "finalizing",
   "ready",
-  "rendering",
-  "completed",
   "partial",
-  "failed",
 ] as const;
 
 export type ClipFactoryStage = (typeof CLIP_FACTORY_STAGES)[number];
@@ -50,7 +56,7 @@ export type ObjectiveOption = (typeof OBJECTIVE_OPTIONS)[number];
 export const CAPTION_STYLES = ["auto", "clean", "bold_viral", "minimal", "karaoke"] as const;
 export type CaptionStyle = (typeof CAPTION_STYLES)[number];
 
-export type SourceKind = "upload" | "library" | "direct_media_url" | "supported_external_source";
+export type SourceKind = "upload" | "library" | "direct_media_url" | "youtube" | "vimeo" | "supported_external_source";
 
 export type TranscriptWord = {
   word: string;
@@ -141,30 +147,37 @@ export const DEFAULT_CLIP_FACTORY_OPTIONS: ClipFactoryOptions = {
 
 export const STAGE_LABELS: Record<string, string> = {
   queued: "Queued",
-  uploading: "Uploading / importing video",
-  ingesting: "Uploading / importing video",
-  analyzing_audio: "Analyzing audio",
-  transcribing: "Creating transcript",
-  understanding_scenes: "Understanding scenes",
-  finding_hooks: "Finding hooks",
-  scoring: "Scoring moments",
-  creating_clips: "Creating clips",
-  generating_captions: "Generating captions",
-  optimizing_vertical: "Optimizing for vertical video",
-  finalizing: "Finalizing",
+  importing: "Importing video",
+  extracting_audio: "Extracting audio",
+  transcribing: "Transcribing",
+  analyzing: "Analyzing content",
+  selecting_moments: "Selecting best moments",
+  rendering: "Rendering clips",
+  captioning: "Adding captions",
+  saving: "Saving to Library",
+  uploading: "Uploading video",
+  ingesting: "Importing video",
+  analyzing_audio: "Extracting audio",
+  understanding_scenes: "Analyzing content",
+  finding_hooks: "Finding candidate moments",
+  scoring: "Selecting best moments",
+  creating_clips: "Rendering clips",
+  generating_captions: "Adding captions",
+  optimizing_vertical: "Rendering clips",
+  finalizing: "Saving to Library",
   ready: "Ready",
-  rendering: "Creating clips",
   completed: "Completed",
   partial: "Partially completed",
   failed: "Failed",
 };
 
 export const ANALYSIS_STAGE_ORDER = [
-  "ingesting",
-  "analyzing_audio",
+  "importing",
+  "extracting_audio",
   "transcribing",
-  "understanding_scenes",
-  "finding_hooks",
-  "scoring",
-  "finalizing",
+  "analyzing",
+  "selecting_moments",
+  "rendering",
+  "captioning",
+  "saving",
 ] as const;

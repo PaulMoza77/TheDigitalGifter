@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import type { ObjectiveOption, Transcript, TranscriptWord, ViralCandidate } from "../../../src/features/clip-factory/types";
-import { normalizeDimensions, overallViralScore, durationFitPenalty } from "../../../src/features/clip-factory/scoring";
+import { normalizeDimensions, overallViralScore, durationFitPenalty, extraSignalBonus } from "../../../src/features/clip-factory/scoring";
 import { snapClipBoundaries, desiredClipCount } from "../../../src/features/clip-factory/boundaries";
 import { selectDiverseCandidates } from "../../../src/features/clip-factory/diversity";
 
@@ -166,10 +166,11 @@ Return {"candidates":[{
   "summary": string, "reason": string, "category": string,
   "suggested_platforms": string[], "suggested_caption": string, "suggested_post_caption": string,
   "hashtags": string[] (max 8, relevant only), "confidence": 0-1,
-  "scores": {"hook":0-100,"retention":0-100,"emotion":0-100,"humor":0-100,"visual":0-100,"standalone":0-100,"shareability":0-100},
+  "scores": {"hook":0-100,"retention":0-100,"emotion":0-100,"humor":0-100,"visual":0-100,"standalone":0-100,"shareability":0-100,"surprise":0-100,"quotability":0-100,"payoff":0-100,"information":0-100,"objective_fit":0-100},
   "why_it_works": string[] (3-5 short bullets)
 }]}
-Do not output overall_viral_score. Prefer natural story units, not identical overlapping windows.`,
+Do not output overall_viral_score. Prefer natural story units. Return the best NON-overlapping moments only.
+Score hook strength, emotional intensity, surprise, humor, standalone comprehensibility, quotability, story payoff, information density, likely retention, relevance to the objective, and fitness for the target platform/duration.`,
       },
     ],
   }), { "Content-Type": "application/json" });
@@ -189,7 +190,11 @@ Do not output overall_viral_score. Prefer natural story units, not identical ove
     start = snapped.start;
     end = snapped.end;
     const duration = end - start;
-    const overall = Math.max(0, overallViralScore(scores, input.options.objective) - durationFitPenalty(duration, input.options.duration));
+    const extra = extraSignalBonus((row.scores || row) as Record<string, unknown>);
+    const overall = Math.max(
+      0,
+      overallViralScore(scores, input.options.objective) - durationFitPenalty(duration, input.options.duration) + extra,
+    );
     const hashtags = Array.isArray(row.hashtags) ? row.hashtags.map((h) => String(h)).slice(0, 8) : [];
     return {
       startTime: start,

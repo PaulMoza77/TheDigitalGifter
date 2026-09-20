@@ -5,15 +5,11 @@ import { requireClipFactoryAdmin } from "./_lib/clip-factory/admin";
 import { ALLOWED_UPLOAD_TYPES, MAX_UPLOAD_BYTES, sanitizeFilename } from "./_lib/clip-factory/ingest";
 import { signedPlaybackPath, verifyMediaSignature } from "./_lib/clip-factory/mediaSign";
 import { kickClipFactoryWorker, processClipFactoryJob, renderClipFactoryCandidate, tickClipFactory } from "./_lib/clip-factory/worker";
-import { classifyMediaUrl } from "../src/features/clip-factory/safeUrl";
+import { classifyVideoUrl } from "../src/features/clip-factory/ingest/classify";
+import { detectUrlAdapter } from "../src/features/clip-factory/ingest/registry";
+import { IngestFailure } from "../src/features/clip-factory/ingest/types";
+import { prepareClipFactoryJob } from "../src/features/clip-factory/createJob";
 import { LIBRARY_VIDEOS } from "../src/features/admin-library/catalog";
-import {
-  CAPTION_STYLES,
-  DEFAULT_CLIP_FACTORY_OPTIONS,
-  DURATION_OPTIONS,
-  OBJECTIVE_OPTIONS,
-  PLATFORM_OPTIONS,
-} from "../src/features/clip-factory/types";
 
 const BUCKET = "clip-factory";
 
@@ -37,7 +33,13 @@ async function hydrateJob(service: ReturnType<typeof getServiceClient>, job: Rec
   return {
     ...job,
     media,
-    source_thumbnail_url: job.source_thumbnail_path ? signedPlaybackPath("thumb", `job:${jobId}`) : null,
+    source_thumbnail_url: job.source_thumbnail_path
+      ? signedPlaybackPath("thumb", `job:${jobId}`)
+      : ((job.source_metadata as { thumbnailUrl?: string } | null | undefined)?.thumbnailUrl || null),
+    progress_label: job.progress_label || null,
+    provider: job.provider || job.source_kind,
+    rights_confirmed: Boolean(job.rights_confirmed),
+    source_metadata: job.source_metadata || {},
     playback_url: job.media_id ? signedPlaybackPath("source", String(job.media_id)) : null,
     candidates: (candidates || []).map((row) => ({
       ...row,
@@ -158,16 +160,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    if (postAction === "inspect_url") {
+      const raw = asString(body.url);
+      const classified = classifyVideoUrl(raw);
+      if (!classified.ok) return apiError(res, 400, classified.code, classified.message);
+      try {
+        const adapter = detectUrlAdapter(raw);
+        const metadata = adapter ? await adapter.getMetadata(raw) : null;
+        return res.status(200).json({
+          classification: classified,
+          metadata,
+          ready: Boolean(metadata?.canImport || classified.canImport),
+        });
+      } catch (err) {
+        if (err instanceof IngestFailure) return apiError(res, 400, err.code, err.message);
+        const message = err instanceof Error ? err.message : "Could not inspect that URL.";
+        return apiError(res, 400, "import_failed", message);
+      }
+    }
+
     if (postAction === "library_sources") {
-      const videos = LIBRARY_VIDEOS.filter((v) => v.kind !== "photo").map((v) => ({
+      const catalog = LIBRARY_VIDEOS.filter((v) => v.kind !== "photo").map((v) => ({
         id: v.id,
         title: v.title,
         src: v.src,
         kind: v.kind,
         filename: v.filename,
         durationSeconds: v.durationSeconds,
+        libraryKind: "catalog" as const,
       }));
-      return res.status(200).json({ videos });
+      const { data: assets } = await service
+        .from("library_assets")
+        .select("id,title,filename,kind,duration_seconds")
+        .order("created_at", { ascending: false })
+        .limit(80);
+      const generated = (assets || []).map((row) => ({
+        id: row.id,
+        title: `${row.title} (Library)`,
+        src: "",
+        kind: row.kind,
+        filename: row.filename,
+        durationSeconds: row.duration_seconds,
+        libraryKind: "asset" as const,
+      }));
+      return res.status(200).json({ videos: [...generated, ...catalog] });
     }
 
     if (postAction === "list_library_assets") {
@@ -202,40 +238,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (postAction === "create_job") {
-      const sourceKind = asString(body.source_kind);
+      const prepared = prepareClipFactoryJob({
+        source_kind: asString(body.source_kind),
+        url: asString(body.url),
+        object_path: asString(body.object_path),
+        file_name: asString(body.file_name),
+        library_asset_id: asString(body.library_asset_id),
+        library_kind: body.library_kind === "asset" ? "asset" : "catalog",
+        source_label: asString(body.source_label),
+        rights_confirmed: body.rights_confirmed === true,
+        options: body.options as never,
+        auto_render: body.auto_render !== false,
+      });
+      if (!prepared.ok) return apiError(res, 400, prepared.code, prepared.message);
+      const sourceKind = prepared.sourceKind;
+      const sourcePayload = prepared.sourcePayload;
+      let sourceLabel = prepared.sourceLabel;
+      const options = prepared.options;
       const idempotencyKey = asString(body.idempotency_key) || null;
-      const options = { ...DEFAULT_CLIP_FACTORY_OPTIONS, ...(body.options as object) };
-      if (!DURATION_OPTIONS.includes(options.duration) || !OBJECTIVE_OPTIONS.includes(options.objective)) {
-        return apiError(res, 400, "invalid_request", "Invalid clip options.");
-      }
-      if (!PLATFORM_OPTIONS.includes(options.platform) || !CAPTION_STYLES.includes(options.captionStyle)) {
-        return apiError(res, 400, "invalid_request", "Invalid clip options.");
-      }
-      if (options.objective === "viral" && options.aiHook == null) options.aiHook = true;
-
-      let sourcePayload: Record<string, unknown> = {};
-      let sourceLabel = asString(body.source_label) || "Untitled video";
-      if (sourceKind === "upload") {
-        const objectPath = asString(body.object_path);
-        if (!objectPath.startsWith("uploads/")) return apiError(res, 400, "invalid_request", "Upload path is invalid.");
-        sourcePayload = { objectPath };
-        sourceLabel = asString(body.file_name) || sourceLabel;
-      } else if (sourceKind === "library") {
+      if (sourceKind === "library") {
         const libraryAssetId = asString(body.library_asset_id);
-        const asset = LIBRARY_VIDEOS.find((v) => v.id === libraryAssetId);
-        if (!asset) return apiError(res, 400, "invalid_request", "Choose a video from the Library.");
-        sourcePayload = { libraryAssetId };
-        sourceLabel = asset.title;
-      } else if (sourceKind === "direct_media_url") {
-        const decision = classifyMediaUrl(asString(body.url));
-        if (!decision.ok) return apiError(res, 400, decision.code, decision.message);
-        sourcePayload = { url: decision.url };
-        sourceLabel = new URL(decision.url).hostname;
-      } else {
-        const decision = classifyMediaUrl(asString(body.url));
-        return apiError(res, 400, decision.ok ? "unsupported_external_source" : decision.code, decision.ok
-          ? "This source type is not imported automatically. Upload a file you have rights to use."
-          : decision.message);
+        const catalog = LIBRARY_VIDEOS.find((v) => v.id === libraryAssetId);
+        if (catalog) {
+          sourceLabel = catalog.title;
+          sourcePayload.libraryKind = "catalog";
+        } else {
+          const { data: asset } = await service.from("library_assets").select("id,title").eq("id", libraryAssetId).maybeSingle();
+          if (!asset) return apiError(res, 400, "invalid_request", "Choose a video from the Library.");
+          sourceLabel = asset.title;
+          sourcePayload.libraryKind = "asset";
+        }
+      }
+      let sourceMetadata = {};
+      if (asString(body.url)) {
+        try {
+          const adapter = detectUrlAdapter(asString(body.url));
+          if (adapter) sourceMetadata = await adapter.getMetadata(asString(body.url));
+        } catch (err) {
+          if (err instanceof IngestFailure) return apiError(res, 400, err.code, err.message);
+        }
       }
 
       if (idempotencyKey) {
@@ -258,12 +299,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           created_by_email: admin.email,
           idempotency_key: idempotencyKey,
           status: "queued",
-          stage: "ingesting",
+          stage: "queued",
           progress: 2,
+          progress_label: "Queued",
           source_kind: sourceKind,
           source_payload: sourcePayload,
-          source_label: sourceLabel,
+          source_label: (sourceMetadata as { title?: string }).title || sourceLabel,
           options,
+          provider: prepared.provider,
+          source_metadata: sourceMetadata,
+          rights_confirmed: prepared.rightsConfirmed,
+          rights_confirmed_at: prepared.rightsConfirmed ? new Date().toISOString() : null,
+          auto_render: prepared.autoRender,
         })
         .select("*")
         .single();
@@ -297,8 +344,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from("clip_factory_jobs")
         .update({
           status: nextStatus,
-          stage: nextStatus === "rendering" ? "rendering" : "ingesting",
+          stage: nextStatus === "rendering" ? "rendering" : "queued",
           progress: 5,
+          progress_label: nextStatus === "rendering" ? "Rendering clips" : "Retrying",
           error_message: null,
           error_code: null,
           retry_count: (data.retry_count || 0) + 1,

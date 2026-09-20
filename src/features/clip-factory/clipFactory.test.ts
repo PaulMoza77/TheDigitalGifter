@@ -4,6 +4,12 @@ import { buildAssCaptions, escapeAss, formatAssTime } from "./captions";
 import { selectDiverseCandidates, sortCandidates } from "./diversity";
 import { ffmpegCropExpression, interpolateSubject, planReframe } from "./reframe";
 import { classifyMediaUrl } from "./safeUrl";
+import { classifyVideoUrl } from "./ingest/classify";
+import { extractYoutubeId, normalizeYoutubeUrl, parseIsoDuration } from "./ingest/adapters/youtube";
+import { hostnameIsBlocked, isBlockedResolvedAddress, parsePublicHttpUrl } from "./ingest/ssrf";
+import { prepareClipFactoryJob } from "./createJob";
+import { canTransitionJob, requiresRightsConfirmation, rightsConfirmationError } from "./jobStates";
+import { clipTimestampsValid, selectNonOverlappingMoments } from "./moments";
 import { overallViralScore, SCORE_WEIGHTS, normalizeDimensions } from "./scoring";
 import type { Transcript, ViralCandidate } from "./types";
 
@@ -108,10 +114,99 @@ describe("clip factory captions", () => {
 });
 
 describe("clip factory ingest urls", () => {
-  it("blocks SSRF and YouTube bypass, allows direct https media", () => {
+  it("blocks SSRF and allows direct https media", () => {
     expect(classifyMediaUrl("http://127.0.0.1/secret.mp4").ok).toBe(false);
-    expect(classifyMediaUrl("https://youtube.com/watch?v=abc").code).toBe("unsupported_external_source");
     expect(classifyMediaUrl("https://cdn.example.com/talk.mp4").ok).toBe(true);
+  });
+
+  it("classifies YouTube instead of rejecting the hostname", () => {
+    const classified = classifyVideoUrl("https://youtube.com/watch?v=dQw4w9wgGcI");
+    expect(classified.ok).toBe(true);
+    if (classified.ok) {
+      expect(classified.provider).toBe("youtube");
+      expect(classified.normalizedUrl).toBe("https://www.youtube.com/watch?v=dQw4w9wgGcI");
+      expect(classified.canImport).toBe(false);
+    }
+    expect(extractYoutubeId("https://youtu.be/dQw4w9wgGcI")).toBe("dQw4w9wgGcI");
+    expect(normalizeYoutubeUrl("dQw4w9wgGcI")).toContain("watch?v=");
+    expect(parseIsoDuration("PT1H2M3S")).toBe(3723);
+  });
+
+  it("blocks localhost, private ranges, and credentials", () => {
+    expect(parsePublicHttpUrl("http://localhost/video.mp4").ok).toBe(false);
+    expect(parsePublicHttpUrl("http://192.168.1.8/video.mp4").ok).toBe(false);
+    expect(parsePublicHttpUrl("http://10.0.0.4/video.mp4").ok).toBe(false);
+    expect(parsePublicHttpUrl("ftp://cdn.example.com/video.mp4").ok).toBe(false);
+    expect(parsePublicHttpUrl("https://user:pass@cdn.example.com/video.mp4").ok).toBe(false);
+    expect(hostnameIsBlocked("169.254.169.254")).toBe(true);
+    expect(isBlockedResolvedAddress("172.16.0.4")).toBe(true);
+    expect(isBlockedResolvedAddress("8.8.8.8")).toBe(false);
+  });
+});
+
+describe("clip factory job creation", () => {
+  it("requires rights confirmation for URL sources", () => {
+    expect(requiresRightsConfirmation("youtube")).toBe(true);
+    expect(rightsConfirmationError(false)).toMatch(/permission/i);
+    const denied = prepareClipFactoryJob({
+      source_kind: "direct_media_url",
+      url: "https://cdn.example.com/talk.mp4",
+      rights_confirmed: false,
+    });
+    expect(denied.ok).toBe(false);
+    if (!denied.ok) expect(denied.code).toBe("rights_required");
+    const allowed = prepareClipFactoryJob({
+      source_kind: "direct_media_url",
+      url: "https://cdn.example.com/talk.mp4",
+      rights_confirmed: true,
+    });
+    expect(allowed.ok).toBe(true);
+  });
+
+  it("does not require rights for uploads or library items", () => {
+    expect(
+      prepareClipFactoryJob({ source_kind: "upload", object_path: "uploads/a.mp4", file_name: "a.mp4" }).ok,
+    ).toBe(true);
+    expect(prepareClipFactoryJob({ source_kind: "library", library_asset_id: "reel-north-pole-santa" }).ok).toBe(true);
+  });
+
+  it("returns a specific fallback for YouTube without authorized import", () => {
+    const result = prepareClipFactoryJob({
+      url: "https://www.youtube.com/watch?v=dQw4w9wgGcI",
+      rights_confirmed: true,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("import_unavailable");
+      expect(result.message).toMatch(/Upload the original video file/i);
+      expect(result.message).not.toMatch(/This source cannot be imported automatically/i);
+    }
+  });
+
+  it("rejects invalid URLs and allows legal job transitions", () => {
+    expect(prepareClipFactoryJob({ url: "not-a-url", rights_confirmed: true }).ok).toBe(false);
+    expect(canTransitionJob("queued", "importing")).toBe(true);
+    expect(canTransitionJob("transcribing", "analyzing")).toBe(true);
+    expect(canTransitionJob("completed", "queued")).toBe(false);
+    expect(canTransitionJob("failed", "queued")).toBe(true);
+  });
+});
+
+describe("clip factory timestamps", () => {
+  it("keeps selected moments non-overlapping and inside the source", () => {
+    const picked = selectNonOverlappingMoments(
+      [
+        cand({ startTime: 10, endTime: 25, overallViralScore: 90 }),
+        cand({ startTime: 18, endTime: 32, overallViralScore: 88 }),
+        cand({ startTime: 40, endTime: 55, overallViralScore: 70 }),
+      ],
+      3,
+    );
+    expect(picked).toHaveLength(2);
+    expect(picked[0].startTime).toBe(10);
+    expect(picked[1].startTime).toBe(40);
+    expect(clipTimestampsValid(10, 25, 60)).toBe(true);
+    expect(clipTimestampsValid(10, 8, 60)).toBe(false);
   });
 });
 

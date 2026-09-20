@@ -18,6 +18,18 @@ export type ClipFactoryJob = {
   cost?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+  progress_label?: string | null;
+  provider?: string;
+  rights_confirmed?: boolean;
+  source_metadata?: {
+    title?: string;
+    author?: string;
+    durationSeconds?: number | null;
+    thumbnailUrl?: string | null;
+    provider?: string;
+    canImport?: boolean;
+    message?: string | null;
+  };
   media?: {
     duration_seconds?: number;
     width?: number;
@@ -87,6 +99,20 @@ async function invoke<T>(action: string, body: Record<string, unknown> = {}): Pr
 }
 
 export const clipFactoryApi = {
+  inspectUrl: (url: string) =>
+    invoke<{
+      classification: { provider: string; canImport: boolean; message?: string | null; normalizedUrl: string };
+      metadata: {
+        provider: string;
+        title?: string | null;
+        author?: string | null;
+        durationSeconds?: number | null;
+        thumbnailUrl?: string | null;
+        canImport: boolean;
+        message?: string | null;
+      } | null;
+      ready: boolean;
+    }>("inspect_url", { url }),
   createJob: (payload: Record<string, unknown>) => invoke<{ job: ClipFactoryJob }>("create_job", payload),
   getJob: (jobId: string) => invoke<{ job: ClipFactoryJob }>("get_job", { job_id: jobId }),
   listJobs: () => invoke<{ jobs: ClipFactoryJob[] }>("list_jobs"),
