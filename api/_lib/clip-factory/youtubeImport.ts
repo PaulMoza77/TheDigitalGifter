@@ -82,7 +82,10 @@ export async function importYoutubeWithYtdlp(url: string, dest: string): Promise
     );
     if (result.code !== 0) {
       const err = `${result.stderr} ${result.stdout}`.slice(-1200);
-      if (/private|login_required|sign in/i.test(err)) {
+      if (/sign in to confirm|not a bot|cookies-from-browser/i.test(err)) {
+        throw new IngestError("import_unavailable", youtubeImportBlockedMessage("bot check from this server"));
+      }
+      if (/private video|login_required/i.test(err)) {
         throw new IngestError("source_auth_required", youtubeImportBlockedMessage("login or private video"));
       }
       if (/unavailable|removed|copyright/i.test(err)) {
