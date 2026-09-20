@@ -137,7 +137,7 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       await recordEvent(jobId, "clip_factory_source_added", { source_kind: job.source_kind });
       const payload = job.source_payload || {};
       if (job.source_kind === "direct_media_url" || job.source_kind === "youtube" || job.source_kind === "vimeo") {
-        await patchJob(jobId, { status: "downloading", stage: "importing", progress: 12, progress_label: "Importing source..." });
+        await patchJob(jobId, { status: "importing", stage: "importing", progress: 12, progress_label: "Importing source..." });
       }
       const ingested = await acquireSourceMedia({
         sourceKind: job.source_kind,
@@ -562,7 +562,11 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     });
   } catch (err) {
     const code = err instanceof IngestError ? err.code : "analysis_failed";
-    const message = err instanceof Error ? err.message : String(err);
+    const message = err instanceof Error
+      ? err.message
+      : typeof err === "object" && err && "message" in err
+        ? String((err as { message: unknown }).message)
+        : String(err);
     const waiting =
       code === "import_unavailable" ||
       code === "source_auth_required" ||
