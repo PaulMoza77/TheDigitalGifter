@@ -24,6 +24,9 @@ describe("clip factory production wiring", () => {
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("assertUsableSourceMedia");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("assertUsableRenderedClip");
     expect(read("src/features/clip-factory/mediaQuality.ts")).toContain("KNOWN_INVALID_MEDIA_HASHES");
+    expect(read("api/_lib/clip-factory/providers.ts")).toContain("CLIP_FACTORY_YOUTUBE_IMPORT_URL");
+    expect(read("api/_lib/clip-factory/providers.ts")).toContain("download_url");
+    expect(read("api/_lib/clip-factory/providers.ts")).toContain("video_id");
     expect(read("api/clip-factory.ts")).toContain("rights_confirmed");
     expect(read("src/features/clip-factory/ingest/types.ts")).toContain("VideoSourceAdapter");
     expect(read("src/features/clip-factory/ingest/types.ts")).toContain("ingestionCapability");

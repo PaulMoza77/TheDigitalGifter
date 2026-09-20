@@ -57,7 +57,14 @@ async function hydrateJob(service: ReturnType<typeof getServiceClient>, job: Rec
   };
 }
 
-async function streamStorage(res: NodeApiResponse, storagePath: string, contentType: string) {
+async function streamStorage(res: NodeApiResponse, storagePath: string, contentType: string, method = "GET") {
+  if (method === "HEAD") {
+    res.status(200);
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "private, max-age=300");
+    res.end();
+    return;
+  }
   const service = getServiceClient();
   const { data, error } = await service.storage.from(BUCKET).download(storagePath);
   if (error || !data) {
@@ -80,7 +87,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
   const action = asString(req.query.action || (req.body as { action?: string })?.action);
 
-  if (req.method === "GET" && action === "media") {
+  if ((req.method === "GET" || req.method === "HEAD") && action === "media") {
     const kind = asString(req.query.kind);
     const id = asString(req.query.id);
     const exp = asString(req.query.exp);
@@ -92,25 +99,25 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     if (kind === "source") {
       const { data } = await service.from("clip_factory_media").select("storage_path").eq("id", id).maybeSingle();
       if (!data?.storage_path) return apiError(res, 404, "not_found", "Source video is not available.");
-      await streamStorage(res, data.storage_path, "video/mp4");
+      await streamStorage(res, data.storage_path, "video/mp4", req.method);
       return;
     }
     if (kind === "render") {
       const { data } = await service.from("clip_factory_renders").select("storage_path").eq("id", id).maybeSingle();
       if (!data?.storage_path) return apiError(res, 404, "not_found", "Rendered clip is not available.");
-      await streamStorage(res, data.storage_path, "video/mp4");
+      await streamStorage(res, data.storage_path, "video/mp4", req.method);
       return;
     }
     if (kind === "thumb") {
       if (id.startsWith("job:")) {
         const { data } = await service.from("clip_factory_jobs").select("source_thumbnail_path").eq("id", id.slice(4)).maybeSingle();
         if (!data?.source_thumbnail_path) return apiError(res, 404, "not_found", "Thumbnail is not available.");
-        await streamStorage(res, data.source_thumbnail_path, "image/jpeg");
+        await streamStorage(res, data.source_thumbnail_path, "image/jpeg", req.method);
         return;
       }
       const { data } = await service.from("clip_factory_renders").select("thumbnail_path").eq("id", id).maybeSingle();
       if (!data?.thumbnail_path) return apiError(res, 404, "not_found", "Thumbnail is not available.");
-      await streamStorage(res, data.thumbnail_path, "image/jpeg");
+      await streamStorage(res, data.thumbnail_path, "image/jpeg", req.method);
       return;
     }
     return apiError(res, 400, "invalid_request", "Unknown media kind.");

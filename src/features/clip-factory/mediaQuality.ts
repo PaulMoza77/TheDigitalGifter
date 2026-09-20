@@ -1,4 +1,13 @@
-/** Production media cannot be a demo, fixture, or near-empty encode. */
+/**
+ * Production media cannot be a demo/fixture encode.
+ *
+ * A small file or a dark scene is not, by itself, proof of invalid media.
+ * Reject only when the file cannot be a camera/editor original:
+ * - known poisoned hashes
+ * - no video stream / unreadable
+ * - duration far from the declared source duration
+ * - sampled frames that are solid-color (tiny JPEGs), not merely dark/textured night
+ */
 
 export const KNOWN_INVALID_MEDIA_HASHES = [
   // 12.6s 1280×720 ~174KB dark/uniform file stored against https://youtu.be/pV9UPP7n0Po
@@ -28,10 +37,9 @@ export type MediaQualityOk = { ok: true };
 
 const MIN_DURATION = 3;
 const MIN_EDGE = 240;
-/** Real 720p footage is far above this; solid-color ffmpeg encodes sit around 10–20 KB/s. */
-export const MIN_BYTES_PER_SECOND = 25_000;
 const DURATION_TOLERANCE = 0.12;
 const DURATION_ABS_SLACK = 2.5;
+/** Solid-color ffmpeg JPEGs are a few KB; textured dark footage is typically 15–80KB. */
 const UNIFORM_JPEG_MAX_BYTES = 9_000;
 
 export function durationMatchesExpected(actual: number, expected: number | null | undefined): boolean {
@@ -78,20 +86,13 @@ export function assessMediaQuality(input: MediaQualityInput): MediaQualityOk | M
       message: `Imported file is ${input.durationSeconds.toFixed(1)}s but the source is ${Number(input.expectedDurationSeconds).toFixed(1)}s. The file is not the original video. Upload the original instead of using a preview or placeholder.`,
     };
   }
-  const minBytes = Math.max(80_000, input.durationSeconds * MIN_BYTES_PER_SECOND);
-  if (input.fileSizeBytes > 0 && input.fileSizeBytes < minBytes) {
-    return {
-      ok: false,
-      code: "synthetic_or_empty",
-      message: `Imported file is only ${Math.round(input.fileSizeBytes / 1024)}KB for ${input.durationSeconds.toFixed(1)}s — that is a placeholder or empty encode, not the source. Upload the original video.`,
-    };
-  }
   const jpegs = input.jpegSampleBytes || [];
   if (jpegs.length >= 3 && jpegs.every((n) => n > 0 && n < UNIFORM_JPEG_MAX_BYTES)) {
     return {
       ok: false,
       code: "uniform_frames",
-      message: "Sampled frames are nearly empty/uniform. This is not usable source footage. Upload the original video.",
+      message:
+        "Sampled frames are solid-color/empty (not just dark). This file is a placeholder encode, not the original video.",
     };
   }
   return { ok: true };

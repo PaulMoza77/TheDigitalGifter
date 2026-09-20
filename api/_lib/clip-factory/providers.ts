@@ -9,6 +9,18 @@ function asIngestError(error: unknown): never {
   throw new IngestError("import_failed", error instanceof Error ? error.message : "Import failed. Retry.");
 }
 
+/**
+ * Optional authorized YouTube *file* importer. This is not YouTube Data API v3
+ * (metadata only) and is not yt-dlp.
+ *
+ * CLIP_FACTORY_YOUTUBE_IMPORT_URL must accept:
+ *   POST application/json
+ *   { "video_id": "<11 chars>", "url": "https://www.youtube.com/watch?v=<id>" }
+ *   Authorization: Bearer CLIP_FACTORY_YOUTUBE_IMPORT_SECRET  (if set)
+ * 200 JSON: { "download_url": "https://..." } or { "url": "https://..." }
+ * The URL must be a directly fetchable video the origin can download.
+ * 401/403 → source_auth_required; 404 → video_unavailable.
+ */
 export async function importYoutubeAuthorized(url: string, dest: string): Promise<{ contentType: string; bytes: number }> {
   const id = extractYoutubeId(url);
   if (!id) throw new IngestError("invalid_url", "That YouTube URL is missing a video id.");
