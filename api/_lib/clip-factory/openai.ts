@@ -166,11 +166,11 @@ Return {"candidates":[{
   "summary": string, "reason": string, "category": string,
   "suggested_platforms": string[], "suggested_caption": string, "suggested_post_caption": string,
   "hashtags": string[] (max 8, relevant only), "confidence": 0-1,
-  "scores": {"hook":0-100,"retention":0-100,"emotion":0-100,"humor":0-100,"visual":0-100,"standalone":0-100,"shareability":0-100,"surprise":0-100,"quotability":0-100,"payoff":0-100,"information":0-100,"objective_fit":0-100},
+  "scores": {"hook":0-100,"retention":0-100,"emotion":0-100,"humor":0-100,"visual":0-100,"standalone":0-100,"shareability":0-100,"surprise":0-100,"curiosity":0-100,"controversy":0-100,"storytelling":0-100,"seasonal":0-100,"quotability":0-100,"payoff":0-100,"information":0-100,"objective_fit":0-100},
   "why_it_works": string[] (3-5 short bullets)
 }]}
-Do not output overall_viral_score. Prefer natural story units. Return the best NON-overlapping moments only.
-Score hook strength, emotional intensity, surprise, humor, standalone comprehensibility, quotability, story payoff, information density, likely retention, relevance to the objective, and fitness for the target platform/duration.`,
+Do not output overall_viral_score. Prefer natural story units. Return the best NON-overlapping moments only. Slightly expand start/end so sentences are complete.
+Score hook, curiosity, emotion, humor, surprise, storytelling, controversy/debate potential, standalone comprehensibility, retention, shareability, and seasonal relevance.`,
       },
     ],
   }), { "Content-Type": "application/json" });

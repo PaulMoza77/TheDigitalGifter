@@ -53,8 +53,9 @@ describe("youtube adapter", () => {
     const meta = await fetchYoutubeMetadata("dQw4w9wgGcI");
     expect(meta.provider).toBe("youtube");
     expect(meta.canImport).toBe(false);
+    expect(meta.ingestionCapability).toBe("REFERENCE_ONLY");
     expect(meta.thumbnailUrl).toContain("dQw4w9wgGcI");
-    expect(meta.message).toMatch(/Upload the original video file/i);
+    expect(meta.message).toMatch(/YouTube Data API|official downloadable media/i);
   });
 
   it("does not claim import unless an authorized importer is configured", async () => {
@@ -78,7 +79,8 @@ describe("youtube adapter", () => {
     const meta = await fetchYoutubeMetadata("dQw4w9wgGcI");
     expect(meta.title).toBe("Demo");
     expect(meta.canImport).toBe(false);
-    expect(meta.message).toMatch(/Upload the original video file/i);
+    expect(meta.ingestionCapability).toBe("REFERENCE_ONLY");
+    expect(meta.message).toMatch(/YouTube Data API|official downloadable media/i);
     expect(youtubeAdapter.canImport(meta)).toBe(false);
   });
 });

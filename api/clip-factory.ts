@@ -167,10 +167,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         const adapter = detectUrlAdapter(raw);
         const metadata = adapter ? await adapter.getMetadata(raw) : null;
+        const capability = metadata?.ingestionCapability || classified.ingestionCapability;
+        const ready = capability === "FULL_IMPORT";
         return res.status(200).json({
           classification: classified,
           metadata,
-          ready: Boolean(metadata?.canImport || classified.canImport),
+          source: metadata
+            ? {
+                sourceId: metadata.sourceId,
+                sourceType: metadata.sourceType,
+                originalUrl: metadata.originalUrl,
+                title: metadata.title,
+                thumbnail: metadata.thumbnail || metadata.thumbnailUrl,
+                duration: metadata.duration ?? metadata.durationSeconds,
+                author: metadata.author,
+                mediaUrl: metadata.mediaUrl || null,
+                mediaAsset: metadata.mediaAsset || null,
+                metadata: metadata.metadata || {},
+                ingestionCapability: capability,
+              }
+            : null,
+          ready,
+          ingestionCapability: capability,
         });
       } catch (err) {
         if (err instanceof IngestFailure) return apiError(res, 400, err.code, err.message);
@@ -237,6 +255,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ videos });
     }
 
+    if (postAction === "attach_media") {
+      const jobId = asString(body.job_id);
+      const { data: job } = await service.from("clip_factory_jobs").select("*").eq("id", jobId).maybeSingle();
+      if (!job) return apiError(res, 404, "not_found", "Job not found.");
+      if (job.media_id) return apiError(res, 409, "media_already_attached", "This project already has media.");
+      const payload = { ...(job.source_payload || {}) } as Record<string, unknown>;
+      if (asString(body.object_path).startsWith("uploads/")) {
+        payload.objectPath = asString(body.object_path);
+        payload.mediaKind = "upload";
+      } else if (asString(body.library_asset_id)) {
+        const libraryAssetId = asString(body.library_asset_id);
+        const catalog = LIBRARY_VIDEOS.find((v) => v.id === libraryAssetId);
+        const { data: asset } = catalog
+          ? { data: null }
+          : await service.from("library_assets").select("id,title").eq("id", libraryAssetId).maybeSingle();
+        if (!catalog && !asset) return apiError(res, 400, "invalid_request", "Choose a video from the Library.");
+        payload.libraryAssetId = libraryAssetId;
+        payload.libraryKind = catalog ? "catalog" : "asset";
+        payload.mediaKind = "library";
+      } else {
+        return apiError(res, 400, "invalid_request", "Upload a file or choose one from the Library.");
+      }
+      await service
+        .from("clip_factory_jobs")
+        .update({
+          source_payload: payload,
+          status: "queued",
+          stage: "queued",
+          progress: 4,
+          progress_label: "Uploading video",
+          error_message: null,
+          error_code: null,
+          lease_expires_at: null,
+          rights_confirmed: true,
+          rights_confirmed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", jobId);
+      kickClipFactoryWorker();
+      const { data: fresh } = await service.from("clip_factory_jobs").select("*").eq("id", jobId).single();
+      return res.status(200).json({ job: await hydrateJob(service, fresh) });
+    }
+
     if (postAction === "create_job") {
       const prepared = prepareClipFactoryJob({
         source_kind: asString(body.source_kind),
@@ -278,6 +339,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (err instanceof IngestFailure) return apiError(res, 400, err.code, err.message);
         }
       }
+      const metaCapability = (sourceMetadata as { ingestionCapability?: string }).ingestionCapability;
+      const provider = prepared.provider;
+      const canAttemptAuthorizedIngest =
+        provider === "direct" || provider === "youtube" || provider === "vimeo" || prepared.sourceKind === "direct_media_url";
+      const waitingForMedia =
+        !canAttemptAuthorizedIngest &&
+        (prepared.waitingForMedia ||
+          (metaCapability
+            ? metaCapability !== "FULL_IMPORT" && !asString(body.object_path) && !asString(body.library_asset_id)
+            : prepared.waitingForMedia));
+      if (metaCapability) {
+        sourcePayload.ingestionCapability = metaCapability;
+        if ((sourceMetadata as { mediaUrl?: string }).mediaUrl) {
+          sourcePayload.mediaUrl = (sourceMetadata as { mediaUrl?: string }).mediaUrl;
+        }
+      }
 
       if (idempotencyKey) {
         const { data: existing } = await service
@@ -298,10 +375,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           created_by: admin.userId,
           created_by_email: admin.email,
           idempotency_key: idempotencyKey,
-          status: "queued",
-          stage: "queued",
-          progress: 2,
-          progress_label: "Queued",
+          status: waitingForMedia ? "waiting_for_media" : "queued",
+          stage: waitingForMedia ? "source_detected" : "queued",
+          progress: waitingForMedia ? 5 : 2,
+          progress_label: waitingForMedia
+            ? (sourceMetadata as { message?: string }).message || "Source detected. Original media is required to continue."
+            : "Queued",
           source_kind: sourceKind,
           source_payload: sourcePayload,
           source_label: (sourceMetadata as { title?: string }).title || sourceLabel,
@@ -315,7 +394,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select("*")
         .single();
       if (inserted.error) throw inserted.error;
-      kickClipFactoryWorker();
+      if (!waitingForMedia) kickClipFactoryWorker();
       return res.status(200).json({ job: await hydrateJob(service, inserted.data) });
     }
 

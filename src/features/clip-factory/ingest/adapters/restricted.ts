@@ -1,4 +1,5 @@
-import { IngestFailure, type VideoSourceAdapter } from "../types";
+import { capabilityMessage } from "../capability";
+import { IngestFailure, normalizeSourceMetadata, type VideoSourceAdapter } from "../types";
 import { parsePublicHttpUrl } from "../ssrf";
 
 const TIKTOK_HOST = /(^|\.)tiktok\.com$/i;
@@ -20,16 +21,18 @@ export const tiktokAdapter: VideoSourceAdapter = {
   async getMetadata(raw) {
     const validated = tiktokAdapter.validate(raw);
     if (!validated.ok) throw new IngestFailure(validated.code, validated.message);
-    return {
+    return normalizeSourceMetadata({
       provider: "tiktok",
       url: validated.url,
       normalizedUrl: validated.url,
       title: "TikTok video",
       canImport: false,
+      ingestionCapability: "REFERENCE_ONLY",
+      mediaUrl: null,
       importMode: "unavailable",
       fallback: "upload",
-      message: "Automatic import isn't available for this source. Upload the original video file instead.",
-    };
+      message: capabilityMessage("REFERENCE_ONLY", "tiktok"),
+    });
   },
   canImport() {
     return false;

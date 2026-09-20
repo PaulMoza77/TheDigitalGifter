@@ -9,6 +9,7 @@ export type ClipFactoryJob = {
   source_kind: string;
   source_label: string;
   source_thumbnail_url?: string | null;
+  media_id?: string | null;
   moments_found: number;
   clips_generated: number;
   error_code?: string | null;
@@ -28,6 +29,7 @@ export type ClipFactoryJob = {
     thumbnailUrl?: string | null;
     provider?: string;
     canImport?: boolean;
+    ingestionCapability?: string;
     message?: string | null;
   };
   media?: {
@@ -101,7 +103,7 @@ async function invoke<T>(action: string, body: Record<string, unknown> = {}): Pr
 export const clipFactoryApi = {
   inspectUrl: (url: string) =>
     invoke<{
-      classification: { provider: string; canImport: boolean; message?: string | null; normalizedUrl: string };
+      classification: { provider: string; canImport: boolean; ingestionCapability?: string; message?: string | null; normalizedUrl: string };
       metadata: {
         provider: string;
         title?: string | null;
@@ -109,14 +111,28 @@ export const clipFactoryApi = {
         durationSeconds?: number | null;
         thumbnailUrl?: string | null;
         canImport: boolean;
+        ingestionCapability?: string;
         message?: string | null;
       } | null;
+      source?: {
+        sourceId: string;
+        sourceType: string;
+        originalUrl: string;
+        title?: string | null;
+        thumbnail?: string | null;
+        duration?: number | null;
+        author?: string | null;
+        mediaUrl?: string | null;
+        ingestionCapability: string;
+      } | null;
       ready: boolean;
+      ingestionCapability?: string;
     }>("inspect_url", { url }),
   createJob: (payload: Record<string, unknown>) => invoke<{ job: ClipFactoryJob }>("create_job", payload),
   getJob: (jobId: string) => invoke<{ job: ClipFactoryJob }>("get_job", { job_id: jobId }),
   listJobs: () => invoke<{ jobs: ClipFactoryJob[] }>("list_jobs"),
   retry: (jobId: string) => invoke<{ job: ClipFactoryJob }>("retry_job", { job_id: jobId }),
+  attachMedia: (payload: Record<string, unknown>) => invoke<{ job: ClipFactoryJob }>("attach_media", payload),
   rejectCandidate: (jobId: string, candidateId: string, rejected: boolean) =>
     invoke<{ ok: true }>("reject_candidate", { job_id: jobId, candidate_id: candidateId, rejected }),
   updateCandidate: (jobId: string, candidateId: string, patch: Record<string, unknown>) =>
