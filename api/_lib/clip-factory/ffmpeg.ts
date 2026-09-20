@@ -131,7 +131,11 @@ export async function renderVerticalClip(input: {
   assPath?: string;
   hasAudio: boolean;
 }): Promise<void> {
-  const args = ["-y", "-ss", String(Math.max(0, input.start)), "-i", input.source, "-t", String(input.duration)];
+  const duration = String(input.duration);
+  const args = ["-y", "-ss", String(Math.max(0, input.start)), "-i", input.source, "-t", duration];
+  if (!input.hasAudio) {
+    args.push("-f", "lavfi", "-t", duration, "-i", "anullsrc=channel_layout=stereo:sample_rate=48000");
+  }
   let vf = input.filter;
   if (input.assPath) {
     const fontsdir = findCaptionFont().replace(/\/[^/]+$/, "");
@@ -139,10 +143,11 @@ export async function renderVerticalClip(input: {
     vf = `${vf},subtitles='${ass}':fontsdir='${fontsdir.replace(/:/g, "\\:")}'`;
   }
   args.push("-vf", vf, "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-r", "30");
+  args.push("-c:a", "aac", "-b:a", "160k", "-ac", "2", "-ar", "48000");
   if (input.hasAudio) {
-    args.push("-c:a", "aac", "-b:a", "160k", "-ac", "2", "-ar", "48000", "-af", "aresample=async=1:first_pts=0");
+    args.push("-af", "aresample=async=1:first_pts=0");
   } else {
-    args.push("-an");
+    args.push("-shortest", "-map", "0:v:0", "-map", "1:a:0");
   }
   args.push("-movflags", "+faststart", "-avoid_negative_ts", "make_zero", input.output);
   await runCommand("ffmpeg", args, 420_000);

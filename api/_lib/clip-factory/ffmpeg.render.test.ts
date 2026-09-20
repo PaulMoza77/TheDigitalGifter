@@ -73,6 +73,7 @@ describe("clip factory ffmpeg render", () => {
       expect(probe.hasAudio).toBe(true);
       expect(probe.duration).toBeGreaterThan(3);
       expect(probe.videoCodec).toBe("h264");
+      expect(probe.audioCodec).toMatch(/aac/i);
       const bytes = await readFile(out);
       expect(bytes.length).toBeGreaterThan(20_000);
       const thumbBytes = await readFile(thumb);
