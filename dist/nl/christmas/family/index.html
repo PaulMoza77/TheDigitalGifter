@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Gezins Kerstfoto Generator | Gezins Kerstportretten</title>
+    <meta
+      name="description"
+      content="Maak een gepersonaliseerd gezins kerstportret van je favoriete gezinsfoto. Kies een feestelijke kerstscène en verander je foto in een feestelijke herinnering."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Gezins Kerstfoto Generator | Gezins Kerstportretten"
+    />
+    <meta
+      property="og:description"
+      content="Maak een gepersonaliseerd gezins kerstportret van je favoriete gezinsfoto. Kies een feestelijke kerstscène en verander je foto in een feestelijke herinnering."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/nl/christmas/family" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Gezins Kerstfoto Generator | Gezins Kerstportretten"
+    />
+    <meta
+      name="twitter:description"
+      content="Maak een gepersonaliseerd gezins kerstportret van je favoriete gezinsfoto. Kies een feestelijke kerstscène en verander je foto in een feestelijke herinnering."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/nl/christmas/family" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas/family" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas/family" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas/family" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas/family" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas/family" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas/family" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas/family" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas/family" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas/family" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas/family" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Kerst","item":"https://www.thedigitalgifter.com/nl/christmas"},{"@type":"ListItem","position":3,"name":"Foto Generator","item":"https://www.thedigitalgifter.com/nl/christmas/photo-generator"},{"@type":"ListItem","position":4,"name":"Gezin","item":"https://www.thedigitalgifter.com/nl/christmas/family"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Gezins Kerstfoto Generator | Gezins Kerstportretten","description":"Maak een gepersonaliseerd gezins kerstportret van je favoriete gezinsfoto. Kies een feestelijke kerstscène en verander je foto in een feestelijke herinnering.","url":"https://www.thedigitalgifter.com/nl/christmas/family","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"nl"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Kan ik een kerstportret maken van één gezinsfoto?","acceptedAnswer":{"@type":"Answer","text":"Ja. Upload één duidelijke gezinsfoto, kies een kerststijl, en maak je gezinsportret."}},{"@type":"Question","name":"Kunnen er meerdere mensen op staan?","acceptedAnswer":{"@type":"Answer","text":"Ja. Deze route is gemaakt voor groepen. Zorg dat iedereen duidelijk zichtbaar is op de originele foto."}},{"@type":"Question","name":"Kunnen opa's en oma's erbij?","acceptedAnswer":{"@type":"Answer","text":"Ja. Multi-generatie foto's — inclusief opa's, oma's en baby's — zijn welkom als gezichten zichtbaar zijn."}},{"@type":"Question","name":"Kan ik een huisdier van het gezin toevoegen?","acceptedAnswer":{"@type":"Answer","text":"Ja, als het huisdier duidelijk zichtbaar is op de gezinsfoto. Voor portretten met alleen het huisdier gebruik je de Huisdieren-, Honden- of Katten-ervaringen."}},{"@type":"Question","name":"Welke foto's werken het beste?","acceptedAnswer":{"@type":"Answer","text":"Duidelijke foto's met zichtbare gezichten, goede belichting, en iedereen die je wilt opnemen. Vermijd extreme vaagheid."}},{"@type":"Question","name":"Kan ik meerdere kerststijlen proberen?","acceptedAnswer":{"@type":"Answer","text":"Ja. Kies uit de gezins kerststijlen op de pagina, en je kunt na het maken van een portret een andere stijl proberen."}},{"@type":"Question","name":"Kan ik het afgeronde portret downloaden?","acceptedAnswer":{"@type":"Answer","text":"Ja. Zodra je portret klaar is, download je het op het resultaatscherm."}},{"@type":"Question","name":"Kan ik het gebruiken in een kerstkaart?","acceptedAnswer":{"@type":"Answer","text":"Ja. Overdracht van het portret naar de Kerstkaart Maker wordt ondersteund."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/nl/christmas/family" data-locale="nl"><nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="/nl/christmas">Kerst</a> / <a href="/nl/christmas/photo-generator">Foto Generator</a> / <a href="/nl/christmas/family">Gezin</a></nav><h1>Verander Je Gezinsfoto in een Magisch Kerstportret</h1><p>Maak een gepersonaliseerd gezins kerstportret van je favoriete gezinsfoto. Kies een feestelijke kerstscène en verander je foto in een feestelijke herinnering.</p><h2>Meer kerstportretten</h2><ul><li><a href="/nl/christmas/photo-generator">AI Kerstfoto Generator</a></li><li><a href="/nl/christmas/couples">Koppel Kerstportretten</a></li><li><a href="/nl/christmas/pets">Huisdier Kerstportretten</a></li><li><a href="/nl/christmas/cards">Kerstkaart Maker</a></li><li><a href="/nl/christmas">Kerst home</a></li></ul><section data-tdg-geo="true"><h2>Wat is een gezins kerstfoto generator?</h2><p>Een gezins kerstfoto generator verandert één geüploade gezinsfoto in een feestelijk groepsportret voor Kerst. Bij TheDigitalGifter upload je een duidelijke foto van je gezin, kies je een kerststijl gemaakt voor meerdere mensen, en maak je een downloadbaar portret — standaard privé, met de optie om verder te gaan naar een kerstkaart.</p></section><section data-tdg-depth-section="Maak een Gezins Kerstportret"><h2>Maak een Gezins Kerstportret</h2><p>Deze ervaring is specifiek gebouwd voor gezinnen — geen algemene look voor één persoon. Upload een groepsfoto, kies een kerstsfeer, en maak een portret dat streeft naar iedereen in beeld.</p></section><section data-tdg-depth-section="Gezins Kerstfoto Voorbeelden"><h2>Gezins Kerstfoto Voorbeelden</h2><p>Demo-voorbeelden tonen richtingen voor gezins kerstportretten. Het zijn inspiratievoorbeelden, geen klantfoto's.</p><ul><li>Ouders met kinderen in een gezellige kerst-woonkamer</li><li>Gezin van drie of vier bij een versierde boom</li><li>Grotere familiebijeenkomst in een feestelijke scène</li><li>Multi-generatie portretten inclusief opa's en oma's</li><li>Gezin plus een duidelijk zichtbaar huisdier in hetzelfde beeld</li></ul></section><section data-tdg-depth-section="Kerststijlen voor Gezinnen"><h2>Kerststijlen voor Gezinnen</h2><p>Beschikbare gezinsstijlen zijn onder meer Klassieke Gezins Kerst, Gezellige Open Haard, Winter Wonderland, Elegante Kerst, Kerstochtend, Luxe Kerst, Kerstfilm en Vintage Gezins Kerst.</p></section><section data-tdg-depth-section="Welke Gezinsfoto&#39;s Werken het Beste?"><h2>Welke Gezinsfoto's Werken het Beste?</h2><p>Gebruik een duidelijke groepsfoto waarop gezichten zichtbaar zijn, de belichting goed is, en iedereen die je in het portret wilt herkenbaar is. Vermijd extreme vaagheid, zware bijsnijdingen, of foto's waar belangrijke mensen verborgen zijn.</p></section><section data-tdg-depth-section="Gezins Kerstkaarten"><h2>Gezins Kerstkaarten</h2><p>Wanneer je gezinsportret klaar is, kun je verdergaan naar de Kerstkaart Maker en afronden met een boodschap.</p><p><a href="/nl/christmas/cards">Zet je gezinsportret om in een kerstkaart</a></p></section><section data-tdg-depth-section="Meer Kerstportretten"><h2>Meer Kerstportretten</h2><p>Op zoek naar een ander onderwerp? Begin bij de volledige fotogenerator of ga naar koppels en huisdieren.</p><ul><li><a href="/nl/christmas/photo-generator">AI Kerstfoto Generator</a></li><li><a href="/nl/christmas/couples">Koppel Kerstportretten</a></li><li><a href="/nl/christmas/pets">Huisdier Kerstportretten</a></li></ul></section><section data-tdg-faq="true"><h2>Veelgestelde vragen</h2><article><h3>Kan ik een kerstportret maken van één gezinsfoto?</h3><p>Ja. Upload één duidelijke gezinsfoto, kies een kerststijl, en maak je gezinsportret.</p></article><article><h3>Kunnen er meerdere mensen op staan?</h3><p>Ja. Deze route is gemaakt voor groepen. Zorg dat iedereen duidelijk zichtbaar is op de originele foto.</p></article><article><h3>Kunnen opa's en oma's erbij?</h3><p>Ja. Multi-generatie foto's — inclusief opa's, oma's en baby's — zijn welkom als gezichten zichtbaar zijn.</p></article><article><h3>Kan ik een huisdier van het gezin toevoegen?</h3><p>Ja, als het huisdier duidelijk zichtbaar is op de gezinsfoto. Voor portretten met alleen het huisdier gebruik je de Huisdieren-, Honden- of Katten-ervaringen.</p></article><article><h3>Welke foto's werken het beste?</h3><p>Duidelijke foto's met zichtbare gezichten, goede belichting, en iedereen die je wilt opnemen. Vermijd extreme vaagheid.</p></article><article><h3>Kan ik meerdere kerststijlen proberen?</h3><p>Ja. Kies uit de gezins kerststijlen op de pagina, en je kunt na het maken van een portret een andere stijl proberen.</p></article><article><h3>Kan ik het afgeronde portret downloaden?</h3><p>Ja. Zodra je portret klaar is, download je het op het resultaatscherm.</p></article><article><h3>Kan ik het gebruiken in een kerstkaart?</h3><p>Ja. Overdracht van het portret naar de Kerstkaart Maker wordt ondersteund.</p></article></section></div></div>
+  </body>
+</html>

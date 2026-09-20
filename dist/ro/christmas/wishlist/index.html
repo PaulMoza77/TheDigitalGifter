@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="ro">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Creator de Liste de Dorințe de Crăciun | Creează și Partajează</title>
+    <meta
+      name="description"
+      content="Creează o listă de dorințe de Crăciun, adaugă cadouri de oriunde și partajează un singur link simplu cu familia și prietenii."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Creator de Liste de Dorințe de Crăciun | Creează și Partajează"
+    />
+    <meta
+      property="og:description"
+      content="Creează o listă de dorințe de Crăciun, adaugă cadouri de oriunde și partajează un singur link simplu cu familia și prietenii."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/ro/christmas/wishlist" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Creator de Liste de Dorințe de Crăciun | Creează și Partajează"
+    />
+    <meta
+      name="twitter:description"
+      content="Creează o listă de dorințe de Crăciun, adaugă cadouri de oriunde și partajează un singur link simplu cu familia și prietenii."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/ro/christmas/wishlist" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas/wishlist" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas/wishlist" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas/wishlist" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas/wishlist" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas/wishlist" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas/wishlist" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas/wishlist" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas/wishlist" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas/wishlist" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas/wishlist" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Acasă","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Crăciun","item":"https://www.thedigitalgifter.com/ro/christmas"},{"@type":"ListItem","position":3,"name":"Listă de dorințe","item":"https://www.thedigitalgifter.com/ro/christmas/wishlist"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Creator de Liste de Dorințe de Crăciun | Creează și Partajează","description":"Creează o listă de dorințe de Crăciun, adaugă cadouri de oriunde și partajează un singur link simplu cu familia și prietenii.","url":"https://www.thedigitalgifter.com/ro/christmas/wishlist","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"ro"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Cum creez o listă de dorințe de Crăciun?","acceptedAnswer":{"@type":"Answer","text":"Deschide pagina Listă de dorințe de Crăciun, alege un titlu și creează lista. Poți adăuga urări imediat după aceea."}},{"@type":"Question","name":"Pot adăuga cadouri din orice magazin?","acceptedAnswer":{"@type":"Answer","text":"Da. Lipește un link obișnuit către un produs sau adaugă cadoul manual, dacă pagina nu poate fi citită automat."}},{"@type":"Question","name":"Pot adăuga urări fără un link?","acceptedAnswer":{"@type":"Answer","text":"Da. Scrie orice urare — experiențe, idei făcute manual sau un simplu „Surprinde-mă”."}},{"@type":"Question","name":"Pot partaja un singur link pentru toată lista?","acceptedAnswer":{"@type":"Answer","text":"Da. Activează partajarea și trimite linkul familiei și prietenilor."}},{"@type":"Question","name":"Pot oamenii să rezerve cadouri?","acceptedAnswer":{"@type":"Answer","text":"Da. Cei care văd lista pot rezerva un cadou, ca ceilalți să știe că este deja acoperit."}},{"@type":"Question","name":"Voi ști cine a cumpărat un anumit cadou?","acceptedAnswer":{"@type":"Answer","text":"Nu. Rezervările rămân anonime, ca surpriza să rămână intactă."}},{"@type":"Question","name":"Pot crea o listă pentru copilul meu?","acceptedAnswer":{"@type":"Answer","text":"Da. Alege pentru cine este lista atunci când o creezi, apoi partajează linkul cu rudele."}},{"@type":"Question","name":"Pot edita lista după ce am partajat-o?","acceptedAnswer":{"@type":"Answer","text":"Da. Adaugi, editezi, reordonezi sau elimini urări oricând. Cei care au linkul văd modificările imediat."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/ro/christmas/wishlist" data-locale="ro"><nav aria-label="Breadcrumb"><a href="/">Acasă</a> / <a href="/ro/christmas">Crăciun</a> / <a href="/ro/christmas/wishlist">Listă de dorințe</a></nav><h1>Creează o Listă de Dorințe și Partajează un Singur Link Simplu</h1><p>Construiește o listă de dorințe de Crăciun în câteva minute. Adaugă cadouri din orice magazin sau scrie-ți propriile urări, apoi trimite un singur link familiei și prietenilor.</p><h2>Cum funcționează</h2><p>Creezi lista, adaugi urări, partajezi un singur link și lași oamenii să se coordoneze fără să strice surpriza.</p><ul><li><a href="/ro/christmas/gift-finder">Încearcă Găsitorul de cadouri</a></li><li><a href="/ro/christmas/tree">Pune cadouri sub un brad digital</a></li><li><a href="/ro/christmas/photo-generator">Adaugă un portret de Crăciun</a></li><li><a href="/ro/christmas">Înapoi la Crăciun</a></li></ul><section data-tdg-geo="true"><h2>Ce este o listă de dorințe online de Crăciun?</h2><p>O listă de dorințe online de Crăciun este o listă de cadouri sau experiențe pe care cineva și-ar dori să le primească, ușor de partajat. Pe TheDigitalGifter creezi o listă, adaugi urări din linkuri către produse sau text liber, partajezi un singur link cu familia și prietenii și îi lași pe alții să rezerve un cadou, ca lucrurile să rămână coordonate, fără să strice surpriza.</p></section><section data-tdg-depth-section="Creează o Listă de Dorințe de Crăciun Online"><h2>Creează o Listă de Dorințe de Crăciun Online</h2><p>Dă un nume listei tale, adaugă urări și păstrează fiecare idee de Crăciun într-un singur loc, în loc să răspândești linkuri prin conversații. Poți începe rapid și poți continua să editezi oricând.</p></section><section data-tdg-depth-section="Adaugă Orice Îți Dorești"><h2>Adaugă Orice Îți Dorești</h2><p>Lipește un link către un produs, aproape din orice magazin, scrie o urare manuală, adaugă notițe sau include experiențe și idei făcute manual. Dacă un link nu poate fi citit automat, poți salva urarea și fără el, scriind-o direct.</p></section><section data-tdg-depth-section="Partajează un Singur Link Simplu"><h2>Partajează un Singur Link Simplu</h2><p>Activează partajarea și trimite un singur link către listă prin copiere, WhatsApp, email sau meniul de partajare al telefonului. Listele partajate sunt accesibile celor care au linkul și nu sunt gândite pentru motoarele de căutare.</p></section><section data-tdg-depth-section="Evită Cadourile Duplicate de Crăciun"><h2>Evită Cadourile Duplicate de Crăciun</h2><p>Cei care văd lista pot apăsa „Eu cumpăr asta” pentru a rezerva un cadou. Rezervările rămân anonime pentru proprietarul listei, astfel încât surpriza rămâne intactă, iar familia evită să cumpere același lucru de două ori.</p></section><section data-tdg-depth-section="Liste de Dorințe de Crăciun Pentru Copii și Familii"><h2>Liste de Dorințe de Crăciun Pentru Copii și Familii</h2><p>Creează o listă pentru tine, pentru copilul tău sau pentru altcineva, apoi partajeaz-o cu bunicii și prietenii. Combin-o cu Găsitorul de cadouri atunci când nu ești sigur ce să ceri.</p><p><a href="/ro/christmas/gift-finder">Încearcă Găsitorul de cadouri de Crăciun</a></p></section><section data-tdg-faq="true"><h2>Întrebări frecvente</h2><article><h3>Cum creez o listă de dorințe de Crăciun?</h3><p>Deschide pagina Listă de dorințe de Crăciun, alege un titlu și creează lista. Poți adăuga urări imediat după aceea.</p></article><article><h3>Pot adăuga cadouri din orice magazin?</h3><p>Da. Lipește un link obișnuit către un produs sau adaugă cadoul manual, dacă pagina nu poate fi citită automat.</p></article><article><h3>Pot adăuga urări fără un link?</h3><p>Da. Scrie orice urare — experiențe, idei făcute manual sau un simplu „Surprinde-mă”.</p></article><article><h3>Pot partaja un singur link pentru toată lista?</h3><p>Da. Activează partajarea și trimite linkul familiei și prietenilor.</p></article><article><h3>Pot oamenii să rezerve cadouri?</h3><p>Da. Cei care văd lista pot rezerva un cadou, ca ceilalți să știe că este deja acoperit.</p></article><article><h3>Voi ști cine a cumpărat un anumit cadou?</h3><p>Nu. Rezervările rămân anonime, ca surpriza să rămână intactă.</p></article><article><h3>Pot crea o listă pentru copilul meu?</h3><p>Da. Alege pentru cine este lista atunci când o creezi, apoi partajează linkul cu rudele.</p></article><article><h3>Pot edita lista după ce am partajat-o?</h3><p>Da. Adaugi, editezi, reordonezi sau elimini urări oricând. Cei care au linkul văd modificările imediat.</p></article></section></div></div>
+  </body>
+</html>

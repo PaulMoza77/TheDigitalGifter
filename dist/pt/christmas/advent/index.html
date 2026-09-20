@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Calendário do Advento de Natal Online | Uma Surpresa Todos os Dias</title>
+    <meta
+      name="description"
+      content="Abra uma nova surpresa digital de Natal todos os dias, de 1 a 24 de dezembro."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Calendário do Advento de Natal Online | Uma Surpresa Todos os Dias"
+    />
+    <meta
+      property="og:description"
+      content="Abra uma nova surpresa digital de Natal todos os dias, de 1 a 24 de dezembro."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/pt/christmas/advent" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Calendário do Advento de Natal Online | Uma Surpresa Todos os Dias"
+    />
+    <meta
+      name="twitter:description"
+      content="Abra uma nova surpresa digital de Natal todos os dias, de 1 a 24 de dezembro."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/pt/christmas/advent" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas/advent" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas/advent" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas/advent" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas/advent" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas/advent" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas/advent" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas/advent" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas/advent" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas/advent" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas/advent" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Natal","item":"https://www.thedigitalgifter.com/pt/christmas"},{"@type":"ListItem","position":3,"name":"Calendário do Advento","item":"https://www.thedigitalgifter.com/pt/christmas/advent"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Calendário do Advento de Natal Online | Uma Surpresa Todos os Dias","description":"Abra uma nova surpresa digital de Natal todos os dias, de 1 a 24 de dezembro.","url":"https://www.thedigitalgifter.com/pt/christmas/advent","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"pt-PT"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quando começa o calendário do Advento?","acceptedAnswer":{"@type":"Answer","text":"As portas correspondem aos dias de dezembro de 1 a 24. Antes de 1 de dezembro, as portas aparecem como brevemente disponíveis."}},{"@type":"Question","name":"Quando é que cada porta abre?","acceptedAnswer":{"@type":"Answer","text":"Cada porta abre no seu dia do calendário, no fuso horário de Europe/Bucharest."}},{"@type":"Question","name":"Posso abrir portas anteriores?","acceptedAnswer":{"@type":"Answer","text":"Não. Os dias perdidos ficam fechados — apenas a porta de hoje está disponível."}},{"@type":"Question","name":"O calendário é gratuito?","acceptedAnswer":{"@type":"Answer","text":"Navegar na experiência do calendário é gratuito. Alguns resgates de recompensa podem exigir uma conta quando os resgates estão ativos para a época."}},{"@type":"Question","name":"O que posso encontrar por trás de uma porta?","acceptedAnswer":{"@type":"Answer","text":"Surpresas de Natal sazonais configuradas para esse dia quando os resgates estão ativos — não é garantia de prémios em dinheiro ou créditos de loja todos os dias."}},{"@type":"Question","name":"Preciso de uma conta?","acceptedAnswer":{"@type":"Answer","text":"Pode ver o calendário sem uma. Resgatar certas recompensas de porta pode exigir sessão iniciada."}},{"@type":"Question","name":"Posso usá-lo no telemóvel?","acceptedAnswer":{"@type":"Answer","text":"Sim. O calendário do Advento foi pensado para funcionar tanto em telemóveis como em computador."}},{"@type":"Question","name":"Posso partilhá-lo?","acceptedAnswer":{"@type":"Answer","text":"Pode partilhar o link da página do calendário do Advento para que outros abram as suas próprias portas diárias."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/pt/christmas/advent" data-locale="pt"><nav aria-label="Breadcrumb"><a href="/">Início</a> / <a href="/pt/christmas">Natal</a> / <a href="/pt/christmas/advent">Calendário do Advento</a></nav><h1>Um Pouco de Magia de Natal Todos os Dias</h1><p>Abra uma nova surpresa digital de Natal todos os dias, de 1 a 24 de dezembro.</p><h2>Mais Magia de Natal</h2><ul><li><a href="/pt/christmas/santa-video">Vídeo Personalizado do Pai Natal</a></li><li><a href="/pt/christmas/cards">Criador de Postais de Natal</a></li><li><a href="/pt/christmas/wishlist">Lista de Desejos de Natal</a></li><li><a href="/pt/christmas">Início do Natal</a></li></ul><section data-tdg-geo="true"><h2>O que é um calendário do Advento online?</h2><p>Um calendário do Advento online é a versão digital do tradicional calendário do Advento: uma nova porta abre-se todos os dias de dezembro até ao Natal. Na TheDigitalGifter, abre a porta de hoje num calendário de 1 a 24 (hora de Europe/Bucharest). As portas passadas ficam fechadas depois de o dia terminar, e algumas recompensas podem exigir sessão iniciada quando os resgates estão ativos.</p></section><section data-tdg-depth-section="Um Pouco de Magia de Natal Todos os Dias"><h2>Um Pouco de Magia de Natal Todos os Dias</h2><p>O calendário do Advento é uma experiência de contagem decrescente com vinte e quatro portas. Cada dia de dezembro tem a sua própria porta — um pequeno ritual de abrir algo novo à medida que o Natal se aproxima.</p></section><section data-tdg-depth-section="Abra uma Nova Porta Todos os Dias"><h2>Abra uma Nova Porta Todos os Dias</h2><p>As portas seguem o dia do calendário no fuso horário de Europe/Bucharest. Apenas a porta de hoje está disponível para abrir. As portas futuras ficam bloqueadas. Os dias perdidos não reabrem para recuperação.</p></section><section data-tdg-depth-section="O Que Pode Estar Por Trás das Portas?"><h2>O Que Pode Estar Por Trás das Portas?</h2><p>As recompensas das portas são momentos de Natal configurados para a época — como um resgate surpresa quando os resgates de produção estão ativos. A disponibilidade pode depender das definições da época e de ter sessão iniciada.</p></section><section data-tdg-depth-section="Antes de 1 de Dezembro"><h2>Antes de 1 de Dezembro</h2><p>Antes de a janela do Advento começar, as portas aparecem como brevemente disponíveis. Volte quando dezembro começar para abrir o dia um.</p></section><section data-tdg-depth-section="Como Funciona o Calendário do Advento"><h2>Como Funciona o Calendário do Advento</h2><p>Passos simples para a experiência digital do Advento.</p><ul><li>Abra a página do Calendário do Advento</li><li>Encontre a porta de hoje (1–24 em dezembro)</li><li>Abra-a quando estiver disponível</li><li>Inicie sessão se um resgate exigir uma conta</li></ul></section><section data-tdg-depth-section="Mais Magia de Natal"><h2>Mais Magia de Natal</h2><p>Continue a época com uma árvore digital ou o centro de Natal.</p><ul><li><a href="/pt/christmas/tree">Árvore de Natal Digital</a></li><li><a href="/pt/christmas">Centro de Natal</a></li></ul></section><section data-tdg-faq="true"><h2>Perguntas frequentes</h2><article><h3>Quando começa o calendário do Advento?</h3><p>As portas correspondem aos dias de dezembro de 1 a 24. Antes de 1 de dezembro, as portas aparecem como brevemente disponíveis.</p></article><article><h3>Quando é que cada porta abre?</h3><p>Cada porta abre no seu dia do calendário, no fuso horário de Europe/Bucharest.</p></article><article><h3>Posso abrir portas anteriores?</h3><p>Não. Os dias perdidos ficam fechados — apenas a porta de hoje está disponível.</p></article><article><h3>O calendário é gratuito?</h3><p>Navegar na experiência do calendário é gratuito. Alguns resgates de recompensa podem exigir uma conta quando os resgates estão ativos para a época.</p></article><article><h3>O que posso encontrar por trás de uma porta?</h3><p>Surpresas de Natal sazonais configuradas para esse dia quando os resgates estão ativos — não é garantia de prémios em dinheiro ou créditos de loja todos os dias.</p></article><article><h3>Preciso de uma conta?</h3><p>Pode ver o calendário sem uma. Resgatar certas recompensas de porta pode exigir sessão iniciada.</p></article><article><h3>Posso usá-lo no telemóvel?</h3><p>Sim. O calendário do Advento foi pensado para funcionar tanto em telemóveis como em computador.</p></article><article><h3>Posso partilhá-lo?</h3><p>Pode partilhar o link da página do calendário do Advento para que outros abram as suas próprias portas diárias.</p></article></section></div></div>
+  </body>
+</html>

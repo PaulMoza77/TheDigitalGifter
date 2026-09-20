@@ -1,0 +1,322 @@
+{
+  "created_at": "2026-09-20T09:10:19.378246+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 2.24,
+  "regenerations": 0,
+  "clips": [
+    {
+      "id": "cinematic_01_polar_express",
+      "title": "Polar Express alpine viaduct",
+      "source_image": "polar_express_alpine_viaduct.jpg",
+      "job_id": "ff036768-a163-4c5b-a0de-111550dfb3ce",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas dusk. This exact photograph comes alive for five seconds. Preserve the black steam locomotive, wreath with red bow, red passenger cars, stone viaduct arches, warm window lights, lantern with red bow, snow-laden pines, alpine village, lake, and sunset mountains exactly as in the first frame. The train eases slowly forward along the tracks with physically correct wheel rotation. Thick steam billows naturally from the stack and drifts. Sparse snowfall. Warm coach lights flicker extremely subtly. Very gentle cinematic camera push along the tracks, almost locked-off. Architecture stays rigid. Passengers stay seated as small silhouettes. No extra cars or warped wheels. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. Subtle cinematic motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_01_polar_express.mp4",
+      "probe": {
+        "filename": "cinematic_01_polar_express.mp4",
+        "path": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_01_polar_express.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 21462572,
+        "size": 13525893
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep20/qc/cinematic_01_polar_express_first.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_01_polar_express_mid.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_01_polar_express_last.jpg"
+      ],
+      "created_at": "2026-09-20T09:12:25.401192+00:00"
+    },
+    {
+      "id": "cinematic_02_coca_cola_truck",
+      "title": "Coca-Cola Christmas truck",
+      "source_image": "coca_cola_christmas_truck_times_square.jpg",
+      "job_id": "6aaedbe5-bcd8-4bce-80c9-61473078a7fd",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Times Square Christmas night. This exact photograph comes alive for five seconds. Preserve the red Coca-Cola truck, Santa mural, wreath on the grille, billboards, Christmas tree, wet street, crowd, and falling snow exactly as in the first frame. The truck slowly rolls forward a few meters with natural wheel rotation. String lights stay attached and stable \u2014 they twinkle, they do not crawl off the truck. Reflections slide naturally on the wet pavement. Sparse snowfall. Crowd makes tiny natural shifts, no morphing faces. Very slow street-level tracking. Billboards remain readable and unchanged. No extra trucks. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. Subtle cinematic motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_02_coca_cola_truck.mp4",
+      "probe": {
+        "filename": "cinematic_02_coca_cola_truck.mp4",
+        "path": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_02_coca_cola_truck.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 29183731,
+        "size": 18391832
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep20/qc/cinematic_02_coca_cola_truck_first.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_02_coca_cola_truck_mid.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_02_coca_cola_truck_last.jpg"
+      ],
+      "created_at": "2026-09-20T09:15:24.186541+00:00"
+    },
+    {
+      "id": "cinematic_03_home_alone_house",
+      "title": "Home Alone-style Christmas house",
+      "source_image": "home_alone_style_christmas_house.jpg",
+      "job_id": "5bd7e3cc-aa34-4e41-8a40-133329366f23",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 suburban Christmas night. This exact photograph comes alive for five seconds. Preserve the brick colonial house, black shutters, white columns, wreath, address plaque 671, Christmas lights, snow-covered lawn, lamp post, and parked van exactly as in the first frame. Extremely slow cinematic push toward the front door. Sparse snowfall. Christmas lights shimmer very softly. Tiny natural movement in evergreen branches. Warm interior glow stays consistent. Do not deform windows, roof, columns, or the house silhouette. No extra cars. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. Subtle cinematic motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_03_home_alone_house.mp4",
+      "probe": {
+        "filename": "cinematic_03_home_alone_house.mp4",
+        "path": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_03_home_alone_house.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 29696485,
+        "size": 18714974
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep20/qc/cinematic_03_home_alone_house_first.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_03_home_alone_house_mid.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_03_home_alone_house_last.jpg"
+      ],
+      "created_at": "2026-09-20T09:17:32.932508+00:00"
+    },
+    {
+      "id": "cinematic_04_rockefeller",
+      "title": "Rockefeller Center ice rink",
+      "source_image": "rockefeller_center_ice_rink.jpg",
+      "job_id": "eac5b74e-cd54-4e32-a2b4-76ad548c4528",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Rockefeller Center Christmas night. This exact photograph comes alive for five seconds. Preserve the Christmas tree, Prometheus statue, flags, skaters, fountain water, buildings, and foreground pine exactly as in the first frame. Skaters glide naturally on the ice with believable body motion. Sparse snowfall. Tree lights sparkle subtly. Fountain water continues. Slow forward-and-slightly-down cinematic move. Architecture and the statue stay rigid. Do not duplicate skaters or morph faces. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. Subtle cinematic motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_04_rockefeller.mp4",
+      "probe": {
+        "filename": "cinematic_04_rockefeller.mp4",
+        "path": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_04_rockefeller.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 29691872,
+        "size": 18712067
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep20/qc/cinematic_04_rockefeller_first.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_04_rockefeller_mid.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_04_rockefeller_last.jpg"
+      ],
+      "created_at": "2026-09-20T09:19:33.846854+00:00"
+    },
+    {
+      "id": "cinematic_05_plaza_hotel",
+      "title": "The Plaza Hotel Fifth Avenue",
+      "source_image": "plaza_hotel_fifth_avenue.jpg",
+      "job_id": "1aa5e426-6c6e-40cf-8dca-caa864e53873",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Fifth Avenue Christmas night. This exact photograph comes alive for five seconds. Preserve The Plaza canopy lettering, wreaths, white horse, red carriage, doorman, wet street, taxis, and snow exactly as in the first frame. Very slow street-level dolly. The horse takes a few natural steps; the carriage follows. Taxis and distant pedestrians move naturally in the background. Sparse snowfall. Canopy lights stay stable. Do not warp the hotel facade or mutate THE PLAZA NEW YORK lettering. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. Subtle cinematic motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_05_plaza_hotel.mp4",
+      "probe": {
+        "filename": "cinematic_05_plaza_hotel.mp4",
+        "path": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_05_plaza_hotel.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 31293387,
+        "size": 19721355
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep20/qc/cinematic_05_plaza_hotel_first.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_05_plaza_hotel_mid.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_05_plaza_hotel_last.jpg"
+      ],
+      "created_at": "2026-09-20T09:21:51.088412+00:00"
+    },
+    {
+      "id": "cinematic_06_santa_london",
+      "title": "Santa flying over London",
+      "source_image": "santa_sleigh_over_london.jpg",
+      "job_id": "9ad53d6a-1d09-4682-8d20-406502b8e82c",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas night over London. This exact photograph comes alive for five seconds. Preserve Santa, the red sleigh, gift pile, eight reindeer, harnesses, full moon, Big Ben, Parliament, Thames boats, and London Eye exactly as in the first frame. Smooth gentle forward flight. Reindeer keep anatomically stable galloping motion \u2014 no extra legs, no warped antlers. Subtle sleigh bob. Clouds drift slowly. City lights parallax below. Sparse snowfall and sparkle. Camera tracks with the sleigh, not a wild orbit. Architecture stays rigid. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. Subtle cinematic motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_06_santa_london.mp4",
+      "probe": {
+        "filename": "cinematic_06_santa_london.mp4",
+        "path": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_06_santa_london.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 38234899,
+        "size": 24095954
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep20/qc/cinematic_06_santa_london_first.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_06_santa_london_mid.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_06_santa_london_last.jpg"
+      ],
+      "created_at": "2026-09-20T09:24:00.480365+00:00"
+    },
+    {
+      "id": "cinematic_07_workshop",
+      "title": "Santa\u2019s Workshop North Pole",
+      "source_image": "santa_workshop_north_pole.jpg",
+      "job_id": "f8804f21-1c89-4dba-bf9f-24702e93f310",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 North Pole workshop night. This exact photograph comes alive for five seconds. Preserve Santa, the Nice List parchment, elves, reindeer, sleigh, SANTA'S WORKSHOP sign, candy-cane pole, aurora, and gift piles exactly as in the first frame. Slow cinematic push through the scene. Santa\u2019s hands make a tiny natural adjustment on the list. Elves make small wrapping and walking motions. Lanterns and firelight flicker. Sparse snowfall. Aurora drifts. Sign letters stay unchanged. No extra elves or morphing faces. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. Subtle cinematic motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_07_workshop.mp4",
+      "probe": {
+        "filename": "cinematic_07_workshop.mp4",
+        "path": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_07_workshop.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 22541233,
+        "size": 14205674
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep20/qc/cinematic_07_workshop_first.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_07_workshop_mid.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_07_workshop_last.jpg"
+      ],
+      "created_at": "2026-09-20T09:26:08.880202+00:00"
+    },
+    {
+      "id": "cinematic_08_grinch",
+      "title": "Grinch over Whoville",
+      "source_image": "grinch_whoville_rooftop.jpg",
+      "job_id": "59108722-55b0-4bc7-8560-6639d7d77610",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Whoville Christmas night. This exact photograph comes alive for five seconds. Preserve the Grinch\u2019s green fur, face, Santa hat and coat, sack of gifts, brick chimney, Welcome to Whoville sign, village lights, Christmas tree, and moon exactly as in the first frame. Very subtle mischievous head and shoulder movement. Fur shifts slightly in the wind. Sparse snowfall. Village lights twinkle. Gentle camera push. Absolutely no face morphing. Sign letters stay readable. Architecture stays rigid. No extra Grinches. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. Subtle cinematic motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_08_grinch.mp4",
+      "probe": {
+        "filename": "cinematic_08_grinch.mp4",
+        "path": "/workspace/public/assets/christmas/cinematic-sep20/masters/cinematic_08_grinch.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 20634246,
+        "size": 13003875
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-sep20/qc/cinematic_08_grinch_first.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_08_grinch_mid.jpg",
+        "/workspace/generated/batch-sep20/qc/cinematic_08_grinch_last.jpg"
+      ],
+      "created_at": "2026-09-20T09:28:16.759542+00:00"
+    }
+  ],
+  "pending": [],
+  "failed": [],
+  "reels": [
+    {
+      "id": "reel-nostalgia-01",
+      "title": "Christmas Movie Nostalgia \u2014 Reel 01",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/final/christmas_movie_nostalgia_reel_01.mp4",
+      "probe": {
+        "filename": "christmas_movie_nostalgia_reel_01.mp4",
+        "duration": 14.3,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 16210629,
+        "size": 28976501,
+        "poster": "/workspace/public/assets/christmas/cinematic-sep20/posters/reel-nostalgia-01.jpg"
+      },
+      "clips_used": [
+        "cinematic_03_home_alone_house",
+        "cinematic_01_polar_express",
+        "cinematic_04_rockefeller",
+        "cinematic_05_plaza_hotel",
+        "reel-cozy-01",
+        "short-christmas-master-07"
+      ],
+      "overlay": "Christmas felt different back then.",
+      "audio": "none"
+    },
+    {
+      "id": "reel-magic-02",
+      "title": "Christmas Magic \u2014 Reel 02",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/final/christmas_magic_reel_02.mp4",
+      "probe": {
+        "filename": "christmas_magic_reel_02.mp4",
+        "duration": 13.4,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15741358,
+        "size": 26366775,
+        "poster": "/workspace/public/assets/christmas/cinematic-sep20/posters/reel-magic-02.jpg"
+      },
+      "clips_used": [
+        "cinematic_06_santa_london",
+        "cinematic_01_polar_express",
+        "cinematic_07_workshop",
+        "short-christmas-master-06",
+        "cinematic_02_coca_cola_truck",
+        "cinematic_04_rockefeller"
+      ],
+      "overlay": "POV: Christmas is real.",
+      "audio": "none"
+    },
+    {
+      "id": "reel-perfect-03",
+      "title": "The Perfect Christmas \u2014 Reel 03",
+      "file": "/workspace/public/assets/christmas/cinematic-sep20/final/the_perfect_christmas_reel_03.mp4",
+      "probe": {
+        "filename": "the_perfect_christmas_reel_03.mp4",
+        "duration": 13.333333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15131634,
+        "size": 25219391,
+        "poster": "/workspace/public/assets/christmas/cinematic-sep20/posters/reel-perfect-03.jpg"
+      },
+      "clips_used": [
+        "cinematic_03_home_alone_house",
+        "reel-cozy-01",
+        "short-christmas-master-04",
+        "short-global-02-alps",
+        "short-global-03-home",
+        "cinematic_03_home_alone_house"
+      ],
+      "overlay": null,
+      "audio": "none"
+    }
+  ],
+  "status": "COMPLETE",
+  "actual_cost_usd": 2.24,
+  "success_count": 8,
+  "failed_count": 0,
+  "reels_assembled_at": "2026-09-20T09:31:55.073333+00:00"
+}

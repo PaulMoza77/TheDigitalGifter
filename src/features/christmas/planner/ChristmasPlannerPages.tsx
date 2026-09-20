@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "./analytics";
-import { insertTask, loadBudget, loadGifts, loadRecipients, loadTasks } from "./api";
+import { insertTask, loadGifts, loadRecipients, loadTasks } from "./api";
 import {
   dismissInsight,
   executePlannerAction,
@@ -11,9 +11,7 @@ import {
   loadPlannerWorkspace,
   runPlannerIntelligence,
   computeRecipientBudgets,
-  computeBudgetTotals,
   formatPlannerMoney,
-  buildPlannerSnapshot,
   type PlannerIntelligence,
 } from "./intelligence";
 import {
@@ -57,27 +55,14 @@ import {
 } from "./plannerUi";
 import { PlannerOnboarding, usePlannerBundle } from "./Onboarding";
 import {
-  BUDGET_CATEGORIES,
   GIFT_ITEM_STATUSES,
   TASK_CATEGORIES,
-  type BudgetCategory,
-  type BudgetEntry,
   type GiftItem,
   type GiftItemStatus,
   type GiftRecipient,
   type PlannerTask,
   type TaskCategory,
 } from "./types";
-
-function buildMiniBudgetSnapshot(profile: import("./types").PlannerProfile, gifts: GiftItem[], rows: BudgetEntry[]) {
-  return buildPlannerSnapshot({
-    profile,
-    tasks: [],
-    recipients: [],
-    gifts,
-    budgetEntries: rows,
-  });
-}
 
 export default function ChristmasPlannerTodayPage() {
   const { loading, access, profile } = usePlannerBundle();
@@ -157,7 +142,7 @@ export default function ChristmasPlannerTodayPage() {
     recipients.length - new Set(gifts.filter((g) => g.status !== "idea").map((g) => g.recipient_id)).size,
   );
   const spent = intel?.budget.spentMinor ?? gifts.reduce((s, g) => s + (g.actual_price_minor || 0), 0);
-  const remaining = intel?.budget.remainingMinor;
+  const remaining = intel?.budget.remainingAfterSpendMinor ?? intel?.budget.remainingMinor;
   const planned = profile.total_budget_minor || intel?.budget.forecastMinor || 0;
   const nextDeadline = tasks.find((t) => t.status === "open" && t.due_on) || null;
   const attention = intel?.attention || [];
@@ -226,6 +211,16 @@ export default function ChristmasPlannerTodayPage() {
     giftsWithoutPlan > 0 ? { to: "/account/christmas/gifts", label: `${giftsWithoutPlan} gift${giftsWithoutPlan === 1 ? "" : "s"} left to buy` } : null,
     menuIncomplete ? { to: "/account/christmas/food", label: mealsCount === 0 ? "Dinner menu not started" : "Dinner menu incomplete" } : null,
     groceryNeed > 0 ? { to: "/account/christmas/grocery", label: `${groceryNeed} grocery items remaining` } : null,
+    remaining != null && remaining < 0 ? { to: "/account/christmas/budget", label: "Christmas budget is a little over — easy to ease back" } : null,
+    remaining != null && remaining >= 0 && (profile.total_budget_minor || 0) > 0
+      ? { to: "/account/christmas/budget", label: `${formatPlannerMoney(remaining, profile.currency)} left in your Christmas budget` }
+      : null,
+    intel?.budget.categoryRows.some((row) => row.category === "gifts" && row.budgetMinor > 0 && row.spentMinor / row.budgetMinor >= 0.78)
+      ? { to: "/account/christmas/budget", label: "Gift budget almost reached" }
+      : null,
+    intel?.budget.plannedOutstandingMinor
+      ? { to: "/account/christmas/budget", label: `${formatPlannerMoney(intel.budget.plannedOutstandingMinor, profile.currency)} planned but not purchased yet` }
+      : null,
     thisWeek.length > 0 ? { to: "/account/christmas/plan", label: `${thisWeek.length} task${thisWeek.length === 1 ? "" : "s"} due this week` } : null,
   ].filter(Boolean) as Array<{ to: string; label: string }>;
 
@@ -239,7 +234,7 @@ export default function ChristmasPlannerTodayPage() {
         {nextActions.length ? (
           <ol className="tdg-home-next">
             {nextActions.slice(0, 4).map((item) => (
-              <li key={item.to}>
+              <li key={`${item.to}:${item.label}`}>
                 <Link to={item.to}>{item.label}</Link>
               </li>
             ))}
@@ -996,161 +991,8 @@ export function ChristmasPlannerMorePage() {
   );
 }
 
-export function ChristmasPlannerBudgetPage() {
-  const { loading, access, profile, reload } = usePlannerBundle();
-  const [rows, setRows] = useState<BudgetEntry[]>([]);
-  const [gifts, setGifts] = useState<GiftItem[]>([]);
-  const [total, setTotal] = useState("");
-  const [expense, setExpense] = useState({ label: "", category: "other" as BudgetCategory, amount: "" });
+export { ChristmasPlannerBudgetPage } from "./BudgetPage";
 
-  useEffect(() => {
-    if (!profile) return;
-    void Promise.all([loadBudget(profile.id), loadGifts(profile.id)]).then(([b, g]) => {
-      setRows(b);
-      setGifts(g);
-    });
-    setTotal(profile.total_budget_minor ? String(profile.total_budget_minor / 100) : "");
-    trackPlannerEvent("planner_module_opened", { module: "budget" });
-  }, [profile?.id]);
-
-  if (loading) return <p>Loading budget…</p>;
-  if (!profile) return <PlannerOnboarding />;
-  if (!hasFeature(access, "budget")) {
-    return (
-      <div className="tdg-planner-page">
-        <PlannerPageHeader title="Budget" lede="Keep Christmas spending beautifully under control." />
-        <PlannerPaywall
-          feature="budget"
-          title="Track gifts, meals and extras without spreadsheet chaos."
-          body="See planned versus spent as the season unfolds. Gift prices roll in automatically."
-        />
-      </div>
-    );
-  }
-
-  const totals = computeBudgetTotals(
-    buildMiniBudgetSnapshot(profile, gifts, rows),
-  );
-  const giftSpent = totals.giftSpentMinor;
-  const planned = totals.totalBudgetMinor || totals.forecastMinor;
-  const spent = totals.spentMinor;
-  const remaining = totals.remainingMinor ?? planned - spent;
-
-  async function ensureCategory(cat: BudgetCategory) {
-    const existing = rows.find((r) => r.category === cat);
-    if (existing) return existing;
-    const { data } = await supabase
-      .from("christmas_budget_entries")
-      .insert({ profile_id: profile!.id, category: cat, label: cat, planned_minor: 0, spent_minor: 0, source_type: "manual" })
-      .select("*")
-      .maybeSingle();
-    if (data) setRows((p) => [...p, data as BudgetEntry]);
-    return data as BudgetEntry | null;
-  }
-
-  return (
-    <div className="tdg-planner-page">
-      <PlannerPageHeader title="Budget" lede="Keep Christmas spending beautifully under control." />
-      <div className="tdg-planner-summary">
-        <PlannerStat label="Total" value={money(planned, profile.currency)} hint="season budget" />
-        <PlannerStat label="Forecast" value={money(totals.forecastMinor, profile.currency)} hint="gifts + other plans" />
-        <PlannerStat label="Spent" value={money(spent, profile.currency)} hint="gift actuals + manual" />
-        <PlannerStat label="Remaining" value={money(remaining, profile.currency)} hint={remaining < 0 ? "over plan" : "left to spend"} />
-        <PlannerStat label="Used" value={`${planned ? Math.min(100, Math.round((spent / planned) * 100)) : 0}%`} hint="of the total" />
-      </div>
-      <section className="tdg-planner-section">
-        <label>
-          Total Christmas budget
-          <input
-            className="tdg-planner-input"
-            type="number"
-            value={total}
-            onChange={(e) => setTotal(e.target.value)}
-            onBlur={async () => {
-              const minor = Math.max(0, Number(total || 0) * 100);
-              await supabase.from("christmas_planner_profiles").update({ total_budget_minor: minor }).eq("id", profile.id);
-              trackPlannerEvent("planner_budget_updated", { module: "budget" });
-              await reload();
-            }}
-          />
-        </label>
-        <PlannerProgress value={planned ? Math.min(100, Math.round((spent / planned) * 100)) : 0} />
-        <p className="tdg-planner-muted">
-          Gift prices roll into spent and forecast automatically. Manual expenses stay separate so the same gift is never counted twice.
-        </p>
-        {totals.overForecastMinor > 0 ? (
-          <p className="tdg-intel-spend is-over">
-            Forecast is {money(totals.overForecastMinor, profile.currency)} over your season total.
-          </p>
-        ) : null}
-      </section>
-      {BUDGET_CATEGORIES.map((cat) => {
-        const row = rows.find((r) => r.category === cat);
-        const extra = cat === "gifts" ? totals.giftCommittedMinor : 0;
-        const cap = row?.planned_minor || 0;
-        const used = cat === "gifts" ? totals.giftCommittedMinor : (row?.spent_minor || 0);
-        return (
-          <div key={cat} className="tdg-planner-budget-row">
-            <div>
-              <strong>{prettyLabel(cat)}</strong>
-              <div className="tdg-planner-muted">
-                {money(used, profile.currency)} of {money(cap, profile.currency)}
-              </div>
-              <div className="tdg-planner-bar is-compact">
-                <span style={{ width: `${cap ? Math.min(100, Math.round((used / cap) * 100)) : 0}%` }} />
-              </div>
-            </div>
-            <input
-              className="tdg-planner-input"
-              style={{ width: 120, margin: 0 }}
-              type="number"
-              placeholder="Cap"
-              defaultValue={row?.planned_minor ? row.planned_minor / 100 : ""}
-              onBlur={async (e) => {
-                const minor = Math.max(0, Number(e.target.value || 0) * 100);
-                const current = row || (await ensureCategory(cat));
-                if (!current) return;
-                await supabase.from("christmas_budget_entries").update({ planned_minor: minor }).eq("id", current.id);
-                setRows((p) => p.map((r) => (r.id === current.id ? { ...r, planned_minor: minor } : r)));
-                trackPlannerEvent("planner_budget_updated", { module: "budget" });
-              }}
-            />
-          </div>
-        );
-      })}
-      <section className="tdg-planner-section">
-        <h2>Add expense</h2>
-        <PlannerComposer>
-        <input className="tdg-planner-input" placeholder="What did you buy?" value={expense.label} onChange={(e) => setExpense({ ...expense, label: e.target.value })} />
-        <select className="tdg-planner-select" value={expense.category} onChange={(e) => setExpense({ ...expense, category: e.target.value as BudgetCategory })}>
-          {BUDGET_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {prettyLabel(c)}
-            </option>
-          ))}
-        </select>
-        <input className="tdg-planner-input" type="number" placeholder="Amount" value={expense.amount} onChange={(e) => setExpense({ ...expense, amount: e.target.value })} />
-        <button
-          type="button"
-          className="tdg-planner-btn primary"
-          onClick={async () => {
-            if (!expense.label.trim() || !expense.amount) return;
-            const current = rows.find((r) => r.category === expense.category) || (await ensureCategory(expense.category));
-            if (!current) return;
-            const add = Math.max(0, Number(expense.amount) * 100);
-            await supabase.from("christmas_budget_entries").update({ spent_minor: current.spent_minor + add, label: expense.label.slice(0, 80) }).eq("id", current.id);
-            setRows((p) => p.map((r) => (r.id === current.id ? { ...r, spent_minor: r.spent_minor + add } : r)));
-            setExpense({ label: "", category: expense.category, amount: "" });
-            trackPlannerEvent("planner_budget_updated", { module: "budget" });
-          }}
-        >
-          Add expense
-        </button>
-        </PlannerComposer>
-      </section>
-    </div>
-  );
-}
 
 export function ChristmasPlannerSimpleModule({
   module,

@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Kerst bij TheDigitalGifter | Cadeaus, Foto's, Kerstman en Meer</title>
+    <meta
+      name="description"
+      content="Maak kerstcadeaus, AI-portretten, Kerstman-video&#39;s, verlanglijstjes, kerstkaarten en adventsverrassingen — gepersonaliseerde digitale kerstervaringen van TheDigitalGifter."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Kerst bij TheDigitalGifter | Cadeaus, Foto&#39;s, Kerstman en Meer"
+    />
+    <meta
+      property="og:description"
+      content="Maak kerstcadeaus, AI-portretten, Kerstman-video&#39;s, verlanglijstjes, kerstkaarten en adventsverrassingen — gepersonaliseerde digitale kerstervaringen van TheDigitalGifter."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/nl/christmas" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/christmas/og-countdown.jpg" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Kerst bij TheDigitalGifter | Cadeaus, Foto&#39;s, Kerstman en Meer"
+    />
+    <meta
+      name="twitter:description"
+      content="Maak kerstcadeaus, AI-portretten, Kerstman-video&#39;s, verlanglijstjes, kerstkaarten en adventsverrassingen — gepersonaliseerde digitale kerstervaringen van TheDigitalGifter."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/christmas/og-countdown.jpg" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/nl/christmas" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Kerst","item":"https://www.thedigitalgifter.com/nl/christmas"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Kerst bij TheDigitalGifter | Cadeaus, Foto's, Kerstman en Meer","description":"Maak kerstcadeaus, AI-portretten, Kerstman-video's, verlanglijstjes, kerstkaarten en adventsverrassingen — gepersonaliseerde digitale kerstervaringen van TheDigitalGifter.","url":"https://www.thedigitalgifter.com/nl/christmas","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"nl"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Wat kan ik voor Kerst maken met TheDigitalGifter?","acceptedAnswer":{"@type":"Answer","text":"Je kunt cadeau-ideeën vinden, foto’s omzetten in kerstportretten voor families, koppels en huisdieren, de kerstman-ervaring starten, een deelbaar verlanglijstje maken, een kaart ontwerpen, berichten schrijven, een digitale boom versieren en adventsverrassingen openen. Kies één ervaring op deze pagina en je bent in minuten klaar."}},{"@type":"Question","name":"Kan de kerstman de naam van mijn kind zeggen?","acceptedAnswer":{"@type":"Answer","text":"Je kunt starten met de voornaam op de kerstpagina of in de kerstman-ervaring en optionele details toevoegen. Gesproken video’s zijn vandaag beschikbaar in het Engels en Roemeens — andere talen volgen."}},{"@type":"Question","name":"Heb ik ontwerpvaardigheden nodig?","acceptedAnswer":{"@type":"Answer","text":"Nee. Elke kerstervaring begeleidt je stap voor stap — upload een foto, beantwoord een paar vragen of begin met een naam — en de pagina doet de rest."}},{"@type":"Question","name":"Is dit voor digitale cadeaus, fysieke cadeaus, of beide?","acceptedAnswer":{"@type":"Answer","text":"Beide. Gebruik de Cadeauzoeker en het verlanglijstje om overal te winkelen, en maak digitale portretten en kaarten om meteen te downloaden of te delen."}},{"@type":"Question","name":"Werkt dit op mijn telefoon?","acceptedAnswer":{"@type":"Answer","text":"Ja — de kersthub en productervaringen zijn eerst voor telefoons gemaakt en werken ook op desktop."}},{"@type":"Question","name":"Is de foto van mijn gezin privé?","acceptedAnswer":{"@type":"Answer","text":"Uploads worden gebruikt om je portret of kaart te maken. Kindervaringen zijn privacy-first en verwachten een ouder of voogd. Als het resultaat klaar is, download je het privé — we plaatsen je foto’s niet openbaar."}},{"@type":"Question","name":"Hoe lang duurt het om iets te maken?","acceptedAnswer":{"@type":"Answer","text":"De meeste ervaringen duren een paar minuten. Cadeauzoeker en berichten zijn bijna direct klaar. Portretten, kaarten en de kerstman begeleiden je stap voor stap; betaalde creaties gaan verder na checkout."}},{"@type":"Question","name":"Heb ik een account nodig om te starten?","acceptedAnswer":{"@type":"Answer","text":"Je kunt meteen verkennen en starten. Sommige ervaringen vragen om een e-mail bij aanmelden of checkout zodat je voortgang kunt opslaan, je resultaat ontvangen of lid worden van de Christmas Club."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/nl/christmas" data-locale="nl"><nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="/nl/christmas">Kerst</a></nav><h1>Maak Dit Jaar Iets Om Nooit Te Vergeten</h1><p>Ontdek kerstcadeaus, fotoportretten, Kerstman-video's, digitale kerstbomen, adventskalenders, kerstkaarten en boodschappen — allemaal op één plek bij TheDigitalGifter.</p><h2>Kerstervaringen</h2><p>Kies hieronder een kerstproduct en maak in enkele minuten iets persoonlijks.</p><ul><li><a href="/nl/christmas/gift-finder">Vind een Kerstcadeau Dat Ze Geweldig Vinden</a></li><li><a href="/nl/christmas/wishlist">Maak een Kerst Verlanglijstje</a></li><li><a href="/nl/christmas/photo-generator">AI Kerstfoto Generator</a></li><li><a href="/nl/christmas/santa-video">Maak een Gepersonaliseerde Kerstman-video</a></li><li><a href="/nl/christmas/tree">Bouw een Digitale Kerstboom</a></li><li><a href="/nl/christmas/advent">Open de Adventskalender</a></li><li><a href="/nl/christmas/cards">Maak een Kerstkaart</a></li><li><a href="/nl/christmas/messages">Vind een Kerstboodschap</a></li></ul><section data-tdg-geo="true"><h2>Wat kun je met TheDigitalGifter maken voor Kerst?</h2><p>TheDigitalGifter is een creatiehub voor Kerst. Je kunt cadeau-ideeën vinden met de Gift Finder, een foto omzetten in een kerstportret voor familie, koppels of huisdieren, een gepersonaliseerde Kerstman-video maken met de naam van de ontvanger, een deelbaar kerst verlanglijstje bouwen, een kerstkaart ontwerpen met je foto en boodschap, kerstwensen schrijven, een digitale kerstboom versieren en dagelijkse adventsverrassingen openen. Begin bij één onderdeel en spring naar de ervaring die past bij wie je viert.</p></section><section data-tdg-depth-section="Vind het Perfecte Kerstcadeau"><h2>Vind het Perfecte Kerstcadeau</h2><p>Weet je niet wat je moet kopen? De Kerst Gift Finder vraagt voor wie je iets zoekt, wat die persoon leuk vindt, hoe hij of zij in het leven staat en wat je wilt uitgeven. Je krijgt doordachte cadeau-ideeën met een korte reden waarom elk idee past — ook voor iemand die alles al lijkt te hebben. Sla favorieten op in een verlanglijstje wanneer je er klaar voor bent.</p><p><a href="/nl/christmas/gift-finder">Vind een kerstcadeau dat écht in de smaak valt</a></p></section><section data-tdg-depth-section="Maak Magische Kerstfoto&#39;s"><h2>Maak Magische Kerstfoto's</h2><p>Upload een duidelijke foto en verander deze in een feestelijk kerstportret. Maak looks voor gezinnen, koppels en huisdieren — met speciale routes voor honden en katten — en download privé of neem een portret mee naar een kerstkaart.</p><p><a href="/nl/christmas/photo-generator">Verander je foto in kerstmagie</a></p></section><section data-tdg-depth-section="Ontvang een Persoonlijke Boodschap van de Kerstman"><h2>Ontvang een Persoonlijke Boodschap van de Kerstman</h2><p>Maak een gepersonaliseerde kerstvideo van de Kerstman. Vertel de Kerstman de naam van de ontvanger en optionele details zoals leeftijd, iets wat goed ging, een hobby of een kerstwens. Bekijk de boodschap en maak vervolgens een video die je kunt downloaden en delen. De video wordt gemaakt in het Engels of Roemeens.</p><p><a href="/nl/christmas/santa-video">Maak een gepersonaliseerde Kerstman-video</a></p></section><section data-tdg-depth-section="Maak en Deel een Kerst Verlanglijstje"><h2>Maak en Deel een Kerst Verlanglijstje</h2><p>Bouw een kerst verlanglijstje met productlinks of vrij geschreven wensen. Deel één simpele link met familie en vrienden. Bezoekers kunnen een cadeau reserveren zodat anderen niet hetzelfde kopen — zonder te verklappen wie het voor de eigenaar van het lijstje heeft gekocht.</p><p><a href="/nl/christmas/wishlist">Maak een kerst verlanglijstje</a></p></section><section data-tdg-depth-section="Maak een Persoonlijke Kerstkaart"><h2>Maak een Persoonlijke Kerstkaart</h2><p>Combineer een foto, een feestelijk kaartontwerp en een persoonlijke boodschap tot een kerstkaart die je kunt downloaden of digitaal delen. Gebruik je eigen foto of een kerstportret dat je al hebt gemaakt.</p><p><a href="/nl/christmas/cards">Maak een kerstkaart die ze willen bewaren</a></p></section><section data-tdg-depth-section="Meer Kerstervaringen"><h2>Meer Kerstervaringen</h2><p>Je kunt ook een digitale kerstboom bouwen met verrassingen, adventsdeurtjes openen tijdens december, en met de boodschappengenerator de juiste kerstwoorden vinden.</p><ul><li><a href="/nl/christmas/tree">Digitale Kerstboom</a></li><li><a href="/nl/christmas/advent">Adventskalender</a></li><li><a href="/nl/christmas/messages">Kerstboodschappen</a></li></ul></section><section data-tdg-faq="true"><h2>Veelgestelde vragen</h2><article><h3>Wat kan ik voor Kerst maken met TheDigitalGifter?</h3><p>Je kunt cadeau-ideeën vinden, foto’s omzetten in kerstportretten voor families, koppels en huisdieren, de kerstman-ervaring starten, een deelbaar verlanglijstje maken, een kaart ontwerpen, berichten schrijven, een digitale boom versieren en adventsverrassingen openen. Kies één ervaring op deze pagina en je bent in minuten klaar.</p></article><article><h3>Kan de kerstman de naam van mijn kind zeggen?</h3><p>Je kunt starten met de voornaam op de kerstpagina of in de kerstman-ervaring en optionele details toevoegen. Gesproken video’s zijn vandaag beschikbaar in het Engels en Roemeens — andere talen volgen.</p></article><article><h3>Heb ik ontwerpvaardigheden nodig?</h3><p>Nee. Elke kerstervaring begeleidt je stap voor stap — upload een foto, beantwoord een paar vragen of begin met een naam — en de pagina doet de rest.</p></article><article><h3>Is dit voor digitale cadeaus, fysieke cadeaus, of beide?</h3><p>Beide. Gebruik de Cadeauzoeker en het verlanglijstje om overal te winkelen, en maak digitale portretten en kaarten om meteen te downloaden of te delen.</p></article><article><h3>Werkt dit op mijn telefoon?</h3><p>Ja — de kersthub en productervaringen zijn eerst voor telefoons gemaakt en werken ook op desktop.</p></article><article><h3>Is de foto van mijn gezin privé?</h3><p>Uploads worden gebruikt om je portret of kaart te maken. Kindervaringen zijn privacy-first en verwachten een ouder of voogd. Als het resultaat klaar is, download je het privé — we plaatsen je foto’s niet openbaar.</p></article><article><h3>Hoe lang duurt het om iets te maken?</h3><p>De meeste ervaringen duren een paar minuten. Cadeauzoeker en berichten zijn bijna direct klaar. Portretten, kaarten en de kerstman begeleiden je stap voor stap; betaalde creaties gaan verder na checkout.</p></article><article><h3>Heb ik een account nodig om te starten?</h3><p>Je kunt meteen verkennen en starten. Sommige ervaringen vragen om een e-mail bij aanmelden of checkout zodat je voortgang kunt opslaan, je resultaat ontvangen of lid worden van de Christmas Club.</p></article></section></div></div>
+  </body>
+</html>

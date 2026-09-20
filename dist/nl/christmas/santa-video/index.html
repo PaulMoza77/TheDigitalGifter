@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Gepersonaliseerde Kerstman-video | De Kerstman Zegt de Naam van Je Kind</title>
+    <meta
+      name="description"
+      content="Maak een gepersonaliseerde kerstvideo van de Kerstman die de naam van de ontvanger en andere ondersteunde persoonlijke details kan bevatten."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Gepersonaliseerde Kerstman-video | De Kerstman Zegt de Naam van Je Kind"
+    />
+    <meta
+      property="og:description"
+      content="Maak een gepersonaliseerde kerstvideo van de Kerstman die de naam van de ontvanger en andere ondersteunde persoonlijke details kan bevatten."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/nl/christmas/santa-video" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Gepersonaliseerde Kerstman-video | De Kerstman Zegt de Naam van Je Kind"
+    />
+    <meta
+      name="twitter:description"
+      content="Maak een gepersonaliseerde kerstvideo van de Kerstman die de naam van de ontvanger en andere ondersteunde persoonlijke details kan bevatten."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/nl/christmas/santa-video" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas/santa-video" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas/santa-video" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas/santa-video" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas/santa-video" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas/santa-video" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas/santa-video" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas/santa-video" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas/santa-video" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas/santa-video" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas/santa-video" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Kerst","item":"https://www.thedigitalgifter.com/nl/christmas"},{"@type":"ListItem","position":3,"name":"Kerstman-video","item":"https://www.thedigitalgifter.com/nl/christmas/santa-video"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Gepersonaliseerde Kerstman-video | De Kerstman Zegt de Naam van Je Kind","description":"Maak een gepersonaliseerde kerstvideo van de Kerstman die de naam van de ontvanger en andere ondersteunde persoonlijke details kan bevatten.","url":"https://www.thedigitalgifter.com/nl/christmas/santa-video","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"nl"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Kan de Kerstman de naam van mijn kind zeggen?","acceptedAnswer":{"@type":"Answer","text":"Ja. De naam van de ontvanger is een centraal personalisatieveld en de Kerstman zegt deze in de video, gesproken in het Engels of Roemeens."}},{"@type":"Question","name":"Wat kan ik personaliseren?","acceptedAnswer":{"@type":"Answer","text":"Naam, optionele leeftijd, iets wat goed ging, kerstwens, een extra detail, en de taal (Engels of Roemeens)."}},{"@type":"Question","name":"Kan de Kerstman een kerstcadeau noemen?","acceptedAnswer":{"@type":"Answer","text":"Ja — je kunt een kerstwens toevoegen, en de Kerstman kan deze noemen wanneer je er een opgeeft."}},{"@type":"Question","name":"Kan ik een video maken voor broers en zussen?","acceptedAnswer":{"@type":"Answer","text":"Ja. Kies de optie voor broers en zussen en voeg hun namen toe bij de naamstap. Een speciale flow voor meerdere kinderen kan later worden uitgebreid."}},{"@type":"Question","name":"Spreekt de Kerstman Nederlands?","acceptedAnswer":{"@type":"Answer","text":"Nog niet. De vandaag ondersteunde talen voor de Kerstman-video zijn Engels en Roemeens."}},{"@type":"Question","name":"Kan ik de boodschap vooraf bekijken?","acceptedAnswer":{"@type":"Answer","text":"Ja. Je kunt de boodschap bekijken voordat je de video maakt."}},{"@type":"Question","name":"Kan ik de video downloaden of delen?","acceptedAnswer":{"@type":"Answer","text":"Ja. Zodra de video klaar is, kun je de MP4 downloaden en delen."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/nl/christmas/santa-video" data-locale="nl"><nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="/nl/christmas">Kerst</a> / <a href="/nl/christmas/santa-video">Kerstman-video</a></nav><h1>Maak een Gepersonaliseerde Video van de Kerstman</h1><p>Maak een gepersonaliseerde kerstvideo van de Kerstman die de naam van de ontvanger en andere ondersteunde persoonlijke details kan bevatten.</p><h2>Hoe Kerstman-video's Werken</h2><p>Vertel de Kerstman voor wie het is, voeg een paar details toe, en maak dan een gepersonaliseerde kerstvideo.</p><ul><li><a href="/nl/christmas/family">Gezins Kerstportretten</a></li><li><a href="/nl/christmas/cards">Kerstkaart Maker</a></li><li><a href="/nl/christmas">Kerst home</a></li></ul><section data-tdg-geo="true"><h2>Wat is een gepersonaliseerde Kerstman-video?</h2><p>Een gepersonaliseerde Kerstman-video is een kerstboodschap-video van de Kerstman die de naam van de ontvanger en andere details die je aanlevert kan bevatten. Bij TheDigitalGifter beantwoord je een kort begeleid formulier, bekijk je de boodschap, en maak je vervolgens een video die je kunt downloaden en delen. Boodschappen worden gemaakt in het Engels of Roemeens — de Kerstman spreekt in deze tool nog geen Nederlands.</p></section><section data-tdg-depth-section="Een Persoonlijke Boodschap van de Kerstman"><h2>Een Persoonlijke Boodschap van de Kerstman</h2><p>Maak een kerstvideo van de Kerstman voor een kind, broers en zussen, familie, of iemand speciaal. De Kerstman kan de naam noemen en optionele details verwerken die je deelt — daarna download of deel je de afgeronde video. De video wordt gesproken in het Engels of Roemeens.</p></section><section data-tdg-depth-section="Wat Kan de Kerstman Noemen?"><h2>Wat Kan de Kerstman Noemen?</h2><p>Je kunt personaliseren met de naam van de ontvanger, optionele leeftijd, iets wat dit jaar goed ging, een kerstwens, een extra detail (zoals een huisdier of hobby), en de taal van de Kerstman. Vandaag ondersteunde talen zijn Engels en Roemeens.</p><ul><li>Naam van de ontvanger</li><li>Optionele leeftijd</li><li>Iets wat goed ging</li><li>Kerstwens</li><li>Extra persoonlijk detail</li><li>Taal: Engels of Roemeens</li></ul></section><section data-tdg-depth-section="Voorbeelden van Gepersonaliseerde Kerstman-video&#39;s"><h2>Voorbeelden van Gepersonaliseerde Kerstman-video's</h2><p>Demo-voorbeelden tonen hoe een gepersonaliseerde Kerstman-boodschap kan aanvoelen. Het zijn productdemonstraties voor inspiratie, geen klantgetuigenissen.</p></section><section data-tdg-depth-section="Hoe Het Werkt"><h2>Hoe Het Werkt</h2><p>Vertel de Kerstman voor wie de boodschap is, voeg de details toe die je genoemd wilt zien, bekijk de voorbeeldweergave, maak de video, en download of deel deze zodra hij klaar is.</p><ul><li>Vertel de Kerstman over hen</li><li>Bekijk de boodschap</li><li>Maak de video</li><li>Download of deel</li></ul></section><section data-tdg-depth-section="Meer Kerstmagie"><h2>Meer Kerstmagie</h2><p>Na de Kerstman maken veel gezinnen ook een kerstportret of kerstkaart voor dezelfde persoon.</p><p><a href="/nl/christmas">Terug naar Kerst bij TheDigitalGifter</a></p></section><section data-tdg-faq="true"><h2>Veelgestelde vragen</h2><article><h3>Kan de Kerstman de naam van mijn kind zeggen?</h3><p>Ja. De naam van de ontvanger is een centraal personalisatieveld en de Kerstman zegt deze in de video, gesproken in het Engels of Roemeens.</p></article><article><h3>Wat kan ik personaliseren?</h3><p>Naam, optionele leeftijd, iets wat goed ging, kerstwens, een extra detail, en de taal (Engels of Roemeens).</p></article><article><h3>Kan de Kerstman een kerstcadeau noemen?</h3><p>Ja — je kunt een kerstwens toevoegen, en de Kerstman kan deze noemen wanneer je er een opgeeft.</p></article><article><h3>Kan ik een video maken voor broers en zussen?</h3><p>Ja. Kies de optie voor broers en zussen en voeg hun namen toe bij de naamstap. Een speciale flow voor meerdere kinderen kan later worden uitgebreid.</p></article><article><h3>Spreekt de Kerstman Nederlands?</h3><p>Nog niet. De vandaag ondersteunde talen voor de Kerstman-video zijn Engels en Roemeens.</p></article><article><h3>Kan ik de boodschap vooraf bekijken?</h3><p>Ja. Je kunt de boodschap bekijken voordat je de video maakt.</p></article><article><h3>Kan ik de video downloaden of delen?</h3><p>Ja. Zodra de video klaar is, kun je de MP4 downloaden en delen.</p></article></section></div></div>
+  </body>
+</html>

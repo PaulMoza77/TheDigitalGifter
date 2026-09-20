@@ -1,0 +1,10 @@
+{
+  "webm": "/assets/christmas/santa/santa-greeting-idle.webm",
+  "static": "/assets/christmas/santa/santa-static.png",
+  "staticMobile": "/assets/christmas/santa/santa-static-480.png",
+  "durationSeconds": 5.0,
+  "format": "webm-vp9-alpha",
+  "webmBytes": 131599,
+  "staticBytes": 571772,
+  "staticMobileBytes": 298396
+}

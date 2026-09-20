@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Digitaler Weihnachtsbaum | Geschenke, Nachrichten &amp; Erinnerungen</title>
+    <meta
+      name="description"
+      content="Gestalte einen digitalen Weihnachtsbaum voller Geschenke, Nachrichten und Erinnerungen, den du dekorieren und sicher teilen kannst."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Digitaler Weihnachtsbaum | Geschenke, Nachrichten &amp; Erinnerungen"
+    />
+    <meta
+      property="og:description"
+      content="Gestalte einen digitalen Weihnachtsbaum voller Geschenke, Nachrichten und Erinnerungen, den du dekorieren und sicher teilen kannst."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/de/christmas/tree" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Digitaler Weihnachtsbaum | Geschenke, Nachrichten &amp; Erinnerungen"
+    />
+    <meta
+      name="twitter:description"
+      content="Gestalte einen digitalen Weihnachtsbaum voller Geschenke, Nachrichten und Erinnerungen, den du dekorieren und sicher teilen kannst."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/de/christmas/tree" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas/tree" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas/tree" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas/tree" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas/tree" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas/tree" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas/tree" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas/tree" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas/tree" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas/tree" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas/tree" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Startseite","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Weihnachten","item":"https://www.thedigitalgifter.com/de/christmas"},{"@type":"ListItem","position":3,"name":"Digitaler Baum","item":"https://www.thedigitalgifter.com/de/christmas/tree"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Digitaler Weihnachtsbaum | Geschenke, Nachrichten & Erinnerungen","description":"Gestalte einen digitalen Weihnachtsbaum voller Geschenke, Nachrichten und Erinnerungen, den du dekorieren und sicher teilen kannst.","url":"https://www.thedigitalgifter.com/de/christmas/tree","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"de"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Was ist ein digitaler Weihnachtsbaum?","acceptedAnswer":{"@type":"Answer","text":"Ein interaktiver Online-Weihnachtsbaum, den du anpasst, mit Nachrichten-Geschenken füllst und teilst, damit jemand sie am eigenen Gerät öffnen kann."}},{"@type":"Question","name":"Was kann ich hinzufügen?","acceptedAnswer":{"@type":"Answer","text":"Aktuell kannst du Geschenkboxen mit persönlichen Weihnachtsnachrichten hinzufügen und festliche Boxstile wählen."}},{"@type":"Question","name":"Kann ich ihn mit jemandem teilen?","acceptedAnswer":{"@type":"Answer","text":"Ja. Aktiviere das Teilen und schicke den Link. Behandle ihn wie einen persönlichen Geschenklink."}},{"@type":"Question","name":"Können Empfänger die Geschenke öffnen?","acceptedAnswer":{"@type":"Answer","text":"Ja. Empfänger können auf Geschenke unter dem Baum tippen, um die von dir hinzugefügten Nachrichten zu sehen."}},{"@type":"Question","name":"Kann ich ein Weihnachtsmann-Video oder Weihnachtsfoto unter den Baum legen?","acceptedAnswer":{"@type":"Answer","text":"Nicht als eigener Geschenktyp im aktuellen Baum-Ersteller. Du kannst diese Erlebnisse trotzdem separat erstellen und in einem Nachrichten-Geschenk erwähnen."}},{"@type":"Question","name":"Brauche ich ein Konto?","acceptedAnswer":{"@type":"Answer","text":"Du kannst ohne aufwendige Einrichtung mit dem Bauen beginnen — die Zuordnung erfolgt über die Erstellersitzung, damit du weiter bearbeiten kannst."}},{"@type":"Question","name":"Ist der geteilte Baum öffentlich?","acceptedAnswer":{"@type":"Answer","text":"Geteilte Bäume sind für Personen mit dem Link erreichbar, aber die Teilenseiten sind noindex und nicht für Suchmaschinen gedacht."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/de/christmas/tree" data-locale="de"><nav aria-label="Breadcrumb"><a href="/">Startseite</a> / <a href="/de/christmas">Weihnachten</a> / <a href="/de/christmas/tree">Digitaler Baum</a></nav><h1>Baue einen Weihnachtsbaum voller Überraschungen</h1><p>Erstelle, dekoriere und teile einen persönlichen digitalen Weihnachtsbaum mit Geschenken und Nachrichten darunter.</p><h2>Kombiniere mit Weihnachtsgeschenken</h2><ul><li><a href="/de/christmas/wishlist">Weihnachtswunschzettel erstellen</a></li><li><a href="/de/christmas/gift-finder">Weihnachts-Geschenke-Finder</a></li><li><a href="/de/christmas/messages">Weihnachtsnachrichten-Generator</a></li><li><a href="/de/christmas">Weihnachten Startseite</a></li></ul><section data-tdg-geo="true"><h2>Was ist ein digitaler Weihnachtsbaum?</h2><p>Ein digitaler Weihnachtsbaum ist ein interaktiver Online-Weihnachtsbaum, den du gestalten und teilen kannst. Bei TheDigitalGifter wählst du einen Baum-Look, fügst Schmuck hinzu, platzierst Geschenkboxen mit persönlichen Nachrichten darunter und teilst einen privaten Link, damit eine besondere Person die Geschenke am Bildschirm öffnen kann — ohne dass die Teilenseite zu einem öffentlichen Suchergebnis wird.</p></section><section data-tdg-depth-section="Baue einen digitalen Weihnachtsbaum"><h2>Baue einen digitalen Weihnachtsbaum</h2><p>Erstelle kostenlos einen interaktiven Weihnachtsbaum im Browser. Passe den Stil (Klassisch, Verschneit, Gold, Gemütlich, Minimal oder Magisch), Lichter, Schnee, Baumspitzen und Kugeln an und platziere dann Geschenkboxen darunter.</p></section><section data-tdg-depth-section="Was kannst du unter deinen Baum legen?"><h2>Was kannst du unter deinen Baum legen?</h2><p>Aktuell kannst du Geschenkboxen mit persönlichen Weihnachtsnachrichten hinzufügen. Jedes Geschenk kann einen festlichen Boxstil wie Rot, Gold, Grün, Blau oder Schnee nutzen. Weitere Geschenktypen können später ergänzt werden — der aktuelle Ersteller konzentriert sich auf Nachrichten-Geschenke.</p><ul><li>Persönliche Weihnachtsnachrichten in Geschenkboxen</li><li>Festliche Boxstile (Rot, Gold, Grün, Blau, Schnee)</li></ul></section><section data-tdg-depth-section="Teile deinen Weihnachtsbaum"><h2>Teile deinen Weihnachtsbaum</h2><p>Wenn du bereit bist, aktiviere das Teilen und schicke einen Link. Empfänger öffnen den Baum, sehen die Dekoration und wickeln Geschenke aus. Geteilte Baum-Links sind für Personen gedacht, denen du vertraust, und werden nicht für Suchmaschinen indexiert.</p></section><section data-tdg-depth-section="Ein Weihnachtsgeschenk zum Öffnen"><h2>Ein Weihnachtsgeschenk zum Öffnen</h2><p>Empfänger können auf Geschenke unter dem Baum tippen, um die Nachrichten zu sehen, die du hinterlassen hast — ein digitaler Moment, der sich anfühlen soll wie das Öffnen von etwas, das eigens für sie dort platziert wurde.</p></section><section data-tdg-depth-section="So funktioniert es"><h2>So funktioniert es</h2><p>Ein einfacher Weg vom leeren Baum zu einer teilbaren Weihnachtsüberraschung.</p><ul><li>Erstelle und gestalte deinen digitalen Weihnachtsbaum</li><li>Füge Geschenkboxen mit Nachrichten hinzu</li><li>Aktiviere das Teilen und schicke den Link</li><li>Sie öffnen die Geschenke unter dem Baum</li></ul></section><section data-tdg-depth-section="Mehr Weihnachtsmagie"><h2>Mehr Weihnachtsmagie</h2><p>Kombiniere deinen Baum mit weiteren Weihnachtserlebnissen für einen zusätzlichen festlichen Moment.</p><ul><li><a href="/de/christmas">Weihnachten Startseite</a></li><li><a href="/de/christmas/santa-video">Persönliches Weihnachtsmann-Video</a></li><li><a href="/de/christmas/advent">Online-Adventskalender</a></li></ul></section><section data-tdg-faq="true"><h2>Häufig gestellte Fragen</h2><article><h3>Was ist ein digitaler Weihnachtsbaum?</h3><p>Ein interaktiver Online-Weihnachtsbaum, den du anpasst, mit Nachrichten-Geschenken füllst und teilst, damit jemand sie am eigenen Gerät öffnen kann.</p></article><article><h3>Was kann ich hinzufügen?</h3><p>Aktuell kannst du Geschenkboxen mit persönlichen Weihnachtsnachrichten hinzufügen und festliche Boxstile wählen.</p></article><article><h3>Kann ich ihn mit jemandem teilen?</h3><p>Ja. Aktiviere das Teilen und schicke den Link. Behandle ihn wie einen persönlichen Geschenklink.</p></article><article><h3>Können Empfänger die Geschenke öffnen?</h3><p>Ja. Empfänger können auf Geschenke unter dem Baum tippen, um die von dir hinzugefügten Nachrichten zu sehen.</p></article><article><h3>Kann ich ein Weihnachtsmann-Video oder Weihnachtsfoto unter den Baum legen?</h3><p>Nicht als eigener Geschenktyp im aktuellen Baum-Ersteller. Du kannst diese Erlebnisse trotzdem separat erstellen und in einem Nachrichten-Geschenk erwähnen.</p></article><article><h3>Brauche ich ein Konto?</h3><p>Du kannst ohne aufwendige Einrichtung mit dem Bauen beginnen — die Zuordnung erfolgt über die Erstellersitzung, damit du weiter bearbeiten kannst.</p></article><article><h3>Ist der geteilte Baum öffentlich?</h3><p>Geteilte Bäume sind für Personen mit dem Link erreichbar, aber die Teilenseiten sind noindex und nicht für Suchmaschinen gedacht.</p></article></section></div></div>
+  </body>
+</html>

@@ -34,6 +34,7 @@ import {
   featuresForPackage,
   featuresFromFunnelEntitlementKeys,
   hasFeature,
+  upgradePackageForFeature,
 } from "./entitlements";
 import {
   accessForSeason,
@@ -517,6 +518,33 @@ describe("entitlements are feature-mapped, not isPremium", () => {
     expect(features).toContain("rescue_mode");
   });
 
+  it("routes every locked-module upgrade to Founding Pass, not the public planner home", () => {
+    expect(upgradePackageForFeature("budget").packageKey).toBe("founding_pass");
+    expect(upgradePackageForFeature("food_planner").packageKey).toBe("founding_pass");
+    expect(upgradePackageForFeature("recipes").packageKey).toBe("founding_pass");
+    expect(upgradePackageForFeature("hosting").packageKey).toBe("founding_pass");
+    expect(upgradePackageForFeature("travel").packageKey).toBe("founding_pass");
+    const ui = readSrc("src/features/christmas/planner/plannerUi.tsx");
+    const unlock = readSrc("src/features/christmas/planner/FoundingPassUnlock.tsx");
+    const budget = readSrc("src/features/christmas/planner/BudgetPage.tsx");
+    const locked = ui.slice(ui.indexOf("export function PlannerLockedModule"), ui.indexOf("export function PlannerSnapshotRow"));
+    expect(locked).toContain("FoundingPassUnlockButton");
+    expect(locked).not.toContain("<Link");
+    expect(locked).not.toContain("#pricing");
+    expect(unlock).toContain("FOUNDING_PASS_PACKAGE_KEY");
+    expect(unlock).toContain("Unlock your complete Christmas plan");
+    expect(unlock).toContain("FOUNDING_PASS_PRICE_LABEL");
+    expect(unlock).toContain("Christmas Planner launch access is opening soon.");
+    expect(unlock).toContain('data-testid="founding-pass-unlock"');
+    expect(unlock).not.toContain("navigate(");
+    expect(unlock).not.toContain("/account/christmas\"");
+    expect(budget).toContain("FoundingPassUnlockButton");
+    expect(budget).toContain('hasFeature(access, "budget")');
+    expect(budget).not.toContain("Unlock this season");
+    expect(budget).not.toContain("/christmas/planner?package");
+    expect(budget).not.toContain("navigate(\"/account/christmas\"");
+  });
+
   it("revokes access when grants are revoked", () => {
     let grants = grantsForPaidOrder({
       orderId: "o1",
@@ -729,19 +757,25 @@ describe("private planner privacy surface", () => {
 
   it("upgrades remaining modules with headers, marks, and ivory chrome", () => {
     const pages = readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx");
+    const budget = readSrc("src/features/christmas/planner/BudgetPage.tsx");
     const more = readSrc("src/features/christmas/planner/ChristmasPlannerMoreModules.tsx");
     const ui = readSrc("src/features/christmas/planner/plannerUi.tsx");
     const css = readSrc("src/features/christmas/planner/plannerApp.css");
     const layout = readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx");
     expect(pages).toContain("Your season, step by step.");
     expect(pages).toContain("Plan everyone you’re buying for");
-    expect(pages).toContain("Keep Christmas spending beautifully under control.");
+    expect(budget).toContain("Keep Christmas spending beautifully under control.");
     expect(pages).toContain("Everything else for your Christmas season.");
     expect(pages).not.toContain("Today’s checklist");
     expect(more).toContain("See your season at a glance.");
     expect(more).toContain("From to-buy through arriving");
     expect(ui).toContain("PlannerPageHeader");
     expect(ui).toContain("PlannerLockedModule");
+    expect(ui).toContain("FoundingPassUnlockButton");
+    expect(ui).not.toContain("Unlock this season");
+    expect(ui).not.toContain("PLANNER_PUBLIC_ROUTE");
+    expect(ui).not.toContain("#pricing");
+    expect(ui).not.toContain("/christmas/planner?package");
     expect(css).toContain("Contrast lock");
     expect(css).toContain(".tdg-planner-app .tdg-planner-side a");
     expect(css).toContain("#f4ead9");

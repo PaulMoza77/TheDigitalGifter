@@ -1,0 +1,210 @@
+{
+  "created_at": "2026-09-19T19:20:04.601517+00:00",
+  "updated_at": "2026-09-19T19:20:04.601539+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 1.4000000000000001,
+  "regenerations": 0,
+  "clips": [
+    {
+      "id": "palace_01_establish",
+      "title": "Wide mansion establishing shot",
+      "source_image": "01_establish_wide_mansion.jpg",
+      "job_id": "86d25a7c-6571-4675-bf08-dbc47f50e910",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 luxury Christmas night. This exact photograph comes alive for five seconds. Preserve the cream palace facade, snow-covered roofs, wreaths, garlands, circular fountain, wet cobblestone driveway, black luxury sedan, Christmas trees, mountains, and lake exactly as in the first frame. Very slow expensive cinematic dolly forward toward the mansion. Stabilized, no handheld shake, no drone rush. Gentle sparse snowfall. Fountain water moves naturally. Tiny Christmas light shimmer. Subtle reflections on the wet driveway. The luxury car eases extremely slowly around the circular fountain \u2014 only a few feet of travel, never fast. Architecture, windows, columns, and trees stay rigid. No people. No morphing. No extra cars. Archival luxury Christmas commercial footage.",
+      "conservative": false,
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/luxury-palace/masters/palace_01_establish.mp4",
+      "probe": {
+        "filename": "palace_01_establish.mp4",
+        "path": "/workspace/public/assets/christmas/luxury-palace/masters/palace_01_establish.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 35872136,
+        "size": 22606921
+      },
+      "qc_frames": [
+        "/workspace/generated/luxury-palace/qc/palace_01_establish_first.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_01_establish_mid.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_01_establish_last.jpg"
+      ],
+      "created_at": "2026-09-19T19:21:55.320928+00:00"
+    },
+    {
+      "id": "palace_02_approach",
+      "title": "Fountain and car approach",
+      "source_image": "02_approach_fountain_car.jpg",
+      "job_id": "e27574a9-4bb1-4fe9-a62c-2aa495e7c0d6",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 luxury Christmas night. This exact photograph comes alive for five seconds. Preserve the palace entrance, wreath, columns, spiral-lit trees, stone fountain with horses, black luxury sedan, lanterns, and snow exactly as in the first frame. Slow forward tracking toward the main entrance, slightly passing the fountain with subtle parallax: foreground decorations, then fountain, then car, then mansion. Fountain water is natural. Gentle snowfall. Warm Christmas lights shimmer. Realistic wet-stone reflections. The car may creep only a few inches, never drive away. Keep architecture perfectly stable. Do not change the car model. Do not melt the fountain. No people. No camera shake. Luxury Christmas film.",
+      "conservative": false,
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/luxury-palace/masters/palace_02_approach.mp4",
+      "probe": {
+        "filename": "palace_02_approach.mp4",
+        "path": "/workspace/public/assets/christmas/luxury-palace/masters/palace_02_approach.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 31169249,
+        "size": 19643122
+      },
+      "qc_frames": [
+        "/workspace/generated/luxury-palace/qc/palace_02_approach_first.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_02_approach_mid.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_02_approach_last.jpg"
+      ],
+      "created_at": "2026-09-19T19:23:31.680429+00:00"
+    },
+    {
+      "id": "palace_03_gates",
+      "title": "Walking toward open palace doors",
+      "source_image": "03_enter_open_gates.jpg",
+      "job_id": "7eb22fd4-3c0d-4de7-9f39-b8f630b69d8a",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 luxury Christmas night. This exact photograph comes alive for five seconds. Preserve the open black gates with wreaths, fountain, wet driveway, black luxury car, open palace doors, and the giant Christmas tree glowing inside exactly as in the first frame. The camera slowly walks forward toward the open doors as if the viewer is arriving personally. Gentle snowfall outside. Fountain water moves naturally. Christmas lights shimmer. Subtle warm interior light. If doors are visible they may settle only a few millimeters, never regenerate or swing wildly. The interior Christmas tree gradually becomes the focus. Architecture stays rigid. No people. No morphing gates. Luxury Christmas commercial.",
+      "conservative": false,
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/luxury-palace/masters/palace_03_gates.mp4",
+      "probe": {
+        "filename": "palace_03_gates.mp4",
+        "path": "/workspace/public/assets/christmas/luxury-palace/masters/palace_03_gates.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 33840784,
+        "size": 21326746
+      },
+      "qc_frames": [
+        "/workspace/generated/luxury-palace/qc/palace_03_gates_first.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_03_gates_mid.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_03_gates_last.jpg"
+      ],
+      "created_at": "2026-09-19T19:25:07.372909+00:00"
+    },
+    {
+      "id": "palace_04_entrance",
+      "title": "Grand hall Christmas tree reveal",
+      "source_image": "04_grand_entrance_tree.jpg",
+      "job_id": "1522b6b2-7c1a-40b4-a905-8c5285835713",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 luxury Christmas palace interior. This exact photograph comes alive for five seconds. Preserve the dark doorway frame, marble floor, enormous decorated Christmas tree, gift boxes, chandelier, double staircase, nutcrackers, lanterns, and floral arrangements exactly as in the first frame. Extremely slow stabilized dolly forward, continuing the arrival, passing slightly through the doorway to reveal the grand hall. Chandelier sparkles. Christmas lights twinkle extremely subtly. Candle lanterns flicker. Soft reflections drift across the marble. No people. Do not move furniture. Do not distort stairs, chandelier, tree, doors, or architecture. No floating ornaments. First major wow moment of a luxury Christmas film.",
+      "conservative": false,
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/luxury-palace/masters/palace_04_entrance.mp4",
+      "probe": {
+        "filename": "palace_04_entrance.mp4",
+        "path": "/workspace/public/assets/christmas/luxury-palace/masters/palace_04_entrance.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 35492081,
+        "size": 22367407
+      },
+      "qc_frames": [
+        "/workspace/generated/luxury-palace/qc/palace_04_entrance_first.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_04_entrance_mid.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_04_entrance_last.jpg"
+      ],
+      "created_at": "2026-09-19T19:27:48.515896+00:00"
+    },
+    {
+      "id": "palace_05_hero",
+      "title": "Elevated palace hero reveal",
+      "source_image": "05_hero_balcony_palace.jpg",
+      "job_id": "c66c4c4f-9916-43da-898a-3627390e0583",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 luxury Christmas palace hero shot. This exact photograph comes alive for five seconds. Preserve the foreground balcony garland with red bows, crystal chandelier, giant Christmas tree, circular gift ring, marble floor, piano, fireplace seating, open entrance, fountain, snowy night, and distant luxury car exactly as in the first frame. Very slow cinematic push forward with an almost imperceptible downward reveal toward the giant tree and hall. Elegant and restrained. Chandelier sparkle. Candle and fireplace glow. Tree lights twinkle softly. Subtle snowfall visible through the open entrance. Fountain water outside. Marble reflections. Architecture remains perfectly stable. No people. No bending columns or warped stairs. The last second becomes calmer and almost stationary, ending on the strongest composition of tree, palace, chandelier, open entrance, and snowy exterior. Luxury Christmas commercial payoff shot.",
+      "conservative": false,
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/luxury-palace/masters/palace_05_hero.mp4",
+      "probe": {
+        "filename": "palace_05_hero.mp4",
+        "path": "/workspace/public/assets/christmas/luxury-palace/masters/palace_05_hero.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 34437947,
+        "size": 21703083
+      },
+      "qc_frames": [
+        "/workspace/generated/luxury-palace/qc/palace_05_hero_first.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_05_hero_mid.jpg",
+        "/workspace/generated/luxury-palace/qc/palace_05_hero_last.jpg"
+      ],
+      "created_at": "2026-09-19T19:30:55.544856+00:00"
+    }
+  ],
+  "reels": [
+    {
+      "id": "luxury-christmas-palace",
+      "title": "Luxury Christmas palace journey",
+      "file": "/workspace/public/assets/christmas/luxury-palace/final/luxury_christmas_palace_reel.mp4",
+      "probe": {
+        "filename": "luxury_christmas_palace_reel.mp4",
+        "duration": 14.533333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 17603575,
+        "size": 31979828
+      },
+      "xfade": 0.14,
+      "shots": [
+        {
+          "src": "palace_01_establish.mp4",
+          "start": 0.18,
+          "duration": 2.55,
+          "id": "palace_01_establish"
+        },
+        {
+          "src": "palace_02_approach.mp4",
+          "start": 0.28,
+          "duration": 2.55,
+          "id": "palace_02_approach"
+        },
+        {
+          "src": "palace_03_gates.mp4",
+          "start": 0.16,
+          "duration": 2.65,
+          "id": "palace_03_gates"
+        },
+        {
+          "src": "palace_04_entrance.mp4",
+          "start": 0.18,
+          "duration": 3.15,
+          "id": "palace_04_entrance"
+        },
+        {
+          "src": "palace_05_hero.mp4",
+          "start": 0.4,
+          "duration": 4.2,
+          "id": "palace_05_hero"
+        }
+      ]
+    }
+  ],
+  "status": "COMPLETE",
+  "actual_cost_usd": 1.4,
+  "reels_assembled_at": "2026-09-19T19:33:21.254342+00:00"
+}

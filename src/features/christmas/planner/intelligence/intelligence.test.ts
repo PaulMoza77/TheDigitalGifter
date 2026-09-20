@@ -217,7 +217,7 @@ describe("budget insights", () => {
     const intel = runPlannerIntelligence(scenario());
     expect(intel.insights.some((i) => i.id === "budget.forecast_over")).toBe(true);
     expect(intel.insights.some((i) => i.id === "gifts.recipient_over:r2")).toBe(true);
-    expect(intel.budget.remainingMinor).toBe(150000 - intel.budget.spentMinor);
+    expect(intel.budget.remainingMinor).toBe(150000 - intel.budget.forecastMinor);
     const mom = computeRecipientBudgets(intel.snapshot).find((r) => r.recipientId === "r2");
     expect(mom?.status).toBe("over");
   });

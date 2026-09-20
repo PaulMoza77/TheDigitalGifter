@@ -1,11 +1,11 @@
 import { FormEvent, useEffect, useId, useState, type ComponentType, type ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { TASK_CATEGORIES, PLANNER_PUBLIC_ROUTE, type PlannerFeatureKey, type PlannerTask, type TaskCategory } from "./types";
+import { TASK_CATEGORIES, type PlannerFeatureKey, type PlannerTask, type TaskCategory } from "./types";
 import { deleteTask, patchTask } from "./api";
 import { trackPlannerEvent } from "./analytics";
 import { formatPlannerDate, taskCategoryLabel, taskPriorityLabel } from "./date";
 import { PlannerMark, type PlannerMarkKind } from "./plannerMarks";
-import { upgradePackageForFeature } from "./entitlements";
+import { FoundingPassUnlockButton } from "./FoundingPassUnlock";
 
 export { PlannerMark, type PlannerMarkKind } from "./plannerMarks";
 
@@ -150,8 +150,6 @@ export function PlannerLockedModule({
   body: string;
   bullets?: string[];
 }) {
-  const pack = upgradePackageForFeature(feature);
-  const to = `${PLANNER_PUBLIC_ROUTE}?package=${encodeURIComponent(pack.packageKey)}#pricing`;
   const mark: PlannerMarkKind =
     feature === "budget" ? "budget" : feature === "food_planner" || feature === "recipes" ? "food" : feature === "hosting" ? "home" : feature === "travel" ? "travel" : "star";
   return (
@@ -166,15 +164,7 @@ export function PlannerLockedModule({
           ))}
         </ul>
       ) : null}
-      <Link
-        className="tdg-planner-btn primary"
-        to={to}
-        onClick={() => {
-          trackPlannerEvent("planner_upgrade_clicked", { feature, packageKey: pack.packageKey });
-        }}
-      >
-        Unlock this season
-      </Link>
+      <FoundingPassUnlockButton feature={feature} />
     </div>
   );
 }
