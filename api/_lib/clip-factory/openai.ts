@@ -3,6 +3,7 @@ import type { ObjectiveOption, Transcript, TranscriptWord, ViralCandidate } from
 import { normalizeDimensions, overallViralScore, durationFitPenalty, extraSignalBonus } from "../../../src/features/clip-factory/scoring";
 import { snapClipBoundaries, desiredClipCount } from "../../../src/features/clip-factory/boundaries";
 import { selectDiverseCandidates } from "../../../src/features/clip-factory/diversity";
+import { candidateTextGrounded } from "../../../src/features/clip-factory/mediaQuality";
 
 function openaiKey(): string {
   return String(process.env.OPENAI_API_KEY || "").trim();
@@ -61,6 +62,51 @@ export async function transcribeWhisper(filePath: string, language: string): Pro
     words,
     segments,
     usage: { minutes: Number(json.duration || 0) / 60 },
+  };
+}
+
+const CHUNK_SECONDS = 480;
+
+export async function transcribeWhisperLong(input: {
+  sourcePath: string;
+  workDir: string;
+  durationSeconds: number;
+  language: string;
+  extractAudio: (source: string, dest: string, start?: number, duration?: number) => Promise<void>;
+}): Promise<Transcript & { usage: { minutes: number } }> {
+  const duration = Math.max(0, Number(input.durationSeconds) || 0);
+  if (duration <= CHUNK_SECONDS + 30) {
+    const audioPath = `${input.workDir}/audio.mp3`;
+    await input.extractAudio(input.sourcePath, audioPath);
+    return transcribeWhisper(audioPath, input.language);
+  }
+  const words: TranscriptWord[] = [];
+  const segments: Transcript["segments"] = [];
+  const texts: string[] = [];
+  let minutes = 0;
+  let language: string | null = input.language === "auto" ? null : input.language;
+  for (let start = 0, index = 0; start < duration; start += CHUNK_SECONDS, index += 1) {
+    const span = Math.min(CHUNK_SECONDS + 12, duration - start);
+    const audioPath = `${input.workDir}/audio-${index}.mp3`;
+    await input.extractAudio(input.sourcePath, audioPath, start, span);
+    const part = await transcribeWhisper(audioPath, input.language);
+    minutes += part.usage.minutes;
+    language = part.language || language;
+    if (part.fullText) texts.push(part.fullText);
+    for (const word of part.words) {
+      words.push({ ...word, start: word.start + start, end: word.end + start });
+    }
+    for (const segment of part.segments) {
+      segments.push({ ...segment, start: segment.start + start, end: segment.end + start });
+    }
+  }
+  return {
+    language,
+    languageProbability: null,
+    fullText: texts.join(" ").trim(),
+    words,
+    segments,
+    usage: { minutes },
   };
 }
 
@@ -142,7 +188,7 @@ export async function proposeMoments(input: {
       {
         role: "system",
         content:
-          "You select short-form clip candidates from an existing video. Be faithful to the source. No clickbait that misrepresents. Return JSON only.",
+          "You select short-form clip candidates from an existing video. Be faithful to the source. No clickbait that misrepresents. Never invent people, animals, dialogue, or scenes that are not in the transcript or visual notes. If the transcript is empty and visuals are dark/empty, return {\"candidates\":[]}. Return JSON only.",
       },
       {
         role: "user",
@@ -217,6 +263,17 @@ Score hook, curiosity, emotion, humor, surprise, storytelling, controversy/debat
       whyItWorks: Array.isArray(row.why_it_works) ? row.why_it_works.map((w) => String(w)).slice(0, 6) : [],
     };
   });
-  const diverse = selectDiverseCandidates(mapped, want);
+  const grounded = mapped.filter((row) =>
+    candidateTextGrounded({
+      start: row.startTime,
+      end: row.endTime,
+      title: row.title,
+      summary: row.summary,
+      hook: row.hook,
+      transcriptText: input.transcript.fullText,
+      visualNotes: input.visuals,
+    }),
+  );
+  const diverse = selectDiverseCandidates(grounded, want);
   return { candidates: diverse, tokens: Number(json.usage?.total_tokens || 0) };
 }

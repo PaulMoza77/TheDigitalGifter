@@ -27,6 +27,7 @@ describe("acquireSourceMedia", () => {
 
   it("reports the official YouTube API limitation instead of pretending import works", async () => {
     vi.stubEnv("CLIP_FACTORY_YOUTUBE_IMPORT_URL", "");
+    vi.stubEnv("CLIP_FACTORY_DISABLE_YTDLP", "1");
     await expect(
       acquireSourceMedia({
         sourceKind: "youtube",
@@ -48,26 +49,58 @@ describe("acquireSourceMedia", () => {
       }),
     ).rejects.toMatchObject({
       code: "import_unavailable",
-      message: expect.stringMatching(/YouTube Data API v3/i),
+      message: expect.stringMatching(/original MP4|YouTube Data API v3|disabled/i),
     });
     vi.unstubAllEnvs();
   });
 
-  it("reuses a previously ingested YouTube original from private storage", async () => {
+  it("reuses a previously ingested YouTube original from private storage only when it looks real", async () => {
     vi.stubEnv("CLIP_FACTORY_YOUTUBE_IMPORT_URL", "");
     const downloadStorage = vi.fn(async () => undefined);
     const result = await acquireSourceMedia({
       sourceKind: "youtube",
       sourcePayload: { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
       dest: "/tmp/source.mp4",
+      expectedDurationSeconds: 213,
       downloadStorage,
       resolveLibraryFile: () => null,
       copyFile: async () => undefined,
-      findStoredMedia: async () => ({ storagePath: "media/abc/source.mp4", title: "Owned original" }),
+      findStoredMedia: async () => ({
+        storagePath: "media/abc/source.mp4",
+        title: "Owned original",
+        durationSeconds: 213,
+        fileSizeBytes: 18_000_000,
+        mediaHash: "abc",
+      }),
     });
     expect(result.status).toBe("ingested");
     expect(result.sourceType).toBe("youtube");
     expect(downloadStorage).toHaveBeenCalledWith("media/abc/source.mp4", "/tmp/source.mp4");
+    vi.unstubAllEnvs();
+  });
+
+  it("does not reuse the poisoned 12.6s YouTube cache as a real import", async () => {
+    vi.stubEnv("CLIP_FACTORY_YOUTUBE_IMPORT_URL", "");
+    vi.stubEnv("CLIP_FACTORY_DISABLE_YTDLP", "1");
+    const downloadStorage = vi.fn(async () => undefined);
+    await expect(
+      acquireSourceMedia({
+        sourceKind: "youtube",
+        sourcePayload: { url: "https://youtu.be/pV9UPP7n0Po" },
+        dest: "/tmp/source.mp4",
+        expectedDurationSeconds: 480,
+        downloadStorage,
+        resolveLibraryFile: () => null,
+        copyFile: async () => undefined,
+        findStoredMedia: async () => ({
+          storagePath: "media/1035c4690f0871aab131142f8b39fb055b82eaea8fe38706519dcc377d0b2c33/source.mp4",
+          durationSeconds: 12.6,
+          fileSizeBytes: 174007,
+          mediaHash: "1035c4690f0871aab131142f8b39fb055b82eaea8fe38706519dcc377d0b2c33",
+        }),
+      }),
+    ).rejects.toMatchObject({ code: "import_unavailable" });
+    expect(downloadStorage).not.toHaveBeenCalled();
     vi.unstubAllEnvs();
   });
 });

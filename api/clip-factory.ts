@@ -9,6 +9,7 @@ import { classifyVideoUrl } from "../src/features/clip-factory/ingest/classify";
 import { detectUrlAdapter } from "../src/features/clip-factory/ingest/registry";
 import { IngestFailure } from "../src/features/clip-factory/ingest/types";
 import { prepareClipFactoryJob } from "../src/features/clip-factory/createJob";
+import { isKnownInvalidMediaHash } from "../src/features/clip-factory/mediaQuality";
 import { LIBRARY_VIDEOS } from "../src/features/admin-library/catalog";
 
 const BUCKET = "clip-factory";
@@ -227,7 +228,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     if (postAction === "list_library_assets") {
       const { data, error } = await service.from("library_assets").select("*").order("created_at", { ascending: false }).limit(80);
       if (error) throw error;
-      const videos = (data || []).map((row) => ({
+      const videos = (data || [])
+        .filter((row) => !row.provenance?.invalid)
+        .map((row) => ({
         id: row.id,
         title: row.title,
         description: row.description,
@@ -240,10 +243,12 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         width: row.width,
         height: row.height,
       }));
-      const { data: renders } = await service
-        .from("clip_factory_renders")
-        .select("id,library_asset_id,thumbnail_path")
-        .in("library_asset_id", (data || []).map((r) => r.id));
+      const { data: renders } = videos.length
+        ? await service
+            .from("clip_factory_renders")
+            .select("id,library_asset_id,thumbnail_path")
+            .in("library_asset_id", videos.map((r) => r.id))
+        : { data: [] as Array<{ id: string; library_asset_id: string; thumbnail_path: string | null }> };
       const byAsset = new Map((renders || []).map((r) => [r.library_asset_id, r]));
       for (const video of videos) {
         const render = byAsset.get(video.id);
@@ -259,7 +264,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       const jobId = asString(body.job_id);
       const { data: job } = await service.from("clip_factory_jobs").select("*").eq("id", jobId).maybeSingle();
       if (!job) return apiError(res, 404, "not_found", "Job not found.");
-      if (job.media_id) return apiError(res, 409, "media_already_attached", "This project already has media.");
+      if (job.media_id && job.status !== "waiting_for_media" && job.status !== "failed" && job.status !== "source_detected") {
+        return apiError(res, 409, "media_already_attached", "This project already has media.");
+      }
       const payload = { ...(job.source_payload || {}) } as Record<string, unknown>;
       if (asString(body.object_path).startsWith("uploads/")) {
         payload.objectPath = asString(body.object_path);
@@ -281,6 +288,8 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         .from("clip_factory_jobs")
         .update({
           source_payload: payload,
+          media_id: null,
+          media_hash: null,
           status: "queued",
           stage: "queued",
           progress: 4,
@@ -418,22 +427,40 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       const jobId = asString(body.job_id);
       const { data } = await service.from("clip_factory_jobs").select("*").eq("id", jobId).maybeSingle();
       if (!data) return apiError(res, 404, "not_found", "Job not found.");
-      const nextStatus = data.failed_stage === "render" ? "rendering" : "queued";
-      await service
-        .from("clip_factory_jobs")
-        .update({
-          status: nextStatus,
-          stage: nextStatus === "rendering" ? "rendering" : "queued",
-          progress: 5,
-          progress_label: nextStatus === "rendering" ? "Rendering clips" : "Retrying",
-          error_message: null,
-          error_code: null,
-          retry_count: (data.retry_count || 0) + 1,
-          lease_expires_at: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", jobId);
-      if (data.failed_stage === "render") {
+      const mediaInvalid = data.media_hash && isKnownInvalidMediaHash(String(data.media_hash));
+      let mediaInvalidated = mediaInvalid;
+      if (data.media_id && !mediaInvalidated) {
+        const { data: media } = await service
+          .from("clip_factory_media")
+          .select("invalidated_at,media_hash")
+          .eq("id", data.media_id)
+          .maybeSingle();
+        mediaInvalidated = Boolean(media?.invalidated_at) || isKnownInvalidMediaHash(media?.media_hash);
+      }
+      const restartIngest = data.failed_stage === "importing" || !data.media_id || mediaInvalidated;
+      const nextStatus = restartIngest ? "queued" : data.failed_stage === "render" ? "rendering" : "queued";
+      const patch: Record<string, unknown> = {
+        status: nextStatus,
+        stage: nextStatus === "rendering" ? "rendering" : "queued",
+        progress: 5,
+        progress_label: nextStatus === "rendering" ? "Rendering clips" : "Retrying",
+        error_message: null,
+        error_code: null,
+        retry_count: (data.retry_count || 0) + 1,
+        lease_expires_at: null,
+        updated_at: new Date().toISOString(),
+      };
+      if (restartIngest) {
+        patch.media_id = null;
+        patch.media_hash = null;
+        patch.clips_generated = 0;
+        patch.moments_found = 0;
+      }
+      await service.from("clip_factory_jobs").update(patch).eq("id", jobId);
+      if (restartIngest) {
+        await service.from("clip_factory_candidates").delete().eq("job_id", jobId);
+        await service.from("clip_factory_renders").delete().eq("job_id", jobId);
+      } else if (data.failed_stage === "render") {
         await service
           .from("clip_factory_renders")
           .update({ status: "queued", error_message: null })

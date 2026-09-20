@@ -5,7 +5,7 @@ import { selectDiverseCandidates, sortCandidates } from "./diversity";
 import { ffmpegCropExpression, interpolateSubject, planReframe } from "./reframe";
 import { classifyMediaUrl } from "./safeUrl";
 import { classifyVideoUrl } from "./ingest/classify";
-import { extractYoutubeId, normalizeYoutubeUrl, parseIsoDuration } from "./ingest/adapters/youtube";
+import { extractYoutubeId, normalizeYoutubeUrl, parseIsoDuration, parseYoutubeDurationFromHtml } from "./ingest/adapters/youtube";
 import { hostnameIsBlocked, isBlockedResolvedAddress, parsePublicHttpUrl } from "./ingest/ssrf";
 import { prepareClipFactoryJob } from "./createJob";
 import { canTransitionJob, requiresRightsConfirmation, rightsConfirmationError } from "./jobStates";
@@ -132,6 +132,7 @@ describe("clip factory ingest urls", () => {
     expect(extractYoutubeId("https://youtu.be/dQw4w9wgGcI")).toBe("dQw4w9wgGcI");
     expect(normalizeYoutubeUrl("dQw4w9wgGcI")).toContain("watch?v=");
     expect(parseIsoDuration("PT1H2M3S")).toBe(3723);
+    expect(parseYoutubeDurationFromHtml('"lengthSeconds":"482","approxDurationMs":"482000"')).toBe(482);
   });
 
   it("blocks localhost, private ranges, and credentials", () => {
