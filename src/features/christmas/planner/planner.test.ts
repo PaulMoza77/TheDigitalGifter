@@ -281,7 +281,7 @@ describe("christmas planner wiring", () => {
     const funnelCss = readSrc("src/features/christmas/planner/planner.css");
     expect(layout).toContain("tdg-planner-app");
     expect(layout).toContain("plannerApp.css");
-    expect(layout.indexOf("tdg-planner-app")).toBeLessThan(layout.indexOf("CopilotHost"));
+    expect(layout).toMatch(/className="tdg-planner-app"[\s\S]*<CopilotHost>/);
     expect(appCss).toContain(".tdg-planner-app");
     expect(appCss).toContain(".tdg-copilot-root");
     expect(appCss).toContain(".tdg-copilot-sheet p");
