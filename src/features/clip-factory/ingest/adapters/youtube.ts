@@ -99,29 +99,46 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
   const oembed = new URL("https://www.youtube.com/oembed");
   oembed.searchParams.set("url", normalizedUrl);
   oembed.searchParams.set("format", "json");
-  const res = await fetch(oembed.toString(), { headers: { Accept: "application/json" } });
-  if (res.status === 401 || res.status === 403) {
-    throw new IngestFailure("source_auth_required", "Source requires authentication.");
+  try {
+    const res = await fetch(oembed.toString(), { headers: { Accept: "application/json" } });
+    if (res.status === 401 || res.status === 403) {
+      throw new IngestFailure("source_auth_required", "Source requires authentication.");
+    }
+    if (res.ok) {
+      const json = (await res.json().catch(() => ({}))) as { title?: string; author_name?: string; thumbnail_url?: string };
+      const canImport = youtubeAuthorizedImportConfigured();
+      return {
+        provider: "youtube",
+        url: normalizedUrl,
+        normalizedUrl,
+        externalId: id,
+        title: json.title || "YouTube video",
+        author: json.author_name || null,
+        durationSeconds: null,
+        thumbnailUrl: json.thumbnail_url || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+        privacy: "public",
+        embeddable: true,
+        canImport,
+        importMode: canImport ? "authorized_api" : "unavailable",
+        fallback: canImport ? null : "upload",
+        message: canImport ? null : youtubeFallbackMessage(),
+      };
+    }
+  } catch (error) {
+    if (error instanceof IngestFailure) throw error;
   }
-  if (res.status === 404) {
-    throw new IngestFailure("video_unavailable", "Video is unavailable.");
-  }
-  if (!res.ok) {
-    throw new IngestFailure("import_failed", "Could not resolve this YouTube video. Retry.");
-  }
-  const json = (await res.json().catch(() => ({}))) as { title?: string; author_name?: string; thumbnail_url?: string };
   const canImport = youtubeAuthorizedImportConfigured();
   return {
     provider: "youtube",
     url: normalizedUrl,
     normalizedUrl,
     externalId: id,
-    title: json.title || "YouTube video",
-    author: json.author_name || null,
+    title: "YouTube video",
+    author: null,
     durationSeconds: null,
-    thumbnailUrl: json.thumbnail_url || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-    privacy: "public",
-    embeddable: true,
+    thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+    privacy: "unknown",
+    embeddable: null,
     canImport,
     importMode: canImport ? "authorized_api" : "unavailable",
     fallback: canImport ? null : "upload",

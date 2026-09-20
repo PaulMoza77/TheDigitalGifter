@@ -40,6 +40,23 @@ describe("youtube adapter", () => {
     await expect(fetchYoutubeMetadata("dQw4w9wgGcI")).rejects.toMatchObject({ code: "video_unavailable" });
   });
 
+  it("still previews a valid id when oEmbed is unavailable", async () => {
+    vi.stubEnv("CLIP_FACTORY_YOUTUBE_IMPORT_URL", "");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: false,
+        status: 404,
+        json: async () => ({}),
+      })),
+    );
+    const meta = await fetchYoutubeMetadata("dQw4w9wgGcI");
+    expect(meta.provider).toBe("youtube");
+    expect(meta.canImport).toBe(false);
+    expect(meta.thumbnailUrl).toContain("dQw4w9wgGcI");
+    expect(meta.message).toMatch(/Upload the original video file/i);
+  });
+
   it("does not claim import unless an authorized importer is configured", async () => {
     vi.stubEnv("YOUTUBE_API_KEY", "test-key");
     vi.stubEnv("CLIP_FACTORY_YOUTUBE_IMPORT_URL", "");
