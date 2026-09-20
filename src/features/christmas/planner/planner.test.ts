@@ -14,6 +14,7 @@ import {
   addonsIncludedInPackage,
   entitlementsForSelection,
   PLANNER_PRODUCT_KEY,
+  plannerPublicCatalog,
   resolvePlannerCheckout,
 } from "./commerce";
 import { sanitizePlannerAnalyticsMetadata } from "./analyticsPrivacy";
@@ -77,14 +78,15 @@ describe("christmas planner commerce", () => {
     );
     const plan = resolvePlannerCheckout({
       catalog,
-      packageKey: "essentials",
+      packageKey: "founding_pass",
       clientAmountCents: 1,
       clientCurrency: "eur",
     });
     expect(plan.ok).toBe(true);
     if (plan.ok) {
-      expect(plan.amountCents).toBe(1299);
+      expect(plan.amountCents).toBe(1700);
       expect(plan.currency).toBe("usd");
+      expect(plan.entitlements).toContain("planner.recipes_collection");
     }
     if (prev == null) delete process.env.CHRISTMAS_CHECKOUT_ENABLED;
     else process.env.CHRISTMAS_CHECKOUT_ENABLED = prev;
@@ -129,6 +131,9 @@ describe("christmas planner commerce", () => {
     expect(magic).toContain("planner.rescue_mode");
     expect(new Set(magic).size).toBe(magic.length);
     expect(addonsIncludedInPackage("all_in")).toContain("addon_recipes");
+    const publicCatalog = plannerPublicCatalog(plannerCatalog().find((p) => p.productKey === PLANNER_PRODUCT_KEY)!);
+    expect(publicCatalog.packages.map((p) => p.packageKey)).toEqual(["founding_pass"]);
+    expect(publicCatalog.addons).toEqual([]);
   });
 
   it("disables checkout via kill switch even when seed prices exist", () => {
@@ -491,6 +496,8 @@ describe("dynamic plan templates", () => {
 describe("entitlements are feature-mapped, not isPremium", () => {
   it("maps packages to feature keys", () => {
     expect(featuresForPackage("christmas_planner_2026", "essentials")).toContain("planner_core");
+    expect(featuresForPackage("christmas_planner_2026", "founding_pass")).toContain("food_planner");
+    expect(featuresForPackage("christmas_planner_2026", "founding_pass")).toContain("recipes");
     expect(featuresForPackage("christmas_planner_2026", "magic")).toContain("food_planner");
     expect(featuresForPackage("christmas_planner_2026", "all_in")).toContain("premium_content");
   });

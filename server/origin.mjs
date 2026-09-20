@@ -8,7 +8,7 @@ import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { APPLE_PAY_PATH, classifyPath } from "./routes.mjs";
-import { invokeVercelHandler } from "./vercel-compat.mjs";
+import { invokeNodeHandler } from "./node-api-compat.mjs";
 import { applyChristmasSeo } from "./christmasSeo.mjs";
 import {
   applyChristmasNoindexShell,
@@ -204,7 +204,7 @@ async function handle(req, res) {
   if (classified.kind === "api") {
     try {
       const handler = await loadHandler(classified.module);
-      await invokeVercelHandler(handler, req, res, url);
+      await invokeNodeHandler(handler, req, res, url);
     } catch (error) {
       console.error(
         JSON.stringify({

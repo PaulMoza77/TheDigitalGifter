@@ -40,8 +40,7 @@ describe("social publisher wiring", () => {
     const cron = read("api/social-publisher-cron.ts");
     expect(cron).toContain("SOCIAL_PUBLISHER_CRON_SECRET");
     expect(cron).toContain("action: \"tick\"");
-    expect(read("vercel.json")).toContain("/api/social-publisher-cron");
-    expect(read("vercel.json")).toContain("* * * * *");
+    expect(read("server/routes.mjs")).toContain("/api/social-publisher-cron");
   });
 
   it("does not put generation controls back on Library and keeps generation APIs", () => {

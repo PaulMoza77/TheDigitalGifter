@@ -10,7 +10,7 @@ export type ProductIdentity = {
   model?: string | null;
 };
 
-export type ComparableOffer = AffiliateProduct & {
+export type ComparableOffer = Omit<AffiliateProduct, "checkedAt"> & {
   identity: ProductIdentity;
   checkedAt: string | null;
 };

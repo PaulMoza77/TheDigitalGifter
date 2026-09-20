@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { asString, isUuid } from "./_lib/christmas/crypto";
 import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabaseClient";
 
@@ -38,7 +38,7 @@ function runFfmpeg(args: string[]): Promise<void> {
   });
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;

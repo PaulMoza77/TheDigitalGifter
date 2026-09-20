@@ -10,17 +10,9 @@
  * available again.
  */
 import { randomUUID } from "node:crypto";
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
+import { waitUntil } from "./_lib/nodeHandler";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { waitUntil as vercelWaitUntil } from "@vercel/functions";
-
-function waitUntil(task: Promise<unknown>) {
-  try {
-    vercelWaitUntil(task);
-  } catch {
-    void task;
-  }
-}
 import {
   CHRISTMAS_PACKS,
   CHRISTMAS_PRODUCT_TYPE,
@@ -70,7 +62,7 @@ const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
 const PAID_STATUSES = ["paid", "generating", "awaiting_qc", "complete", "partial_failure"] as const;
 
-function setCorsHeaders(res: VercelResponse) {
+function setCorsHeaders(res: NodeApiResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Headers",
@@ -80,7 +72,7 @@ function setCorsHeaders(res: VercelResponse) {
 }
 
 function apiError(
-  res: VercelResponse,
+  res: NodeApiResponse,
   code: string,
   message: string,
   status = 400,
@@ -292,7 +284,7 @@ function attributionFromBody(raw: unknown): Record<string, string> {
   return out;
 }
 
-function parseBody(req: VercelRequest): Body {
+function parseBody(req: NodeApiRequest): Body {
   const raw = req.body;
   if (!raw) return {};
   if (typeof raw === "string") {
@@ -306,7 +298,7 @@ function parseBody(req: VercelRequest): Body {
   return {};
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   setCorsHeaders(res);
   if (req.method === "OPTIONS") return res.status(200).send("ok");
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });

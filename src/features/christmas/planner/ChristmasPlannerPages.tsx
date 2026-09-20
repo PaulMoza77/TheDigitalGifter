@@ -39,6 +39,7 @@ import {
 import { canAddCustomTask, canAddRecipient, hasFeature } from "./entitlements";
 import { computeReadiness } from "./readiness";
 import { GiftConcierge } from "./giftConcierge";
+import { PlannerStudioCue, recipientStudioCues } from "./studio/PlannerStudioCue";
 import { money, PlannerPaywall } from "./Paywall";
 import { PlannerGiftOutboundLink, PlannerGiftPriceLabel } from "./PlannerGiftLink";
 import { useCopilotUi } from "./copilot/CopilotHost";
@@ -747,6 +748,9 @@ export function ChristmasPlannerGiftsPage() {
                 </>
               );
             })()}
+            <PlannerStudioCue
+              cues={recipientStudioCues({ hasChildren: profile.has_children, relationship: active.relationship })}
+            />
             <PlannerComposer>
               <input
                 ref={ideaRef}

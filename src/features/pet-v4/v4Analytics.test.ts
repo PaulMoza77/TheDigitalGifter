@@ -52,7 +52,7 @@ describe("pet-v4 campaign isolation", () => {
     const routes = readSrc("server/routes.mjs");
     expect(routes).toContain('"/api/pet-v4/funnel-event": "pet-v4-funnel-event.ts"');
     expect(routes).toContain('"/api/pet-v4-funnel-event": "pet-v4-funnel-event.ts"');
-    expect(readSrc("vercel.json")).toContain("/api/pet-v4/funnel-event");
+    expect(readSrc("server/routes.mjs")).toContain("/api/pet-v4/funnel-event");
     expect(readSrc("vite.petV2Plugin.ts")).toContain("/api/pet-v4/funnel-event");
     const app = readSrc("src/App.tsx");
     expect(app).toContain("PetV4CampaignRedirect");

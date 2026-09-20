@@ -127,9 +127,13 @@ export async function executePlannerAction(ctx: ActionContext, request: PlannerA
   }
 
   if (request.type === "update_gift_status") {
+    const patch: Record<string, unknown> = { status: p.status as GiftItemStatus };
+    if (p.actualPriceMinor != null && Number.isFinite(Number(p.actualPriceMinor))) {
+      patch.actual_price_minor = Math.max(0, Number(p.actualPriceMinor));
+    }
     const { error } = await supabase
       .from("christmas_gift_items")
-      .update({ status: p.status as GiftItemStatus })
+      .update(patch)
       .eq("id", String(p.giftId))
       .eq("profile_id", profileId);
     if (error) return { ok: false, error: "Could not update gift.", code: "write_failed" };
@@ -194,6 +198,27 @@ export async function executePlannerAction(ctx: ActionContext, request: PlannerA
       .select("id")
       .maybeSingle();
     if (error || !data) return { ok: false, error: "Could not add event.", code: "write_failed" };
+    return { ok: true, data: { id: data.id } };
+  }
+
+  if (request.type === "add_guest") {
+    if (ctx.access && !hasFeature(ctx.access, "hosting") && !hasFeature(ctx.access, "food_planner")) {
+      return { ok: false, error: "Hosting is a paid module.", code: "entitlement" };
+    }
+    const adults = Math.min(20, Math.max(0, Number(p.adults ?? 1)));
+    const kids = Math.min(20, Math.max(0, Number(p.kids ?? 0)));
+    const { data, error } = await supabase
+      .from("christmas_guests")
+      .insert({
+        profile_id: profileId,
+        display_name: String(p.displayName || "Guest").trim().slice(0, 80),
+        adults,
+        kids,
+        rsvp: "yes",
+      })
+      .select("id")
+      .maybeSingle();
+    if (error || !data) return { ok: false, error: "Could not add guest.", code: "write_failed" };
     return { ok: true, data: { id: data.id } };
   }
 

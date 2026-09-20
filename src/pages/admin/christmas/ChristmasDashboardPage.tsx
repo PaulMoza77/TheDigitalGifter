@@ -17,6 +17,7 @@ import {
   type Platform,
   type RangeDays,
 } from "./christmasAdminTypes";
+import { computePlannerNorthStar } from "./plannerNorthStar";
 import { useChristmasAdminData } from "./useChristmasAdminData";
 
 function Metric({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
@@ -100,6 +101,7 @@ export default function ChristmasDashboardPage() {
     }).filter((row) => row.sessions > 0);
   }, [events]);
 
+  const plannerKpis = useMemo(() => computePlannerNorthStar({ events, orders }), [events, orders]);
   const incomeLabel = moneyByCurrency(paid);
   const clubEmails = data.clubSignups.length;
 
@@ -197,6 +199,42 @@ export default function ChristmasDashboardPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Planner North Star" subtitle="Acquisition through paid access and module activation. No recipient or search text.">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Metric label="Visitors" value={plannerKpis.visitors} />
+            <Metric label="Planner starts" value={plannerKpis.starts} />
+            <Metric label="Preview done" value={plannerKpis.previews} />
+            <Metric label="Checkout starts" value={plannerKpis.checkoutStarts} />
+            <Metric label="Purchases" value={plannerKpis.purchases} />
+            <Metric label="Conversion" value={`${plannerKpis.conversionPct}%`} />
+            <Metric label="Revenue" value={formatUsd(plannerKpis.revenueCents / 100)} />
+            <Metric label="AOV" value={formatUsd(plannerKpis.aovCents / 100)} />
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-3 text-sm">
+            <div>
+              <p className="text-xs uppercase text-slate-500">Source / UTM</p>
+              {plannerKpis.bySource.slice(0, 8).map((row) => (
+                <p key={row.source}>{row.source}: {row.sessions}</p>
+              ))}
+            </div>
+            <div>
+              <p className="text-xs uppercase text-slate-500">Device</p>
+              {plannerKpis.byDevice.map((row) => (
+                <p key={row.device}>{row.device}: {row.sessions}</p>
+              ))}
+            </div>
+            <div>
+              <p className="text-xs uppercase text-slate-500">Module activation</p>
+              {plannerKpis.activations.slice(0, 8).map((row) => (
+                <p key={row.module}>{row.module}: {row.sessions}</p>
+              ))}
+            </div>
+          </div>
+          <div className="mt-3 text-sm text-slate-400">
+            Drop-off: {plannerKpis.dropoff.map((d) => `${d.from}→${d.to} lost ${d.lost}`).join(" · ") || "—"}
           </div>
         </SectionCard>
 

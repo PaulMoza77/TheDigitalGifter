@@ -5,6 +5,7 @@ import { sanitizePlannerMetadata } from "../analytics";
 import { buildPlannerSnapshot } from "../intelligence/snapshot";
 import { runPlannerIntelligence } from "../intelligence/engine";
 import { askCopilot, copilotLlmEnabled } from "./ask";
+import { proposeCopilotPlan } from "./plan";
 import { applyCopilotPlan, confirmationClassFor, isWriteTool } from "./registry";
 import type { GiftItem, GiftRecipient, PlannerProfile, PlannerTask } from "../types";
 
@@ -150,14 +151,25 @@ describe("christmas copilot P0 on Intelligence Engine", () => {
     expect(blob).not.toContain("do not leak");
   });
 
-  it("never enables the LLM path or apply in P0", () => {
+  it("never enables the LLM path; apply requires a confirmed plan", async () => {
     expect(copilotLlmEnabled()).toBe(false);
-    const applied = applyCopilotPlan();
-    expect(applied.ok).toBe(false);
-    if (!applied.ok) expect(applied.code).toBe("not_implemented");
+    const appliedMissing = await applyCopilotPlan();
+    expect(appliedMissing.ok).toBe(false);
+    if (!appliedMissing.ok) expect(appliedMissing.code).toBe("missing_plan");
     expect(confirmationClassFor("reschedule_task", 3)).toBe("bulk");
     expect(isWriteTool("create_task")).toBe(true);
     expect(isWriteTool("read_snapshot")).toBe(false);
+    const intel = fixture();
+    const plan = proposeCopilotPlan("Add one guest and recalculate.", intel, "v");
+    expect(plan?.steps[0]?.tool).toBe("add_guest");
+    const appliedOk = await applyCopilotPlan({
+      plan: plan!,
+      confirm: true,
+      snapshotVersion: "v",
+      execute: async () => ({ ok: true }),
+    });
+    expect(appliedOk.ok).toBe(true);
+    if (appliedOk.ok) expect(appliedOk.applied).toBe(1);
   });
 
   it("keeps copilot analytics free of names and notes", () => {

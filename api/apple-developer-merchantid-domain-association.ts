@@ -4,12 +4,12 @@
  * Fallback: public/.well-known/… (static) then bundled Stripe universal file.
  * Must never return SPA HTML.
  */
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION_FALLBACK } from "./_lib/stripeApplePayDomainAssociation";
 
-export default function handler(_req: VercelRequest, res: VercelResponse) {
+export default function handler(_req: NodeApiRequest, res: NodeApiResponse) {
   const fromEnv = String(process.env.STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION || "").trim();
   let body = fromEnv;
   if (!body) {

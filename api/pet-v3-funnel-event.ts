@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import {
   clientIpFromHeaders,
   countryCodeFromHeaders,
@@ -38,7 +38,6 @@ function originAllowed(origin: string | undefined, host: string | undefined): bo
   try {
     const url = new URL(origin);
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return true;
-    if (url.hostname.endsWith(".vercel.app")) return true;
     if (url.hostname === "www.thedigitalgifter.com" || url.hostname === "thedigitalgifter.com") return true;
     if (host && url.host === host) return true;
     return false;
@@ -48,9 +47,9 @@ function originAllowed(origin: string | undefined, host: string | undefined): bo
 }
 
 function resolveWriteEnvironment(): "production" | "preview" | "development" {
-  const vercel = String(process.env.VERCEL_ENV || "").toLowerCase();
-  if (vercel === "production") return "production";
-  if (vercel === "preview") return "preview";
+  const named = String(process.env.TDG_ENV || process.env.MOZAS_ENV || process.env.NODE_ENV || "").toLowerCase();
+  if (named === "production" || named === "prod") return "production";
+  if (named === "preview" || named === "staging") return "preview";
   return "development";
 }
 
@@ -354,7 +353,7 @@ async function writePetV3FunnelEvent(
   return { ok: true, duplicate: id == null };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");

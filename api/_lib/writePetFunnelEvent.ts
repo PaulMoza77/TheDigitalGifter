@@ -1,3 +1,4 @@
+import { isAllowedAppHostname, runtimeEnvironment } from "./nodeHandler";
 import {
   FunnelIngestError,
   PET_FUNNEL_MAX_BODY_BYTES,
@@ -8,10 +9,7 @@ import {
 export type WriteEnvironment = "production" | "preview" | "development";
 
 export function resolveWriteEnvironment(): WriteEnvironment {
-  const vercel = String(process.env.VERCEL_ENV || "").toLowerCase();
-  if (vercel === "production") return "production";
-  if (vercel === "preview") return "preview";
-  return "development";
+  return runtimeEnvironment();
 }
 
 export function resolveIsTest(environment: WriteEnvironment, clientFlag: boolean): boolean {
@@ -52,9 +50,7 @@ export function originAllowed(origin: string | undefined, host: string | undefin
   if (!origin) return true;
   try {
     const url = new URL(origin);
-    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return true;
-    if (url.hostname.endsWith(".vercel.app")) return true;
-    if (url.hostname === "www.thedigitalgifter.com" || url.hostname === "thedigitalgifter.com") return true;
+    if (isAllowedAppHostname(url.hostname)) return true;
     if (host && url.host === host) return true;
     return false;
   } catch {

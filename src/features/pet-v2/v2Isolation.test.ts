@@ -94,8 +94,8 @@ describe("pet funnel V2 isolation", () => {
     expect(handler).not.toContain("./_lib/");
     expect(handler).toContain("res.status(500)");
     expect(handler).not.toContain("status(202).json({ ok: true, duplicate: false })");
-    expect(readSrc("vercel.json")).toContain("/api/pet-v2-funnel-event");
-    expect(readSrc("vercel.json")).toContain("apple-developer-merchantid-domain-association");
+    expect(readSrc("server/routes.mjs")).toContain("/api/pet-v2-funnel-event");
+    expect(readSrc("server/routes.mjs")).toContain("apple-developer-merchantid-domain-association");
   });
 
   it("uses existing mini clips and the other-pets animals already in the product", () => {

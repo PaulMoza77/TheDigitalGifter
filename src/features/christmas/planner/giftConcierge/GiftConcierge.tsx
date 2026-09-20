@@ -30,6 +30,8 @@ import {
 } from "../../affiliateProducts/client";
 import { priceBucketFromMinor, type AffiliateProduct } from "../../affiliateProducts/helpers";
 import { useAffiliateProductSearch } from "../../affiliateProducts/useAffiliateProductSearch";
+import { PriceCompareOffers } from "../../affiliateProducts/PriceCompareOffers";
+import { groupShoppingOffers } from "../../affiliateProducts/shoppingOffers";
 import "./giftConcierge.css";
 
 type ConciergeTab = "ideas" | "shop";
@@ -323,6 +325,7 @@ export function GiftConcierge({
         <header className="tdg-concierge-head">
           <div>
             <p className="tdg-planner-kicker">Gift Concierge</p>
+            <p className="tdg-planner-muted">Person → interests → budget → ideas → products → Gift Plan</p>
             <h2 id={titleId}>Gift ideas for {recipient.display_name}</h2>
             <p className="tdg-concierge-sub">
               {recipient.relationship ? `${prettyRel(recipient.relationship)}` : "Recipient"}
@@ -658,6 +661,8 @@ function ShopPanel({
         <div className="tdg-concierge-results">
           {products.length === 0 ? (
             <p className="tdg-planner-muted">No live products matched this search. Try a simpler phrase.</p>
+          ) : groupShoppingOffers(products).mode === "compare" ? (
+            <PriceCompareOffers products={products} onAdd={onAdd} onView={onView} addingKey={addingKey} />
           ) : (
             products.map((product) => {
               const key = `${product.provider}:${product.externalProductId}`;

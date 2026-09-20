@@ -6,7 +6,7 @@
 export const PLANNER_PRODUCT_KEY = "christmas_planner_2026";
 export const PLANNER_SEASON_YEAR = 2026;
 
-export const PLANNER_PACKAGE_KEYS = ["essentials", "magic", "all_in"] as const;
+export const PLANNER_PACKAGE_KEYS = ["founding_pass", "essentials", "magic", "all_in"] as const;
 export const PLANNER_ADDON_KEYS = [
   "addon_recipes",
   "addon_hosting",
@@ -20,6 +20,27 @@ export type PlannerPackageKey = (typeof PLANNER_PACKAGE_KEYS)[number];
 export type PlannerAddonKey = (typeof PLANNER_ADDON_KEYS)[number];
 
 export const PACKAGE_ENTITLEMENTS: Record<PlannerPackageKey, string[]> = {
+  founding_pass: [
+    "planner.countdown",
+    "planner.plan",
+    "planner.tasks",
+    "planner.gifts",
+    "planner.budget",
+    "planner.shopping",
+    "planner.wishlist",
+    "planner.meals",
+    "planner.hosting",
+    "planner.cards_messages",
+    "planner.activities",
+    "planner.travel",
+    "planner.gift_finder_advanced",
+    "planner.rescue_mode",
+    "planner.recipes_collection",
+    "planner.premium_content",
+    "planner.photo_credits_bonus",
+    "planner.ai_assistant",
+    "planner.club_premium",
+  ],
   essentials: [
     "planner.countdown",
     "planner.plan",

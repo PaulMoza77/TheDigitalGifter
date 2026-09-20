@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "../_lib/nodeHandler";
 
 /**
  * Legacy Vercel preview endpoint.
@@ -26,7 +26,6 @@ function originAllowed(origin: string | undefined, host: string | undefined): bo
   try {
     const url = new URL(origin);
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return true;
-    if (url.hostname.endsWith(".vercel.app")) return true;
     if (url.hostname === "www.thedigitalgifter.com" || url.hostname === "thedigitalgifter.com") {
       return true;
     }
@@ -45,7 +44,7 @@ function hashIp(ip: string): string {
   return createHash("sha256").update(`pet-v2:${ip}`).digest("hex").slice(0, 32);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");

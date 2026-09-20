@@ -98,9 +98,8 @@ describe("V2 teaser conversion rebuild", () => {
   });
 
   it("wires Apple Pay association outside the SPA catch-all", () => {
-    const vercel = readSrc("vercel.json");
-    expect(vercel).toContain("apple-developer-merchantid-domain-association");
-    expect(vercel).toContain("\\.well-known/");
+    const routes = readSrc("server/routes.mjs");
+    expect(routes).toContain("apple-developer-merchantid-domain-association");
     const api = readSrc("api/apple-developer-merchantid-domain-association.ts");
     expect(api).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION");
     expect(api).toContain("application/octet-stream");

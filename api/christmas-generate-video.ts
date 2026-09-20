@@ -2,7 +2,7 @@
  * Node/Vercel port of supabase/functions/christmas-generate-video/index.ts.
  * Keep in sync with the Deno source — see api/christmas-funnel.ts for context.
  */
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import {
   CHRISTMAS_RESULT_BUCKET,
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
@@ -91,7 +91,7 @@ async function generateSeedanceVideo(imageUrl: string): Promise<{
   return { predictionId: asString(prediction.id), outputUrl, model };
 }
 
-function parseBody(req: VercelRequest): Body {
+function parseBody(req: NodeApiRequest): Body {
   const raw = req.body;
   if (!raw) return {};
   if (typeof raw === "string") {
@@ -105,7 +105,7 @@ function parseBody(req: VercelRequest): Body {
   return {};
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "authorization, content-type");

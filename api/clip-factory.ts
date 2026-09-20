@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { randomUUID } from "node:crypto";
 import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabaseClient";
 import { requireClipFactoryAdmin } from "./_lib/clip-factory/admin";
@@ -17,7 +17,7 @@ function asString(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-function apiError(res: VercelResponse, status: number, error: string, message: string) {
+function apiError(res: NodeApiResponse, status: number, error: string, message: string) {
   return res.status(status).json({ error, message });
 }
 
@@ -56,7 +56,7 @@ async function hydrateJob(service: ReturnType<typeof getServiceClient>, job: Rec
   };
 }
 
-async function streamStorage(res: VercelResponse, storagePath: string, contentType: string) {
+async function streamStorage(res: NodeApiResponse, storagePath: string, contentType: string) {
   const service = getServiceClient();
   const { data, error } = await service.storage.from(BUCKET).download(storagePath);
   if (error || !data) {
@@ -71,7 +71,7 @@ async function streamStorage(res: VercelResponse, storagePath: string, contentTy
   res.end(buf);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;

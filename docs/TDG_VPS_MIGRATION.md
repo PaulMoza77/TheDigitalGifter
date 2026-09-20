@@ -49,9 +49,7 @@ CI (`.github/workflows/deploy-vps-static.yml`) requires Production secrets and p
 `MOZAS_SSH_HOST` into the Verify step. After deploy it runs `TDG_HTTPS_PHASE=post`
 (public HTTPS, no `--resolve`) and Apple Pay file checks.
 
-`deploy-vercel-production.yml` is **disabled**. `scripts/vercel-ignore.mjs` skips
-Vercel builds for this repo (`the-digital-gifter`, `the-digital-gifter-d5vu`).
-Keep existing Vercel deployments as rollback until a live payment is confirmed.
+`deploy-vercel-production.yml` has been removed. Production is VPS-only via `scripts/deploy-vps.sh`.
 
 ## Verify
 

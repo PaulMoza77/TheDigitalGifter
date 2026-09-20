@@ -210,9 +210,9 @@ assert(
 assert(!/Disallow:\s*\/wishlist/i.test(robotsTxt), "robots does not block wishlist shares");
 assert(!/Disallow:\s*\/christmas/i.test(robotsTxt), "robots does not blanket-block christmas");
 
-const vercel = readFileSync(join(root, "vercel.json"), "utf8");
-assert(vercel.includes('"/christmas/gifts"'), "vercel redirects gifts");
-assert(vercel.includes('"/christmas/gift-finder"'), "vercel gifts target");
+const indexing = readFileSync(join(root, "server/christmasIndexing.mjs"), "utf8");
+assert(indexing.includes('"/christmas/gifts"'), "VPS redirects gifts");
+assert(indexing.includes('"/christmas/gift-finder"'), "VPS gifts target");
 
 // —— 2) Injection against HTML template ——
 const distIndex = join(root, "dist", "index.html");

@@ -44,11 +44,14 @@ describe("pet funnel ingest writer helpers", () => {
     );
   });
 
-  it("treats missing Vercel env as development", () => {
-    const previous = process.env.VERCEL_ENV;
-    delete process.env.VERCEL_ENV;
+  it("treats missing production env as development", () => {
+    const previous = process.env.TDG_ENV;
+    const node = process.env.NODE_ENV;
+    delete process.env.TDG_ENV;
+    process.env.NODE_ENV = "test";
     expect(resolveWriteEnvironment()).toBe("development");
-    if (previous == null) delete process.env.VERCEL_ENV;
-    else process.env.VERCEL_ENV = previous;
+    if (previous == null) delete process.env.TDG_ENV;
+    else process.env.TDG_ENV = previous;
+    process.env.NODE_ENV = node;
   });
 });

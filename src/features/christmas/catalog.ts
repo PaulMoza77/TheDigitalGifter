@@ -89,6 +89,38 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     },
     packages: [
       {
+        packageKey: "founding_pass",
+        packageName: "Christmas 2026 Founding Pass",
+        description:
+          "One-time access to the full Christmas Planner: tasks, calendar, budget, gifts, Gift Finder, recipes, meals, smart grocery, and Christmas Studio member benefits where economics allow.",
+        currency: "usd",
+        priceCents: 1700,
+        compareAtCents: 4900,
+        active: true,
+        purchasable: true,
+        features: [
+          "Planner",
+          "Tasks and calendar",
+          "Budget",
+          "Gift Planner",
+          "Gift Finder",
+          "Recipes",
+          "Meal Planner",
+          "Smart Grocery List",
+          "Christmas Studio member benefit where economically valid",
+        ],
+        sortOrder: 1,
+        localeDefault: "en",
+        metadata: {
+          kind: "package",
+          tier: "founding_pass",
+          highlight: true,
+          badge: "$17 Founding Pass",
+          publicOffer: true,
+          launchOffer: true,
+        },
+      },
+      {
         packageKey: "essentials",
         packageName: "Essentials",
         description: "Countdown, plan, tasks, gifts, budget, shopping tracker, and wishlist.",
@@ -108,7 +140,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         ],
         sortOrder: 10,
         localeDefault: "en",
-        metadata: { kind: "package", tier: "essentials" },
+        metadata: { kind: "package", tier: "essentials", publicOffer: false },
       },
       {
         packageKey: "magic",
@@ -131,7 +163,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         ],
         sortOrder: 20,
         localeDefault: "en",
-        metadata: { kind: "package", tier: "magic" },
+        metadata: { kind: "package", tier: "magic", publicOffer: false },
       },
       {
         packageKey: "all_in",
@@ -152,7 +184,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         ],
         sortOrder: 30,
         localeDefault: "en",
-        metadata: { kind: "package", tier: "all_in", highlight: true, badge: "Best value" },
+        metadata: { kind: "package", tier: "all_in", highlight: false, badge: "Legacy", publicOffer: false },
       },
       {
         packageKey: "addon_recipes",

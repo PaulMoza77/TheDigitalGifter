@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { CHRISTMAS_CLUB_MAX_BODY_BYTES } from "../src/features/christmas/club/config";
 import {
   ChristmasClubSignupError,
@@ -13,7 +13,6 @@ function originAllowed(origin: string | undefined, host: string | undefined): bo
   try {
     const url = new URL(origin);
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return true;
-    if (url.hostname.endsWith(".vercel.app")) return true;
     if (url.hostname === "www.thedigitalgifter.com" || url.hostname === "thedigitalgifter.com") {
       return true;
     }
@@ -24,7 +23,7 @@ function originAllowed(origin: string | undefined, host: string | undefined): bo
   }
 }
 
-async function parseJsonBody(req: VercelRequest): Promise<unknown> {
+async function parseJsonBody(req: NodeApiRequest): Promise<unknown> {
   const body = req.body;
   if (body == null) return {};
   if (typeof body === "string") {
@@ -48,7 +47,7 @@ async function parseJsonBody(req: VercelRequest): Promise<unknown> {
   throw new ChristmasClubSignupError("malformed_json", 400, "Invalid body");
 }
 
-function bearerToken(req: VercelRequest): string | null {
+function bearerToken(req: NodeApiRequest): string | null {
   const header = req.headers.authorization;
   const raw = Array.isArray(header) ? header[0] : header;
   if (!raw || !raw.toLowerCase().startsWith("bearer ")) return null;
@@ -175,7 +174,7 @@ async function insertSignup(
   return { alreadyJoined: true, storage: "christmas_club_signups" };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");

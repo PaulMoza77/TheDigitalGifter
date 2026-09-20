@@ -94,6 +94,11 @@ Deno.serve(async (req) => {
           seasonYear: Number(meta.season_year) || 2026,
           packages: (packages || [])
             .filter((pkg) => isPlannerPackageKey(pkg.package_key))
+            .filter((pkg) => {
+              const meta = (pkg.metadata || {}) as Record<string, unknown>;
+              if (meta.publicOffer === false) return false;
+              return true;
+            })
             .map((pkg) => ({
               packageKey: pkg.package_key,
               packageName: pkg.package_name,
@@ -109,6 +114,7 @@ Deno.serve(async (req) => {
             })),
           addons: (packages || [])
             .filter((pkg) => isPlannerAddonKey(pkg.package_key))
+            .filter(() => !(packages || []).some((row) => row.package_key === "founding_pass"))
             .map((pkg) => ({
               packageKey: pkg.package_key,
               packageName: pkg.package_name,

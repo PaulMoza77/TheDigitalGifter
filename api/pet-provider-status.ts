@@ -8,20 +8,20 @@
  * Missing REPLICATE_API_TOKEN on Vercel is a probe misconfiguration: paid generation
  * runs on Supabase Edge (where the token normally lives), so do not block checkout.
  */
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { createClient } from "@supabase/supabase-js";
 
 const UNAVAILABLE =
   "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.";
 
-function json(res: VercelResponse, body: Record<string, unknown>, status = 200) {
+function json(res: NodeApiResponse, body: Record<string, unknown>, status = 200) {
   res.status(status);
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.send(JSON.stringify(body));
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method === "OPTIONS") {
     res.status(204);
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");

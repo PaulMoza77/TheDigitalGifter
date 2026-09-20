@@ -2,7 +2,7 @@ import { Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { trackPlannerEvent } from "../analytics";
-import { loadDismissedInsightIds, loadPlannerWorkspace, runPlannerIntelligence } from "../intelligence";
+import { executePlannerAction, loadDismissedInsightIds, loadPlannerWorkspace, runPlannerIntelligence } from "../intelligence";
 import type { PlannerIntelligence } from "../intelligence/types";
 import { usePlannerBundle } from "../Onboarding";
 import { ASSISTANT_PROMPTS } from "../plannerUi";
@@ -65,7 +65,7 @@ export function CopilotSheet({
   onClose: () => void;
   onSeedConsumed: () => void;
 }) {
-  const { profile } = usePlannerBundle();
+  const { profile, access } = usePlannerBundle();
   const [question, setQuestion] = useState("What should I do this weekend?");
   const [reply, setReply] = useState<CopilotResponse | null>(null);
   const [intel, setIntel] = useState<PlannerIntelligence | null>(null);
@@ -172,19 +172,41 @@ export function CopilotSheet({
             {reply.cards.map((card, i) => (
               <CopilotCardView key={`${card.type}-${i}`} card={card} />
             ))}
-            {reply.unsupported?.reason === "no_tool" ? (
+            {reply.actionPlan?.steps.length ? (
               <div className="tdg-copilot-confirm">
-                <p>I can prepare this change later. Nothing was written by Copilot.</p>
+                <p>Preview — nothing is written yet:</p>
+                <ul>
+                  {reply.actionPlan.steps.map((step) => (
+                    <li key={step.preview}>{step.preview}</li>
+                  ))}
+                </ul>
                 <button
                   type="button"
-                  className="tdg-planner-btn"
+                  className="tdg-planner-btn primary"
                   onClick={() => {
-                    const result = tryApplyCopilotPlan();
-                    setApplyNote(result.ok ? `Applied ${result.applied} changes` : result.message);
+                    if (!profile || !intel || !reply.actionPlan) return;
+                    void (async () => {
+                      const result = await tryApplyCopilotPlan({
+                        plan: reply.actionPlan,
+                        confirm: true,
+                        snapshotVersion: reply.snapshotVersion,
+                        execute: (request) =>
+                          executePlannerAction(
+                            { userId: profile.user_id, access, profile },
+                            request,
+                          ),
+                      });
+                      setApplyNote(result.ok ? `Applied ${result.applied} change${result.applied === 1 ? "" : "s"}` : result.message);
+                    })();
                   }}
                 >
-                  Apply is not available yet
+                  Confirm and apply
                 </button>
+                {applyNote ? <p className="tdg-planner-muted">{applyNote}</p> : null}
+              </div>
+            ) : reply.unsupported?.reason === "no_tool" ? (
+              <div className="tdg-copilot-confirm">
+                <p>I can show this on the plan. I will not invent live prices or write without a preview.</p>
                 {applyNote ? <p className="tdg-planner-muted">{applyNote}</p> : null}
               </div>
             ) : null}

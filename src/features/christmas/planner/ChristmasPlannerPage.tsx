@@ -52,6 +52,17 @@ const PACKAGE_COPY: Record<
   string,
   { audience: string; ticks: string[]; ribbon?: string }
 > = {
+  founding_pass: {
+    audience: "The complete Christmas 2026 Planner — one $17 payment. Checkout stays off until launch QA.",
+    ticks: [
+      "Planner, tasks, and calendar",
+      "Budget that follows gift purchases",
+      "Gift Planner and Gift Finder",
+      "Recipes, meals, and smart grocery",
+      "Christmas Studio member benefit where valid",
+    ],
+    ribbon: "Founding Pass",
+  },
   essentials: {
     audience: "For people who mainly want to stay organized.",
     ticks: ["Christmas plan", "Daily tasks", "Gifts", "Budget", "Shopping tracker"],
@@ -407,7 +418,7 @@ function QuizLayer({
 export default function ChristmasPlannerPage() {
   const navigate = useNavigate();
   const [catalog, setCatalog] = useState<PlannerCatalog>(seedCatalog);
-  const [packageKey, setPackageKey] = useState<string>("magic");
+  const [packageKey, setPackageKey] = useState<string>("founding_pass");
   const [addonKeys, setAddonKeys] = useState<string[]>([]);
   const [checkout, setCheckout] = useState<{
     clientSecret: string;
@@ -463,6 +474,7 @@ export default function ChristmasPlannerPage() {
       .then((row) => {
         setCatalog(row);
         const preferred =
+          row.packages.find((pkg) => pkg.packageKey === "founding_pass") ||
           row.packages.find((pkg) => pkg.packageKey === "magic") ||
           row.packages.find((pkg) => pkg.packageKey === "all_in") ||
           row.packages[0];
@@ -913,9 +925,12 @@ export default function ChristmasPlannerPage() {
           id="packages"
         >
           <div className="tdg-planner__inner">
-            <p className="tdg-planner__kicker">Packages</p>
-            <h2>Choose your Christmas</h2>
-            <p className="tdg-planner__micro tdg-planner__micro--on-dark">SEE OPTIONS if you want paid modules later. The Planner itself opens free with limits.</p>
+            <p className="tdg-planner__kicker">Founding Pass</p>
+            <h2>Christmas 2026 — $17 one-time</h2>
+            <p className="tdg-planner__micro tdg-planner__micro--on-dark">
+              Planner, gifts, recipes, meals, grocery, and Studio member benefits. Checkout is technically ready and stays
+              killed until final launch QA. Existing Essentials / Magic / All-In entitlements still work.
+            </p>
             <div className="tdg-planner__packages tdg-planner__packages--rows">
               {catalog.packages.map((pkg) => {
                 const copy = PACKAGE_COPY[pkg.packageKey];

@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { fetchChristmasSeoPageByPath } from "./_lib/christmas/seoPages";
 import { parseChristmasSeoPath } from "../src/features/christmas/seo/factory";
 import { renderChristmasSeoHtml, renderChristmasSeoNotFound } from "../src/features/christmas/seo/renderHtml";
@@ -8,7 +8,7 @@ function queryString(value: string | string[] | undefined): string {
   return Array.isArray(value) ? String(value[0] || "") : String(value || "");
 }
 
-function resolveFromQuery(req: VercelRequest): ReturnType<typeof parseChristmasSeoPath> {
+function resolveFromQuery(req: NodeApiRequest): ReturnType<typeof parseChristmasSeoPath> {
   const cluster = queryString(req.query.cluster) as ChristmasSeoCluster;
   const slug = queryString(req.query.slug).trim().toLowerCase();
   const locale = (queryString(req.query.locale) === "ro" ? "ro" : "en") as ChristmasSeoLocale;
@@ -25,14 +25,14 @@ function resolveFromQuery(req: VercelRequest): ReturnType<typeof parseChristmasS
   return null;
 }
 
-function sendHtml(res: VercelResponse, status: number, html: string) {
+function sendHtml(res: NodeApiResponse, status: number, html: string) {
   res.status(status);
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=600");
   res.send(html);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method && req.method !== "GET" && req.method !== "HEAD") {
     res.status(405).setHeader("Allow", "GET, HEAD").send("Method Not Allowed");
     return;

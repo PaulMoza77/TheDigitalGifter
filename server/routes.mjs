@@ -18,7 +18,7 @@ export const API_MODULES = {
   "/api/christmas-funnel": "christmas-funnel.ts",
   "/api/christmas-santa-compose": "christmas-santa-compose.ts",
   "/api/clip-factory": "clip-factory.ts",
-  "/api/clip-factory-tick": "clip-factory-tick.ts",
+  "/api/social-publisher-cron": "social-publisher-cron.ts",
   "/api/christmas/funnel-event": "christmas-funnel-event.ts",
   "/api/christmas-funnel-event": "christmas-funnel-event.ts",
   "/api/christmas/gift-tree": "christmas-gift-tree.ts",

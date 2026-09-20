@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 
 /** Self-contained Christmas V2 ingest. Do not import ./_lib here — match pet-v2 pattern. */
 
@@ -38,7 +38,6 @@ function originAllowed(origin: string | undefined, host: string | undefined): bo
   try {
     const url = new URL(origin);
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return true;
-    if (url.hostname.endsWith(".vercel.app")) return true;
     if (url.hostname === "www.thedigitalgifter.com" || url.hostname === "thedigitalgifter.com") {
       return true;
     }
@@ -166,7 +165,7 @@ async function writeChristmasV2FunnelEvent(raw: unknown): Promise<{ ok: true; du
   return { ok: true, duplicate: Boolean(payload?.duplicate) };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");

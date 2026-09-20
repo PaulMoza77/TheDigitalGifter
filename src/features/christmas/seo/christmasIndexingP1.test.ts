@@ -66,13 +66,13 @@ describe("christmas P1 indexing policy", () => {
     expect(should404UnknownChristmasPath("/ro/christmas/not-a-real-product")).toBe(true);
   });
 
-  it("wires origin + vercel + robots for P1", () => {
+  it("wires origin + VPS indexing + robots for P1", () => {
     const origin = readFileSync(join(process.cwd(), "server/origin.mjs"), "utf8");
     expect(origin).toContain("buildChristmasRedirectLocation");
     expect(origin).toContain("buildApexToWwwLocation");
     expect(origin).toContain("should404UnknownChristmasPath");
-    const vercel = readFileSync(join(process.cwd(), "vercel.json"), "utf8");
-    expect(vercel).toContain("/christmas/gifts");
+    const indexing = readFileSync(join(process.cwd(), "server/christmasIndexing.mjs"), "utf8");
+    expect(indexing).toContain("/christmas/gifts");
     const robots = readFileSync(join(process.cwd(), "public/robots.txt"), "utf8");
     expect(robots).toContain("https://www.thedigitalgifter.com/sitemap.xml");
     expect(robots).not.toMatch(/Disallow:\s*\/wishlist/);

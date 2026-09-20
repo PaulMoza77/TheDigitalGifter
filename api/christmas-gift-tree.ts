@@ -2,7 +2,7 @@
  * Same-origin Christmas Gift Tree API.
  * Actions: openGiftTree | claimGiftEmail | claimGiftTree | getGiftTreeStatus | listMyGifts
  */
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { createHash, randomBytes } from "node:crypto";
 import {
   GIFT_TREE_PAID_OFFERS,
@@ -38,7 +38,6 @@ function isOriginAllowed(origin: string | undefined, host: string | undefined): 
   try {
     const url = new URL(origin);
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return true;
-    if (url.hostname.endsWith(".vercel.app")) return true;
     if (url.hostname === "www.thedigitalgifter.com" || url.hostname === "thedigitalgifter.com") return true;
     if (host && url.host === host) return true;
     return false;
@@ -163,7 +162,7 @@ async function supabaseRpc<T>(
 }
 
 async function getUserFromAuthHeader(
-  req: VercelRequest,
+  req: NodeApiRequest,
 ): Promise<{ id: string; email: string | null } | null> {
   const auth = String(req.headers.authorization || "");
   const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
@@ -329,7 +328,7 @@ async function sendGiftClaimEmail(input: {
   return { sent: true };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");

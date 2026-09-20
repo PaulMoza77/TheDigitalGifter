@@ -43,6 +43,7 @@ export const PLANNER_ACTION_TYPES = [
   "add_grocery_item",
   "add_event",
   "ensure_hosting_tasks",
+  "add_guest",
 ] as const;
 export type PlannerActionType = (typeof PLANNER_ACTION_TYPES)[number];
 
@@ -148,6 +149,7 @@ export type SnapshotGrocery = {
   status: "have" | "need" | "bought";
   source_type: string;
   meal_item_id: string | null;
+  ingredient_key?: string | null;
 };
 
 export type SnapshotGuest = {
@@ -317,6 +319,7 @@ export type GroceryMergeRow = {
   status: "have" | "need" | "bought";
   persistedId: string | null;
   derived: boolean;
+  sources?: string[];
 };
 
 export type FoodCompleteness = {

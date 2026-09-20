@@ -181,11 +181,12 @@ export function mergeGroceryList(snapshot: PlannerSnapshot): GroceryMergeRow[] {
       status: "need",
       persistedId: null,
       derived: true,
+      sources: [...item.sources],
     });
   }
   for (const stored of snapshot.grocery) {
     const parsed = parseAisle(stored.name);
-    const key = `${normalizeIngredientName(parsed.label)}|`;
+    const key = stored.ingredient_key || `${normalizeIngredientName(parsed.label)}|`;
     const existing = rows.get(key) || [...rows.values()].find((r) => r.name === normalizeIngredientName(parsed.label));
     if (existing) {
       existing.status = stored.status;

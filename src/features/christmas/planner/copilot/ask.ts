@@ -2,6 +2,7 @@ import { classifyAssistantIntent } from "../assistant";
 import { formatPlannerMoney } from "../intelligence/budgetIntelligence";
 import type { PlannerIntelligence, PlannerInsight } from "../intelligence/types";
 import { applyCopilotPlan, type ApplyPlanResult } from "./registry";
+import { proposeCopilotPlan, type CopilotActionPlan, type CopilotPlanStep } from "./plan";
 
 export type CopilotCard =
   | { type: "insight"; title: string; body: string; href?: string }
@@ -14,8 +15,8 @@ export type CopilotResponse = {
   tone: "steady" | "rescue" | "celebrate";
   insightsUsed: Array<{ id: string; kind: string; module: string }>;
   nextBestActions: Array<{ id: string; label: string; href?: string }>;
-  suggestedActions: never[];
-  actionPlan: null;
+  suggestedActions: CopilotPlanStep[];
+  actionPlan: CopilotActionPlan | null;
   requiresConfirmation: boolean;
   followUpOptions: string[];
   cards: CopilotCard[];
@@ -25,7 +26,7 @@ export type CopilotResponse = {
 };
 
 const WRITE_HINT =
-  "I can show the plan. I won’t create, move, or delete anything until you confirm in a later Copilot release.";
+  "I can preview a change. Nothing is written until you confirm.";
 
 function progressedGift(status: string): boolean {
   return ["planned", "ordered", "arrived", "hidden", "wrapped", "given"].includes(status);
@@ -90,15 +91,17 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
   const trip = snapshot.trips.map((t) => t.start_on).filter(Boolean).sort()[0] || null;
   const groceryNeed = grocery.filter((g) => g.status === "need").length;
 
+  const snapshotVersion = snapshotVersionFromIntel(intel);
+  const proposedPlan = proposeCopilotPlan(q, intel, snapshotVersion);
   const base = (): Omit<CopilotResponse, "message" | "cards" | "followUpOptions" | "unsupported"> => ({
     tone,
     insightsUsed: insights.slice(0, 4).map((i) => ({ id: i.id, kind: i.type, module: i.category })),
     nextBestActions: nbas,
-    suggestedActions: [],
-    actionPlan: null,
-    requiresConfirmation: false,
+    suggestedActions: proposedPlan?.steps || [],
+    actionPlan: proposedPlan,
+    requiresConfirmation: Boolean(proposedPlan?.steps.length),
     modelPath: "deterministic",
-    snapshotVersion: snapshotVersionFromIntel(intel),
+    snapshotVersion,
   });
 
   if (lower.includes("ignore") || lower.includes("safely ignore") || (lower.includes("skip") && lower.includes("task"))) {
@@ -304,6 +307,8 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
   };
 }
 
-export function tryApplyCopilotPlan(): ApplyPlanResult {
-  return applyCopilotPlan();
+export function tryApplyCopilotPlan(
+  input?: Parameters<typeof applyCopilotPlan>[0],
+): ReturnType<typeof applyCopilotPlan> {
+  return applyCopilotPlan(input);
 }

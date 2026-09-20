@@ -19,7 +19,7 @@ export const PLANNER_ROUTE = "/christmas/planner";
 export const PLANNER_WELCOME_ROUTE = "/christmas/planner/welcome";
 export const PLANNER_ACCOUNT_ROUTE = "/account/christmas";
 
-export const PLANNER_PACKAGE_KEYS = ["essentials", "magic", "all_in"] as const;
+export const PLANNER_PACKAGE_KEYS = ["founding_pass", "essentials", "magic", "all_in"] as const;
 export type PlannerPackageKey = (typeof PLANNER_PACKAGE_KEYS)[number];
 
 export const PLANNER_ADDON_KEYS = [
@@ -86,6 +86,7 @@ const ALL_IN_ENTITLEMENTS: PlannerEntitlementKey[] = [
 ];
 
 export const PACKAGE_ENTITLEMENTS: Record<PlannerPackageKey, PlannerEntitlementKey[]> = {
+  founding_pass: ALL_IN_ENTITLEMENTS,
   essentials: ESSENTIALS_ENTITLEMENTS,
   magic: MAGIC_ENTITLEMENTS,
   all_in: ALL_IN_ENTITLEMENTS,
@@ -279,9 +280,18 @@ export function resolvePlannerCheckout(input: {
   };
 }
 
+function isPublicPlannerOffer(pkg: ChristmasPackageDef): boolean {
+  if (pkg.metadata?.publicOffer === false) return false;
+  if (pkg.metadata?.kind === "addon") return false;
+  return true;
+}
+
 export function plannerPublicCatalog(product: ChristmasProductDef) {
-  const packages = product.packages
-    .filter((pkg) => pkg.active && isPlannerPackageKey(pkg.packageKey))
+  const launchPackages = product.packages.filter(
+    (pkg) => pkg.active && isPlannerPackageKey(pkg.packageKey) && pkg.packageKey === "founding_pass",
+  );
+  const packages = (launchPackages.length ? launchPackages : product.packages)
+    .filter((pkg) => pkg.active && isPlannerPackageKey(pkg.packageKey) && isPublicPlannerOffer(pkg))
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((pkg) => ({
       packageKey: pkg.packageKey,
@@ -298,7 +308,7 @@ export function plannerPublicCatalog(product: ChristmasProductDef) {
       includedAddons: isPlannerPackageKey(pkg.packageKey) ? addonsIncludedInPackage(pkg.packageKey) : [],
     }));
 
-  const addons = product.packages
+  const addons = (launchPackages.length ? [] : product.packages)
     .filter((pkg) => pkg.active && isPlannerAddonKey(pkg.packageKey))
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((pkg) => ({

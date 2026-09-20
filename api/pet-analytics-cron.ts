@@ -1,11 +1,11 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 
 /**
  * Cron entrypoint: sync Meta + GA4 for yesterday and today.
  * Protect with PET_ANALYTICS_CRON_SECRET (or CRON_SECRET).
  * Never expose Ads/GA4 tokens to the browser.
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method !== "POST" && req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }

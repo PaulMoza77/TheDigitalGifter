@@ -52,6 +52,11 @@ export function validatePlannerAction(request: PlannerActionRequest): { ok: true
     case "add_event":
       if (!String(p.title || "").trim() || !p.startsOn) return { ok: false, error: "Event title and date are required.", code: "invalid_payload" };
       return { ok: true };
+    case "add_guest":
+      if (!String(p.displayName || "").trim() && p.adults == null) {
+        return { ok: false, error: "Guest name or count is required.", code: "invalid_payload" };
+      }
+      return { ok: true };
     case "ensure_hosting_tasks":
       return { ok: true };
     default:

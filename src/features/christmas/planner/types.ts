@@ -46,6 +46,7 @@ export const PLANNER_COMPLETE_FEATURES: readonly PlannerFeatureKey[] = [
 ];
 
 export const PLANNER_PACKAGE_FEATURES: Record<string, readonly PlannerFeatureKey[]> = {
+  founding_pass: PLANNER_COMPLETE_FEATURES,
   essentials: PLANNER_CORE_FEATURES,
   core: PLANNER_CORE_FEATURES,
   magic: PLANNER_COMPLETE_FEATURES,
@@ -57,7 +58,7 @@ export const PLANNER_PACKAGE_FEATURES: Record<string, readonly PlannerFeatureKey
   travel: ["travel"],
 };
 
-export const PLANNER_PAID_TIER_KEYS = ["essentials", "magic", "all_in"] as const;
+export const PLANNER_PAID_TIER_KEYS = ["founding_pass", "essentials", "magic", "all_in"] as const;
 export const PLANNER_ADDON_PACKAGE_KEYS = ["food", "recipes", "hosting", "travel"] as const;
 
 export const TASK_CATEGORIES = [

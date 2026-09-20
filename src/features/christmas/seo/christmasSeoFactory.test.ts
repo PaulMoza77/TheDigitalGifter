@@ -119,18 +119,14 @@ describe("Christmas SEO wiring", () => {
       ]),
     );
 
-    const vercel = readSrc("vercel.json");
-    expect(vercel).toContain("/api/christmas-seo?cluster=gifts-for");
-    expect(vercel).toContain("/api/christmas-seo?cluster=messages-intent");
+    const origin = readSrc("server/routes.mjs");
+    expect(origin).toContain("christmas-seo.ts");
+    expect(origin).toContain("gifts-for-[a-z0-9-]+");
 
     const sitemap = readSrc("api/sitemap.xml.ts");
     expect(sitemap).toContain("listChristmasSeoSitemapRows");
     expect(sitemap).toContain("sitemapEntriesForRows");
     expect(sitemap).toContain("xmlns:xhtml");
-
-    const origin = readSrc("server/routes.mjs");
-    expect(origin).toContain("christmas-seo.ts");
-    expect(origin).toContain("gifts-for-[a-z0-9-]+");
   });
 
   it("seeds seo_pages from the factory and keeps checkout off", () => {

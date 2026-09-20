@@ -40,7 +40,7 @@ export async function loadPlannerWorkspace(profile: PlannerProfile, now = new Da
     supabase.from("christmas_meals").select("id,section,title,meal_on").eq("profile_id", profile.id),
     supabase.from("christmas_meal_items").select("id,meal_id,recipe_id,dish_name,servings,prep_minutes,cook_minutes,day_time").eq("profile_id", profile.id),
     supabase.from("christmas_recipes").select("id,title,servings,prep_minutes,cook_minutes,category,tags,ingredients").eq("published", true),
-    supabase.from("christmas_grocery_items").select("id,name,quantity,status,source_type,meal_item_id").eq("profile_id", profile.id),
+    supabase.from("christmas_grocery_items").select("id,name,quantity,status,source_type,meal_item_id,ingredient_key").eq("profile_id", profile.id),
     supabase.from("christmas_guests").select("id,display_name,rsvp,adults,kids,dietary,sleeping").eq("profile_id", profile.id),
     supabase.from("christmas_home_items").select("id,title,area,status").eq("profile_id", profile.id),
     supabase.from("christmas_trips").select("id,destination,start_on,end_on,packing,gifts_to_take").eq("profile_id", profile.id),
