@@ -96,7 +96,7 @@ function deliveryWindow(item: EbayItemSummary): { start?: string; end?: string }
   return { start, end };
 }
 
-export function normalizeEbayItem(item: EbayItemSummary, rank: number): AffiliateProduct | null {
+export function normalizeEbayItem(item: EbayItemSummary, rank: number, checkedAt?: string): AffiliateProduct | null {
   const title = String(item.title || "").trim().slice(0, 200);
   const id = String(item.itemId || "").trim();
   if (!title || !id) return null;
@@ -122,6 +122,7 @@ export function normalizeEbayItem(item: EbayItemSummary, rank: number): Affiliat
     affiliateUrl,
     providerRank: rank,
   };
+  if (checkedAt) out.checkedAt = checkedAt;
   const desc = String(item.shortDescription || "").trim().slice(0, 280);
   if (desc) out.description = desc;
   if (imageUrl) out.imageUrl = imageUrl;
@@ -136,11 +137,11 @@ export function normalizeEbayItem(item: EbayItemSummary, rank: number): Affiliat
 }
 
 /** Preserve provider order. Filter invalid rows; do not re-sort. */
-export function normalizeEbaySearchResults(payload: EbaySearchResponse, limit: number): AffiliateProduct[] {
+export function normalizeEbaySearchResults(payload: EbaySearchResponse, limit: number, checkedAt?: string): AffiliateProduct[] {
   const items = payload.itemSummaries || [];
   const out: AffiliateProduct[] = [];
   for (let i = 0; i < items.length; i += 1) {
-    const product = normalizeEbayItem(items[i], i);
+    const product = normalizeEbayItem(items[i], i, checkedAt);
     if (product) out.push(product);
     if (out.length >= limit) break;
   }

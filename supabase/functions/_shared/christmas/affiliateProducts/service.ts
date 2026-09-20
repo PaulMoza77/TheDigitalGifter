@@ -126,7 +126,7 @@ export class AffiliateProductService {
     } catch {
       throw new Error("ebay_browse_invalid_json");
     }
-    const products = normalizeEbaySearchResults(payload, input.limit);
+    const products = normalizeEbaySearchResults(payload, input.limit, new Date(this.now()).toISOString());
     return {
       ok: true,
       enabled: true,

@@ -56,3 +56,6 @@ export {
   readEbayCredentials,
 } from "../../../../supabase/functions/_shared/christmas/affiliateProducts/config.ts";
 export { TtlCache } from "../../../../supabase/functions/_shared/christmas/affiliateProducts/cache.ts";
+
+export { compareExactProductOffers, productIdentity, productIdentityKey } from "./priceCompare";
+export type { ComparableOffer, PriceComparison, ProductIdentity } from "./priceCompare";
