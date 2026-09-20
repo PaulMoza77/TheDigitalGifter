@@ -1,7 +1,7 @@
 name: deploy-exclude-internal-geos
 
 # Safe apply: RO/IT funnel exclusion migration + pet-analytics-sync.
-# VPS frontend/API deploy is separate (deploy-vps-mozas / scripts/deploy-vps.sh).
+# VPS frontend/API deploy is separate (scripts/deploy-production.sh via Cloud Agent SSH).
 
 on:
   workflow_dispatch:

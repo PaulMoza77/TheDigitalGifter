@@ -2,7 +2,7 @@
 # Safe production apply for RO/IT funnel exclusion:
 #   1) SQL migration 20260902120000_pet_funnel_exclude_internal_geos.sql
 #   2) Edge function pet-analytics-sync (GA4 skip Romania/Italy)
-# Does NOT deploy frontend / VPS (use scripts/deploy-vps.sh for that).
+# Does NOT deploy frontend / VPS (use scripts/deploy-production.sh for that).
 # Requires: SUPABASE_ACCESS_TOKEN
 # Optional: SUPABASE_DB_PASSWORD (preferred for migration apply)
 set -euo pipefail

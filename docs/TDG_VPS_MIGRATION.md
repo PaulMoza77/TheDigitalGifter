@@ -1,7 +1,7 @@
 # TheDigitalGifter on Mozas VPS
 
-A new Cursor account needs **repo access** plus **MOZAS_SSH_*** only.
-Application Vite keys live on the VPS at
+A new Cursor account needs **repo access** plus **MOZAS_SSH_*** Cloud Agent
+secrets only. Application Vite keys live on the VPS at
 `/opt/mozas/projects/thedigitalgifter/secrets/app.env` and must not be
 re-entered from the agent.
 
@@ -29,12 +29,22 @@ export MOZAS_BACKUP_S3_ACCESS_KEY MOZAS_BACKUP_S3_SECRET_KEY
 bash scripts/persist-tdg-vps-config.sh
 ```
 
-## Deploy (preserves HTTPS)
+## Deploy (canonical — Cloud Agent only)
+
+Production deployment for TDG MUST use `scripts/deploy-production.sh`. Vercel
+and GitHub Actions are forbidden deployment paths. If deployment fails, debug
+the SSH/VPS deployment. Do not switch deployment providers.
 
 ```bash
-export MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY MOZAS_SSH_USER
-bash scripts/deploy-vps.sh
+# From a Cursor Cloud Agent with MOZAS_SSH_* secrets injected:
+bash scripts/deploy-production.sh
 ```
+
+Path: **Cursor Cloud Agent → direct SSH → Mozas VPS → build/restart → healthcheck**
+(`/healthz` + `https://www.thedigitalgifter.com/christmas`).
+
+`scripts/deploy-vps.sh` is the internal sync/build helper invoked by the
+canonical script. Do not invent a Vercel or Actions substitute.
 
 Deploy calls `mozas-ensure-tdg-caddy`, which:
 
@@ -45,13 +55,9 @@ Deploy calls `mozas-ensure-tdg-caddy`, which:
 Failed deploys roll back to `mozas/thedigitalgifter:previous` and restore
 `releases/verified.*` metadata. Verified pins advance only after health wait succeeds.
 
-CI (`.github/workflows/deploy-vps-static.yml`) requires Production secrets and passes
-`MOZAS_SSH_HOST` into the Verify step. After deploy it runs `TDG_HTTPS_PHASE=post`
-(public HTTPS, no `--resolve`) and Apple Pay file checks.
-
-`deploy-vercel-production.yml` is **disabled**. `scripts/vercel-ignore.mjs` skips
-Vercel builds for this repo (`the-digital-gifter`, `the-digital-gifter-d5vu`).
-Keep existing Vercel deployments as rollback until a live payment is confirmed.
+`.github/workflows/deploy-vps-static.yml`, `deploy-vercel-production.yml`, and
+`deploy-static-github-pages.yml` are **disabled stubs**. `scripts/vercel-ignore.mjs`
+skips Vercel builds. `scripts/vercel-unpause-and-deploy.sh` refuses to run.
 
 ## Verify
 
@@ -85,7 +91,6 @@ You change DNS (no Cloudflare token in this repo):
 
 1. Keep MX.
 2. Apex **and** www **A** → `MOZAS_SSH_HOST` (prefer grey-cloud; no AAAA, or AAAA = VPS only).
-3. Keep the Vercel deployment as rollback.
 
 **After you confirm both names are on the VPS:**
 
@@ -123,11 +128,9 @@ Instructions on VPS: `/opt/mozas/secrets/RESTIC_PASSWORD_RECOVERY.txt`.
 
 1. Keep MX.
 2. Apex + www A → `MOZAS_SSH_HOST` (prefer grey-cloud for first ACME).
-3. Keep Vercel as rollback.
-4. Confirm to the agent, then HTTPS apply + post verify above.
+3. Confirm to the agent, then HTTPS apply + post verify above.
 
-## Still optional / blockers
+## Credentials note
 
-- GitHub Production must contain `MOZAS_SSH_HOST`, `MOZAS_SSH_PRIVATE_KEY`,
-  `MOZAS_SSH_USER` (and ideally `VITE_SUPABASE_*`) for CI deploy+verify.
-- Stripe **test** keys for paid checkout/generation e2e (do not replace live keys).
+Deployment credentials live in **Cursor Cloud Agent secrets**, not GitHub Actions.
+GitHub is source control only for the TDG production origin.

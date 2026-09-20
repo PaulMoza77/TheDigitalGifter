@@ -2,14 +2,37 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+const deployProduction = readFileSync(resolve("scripts/deploy-production.sh"), "utf8");
 const deployVps = readFileSync(resolve("scripts/deploy-vps.sh"), "utf8");
 const applyHttp = readFileSync(resolve("deploy/scripts/apply-tdg-caddy.sh"), "utf8");
 const ensure = readFileSync(resolve("deploy/scripts/mozas-ensure-tdg-caddy.sh"), "utf8");
 const deployRemote = readFileSync(resolve("deploy/scripts/mozas-deploy-thedigitalgifter.sh"), "utf8");
 const rollback = readFileSync(resolve("deploy/scripts/mozas-rollback-thedigitalgifter.sh"), "utf8");
-const workflow = readFileSync(resolve(".github/workflows/deploy-vps-static.yml"), "utf8");
+const workflowVps = readFileSync(resolve(".github/workflows/deploy-vps-static.yml"), "utf8");
+const workflowVercel = readFileSync(resolve(".github/workflows/deploy-vercel-production.yml"), "utf8");
+const workflowPages = readFileSync(resolve(".github/workflows/deploy-static-github-pages.yml"), "utf8");
+const agents = readFileSync(resolve("AGENTS.md"), "utf8");
+const vercelUnpause = readFileSync(resolve("scripts/vercel-unpause-and-deploy.sh"), "utf8");
 
-describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
+describe("TDG deploy wiring (HTTPS persist + rollback + Cloud Agent canonical path)", () => {
+  it("deploy-production.sh is the canonical Cloud Agent → SSH entrypoint", () => {
+    expect(deployProduction).toMatch(/Canonical TDG production deployment/);
+    expect(deployProduction).toMatch(/MOZAS_SSH_HOST/);
+    expect(deployProduction).toMatch(/MOZAS_SSH_PRIVATE_KEY/);
+    expect(deployProduction).toMatch(/scripts\/deploy-vps\.sh/);
+    expect(deployProduction).toMatch(/thedigitalgifter\.com\/christmas/);
+    expect(deployProduction).toMatch(/\/healthz/);
+    expect(deployProduction).toMatch(/GITHUB_ACTIONS/);
+    expect(deployProduction).toMatch(/Vercel used: NO/);
+    expect(deployProduction).toMatch(/GitHub Actions used: NO/);
+  });
+
+  it("AGENTS.md forbids Vercel and GitHub Actions deploy paths", () => {
+    expect(agents).toMatch(/scripts\/deploy-production\.sh/);
+    expect(agents).toMatch(/Vercel and GitHub Actions are forbidden/);
+    expect(agents).toMatch(/Do not switch deployment providers/);
+  });
+
   it("deploy-vps.sh applies Caddy via ensure, not unconditional HTTP apply", () => {
     expect(deployVps).toMatch(/\/opt\/mozas\/bin\/mozas-ensure-tdg-caddy/);
     expect(deployVps).toMatch(
@@ -59,15 +82,14 @@ describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
     expect(rollback).toMatch(/current\.sha/);
   });
 
-  it("GitHub Actions Verify TDG origin receives Mozas SSH secrets", () => {
-    const verifyIdx = workflow.indexOf("name: Verify TDG origin");
-    expect(verifyIdx).toBeGreaterThan(0);
-    const verifyStep = workflow.slice(verifyIdx);
-    expect(verifyStep).toMatch(/MOZAS_SSH_HOST: \$\{\{ secrets\.MOZAS_SSH_HOST \}\}/);
-    expect(verifyStep).toMatch(/MOZAS_SSH_PRIVATE_KEY: \$\{\{ secrets\.MOZAS_SSH_PRIVATE_KEY \}\}/);
-    expect(verifyStep).toMatch(/MOZAS_SSH_USER: \$\{\{ secrets\.MOZAS_SSH_USER \}\}/);
-    expect(verifyStep).toMatch(/verify-tdg-vps-origin\.mjs/);
-    expect(verifyStep).toMatch(/TDG_HTTPS_PHASE=post/);
-    expect(verifyStep).toMatch(/verify-apple-pay-domain\.mjs/);
+  it("GitHub Actions and Vercel production workflows are disabled stubs", () => {
+    expect(workflowVps).toMatch(/forbidden/);
+    expect(workflowVps).not.toMatch(/bash scripts\/deploy-vps\.sh/);
+    expect(workflowVps).not.toMatch(/on:\s*\n\s*push:/);
+    expect(workflowVercel).toMatch(/forbidden/);
+    expect(workflowPages).toMatch(/forbidden/);
+    expect(vercelUnpause).toMatch(/BLOCKED/);
+    expect(vercelUnpause).toMatch(/exit 2/);
+    expect(vercelUnpause).not.toMatch(/npx --yes vercel/);
   });
 });
