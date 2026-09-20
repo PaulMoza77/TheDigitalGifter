@@ -255,8 +255,30 @@ export default function LibraryVideoCard({
           <p className="mt-1 font-mono text-[11px] text-slate-500">
             {video.filename}
             {durationLabel ? ` · ${durationLabel}` : ""}
-            {photo ? "" : " · 1080×1920"}
+            {photo ? "" : ` · ${video.width || 1080}×${video.height || 1920}`}
+            {video.fileSizeBytes ? ` · ${(video.fileSizeBytes / (1024 * 1024)).toFixed(1)} MB` : ""}
           </p>
+          {video.model || video.jobId || video.sourceImage || video.createdAt ? (
+            <p className="mt-1 text-[11px] leading-4 text-slate-500">
+              {video.model ? `Model ${video.model}` : ""}
+              {video.jobId ? ` · Higgsfield ${video.jobId}` : ""}
+              {video.sourceImage ? ` · Source ${video.sourceImage}` : ""}
+              {typeof video.costUsd === "number" ? ` · $${video.costUsd.toFixed(2)}` : ""}
+              {video.createdAt ? ` · ${video.createdAt.slice(0, 10)}` : ""}
+            </p>
+          ) : null}
+          {video.clipsUsed && video.clipsUsed.length > 0 ? (
+            <p className="mt-1 text-[11px] leading-4 text-slate-500">Clips used: {video.clipsUsed.join(" · ")}</p>
+          ) : null}
+          {video.tags && video.tags.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {video.tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
         {onToggleSelect && video.kind === "reel" ? (
           <label className="flex items-center gap-2 text-xs text-slate-400">
