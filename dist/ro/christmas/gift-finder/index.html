@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="ro">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Găsitorul de Cadouri de Crăciun | Găsește Cadoul Perfect</title>
+    <meta
+      name="description"
+      content="Găsește idei de cadouri de Crăciun pline de sens, potrivite pentru cine cumperi, interesele lor și bugetul tău."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Găsitorul de Cadouri de Crăciun | Găsește Cadoul Perfect"
+    />
+    <meta
+      property="og:description"
+      content="Găsește idei de cadouri de Crăciun pline de sens, potrivite pentru cine cumperi, interesele lor și bugetul tău."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/ro/christmas/gift-finder" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Găsitorul de Cadouri de Crăciun | Găsește Cadoul Perfect"
+    />
+    <meta
+      name="twitter:description"
+      content="Găsește idei de cadouri de Crăciun pline de sens, potrivite pentru cine cumperi, interesele lor și bugetul tău."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/ro/christmas/gift-finder" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas/gift-finder" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas/gift-finder" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas/gift-finder" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas/gift-finder" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas/gift-finder" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas/gift-finder" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas/gift-finder" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas/gift-finder" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas/gift-finder" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas/gift-finder" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Acasă","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Crăciun","item":"https://www.thedigitalgifter.com/ro/christmas"},{"@type":"ListItem","position":3,"name":"Găsitor de cadouri","item":"https://www.thedigitalgifter.com/ro/christmas/gift-finder"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Găsitorul de Cadouri de Crăciun | Găsește Cadoul Perfect","description":"Găsește idei de cadouri de Crăciun pline de sens, potrivite pentru cine cumperi, interesele lor și bugetul tău.","url":"https://www.thedigitalgifter.com/ro/christmas/gift-finder","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"ro"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Cum funcționează Găsitorul de cadouri de Crăciun?","acceptedAnswer":{"@type":"Answer","text":"Răspunzi la câteva întrebări scurte despre persoana pentru care cumperi, interesele, personalitatea și bugetul ei. Apoi vezi idei de cadouri alese cu grijă, fiecare cu un motiv clar pentru care s-ar potrivi."}},{"@type":"Question","name":"Pot căuta după buget?","acceptedAnswer":{"@type":"Answer","text":"Da. Intervalul de buget este un pas important în Găsitor."}},{"@type":"Question","name":"Pot găsi cadouri pentru cineva care are deja de toate?","acceptedAnswer":{"@type":"Answer","text":"Da. Printre opțiunile de personalitate se numără „Are deja de toate”, care îndreaptă ideile spre experiențe, personalizare și obiecte cu semnificație."}},{"@type":"Question","name":"Îl pot folosi pentru copii sau adolescenți?","acceptedAnswer":{"@type":"Answer","text":"Da. Alege Copil sau Adolescent (sau Fiică/Fiu cu un interval de vârstă), astfel încât ideile să rămână potrivite vârstei."}},{"@type":"Question","name":"Pot salva idei în lista mea de dorințe?","acceptedAnswer":{"@type":"Answer","text":"Da. Folosește opțiunea Salvează în listă lângă o idee, pentru a o adăuga în /ro/christmas/wishlist."}},{"@type":"Question","name":"Recomandările sunt cu adevărat personalizate?","acceptedAnswer":{"@type":"Answer","text":"Da. Recomandările folosesc destinatarul, vârsta, interesele, personalitatea, bugetul și un detaliu personal opțional."}},{"@type":"Question","name":"Afișează produse reale, din magazine?","acceptedAnswer":{"@type":"Answer","text":"În acest moment Găsitorul arată idei de cadouri alese cu grijă, cu intervale de preț tipice. Prețurile live de la retaileri, stocul și fluxurile de la magazine nu sunt încă conectate — nu inventăm prețuri exacte sau stoc real."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/ro/christmas/gift-finder" data-locale="ro"><nav aria-label="Breadcrumb"><a href="/">Acasă</a> / <a href="/ro/christmas">Crăciun</a> / <a href="/ro/christmas/gift-finder">Găsitor de cadouri</a></nav><h1>Găsește un Cadou de Crăciun Pe Care Chiar Îl Vor Iubi</h1><p>Răspunde la câteva întrebări despre persoana pentru care cumperi și primești idei de cadouri de Crăciun potrivite intereselor, personalității și bugetului ei.</p><h2>Alte instrumente de Crăciun</h2><ul><li><a href="/ro/christmas/wishlist">Creează o listă de dorințe</a></li><li><a href="/ro/christmas/photo-generator">Generator foto de Crăciun</a></li><li><a href="/ro/christmas/tree">Brad digital de Crăciun</a></li><li><a href="/ro/christmas">Toate experiențele de Crăciun</a></li></ul><section data-tdg-geo="true"><h2>Ce este un Găsitor de cadouri de Crăciun?</h2><p>Un Găsitor de cadouri de Crăciun este un instrument ghidat care recomandă idei de cadouri pe baza persoanei pentru care cumperi, a intereselor și personalității ei, plus bugetul tău. Pe TheDigitalGifter răspunzi la un set scurt de întrebări și primești idei alese cu grijă, cu motive clare pentru care s-ar potrivi — apoi poți rafina răspunsurile sau salva ideile într-o listă de dorințe.</p></section><section data-tdg-depth-section="Cum Funcționează Găsitorul de Cadouri de Crăciun"><h2>Cum Funcționează Găsitorul de Cadouri de Crăciun</h2><p>Alegi destinatarul, îi descrii interesele și personalitatea, stabilești un buget și, opțional, adaugi un detaliu personal. Găsitorul îți întoarce idei de cadouri ordonate, cu explicații scurte. Poți rafina răspunsurile, poți relua totul de la capăt sau poți salva idei direct în lista ta de dorințe de Crăciun.</p><ul><li>Pentru cine cumperi</li><li>Interese și personalitate</li><li>Interval de buget</li><li>Idei de cadouri personalizate, cu motive</li></ul></section><section data-tdg-depth-section="Găsește Cadouri După Destinatar"><h2>Găsește Cadouri După Destinatar</h2><p>Găsitorul acoperă cele mai frecvente relații din cumpărăturile de Crăciun, astfel încât recomandările rămân potrivite. Folosește instrumentul pentru mamă, tată, soție, soț, iubită, iubit, copii, adolescenți, bunici, prieteni, colegi și mulți alții. Paginile dedicate fiecărui destinatar nu sunt încă live — pornește Găsitorul și alege destinatarul direct acolo.</p><ul><li>Mamă</li><li>Tată</li><li>Soție</li><li>Soț</li><li>Iubită</li><li>Iubit</li><li>Copii</li><li>Adolescenți</li><li>Bunici</li><li>Prieteni</li><li>Colegi</li></ul></section><section data-tdg-depth-section="Găsește Cadouri de Crăciun După Buget"><h2>Găsește Cadouri de Crăciun După Buget</h2><p>Alege un interval de cheltuială, de exemplu sub 100 lei, 100–250 lei, 250–500 lei, 500–1000 lei, peste 1000 lei sau fără un buget strict. Recomandările sunt idei de cadouri cu intervale de preț tipice — nu stoc live de la retaileri și nu o garanție de disponibilitate.</p></section><section data-tdg-depth-section="Cadouri Pentru Cineva Care Are Deja de Toate"><h2>Cadouri Pentru Cineva Care Are Deja de Toate</h2><p>Când cineva pare să aibă deja „tot ce trebuie”, cadourile de Crăciun cu adevărat utile țin de obicei de experiențe, obiecte personalizate cu suflet, upgrade-uri pentru un hobby, momente sentimentale sau lucruri practice, dar premium. Alegerea personalității „Are deja de toate” îndreaptă Găsitorul spre astfel de direcții, în loc de idei generice.</p></section><section data-tdg-depth-section="Salvează Ideile în Lista de Dorințe"><h2>Salvează Ideile în Lista de Dorințe</h2><p>Ți-a plăcut o idee? Salveaz-o în lista ta de dorințe de Crăciun și partajeaz-o cu familia, ca toată lumea să rămână coordonată la cumpărături.</p><p><a href="/ro/christmas/wishlist">Deschide creatorul de liste de dorințe</a></p></section><section data-tdg-faq="true"><h2>Întrebări frecvente</h2><article><h3>Cum funcționează Găsitorul de cadouri de Crăciun?</h3><p>Răspunzi la câteva întrebări scurte despre persoana pentru care cumperi, interesele, personalitatea și bugetul ei. Apoi vezi idei de cadouri alese cu grijă, fiecare cu un motiv clar pentru care s-ar potrivi.</p></article><article><h3>Pot căuta după buget?</h3><p>Da. Intervalul de buget este un pas important în Găsitor.</p></article><article><h3>Pot găsi cadouri pentru cineva care are deja de toate?</h3><p>Da. Printre opțiunile de personalitate se numără „Are deja de toate”, care îndreaptă ideile spre experiențe, personalizare și obiecte cu semnificație.</p></article><article><h3>Îl pot folosi pentru copii sau adolescenți?</h3><p>Da. Alege Copil sau Adolescent (sau Fiică/Fiu cu un interval de vârstă), astfel încât ideile să rămână potrivite vârstei.</p></article><article><h3>Pot salva idei în lista mea de dorințe?</h3><p>Da. Folosește opțiunea Salvează în listă lângă o idee, pentru a o adăuga în /ro/christmas/wishlist.</p></article><article><h3>Recomandările sunt cu adevărat personalizate?</h3><p>Da. Recomandările folosesc destinatarul, vârsta, interesele, personalitatea, bugetul și un detaliu personal opțional.</p></article><article><h3>Afișează produse reale, din magazine?</h3><p>În acest moment Găsitorul arată idei de cadouri alese cu grijă, cu intervale de preț tipice. Prețurile live de la retaileri, stocul și fluxurile de la magazine nu sunt încă conectate — nu inventăm prețuri exacte sau stoc real.</p></article></section></div></div>
+  </body>
+</html>

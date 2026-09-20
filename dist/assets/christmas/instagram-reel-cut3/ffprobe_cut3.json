@@ -1,0 +1,15 @@
+{
+  "programs": [],
+  "streams": [
+    {
+      "width": 1080,
+      "height": 1920,
+      "avg_frame_rate": "24/1",
+      "bit_rate": "11654572"
+    }
+  ],
+  "format": {
+    "duration": "14.958333",
+    "bit_rate": "11657486"
+  }
+}

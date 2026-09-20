@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Natal na TheDigitalGifter | Presentes, Fotos, Pai Natal e Muito Mais</title>
+    <meta
+      name="description"
+      content="Crie presentes de Natal, retratos com IA, vídeos do Pai Natal, listas de desejos, postais de Natal e surpresas de Advento — experiências digitais personalizadas de Natal da TheDigitalGifter."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Natal na TheDigitalGifter | Presentes, Fotos, Pai Natal e Muito Mais"
+    />
+    <meta
+      property="og:description"
+      content="Crie presentes de Natal, retratos com IA, vídeos do Pai Natal, listas de desejos, postais de Natal e surpresas de Advento — experiências digitais personalizadas de Natal da TheDigitalGifter."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/pt/christmas" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/christmas/og-countdown.jpg" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Natal na TheDigitalGifter | Presentes, Fotos, Pai Natal e Muito Mais"
+    />
+    <meta
+      name="twitter:description"
+      content="Crie presentes de Natal, retratos com IA, vídeos do Pai Natal, listas de desejos, postais de Natal e surpresas de Advento — experiências digitais personalizadas de Natal da TheDigitalGifter."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/christmas/og-countdown.jpg" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/pt/christmas" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Natal","item":"https://www.thedigitalgifter.com/pt/christmas"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Natal na TheDigitalGifter | Presentes, Fotos, Pai Natal e Muito Mais","description":"Crie presentes de Natal, retratos com IA, vídeos do Pai Natal, listas de desejos, postais de Natal e surpresas de Advento — experiências digitais personalizadas de Natal da TheDigitalGifter.","url":"https://www.thedigitalgifter.com/pt/christmas","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"pt-PT"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O que posso criar para o Natal com TheDigitalGifter?","acceptedAnswer":{"@type":"Answer","text":"Pode encontrar ideias de presentes, transformar fotos em retratos de Natal para famílias, casais e animais, iniciar a experiência do Pai Natal, criar uma lista de desejos partilhável, desenhar um cartão, escrever mensagens, decorar uma árvore digital e abrir surpresas do Advento. Escolha uma experiência nesta página e termine em minutos."}},{"@type":"Question","name":"O Pai Natal pode dizer o nome do meu filho?","acceptedAnswer":{"@type":"Answer","text":"Pode começar pelo nome na página de Natal ou na experiência do Pai Natal e acrescentar detalhes opcionais. Os vídeos falados estão disponíveis hoje em inglês e romeno — outras línguas virão a seguir."}},{"@type":"Question","name":"Preciso de competências de design?","acceptedAnswer":{"@type":"Answer","text":"Não. Cada experiência de Natal guia-o passo a passo — carregue uma foto, responda a algumas perguntas ou comece com um nome — e a página faz o resto."}},{"@type":"Question","name":"É para presentes digitais, físicos ou ambos?","acceptedAnswer":{"@type":"Answer","text":"Ambos. Use o Localizador e a lista de desejos para comprar em qualquer lado, e crie retratos e cartões digitais para descarregar ou partilhar de imediato."}},{"@type":"Question","name":"Funciona no meu telemóvel?","acceptedAnswer":{"@type":"Answer","text":"Sim — o hub de Natal e as experiências de produto foram pensados primeiro para telemóvel e também funcionam no computador."}},{"@type":"Question","name":"A foto da minha família é privada?","acceptedAnswer":{"@type":"Answer","text":"Os envios são usados para criar o seu retrato ou cartão. As experiências para crianças são privacy-first e esperam um pai ou tutor. Quando o resultado estiver pronto, descarrega-o em privado — não publicamos as suas fotos."}},{"@type":"Question","name":"Quanto tempo demora a criar algo?","acceptedAnswer":{"@type":"Answer","text":"A maioria das experiências demora poucos minutos. O Localizador e as mensagens são quase instantâneos. Retratos, cartões e Pai Natal guiam-no passo a passo; as criações pagas continuam após o checkout."}},{"@type":"Question","name":"Preciso de uma conta para começar?","acceptedAnswer":{"@type":"Answer","text":"Pode explorar e começar de imediato. Algumas experiências pedem um e-mail no registo ou no pagamento para guardar o progresso, receber o resultado ou juntar-se ao Christmas Club."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/pt/christmas" data-locale="pt"><nav aria-label="Breadcrumb"><a href="/">Início</a> / <a href="/pt/christmas">Natal</a></nav><h1>Crie Algo Que Vão Recordar Este Natal</h1><p>Explore presentes de Natal, retratos fotográficos, vídeos do Pai Natal, árvores digitais, calendários do Advento, postais de Natal e mensagens — tudo num só lugar na TheDigitalGifter.</p><h2>Experiências de Natal</h2><p>Escolha um produto de Natal abaixo e crie algo pessoal em poucos minutos.</p><ul><li><a href="/pt/christmas/gift-finder">Encontre o Presente de Natal Perfeito</a></li><li><a href="/pt/christmas/wishlist">Crie uma Lista de Desejos de Natal</a></li><li><a href="/pt/christmas/photo-generator">Gerador de Fotos de Natal com IA</a></li><li><a href="/pt/christmas/santa-video">Crie um Vídeo Personalizado do Pai Natal</a></li><li><a href="/pt/christmas/tree">Construa uma Árvore de Natal Digital</a></li><li><a href="/pt/christmas/advent">Abra o Calendário do Advento</a></li><li><a href="/pt/christmas/cards">Crie um Postal de Natal</a></li><li><a href="/pt/christmas/messages">Encontre uma Mensagem de Natal</a></li></ul><section data-tdg-geo="true"><h2>O que pode criar com a TheDigitalGifter no Natal?</h2><p>A TheDigitalGifter é um centro de criação de Natal. Pode encontrar ideias de presentes com o Gift Finder, transformar uma fotografia num retrato de Natal para a família, casal ou animais de estimação, criar um vídeo personalizado do Pai Natal com o nome do destinatário, construir uma lista de desejos de Natal para partilhar, desenhar um postal de Natal com a sua fotografia e mensagem, escrever votos de Natal, decorar uma árvore de Natal digital e abrir surpresas diárias do Advento. Comece por uma área e siga para a experiência que se ajusta à pessoa que está a celebrar.</p></section><section data-tdg-depth-section="Encontre o Presente de Natal Perfeito"><h2>Encontre o Presente de Natal Perfeito</h2><p>Não sabe o que comprar? O Gift Finder de Natal pergunta para quem está a comprar, o que essa pessoa gosta, como é o seu dia a dia e quanto quer gastar. Recebe ideias de presentes cuidadas com uma razão curta para cada uma — incluindo opções para quem parece já ter tudo. Guarde os favoritos numa lista de desejos quando estiver pronto.</p><p><a href="/pt/christmas/gift-finder">Encontre um presente de Natal que vão mesmo adorar</a></p></section><section data-tdg-depth-section="Crie Fotos de Natal Mágicas"><h2>Crie Fotos de Natal Mágicas</h2><p>Carregue uma fotografia nítida e transforme-a num retrato de Natal festivo. Crie visuais para famílias, casais e animais de estimação — incluindo percursos dedicados a cães e gatos — e depois descarregue em privado ou leve o retrato para um postal de Natal.</p><p><a href="/pt/christmas/photo-generator">Transforme a sua fotografia em magia de Natal</a></p></section><section data-tdg-depth-section="Receba uma Mensagem Personalizada do Pai Natal"><h2>Receba uma Mensagem Personalizada do Pai Natal</h2><p>Crie um vídeo de Natal personalizado do Pai Natal. Indique o nome do destinatário e detalhes opcionais como a idade, algo que fez bem, um passatempo ou um desejo de Natal. Reveja a mensagem e depois crie um vídeo que pode descarregar e partilhar. O vídeo é gerado em inglês ou romeno.</p><p><a href="/pt/christmas/santa-video">Crie um vídeo personalizado do Pai Natal</a></p></section><section data-tdg-depth-section="Crie e Partilhe uma Lista de Desejos de Natal"><h2>Crie e Partilhe uma Lista de Desejos de Natal</h2><p>Construa uma lista de desejos de Natal com links de produtos ou desejos escritos livremente. Partilhe um único link simples com a família e amigos. Quem vê a lista pode reservar um presente para que ninguém compre o mesmo — sem revelar quem comprou à pessoa da lista.</p><p><a href="/pt/christmas/wishlist">Crie uma lista de desejos de Natal</a></p></section><section data-tdg-depth-section="Crie um Postal de Natal Personalizado"><h2>Crie um Postal de Natal Personalizado</h2><p>Combine uma fotografia, um design festivo e uma mensagem pessoal num postal de Natal que pode descarregar ou partilhar digitalmente. Use a sua própria fotografia ou um retrato de Natal que já tenha criado.</p><p><a href="/pt/christmas/cards">Crie um postal de Natal que vão querer guardar</a></p></section><section data-tdg-depth-section="Mais Experiências de Natal"><h2>Mais Experiências de Natal</h2><p>Também pode construir uma árvore de Natal digital com surpresas, abrir as portas do Advento durante dezembro e encontrar as palavras certas com o gerador de mensagens de Natal.</p><ul><li><a href="/pt/christmas/tree">Árvore de Natal Digital</a></li><li><a href="/pt/christmas/advent">Calendário do Advento</a></li><li><a href="/pt/christmas/messages">Mensagens de Natal</a></li></ul></section><section data-tdg-faq="true"><h2>Perguntas frequentes</h2><article><h3>O que posso criar para o Natal com TheDigitalGifter?</h3><p>Pode encontrar ideias de presentes, transformar fotos em retratos de Natal para famílias, casais e animais, iniciar a experiência do Pai Natal, criar uma lista de desejos partilhável, desenhar um cartão, escrever mensagens, decorar uma árvore digital e abrir surpresas do Advento. Escolha uma experiência nesta página e termine em minutos.</p></article><article><h3>O Pai Natal pode dizer o nome do meu filho?</h3><p>Pode começar pelo nome na página de Natal ou na experiência do Pai Natal e acrescentar detalhes opcionais. Os vídeos falados estão disponíveis hoje em inglês e romeno — outras línguas virão a seguir.</p></article><article><h3>Preciso de competências de design?</h3><p>Não. Cada experiência de Natal guia-o passo a passo — carregue uma foto, responda a algumas perguntas ou comece com um nome — e a página faz o resto.</p></article><article><h3>É para presentes digitais, físicos ou ambos?</h3><p>Ambos. Use o Localizador e a lista de desejos para comprar em qualquer lado, e crie retratos e cartões digitais para descarregar ou partilhar de imediato.</p></article><article><h3>Funciona no meu telemóvel?</h3><p>Sim — o hub de Natal e as experiências de produto foram pensados primeiro para telemóvel e também funcionam no computador.</p></article><article><h3>A foto da minha família é privada?</h3><p>Os envios são usados para criar o seu retrato ou cartão. As experiências para crianças são privacy-first e esperam um pai ou tutor. Quando o resultado estiver pronto, descarrega-o em privado — não publicamos as suas fotos.</p></article><article><h3>Quanto tempo demora a criar algo?</h3><p>A maioria das experiências demora poucos minutos. O Localizador e as mensagens são quase instantâneos. Retratos, cartões e Pai Natal guiam-no passo a passo; as criações pagas continuam após o checkout.</p></article><article><h3>Preciso de uma conta para começar?</h3><p>Pode explorar e começar de imediato. Algumas experiências pedem um e-mail no registo ou no pagamento para guardar o progresso, receber o resultado ou juntar-se ao Christmas Club.</p></article></section></div></div>
+  </body>
+</html>

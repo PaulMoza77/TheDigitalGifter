@@ -527,11 +527,13 @@ describe("entitlements are feature-mapped, not isPremium", () => {
     const ui = readSrc("src/features/christmas/planner/plannerUi.tsx");
     const unlock = readSrc("src/features/christmas/planner/FoundingPassUnlock.tsx");
     const budget = readSrc("src/features/christmas/planner/BudgetPage.tsx");
-    expect(ui).toContain("FoundingPassUnlockButton");
-    expect(ui).not.toMatch(/to=\{to\}/);
-    expect(ui).not.toContain("/christmas\"");
-    expect(unlock).toContain("founding_pass");
-    expect(unlock).toContain("Unlock your complete Christmas plan — $17 one-time");
+    const locked = ui.slice(ui.indexOf("export function PlannerLockedModule"), ui.indexOf("export function PlannerSnapshotRow"));
+    expect(locked).toContain("FoundingPassUnlockButton");
+    expect(locked).not.toContain("<Link");
+    expect(locked).not.toContain("#pricing");
+    expect(unlock).toContain("FOUNDING_PASS_PACKAGE_KEY");
+    expect(unlock).toContain("Unlock your complete Christmas plan");
+    expect(unlock).toContain("FOUNDING_PASS_PRICE_LABEL");
     expect(unlock).toContain("Christmas Planner launch access is opening soon.");
     expect(unlock).toContain('data-testid="founding-pass-unlock"');
     expect(unlock).not.toContain("navigate(");

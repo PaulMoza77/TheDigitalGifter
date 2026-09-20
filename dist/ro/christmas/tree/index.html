@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="ro">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Brad Digital de Crăciun | Cadouri, Mesaje și Amintiri</title>
+    <meta
+      name="description"
+      content="Construiește un brad digital de Crăciun plin de mesaje și amintiri, pe care îl poți decora și partaja în siguranță."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Brad Digital de Crăciun | Cadouri, Mesaje și Amintiri"
+    />
+    <meta
+      property="og:description"
+      content="Construiește un brad digital de Crăciun plin de mesaje și amintiri, pe care îl poți decora și partaja în siguranță."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/ro/christmas/tree" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Brad Digital de Crăciun | Cadouri, Mesaje și Amintiri"
+    />
+    <meta
+      name="twitter:description"
+      content="Construiește un brad digital de Crăciun plin de mesaje și amintiri, pe care îl poți decora și partaja în siguranță."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/ro/christmas/tree" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas/tree" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas/tree" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas/tree" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas/tree" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas/tree" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas/tree" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas/tree" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas/tree" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas/tree" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas/tree" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Acasă","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Crăciun","item":"https://www.thedigitalgifter.com/ro/christmas"},{"@type":"ListItem","position":3,"name":"Brad digital","item":"https://www.thedigitalgifter.com/ro/christmas/tree"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Brad Digital de Crăciun | Cadouri, Mesaje și Amintiri","description":"Construiește un brad digital de Crăciun plin de mesaje și amintiri, pe care îl poți decora și partaja în siguranță.","url":"https://www.thedigitalgifter.com/ro/christmas/tree","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"ro"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Ce este un brad digital de Crăciun?","acceptedAnswer":{"@type":"Answer","text":"Un brad de Crăciun interactiv, online, pe care îl personalizezi, îl umpli cu cadouri cu mesaj și îl partajezi, astfel încât cineva să le poată deschide pe propriul dispozitiv."}},{"@type":"Question","name":"Ce pot adăuga pe el?","acceptedAnswer":{"@type":"Answer","text":"Astăzi poți adăuga cutii cadou cu mesaje personale de Crăciun și poți alege stiluri festive de cutii."}},{"@type":"Question","name":"Pot să îl partajez cu cineva?","acceptedAnswer":{"@type":"Answer","text":"Da. Activează partajarea și trimite linkul. Tratează-l ca pe un link de cadou personal."}},{"@type":"Question","name":"Pot destinatarii să deschidă cadourile?","acceptedAnswer":{"@type":"Answer","text":"Da. Destinatarii pot atinge cadourile de sub brad pentru a descoperi mesajele pe care le-ai adăugat."}},{"@type":"Question","name":"Pot adăuga un video de la Moș Crăciun sau o fotografie de Crăciun sub brad?","acceptedAnswer":{"@type":"Answer","text":"Nu, ca tip de cadou dedicat, în creatorul actual de brad. Poți crea acele experiențe separat și le poți menționa într-un cadou cu mesaj."}},{"@type":"Question","name":"Am nevoie de un cont?","acceptedAnswer":{"@type":"Answer","text":"Poți începe să creezi un brad fără o configurare complicată — proprietatea este gestionată la nivelul sesiunii de creare, ca să poți continua să editezi."}},{"@type":"Question","name":"Bradul partajat este public?","acceptedAnswer":{"@type":"Answer","text":"Bradurile partajate sunt accesibile celor care au linkul, dar paginile de partajare sunt marcate noindex și nu sunt gândite pentru motoarele de căutare."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/ro/christmas/tree" data-locale="ro"><nav aria-label="Breadcrumb"><a href="/">Acasă</a> / <a href="/ro/christmas">Crăciun</a> / <a href="/ro/christmas/tree">Brad digital</a></nav><h1>Construiește un Brad de Crăciun Plin de Surprize</h1><p>Creează, decorează și partajează un brad digital de Crăciun personalizat, cu mesaje ascunse dedesubt.</p><h2>Combină cu alte cadouri de Crăciun</h2><ul><li><a href="/ro/christmas/wishlist">Creator de liste de dorințe</a></li><li><a href="/ro/christmas/gift-finder">Găsitor de cadouri de Crăciun</a></li><li><a href="/ro/christmas/messages">Generator de mesaje de Crăciun</a></li><li><a href="/ro/christmas">Acasă la Crăciun</a></li></ul><section data-tdg-geo="true"><h2>Ce este un brad digital de Crăciun?</h2><p>Un brad digital de Crăciun este un brad interactiv, online, pe care îl poți personaliza și partaja. Pe TheDigitalGifter alegi un look pentru brad, adaugi decorațiuni, așezi cutii cadou cu mesaje personale sub el și partajezi un link privat, astfel încât cineva drag să poată deschide cadourile pe ecranul propriu — fără ca pagina partajată să ajungă în rezultatele motoarelor de căutare.</p></section><section data-tdg-depth-section="Construiește un Brad Digital de Crăciun"><h2>Construiește un Brad Digital de Crăciun</h2><p>Creează gratuit un brad de Crăciun interactiv, direct în browser. Personalizează stilul (Clasic, Înzăpezit, Auriu, Cald, Minimalist sau Magic), luminițele, zăpada, vârful bradului și globurile, apoi așază cutii cadou dedesubt.</p></section><section data-tdg-depth-section="Ce Poți Pune Sub Bradul Tău?"><h2>Ce Poți Pune Sub Bradul Tău?</h2><p>Astăzi poți adăuga cutii cadou care conțin mesaje personale de Crăciun. Fiecare cadou poate folosi un stil de cutie festiv, precum roșu, auriu, verde, albastru sau alb ca zăpada. Alte tipuri de cadou se pot adăuga în viitor — creatorul actual se concentrează pe cadouri cu mesaj.</p><ul><li>Mesaje personale de Crăciun, în cutii cadou</li><li>Stiluri festive de cutii (roșu, auriu, verde, albastru, alb ca zăpada)</li></ul></section><section data-tdg-depth-section="Partajează Bradul Tău de Crăciun"><h2>Partajează Bradul Tău de Crăciun</h2><p>Când ești gata, activează partajarea și trimite un singur link. Destinatarii deschid bradul, văd decorațiunile și despachetează cadourile. Linkurile de brad partajate sunt gândite pentru oamenii în care ai încredere și nu sunt indexate pentru motoarele de căutare.</p></section><section data-tdg-depth-section="Un Cadou de Crăciun Gândit să Fie Deschis"><h2>Un Cadou de Crăciun Gândit să Fie Deschis</h2><p>Destinatarii pot atinge cadourile de sub brad pentru a descoperi mesajele pe care le-ai lăsat — un moment digital gândit să semene cu deschiderea unui cadou lăsat special pentru ei.</p></section><section data-tdg-depth-section="Cum Funcționează"><h2>Cum Funcționează</h2><p>Un drum simplu, de la un brad gol până la o surpriză de Crăciun gata de partajat.</p><ul><li>Creează și personalizează bradul digital de Crăciun</li><li>Adaugă cutii cadou cu mesaje</li><li>Activează partajarea și trimite linkul</li><li>Ei deschid cadourile de sub brad</li></ul></section><section data-tdg-depth-section="Mai Multă Magie de Crăciun"><h2>Mai Multă Magie de Crăciun</h2><p>Combină bradul tău cu alte creații de Crăciun, atunci când vrei ceva în plus pentru atmosfera de sărbătoare.</p><ul><li><a href="/ro/christmas">Hub de Crăciun</a></li><li><a href="/ro/christmas/santa-video">Video personalizat de la Moș Crăciun</a></li><li><a href="/ro/christmas/advent">Calendar de Advent online</a></li></ul></section><section data-tdg-faq="true"><h2>Întrebări frecvente</h2><article><h3>Ce este un brad digital de Crăciun?</h3><p>Un brad de Crăciun interactiv, online, pe care îl personalizezi, îl umpli cu cadouri cu mesaj și îl partajezi, astfel încât cineva să le poată deschide pe propriul dispozitiv.</p></article><article><h3>Ce pot adăuga pe el?</h3><p>Astăzi poți adăuga cutii cadou cu mesaje personale de Crăciun și poți alege stiluri festive de cutii.</p></article><article><h3>Pot să îl partajez cu cineva?</h3><p>Da. Activează partajarea și trimite linkul. Tratează-l ca pe un link de cadou personal.</p></article><article><h3>Pot destinatarii să deschidă cadourile?</h3><p>Da. Destinatarii pot atinge cadourile de sub brad pentru a descoperi mesajele pe care le-ai adăugat.</p></article><article><h3>Pot adăuga un video de la Moș Crăciun sau o fotografie de Crăciun sub brad?</h3><p>Nu, ca tip de cadou dedicat, în creatorul actual de brad. Poți crea acele experiențe separat și le poți menționa într-un cadou cu mesaj.</p></article><article><h3>Am nevoie de un cont?</h3><p>Poți începe să creezi un brad fără o configurare complicată — proprietatea este gestionată la nivelul sesiunii de creare, ca să poți continua să editezi.</p></article><article><h3>Bradul partajat este public?</h3><p>Bradurile partajate sunt accesibile celor care au linkul, dar paginile de partajare sunt marcate noindex și nu sunt gândite pentru motoarele de căutare.</p></article></section></div></div>
+  </body>
+</html>

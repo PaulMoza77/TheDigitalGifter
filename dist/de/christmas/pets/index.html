@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Weihnachtsfoto-Generator für Haustiere | Festliche Tierporträts</title>
+    <meta
+      name="description"
+      content="Verwandle das Foto deines Haustiers in ein festliches Weihnachtsporträt. Hunde und Katzen willkommen — standardmäßig privat."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Weihnachtsfoto-Generator für Haustiere | Festliche Tierporträts"
+    />
+    <meta
+      property="og:description"
+      content="Verwandle das Foto deines Haustiers in ein festliches Weihnachtsporträt. Hunde und Katzen willkommen — standardmäßig privat."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/de/christmas/pets" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Weihnachtsfoto-Generator für Haustiere | Festliche Tierporträts"
+    />
+    <meta
+      name="twitter:description"
+      content="Verwandle das Foto deines Haustiers in ein festliches Weihnachtsporträt. Hunde und Katzen willkommen — standardmäßig privat."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/de/christmas/pets" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas/pets" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas/pets" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas/pets" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas/pets" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas/pets" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas/pets" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas/pets" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas/pets" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas/pets" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas/pets" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Startseite","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Weihnachten","item":"https://www.thedigitalgifter.com/de/christmas"},{"@type":"ListItem","position":3,"name":"Foto-Generator","item":"https://www.thedigitalgifter.com/de/christmas/photo-generator"},{"@type":"ListItem","position":4,"name":"Haustiere","item":"https://www.thedigitalgifter.com/de/christmas/pets"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Weihnachtsfoto-Generator für Haustiere | Festliche Tierporträts","description":"Verwandle das Foto deines Haustiers in ein festliches Weihnachtsporträt. Hunde und Katzen willkommen — standardmäßig privat.","url":"https://www.thedigitalgifter.com/de/christmas/pets","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"de"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Kann ich ein Weihnachtsporträt meines Hundes erstellen?","acceptedAnswer":{"@type":"Answer","text":"Ja. Starte hier oder gehe zur eigenen Seite für Hunde-Weihnachtsporträts für einen hundespezifischen Weg."}},{"@type":"Question","name":"Kann ich eines für meine Katze erstellen?","acceptedAnswer":{"@type":"Answer","text":"Ja. Nutze diese Haustiere-Seite oder die eigene Seite für Katzen-Weihnachtsporträts."}},{"@type":"Question","name":"Kann ich mehr als ein Haustier einbeziehen?","acceptedAnswer":{"@type":"Answer","text":"Wenn mehrere Tiere auf einem Foto gut sichtbar sind, kannst du dieses Foto verwenden. Die Ergebnisse sind am besten, wenn das Gesicht jedes Tieres gut erkennbar ist."}},{"@type":"Question","name":"Kann ich mich selbst mit meinem Haustier einbeziehen?","acceptedAnswer":{"@type":"Answer","text":"Dieser Weg ist darauf ausgelegt, das Haustier im Mittelpunkt zu haben. Für Familienbilder mit Mensch und Tier ist das Familien-Weihnachtserlebnis oft der bessere Einstieg."}},{"@type":"Question","name":"Welche Fotos funktionieren am besten?","acceptedAnswer":{"@type":"Answer","text":"Klare Haustierfotos mit gut sichtbaren Augen und Gesicht, guter Beleuchtung und wenig Unschärfe."}},{"@type":"Question","name":"Kann ich das Bild herunterladen?","acceptedAnswer":{"@type":"Answer","text":"Ja. Lade es über den Ergebnisbildschirm herunter, wenn dein Haustierporträt fertig ist."}},{"@type":"Question","name":"Kann ich es für eine Weihnachtskarte verwenden?","acceptedAnswer":{"@type":"Answer","text":"Ja. Die Übergabe des Porträts in den Weihnachtskarten-Ersteller wird unterstützt."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/de/christmas/pets" data-locale="de"><nav aria-label="Breadcrumb"><a href="/">Startseite</a> / <a href="/de/christmas">Weihnachten</a> / <a href="/de/christmas/photo-generator">Foto-Generator</a> / <a href="/de/christmas/pets">Haustiere</a></nav><h1>Verwandle dein Haustier in Weihnachtsmagie</h1><p>Lade ein klares Foto deines Haustiers hoch und erstelle ein festliches Weihnachts-Tierporträt für Hunde oder Katzen.</p><h2>Tierartspezifische Weihnachtsporträts</h2><ul><li><a href="/de/christmas/dogs">Weihnachtsporträts für Hunde</a></li><li><a href="/de/christmas/cats">Weihnachtsporträts für Katzen</a></li><li><a href="/de/christmas/photo-generator">KI-Weihnachtsfoto-Generator</a></li><li><a href="/de/christmas">Weihnachten Startseite</a></li></ul><section data-tdg-geo="true"><h2>Was ist ein Weihnachtsfoto-Generator für Haustiere?</h2><p>Ein Weihnachtsfoto-Generator für Haustiere verwandelt das Foto eines Hundes, einer Katze oder eines anderen Haustiers in ein festliches Weihnachts-Tierporträt. Bei TheDigitalGifter ist die Haustiere-Seite die zentrale Anlaufstelle für tierische Weihnachtsporträts, mit eigenen Wegen für Hunde und Katzen, herunterladbaren Ergebnissen und der optionalen Übergabe in eine Weihnachtskarte.</p></section><section data-tdg-depth-section="Verwandle dein Haustier in Weihnachtsmagie"><h2>Verwandle dein Haustier in Weihnachtsmagie</h2><p>Lade ein klares Foto deines Haustiers hoch, wähle einen Weihnachtsstil für Tiere und erstelle ein festliches Porträt des Tieres, das du liebst. Dies ist die allgemeine Anlaufstelle für Haustiere — kein spezielles Comic-Set.</p></section><section data-tdg-depth-section="Weihnachtsporträts für Hunde und Katzen"><h2>Weihnachtsporträts für Hunde und Katzen</h2><p>Möchtest du einen klareren Einstieg für eine Tierart? Nutze die spezialisierten Wege für Hund oder Katze — sie helfen bei der Fotoprüfung und halten das Erlebnis hund- oder katzenspezifisch.</p><ul><li><a href="/de/christmas/dogs">Weihnachtsfoto-Generator für Hunde</a></li><li><a href="/de/christmas/cats">Weihnachtsfoto-Generator für Katzen</a></li></ul></section><section data-tdg-depth-section="Beispiele für Haustier-Weihnachtsfotos"><h2>Beispiele für Haustier-Weihnachtsfotos</h2><p>Demo-Richtungen für Weihnachtsporträts von Haustieren. Die Beispiele sind Inspiration, keine Kundenfotos.</p><ul><li>Hunde-Weihnachtsporträt in festlicher Szene</li><li>Katzen-Weihnachtsporträt am Baum oder am Kamin</li><li>Gemütlicher Pullover- oder Weihnachtsmann-inspirierter Tierstil</li></ul></section><section data-tdg-depth-section="Weihnachtsstile für Haustiere"><h2>Weihnachtsstile für Haustiere</h2><p>Aktuell verfügbare Tierstile sind Weihnachtsmann-Haustier, Gemütliche Weihnacht, Nordpol, Weihnachtspullover, Schneeporträt, Weihnachtskarte, Königliche Weihnacht und Vintage-Weihnacht.</p></section><section data-tdg-depth-section="Welche Haustierfotos funktionieren am besten?"><h2>Welche Haustierfotos funktionieren am besten?</h2><p>Wähle ein klares Foto, auf dem Gesicht und Augen des Haustiers gut sichtbar sind, mit ordentlicher Beleuchtung und ohne starke Unschärfe. Sollen mehrere Tiere erscheinen, achte darauf, dass jedes Tier auf dem Foto sichtbar ist.</p></section><section data-tdg-depth-section="Weihnachtskarten mit Haustieren"><h2>Weihnachtskarten mit Haustieren</h2><p>Du kannst ein fertiges Haustierporträt in den Weihnachtskarten-Ersteller mitnehmen.</p><p><a href="/de/christmas/cards">Verwandle dein Haustierporträt in eine Weihnachtskarte</a></p></section><section data-tdg-faq="true"><h2>Häufig gestellte Fragen</h2><article><h3>Kann ich ein Weihnachtsporträt meines Hundes erstellen?</h3><p>Ja. Starte hier oder gehe zur eigenen Seite für Hunde-Weihnachtsporträts für einen hundespezifischen Weg.</p></article><article><h3>Kann ich eines für meine Katze erstellen?</h3><p>Ja. Nutze diese Haustiere-Seite oder die eigene Seite für Katzen-Weihnachtsporträts.</p></article><article><h3>Kann ich mehr als ein Haustier einbeziehen?</h3><p>Wenn mehrere Tiere auf einem Foto gut sichtbar sind, kannst du dieses Foto verwenden. Die Ergebnisse sind am besten, wenn das Gesicht jedes Tieres gut erkennbar ist.</p></article><article><h3>Kann ich mich selbst mit meinem Haustier einbeziehen?</h3><p>Dieser Weg ist darauf ausgelegt, das Haustier im Mittelpunkt zu haben. Für Familienbilder mit Mensch und Tier ist das Familien-Weihnachtserlebnis oft der bessere Einstieg.</p></article><article><h3>Welche Fotos funktionieren am besten?</h3><p>Klare Haustierfotos mit gut sichtbaren Augen und Gesicht, guter Beleuchtung und wenig Unschärfe.</p></article><article><h3>Kann ich das Bild herunterladen?</h3><p>Ja. Lade es über den Ergebnisbildschirm herunter, wenn dein Haustierporträt fertig ist.</p></article><article><h3>Kann ich es für eine Weihnachtskarte verwenden?</h3><p>Ja. Die Übergabe des Porträts in den Weihnachtskarten-Ersteller wird unterstützt.</p></article></section></div></div>
+  </body>
+</html>

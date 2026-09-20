@@ -223,8 +223,7 @@ describe("christmas budget engine", () => {
   });
 
   it("marks over-budget when spent plus planned exceeds the total", () => {
-    const totals = computeBudgetTotals(
-      snap({
+    const snapshot = snap({
         profile: { total_budget_minor: 10000 },
         gifts: [gift({ id: "g1", status: "ordered", actual_price_minor: 8000 })],
         budgetEntries: [
@@ -238,13 +237,11 @@ describe("christmas budget engine", () => {
             source_type: "manual",
           },
         ],
-      }),
-    );
+      });
+    const totals = computeBudgetTotals(snapshot);
     expect(totals.overForecastMinor).toBe(2000);
     expect(totals.remainingMinor).toBe(-2000);
-    expect(collectBudgetCopy(snap({ profile: { total_budget_minor: 10000 } }), totals).some((line) => line.includes("over"))).toBe(
-      true,
-    );
+    expect(collectBudgetCopy(snapshot, totals).some((line) => line.includes("over"))).toBe(true);
   });
 
   it("uses the planner currency and never mixes a different gift currency", () => {

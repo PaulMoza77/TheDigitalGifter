@@ -1,0 +1,395 @@
+<!doctype html>
+<html dir="ltr" lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <script>
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas";
+      })();
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      gtag("consent", "default", {
+        analytics_storage: "granted",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        wait_for_update: 500
+      });
+
+      function __tdgLoadGtag() {
+        if (window.__TDG_GTAG_LOADED__) return;
+        window.__TDG_GTAG_LOADED__ = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
+        document.head.appendChild(s);
+        gtag("js", new Date());
+        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+      }
+      if (window.__TDG_DEFER_ANALYTICS__) {
+        window.addEventListener("load", function () {
+          setTimeout(__tdgLoadGtag, 1800);
+        });
+      } else {
+        __tdgLoadGtag();
+      }
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        function boot() {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(boot, 2200);
+          });
+        } else {
+          boot();
+        }
+      })(window, document, "clarity", "script", "y3y98n4wks");
+    </script>
+
+    <title>Creador de Listas de Deseos de Navidad | Crea y Comparte tu Lista</title>
+    <meta
+      name="description"
+      content="Crea una lista de deseos navideña, añade regalos de cualquier tienda y comparte un único enlace con familiares y amigos."
+    />
+    <meta
+      name="keywords"
+      content="AI Christmas cards, AI holiday photos, personalized cards, family portrait generator, The Digital Gifter"
+    />
+    <meta name="author" content="TheDigitalGifter" />
+    <meta name="theme-color" content="#0b1220" />
+
+    <meta
+      property="og:title"
+      content="Creador de Listas de Deseos de Navidad | Crea y Comparte tu Lista"
+    />
+    <meta
+      property="og:description"
+      content="Crea una lista de deseos navideña, añade regalos de cualquier tienda y comparte un único enlace con familiares y amigos."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thedigitalgifter.com/es/christmas/wishlist" />
+    <meta property="og:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+    <meta property="og:site_name" content="TheDigitalGifter" />
+    <meta
+      property="og:image:alt"
+      content="TheDigitalGifter — AI-generated holiday cards"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheDigitalGifter" />
+    <meta
+      name="twitter:title"
+      content="Creador de Listas de Deseos de Navidad | Crea y Comparte tu Lista"
+    />
+    <meta
+      name="twitter:description"
+      content="Crea una lista de deseos navideña, añade regalos de cualquier tienda y comparte un único enlace con familiares y amigos."
+    />
+    <meta name="twitter:image" content="https://www.thedigitalgifter.com/og-preview.png" />
+
+    <meta
+      name="google-site-verification"
+      content="rDTVDbxy29jSeNGqA0unaw5XHuGTyF-6lXDH26dkmF4"
+    />
+
+    <link rel="canonical" href="https://www.thedigitalgifter.com/es/christmas/wishlist" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="TheDigitalGifter" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+
+    <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/christmas") return;
+        window.__TDG_CHRISTMAS_BOOT__ = true;
+        document.documentElement.style.background = "#0b0504";
+        document.documentElement.style.colorScheme = "dark";
+
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+
+        add("preload", {
+          as: "style",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          "data-cc-boot": "fonts-preload",
+        });
+        add("stylesheet", {
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap",
+          id: "christmas-club-fonts",
+        });
+
+        var wide = window.matchMedia("(min-width: 901px)").matches;
+        var heroStill = wide
+          ? "/christmas/cabin-hero-1920.webp"
+          : "/christmas/cabin-hero-1280.webp";
+        add("preload", {
+          as: "image",
+          type: "image/webp",
+          href: heroStill,
+          imagesrcset:
+            "/christmas/cabin-hero-1280.webp 1280w, /christmas/cabin-hero-1920.webp 1920w, /christmas/cabin-hero-2560.webp 2560w",
+          imagesizes: "100vw",
+          fetchpriority: "high",
+          "data-cc-preload": "hero",
+        });
+        add("preload", {
+          as: "video",
+          href: wide
+            ? "/christmas/cabin-hero-loop.mp4?v=seedance1"
+            : "/christmas/cabin-hero-loop-720.mp4?v=seedance1",
+          "data-cc-preload": "loop",
+        });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "cc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#0b0504}" +
+          "#cc-boot{position:fixed;inset:0;z-index:0;pointer-events:none;" +
+          "background:#0b0504 url(" +
+          heroStill +
+          ") " +
+          (wide ? "center" : "72% 42%") +
+          "/cover no-repeat}" +
+          "#cc-boot::after{content:'';position:absolute;inset:0;" +
+          "background:linear-gradient(180deg,rgba(8,3,2,.34) 0%,rgba(8,3,2,.08) 28%,rgba(8,3,2,.28) 58%,rgba(8,3,2,.78) 100%)," +
+          "linear-gradient(90deg,rgba(8,3,2,.42) 0%,transparent 34%,transparent 66%,rgba(8,3,2,.28) 100%)}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("cc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "cc-boot";
+          boot.setAttribute("aria-hidden", "true");
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "description": "Create beautiful, personalized AI-generated holiday cards and memories",
+        "sameAs": [
+          "https://www.facebook.com/thedigitalgifter",
+          "https://twitter.com/thedigitalgifter"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@thedigitalgifter.com"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.thedigitalgifter.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "AI Holiday Card Generator",
+        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
+        "provider": {
+          "@type": "Organization",
+          "name": "TheDigitalGifter"
+        },
+        "areaServed": "Worldwide",
+        "priceRange": "$5 - $50",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "5.00"
+        }
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Create AI Holiday Cards with TheDigitalGifter",
+        "description": "4 simple steps to create personalized AI-generated holiday cards",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Choose Template",
+            "text": "Pick from our festive collection of holiday card templates",
+            "position": "1"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Add Your Touch",
+            "text": "Upload photos and customize text to personalize your card",
+            "position": "2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "AI Magic",
+            "text": "Our AI perfects the design automatically",
+            "position": "3"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download & Share",
+            "text": "Get your beautiful Christmas card ready for download",
+            "position": "4"
+          }
+        ]
+      }
+    </script>
+
+    <meta name="robots" content="index,follow" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <script>
+      (function () {
+        function bootFbq() {
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = "2.0";
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(
+            window,
+            document,
+            "script",
+            "https://connect.facebook.net/en_US/fbevents.js"
+          );
+
+          fbq("init", "1581639566935542");
+          fbq("track", "PageView");
+        }
+        if (window.__TDG_DEFER_ANALYTICS__) {
+          window.addEventListener("load", function () {
+            setTimeout(bootFbq, 2500);
+          });
+        } else {
+          bootFbq();
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BX8q4XZM.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B0NtJXx3.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CcVX3a_9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-C3HhMKPG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CbaRCeZ3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CdxvZa8r.css">
+      <link rel="alternate" hreflang="en" href="https://www.thedigitalgifter.com/christmas/wishlist" />
+    <link rel="alternate" hreflang="ro" href="https://www.thedigitalgifter.com/ro/christmas/wishlist" />
+    <link rel="alternate" hreflang="de" href="https://www.thedigitalgifter.com/de/christmas/wishlist" />
+    <link rel="alternate" hreflang="fr" href="https://www.thedigitalgifter.com/fr/christmas/wishlist" />
+    <link rel="alternate" hreflang="es" href="https://www.thedigitalgifter.com/es/christmas/wishlist" />
+    <link rel="alternate" hreflang="it" href="https://www.thedigitalgifter.com/it/christmas/wishlist" />
+    <link rel="alternate" hreflang="pt-PT" href="https://www.thedigitalgifter.com/pt/christmas/wishlist" />
+    <link rel="alternate" hreflang="nl" href="https://www.thedigitalgifter.com/nl/christmas/wishlist" />
+    <link rel="alternate" hreflang="pl" href="https://www.thedigitalgifter.com/pl/christmas/wishlist" />
+    <link rel="alternate" hreflang="x-default" href="https://www.thedigitalgifter.com/christmas/wishlist" />
+  
+    <script type="application/ld+json" data-tdg-seo="breadcrumb">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://www.thedigitalgifter.com/"},{"@type":"ListItem","position":2,"name":"Navidad","item":"https://www.thedigitalgifter.com/es/christmas"},{"@type":"ListItem","position":3,"name":"Lista de deseos","item":"https://www.thedigitalgifter.com/es/christmas/wishlist"}]}</script>
+    <script type="application/ld+json" data-tdg-seo="webpage">{"@context":"https://schema.org","@type":"WebPage","name":"Creador de Listas de Deseos de Navidad | Crea y Comparte tu Lista","description":"Crea una lista de deseos navideña, añade regalos de cualquier tienda y comparte un único enlace con familiares y amigos.","url":"https://www.thedigitalgifter.com/es/christmas/wishlist","isPartOf":{"@type":"WebSite","name":"TheDigitalGifter","url":"https://www.thedigitalgifter.com"},"inLanguage":"es"}</script>
+    <script type="application/ld+json" data-tdg-seo="faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"¿Cómo creo una lista de deseos de Navidad?","acceptedAnswer":{"@type":"Answer","text":"Abre la página de la lista de deseos navideña, elige un título y crea tu lista. Luego añade deseos al momento."}},{"@type":"Question","name":"¿Puedo añadir regalos de cualquier tienda?","acceptedAnswer":{"@type":"Answer","text":"Sí. Pega el enlace normal de un producto, o añade el regalo manualmente si la página no se puede leer automáticamente."}},{"@type":"Question","name":"¿Puedo añadir deseos sin un enlace?","acceptedAnswer":{"@type":"Answer","text":"Sí. Escribe cualquier deseo — experiencias, ideas hechas a mano o un simple «Sorpréndeme»."}},{"@type":"Question","name":"¿Puedo compartir un único enlace de la lista?","acceptedAnswer":{"@type":"Answer","text":"Sí. Activa la opción de compartir y envía el enlace a familiares y amigos."}},{"@type":"Question","name":"¿Pueden reservar regalos las personas que la ven?","acceptedAnswer":{"@type":"Answer","text":"Sí. Quien la vea puede reservar un regalo para que los demás sepan que ya está cubierto."}},{"@type":"Question","name":"¿Sabré quién compró algo?","acceptedAnswer":{"@type":"Answer","text":"No. Las reservas se mantienen anónimas para que la sorpresa se conserve."}},{"@type":"Question","name":"¿Puedo crear una para mi hijo?","acceptedAnswer":{"@type":"Answer","text":"Sí. Elige para quién es la lista al crearla y luego comparte el enlace con la familia."}},{"@type":"Question","name":"¿Puedo editarla después de compartirla?","acceptedAnswer":{"@type":"Answer","text":"Sí. Añade, edita, reordena o elimina deseos cuando quieras. Quien tenga el enlace verá los cambios."}}]}</script>
+  </head>
+
+  <body>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
+      />
+    </noscript>
+
+    <div id="root"><div id="tdg-christmas-seo" data-tdg-seo="christmas" data-tdg-depth="p3b" data-path="/es/christmas/wishlist" data-locale="es"><nav aria-label="Breadcrumb"><a href="/">Inicio</a> / <a href="/es/christmas">Navidad</a> / <a href="/es/christmas/wishlist">Lista de deseos</a></nav><h1>Crea una lista de deseos navideña y comparte un único enlace</h1><p>Monta una lista de deseos navideña en pocos minutos. Añade regalos de cualquier tienda o escribe tus propios deseos, y envía un único enlace a familiares y amigos.</p><h2>Cómo funciona</h2><p>Crea tu lista, añade deseos, comparte un enlace y deja que coordinen los regalos sin arruinar la sorpresa.</p><ul><li><a href="/es/christmas/gift-finder">Prueba el buscador de regalos de Navidad</a></li><li><a href="/es/christmas/tree">Pon regalos bajo un árbol de Navidad digital</a></li><li><a href="/es/christmas/photo-generator">Añade un retrato navideño</a></li><li><a href="/es/christmas">Volver a Navidad</a></li></ul><section data-tdg-geo="true"><h2>¿Qué es una lista de deseos de Navidad online?</h2><p>Una lista de deseos de Navidad online es una lista de regalos o experiencias que a alguien le gustaría recibir, lista para compartir. En TheDigitalGifter creas una lista, añades deseos a partir de enlaces de productos o texto libre, compartes un único enlace con familiares y amigos, y dejas que reserven regalos para que las compras queden coordinadas sin arruinar la sorpresa.</p></section><section data-tdg-depth-section="Crea una lista de deseos de Navidad online"><h2>Crea una lista de deseos de Navidad online</h2><p>Ponle nombre a tu lista, añade deseos y ten cada idea navideña en un solo lugar en lugar de repartida en distintos chats. Puedes empezar rápido y seguir editando cuando quieras.</p></section><section data-tdg-depth-section="Añade cualquier cosa que desees"><h2>Añade cualquier cosa que desees</h2><p>Pega la URL de un producto de casi cualquier tienda, escribe un deseo manualmente, añade notas e incluye experiencias o ideas hechas a mano. Si un enlace no se puede leer automáticamente, aún puedes guardar el deseo escribiéndolo tú mismo.</p></section><section data-tdg-depth-section="Comparte un único enlace sencillo"><h2>Comparte un único enlace sencillo</h2><p>Activa la opción de compartir y envía un único enlace de tu lista por copiar y pegar, WhatsApp, correo electrónico o el panel de compartir de tu dispositivo. Las listas compartidas son accesibles para quien tenga el enlace y no están pensadas para aparecer en buscadores.</p></section><section data-tdg-depth-section="Evita regalos de Navidad repetidos"><h2>Evita regalos de Navidad repetidos</h2><p>Quien vea la lista puede pulsar «Yo lo compro» para reservar un regalo. Las reservas se mantienen anónimas para el dueño de la lista, así que la sorpresa se mantiene intacta y la familia evita comprar lo mismo dos veces.</p></section><section data-tdg-depth-section="Listas de deseos navideñas para niños y familias"><h2>Listas de deseos navideñas para niños y familias</h2><p>Crea una lista para ti, para tu hijo o para otra persona, y compártela con abuelos y amigos. Combínala con el buscador de regalos cuando no sepas qué pedir.</p><p><a href="/es/christmas/gift-finder">Prueba el buscador de regalos de Navidad</a></p></section><section data-tdg-faq="true"><h2>Preguntas frecuentes</h2><article><h3>¿Cómo creo una lista de deseos de Navidad?</h3><p>Abre la página de la lista de deseos navideña, elige un título y crea tu lista. Luego añade deseos al momento.</p></article><article><h3>¿Puedo añadir regalos de cualquier tienda?</h3><p>Sí. Pega el enlace normal de un producto, o añade el regalo manualmente si la página no se puede leer automáticamente.</p></article><article><h3>¿Puedo añadir deseos sin un enlace?</h3><p>Sí. Escribe cualquier deseo — experiencias, ideas hechas a mano o un simple «Sorpréndeme».</p></article><article><h3>¿Puedo compartir un único enlace de la lista?</h3><p>Sí. Activa la opción de compartir y envía el enlace a familiares y amigos.</p></article><article><h3>¿Pueden reservar regalos las personas que la ven?</h3><p>Sí. Quien la vea puede reservar un regalo para que los demás sepan que ya está cubierto.</p></article><article><h3>¿Sabré quién compró algo?</h3><p>No. Las reservas se mantienen anónimas para que la sorpresa se conserve.</p></article><article><h3>¿Puedo crear una para mi hijo?</h3><p>Sí. Elige para quién es la lista al crearla y luego comparte el enlace con la familia.</p></article><article><h3>¿Puedo editarla después de compartirla?</h3><p>Sí. Añade, edita, reordena o elimina deseos cuando quieras. Quien tenga el enlace verá los cambios.</p></article></section></div></div>
+  </body>
+</html>

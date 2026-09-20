@@ -252,14 +252,12 @@ export function computeBudgetTotals(snapshot: PlannerSnapshot): BudgetTotals {
 export function collectBudgetCopy(snapshot: PlannerSnapshot, totals = computeBudgetTotals(snapshot)): string[] {
   const currency = snapshot.currency;
   const lines: string[] = [];
-  if (totals.remainingAfterSpendMinor != null) {
-    if (totals.remainingAfterSpendMinor >= 0) {
-      lines.push(`You have ${formatPlannerMoney(totals.remainingAfterSpendMinor, currency)} left.`);
-    } else {
-      lines.push(
-        `You’re ${formatPlannerMoney(Math.abs(totals.remainingAfterSpendMinor), currency)} over your Christmas budget — easy to ease back.`,
-      );
-    }
+  if (totals.overForecastMinor > 0) {
+    lines.push(
+      `You’re ${formatPlannerMoney(totals.overForecastMinor, currency)} over your Christmas budget — easy to ease back.`,
+    );
+  } else if (totals.remainingAfterSpendMinor != null && totals.remainingAfterSpendMinor >= 0) {
+    lines.push(`You have ${formatPlannerMoney(totals.remainingAfterSpendMinor, currency)} left.`);
   }
   const gifts = totals.categoryRows.find((r) => r.category === "gifts");
   if (gifts && gifts.budgetMinor > 0) {
