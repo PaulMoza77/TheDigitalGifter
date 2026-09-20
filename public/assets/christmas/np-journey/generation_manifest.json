@@ -1,0 +1,481 @@
+{
+  "created_at": "2026-09-20T20:45:27.946714+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 3.08,
+  "regenerations": 0,
+  "clips": [
+    {
+      "id": "npj_01_train_window",
+      "title": "Magical train window",
+      "source_image": "np_journey_train_window_girl.jpg",
+      "job_id": "c02def6a-0f61-442e-811a-73da660f0125",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas night. This exact photograph comes alive for five seconds. Preserve the child in the red knit hat leaning from the lantern-lit red carriage, pine garland, warm string lights, steam locomotive, red passenger cars, stone viaduct, moon, snowy pines, and alpine village exactly as in the first frame. The train moves genuinely forward along the viaduct with physically correct wheel rotation. Thick steam billows from the stack and drifts naturally. Snow falls with depth and parallax. Coach lights flicker extremely subtly. Hair and knit hat react slightly to wind. Very gentle camera track along the carriage. Do not overanimate the child's face or hands. Architecture stays rigid. No extra cars or warped wheels. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_01_train_window.mp4",
+      "probe": {
+        "filename": "npj_01_train_window.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_01_train_window.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 34742251,
+        "size": 21894858
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_01_train_window_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_01_train_window_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_01_train_window_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:49:28.627835+00:00"
+    },
+    {
+      "id": "npj_02_station",
+      "title": "North Pole Express station",
+      "source_image": "np_journey_north_pole_express_station.jpg",
+      "job_id": "596d6bd3-fbee-4a3d-98fe-e248fbb7d637",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas night at a station. This exact photograph comes alive for five seconds. Preserve the NORTH POLE EXPRESS sign, PLATFORM 1 plaque, clock, wreath-lit locomotive headlights, red carriages, child with backpack and suitcase, wet platform, luggage, and falling snow exactly as framed. The locomotive eases slowly forward a few meters with natural steam and wheel rotation. Headlights glow steadily. Sparse snow. Distant passengers take tiny natural steps. Clock hands stay readable. Sign lettering does not warp. Child remains mostly still with a subtle breath and coat shift \u2014 no face morphing, no extra limbs. Gentle cinematic push toward the train. Architecture stays rigid. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_02_station.mp4",
+      "probe": {
+        "filename": "npj_02_station.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_02_station.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 33624778,
+        "size": 21190617
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_02_station_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_02_station_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_02_station_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:49:33.227428+00:00"
+    },
+    {
+      "id": "npj_03_aurora_window",
+      "title": "Aurora from the train",
+      "source_image": "np_journey_aurora_from_train.jpg",
+      "job_id": "51960e8a-c531-4a6c-a3b9-81ea550873ab",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas night. This exact photograph comes alive for five seconds. Preserve the red train on the stone viaduct, warm carriage windows, steam, alpine village, lake, mountains, and green-purple aurora exactly as in the first frame. The train advances along the tracks with correct motion. Steam drifts. Aurora slowly ripples across the sky. Snow falls with parallax. Village lights twinkle very softly. Slow dolly along the viaduct railing. Architecture and arches stay rigid. No warped train geometry. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_03_aurora_window.mp4",
+      "probe": {
+        "filename": "npj_03_aurora_window.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_03_aurora_window.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 35249393,
+        "size": 22214463
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_03_aurora_window_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_03_aurora_window_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_03_aurora_window_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:49:37.887053+00:00"
+    },
+    {
+      "id": "npj_04_viaduct_wide",
+      "title": "Train on aurora viaduct",
+      "source_image": "np_journey_viaduct_aurora_wide.jpg",
+      "job_id": "9a22f8b1-a64f-4e7b-8863-51818e306af4",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas night. This exact photograph comes alive for five seconds. Preserve the steam locomotive, red carriages, high stone viaduct arches, frozen river, snowy pines, village lights, mountains, and aurora exactly as framed. The train travels forward across the viaduct with physically correct motion and natural steam. Aurora slowly moves. Snow falls with depth. Headlamp beam stays attached to the locomotive. Very slow cinematic push with slight tracking. Pines stay solid. No melting arches, no extra locomotives. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_04_viaduct_wide.mp4",
+      "probe": {
+        "filename": "npj_04_viaduct_wide.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_04_viaduct_wide.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 38073418,
+        "size": 23994187
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_04_viaduct_wide_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_04_viaduct_wide_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_04_viaduct_wide_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:49:42.683662+00:00"
+    },
+    {
+      "id": "npj_05_village_arrival",
+      "title": "North Pole Santa Village",
+      "source_image": "np_journey_santa_village_arrival.jpg",
+      "job_id": "31aec96a-0dd7-4494-b01b-60c8d51cc7f4",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 North Pole night. This exact photograph comes alive for five seconds. Preserve the child with backpack, lantern-lit train at left, NORTH POLE SANTA VILLAGE arch, wooden destination signs, elves, reindeer, clock-tower palace, giant Christmas tree, and aurora. Gentle walk-forward energy: the traveler is mostly still with a subtle coat shift. Elves take small believable steps carrying gifts. Reindeer make a tiny natural head movement. Lanterns flicker softly. Snow falls. Arch lettering stays readable and unwarped. Slow cinematic push through the lane. Do not morph faces or add extra limbs. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_05_village_arrival.mp4",
+      "probe": {
+        "filename": "npj_05_village_arrival.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_05_village_arrival.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 34825919,
+        "size": 21947586
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_05_village_arrival_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_05_village_arrival_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_05_village_arrival_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:49:47.297213+00:00"
+    },
+    {
+      "id": "npj_06_workshop_street",
+      "title": "Santa\u2019s Workshop street",
+      "source_image": "np_journey_workshop_street.jpg",
+      "job_id": "945d5014-d5dc-4c05-8da4-ee778b45ee2f",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 North Pole street. This exact photograph comes alive for five seconds. Preserve the child from behind, lantern-lit train, SANTA'S WORKSHOP facade, reindeer, elves, gift stacks, giant tree, SANTA VILLAGE arch, and aurora. Reindeer shift weight naturally and breathe. Elves make small wrapping and walking motions. Tree lights sparkle. Snow falls. Workshop sign letters stay unchanged. Slow push past the child toward the workshop. Do not overanimate the child's face or hands. No disappearing reindeer, no extra antlers. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_06_workshop_street.mp4",
+      "probe": {
+        "filename": "npj_06_workshop_street.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_06_workshop_street.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 35813549,
+        "size": 22569999
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_06_workshop_street_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_06_workshop_street_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_06_workshop_street_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:49:52.349967+00:00"
+    },
+    {
+      "id": "npj_07_workshop_list",
+      "title": "Santa and the Naughty or Nice list",
+      "source_image": "np_journey_workshop_naughty_nice.jpg",
+      "job_id": "f0fdc649-800d-4577-a107-0618c1a38a40",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Santa\u2019s workshop interior. This exact photograph comes alive for five seconds. Preserve Santa from behind at the desk, Naughty or Nice parchment, wrapping elf, sleeping golden retriever, SANTA'S WORKSHOP banner, toy train, lantern, map, snow globe, and the window with sleigh silhouette. Santa\u2019s hands make a tiny natural adjustment on the list. The elf wraps with small believable motions. Lantern firelight flickers. Steam rises from the cocoa. The dog breathes while sleeping. Background elves move slightly at the benches. Aurora drifts outside. Banner and list lettering stay readable. No face morphing, no extra fingers. Slow gentle push toward the desk. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_07_workshop_list.mp4",
+      "probe": {
+        "filename": "npj_07_workshop_list.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_07_workshop_list.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 34020041,
+        "size": 21439715
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_07_workshop_list_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_07_workshop_list_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_07_workshop_list_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:49:56.918775+00:00"
+    },
+    {
+      "id": "npj_08_wrapping",
+      "title": "Elves wrapping with Santa",
+      "source_image": "np_journey_workshop_wrapping.jpg",
+      "job_id": "b72bd994-f5ab-45c9-a737-b5333ba2aa0f",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Santa\u2019s workshop. This exact photograph comes alive for five seconds. Preserve Santa tying a bow, two wrapping elves, toy train, teddy, lantern, Good Children Around the World scroll, snow globe, gift piles, and the window with reindeer sleigh. Santa\u2019s hands finish a small ribbon tug without morphing. Elves make subtle wrapping motions. Lantern flickers. Background workshop stays busy but stable. Scroll lettering remains readable. Slow cinematic push. Do not add extra limbs or warp faces. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_08_wrapping.mp4",
+      "probe": {
+        "filename": "npj_08_wrapping.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_08_wrapping.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 28232952,
+        "size": 17792643
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_08_wrapping_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_08_wrapping_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_08_wrapping_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:50:01.240647+00:00"
+    },
+    {
+      "id": "npj_09_window_sleigh",
+      "title": "Child watching Santa\u2019s sleigh",
+      "source_image": "np_journey_window_sleigh_payoff.jpg",
+      "job_id": "e15b2b35-9875-4a2b-80d1-8ecb569b0d68",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 cozy Christmas night. This exact photograph comes alive for five seconds. Preserve the girl in red pajamas, teddy, golden retriever, mug, cookies, Christmas tree, and the window view of the moonlit village. Santa\u2019s sleigh and reindeer actually travel across the sky from left toward the moon with anatomically stable reindeer motion \u2014 no extra legs. Village chimney smoke drifts. Tree lights twinkle. The dog\u2019s ears shift slightly. Girl stays mostly still with a tiny breath. Do not morph faces. Camera almost locked-off with a very gentle push toward the window. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_09_window_sleigh.mp4",
+      "probe": {
+        "filename": "npj_09_window_sleigh.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_09_window_sleigh.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 27405384,
+        "size": 17271103
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_09_window_sleigh_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_09_window_sleigh_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_09_window_sleigh_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:50:05.515057+00:00"
+    },
+    {
+      "id": "npj_10_snowman",
+      "title": "Village square snowman",
+      "source_image": "np_journey_village_snowman.jpg",
+      "job_id": "1bf85c4e-55bb-4f6d-9ced-1fcfdb5b35db",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 alpine Christmas market. This exact photograph comes alive for five seconds. Preserve the child in the red coat placing the carrot, snowman, golden retriever with scarf, lantern, gifts, market stalls, clock tower, giant tree, and GOOD PEOPLE BRIGHTER TOMORROWS sign. Child\u2019s hand makes a tiny natural finish on the carrot \u2014 no extra fingers. The dog looks up with a small head tilt. Sparse snowfall. Tree lights sparkle. Distant villagers shift slightly. Sign letters stay readable. Slow gentle push. Architecture stays rigid. No face morphing. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_10_snowman.mp4",
+      "probe": {
+        "filename": "npj_10_snowman.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_10_snowman.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 31381418,
+        "size": 19776833
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_10_snowman_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_10_snowman_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_10_snowman_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:50:10.109261+00:00"
+    },
+    {
+      "id": "npj_11_plaza",
+      "title": "The Plaza New York arrival",
+      "source_image": "np_journey_plaza_nyc_girl_dog.jpg",
+      "job_id": "757c08c5-8843-43d9-bd14-a83f4fc85b69",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Fifth Avenue Christmas night. This exact photograph comes alive for five seconds. Preserve the girl in the red coat holding a gift, golden retriever with bow, THE PLAZA canopy, doorman, red carpet, vintage cars, Chrysler Building, and street trees exactly as framed. Very slow street-level dolly. Doorman stands with a tiny natural shift. Distant pedestrians move slightly. Wet pavement reflections slide. Sparse snowfall. Canopy lettering THE PLAZA does not warp. Dog stays mostly still with a breath. Do not morph the child's face or add extra limbs. Facade stays rigid. Do not morph faces, buildings, vehicles, animals, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions appearing. No wild camera spins. No fake zoom-only animation. Subtle cinematic motion only. Keep hands, faces, and architecture stable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/np-journey/masters/npj_11_plaza.mp4",
+      "probe": {
+        "filename": "npj_11_plaza.mp4",
+        "path": "/workspace/public/assets/christmas/np-journey/masters/npj_11_plaza.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 34093815,
+        "size": 21486208
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-np-journey/qc/npj_11_plaza_first.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_11_plaza_mid.jpg",
+        "/workspace/generated/batch-np-journey/qc/npj_11_plaza_last.jpg"
+      ],
+      "created_at": "2026-09-20T20:50:14.746547+00:00"
+    }
+  ],
+  "pending": [],
+  "failed": [],
+  "reels": [
+    {
+      "id": "reel-np-journey-01",
+      "title": "The Journey \u2014 Magical Train to the North Pole",
+      "file": "/workspace/public/assets/christmas/np-journey/final/the_journey_north_pole_reel_01.mp4",
+      "probe": {
+        "duration": 36.833333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "bitrate": 15948236,
+        "size": 73428338,
+        "nb_frames": "1105"
+      },
+      "clips_used": [
+        "npj_04_viaduct_wide",
+        "npj_01_train_window",
+        "npj_03_aurora_window",
+        "short-cinematic-polar-express",
+        "npj_02_station",
+        "npj_05_village_arrival",
+        "npj_06_workshop_street",
+        "npj_07_workshop_list",
+        "npj_08_wrapping",
+        "short-santa-02-sleigh",
+        "npj_09_window_sleigh",
+        "npj_11_plaza"
+      ],
+      "overlay": "Where is this train going?",
+      "audio": "none",
+      "kind": "long-reel",
+      "theme": "the-journey",
+      "poster": "/workspace/public/assets/christmas/np-journey/posters/reel-np-journey-01.jpg"
+    },
+    {
+      "id": "reel-follow-santa-02",
+      "title": "Follow Santa \u2014 Christmas Eve",
+      "file": "/workspace/public/assets/christmas/np-journey/final/follow_santa_reel_02.mp4",
+      "probe": {
+        "duration": 35.833333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "bitrate": 15537576,
+        "size": 69595394,
+        "nb_frames": "1075"
+      },
+      "clips_used": [
+        "npj_07_workshop_list",
+        "short-santa-01-workshop",
+        "npj_08_wrapping",
+        "npj_06_workshop_street",
+        "short-santa-02-sleigh",
+        "short-cinematic-santa-london",
+        "short-christmas-master-08",
+        "short-cinematic-rockefeller",
+        "npj_11_plaza",
+        "short-cinematic-home-alone-house",
+        "npj_09_window_sleigh",
+        "reel-cozy-01"
+      ],
+      "overlay": "Christmas Eve has begun\u2026",
+      "audio": "none",
+      "kind": "long-reel",
+      "theme": "follow-santa",
+      "poster": "/workspace/public/assets/christmas/np-journey/posters/reel-follow-santa-02.jpg"
+    },
+    {
+      "id": "reel-magical-night-03",
+      "title": "One Magical Christmas Night",
+      "file": "/workspace/public/assets/christmas/np-journey/final/one_magical_christmas_night_reel_03.mp4",
+      "probe": {
+        "duration": 34.266667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "bitrate": 15769244,
+        "size": 67544930,
+        "nb_frames": "1028"
+      },
+      "clips_used": [
+        "npj_10_snowman",
+        "short-global-03-home",
+        "short-global-01-lapland",
+        "npj_04_viaduct_wide",
+        "npj_01_train_window",
+        "npj_05_village_arrival",
+        "short-cinematic-workshop",
+        "short-cinematic-santa-london",
+        "short-global-02-alps",
+        "short-global-04-plaza",
+        "short-christmas-master-07",
+        "npj_09_window_sleigh"
+      ],
+      "overlay": null,
+      "audio": "none",
+      "kind": "long-reel",
+      "theme": "magical-christmas-night",
+      "poster": "/workspace/public/assets/christmas/np-journey/posters/reel-magical-night-03.jpg"
+    },
+    {
+      "id": "reel-viral-short-04",
+      "title": "Viral Cut \u2014 Where is this train going?",
+      "file": "/workspace/public/assets/christmas/np-journey/final/viral_train_north_pole_short_04.mp4",
+      "probe": {
+        "duration": 14.566667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "bitrate": 15905848,
+        "size": 28961900,
+        "nb_frames": "437"
+      },
+      "clips_used": [
+        "npj_04_viaduct_wide",
+        "npj_03_aurora_window",
+        "npj_05_village_arrival",
+        "short-cinematic-santa-london",
+        "npj_09_window_sleigh",
+        "npj_04_viaduct_wide"
+      ],
+      "overlay": null,
+      "audio": "none",
+      "kind": "short-reel",
+      "theme": "viral-train-hook",
+      "poster": "/workspace/public/assets/christmas/np-journey/posters/reel-viral-short-04.jpg"
+    },
+    {
+      "id": "reel-viral-night-05",
+      "title": "Viral Cut \u2014 The most magical Christmas night",
+      "file": "/workspace/public/assets/christmas/np-journey/final/viral_most_magical_night_short_05.mp4",
+      "probe": {
+        "duration": 14.333333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "bitrate": 15761613,
+        "size": 28239557,
+        "nb_frames": "430"
+      },
+      "clips_used": [
+        "npj_10_snowman",
+        "npj_06_workshop_street",
+        "npj_08_wrapping",
+        "short-santa-02-sleigh",
+        "npj_11_plaza",
+        "npj_09_window_sleigh"
+      ],
+      "overlay": null,
+      "audio": "none",
+      "kind": "short-reel",
+      "theme": "most-magical-night",
+      "poster": "/workspace/public/assets/christmas/np-journey/posters/reel-viral-night-05.jpg"
+    }
+  ],
+  "status": "COMPLETE",
+  "actual_cost_usd": 3.08,
+  "success_count": 11,
+  "failed_count": 0,
+  "reels_assembled_at": "2026-09-20T21:01:23.552985+00:00"
+}

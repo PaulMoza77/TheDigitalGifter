@@ -1,0 +1,336 @@
+{
+  "status": "INGESTED",
+  "count": 11,
+  "assets": [
+    {
+      "id": "photo-np-train-window",
+      "title": "Photo \u00b7 Magical train window",
+      "description": "Child in a red knit hat leans from a lantern-lit carriage as a steam train crosses a moonlit alpine viaduct.",
+      "tags": [
+        "christmas",
+        "train",
+        "cinematic",
+        "reel-source"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_train_window_girl.jpg",
+      "generation_still": "source/batch-np-journey/01_train_window_girl_1080x1920.png",
+      "original_bytes": 717261,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4992164,
+      "created_at": "2026-09-20T20:44:53.187506+00:00"
+    },
+    {
+      "id": "photo-np-express-station",
+      "title": "Photo \u00b7 North Pole Express station",
+      "description": "Child with backpack faces a wreath-lit steam locomotive under the NORTH POLE EXPRESS station clock.",
+      "tags": [
+        "christmas",
+        "train",
+        "north-pole",
+        "reel-source"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_north_pole_express_station.jpg",
+      "generation_still": "source/batch-np-journey/02_north_pole_express_station_1080x1920.png",
+      "original_bytes": 753361,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4934228,
+      "created_at": "2026-09-20T20:44:53.548885+00:00"
+    },
+    {
+      "id": "photo-np-aurora-window",
+      "title": "Photo \u00b7 Aurora from the train",
+      "description": "Carriage-side view of a red steam train on a stone viaduct under green northern lights.",
+      "tags": [
+        "christmas",
+        "train",
+        "aurora",
+        "cinematic"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_aurora_from_train.jpg",
+      "generation_still": "source/batch-np-journey/03_aurora_from_train_1080x1920.png",
+      "original_bytes": 798420,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5209223,
+      "created_at": "2026-09-20T20:44:53.916238+00:00"
+    },
+    {
+      "id": "photo-np-viaduct-aurora",
+      "title": "Photo \u00b7 Train on aurora viaduct",
+      "description": "Wide cinematic steam train crossing a high stone viaduct above a frozen river and alpine village.",
+      "tags": [
+        "christmas",
+        "train",
+        "aurora",
+        "cinematic"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_viaduct_aurora_wide.jpg",
+      "generation_still": "source/batch-np-journey/04_viaduct_aurora_wide_1080x1920.png",
+      "original_bytes": 786818,
+      "source_wh": [
+        941,
+        1671
+      ],
+      "crop": [
+        940,
+        1671,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5247990,
+      "created_at": "2026-09-20T20:44:54.260720+00:00"
+    },
+    {
+      "id": "photo-np-village-arrival",
+      "title": "Photo \u00b7 North Pole Santa Village",
+      "description": "Traveler arriving under the NORTH POLE SANTA VILLAGE arch with elves, gifts, and a clock tower.",
+      "tags": [
+        "christmas",
+        "north-pole",
+        "santa",
+        "village"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_santa_village_arrival.jpg",
+      "generation_still": "source/batch-np-journey/05_santa_village_arrival_1080x1920.png",
+      "original_bytes": 822260,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5199621,
+      "created_at": "2026-09-20T20:44:54.618178+00:00"
+    },
+    {
+      "id": "photo-np-workshop-street",
+      "title": "Photo \u00b7 Santa\u2019s Workshop street",
+      "description": "Child facing Santa\u2019s Workshop with reindeer, elves, gifts, and a giant Christmas tree.",
+      "tags": [
+        "christmas",
+        "workshop",
+        "reindeer",
+        "north-pole"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_workshop_street.jpg",
+      "generation_still": "source/batch-np-journey/06_workshop_street_1080x1920.png",
+      "original_bytes": 790854,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5082540,
+      "created_at": "2026-09-20T20:44:54.957294+00:00"
+    },
+    {
+      "id": "photo-np-workshop-list",
+      "title": "Photo \u00b7 Santa and the Naughty or Nice list",
+      "description": "Santa at his workshop desk with the Naughty or Nice list, wrapping elf, and sleeping golden retriever.",
+      "tags": [
+        "christmas",
+        "santa",
+        "workshop",
+        "cozy"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_workshop_naughty_nice.jpg",
+      "generation_still": "source/batch-np-journey/07_workshop_naughty_nice_1080x1920.png",
+      "original_bytes": 749922,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5036789,
+      "created_at": "2026-09-20T20:44:55.308271+00:00"
+    },
+    {
+      "id": "photo-np-workshop-wrapping",
+      "title": "Photo \u00b7 Elves wrapping with Santa",
+      "description": "Santa tying a bow while elves wrap toys beside a Good Children Around the World scroll.",
+      "tags": [
+        "christmas",
+        "santa",
+        "workshop",
+        "elves"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_workshop_wrapping.jpg",
+      "generation_still": "source/batch-np-journey/08_workshop_wrapping_1080x1920.png",
+      "original_bytes": 652836,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4858763,
+      "created_at": "2026-09-20T20:44:55.663158+00:00"
+    },
+    {
+      "id": "photo-np-window-sleigh",
+      "title": "Photo \u00b7 Child watching Santa\u2019s sleigh",
+      "description": "Girl and golden retriever at a snowy window as Santa\u2019s sleigh flies over a moonlit village.",
+      "tags": [
+        "christmas",
+        "sleigh",
+        "cozy",
+        "santa"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_window_sleigh_payoff.jpg",
+      "generation_still": "source/batch-np-journey/09_window_sleigh_payoff_1080x1920.png",
+      "original_bytes": 590717,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        1,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4527448,
+      "created_at": "2026-09-20T20:44:56.004289+00:00"
+    },
+    {
+      "id": "photo-np-village-snowman",
+      "title": "Photo \u00b7 Village square snowman",
+      "description": "Child placing a carrot nose on a snowman in a festive alpine market with a golden retriever.",
+      "tags": [
+        "christmas",
+        "village",
+        "cozy",
+        "snowman"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_village_snowman.jpg",
+      "generation_still": "source/batch-np-journey/10_village_snowman_1080x1920.png",
+      "original_bytes": 745940,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5339645,
+      "created_at": "2026-09-20T20:44:56.341873+00:00"
+    },
+    {
+      "id": "photo-np-plaza-girl-dog",
+      "title": "Photo \u00b7 The Plaza New York arrival",
+      "description": "Girl in a red coat and golden retriever at The Plaza Hotel entrance on a snowy Fifth Avenue night.",
+      "tags": [
+        "christmas",
+        "new-york",
+        "plaza",
+        "cinematic"
+      ],
+      "original": "public/assets/christmas/library-stills/np_journey_plaza_nyc_girl_dog.jpg",
+      "generation_still": "source/batch-np-journey/11_plaza_nyc_girl_dog_1080x1920.png",
+      "original_bytes": 801462,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5192436,
+      "created_at": "2026-09-20T20:44:56.679500+00:00"
+    }
+  ]
+}

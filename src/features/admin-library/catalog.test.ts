@@ -49,7 +49,7 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-christmas-movie-nostalgia-01");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-np-journey-01");
     expect(
       searchLibraryVideos("North Pole Santa", "christmas_reels", "reel").some((video) => video.id === "reel-north-pole-santa"),
     ).toBe(true);
@@ -98,7 +98,14 @@ describe("admin video library", () => {
         (item) => item.id === "reel-christmas-movie-nostalgia-01",
       ),
     ).toBe(true);
-    expect(searchLibraryVideos("ready-to-post", "christmas_reels", "reel").length).toBeGreaterThanOrEqual(3);
+    expect(
+      searchLibraryVideos("The Journey", "christmas_reels", "reel").some(
+        (item) => item.id === "reel-np-journey-01",
+      ),
+    ).toBe(true);
+    expect(
+      searchLibraryVideos("ready-to-post", "christmas_reels", "reel").length,
+    ).toBeGreaterThanOrEqual(8);
     expect(
       searchLibraryVideos("recognizable-scene", "christmas_reels", "photo").some(
         (item) => item.id === "photo-home-alone-house",
@@ -134,7 +141,15 @@ describe("admin video library", () => {
       "public/assets/christmas/library-stills/polar_express_alpine_viaduct.jpg",
       "public/assets/christmas/library-stills/home_alone_style_christmas_house.jpg",
       "public/assets/christmas/library-stills/grinch_whoville_rooftop.jpg",
-      "public/assets/christmas/cinematic-sep20/masters/cinematic_01_polar_express.mp4",
+      "public/assets/christmas/np-journey/masters/npj_01_train_window.mp4",
+      "public/assets/christmas/np-journey/masters/npj_11_plaza.mp4",
+      "public/assets/christmas/np-journey/final/the_journey_north_pole_reel_01.mp4",
+      "public/assets/christmas/np-journey/final/follow_santa_reel_02.mp4",
+      "public/assets/christmas/np-journey/final/one_magical_christmas_night_reel_03.mp4",
+      "public/assets/christmas/np-journey/final/viral_train_north_pole_short_04.mp4",
+      "public/assets/christmas/np-journey/final/viral_most_magical_night_short_05.mp4",
+      "public/assets/christmas/np-journey/posters/reel-np-journey-01.jpg",
+      "public/assets/christmas/library-stills/np_journey_viaduct_aurora_wide.jpg",
       "public/assets/christmas/cinematic-sep20/masters/cinematic_08_grinch.mp4",
       "public/assets/christmas/cinematic-sep20/final/christmas_movie_nostalgia_reel_01.mp4",
       "public/assets/christmas/cinematic-sep20/final/christmas_magic_reel_02.mp4",
