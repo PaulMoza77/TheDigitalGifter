@@ -759,6 +759,14 @@ describe("private planner privacy surface", () => {
     expect(workspace).toContain("christmas_planner_owns_profile");
     expect(workspace).toContain("revoke all on table public.christmas_planner_profiles from anon");
     expect(workspace).toContain("using (public.christmas_planner_owns_profile(profile_id) or public.is_admin())");
+    const ownerOnly = readSrc("supabase/migrations/20260921120000_planner_gift_people_owner_only.sql");
+    expect(ownerOnly).toContain("christmas_gift_recipients force row level security");
+    expect(ownerOnly).toContain("using (public.christmas_planner_owns_profile(profile_id))");
+    expect(ownerOnly).not.toMatch(/owns_profile\(profile_id\) or public\.is_admin\(\)/);
+    expect(ownerOnly).toContain("using (user_id = auth.uid())");
+    const api = readSrc("src/features/christmas/planner/api.ts");
+    expect(api).toContain('eq("user_id", userId)');
+    expect(api).toContain("requirePlannerUserId");
   });
 
   it("upgrades remaining modules with headers, marks, and ivory chrome", () => {

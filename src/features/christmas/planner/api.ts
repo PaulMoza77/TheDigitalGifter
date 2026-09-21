@@ -198,10 +198,18 @@ export function readPlannerOrder(): Record<string, unknown> | null {
   }
 }
 
+async function requirePlannerUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
+
 export async function loadProfile(seasonYear: number): Promise<PlannerProfile | null> {
+  const userId = await requirePlannerUserId();
+  if (!userId) return null;
   const { data } = await supabase
     .from("christmas_planner_profiles")
     .select("*")
+    .eq("user_id", userId)
     .eq("season_year", seasonYear)
     .maybeSingle();
   return (data as PlannerProfile | null) ?? null;
@@ -210,9 +218,11 @@ export async function loadProfile(seasonYear: number): Promise<PlannerProfile | 
 export async function upsertProfile(
   patch: Partial<PlannerProfile> & { season_year: number; user_id: string },
 ): Promise<PlannerProfile | null> {
+  const userId = await requirePlannerUserId();
+  if (!userId) return null;
   const { data, error } = await supabase
     .from("christmas_planner_profiles")
-    .upsert(patch, { onConflict: "user_id,season_year" })
+    .upsert({ ...patch, user_id: userId }, { onConflict: "user_id,season_year" })
     .select("*")
     .maybeSingle();
   if (error) return null;
@@ -252,20 +262,24 @@ export async function insertTask(
 }
 
 export async function loadRecipients(profileId: string): Promise<GiftRecipient[]> {
+  const userId = await requirePlannerUserId();
+  if (!userId) return [];
   const { data } = await supabase
     .from("christmas_gift_recipients")
     .select("*")
     .eq("profile_id", profileId)
     .order("sort_order");
-  return (data as GiftRecipient[]) || [];
+  return ((data as GiftRecipient[]) || []).filter((row) => row.profile_id === profileId);
 }
 
 export async function loadGifts(profileId: string): Promise<GiftItem[]> {
+  const userId = await requirePlannerUserId();
+  if (!userId) return [];
   const { data } = await supabase
     .from("christmas_gift_items")
     .select("*")
     .eq("profile_id", profileId);
-  return (data as GiftItem[]) || [];
+  return ((data as GiftItem[]) || []).filter((row) => row.profile_id === profileId);
 }
 
 export async function loadBudget(profileId: string): Promise<BudgetEntry[]> {
