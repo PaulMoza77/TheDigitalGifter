@@ -1,7 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { supabase } from "@/lib/supabase";
-import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
+import { createAccountWithEmailPassword, signInWithEmailPassword } from "@/lib/auth/emailPassword";
+import { startGoogleSignIn } from "@/lib/auth/googleOAuth";
+import { authErrorMessage } from "@/lib/auth/oauthReturn";
 import { FONT_HREF } from "../landing/assets";
 import { PLANNER_ACCOUNT_ROUTE } from "./types";
 import "./plannerApp.css";
@@ -39,53 +42,73 @@ function ensurePlannerFonts() {
 }
 
 export default function PlannerAuthGate() {
+  const [params] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(authErrorMessage(params.get("auth_error")));
+  const [busy, setBusy] = useState<"signin" | "signup" | null>(null);
   const [googleBusy, setGoogleBusy] = useState(false);
 
   useEffect(() => {
     ensurePlannerFonts();
   }, []);
 
-  async function onEmail(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setMessage(null);
-    rememberAuthReturnTo(PLANNER_ACCOUNT_ROUTE);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      const created = await supabase.auth.signUp({ email, password });
-      if (created.error) {
-        setMessage(created.error.message);
-        setBusy(false);
-        return;
-      }
-    }
-    setBusy(false);
+  function finish() {
     window.location.assign(PLANNER_ACCOUNT_ROUTE);
+  }
+
+  async function onSignIn(event: FormEvent) {
+    event.preventDefault();
+    setBusy("signin");
+    setMessage(null);
+    const result = await signInWithEmailPassword(supabase, email, password);
+    if (!result.ok) {
+      setMessage(result.error);
+      setBusy(null);
+      return;
+    }
+    finish();
+  }
+
+  async function onCreateAccount() {
+    setBusy("signup");
+    setMessage(null);
+    const result = await createAccountWithEmailPassword(supabase, email, password);
+    if (!result.ok) {
+      setMessage(result.error);
+      setBusy(null);
+      return;
+    }
+    if (result.needsConfirmation) {
+      setMessage("Check your email to confirm the account, then sign in.");
+      setBusy(null);
+      return;
+    }
+    finish();
   }
 
   async function onGoogle() {
     setGoogleBusy(true);
     setMessage(null);
-    rememberAuthReturnTo(PLANNER_ACCOUNT_ROUTE);
-    const base = window.location.origin;
     try {
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${base}/auth/callback` },
-      });
+      await startGoogleSignIn(PLANNER_ACCOUNT_ROUTE);
     } catch (err) {
       setGoogleBusy(false);
       setMessage(err instanceof Error ? err.message : "Google sign-in is unavailable.");
     }
   }
 
+  const formBusy = busy !== null;
+
   return (
     <div className="tdg-planner-app tdg-planner-app--auth">
-      <PageHead title="Christmas Planner" description="Sign in to open your private Christmas Planner." noindex exactTitle />
+      <PageHead
+        title="Christmas Planner"
+        description="Sign in to open your private Christmas Planner."
+        noindex
+        nofollow
+        exactTitle
+      />
       <div className="tdg-planner-auth">
         <p className="tdg-planner-brand">Christmas Planner</p>
         <h1>Your Christmas Plan is ready.</h1>
@@ -97,17 +120,22 @@ export default function PlannerAuthGate() {
           type="button"
           className="tdg-planner-google"
           onClick={() => void onGoogle()}
-          disabled={googleBusy || busy}
+          disabled={googleBusy || formBusy}
         >
           <GoogleMark />
-          {googleBusy ? "Continuing with Google…" : "Continue with Google"}
+          {googleBusy ? "Waiting for Google…" : "Continue with Google"}
         </button>
+        {googleBusy ? (
+          <p className="tdg-planner-auth-hint">
+            Google can take several seconds to open. Keep this tab open after you pick an account.
+          </p>
+        ) : null}
 
         <div className="tdg-planner-auth-divider" role="separator">
           <span>or email</span>
         </div>
 
-        <form className="tdg-planner-auth-form" onSubmit={(e) => void onEmail(e)}>
+        <form className="tdg-planner-auth-form" onSubmit={(e) => void onSignIn(e)}>
           <label htmlFor="planner-auth-email">Email</label>
           <input
             id="planner-auth-email"
@@ -136,9 +164,19 @@ export default function PlannerAuthGate() {
               {message}
             </p>
           ) : null}
-          <button type="submit" className="tdg-planner-btn primary" disabled={busy || googleBusy}>
-            {busy ? "Opening…" : "Open my Christmas Planner"}
-          </button>
+          <div className="tdg-planner-auth-actions">
+            <button type="submit" className="tdg-planner-btn primary" disabled={formBusy || googleBusy}>
+              {busy === "signin" ? "Signing in…" : "Sign in"}
+            </button>
+            <button
+              type="button"
+              className="tdg-planner-btn ghost"
+              disabled={formBusy || googleBusy}
+              onClick={() => void onCreateAccount()}
+            >
+              {busy === "signup" ? "Creating account…" : "Create account"}
+            </button>
+          </div>
         </form>
       </div>
     </div>

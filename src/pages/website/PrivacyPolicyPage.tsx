@@ -141,11 +141,11 @@ export function PrivacyPolicyPage() {
           type: "list",
           items: [
             "Essential Cookies: Required for authentication, security, and core functionality",
-            "Analytics Cookies: Help us understand usage patterns and improve our service",
+            "Analytics Cookies: Only used after you accept cookies; they help us understand usage patterns and improve our service",
             "Preference Cookies: Remember your settings and preferences",
           ],
         },
-        "You can control cookie preferences through your browser settings. Disabling certain cookies may limit functionality of our services. We respect Do Not Track signals where applicable and required by law.",
+        "You can control cookie preferences with the banner on this site (Accept / Reject). Analytics, advertising, and similar tags stay off until you accept. Essential cookies for sign-in and checkout still work if you reject. You can also control cookies through your browser settings. Disabling essential cookies may limit functionality of our services.",
       ],
     },
     {

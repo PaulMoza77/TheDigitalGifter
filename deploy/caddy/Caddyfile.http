@@ -8,6 +8,8 @@
 	header {
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options SAMEORIGIN
+		Content-Security-Policy "frame-ancestors 'self'; object-src 'none'; base-uri 'self'"
 		-Server
 	}
 }
@@ -22,6 +24,8 @@
 
 (tdg_upstream) {
 	import security_headers
+	@privateAccount path /account /account/*
+	header @privateAccount X-Robots-Tag "noindex, nofollow"
 	reverse_proxy thedigitalgifter:8080 {
 		health_uri /healthz
 		health_interval 30s

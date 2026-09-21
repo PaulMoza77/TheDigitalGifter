@@ -1,13 +1,16 @@
-import { useEffect, useMemo } from "react";
+import { lazy, Suspense, useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { parsePetSpecies, petCreatePath, petLandingPath } from "./catalog";
 import { parsePetLocalePath, usePetBrowserLocaleRedirect, withPetLocale, usePetLocale } from "./i18n";
-import { PetCheckoutPage } from "./PetCheckoutPage";
 import { PetCreatePage } from "./PetCreatePage";
 import { PetLandingPage } from "./PetLandingPage";
 import { PetOrderPage } from "./PetOrderPage";
 import { petFunnelApi } from "./supabaseApi";
 import type { PetFunnelNavigation, PetSpecies } from "./types";
+
+const PetCheckoutPage = lazy(() =>
+  import("./PetCheckoutPage").then((m) => ({ default: m.PetCheckoutPage })),
+);
 
 function usePetNavigation(species: PetSpecies = "dog"): PetFunnelNavigation {
   const navigate = useNavigate();
@@ -76,7 +79,11 @@ export function PetCreateRoute() {
 export function PetCheckoutRoute() {
   usePetBrowserLocaleRedirect();
   const navigation = usePetNavigation();
-  return <PetCheckoutPage navigation={navigation} api={petFunnelApi} />;
+  return (
+    <Suspense fallback={null}>
+      <PetCheckoutPage navigation={navigation} api={petFunnelApi} />
+    </Suspense>
+  );
 }
 
 export function PetOrderRoute() {

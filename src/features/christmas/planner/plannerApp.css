@@ -890,11 +890,24 @@
   border-radius: 12px;
 }
 
-.tdg-planner-auth-form .tdg-planner-btn.primary {
+.tdg-planner-auth-form .tdg-planner-btn.primary,
+.tdg-planner-auth-form .tdg-planner-btn.ghost {
   width: 100%;
-  margin-top: 1.1rem;
   min-height: 3.1rem;
   border-radius: 999px;
+}
+
+.tdg-planner-auth-actions {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.1rem;
+}
+
+.tdg-planner-auth-hint {
+  margin: 0.75rem 0 0;
+  color: var(--planner-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
 }
 
 .tdg-planner-auth-error {

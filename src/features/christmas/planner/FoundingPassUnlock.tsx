@@ -1,11 +1,10 @@
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { trackPlannerEvent } from "./analytics";
 import { startPlannerCheckout } from "./api";
 import { getChristmasFunnelSessionId } from "@/features/christmas/analytics";
 import { getOrCreatePlannerGuestToken, persistPlannerOrderRecovery } from "./guest";
 import { money } from "./Paywall";
-import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { supabase } from "@/lib/supabase";
 import {
   FOUNDING_PASS_PACKAGE_KEY,
@@ -16,6 +15,12 @@ import {
 import { upgradePackageForFeature } from "./entitlements";
 
 const OFFER_CTA = `Unlock your complete Christmas plan — ${FOUNDING_PASS_PRICE_LABEL} one-time`;
+
+const CustomStripeCheckout = lazy(() =>
+  import("@/features/pet/components/CustomStripeCheckout").then((mod) => ({
+    default: mod.CustomStripeCheckout,
+  })),
+);
 
 export function FoundingPassUnlockButton({
   feature,
@@ -136,7 +141,8 @@ export function FoundingPassUnlockButton({
               </p>
             ) : null}
             {session?.clientSecret ? (
-              <CustomStripeCheckout
+              <Suspense fallback={<p className="tdg-planner-muted">Loading checkout…</p>}>
+                <CustomStripeCheckout
                 clientSecret={session.clientSecret}
                 publishableKey={session.publishableKey}
                 dueDisplay={money(session.amountCents, session.currency)}
@@ -151,6 +157,7 @@ export function FoundingPassUnlockButton({
                   });
                 }}
               />
+              </Suspense>
             ) : null}
           </div>
         </div>

@@ -46,7 +46,7 @@ describe("TDG Meta Pixel", () => {
     expect(html).not.toContain("1673980440653322");
     expect(html.match(/fbq\("init"/g)?.length).toBe(1);
     expect(html).toContain(`fbq("init", "${TDG_META_PIXEL_ID}")`);
-    expect(html).toContain(`facebook.com/tr?id=${TDG_META_PIXEL_ID}&ev=PageView&noscript=1`);
+    expect(html).not.toContain("facebook.com/tr?id=");
     expect(readSrc("src/App.tsx")).not.toMatch(/fbq\(["']init/);
     expect(readSrc("supabase/functions/_shared/pet/meta.ts")).toContain(TDG_META_PIXEL_ID);
     expect(readSrc("supabase/functions/_shared/pet/meta.ts")).not.toContain("1673980440653322");

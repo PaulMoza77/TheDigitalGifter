@@ -2,7 +2,8 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { supabase } from "@/lib/supabase";
-import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
+import { createAccountWithEmailPassword, signInWithEmailPassword } from "@/lib/auth/emailPassword";
+import { startGoogleSignIn } from "@/lib/auth/googleOAuth";
 import { trackChristmasEvent } from "../analytics";
 import { PLANNER_ACCOUNT_ROUTE, PLANNER_PRODUCT_KEY } from "./commerce";
 import { claimPlannerOrder, fetchPlannerOrder } from "./api";
@@ -19,6 +20,7 @@ export default function ChristmasPlannerWelcomePage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"signin" | "signup" | "google" | null>(null);
   const token = params.get("token") || readPlannerOrderRecovery()?.publicToken || "";
 
   useEffect(() => {
@@ -93,25 +95,45 @@ export default function ChristmasPlannerWelcomePage() {
 
   async function onSignIn(event: FormEvent) {
     event.preventDefault();
-    rememberAuthReturnTo("/christmas/planner/welcome");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      const created = await supabase.auth.signUp({ email, password });
-      if (created.error) {
-        setMessage(created.error.message);
-        return;
-      }
+    setBusy("signin");
+    setMessage(null);
+    const result = await signInWithEmailPassword(supabase, email, password);
+    if (!result.ok) {
+      setMessage(result.error);
+      setBusy(null);
+      return;
     }
     if (token) await claim(token);
+    setBusy(null);
+  }
+
+  async function onCreateAccount() {
+    setBusy("signup");
+    setMessage(null);
+    const result = await createAccountWithEmailPassword(supabase, email, password);
+    if (!result.ok) {
+      setMessage(result.error);
+      setBusy(null);
+      return;
+    }
+    if (result.needsConfirmation) {
+      setMessage("Check your email to confirm the account, then sign in.");
+      setBusy(null);
+      return;
+    }
+    if (token) await claim(token);
+    setBusy(null);
   }
 
   async function onGoogle() {
-    rememberAuthReturnTo("/christmas/planner/welcome");
-    const base = window.location.origin;
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${base}/auth/callback` },
-    });
+    setBusy("google");
+    setMessage(null);
+    try {
+      await startGoogleSignIn("/christmas/planner/welcome");
+    } catch (err) {
+      setBusy(null);
+      setMessage(err instanceof Error ? err.message : "Google sign-in is unavailable.");
+    }
   }
 
   return (
@@ -144,20 +166,29 @@ export default function ChristmasPlannerWelcomePage() {
           <p className="tdg-planner__lede">Your access is unlocked. The full Planner experience is being prepared in your account.</p>
           {needsAuth ? (
             <div className="tdg-planner__checkout" style={{ maxWidth: 420, marginTop: 24 }}>
-              <h2>Create account / Sign in</h2>
+              <h2>Sign in or create an account</h2>
               <p>Attach this purchase to your account so it is waiting when the Planner app and web workspace open.</p>
               <form onSubmit={(event) => void onSignIn(event)}>
                 <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
                 <div style={{ height: 10 }} />
                 <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
                 <div style={{ height: 12 }} />
-                <button type="submit" className="tdg-planner__btn">
-                  Continue
+                <button type="submit" className="tdg-planner__btn" disabled={busy !== null}>
+                  {busy === "signin" ? "Signing in…" : "Sign in"}
                 </button>
               </form>
+              <div style={{ height: 10 }} />
+              <button
+                type="button"
+                className="tdg-planner__btn"
+                disabled={busy !== null}
+                onClick={() => void onCreateAccount()}
+              >
+                {busy === "signup" ? "Creating account…" : "Create account"}
+              </button>
               <div style={{ height: 12 }} />
-              <button type="button" className="tdg-planner__btn" onClick={() => void onGoogle()}>
-                Continue with Google
+              <button type="button" className="tdg-planner__btn" disabled={busy !== null} onClick={() => void onGoogle()}>
+                {busy === "google" ? "Waiting for Google…" : "Continue with Google"}
               </button>
             </div>
           ) : (
