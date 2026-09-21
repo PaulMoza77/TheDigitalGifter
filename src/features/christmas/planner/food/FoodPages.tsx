@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { planGroceryRegeneration } from "@/features/occasions/grocerySync";
+import { planGroceryRegeneration, planManualGroceryAdd } from "@/features/occasions/grocerySync";
 import { CHRISTMAS_2026 } from "@/features/occasions/types";
 import { trackPlannerEvent } from "../analytics";
 import { detectFoodCompleteness, ingredientsFromRecipe, invalidatePlannerSnapshot } from "../intelligence";
@@ -10,6 +10,7 @@ import { PlannerOnboarding, usePlannerBundle } from "../Onboarding";
 import { PlannerPaywall } from "../Paywall";
 import { GROCERY_AISLES, type GroceryAisle } from "../types";
 import { PlannerEmptyState, PlannerPageHeader } from "../plannerUi";
+import { bumpPlannerWorkspace } from "../workspaceSync";
 import { applyGroceryOps } from "./persistGrocery";
 import {
   RECIPE_DISCOVERY,
@@ -148,8 +149,8 @@ export function ChristmasPlannerFoodPage() {
   if (!hasFeature(access, "food_planner")) {
     return (
       <div className="tdg-planner-page">
-        <PlannerPageHeader title="Meal Planner" lede="Plan Christmas dinner in minutes." />
-        <PlannerPaywall feature="food_planner" title="Menus, then one shopping list." body="Unlock the Founding Pass to plan Eve and Day, then send ingredients to Grocery." />
+        <PlannerPageHeader title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
+        <PlannerPaywall feature="food_planner" title="Meals are part of Christmas Planner" body="Get my Christmas Planner for $17 to plan the occasion, guests, recipes, portions, menu, and grocery list." />
       </div>
     );
   }
@@ -191,6 +192,7 @@ export function ChristmasPlannerFoodPage() {
       .maybeSingle();
     if (data) setDishes((p) => [...p, data as DishRow]);
     await reloadGroceryDerived(profile!.id);
+    bumpPlannerWorkspace();
     trackPlannerEvent("planner_meal_created", { module: "food" });
   }
 
@@ -199,6 +201,7 @@ export function ChristmasPlannerFoodPage() {
     await supabase.from("christmas_meal_items").update({ servings: next }).eq("id", dish.id);
     setDishes((p) => p.map((x) => (x.id === dish.id ? { ...x, servings: next } : x)));
     await reloadGroceryDerived(profile!.id);
+    bumpPlannerWorkspace();
   }
 
   const suggested = suggestMenu(recipes, {
@@ -238,7 +241,21 @@ export function ChristmasPlannerFoodPage() {
 
   return (
     <div className="tdg-planner-page tdg-food-product">
-      <PlannerPageHeader title="Plan Christmas dinner in minutes." lede="Occasion, guests, a menu, then one shopping list." />
+      <PlannerPageHeader title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
+      <ol className="tdg-meal-steps" aria-label="Meal steps">
+        {[
+          ["Occasion", true],
+          ["Guests", people > 0],
+          ["Recipes", sitting.length > 0],
+          ["Portions", sitting.some((dish) => dish.servings > 0)],
+          ["Menu", sitting.length > 0 && wizard === "menu"],
+          ["Grocery", false],
+        ].map(([label, on]) => (
+          <li key={String(label)} className={on ? "is-on" : undefined}>
+            {label}
+          </li>
+        ))}
+      </ol>
       <div className="tdg-planner-seg" role="tablist">
         {FOOD_TABS.map(([id, label]) => (
           <button key={id} type="button" className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
@@ -335,7 +352,7 @@ export function ChristmasPlannerFoodPage() {
             {completeness?.missing.length ? ` · Menu still needs ${completeness.missing.join(", ")}` : " · Menu looks complete"}
           </p>
           <button type="button" className="tdg-planner-btn primary tdg-sticky-cta" onClick={() => navigate("/account/christmas/grocery")}>
-            Create my shopping list
+            Open grocery
           </button>
         </section>
       ) : (
@@ -624,6 +641,7 @@ export function ChristmasPlannerGroceryPage() {
     Array<{ id: string; name: string; quantity: string; status: string; source_type: string; ingredient_key?: string | null; source_notes?: string | null }>
   >([]);
   const [draft, setDraft] = useState({ name: "", aisle: "other" as GroceryAisle, qty: "" });
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function reload() {
     if (!profile) return;
@@ -648,8 +666,8 @@ export function ChristmasPlannerGroceryPage() {
   if (!hasFeature(access, "food_planner")) {
     return (
       <div className="tdg-planner-page">
-        <PlannerPageHeader title="Your Christmas Shopping List" lede="One list from the menu you already chose." />
-        <PlannerPaywall feature="food_planner" title="Grocery lives with the meal planner." body="Unlock meals to keep one grocery list for Christmas." />
+        <PlannerPageHeader title="Grocery" lede="Food for the menu. Gift shopping is a separate list." />
+        <PlannerPaywall feature="food_planner" title="Grocery is part of Christmas Planner" body="Get my Christmas Planner for $17 to keep one grocery list from your meals." />
       </div>
     );
   }
@@ -658,25 +676,47 @@ export function ChristmasPlannerGroceryPage() {
 
   return (
     <div className="tdg-planner-page tdg-food-product">
-      <PlannerPageHeader title="Your Christmas Shopping List" lede="Built from your menu. Tick what you have. Manual extras stay when the list refreshes." />
+      <PlannerPageHeader title="Grocery" lede="Built from your menu. Tick what you have. This is food, not gift shopping." />
       <p className="tdg-planner-muted">{remaining} ingredients still needed</p>
+      {notice ? <p className="tdg-planner-muted" role="status">{notice}</p> : null}
       <form
         className="tdg-grocery-add"
         onSubmit={async (event: FormEvent) => {
           event.preventDefault();
           if (!draft.name.trim()) return;
-          const { data } = await supabase
-            .from("christmas_grocery_items")
-            .insert({
-              profile_id: profile.id,
-              name: `${draft.aisle}|${draft.name.trim()}`.slice(0, 120),
-              quantity: draft.qty.slice(0, 40),
-              status: "need",
-              source_type: "manual",
-            })
-            .select("id,name,quantity,status,source_type,ingredient_key,source_notes")
-            .maybeSingle();
-          if (data) setItems((p) => [...p, data as (typeof items)[0]]);
+          const plan = planManualGroceryAdd({
+            items,
+            aisle: draft.aisle,
+            label: draft.name.trim(),
+            quantity: draft.qty,
+          });
+          if (plan.action === "duplicate") {
+            setNotice(
+              plan.reason === "incompatible_unit"
+                ? "That item is already on the list with a different unit. Edit its quantity instead of adding it again."
+                : "That item is already on the grocery list.",
+            );
+            return;
+          }
+          if (plan.action === "merge") {
+            await supabase.from("christmas_grocery_items").update({ quantity: plan.quantity }).eq("id", plan.id).eq("profile_id", profile.id);
+            setItems((prev) => prev.map((row) => (row.id === plan.id ? { ...row, quantity: plan.quantity } : row)));
+            setNotice("Quantities combined on the existing grocery item.");
+          } else {
+            const { data } = await supabase
+              .from("christmas_grocery_items")
+              .insert({
+                profile_id: profile.id,
+                name: plan.name,
+                quantity: plan.quantity,
+                status: "need",
+                source_type: "manual",
+              })
+              .select("id,name,quantity,status,source_type,ingredient_key,source_notes")
+              .maybeSingle();
+            if (data) setItems((p) => [...p, data as (typeof items)[0]]);
+            setNotice(null);
+          }
           setDraft({ name: "", aisle: draft.aisle, qty: "" });
         }}
       >

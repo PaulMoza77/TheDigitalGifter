@@ -171,13 +171,21 @@ export async function fetchPlannerAccess(): Promise<PlannerAccess | null> {
     features?: string[];
     package_keys?: string[];
     paid?: boolean;
+    payment_fulfilled?: boolean;
+    access_source?: PlannerAccess["access_source"];
   };
+  const accessSource = row.access_source;
   return {
     ok: Boolean(row.ok),
     season_year: Number(row.season_year || 0),
     features: (row.features || []) as PlannerFeatureKey[],
     package_keys: row.package_keys || [],
     paid: Boolean(row.paid),
+    payment_fulfilled: Boolean(row.payment_fulfilled),
+    access_source:
+      accessSource === "stripe" || accessSource === "qa_grant" || accessSource === "admin" || accessSource === "free"
+        ? accessSource
+        : undefined,
   };
 }
 

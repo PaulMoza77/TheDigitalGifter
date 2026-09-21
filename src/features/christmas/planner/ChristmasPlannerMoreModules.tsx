@@ -69,7 +69,7 @@ export function ChristmasPlannerShoppingPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Shopping" lede="From to-buy through arriving, arrived, and returns." />
+      <PlannerPageHeader title="Gift shopping" lede="Presents to buy, ordered, arriving, and returns. Groceries stay in Grocery." />
       <div className="tdg-planner-seg" role="tablist">
         {(["need", "ordered", "arriving", "arrived", "returns"] as const).map((t) => (
           <button key={t} type="button" className={tab === t ? "on" : ""} onClick={() => setTab(t)}>

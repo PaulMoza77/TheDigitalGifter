@@ -25,6 +25,7 @@ import type { BudgetExpenseLine } from "./intelligence/budgetIntelligence";
 import { hasFeature } from "./entitlements";
 import { PlannerOnboarding, usePlannerBundle } from "./Onboarding";
 import { PlannerPageHeader, PlannerProgress } from "./plannerUi";
+import { bumpPlannerWorkspace } from "./workspaceSync";
 import {
   BUDGET_CATEGORY_LABELS,
   BUDGET_DASHBOARD_CATEGORIES,
@@ -114,6 +115,7 @@ export function ChristmasPlannerBudgetPage() {
     if (!profile) return;
     await setPlannerTotalBudget(profile.id, minor);
     trackPlannerEvent("planner_budget_updated", { module: "budget" });
+    bumpPlannerWorkspace();
     await reload();
   }
 
@@ -181,6 +183,7 @@ export function ChristmasPlannerBudgetPage() {
         return [...rest, saved];
       });
       trackPlannerEvent("planner_budget_updated", { module: "budget", metadata: { category } });
+      bumpPlannerWorkspace();
     }
   }
 
@@ -209,6 +212,7 @@ export function ChristmasPlannerBudgetPage() {
       if (saved) setRows((prev) => [...prev, saved]);
     }
     trackPlannerEvent("planner_budget_updated", { module: "budget" });
+    bumpPlannerWorkspace();
     setExpense(EMPTY_EXPENSE);
     setExpenseOpen(false);
   }
@@ -222,6 +226,7 @@ export function ChristmasPlannerBudgetPage() {
     }
     await deleteBudgetExpense(line.id);
     setRows((prev) => prev.filter((r) => r.id !== line.id));
+    bumpPlannerWorkspace();
     trackPlannerEvent("planner_budget_updated", { module: "budget" });
   }
 
@@ -349,7 +354,7 @@ export function ChristmasPlannerBudgetPage() {
             <strong>{money(spent)}</strong>
           </div>
           <div>
-            <span className="tdg-planner-kicker">Planned</span>
+            <span className="tdg-planner-kicker">Committed</span>
             <strong>{money(planned)}</strong>
           </div>
           <div>
@@ -362,7 +367,7 @@ export function ChristmasPlannerBudgetPage() {
           <span className="is-planned" style={{ width: `${plannedPct}%`, left: `${spentPct}%` }} />
         </div>
         <p className="tdg-planner-muted">
-          {money(spent)} spent · {money(planned)} planned · {remaining < 0 ? `${money(Math.abs(remaining))} over` : `${money(remaining)} remaining`}
+          {money(spent)} spent · {money(planned)} committed · {remaining < 0 ? `${money(Math.abs(remaining))} over` : `${money(remaining)} remaining`}. Remaining is the total minus spent and committed. Each gift price is counted once.
         </p>
       </section>
 
@@ -388,7 +393,7 @@ export function ChristmasPlannerBudgetPage() {
             <div>
               <strong>{row.label}</strong>
               <div className="tdg-planner-muted">
-                Budget {money(row.budgetMinor)} · Spent {money(row.spentMinor)} · Remaining {money(row.remainingMinor)}
+                Cap {money(row.budgetMinor)} · Spent {money(row.spentMinor)} · Committed {money(row.plannedMinor)} · Remaining {money(row.budgetMinor - row.spentMinor - row.plannedMinor)}
               </div>
               <PlannerProgress
                 value={row.budgetMinor ? Math.min(100, Math.round((row.spentMinor / row.budgetMinor) * 100)) : 0}

@@ -71,6 +71,16 @@ export function planModeLabel(mode: PlanMode): string {
   return "Season wrap & next year";
 }
 
+export function plannerGreeting(now: Date, timeZone?: string | null): string {
+  const tz = timeZone && timeZone !== "local" ? timeZone : undefined;
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: tz }).format(now),
+  );
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export function countdownCopy(daysLeft: number): string {
   if (daysLeft > 1) return `${daysLeft} days until Christmas`;
   if (daysLeft === 1) return "1 day until Christmas";
@@ -92,7 +102,7 @@ export function formatPlannerDate(iso: string | null | undefined): string {
 
 const CATEGORY_LABELS: Record<string, string> = {
   gifts: "Gifts",
-  shopping: "Shopping",
+  shopping: "Gift shopping",
   cards: "Cards",
   food: "Food",
   hosting: "Hosting",

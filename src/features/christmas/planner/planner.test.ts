@@ -546,7 +546,7 @@ describe("entitlements are feature-mapped, not isPremium", () => {
     expect(locked).not.toContain("<Link");
     expect(locked).not.toContain("#pricing");
     expect(unlock).toContain("FOUNDING_PASS_PACKAGE_KEY");
-    expect(unlock).toContain("Unlock your complete Christmas plan");
+    expect(unlock).toContain("Get my Christmas Planner");
     expect(unlock).toContain("FOUNDING_PASS_PRICE_LABEL");
     expect(unlock).toContain("startPlannerCheckout");
     expect(unlock).toContain("returnPath");
@@ -793,13 +793,13 @@ describe("private planner privacy surface", () => {
     const ui = readSrc("src/features/christmas/planner/plannerUi.tsx");
     const css = readSrc("src/features/christmas/planner/plannerApp.css");
     const layout = readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx");
-    expect(pages).toContain("Your season, step by step.");
-    expect(pages).toContain("Plan everyone you’re buying for");
+    expect(pages).toContain("Overdue, today, this week, and later use the same dates as Today.");
+    expect(pages).toContain("People first.");
     expect(budget).toContain("Keep Christmas spending beautifully under control.");
     expect(pages).toContain("Everything else for your Christmas season.");
     expect(pages).not.toContain("Today’s checklist");
     expect(more).toContain("See your season at a glance.");
-    expect(more).toContain("From to-buy through arriving");
+    expect(more).toContain("Presents to buy, ordered, arriving, and returns.");
     expect(ui).toContain("PlannerPageHeader");
     expect(ui).toContain("PlannerLockedModule");
     expect(ui).toContain("FoundingPassUnlockButton");
