@@ -71,6 +71,30 @@ export function planModeLabel(mode: PlanMode): string {
   return "Season wrap & next year";
 }
 
+export function localHour(now: Date, timeZone?: string | null): number {
+  const tz = timeZone && timeZone !== "local" ? timeZone : undefined;
+  const fmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
+    hour: "numeric",
+    hourCycle: "h23",
+  });
+  const hour = Number(fmt.formatToParts(now).find((p) => p.type === "hour")?.value);
+  return Number.isFinite(hour) ? hour : now.getHours();
+}
+
+export function dayGreetingWord(now: Date, timeZone?: string | null): "morning" | "afternoon" | "evening" {
+  const hour = localHour(now, timeZone);
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
+  return "evening";
+}
+
+export function dayGreeting(now: Date, timeZone?: string | null, firstName?: string | null): string {
+  const word = dayGreetingWord(now, timeZone);
+  const name = String(firstName || "").trim();
+  return name ? `Good ${word}, ${name}!` : `Good ${word}!`;
+}
+
 export function countdownCopy(daysLeft: number): string {
   if (daysLeft > 1) return `${daysLeft} days until Christmas`;
   if (daysLeft === 1) return "1 day until Christmas";

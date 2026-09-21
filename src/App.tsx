@@ -213,6 +213,12 @@ const ChristmasPlannerLayout = lazy(
 const ChristmasPlannerTodayPage = lazy(
   () => import("@/features/christmas/planner/ChristmasPlannerPages"),
 );
+const PlannerHubRoute = lazy(
+  () => import("@/features/christmas/planner/shell/ChristmasPlannerHubPage"),
+);
+const PlannerHomeVisualPage = lazy(
+  () => import("@/features/christmas/planner/shell/PlannerHomeVisualPage"),
+);
 const PlannerPlanRoute = lazy(() =>
   import("@/features/christmas/planner/ChristmasPlannerPages").then((m) => ({
     default: m.ChristmasPlannerPlanPage,
@@ -679,6 +685,9 @@ function AppInner() {
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
             <Route path="/christmas/planner" element={<ChristmasPlannerPage />} />
             <Route path="/christmas/planner/welcome" element={<ChristmasPlannerWelcomePage />} />
+            {import.meta.env.DEV ? (
+              <Route path="/dev/planner-home" element={<PlannerHomeVisualPage />} />
+            ) : null}
             <Route path="/christmas/send-a-gift" element={<ChristmasSendGiftPage />} />
             <Route path="/send-a-gift" element={<Navigate to="/christmas/send-a-gift" replace />} />
             <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
@@ -805,7 +814,8 @@ function AppInner() {
 
           <Route element={<ProtectedClientRoute />}>
             <Route path="/account/christmas" element={<ChristmasPlannerLayout />}>
-              <Route index element={<ChristmasPlannerTodayPage />} />
+              <Route index element={<PlannerHubRoute />} />
+              <Route path="today" element={<ChristmasPlannerTodayPage />} />
               <Route path="plan" element={<PlannerPlanRoute />} />
               <Route path="gifts" element={<PlannerGiftsRoute />} />
               <Route path="more" element={<PlannerMoreRoute />} />

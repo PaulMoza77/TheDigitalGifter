@@ -818,10 +818,12 @@ describe("private planner privacy surface", () => {
     expect(css).toContain("grid-column: 2");
     expect(css).toContain(".tdg-planner-side");
     expect(css).toContain("overflow-y: auto");
-    expect(layout).toContain("TheDigitalGifter.png");
+    expect(layout).toContain("Christmas Planner");
     expect(layout).not.toContain("tdg-planner-body");
     expect(layout).toContain('aside className="tdg-planner-side"');
     expect(layout).toContain('main className="tdg-planner-main"');
+    expect(layout).toContain("Need an idea?");
+    expect(layout).toContain("AI Copilot");
   });
 });
 

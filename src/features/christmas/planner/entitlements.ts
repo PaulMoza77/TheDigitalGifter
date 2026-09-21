@@ -1,5 +1,6 @@
 import {
   FREE_LIMITS,
+  PLANNER_COMPLETE_FEATURES,
   PLANNER_FEATURE_KEYS,
   PLANNER_PACKAGE_FEATURES,
   PLANNER_PRODUCT_KEYS,
@@ -125,6 +126,28 @@ export function accessFromGrants(input: {
 
 export function hasFeature(access: PlannerAccess | null | undefined, key: PlannerFeatureKey): boolean {
   return Boolean(access?.features?.includes(key));
+}
+
+const COMPLETE_PACKAGE_KEYS = new Set(["founding_pass", "magic", "complete", "all_in"]);
+
+/** Truthful Complete / Founding Pass access — never invents a new product. */
+export function hasCompletePlanner(access: PlannerAccess | null | undefined): boolean {
+  if (!access) return false;
+  if ((access.package_keys || []).some((key) => COMPLETE_PACKAGE_KEYS.has(key))) return true;
+  return PLANNER_COMPLETE_FEATURES.every((key) => access.features.includes(key));
+}
+
+export function firstNameFromAuthUser(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+} | null | undefined): string {
+  const meta = user?.user_metadata || {};
+  const full = String(meta.full_name || meta.name || meta.given_name || "").trim();
+  const first = full.split(/\s+/)[0];
+  if (first) return first;
+  const email = String(user?.email || "").trim();
+  const local = email.split("@")[0];
+  return local || "";
 }
 
 export function moduleLocked(
