@@ -1,4 +1,5 @@
 import { mkdir, copyFile, rm, stat } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { LIBRARY_VIDEOS, isLibraryPhoto, type LibraryVideo } from "../../../src/features/admin-library/catalog";
 import { generateDescription, generateThumbnailConcepts, generateTitleOptions } from "../../../src/features/long-form-studio/copy";
@@ -7,6 +8,7 @@ import { buildPlaylist } from "../../../src/features/long-form-studio/playlist";
 import { validateProductionRights } from "../../../src/features/long-form-studio/rightsManifest";
 import { checkProductionSimilarity } from "../../../src/features/long-form-studio/similarity";
 import { ORIGINAL_MUSIC_SEED } from "../../../src/features/long-form-studio/seedMusic";
+import { extractThumbnail, ffprobeFile } from "../clip-factory/ffmpeg";
 import { renderLongFormVideo, visualTreatmentId, type SceneInput } from "./render";
 import { loadLocalState, saveLocalState, newId } from "./localState";
 import { signedLongFormPath, stableMediaPath } from "./mediaSign";
@@ -272,29 +274,53 @@ export async function processProductionById(productionId: string, workDir?: stri
 
   try {
     await bucketHeadroom(parsed.durationSeconds >= 3600 ? 2_000_000_000 : 80_000_000);
-    const sceneInputs: SceneInput[] = plan2.scenes.map((s) => ({
-      id: s.id,
-      title: s.title,
-      src: s.src,
-      kind: s.kind,
-      filename: s.filename,
-    }));
-    const rendered = await renderLongFormVideo({
-      workDir: dir,
-      scenes: sceneInputs,
-      tracks: plan2.usedTracks,
-      playlist: plan2.playlist.entries,
-      durationSeconds: parsed.durationSeconds,
-      style: parsed.style,
-      onProgress: async (stage, progress, label) => {
-        production.stage = stage;
-        production.progress = progress;
-        production.progress_label = label;
-        production.status = "rendering";
+    const existingFinal = join(dir, "final.mp4");
+    const existingThumb = join(dir, "thumb.jpg");
+    let rendered:
+      | {
+          outputPath: string;
+          thumbnailPath: string;
+          probe: { duration: number; width: number; height: number; hasAudio?: boolean; fileSize: number | null };
+        }
+      | undefined;
+    if (existsSync(existingFinal)) {
+      const probe = await ffprobeFile(existingFinal);
+      if (Math.abs(probe.duration - parsed.durationSeconds) <= 3 && probe.width >= 1920 && probe.hasAudio) {
+        if (!existsSync(existingThumb)) {
+          await extractThumbnail(existingFinal, Math.min(8, probe.duration / 5), existingThumb);
+        }
+        rendered = { outputPath: existingFinal, thumbnailPath: existingThumb, probe };
+        production.stage = "saving_to_library";
+        production.progress = 90;
+        production.progress_label = STAGE_LABELS.saving_to_library;
         await persistProduction(production, { requireRemote: !longFormLocalAllowed() });
-        await patchJob(jobId, { stage, progress, progress_label: label, status: "rendering" });
-      },
-    });
+      }
+    }
+    if (!rendered) {
+      const sceneInputs: SceneInput[] = plan2.scenes.map((s) => ({
+        id: s.id,
+        title: s.title,
+        src: s.src,
+        kind: s.kind,
+        filename: s.filename,
+      }));
+      rendered = await renderLongFormVideo({
+        workDir: dir,
+        scenes: sceneInputs,
+        tracks: plan2.usedTracks,
+        playlist: plan2.playlist.entries,
+        durationSeconds: parsed.durationSeconds,
+        style: parsed.style,
+        onProgress: async (stage, progress, label) => {
+          production.stage = stage;
+          production.progress = progress;
+          production.progress_label = label;
+          production.status = "rendering";
+          await persistProduction(production, { requireRemote: !longFormLocalAllowed() });
+          await patchJob(jobId, { stage, progress, progress_label: label, status: "rendering" });
+        },
+      });
+    }
 
     const filename = `final.mp4`;
     const videoKey = `productions/${productionId}/${filename}`;

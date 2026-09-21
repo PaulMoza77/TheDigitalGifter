@@ -1,7 +1,7 @@
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { open, stat } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { getServiceClient } from "../christmas/supabaseClient";
+import { getServiceClient, requiredEnv } from "../christmas/supabaseClient";
 
 export const LONG_FORM_BUCKET = "long-form";
 
@@ -25,34 +25,102 @@ export async function uploadObjectStreaming(input: {
   objectPath: string;
   contentType: string;
 }): Promise<{ bytes: number; sha256: string }> {
-  const service = getServiceClient();
   const info = await stat(input.localPath);
   const sha256 = await hashFile(input.localPath);
-  const { data, error } = await service.storage.from(LONG_FORM_BUCKET).createSignedUploadUrl(input.objectPath, {
+  if (info.size > 5_000_000) {
+    await uploadObjectResumable(input.objectPath, input.localPath, input.contentType, info.size);
+  } else {
+    await uploadObjectSignedPut(input.objectPath, input.localPath, input.contentType, info.size);
+  }
+  const verified = await verifyStoredObject(input.objectPath, info.size);
+  if (!verified.ok) throw new Error(verified.message);
+  return { bytes: info.size, sha256 };
+}
+
+async function uploadObjectSignedPut(objectPath: string, localPath: string, contentType: string, size: number) {
+  const service = getServiceClient();
+  const { data, error } = await service.storage.from(LONG_FORM_BUCKET).createSignedUploadUrl(objectPath, {
     upsert: true,
   });
   if (error || !data?.signedUrl) {
     throw new Error(error?.message || "Could not create a storage upload URL.");
   }
-  const body = createReadStream(input.localPath);
+  const body = createReadStream(localPath);
   const put = await fetch(data.signedUrl, {
     method: "PUT",
     body,
     duplex: "half",
     headers: {
-      "Content-Type": input.contentType,
-      "Content-Length": String(info.size),
+      "Content-Type": contentType,
+      "Content-Length": String(size),
     },
   } as RequestInit);
   if (!put.ok) {
     const text = await put.text().catch(() => "");
     throw new Error(`Storage upload failed (${put.status}). ${text.slice(0, 180)}`);
   }
-  const verified = await verifyStoredObject(input.objectPath, info.size);
-  if (!verified.ok) {
-    throw new Error(verified.message);
+}
+
+function b64(value: string): string {
+  return Buffer.from(value).toString("base64");
+}
+
+async function uploadObjectResumable(objectPath: string, localPath: string, contentType: string, size: number) {
+  const supabaseUrl = requiredEnv("SUPABASE_URL").replace(/\/$/, "");
+  const key = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const metadata = [
+    `bucketName ${b64(LONG_FORM_BUCKET)}`,
+    `objectName ${b64(objectPath)}`,
+    `contentType ${b64(contentType)}`,
+    `cacheControl ${b64("3600")}`,
+  ].join(",");
+  const create = await fetch(`${supabaseUrl}/storage/v1/upload/resumable`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      apikey: key,
+      "x-upsert": "true",
+      "Tus-Resumable": "1.0.0",
+      "Upload-Length": String(size),
+      "Upload-Metadata": metadata,
+    },
+  });
+  if (create.status !== 201 && create.status !== 200) {
+    const text = await create.text().catch(() => "");
+    throw new Error(`Storage upload failed (${create.status}). ${text.slice(0, 180)}`);
   }
-  return { bytes: info.size, sha256 };
+  let location = create.headers.get("location") || create.headers.get("Location") || "";
+  if (!location) throw new Error("Storage did not return a resumable upload URL.");
+  if (location.startsWith("/")) location = `${supabaseUrl}${location}`;
+  const chunkSize = 6 * 1024 * 1024;
+  const handle = await open(localPath, "r");
+  try {
+    let offset = 0;
+    while (offset < size) {
+      const length = Math.min(chunkSize, size - offset);
+      const buf = Buffer.alloc(length);
+      const read = await handle.read(buf, 0, length, offset);
+      const patch = await fetch(location, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          apikey: key,
+          "Tus-Resumable": "1.0.0",
+          "Upload-Offset": String(offset),
+          "Content-Type": "application/offset+octet-stream",
+        },
+        body: buf.subarray(0, read.bytesRead),
+      });
+      if (patch.status !== 204 && patch.status !== 200) {
+        const text = await patch.text().catch(() => "");
+        throw new Error(`Storage upload failed (${patch.status}). ${text.slice(0, 180)}`);
+      }
+      const next = Number(patch.headers.get("Upload-Offset") || offset + read.bytesRead);
+      offset = Number.isFinite(next) ? next : offset + read.bytesRead;
+    }
+  } finally {
+    await handle.close();
+  }
 }
 
 export async function verifyStoredObject(
