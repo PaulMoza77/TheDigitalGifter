@@ -1,6 +1,7 @@
 -- Explicit Christmas Planner QA access.
 -- This is not Stripe fulfillment: it never inserts an order and never marks a payment paid.
--- Execute only with the service role, for a real auth user, with a written reason.
+-- Execute only with the service role. The target must already be marked
+-- auth.users.raw_app_meta_data.planner_qa = true (admin API only, never user_metadata).
 
 create or replace function public.get_christmas_planner_access()
 returns jsonb
@@ -120,15 +121,24 @@ declare
   ];
   key text;
   granted integer := 0;
+  jwt_role text := coalesce(auth.role(), '');
 begin
+  if jwt_role in ('anon', 'authenticated') or (jwt_role <> '' and jwt_role <> 'service_role') then
+    return jsonb_build_object('ok', false, 'reason', 'forbidden');
+  end if;
   if p_user_id is null then
     return jsonb_build_object('ok', false, 'reason', 'missing_user');
   end if;
   if length(trim(coalesce(p_reason, ''))) < 12 then
     return jsonb_build_object('ok', false, 'reason', 'reason_required');
   end if;
-  if not exists (select 1 from auth.users where id = p_user_id) then
-    return jsonb_build_object('ok', false, 'reason', 'user_not_found');
+  if not exists (
+    select 1
+    from auth.users
+    where id = p_user_id
+      and coalesce(raw_app_meta_data->>'planner_qa', '') = 'true'
+  ) then
+    return jsonb_build_object('ok', false, 'reason', 'not_qa_user');
   end if;
 
   foreach key in array keys
@@ -151,14 +161,8 @@ begin
         'payment_fulfilled', false,
         'reason', left(trim(p_reason), 240)
       )
-    where not exists (
-      select 1
-      from public.user_entitlements existing
-      where existing.user_id = p_user_id
-        and existing.entitlement_key = key
-        and existing.season_year = coalesce(p_season_year, 2026)
-        and existing.status = 'active'
-    );
+    on conflict (user_id, entitlement_key, season_year) where user_id is not null and status = 'active'
+    do nothing;
     if found then
       granted := granted + 1;
     end if;
@@ -185,10 +189,24 @@ set search_path = public
 as $$
 declare
   n integer := 0;
+  jwt_role text := coalesce(auth.role(), '');
 begin
+  if jwt_role in ('anon', 'authenticated') or (jwt_role <> '' and jwt_role <> 'service_role') then
+    return jsonb_build_object('ok', false, 'reason', 'forbidden', 'revoked', 0, 'payment_rows_touched', 0);
+  end if;
+  if not exists (
+    select 1
+    from auth.users
+    where id = p_user_id
+      and coalesce(raw_app_meta_data->>'planner_qa', '') = 'true'
+  ) then
+    return jsonb_build_object('ok', false, 'reason', 'not_qa_user', 'revoked', 0, 'payment_rows_touched', 0);
+  end if;
+
   update public.user_entitlements
   set status = 'revoked', updated_at = now()
   where user_id = p_user_id
+    and product_key = 'christmas_planner_2026'
     and status = 'active'
     and source = 'admin'
     and christmas_order_id is null
@@ -201,8 +219,9 @@ $$;
 revoke all on function public.revoke_christmas_planner_qa_access(uuid) from public, anon, authenticated;
 grant execute on function public.revoke_christmas_planner_qa_access(uuid) to service_role;
 
--- Free gift-people cap applies to new rows only. Existing people are kept.
--- Household is the gift-shopping list and does not consume a gift-person place.
+-- Free gift-people cap applies when a real person is added. Existing people are kept.
+-- One Household row is the gift-shopping list and does not consume a gift-person place.
+-- Renaming Household into a person, or inserting another Household, cannot bypass the cap.
 create or replace function public.christmas_planner_enforce_free_recipient_cap()
 returns trigger
 language plpgsql
@@ -213,8 +232,31 @@ declare
   people integer;
   entitled boolean;
   season integer;
+  incoming_household boolean;
+  previous_household boolean;
 begin
-  if lower(trim(new.display_name)) = 'household' then
+  incoming_household := lower(trim(new.display_name)) = 'household';
+  previous_household := tg_op = 'UPDATE' and lower(trim(old.display_name)) = 'household';
+
+  if incoming_household then
+    if exists (
+      select 1
+      from public.christmas_gift_recipients
+      where profile_id = new.profile_id
+        and id is distinct from new.id
+        and lower(trim(display_name)) = 'household'
+    ) then
+      raise exception 'household_list_exists'
+        using errcode = 'P0001',
+              hint = 'Each plan has one Household gift-shopping list.';
+    end if;
+    return new;
+  end if;
+
+  -- Editing a saved gift person does not take a new place, even above the cap.
+  if tg_op = 'UPDATE'
+     and not previous_household
+     and old.profile_id is not distinct from new.profile_id then
     return new;
   end if;
 
@@ -238,6 +280,7 @@ begin
   select count(*) into people
   from public.christmas_gift_recipients
   where profile_id = new.profile_id
+    and id is distinct from new.id
     and lower(trim(display_name)) <> 'household';
 
   if people >= 3 then
@@ -250,7 +293,9 @@ begin
 end;
 $$;
 
+revoke all on function public.christmas_planner_enforce_free_recipient_cap() from public, anon, authenticated;
+
 drop trigger if exists christmas_gift_recipients_free_cap on public.christmas_gift_recipients;
 create trigger christmas_gift_recipients_free_cap
-before insert on public.christmas_gift_recipients
+before insert or update on public.christmas_gift_recipients
 for each row execute function public.christmas_planner_enforce_free_recipient_cap();

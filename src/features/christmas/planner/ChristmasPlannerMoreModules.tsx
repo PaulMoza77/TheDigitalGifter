@@ -743,7 +743,7 @@ export function ChristmasPlannerCardsPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Cards" lede="Track who needs a greeting, then open the makers you already use." />
+      <PlannerPageHeader title="Cards" lede="Track who needs a greeting. Creating a card, photo, or video uses separate credits and is not part of the $17 planner." />
       <PlannerStudioCue cues={cardsStudioCues()} />
       <div className="tdg-planner-actions" style={{ marginBottom: 12 }}>
         <Link className="tdg-planner-btn primary" to="/christmas/messages">
@@ -865,8 +865,8 @@ export function ChristmasPlannerClubPage() {
   }, []);
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Christmas Club" lede="Countdown community - the Planner stays private." />
-      <p>Community posts aren’t live yet - we won’t fake an active feed. Join the existing Christmas Club for countdown updates.</p>
+      <PlannerPageHeader title="Christmas Club" lede="The community feed is not live and is not included in Christmas Planner." />
+      <p>Community posts aren’t live yet - we won’t fake an active feed. The $17 planner does not include this feed. Countdown updates stay on the separate Christmas Club page.</p>
       <div className="tdg-planner-actions" style={{ marginTop: 16 }}>
         <Link className="tdg-planner-btn primary" to={CHRISTMAS_CLUB_ROUTE}>
           Open Christmas Club

@@ -371,7 +371,7 @@ export default function ChristmasPlannerTodayPage() {
         <PlannerPaywall
           feature="planner_core"
           title="Christmas Planner is $17"
-          body="Free includes Today, a short task list, and 3 gift people. Christmas Planner is a one-time $17 payment for the full 2026 season, including meals, grocery, and budget."
+          body="Free includes Today, a short task list, and 3 gift people. Christmas Planner is a one-time $17 payment for the full 2026 season, including meals, grocery, and budget. Cards, photos, and videos are separate. The Christmas Club feed is not included."
         />
       ) : null}
 
@@ -1024,7 +1024,7 @@ export function ChristmasPlannerMorePage() {
       title: "People",
       items: [
         ["/account/christmas/travel", "Travel", "Trips, packing and plans", "travel"],
-        ["/account/christmas/cards", "Cards", "Keep greetings on track", "star"],
+        ["/account/christmas/cards", "Cards", "Track greetings. Card making is a separate credit.", "star"],
         ["/christmas/wishlist", "Wishlist", "Open your public wishlist", "gift"],
       ],
     },
@@ -1033,7 +1033,7 @@ export function ChristmasPlannerMorePage() {
       items: [
         ["/account/christmas/traditions", "Traditions", "Make time for what matters", "star"],
         ["/account/christmas/memories", "Memories", "Keep the season", "memory"],
-        ["/account/christmas/club", "Christmas Club", "Countdown community", "star"],
+        ["/account/christmas/club", "Christmas Club", "Feed is not live and is not part of the $17 planner.", "star"],
         ["/account/christmas/settings", "Settings", "Currency, hosting, reset", "settings"],
       ],
     },
@@ -1092,7 +1092,7 @@ export function ChristmasPlannerSimpleModule({
   if (loading) return <p>Loading…</p>;
   if (!profile) return <PlannerOnboarding />;
   if (feature && !hasFeature(access, feature)) {
-    return <PlannerPaywall feature={feature} title={`${title} is part of Christmas Planner`} body="Christmas Planner is $17 once for the 2026 season." />;
+    return <PlannerPaywall feature={feature} title={`${title} is part of Christmas Planner`} body="Christmas Planner is $17 once for the 2026 season. Cards, photos, and videos stay separate." />;
   }
 
   return (

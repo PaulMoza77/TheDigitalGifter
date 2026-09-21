@@ -18,8 +18,9 @@ Stripe fulfillment remains `grant_christmas_planner_entitlements` after a verifi
 ## How to open one isolated QA account
 
 1. Create a new auth user that is not a customer account. Do not reuse the Free account that already has planner data.
-2. Apply migration `20260921193000_christmas_planner_qa_access.sql`.
-3. With the service role, call:
+2. Set `app_metadata.planner_qa` to `true` with the admin API. Do not put this flag in `user_metadata`; that field is editable by the user and is ignored by the grant.
+3. Apply migration `20260921193000_christmas_planner_qa_access.sql`.
+4. With the service role only, call:
 
 ```sql
 select public.grant_christmas_planner_qa_access(
@@ -28,10 +29,10 @@ select public.grant_christmas_planner_qa_access(
 );
 ```
 
-The reason must be at least 12 characters. Authenticated clients cannot call this function.
+The reason must be at least 12 characters. Anonymous and signed-in clients cannot call this function. A user without `app_metadata.planner_qa = true` is refused, so the grant cannot be aimed at a customer account. Calling it again does not add a second set of rows.
 
-4. Sign in as that user and open `/account/christmas`. Meals, budget, and grocery should unlock. The QA note must stay visible.
-5. When finished, remove only that grant:
+5. Sign in as that user and open `/account/christmas`. Meals, budget, and grocery should unlock. The QA note must stay visible.
+6. When finished, remove only that grant:
 
 ```sql
 select public.revoke_christmas_planner_qa_access('<auth.users id>'::uuid);
@@ -41,4 +42,4 @@ This does not charge a card and does not mark an order paid.
 
 ## Free gift people
 
-Free accounts can add 3 gift people. A row named Household is created by Gift shopping for general presents and does not use one of those 3 places. That is why a Free account can show 4 recipient rows while the limit copy says 3. People already saved above the cap are kept. New gift people are refused until Christmas Planner ($17) is actually entitled.
+Free accounts can add 3 gift people. One row named Household is the Gift shopping list for general presents and does not use one of those 3 places. That is why a Free account can show 4 recipient rows while the limit copy says 3. A second Household row is refused. Renaming Household into a person counts toward the cap. People already saved above the cap are kept and can still be edited. New gift people are refused until Christmas Planner ($17) is actually entitled.

@@ -154,10 +154,16 @@ describe("QA access is not a payment", () => {
     const sql = readFileSync("supabase/migrations/20260921193000_christmas_planner_qa_access.sql", "utf8");
     const grant = sql.slice(sql.indexOf("function public.grant_christmas_planner_qa_access"), sql.indexOf("function public.revoke_christmas_planner_qa_access"));
     expect(grant).toContain("payment_fulfilled");
+    expect(grant).toContain("raw_app_meta_data->>'planner_qa'");
+    expect(grant).not.toContain("user_metadata");
     expect(grant).not.toContain("christmas_orders");
     expect(grant).not.toContain("payment_status");
+    expect(sql).toContain("revoke all on function public.grant_christmas_planner_qa_access(uuid, text, integer) from public, anon, authenticated");
+    expect(sql).toContain("grant execute on function public.grant_christmas_planner_qa_access(uuid, text, integer) to service_role");
     expect(sql).toContain("free_recipient_limit");
-    expect(sql).toContain("before insert");
+    expect(sql).toContain("household_list_exists");
+    expect(sql).toContain("before insert or update");
+    expect(sql).not.toContain("raw_user_meta_data");
     const pages = readFileSync("src/features/christmas/planner/ChristmasPlannerPages.tsx", "utf8");
     const unlock = readFileSync("src/features/christmas/planner/FoundingPassUnlock.tsx", "utf8");
     const copilot = readFileSync("src/features/christmas/planner/copilot/CopilotSheet.tsx", "utf8");
