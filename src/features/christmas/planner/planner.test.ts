@@ -309,6 +309,10 @@ describe("christmas planner wiring", () => {
     expect(checkout).toContain("walletCapabilityOnly");
     expect(checkout).toContain('applePay: "auto" as const');
     expect(checkout).toContain('googlePay: "auto" as const');
+    expect(checkout).toContain('walletsReady && !walletsAvailable ? "hidden"');
+    expect(checkout).toContain("Or pay with card");
+    expect(checkout).toContain("lightRules");
+    expect(checkout).toContain('color: "#14080b"');
   });
 
   it("does not duplicate the English planner on locale-prefixed Christmas routes", () => {
@@ -341,6 +345,9 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("walletCapabilityOnly");
     expect(page).toContain("startPlannerCheckout");
     expect(page).toContain("Open my planner");
+    expect(page).toContain("HeroProductSummary");
+    expect(page).toContain("tdg-pl__pay-surface");
+    expect(page).toContain("STRIPE_LIGHT");
     expect(page).not.toContain("BUILD MY CHRISTMAS PLAN");
     expect(page).not.toContain("one clear product");
     expect(page).not.toContain("Guest checkout is supported");
@@ -349,6 +356,8 @@ describe("christmas planner wiring", () => {
     expect(page).not.toContain("Budget: not set yet");
     expect(css).toContain("tdg-pl__hero-grid");
     expect(css).toContain("--pl-shell");
+    expect(css).toContain("tdg-pl__pay-surface");
+    expect(css).toContain("tdg-pl__pay-btn");
   });
 
   it("shows a product demo and clear offer without quiz-gated checkout", () => {
@@ -359,6 +368,11 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("Example plan");
     expect(page).toContain("PlannerHeroScene");
     expect(page).toContain("PlannerDemoPanel");
+    expect(page).toContain("HeroProductSummary");
+    expect(page).toContain("MEAL_DEMO_RECIPE");
+    expect(page).toContain("scaleIngredientList");
+    expect(page).toContain("mealServings");
+    expect(page).toContain("Add to shopping list");
     expect(page).toContain("planner_demo_viewed");
     expect(page).toContain("planner_demo_tab_clicked");
     expect(page).toContain("planner_cta_clicked");
@@ -368,7 +382,12 @@ describe("christmas planner wiring", () => {
     expect(page).not.toContain("no fake customer progress");
     expect(page).not.toContain("tdg-planner__teaser-card");
     expect(page).not.toContain("Online Christmas planner for 2026");
+    // Full interactive demo once; hero uses compact summary only
+    expect((page.match(/<PlannerDemoPanel/g) || []).length).toBe(1);
+    expect((page.match(/GIFT_DEMO_PEOPLE/g) || []).length).toBeLessThanOrEqual(2);
     expect(css).toContain("tdg-pl__panel");
+    expect(css).toContain("tdg-pl__summary-list");
+    expect(css).toContain("tdg-pl__portions");
     expect(css).not.toContain(".tdg-pl .tdg-planner__device-frame");
     expect(readSrc("src/features/christmas/planner/PlannerHeroScene.tsx")).toContain("LANDING_ASSETS.cabinLoop");
     const faqIndex = page.indexOf("tdg-pl__faq");
@@ -405,8 +424,10 @@ describe("christmas planner wiring", () => {
     expect(copy.match(/q:/g)?.length).toBeLessThanOrEqual(7);
     expect(copy.toLowerCase()).toContain("one-time");
     expect(copy.toLowerCase()).toContain("not lifetime");
+    expect(copy.toLowerCase()).toContain("not separately defined");
     expect(copy.toLowerCase()).toContain("separate credits");
     expect(copy).toContain("BUDGET_DEMO_REMAINING");
+    expect(copy).toContain("MEAL_DEMO_RECIPE");
     expect(readSrc("src/pages/website/HomePage.tsx")).toContain("/christmas/planner");
     expect(readSrc("src/components/Header.tsx")).toContain("Christmas Planner");
   });
