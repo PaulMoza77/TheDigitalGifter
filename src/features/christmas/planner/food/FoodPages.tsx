@@ -744,10 +744,11 @@ export function ChristmasPlannerGroceryPage() {
             <h2>{AISLE_LABEL[aisle]}</h2>
             {rows.map((row) => (
               <div key={row.id} className={`tdg-grocery-row${row.status !== "need" ? " is-done" : ""}`}>
-                <label>
+                <div className="tdg-grocery-check">
                   <input
+                    id={`grocery-bought-${row.id}`}
                     type="checkbox"
-                    aria-label="Bought"
+                    aria-label={`Bought ${parseAisle(row.name).label}`}
                     checked={row.status === "bought"}
                     onChange={async (e) => {
                       const status = e.target.checked ? "bought" : "need";
@@ -755,11 +756,11 @@ export function ChristmasPlannerGroceryPage() {
                       setItems((p) => p.map((x) => (x.id === row.id ? { ...x, status } : x)));
                     }}
                   />
-                  <span>
+                  <label htmlFor={`grocery-bought-${row.id}`}>
                     <strong>{parseAisle(row.name).label}</strong>
                     <em>{row.quantity || ""}</em>
-                  </span>
-                </label>
+                  </label>
+                </div>
                 <p className="tdg-grocery-sources">
                   {row.source_type === "manual" ? "Added by you" : row.source_notes ? `Needed for: ${row.source_notes}` : "From your menu"}
                 </p>
