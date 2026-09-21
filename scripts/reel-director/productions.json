@@ -1,0 +1,9 @@
+{
+  "productions": [
+    {
+      "id": "christmas_planner_mom_overwhelm_v2",
+      "manifest": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/generation_manifest.json",
+      "status": "READY_FOR_APPROVAL"
+    }
+  ]
+}

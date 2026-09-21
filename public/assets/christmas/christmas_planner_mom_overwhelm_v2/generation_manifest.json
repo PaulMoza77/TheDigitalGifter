@@ -1,0 +1,454 @@
+{
+  "project": "christmas_planner_mom_overwhelm_v2",
+  "title": "Lauren — Christmas Planner Mom Overwhelm V2",
+  "status": "READY_FOR_APPROVAL",
+  "approval_gate": true,
+  "paid_video_called": false,
+  "format": "9:16",
+  "target_duration_s": [35, 45],
+  "estimated_final_duration_s": 41.5,
+  "duration_rule": "EDIT VIDEO AROUND HUMAN SPEECH. Never speed speech. Natural pauses are mandatory. Shot clocks are budgets, not stretchers.",
+  "pipeline": [
+    "character_bible",
+    "story_beats",
+    "shot_plan",
+    "audio_plan",
+    "generation_manifest",
+    "cost_estimate",
+    "approval",
+    "generation",
+    "assembly",
+    "qa",
+    "library"
+  ],
+  "style": {
+    "look": "photoreal UGC / documentary phone footage in a real home",
+    "avoid": [
+      "AI reel sheen",
+      "slideshow",
+      "ad with narrator",
+      "woman reading marketing copy",
+      "perfect lip-sync dependency",
+      "cinematic orbits",
+      "melodrama"
+    ]
+  },
+  "story_beats": [
+    "FAMILY CHAOS",
+    "MOM OVERWHELMED",
+    "BREAKING POINT",
+    "FRIEND MESSAGE",
+    "CHRISTMAS PLANNER",
+    "REALIZATION",
+    "RELIEF",
+    "TIME WITH FAMILY"
+  ],
+  "lip_sync_strategy": {
+    "depend_on_perfect_sync": false,
+    "video_sound": "off",
+    "prefer": [
+      "speaker starts → cut to Lauren reaction",
+      "off-camera dialogue",
+      "side profile / OTS",
+      "J-cuts and L-cuts",
+      "background husband"
+    ],
+    "on_camera_speech": "Lauren only, shots 4 and 6–7, small natural mouth motion allowed; do not sacrifice face lock for sync"
+  },
+  "motion_bible": {
+    "good": [
+      "subtle handheld",
+      "slow push-in",
+      "breathing, blinking, small eyes/head/hands",
+      "kids shifting in frame",
+      "husband moving in background",
+      "tree lights, candle flicker"
+    ],
+    "bad": [
+      "large orbit",
+      "fast zoom",
+      "face morph",
+      "extra people",
+      "exaggerated faces",
+      "readable invented UI or text"
+    ]
+  },
+  "provider_choice": "Higgsfield Kling 3.0 Pro I2V is the already-integrated photoreal identity path from Lauren v1; Seedance/WAN are cheaper 480p and weaker at locking this family, so we keep Kling with sound=off.",
+  "video_defaults": {
+    "provider": "higgsfield",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "sound": "off",
+    "rate_5s_usd": 0.28,
+    "rate_5s_credits": 4.48,
+    "rate_10s_usd": 0.56,
+    "rate_10s_credits": 8.96,
+    "rate_basis": "Live Lauren v1 Higgsfield estimate 2026-09-21 ($0.28 / 4.480 credits per 5s). 10s assumed 2× until live /estimate at generate time.",
+    "single_scene_regen": true,
+    "do_not_regenerate_whole_reel": true
+  },
+  "characters": {
+    "bible": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/character_bible.json",
+    "identity_lock": "Keep Lauren the same woman: mid-30s mother, warm fair skin, light freckles, brown-green eyes, messy honey-brown high bun with loose wisps, cream oversized knit cardigan, white tank, gold necklace. Keep the same daughter in white snowflake pajamas with teddy, same son in dark green Christmas pajamas, same husband in a dark grey henley, same golden retriever, same warm Christmas kitchen. Photoreal. Do not redesign faces."
+  },
+  "reference_assets": [
+    {
+      "id": "ref_01_chaos",
+      "still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_01_chaos_family_table.jpg",
+      "i2v": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_01_chaos_1080x1920.png"
+    },
+    {
+      "id": "ref_02_pressure",
+      "still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_02_pressure_lists_son.jpg",
+      "i2v": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_02_pressure_1080x1920.png"
+    },
+    {
+      "id": "ref_03_husband",
+      "still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_03_husband_dinner.jpg",
+      "i2v": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_03_husband_1080x1920.png"
+    },
+    {
+      "id": "ref_04_breaking",
+      "still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_04_breaking_point_closeup.jpg",
+      "i2v": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_04_breaking_1080x1920.png"
+    },
+    {
+      "id": "ref_05_phone",
+      "still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_05_friend_message_phone.jpg",
+      "i2v": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_05_phone_1080x1920.png",
+      "note": "Start frame already has a small smile. Use as the curious beat. Do not bloom into joy."
+    },
+    {
+      "id": "ref_06_cookies",
+      "still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_06_cookies_lauren_kids.jpg",
+      "i2v": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_06_cookies_1080x1920.png"
+    },
+    {
+      "id": "ref_07_family_bake",
+      "still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_07_family_bake.jpg",
+      "i2v": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_07_family_bake_1080x1920.png",
+      "usage": "optional B-roll if shot 7 needs husband in frame; not in base paid-video count"
+    }
+  ],
+  "shots": [
+    {
+      "id": "shot_01_chaos",
+      "beat": "FAMILY CHAOS",
+      "duration_s": 4.5,
+      "duration_budget_s": [4, 5],
+      "reference_asset": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_01_chaos_1080x1920.png",
+      "camera": "wide table; subtle handheld; daughter begins speaking then hold on Lauren's face while the line finishes off-camera",
+      "lip_sync": "daughter starts on-camera if mouth is already open, then L-cut; do not require sync",
+      "dialogue": [
+        { "id": "d01_daughter", "speaker": "daughter", "text": "Mom! Mom!... Did you get my present yet?", "mix": "near, roomy" }
+      ],
+      "video": {
+        "generate": true,
+        "provider": "higgsfield",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "duration_s": 5,
+        "sound": "off",
+        "estimated_credits": 4.48,
+        "estimated_usd": 0.28,
+        "prompt": "Photoreal 9:16 UGC from this exact still. Identity lock: same Lauren, daughter, son, husband, golden retriever, Christmas kitchen. Subtle handheld. Daughter leans in and starts to speak, then camera holds on Lauren's overloaded reaction. Kids shift naturally. Tree lights twinkle. No invented text, no extra people, no orbit, no lip-sync performance, no morphing."
+      }
+    },
+    {
+      "id": "shot_02_pressure",
+      "beat": "MOM OVERWHELMED",
+      "duration_s": 4.5,
+      "duration_budget_s": [4, 5],
+      "reference_asset": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_02_pressure_1080x1920.png",
+      "camera": "same table, lists in fg; son partly off-camera; overlapping speech",
+      "lip_sync": "son off-camera / side; Lauren may murmur without sync",
+      "dialogue": [
+        { "id": "d02_son", "speaker": "son", "text": "Mom! I need you!", "mix": "slightly off-mic, overlap allowed" },
+        { "id": "d02_lauren", "speaker": "lauren", "text": "Okay, honey... one second.", "mix": "tired, close" }
+      ],
+      "video": {
+        "generate": true,
+        "provider": "higgsfield",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "duration_s": 5,
+        "sound": "off",
+        "estimated_credits": 4.48,
+        "estimated_usd": 0.28,
+        "prompt": "Photoreal 9:16 UGC from this exact still. Identity lock. Messy real household. Son tugs for attention. Lauren stays at the laptop, overwhelmed. Husband stays in the background with tiny natural motion. Subtle handheld. No readable new text. No extra people. No dramatic zoom."
+      }
+    },
+    {
+      "id": "shot_03_husband",
+      "beat": "MOM OVERWHELMED",
+      "duration_s": 4.5,
+      "duration_budget_s": [4, 5],
+      "reference_asset": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_03_husband_1080x1920.png",
+      "camera": "stay primarily on Lauren; husband in background/side; his line plays while we watch her",
+      "lip_sync": "husband off-camera or side-profile; do not close-up-sync him",
+      "dialogue": [
+        { "id": "d03_husband", "speaker": "husband", "text": "Babe... what are we doing for Christmas dinner?", "mix": "across the room" },
+        { "id": "d03_lauren", "speaker": "lauren", "text": "I... I don't know.", "mix": "quiet, small pause before" }
+      ],
+      "video": {
+        "generate": true,
+        "provider": "higgsfield",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "duration_s": 5,
+        "sound": "off",
+        "estimated_credits": 4.48,
+        "estimated_usd": 0.28,
+        "prompt": "Photoreal 9:16 UGC from this exact still. Identity lock. Camera stays on Lauren. Husband shifts slightly in the background with the mug. Lauren's eyes flick to him then back to the laptop. Tiny head shake. No close-up of the husband. No extra people. No orbit."
+      }
+    },
+    {
+      "id": "shot_04_breaking_point",
+      "beat": "BREAKING POINT",
+      "duration_s": 6.0,
+      "duration_budget_s": [5, 6.2],
+      "reference_asset": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_04_breaking_1080x1920.png",
+      "camera": "strongest close-up; very slow push-in",
+      "silence_after_line_s": [0.7, 1.2],
+      "silence_required": true,
+      "lip_sync": "Lauren may have the clearest on-camera line; small mouth motion ok; if sync fails, keep the tired face and lay VO",
+      "dialogue": [
+        { "id": "d04_lauren", "speaker": "lauren", "text": "I can't keep up with all of this.", "mix": "quiet, close, after a breath" }
+      ],
+      "video": {
+        "generate": true,
+        "provider": "higgsfield",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "duration_s": 10,
+        "sound": "off",
+        "estimated_credits": 8.96,
+        "estimated_usd": 0.56,
+        "prompt": "Photoreal 9:16 UGC from this exact still. Identity lock on Lauren. Very slow push-in. She breathes, blinks, genuine exhaustion, not crying, not melodramatic. Tiny mouth motion only if natural. Hold still after. No extra people. No invented text. No aggressive camera."
+      }
+    },
+    {
+      "id": "shot_05_friend_message",
+      "beat": "FRIEND MESSAGE",
+      "duration_s": 4.5,
+      "duration_budget_s": [4, 5],
+      "reference_asset": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_05_phone_1080x1920.png",
+      "camera": "Lauren looks at phone; kids present but quiet; phone screen must stay unreadable in the model output",
+      "expression": "exhausted → curious, not instantly happy. Still already has a small smile — do not escalate.",
+      "lip_sync": "none",
+      "dialogue": [],
+      "overlays": [
+        {
+          "id": "imessage_friend",
+          "type": "post_ui",
+          "copy": ["Girl, use the planner I sent you 😭", "Seriously. It saved my Christmas last year."]
+        }
+      ],
+      "sfx": ["sfx_phone_notification"],
+      "video": {
+        "generate": true,
+        "provider": "higgsfield",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "duration_s": 5,
+        "sound": "off",
+        "estimated_credits": 4.48,
+        "estimated_usd": 0.28,
+        "prompt": "Photoreal 9:16 UGC from this exact still. Identity lock. Lauren looks at the phone. Expression stays tired-curious. Do not widen into a happy grin. Phone screen stays blank/blurred — no readable text, no UI, no logos. Subtle handheld. Kids breathe. No extra people."
+      }
+    },
+    {
+      "id": "shot_06_discovery",
+      "beat": "CHRISTMAS PLANNER / REALIZATION",
+      "duration_s": 8.0,
+      "duration_budget_s": [7, 9],
+      "reference_asset": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_01_chaos_1080x1920.png",
+      "camera": "Lauren at the real laptop; UI is composited, never generated",
+      "lip_sync": "short reactions; UI portion is screen capture so mouth sync is irrelevant",
+      "dialogue": [
+        { "id": "d06_wait", "speaker": "lauren", "text": "Wait...", "mix": "quiet" },
+        { "id": "d06_oh", "speaker": "lauren", "text": "Oh... this actually does everything.", "mix": "disbelief/relief, not sales" }
+      ],
+      "ui_sequence": ["Today", "Gifts", "Meals", "Budget", "Tasks"],
+      "ui_rule": "Show 2–3 real check-offs before her emotional state changes. Solution must not feel instant.",
+      "video": {
+        "generate": true,
+        "provider": "higgsfield",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "duration_s": 10,
+        "sound": "off",
+        "estimated_credits": 8.96,
+        "estimated_usd": 0.56,
+        "prompt": "Photoreal 9:16 UGC from this exact still. Identity lock. Lauren looks at the laptop. Small 'wait' recognition, then exploring, not a sales smile. Laptop screen may stay dark/blank for compositing. Subtle handheld. Family presence stays soft. No readable invented UI. No extra people."
+      }
+    },
+    {
+      "id": "shot_07_payoff",
+      "beat": "RELIEF / TIME WITH FAMILY",
+      "duration_s": 8.0,
+      "duration_budget_s": [7, 9],
+      "reference_asset": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_06_cookies_1080x1920.png",
+      "alt_reference_asset": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_07_family_bake_1080x1920.png",
+      "camera": "cut into cookie scene; natural kitchen; husband may join via alt still in assembly if needed",
+      "lip_sync": "daughter off-camera or side; Lauren looks at her then answers",
+      "dialogue": [
+        { "id": "d07_daughter", "speaker": "daughter", "text": "Mom... can we make cookies?", "mix": "close, hopeful" },
+        { "id": "d07_yeah", "speaker": "lauren", "text": "Yeah, baby.", "mix": "warm" },
+        { "id": "d07_lets", "speaker": "lauren", "text": "Let's make cookies.", "mix": "after a small pause" }
+      ],
+      "video": {
+        "generate": true,
+        "provider": "higgsfield",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "duration_s": 10,
+        "sound": "off",
+        "estimated_credits": 8.96,
+        "estimated_usd": 0.56,
+        "prompt": "Photoreal 9:16 UGC from this exact still. Identity lock. Family decorating cookies. Small laugh. Natural hand motion placing sprinkles. Soft kitchen life. No narration energy. No extra people. No orbit. No morphing faces."
+      }
+    }
+  ],
+  "audio": {
+    "architecture": [
+      "lauren",
+      "daughter",
+      "son",
+      "husband",
+      "room_ambience",
+      "phone_sfx",
+      "music",
+      "kitchen_sfx"
+    ],
+    "no_continuous_narrator": true,
+    "edit_picture_to_speech": true,
+    "never_speed_speech": true,
+    "room": "same house, slightly different mic distance per speaker",
+    "provider": "openai",
+    "model": "gpt-4o-mini-tts",
+    "why": "Already used on Lauren v1; ElevenLabs is not wired. Voices generated as separate files so audio-only regen is possible.",
+    "voices": [
+      {
+        "id": "lauren",
+        "voice": "coral",
+        "count": 1,
+        "style": "American woman ~30–38, warm, tired then quietly relieved, understated"
+      },
+      {
+        "id": "husband",
+        "voice": "onyx",
+        "count": 1,
+        "style": "American man ~30–42, casual, from across the room"
+      },
+      {
+        "id": "daughter",
+        "voice": "nova",
+        "count": 1,
+        "style": "natural young girl, not cartoon, not polished commercial"
+      },
+      {
+        "id": "son",
+        "voice": "ash",
+        "count": 1,
+        "style": "natural young boy, messy, overlapping"
+      }
+    ],
+    "voice_count": 4,
+    "line_count": 11,
+    "assets": [
+      { "id": "d01_daughter", "speaker": "daughter", "file": "audio/d01_daughter.wav", "regenerable": true },
+      { "id": "d02_son", "speaker": "son", "file": "audio/d02_son.wav", "regenerable": true },
+      { "id": "d02_lauren", "speaker": "lauren", "file": "audio/d02_lauren.wav", "regenerable": true },
+      { "id": "d03_husband", "speaker": "husband", "file": "audio/d03_husband.wav", "regenerable": true },
+      { "id": "d03_lauren", "speaker": "lauren", "file": "audio/d03_lauren.wav", "regenerable": true },
+      { "id": "d04_lauren", "speaker": "lauren", "file": "audio/d04_lauren.wav", "regenerable": true },
+      { "id": "d06_wait", "speaker": "lauren", "file": "audio/d06_wait.wav", "regenerable": true },
+      { "id": "d06_oh", "speaker": "lauren", "file": "audio/d06_oh.wav", "regenerable": true },
+      { "id": "d07_daughter", "speaker": "daughter", "file": "audio/d07_daughter.wav", "regenerable": true },
+      { "id": "d07_yeah", "speaker": "lauren", "file": "audio/d07_yeah.wav", "regenerable": true },
+      { "id": "d07_lets", "speaker": "lauren", "file": "audio/d07_lets.wav", "regenerable": true },
+      { "id": "sfx_phone_notification", "kind": "sfx", "file": "audio/sfx_phone_notification.wav", "source": "original synth, post" },
+      { "id": "ambience_room", "kind": "ambience", "file": "audio/ambience_room.wav", "source": "original synth, dip under shot 4" },
+      { "id": "ambience_kitchen", "kind": "sfx", "file": "audio/ambience_kitchen.wav", "source": "original synth, shot 7" },
+      { "id": "music_bed", "kind": "music", "file": "audio/music_bed.wav", "source": "original synth bed like v1, no licensed track, quiet after shot 4 then slight lift on payoff" }
+    ],
+    "estimated_usd": 0.15
+  },
+  "ui_overlays": {
+    "never_generate_in_model": true,
+    "product": "The Digital Gifter Christmas Planner",
+    "source": "Live production app implementation: src/features/christmas/planner + routes under /account/christmas (ChristmasPlannerLayout SIDE nav).",
+    "capture_after_approval": [
+      { "label": "Today", "route": "/account/christmas" },
+      { "label": "Gifts", "route": "/account/christmas/gifts" },
+      { "label": "Meals", "route": "/account/christmas/food" },
+      { "label": "Budget", "route": "/account/christmas/budget" },
+      { "label": "Tasks", "route": "/account/christmas/plan" }
+    ],
+    "method": "9:16 screen recordings / screenshots composited in ffmpeg. Insert cuts over shot 6, not warped fake laptop UI. Include 2–3 real check-offs.",
+    "message_ui": {
+      "shot": "shot_05_friend_message",
+      "method": "post overlay, not in the AI video",
+      "lines": [
+        "Girl, use the planner I sent you 😭",
+        "Seriously. It saved my Christmas last year."
+      ]
+    }
+  },
+  "end_frame": {
+    "duration_s": 3.5,
+    "style": "premium, understated, no aggressive CTA",
+    "text": [
+      "Christmas shouldn't feel like a second job.",
+      "Plan it once. Enjoy it.",
+      "The Digital Gifter",
+      "Christmas Planner"
+    ]
+  },
+  "assembly": {
+    "order": [
+      "shot_01_chaos",
+      "shot_02_pressure",
+      "shot_03_husband",
+      "shot_04_breaking_point",
+      "shot_05_friend_message",
+      "shot_06_discovery",
+      "shot_07_payoff",
+      "end_frame"
+    ],
+    "transitions": [
+      { "at": "01→02", "type": "hard cut / L-cut speech" },
+      { "at": "02→03", "type": "hard cut, overlapping household" },
+      { "at": "03→04", "type": "cut closer, ambience dip" },
+      { "at": "04 silence", "type": "hold last frames 0.7–1.2s, required" },
+      { "at": "04→05", "type": "phone SFX J-cut" },
+      { "at": "05→06", "type": "hard cut to laptop / UI inserts" },
+      { "at": "06→07", "type": "natural cut to cookies; daughter line may J-cut" },
+      { "at": "07→end", "type": "short fade to end card" }
+    ],
+    "output": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/final/christmas_planner_mom_overwhelm_v2.mp4",
+    "library": "after QA, same folder + existing Christmas library ingest pattern"
+  },
+  "cost_estimate": {
+    "currency": "USD",
+    "video_generations": 7,
+    "video_provider": "higgsfield",
+    "video_model": "kling-video/v3.0/pro/image-to-video",
+    "video_breakdown": [
+      { "shot": "shot_01_chaos", "duration_s": 5, "credits": 4.48, "usd": 0.28 },
+      { "shot": "shot_02_pressure", "duration_s": 5, "credits": 4.48, "usd": 0.28 },
+      { "shot": "shot_03_husband", "duration_s": 5, "credits": 4.48, "usd": 0.28 },
+      { "shot": "shot_04_breaking_point", "duration_s": 10, "credits": 8.96, "usd": 0.56 },
+      { "shot": "shot_05_friend_message", "duration_s": 5, "credits": 4.48, "usd": 0.28 },
+      { "shot": "shot_06_discovery", "duration_s": 10, "credits": 8.96, "usd": 0.56 },
+      { "shot": "shot_07_payoff", "duration_s": 10, "credits": 8.96, "usd": 0.56 }
+    ],
+    "video_credits": 44.8,
+    "video_usd": 2.8,
+    "audio_provider": "openai gpt-4o-mini-tts",
+    "audio_voices": 4,
+    "audio_lines": 11,
+    "audio_usd": 0.15,
+    "ui_capture_usd": 0,
+    "assemble_usd": 0,
+    "total_usd": 2.95,
+    "optional_alt_shot_07_family_bake_usd": 0.56,
+    "optional_one_scene_regen_usd": 0.56,
+    "live_estimate_required_before_charge": true
+  },
+  "blockers": [],
+  "next_action": "WAITING FOR APPROVAL TO GENERATE"
+}
