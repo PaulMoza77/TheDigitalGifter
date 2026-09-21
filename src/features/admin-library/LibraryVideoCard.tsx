@@ -13,7 +13,7 @@ import {
   shareLibraryVideoFile,
   triggerBlobDownload,
 } from "./saveLibraryVideo";
-import { isLibraryPhoto, librarySrcPath, type LibraryVideo } from "./catalog";
+import { isLibraryPhoto, isRecentLibraryItem, librarySrcPath, type LibraryVideo } from "./catalog";
 
 type Props = {
   video: LibraryVideo;
@@ -239,8 +239,15 @@ export default function LibraryVideoCard({
           </>
         )}
 
-        <p className="pointer-events-none absolute left-2 top-2 z-20 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-white">
-          {KIND_LABEL[video.kind]}
+        <p className="pointer-events-none absolute left-2 top-2 z-20 flex gap-1">
+          <span className="rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-white">
+            {KIND_LABEL[video.kind]}
+          </span>
+          {isRecentLibraryItem(video) ? (
+            <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-950">
+              New
+            </span>
+          ) : null}
         </p>
         {durationLabel ? (
           <p className="pointer-events-none absolute right-2 top-2 z-20 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white">
