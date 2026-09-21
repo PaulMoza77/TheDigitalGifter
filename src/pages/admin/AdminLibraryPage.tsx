@@ -1,5 +1,6 @@
 import React from "react";
-import { Library, Search } from "lucide-react";
+import { Link } from "react-router-dom";
+import { CalendarClock, Library, Search, Share2 } from "lucide-react";
 
 import LibraryVideoCard from "@/features/admin-library/LibraryVideoCard";
 import {
@@ -92,7 +93,7 @@ export default function AdminLibraryPage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Media library</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-50 sm:text-3xl">
@@ -100,10 +101,16 @@ export default function AdminLibraryPage() {
               Library
             </h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-              Finished Reels, Shorts, and Photos. Preview, save, and schedule — generation lives in Studio.
+              Finished Reels, Shorts, and Photos. Preview, save, and schedule — generation lives in AI Clip Factory.
             </p>
           </div>
-          <p className="text-sm text-slate-400">{totalLabel}</p>
+          <div className="flex flex-col items-start gap-3 lg:items-end">
+            <div className="flex flex-wrap gap-2">
+              <LibraryNavBadge to="/admin/social-accounts" icon={Share2} label="Social Accounts" />
+              <LibraryNavBadge to="/admin/publishing" icon={CalendarClock} label="Publishing" />
+            </div>
+            <p className="text-sm text-slate-400">{totalLabel}</p>
+          </div>
         </header>
 
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -210,6 +217,26 @@ export default function AdminLibraryPage() {
         />
       ) : null}
     </div>
+  );
+}
+
+function LibraryNavBadge({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-slate-50"
+    >
+      <Icon className="h-3.5 w-3.5 text-slate-400" />
+      {label}
+    </Link>
   );
 }
 
