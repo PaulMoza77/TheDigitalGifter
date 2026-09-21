@@ -214,6 +214,8 @@ async function downloadYoutube(config, url, dest, heartbeat) {
         "--newline",
         "--no-mtime",
         "--no-progress",
+        "--ffmpeg-location",
+        dirname(config.ffmpeg),
         "-f",
         "bv*[height<=1080]+ba/b[height<=1080]/b",
         "--merge-output-format",
@@ -228,6 +230,13 @@ async function downloadYoutube(config, url, dest, heartbeat) {
     if (result.code !== 0) {
       const error = new Error("yt-dlp failed");
       error.code = classifyYtdlp(`${result.stderr} ${result.stdout}`);
+      throw error;
+    }
+    try {
+      await fs.stat(dest);
+    } catch {
+      const error = new Error("yt-dlp produced no file");
+      error.code = "import_unavailable";
       throw error;
     }
   } finally {

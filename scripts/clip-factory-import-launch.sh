@@ -17,4 +17,5 @@ if [[ -f "$LOG" ]]; then
 fi
 exec >>"$LOG" 2>&1
 cd "$ROOT"
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 exec /usr/local/bin/node "${ROOT}/scripts/clip-factory-import-worker.mjs"
