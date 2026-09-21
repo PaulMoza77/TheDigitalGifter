@@ -296,7 +296,7 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
       ...base(),
       modelPath: "fallback",
       message:
-        "Ask about today, gaps, budget, gifts, dinner, travel, grocery, rescue, or what you can ignore. Private notes stay in your planner - Copilot uses Engine facts, not ads.",
+        "Ask about today, gifts, budget, meals, grocery, or travel. Answers use what you saved. Nothing is written until you confirm.",
       cards: insightCards(insights),
       followUpOptions: ["What should I do this weekend?", "What am I forgetting?", "Am I over budget?"],
       unsupported: { asked: q.slice(0, 80), reason: "ambiguous" },

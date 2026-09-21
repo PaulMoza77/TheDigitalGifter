@@ -330,6 +330,6 @@ describe("christmas budget entitlement + CTA wiring", () => {
     expect(unlock).toContain("FOUNDING_PASS_PACKAGE_KEY");
     expect(unlock).toContain("planner-checkout-error");
     expect(food).toContain("PlannerPaywall");
-    expect(food).toContain("Unlock the Founding Pass");
+    expect(food).toContain("Get my Christmas Planner");
   });
 });

@@ -110,7 +110,7 @@ function fixture() {
 }
 
 describe("christmas copilot P0 on Intelligence Engine", () => {
-  it("answers from Engine facts without leaking notes or hiding places", () => {
+  it("answers from the saved plan without leaking notes or hiding places", () => {
     const intel = fixture();
     expect(intel.snapshot.trips[0]?.start_on).toBe("2026-12-22");
     const weekend = askCopilot("What should I do this weekend?", intel);

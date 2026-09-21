@@ -102,6 +102,104 @@ export function planGroceryRegeneration(input: {
   return { occasion, ops };
 }
 
+const UNIT_ALIASES: Record<string, string> = {
+  g: "g",
+  gram: "g",
+  grams: "g",
+  kg: "kg",
+  kilogram: "kg",
+  kilograms: "kg",
+  ml: "ml",
+  millilitre: "ml",
+  milliliter: "ml",
+  l: "l",
+  liter: "l",
+  litre: "l",
+  cup: "cup",
+  cups: "cup",
+  piece: "piece",
+  pieces: "piece",
+  pc: "piece",
+  pcs: "piece",
+  tbsp: "tbsp",
+  teaspoon: "tsp",
+  teaspoons: "tsp",
+  tsp: "tsp",
+  oz: "oz",
+  lb: "lb",
+  lbs: "lb",
+};
+
+function parseQty(raw: string): { n: number; unit: string } | null {
+  const match = raw.trim().match(/^(\d+(?:[.,]\d+)?)\s*([a-zA-Z]+)?$/);
+  if (!match) return null;
+  const n = Number(match[1].replace(",", "."));
+  if (!Number.isFinite(n)) return null;
+  const unitRaw = (match[2] || "").toLowerCase();
+  return { n, unit: UNIT_ALIASES[unitRaw] || unitRaw };
+}
+
+function formatQty(n: number, unit: string): string {
+  const shown = Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+  return unit ? `${shown} ${unit}` : shown;
+}
+
+/** Combine two quantities when the units match or convert (g/kg, ml/l). */
+export function mergeCompatibleQuantity(current: string, incoming: string): string | null {
+  const next = incoming.trim();
+  const prev = current.trim();
+  if (!next) return prev || "";
+  if (!prev) return next;
+  const left = parseQty(prev);
+  const right = parseQty(next);
+  if (!left || !right) {
+    return prev.toLowerCase() === next.toLowerCase() ? prev : null;
+  }
+  if (left.unit === right.unit) return formatQty(left.n + right.n, left.unit);
+  const grams = (unit: string, n: number) => (unit === "kg" ? n * 1000 : unit === "g" ? n : null);
+  const ml = (unit: string, n: number) => (unit === "l" ? n * 1000 : unit === "ml" ? n : null);
+  const g = (grams(left.unit, left.n) ?? 0) + (grams(right.unit, right.n) ?? 0);
+  if (grams(left.unit, left.n) != null && grams(right.unit, right.n) != null) {
+    return g >= 1000 ? formatQty(g / 1000, "kg") : formatQty(g, "g");
+  }
+  const volume = (ml(left.unit, left.n) ?? 0) + (ml(right.unit, right.n) ?? 0);
+  if (ml(left.unit, left.n) != null && ml(right.unit, right.n) != null) {
+    return volume >= 1000 ? formatQty(volume / 1000, "l") : formatQty(volume, "ml");
+  }
+  return null;
+}
+
+export type ManualGroceryPlan =
+  | { action: "insert"; name: string; quantity: string }
+  | { action: "merge"; id: string; quantity: string }
+  | { action: "duplicate"; id: string; reason: "same_item" | "incompatible_unit" };
+
+export function planManualGroceryAdd(input: {
+  items: Array<{ id: string; name: string; quantity: string }>;
+  aisle: string;
+  label: string;
+  quantity: string;
+}): ManualGroceryPlan {
+  const label = input.label.trim();
+  const storedName = `${input.aisle}|${label}`.slice(0, 120);
+  const match = input.items.find((row) => {
+    const [aisle, ...rest] = row.name.split("|");
+    const rowLabel = rest.length ? rest.join("|") : row.name;
+    const rowAisle = rest.length ? aisle : "other";
+    return rowAisle === input.aisle && rowLabel.trim().toLowerCase() === label.toLowerCase();
+  });
+  if (!match) return { action: "insert", name: storedName, quantity: input.quantity.slice(0, 40) };
+  const merged = mergeCompatibleQuantity(match.quantity || "", input.quantity || "");
+  if (merged == null) return { action: "duplicate", id: match.id, reason: "incompatible_unit" };
+  if ((match.quantity || "").trim() === merged.trim() && !input.quantity.trim()) {
+    return { action: "duplicate", id: match.id, reason: "same_item" };
+  }
+  if ((match.quantity || "").trim() === merged.trim()) {
+    return { action: "duplicate", id: match.id, reason: "same_item" };
+  }
+  return { action: "merge", id: match.id, quantity: merged.slice(0, 40) };
+}
+
 export function groceryInsertWouldDuplicate(
   stored: SnapshotGrocery[],
   ingredientKey: string,

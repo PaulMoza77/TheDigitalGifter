@@ -3,8 +3,9 @@ import { CalendarDays, Gift, LayoutList, ListTodo, MoreHorizontal, Settings, Use
 import { PageHead } from "@/components/PageHead";
 import { useEffect, useMemo, useState } from "react";
 import { countdownCopy, daysUntilChristmas } from "./date";
-import { computeReadiness } from "./readiness";
-import { loadPlannerWorkspace } from "./intelligence";
+import { loadPlannerWorkspace, runPlannerIntelligence } from "./intelligence";
+import { invalidatePlannerSnapshot } from "./intelligence/loadSnapshot";
+import { onPlannerWorkspaceBump, subscribePlannerReadiness } from "./workspaceSync";
 import { claimPlannerOrder } from "./api";
 import { readPlannerOrderRecovery } from "./guest";
 import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./Onboarding";
@@ -45,7 +46,7 @@ export default function ChristmasPlannerLayout() {
 function PlannerAppShell() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { loading, profile, reload } = usePlannerBundle();
+  const { loading, profile, access, reload } = usePlannerBundle();
   const copilot = useCopilotUi();
   const [readiness, setReadiness] = useState<number | null>(null);
 
@@ -73,21 +74,26 @@ function PlannerAppShell() {
     };
   }, [location.pathname, location.search, navigate, reload]);
 
+  useEffect(() => subscribePlannerReadiness(setReadiness), []);
+
   useEffect(() => {
     if (!profile) return;
-    void loadPlannerWorkspace(profile).then((snapshot) => {
-      setReadiness(
-        computeReadiness({
-          profile,
-          tasks: snapshot.tasks,
-          recipients: snapshot.recipients,
-          gifts: snapshot.gifts,
-          cardsNeeded: snapshot.cards.length,
-          cardsPrepared: snapshot.cards.filter((c) => c.status === "prepared" || c.status === "sent").length,
-          mealsCount: snapshot.meals.length,
-        }).percent,
-      );
+    const current = profile;
+    let cancelled = false;
+    async function reconcile() {
+      invalidatePlannerSnapshot(current.id);
+      const snapshot = await loadPlannerWorkspace(current);
+      if (cancelled) return;
+      setReadiness(runPlannerIntelligence(snapshot).readiness.percent);
+    }
+    void reconcile();
+    const stop = onPlannerWorkspaceBump(() => {
+      void reconcile();
     });
+    return () => {
+      cancelled = true;
+      stop();
+    };
   }, [profile, location.pathname]);
 
   return (
@@ -140,6 +146,11 @@ function PlannerAppShell() {
           </div>
         </aside>
         <main className="tdg-planner-main">
+          {access?.access_source === "qa_grant" ? (
+            <p className="tdg-planner-qa-note" data-testid="planner-qa-access">
+              Test access is on for this account. It is not a Stripe payment.
+            </p>
+          ) : null}
           {loading ? <p className="tdg-planner-muted">Opening your Christmas…</p> : !profile ? <PlannerOnboarding /> : <Outlet />}
         </main>
         <nav className="tdg-planner-nav" aria-label="Christmas planner">

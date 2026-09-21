@@ -328,15 +328,19 @@ export function recommendedToday<T extends { due_on: string | null; status: stri
   tasks: T[],
   todayIso: string,
   limit = 3,
+  weekEndIso?: string,
 ): T[] {
-  const open = tasks.filter((t) => t.status === "open");
+  const open = tasks.filter((t) => t.status === "open" || t.status === "rescheduled");
+  const pool = weekEndIso
+    ? open.filter((task) => Boolean(task.due_on) && (task.due_on as string) <= weekEndIso)
+    : open;
   const rank = (t: T) => {
     const due = t.due_on || "9999-12-31";
     const overdue = due < todayIso ? 0 : 1;
     const pri = t.priority === "high" ? 0 : t.priority === "normal" ? 1 : 2;
     return [overdue, due, pri] as const;
   };
-  return [...open].sort((a, b) => {
+  return [...pool].sort((a, b) => {
     const ra = rank(a);
     const rb = rank(b);
     if (ra[0] !== rb[0]) return ra[0] - rb[0];

@@ -72,6 +72,26 @@ export function scoreNextBestAction(input: {
   return candidates[0] || null;
 }
 
+/** Hide a second card that repeats the one next action. */
+export function attentionWithoutDuplicates(
+  insights: PlannerInsight[],
+  action: NextBestAction | null,
+): PlannerInsight[] {
+  const seen = new Set<string>();
+  const out: PlannerInsight[] = [];
+  for (const insight of insights) {
+    if (action?.id === `insight:${insight.id}`) continue;
+    if (action?.id.startsWith("task:") && insight.id === "tasks.overdue_cluster") continue;
+    if (action?.title && (insight.title === action.title || insight.recommendedAction === action.title)) continue;
+    const href = String(insight.actionPayload.href || "");
+    const key = `${insight.title}|${href}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(insight);
+  }
+  return out;
+}
+
 function moduleHref(category: string): string {
   if (category === "gifts" || category === "shopping") return "/account/christmas/gifts";
   if (category === "budget") return "/account/christmas/budget";
