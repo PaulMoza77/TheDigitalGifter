@@ -3,6 +3,7 @@ export const CLIP_FACTORY_JOB_STATUSES = [
   "uploading",
   "source_detected",
   "waiting_for_media",
+  "waiting_for_import",
   "importing",
   "downloading",
   "ingesting",
@@ -27,11 +28,12 @@ export const CLIP_FACTORY_JOB_STATUSES = [
 export type ClipFactoryJobStatus = (typeof CLIP_FACTORY_JOB_STATUSES)[number];
 
 const TRANSITIONS: Record<string, readonly string[]> = {
-  queued: ["importing", "ingesting", "downloading", "waiting_for_media", "source_detected", "failed"],
+  queued: ["importing", "ingesting", "downloading", "waiting_for_media", "waiting_for_import", "source_detected", "failed"],
   waiting_for_media: ["queued", "importing", "uploading", "failed"],
+  waiting_for_import: ["importing", "failed"],
   source_detected: ["waiting_for_media", "queued", "importing", "failed"],
   uploading: ["queued", "importing", "failed"],
-  importing: ["extracting_audio", "analyzing_audio", "downloading", "failed"],
+  importing: ["extracting_audio", "analyzing_audio", "downloading", "queued", "waiting_for_import", "failed"],
   downloading: ["extracting_audio", "importing", "failed"],
   ingesting: ["extracting_audio", "analyzing_audio", "failed"],
   extracting_audio: ["transcribing", "failed"],
@@ -49,7 +51,7 @@ const TRANSITIONS: Record<string, readonly string[]> = {
   finalizing: ["completed", "partial", "failed"],
   completed: ["rendering", "failed"],
   partial: ["rendering", "failed", "queued"],
-  failed: ["queued", "importing", "rendering"],
+  failed: ["queued", "importing", "waiting_for_import", "rendering"],
 };
 
 export function canTransitionJob(from: string, to: string): boolean {

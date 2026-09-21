@@ -120,6 +120,22 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       job.media_id = null;
       job.media_hash = null;
     }
+    const payloadPreview = (job.source_payload || {}) as Record<string, unknown>;
+    const hasAttachedFile = String(payloadPreview.objectPath || "").startsWith("uploads/") || Boolean(payloadPreview.libraryAssetId);
+    const importLease = job.import_lease_expires_at ? Date.parse(String(job.import_lease_expires_at)) : 0;
+    if (job.source_kind === "youtube" && !job.media_id && !hasAttachedFile) {
+      if (job.status === "importing" && importLease > Date.now()) return;
+      await patchJob(jobId, {
+        status: "waiting_for_import",
+        stage: "waiting_for_import",
+        progress: 4,
+        progress_label: "Waiting for import device",
+        error_message: null,
+        error_code: null,
+        lease_expires_at: null,
+      });
+      return;
+    }
     if (
       ["queued", "ingesting", "importing", "downloading", "uploading", "failed", "waiting_for_media", "source_detected"].includes(
         job.status,
@@ -270,11 +286,40 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     } catch {
       await downloadStorage(media.storage_path, sourcePath);
     }
-    await assertUsableSourceMedia({
+    const verified = await assertUsableSourceMedia({
       path: sourcePath,
       expectedDurationSeconds: expectedDuration || Number(media.duration_seconds || 0),
       mediaHash: media.media_hash,
     });
+    if (verified.hasAudio !== media.has_audio || Math.abs(verified.duration - Number(media.duration_seconds || 0)) > 1.5) {
+      await service
+        .from("clip_factory_media")
+        .update({
+          has_audio: verified.hasAudio,
+          duration_seconds: verified.duration,
+          width: verified.width,
+          height: verified.height,
+          codec_video: verified.videoCodec,
+          codec_audio: verified.audioCodec,
+          probe: verified,
+        })
+        .eq("id", media.id);
+      media.has_audio = verified.hasAudio;
+      media.duration_seconds = verified.duration;
+      media.width = verified.width;
+      media.height = verified.height;
+    }
+    const importSha = String((job.source_payload || {}).importSha256 || "");
+    if (importSha) {
+      const actualHash = await hashFile(sourcePath);
+      if (actualHash !== importSha) {
+        await service
+          .from("clip_factory_media")
+          .update({ invalidated_at: new Date().toISOString(), invalid_reason: "Uploaded bytes do not match the import hash." })
+          .eq("id", media.id);
+        throw new IngestError("corrupt_file", "Imported file hash does not match the upload.");
+      }
+    }
 
     await recordEvent(jobId, "clip_factory_analysis_started", { media_hash: media.media_hash });
     await patchJob(jobId, {

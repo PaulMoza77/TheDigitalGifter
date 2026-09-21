@@ -17,6 +17,7 @@ import {
   type ClipFactoryCandidateRow,
   type ClipFactoryJob,
 } from "@/features/clip-factory/api";
+import { YOUTUBE_PROGRESS_STAGES, youtubeProgressIndex, youtubeProgressLabel } from "@/features/clip-factory/importDevice";
 import { sortCandidates } from "@/features/clip-factory/diversity";
 import {
   ANALYSIS_STAGE_ORDER,
@@ -563,13 +564,20 @@ export default function AdminClipFactoryPage() {
         {job && analyzing ? (
           <section className="rounded-[28px] border border-slate-800 bg-slate-900/50 p-6 sm:p-8">
             <p className="text-sm text-slate-400">{job.source_label}</p>
-            <h2 className="mt-1 text-2xl font-semibold">{job.progress_label || "Finding the strongest moments"}</h2>
+            <h2 className="mt-1 text-2xl font-semibold">
+              {job.source_kind === "youtube" ? youtubeProgressLabel(job.status) : job.progress_label || "Finding the strongest moments"}
+            </h2>
+            {job.source_kind === "youtube" ? (
+              <p className="mt-1 text-xs text-slate-500">Import device {job.import_device_online ? "online" : "offline"}</p>
+            ) : null}
             <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-800">
               <div className="h-full rounded-full bg-indigo-400 transition-all" style={{ width: `${Math.max(6, job.progress)}%` }} />
             </div>
             <ol className="mt-6 grid gap-2">
-              {ANALYSIS_STAGE_ORDER.map((stage) => {
+              {(job.source_kind === "youtube" ? YOUTUBE_PROGRESS_STAGES.map((stage) => stage.id) : ANALYSIS_STAGE_ORDER).map((stage) => {
+                const youtube = job.source_kind === "youtube";
                 const mappedStage = (() => {
+                  if (youtube) return YOUTUBE_PROGRESS_STAGES[youtubeProgressIndex(job.status)].id;
                   const s = job.stage;
                   if (["queued", "importing", "ingesting", "downloading", "uploading"].includes(s)) return "importing";
                   if (["extracting_audio", "transcribing", "analyzing_audio"].includes(s)) return "transcribing";
@@ -578,11 +586,12 @@ export default function AdminClipFactoryPage() {
                   if (["saving", "finalizing", "completed"].includes(s)) return "saving";
                   return s;
                 })();
-                const currentIndex = ANALYSIS_STAGE_ORDER.indexOf(mappedStage as (typeof ANALYSIS_STAGE_ORDER)[number]);
-                const thisIndex = ANALYSIS_STAGE_ORDER.indexOf(stage);
+                const order: readonly string[] = youtube ? YOUTUBE_PROGRESS_STAGES.map((item) => item.id) : ANALYSIS_STAGE_ORDER;
+                const currentIndex = order.indexOf(mappedStage);
+                const thisIndex = order.indexOf(stage);
                 const done = currentIndex > thisIndex;
-                const active = mappedStage === stage || (stage === "importing" && (job.stage === "queued" || job.stage === "ingesting" || job.stage === "downloading"));
-                const label = STAGE_LABELS[stage];
+                const active = mappedStage === stage || (!youtube && stage === "importing" && (job.stage === "queued" || job.stage === "ingesting" || job.stage === "downloading"));
+                const label = youtube ? YOUTUBE_PROGRESS_STAGES.find((item) => item.id === stage)?.label || stage : STAGE_LABELS[stage];
                 return (
                   <li key={stage} className="flex items-center gap-3 rounded-2xl border border-slate-800 px-4 py-3">
                     {done ? <Check className="h-4 w-4 text-emerald-300" /> : active ? <Loader2 className="h-4 w-4 animate-spin text-indigo-300" /> : <span className="h-4 w-4 rounded-full border border-slate-700" />}
