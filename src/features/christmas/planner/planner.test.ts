@@ -788,13 +788,14 @@ describe("private planner privacy surface", () => {
 
   it("upgrades remaining modules with headers, marks, and ivory chrome", () => {
     const pages = readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx");
+    const gifts = readSrc("src/features/christmas/planner/gifts/GiftsPage.tsx");
     const budget = readSrc("src/features/christmas/planner/BudgetPage.tsx");
     const more = readSrc("src/features/christmas/planner/ChristmasPlannerMoreModules.tsx");
     const ui = readSrc("src/features/christmas/planner/plannerUi.tsx");
     const css = readSrc("src/features/christmas/planner/plannerApp.css");
     const layout = readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx");
     expect(pages).toContain("Overdue, today, this week, and later use the same dates as Today.");
-    expect(pages).toContain("People first.");
+    expect(gifts).toContain("People first.");
     expect(budget).toContain("Keep Christmas spending beautifully under control.");
     expect(pages).toContain("Everything else for your Christmas season.");
     expect(pages).not.toContain("Today’s checklist");
