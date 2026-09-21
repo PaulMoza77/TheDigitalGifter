@@ -567,7 +567,23 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       .select("id", { count: "exact", head: true })
       .eq("job_id", jobId)
       .eq("status", "completed");
+    const { count: pendingCount } = await service
+      .from("clip_factory_renders")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", jobId)
+      .in("status", ["queued", "rendering"]);
     const readyCount = completedCount || 0;
+    if ((pendingCount || 0) > 0 && readyCount === 0) {
+      await patchJob(jobId, {
+        status: "rendering",
+        stage: "rendering",
+        progress: 90,
+        progress_label: "Rendering clips",
+        clips_generated: readyCount,
+        lease_expires_at: null,
+      });
+      return;
+    }
     await patchJob(jobId, {
       status: readyCount ? (readyCount === renderIds.length ? "completed" : "partial") : "failed",
       stage: readyCount ? "completed" : "failed",
