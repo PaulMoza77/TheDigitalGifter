@@ -752,6 +752,9 @@ describe("private planner privacy surface", () => {
     expect(auth).toContain("tdg-planner-google");
     expect(auth).toContain('fill="#4285F4"');
     expect(auth).toContain("Continue with Google");
+    expect(auth).toContain("Sign in");
+    expect(auth).toContain("Create account");
+    expect(auth).not.toMatch(/signInWithPassword[\s\S]{0,240}signUp/);
     expect(appCss).toContain(".tdg-planner-google");
     expect(pages.toLowerCase()).not.toContain("share my planner");
     expect(pages.toLowerCase()).not.toContain("public_token");

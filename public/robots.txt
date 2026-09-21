@@ -3,6 +3,7 @@ Allow: /
 
 Disallow: /admin
 Disallow: /account
+Disallow: /auth/callback
 Disallow: /funnel/payment
 Disallow: /funnel/result
 

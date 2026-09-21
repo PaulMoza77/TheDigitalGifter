@@ -92,7 +92,7 @@ function PlannerAppShell() {
 
   return (
     <>
-      <PageHead title="Christmas Planner" description="Your private Christmas command center." noindex exactTitle />
+      <PageHead title="Christmas Planner" description="Your private Christmas command center." noindex nofollow exactTitle />
       <div className="tdg-planner-frame">
         <header className="tdg-planner-header">
           <a className="tdg-planner-logo" href="/christmas" aria-label="The Digital Gifter">

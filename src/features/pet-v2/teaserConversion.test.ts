@@ -164,7 +164,7 @@ describe("V2 teaser conversion rebuild", () => {
     expect(readSrc("src/features/pet-v2/PetV2FunnelPage.tsx")).toContain("warmV2CheckoutDependencies");
     expect(readSrc("src/features/pet-v2/checkoutWarmup.ts")).toContain("js.stripe.com");
     expect(readSrc("src/features/pet/supabaseApi.ts")).toContain("30_000");
-    expect(readSrc("index.html")).toContain("https://js.stripe.com");
+    expect(readSrc("index.html")).not.toContain("https://js.stripe.com");
   });
 
   it("skips redundant Stripe session re-fetch when create already returns client_secret", () => {

@@ -47,6 +47,6 @@ describe("admin return path", () => {
     expect(adminRoute).toContain("Sign in required");
     expect(adminRoute).toContain("if (!gate.email)");
     expect(adminRoute).toContain("return <AdminSignInGate");
-    expect(readFileSync(resolve(root, "src/pages/AuthCallback.tsx"), "utf8")).toContain("takeAuthReturnTo");
+    expect(readFileSync(resolve(root, "src/pages/AuthCallback.tsx"), "utf8")).toContain("resolveOAuthReturnTo");
   });
 });

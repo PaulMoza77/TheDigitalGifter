@@ -1,6 +1,7 @@
 // FILE: src/components/Footer.tsx
 import { Link } from "react-router-dom";
 import { Logo } from "./ui/logo";
+import { openCookieSettings } from "@/lib/cookieConsent";
 
 export default function Footer() {
   return (
@@ -63,6 +64,15 @@ export default function Footer() {
                 <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Privacy Policy
               </Link>
+
+              <button
+                type="button"
+                onClick={() => openCookieSettings()}
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
+              >
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
+                Cookie settings
+              </button>
 
               <Link
                 to="/terms"

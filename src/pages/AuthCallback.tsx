@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { takeAuthReturnTo } from "@/lib/auth/returnTo";
+import { resolveOAuthReturnTo, withAuthError } from "@/lib/auth/oauthReturn";
 
 function getHashParams() {
   const hash = window.location.hash.startsWith("#")
@@ -18,14 +18,18 @@ export default function AuthCallback() {
   useEffect(() => {
     let mounted = true;
 
+    function destination() {
+      return resolveOAuthReturnTo(window.location.search, "/");
+    }
+
     async function finish() {
       if (!mounted) return;
-      navigate(takeAuthReturnTo("/"), { replace: true });
+      navigate(destination(), { replace: true });
     }
 
     async function fail(reason: string) {
       if (!mounted) return;
-      navigate(`/?auth_error=${encodeURIComponent(reason)}`, { replace: true });
+      navigate(withAuthError(destination(), reason), { replace: true });
     }
 
     async function handleAuthCallback() {
@@ -112,7 +116,7 @@ export default function AuthCallback() {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center text-white/80">
-      Finalizing sign in...
+      Finalizing sign in... Keep this tab open after choosing your Google account.
     </div>
   );
 }

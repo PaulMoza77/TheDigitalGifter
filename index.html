@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- Analytics: load immediately on most pages; defer on /christmas so the cabin paints first -->
+    <!-- Analytics: default denied until cookie consent. Defer even after accept on /christmas. -->
     <script>
       window.__TDG_DEFER_ANALYTICS__ = (function () {
         var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
         return path === "/christmas";
       })();
+      window.__TDG_CONSENT_KEY__ = "tdg.cookie-consent.v1";
     </script>
 
-    <!-- Google tag (gtag.js) -->
+    <!-- Google tag (gtag.js) — Consent Mode v2: denied until the visitor accepts -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
@@ -22,11 +23,11 @@
       window.gtag = gtag;
 
       gtag("consent", "default", {
-        analytics_storage: "granted",
-        ad_storage: "granted",
-        ad_user_data: "granted",
-        ad_personalization: "granted",
-        wait_for_update: 500
+        analytics_storage: "denied",
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+        wait_for_update: 1500
       });
 
       function __tdgLoadGtag() {
@@ -39,19 +40,11 @@
         gtag("js", new Date());
         gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
       }
-      if (window.__TDG_DEFER_ANALYTICS__) {
-        window.addEventListener("load", function () {
-          setTimeout(__tdgLoadGtag, 1800);
-        });
-      } else {
-        __tdgLoadGtag();
-      }
-    </script>
 
-    <!-- Microsoft Clarity -->
-    <script type="text/javascript">
-      (function (c, l, a, r, i, t, y) {
-        function boot() {
+      function __tdgLoadClarity() {
+        if (window.__TDG_CLARITY_LOADED__) return;
+        window.__TDG_CLARITY_LOADED__ = true;
+        (function (c, l, a, r, i, t, y) {
           c[a] =
             c[a] ||
             function () {
@@ -62,15 +55,80 @@
           t.src = "https://www.clarity.ms/tag/" + i;
           y = l.getElementsByTagName(r)[0];
           y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "y3y98n4wks");
+      }
+
+      function __tdgLoadFbq() {
+        if (window.__TDG_FBQ_LOADED__) return;
+        window.__TDG_FBQ_LOADED__ = true;
+        !(function (f, b, e, v, n, t, s) {
+          if (f.fbq) return;
+          n = f.fbq = function () {
+            n.callMethod
+              ? n.callMethod.apply(n, arguments)
+              : n.queue.push(arguments);
+          };
+          if (!f._fbq) f._fbq = n;
+          n.push = n;
+          n.loaded = true;
+          n.version = "2.0";
+          n.queue = [];
+          t = b.createElement(e);
+          t.async = true;
+          t.src = v;
+          s = b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t, s);
+        })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+        fbq("init", "1581639566935542");
+        fbq("track", "PageView");
+      }
+
+      function __tdgLoadMarketingScripts() {
+        function boot() {
+          __tdgLoadGtag();
+          __tdgLoadClarity();
+          __tdgLoadFbq();
         }
         if (window.__TDG_DEFER_ANALYTICS__) {
           window.addEventListener("load", function () {
-            setTimeout(boot, 2200);
+            setTimeout(boot, 1800);
           });
         } else {
           boot();
         }
-      })(window, document, "clarity", "script", "y3y98n4wks");
+      }
+
+      window.__tdgApplyConsentUpdate = function (granted) {
+        var state = granted ? "granted" : "denied";
+        gtag("consent", "update", {
+          analytics_storage: state,
+          ad_storage: state,
+          ad_user_data: state,
+          ad_personalization: state
+        });
+      };
+
+      window.__tdgSetCookieConsent = function (value) {
+        try {
+          localStorage.setItem(window.__TDG_CONSENT_KEY__, value);
+        } catch (e) {}
+        var granted = value === "granted";
+        window.__tdgApplyConsentUpdate(granted);
+        if (granted) __tdgLoadMarketingScripts();
+      };
+
+      (function bootConsent() {
+        var existing = null;
+        try {
+          existing = localStorage.getItem(window.__TDG_CONSENT_KEY__);
+        } catch (e) {}
+        if (existing === "granted") {
+          window.__tdgApplyConsentUpdate(true);
+          __tdgLoadMarketingScripts();
+        } else if (existing === "denied") {
+          window.__tdgApplyConsentUpdate(false);
+        }
+      })();
     </script>
 
     <title>TheDigitalGifter — Custom AI Holiday Cards & Memories</title>
@@ -130,10 +188,6 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://js.stripe.com" />
-    <link rel="preconnect" href="https://api.stripe.com" />
-    <link rel="dns-prefetch" href="https://connect.facebook.net" />
-    <link rel="dns-prefetch" href="https://www.clarity.ms" />
 
     <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
     <script>
@@ -318,59 +372,10 @@
     <meta name="robots" content="index,follow" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
 
-    <script>
-      (function () {
-        function bootFbq() {
-          !(function (f, b, e, v, n, t, s) {
-            if (f.fbq) return;
-            n = f.fbq = function () {
-              n.callMethod
-                ? n.callMethod.apply(n, arguments)
-                : n.queue.push(arguments);
-            };
-            if (!f._fbq) f._fbq = n;
-            n.push = n;
-            n.loaded = true;
-            n.version = "2.0";
-            n.queue = [];
-            t = b.createElement(e);
-            t.async = true;
-            t.src = v;
-            s = b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t, s);
-          })(
-            window,
-            document,
-            "script",
-            "https://connect.facebook.net/en_US/fbevents.js"
-          );
-
-          fbq("init", "1581639566935542");
-          fbq("track", "PageView");
-        }
-        if (window.__TDG_DEFER_ANALYTICS__) {
-          window.addEventListener("load", function () {
-            setTimeout(bootFbq, 2500);
-          });
-        } else {
-          bootFbq();
-        }
-      })();
-    </script>
-
     <link rel="stylesheet" href="/src/index.css" />
   </head>
 
   <body>
-    <noscript>
-      <img
-        height="1"
-        width="1"
-        style="display: none"
-        src="https://www.facebook.com/tr?id=1581639566935542&ev=PageView&noscript=1"
-      />
-    </noscript>
-
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

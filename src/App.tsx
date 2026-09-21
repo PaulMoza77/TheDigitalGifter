@@ -14,19 +14,10 @@ import { Toaster } from "sonner";
 import Index from "@/pages/website/HomePage";
 import AuthCallback from "@/pages/AuthCallback";
 import {
-  PetCheckoutRoute,
   PetCreateRoute,
   PetLandingRoute,
   PetOrderRoute,
 } from "@/features/pet/PetRoutes";
-import { PetV2Route } from "@/features/pet-v2/PetV2Routes";
-import { PetV3Route } from "@/features/pet-v3/PetV3Routes";
-import { PetV4Route } from "@/features/pet-v4/PetV4Routes";
-import { PetV4CampaignRedirect } from "@/features/pet-v4/V4CampaignRedirect";
-import {
-  ChristmasV2OrderRoute,
-  ChristmasV2Route,
-} from "@/features/christmas-v2/ChristmasV2Routes";
 import { christmasLocalePrefixedRoutes } from "@/features/christmas/seo/christmasLocaleRoutes";
 import { petLocalePrefixedRoutes } from "@/features/pet/i18n";
 
@@ -312,6 +303,34 @@ const PlannerSettingsRoute = lazy(() =>
   })),
 );
 
+const PetCheckoutRoute = lazy(() =>
+  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetCheckoutRoute })),
+);
+const PetV2Route = lazy(() =>
+  import("@/features/pet-v2/PetV2Routes").then((m) => ({ default: m.PetV2Route })),
+);
+const PetV3Route = lazy(() =>
+  import("@/features/pet-v3/PetV3Routes").then((m) => ({ default: m.PetV3Route })),
+);
+const PetV4Route = lazy(() =>
+  import("@/features/pet-v4/PetV4Routes").then((m) => ({ default: m.PetV4Route })),
+);
+const PetV4CampaignRedirect = lazy(() =>
+  import("@/features/pet-v4/V4CampaignRedirect").then((m) => ({
+    default: m.PetV4CampaignRedirect,
+  })),
+);
+const ChristmasV2Route = lazy(() =>
+  import("@/features/christmas-v2/ChristmasV2Routes").then((m) => ({
+    default: m.ChristmasV2Route,
+  })),
+);
+const ChristmasV2OrderRoute = lazy(() =>
+  import("@/features/christmas-v2/ChristmasV2Routes").then((m) => ({
+    default: m.ChristmasV2OrderRoute,
+  })),
+);
+
 // ================= FUNNEL =================
 const FunnelHomePage = lazy(
   () => import("@/components/funnelVersion/FunnelHomePage")
@@ -340,6 +359,7 @@ import { supabase } from "@/lib/supabase";
 import { trackMetaSpaPageView } from "@/lib/metaPixel";
 import { trackPageView } from "@/lib/analytics";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -1029,6 +1049,7 @@ function AppInner() {
       </Suspense>
       <Toaster position="top-right" />
       <CreditsFunnelModal />
+      <CookieConsentBanner />
     </BrowserRouter>
   );
 }

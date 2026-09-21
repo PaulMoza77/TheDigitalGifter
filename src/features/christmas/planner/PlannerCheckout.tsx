@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
-import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { getChristmasFunnelSessionId } from "@/features/christmas/analytics";
 import { trackPlannerEvent } from "./analytics";
 import { startPlannerCheckout } from "./api";
 import { getOrCreatePlannerGuestToken, persistPlannerOrderRecovery } from "./guest";
 import { money } from "./Paywall";
+
+const CustomStripeCheckout = lazy(() =>
+  import("@/features/pet/components/CustomStripeCheckout").then((mod) => ({
+    default: mod.CustomStripeCheckout,
+  })),
+);
 
 export type PlannerCheckoutSelection = {
   packageKey: string;
@@ -129,22 +134,25 @@ export function PlannerCheckoutSheet({
         {session?.clientSecret ? (
           <>
             <p className="tdg-planner-muted">Due today: {due}</p>
-            <CustomStripeCheckout
-              clientSecret={session.clientSecret}
-              publishableKey={session.publishableKey}
-              dueDisplay={due}
-              email={email}
-              appearanceTheme="night"
-              walletCapabilityOnly
-              payButtonLabel={() => "Pay"}
-              onPaymentInteraction={() => {
-                trackPlannerEvent("planner_payment_submitted", {
-                  packageKey: selected?.packageKey,
-                  orderId: session.orderId,
-                  amountCents: session.amountCents,
-                });
-              }}
-            />
+            <Suspense fallback={<p className="tdg-planner-muted">Loading checkout…</p>}>
+            <Suspense fallback={<p className="tdg-planner-muted">Loading checkout…</p>}>
+              <CustomStripeCheckout
+                clientSecret={session.clientSecret}
+                publishableKey={session.publishableKey}
+                dueDisplay={due}
+                email={email}
+                appearanceTheme="night"
+                walletCapabilityOnly
+                payButtonLabel={() => "Pay"}
+                onPaymentInteraction={() => {
+                  trackPlannerEvent("planner_payment_submitted", {
+                    packageKey: selected?.packageKey,
+                    orderId: session.orderId,
+                    amountCents: session.amountCents,
+                  });
+                }}
+              />
+            </Suspense>
           </>
         ) : null}
       </div>

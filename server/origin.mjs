@@ -18,6 +18,7 @@ import {
   getChristmasPermanentRedirectTarget,
   should404UnknownChristmasPath,
 } from "./christmasIndexing.mjs";
+import { applyAccountPrivacyShell, isPrivateAccountPath } from "./accountPrivacy.mjs";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const root = resolve(here, "..");
@@ -142,6 +143,7 @@ function sendRedirect(res, status, location) {
 function applyRouteMeta(html, pathname) {
   let next = applyChristmasSeo(html, pathname);
   next = applyChristmasNoindexShell(next, pathname);
+  next = applyAccountPrivacyShell(next, pathname);
   return next;
 }
 
@@ -248,6 +250,9 @@ async function handle(req, res) {
     const asset = safeJoin(distDir, url.pathname);
     if (asset && existsSync(asset) && statSync(asset).isFile()) {
       const extra = cacheHeadersFor(url.pathname);
+      if (isPrivateAccountPath(url.pathname)) {
+        extra["X-Robots-Tag"] = "noindex, nofollow";
+      }
       sendFile(res, asset, extra, req);
       return;
     }
@@ -273,6 +278,9 @@ async function handle(req, res) {
         res.statusCode = 200;
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.setHeader("Cache-Control", "no-cache");
+        if (isPrivateAccountPath(url.pathname)) {
+          res.setHeader("X-Robots-Tag", "noindex, nofollow");
+        }
         res.setHeader("Content-Length", String(body.length));
         res.end(body);
         return;
@@ -285,6 +293,9 @@ async function handle(req, res) {
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache");
+      if (isPrivateAccountPath(url.pathname)) {
+        res.setHeader("X-Robots-Tag", "noindex, nofollow");
+      }
       res.setHeader("Content-Length", String(body.length));
       res.end(body);
       return;

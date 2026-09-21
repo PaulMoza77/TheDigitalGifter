@@ -71,6 +71,7 @@ describe("christmas P1 indexing policy", () => {
     expect(origin).toContain("buildChristmasRedirectLocation");
     expect(origin).toContain("buildApexToWwwLocation");
     expect(origin).toContain("should404UnknownChristmasPath");
+    expect(origin).toContain("applyAccountPrivacyShell");
     const indexing = readFileSync(join(process.cwd(), "server/christmasIndexing.mjs"), "utf8");
     expect(indexing).toContain("/christmas/gifts");
     const robots = readFileSync(join(process.cwd(), "public/robots.txt"), "utf8");
