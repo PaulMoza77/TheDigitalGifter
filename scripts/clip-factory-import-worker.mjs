@@ -256,8 +256,9 @@ async function uploadFile(uploadUrl, path, contentType) {
     body: Readable.toWeb(createReadStream(path)),
   });
   if (!response.ok) {
+    const text = await response.text().catch(() => "");
     const error = new Error(`upload failed ${response.status}`);
-    error.code = "network";
+    error.code = response.status === 413 || /EntityTooLarge|exceeded the maximum allowed size/i.test(text) ? "huge_file" : "network";
     throw error;
   }
   return stat.size;
