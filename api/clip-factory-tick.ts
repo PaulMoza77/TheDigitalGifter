@@ -1,5 +1,6 @@
 import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { tickClipFactory } from "./_lib/clip-factory/worker";
+import { tickLongForm } from "./_lib/long-form-studio/worker";
 
 export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
   if (req.method !== "POST" && req.method !== "GET") {
@@ -18,8 +19,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
-    const result = await tickClipFactory("cron");
-    return res.status(200).json({ ok: true, ...result });
+    const clip = await tickClipFactory("cron");
+    const longForm = await tickLongForm("cron");
+    return res.status(200).json({ ok: true, ...clip, longForm });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return res.status(500).json({ error: "tick_failed", message: message.slice(0, 300) });

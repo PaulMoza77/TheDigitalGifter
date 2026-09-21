@@ -1,4 +1,4 @@
-/* Christmas Planner private app — cream application, evergreen chrome. Not the public funnel. */
+/* Christmas Planner private app - cream application, evergreen chrome. Not the public funnel. */
 .tdg-planner-app {
   --planner-cream: #f6efe4;
   --planner-parchment: #efe4d2;
@@ -1563,7 +1563,7 @@
   }
 }
 
-/* Christmas Copilot — planner chrome, not a generic chat embed */
+/* Christmas Copilot - planner chrome, not a generic chat embed */
 .tdg-planner-header .tdg-copilot-launch {
   min-height: 36px;
   padding: 0 12px;

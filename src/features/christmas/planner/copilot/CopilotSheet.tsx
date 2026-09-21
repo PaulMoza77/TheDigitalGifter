@@ -122,7 +122,7 @@ export function CopilotSheet({
             <h2 id="tdg-copilot-title">Using your current Christmas plan</h2>
             {intel ? (
               <p className="tdg-planner-muted">
-                {intel.readiness.percent}% ready · {intel.snapshot.daysLeft} days left · Engine facts — notes stay in the planner
+                {intel.readiness.percent}% ready · {intel.snapshot.daysLeft} days left · Engine facts - notes stay in the planner
               </p>
             ) : (
               <p className="tdg-planner-muted">Reading your plan…</p>
@@ -174,7 +174,7 @@ export function CopilotSheet({
             ))}
             {reply.actionPlan?.steps.length ? (
               <div className="tdg-copilot-confirm">
-                <p>Preview — nothing is written yet:</p>
+                <p>Preview - nothing is written yet:</p>
                 <ul>
                   {reply.actionPlan.steps.map((step) => (
                     <li key={step.preview}>{step.preview}</li>

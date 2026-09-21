@@ -123,7 +123,7 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
       ...base(),
       message: snapshot.profile.hosting
         ? snapshot.meals.length
-          ? `You have ${snapshot.meals.length} ${snapshot.meals.length === 1 ? "meal" : "meals"} and ${groceryNeed} grocery ${groceryNeed === 1 ? "row" : "rows"} still marked need. Open Grocery to tick them — I won’t invent ingredients from private notes.`
+          ? `You have ${snapshot.meals.length} ${snapshot.meals.length === 1 ? "meal" : "meals"} and ${groceryNeed} grocery ${groceryNeed === 1 ? "row" : "rows"} still marked need. Open Grocery to tick them - I won’t invent ingredients from private notes.`
           : "Add Christmas Eve or Day in Food first, then the Engine can merge a grocery list."
         : "You’re not marked as hosting. Turn hosting on in Settings if you need a dinner grocery list.",
       cards: insightCards(insights, ["food"]),
@@ -167,7 +167,7 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
       tone: "rescue",
       message: rescue.active
         ? `Rescue is on (${snapshot.daysLeft} days). ${rescue.reason} Start with: ${focus.join("; ") || "gifts that must ship, food shop, wrap"}.`
-        : `You’re ${readiness.percent}% ready. Treat it as rescue: three things only — gifts that must ship, food shop, wrap.`,
+        : `You’re ${readiness.percent}% ready. Treat it as rescue: three things only - gifts that must ship, food shop, wrap.`,
       cards: [
         { type: "task_list", title: "Rescue focus", items: focus.length ? focus : ["Pick three things that still matter"] },
         ...insightCards(insights.filter((i) => i.severity === "urgent" || i.severity === "important")),
@@ -181,7 +181,7 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
     const askedDad = lower.includes("dad") || lower.includes("father");
     const message = askedDad
       ? dad
-        ? `${dad} is on the list without a planned gift. Open Gifts and use Need an idea? — I don’t invent gifts from private notes.`
+        ? `${dad} is on the list without a planned gift. Open Gifts and use Need an idea? - I don’t invent gifts from private notes.`
         : missing.length
           ? `I don’t see a “Dad” label still missing a plan. Still open: ${missing.join(", ")}.`
           : "Every person on your gift list has at least one planned gift."
@@ -200,7 +200,7 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
     if (budget.remainingMinor == null && !snapshot.profile.totalBudgetMinor) {
       return {
         ...base(),
-        message: "Set a season budget in Budget, then I can tell you if you’re on track — without sending amounts to ads.",
+        message: "Set a season budget in Budget, then I can tell you if you’re on track - without sending amounts to ads.",
         cards: insightCards(insights, ["budget"]),
         followUpOptions: ["What am I forgetting?", "What gifts am I still missing?"],
       };
@@ -223,7 +223,7 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
           type: "budget_summary",
           planned: money(snapshot.profile.totalBudgetMinor || budget.forecastMinor),
           spent: money(budget.spentMinor),
-          remaining: remaining != null ? money(remaining) : "—",
+          remaining: remaining != null ? money(remaining) : "-",
         },
         ...insightCards(insights, ["budget"]),
       ],
@@ -285,7 +285,7 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
   if (intent === "gift_ideas") {
     return {
       ...base(),
-      message: "Use Need an idea? on a recipient — Gift Concierge stays in Gifts and can add a result to their list. I don’t invent gifts from private notes.",
+      message: "Use Need an idea? on a recipient - Gift Concierge stays in Gifts and can add a result to their list. I don’t invent gifts from private notes.",
       cards: insightCards(insights, ["gifts"]),
       followUpOptions: ["What gifts am I still missing?", "Am I over budget?"],
     };
@@ -296,7 +296,7 @@ export function askCopilot(question: string, intel: PlannerIntelligence): Copilo
       ...base(),
       modelPath: "fallback",
       message:
-        "Ask about today, gaps, budget, gifts, dinner, travel, grocery, rescue, or what you can ignore. Private notes stay in your planner — Copilot uses Engine facts, not ads.",
+        "Ask about today, gaps, budget, gifts, dinner, travel, grocery, rescue, or what you can ignore. Private notes stay in your planner - Copilot uses Engine facts, not ads.",
       cards: insightCards(insights),
       followUpOptions: ["What should I do this weekend?", "What am I forgetting?", "Am I over budget?"],
       unsupported: { asked: q.slice(0, 80), reason: "ambiguous" },

@@ -1,14 +1,14 @@
 import { FREE_LIMITS, FOUNDING_PASS_PRICE_LABEL } from "./types";
 
-/** Condensed FAQ — existing commercial rules only. */
+/** Condensed FAQ - existing commercial rules only. */
 export const PLANNER_FAQS = [
   {
-    q: "What do I get — and what is free?",
+    q: "What do I get - and what is free?",
     a: `Christmas Planner 2026 is an online planner for gifts, budget, meals, groceries, tasks, and hosting. Free use stays limited (up to ${FREE_LIMITS.maxRecipients} gift people, a small task set, limited budget categories, and a short recipe teaser). The ${FOUNDING_PASS_PRICE_LABEL} Founding Pass unlocks the full Planner for the 2026 season.`,
   },
   {
     q: "Is this a PDF? Does it work on my phone?",
-    a: "It is an interactive online planner in your browser — not a PDF and not a store app. It is built for phones first and also works on desktop.",
+    a: "It is an interactive online planner in your browser - not a PDF and not a store app. It is built for phones first and also works on desktop.",
   },
   {
     q: "Is $17 a subscription, and how long does access last?",
@@ -16,7 +16,7 @@ export const PLANNER_FAQS = [
   },
   {
     q: "What happens after I pay?",
-    a: "You return to a welcome page, sign in or create an account if needed, and open your Planner. Paid access is granted only after the server verifies payment — never from a success URL alone.",
+    a: "You return to a welcome page, sign in or create an account if needed, and open your Planner. Paid access is granted only after the server verifies payment - never from a success URL alone.",
   },
   {
     q: "Are AI cards and videos included?",
@@ -80,7 +80,7 @@ export const BUDGET_DEMO = {
 
 export const BUDGET_DEMO_REMAINING = BUDGET_DEMO.season - BUDGET_DEMO.gifts - BUDGET_DEMO.foodDecor;
 
-/** Local demo recipe — scaled with the same helper as the product recipe catalog. */
+/** Local demo recipe - scaled with the same helper as the product recipe catalog. */
 export const MEAL_DEMO_RECIPE = {
   title: "Herb-butter roast turkey",
   baseServings: 8,

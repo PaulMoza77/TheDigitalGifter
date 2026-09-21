@@ -14,6 +14,7 @@ import {
   type LibraryVideo,
 } from "@/features/admin-library/catalog";
 import { clipFactoryApi } from "@/features/clip-factory/api";
+import { longFormApi } from "@/features/long-form-studio/api";
 import BulkScheduleDialog from "@/features/social-publisher/BulkScheduleDialog";
 import PublishReelDrawer from "@/features/social-publisher/PublishReelDrawer";
 import { socialPublisherApi } from "@/features/social-publisher/api";
@@ -53,28 +54,38 @@ export default function AdminLibraryPage() {
   }, []);
 
   React.useEffect(() => {
-    void clipFactoryApi
-      .dynamicLibrary()
-      .then((data) => {
-        setFactoryVideos(
-          (data.videos || []).map((row) => ({
-            id: String(row.id),
-            title: String(row.title || "Clip Factory"),
-            description: String(row.description || ""),
-            src: String(row.src || ""),
-            filename: String(row.filename || "clip.mp4"),
-            category: "clip_factory",
-            kind: (row.kind as LibraryKind) || "reel",
-            durationSeconds: typeof row.durationSeconds === "number" ? row.durationSeconds : undefined,
-            poster: typeof row.poster === "string" ? row.poster : undefined,
-            width: typeof row.width === "number" ? row.width : 1080,
-            height: typeof row.height === "number" ? row.height : 1920,
-          })),
-        );
-      })
-      .catch(() => {
-        setFactoryVideos([]);
-      });
+    void Promise.all([
+      clipFactoryApi.dynamicLibrary().catch(() => ({ videos: [] as Array<Record<string, unknown>> })),
+      longFormApi.libraryVideos().catch(() => ({ videos: [] as Array<Record<string, unknown>> })),
+    ]).then(([factory, longForm]) => {
+      const factoryRows = (factory.videos || []).map((row) => ({
+        id: String(row.id),
+        title: String(row.title || "Clip Factory"),
+        description: String(row.description || ""),
+        src: String(row.src || ""),
+        filename: String(row.filename || "clip.mp4"),
+        category: (row.category as LibraryCategoryId) || "clip_factory",
+        kind: (row.kind as LibraryKind) || "reel",
+        durationSeconds: typeof row.durationSeconds === "number" ? row.durationSeconds : undefined,
+        poster: typeof row.poster === "string" ? row.poster : undefined,
+        width: typeof row.width === "number" ? row.width : 1080,
+        height: typeof row.height === "number" ? row.height : 1920,
+      }));
+      const longRows = (longForm.videos || []).map((row) => ({
+        id: String(row.id),
+        title: String(row.title || "Long-form"),
+        description: String(row.description || ""),
+        src: String(row.src || ""),
+        filename: String(row.filename || "long-form.mp4"),
+        category: "long_form" as const,
+        kind: "long_form" as const,
+        durationSeconds: typeof row.durationSeconds === "number" ? row.durationSeconds : undefined,
+        poster: typeof row.poster === "string" ? row.poster : undefined,
+        width: typeof row.width === "number" ? row.width : 1920,
+        height: typeof row.height === "number" ? row.height : 1080,
+      }));
+      setFactoryVideos([...longRows, ...factoryRows]);
+    });
   }, []);
 
   const catalog = React.useMemo(() => [...factoryVideos, ...LIBRARY_VIDEOS], [factoryVideos]);
@@ -101,7 +112,7 @@ export default function AdminLibraryPage() {
               Library
             </h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-              Finished Reels, Shorts, and Photos. Preview, save, and schedule — generation lives in AI Clip Factory.
+              Finished Reels, Shorts, Photos, and long-form ambience. Preview, save, and schedule.
             </p>
           </div>
           <div className="flex flex-col items-start gap-3 lg:items-end">

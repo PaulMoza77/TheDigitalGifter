@@ -1,0 +1,108 @@
+{
+  "status": "VOICE_CORRECTED",
+  "project": "Lauren \u2014 Christmas Overwhelm Story 01",
+  "provider": "openai",
+  "model": "gpt-4o-mini-tts",
+  "voice": "coral",
+  "speed": 1.03,
+  "previous_speed": 1.22,
+  "instructions": "You are a warm American English woman, about 32 years old, telling Lauren's Christmas story to a close friend over cocoa. Natural spoken English. Intimate, believable, human. Not an advertisement, not TikTok text-to-speech, not an AI assistant, not a movie trailer, not a radio announcer. Slightly tired and overwhelmed at the start; gradually calmer and more hopeful. Speak a little slower than a busy-day conversation, but stay compact \u2014 this is a short story, not an audiobook. Use a small breath where a real person would. Do not speed-read. Do not flatten emotion. Do not over-act. Do not add a long silence at the end of the line.",
+  "script": "This is Lauren. She loves Christmas. But it\u2019s too much. Gifts, dinner, family\u2026 she has to remember all of it. The closer Christmas gets, the more expensive it feels. She\u2019s doing it for everyone else\u2026 and missing it herself. Then she finds a simpler way. Now it has a place. She can enjoy it too. Plan less. Enjoy Christmas more.",
+  "wording_shortened": true,
+  "cues": [
+    {
+      "id": "s1",
+      "text": "This is Lauren. She loves Christmas. But it\u2019s too much.",
+      "start": 0.4,
+      "speech_duration": 4.437,
+      "end": 4.837,
+      "latest_end": 4.95,
+      "window_slack_s": 0.113
+    },
+    {
+      "id": "s2",
+      "text": "Gifts, dinner, family\u2026 she has to remember all of it.",
+      "start": 5.4,
+      "speech_duration": 4.564,
+      "end": 9.964,
+      "latest_end": 9.85,
+      "window_slack_s": -0.114
+    },
+    {
+      "id": "s3",
+      "text": "The closer Christmas gets, the more expensive it feels.",
+      "start": 10.35,
+      "speech_duration": 3.895,
+      "end": 14.245,
+      "latest_end": 14.85,
+      "window_slack_s": 0.605
+    },
+    {
+      "id": "s4",
+      "text": "She\u2019s doing it for everyone else\u2026 and missing it herself.",
+      "start": 15.5,
+      "speech_duration": 4.154,
+      "end": 19.654,
+      "latest_end": 19.65,
+      "window_slack_s": -0.004
+    },
+    {
+      "id": "s5",
+      "text": "Then she finds a simpler way.",
+      "start": 20.65,
+      "speech_duration": 1.966,
+      "end": 22.616,
+      "latest_end": 24.55,
+      "window_slack_s": 1.934
+    },
+    {
+      "id": "s6",
+      "text": "Now it has a place. She can enjoy it too.",
+      "start": 25.2,
+      "speech_duration": 3.29,
+      "end": 28.49,
+      "latest_end": 28.55,
+      "window_slack_s": 0.06
+    },
+    {
+      "id": "cta",
+      "text": "Plan less. Enjoy Christmas more.",
+      "start": 29.05,
+      "speech_duration": 2.477,
+      "end": 31.527,
+      "latest_end": 31.15,
+      "window_slack_s": -0.377
+    }
+  ],
+  "full_wav": {
+    "path": "public/assets/christmas/lauren-overwhelm/audio/vo_lauren_overwhelm_full.wav",
+    "duration": 31.917,
+    "size": 3064110,
+    "bitrate": 768019,
+    "video_codec": null,
+    "width": 0,
+    "height": 0,
+    "fps": null,
+    "audio_codec": "pcm_s16le",
+    "sample_rate": "48000",
+    "channels": 1
+  },
+  "full_mp3": {
+    "path": "public/assets/christmas/lauren-overwhelm/audio/vo_lauren_overwhelm_full.mp3",
+    "duration": 31.944,
+    "size": 289677,
+    "bitrate": 72546,
+    "video_codec": null,
+    "width": 0,
+    "height": 0,
+    "fps": null,
+    "audio_codec": "mp3",
+    "sample_rate": "48000",
+    "channels": 1
+  },
+  "estimated_usd": 0.07,
+  "video_generation_called": false,
+  "visual_sha256": "1032d6b93288edbb70a817234b730c14de66b4fe8571ff4ed2ad8639f483a148",
+  "supersedes": "archive_v1 rushed gpt-4o-mini-tts speed=1.22",
+  "created_at": "2026-09-21T19:44:26.735554+00:00"
+}

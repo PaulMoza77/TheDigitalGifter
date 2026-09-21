@@ -14,7 +14,7 @@ import {
 } from "./types";
 import { upgradePackageForFeature } from "./entitlements";
 
-const OFFER_CTA = `Unlock your complete Christmas plan — ${FOUNDING_PASS_PRICE_LABEL} one-time`;
+const OFFER_CTA = `Unlock your complete Christmas plan - ${FOUNDING_PASS_PRICE_LABEL} one-time`;
 
 const CustomStripeCheckout = lazy(() =>
   import("@/features/pet/components/CustomStripeCheckout").then((mod) => ({

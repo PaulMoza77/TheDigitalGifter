@@ -1,0 +1,24 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,DejaVu Sans,62,&H00FFFFFF,&H000000FF,&H66101010,&H00000000,0,0,0,0,100,100,0,0,1,4,0,2,70,70,210,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.40,0:00:02.53,Default,,0,0,0,,This is {\c&HC8E6FF&}Lauren.{\c&HFFFFFF&}\NShe loves {\c&HC8E6FF&}Christmas.{\c&HFFFFFF&}
+Dialogue: 0,0:00:02.53,0:00:04.84,Default,,0,0,0,,But it’s {\c&HC8E6FF&}too{\c&HFFFFFF&} much.
+Dialogue: 0,0:00:05.40,0:00:07.54,Default,,0,0,0,,{\c&HC8E6FF&}Gifts,{\c&HFFFFFF&} dinner, family…
+Dialogue: 0,0:00:07.54,0:00:09.85,Default,,0,0,0,,she has to {\c&HC8E6FF&}remember{\c&HFFFFFF&}\Nall of it.
+Dialogue: 0,0:00:10.35,0:00:14.24,Default,,0,0,0,,The closer Christmas gets,\Nthe more {\c&HC8E6FF&}expensive{\c&HFFFFFF&} it feels.
+Dialogue: 0,0:00:15.50,0:00:17.49,Default,,0,0,0,,She’s doing it\Nfor {\c&HC8E6FF&}everyone{\c&HFFFFFF&} else…
+Dialogue: 0,0:00:17.49,0:00:19.65,Default,,0,0,0,,and missing it {\c&HC8E6FF&}herself.{\c&HFFFFFF&}
+Dialogue: 0,0:00:20.65,0:00:22.62,Default,,0,0,0,,Then she finds\Na {\c&HC8E6FF&}simpler{\c&HFFFFFF&} way.
+Dialogue: 0,0:00:25.20,0:00:26.78,Default,,0,0,0,,Now it has a {\c&HC8E6FF&}place.{\c&HFFFFFF&}
+Dialogue: 0,0:00:26.78,0:00:28.49,Default,,0,0,0,,She can {\c&HC8E6FF&}enjoy{\c&HFFFFFF&} it too.
+Dialogue: 0,0:00:29.05,0:00:31.15,Default,,0,0,0,,Plan less.\N{\c&HC8E6FF&}Enjoy{\c&HFFFFFF&} Christmas more.

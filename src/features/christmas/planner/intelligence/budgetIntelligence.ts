@@ -254,7 +254,7 @@ export function collectBudgetCopy(snapshot: PlannerSnapshot, totals = computeBud
   const lines: string[] = [];
   if (totals.overForecastMinor > 0) {
     lines.push(
-      `You’re ${formatPlannerMoney(totals.overForecastMinor, currency)} over your Christmas budget — easy to ease back.`,
+      `You’re ${formatPlannerMoney(totals.overForecastMinor, currency)} over your Christmas budget - easy to ease back.`,
     );
   } else if (totals.remainingAfterSpendMinor != null && totals.remainingAfterSpendMinor >= 0) {
     lines.push(`You have ${formatPlannerMoney(totals.remainingAfterSpendMinor, currency)} left.`);

@@ -20,6 +20,7 @@ describe("TDG origin path classification", () => {
     expect(classifyPath("/api/clip-factory-import").kind).toBe("api");
     expect(classifyPath("/api/clip-factory-import-bytes").kind).toBe("api");
     expect(classifyPath("/api/clip-factory-tick").kind).toBe("api");
+    expect(classifyPath("/api/long-form-studio").kind).toBe("api");
     expect(classifyPath("/api/christmas/gift-tree").kind).toBe("api");
     expect(classifyPath("/api/christmas-gift-tree").kind).toBe("api");
     expect(classifyPath("/sitemap.xml").kind).toBe("api");

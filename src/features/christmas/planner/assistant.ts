@@ -52,13 +52,13 @@ export function answerFromContext(question: string, ctx: AssistantSafeContext): 
       source: "local_rules",
       text:
         ctx.openTasks > 0
-          ? `You have ${ctx.openTasks} open tasks and ${ctx.daysLeft} days left. Finish the top three on Today first — that’s the fastest readiness gain.`
+          ? `You have ${ctx.openTasks} open tasks and ${ctx.daysLeft} days left. Finish the top three on Today first - that’s the fastest readiness gain.`
           : `You’re caught up on tasks. Add one gift idea or a meal if you’re hosting.`,
     };
   }
   if (intent === "budget") {
     if (ctx.budgetRemainingMinor == null) {
-      return { source: "local_rules", text: "Set a season budget in Budget, then I can tell you if you’re on track — without storing extra notes." };
+      return { source: "local_rules", text: "Set a season budget in Budget, then I can tell you if you’re on track - without storing extra notes." };
     }
     const remaining = (ctx.budgetRemainingMinor / 100).toFixed(0);
     return {
@@ -102,7 +102,7 @@ export function answerFromContext(question: string, ctx: AssistantSafeContext): 
   if (intent === "gift_ideas") {
     return {
       source: "local_rules",
-      text: "Use Need an idea? on a recipient — Gift Concierge stays in Gifts and can add a result to their list. I don’t invent gifts from private notes.",
+      text: "Use Need an idea? on a recipient - Gift Concierge stays in Gifts and can add a result to their list. I don’t invent gifts from private notes.",
     };
   }
   if (intent === "rescue") {

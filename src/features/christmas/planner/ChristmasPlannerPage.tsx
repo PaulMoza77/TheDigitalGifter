@@ -161,7 +161,7 @@ function statusLabel(status: GiftDemoStatus) {
 function formatDemoQty(quantity: unknown, unit: unknown) {
   const qty = typeof quantity === "number" ? quantity : null;
   const u = typeof unit === "string" ? unit : "";
-  if (qty == null) return u || "—";
+  if (qty == null) return u || "-";
   const n = Number.isInteger(qty) ? String(qty) : String(Math.round(qty * 100) / 100);
   return u ? `${n} ${u}` : n;
 }
@@ -187,7 +187,7 @@ function HeroProductSummary() {
           <span>Menu portions that become a shopping list</span>
         </li>
       </ul>
-      <p className="tdg-pl__summary-note">See the full example below — tap statuses and change portions.</p>
+      <p className="tdg-pl__summary-note">See the full example below - tap statuses and change portions.</p>
     </aside>
   );
 }
@@ -361,7 +361,7 @@ function PlannerDemoPanel({
           </button>
           {groceryAdded ? (
             <p className="tdg-pl__hint" role="status">
-              Demo list updated for {mealServings} portions — nothing is saved to an account.
+              Demo list updated for {mealServings} portions - nothing is saved to an account.
             </p>
           ) : null}
         </div>
@@ -408,7 +408,7 @@ export default function ChristmasPlannerPage() {
     founding && founding.priceCents === FOUNDING_PASS_PRICE_CENTS && currency === FOUNDING_PASS_CURRENCY
       ? FOUNDING_PASS_PRICE_LABEL
       : money(priceCents, currency);
-  const buyLabel = `Get my Christmas Planner — ${priceLabel}`;
+  const buyLabel = `Get my Christmas Planner - ${priceLabel}`;
 
   useEffect(() => {
     ensureFonts();
@@ -654,7 +654,7 @@ export default function ChristmasPlannerPage() {
             <p className="tdg-pl__eyebrow">CHRISTMAS PLANNER 2026</p>
             <h1>Christmas is coming. Get it all out of your head.</h1>
             <p className="tdg-pl__lede">
-              Keep gifts, spending, meals and holiday to-dos in one online planner — so you can enjoy the Christmas
+              Keep gifts, spending, meals and holiday to-dos in one online planner - so you can enjoy the Christmas
               you’re organising.
             </p>
             <ul className="tdg-pl__benefits">
@@ -741,7 +741,7 @@ export default function ChristmasPlannerPage() {
               <li>Gifts, budget, meals, groceries, tasks &amp; hosting</li>
               <li>Access for the Christmas 2026 season</li>
               <li>Works on phone and computer</li>
-              <li>Not a PDF — your plan stays online</li>
+              <li>Not a PDF - your plan stays online</li>
             </ul>
 
             <div className="tdg-pl__checkout" id="checkout" ref={paymentRef}>
@@ -763,7 +763,7 @@ export default function ChristmasPlannerPage() {
               ) : !catalog.checkoutLive ? (
                 <div className="tdg-pl__launch" data-testid="planner-checkout-disabled">
                   <strong>Checkout is opening soon.</strong>
-                  <p>Apple Pay, Google Pay, and card appear here when live — only if your device supports them.</p>
+                  <p>Apple Pay, Google Pay, and card appear here when live - only if your device supports them.</p>
                 </div>
               ) : !checkout ? (
                 buyButton("offer", "planner-buy-cta-offer")
