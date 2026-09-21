@@ -17,6 +17,34 @@ const HomePage: React.FC = () => {
 
       <OccasionGrid />
 
+      <section
+        className="relative border-y border-white/10 bg-gradient-to-b from-[#12080c] via-[#1a0c10] to-black px-4 py-14 sm:px-6 lg:px-8"
+        aria-label="Christmas Planner"
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(212,179,106,0.14),transparent_42%)]" />
+        <div className="relative mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#f0d59a]">
+              Christmas Planner 2026
+            </p>
+            <h2 className="mt-3 font-serif text-3xl font-semibold tracking-tight text-[#f6efe3] sm:text-4xl">
+              Plan gifts, budget, and meals in one place.
+            </h2>
+            <p className="mt-3 max-w-xl text-base leading-7 text-[#f6efe3]/70">
+              An online Christmas planner — separate from card and video generators —
+              so the family organiser can keep the holiday moving without juggling notes.
+            </p>
+          </div>
+          <Link
+            to="/christmas/planner"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#f0d59a] to-[#c9a24c] px-7 py-4 text-base font-bold text-[#2a160c] shadow-lg shadow-amber-900/20 transition hover:scale-[1.02]"
+          >
+            Open Christmas Planner
+            <ArrowRight className="h-5 w-5" />
+          </Link>
+        </div>
+      </section>
+
       <section className="relative border-y border-white/10 bg-gradient-to-b from-black via-slate-950 to-black px-4 py-20 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,214,102,0.12),transparent_45%)]" />
 
