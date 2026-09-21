@@ -1,12 +1,13 @@
 export type LibraryCategoryId =
   | "clip_factory"
+  | "long_form"
   | "christmas_reels"
   | "christmas_marketing"
   | "pet_dog"
   | "pet_cat"
   | "pet_other";
 
-export type LibraryKind = "reel" | "short" | "photo";
+export type LibraryKind = "reel" | "short" | "photo" | "long_form";
 
 export type LibraryVideo = {
   id: string;
@@ -49,6 +50,11 @@ export const LIBRARY_CATEGORIES: LibraryCategory[] = [
     id: "clip_factory",
     label: "Clip Factory",
     description: "Vertical clips generated from long-form video, with captions and provenance.",
+  },
+  {
+    id: "long_form",
+    label: "Long-form",
+    description: "YouTube-length ambience productions from Long-Form Studio, with rights manifests.",
   },
   {
     id: "christmas_reels",

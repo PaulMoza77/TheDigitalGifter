@@ -25,6 +25,7 @@ describe("admin video library", () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(LIBRARY_CATEGORIES.map((item) => item.id)).toEqual([
       "clip_factory",
+      "long_form",
       "christmas_reels",
       "christmas_marketing",
       "pet_dog",
@@ -35,7 +36,7 @@ describe("admin video library", () => {
     for (const video of LIBRARY_VIDEOS) {
       expect(video.src.startsWith("/")).toBe(true);
       expect(librarySrcPath(video.src).includes("?")).toBe(false);
-      expect(["reel", "short", "photo"]).toContain(video.kind);
+      expect(["reel", "short", "photo", "long_form"]).toContain(video.kind);
       if (isLibraryPhoto(video)) {
         expect(/\.(jpe?g|png|webp)$/i.test(video.filename)).toBe(true);
       } else {

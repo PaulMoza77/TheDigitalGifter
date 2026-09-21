@@ -40,7 +40,7 @@ export const ACCOUNT_STATUSES = [
 ] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
-export type LibraryAssetKind = "reel" | "short" | "photo";
+export type LibraryAssetKind = "reel" | "short" | "photo" | "long_form";
 
 export type LibraryAssetSnapshot = {
   id: string;
