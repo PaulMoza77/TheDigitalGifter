@@ -26,6 +26,7 @@ services:
       CLIP_FACTORY_CRON_SECRET: ${CLIP_FACTORY_CRON_SECRET:-${CRON_SECRET:-}}
       CLIP_FACTORY_IMPORT_WORKER_TOKEN: ${CLIP_FACTORY_IMPORT_WORKER_TOKEN:-}
       CLIP_FACTORY_MEDIA_ROOT: /var/lib/tdg/clip-factory
+      LONG_FORM_DATA_DIR: /data/long-form
       CLIP_FACTORY_SIGNING_SECRET: ${CLIP_FACTORY_SIGNING_SECRET:-}
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
       CLIP_FACTORY_YOUTUBE_IMPORT_URL: ${CLIP_FACTORY_YOUTUBE_IMPORT_URL:-}
@@ -50,6 +51,7 @@ services:
       - "8080"
     volumes:
       - /opt/mozas/projects/thedigitalgifter/media:/var/lib/tdg/clip-factory
+      - /opt/mozas/projects/thedigitalgifter/data/long-form:/data/long-form
     networks:
       - mozas-edge
     healthcheck:
