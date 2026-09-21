@@ -17,4 +17,4 @@ if [[ -f "$LOG" ]]; then
 fi
 exec >>"$LOG" 2>&1
 cd "$ROOT"
-exec /usr/bin/env node "${ROOT}/scripts/clip-factory-import-worker.mjs"
+exec /usr/local/bin/node "${ROOT}/scripts/clip-factory-import-worker.mjs"
