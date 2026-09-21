@@ -1,25 +1,25 @@
 # TDG Reel Director
 
-Reusable production spine for vertical UGC reels. Not a product surface.
+Reusable spine for vertical UGC reels. Not a product surface.
 
 ```
-Character Bible → Story Beats → Shot Plan → Audio Plan → Generation Manifest
-→ Cost Estimate → [APPROVAL] → Generation → Assembly → QA → Library
+Character Bible → Story Beats → Shot Plan → Audio Plan → Manifest → Cost
+→ [APPROVAL] → Audio + audition → Measure speech → Video → Assembly → QA → Library
 ```
 
-Rules:
-
-- Image-to-video only from locked stills. Do not regenerate approved references.
-- Never invent product UI in a video model. Composite real Planner captures.
-- Video `sound=off`. Voices, SFX, music are separate tracks.
-- Edit picture around human speech. Never speed speech to fit a clip.
-- Do not require perfect lip-sync. Prefer off-camera, OTS, reaction, J/L-cuts.
-- Audio-only and single-scene video regen must not require regenerating the reel.
-- Paid video providers are called only after the production manifest `status` is `APPROVED`.
-
-First production: `christmas_planner_mom_overwhelm_v2`.
+Paid submit is only:
 
 ```
-python3 scripts/reel-director/validate.py \
-  public/assets/christmas/christmas_planner_mom_overwhelm_v2/generation_manifest.json
+python3 scripts/reel-director/generate.py --execute
 ```
+
+and only if the manifest is `APPROVED`, voices were auditioned, speech was measured, and live estimate is under the cap.
+
+No-cost checks:
+
+```
+python3 scripts/reel-director/generate.py --dry-run
+python3 scripts/reel-director/generate.py --estimate-only
+```
+
+`--estimate-only` calls Higgsfield `/estimate` (not Kling submit). `--dry-run` uses no network.

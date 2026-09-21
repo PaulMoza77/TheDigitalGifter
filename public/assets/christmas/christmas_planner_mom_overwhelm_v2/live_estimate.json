@@ -1,0 +1,9 @@
+{
+  "status": "BLOCKED_MISSING_CREDENTIALS",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "paid_submit_called": false,
+  "live_generation_verified": false,
+  "blocker": "HF_CREDENTIALS / HF_API_KEY_ID+SECRET not set in this environment. Live 5s/10s estimate not called.",
+  "at": "2026-09-21T21:41:39.847933+00:00"
+}

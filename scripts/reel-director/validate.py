@@ -54,19 +54,23 @@ def main() -> int:
         video = shot["video"]
         if video.get("generate"):
             paid += 1
-            for key in ("provider", "model", "duration_s", "estimated_usd"):
+            for key in ("provider", "model", "duration_s"):
                 if key not in video:
                     raise SystemExit(f"{shot['id']} video missing {key}")
+        if shot.get("coverage"):
+            for line in shot["coverage"]:
+                for key in ("speaker", "text", "see", "hear"):
+                    if key not in line:
+                        raise SystemExit(f"{shot['id']} coverage missing {key}")
         ref = ROOT / shot["reference_asset"]
         if not ref.exists():
             raise SystemExit(f"{shot['id']} missing reference {ref}")
     cost = data["cost_estimate"]
-    for key in ("video_usd", "audio_usd", "total_usd"):
-        if key not in cost:
-            raise SystemExit(f"cost_estimate missing {key}")
+    if "approved_cost_cap_usd" not in cost:
+        raise SystemExit("cost_estimate missing approved_cost_cap_usd")
     print(
         f"OK {data['project']} status={data['status']} shots={len(data['shots'])} "
-        f"paid_video_jobs={paid} total_usd={cost['total_usd']}",
+        f"paid_video_jobs={paid} cap_usd={cost.get('approved_cost_cap_usd')}",
         flush=True,
     )
     return 0
