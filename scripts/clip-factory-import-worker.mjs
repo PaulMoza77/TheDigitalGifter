@@ -215,7 +215,7 @@ async function downloadYoutube(config, url, dest, heartbeat) {
         "--no-mtime",
         "--no-progress",
         "-f",
-        "bv*[vcodec^=avc1][height<=1080]+ba[acodec^=mp4a]/bv*[height<=1080]+ba/b",
+        "bv*[height<=1080]+ba/b[height<=1080]/b",
         "--merge-output-format",
         "mp4",
         "-o",
